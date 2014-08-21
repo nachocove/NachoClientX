@@ -113,8 +113,6 @@ namespace NachoClient.iOS
                 ConfigureView ();
             });
             contentView.AddGestureRecognizer (tap);
-
-
         }
 
         public void Append (McAttachment attachment)
@@ -135,8 +133,7 @@ namespace NachoClient.iOS
 
         public void PromptForAttachment (string compositionType)
         {
-            AttachFileActionSheet (compositionType);
-
+            AttachFileActionSheet ();
         }
 
         public void Remove (UcAttachmentCell c)
@@ -188,7 +185,7 @@ namespace NachoClient.iOS
             this.Frame = new RectangleF (this.Frame.Location, contentView.Frame.Size);
         }
 
-        protected void AttachFileActionSheet (string compositionType)
+        protected void AttachFileActionSheet ()
         {
             var actionSheet = new UIActionSheet ();
 
@@ -197,49 +194,24 @@ namespace NachoClient.iOS
             actionSheet.Add ("Cancel");
             actionSheet.CancelButtonIndex = 2;
 
-            if ("message" == compositionType) {
-                actionSheet.Clicked += delegate(object sender, UIButtonEventArgs b) {
-                    switch (b.ButtonIndex) {
-                    case 0:
-                        SetupPhotoPicker ();
-                        break; 
-                    case 1:
-                        if (null != owner) {
-                            owner.PerformSegueForAttachmentBlock ("ComposeToFiles", new SegueHolder (null));
-                        }
-                        break;
-                    case 2:
-
-                        break;// Cancel
-                    default:
-                        NcAssert.CaseError ();
-                        break;
+            actionSheet.Clicked += delegate(object sender, UIButtonEventArgs b) {
+                switch (b.ButtonIndex) {
+                case 0:
+                    SetupPhotoPicker ();
+                    break; 
+                case 1:
+                    if (null != owner) {
+                        owner.PerformSegueForAttachmentBlock ("ComposeToFiles", new SegueHolder (null));
                     }
-                };
-            }
-            if ("event" == compositionType) {
-                actionSheet.Clicked += delegate(object sender, UIButtonEventArgs b) {
-                    switch (b.ButtonIndex) {
-                    case 0:
-                        SetupPhotoPicker ();
-                        break; 
-                    case 1:
-                        if (null != owner) {
-                            owner.PerformSegueForAttachmentBlock ("EventToFiles", new SegueHolder (null));
-                        }
-                        break;
-                    case 2:
+                    break;
+                case 2:
 
-                        break;// Cancel
-                    default:
-                        NcAssert.CaseError ();
-                        break;
-                    }
-                };
-
-            }
-
-
+                    break;// Cancel
+                default:
+                    NcAssert.CaseError ();
+                    break;
+                }
+            };
             actionSheet.ShowInView (this);
         }
 

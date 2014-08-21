@@ -23,7 +23,9 @@ namespace NachoClient.iOS
         // doing these as internal globals
         private UIView pageContainerView; // full screen
         private UIView contentContainer; // the phone-image content
-        private UIView helperContainer; // the helpful text
+        private UIView helperContainer; // the helpful text container
+        private UILabel helperTitleText; // text Title
+        private UILabel helperBodyText; // text body
         private UIImageView msg1View;
         private bool retinaDisplay = (UIScreen.MainScreen.Scale > 1.0); // if so, then we are on a retinadisplay
         private int scaleIt; 
@@ -52,12 +54,12 @@ namespace NachoClient.iOS
 
         // Background
 
-        const string bgscreen = "Content/Slide1-BG.png"; // background screen
-        const string contentscreen = "Content/Slide1-3.png"; // phone-face image
-        const string calendarpull = "Content/Slide1-2.png"; // calendar pull down
-        const string msg1loc = "Content/Slide1-1A.png"; // Meagan message
-        const string msg2loc = "Content/Slide1-1B.png"; // next message
-        const string inboxloc = "Content/Slide1-4.png"; // inbox msg at bottom of screen
+        const string bgscreen = "Content/Slide1-BG@2x.png"; // background screen
+        const string contentscreen = "Content/Slide1-3@2x.png"; // phone-face image
+        const string calendarpull = "Content/Slide1-2@2x.png"; // calendar pull down
+        const string msg1loc = "Content/Slide1-1A@2x.png"; // Meagan message
+        const string msg2loc = "Content/Slide1-1B@2x.png"; // next message
+        const string inboxloc = "Content/Slide1-4@2x.png"; // inbox msg at bottom of screen
        
         //const string TutPageOne = "Content/Tutorial-Page1.png";
         const string TutPageOne = "Content/01_img_only.png";
@@ -92,79 +94,40 @@ namespace NachoClient.iOS
             // Known issue :: If I Hide the UINavControllerbar we have no way home (see homeViewcontroll..cs)
            
             string fileName = Tutorial [this.PageIndex];
-            //scaleIt = retinaDisplay ? 2 : 1;
-            scaleIt = 1; // retinadisplay test needs to be checked...
-            //UIView pageContainerView = new UIView (new RectangleF(0,0,View.Frame.Width, View.Frame.Height-50)); // Contains everything created by this object
+            scaleIt = retinaDisplay ? 2 : 1; // retina display test, not used right now
+           
+            // set up the container frame sizes. Note all containers are referenced globally within this object
+            // so as to allow animations to access the elements as needed
+
             this.pageContainerView = new UIView (new RectangleF(0,0, this.owner.View.Bounds.Width, this.owner.View.Bounds.Height-48));
             this.contentContainer = new UIView (new RectangleF (54 , 60, 212, 306)); // see size of helpercontainer
             this.helperContainer = new UIView (new RectangleF(0,this.contentContainer.Frame.Bottom, pageContainerView.Frame.Width, pageContainerView.Frame.Bottom- this.contentContainer.Frame.Bottom));// contains the helpertext and labels  
-            UILabel helperTitleText = new UILabel (new RectangleF(0,10, helperContainer.Frame.Width, 20));
-            UILabel helperBodyText = new UILabel (new RectangleF( 0, helperTitleText.Frame.Bottom, helperContainer.Frame.Width,40));
-
-            helperContainer.BackgroundColor = UIColor.White;
-     
-            helperTitleText.BackgroundColor = UIColor.White; // debug
-           
-            helperBodyText.BackgroundColor = UIColor.White; // debug
-            helperBodyText.Lines = 2;
-            helperTitleText.TextColor = A.Color_11464F;
-            helperBodyText.TextColor = A.Color_9B9B9B;
-           
-          
-            helperTitleText.Text = titleText [this.PageIndex];
-            helperBodyText.Text = bodyText[this.PageIndex];
-            helperBodyText.Font = A.Font_AvenirNextRegular14;
-            helperTitleText.Font = A.Font_AvenirNextDemiBold17;
-            helperBodyText.TextAlignment = UITextAlignment.Center;
-            helperTitleText.TextAlignment = UITextAlignment.Center;
-          
-           
-            helperTitleText.Layer.BorderColor = UIColor.White.CGColor;
-            helperTitleText.Layer.BorderWidth = 2f;
-            helperBodyText.Layer.BorderColor = UIColor.White.CGColor;
-            helperBodyText.Layer.BorderWidth = 2f;
-           
-
-            //helperBodyText.Center = new PointF (helperContainer.Frame.Width/2,(helperContainer.Frame.Height / 4)*3);
+            this.helperTitleText = new UILabel (new RectangleF(0,10, helperContainer.Frame.Width, 20));
+            this.helperBodyText = new UILabel (new RectangleF( 0, helperTitleText.Frame.Bottom, helperContainer.Frame.Width,40));
 
 
-            helperContainer.Add (helperTitleText);
-            helperContainer.Add (helperBodyText);
+
 
             base.ViewDidLoad ();
 
-           
-            UIImageView bgImage = new UIImageView (UIImage.FromBundle (bgscreen));
-            bgImage.Frame = new RectangleF (0,0, pageContainerView.Frame.Width, pageContainerView.Frame.Height - helperContainer.Frame.Height);
-           
-            UIImageView screenImage = new UIImageView (UIImage.FromBundle (contentscreen));
+            // build the pages based on index
 
-            screenImage.Frame = (new RectangleF (0,0, contentContainer.Frame.Width, contentContainer.Frame.Height));
-            UIImageView pullimageView = new UIImageView(UIImage.FromBundle (calendarpull));
-            msg1View = new UIImageView (UIImage.FromBundle (msg1loc));
-            UIImageView inboximageView = new UIImageView (UIImage.FromBundle (inboxloc));
-
-            //pullimageView.Frame = (new RectangleF (0, 0, contentContainer.Frame.Width, 46));
-            pullimageView.Center = new PointF (contentContainer.Frame.Width / 2,  23);// is centerpoint relative to local view?
-            msg1View.Center = new PointF (contentContainer.Frame.Width / 2 , contentContainer.Frame.Height / 2 +10);
-            inboximageView.Center = new PointF (contentContainer.Frame.Width / 2, contentContainer.Frame.Height - 10);
-
-
-            contentContainer.AddSubview(screenImage);
-            //contentContainer.AddSubview (pullimageView);
-            contentContainer.AddSubview (msg1View);
-            contentContainer.AddSubview (inboximageView);
-        
-
-            pageContainerView.AddSubview (bgImage);
-            pageContainerView.AddSubview(contentContainer);
-            pageContainerView.AddSubview (helperContainer);
-            //pageContainerView.AddSubview (helperTitleText);
-            //pageContainerView.AddSubview (helperBodyText);
-
+            switch (this.PageIndex) {
+            case 0:
+                CreatePage1 ();
+                break;
+            case 1:
+                CreatePage2 ();
+                break;
+            case 2:
+                CreatePage3 ();
+                break;
+            case 3:
+                CreatePage4 ();
+                break;
+            }
 
             this.View.AddSubview (pageContainerView);
-
             CreateCovers ();
 
             Log.Info (Log.LOG_UI, "Book page #{0} loaded!", this.PageIndex + 1);
@@ -173,6 +136,9 @@ namespace NachoClient.iOS
 
         public override void ViewWillAppear (bool animated)
         {
+            Log.Info (Log.LOG_UI, "HPVC - View_Will_Appear");
+            // need to know why animate toolTip not called on first appearance??
+
             base.ViewWillAppear (animated);
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
@@ -200,18 +166,8 @@ namespace NachoClient.iOS
                 break;
             }
         }
-        /*
-        private UIImageView CreateSlide1()
-        {
-            // NYI should return a completely built up page 1
-            // WIP
 
-            UIImageView slide1Content = new UIImageView (this.contentContainer.Frame);
-            UIImageView slide1Helper = new UIImageView (this.helperContainer.Frame);
-            UIImageView slide1PageView = new UIImageView (this.pageContainerView.Frame);
-            UILabel helperTitleText = new UILabel (new RectangleF(0, 5, helperContainer.Frame.Width, 25));
-            UILabel helperBodyText = new UILabel (new RectangleF( 0, helperTitleText.Frame.Bottom, helperContainer.Frame.Width,40));
-
+        void CreateHelperText(){
             helperContainer.BackgroundColor = UIColor.White;
 
             helperTitleText.BackgroundColor = UIColor.White; // debug
@@ -229,48 +185,124 @@ namespace NachoClient.iOS
             helperBodyText.TextAlignment = UITextAlignment.Center;
             helperTitleText.TextAlignment = UITextAlignment.Center;
 
+            helperContainer.Add (helperTitleText);
+            helperContainer.Add (helperBodyText);
+        }
 
-            helperTitleText.Layer.BorderColor = UIColor.White.CGColor;
-            helperTitleText.Layer.BorderWidth = 2f;
-            helperBodyText.Layer.BorderColor = UIColor.White.CGColor;
-            helperBodyText.Layer.BorderWidth = 2f;
+       
+        private void CreatePage1()
+        {
+            // build up the page for index 1
 
-            UIImageView bgImage = new UIImageView (UIImage.FromBundle ("Content/Slide1-BG.png"));
+            CreateHelperText ();
+
+            UIImageView bgImage = new UIImageView (UIImage.FromBundle (bgscreen));
             bgImage.Frame = new RectangleF (0,0, pageContainerView.Frame.Width, pageContainerView.Frame.Height - helperContainer.Frame.Height);
 
-            slide1PageView.AddSubview (bgImage);
-            UIImageView nnBackground = new UIImageView (UIImage.FromBundle("Content/Slide1-3.png")); //the background
-            UIImageView nachoMsg1 = new UIImageView (UIImage.FromBundle ("Content/Slide1-1A.png")); // the message
-            UIImageView bottomMsg = new UIImageView (UIImage.FromBundle ("Content/Slide-1-2.png")); // the inbox
+            UIImageView screenImage = new UIImageView (UIImage.FromBundle (contentscreen));
 
-            nnBackground.Frame = new RectangleF (0, 0, contentContainer.Frame.Width, contentContainer.Frame.Height);
-            nachoMsg1.Frame = new RectangleF (10, 60, contentContainer.Frame.Width - 20, contentContainer.Frame.Height - 120);
+            screenImage.Frame = (new RectangleF (0,0, contentContainer.Frame.Width, contentContainer.Frame.Height));
+            UIImageView pullimageView = new UIImageView(UIImage.FromBundle (calendarpull));
+            msg1View = new UIImageView (UIImage.FromBundle (msg1loc));
+            msg1View.Frame = new RectangleF (10, 60, 192, 207);
+            UIImageView inboximageView = new UIImageView (UIImage.FromBundle (inboxloc));
+            inboximageView.Frame = new RectangleF (10, msg1View.Frame.Bottom + 20, 192, 20);
+
+            //pullimageView.Frame = (new RectangleF (0, 0, contentContainer.Frame.Width, 46));
+            pullimageView.Center = new PointF (contentContainer.Frame.Width / 2,  23);// is centerpoint relative to local view?
+            msg1View.Center = new PointF (contentContainer.Frame.Width / 2 , contentContainer.Frame.Height / 2 +10);
+            inboximageView.Center = new PointF (contentContainer.Frame.Width / 2, contentContainer.Frame.Height - 10);
 
 
+            contentContainer.AddSubview(screenImage);
+            //contentContainer.AddSubview (pullimageView);
+            contentContainer.AddSubview (msg1View);
+            contentContainer.AddSubview (inboximageView);
 
-                slide1Content = new UIImageView (UIImage.FromBundle ("Content/Slide1-3.png"));
 
-
-            return slide1PageView;
-
+            pageContainerView.AddSubview (bgImage);
+            pageContainerView.AddSubview(contentContainer);
+            pageContainerView.AddSubview (helperContainer);
 
         }
 
-        private UIImageView CreateSlide2()
+
+
+        private void CreatePage2()
         {
-            //NYI
+
+            CreateHelperText ();
+
+            UIImageView bgImage = new UIImageView (UIImage.FromBundle (bgscreen));
+            bgImage.Frame = new RectangleF (0,0, pageContainerView.Frame.Width, pageContainerView.Frame.Height - helperContainer.Frame.Height);
+
+            UIImageView screenImage = new UIImageView (UIImage.FromBundle (contentscreen));
+
+            screenImage.Frame = (new RectangleF (0,0, contentContainer.Frame.Width, contentContainer.Frame.Height));
+            UIImageView pullimageView = new UIImageView(UIImage.FromBundle (calendarpull));
+            msg1View = new UIImageView (UIImage.FromBundle (msg1loc));
+            UIImageView inboximageView = new UIImageView (UIImage.FromBundle (inboxloc));
+            msg1View.Frame = new RectangleF (10, 60, 192, 207);
+            inboximageView.Frame = new RectangleF (10, msg1View.Frame.Bottom + 20, 192, 20);
+            pullimageView.Center = new PointF (contentContainer.Frame.Width / 2,  23);// is centerpoint relative to local view?
+            msg1View.Center = new PointF (contentContainer.Frame.Width / 2 , contentContainer.Frame.Height / 2 +10);
+            inboximageView.Center = new PointF (contentContainer.Frame.Width / 2, contentContainer.Frame.Height - 10);
+
+
+            contentContainer.AddSubview(screenImage);
+            contentContainer.AddSubview (msg1View);
+            contentContainer.AddSubview (inboximageView);
+
+
+            pageContainerView.AddSubview (bgImage);
+            pageContainerView.AddSubview(contentContainer);
+            pageContainerView.AddSubview (helperContainer);
         }
 
-        private UIImageView CreateSlide3()
+        private void CreatePage3()
         {
-            //NYI
+
+            CreateHelperText ();
+
+            UIImageView bgImage = new UIImageView (UIImage.FromBundle (bgscreen));
+            bgImage.Frame = new RectangleF (0,0, pageContainerView.Frame.Width, pageContainerView.Frame.Height - helperContainer.Frame.Height);
+
+            UIImageView screenImage = new UIImageView (UIImage.FromBundle ("Content/Slide3-2@2x.png"));
+            UIImageView pullimage = new UIImageView (UIImage.FromBundle ("Content/Slide3-1B@2x.png"));
+
+
+            screenImage.Frame = (new RectangleF (0,0, contentContainer.Frame.Width, contentContainer.Frame.Height));
+            UIImageView calimageView = new UIImageView(UIImage.FromBundle ("Content/Slide3-1A@2x.png"));
+           
+            calimageView.Center = new PointF (contentContainer.Frame.Width / 2,  23);// is centerpoint relative to local view?
+            pullimage.Center = new PointF (calimageView.Center.X, calimageView.Center.Y + 10);
+            contentContainer.AddSubview(screenImage);
+            contentContainer.AddSubview (calimageView);
+            contentContainer.AddSubview (pullimage);
+
+            pageContainerView.AddSubview (bgImage);
+            pageContainerView.AddSubview(contentContainer);
+            pageContainerView.AddSubview (helperContainer);
         }
 
-        private UIImageView CreateSlide4()
+        private void CreatePage4()
         {
-            // NYI
+           
+            CreateHelperText ();
+
+            UIImageView bgImage = new UIImageView (UIImage.FromBundle (bgscreen));
+            bgImage.Frame = new RectangleF (0,0, pageContainerView.Frame.Width, pageContainerView.Frame.Height - helperContainer.Frame.Height);
+
+            UIImageView screenImage = new UIImageView (UIImage.FromBundle ("Content/Slide4-1@2x.png"));
+            screenImage.Frame = (new RectangleF (0,0, contentContainer.Frame.Width, contentContainer.Frame.Height));
+            contentContainer.AddSubview(screenImage);
+           
+
+            pageContainerView.AddSubview (bgImage);
+            pageContainerView.AddSubview(contentContainer);
+            pageContainerView.AddSubview (helperContainer);
         }
-*/
+
 
         private void CreateCovers ()
         {
@@ -294,7 +326,7 @@ namespace NachoClient.iOS
         private UIImageView CreateRedButton ()
         {
             UIImageView redButton = new UIImageView (UIImage.FromBundle ("Content/red_pointer.png"));
-            redButton.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 3);
+            redButton.Center = new PointF (this.msg1View.Frame.Width / 2, this.msg1View.Frame.Height / 3);
             redButton.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
             return redButton;
         }
@@ -302,7 +334,7 @@ namespace NachoClient.iOS
         private UIImageView CreateRedTooltip ()
         {
             UIImageView redTooltip = new UIImageView (UIImage.FromBundle ("Content/red_balloon.png"));
-            redTooltip.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 3 + 35);
+            redTooltip.Center = new PointF (this.msg1View.Frame.Width / 2, this.msg1View.Frame.Height / 3 + 35);
             redTooltip.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
             return redTooltip;
         }
@@ -320,6 +352,8 @@ namespace NachoClient.iOS
             UIImageView greenTooltip = new UIImageView (UIImage.FromBundle ("Content/teal_balloon.png"));
             greenTooltip.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height * 5 / 6 - 35);
             greenTooltip.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
+
+           
             return greenTooltip;
         }
 

@@ -31,7 +31,7 @@ namespace NachoCore.ActiveSync
                 if (null != saveAttr) {
                     item.BodyId = int.Parse (saveAttr.Value);
                 } else {
-                    var body = McBody.Save(xmlData.Value); 
+                    var body = McBody.Save (xmlData.Value); 
                     item.BodyId = body.Id;
                 }
                 item.BodyType = bodyType;
@@ -109,7 +109,9 @@ namespace NachoCore.ActiveSync
             }
 
             // TODO TimeZoneId - TimeZone table not implemented yet.
-            xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.Timezone, "4AEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAsAAAABAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAAAACAAMAAAAAAAAAxP///w=="));//FIXME.
+             xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.Timezone, cal.TimeZone));
+
+//            xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.Timezone, "4AEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAsAAAABAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAAAACAAMAAAAAAAAAxP///w=="));//FIXME.
 
             if (null != cal.Subject) {
                 xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.Subject, cal.Subject));
@@ -376,10 +378,10 @@ namespace NachoCore.ActiveSync
         /// <returns>The recurrence record</returns>
         /// <param name="ns">XML namespace to use to fetch elements</param>
         /// <param name="recurrence">Recurrence element</param>
-        public McRecurrence ParseRecurrence (XNamespace ns, XElement recurrence)
+        public McRecurrence ParseRecurrence (XNamespace ns, XElement recurrence, string LocalName)
         {
             NcAssert.True (null != recurrence);
-            NcAssert.True (recurrence.Name.LocalName.Equals (Xml.Calendar.Calendar_Recurrence));
+            NcAssert.True (recurrence.Name.LocalName.Equals (LocalName));
 
             var r = new McRecurrence ();
 
@@ -397,9 +399,11 @@ namespace NachoCore.ActiveSync
                     break;
                 case Xml.Calendar.Recurrence.FirstDayOfWeek:
                     r.FirstDayOfWeek = child.Value.ToInt ();
+                    r.FirstDayOfWeekIsSet = true;
                     break;
                 case Xml.Calendar.Recurrence.Interval:
                     r.Interval = child.Value.ToInt ();
+                    r.IntervalIsSet = true;
                     break;
                 case Xml.Calendar.Recurrence.IsLeapMonth:
                     r.isLeapMonth = child.Value.ToBoolean ();
@@ -409,6 +413,7 @@ namespace NachoCore.ActiveSync
                     break;
                 case Xml.Calendar.Recurrence.Occurrences:
                     r.Occurences = int.Parse (child.Value);
+                    r.OccurencesIsSet = true;
                     break;
                 case Xml.Calendar.Recurrence.Type:
                     r.Type = child.Value.ParseInteger<NcRecurrenceType> ();
@@ -475,7 +480,9 @@ namespace NachoCore.ActiveSync
                         e.MeetingStatusIsSet = true;
                         break;
                     case Xml.Calendar.Exception.Reminder:
-                        e.Reminder = child.Value.ToUint ();
+                        if (!String.IsNullOrEmpty (child.Value)) {
+                            e.Reminder = child.Value.ToUint ();
+                        }
                         break;
                     case Xml.Calendar.Exception.ResponseType:
                         e.ResponseType = child.Value.ParseInteger<NcResponseType> ();
@@ -565,7 +572,7 @@ namespace NachoCore.ActiveSync
                     c.exceptions.AddRange (exceptions);
                     break;
                 case Xml.Calendar.Calendar_Recurrence:
-                    var recurrence = ParseRecurrence (nsCalendar, child);
+                    var recurrence = ParseRecurrence (nsCalendar, child, Xml.Calendar.Calendar_Recurrence);
                     c.recurrences.Add (recurrence);
                     break;
                 case Xml.AirSyncBase.Body:
@@ -644,6 +651,7 @@ namespace NachoCore.ActiveSync
             var appData = command.Element (ns + Xml.AirSync.ApplicationData);
             NcAssert.NotNull (appData);
 
+            XNamespace nsEmail = "Email";
 
             emailMessage.xmlAttachments = null;
 
@@ -683,7 +691,7 @@ namespace NachoCore.ActiveSync
 
                             case Xml.Tasks.StartDate:
                                 try {
-                                    emailMessage.FlagDeferUntil = DateTime.Parse (flagPart.Value);
+                                    emailMessage.FlagStartDate = DateTime.Parse (flagPart.Value);
                                 } catch {
                                     // FIXME log.
                                 }
@@ -691,7 +699,7 @@ namespace NachoCore.ActiveSync
 
                             case Xml.Tasks.UtcStartDate:
                                 try {
-                                    emailMessage.FlagUtcDeferUntil = DateTime.Parse (flagPart.Value);
+                                    emailMessage.FlagUtcStartDate = DateTime.Parse (flagPart.Value);
                                 } catch {
                                     // FIXME log.
                                 }
@@ -840,12 +848,74 @@ namespace NachoCore.ActiveSync
                     emailMessage.ContentClass = child.Value;
                     break;
                 case Xml.Email.Categories:
-                    XNamespace nsEmail = "Email";
                     var categories = AsHelpers.ParseEmailCategories (nsEmail, child);
                     if (0 == emailMessage.Categories.Count) {
                         emailMessage.Categories = categories;
                     } else {
                         emailMessage.Categories.AddRange (categories);
+                    }
+                    break;
+                case Xml.Email.MeetingRequest:
+                    if (child.HasElements) {
+                        var e = new  McMeetingRequest ();
+                        foreach (var meetingRequestPart in child.Elements()) {
+                            switch (meetingRequestPart.Name.LocalName) {
+                            case Xml.Email.AllDayEvent:
+                                e.AllDayEvent = meetingRequestPart.Value.ToBoolean ();
+                                break;
+                            case Xml.Email.StartTime:
+                            case Xml.Email.DtStamp:
+                            case Xml.Email.EndTime:
+                            case Xml.Email.RecurrenceId:
+                                TrySetCompactDateTimeFromXml (e, meetingRequestPart.Name.LocalName, meetingRequestPart.Value);
+                                break;
+                            case Xml.Email.InstanceType:
+                                e.InstanceType = meetingRequestPart.Value.ParseInteger<NcInstanceType> ();
+
+                                // TODO
+                                break;
+                            case Xml.Email.Location:
+                            case Xml.Email.Organizer:
+                            case Xml.Email.GlobalObjId:
+                                TrySetStringFromXml (e, meetingRequestPart.Name.LocalName, meetingRequestPart.Value);
+                                break;
+                            case Xml.Email.Reminder:
+                                e.Reminder = meetingRequestPart.Value.ToUint ();
+                                break;
+                            case Xml.Email.ResponseRequested:
+                                e.ResponseRequested = meetingRequestPart.Value.ToBoolean ();
+                                break;
+                            case Xml.Email.Recurrences:
+                                if (meetingRequestPart.HasElements) {
+                                    foreach (var recurrencePart in meetingRequestPart.Elements()) {
+                                        var recurrence = ParseRecurrence (nsEmail, recurrencePart, Xml.Email.Recurrence);
+                                        e.recurrences.Add (recurrence);
+                                    }
+                                }
+                                break;
+                            case Xml.Email.Sensitivity:
+                                e.Sensitivity = meetingRequestPart.Value.ParseInteger<NcSensitivity> ();
+                                e.SensitivityIsSet = true;
+                                break;
+                            case Xml.Email.BusyStatus:
+                                e.BusyStatus = meetingRequestPart.Value.ToEnum<NcBusyStatus> ();
+                                e.BusyStatusIsSet = true;
+                                break;
+                            case Xml.Email.TimeZone:
+                                e.TimeZone = meetingRequestPart.Value;
+                                break;
+                            case Xml.Email.DisallowNewTimeProposal:
+                                e.DisallowNewTimeProposal = meetingRequestPart.Value.ToBoolean ();
+                                break;
+                            case Xml.Email.MeetingMessageType:
+                                e.MeetingMessageType = meetingRequestPart.Value.ParseInteger<NcMeetingMessageType> ();
+                                break;
+                            default:
+                                Log.Warn (Log.LOG_AS, "ProcessEmailItem MeetingRequest UNHANDLED: " + meetingRequestPart.Name.LocalName + " value=" + child.Value);
+                                break;
+                            }
+                        }
+                        emailMessage.MeetingRequest = e;
                     }
                     break;
                 case Xml.Email2.LastVerbExecuted:

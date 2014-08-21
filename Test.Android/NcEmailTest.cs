@@ -248,9 +248,9 @@ namespace Test.Common
             Assert.True (email1.getInternalCategoriesList ().Count == 6);
 
             email1.AccountId = 1;
-            email1.Update();
+            email1.Update ();
 
-            McEmailMessage email2 = NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE AccountId=?", 1)[0];
+            McEmailMessage email2 = NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE AccountId=?", 1) [0];
             email2.IsRead = true;
             email2.Update ();
             Assert.True (email2.Categories.Count == 6);
@@ -501,6 +501,21 @@ namespace Test.Common
             Assert.AreEqual (categoriesXMLCommand.Name.LocalName, Xml.AirSync.Add);
             McEmailMessage helloCategory = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddEmail (categoriesXMLCommand, new MockNcFolder ());
             Assert.AreEqual (2, helloCategory.Categories.Count);
+
+            var f = McEmailMessage.QueryById<McEmailMessage> (helloCategory.Id);
+            Assert.AreEqual (2, f.Categories.Count);
+        }
+
+        [Test]
+        public void EmailMeetingRequestTest ()
+        {
+            var eXML = System.Xml.Linq.XElement.Parse (EmailWithMeetingRequest);
+            Assert.IsNotNull (eXML);
+            Assert.AreEqual (eXML.Name.LocalName, Xml.AirSync.Add);
+            McEmailMessage e = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddEmail (eXML, new MockNcFolder ());
+
+            var f = McEmailMessage.QueryById<McEmailMessage> (e.Id);
+            Assert.IsNotNull (f.MeetingRequest);
         }
 
         public string CategoryTestXML = @"
@@ -581,6 +596,57 @@ namespace Test.Common
             <Categories xmlns=""Email"" />
           </ApplicationData>
             </Add>";
+
+        public string EmailWithMeetingRequest = @"
+           <Add xmlns = ""AirSync"">
+         <ServerId>10:87</ServerId>
+          <ApplicationData>
+            <To xmlns=""Email"">""Steve Scalpone"" &lt;steves@nachocove.com&gt;</To>
+            <From xmlns=""Email"">""Jeff Enderwick"" &lt;jeffe@nachocove.com&gt;</From>
+            <Subject xmlns=""Email"">Canceled Event: TEST my NEW sh*t @ Tue Aug 12, 2014 12:15pm - 1:15pm (Steve Scalpone)</Subject>
+            <ReplyTo xmlns=""Email"">""Jeff Enderwick"" &lt;jeffe@nachocove.com&gt;</ReplyTo>
+            <DateReceived xmlns=""Email"">2014-08-12T19:06:15.403Z</DateReceived>
+            <DisplayTo xmlns=""Email"">Steve Scalpone</DisplayTo>
+            <ThreadTopic xmlns=""Email"">Canceled Event: TEST my NEW sh*t @ Tue Aug 12, 2014 12:15pm - 1:15pm (Steve Scalpone)</ThreadTopic>
+            <Importance xmlns=""Email"">1</Importance>
+            <Read xmlns=""Email"">0</Read>
+            <Attachments xmlns=""AirSyncBase"">
+              <Attachment>
+                <DisplayName>invite.ics</DisplayName>
+                <FileReference>10%3a87%3a0</FileReference>
+                <Method>1</Method>
+                <EstimatedDataSize>1078</EstimatedDataSize>
+              </Attachment>
+            </Attachments>
+            <Body xmlns=""AirSyncBase"">
+              <Type>3</Type>
+              <EstimatedDataSize>3612</EstimatedDataSize>
+              <Truncated>1</Truncated>
+            </Body>
+            <MessageClass xmlns=""Email"">IPM.Schedule.Meeting.Canceled</MessageClass>
+            <MeetingRequest xmlns=""Email"">
+              <AllDayEvent>0</AllDayEvent>
+              <StartTime>2014-08-12T19:15:00.000Z</StartTime>
+              <DtStamp>2014-08-12T19:06:08.000Z</DtStamp>
+              <EndTime>2014-08-12T20:15:00.000Z</EndTime>
+              <InstanceType>0</InstanceType>
+              <Location>steve's table</Location>
+              <Organizer>""Jeff Enderwick"" &lt;jeffe@nachocove.com&gt;</Organizer>
+              <Sensitivity>0</Sensitivity>
+              <TimeZone>AAAAACgAVQBUAEMAKQAgAE0AbwBuAHIAbwB2AGkAYQAsACAAUgBlAHkAawBqAGEAdgBpAGsAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACgAVQBUAEMAKQAgAE0AbwBuAHIAbwB2AGkAYQAsACAAUgBlAHkAawBqAGEAdgBpAGsAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==</TimeZone>
+              <GlobalObjId>BAAAAIIA4AB0xbcQGoLgCAAAAAAAAAAAAAAAAAAAAAAAAAAAMQAAAHZDYWwtVWlkAQAAADkyRDVFMDBCLUU0NEEtNEQ0Qi1CMEVBLUFGNTRENjA1OTE1QwA=</GlobalObjId>
+              <MeetingMessageType xmlns=""Email2"">0</MeetingMessageType>
+            </MeetingRequest>
+            <InternetCPID xmlns=""Email"">20127</InternetCPID>
+            <Flag xmlns=""Email"" />
+            <ContentClass xmlns=""Email"">urn:content-classes:calendarmessage</ContentClass>
+            <NativeBodyType xmlns=""AirSyncBase"">3</NativeBodyType>
+            <ConversationId xmlns=""Email2"">VMZaN6rjgUuqxrpVpFDsMw==</ConversationId>
+            <ConversationIndex xmlns=""Email2"">Ac+2YH0=</ConversationIndex>
+            <Categories xmlns=""Email"" />
+          </ApplicationData>
+</Add>
+            ";
     }
 }
 

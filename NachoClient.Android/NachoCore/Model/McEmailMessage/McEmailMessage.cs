@@ -68,7 +68,9 @@ namespace NachoCore.Model
 
         /// Email address of the sender (optional)
         public string From { set; get; }
+
         public int cachedFromColor { set; get; }
+
         public string cachedFromLetters { set; get; }
 
         /// Subject of the message (optional)
@@ -132,6 +134,10 @@ namespace NachoCore.Model
         protected List<McEmailMessageCategory> _Categories{ get; set; }
 
         [Ignore]
+        /// Internal copy of McMeetingRequest
+        protected McMeetingRequest _MeetingRequest { get; set; }
+
+        [Ignore]
         /// List of xml attachments for the email
         public IEnumerable<XElement> xmlAttachments { get; set; }
 
@@ -168,9 +174,10 @@ namespace NachoCore.Model
         public string FlagType { set; get; }
 
         /// User has asked to hide the message for a while
-        public DateTime FlagUtcDeferUntil { set; get; }
+        public DateTime FlagUtcStartDate { set; get; }
 
-        public DateTime FlagDeferUntil { set; get; }
+        public DateTime FlagStartDate { set; get; }
+
         // User must complete task by.
         public DateTime FlagUtcDue { set; get; }
 
@@ -232,6 +239,19 @@ namespace NachoCore.Model
             }
         }
 
+        public static List<NcEmailMessageIndex> QueryInteractions (int accountId, McContact contact)
+        {
+            var emailWildcard = "%" + contact.GetEmailAddress() + "%";
+            return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
+                "SELECT e.Id as Id FROM McEmailMessage AS e " +
+                " WHERE " +
+                " e.AccountId = ? AND " +
+                " e.IsAwaitingDelete = 0 AND " +
+                " e.[From] LIKE ? OR " +
+                " e.[To] Like ? ORDER BY e.DateReceived DESC",
+                accountId, emailWildcard, emailWildcard);
+        }
+
         public static List<McEmailMessage> QueryActiveMessages (int accountId, int folderId)
         {
             return NcModel.Instance.Db.Query<McEmailMessage> (
@@ -243,7 +263,7 @@ namespace NachoCore.Model
                 " m.AccountId = ? AND " +
                 " m.ClassCode = ? AND " +
                 " m.FolderId = ? AND " +
-                " e.FlagUtcDeferUntil < ?",
+                " e.FlagUtcStartDate < ?",
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
         }
 
@@ -258,7 +278,7 @@ namespace NachoCore.Model
                 " m.AccountId = ? AND " +
                 " m.ClassCode = ? AND " +
                 " m.FolderId = ? AND " +
-                " e.FlagUtcDeferUntil < ? " +
+                " e.FlagUtcStartDate < ? " +
                 " ORDER BY e.DateReceived DESC",
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
         }
@@ -290,7 +310,7 @@ namespace NachoCore.Model
                 " m.AccountId = ? AND " +
                 " m.ClassCode = ? AND " +
                 " m.FolderId = ? AND " +
-                " e.FlagUtcDeferUntil < ? " +
+                " e.FlagUtcStartDate < ? " +
                 " ORDER BY e.Score DESC, e.DateReceived DESC LIMIT 20",
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
         }
@@ -303,7 +323,7 @@ namespace NachoCore.Model
                 "SELECT e.Id as Id FROM McEmailMessage AS e " +
                 " WHERE " +
                 " e.IsAwaitingDelete = 0 AND " +
-                " e.FlagUtcDeferUntil > ? ORDER BY e.DateReceived DESC",
+                " e.FlagUtcStartDate > ? ORDER BY e.DateReceived DESC",
                 DateTime.UtcNow);
         }
 
@@ -327,23 +347,23 @@ namespace NachoCore.Model
             return McAbstrFolderEntry.ClassCodeEnum.Email;
         }
 
-        public const double minHotScore = 0.1;
+        public const double minHotScore = 0.5;
 
         public bool isHot ()
         {
-            return (minHotScore < this.Score );
+            return (minHotScore < this.Score);
         }
 
         public bool IsDeferred ()
         {
-            if ((DateTime.MinValue == FlagDeferUntil) && (DateTime.MinValue == FlagUtcDeferUntil)) {
+            if ((DateTime.MinValue == FlagStartDate) && (DateTime.MinValue == FlagUtcStartDate)) {
                 return false;
             }
-            if (DateTime.MinValue != FlagDeferUntil) {
-                return DateTime.Now < FlagDeferUntil;
+            if (DateTime.MinValue != FlagStartDate) {
+                return DateTime.Now < FlagStartDate;
             }
-            if (DateTime.MinValue != FlagUtcDeferUntil) {
-                return DateTime.UtcNow < FlagUtcDeferUntil;
+            if (DateTime.MinValue != FlagUtcStartDate) {
+                return DateTime.UtcNow < FlagUtcStartDate;
             }
             NcAssert.CaseError ();
             return false;
@@ -354,7 +374,7 @@ namespace NachoCore.Model
             if ((DateTime.MinValue == FlagDue) && (DateTime.MinValue == FlagUtcDue)) {
                 return false;
             }
-            if ((FlagDue == FlagDeferUntil) && (FlagUtcDue == FlagUtcDeferUntil)) {
+            if ((FlagDue == FlagStartDate) && (FlagUtcDue == FlagUtcStartDate)) {
                 return false;
             }
             return true;
@@ -441,6 +461,7 @@ namespace NachoCore.Model
         public McEmailMessage () : base ()
         {
             _Categories = new List<McEmailMessageCategory> ();
+            _MeetingRequest = null;
             isDeleted = false;
             isAncillaryInMemory = false;
         }
@@ -452,35 +473,59 @@ namespace NachoCore.Model
                 return _Categories;
             }
             set {
+                ReadAncillaryData ();
                 _Categories = value;
+            }
+        }
+
+        [Ignore]
+        public McMeetingRequest MeetingRequest {
+            get {
+                ReadAncillaryData ();
+                return _MeetingRequest;
+            }
+            set {
+                ReadAncillaryData ();
+                _MeetingRequest = value;
             }
         }
 
         protected NcResult ReadAncillaryData ()
         {
             NcAssert.True (!isDeleted);
-            if (!isAncillaryInMemory) {
-                ForceReadAncillaryData ();
+            if (isAncillaryInMemory) {
+                return NcResult.OK ();
             }
-            return NcResult.OK ();
-        }
-
-        protected NcResult ForceReadAncillaryData ()
-        {
-            SQLiteConnection db = NcModel.Instance.Db;
-            _Categories = db.Table<McEmailMessageCategory> ().Where (x => x.ParentId == Id).ToList ();
+            if (0 == Id) {
+                isAncillaryInMemory = true;
+                return NcResult.OK ();
+            }
+            _Categories = NcModel.Instance.Db.Table<McEmailMessageCategory> ().Where (x => x.ParentId == Id).ToList ();
+            _MeetingRequest = NcModel.Instance.Db.Table<McMeetingRequest> ().Where (x => x.EmailMessageId == Id).SingleOrDefault ();
             isAncillaryInMemory = true;
             return NcResult.OK ();
         }
 
         protected NcResult InsertAncillaryData (SQLiteConnection db)
         {
-            return InsertCategories (db);
+            NcAssert.True (0 != Id);
+
+            InsertCategories (db);
+
+            if (null != _MeetingRequest) {
+                _MeetingRequest.Id = 0;
+                _MeetingRequest.EmailMessageId = Id;
+                _MeetingRequest.AccountId = AccountId;
+                _MeetingRequest.Insert ();
+            }
+
+            return NcResult.OK ();
         }
 
         protected NcResult InsertCategories (SQLiteConnection db)
         {
             foreach (var c in _Categories) {
+                c.Id = 0;
                 c.SetParent (this);
                 db.Insert (c);
             }
@@ -489,12 +534,9 @@ namespace NachoCore.Model
 
         protected void DeleteAncillaryData (SQLiteConnection db)
         {
-            DeleteCategoriesData (db);
-        }
-
-        protected void DeleteCategoriesData (SQLiteConnection db)
-        {
+            NcAssert.True (0 != Id);
             db.Query<McEmailMessageCategory> ("DELETE FROM McEmailMessageCategory WHERE ParentID=?", Id);
+            db.Query<McMeetingRequest> ("DELETE FROM McMeetingRequest WHERE EmailMessageId=?", Id);
         }
 
         public override int Insert ()
@@ -504,8 +546,7 @@ namespace NachoCore.Model
             //FIXME better default returnVal
             int returnVal = -1; 
 
-            try 
-            {
+            try {
                 if (0 == ScoreVersion) {
                     // Try to use the contact score for initial email message score
                     McEmailAddress emailAddress = GetFromAddress ();
@@ -517,10 +558,8 @@ namespace NachoCore.Model
                     returnVal = base.Insert ();
                     InsertAncillaryData (NcModel.Instance.Db);
                 });
-            }
-            catch (SQLiteException ex) 
-            {
-                Log.Error(Log.LOG_EMAIL,"Inserting the email failed: {0} No changes were made to the DB.", ex.Message);
+            } catch (SQLiteException ex) {
+                Log.Error (Log.LOG_EMAIL, "Inserting the email failed: {0} No changes were made to the DB.", ex.Message);
             }
                 
             return returnVal;
@@ -533,20 +572,15 @@ namespace NachoCore.Model
             //FIXME better default returnVal
             int returnVal = -1;  
 
-            try 
-            {
+            try {
                 NcModel.Instance.RunInTransaction (() => {
                     returnVal = base.Update ();
-                    if(!isAncillaryInMemory){
-                        ForceReadAncillaryData();
-                    }
+                    ReadAncillaryData ();
                     DeleteAncillaryData (NcModel.Instance.Db);
                     InsertAncillaryData (NcModel.Instance.Db);
                 });
-            }
-            catch (SQLiteException ex) 
-            {
-                Log.Error(Log.LOG_EMAIL,"Updating the email failed: {0} No changes were made to the DB.", ex.Message);
+            } catch (SQLiteException ex) {
+                Log.Error (Log.LOG_EMAIL, "Updating the email failed: {0} No changes were made to the DB.", ex.Message);
             }
 
             return returnVal;
@@ -554,6 +588,7 @@ namespace NachoCore.Model
 
         public override void DeleteAncillary ()
         {
+            NcAssert.True (0 != Id);
             NcAssert.True (NcModel.Instance.IsInTransaction ());
             if (!IsRead) {
                 McEmailAddress emailAddress;
@@ -569,7 +604,7 @@ namespace NachoCore.Model
             DeleteAttachments ();
             DeleteAncillaryData (NcModel.Instance.Db);
         }
-            
+
         public override int Delete ()
         {
             //FIXME better default returnVal

@@ -20,6 +20,7 @@ namespace NachoCore.Model
 
         public static int CALENDAR = 1;
         public static int EXCEPTION = 2;
+        public static int MEETING_REQUEST = 3;
         // Which table has the parent?
         public int ParentType { get; set; }
 
@@ -46,6 +47,8 @@ namespace NachoCore.Model
                 return CALENDAR;
             } else if (r.GetType () == typeof(McException)) {
                 return EXCEPTION;
+            } else if(r.GetType() == typeof(McMeetingRequest)) {
+                return MEETING_REQUEST;
             } else {
                 NcAssert.True (false);
                 return 0;

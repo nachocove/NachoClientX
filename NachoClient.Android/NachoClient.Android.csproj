@@ -81,6 +81,10 @@
     <Reference Include="MimeKit">
       <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\MonoAndroid\MimeKit.dll</HintPath>
     </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\Json.NET\json.net-4.5.11\lib\android\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Json" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Resources\Resource.designer.cs" />
@@ -326,6 +330,14 @@
     <Compile Include="NachoCore\Utils\RegexUtilities.cs" />
     <Compile Include="NachoCore\Model\McPortrait.cs" />
     <Compile Include="NachoCore\Utils\CertificateHelper.cs" />
+    <Compile Include="NachoCore\Model\McMeetingRequest.cs" />
+    <Compile Include="NachoCore\Brain\NcBrainControl.cs" />
+    <Compile Include="NachoCore\Model\McEvent.cs" />
+    <Compile Include="NachoCore\Adapters\NachoEvents.cs" />
+    <Compile Include="NachoCore\Adapters\NcEventsCommon.cs" />
+    <Compile Include="NachoCore\Adapters\INcEventProvider.cs" />
+    <Compile Include="NachoCore\Adapters\NcEventManager.cs" />
+    <Compile Include="NachoCore\Adapters\UserInteractionEmailMessages.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

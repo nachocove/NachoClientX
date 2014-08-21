@@ -12,10 +12,11 @@ using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using MimeKit;
+using System.Text.RegularExpressions;
 
 namespace NachoClient.iOS
 {
-    public partial class ContactDetailViewController : NcUIViewController
+    public partial class ContactDetailViewController : NcUIViewController, IMessageTableViewSourceDelegate, INachoMessageEditorParent, INachoCalendarItemEditorParent, INachoFolderChooserParent
     {
         public McContact contact;
 
@@ -23,22 +24,47 @@ namespace NachoClient.iOS
 
         protected UIColor originalBarTintColor;
 
+        protected UIBarButtonItem vipButton;
+
+        protected const string UICellReuseIdentifier = "UICell";
+        protected const string EmailMessageReuseIdentifier = "EmailMessage";
+        MessageTableViewSource messageSource;
+        protected HashSet<int> MultiSelect = null;
+        protected UITableView InteractionsTable;
+
         public ContactDetailViewController (IntPtr handle) : base (handle)
         {
+            messageSource = new MessageTableViewSource ();
+            MultiSelect = new HashSet<int> ();
         }
 
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
 
-            var editButton = new UIBarButtonItem (UIBarButtonSystemItem.Edit);
-            NavigationItem.RightBarButtonItem = editButton;
+//            Beta 1 -- No editing
+//            var editButton = new UIBarButtonItem (UIBarButtonSystemItem.Edit);
+//            NavigationItem.RightBarButtonItem = editButton;
+//
+//            editButton.Clicked += (object sender, EventArgs e) => {
+//                PerformSegue ("ContactToContactEdit", new SegueHolder (contact));
+//            };
 
-            editButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("ContactToContactEdit", new SegueHolder (contact));
+            vipButton = new UIBarButtonItem ();
+            NavigationItem.RightBarButtonItem = vipButton;
+
+            vipButton.Clicked += (object sender, EventArgs e) => {
+                ToggleVipStatus();
             };
 
+            messageSource.owner = this;
+            InteractionsTable = new UITableView ();
+            InteractionsTable.Source = messageSource;
+            MultiSelectToggle (messageSource, false);
+            SetEmailMessages (new UserInteractionEmailMessages (contact));
+
             CreateView ();
+
         }
 
         public override void ViewWillAppear (bool animated)
@@ -50,6 +76,7 @@ namespace NachoClient.iOS
 
             }
             ConfigureView ();
+            UpdateVipButton ();
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 
@@ -62,11 +89,6 @@ namespace NachoClient.iOS
 
             }
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-        }
-
-        public void StatusIndicatorCallback (object sender, EventArgs e)
-        {
-
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
@@ -194,8 +216,12 @@ namespace NachoClient.iOS
                 var selectedSegmentId = (sender as UISegmentedControl).SelectedSegment;
                 switch (selectedSegmentId) {
                 case 0:
+                    InteractionsTable.Hidden = true;
+                    contentView.Hidden = false;
                     break;
                 case 1:
+                    InteractionsTable.Hidden = false;
+                    RefreshData();
                     break;
                 case 2:
                     PerformSegue ("ContactToNotes", new SegueHolder (contact));
@@ -216,6 +242,11 @@ namespace NachoClient.iOS
             segmentedControlHL.BackgroundColor = A.Color_NachoSeparator;
             segmentedControlHL.Tag = SEGMENTED_CONTROL_HL_TAG;
             contentView.AddSubview (segmentedControlHL);
+
+            InteractionsTable.Frame = new RectangleF (0, yOffset + 2, View.Frame.Width, 300);
+            InteractionsTable.Hidden = true;
+            InteractionsTable.BackgroundColor = UIColor.White;
+            View.AddSubview (InteractionsTable);
 
             yOffset += 6;
 
@@ -273,11 +304,13 @@ namespace NachoClient.iOS
                 yOffset += AddEmailAddress (emailAddressAttributes, yOffset);
             }
 
-            var emailHL = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 1));
-            emailHL.BackgroundColor = A.Color_NachoSeparator;
-            emailHL.Tag = TRANSIENT_TAG;
+            yOffset += 3;
+
+            var emailSectionSeparator = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 1));
+            emailSectionSeparator.BackgroundColor = A.Color_NachoSeparator;
+            emailSectionSeparator.Tag = TRANSIENT_TAG;
             ;
-            contentView.AddSubview (emailHL);
+            contentView.AddSubview (emailSectionSeparator);
 
             yOffset += 6;
 
@@ -292,6 +325,14 @@ namespace NachoClient.iOS
             foreach (var phoneNumberAttribute in contact.PhoneNumbers) {
                 yOffset += AddPhoneNumber (phoneNumberAttribute, yOffset);
             }
+
+            yOffset += 3;
+
+            var phoneSectionSeparator = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 1));
+            phoneSectionSeparator.BackgroundColor = A.Color_NachoSeparator;
+            phoneSectionSeparator.Tag = TRANSIENT_TAG;
+            ;
+            contentView.AddSubview (phoneSectionSeparator);
 
             skippedPhones:
 
@@ -322,7 +363,7 @@ namespace NachoClient.iOS
             var labelLabel = new UILabel (new RectangleF (15, 0, 45, 20));
             labelLabel.Font = A.Font_AvenirNextRegular14;
             labelLabel.TextColor = A.Color_0B3239;
-            labelLabel.Text = email.Name;
+            labelLabel.Text = "Email Address";
             labelLabel.SizeToFit ();
             labelLabel.Tag = TRANSIENT_TAG;
             view.AddSubview (labelLabel);
@@ -353,10 +394,24 @@ namespace NachoClient.iOS
             view.Tag = TRANSIENT_TAG;
             contentView.AddSubview (view);
 
+            string phoneLabel = "";
+
+            if (NachoCore.ActiveSync.Xml.Contacts.MobilePhoneNumber == phone.Name) {
+                phoneLabel = "Mobile Phone Number";
+            } else if (NachoCore.ActiveSync.Xml.Contacts.BusinessPhoneNumber == phone.Name) {
+                phoneLabel = "Business Phone Number";
+            } else if (NachoCore.ActiveSync.Xml.Contacts.HomePhoneNumber == phone.Name) {
+                phoneLabel = "Home Phone Number";
+            } else if (NachoCore.ActiveSync.Xml.Contacts.AssistantPhoneNumber == phone.Name) {
+                phoneLabel = "Assistant Phone Number";
+            } else {
+                phoneLabel = "Phone Number";
+            }
+
             var labelLabel = new UILabel (new RectangleF (15, 0, 45, 20));
             labelLabel.Font = A.Font_AvenirNextRegular14;
             labelLabel.TextColor = A.Color_0B3239;
-            labelLabel.Text = phone.Name;
+            labelLabel.Text = phoneLabel;
             labelLabel.SizeToFit ();
             labelLabel.Tag = TRANSIENT_TAG;
             view.AddSubview (labelLabel);
@@ -365,7 +420,7 @@ namespace NachoClient.iOS
             phoneButton.Frame = new RectangleF (View.Frame.Width - 24 - 15, 10, 24, 24);
             phoneButton.SetImage (UIImage.FromBundle ("icn-mtng-phone"), UIControlState.Normal);
             phoneButton.TouchUpInside += (sender, e) => {
-                TouchedEmailButton (phone.Value);
+                TouchedCallButton (phone.Value);
             };
             view.AddSubview (phoneButton);
 
@@ -373,7 +428,7 @@ namespace NachoClient.iOS
             smsButton.Frame = new RectangleF (View.Frame.Width - 24 - 15 - 24 - 15, 10, 24, 24);
             smsButton.SetImage (UIImage.FromBundle ("icn-sms"), UIControlState.Normal);
             smsButton.TouchUpInside += (sender, e) => {
-                TouchedEmailButton (phone.Value);
+                TouchedSmsButton (phone.Value);
             };
             view.AddSubview (smsButton);
 
@@ -456,7 +511,7 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_UI, "TouchedCallButton");
 
             if (string.IsNullOrEmpty (number)) {
-                ComplainAbout ("No phone number", "You've selected a contact who does not have an phone number");
+                ComplainAbout ("No phone number", "You've selected a contact who does not have a phone number");
                 return;
             }
             PerformAction ("tel", number);
@@ -467,7 +522,7 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_UI, "TouchedSmsButton");
 
             if (null == number) {
-                ComplainAbout ("No phone number", "You've selected a contact who does not have an phone number");
+                ComplainAbout ("No phone number", "You've selected a contact who does not have a phone number");
                 return;
             }
             PerformAction ("sms", number);
@@ -475,7 +530,7 @@ namespace NachoClient.iOS
 
         protected void PerformAction (string action, string number)
         {
-            UIApplication.SharedApplication.OpenUrl (new Uri (String.Format ("{0}://{1}", action, number)));
+            UIApplication.SharedApplication.OpenUrl (new Uri (String.Format ("{0}:{1}", action, number)));
         }
 
         protected void ComplainAbout (string complaintTitle, string complaintMessage)
@@ -484,5 +539,106 @@ namespace NachoClient.iOS
             alert.Show ();
         }
 
+        protected void ToggleVipStatus()
+        {
+            contact.SetVIP (!contact.IsVip);
+            UpdateVipButton ();
+        }
+
+        protected void UpdateVipButton()
+        {
+            var vipImageName = (contact.IsVip ? "icn-contact-vip" : "icn-vip");
+
+            using (var rawImage = UIImage.FromBundle (vipImageName)) {
+                var image = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
+                vipButton.Image = image;
+            }
+        }
+
+        ////////InteractionsTableViewStuff
+
+        public void PerformSegueForDelegate (string identifier, NSObject sender)
+        {
+            PerformSegue (identifier, sender);
+        }
+
+        public void MessageThreadSelected (McEmailMessageThread messageThread)
+        {
+            PerformSegue ("NachoNowToMessageView", new SegueHolder (messageThread));
+        }
+
+        public void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+            if (NcResult.SubKindEnum.Info_EmailMessageSetChanged == s.Status.SubKind) {
+                Log.Debug (Log.LOG_UI, "StatusIndicatorCallback");
+                RefreshData ();
+            }
+        }
+
+        public void RefreshData ()
+        {
+            NachoClient.Util.HighPriority ();
+            messageSource.RefreshEmailMessages ();
+            InteractionsTable.ReloadData ();
+            NachoClient.Util.RegularPriority ();
+        }
+
+        public void DismissChildMessageEditor (INachoMessageEditor vc)
+        {
+            vc.SetOwner (null);
+            vc.DismissMessageEditor (false, new NSAction (delegate {
+                this.DismissViewController (true, null);
+            }));
+        }
+
+        public void CreateTaskForEmailMessage (INachoMessageEditor vc, McEmailMessageThread thread)
+        {
+            var m = thread.SingleMessageSpecialCase ();
+            var t = CalendarHelper.CreateTask (m);
+            vc.SetOwner (null);
+            vc.DismissMessageEditor (false, new NSAction (delegate {
+                PerformSegue ("", new SegueHolder (t));
+            }));
+        }
+
+        public void CreateMeetingEmailForMessage (INachoMessageEditor vc, McEmailMessageThread thread)
+        {
+            var m = thread.SingleMessageSpecialCase ();
+            var c = CalendarHelper.CreateMeeting (m);
+            vc.DismissMessageEditor (false, new NSAction (delegate {
+                PerformSegue ("MessageListToCalendarItemEdit", new SegueHolder (c));
+            }));
+        }
+
+        public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)
+        {
+            vc.SetOwner (null);
+            vc.DismissCalendarItemEditor (true, null);
+        }
+            
+        public void DismissChildFolderChooser (INachoFolderChooser vc)
+        {
+            vc.SetOwner (null, null);
+            vc.DismissFolderChooser (false, null);
+        }
+            
+        public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
+        {
+            if (null != messageSource) {
+                messageSource.FolderSelected (vc, folder, cookie);
+            }
+            vc.DismissFolderChooser (true, null);
+        }
+
+        public void MultiSelectToggle (MessageTableViewSource source, bool enabled)
+        {
+            return;
+        }
+
+        public void SetEmailMessages (INachoEmailMessages messageThreads)
+        {
+            this.messageSource.SetEmailMessages (messageThreads);
+        }
     }
 }

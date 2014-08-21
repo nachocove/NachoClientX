@@ -12,6 +12,7 @@ using MimeKit;
 
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoPlatform;
 using SWRevealViewControllerBinding;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -22,7 +23,7 @@ using NachoCore.ActiveSync;
 
 namespace NachoClient.iOS
 {
-    public partial class EditEventViewController : NcUIViewController, INachoAttendeeListChooserDelegate
+    public partial class EditEventViewController : NcUIViewController, INachoAttendeeListChooserDelegate, INachoAttachmentListChooserDelegate
     {
         protected INachoCalendarItemEditorParent owner;
         protected CalendarItemEditorAction action;
@@ -33,6 +34,7 @@ namespace NachoClient.iOS
         protected NachoFolders calendars;
         protected string TempPhone = "";
         protected int calendarIndex = 0;
+        List<McAttachment> attachments = new List<McAttachment> ();
 
         protected UIView EventInfoView;
 
@@ -73,6 +75,7 @@ namespace NachoClient.iOS
         protected int END_PICKER_HEIGHT = 0;
         protected float TEXT_LINE_HEIGHT = 19.124f;
         protected float DESCRIPTION_OFFSET = 0f;
+        protected float DELETE_BUTTON_OFFSET = 0f;
         public float IMAGE_HEIGHT = SCREEN_WIDTH / 2 - 45;
         protected float keyboardHeight;
         protected bool suppressLowerLayout = false;
@@ -83,6 +86,7 @@ namespace NachoClient.iOS
         protected bool endChanged = false;
         protected bool allDayEvent = false;
         protected bool eventEditStarted = false;
+        protected bool isRecurring = false;
 
 
         public bool showMenu;
@@ -138,7 +142,7 @@ namespace NachoClient.iOS
             { 120, "2 hours before" },
             { 1440, "1 day before" },
             { 2880, "2 days before" },
-            { 20160, "1 week before" },
+            { 10080, "1 week before" },
         };
 
         public McCalendar GetItem ()
@@ -160,8 +164,27 @@ namespace NachoClient.iOS
             account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
             calendars = new NachoFolders (NachoFolders.FilterForCalendars);
 
-            c = item;
-            CreateEditEventView ();
+
+            switch (action) {
+            case CalendarItemEditorAction.create:
+                if (null == item) {
+                    c = CalendarHelper.DefaultMeeting ();
+                } else {
+                    c = item;
+                }
+                CreateEditEventView ();
+                break;
+            case CalendarItemEditorAction.edit:
+                c = item;
+                if (0 != c.recurrences.Count) {
+                    isRecurring = true;
+                }
+                CreateEditEventView ();
+                break;
+            default:
+                NcAssert.CaseError ();
+                break;
+            }
         }
 
         public void SetCalendarItem (McCalendar item, CalendarItemEditorAction action)
@@ -273,18 +296,10 @@ namespace NachoClient.iOS
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-//            if (segue.Identifier.Equals ("EditEventToAttendee")) {
-//                var dc = (AttendeeViewController)segue.DestinationViewController;
-//                dc.SetAttendeeList (c.attendees);
-//                dc.ViewDisappearing += (object s, EventArgs e) => {
-//                    c.attendees = dc.GetAttendeeList ();
-//                    ConfigureEditEventView ();
-//                };
-//                return;
-//            }
 
             if (segue.Identifier.Equals ("EditEventToEventAttendees")) {
                 var dc = (EventAttendeeViewController)segue.DestinationViewController;
+                ExtractValues ();
                 dc.SetOwner (this, c.attendees, c, true);
                 return;
             }
@@ -292,6 +307,7 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("EditEventToAlert")) {
                 var dc = (AlertChooserViewController)segue.DestinationViewController;
                 dc.SetReminder (c.Reminder);
+                ExtractValues ();
                 dc.ViewDisappearing += (object s, EventArgs e) => {
                     c.Reminder = dc.GetReminder ();
                     ConfigureEditEventView ();
@@ -302,6 +318,7 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("EventToPhone")) {
                 var dc = (PhoneViewController)segue.DestinationViewController;
                 dc.SetPhone (TempPhone);
+                ExtractValues ();
                 dc.ViewDisappearing += (object s, EventArgs e) => {
                     TempPhone = dc.GetPhone ();
                     ConfigureEditEventView ();
@@ -312,6 +329,7 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("EditEventToCalendarChooser")) {
                 var dc = (ChooseCalendarViewController)segue.DestinationViewController;
                 dc.SetCalendars (calendars);
+                ExtractValues ();
                 dc.ViewDisappearing += (object s, EventArgs e) => {
                     calendarIndex = dc.GetCalIndex ();
                     ConfigureEditEventView ();
@@ -319,7 +337,10 @@ namespace NachoClient.iOS
                 return;
             }
 
-            if (segue.Identifier.Equals ("EventToAddAttachment")) {
+            if (segue.Identifier.Equals ("EditEventToAttachment")) {
+                var dc = (EventAttachmentViewController)segue.DestinationViewController;
+                ExtractValues ();
+                dc.SetOwner (this, attachments, c, true);
                 return;
             }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
@@ -355,6 +376,7 @@ namespace NachoClient.iOS
                 saveEdit = true;
                 ExtractValues ();
                 SyncMeetingRequest ();
+                ScheduleNotification ();
                 DismissView (showMenu);
             };
 
@@ -657,7 +679,7 @@ namespace NachoClient.iOS
             phoneView.AddSubview (phoneAccessoryImage);
 
             phoneDetailLabel = new UILabel ();
-            phoneDetailLabel.Text = "559-320-9923";
+            phoneDetailLabel.Text = "";
             phoneDetailLabel.Tag = PHONE_DETAIL_TAG;
             phoneDetailLabel.SizeToFit ();
             phoneDetailLabel.TextAlignment = UITextAlignment.Right;
@@ -692,7 +714,7 @@ namespace NachoClient.iOS
             attachmentsView.AddSubview (attachmentsAccessoryImage);
 
             UILabel attachmentsDetailLabel = new UILabel ();
-            attachmentsDetailLabel.Text = "";
+            attachmentsDetailLabel.Text = "(" + attachments.Count + ")";
             attachmentsDetailLabel.Tag = ATTACHMENTS_DETAIL_TAG;
             attachmentsDetailLabel.SizeToFit ();
             attachmentsDetailLabel.TextAlignment = UITextAlignment.Right;
@@ -703,7 +725,7 @@ namespace NachoClient.iOS
 
             var attachmentTap = new UITapGestureRecognizer ();
             attachmentTap.AddTarget (() => {
-                //PerformSegue ("EventToAttachment", this);
+                PerformSegue ("EditEventToAttachment", this);
             });
             attachmentsView.AddGestureRecognizer (attachmentTap);
 
@@ -716,8 +738,8 @@ namespace NachoClient.iOS
             peopleImage.Image = UIImage.FromBundle ("icn-peoples");
             peopleView.AddSubview (peopleImage);
 
-            UILabel peopleLabel = new UILabel (new RectangleF (37, 12.438f, 55, TEXT_LINE_HEIGHT));
-            peopleLabel.Text = "People";
+            UILabel peopleLabel = new UILabel (new RectangleF (37, 12.438f, 75, TEXT_LINE_HEIGHT));
+            peopleLabel.Text = "Attendees";
             peopleLabel.Font = A.Font_AvenirNextRegular14;
             peopleLabel.TextColor = solidTextColor;
             peopleView.AddSubview (peopleLabel);
@@ -830,6 +852,8 @@ namespace NachoClient.iOS
                     switch (b.ButtonIndex) {
                     case 0:
                         //delete event
+                        // DeleteEvent(item);
+                        //
                         break; 
                     case 1:
 
@@ -841,7 +865,7 @@ namespace NachoClient.iOS
                 };
                 actionSheet.ShowInView (View);
             };
-
+            deleteButton.Hidden = true;
 
             //Content View
             contentView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, (LINE_OFFSET * 9) + (CELL_HEIGHT * 12) + TEXT_LINE_HEIGHT);
@@ -904,13 +928,26 @@ namespace NachoClient.iOS
 
             //Scroll View
             scrollView.BackgroundColor = A.Color_NachoNowBackground;
-            scrollView.ContentSize = new SizeF (SCREEN_WIDTH, (LINE_OFFSET * 9) + (CELL_HEIGHT * 11));
+            if (action == CalendarItemEditorAction.edit) {
+                DELETE_BUTTON_OFFSET = TEXT_LINE_HEIGHT + CELL_HEIGHT;
+            }
+            scrollView.ContentSize = new SizeF (SCREEN_WIDTH, (LINE_OFFSET * 8) + (CELL_HEIGHT * 10) + DELETE_BUTTON_OFFSET);
             scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
 
         }
 
         protected void ConfigureEditEventView ()
         {
+
+
+            if (action == CalendarItemEditorAction.create) {
+                NavigationItem.Title = "New Event";
+                deleteButton.Hidden = true;
+            } else {
+                NavigationItem.Title = "Edit Event";
+                deleteButton.Hidden = false;
+            }
+
             //title
             var titleFieldView = contentView.ViewWithTag (EVENT_TITLE_LABEL_TAG) as UITextField;
             titleFieldView.Text = c.Subject;
@@ -948,6 +985,10 @@ namespace NachoClient.iOS
             //location
             var locationFieldView = contentView.ViewWithTag (EVENT_LOCATION_DETAIL_LABEL_TAG) as UITextField;
             locationFieldView.Text = c.Location;
+
+            //attachments view
+            var attachmentDetailLabelView = contentView.ViewWithTag (ATTACHMENTS_DETAIL_TAG) as UILabel;
+            attachmentDetailLabelView.Text = "(" + attachments.Count () + ")";
 
             //people view
             var peopleDetailLabelView = contentView.ViewWithTag (PEOPLE_DETAIL_TAG) as UILabel;
@@ -1117,7 +1158,12 @@ namespace NachoClient.iOS
                     alertsView.Frame = new RectangleF (0, (LINE_OFFSET * 4) + (CELL_HEIGHT * 9) + TEXT_LINE_HEIGHT + DESCRIPTION_OFFSET + START_PICKER_HEIGHT + END_PICKER_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT);
                     calendarView.Frame = new RectangleF (0, (LINE_OFFSET * 5) + (CELL_HEIGHT * 10) + TEXT_LINE_HEIGHT + DESCRIPTION_OFFSET + START_PICKER_HEIGHT + END_PICKER_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT);
 
-                    deleteButton.Frame = new RectangleF (20, (LINE_OFFSET * 6) + (CELL_HEIGHT * 11) + TEXT_LINE_HEIGHT + DESCRIPTION_OFFSET + START_PICKER_HEIGHT + END_PICKER_HEIGHT, 280, CELL_HEIGHT);
+                    if (action == CalendarItemEditorAction.edit) {
+                        deleteButton.Frame = new RectangleF (20, (LINE_OFFSET * 6) + (CELL_HEIGHT * 11) + TEXT_LINE_HEIGHT + DESCRIPTION_OFFSET + START_PICKER_HEIGHT + END_PICKER_HEIGHT, 280, CELL_HEIGHT);
+                        DELETE_BUTTON_OFFSET = TEXT_LINE_HEIGHT + CELL_HEIGHT;
+                    } else {
+                        DELETE_BUTTON_OFFSET = 0f;
+                    }
 
                     line8.Frame = new RectangleF (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 5) + TEXT_LINE_HEIGHT + DESCRIPTION_OFFSET + START_PICKER_HEIGHT + END_PICKER_HEIGHT, SCREEN_WIDTH, .5f);
                     line9.Frame = new RectangleF (15, (LINE_OFFSET * 3) + (CELL_HEIGHT * 6) + TEXT_LINE_HEIGHT + DESCRIPTION_OFFSET + START_PICKER_HEIGHT + END_PICKER_HEIGHT, SCREEN_WIDTH, .5f);
@@ -1149,7 +1195,7 @@ namespace NachoClient.iOS
 
                 });
             scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
-            contentView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, (LINE_OFFSET * 8) + (CELL_HEIGHT * 11) + TEXT_LINE_HEIGHT + DESCRIPTION_OFFSET + START_PICKER_HEIGHT + END_PICKER_HEIGHT);
+            contentView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, (LINE_OFFSET * 7) + (CELL_HEIGHT * 10) + TEXT_LINE_HEIGHT + DESCRIPTION_OFFSET + START_PICKER_HEIGHT + END_PICKER_HEIGHT + DELETE_BUTTON_OFFSET);
             scrollView.ContentSize = contentView.Frame.Size;
         }
 
@@ -1181,12 +1227,13 @@ namespace NachoClient.iOS
                 c.ResponseRequested = true;
                 c.ResponseRequestedIsSet = true;
             }
-            // Timezone
-            //            var tzid = RadioElementWithData.SelectedData (timezoneEntryElement);
-            //            var tzi = TimeZoneInfo.FindSystemTimeZoneById (tzid);
-            //            var tz = new AsTimeZone (tzi);
-            //            c.TimeZone = tz.toEncodedTimeZone ();
-            c.TimeZone = TimeZone.CurrentTimeZone.ToString ();
+
+            // Timezone hardcoded
+            var l = TimeZoneInfo.Local;
+            var tzi = l;
+            var tz = new AsTimeZone (tzi, c.StartTime);
+            c.TimeZone = tz.toEncodedTimeZone ();
+
             if (String.IsNullOrEmpty (c.UID)) {
                 c.UID = System.Guid.NewGuid ().ToString ().Replace ("-", null).ToUpper ();
             }
@@ -1207,6 +1254,35 @@ namespace NachoClient.iOS
 
         }
 
+        protected void ScheduleNotification ()
+        {
+            Notif eventNotif = Notif.Instance;
+            if (0 != c.Reminder) {
+                var alertMessage = Util.MakeAlertMessage (c.Subject, c.Reminder);
+                var fireTime = c.StartTime.AddMinutes (-c.Reminder);
+                if (null != eventNotif.FindNotif (c.Id)) {
+                    eventNotif.CancelNotif (c.Id);
+                    eventNotif.ScheduleNotif (c.Id, fireTime, alertMessage);
+                } else {
+                    eventNotif.ScheduleNotif (c.Id, fireTime, alertMessage);
+                }
+                return;
+            }
+            if (null != eventNotif.FindNotif (c.Id)) {
+                eventNotif.CancelNotif (c.Id);
+            }
+        }
+
+        protected void DeleteEvent (int itemId)
+        {
+            //remove item from db
+
+            Notif eventNotif = Notif.Instance;
+            if (null != eventNotif.FindNotif (c.Id)) {
+                eventNotif.CancelNotif (c.Id);
+            }
+        }
+
         /// <summary>
         /// Sends the message. Message (UID) must already exist in EAS.
         /// </summary>
@@ -1223,6 +1299,16 @@ namespace NachoClient.iOS
         }
 
         public void DismissINachoAttendeeListChooser (INachoAttendeeListChooser vc)
+        {
+            NcAssert.CaseError ();
+        }
+
+        public void UpdateAttachmentList (List<McAttachment> attachments)
+        {
+            this.attachments = attachments;
+        }
+
+        public void DismissINachoAttachmentListChooser (INachoAttachmentListChooser vc)
         {
             NcAssert.CaseError ();
         }

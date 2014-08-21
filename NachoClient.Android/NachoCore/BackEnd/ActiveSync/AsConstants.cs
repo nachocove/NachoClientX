@@ -551,25 +551,44 @@ namespace NachoCore.ActiveSync
         {
             public const string Ns = AirSync.ClassCode.Email;
             // Alpha order.
+            public const string AllDayEvent = "AllDayEvent";
+            public const string BusyStatus = "BusyStatus";
             public const string Category = "Category";
             public const string Categories = "Categories";
             public const string Cc = "Cc";
             public const string CompleteTime = "CompleteTime";
             public const string ContentClass = "ContentClass";
             public const string DateReceived = "DateReceived";
+            public const string DisallowNewTimeProposal = "DisallowNewTimeProposal";
             public const string DisplayTo = "DisplayTo";
+            public const string DtStamp = "DtStamp";
+            public const string EndTime = "EndTime";
             public const string Flag = "Flag";
             public const string FlagType = "FlagType";
             public const string From = "From";
+            public const string GlobalObjId = "GlobalObjId";
             public const string Importance = "Importance";
             public const string InternetCPID = "InternetCPID";
+            public const string InstanceType = "InstanceType";
+            public const string Location = "Location";
+            public const string MeetingRequest = "MeetingRequest";
             public const string MessageClass = "MessageClass";
+            public const string MeetingMessageType = "MeetingMessageType";
+            public const string Organizer = "Organizer";
             public const string Read = "Read";
+            public const string RecurrenceId = "RecurrenceId";
+            public const string Recurrence = "Recurrence";
+            public const string Recurrences = "Recurrences";
+            public const string Reminder = "Reminder";
             public const string ReplyTo = "ReplyTo";
+            public const string ResponseRequested = "ResponseRequested";
             public const string Sender = "Sender";
+            public const string Sensitivity = "Sensitivity";
             public const string Status = AirSync.Status;
+            public const string StartTime = "StartTime";
             public const string Subject = Calendar.Subject;
             public const string ThreadTopic = "ThreadTopic";
+            public const string TimeZone = "TimeZone";
             public const string To = "To";
 
             public enum FlagStatusCode : uint

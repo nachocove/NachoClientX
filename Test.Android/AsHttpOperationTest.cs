@@ -184,7 +184,9 @@ namespace Test.iOS
             string mockRequestLength = CommonMockData.MockRequestXml.ToWbxml ().Length.ToString ();
             string mockResponseLength = CommonMockData.Wbxml.Length.ToString ();
 
-            PerformHttpOperationWithSettings (response => {
+            PerformHttpOperationWithSettings (sm => {
+
+            }, response => {
                 response.StatusCode = System.Net.HttpStatusCode.OK;
                 response.Content.Headers.Add ("Content-Length", mockResponseLength);
                 response.Content.Headers.Add ("Content-Type", contentType);
@@ -202,7 +204,9 @@ namespace Test.iOS
             string contentType = "application/vnd.ms-sync.wbxml";
             string mockResponseLength = "-15";
 
-            PerformHttpOperationWithSettings (response => {
+            PerformHttpOperationWithSettings (sm => {
+
+            }, response => {
                 response.StatusCode = System.Net.HttpStatusCode.OK;
                 response.Content.Headers.Add ("Content-Length", mockResponseLength);
                 response.Content.Headers.Add ("Content-Type", contentType);
@@ -218,7 +222,9 @@ namespace Test.iOS
             string contentType = "application/vnd.ms-sync.wbxml";
             string mockResponseLength = 10.ToString ();
 
-            PerformHttpOperationWithSettings (response => {
+            PerformHttpOperationWithSettings (sm => {
+
+            }, response => {
                 string badWbxml = "wbxml bad wbxml";
                 byte[] bytes = new byte[badWbxml.Length * sizeof(char)];
                 System.Buffer.BlockCopy(badWbxml.ToCharArray(), 0, bytes, 0, bytes.Length);
@@ -243,7 +249,9 @@ namespace Test.iOS
             string contentType = "text/xml";
             string mockResponseLength = 10.ToString ();
 
-            PerformHttpOperationWithSettings (response => {
+            PerformHttpOperationWithSettings (sm => {
+
+            }, response => {
                 string badXml = "xml bad xml";
                 byte[] bytes = new byte[badXml.Length * sizeof(char)];
                 System.Buffer.BlockCopy(badXml.ToCharArray(), 0, bytes, 0, bytes.Length);
@@ -267,7 +275,9 @@ namespace Test.iOS
             string contentType = "text/xml";
             string mockResponseLength = 10.ToString ();
 
-            PerformHttpOperationWithSettings (response => {
+            PerformHttpOperationWithSettings (sm => {
+                sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine");
+            }, response => {
                 string goodXml = CommonMockData.BasicPhonyPingRequestXml;
                 byte[] bytes = new byte[goodXml.Length * sizeof(char)];
                 System.Buffer.BlockCopy(goodXml.ToCharArray(), 0, bytes, 0, bytes.Length);
@@ -310,7 +320,8 @@ namespace Test.iOS
             string contentType = "application/vnd.ms-sync.wbxml";
             string mockRequestLength = CommonMockData.MockRequestXml.ToWbxml ().Length.ToString ();
 
-            PerformHttpOperationWithSettings (response => {
+            PerformHttpOperationWithSettings (sm => {
+            }, response => {
                 response.StatusCode = System.Net.HttpStatusCode.OK;
                 response.Content.Headers.Add ("Content-Length", responseLength);
                 response.Content.Headers.Add ("Content-Type", contentType);
@@ -331,7 +342,9 @@ namespace Test.iOS
             string mockRequestLength = CommonMockData.MockRequestXml.ToWbxml ().Length.ToString ();
             string mockResponseLength = 0.ToString ();
 
-            PerformHttpOperationWithSettings (response => {
+            PerformHttpOperationWithSettings (sm => {
+
+            }, response => {
                 response.StatusCode = System.Net.HttpStatusCode.OK;
                 response.Content.Headers.Add ("Content-Length", mockResponseLength);
             }, request => {
@@ -339,7 +352,9 @@ namespace Test.iOS
             });
 
             /* Content-Length is missing --> must not require content type */
-            PerformHttpOperationWithSettings (response => {
+            PerformHttpOperationWithSettings (sm => {
+                sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine");
+            }, response => {
                 response.StatusCode = System.Net.HttpStatusCode.OK;
             }, request => {
                 Assert.AreEqual (mockRequestLength, request.Content.Headers.ContentLength.ToString (), "request Content-Length should match expected");
@@ -350,7 +365,9 @@ namespace Test.iOS
         public void StatusCodeFound ()
         {
             // Status Code -- Found (200)
-            PerformHttpOperationWithSettings (response => {
+            PerformHttpOperationWithSettings (sm => {
+
+            }, response => {
                 response.StatusCode = System.Net.HttpStatusCode.Found;
             }, request => {
             });
@@ -362,7 +379,9 @@ namespace Test.iOS
         public void StatusCodeBadRequest ()
         {
             // Status Code -- Bad Request (400)
-            PerformHttpOperationWithSettings (response => {
+            PerformHttpOperationWithSettings (sm => {
+                sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine");
+            }, response => {
                 response.StatusCode = System.Net.HttpStatusCode.BadRequest;
             }, request => {
             });
@@ -375,7 +394,8 @@ namespace Test.iOS
         public void StatusCodeUnauthorized ()
         {
             // Status Code -- Unauthorized (401)
-            PerformHttpOperationWithSettings (response => {
+            PerformHttpOperationWithSettings (sm => {
+            }, response => {
                 response.StatusCode = System.Net.HttpStatusCode.Unauthorized;
             }, request => {
             });
@@ -387,7 +407,8 @@ namespace Test.iOS
         public void StatusCodeForbidden ()
         {
             // Status Code -- Forbidden (403)
-            PerformHttpOperationWithSettings (response => {
+            PerformHttpOperationWithSettings (sm => {
+            }, response => {
                 response.StatusCode = System.Net.HttpStatusCode.Forbidden;
             }, request => {
             });
@@ -399,7 +420,9 @@ namespace Test.iOS
         public void StatusCodeNotFound ()
         {
             // Status Code -- NotFound (404)
-            PerformHttpOperationWithSettings (response => {
+            PerformHttpOperationWithSettings (sm => {
+                sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine");
+            }, response => {
                 response.StatusCode = System.Net.HttpStatusCode.NotFound;
             }, request => {
             });
@@ -411,7 +434,8 @@ namespace Test.iOS
         public void StatusCode449 ()
         {
             // Status Code -- Retry With Status Code (449)
-            PerformHttpOperationWithSettings (response => {
+            PerformHttpOperationWithSettings (sm => {
+            }, response => {
                 response.StatusCode = (System.Net.HttpStatusCode)449;
             }, request => {
             });
@@ -423,7 +447,8 @@ namespace Test.iOS
         public void StatusCodeInternalServerError ()
         {
             // Status Code -- Internal Server Error (500)
-            PerformHttpOperationWithSettings (response => {
+            PerformHttpOperationWithSettings (sm => {
+            }, response => {
                 response.StatusCode = System.Net.HttpStatusCode.InternalServerError;
             }, request => {
             });
@@ -435,7 +460,9 @@ namespace Test.iOS
         public void StatusCode501 ()
         {
             // Status Code -- Command Not Implemented (501)
-            PerformHttpOperationWithSettings (response => {
+            PerformHttpOperationWithSettings (sm => {
+                sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine");
+            }, response => {
                 response.StatusCode = (System.Net.HttpStatusCode)501;
             }, request => {
             });
@@ -462,7 +489,9 @@ namespace Test.iOS
             McMutables.Set ("HTTP", "MaxDelaySeconds", (3).ToString ());
 
             uint retryCount = 0;
-            PerformHttpOperationWithSettings (response => {
+            PerformHttpOperationWithSettings (sm => {
+                sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine");
+            }, response => {
                 retryCount = AssertRetry (retryCount);
                 response.StatusCode = System.Net.HttpStatusCode.ServiceUnavailable;
             }, request => {});
@@ -491,7 +520,9 @@ namespace Test.iOS
             bool hasBeenThrottled = false;
             uint retryCount = 0;
             var stopwatch = new System.Diagnostics.Stopwatch ();
-            PerformHttpOperationWithSettings (response => {
+            PerformHttpOperationWithSettings (sm => {
+                sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine");
+            }, response => {
                 if (!hasBeenThrottled) {
                     response.Headers.Add (HeaderRetryAfter, retryAfterSecs);
                     response.Headers.Add (HeaderXMsThrottle, "Throttle reason");
@@ -528,7 +559,9 @@ namespace Test.iOS
 
             uint retryCount = 0;
             bool hasBeenThrottled = false;
-            PerformHttpOperationWithSettings (response => {
+            PerformHttpOperationWithSettings (sm => {
+                sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine");
+            }, response => {
                 if (!hasBeenThrottled) {
                     response.Headers.Add (HeaderXMsThrottle, "Throttle reason");
                     hasBeenThrottled = true;
@@ -547,7 +580,9 @@ namespace Test.iOS
         public void StatusCode507 ()
         {
             // Status Code -- Server out of Space (507)
-            PerformHttpOperationWithSettings (response => {
+            PerformHttpOperationWithSettings (sm => {
+                sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine");
+            }, response => {
                 response.StatusCode = (System.Net.HttpStatusCode)507;
             }, request => {
             });
@@ -559,7 +594,9 @@ namespace Test.iOS
         public void StatusCodeUnknown ()
         {
             // Unknown status code
-            PerformHttpOperationWithSettings (response => {
+            PerformHttpOperationWithSettings (sm => {
+                sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine");
+            }, response => {
                 response.StatusCode = (System.Net.HttpStatusCode)8035;
             }, request => {
             });
@@ -594,7 +631,7 @@ namespace Test.iOS
             Assert.AreEqual (CommonMockData.Host, mockCommStatus.Host);
         }
 
-        private void PerformHttpOperationWithSettings (Action<HttpResponseMessage> provideResponse, Action<HttpRequestMessage> provideRequest)
+        private void PerformHttpOperationWithSettings (Action<NcStateMachine> provideSm, Action<HttpResponseMessage> provideResponse, Action<HttpRequestMessage> provideRequest)
         {
             var autoResetEvent = new AutoResetEvent(false);
 
@@ -602,6 +639,8 @@ namespace Test.iOS
             NcStateMachine sm = CreatePhonySM (() => {
                 autoResetEvent.Set ();
             });
+
+            provideSm (sm);
 
             // do some common assertions
             ExamineRequestMessageOnMockClient (CommonMockData.MockUri, request => {
@@ -644,14 +683,14 @@ namespace Test.iOS
             var sm = new NcStateMachine ("PHONY") {
                 Name = "BasicPhonyPing",
                 LocalEventType = typeof(AsProtoControl.CtlEvt),
-                LocalStateType = typeof(AsProtoControl.Lst),
+                LocalStateType = typeof(PhonySt),
                 TransTable = new [] {
                     new Node {State = (uint)St.Start,
                         On = new [] {
                             new Trans { 
                                 Event = (uint)SmEvt.E.Launch, 
                                 Act = delegate () {},
-                                State = (uint)St.Start },
+                                State = (uint)PhonySt.FailureTests },
                             new Trans {
                                 Event = (uint)SmEvt.E.Success,
                                 Act = delegate () {
@@ -665,19 +704,7 @@ namespace Test.iOS
                                 },
                                 State = (uint)St.Start },
                             new Trans {
-                                Event = (uint)AsProtoControl.AsEvt.E.AuthFail,
-                                Act = delegate () {
-                                    action();
-                                },
-                                State = (uint)St.Start },
-                            new Trans {
                                 Event = (uint)AsProtoControl.AsEvt.E.ReProv,
-                                Act = delegate () {
-                                    action();
-                                },
-                                State = (uint)St.Start },
-                            new Trans {
-                                Event = (uint)SmEvt.E.HardFail,
                                 Act = delegate () {
                                     action();
                                 },
@@ -688,8 +715,18 @@ namespace Test.iOS
                                     action();
                                 },
                                 State = (uint)St.Start },
+                        }
+                    },
+                    new Node {State = (uint)PhonySt.FailureTests,
+                        On = new [] {
                             new Trans {
                                 Event = (uint)AsProtoControl.AsEvt.E.AuthFail,
+                                Act = delegate () {
+                                    action();
+                                },
+                                State = (uint)St.Start },
+                            new Trans {
+                                Event = (uint)SmEvt.E.HardFail,
                                 Act = delegate () {
                                     action();
                                 },
@@ -701,6 +738,12 @@ namespace Test.iOS
 
             return sm;
         }
+
+        public enum PhonySt : uint
+        {
+            FailureTests = (AsProtoControl.Lst.QOpW + 1),
+            Last = FailureTests,
+        };
            
         private BaseMockOwner CreateMockOwner (Uri mockUri, XDocument mockRequestXml)
         {

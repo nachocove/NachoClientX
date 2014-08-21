@@ -83,7 +83,7 @@ namespace NachoClient.iOS
             };
 
             // Initially let's hide the search controller
-            TableView.SetContentOffset (new PointF (0.0f, 44.0f), false);
+//            TableView.SetContentOffset (new PointF (0.0f, 44.0f), false);
             TableView.SeparatorColor = A.Color_NachoSeparator;
 
             // Search button brings up the search controller
@@ -140,6 +140,8 @@ namespace NachoClient.iOS
             TableView.Source = messageSource;
 
             MultiSelectToggle (messageSource, false);
+
+            TableView.TableHeaderView = null; // beta 1
         }
 
         public void MultiSelectToggle (MessageTableViewSource source, bool enabled)
@@ -150,7 +152,7 @@ namespace NachoClient.iOS
                         NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { deleteButton, saveButton };
                         NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { cancelButton };
                     } else {
-                        NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, searchButton };
+                        NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, /* beta 1 searchButton */ };
                         NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
                     }
                 })
@@ -301,18 +303,19 @@ namespace NachoClient.iOS
                 vc.SetOwner (this, h);
                 return;
             }
-            if (segue.Identifier == "NachoNowToCalendarItem") {
-                CalendarItemViewController vc = (CalendarItemViewController)segue.DestinationViewController;
+            if (segue.Identifier == "NachoNowToEditEvent") {
+                var vc = (EditEventViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
                 var c = holder.value as McCalendar;
                 if (null == c) {
                     vc.SetCalendarItem (null, CalendarItemEditorAction.create);
                 } else {
-                    vc.SetCalendarItem (c, CalendarItemEditorAction.view);
+                    vc.SetCalendarItem (c, CalendarItemEditorAction.create);
                 }
                 vc.SetOwner (this);
                 return;
             }
+
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }
@@ -361,7 +364,7 @@ namespace NachoClient.iOS
             var m = thread.SingleMessageSpecialCase ();
             var c = CalendarHelper.CreateMeeting (m);
             vc.DismissMessageEditor (false, new NSAction (delegate {
-                PerformSegue ("MessageListToCalendarItemEdit", new SegueHolder (c));
+                PerformSegue ("NachoNowToEditEvent", new SegueHolder (c));
             }));
         }
 

@@ -49,6 +49,16 @@ namespace NachoCore.Model
 
         public bool BusyStatusIsSet { get; set; }
 
+        /// The default is False.  Calendar & MeetingRequest only
+        public bool DisallowNewTimeProposal { get; set; }
+
+        public bool DisallowNewTimeProposalIsSet { get; set; }
+
+        /// Is a response to this meeting required? Calendar & MeetingRequest only.
+        public bool ResponseRequested { get; set; }
+
+        public bool ResponseRequestedIsSet { get; set; }
+
         /// None, Organizer, Tentative, ...
         public NcResponseType ResponseType;
 
@@ -117,8 +127,10 @@ namespace NachoCore.Model
             }
             HasReadAncillaryData = true;
             SQLiteConnection db = NcModel.Instance.Db;
-            DbAttendees = db.Table<McAttendee> ().Where (x => x.ParentId == Id).ToList ();
-            DbCategories = db.Table<McCalendarCategory> ().Where (x => x.ParentId == Id).ToList ();
+            var attendeeParentType = McAttendee.GetParentType (this);
+            DbAttendees = db.Table<McAttendee> ().Where (x => (x.ParentId == Id) && (x.ParentType == attendeeParentType)).ToList ();
+            var categoryParentType = McCalendarCategory.GetParentType (this);
+            DbCategories = db.Table<McCalendarCategory> ().Where (x => (x.ParentId == Id) && (x.ParentType == categoryParentType)).ToList ();
             // TODO: Deal with errors
             return NcResult.OK ();
         }
@@ -171,11 +183,13 @@ namespace NachoCore.Model
 
         private NcResult DeleteAncillaryDataFromDB (SQLiteConnection db)
         {
-            var attendees = db.Table<McAttendee> ().Where (x => x.ParentId == Id).ToList ();
+            var attendeeParentType = McAttendee.GetParentType (this);
+            var attendees = db.Table<McAttendee> ().Where (x => (x.ParentId == Id) && (x.ParentType == attendeeParentType)).ToList ();
             foreach (var a in attendees) {
                 a.Delete ();
             }
-            var categories = db.Table<McCalendarCategory> ().Where (x => x.ParentId == Id).ToList ();
+            var categoryParentType = McAttendee.GetParentType (this);
+            var categories = db.Table<McCalendarCategory> ().Where (x => (x.ParentId == Id) && (x.ParentType == categoryParentType)).ToList ();
             foreach (var c in categories) {
                 c.Delete ();
             }

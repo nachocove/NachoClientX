@@ -54,10 +54,6 @@ namespace NachoCore.Model
 
         public double GetScore ()
         {
-            if (IsVip) {
-                return 1.0; // 100% sure. User says so.
-            }
-
             int total = EmailsReceived + EmailsSent + EmailsDeleted;
             if (0 == total) {
                 return 0.0;
@@ -75,6 +71,11 @@ namespace NachoCore.Model
             }
             if (1 == ScoreVersion) {
                 // Version 2 statistics are updated by emails. Nothing to do here
+                ScoreVersion++;
+            }
+            if (2 == ScoreVersion) {
+                // No statisitcs are updated in v3. Just need to recompute the score
+                // using the new function.
                 ScoreVersion++;
             }
             NcAssert.True (Scoring.Version == ScoreVersion);
@@ -107,7 +108,7 @@ namespace NachoCore.Model
             SyncInfo = null;
         }
 
-        private void MarkDependencies ()
+        public void MarkDependencies ()
         {
             MarkDependentEmailMessages ();
             // TODO - mark dependent meetings later

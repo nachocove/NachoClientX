@@ -13,6 +13,7 @@ using NachoCore.Model;
 using NachoCore.Utils;
 using MCSwipeTableViewCellBinding;
 using MonoTouch.Dialog;
+using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
@@ -38,6 +39,8 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+
+            CalendarHelper.ExpandRecurrences ();
 
             // Navigation
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
@@ -78,7 +81,7 @@ namespace NachoClient.iOS
             };
 
             newMeetingButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("NachoNowToEventView", new SegueHolder (null));
+                PerformSegue ("NachoNowToEditEventView", new SegueHolder (null));
             };
 
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, newMeetingButton };
@@ -135,7 +138,7 @@ namespace NachoClient.iOS
 
             calendarSource = new CalendarTableViewSource ();
             calendarSource.owner = this;
-            calendarSource.SetCalendar (NcCalendarManager.Instance);
+            calendarSource.SetCalendar (NcEventManager.Instance);
             calendarTableView.Source = calendarSource;
 
             // Set up gesture recognizers; they'll be enabled and disabled as needed
@@ -192,6 +195,9 @@ namespace NachoClient.iOS
             base.ViewWillAppear (animated);
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
+                if (this.NavigationController.NavigationBarHidden == true) {
+                    this.NavigationController.NavigationBarHidden = false;
+                }
             }
             carouselView.ReloadData ();
             inboxSource.SetEmailMessages (NcEmailManager.Inbox ());
@@ -221,15 +227,23 @@ namespace NachoClient.iOS
             if (segue.Identifier == "NachoNowToCalendar") {
                 return; // Nothing to do
             }
+            if (segue.Identifier == "NachoNowToEditEventView") {
+                var vc = (EditEventViewController)segue.DestinationViewController;
+                var holder = sender as SegueHolder;
+                var c = holder.value as McCalendar;
+                if (null == c) { 
+                    vc.SetCalendarItem (null, CalendarItemEditorAction.create);
+                } else {
+                    vc.SetCalendarItem (c, CalendarItemEditorAction.create);
+                }
+                vc.SetOwner (this);
+                return;
+            }
             if (segue.Identifier == "NachoNowToEventView") {
                 var vc = (EventViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
                 var c = holder.value as McCalendar;
-                if (null == c) {
-                    vc.SetCalendarItem (null, CalendarItemEditorAction.create);
-                } else {
-                    vc.SetCalendarItem (c, CalendarItemEditorAction.view);
-                }
+                vc.SetCalendarItem (c, CalendarItemEditorAction.view);
                 vc.SetOwner (this);
                 return;
             }
@@ -247,18 +261,7 @@ namespace NachoClient.iOS
                 vc.SetOwner (this);
                 return;
             }
-            if (segue.Identifier == "NachoNowToCalendarItem") {
-                CalendarItemViewController vc = (CalendarItemViewController)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                var c = holder.value as McCalendar;
-                if (null == c) {
-                    vc.SetCalendarItem (null, CalendarItemEditorAction.create);
-                } else {
-                    vc.SetCalendarItem (c, CalendarItemEditorAction.view);
-                }
-                vc.SetOwner (this);
-                return;
-            }
+
             if (segue.Identifier == "NachoNowToMessageList") {
                 var holder = (SegueHolder)sender;
                 var messageList = (INachoEmailMessages)holder.value;
@@ -571,6 +574,7 @@ namespace NachoClient.iOS
                     var message = messageThread.SingleMessageSpecialCase ();
                     message.UserAction = 1;
                     message.Update ();
+                    NcBrain.UpdateMessageScore (message.Id);
                     break;
                 case 1:
                     PerformSegue ("NachoNowToMessagePriority", new SegueHolder (messageThread));
@@ -715,6 +719,7 @@ namespace NachoClient.iOS
                     var message = messageThread.SingleMessageSpecialCase ();
                     message.UserAction = -1;
                     message.Update ();
+                    NcBrain.UpdateMessageScore (message.Id);
                 }
                 return;
             }
@@ -769,7 +774,7 @@ namespace NachoClient.iOS
             var m = thread.SingleMessageSpecialCase ();
             var c = CalendarHelper.CreateMeeting (m);
             vc.DismissMessageEditor (false, new NSAction (delegate {
-                PerformSegue ("", new SegueHolder (c));
+                PerformSegue ("NachoNowToEditEventView", new SegueHolder (c));
             }));
         }
 
@@ -941,24 +946,12 @@ namespace NachoClient.iOS
                 if (null == preventBarButtonGC) {
                     preventBarButtonGC = new List<UIBarButtonItem> ();
                 }
-                    
+
                 var replyButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-reply"), UIBarButtonItemStyle.Plain, null);
                 replyButton.Clicked += (object sender, EventArgs e) => {
-                    onReplyButtonClicked (view, MessageComposeViewController.Reply);
+                    ReplyActionSheet (view);
                 };
                 preventBarButtonGC.Add (replyButton);
-
-                var replyAllButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-reply-all"), UIBarButtonItemStyle.Plain, null);
-                replyAllButton.Clicked += (object sender, EventArgs e) => {
-                    onReplyButtonClicked (view, MessageComposeViewController.ReplyAll);
-                };
-                preventBarButtonGC.Add (replyAllButton);
-
-                var forwardButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-fwd"), UIBarButtonItemStyle.Plain, null);
-                forwardButton.Clicked += (object sender, EventArgs e) => {
-                    onReplyButtonClicked (view, MessageComposeViewController.Forward);
-                };
-                preventBarButtonGC.Add (forwardButton);
 
                 var saveButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-move"), UIBarButtonItemStyle.Plain, null);
                 saveButton.Clicked += (object sender, EventArgs e) => {
@@ -966,8 +959,18 @@ namespace NachoClient.iOS
                 };
                 preventBarButtonGC.Add (saveButton);
 
+                var archiveButton = new UIBarButtonItem (UIImage.FromBundle ("icn-archive"), UIBarButtonItemStyle.Plain, null);
+                archiveButton.Clicked += (object sender, EventArgs e) => {
+                    onArchiveButtonClicked (view);
+                };
+                preventBarButtonGC.Add (saveButton);
+
                 var flexibleSpace = new UIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace);
                 preventBarButtonGC.Add (flexibleSpace);
+
+                var fixedSpace = new UIBarButtonItem (UIBarButtonSystemItem.FixedSpace);
+                fixedSpace.Width = 25;
+                preventBarButtonGC.Add (fixedSpace);
 
                 var deleteButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-delete"), UIBarButtonItemStyle.Plain, null);
                 deleteButton.Clicked += (object sender, EventArgs e) => {
@@ -978,10 +981,11 @@ namespace NachoClient.iOS
                 var toolbar = new UIToolbar (new RectangleF (0, frame.Height - 44, frame.Width, 44));
                 toolbar.SetItems (new UIBarButtonItem[] {
                     replyButton,
-                    replyAllButton,
-                    forwardButton,
                     flexibleSpace,
+                    archiveButton,
+                    fixedSpace,
                     saveButton,
+                    fixedSpace,
                     deleteButton
                 }, false);
                 view.AddSubview (toolbar);
@@ -1001,6 +1005,14 @@ namespace NachoClient.iOS
                 var messageThreadIndex = view.Tag;
                 var messageThread = owner.priorityInbox.GetEmailThread (messageThreadIndex);
                 owner.PerformSegueForDelegate ("NachoNowToMessageAction", new SegueHolder (messageThread));
+            }
+
+            void onArchiveButtonClicked (UIView view)
+            {
+                var messageThreadIndex = view.Tag;
+                var messageThread = owner.priorityInbox.GetEmailThread (messageThreadIndex);
+                var message = messageThread.SingleMessageSpecialCase ();
+                NcEmailArchiver.Archive (message);
             }
 
             void onDeleteButtonClicked (UIView view)
@@ -1056,8 +1068,8 @@ namespace NachoClient.iOS
                 var cookedPreview = rawPreview;
                 do {
                     oldLength = cookedPreview.Length;
-                    cookedPreview = cookedPreview.Replace('\r', '\n');
-                    cookedPreview = cookedPreview.Replace("\n\n", "\n");
+                    cookedPreview = cookedPreview.Replace ('\r', '\n');
+                    cookedPreview = cookedPreview.Replace ("\n\n", "\n");
                 } while(cookedPreview.Length != oldLength);
                 previewLabelView.AttributedText = new NSAttributedString (cookedPreview);
 
@@ -1136,6 +1148,34 @@ namespace NachoClient.iOS
                 label.Text = "No hot items!";
             
                 return view;
+            }
+
+            protected void ReplyActionSheet (UIView view)
+            {
+                var actionSheet = new UIActionSheet ();
+                actionSheet.Add ("Reply");
+                actionSheet.Add ("Reply All");
+                actionSheet.Add ("Forward");
+                actionSheet.Add ("Cancel");
+
+                actionSheet.CancelButtonIndex = 3;
+
+                actionSheet.Clicked += delegate(object a, UIButtonEventArgs b) {
+                    switch (b.ButtonIndex) {
+                    case 0:
+                        onReplyButtonClicked (view, MessageComposeViewController.Reply);
+                        break;
+                    case 1:
+                        onReplyButtonClicked (view, MessageComposeViewController.ReplyAll);
+                        break;
+                    case 2:
+                        onReplyButtonClicked (view, MessageComposeViewController.Forward);
+                        break;
+                    case 3:
+                        break; // Cancel
+                    }
+                };
+                actionSheet.ShowInView (view);
             }
         }
 

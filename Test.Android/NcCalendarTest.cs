@@ -470,7 +470,7 @@ namespace Test.Common
         }
 
         [Test]
-        public void CreateNcCalendarFromXML4()
+        public void CreateNcCalendarFromXML4 ()
         {
             var command = System.Xml.Linq.XElement.Parse (addString_04);
             Assert.IsNotNull (command);
@@ -483,13 +483,25 @@ namespace Test.Common
             Assert.IsNotNull (c);
 
             var changeCommand = System.Xml.Linq.XElement.Parse (changeString_04);
-             r = h.ParseCalendar (Ns, changeCommand);
+            r = h.ParseCalendar (Ns, changeCommand);
             Assert.IsNotNull (r.GetValue<McCalendar> ());
             var d = r.GetValue<McCalendar> ();
             Assert.IsNotNull (d);
             Assert.AreEqual (1, d.exceptions.Count);
         }
-       
+
+        [Test]
+        public void ExceptionParse01()
+        {
+            var command = System.Xml.Linq.XElement.Parse (Exception_String_01);
+            Assert.IsNotNull (command);
+            var h = new NachoCore.ActiveSync.AsHelpers ();
+            XNamespace Ns = Xml.Calendar.Ns;
+            var exception = h.ParseExceptions (Ns, command);
+            Assert.IsNotNull (exception);
+        }
+
+
         protected McCalendar InsertSimpleEvent (string type)
         {
             var c = new McCalendar ();
@@ -714,7 +726,6 @@ namespace Test.Common
             Assert.AreEqual (0, c.exceptions.Count);
             Assert.AreEqual (0, f.exceptions.Count);
         }
-
 
         String addString_01 = @"
                 <Add xmlns=""AirSync"">
@@ -963,7 +974,50 @@ namespace Test.Common
         </Change>
 ";
 
-
+        string Exception_String_01 = @"
+<Exceptions xmlns=""Calendar"">
+  <Exception>
+    <DtStamp>20140811T060455Z</DtStamp>
+    <StartTime>20140811T210000Z</StartTime>
+    <Location>Skype</Location>
+    <EndTime>20140811T213000Z</EndTime>
+    <Body xmlns=""AirSyncBase"">
+      <Type>4</Type>
+      <EstimatedDataSize>4211</EstimatedDataSize>
+      <Data nacho-body-id=""455"" />
+    </Body>
+    <Categories />
+    <ExceptionStartTime>20140811T160000Z</ExceptionStartTime>
+    <Reminder />
+    <Attendees>
+      <Attendee>
+        <Email>nerds@nachocove.com</Email>
+        <Name>Nacho Nerds</Name>
+        <AttendeeType>1</AttendeeType>
+      </Attendee>
+      <Attendee>
+        <Email>zachq@nachocove.com</Email>
+        <Name>Zach Quiring</Name>
+        <AttendeeType>2</AttendeeType>
+      </Attendee>
+      <Attendee>
+        <Email>coleb@nachocove.com</Email>
+        <Name>Cole Britton</Name>
+        <AttendeeType>2</AttendeeType>
+      </Attendee>
+      <Attendee>
+        <Email>henryk@nachocove.com</Email>
+        <Name>Henry Kwok</Name>
+        <AttendeeType>2</AttendeeType>
+      </Attendee>
+    </Attendees>
+    <AppointmentReplyTime>20140811T062113Z</AppointmentReplyTime>
+    <OnlineMeetingConfLink />
+    <MeetingStatus>3</MeetingStatus>
+    <OnlineMeetingExternalLink />
+  </Exception>
+</Exceptions>
+";
     }
 }
 

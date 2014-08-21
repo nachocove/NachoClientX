@@ -19,7 +19,7 @@ namespace NachoClient.iOS
         }
 
         public uint Reminder;
-        List<uint> minValues = new List<uint>(new uint[] { 0, 1, 5, 15, 30, 60, 120, 1440, 2880, 20160 });
+        List<uint> minValues = new List<uint>(new uint[] { 0, 1, 5, 15, 30, 60, 120, 1440, 2880, 10080 });
 
         UIColor separatorColor = A.Color_NachoSeparator;
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;

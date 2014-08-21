@@ -102,6 +102,18 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("SegueToNachoNow")) {
                 return;
             }
+            if (segue.Identifier.Equals ("ContactsToQuickMessageCompose")) {
+                var h = sender as SegueHolder;
+                MessageComposeViewController mcvc = (MessageComposeViewController)segue.DestinationViewController;
+                mcvc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, (string)h.value));
+                return;
+            }
+            if (segue.Identifier.Equals ("ContactsToMessageCompose")) {
+                var h = sender as SegueHolder;
+                MessageComposeViewController mcvc = (MessageComposeViewController)segue.DestinationViewController;
+                mcvc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, (string)h.value));
+                return;
+            }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }

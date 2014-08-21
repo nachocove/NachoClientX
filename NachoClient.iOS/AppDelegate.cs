@@ -1,3 +1,7 @@
+#define HA_AUTH_ANONYMOUS
+//#define HA_AUTH_USER
+//#define HA_AUTH_EMAIL
+
 using System;
 using System.IO;
 using System.Linq;
@@ -94,6 +98,17 @@ namespace NachoClient.iOS
                 manager.StartManager ();
 
                 //Authenticate (there are other authentication options)
+                #if HA_AUTH_ANONYMOUS
+                manager.Authenticator.IdentificationType = BITAuthenticatorIdentificationType.Anonymous;
+                #endif
+                #if HA_AUTH_USER
+                manager.Authenticator.IdentificationType = BITAuthenticatorIdentificationType.HockeyAppUser;
+                manager.Authenticator.Delegate = new HockeyAppAuthenticatorDelegate ();
+                #endif
+                #if HA_AUTH_EMAIL
+                manager.Authenticator.IdentificationType = BITAuthenticatorIdentificationType.HockeyAppEmail;
+                manager.Authenticator.AuthenticationSecret = "fc041d7edcdd8b93951be3d4b9dd05d2";
+                #endif
                 manager.Authenticator.AuthenticateInstallation ();
 
                 //Rethrow any unhandled .NET exceptions as native iOS
@@ -101,7 +116,7 @@ namespace NachoClient.iOS
                 AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
                     Setup.ThrowExceptionAsNative (e.ExceptionObject);
 
-                TaskScheduler.UnobservedTaskException += (sender, e) =>
+                NcApplication.UnobservedTaskException += (sender, e) =>
                     Setup.ThrowExceptionAsNative (e.Exception);
             });
         }
@@ -127,7 +142,7 @@ namespace NachoClient.iOS
                 Telemetry.RecordUiButton (description);
             });
 
-            NachoUIMonitor.SetupUISegmentedControl (delegate(string description, long index) {
+            NachoUIMonitor.SetupUISegmentedControl (delegate(string description, int index) {
                 Telemetry.RecordUiSegmentedControl (description, index);
             });
 
@@ -143,8 +158,35 @@ namespace NachoClient.iOS
                 Telemetry.RecordUiTextField (description);
             });
 
-            NachoUIMonitor.SetupUIPageControl (delegate(string description, long page) {
+            NachoUIMonitor.SetupUIPageControl (delegate(string description, int page) {
                 Telemetry.RecordUiPageControl (description, page);
+            });
+
+            NachoUIMonitor.SetupUIAlertView (delegate(string description, int index) {
+                Telemetry.RecordUiAlertView (description, index);
+            });
+
+            NachoUIMonitor.SetupUIActionSheet (delegate(string description, int index) {
+                Telemetry.RecordUiActionSheet (description, index);
+            });
+
+            NachoUIMonitor.SetupUITapGestureRecognizer (delegate(string description, int numTouches,
+                                                                 PointF point1, PointF point2, PointF point3) {
+                string touches = "";
+                if (0 < numTouches) {
+                    touches = String.Format("({0},{1})", point1.X, point1.Y);
+                    if (1 < numTouches) {
+                        touches += String.Format(", ({0},{1})", point2.X, point2.Y);
+                        if (2 < numTouches) {
+                            touches += String.Format(", ({0},{1})", point3.X, point3.Y);
+                        }
+                    }
+                }
+                Telemetry.RecordUiTapGestureRecognizer(description, touches);
+            });
+
+            NachoUIMonitor.SetupUITableView (delegate(string description, string operation) {
+                Telemetry.RecordUiTableView (description, operation);
             });
         }
 
@@ -210,10 +252,23 @@ namespace NachoClient.iOS
             if (launchOptions != null && launchOptions.ContainsKey (UIApplication.LaunchOptionsLocalNotificationKey)) {
                 Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: LaunchOptionsLocalNotificationKey");
                 var localNotification = launchOptions [UIApplication.LaunchOptionsLocalNotificationKey] as UILocalNotification;
-                var emailMessageId = ((NSNumber)localNotification.UserInfo.ObjectForKey (NoteKey)).IntValue;
-                Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: from local notification: McEmailMessage.Id is {0}.", emailMessageId);
+                var emailDictResult = localNotification.UserInfo.ObjectForKey (NoteKey);
+                if (null != emailDictResult) {
+                    var emailMessageId = ((NSNumber)emailDictResult).IntValue;
+                    Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: from local notification: McEmailMessage.Id is {0}.", emailMessageId);
+                }
+                var eventDictResult = localNotification.UserInfo.ObjectForKey (EventKey);
+                if (null != eventDictResult) {
+                    var eventId = ((NSNumber)eventDictResult).IntValue;
+                    Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: from local notification: eventId is {0}.", eventId);
+                }
+                if (localNotification != null) {
+                    // reset badge
+                    UIApplication.SharedApplication.ApplicationIconBadgeNumber = 0;
+                }
             }
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Exit");
+
             return true;
         }
 
@@ -446,6 +501,12 @@ namespace NachoClient.iOS
                 var emailMessageId = value.IntValue;
                 Log.Info (Log.LOG_LIFECYCLE, "ReceivedLocalNotification: from local notification: McEmailMessage.Id is {0}.", emailMessageId);
             }
+                
+            value = (NSNumber)notification.UserInfo.ObjectForKey (EventKey);
+            if (null != value) {
+                var eventId = value.IntValue;
+                Log.Info (Log.LOG_LIFECYCLE, "ReceivedLocalNotification: from local notification: NotifiOS.handle is {0}.", eventId);
+            }
         }
 
         public void BgStatusIndReceiver (object sender, EventArgs e)
@@ -468,130 +529,89 @@ namespace NachoClient.iOS
         {
             hasFirstSyncCompleted = LoginHelpers.HasFirstSyncCompleted (accountId); 
             if (hasFirstSyncCompleted == false) {
-                Log.Info (Log.LOG_LIFECYCLE, "CredReqCallback Called");
+                Log.Info (Log.LOG_UI, "CredReqCallback Called for account: {0}", accountId);
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                     Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_CredReqCallback),
                     Account = ConstMcAccount.NotAccountSpecific,
                 });
             } else {
-
-                var Mo = NcModel.Instance;
-                var Be = BackEnd.Instance;
-
-                var credView = new UIAlertView ();
-                var account = Mo.Db.Table<McAccount> ().Single (rec => rec.Id == accountId);
-                var tmpCred = Mo.Db.Table<McCred> ().Single (rec => rec.Id == account.CredId);
-
-                credView.Title = "Need to update Login Credentials";
-                credView.AddButton ("Update");
-                credView.AlertViewStyle = UIAlertViewStyle.LoginAndPasswordInput;
-                credView.Show ();
-
-                credView.Clicked += delegate(object sender, UIButtonEventArgs b) {
-                    var parent = (UIAlertView)sender;
-                    // FIXME - need  to display the login id they used in first login attempt
-                    var tmplog = parent.GetTextField (0).Text; // login id
-                    var tmppwd = parent.GetTextField (1).Text; // password
-                    if ((tmplog != String.Empty) && (tmppwd != String.Empty)) {
-                        tmpCred.Username = (string)tmplog;
-                        tmpCred.Password = (string)tmppwd;
-                        Mo.Db.Update (tmpCred); //  update with new username/password
-
-                        Be.CredResp (accountId);
-                        credView.ResignFirstResponder ();
-                    } else {
-                        var DoitYadummy = new UIAlertView ();
-                        DoitYadummy.Title = "You need to enter fields for Login ID and Password";
-                        DoitYadummy.AddButton ("Go Back");
-                        DoitYadummy.AddButton ("Exit - Do Not Care");
-                        DoitYadummy.CancelButtonIndex = 1;
-                        DoitYadummy.Show ();
-                        DoitYadummy.Clicked += delegate(object silly, UIButtonEventArgs e) {
-
-                            if (e.ButtonIndex == 0) { // I want to actually enter login data
-                                CredReqCallback (accountId);    // call to get credentials
-                            }
-
-                            DoitYadummy.ResignFirstResponder ();
-                        };
-                    }
-                    ;
-                    credView.ResignFirstResponder (); // might want this moved
-                };
+                Log.Info (Log.LOG_UI, "CredReqCallback Called for account: {0}", accountId);
+                UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+                CredentialsAskViewController cvc = (CredentialsAskViewController)x.InstantiateViewController ("CredentialsAskViewController");
+                this.Window.RootViewController.PresentViewController (cvc, true, null);
             }
         }
 
         public void ServConfReqCallback (int accountId)
         {
-
             hasFirstSyncCompleted = LoginHelpers.HasFirstSyncCompleted (accountId); 
             if (hasFirstSyncCompleted == false) {
-                Log.Info (Log.LOG_LIFECYCLE, "ServConfReqCallback Called");
+                Log.Info (Log.LOG_UI, "ServConfReqCallback Called for account: {0}", accountId);
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                     Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Error_ServerConfReqCallback),
                     Account = ConstMcAccount.NotAccountSpecific,
                 });
             } else {
 
-            // called if server name is wrong
-            // cancel should call "exit program, enter new server name should be updated server
-            var Mo = NcModel.Instance;
-            var Be = BackEnd.Instance;
+                // called if server name is wrong
+                // cancel should call "exit program, enter new server name should be updated server
+                var Mo = NcModel.Instance;
+                var Be = BackEnd.Instance;
 
 
-            var credView = new UIAlertView ();
+                var credView = new UIAlertView ();
 
-            credView.Title = "Need Correct Server Name";
-            credView.AddButton ("Update");
-            credView.AddButton ("Cancel");
-            credView.AlertViewStyle = UIAlertViewStyle.PlainTextInput;
-            credView.Show ();
-            credView.Clicked += delegate(object a, UIButtonEventArgs b) {
-                var parent = (UIAlertView)a;
-                if (b.ButtonIndex == 0) {
-                    var txt = parent.GetTextField (0).Text;
-                    // FIXME need to scan string to make sure it is of right format (regex).
-                    if (txt != null) {
-                        Log.Info (Log.LOG_LIFECYCLE, " New Server Name = " + txt);
-                        NcModel.Instance.RunInTransaction(() => {
-                            var account = McAccount.QueryById<McAccount> (accountId);
-                            var tmpServer = McServer.QueryById<McServer> (account.ServerId);
-                            if (null == tmpServer) {
-                                tmpServer = new McServer() {
-                                    Host = txt,
-                                };
-                                tmpServer.Insert ();
-                                account.ServerId = tmpServer.Id;
-                                account.Update();
-                            } else {
-                                tmpServer.Host = txt;
-                                tmpServer.Update ();
-                            }
-                        });
-                        Be.ServerConfResp (accountId, false); 
-                        credView.ResignFirstResponder ();
+                credView.Title = "Need Correct Server Name";
+                credView.AddButton ("Update");
+                credView.AddButton ("Cancel");
+                credView.AlertViewStyle = UIAlertViewStyle.PlainTextInput;
+                credView.Show ();
+                credView.Clicked += delegate(object a, UIButtonEventArgs b) {
+                    var parent = (UIAlertView)a;
+                    if (b.ButtonIndex == 0) {
+                        var txt = parent.GetTextField (0).Text;
+                        // FIXME need to scan string to make sure it is of right format (regex).
+                        if (txt != null) {
+                            Log.Info (Log.LOG_LIFECYCLE, " New Server Name = " + txt);
+                            NcModel.Instance.RunInTransaction (() => {
+                                var account = McAccount.QueryById<McAccount> (accountId);
+                                var tmpServer = McServer.QueryById<McServer> (account.ServerId);
+                                if (null == tmpServer) {
+                                    tmpServer = new McServer () {
+                                        Host = txt,
+                                    };
+                                    tmpServer.Insert ();
+                                    account.ServerId = tmpServer.Id;
+                                    account.Update ();
+                                } else {
+                                    tmpServer.Host = txt;
+                                    tmpServer.Update ();
+                                }
+                            });
+                            Be.ServerConfResp (accountId, false); 
+                            credView.ResignFirstResponder ();
+                        }
+                        ;
                     }
                     ;
-                }
-                ;
 
-                if (b.ButtonIndex == 1) {
-                    var gonnaquit = new UIAlertView ();
-                    gonnaquit.Title = "Are You Sure? \n No account information will be updated";
+                    if (b.ButtonIndex == 1) {
+                        var gonnaquit = new UIAlertView ();
+                        gonnaquit.Title = "Are You Sure? \n No account information will be updated";
 
-                    gonnaquit.AddButton ("Ok"); // continue exiting
-                    gonnaquit.AddButton ("Go Back"); // enter info
-                    gonnaquit.CancelButtonIndex = 1;
-                    gonnaquit.Show ();
-                    gonnaquit.Clicked += delegate(object sender, UIButtonEventArgs e) {
-                        if (e.ButtonIndex == 1) {
-                            ServConfReqCallback (accountId); // go again
-                        }
-                        gonnaquit.ResignFirstResponder ();
-                    };
-                }
-                ;
-            };
+                        gonnaquit.AddButton ("Ok"); // continue exiting
+                        gonnaquit.AddButton ("Go Back"); // enter info
+                        gonnaquit.CancelButtonIndex = 1;
+                        gonnaquit.Show ();
+                        gonnaquit.Clicked += delegate(object sender, UIButtonEventArgs e) {
+                            if (e.ButtonIndex == 1) {
+                                ServConfReqCallback (accountId); // go again
+                            }
+                            gonnaquit.ResignFirstResponder ();
+                        };
+                    }
+                    ;
+                };
             }
         }
 
@@ -599,7 +619,7 @@ namespace NachoClient.iOS
         {
             hasFirstSyncCompleted = LoginHelpers.HasFirstSyncCompleted (accountId);
             if (hasFirstSyncCompleted == false) {
-                Log.Info (Log.LOG_LIFECYCLE, "CertAskReqCallback Called");
+                Log.Info (Log.LOG_UI, "CertAskReqCallback Called for account: {0}", accountId);
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                     Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Error_CertAskReqCallback),
                     Account = ConstMcAccount.NotAccountSpecific,
@@ -611,7 +631,7 @@ namespace NachoClient.iOS
         }
 
         /* BADGE & NOTIFICATION LOGIC HERE.
-         * - OnActivated clears ALL notifications an the badge.
+         * - OnActivated clears ALL notifications and the badge.
          * - When we are not in the active state, and we get an indication of a new, hot, and unread email message:
          *   - we create a local notification for that message.
          *   - we set the badge number to the count of all new, hot, and unread email messages that have arrived 
@@ -619,6 +639,7 @@ namespace NachoClient.iOS
          * NOTE: This code will need to get a little smarter when we are doing many types of notification.
          */
         static NSString NoteKey = new NSString ("McEmailMessage.Id");
+        static NSString EventKey = new NSString ("NotifiOS.handle");
 
         private bool BadgeNotifAllowed = false;
 
@@ -627,7 +648,6 @@ namespace NachoClient.iOS
             UIApplication.SharedApplication.ApplicationIconBadgeNumber = 0;
             BadgeNotifAllowed = false;
             Log.Info (Log.LOG_UI, "BadgeNotifClear: exit");
-
         }
 
         private void BadgeNotifGoInactive ()
@@ -721,6 +741,29 @@ namespace NachoClient.iOS
         public override string UserNameForCrashManager (BITCrashManager crashManager)
         {
             return UserName ();
+        }
+    }
+
+    public class HockeyAppAuthenticatorDelegate : BITAuthenticatorDelegate
+    {
+        public override void WillShowAuthenticationController (BITAuthenticator authenticator, UIViewController viewController)
+        {
+            this.BeginInvokeOnMainThread (() => {
+                bool done = false;
+
+                UIAlertView av = new UIAlertView ();
+                av.Title = "Authentication Required";
+                av.Message = "In order to run this Nacho Mail beta client, you must authenticate with HockeyApp. " +
+                "Please enter your HockeyApp credential in the next screen.";
+                av.AddButton ("Continue");
+                av.Clicked += (sender, buttonArgs) => {
+                    done = true;
+                };
+                av.Show ();
+                while (!done) {
+                    NSRunLoop.Current.RunUntil (NSDate.FromTimeIntervalSinceNow (0.5));
+                }
+            });
         }
     }
 }

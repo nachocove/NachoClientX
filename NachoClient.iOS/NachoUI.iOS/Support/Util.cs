@@ -494,6 +494,18 @@ namespace NachoClient
             });
         }
 
+        public static void PerformAction (string action, string number)
+        {
+            UIApplication.SharedApplication.OpenUrl (new Uri (String.Format ("{0}:{1}", action, number)));
+        }
+
+
+        public static void ComplainAbout (string complaintTitle, string complaintMessage)
+        {
+            UIAlertView alert = new UIAlertView (complaintTitle, complaintMessage, null, "OK", null);
+            alert.Show ();
+        }
+
         public static string NameToLetters (string name)
         {
             var Initials = "";
@@ -595,6 +607,64 @@ namespace NachoClient
             UIGraphics.EndImageContext ();
             return image;
 
+        }
+
+        public static string MakeAlertMessage (string title, uint alert)
+        {
+            var alertMessage = "";
+            if (1 == alert) {
+                alertMessage = title + " in a minute";
+            } else if (5 == alert || 15 == alert || 30 == alert) {
+                alertMessage = title + " in " + alert + " minutes";
+            } else if (60 == alert) {
+                alertMessage = title + " in an hour";
+            } else if (120 == alert) {
+                alertMessage = title + " in two hours";
+            } else if ((60 * 24) == alert) {
+                alertMessage = title + " in one day";
+            } else if ((60 * 48) == alert) {
+                alertMessage = title + " in two days";
+            } else if ((60 * 24 * 7) == alert) {
+                alertMessage = title + " in a week";
+            } else {
+                NcAssert.CaseError ();
+            }
+            return alertMessage;
+        }
+
+        public static string MakeCommaSeparatedList (List<string> stringList)
+        {
+
+            var endString = " and " + stringList [stringList.Count - 1];
+            stringList.RemoveAt (stringList.Count - 1);
+            var stringArray = stringList.ToArray ();
+            var commaSeparatedString = String.Join (", ", stringArray);
+            return commaSeparatedString + endString;
+
+        }
+
+        public static string AddOrdinalSuffix (int num)
+        {
+            if (num <= 0)
+                return num.ToString ();
+
+            switch (num % 100) {
+            case 11:
+            case 12:
+            case 13:
+                return num + "th";
+            }
+
+            switch (num % 10) {
+            case 1:
+                return num + "st";
+            case 2:
+                return num + "nd";
+            case 3:
+                return num + "rd";
+            default:
+                return num + "th";
+            }
         }
 
         #endregion

@@ -145,6 +145,7 @@ namespace NachoClient.iOS
             }
             var messageThread = messageThreads.GetEmailThread (indexPath.Row);
             owner.MessageThreadSelected (messageThread);
+            DumpInfo (messageThread);
         }
 
         protected const int USER_IMAGE_TAG = 99101;
@@ -192,10 +193,11 @@ namespace NachoClient.iOS
                 return;
             }
 
-            userCheckmarkView.Hidden = false;
             if (MultiSelect.Contains (threadIndex)) {
+                userCheckmarkView.Hidden = false;
                 userCheckmarkView.Image = UIImage.FromBundle ("inbox-multi-select-active");
             } else {
+                userCheckmarkView.Hidden = true;
                 userCheckmarkView.Image = UIImage.FromBundle ("inbox-multi-select-default");
             }
         }
@@ -319,7 +321,7 @@ namespace NachoClient.iOS
                 // User chili view
                 var chiliY = 72;
                 var userChiliView = new UIImageView (new RectangleF (23, chiliY, 24, 24));
-                userChiliView.Image = UIImage.FromBundle ("inbox-icn-chilli");
+                userChiliView.Image = UIImage.FromBundle ("icn-red-chili-small");
                 userChiliView.Tag = USER_CHILI_TAG;
                 cell.ContentView.AddSubview (userChiliView);
 
@@ -502,7 +504,6 @@ namespace NachoClient.iOS
                 var rawPreview = message.GetBodyPreviewOrEmpty ();
                 var cookedPreview = System.Text.RegularExpressions.Regex.Replace (rawPreview, @"\s+", " ");
                 previewLabelView.AttributedText = new NSAttributedString (cookedPreview);
-                ;
             }
 
             // Reminder image view and label
@@ -512,7 +513,7 @@ namespace NachoClient.iOS
                 reminderImageView.Hidden = false;
                 reminderLabelView.Hidden = false;
                 if (message.IsDeferred ()) {
-                    reminderLabelView.Text = String.Format ("Message hidden until {0}", message.FlagDeferUntil);
+                    reminderLabelView.Text = String.Format ("Message hidden until {0}", message.FlagStartDate);
                 } else if (message.IsOverdue ()) {
                     reminderLabelView.Text = String.Format ("Response was due {0}", message.FlagDueAsUtc ());
                 } else {
@@ -781,6 +782,11 @@ namespace NachoClient.iOS
             }
         }
 
+        protected void DumpInfo(McEmailMessageThread messageThread)
+        {
+            var message = messageThread.SingleMessageSpecialCase ();
+            Log.Debug (Log.LOG_UI, "message Id={0} bodyId={1} Score={2}", message.Id, message.BodyId, message.Score);
+        }
     }
 }
 

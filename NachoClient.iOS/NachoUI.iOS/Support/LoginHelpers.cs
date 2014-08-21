@@ -15,7 +15,6 @@ namespace NachoClient.iOS
         {
         }
 
-
         //Sets the status of the sync bit for given accountId
         static public void SetFirstSyncCompleted (int accountId, bool toWhat)
         {
@@ -29,7 +28,7 @@ namespace NachoClient.iOS
         static public bool HasFirstSyncCompleted(int accountId)
         {
             NcAssert.True (GetCurrentAccountId() == accountId);
-            return McMutables.GetBool("hasSyncedFolders", accountId.ToString ());
+            return McMutables.GetOrCreateBool("hasSyncedFolders", accountId.ToString (), false);
         }
 
         //Sets the status of the tutorial bit for given accountId
@@ -45,7 +44,7 @@ namespace NachoClient.iOS
         static public bool HasViewedTutorial(int accountId)
         {
             NcAssert.True (GetCurrentAccountId() == accountId);
-            return McMutables.GetBool("hasViewedTutorial", accountId.ToString ());
+            return McMutables.GetOrCreateBool("hasViewedTutorial", accountId.ToString (), false);
         }
 
         //Sets the status of the creds bit for given accountId
@@ -61,34 +60,7 @@ namespace NachoClient.iOS
         static public bool HasProvidedCreds(int accountId)
         {
             NcAssert.True (GetCurrentAccountId() == accountId);
-            return McMutables.GetBool("hasProvidedCreds", accountId.ToString ());
-        }
-//        //Sets the status of the creds bit for given accountId
-//        static public void SetCertificateBit (int accountId, bool toWhat)
-//        {
-//            McMutables.SetBool ("hasAcceptedCertificate", accountId.ToString (), toWhat);
-//        }
-//
-//        //Gets the status of the creds bit for given accountId
-//        //True if they have provided creds at least once
-//        //False if not
-//        static public bool GetCertificateBit(int accountId)
-//        {
-//            return McMutables.GetBool("hasAcceptedCertificate", accountId.ToString ());
-//        }
-
-        //Sets the status of the creds bit for given accountId
-        static public void IsBeRunning (int accountId, bool toWhat)
-        {
-            McMutables.SetBool ("isBeRunning", accountId.ToString (), toWhat);
-        }
-
-        //Gets the status of the creds bit for given accountId
-        //True if they have provided creds at least once
-        //False if not
-        static public bool IsBeRunning(int accountId)
-        {
-            return McMutables.GetBool("isBeRunning", accountId.ToString ());
+            return McMutables.GetOrCreateBool("hasProvidedCreds", accountId.ToString (), false);
         }
 
         static public int GetCurrentAccountId()

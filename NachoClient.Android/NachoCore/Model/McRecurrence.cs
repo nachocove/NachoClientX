@@ -22,6 +22,9 @@ namespace NachoCore.Model
         [Indexed]
         public int TaskId { get; set; }
 
+        [Indexed]
+        public int MeetingRequestId { get; set; }
+
         ///The following fields define the
         /// Recurrence pattern of an event.
         /// Required for Task.
@@ -30,8 +33,12 @@ namespace NachoCore.Model
         /// Maximum is 999
         public int Occurences { get; set; }
 
+        public bool OccurencesIsSet { get; set; }
+
         /// Interval between recurrences, range is 0 to 999
         public int Interval { get; set; }
+
+        public bool IntervalIsSet { get; set; }
 
         /// The week of the month or the day of the month for the recurrence
         /// WeekOfMonth must be between 1 and 5; 5 is the last week of the month.
@@ -60,13 +67,38 @@ namespace NachoCore.Model
         /// Disambiguates recurrences across localities
         public int FirstDayOfWeek { get; set; }
 
+        public bool FirstDayOfWeekIsSet { get; set; }
+
         /// Required for Task.
         public DateTime Start { get; set; }
-
 
         public static McRecurrence QueryByTaskId (int taskId)
         {
             return NcModel.Instance.Db.Table<McRecurrence> ().Where (x => x.TaskId == taskId).SingleOrDefault ();
+        }
+
+        public override int Insert ()
+        {
+            if (0 != CalendarId) {
+                Utils.NcAssert.True (0 == MeetingRequestId);
+            }
+            if (0 != MeetingRequestId) {
+                Utils.NcAssert.True (0 == CalendarId);
+            }
+            Utils.NcAssert.True ((0 != CalendarId) || (0 != MeetingRequestId) || (0 != TaskId));
+            return base.Insert ();
+        }
+
+        public override int Update ()
+        {
+            if (0 != CalendarId) {
+                Utils.NcAssert.True (0 == MeetingRequestId);
+            }
+            if (0 != MeetingRequestId) {
+                Utils.NcAssert.True (0 == CalendarId);
+            }
+            Utils.NcAssert.True ((0 != CalendarId) || (0 != MeetingRequestId) || (0 != TaskId));
+            return base.Update ();
         }
     }
 }

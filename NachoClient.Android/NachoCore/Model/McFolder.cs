@@ -52,6 +52,7 @@ namespace NachoCore.Model
         public const string ClientOwned_Gleaned = "GLEANED";
         public const string ClientOwned_LostAndFound = "LAF";
         public const string ClientOwned_DeviceContacts = "DEVCONTACTS";
+        public const string ClientOwned_DeviceCalendars = "DEVCALENDARS";
 
         public override string ToString ()
         {
@@ -122,6 +123,12 @@ namespace NachoCore.Model
         {
             var account = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Device).Single ();
             return McFolder.GetClientOwnedFolder (account.Id, ClientOwned_DeviceContacts);
+        }
+
+        public static McFolder GetDeviceCalendarsFolder ()
+        {
+            var account = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Device).Single ();
+            return McFolder.GetClientOwnedFolder (account.Id, ClientOwned_DeviceCalendars);
         }
 
         public static McFolder GetOutboxFolder (int accountId)

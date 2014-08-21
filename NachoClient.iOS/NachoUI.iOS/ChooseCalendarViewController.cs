@@ -33,7 +33,6 @@ namespace NachoClient.iOS
         public void SetCalendars (NachoFolders calendars)
         {
             this.Calendars = calendars;
-
         }
 
         public int GetCalIndex ()
@@ -49,8 +48,6 @@ namespace NachoClient.iOS
             ConfigureCalendarView ();
 
         }
-
-
             
         protected void CreateCalendarView ()
         {
@@ -65,7 +62,6 @@ namespace NachoClient.iOS
                 i++;
             }
 
-
             //Content View
             contentView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, (LINE_OFFSET * 3) + (CELL_HEIGHT * (Calendars.Count () + 1)));
             contentView.BackgroundColor = A.Color_NachoNowBackground;
@@ -74,13 +70,11 @@ namespace NachoClient.iOS
             scrollView.BackgroundColor = A.Color_NachoNowBackground;
             scrollView.ContentSize = new SizeF (SCREEN_WIDTH, (LINE_OFFSET * 3) + (CELL_HEIGHT * (Calendars.Count () + 1)));
 
-
         }
 
         protected void ConfigureCalendarView ()
         {
             contentView.ViewWithTag (100 + selectedCalIndex).ViewWithTag (200 + selectedCalIndex).Hidden = false;
-
         }
 
         public void AddCalLine (float offset, float yVal, float width, UIColor color)
@@ -89,8 +83,6 @@ namespace NachoClient.iOS
             lineUIView.BackgroundColor = color;
             contentView.AddSubview (lineUIView);
         }
-
-
 
         public void MakeCalCheckCell (int tag, string label, float X, float Y, float Width, float Height)
         {
@@ -129,7 +121,7 @@ namespace NachoClient.iOS
         {
             int i = 0;
             while (i < Calendars.Count()) {
-                contentView.ViewWithTag (101 + i).ViewWithTag (201 + i).Hidden = true;
+                contentView.ViewWithTag (100 + i).ViewWithTag (200 + i).Hidden = true;
                 i++;
             }
         }

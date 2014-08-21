@@ -20,14 +20,15 @@ namespace NachoClient.iOS
     public partial class ContactChooserViewController : NcUIViewController, IUITableViewDelegate, IUITextFieldDelegate, INachoContactChooser
     {
         // Interface
+        protected McAccount account;
         protected NcEmailAddress address;
         protected NachoContactType contactType;
         protected INachoContactChooserDelegate owner;
         // Internal state
         List<McContactEmailAddressAttribute> searchResults;
-       
+        // ContactTableViewSource is used solely to create & config a cell
         ContactsTableViewSource contactTableViewSource;
-        // Just used for ConfigureCell
+        string contactSearchToken;
 
         protected const string ContactCellReuseIdentifier = "ContactCell";
 
@@ -52,6 +53,8 @@ namespace NachoClient.iOS
 
             NcAssert.True (null != owner);
             NcAssert.True (null != address);
+
+            account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
 
             contactTableViewSource = new ContactsTableViewSource ();
 
@@ -93,6 +96,7 @@ namespace NachoClient.iOS
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
+            CancelSearchIfActive ();
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
@@ -154,9 +158,12 @@ namespace NachoClient.iOS
                 return;
             }
             new System.Threading.Thread (new System.Threading.ThreadStart (() => {
-                NachoClient.Util.HighPriority ();
+//                if (String.IsNullOrEmpty (contactSearchToken)) {
+//                    contactSearchToken = BackEnd.Instance.StartSearchContactsReq (account.Id, forSearchString, null);
+//                } else {
+//                    BackEnd.Instance.SearchContactsReq (account.Id, forSearchString, null, contactSearchToken);
+//                }
                 var results = McContact.SearchAllContactItems (forSearchString);
-                NachoClient.Util.RegularPriority ();
                 InvokeOnMainThread (() => {
                     searchResults = results;
                     NachoClient.Util.HighPriority ();
@@ -201,6 +208,7 @@ namespace NachoClient.iOS
             {
                 return Owner.contactTableViewSource.GetHeightForRow (tableView, indexPath);
             }
+
             public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
             {
                 var cell = Owner.contactTableViewSource.CreateCell ();
@@ -214,6 +222,8 @@ namespace NachoClient.iOS
                 McContact contact;
 
                 contact = Owner.searchResults [indexPath.Row].GetContact ();
+
+                Owner.CancelSearchIfActive ();
 
                 // TODO: require phone numbers in contact chooser
                 NcAssert.True (0 == (Owner.contactType & NachoContactType.PhoneNumberRequired));
@@ -245,6 +255,14 @@ namespace NachoClient.iOS
                 }
             };
             alert.Show ();
+        }
+
+        protected void CancelSearchIfActive ()
+        {
+            if (!String.IsNullOrEmpty (contactSearchToken)) {
+                BackEnd.Instance.Cancel (account.Id, contactSearchToken);
+                contactSearchToken = null;
+            }
         }
     }
 }

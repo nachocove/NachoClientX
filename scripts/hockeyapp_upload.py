@@ -29,7 +29,7 @@ class HockeyappUploadIos(HockeyappUpload):
         # CFBundleVersion -> HockeyApp "build"
         self.version = None
 
-    def upload(self, target_dir, note=None):
+    def upload(self, target_dir, ipa_file=None, note=None):
         self.app_folder = os.path.join(target_dir, 'NachoClientiOS.app')
         self.dsym_folder = os.path.join(target_dir, 'NachoClientiOS.app.dSYM')
 
@@ -50,8 +50,12 @@ class HockeyappUploadIos(HockeyappUpload):
 
         self.find_version()
 
-        print '\nUploading zipped dSYM file...'
-        self.version_obj.update(zip_file, note)
+        if ipa_file is None:
+            print '\nUploading zipped dSYM file...'
+        else:
+            print '\nUploading zipped dSYM and ipa files...'
+            ipa_file = os.path.join(target_dir, ipa_file)
+        self.version_obj.update(zip_file, ipa_file, note)
 
     def copy_attributes(self):
         # Read Info.plist
@@ -109,9 +113,12 @@ def main():
         exit(0)
 
     if options.ios:
+        ipa_file = None
         if 'VERSION' in os.environ or 'BUILD' in os.environ:
             api_token = '1c08642c07d244f7a0600ef5654e0dad'
             app_id = '44dae4a6ae9134930c64c623d5023ac4'
+            if 'BUILD' in os.environ:
+                ipa_file = 'NachoClientiOS-%s.ipa' % os.environ['BUILD']
         else:
             api_token = 'dbccf0190d5b410e8f43ef2b5e7d6b43'
             app_id = 'b22a505d784d64901ab1abde0728df67'
@@ -119,7 +126,7 @@ def main():
         hockey_app = HockeyappUploadIos(api_token=api_token, app_id=app_id)
     else:
         raise NotImplementedError('Android is not yet supported')
-    hockey_app.upload(options.target_dir)
+    hockey_app.upload(target_dir=options.target_dir, ipa_file=ipa_file)
 
 
 if __name__ == '__main__':

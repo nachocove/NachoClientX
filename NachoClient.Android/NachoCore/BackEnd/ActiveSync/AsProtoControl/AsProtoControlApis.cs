@@ -320,8 +320,8 @@ namespace NachoCore.ActiveSync
             // Set the Flag info in the DB item.
             emailMessage.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Active;
             emailMessage.FlagType = flagType;
-            emailMessage.FlagDeferUntil = start;
-            emailMessage.FlagUtcDeferUntil = utcStart;
+            emailMessage.FlagStartDate = start;
+            emailMessage.FlagUtcStartDate = utcStart;
             emailMessage.FlagDue = due;
             emailMessage.FlagUtcDue = utcDue;
             emailMessage.Update ();

@@ -86,10 +86,9 @@
     </CustomCommands>
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
-    <CodesignProvision>A5A410CF-93E6-4AC9-979B-27C42C717007</CodesignProvision>
+    <CodesignProvision>6bae56aa-3715-4d05-84ad-8dfb2cc73d20</CodesignProvision>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
-    <DebugType>full</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\iPhone\Release</OutputPath>
     <ErrorReport>prompt</ErrorReport>
@@ -114,8 +113,7 @@
     </CustomCommands>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Ad-Hoc|iPhone' ">
-    <DebugType>full</DebugType>
-    <Optimize>true</Optimize>
+    <Optimize>false</Optimize>
     <OutputPath>bin\iPhone\Ad-Hoc</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -138,6 +136,9 @@
         <Command type="AfterBuild" command="${SolutionDir}/scripts/update_build_number.sh" workingdir="${ProjectDir}" />
       </CustomCommands>
     </CustomCommands>
+    <DebugSymbols>true</DebugSymbols>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <MtouchDebug>true</MtouchDebug>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'AppStore|iPhone' ">
     <DebugType>full</DebugType>
@@ -190,6 +191,9 @@
       <HintPath>HockeyApp\hockeyappios-3.5.5\lib\ios\HockeyApp.iOS.dll</HintPath>
     </Reference>
     <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\Json.NET\json.net-4.5.11\lib\ios\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System.Json" />
   </ItemGroup>
   <ItemGroup>
@@ -288,10 +292,6 @@
     <Compile Include="NachoUI.iOS\ContactViewController.cs" />
     <Compile Include="NachoUI.iOS\ContactViewController.designer.cs">
       <DependentUpon>ContactViewController.cs</DependentUpon>
-    </Compile>
-    <Compile Include="NachoUI.iOS\CalendarItemViewController.cs" />
-    <Compile Include="NachoUI.iOS\CalendarItemViewController.designer.cs">
-      <DependentUpon>CalendarItemViewController.cs</DependentUpon>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McAccount.cs">
       <Link>NachoCore\Model\McAccount.cs</Link>
@@ -1096,6 +1096,50 @@
     <Compile Include="NachoUI.iOS\EventAttachmentViewController.designer.cs">
       <DependentUpon>EventAttachmentViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\WaitingView.cs" />
+    <Compile Include="NachoUI.iOS\SupportMessageViewController.cs" />
+    <Compile Include="NachoUI.iOS\SupportMessageViewController.designer.cs">
+      <DependentUpon>SupportMessageViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\AttachmentTableViewSource.cs" />
+    <Compile Include="NachoUI.iOS\Support\iAttachmentTableViewSourceDelegate.cs" />
+    <Compile Include="NachoUI.iOS\Interfaces\INachoAttachmentListChooser.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McMeetingRequest.cs">
+      <Link>NachoCore\Model\McMeetingRequest.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\GeneralSettingsViewController.cs" />
+    <Compile Include="NachoUI.iOS\GeneralSettingsViewController.designer.cs">
+      <DependentUpon>GeneralSettingsViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\SettingsLegalViewController.cs" />
+    <Compile Include="NachoUI.iOS\SettingsLegalViewController.designer.cs">
+      <DependentUpon>SettingsLegalViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcBrainControl.cs">
+      <Link>NachoCore\Brain\NcBrainControl.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\CredentialsAskViewController.cs" />
+    <Compile Include="NachoUI.iOS\CredentialsAskViewController.designer.cs">
+      <DependentUpon>CredentialsAskViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEvent.cs">
+      <Link>NachoCore\Model\McEvent.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoEvents.cs">
+      <Link>NachoCore\Adapters\NachoEvents.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcEventsCommon.cs">
+      <Link>NachoCore\Adapters\NcEventsCommon.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\INcEventProvider.cs">
+      <Link>NachoCore\Adapters\INcEventProvider.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcEventManager.cs">
+      <Link>NachoCore\Adapters\NcEventManager.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\UserInteractionEmailMessages.cs">
+      <Link>NachoCore\Adapters\UserInteractionEmailMessages.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -1345,8 +1389,6 @@
     <BundleResource Include="Resources\icn-contact-quickemail%402x.png" />
     <BundleResource Include="Resources\icn-file-complete%402x.png" />
     <BundleResource Include="Resources\icn-file-complete.png" />
-    <BundleResource Include="Resources\icn-file-download%402x.png" />
-    <BundleResource Include="Resources\icn-file-download.png" />
     <BundleResource Include="Resources\icn-quick-message.png" />
     <BundleResource Include="Resources\icn-quick-message%402x.png" />
     <BundleResource Include="Resources\icn-sms.png" />
@@ -1389,6 +1431,27 @@
     <BundleResource Include="Content\Slide1-9B.png" />
     <BundleResource Include="Content\Slide1-9C.png" />
     <BundleResource Include="Content\Slide1-1A.png" />
+    <BundleResource Include="Resources\downloadline%402x.png" />
+    <BundleResource Include="Resources\downloadline.png" />
+    <BundleResource Include="Resources\downloadicon%402x.png" />
+    <BundleResource Include="Resources\downloadicon.png" />
+    <BundleResource Include="Resources\downloadcircle%402x.png" />
+    <BundleResource Include="Resources\downloadcircle.png" />
+    <BundleResource Include="Resources\downloadarrow%402x.png" />
+    <BundleResource Include="Resources\downloadarrow.png" />
+    <BundleResource Include="Resources\ic_action_group.png" />
+    <BundleResource Include="Resources\icn-inbox.png" />
+    <BundleResource Include="Resources\icn-contact-vip.png" />
+    <BundleResource Include="Resources\icn-contact-vip%402x.png" />
+    <BundleResource Include="Resources\icn-vip-selected.png" />
+    <BundleResource Include="Resources\icn-vip-selected%402x.png" />
+    <BundleResource Include="Resources\icn-vip.png" />
+    <BundleResource Include="Resources\icn-vip%402x.png" />
+    <BundleResource Include="Resources\icn-quick-message-pressed.png" />
+    <BundleResource Include="Resources\icn-red-chili-large.png" />
+    <BundleResource Include="Resources\icn-red-chili-large%402x.png" />
+    <BundleResource Include="Resources\icn-red-chili-small.png" />
+    <BundleResource Include="Resources\icn-red-chili-small%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

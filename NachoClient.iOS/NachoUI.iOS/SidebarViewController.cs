@@ -38,13 +38,14 @@ namespace NachoClient.iOS
         const string SidebarToHomeSegueId = "SidebarToHome";
         const string SidebarToAccountsSegueId = "SidebarToAccounts";
         const string SidebarToSettingsSegueId = "SidebarToSettings";
+        const string SidebarToGeneralSettingsSegueId = "SidebarToGeneralSettings";
         const string SidebarToSupportSegueId = "SidebarToSupport";
         const string SidebarToFilesSegueId = "SidebarToFiles";
         const string SidebarToTasksSegueId = "SidebarToTasks";
         const string SidebarToNewEmailSegueId = "SidebarToNewEmail";
-        const string SidebarToNewEventSegueId = "SidebarToNewEvent";
-        const string SidebarToEventSegueId = "SidebarToEvent";
+        const string SidebarToNewEventSegueId = "SidebarToEditEvent";
         const string SidebarToHotListSegueId = "SidebarToHotList";
+
 
 
         protected class ButtonInfo
@@ -100,20 +101,19 @@ namespace NachoClient.iOS
             View.AddSubview (contentView);
 
             List<ButtonInfo> buttonInfoList = new List<ButtonInfo> (new ButtonInfo[] {
-                new ButtonInfo ("Inbox", "menu-contacts", SidebarToMessagesSegueId),
+                new ButtonInfo ("Inbox", "menu-inbox", SidebarToMessagesSegueId),
                 new ButtonInfo ("Calendar", "menu-calendar", SidebarToCalendarSegueId),
                 new ButtonInfo ("Contacts", "menu-contacts", SidebarToContactsSegueId),
                 new ButtonInfo (null, null, null),
                 new ButtonInfo ("Hot List", "menu-chili", SidebarToHotListSegueId),
                 new ButtonInfo ("New Email", "menu-new-email", SidebarToNewEmailSegueId),
-//                new ButtonInfo ("New Event", "menu-new-event", SidebarToNewEventSegueId),
-                new ButtonInfo ("New Event", "menu-new-event", SidebarToEventSegueId),
+                new ButtonInfo ("New Event", "menu-new-event", SidebarToNewEventSegueId),
                 new ButtonInfo (null, null, null),
                 new ButtonInfo ("Deferred", "menu-deferred", SidebarToDeferredMessagesSegueId),
                 new ButtonInfo ("Files", "menu-attachments", SidebarToFilesSegueId),
                 new ButtonInfo ("Folders", "menu-folders", SidebarToFoldersSegueId),
                 new ButtonInfo (null, null, null),
-                new ButtonInfo ("Settings", "menu-settings", SidebarToSettingsSegueId),
+                new ButtonInfo ("Settings", "menu-settings", SidebarToGeneralSettingsSegueId),
                 null,
                 new ButtonInfo ("Support", "menu-help", SidebarToSupportSegueId),
             });
@@ -219,14 +219,7 @@ namespace NachoClient.iOS
                 break;
             case SidebarToNewEventSegueId:
                 {
-                    var vc = (CalendarItemViewController)destViewController;
-                    vc.SetCalendarItem (null, CalendarItemEditorAction.create);
-                    vc.showMenu = true;
-                }
-                break;
-            case SidebarToEventSegueId:
-                {
-                    var vc = (EventViewController)destViewController;
+                    var vc = (EditEventViewController)destViewController;
                     vc.SetCalendarItem (null, CalendarItemEditorAction.create);
                     vc.showMenu = true;
                 }

@@ -2,10 +2,13 @@
 //
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using NachoCore.Model;
+using Newtonsoft.Json;
+using System.Json;
 
 namespace NachoCore.Utils
 {
@@ -22,12 +25,14 @@ namespace NachoCore.Utils
         COUNTER,
         CAPTURE,
         UI,
+        SUPPORT,
         MAX_TELEMETRY_EVENT_TYPE
     };
 
     [Serializable]
     public class TelemetryEvent : NcQueueElement
     {
+        // iOS UI object monitoring strings
         public const string UIBUTTON = "UIButton";
         public const string UISEGMENTEDCONTROL = "UISegmentedControl";
         public const string UISWITCH = "UISwitch";
@@ -35,6 +40,10 @@ namespace NachoCore.Utils
         public const string UITEXTFIELD = "UITextField";
         public const string UIPAGECONTROL = "UIPageControl";
         public const string UIVIEWCONTROLER = "UIViewController";
+        public const string UIALERTVIEW = "UIAlertView";
+        public const string UIACTIONSHEET = "UIActionSheet";
+        public const string UITAPGESTURERECOGNIZER = "UITapGestureRecognizer";
+        public const string UITABLEVIEW = "UITableView";
 
         public const string UIVIEW_WILLAPPEAR = "WILL_APPEAR";
         public const string UIVIEW_DIDAPPEAR = "DID_APPEAR";
@@ -246,6 +255,17 @@ namespace NachoCore.Utils
             }
         }
 
+        private string _Support;
+
+        public string Support {
+            get {
+                return _Support;
+            }
+            set {
+                _Support = value;
+            }
+        }
+
         public static bool IsLogEvent (TelemetryEventType type)
         {
             return ((TelemetryEventType.ERROR == type) ||
@@ -275,6 +295,11 @@ namespace NachoCore.Utils
             return (TelemetryEventType.UI == type);
         }
 
+        public static bool IsSupportEvent (TelemetryEventType type)
+        {
+            return (TelemetryEventType.SUPPORT == type);
+        }
+
         public bool IsLogEvent ()
         {
             return IsLogEvent (Type);
@@ -300,6 +325,11 @@ namespace NachoCore.Utils
             return IsUiEvent (Type);
         }
 
+        public bool IsSupportEvent ()
+        {
+            return IsSupportEvent (Type);
+        }
+
         public TelemetryEvent (TelemetryEventType type)
         {
             Timestamp = DateTime.UtcNow;
@@ -315,6 +345,11 @@ namespace NachoCore.Utils
             _Min = 0;
             _Max = 0;
             _StdDev = 0;
+            _UiType = null;
+            _UiObject = null;
+            _UiString = null;
+            _UiLong = 0;
+            _Support = null;
         }
 
         public uint GetSize ()
@@ -325,7 +360,7 @@ namespace NachoCore.Utils
 
     public class Telemetry
     {
-        private static bool ENABLED = true;
+        public static bool ENABLED = true;
         private static bool PERSISTED = true;
         // Parse has a maximum data size of 128K for PFObject. But the
         // exact definition of data size of an object with multiple
@@ -563,6 +598,37 @@ namespace NachoCore.Utils
             RecordUiWithString (TelemetryEvent.UIVIEWCONTROLER, uiObject, state);
         }
 
+        public static void RecordUiAlertView (string uiObject, long index)
+        {
+            RecordUiWithLong (TelemetryEvent.UIALERTVIEW, uiObject, index);
+        }
+
+        public static void RecordUiActionSheet (string uiObject, long index)
+        {
+            RecordUiWithLong (TelemetryEvent.UIACTIONSHEET, uiObject, index);
+        }
+
+        public static void RecordUiTapGestureRecognizer (string uiObject, string touches)
+        {
+            RecordUiWithString (TelemetryEvent.UITAPGESTURERECOGNIZER, uiObject, touches);
+        }
+
+        public static void RecordUiTableView (string uiObject, string operation)
+        {
+            RecordUiWithString (TelemetryEvent.UITABLEVIEW, uiObject, operation);
+        }
+
+        public static void RecordSupport (Dictionary<string, string> info)
+        {
+            if (!ENABLED) {
+                return;
+            }
+
+            TelemetryEvent tEvent = new TelemetryEvent (TelemetryEventType.SUPPORT);
+            tEvent.Support = JsonConvert.SerializeObject (info);
+            RecordRawEvent (tEvent);
+        }
+
         public void Start<T> () where T : ITelemetryBE, new()
         {
             if (!ENABLED) {
@@ -577,7 +643,7 @@ namespace NachoCore.Utils
         private void Process<T> () where T : ITelemetryBE, new()
         {
             BackEnd = new T ();
-            Counters [0].ReportPeriod = 60 * 60; // report once per day
+            Counters [0].ReportPeriod = 5 * 60; // report once every 5 min
 
             // Capture the transaction time to telemetry server
             const string CAPTURE_NAME = "Telemetry.SendEvent";

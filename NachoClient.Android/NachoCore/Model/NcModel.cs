@@ -119,6 +119,7 @@ namespace NachoCore.Model
             Db.CreateTable<McEmailMessageCategory> ();
             Db.CreateTable<McEmailMessageScoreSyncInfo> ();
             Db.CreateTable<McEmailMessageDependency> ();
+            Db.CreateTable<McMeetingRequest> ();
             Db.CreateTable<McAttachment> ();
             Db.CreateTable<McContact> ();
             Db.CreateTable<McContactDateAttribute> ();
@@ -137,6 +138,7 @@ namespace NachoCore.Model
             Db.CreateTable<McCalendarCategory> ();
             Db.CreateTable<McRecurrence> ();
             Db.CreateTable<McTimeZone> ();
+            Db.CreateTable<McEvent> ();
             Db.CreateTable<McTask> ();
             Db.CreateTable<McBody> ();
             Db.CreateTable<McDocument> ();
@@ -199,11 +201,14 @@ namespace NachoCore.Model
         }
 
         private NcTimer CheckPointTimer;
+
         private class CheckpointResult
         {
             // Note: these property names can't be changed - they are hard-coded in the SQLite C code.
             public int busy { set; get; }
+
             public int log { set; get; }
+
             public int checkpointed { set; get; }
         }
 

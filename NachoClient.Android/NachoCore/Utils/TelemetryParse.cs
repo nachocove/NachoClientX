@@ -57,6 +57,8 @@ namespace NachoCore.Utils
 
         public void AddString (string key, string value)
         {
+            NcAssert.NotNull (key);
+            NcAssert.NotNull (value);
             Add (SafeNSString (key), SafeNSString(value));
         }
 
@@ -207,6 +209,9 @@ namespace NachoCore.Utils
                     dict.AddString ("ui_string", tEvent.UiString);
                     break;
                 }
+            } else if (tEvent.IsSupportEvent ()) {
+                dict.AddString ("event_type", "SUPPORT");
+                dict.AddString ("support", tEvent.Support);
             } else {
                 NcAssert.True (false);
             }

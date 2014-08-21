@@ -732,6 +732,12 @@ namespace Test.iOS
                                     PostAutodEvent ((uint)AsAutodiscoverCommand.SharedEvt.E.SrvCertY, "TEST-ASPCDCOY");
                                 },
                                 State = (uint)St.Start },
+                            new Trans {
+                                Event = (uint)AsProtoControl.CtlEvt.E.GetServConf,
+                                Act = delegate () {
+                                    Assert.Fail ("Received an unexpected command in top level state machine");
+                                },
+                                State = (uint)St.Start },
                         }
                     },
 

@@ -60,20 +60,19 @@ namespace NachoCore.ActiveSync
                 case (uint)Lst.ProvW:
                 case (uint)Lst.SettingsW:
                 case (uint)Lst.FSyncW:
-                    return BackEndAutoDStateEnum.PostAutoDPreFsync;
-
-                    // FSync2W can only happen AFTER 1st FSync has been done.
                 case (uint)Lst.FSync2W: 
                 case (uint)Lst.Pick:
                 case (uint)Lst.SyncW:
                 case (uint)Lst.PingW:
                 case (uint)Lst.QOpW:
                 case (uint)Lst.FetchW:
-                    return BackEndAutoDStateEnum.PostAutoDPostFSync;
+                    return (ProtocolState.HasSyncedInbox) ? 
+                        BackEndAutoDStateEnum.PostAutoDPostInboxSync : 
+                        BackEndAutoDStateEnum.PostAutoDPreInboxSync;
 
                 default:
                     NcAssert.CaseError (string.Format ("Unhandled state {0}", Sm.State));
-                    return BackEndAutoDStateEnum.PostAutoDPostFSync;
+                    return BackEndAutoDStateEnum.PostAutoDPostInboxSync;
                 }
             }
         }
