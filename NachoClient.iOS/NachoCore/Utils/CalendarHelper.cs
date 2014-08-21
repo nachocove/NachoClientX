@@ -699,9 +699,9 @@ namespace NachoCore.Utils
             }
         }
 
-        protected static bool IsDayInDayOfWeek(System.DayOfWeek systemDOW, NcDayOfWeek ncDOW)
+        protected static bool IsDayInDayOfWeek (System.DayOfWeek systemDOW, NcDayOfWeek ncDOW)
         {
-            int shift = (int) systemDOW;
+            int shift = (int)systemDOW;
             NcAssert.True ((0 <= shift) && (6 >= shift));
             return (0 != ((1 << shift) & ((int)ncDOW)));
         }
@@ -712,7 +712,7 @@ namespace NachoCore.Utils
 
             // System.DayOfWeek 0..6
             // DayOfWeek 1,2,4,8,...
-            while(!IsDayInDayOfWeek(t.DayOfWeek, DayOfWeek)) {
+            while (!IsDayInDayOfWeek (t.DayOfWeek, DayOfWeek)) {
                 t = t.AddDays (1);
             }
 
@@ -846,6 +846,17 @@ namespace NachoCore.Utils
 //            }
         }
 
+        protected static void ExpandAllDayEvent (McCalendar c)
+        {
+            var eventStartTime = c.StartTime;
+            var eventEndTime = c.EndTime;
+
+            while (eventStartTime <= c.EndTime) {
+                CreateEventRecord (c.AccountId, eventStartTime, eventEndTime, c.Id);
+                eventStartTime = eventStartTime.AddDays (1);
+            }
+        }
+
         public static void ExpandRecurrences ()
         {
             // Debug
@@ -867,10 +878,14 @@ namespace NachoCore.Utils
             // Loop thru 'em, generating recurrences
             foreach (var calendarItem in list) {
                 // Just add entries that don't have recurrences
-                if (null == calendarItem.recurrences) {
+                if (0 == calendarItem.recurrences.Count) {
+                    if (calendarItem.AllDayEvent) {
+                        ExpandAllDayEvent (calendarItem);
+                    } else {
+                        CreateEventRecord (calendarItem.AccountId, calendarItem.StartTime, calendarItem.EndTime, calendarItem.Id);
+                    }
                     calendarItem.RecurrencesGeneratedUntil = DateTime.MaxValue;
                     calendarItem.Update ();
-                    CreateEventRecord (calendarItem.AccountId, calendarItem.StartTime, calendarItem.EndTime, calendarItem.Id);
                     continue;
                 }
                 var lastOneGeneratedAggregate = DateTime.MaxValue;
@@ -888,9 +903,9 @@ namespace NachoCore.Utils
             Log.Info (Log.LOG_CALENDAR, "Events in db: {0}", el.Count);
         }
 
-        protected static void CreateEventRecord(int accountId, DateTime startTime, DateTime endTime, int calendarId)
+        protected static void CreateEventRecord (int accountId, DateTime startTime, DateTime endTime, int calendarId)
         {
-            var exception = McException.QueryForExceptionId(calendarId, startTime);
+            var exception = McException.QueryForExceptionId (calendarId, startTime);
 
             if (null == exception) {
                 McEvent.Create (accountId, startTime, endTime, calendarId, 0);
