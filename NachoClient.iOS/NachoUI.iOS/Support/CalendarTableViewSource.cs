@@ -273,7 +273,8 @@ namespace NachoClient.iOS
                 subjectLabelView.Text = subject;
                 dotView.Frame = new RectangleF (30, 20, 9, 9);
             }
-            dotView.Image = Util.DrawCalDot (A.Color_CalDotBlue);
+            var size = new SizeF (10, 10);
+            dotView.Image = Util.DrawCalDot (A.Color_CalDotBlue, size);
             dotView.Hidden = false;
 
             // Duration label view

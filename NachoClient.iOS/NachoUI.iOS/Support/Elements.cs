@@ -60,7 +60,7 @@ namespace NachoClient.iOS
             this.FooterView = new UIView (new RectangleF (0.0f, 0.0f, 1.0f, 1.0f));
         }
 
-        public ThinSection(UIColor color) : this()
+        public ThinSection (UIColor color) : this ()
         {
             this.HeaderView.BackgroundColor = color;
             this.FooterView.BackgroundColor = color;
@@ -75,7 +75,7 @@ namespace NachoClient.iOS
             this.FooterView = new UIView (new RectangleF (0.0f, 0.0f, 1.0f, 1.0f));
         }
 
-        public SuperThinSection(UIColor color) : this()
+        public SuperThinSection (UIColor color) : this ()
         {
             this.HeaderView.BackgroundColor = color;
             this.FooterView.BackgroundColor = color;
@@ -86,7 +86,7 @@ namespace NachoClient.iOS
     {
         public LowerSection (string headerSize) : base (headerSize)
         {
-            this.HeaderView = new UIView (new RectangleF (0.0f, 0.0f, 1.0f, float.Parse(headerSize)));
+            this.HeaderView = new UIView (new RectangleF (0.0f, 0.0f, 1.0f, float.Parse (headerSize)));
             this.FooterView = new UIView (new RectangleF (0.0f, 0.0f, 1.0f, 1.0f));
         }
 
@@ -255,6 +255,7 @@ namespace NachoClient.iOS
     public class EntryElementWithIcon : EntryElement
     {
         protected UIImage icon { get; private set; }
+
         protected bool numericEntry { get; private set; }
 
         protected UITextField textField;
@@ -332,7 +333,7 @@ namespace NachoClient.iOS
 
         public override UITableViewCell GetCell (UITableView tv)
         {
-            UIImageView accessoryImage = new UIImageView(new RectangleF(0, 0, 24, 24));
+            UIImageView accessoryImage = new UIImageView (new RectangleF (0, 0, 24, 24));
             accessoryImage.Image = settingsIcon;
             var cell = base.GetCell (tv);
             cell.AccessoryView = accessoryImage;
@@ -621,6 +622,7 @@ namespace NachoClient.iOS
             inputText.TextColor = UIColor.Gray;
             inputText.Text = theDetail;
         }
+
         public override UITableViewCell GetCell (UITableView tv)
         {
             var cell = base.GetCell (tv);
@@ -640,7 +642,7 @@ namespace NachoClient.iOS
 
             return cell;
         }
-    }    
+    }
 
     public class SignatureEntryElement : StyledStringElement
     {
@@ -674,7 +676,7 @@ namespace NachoClient.iOS
 
             return cell;
         }
-    }  
+    }
 
     public class StyledMultilineElementWithIndent : StyledMultilineElement
     {
@@ -692,7 +694,7 @@ namespace NachoClient.iOS
         string theDetail;
         UITextView inputText;
 
-        public StyledMultiLineTextInput (string caption, string detail, UITextView inputText) : base(caption, detail, inputText.Frame.Height, false)
+        public StyledMultiLineTextInput (string caption, string detail, UITextView inputText) : base (caption, detail, inputText.Frame.Height, false)
         {
 
             this.theDetail = detail;
@@ -711,7 +713,7 @@ namespace NachoClient.iOS
                 }
             }
 
-            cell.Frame = new RectangleF (0,0,320,inputText.Frame.Height);
+            cell.Frame = new RectangleF (0, 0, 320, inputText.Frame.Height);
             tv.SeparatorColor = UIColor.White;
             inputText.Editable = true;
             inputText.Font = A.Font_AvenirNextMedium14;
@@ -745,7 +747,8 @@ namespace NachoClient.iOS
         {
             var cell = base.GetCell (tv);
             tv.SeparatorColor = A.Color_NachoSeparator;
-            cell.ImageView.Image = NachoClient.Util.DrawCalDot (color);
+            var size = new SizeF (10, 10);
+            cell.ImageView.Image = NachoClient.Util.DrawCalDot (color, size);
             cell.TextLabel.Font = A.Font_AvenirNextRegular14;
             cell.TintColor = A.Color_NachoBlue;
             return cell;
@@ -782,7 +785,7 @@ namespace NachoClient.iOS
             this.data = data;
         }
 
-        public static string SelectedData(RootElement root)
+        public static string SelectedData (RootElement root)
         {
             var section = root [0];
             var element = section [root.RadioSelected] as RadioElementWithData;

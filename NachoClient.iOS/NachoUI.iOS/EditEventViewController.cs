@@ -505,7 +505,7 @@ namespace NachoClient.iOS
                     endDateLabel.TextColor = A.Color_808080;
                 }
             };
-            startDivider = AddLineView (15, CELL_HEIGHT, SCREEN_WIDTH, separatorColor);
+            startDivider = Util.AddHorizontalLineView (15, CELL_HEIGHT, SCREEN_WIDTH, separatorColor);
             startDivider.Hidden = true;
             startView.AddSubview (startDivider);
 
@@ -574,7 +574,7 @@ namespace NachoClient.iOS
                 }
             };
 
-            endDivider = AddLineView (15, CELL_HEIGHT, SCREEN_WIDTH, separatorColor);
+            endDivider = Util.AddHorizontalLineView (15, CELL_HEIGHT, SCREEN_WIDTH, separatorColor);
             startDivider.Hidden = true;
             endView.AddSubview (endDivider);
 
@@ -630,7 +630,7 @@ namespace NachoClient.iOS
                 }
                 eventEditStarted = true;
             };
-            strikethrough = AddLineView (0, CELL_HEIGHT / 2, SCREEN_WIDTH, A.Color_NachoRed);
+            strikethrough = Util.AddHorizontalLineView (0, CELL_HEIGHT / 2, SCREEN_WIDTH, A.Color_NachoRed);
             strikethrough.Hidden = true;
             endView.AddSubview (strikethrough);
 
@@ -885,26 +885,26 @@ namespace NachoClient.iOS
                 deleteButton
             }); 
             //LO
-            line1 = AddLineView (0, LINE_OFFSET, SCREEN_WIDTH, separatorColor);
-            line2 = AddLineView (15, LINE_OFFSET + CELL_HEIGHT, SCREEN_WIDTH, separatorColor);
-            line3 = AddLineView (0, LINE_OFFSET + (CELL_HEIGHT * 2) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+            line1 = Util.AddHorizontalLineView (0, LINE_OFFSET, SCREEN_WIDTH, separatorColor);
+            line2 = Util.AddHorizontalLineView (15, LINE_OFFSET + CELL_HEIGHT, SCREEN_WIDTH, separatorColor);
+            line3 = Util.AddHorizontalLineView (0, LINE_OFFSET + (CELL_HEIGHT * 2) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
             //LO
-            line4 = AddLineView (0, (LINE_OFFSET * 2) + (CELL_HEIGHT * 2) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
-            line5 = AddLineView (15, (LINE_OFFSET * 2) + (CELL_HEIGHT * 3) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
-            line6 = AddLineView (15, (LINE_OFFSET * 2) + (CELL_HEIGHT * 4) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
-            line7 = AddLineView (0, (LINE_OFFSET * 2) + (CELL_HEIGHT * 5) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+            line4 = Util.AddHorizontalLineView (0, (LINE_OFFSET * 2) + (CELL_HEIGHT * 2) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+            line5 = Util.AddHorizontalLineView (15, (LINE_OFFSET * 2) + (CELL_HEIGHT * 3) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+            line6 = Util.AddHorizontalLineView (15, (LINE_OFFSET * 2) + (CELL_HEIGHT * 4) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+            line7 = Util.AddHorizontalLineView (0, (LINE_OFFSET * 2) + (CELL_HEIGHT * 5) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
             //LO
-            line8 = AddLineView (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 5) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
-            line9 = AddLineView (15, (LINE_OFFSET * 3) + (CELL_HEIGHT * 6) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
-            line10 = AddLineView (15, (LINE_OFFSET * 3) + (CELL_HEIGHT * 7) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
-            line11 = AddLineView (15, (LINE_OFFSET * 3) + (CELL_HEIGHT * 8) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
-            line12 = AddLineView (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 9) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+            line8 = Util.AddHorizontalLineView (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 5) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+            line9 = Util.AddHorizontalLineView (15, (LINE_OFFSET * 3) + (CELL_HEIGHT * 6) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+            line10 = Util.AddHorizontalLineView (15, (LINE_OFFSET * 3) + (CELL_HEIGHT * 7) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+            line11 = Util.AddHorizontalLineView (15, (LINE_OFFSET * 3) + (CELL_HEIGHT * 8) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+            line12 = Util.AddHorizontalLineView (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 9) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
             //LO
-            line13 = AddLineView (0, (LINE_OFFSET * 4) + (CELL_HEIGHT * 9) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
-            line14 = AddLineView (0, (LINE_OFFSET * 4) + (CELL_HEIGHT * 10) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+            line13 = Util.AddHorizontalLineView (0, (LINE_OFFSET * 4) + (CELL_HEIGHT * 9) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+            line14 = Util.AddHorizontalLineView (0, (LINE_OFFSET * 4) + (CELL_HEIGHT * 10) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
             //LO
-            line15 = AddLineView (0, (LINE_OFFSET * 5) + (CELL_HEIGHT * 10) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
-            line16 = AddLineView (0, (LINE_OFFSET * 5) + (CELL_HEIGHT * 11) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+            line15 = Util.AddHorizontalLineView (0, (LINE_OFFSET * 5) + (CELL_HEIGHT * 10) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+            line16 = Util.AddHorizontalLineView (0, (LINE_OFFSET * 5) + (CELL_HEIGHT * 11) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
             //LO
             contentView.AddSubviews (new UIView[] {
                 line1,
@@ -1068,20 +1068,6 @@ namespace NachoClient.iOS
                 );
             }
 
-        }
-
-        public UIView AddLineView (float offset, float yVal, float width, UIColor color)
-        {
-            var lineUIView = new UIView (new RectangleF (offset, yVal, width, .5f));
-            lineUIView.BackgroundColor = color;
-            return lineUIView;
-        }
-
-        public void AddLine (float offset, float yVal, float width, UIColor color, UIView parentView)
-        {
-            var lineUIView = new UIView (new RectangleF (offset, yVal, width, .5f));
-            lineUIView.BackgroundColor = color;
-            parentView.Add (lineUIView);
         }
 
         protected void SelectionChanged (UITextView textView)

@@ -32,7 +32,7 @@ namespace NachoClient.iOS
 
             // Multiple buttons on the left side
             NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
-            using (var nachoImage = UIImage.FromBundle ("Nacho-Cove-Icon")) {
+            using (var nachoImage = UIImage.FromBundle ("navbar-icn-inbox")) {
                 nachoButton.Image = nachoImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
             }
             nachoButton.Clicked += (object sender, EventArgs e) => {

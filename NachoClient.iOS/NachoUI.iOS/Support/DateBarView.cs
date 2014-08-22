@@ -77,7 +77,6 @@ namespace NachoClient.iOS
             }
         }
 
-
         public void MakeDateDotButtons ()
         {
             monthLabelView.TextColor = A.Color_999999;
@@ -251,7 +250,7 @@ namespace NachoClient.iOS
             }
 
         }
-           
+
         public void ToggleButtons (int selectedButtonTag)
         {
             if (!CalendarViewController.BasicView) {
