@@ -56,25 +56,26 @@ namespace NachoCore.ActiveSync
             AllInf,
         };
 
-        private enum ActionEnum
+        private enum FlagEnum
         {
-            None,
-            RicSynced,
+            None = 0,
+            RicSynced = (1 << 0),
+            NarrowSyncOk = (1 << 1),
         };
 
         private ItemType[] ItemTypeSeq = new ItemType[] { ItemType.Email, ItemType.Cal, ItemType.Contact };
 
         private int[,] Ladder = new int[,] {
             // { Email, Cal, Contact, Action }
-            { (int)EmailEnum.None, (int)CalEnum.None, (int)ContactEnum.RicInf, (int)ActionEnum.RicSynced },
-            { (int)EmailEnum.Def1d, (int)CalEnum.Def2w, (int)ContactEnum.RicInf, (int)ActionEnum.None },
-            { (int)EmailEnum.Def3d, (int)CalEnum.Def2w, (int)ContactEnum.RicInf, (int)ActionEnum.None },
-            { (int)EmailEnum.Def1w, (int)CalEnum.Def2w, (int)ContactEnum.RicInf, (int)ActionEnum.None },
-            { (int)EmailEnum.Def2w, (int)CalEnum.Def2w, (int)ContactEnum.DefRicInf, (int)ActionEnum.None },
-            { (int)EmailEnum.All1m, (int)CalEnum.All1m, (int)ContactEnum.DefRicInf, (int)ActionEnum.None },
-            { (int)EmailEnum.All3m, (int)CalEnum.All3m, (int)ContactEnum.AllInf, (int)ActionEnum.None },
-            { (int)EmailEnum.All6m, (int)CalEnum.All6m, (int)ContactEnum.AllInf, (int)ActionEnum.None },
-            { (int)EmailEnum.AllInf, (int)CalEnum.AllInf, (int)ContactEnum.AllInf, (int)ActionEnum.None },
+            { (int)EmailEnum.None, (int)CalEnum.None, (int)ContactEnum.RicInf, (int)FlagEnum.None },
+            { (int)EmailEnum.Def1d, (int)CalEnum.Def2w, (int)ContactEnum.RicInf, (int)FlagEnum.RicSynced },
+            { (int)EmailEnum.Def3d, (int)CalEnum.Def2w, (int)ContactEnum.RicInf, (int)FlagEnum.RicSynced },
+            { (int)EmailEnum.Def1w, (int)CalEnum.Def2w, (int)ContactEnum.RicInf, (int)FlagEnum.RicSynced|FlagEnum.NarrowSyncOk },
+            { (int)EmailEnum.Def2w, (int)CalEnum.Def2w, (int)ContactEnum.DefRicInf, (int)FlagEnum.RicSynced|FlagEnum.NarrowSyncOk },
+            { (int)EmailEnum.All1m, (int)CalEnum.All1m, (int)ContactEnum.DefRicInf, (int)FlagEnum.RicSynced|FlagEnum.NarrowSyncOk },
+            { (int)EmailEnum.All3m, (int)CalEnum.All3m, (int)ContactEnum.AllInf, (int)FlagEnum.RicSynced|FlagEnum.NarrowSyncOk },
+            { (int)EmailEnum.All6m, (int)CalEnum.All6m, (int)ContactEnum.AllInf, (int)FlagEnum.RicSynced|FlagEnum.NarrowSyncOk },
+            { (int)EmailEnum.AllInf, (int)CalEnum.AllInf, (int)ContactEnum.AllInf, (int)FlagEnum.RicSynced|FlagEnum.NarrowSyncOk },
         };
 
         private IBEContext BEContext;
@@ -84,6 +85,11 @@ namespace NachoCore.ActiveSync
         {
             BEContext = beContext;
             CoinToss = new Random ();
+        }
+
+        private bool FlagIsSet (int rung, FlagEnum flag)
+        {
+            return (flag == (Ladder [rung, ItemType.Last + 1] & flag));
         }
 
         private List<ItemType> RequiredToAdvance (int rung)
@@ -127,20 +133,13 @@ namespace NachoCore.ActiveSync
         private int AdvanceIfPossible (int rung)
         {
             if (CanAdvance (rung)) {
-                switch ((ActionEnum)Ladder [rung, (int)ItemType.Last + 1]) {
-                case ActionEnum.RicSynced:
-                    BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_RicInitialSyncCompleted));
-                    break;
-                case ActionEnum.None:
-                    break;
-                default:
-                    NcAssert.CaseError (rung.ToString ());
-                    break;
-                }
                 var protocolState = BEContext.ProtocolState;
                 protocolState.StrategyRung++;
                 protocolState.Update ();
                 rung = protocolState.StrategyRung;
+                if (FlagIsSet (rung, FlagEnum.RicSynced)) {
+                    BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_RicInitialSyncCompleted));
+                }
             }
             return rung;
         }
@@ -526,7 +525,7 @@ namespace NachoCore.ActiveSync
             return null;
         }
 
-        bool CanExecuteNarrowPing (int accountId)
+        bool NarrowFoldersNoToClientExpected (int accountId)
         {
             var defInbox = McFolder.GetDefaultInboxFolder (accountId);
             var defCal = McFolder.GetDefaultCalendarFolder (accountId);
@@ -597,9 +596,10 @@ namespace NachoCore.ActiveSync
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt ||
                 NcApplication.ExecutionContextEnum.Background == exeCtxt) {
                 var past120secs = DateTime.UtcNow.AddSeconds (-120);
-                if (protocolState.LastNarrowSync < past120secs &&
+                if (FlagIsSet (protocolState.StrategyRung, FlagEnum.NarrowSyncOk) &&
+                    protocolState.LastNarrowSync < past120secs &&
                     (protocolState.LastPing < past120secs ||
-                    !CanExecuteNarrowPing (accountId))) {
+                    !NarrowFoldersNoToClientExpected (accountId))) {
                     var nSyncKit = GenSyncKit (accountId, protocolState, true, false);
                     if (null != nSyncKit) {
                         return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
@@ -624,7 +624,7 @@ namespace NachoCore.ActiveSync
                 if (NcCommStatus.Instance.IsRateLimited (BEContext.Server.Id)) {
                     // (FG, BG) If we are rate-limited, and we can execute a narrow Ping command at the 
                     // current filter setting, execute a narrow Ping command.
-                    if (CanExecuteNarrowPing (accountId)) {
+                    if (NarrowFoldersNoToClientExpected (accountId)) {
                         return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping, 
                             new AsPingCommand (BEContext.ProtoControl, GenPingKit (protocolState, true)));
                     }
