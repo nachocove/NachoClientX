@@ -67,11 +67,10 @@ namespace NachoCore.ActiveSync
                 case (uint)Lst.PingW:
                 case (uint)Lst.QOpW:
                 case (uint)Lst.FetchW:
-                    return (ProtocolState.HasSyncedInbox) ? 
+                case (uint)Lst.IdleW:
+                     return (ProtocolState.HasSyncedInbox) ? 
                         BackEndAutoDStateEnum.PostAutoDPostInboxSync : 
                         BackEndAutoDStateEnum.PostAutoDPreInboxSync;
-                case (uint)Lst.IdleW:
-                    return BackEndAutoDStateEnum.PostAutoDPostFSync;
 
                 default:
                     NcAssert.CaseError (string.Format ("Unhandled state {0}", Sm.State));
