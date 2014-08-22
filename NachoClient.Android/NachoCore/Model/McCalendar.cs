@@ -168,6 +168,20 @@ namespace NachoCore.Model
         {
             return NcModel.Instance.Db.Table<McCalendar> ().Where (x => x.RecurrencesGeneratedUntil < generateUntil).ToList ();
         }
+
+        public void DeleteRelatedEvents ()
+        {
+            var list = NcModel.Instance.Db.Table<McEvent> ().Where (x => x.CalendarId == Id).ToList ();
+            foreach (var e in list) {
+                e.Delete ();
+            }
+        }
+
+        public override int Delete ()
+        {
+            DeleteRelatedEvents ();
+            return base.Delete ();
+        }
     }
 }
 

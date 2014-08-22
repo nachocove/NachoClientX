@@ -913,6 +913,14 @@ namespace NachoCore.Utils
                 McEvent.Create (accountId, exception.StartTime, exception.EndTime, calendarId, exception.Id);
             }
         }
+
+        public static void UpdateRecurrences(McCalendar c)
+        {
+            c.DeleteRelatedEvents ();
+            c.RecurrencesGeneratedUntil = DateTime.MinValue;;
+            c.Update ();
+            ExpandRecurrences ();
+        }
     }
 }
 
