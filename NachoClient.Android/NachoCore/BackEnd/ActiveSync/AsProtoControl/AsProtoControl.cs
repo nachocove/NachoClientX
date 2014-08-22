@@ -553,11 +553,11 @@ namespace NachoCore.ActiveSync
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPick, State = (uint)Lst.Pick },
-                            new Trans { Event = (uint)CtlEvt.E.PkQOop, Act = DoQOp, State = (uint)Lst.QOpW },
-                            new Trans { Event = (uint)CtlEvt.E.PkFetch, Act = DoFetch, State = (uint)Lst.FetchW },
+                            new Trans { Event = (uint)CtlEvt.E.PkQOop, Act = DoArg, State = (uint)Lst.QOpW },
+                            new Trans { Event = (uint)CtlEvt.E.PkFetch, Act = DoArg, State = (uint)Lst.FetchW },
                             new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },
-                            new Trans { Event = (uint)CtlEvt.E.PkPing, Act = DoPing, State = (uint)Lst.PingW },
-                            new Trans { Event = (uint)CtlEvt.E.PkWait, Act = DoWait, State = (uint)Lst.IdleW },
+                            new Trans { Event = (uint)CtlEvt.E.PkPing, Act = DoArg, State = (uint)Lst.PingW },
+                            new Trans { Event = (uint)CtlEvt.E.PkWait, Act = DoArg, State = (uint)Lst.IdleW },
                         }
                     },
 
@@ -611,8 +611,8 @@ namespace NachoCore.ActiveSync
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPick, State = (uint)Lst.Pick },
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoPick, State = (uint)Lst.Pick },
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoPing, State = (uint)Lst.PingW },
-                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoPing, State = (uint)Lst.PingW },
+                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoPick, State = (uint)Lst.Pick },
                             new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
                             new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },
@@ -992,31 +992,9 @@ namespace NachoCore.ActiveSync
             Cmd.Execute (Sm);
         }
 
-        private void DoFetch ()
+        private void DoArg ()
         {
             var cmd = Sm.Arg as AsCommand;
-            SetCmd (cmd);
-            Cmd.Execute (Sm);
-        }
-
-        private void DoPing ()
-        {
-            var cmd = Sm.Arg as AsCommand;
-            SetCmd (cmd);
-            Cmd.Execute (Sm);
-        }
-
-        private void DoQOp ()
-        {
-            var cmd = (AsCommand)Sm.Arg;
-            SetCmd (cmd);
-            Cmd.Execute (Sm);
-        }
-
-        private void DoWait ()
-        {
-            // TODO consolidate as DoArg - after some intial testing.
-            var cmd = (AsCommand)Sm.Arg;
             SetCmd (cmd);
             Cmd.Execute (Sm);
         }
