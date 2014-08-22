@@ -112,6 +112,37 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("ContactToContactEdit")) {
                 return;
             }
+            if (segue.Identifier == "NachoNowToMessagePriority") {
+                var vc = (MessagePriorityViewController)segue.DestinationViewController;
+                var holder = (SegueHolder)sender;
+                vc.thread = holder.value as McEmailMessageThread;
+                vc.SetOwner (this);
+                return;
+            }
+            if (segue.Identifier == "NachoNowToMessageAction") {
+                var vc = (MessageActionViewController)segue.DestinationViewController;
+                var h = sender as SegueHolder;
+                vc.SetOwner (this, h);
+                return;
+            }
+            if (segue.Identifier == "NachoNowToMessageView") {
+                var vc = (MessageViewController)segue.DestinationViewController;
+                var holder = (SegueHolder)sender;
+                vc.thread = holder.value as McEmailMessageThread;                
+                return;
+            }
+            if (segue.Identifier == "NachoNowToEditEvent") {
+                var vc = (EditEventViewController)segue.DestinationViewController;
+                var holder = sender as SegueHolder;
+                var c = holder.value as McCalendar;
+                if (null == c) {
+                    vc.SetCalendarItem (null, CalendarItemEditorAction.create);
+                } else {
+                    vc.SetCalendarItem (c, CalendarItemEditorAction.create);
+                }
+                vc.SetOwner (this);
+                return;
+            }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }
@@ -607,7 +638,7 @@ namespace NachoClient.iOS
             var m = thread.SingleMessageSpecialCase ();
             var c = CalendarHelper.CreateMeeting (m);
             vc.DismissMessageEditor (false, new NSAction (delegate {
-                PerformSegue ("MessageListToCalendarItemEdit", new SegueHolder (c));
+                PerformSegue ("NachoNowToEditEvent", new SegueHolder (c));
             }));
         }
 
