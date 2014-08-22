@@ -55,13 +55,6 @@ namespace NachoCore.Model
         }
     }
 
-    public class NcEmailMessageDatedIndex
-    {
-        public int Id { set; get; }
-
-        public DateTime DateReceived { set; get; }
-    }
-
     public partial class McEmailMessage : McAbstrItem
     {
         private const string CrLf = "\r\n";
@@ -308,37 +301,20 @@ namespace NachoCore.Model
 
         public static List<NcEmailMessageIndex> QueryActiveMessageItemsByScore (int accountId, int folderId)
         {
-            List<NcEmailMessageDatedIndex> datedIndexList = 
-                NcModel.Instance.Db.Query<NcEmailMessageDatedIndex> (
-                    "SELECT e.Id AS Id, e.DateReceived AS DateReceived FROM McEmailMessage AS e " +
-                    " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
-                    " WHERE " +
-                    " e.AccountId = ? AND " +
-                    " e.IsAwaitingDelete = 0 AND " +
-                    " m.AccountId = ? AND " +
-                    " m.ClassCode = ? AND " +
-                    " m.FolderId = ? AND " +
-                    " e.FlagUtcStartDate < ? " +
-                    " ORDER BY e.Score DESC LIMIT 20",
-                    accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
-            // Sort them in descending chronological order
-            datedIndexList.Sort (delegate (NcEmailMessageDatedIndex a, NcEmailMessageDatedIndex b) {
-                // Comparison function is negated to give a desending choronological order
-                if (a.DateReceived < b.DateReceived) {
-                    return +1;
-                }
-                if (a.DateReceived > b.DateReceived) {
-                    return -1;
-                }
-                return 0;
-            });
-            List<NcEmailMessageIndex> indiceList = new List<NcEmailMessageIndex> ();
-            foreach (NcEmailMessageDatedIndex datedIndex in datedIndexList) {
-                NcEmailMessageIndex index = new NcEmailMessageIndex ();
-                index.Id = datedIndex.Id;
-                indiceList.Add (index);
-            }
-            return indiceList;
+            return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
+                "SELECT e.Id as Id FROM McEmailMessage AS e " +
+                " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                " WHERE " +
+                " e.AccountId = ? AND " +
+                " e.IsAwaitingDelete = 0 AND " +
+                " m.AccountId = ? AND " +
+                " m.ClassCode = ? AND " +
+                " m.FolderId = ? AND " +
+                " e.FlagUtcStartDate < ? AND " +
+                " e.Score > ? " +
+                " ORDER BY e.DateReceived DESC",
+                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId,DateTime.UtcNow,
+                minHotScore);
         }
 
         /// TODO: Need account id
