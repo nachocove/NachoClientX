@@ -64,6 +64,7 @@ namespace NachoClient.iOS
 
             // Update the auto-complete on each keystroke
             AutocompleteTextField.EditingChanged += delegate {
+                KickoffSearchApi (0, AutocompleteTextField.Text);
                 UpdateAutocompleteResults (0, AutocompleteTextField.Text);
             };
 
@@ -88,6 +89,7 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
             NachoClient.Util.HighPriority ();
             TableView.ReloadData ();
             NachoClient.Util.RegularPriority ();
@@ -96,7 +98,17 @@ namespace NachoClient.iOS
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
             CancelSearchIfActive ();
+        }
+
+        public void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+            if (NcResult.SubKindEnum.Info_SearchCommandSucceeded == s.Status.SubKind) {
+                Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: Info_SearchCommandSucceeded");
+                UpdateAutocompleteResults (0, AutocompleteTextField.Text);
+            }
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
@@ -158,11 +170,6 @@ namespace NachoClient.iOS
                 return;
             }
             new System.Threading.Thread (new System.Threading.ThreadStart (() => {
-//                if (String.IsNullOrEmpty (contactSearchToken)) {
-//                    contactSearchToken = BackEnd.Instance.StartSearchContactsReq (account.Id, forSearchString, null);
-//                } else {
-//                    BackEnd.Instance.SearchContactsReq (account.Id, forSearchString, null, contactSearchToken);
-//                }
                 var results = McContact.SearchAllContactItems (forSearchString);
                 InvokeOnMainThread (() => {
                     searchResults = results;
@@ -171,6 +178,15 @@ namespace NachoClient.iOS
                     NachoClient.Util.RegularPriority ();
                 });
             })).Start ();
+        }
+
+        protected void KickoffSearchApi (int forSearchOption, string forSearchString)
+        {
+            if (String.IsNullOrEmpty (contactSearchToken)) {
+                contactSearchToken = BackEnd.Instance.StartSearchContactsReq (account.Id, forSearchString, null);
+            } else {
+                BackEnd.Instance.SearchContactsReq (account.Id, forSearchString, null, contactSearchToken);
+            }
         }
 
         public void DoublePop (ContactSearchViewController vc, McContact contact)
