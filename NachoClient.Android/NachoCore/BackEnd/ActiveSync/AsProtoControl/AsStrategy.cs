@@ -70,12 +70,12 @@ namespace NachoCore.ActiveSync
             { (int)EmailEnum.None, (int)CalEnum.None, (int)ContactEnum.RicInf, (int)FlagEnum.None },
             { (int)EmailEnum.Def1d, (int)CalEnum.Def2w, (int)ContactEnum.RicInf, (int)FlagEnum.RicSynced },
             { (int)EmailEnum.Def3d, (int)CalEnum.Def2w, (int)ContactEnum.RicInf, (int)FlagEnum.RicSynced },
-            { (int)EmailEnum.Def1w, (int)CalEnum.Def2w, (int)ContactEnum.RicInf, (int)FlagEnum.RicSynced|FlagEnum.NarrowSyncOk },
-            { (int)EmailEnum.Def2w, (int)CalEnum.Def2w, (int)ContactEnum.DefRicInf, (int)FlagEnum.RicSynced|FlagEnum.NarrowSyncOk },
-            { (int)EmailEnum.All1m, (int)CalEnum.All1m, (int)ContactEnum.DefRicInf, (int)FlagEnum.RicSynced|FlagEnum.NarrowSyncOk },
-            { (int)EmailEnum.All3m, (int)CalEnum.All3m, (int)ContactEnum.AllInf, (int)FlagEnum.RicSynced|FlagEnum.NarrowSyncOk },
-            { (int)EmailEnum.All6m, (int)CalEnum.All6m, (int)ContactEnum.AllInf, (int)FlagEnum.RicSynced|FlagEnum.NarrowSyncOk },
-            { (int)EmailEnum.AllInf, (int)CalEnum.AllInf, (int)ContactEnum.AllInf, (int)FlagEnum.RicSynced|FlagEnum.NarrowSyncOk },
+            { (int)EmailEnum.Def1w, (int)CalEnum.Def2w, (int)ContactEnum.RicInf, (int)FlagEnum.RicSynced|(int)FlagEnum.NarrowSyncOk },
+            { (int)EmailEnum.Def2w, (int)CalEnum.Def2w, (int)ContactEnum.DefRicInf, (int)FlagEnum.RicSynced|(int)FlagEnum.NarrowSyncOk },
+            { (int)EmailEnum.All1m, (int)CalEnum.All1m, (int)ContactEnum.DefRicInf, (int)FlagEnum.RicSynced|(int)FlagEnum.NarrowSyncOk },
+            { (int)EmailEnum.All3m, (int)CalEnum.All3m, (int)ContactEnum.AllInf, (int)FlagEnum.RicSynced|(int)FlagEnum.NarrowSyncOk },
+            { (int)EmailEnum.All6m, (int)CalEnum.All6m, (int)ContactEnum.AllInf, (int)FlagEnum.RicSynced|(int)FlagEnum.NarrowSyncOk },
+            { (int)EmailEnum.AllInf, (int)CalEnum.AllInf, (int)ContactEnum.AllInf, (int)FlagEnum.RicSynced|(int)FlagEnum.NarrowSyncOk },
         };
 
         private IBEContext BEContext;
@@ -89,7 +89,7 @@ namespace NachoCore.ActiveSync
 
         private bool FlagIsSet (int rung, FlagEnum flag)
         {
-            return (flag == (Ladder [rung, ItemType.Last + 1] & flag));
+            return ((int)flag == (((int)Ladder [rung, (int)ItemType.Last + 1]) & (int)flag));
         }
 
         private List<ItemType> RequiredToAdvance (int rung)
@@ -107,20 +107,20 @@ namespace NachoCore.ActiveSync
             return retval;
         }
 
-        private bool CanAdvance (int rung)
+        private bool CanAdvance (int accountId, int rung)
         {
             var musts = RequiredToAdvance (rung);
             var folders = new List<McFolder> ();
             foreach (var must in musts) {
                 switch (must) {
                 case ItemType.Email:
-                    folders.AddRange (EmailFolderListProvider ((EmailEnum)Ladder [rung, (int)must], false));
+                    folders.AddRange (EmailFolderListProvider (accountId, (EmailEnum)Ladder [rung, (int)must], false));
                     break;
                 case ItemType.Cal:
-                    folders.AddRange (CalFolderListProvider ((CalEnum)Ladder [rung, (int)must], false));
+                    folders.AddRange (CalFolderListProvider (accountId, (CalEnum)Ladder [rung, (int)must], false));
                     break;
                 case ItemType.Contact:
-                    folders.AddRange (ContactFolderListProvider ((ContactEnum)Ladder [rung, (int)must], false));
+                    folders.AddRange (ContactFolderListProvider (accountId, (ContactEnum)Ladder [rung, (int)must], false));
                     break;
                 default:
                     NcAssert.CaseError (must.ToString ());
@@ -130,9 +130,9 @@ namespace NachoCore.ActiveSync
             return !folders.Any (x => x.AsSyncMetaToClientExpected = true);
         }
 
-        private int AdvanceIfPossible (int rung)
+        private int AdvanceIfPossible (int accountId, int rung)
         {
-            if (CanAdvance (rung)) {
+            if (CanAdvance (accountId, rung)) {
                 var protocolState = BEContext.ProtocolState;
                 protocolState.StrategyRung++;
                 protocolState.Update ();
@@ -144,12 +144,12 @@ namespace NachoCore.ActiveSync
             return rung;
         }
 
-        private List<McFolder> EmailFolderListProvider (EmailEnum scope, bool isNarrow)
+        private List<McFolder> EmailFolderListProvider (int accountId, EmailEnum scope, bool isNarrow)
         {
             switch (scope) {
             case EmailEnum.None:
                 if (isNarrow) {
-                    return new List<McFolder> () { McFolder.GetDefaultInboxFolder (BEContext.Account.Id) };
+                    return new List<McFolder> () { McFolder.GetDefaultInboxFolder (accountId) };
                 }
                 return new List<McFolder> ();
 
@@ -157,16 +157,16 @@ namespace NachoCore.ActiveSync
             case EmailEnum.Def1w:
             case EmailEnum.Def2w:
             case EmailEnum.Def3d:
-                return new List<McFolder> () { McFolder.GetDefaultInboxFolder (BEContext.Account.Id) };
+                return new List<McFolder> () { McFolder.GetDefaultInboxFolder (accountId) };
 
             case EmailEnum.All1m:
             case EmailEnum.All3m:
             case EmailEnum.All6m:
             case EmailEnum.AllInf:
                 if (isNarrow) {
-                    return new List<McFolder> () { McFolder.GetDefaultInboxFolder (BEContext.Account.Id) };
+                    return new List<McFolder> () { McFolder.GetDefaultInboxFolder (accountId) };
                 }
-                return McFolder.ServerEndQueryAll (BEContext.Account.Id).Where (f => 
+                return McFolder.ServerEndQueryAll (accountId).Where (f => 
                     Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) ==
                 McAbstrFolderEntry.ClassCodeEnum.Email).ToList ();
 
@@ -176,26 +176,26 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private List<McFolder> CalFolderListProvider (CalEnum scope, bool isNarrow)
+        private List<McFolder> CalFolderListProvider (int accountId, CalEnum scope, bool isNarrow)
         {
             switch (scope) {
             case CalEnum.None:
                 if (isNarrow) {
-                    return new List<McFolder> () { McFolder.GetDefaultCalendarFolder (BEContext.Account.Id) };
+                    return new List<McFolder> () { McFolder.GetDefaultCalendarFolder (accountId) };
                 }
                 return new List<McFolder> ();
 
             case CalEnum.Def2w:
-                return new List<McFolder> () { McFolder.GetDefaultCalendarFolder (BEContext.Account.Id) };
+                return new List<McFolder> () { McFolder.GetDefaultCalendarFolder (accountId) };
 
             case CalEnum.All1m:
             case CalEnum.All3m:
             case CalEnum.All6m:
             case CalEnum.AllInf:
                 if (isNarrow) {
-                    return new List<McFolder> () { McFolder.GetDefaultCalendarFolder (BEContext.Account.Id) };
+                    return new List<McFolder> () { McFolder.GetDefaultCalendarFolder (accountId) };
                 }
-                return McFolder.ServerEndQueryAll (BEContext.Account.Id).Where (f => 
+                return McFolder.ServerEndQueryAll (accountId).Where (f => 
                     Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) ==
                 McAbstrFolderEntry.ClassCodeEnum.Calendar).ToList ();
 
@@ -205,7 +205,7 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private List<McFolder> ContactFolderListProvider (ContactEnum scope, bool isNarrow)
+        private List<McFolder> ContactFolderListProvider (int accountId, ContactEnum scope, bool isNarrow)
         {
             if (isNarrow) {
                 return new List<McFolder> ();
@@ -215,15 +215,15 @@ namespace NachoCore.ActiveSync
                 return new List<McFolder> ();
 
             case ContactEnum.RicInf:
-                return new List<McFolder> () { McFolder.GetRicContactFolder (BEContext.Account.Id) };
+                return new List<McFolder> () { McFolder.GetRicContactFolder (accountId) };
 
             case ContactEnum.DefRicInf:
-                return new List<McFolder> () { McFolder.GetRicContactFolder (BEContext.Account.Id),
-                    McFolder.GetDefaultContactFolder (BEContext.Account.Id)
+                return new List<McFolder> () { McFolder.GetRicContactFolder (accountId),
+                    McFolder.GetDefaultContactFolder (accountId)
                 };
 
             case ContactEnum.AllInf:
-                return McFolder.ServerEndQueryAll (BEContext.Account.Id).Where (f => 
+                return McFolder.ServerEndQueryAll (accountId).Where (f => 
                     Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) ==
                 McAbstrFolderEntry.ClassCodeEnum.Contact).ToList ();
 
@@ -234,20 +234,20 @@ namespace NachoCore.ActiveSync
         }
 
         // function returning all folders at current level eligible for Sync.
-        private List<McFolder> FolderListProvider (int rung, bool isNarrow)
+        private List<McFolder> FolderListProvider (int accountId, int rung, bool isNarrow)
         {
             var result = new List<McFolder> ();
             foreach (int track in ItemTypeSeq) {
                 var scope = Ladder [rung, track];
                 switch ((ItemType)track) {
                 case ItemType.Email:
-                    result.AddRange (EmailFolderListProvider ((EmailEnum)scope, isNarrow));
+                    result.AddRange (EmailFolderListProvider (accountId, (EmailEnum)scope, isNarrow));
                     break;
                 case ItemType.Cal:
-                    result.AddRange (CalFolderListProvider ((CalEnum)scope, isNarrow));
+                    result.AddRange (CalFolderListProvider (accountId, (CalEnum)scope, isNarrow));
                     break;
                 case ItemType.Contact:
-                    result.AddRange (ContactFolderListProvider ((ContactEnum)scope, isNarrow));
+                    result.AddRange (ContactFolderListProvider (accountId, (ContactEnum)scope, isNarrow));
                     break;
                 default:
                     NcAssert.CaseError (string.Format ("{0}", track));
@@ -344,11 +344,11 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private List<McFolder> AllSyncedFolders ()
+        private List<McFolder> AllSyncedFolders (int accountId)
         {
             // A folder must be created on the server before it can be the subject of a Sync/Ping.
             // Exclude the types of folders we don't yet Sync.
-            return McFolder.ServerEndQueryAll (BEContext.Account.Id).Where (x => 
+            return McFolder.ServerEndQueryAll (accountId).Where (x => 
                 x.Type != Xml.FolderHierarchy.TypeCode.DefaultJournal_11 &&
             x.Type != Xml.FolderHierarchy.TypeCode.DefaultNotes_10 &&
             x.Type != Xml.FolderHierarchy.TypeCode.DefaultTasks_7 &&
@@ -394,7 +394,7 @@ namespace NachoCore.ActiveSync
                 overallWindowSize *= 3;
                 break;
             }
-            List<McFolder> eligibleForGetChanges = FolderListProvider (rung, isNarrow);
+            List<McFolder> eligibleForGetChanges = FolderListProvider (accountId, rung, isNarrow);
             NcAssert.True (0 != eligibleForGetChanges.Count);
             // Don't bother with commands when doing a narrow Sync.
             // TODO: should we hold off narrow sync until after intial sync?
@@ -402,7 +402,7 @@ namespace NachoCore.ActiveSync
                 return GenNarrowSyncKit (eligibleForGetChanges, rung, overallWindowSize);
             }
             // Wide Sync below.
-            rung = AdvanceIfPossible (rung);
+            rung = AdvanceIfPossible (accountId, rung);
             List<McPending> commands;
             bool inSerialMode = false;
             bool issuedAtLeast1 = false;
@@ -411,7 +411,7 @@ namespace NachoCore.ActiveSync
 
             // Loop through all synced folders. Choose those that exepect to-client items and
             // those that have waiting pending items.
-            foreach (var folder in AllSyncedFolders ()) {
+            foreach (var folder in AllSyncedFolders (accountId)) {
                 if (0 >= limit) {
                     // TODO: prefer default folders in this scenario.
                     break;
@@ -429,7 +429,7 @@ namespace NachoCore.ActiveSync
                 commands = new List<McPending> ();
                 // If we are in serial mode, we will issue no more pendings.
                 if (McFolder.AsSyncKey_Initial != folder.AsSyncKey && !inSerialMode) {
-                    var rawPendings = McPending.QueryEligibleByFolderServerId (BEContext.Account.Id, folder.ServerId);
+                    var rawPendings = McPending.QueryEligibleByFolderServerId (accountId, folder.ServerId);
                     commands = rawPendings.Where (p => AsSyncCommand.IsSyncCommand (p.Operation)).ToList ();
                     if (issuedAtLeast1) {
                         // If we have issuedAtLeast1, then we exclude any serial pendings.
@@ -473,9 +473,9 @@ namespace NachoCore.ActiveSync
         }
 
         // Never returns null.
-        private PingKit GenPingKit (McProtocolState protocolState, bool isNarrow)
+        private PingKit GenPingKit (int accountId, McProtocolState protocolState, bool isNarrow)
         {
-            var folders = FolderListProvider (protocolState.StrategyRung, isNarrow);
+            var folders = FolderListProvider (accountId, protocolState.StrategyRung, isNarrow);
             if (protocolState.MaxFolders >= folders.Count) {
                 return new PingKit () { Folders = folders };
             }
@@ -626,7 +626,7 @@ namespace NachoCore.ActiveSync
                     // current filter setting, execute a narrow Ping command.
                     if (NarrowFoldersNoToClientExpected (accountId)) {
                         return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping, 
-                            new AsPingCommand (BEContext.ProtoControl, GenPingKit (protocolState, true)));
+                            new AsPingCommand (BEContext.ProtoControl, GenPingKit (accountId, protocolState, true)));
                     }
                     // (FG, BG) If we are rate-limited, and we can’t execute a narrow Ping command
                     // at the current filter setting, then wait.
@@ -636,7 +636,7 @@ namespace NachoCore.ActiveSync
                     }
                 }
                 // I(FG, BG) If there are entries in the pending queue, execute the oldest.
-                var next = McPending.QueryEligible (BEContext.Account.Id).FirstOrDefault ();
+                var next = McPending.QueryEligible (accountId).FirstOrDefault ();
                 if (null != next) {
                     AsCommand cmd = null;
                     switch (next.Operation) {
@@ -689,9 +689,9 @@ namespace NachoCore.ActiveSync
                             new AsSyncCommand (BEContext.ProtoControl, syncKit));
                     }
                 }
-                var pingKit = GenPingKit (protocolState, false);
+                var pingKit = GenPingKit (accountId, protocolState, false);
                 if (null == pingKit) {
-                    pingKit = GenPingKit (protocolState, true);
+                    pingKit = GenPingKit (accountId, protocolState, true);
                 }
                 if (null != pingKit) {
                     return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping,
