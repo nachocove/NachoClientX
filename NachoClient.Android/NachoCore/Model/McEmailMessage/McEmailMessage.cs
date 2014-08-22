@@ -252,11 +252,13 @@ namespace NachoCore.Model
                 " e.AccountId = ? AND " +
                 " e.IsAwaitingDelete = 0 AND " +
                 " f.IsClientOwned != 1 AND " +
+                " m.ClassCode = ? AND " +
                 " m.AccountId = ? AND " +
                 " m.FolderId != ? AND " +
                 " e.[From] LIKE ? OR " +
                 " e.[To] Like ? ORDER BY e.DateReceived DESC",
-                accountId, accountId, deletedFolder.Id, emailWildcard, emailWildcard);
+                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, deletedFolder.Id, emailWildcard, emailWildcard);
+
         }
 
         public static List<McEmailMessage> QueryActiveMessages (int accountId, int folderId)
