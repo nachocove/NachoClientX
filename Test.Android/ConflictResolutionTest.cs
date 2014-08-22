@@ -204,7 +204,7 @@ namespace Test.iOS
                 ProtoOps.ExecuteConflictTest (FolderCmd, SyncResponseAddMultiple);
 
                 var foundTopFolder = GetCreatedFolder (defaultAccountId, TypeCode.UserCreatedGeneric_1, "0", folderName);
-                var pending = McPending.QueryByToken (defaultAccountId, token);
+                var pending = McPending.QueryByToken (defaultAccountId, token).FirstOrDefault ();
 
                 Assert.AreEqual ("1", foundTopFolder.ServerId, "Sanity check: ServerId of top folder should match expected");
                 Assert.AreEqual (TypeCode.UserCreatedGeneric_1, foundTopFolder.Type, "Type should be changed to match server's type when name and parentId match but type does not");
@@ -226,7 +226,7 @@ namespace Test.iOS
                 ProtoOps.ExecuteConflictTest (FolderCmd, SyncResponseAddMultiple);
 
                 var foundTopFolder = GetCreatedFolder (defaultAccountId, TypeCode.UserCreatedGeneric_1, "0", folderName);
-                var pending = McPending.QueryByToken (defaultAccountId, token);
+                var pending = McPending.QueryByToken (defaultAccountId, token).FirstOrDefault ();
 
                 // (1) Delete pending FolderCreate, but don't perform the failure-action, and don't notify via StatusInd. 
                 Assert.Null (pending, "Pending FolderCreate should be deleted");
@@ -253,7 +253,7 @@ namespace Test.iOS
                 // deletes top folder
                 ProtoOps.ExecuteConflictTest (FolderCmd, SyncResponseDeleteTop);
 
-                var subFolderPending = McPending.QueryByToken (defaultAccountId, token);
+                var subFolderPending = McPending.QueryByToken (defaultAccountId, token).FirstOrDefault ();
                 Assert.Null (subFolderPending, "Should delete pending if the destination for the new folder is being deleted by the server");
             }
 
@@ -274,7 +274,7 @@ namespace Test.iOS
                 // deletes top folder
                 ProtoOps.ExecuteConflictTest (FolderCmd, SyncResponseDeleteTop);
 
-                var subFolderPending = McPending.QueryByToken (defaultAccountId, token);
+                var subFolderPending = McPending.QueryByToken (defaultAccountId, token).FirstOrDefault ();
                 Assert.Null (subFolderPending, "Should delete pending if the destination for the new folder is being deleted by the server");
             }
         }
@@ -294,7 +294,7 @@ namespace Test.iOS
 
                 ProtoOps.ExecuteConflictTest (FolderCmd, SyncResponseAddSub);
 
-                var pendDeleteOp = McPending.QueryByToken (defaultAccountId, token);
+                var pendDeleteOp = McPending.QueryByToken (defaultAccountId, token).FirstOrDefault ();
                 Assert.NotNull (pendDeleteOp, "Should not delete pending delete operation");
 
                 var foundParent = McFolder.QueryByServerId<McFolder> (defaultAccountId, topFolder.ServerId);
@@ -319,7 +319,7 @@ namespace Test.iOS
 
                 ProtoOps.ExecuteConflictTest (FolderCmd, SyncResponseDeleteTop);
 
-                var pendDeleteOp = McPending.QueryByToken (defaultAccountId, token);
+                var pendDeleteOp = McPending.QueryByToken (defaultAccountId, token).FirstOrDefault ();
                 Assert.Null (pendDeleteOp, "Should delete pending FolderDelete because delete has already happened on server");
 
                 var foundFolder = McFolder.QueryByServerId<McFolder> (defaultAccountId, topFolder.ServerId);
@@ -343,7 +343,7 @@ namespace Test.iOS
 
                 ProtoOps.ExecuteConflictTest (FolderCmd, SyncResponseDeleteTop);
 
-                var pendDeleteOp = McPending.QueryByToken (defaultAccountId, token);
+                var pendDeleteOp = McPending.QueryByToken (defaultAccountId, token).FirstOrDefault ();
                 Assert.Null (pendDeleteOp, "Should delete pending FolderDelete because delete of parent already happened on server");
 
                 var foundParent = McFolder.QueryByServerId<McFolder> (defaultAccountId, topFolder.ServerId);
@@ -367,7 +367,7 @@ namespace Test.iOS
 
                 ProtoOps.ExecuteConflictTest (FolderCmd, SyncResponseDeleteSub);
 
-                var pendDeleteOp = McPending.QueryByToken (defaultAccountId, token);
+                var pendDeleteOp = McPending.QueryByToken (defaultAccountId, token).FirstOrDefault ();
                 Assert.NotNull (pendDeleteOp, "Should not delete pending operation if it's ServerId dominates the server command's ServerId");
                 Assert.AreEqual (topFolder.ServerId, pendDeleteOp.ServerId, "Pending delete operation should match top folder");
 
@@ -405,7 +405,7 @@ namespace Test.iOS
                 Assert.Null (foundChild, "Child folder should be deleted by FolderSync:Delete command, overriding the Update pending");
 
                 // Pending rename should be deleted
-                var pendRenameOp = McPending.QueryByToken (defaultAccountId, token);
+                var pendRenameOp = McPending.QueryByToken (defaultAccountId, token).FirstOrDefault ();
                 Assert.Null (pendRenameOp, "Should delete pending RenameOp when FolderSync:Delete command's ServerId dominates pending's ServerId");
             }
 
@@ -429,7 +429,7 @@ namespace Test.iOS
                 Assert.AreEqual (TopFolderServerUpdateName, foundParent.DisplayName, "Folder name should be updated by the server, not the client");
 
                 // pending should be deleted
-                var pendRenameOp = McPending.QueryByToken (defaultAccountId, token);
+                var pendRenameOp = McPending.QueryByToken (defaultAccountId, token).FirstOrDefault ();
                 Assert.Null (pendRenameOp, "Should delete pending RenameOp when FolderSync:Update (Rename) command's ServerId matches pending's ServerId");
             }
 
@@ -464,7 +464,7 @@ namespace Test.iOS
                 Assert.AreNotEqual (renameString, foundParent.DisplayName, "Folder should not be renamed because server should overwrite pending rename");
 
                 // pending should be deleted
-                var pendRenameOp = McPending.QueryByToken (defaultAccountId, token);
+                var pendRenameOp = McPending.QueryByToken (defaultAccountId, token).FirstOrDefault ();
                 Assert.Null (pendRenameOp, "Should delete pending MoveOp when FolderSync:Update (Move) command's ServerId matches pending's ServerId");
             }
         }
@@ -501,7 +501,7 @@ namespace Test.iOS
                 Assert.AreEqual (topFolder.ServerId, foundServerChild.ParentId, "Should move folder into folder defined by both client and server");
 
                 // should create a re-write to alter the pending's DisplayName
-                var pendMoveOp = McPending.QueryByToken (defaultAccountId, token);
+                var pendMoveOp = McPending.QueryByToken (defaultAccountId, token).FirstOrDefault ();
                 Assert.NotNull (pendMoveOp, "MoveOp should not be deleted");
                 Assert.AreEqual (ChildFolderName + " Client-Moved", pendMoveOp.DisplayName, "Should append suffix to note conflict");
             }
@@ -532,7 +532,7 @@ namespace Test.iOS
                 var foundAtt = McAttachment.QueryById<McAttachment> (att.Id);
                 Assert.Null (foundAtt, "Server delete of parent folder should also delete attachment");
 
-                var pendDnldOp = McPending.QueryByToken (defaultAccountId, token);
+                var pendDnldOp = McPending.QueryByToken (defaultAccountId, token).FirstOrDefault ();
                 Assert.Null (pendDnldOp, "Pending fetch attachment operation should be deleted when a folder that dominates the item is deleted");
             }
 
@@ -556,7 +556,7 @@ namespace Test.iOS
                 var foundCal = McCalendar.QueryByServerId<McCalendar> (defaultAccountId, cal.ServerId);
                 Assert.Null (foundCal, "Server delete of parent folder should also delete sub calendar");
 
-                var pendResponseOp = McPending.QueryByToken (defaultAccountId, token);
+                var pendResponseOp = McPending.QueryByToken (defaultAccountId, token).FirstOrDefault ();
                 Assert.Null (pendResponseOp, "Pending meeting response operation should be deleted when a folder that dominates the item is deleted");
             }
         }
@@ -765,7 +765,7 @@ namespace Test.iOS
                 var foundParent = McMapFolderFolderEntry.QueryByFolderId (defaultAccountId, laf.Id);
                 Assert.AreEqual (foundItem.Id, foundParent.FirstOrDefault ().FolderEntryId, "Item should be moved into L&F");
 
-                var foundPend = McPending.QueryByToken (defaultAccountId, token);
+                var foundPend = McPending.QueryByToken (defaultAccountId, token).FirstOrDefault ();
                 Assert.Null (foundPend, "Pending should be deleted when server delete command dominates pending");
             }
 
@@ -777,7 +777,7 @@ namespace Test.iOS
                 var foundItem = McAbstrItem.QueryByServerId<T> (defaultAccountId, item.ServerId);
                 Assert.Null (foundItem, "Item should be deleted by server");
 
-                var foundPend = McPending.QueryByToken (defaultAccountId, token);
+                var foundPend = McPending.QueryByToken (defaultAccountId, token).FirstOrDefault ();
                 Assert.Null (foundPend, "Pending should be deleted when server delete command dominates pending");
             }
         }

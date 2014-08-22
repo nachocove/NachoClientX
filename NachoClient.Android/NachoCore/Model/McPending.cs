@@ -417,12 +417,18 @@ namespace NachoCore.Model
             Delete ();
         }
 
-        public void ResolveAsCancelled ()
+        public void ResolveAsCancelled (bool onlyDeferred)
         {
-            NcAssert.True (StateEnum.Dispatched == State);
+            // FIXME - need lock to ensure that pending state does not change while in this function.
+            NcAssert.True (StateEnum.Dispatched == State || !onlyDeferred);
             State = StateEnum.Deleted;
             Log.Info (Log.LOG_SYNC, "Pending:ResolveAsCancelled:{0}", Id);
             Delete ();
+        }
+
+        public void ResolveAsCancelled ()
+        {
+            ResolveAsCancelled (true);
         }
 
         public void ResolveAsHardFail (ProtoControl control, NcResult result)
@@ -631,7 +637,7 @@ namespace NachoCore.Model
             }
             var killList = query.ToList ();
             foreach (var kill in killList) {
-                kill.ResolveAsCancelled ();
+                kill.ResolveAsCancelled (false);
             }
         }
 
@@ -823,12 +829,11 @@ namespace NachoCore.Model
             ).OrderBy (x => x.Priority).ToList ();
         }
 
-        public static McPending QueryByToken (int accountId, string token)
+        public static IEnumerable<McPending> QueryByToken (int accountId, string token)
         {
             return NcModel.Instance.Db.Table<McPending> ().Where (x => 
                 x.AccountId == accountId &&
-            x.Token == token)
-                    .SingleOrDefault ();
+            x.Token == token);
         }
 
         public static List<McPending> QueryByOperation (int accountId, McPending.Operations operation)
