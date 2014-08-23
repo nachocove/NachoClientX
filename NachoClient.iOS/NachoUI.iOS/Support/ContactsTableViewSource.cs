@@ -435,6 +435,7 @@ namespace NachoClient.iOS
                     ConfigureLabelView (labelView, displayName, colorIndex);
                     return;
                 default:
+                    NcAssert.CaseError ("Unhandled Case");
                     return;
                 }
             } else {
