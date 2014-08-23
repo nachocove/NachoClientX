@@ -27,6 +27,9 @@ namespace NachoClient.AndroidClient
 		public static void UpdateIdValues()
 		{
 			global::DnDns.Resource.String.library_name = global::NachoClient.AndroidClient.Resource.String.library_name;
+			global::DDay.Collections.Android.Resource.String.library_name = global::NachoClient.AndroidClient.Resource.String.library_name;
+			global::DDay.iCal.Android.Resource.String.library_name = global::NachoClient.AndroidClient.Resource.String.library_name;
+			global::antlr.runtime.Android.Resource.String.library_name = global::NachoClient.AndroidClient.Resource.String.library_name;
 		}
 		
 		public partial class Animation

@@ -85,6 +85,15 @@
       <HintPath>..\Json.NET\json.net-4.5.11\lib\android\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System.Json" />
+    <Reference Include="DDay.Collections.Android">
+      <HintPath>..\..\DDay-iCal-Xamarin\DDay.Collections.Android\obj\Debug\DDay.Collections.Android.dll</HintPath>
+    </Reference>
+    <Reference Include="DDay.iCal.Android">
+      <HintPath>..\..\DDay-iCal-Xamarin\DDay.iCal.Android\obj\Debug\DDay.iCal.Android.dll</HintPath>
+    </Reference>
+    <Reference Include="antlr.runtime.Android">
+      <HintPath>..\..\DDay-iCal-Xamarin\antlr.runtime.Android\obj\Debug\antlr.runtime.Android.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Resources\Resource.designer.cs" />
@@ -338,6 +347,7 @@
     <Compile Include="NachoCore\Adapters\INcEventProvider.cs" />
     <Compile Include="NachoCore\Adapters\NcEventManager.cs" />
     <Compile Include="NachoCore\Adapters\UserInteractionEmailMessages.cs" />
+    <Compile Include="NachoCore\Utils\CalendarHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

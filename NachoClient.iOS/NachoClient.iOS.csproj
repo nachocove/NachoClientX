@@ -780,7 +780,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcCalendarManager.cs">
       <Link>NachoCore\Adapters\NcCalendarManager.cs</Link>
     </Compile>
-    <Compile Include="NachoCore\Utils\CalendarHelper.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\NcApplication.cs">
       <Link>NachoCore\NcApplication.cs</Link>
     </Compile>
@@ -1139,6 +1138,9 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\UserInteractionEmailMessages.cs">
       <Link>NachoCore\Adapters\UserInteractionEmailMessages.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\CalendarHelper.cs">
+      <Link>NachoCore\Utils\CalendarHelper.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
