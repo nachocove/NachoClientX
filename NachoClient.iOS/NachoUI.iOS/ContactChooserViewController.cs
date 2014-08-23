@@ -117,13 +117,10 @@ namespace NachoClient.iOS
                 ContactSearchViewController destinationController = (ContactSearchViewController)segue.DestinationViewController;
                 destinationController.owner = this;
                 destinationController.initialSearchString = AutocompleteTextField.Text;
+                return;
             }
-            if (segue.Identifier.Equals ("ContactChooserToContactView")) {
-                var holder = (SegueHolder)sender;
-                ContactViewController destinationController = (ContactViewController)segue.DestinationViewController;
-                destinationController.editing = false;
-                destinationController.contact = (McContact)holder.value;
-            }
+            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
+            NcAssert.CaseError ();
         }
 
         protected void UpdateEmailAddress (McContact contact, string address)

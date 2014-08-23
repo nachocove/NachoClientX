@@ -289,10 +289,6 @@
     <Compile Include="NachoUI.iOS\HomePageViewController.designer.cs">
       <DependentUpon>HomePageViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="NachoUI.iOS\ContactViewController.cs" />
-    <Compile Include="NachoUI.iOS\ContactViewController.designer.cs">
-      <DependentUpon>ContactViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McAccount.cs">
       <Link>NachoCore\Model\McAccount.cs</Link>
     </Compile>

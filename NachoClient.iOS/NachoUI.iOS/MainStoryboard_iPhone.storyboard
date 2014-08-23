@@ -459,7 +459,6 @@
                         <outlet property="nachoButton" destination="DbK-yy-Alh" id="YgY-Zo-4hj"/>
                         <outlet property="revealButton" destination="jLa-UU-2VJ" id="dUB-Zb-Sre"/>
                         <outlet property="searchDisplayController" destination="rbr-Tg-MJy" id="gRe-Gf-Fmo"/>
-                        <segue destination="cRD-uS-uKj" kind="push" identifier="ContactsToContact" id="mo4-Vz-xJh"/>
                         <segue destination="MG9-1p-N0l" kind="push" identifier="ContactsToContactDetail" id="fwk-9p-tlV"/>
                         <segue destination="vgr-FH-RtX" kind="push" identifier="ContactsToContactEdit" id="W3H-fb-nEJ"/>
                         <segue destination="ygr-ff-C2f" kind="push" identifier="SegueToNachoNow" id="hFF-MQ-SOq"/>
@@ -480,27 +479,6 @@
                 <barButtonItem title="Item" id="DbK-yy-Alh" userLabel="Bar Button Item - Nacho"/>
             </objects>
             <point key="canvasLocation" x="-2151" y="-955"/>
-        </scene>
-        <!--Contact View Controller - Contact-->
-        <scene sceneID="FRe-Er-G10">
-            <objects>
-                <viewController restorationIdentifier="ContactViewController" storyboardIdentifier="ContactViewController" id="cRD-uS-uKj" customClass="ContactViewController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="Ehb-K2-MUK">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
-                        <autoresizingMask key="autoresizingMask" flexibleMaxY="YES"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
-                    </view>
-                    <extendedEdge key="edgesForExtendedLayout"/>
-                    <navigationItem key="navigationItem" title="Contact" id="qGr-Yu-K1Y">
-                        <barButtonItem key="rightBarButtonItem" systemItem="edit" id="1h5-H1-Tex"/>
-                    </navigationItem>
-                    <connections>
-                        <outlet property="editBarButtonItem" destination="1h5-H1-Tex" id="9XF-DO-UnU"/>
-                    </connections>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="2DD-f7-nYh" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-1536" y="-955"/>
         </scene>
         <!--General Settings View Controller-->
         <scene sceneID="cES-6I-XY9">
@@ -1043,7 +1021,6 @@
                         <outlet property="ContactsButton" destination="PfB-rr-F7z" id="JTC-Ef-UAG"/>
                         <outlet property="TableView" destination="9hu-Bf-IM7" id="BGO-Do-fuf"/>
                         <outlet property="cancelButton" destination="evg-g8-Cwf" id="LYO-8h-85t"/>
-                        <segue destination="cRD-uS-uKj" kind="push" identifier="ContactChooserToContactView" id="WJc-Y6-XJB"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="1Iy-0a-PtC" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -2102,29 +2079,28 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="LTs-mH-KqM"/>
-        <segue reference="peA-r2-tjq"/>
-        <segue reference="99V-JV-Y0L"/>
-        <segue reference="ja3-Zu-g6R"/>
-        <segue reference="4qv-ZA-Stq"/>
         <segue reference="iqA-wd-xqD"/>
-        <segue reference="g4G-tD-G9H"/>
-        <segue reference="ebP-h4-BhC"/>
         <segue reference="J8i-gn-UTn"/>
+        <segue reference="ebP-h4-BhC"/>
         <segue reference="JGd-do-Y28"/>
-        <segue reference="Kmd-x6-iCJ"/>
+        <segue reference="4qv-ZA-Stq"/>
         <segue reference="FHc-YP-jWH"/>
+        <segue reference="ja3-Zu-g6R"/>
+        <segue reference="Kmd-x6-iCJ"/>
         <segue reference="Wvd-xL-8Ik"/>
-        <segue reference="mo4-Vz-xJh"/>
         <segue reference="W3H-fb-nEJ"/>
         <segue reference="fwk-9p-tlV"/>
         <segue reference="alQ-9Z-W4y"/>
-        <segue reference="G1z-aV-19B"/>
         <segue reference="qB9-ce-7gT"/>
-        <segue reference="w67-dy-XSq"/>
+        <segue reference="99V-JV-Y0L"/>
+        <segue reference="G1z-aV-19B"/>
         <segue reference="xSG-RA-4K6"/>
         <segue reference="m2D-2n-RiV"/>
         <segue reference="7sK-rg-HQL"/>
+        <segue reference="peA-r2-tjq"/>
+        <segue reference="w67-dy-XSq"/>
+        <segue reference="LTs-mH-KqM"/>
         <segue reference="4M9-UI-9mt"/>
+        <segue reference="g4G-tD-G9H"/>
     </inferredMetricsTieBreakers>
 </document>
