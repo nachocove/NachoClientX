@@ -319,9 +319,11 @@ namespace NachoCore.Model
                 " m.AccountId = ? AND " +
                 " m.ClassCode = ? AND " +
                 " m.FolderId = ? AND " +
-                " e.FlagUtcStartDate < ? " +
-                " ORDER BY e.Score DESC, e.DateReceived DESC LIMIT 20",
-                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
+                " e.FlagUtcStartDate < ? AND " +
+                " e.Score > ? " +
+                " ORDER BY e.DateReceived DESC",
+                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId,DateTime.UtcNow,
+                minHotScore);
         }
 
         /// TODO: Need account id
