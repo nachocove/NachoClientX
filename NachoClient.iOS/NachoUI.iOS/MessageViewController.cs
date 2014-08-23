@@ -29,6 +29,9 @@ namespace NachoClient.iOS
         protected int htmlBusy;
         protected int deferLayout;
         protected object deferLayoutLock = new object ();
+        protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
+        protected int LINE_OFFSET = 30;
+        protected int CELL_HEIGHT = 44;
 
         protected bool errorLoadingBody;
 
@@ -400,7 +403,6 @@ namespace NachoClient.iOS
             view.AddSubview (spinner);
 
             // Attachments
-
             attachmentListView = new UIView ();
             attachmentListView.Tag = ATTACHMENT_VIEW_TAG;
 
@@ -544,7 +546,7 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_EMAIL, "Starting download of whole message body");
                 StartSpinner ();
                 BackEnd.Instance.DnldEmailBodyCmd (message.AccountId, message.Id);
-                RenderTextString (message.GetBodyPreviewOrEmpty ());
+                //RenderTextString (message.GetBodyPreviewOrEmpty ());
                 return;
             }
  
@@ -679,9 +681,9 @@ namespace NachoClient.iOS
         void RenderTextString (string text)
         {
             var attributedString = new NSAttributedString (text);
-            var label = new UILabel (new RectangleF (0.0f, 0.0f, 320.0f, 1.0f));
+            var label = new UILabel (new RectangleF (15.0f, 0.0f, 290.0f, 1.0f));
             label.Lines = 0;
-            label.Font = UIFont.SystemFontOfSize (17.0f);
+            label.Font = A.Font_AvenirNextRegular17;
             label.LineBreakMode = UILineBreakMode.WordWrap;
             label.AttributedText = attributedString;
             label.SizeToFit ();
@@ -696,9 +698,9 @@ namespace NachoClient.iOS
             nsAttributes.DocumentType = NSDocumentType.RTF;
             var attributedString = new NSAttributedString (rtf, nsAttributes, ref nsError);
             // Put attributed string into a label
-            var label = new UILabel (new RectangleF (0.0f, 0.0f, 320.0f, 1.0f));
+            var label = new UILabel (new RectangleF (15.0f, 0.0f, 290.0f, 1.0f));
             label.Lines = 0;
-            label.Font = UIFont.SystemFontOfSize (17.0f);
+            label.Font = A.Font_AvenirNextRegular17;
             label.LineBreakMode = UILineBreakMode.WordWrap;
             label.AttributedText = attributedString;
             label.SizeToFit ();
@@ -739,7 +741,7 @@ namespace NachoClient.iOS
 
         void RenderHtmlString (string html)
         {
-            var wv = new UIWebView (new RectangleF (0, 0, View.Frame.Width, 1));
+            var wv = new UIWebView (new RectangleF (0, 0, SCREEN_WIDTH, 1));
             wv.ScrollView.Bounces = false;
             wv.ScrollView.ScrollEnabled = true;
             wv.ScrollView.PagingEnabled = false;
@@ -822,62 +824,210 @@ namespace NachoClient.iOS
             var evt = iCal.Events.First () as DDay.iCal.Event;
             NachoCore.Utils.CalendarHelper.ExtrapolateTimes (ref evt);
 
-            var root = new RootElement ("");
-            var section = new ThinSection ();
-            root.Add (section);
+            UIView calendarEventView = new UIView (new RectangleF (0, 0, SCREEN_WIDTH, LINE_OFFSET + 110));
+            calendarEventView.Tag = MESSAGE_PART_TAG;
+            //calendarEventView.BackgroundColor = A.Color_NachoNowBackground;
+            //calendarEventView.BackgroundColor = A.Color_NachoBlue;
 
-            if (null != evt.Summary) {
-                section.Add (new SubjectElement (evt.Summary));
-            }
-            section.Add (new StartTimeElement (Pretty.FullDateTimeString (evt.Start.Value)));
-            if (evt.IsAllDay) {
-                section.Add (new DurationElement (Pretty.AllDayStartToEnd (evt.Start.Value, evt.End.Value)));
+            UILabel monthLabel = new UILabel (new RectangleF (19, LINE_OFFSET + 3, 36, 20));
+            monthLabel.Font = A.Font_AvenirNextRegular12;
+            monthLabel.TextColor = A.Color_NachoBlack;
+            monthLabel.TextAlignment = UITextAlignment.Center;
+            monthLabel.Text = evt.Start.Value.ToString ("MMM");
+            //monthLabel.BackgroundColor = A.Color_NachoNowBackground;
+
+            UIImageView dateImage = new UIImageView (new RectangleF (19, LINE_OFFSET + 23, 36, 36));
+            var size = new SizeF (40, 40);
+            dateImage.Image = NachoClient.Util.DrawCalDot (A.Color_FEBA32, size);
+
+            UILabel dateLabel = new UILabel (new RectangleF (19, LINE_OFFSET + 23, 36, 36));
+            dateLabel.Font = A.Font_AvenirNextDemiBold17;
+            dateLabel.TextColor = UIColor.White;
+            dateLabel.TextAlignment = UITextAlignment.Center;
+            dateLabel.Text = evt.Start.Value.ToString ("dd");
+
+            UILabel titleLabel = new UILabel (new RectangleF (74, LINE_OFFSET + 7, SCREEN_WIDTH - 89, 20));
+            titleLabel.Font = A.Font_AvenirNextDemiBold14;
+            titleLabel.TextColor = A.Color_NachoBlack;
+            titleLabel.TextAlignment = UITextAlignment.Left;
+            titleLabel.Text = evt.Summary;
+            titleLabel.SizeToFit ();
+
+            UILabel durationLabel = new UILabel (new RectangleF (74, LINE_OFFSET + 27, SCREEN_WIDTH - 89, 20));
+            durationLabel.Font = A.Font_AvenirNextRegular12;
+            durationLabel.TextColor = A.Color_NachoBlack;
+            durationLabel.TextAlignment = UITextAlignment.Left;
+            durationLabel.Text = evt.Start.Value.ToString ("dd");
+            if (!evt.IsAllDay) {
+                if (evt.Start.Value.DayOfYear == evt.End.Value.DayOfYear) {
+                    durationLabel.Text = "from " + Pretty.FullTimeString (evt.Start.Value) + " until " + Pretty.FullTimeString (evt.End.Value);
+                } else {
+                    durationLabel.Text = "from " + Pretty.FullTimeString (evt.Start.Value) + " until " + Pretty.FullDateTimeString (evt.End.Value);
+                }
             } else {
-                section.Add (new DurationElement (Pretty.EventStartToEnd (evt.Start.Value, evt.End.Value)));
+                if (evt.Start.Value.DayOfYear == evt.End.Value.DayOfYear) {
+                    durationLabel.Text = "all day event";
+                } else {
+                    durationLabel.Text = "from " + Pretty.FullDateString (evt.Start.Value) + " until " + Pretty.FullDateString (evt.End.Value);
+                }
             }
+            durationLabel.SizeToFit ();
 
-            if (null != evt.Location) {
-                section = new ThinSection ();
-                section.Add (new LocationElement (evt.Location));
+            UILabel locationLabel = new UILabel (new RectangleF (74, LINE_OFFSET + 45, SCREEN_WIDTH - 89, 20));
+            locationLabel.Font = A.Font_AvenirNextRegular12;
+            locationLabel.TextColor = A.Color_NachoBlack;
+            locationLabel.TextAlignment = UITextAlignment.Left;
+            locationLabel.Text = evt.Location;
+            locationLabel.SizeToFit ();
+
+            calendarEventView.Add (monthLabel);
+            calendarEventView.Add (dateImage);
+            calendarEventView.Add (dateLabel);
+            calendarEventView.Add (titleLabel);
+            calendarEventView.Add (durationLabel);
+            calendarEventView.Add (locationLabel);
+
+            MakeResponseBar (evt, calendarEventView);
+
+            Util.AddHorizontalLine (0, LINE_OFFSET, SCREEN_WIDTH, A.Color_NachoSeparator, calendarEventView);
+            Util.AddHorizontalLine (0, LINE_OFFSET + 66, SCREEN_WIDTH, A.Color_NachoSeparator, calendarEventView);
+            Util.AddHorizontalLine (0, LINE_OFFSET + 110, SCREEN_WIDTH, A.Color_NachoSeparator, calendarEventView);
+            Util.AddVerticalLine (65, LINE_OFFSET, 66, A.Color_NachoSeparator, calendarEventView);
+//            var root = new RootElement ("");
+//            var section = new ThinSection ();
+//            root.Add (section);
+//
+//            if (null != evt.Summary) {
+//                section.Add (new SubjectElement (evt.Summary));
+//            }
+//            section.Add (new StartTimeElement (Pretty.FullDateTimeString (evt.Start.Value)));
+//            if (evt.IsAllDay) {
+//                section.Add (new DurationElement (Pretty.AllDayStartToEnd (evt.Start.Value, evt.End.Value)));
+//            } else {
+//                section.Add (new DurationElement (Pretty.EventStartToEnd (evt.Start.Value, evt.End.Value)));
+//            }
+//
+//            if (null != evt.Location) {
+//                section = new ThinSection ();
+//                section.Add (new LocationElement (evt.Location));
+//            }
+//
+//            var button1 = new StyledStringElementWithDot ("Accept", UIColor.Green);
+//            button1.Tapped += () => {
+//                UpdateMeetingStatus (evt, NcAttendeeStatus.Accept);
+//            };
+//            var button2 = new StyledStringElementWithDot ("Tentative", UIColor.Yellow);
+//            button2.Tapped += () => {
+//                UpdateMeetingStatus (evt, NcAttendeeStatus.Tentative);
+//            };
+//            var button3 = new StyledStringElementWithDot ("Decline", UIColor.Red);
+//            button3.Tapped += () => {
+//                UpdateMeetingStatus (evt, NcAttendeeStatus.Decline);
+//            };
+//            section.Add (button1);
+//            section.Add (button2);
+//            section.Add (button3);
+//
+//            {
+//                var e = new StyledStringElement ("People");
+//                var image = UIImage.FromBundle ("ic_action_group");
+//                e.Image = image.Scale (new SizeF (22.0f, 22.0f));
+//                e.Font = UIFont.SystemFontOfSize (17.0f);
+//                //                e.Tapped += () => {
+//                //                    PushAttendeeView ();
+//                //                };
+//                e.Accessory = UITableViewCellAccessory.DisclosureIndicator;
+//            }
+//
+//            //            section = new ThinSection ();
+//            //            using (var image = UIImage.FromBundle ("ic_action_alarms")) {
+//            //                var scaledImage = image.Scale (new SizeF (22.0f, 22.0f));
+//            //                section.Add (new StyledStringElementWithIcon ("Reminder", Pretty.ReminderString (evt.Alarms.First()), scaledImage));
+//            //            }
+//            //            root.Add (section);
+//
+//            var dvc = new DialogViewController (root);
+//            dvc.View.Tag = MESSAGE_PART_TAG;
+            view.AddSubview (calendarEventView);
+        }
+
+        UIButton acceptButton;
+        UIButton tentativeButton;
+        UIButton declineButton;
+
+        public void MakeResponseBar (DDay.iCal.Event evt, UIView parentView)
+        {
+            UIView responseView = new UIView (new RectangleF (0, LINE_OFFSET + 66, SCREEN_WIDTH, 44));
+            responseView.BackgroundColor = UIColor.White;
+
+            acceptButton = new UIButton (UIButtonType.RoundedRect);
+            tentativeButton = new UIButton (UIButtonType.RoundedRect);
+            declineButton = new UIButton (UIButtonType.RoundedRect);
+
+            //acceptButton
+            using (var acceptButtonImage = UIImage.FromBundle ("btn-mtng-accept")) {
+                acceptButton.SetImage (acceptButtonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal), UIControlState.Normal);
             }
+            using (var acceptPressedButtonImage = UIImage.FromBundle ("btn-mtng-accept-pressed")) {
+                acceptButton.SetImage (acceptPressedButtonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal), UIControlState.Selected);
+            }
+            acceptButton.SetTitle ("", UIControlState.Normal);
+            acceptButton.Frame = new RectangleF (25, 10, 24, 24);
+            acceptButton.TintColor = UIColor.Clear;
 
-            var button1 = new StyledStringElementWithDot ("Accept", UIColor.Green);
-            button1.Tapped += () => {
+            //tentativeButton
+            using (var tentativeButtonImage = UIImage.FromBundle ("btn-mtng-tenative")) {
+                tentativeButton.SetImage (tentativeButtonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal), UIControlState.Normal);
+            }
+            using (var tentativePressedButtonImage = UIImage.FromBundle ("btn-mtng-tenative-pressed")) {
+                tentativeButton.SetImage (tentativePressedButtonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal), UIControlState.Selected);
+            }
+            tentativeButton.SetTitle ("", UIControlState.Normal);
+            tentativeButton.Frame = new RectangleF ((SCREEN_WIDTH / 2) - 12, 10, 24, 24);
+            tentativeButton.TintColor = UIColor.Clear;
+
+            //declineButton
+            using (var declineButtonImage = UIImage.FromBundle ("btn-mtng-decline")) {
+                declineButton.SetImage (declineButtonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal), UIControlState.Normal);
+
+            }
+            using (var declinePressedButtonImage = UIImage.FromBundle ("btn-mtng-decline-pressed")) {
+                declineButton.SetImage (declinePressedButtonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal), UIControlState.Selected);
+            }
+            declineButton.SetTitle ("", UIControlState.Normal);
+            declineButton.Frame = new RectangleF (SCREEN_WIDTH - 24 - 25, 10, 24, 24);
+            declineButton.TintColor = UIColor.Clear;
+
+            acceptButton.TouchUpInside += (object sender, EventArgs e) => {
+                ToggleButtons ();
+                acceptButton.Selected = true;
                 UpdateMeetingStatus (evt, NcAttendeeStatus.Accept);
             };
-            var button2 = new StyledStringElementWithDot ("Tentative", UIColor.Yellow);
-            button2.Tapped += () => {
+
+            tentativeButton.TouchUpInside += (object sender, EventArgs e) => {
+                ToggleButtons ();
+                tentativeButton.Selected = true;
                 UpdateMeetingStatus (evt, NcAttendeeStatus.Tentative);
             };
-            var button3 = new StyledStringElementWithDot ("Decline", UIColor.Red);
-            button3.Tapped += () => {
+
+            declineButton.TouchUpInside += (object sender, EventArgs e) => {
+                ToggleButtons ();
+                declineButton.Selected = true;
                 UpdateMeetingStatus (evt, NcAttendeeStatus.Decline);
             };
-            section.Add (button1);
-            section.Add (button2);
-            section.Add (button3);
 
-            {
-                var e = new StyledStringElement ("People");
-                var image = UIImage.FromBundle ("ic_action_group");
-                e.Image = image.Scale (new SizeF (22.0f, 22.0f));
-                e.Font = UIFont.SystemFontOfSize (17.0f);
-                //                e.Tapped += () => {
-                //                    PushAttendeeView ();
-                //                };
-                e.Accessory = UITableViewCellAccessory.DisclosureIndicator;
-            }
+            responseView.Add (acceptButton);
+            responseView.Add (tentativeButton);
+            responseView.Add (declineButton);
 
-            //            section = new ThinSection ();
-            //            using (var image = UIImage.FromBundle ("ic_action_alarms")) {
-            //                var scaledImage = image.Scale (new SizeF (22.0f, 22.0f));
-            //                section.Add (new StyledStringElementWithIcon ("Reminder", Pretty.ReminderString (evt.Alarms.First()), scaledImage));
-            //            }
-            //            root.Add (section);
+            parentView.Add (responseView);
+        }
 
-            var dvc = new DialogViewController (root);
-            dvc.View.Tag = MESSAGE_PART_TAG;
-            view.AddSubview (dvc.View);
+        protected void ToggleButtons ()
+        {
+            acceptButton.Selected = false;
+            declineButton.Selected = false;
+            tentativeButton.Selected = false;
         }
 
         /// <summary>
@@ -885,7 +1035,7 @@ namespace NachoClient.iOS
         /// </summary>
         void UpdateMeetingStatus (IEvent evt, NcAttendeeStatus status)
         {
-            // TODO: Map meeting uid to calendar record; update status
+            //BackEnd.Instance.RespondCalCmd (account.Id, evt, status);
         }
 
 

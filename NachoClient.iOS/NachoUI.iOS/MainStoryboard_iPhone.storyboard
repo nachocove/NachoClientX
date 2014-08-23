@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="5056" systemVersion="13C64" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="DIz-1F-Wd9">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="5056" systemVersion="13E28" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="DIz-1F-Wd9">
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="3733"/>
     </dependencies>
@@ -28,7 +28,7 @@
             <objects>
                 <viewController storyboardIdentifier="AdvancedLoginViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="tch-Ox-Ppd" customClass="AdvancedLoginViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="QRf-dz-YUv">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -128,7 +128,7 @@
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="sh1-Qf-9vs" userLabel="First Responder" sceneMemberID="firstResponder"/>
-                <barButtonItem image="navbar-icn-menu-active.png" id="3Av-eh-eab" userLabel="Bar Button Item - Reveal"/>
+                <barButtonItem image="navbar-icn-menu.png" id="3Av-eh-eab" userLabel="Bar Button Item - Reveal"/>
                 <barButtonItem image="navbar-icn-inbox.png" id="Mqq-sh-bns" userLabel="Bar Button Item - Now"/>
                 <barButtonItem systemItem="trash" id="q2b-Qv-RwO" userLabel="Bar Button Item - Delete"/>
                 <barButtonItem systemItem="save" id="Gfu-QM-YrL" userLabel="Bar Button Item - Save"/>
@@ -854,8 +854,8 @@
                     <toolbarItems/>
                     <navigationItem key="navigationItem" title="Folders" id="rc6-gG-qc6">
                         <barButtonItem key="backBarButtonItem" title="Folders" id="8Rb-XO-7If"/>
-                        <barButtonItem key="leftBarButtonItem" image="list.png" id="puc-hC-DdW" userLabel="Bar Button Item - Menu"/>
-                        <barButtonItem key="rightBarButtonItem" systemItem="compose" id="JfL-cu-kdr"/>
+                        <barButtonItem key="leftBarButtonItem" image="navbar-icn-menu.png" id="puc-hC-DdW" userLabel="Bar Button Item - Menu"/>
+                        <barButtonItem key="rightBarButtonItem" systemItem="add" id="JfL-cu-kdr"/>
                     </navigationItem>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <nil key="simulatedBottomBarMetrics"/>
@@ -2085,7 +2085,6 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <image name="navbar-icn-close.png" width="17" height="17"/>
         <image name="navbar-icn-defer.png" width="20" height="24"/>
         <image name="navbar-icn-inbox.png" width="24" height="24"/>
-        <image name="navbar-icn-menu-active.png" width="24" height="24"/>
         <image name="navbar-icn-menu.png" width="24" height="24"/>
         <image name="navbar-icn-newEmail.png" width="24" height="24"/>
         <image name="navbar-icn-newevent.png" width="24" height="24"/>
@@ -2103,51 +2102,29 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="QbR-l1-NT5"/>
-        <segue reference="9pm-2U-9AI"/>
-        <segue reference="lXf-yZ-Qj9"/>
-        <segue reference="zDw-Tx-fTt"/>
-        <segue reference="zXa-AG-jcx"/>
-        <segue reference="uqv-uq-oCq"/>
-        <segue reference="Rd3-YY-NMX"/>
-        <segue reference="gkM-dU-I3K"/>
-        <segue reference="FHc-YP-jWH"/>
-        <segue reference="mo4-Vz-xJh"/>
-        <segue reference="hxO-14-opZ"/>
-        <segue reference="c79-xS-Npa"/>
-        <segue reference="Afu-47-Kju"/>
-        <segue reference="peA-r2-tjq"/>
-        <segue reference="w67-dy-XSq"/>
-        <segue reference="xSG-RA-4K6"/>
-        <segue reference="m2D-2n-RiV"/>
-        <segue reference="wZa-Ld-8vI"/>
-        <segue reference="sa2-Em-8sH"/>
-        <segue reference="g4G-tD-G9H"/>
-        <segue reference="iqA-wd-xqD"/>
-        <segue reference="ebP-h4-BhC"/>
-        <segue reference="VgN-QU-7Sb"/>
-        <segue reference="p6V-c0-caL"/>
-        <segue reference="J8i-gn-UTn"/>
-        <segue reference="T7S-YG-5o8"/>
-        <segue reference="W3H-fb-nEJ"/>
-        <segue reference="hFF-MQ-SOq"/>
-        <segue reference="mo4-Vz-xJh"/>
-        <segue reference="fwk-9p-tlV"/>
-        <segue reference="Ery-e3-vSy"/>
-        <segue reference="kYM-OY-NE0"/>
-        <segue reference="6J3-c2-bz5"/>
-        <segue reference="alQ-9Z-W4y"/>
-        <segue reference="UJb-nL-M4Z"/>
-        <segue reference="7sK-rg-HQL"/>
         <segue reference="LTs-mH-KqM"/>
         <segue reference="peA-r2-tjq"/>
+        <segue reference="99V-JV-Y0L"/>
+        <segue reference="ja3-Zu-g6R"/>
+        <segue reference="4qv-ZA-Stq"/>
+        <segue reference="iqA-wd-xqD"/>
+        <segue reference="g4G-tD-G9H"/>
+        <segue reference="ebP-h4-BhC"/>
+        <segue reference="J8i-gn-UTn"/>
+        <segue reference="JGd-do-Y28"/>
+        <segue reference="Kmd-x6-iCJ"/>
+        <segue reference="FHc-YP-jWH"/>
+        <segue reference="Wvd-xL-8Ik"/>
+        <segue reference="mo4-Vz-xJh"/>
+        <segue reference="W3H-fb-nEJ"/>
+        <segue reference="fwk-9p-tlV"/>
+        <segue reference="alQ-9Z-W4y"/>
+        <segue reference="G1z-aV-19B"/>
+        <segue reference="qB9-ce-7gT"/>
         <segue reference="w67-dy-XSq"/>
         <segue reference="xSG-RA-4K6"/>
         <segue reference="m2D-2n-RiV"/>
+        <segue reference="7sK-rg-HQL"/>
         <segue reference="4M9-UI-9mt"/>
-        <segue reference="dAf-rc-Hh3"/>
-        <segue reference="mLY-u0-R5O"/>
-        <segue reference="alQ-9Z-W4y"/>
-        <segue reference="qSV-ar-VcH"/>
     </inferredMetricsTieBreakers>
 </document>

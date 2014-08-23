@@ -141,6 +141,8 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
+            CalendarHelper.ExpandRecurrences ();
+
             MakeToolbar ();
             var g = new UITapGestureRecognizer (() => View.EndEditing (true));
             contentView.AddGestureRecognizer (g);
@@ -327,9 +329,6 @@ namespace NachoClient.iOS
 
         protected void CreateEventView ()
         {
-
-                    
-
             //NavigationItem.LeftBarButtonItem = null;
             NavigationItem.RightBarButtonItem = editButton;
             editButton.Clicked += (object sender, EventArgs e) => {
@@ -492,7 +491,7 @@ namespace NachoClient.iOS
             EventInfoView.Add (eventNotesView);
 
             for (int i = 0; i < 4; i++) {
-                AddLine (23f, RECURRING_OFFEST + 20 + 245 + IMAGE_HEIGHT + 115 + (CELL_HEIGHT * i), SCREEN_WIDTH, separatorColor, EventInfoView);
+                Util.AddHorizontalLine (23f, RECURRING_OFFEST + 20 + 245 + IMAGE_HEIGHT + 115 + (CELL_HEIGHT * i), SCREEN_WIDTH, separatorColor, EventInfoView);
             }
 
             //Content View
@@ -504,7 +503,6 @@ namespace NachoClient.iOS
             scrollView.BackgroundColor = UIColor.White;
             scrollView.ContentSize = new SizeF (SCREEN_WIDTH, RECURRING_OFFEST + 20 + 608 + 20 - 115);
             scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
-
 
         }
 
@@ -619,21 +617,7 @@ namespace NachoClient.iOS
             }
 
         }
-
-        public UIView AddLineView (float offset, float yVal, float width, UIColor color)
-        {
-            var lineUIView = new UIView (new RectangleF (offset, yVal, width, .5f));
-            lineUIView.BackgroundColor = color;
-            return lineUIView;
-        }
-
-        public void AddLine (float offset, float yVal, float width, UIColor color, UIView parentView)
-        {
-            var lineUIView = new UIView (new RectangleF (offset, yVal, width, .5f));
-            lineUIView.BackgroundColor = color;
-            parentView.Add (lineUIView);
-        }
-
+          
         public void AddTextLabel (float xOffset, float yOffset, float width, float height, string text, UIView parentView)
         {
             var textLabel = new UILabel (new RectangleF (xOffset, yOffset, width, height));
@@ -795,8 +779,6 @@ namespace NachoClient.iOS
                 parentView.Add (attendeesAccessoryImage);
                 parentView.Add (eventAttendeeDetailButton);
             }
-
-
         }
 
         public UIImage GetImageForAttendeeResponse (McAttendee attendee)

@@ -419,9 +419,9 @@ namespace NachoClient
             return image;
         }
 
-        public static UIImage DrawCalDot (UIColor circleColor)
+        public static UIImage DrawCalDot (UIColor circleColor, SizeF size)
         {
-            var size = new SizeF (10, 10);
+            //var size = new SizeF (10, 10);
             var origin = new PointF (0, 0);
 
             UIGraphics.BeginImageContextWithOptions (size, false, 0);
@@ -665,6 +665,27 @@ namespace NachoClient
             default:
                 return num + "th";
             }
+        }
+
+        public static UIView AddHorizontalLineView (float offset, float yVal, float width, UIColor color)
+        {
+            var lineUIView = new UIView (new RectangleF (offset, yVal, width, .5f));
+            lineUIView.BackgroundColor = color;
+            return lineUIView;
+        }
+
+        public static void AddHorizontalLine (float offset, float yVal, float width, UIColor color, UIView parentView)
+        {
+            var lineUIView = new UIView (new RectangleF (offset, yVal, width, .5f));
+            lineUIView.BackgroundColor = color;
+            parentView.Add (lineUIView);
+        }
+
+        public static void AddVerticalLine (float offset, float yVal, float height, UIColor color, UIView parentView)
+        {
+            var lineUIView = new UIView (new RectangleF (offset, yVal, .5f, height));
+            lineUIView.BackgroundColor = color;
+            parentView.Add (lineUIView);
         }
 
         #endregion

@@ -128,7 +128,8 @@ namespace NachoCore.Utils
         static public string FullDateTimeString (DateTime d)
         {
             NcAssert.True (DateTimeKind.Local != d.Kind);
-            return LocalT (d).ToString ("ddd, MMM d - h:mm tt");
+            return LocalT (d).ToString ("ddd, MMM d - h:mm ") + LocalT (d).ToString("tt").ToLower();
+
         }
 
         static public string FullDateString (DateTime d)
@@ -152,7 +153,7 @@ namespace NachoCore.Utils
         static public string FullTimeString (DateTime d)
         {
             NcAssert.True (DateTimeKind.Local != d.Kind);
-            return LocalT (d).ToString ("t");
+            return LocalT (d).ToString ("t").ToLower();
         }
             
 
