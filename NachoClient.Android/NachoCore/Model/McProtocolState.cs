@@ -49,9 +49,9 @@ namespace NachoCore.Model
         public uint ProtoControlState { get; set; }
 
         public int StrategyRung { get; set; }
-        // FIXME - need to set.
+
         public DateTime LastNarrowSync { get; set; }
-        // FIXME - need to set.
+
         public DateTime LastPing { get; set; }
 
         public bool IsWipeRequired { get; set; }

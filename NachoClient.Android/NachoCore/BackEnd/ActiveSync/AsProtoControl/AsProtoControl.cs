@@ -986,6 +986,7 @@ namespace NachoCore.ActiveSync
         {
             var cmd = Sm.Arg as AsCommand;
             if (null == cmd) {
+                Log.Info (Log.LOG_AS, "DoSync: not from Pick.");
                 cmd = new AsSyncCommand (this, SyncStrategy.GenSyncKit (AccountId, ProtocolState, true));
             }
             SetCmd (cmd);
