@@ -41,8 +41,16 @@ namespace NachoClient.iOS
 
             NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { A.RevealButton (this), A.NachoNowButton (this) };
 
+            var searchButton = new UIBarButtonItem (UIBarButtonSystemItem.Search);
+
+            NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { addButton, searchButton };
+
             addButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("ContactsToContactEdit", new SegueHolder (null));
+            };
+
+            searchButton.Clicked += (object sender, EventArgs e) => {
+                SearchDisplayController.SearchBar.BecomeFirstResponder();
             };
         }
 
