@@ -500,6 +500,29 @@ namespace NachoCore.Model
         {
             NcModel.Instance.Db.Query<McEmailMessage> ("UPDATE McEmailMessage AS m SET m.NeedUpdate = 1");
         }
+
+        public void ToggleHotOrNot ()
+        {
+            var ua = this.UserAction;
+
+            switch (this.UserAction) {
+            case 0:
+                this.UserAction = (this.isHot () ? -1 : 1);
+                break;
+            case 1:
+                this.UserAction = -1;
+                break;
+            case -1:
+                this.UserAction = 1;
+                break;
+            default:
+                NcAssert.CaseError ();
+                break;
+            }
+            Log.Info (Log.LOG_BRAIN, "HotOrNot: was={0}, new={1}", ua, this.UserAction);
+            this.Update ();
+            NcBrain.UpdateMessageScore (this.Id);        
+        }
     }
 }
 

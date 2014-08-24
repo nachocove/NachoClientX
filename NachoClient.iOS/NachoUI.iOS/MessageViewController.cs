@@ -11,6 +11,7 @@ using MonoTouch.UIKit;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoCore.Brain;
 using MimeKit;
 using DDay.iCal;
 using DDay.iCal.Serialization;
@@ -25,6 +26,8 @@ namespace NachoClient.iOS
         protected UIView view;
         protected UIView attachmentListView;
         protected List<McAttachment> attachments;
+
+        protected UIBarButtonItem chiliButton;
 
         protected int htmlBusy;
         protected int deferLayout;
@@ -43,10 +46,14 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
+            chiliButton = new UIBarButtonItem ("Hot", UIBarButtonItemStyle.Plain, null);
+
             // Multiple buttons spaced evently
             ToolbarItems = new UIBarButtonItem[] {
                 replyButton,
                 flexibleSpaceButton,
+                chiliButton,
+                fixedSpaceButton,
                 archiveButton,
                 fixedSpaceButton,
                 saveButton,
@@ -76,6 +83,11 @@ namespace NachoClient.iOS
             deleteButton.Clicked += (object sender, EventArgs e) => {
                 DeleteThisMessage ();
                 NavigationController.PopViewControllerAnimated (true);
+            };
+            chiliButton.Clicked += (object sender, EventArgs e) => {
+                var message = thread.SingleMessageSpecialCase();
+                message.ToggleHotOrNot();
+                ConfigureToolbar ();
             };
 
             FetchAttachments ();
@@ -301,6 +313,8 @@ namespace NachoClient.iOS
             view = new UIView ();
             scrollView.AddSubview (view);
 
+            float yOffset = 0;
+
             scrollView.DidZoom += (object sender, EventArgs e) => {
                 Log.Info (Log.LOG_UI, "scrollview did zoom");
             };
@@ -336,6 +350,8 @@ namespace NachoClient.iOS
             userLabelView.Tag = USER_LABEL_TAG;
             view.AddSubview (userLabelView);
 
+            yOffset = 20;
+
             // From label view
             // Font will vary bold or regular, depending on isRead.
             // Size fields will be recalculated after text is known.
@@ -345,23 +361,27 @@ namespace NachoClient.iOS
             fromLabelView.Tag = FROM_TAG;
             view.AddSubview (fromLabelView);
 
+            yOffset += 20;
+
             // Subject label view
             // Size fields will be recalculated after text is known.
-            var subjectLabelView = new UILabel (new RectangleF (65, 40, 250, 20));
+            var subjectLabelView = new UILabel (new RectangleF (65, yOffset, 250, 20));
             subjectLabelView.LineBreakMode = UILineBreakMode.TailTruncation;
             subjectLabelView.Font = A.Font_AvenirNextMedium14;
             subjectLabelView.TextColor = A.Color_0F424C;
             subjectLabelView.Tag = SUBJECT_TAG;
             view.AddSubview (subjectLabelView);
 
+            yOffset += 20;
+
             // Reminder image view
-            var reminderImageView = new UIImageView (new RectangleF (65, 64, 12, 12));
+            var reminderImageView = new UIImageView (new RectangleF (65, yOffset + 4, 12, 12));
             reminderImageView.Image = UIImage.FromBundle ("inbox-icn-deadline");
             reminderImageView.Tag = REMINDER_ICON_TAG;
             view.AddSubview (reminderImageView);
 
             // Reminder label view
-            var reminderLabelView = new UILabel (new RectangleF (87, 60, 230, 20));
+            var reminderLabelView = new UILabel (new RectangleF (87, yOffset, 230, 20));
             reminderLabelView.Font = A.Font_AvenirNextRegular14;
             reminderLabelView.TextColor = A.Color_9B9B9B;
             reminderLabelView.Tag = REMINDER_TEXT_TAG;
@@ -390,7 +410,8 @@ namespace NachoClient.iOS
             view.AddSubview (receivedLabelView);
 
             // Separator
-            var separatorView = new UIView (new RectangleF (0, 80, 320, 1));
+            yOffset += 5;
+            var separatorView = new UIView (new RectangleF (0, yOffset, 320, 1));
             separatorView.BackgroundColor = A.Color_NachoNowBackground;
             separatorView.Tag = SEPARATOR_TAG;
             view.AddSubview (separatorView);
@@ -529,9 +550,34 @@ namespace NachoClient.iOS
 
             ConfigureAttachments ();
 
+            ConfigureToolbar ();
+
             if (0 == DeferLayoutDecrement ()) {
                 LayoutView ();
             }
+        }
+
+        protected void ConfigureToolbar ()
+        {
+            var message = thread.SingleMessageSpecialCase ();
+
+            string icon;
+            switch (message.UserAction) {
+            case 0:
+                icon = (message.isHot () ? "icn-nothot" : "icn-hot");
+                break;
+            case 1:
+                icon = "icn-nothot";
+                break;
+            case -1:
+                icon = "icn-hot";
+                break;
+            default:
+                icon = "shutup";
+                NcAssert.CaseError ();
+                break;
+            }
+            chiliButton.Image = UIImage.FromBundle (icon);
         }
 
         protected void RenderBody (McEmailMessage message)
@@ -1082,5 +1128,6 @@ namespace NachoClient.iOS
             var spinner = View.ViewWithTag (SPINNER_TAG) as UIActivityIndicatorView;
             spinner.StopAnimating ();
         }
+
     }
 }

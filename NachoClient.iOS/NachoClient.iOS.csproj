@@ -1427,6 +1427,8 @@
     <BundleResource Include="Resources\icn-red-chili-large%402x.png" />
     <BundleResource Include="Resources\icn-red-chili-small.png" />
     <BundleResource Include="Resources\icn-red-chili-small%402x.png" />
+    <BundleResource Include="Resources\icn-nothot%402x.png" />
+    <BundleResource Include="Resources\icn-hot%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

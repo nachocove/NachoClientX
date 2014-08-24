@@ -305,6 +305,10 @@ namespace NachoClient.iOS
                 NcCalendarManager.Instance.Refresh ();
                 calendarTableView.ReloadData ();
             }
+            if (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated == s.Status.SubKind) {
+                priorityInbox.Refresh ();
+                carouselView.ReloadData ();
+            }
         }
 
         protected void DisableGestureRecognizers ()
@@ -953,6 +957,12 @@ namespace NachoClient.iOS
                 };
                 preventBarButtonGC.Add (replyButton);
 
+                var chiliButton = new UIBarButtonItem (UIImage.FromBundle ("icn-nothot"), UIBarButtonItemStyle.Plain, null);
+                chiliButton.Clicked += (object sender, EventArgs e) => {
+                    onChiliButtonClicked (view);
+                };
+                preventBarButtonGC.Add (chiliButton);
+
                 var saveButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-move"), UIBarButtonItemStyle.Plain, null);
                 saveButton.Clicked += (object sender, EventArgs e) => {
                     onSaveButtonClicked (view);
@@ -982,6 +992,8 @@ namespace NachoClient.iOS
                 toolbar.SetItems (new UIBarButtonItem[] {
                     replyButton,
                     flexibleSpace,
+                    chiliButton,
+                    flexibleSpace,
                     archiveButton,
                     fixedSpace,
                     saveButton,
@@ -998,6 +1010,16 @@ namespace NachoClient.iOS
                 var messageThreadIndex = view.Tag;
                 var messageThread = owner.priorityInbox.GetEmailThread (messageThreadIndex);
                 owner.PerformSegueForDelegate ("NachoNowToCompose", new SegueHolder (action, messageThread));
+            }
+
+            void onChiliButtonClicked (UIView view)
+            {
+                var messageThreadIndex = view.Tag;
+                var messageThread = owner.priorityInbox.GetEmailThread (messageThreadIndex);
+                var message = messageThread.SingleMessageSpecialCase ();
+                message.ToggleHotOrNot ();
+                owner.priorityInbox.Refresh ();
+                owner.carouselView.ReloadData ();
             }
 
             void onSaveButtonClicked (UIView view)
