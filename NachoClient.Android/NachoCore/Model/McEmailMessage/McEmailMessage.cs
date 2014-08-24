@@ -311,7 +311,7 @@ namespace NachoCore.Model
         public static List<NcEmailMessageIndex> QueryActiveMessageItemsByScore (int accountId, int folderId)
         {
             return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
-                "SELECT e.Id as Id FROM McEmailMessage AS e " +
+                "SELECT e.Id as Id, e.DateReceived FROM McEmailMessage AS e " +
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 " WHERE " +
                 " e.AccountId = ? AND " +
@@ -321,9 +321,20 @@ namespace NachoCore.Model
                 " m.FolderId = ? AND " +
                 " e.FlagUtcStartDate < ? AND " +
                 " e.Score > ? " +
+                "UNION " +
+                "SELECT e.Id as Id, e.DateReceived FROM McEmailMessage AS e " +
+                " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                " JOIN McEmailMessageDependency AS d ON e.Id = d.EmailMessageId " +
+                " WHERE " +
+                " e.AccountId = ? AND " +
+                " e.IsAwaitingDelete = 0 AND " +
+                " m.AccountId = ? AND " +
+                " m.ClassCode = ? AND " +
+                " m.FolderId = ? AND " +
+                " d.EmailAddressId IN (SELECT a.Id FROM McEmailAddress AS a WHERE a.IsVip != 0) " +
                 " ORDER BY e.DateReceived DESC",
-                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId,DateTime.UtcNow,
-                minHotScore);
+                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow, minHotScore,
+                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId);
         }
 
         /// TODO: Need account id
