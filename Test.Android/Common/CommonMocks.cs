@@ -217,6 +217,11 @@ namespace Test.iOS
             }
         }
 
+        public bool IsRateLimited (int serverId)
+        {
+            return false;
+        }
+
         public void NetStatusEventHandler (Object sender, NetStatusEventArgs e) {}
 
         #pragma warning disable 067
@@ -267,34 +272,25 @@ namespace Test.iOS
             Folder = folder;
         }
 
-        public void ReportSyncResult (System.Collections.Generic.List<McFolder> folders) {}
-
-        public Tuple<uint, System.Collections.Generic.List<Tuple<McFolder, System.Collections.Generic.List<McPending>>>> SyncKit ()
+        public SyncKit GenSyncKit (int accountId, McProtocolState protocolState, bool cantBeEmpty)
         {
-            uint windowSize = 1; // TODO determine a good default window size
-            var retList = new List<Tuple<McFolder, List<McPending>>> ();
-            retList.Add (Tuple.Create (Folder, PendList));
-
-            return Tuple.Create (windowSize, retList);
+            return new NachoCore.ActiveSync.SyncKit () {
+                OverallWindowSize = 1,
+                PerFolders = new List<NachoCore.ActiveSync.SyncKit.PerFolder> () { 
+                    new NachoCore.ActiveSync.SyncKit.PerFolder () {
+                        Folder = Folder,
+                        Commands = PendList,
+                        WindowSize = 1,
+                        FilterCode = Xml.Provision.MaxAgeFilterCode.TwoWeeks_4,
+                        GetChanges = true,
+                    }
+                },
+            };
         }
 
-        private bool IsMoreSyncNeeded () { return false; }
-
-        public System.Collections.Generic.IEnumerable<McFolder> PingKit () { throw new NotImplementedException (); }
-
-        private bool IsMoreFetchingNeeded ()
+        public Tuple<PickActionEnum, AsCommand> Pick ()
         {
-            return false;
-        }
-
-        public Tuple<IEnumerable<McPending>, IEnumerable<Tuple<McAbstrItem, string>>> FetchKit ()
-        {
-            return null;
-        }
-
-        public PickActionEnum Pick ()
-        {
-            return PickActionEnum.Wait;
+            return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Wait, null);
         }
     }
 }
