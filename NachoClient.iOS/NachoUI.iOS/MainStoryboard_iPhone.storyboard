@@ -1856,7 +1856,7 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
-                    <navigationItem key="navigationItem" title="Contact Detail" id="xBH-1J-udq"/>
+                    <navigationItem key="navigationItem" id="xBH-1J-udq"/>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <connections>
                         <outlet property="contentView" destination="njj-ho-OMu" id="j6u-eh-quk"/>
@@ -2082,24 +2082,24 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
     <inferredMetricsTieBreakers>
         <segue reference="LTs-mH-KqM"/>
         <segue reference="peA-r2-tjq"/>
-        <segue reference="twQ-jE-jZd"/>
-        <segue reference="ja3-Zu-g6R"/>
+        <segue reference="kYM-OY-NE0"/>
+        <segue reference="fwk-9p-tlV"/>
+        <segue reference="FHc-YP-jWH"/>
         <segue reference="eK3-Wd-Zbv"/>
         <segue reference="Bq3-C6-QI6"/>
-        <segue reference="FHc-YP-jWH"/>
         <segue reference="Kmd-x6-iCJ"/>
         <segue reference="Rd3-YY-NMX"/>
-        <segue reference="W3H-fb-nEJ"/>
-        <segue reference="fwk-9p-tlV"/>
+        <segue reference="Ery-e3-vSy"/>
+        <segue reference="r1y-34-GvV"/>
         <segue reference="alQ-9Z-W4y"/>
-        <segue reference="G1z-aV-19B"/>
-        <segue reference="qB9-ce-7gT"/>
-        <segue reference="vUs-ft-xdy"/>
-        <segue reference="RHB-Or-A5o"/>
+        <segue reference="UJb-nL-M4Z"/>
+        <segue reference="mLY-u0-R5O"/>
+        <segue reference="6J3-c2-bz5"/>
         <segue reference="xrp-ey-B0j"/>
-        <segue reference="7sK-rg-HQL"/>
-        <segue reference="m2D-2n-RiV"/>
+        <segue reference="vUs-ft-xdy"/>
         <segue reference="w67-dy-XSq"/>
+        <segue reference="m2D-2n-RiV"/>
+        <segue reference="7sK-rg-HQL"/>
         <segue reference="xSG-RA-4K6"/>
         <segue reference="g4G-tD-G9H"/>
         <segue reference="iqA-wd-xqD"/>
