@@ -18,11 +18,17 @@ namespace NachoCore.Model
         // Optimistic concurrency control
         public DateTime LastModified { get; set; }
 
+        // This boolean serves a priority bit. Support events are 
+        // process first out of order.
+        [Indexed]
+        public bool IsSupport { set; get; }
+
         public byte[] Data { set; get; }
 
         public McTelemetryEvent ()
         {
             Data = null;
+            IsSupport = false;
         }
 
         public McTelemetryEvent (TelemetryEvent tEvent)
@@ -33,6 +39,7 @@ namespace NachoCore.Model
             BinaryFormatter serializer = new BinaryFormatter ();
             serializer.Serialize (binaryStream, tEvent);
             Data = binaryStream.ToArray ();
+            IsSupport = tEvent.IsSupportEvent ();
         }
 
         public TelemetryEvent GetTelemetryEvent ()
@@ -45,7 +52,8 @@ namespace NachoCore.Model
         public static McTelemetryEvent QueryOne ()
         {
             List<McTelemetryEvent> eventList = 
-                NcModel.Instance.TeleDb.Query<McTelemetryEvent> ("SELECT * FROM McTelemetryEvent LIMIT 1;");
+                NcModel.Instance.TeleDb.Query<McTelemetryEvent> (
+                    "SELECT * FROM McTelemetryEvent ORDER BY IsSupport DESC LIMIT 1;");
             if (1 == eventList.Count) {
                 return eventList [0];
             }
