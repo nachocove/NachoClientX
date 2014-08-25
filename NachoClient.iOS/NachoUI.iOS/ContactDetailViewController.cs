@@ -31,6 +31,8 @@ namespace NachoClient.iOS
         MessageTableViewSource messageSource;
         protected HashSet<int> MultiSelect = null;
         protected UITableView InteractionsTable;
+        protected UIScrollView notesScrollView;
+        protected UITextView notesView;
 
         public ContactDetailViewController (IntPtr handle) : base (handle)
         {
@@ -54,7 +56,7 @@ namespace NachoClient.iOS
             NavigationItem.RightBarButtonItem = vipButton;
 
             vipButton.Clicked += (object sender, EventArgs e) => {
-                ToggleVipStatus();
+                ToggleVipStatus ();
             };
 
             messageSource.owner = this;
@@ -162,13 +164,20 @@ namespace NachoClient.iOS
 
         protected void CreateView ()
         {
-            var topImage = new UIView (new RectangleF (0, 0, View.Frame.Width, 216 - FOO_SIZE));
+            NavigationController.NavigationBar.SetBackgroundImage (new UIImage (), UIBarMetrics.Default);
+            NavigationController.NavigationBar.ShadowImage = new UIImage ();
+            NavigationController.NavigationBar.Translucent = true;
+            NavigationController.NavigationBar.BackgroundColor = UIColor.Clear;
+            NavigationController.NavigationBar.TintColor = UIColor.White;
+
+
+            var topImage = new UIView (new RectangleF (0, -FOO_SIZE, View.Frame.Width, 216));
             topImage.Tag = TOP_IMAGE_TAG;
             contentView.AddSubview (topImage);
 
             var topEmailButton = UIButton.FromType (UIButtonType.RoundedRect);
             topEmailButton.Frame = new RectangleF (0, 0, 40, 40);
-            topEmailButton.Center = new PointF (62, (216 / 2) - FOO_SIZE);
+            topEmailButton.Center = new PointF (62, (216 / 2));
             topEmailButton.Layer.CornerRadius = 20;
             topEmailButton.Layer.MasksToBounds = true;
             topEmailButton.TintColor = UIColor.White;
@@ -181,7 +190,7 @@ namespace NachoClient.iOS
 
             var topCallButton = UIButton.FromType (UIButtonType.RoundedRect);
             topCallButton.Frame = new RectangleF (0, 0, 40, 40);
-            topCallButton.Center = new PointF (View.Frame.Width - 62, (216 / 2) - FOO_SIZE);
+            topCallButton.Center = new PointF (View.Frame.Width - 62, (216 / 2));
             topCallButton.Layer.CornerRadius = 20;
             topCallButton.Layer.MasksToBounds = true;
             topCallButton.TintColor = UIColor.White;
@@ -193,7 +202,7 @@ namespace NachoClient.iOS
             topImage.AddSubview (topCallButton);
 
             var topUserLabel = new UILabel (new RectangleF (0, 0, 72, 72));
-            topUserLabel.Center = new PointF (View.Frame.Width / 2, (216 / 2) - FOO_SIZE);
+            topUserLabel.Center = new PointF (View.Frame.Width / 2, (216 / 2));
             topUserLabel.Font = A.Font_AvenirNextRegular24;
             topUserLabel.TextColor = UIColor.White;
             topUserLabel.TextAlignment = UITextAlignment.Center;
@@ -232,7 +241,7 @@ namespace NachoClient.iOS
             yOffset += 6;
 
             var segmentedControl = new UISegmentedControl ();
-            segmentedControl.Frame = new RectangleF (6, yOffset, View.Frame.Width - 12, 40);
+            segmentedControl.Frame = new RectangleF (6, yOffset, View.Frame.Width - 12, 30);
             segmentedControl.InsertSegment ("Contact Info", 0, false);
             segmentedControl.InsertSegment ("Interactions", 1, false);
             segmentedControl.InsertSegment ("Notes", 2, false);
@@ -248,14 +257,18 @@ namespace NachoClient.iOS
                 switch (selectedSegmentId) {
                 case 0:
                     InteractionsTable.Hidden = true;
+                    notesScrollView.Hidden = true;
                     contentView.Hidden = false;
                     break;
                 case 1:
                     InteractionsTable.Hidden = false;
-                    RefreshData();
+                    notesScrollView.Hidden = true;
+                    RefreshData ();
                     break;
                 case 2:
                     PerformSegue ("ContactToNotes", new SegueHolder (contact));
+//                    InteractionsTable.Hidden = true;
+//                    notesScrollView.Hidden = false;
                     break;
                 default:
                     NcAssert.CaseError ();
@@ -266,18 +279,28 @@ namespace NachoClient.iOS
             segmentedControl.Tag = SEGMENTED_CONTROL_TAG;
             contentView.AddSubview (segmentedControl);
 
-            yOffset += 40;
+            yOffset += 30;
             yOffset += 6;
 
+            //segmentedControl
             var segmentedControlHL = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 1));
             segmentedControlHL.BackgroundColor = A.Color_NachoSeparator;
             segmentedControlHL.Tag = SEGMENTED_CONTROL_HL_TAG;
             contentView.AddSubview (segmentedControlHL);
 
-            InteractionsTable.Frame = new RectangleF (0, yOffset + 2, View.Frame.Width, 300);
+            // Interactions Table
+            InteractionsTable.Frame = new RectangleF (0, yOffset + 6 + 60, View.Frame.Width, 300);
             InteractionsTable.Hidden = true;
             InteractionsTable.BackgroundColor = UIColor.White;
             View.AddSubview (InteractionsTable);
+
+            // Notes
+            notesScrollView = new UIScrollView (new RectangleF (0, yOffset + 66, View.Frame.Width, 300));
+            notesView = new UITextView ();
+            notesScrollView.Add (notesView);
+            notesScrollView.Hidden = true;
+            notesScrollView.BackgroundColor = UIColor.White;
+            View.AddSubview (notesScrollView);
 
             yOffset += 6;
 
@@ -404,7 +427,7 @@ namespace NachoClient.iOS
             view.AddSubview (imageView);
 
             var tap = new UITapGestureRecognizer ((UITapGestureRecognizer obj) => {
-                TouchedEmailButton(email.Value);
+                TouchedEmailButton (email.Value);
             });
             view.AddGestureRecognizer (tap);
             view.UserInteractionEnabled = true;
@@ -534,7 +557,7 @@ namespace NachoClient.iOS
                 ComplainAbout ("No email address", "You've selected a contact who does not have an email address");
                 return;
             }
-            PerformSegue ("ContactToEmailCompose", new SegueHolder(address));
+            PerformSegue ("ContactToEmailCompose", new SegueHolder (address));
         }
 
         protected void TouchedCallButton (string number)
@@ -570,13 +593,13 @@ namespace NachoClient.iOS
             alert.Show ();
         }
 
-        protected void ToggleVipStatus()
+        protected void ToggleVipStatus ()
         {
             contact.SetVIP (!contact.IsVip);
             UpdateVipButton ();
         }
 
-        protected void UpdateVipButton()
+        protected void UpdateVipButton ()
         {
             var vipImageName = (contact.IsVip ? "icn-contact-vip" : "icn-vip");
 
@@ -647,13 +670,13 @@ namespace NachoClient.iOS
             vc.SetOwner (null);
             vc.DismissCalendarItemEditor (true, null);
         }
-            
+
         public void DismissChildFolderChooser (INachoFolderChooser vc)
         {
             vc.SetOwner (null, null);
             vc.DismissFolderChooser (false, null);
         }
-            
+
         public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
         {
             if (null != messageSource) {
