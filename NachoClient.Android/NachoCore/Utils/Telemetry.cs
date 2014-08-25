@@ -11,6 +11,7 @@ using Newtonsoft.Json;
 using System.Json;
 using System.Security.Cryptography;
 using System.Text;
+using NachoPlatform;
 
 namespace NachoCore.Utils
 {
@@ -264,7 +265,20 @@ namespace NachoCore.Utils
                 return _Support;
             }
             set {
+                NcAssert.True (IsSupportEvent ());
                 _Support = value;
+            }
+        }
+
+        private Action _Callback;
+
+        public Action Callback {
+            get {
+                return _Callback;
+            }
+            set {
+                NcAssert.True (IsSupportEvent ());
+                _Callback = value;
             }
         }
 
@@ -620,7 +634,7 @@ namespace NachoCore.Utils
             RecordUiWithString (TelemetryEvent.UITABLEVIEW, uiObject, operation);
         }
 
-        public static void RecordSupport (Dictionary<string, string> info)
+        public static void RecordSupport (Dictionary<string, string> info, Action callback = null)
         {
             if (!ENABLED) {
                 return;
@@ -628,6 +642,7 @@ namespace NachoCore.Utils
 
             TelemetryEvent tEvent = new TelemetryEvent (TelemetryEventType.SUPPORT);
             tEvent.Support = JsonConvert.SerializeObject (info);
+            tEvent.Callback = callback;
             RecordRawEvent (tEvent);
         }
 
@@ -716,6 +731,11 @@ namespace NachoCore.Utils
                 BackEnd.SendEvent (tEvent);
                 transactionTime.Stop ();
                 transactionTime.Reset ();
+
+                // If it is a support, make the callback.
+                if (tEvent.IsSupportEvent () && (null != tEvent.Callback)) {
+                    InvokeOnUIThread.Instance.Invoke (tEvent.Callback);
+                }
 
                 if (null != dbEvent) {
                     dbEvent.Delete ();
