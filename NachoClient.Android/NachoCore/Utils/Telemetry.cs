@@ -11,11 +11,10 @@ using Newtonsoft.Json;
 using System.Json;
 using System.Security.Cryptography;
 using System.Text;
+using NachoPlatform;
 
 namespace NachoCore.Utils
 {
-    public delegate void TelemetrySupportCallback ();
-
     public enum TelemetryEventType
     {
         UNKNOWN = 0,
@@ -271,9 +270,9 @@ namespace NachoCore.Utils
             }
         }
 
-        private TelemetrySupportCallback _Callback;
+        private Action _Callback;
 
-        public TelemetrySupportCallback Callback {
+        public Action Callback {
             get {
                 return _Callback;
             }
@@ -635,7 +634,7 @@ namespace NachoCore.Utils
             RecordUiWithString (TelemetryEvent.UITABLEVIEW, uiObject, operation);
         }
 
-        public static void RecordSupport (Dictionary<string, string> info, TelemetrySupportCallback callback = null)
+        public static void RecordSupport (Dictionary<string, string> info, Action callback = null)
         {
             if (!ENABLED) {
                 return;
@@ -735,7 +734,7 @@ namespace NachoCore.Utils
 
                 // If it is a support, make the callback.
                 if (tEvent.IsSupportEvent () && (null != tEvent.Callback)) {
-                    tEvent.Callback ();
+                    InvokeOnUIThread.Instance.Invoke (tEvent.Callback);
                 }
 
                 if (null != dbEvent) {
