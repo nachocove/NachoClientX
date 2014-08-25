@@ -12,7 +12,7 @@ using System.Drawing;
 
 namespace NachoClient.iOS
 {
-    public partial class MessagePriorityViewController : BlurryViewController, INachoMessageEditor
+    public partial class MessagePriorityViewController : BlurryViewController, INachoMessageEditor, INcDatePickerDelegate
     {
         public McEmailMessageThread thread;
         protected INachoMessageEditorParent owner;
@@ -54,15 +54,12 @@ namespace NachoClient.iOS
             float windowY = (View.Frame.Height - frameHeight) / 2;
 
             PriorityView priorityView = new PriorityView (new RectangleF (windowX, windowY, frameWidth, frameHeight));
-            priorityView.SetOwner (this);
-            priorityView.initButtonManager ();
-            priorityView.MakeButtonLabels ();
             priorityView.Layer.CornerRadius = 15.0f;
             priorityView.ClipsToBounds = true;
             priorityView.BackgroundColor = UIColor.White;
-            priorityView.AddEscapeButton ();
-            priorityView.AddDeferMessageLabel ();
-            priorityView.MakeActionButtons ();
+
+            priorityView.InitButtonManager (this);
+
             View.AddSubview (priorityView);
         }
 
@@ -137,7 +134,7 @@ namespace NachoClient.iOS
                 PerformSegue ("MessagePriorityToDatePicker", this);
                 break;
             case "None":
-                NcMessageDeferral.DeferThread (thread, MessageDeferralType.None);
+                NcMessageDeferral.UndeferThread (thread);
                 owner.DismissChildMessageEditor (this);
                 return;
             default:

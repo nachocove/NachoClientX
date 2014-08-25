@@ -679,6 +679,7 @@ namespace NachoClient.iOS
                             ConfigureCalendarListView ();
                         },
                         () => {
+                            PerformSegue("NachoNowToCalendar", new SegueHolder(null));
                         }
                     );
                 } else {
@@ -963,6 +964,11 @@ namespace NachoClient.iOS
                 };
                 preventBarButtonGC.Add (chiliButton);
 
+                var deferButton = new UIBarButtonItem (UIImage.FromBundle ("navbar-icn-defer"), UIBarButtonItemStyle.Plain, null);
+                deferButton.Clicked += (object sender, EventArgs e) => {
+                    onDeferButtonClicked(view);
+                };
+
                 var saveButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-move"), UIBarButtonItemStyle.Plain, null);
                 saveButton.Clicked += (object sender, EventArgs e) => {
                     onSaveButtonClicked (view);
@@ -994,10 +1000,12 @@ namespace NachoClient.iOS
                     flexibleSpace,
                     chiliButton,
                     flexibleSpace,
+                    deferButton,
+                    flexibleSpace,
                     archiveButton,
-                    fixedSpace,
+                    flexibleSpace,
                     saveButton,
-                    fixedSpace,
+                    flexibleSpace,
                     deleteButton
                 }, false);
                 view.AddSubview (toolbar);
@@ -1020,6 +1028,13 @@ namespace NachoClient.iOS
                 message.ToggleHotOrNot ();
                 owner.priorityInbox.Refresh ();
                 owner.carouselView.ReloadData ();
+            }
+
+            void onDeferButtonClicked(UIView view)
+            {
+                var messageThreadIndex = view.Tag;
+                var messageThread = owner.priorityInbox.GetEmailThread (messageThreadIndex);
+                owner.PerformSegueForDelegate ("NachoNowToMessagePriority", new SegueHolder (messageThread));
             }
 
             void onSaveButtonClicked (UIView view)

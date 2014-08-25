@@ -9,7 +9,7 @@ namespace NachoClient.iOS
 {
     public partial class DatePickerViewController : NcUIViewController
     {
-        public MessagePriorityViewController owner;
+        public INcDatePickerDelegate owner;
 
         public DatePickerViewController (IntPtr handle) : base (handle)
         {

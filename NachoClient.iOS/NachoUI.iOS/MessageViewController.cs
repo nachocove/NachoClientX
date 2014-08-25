@@ -20,7 +20,7 @@ using MonoTouch.Dialog;
 
 namespace NachoClient.iOS
 {
-    public partial class MessageViewController : NcUIViewController, INachoMessageEditorParent, INachoFolderChooserParent, INachoCalendarItemEditorParent
+    public partial class MessageViewController : NcUIViewController, INachoMessageEditorParent, INachoFolderChooserParent, INachoCalendarItemEditorParent, INcDatePickerDelegate
     {
         public McEmailMessageThread thread;
         protected UIView view;
@@ -28,6 +28,7 @@ namespace NachoClient.iOS
         protected List<McAttachment> attachments;
 
         protected UIBarButtonItem chiliButton;
+        protected UIBarButtonItem deadlineButton;
 
         protected int htmlBusy;
         protected int deferLayout;
@@ -48,23 +49,29 @@ namespace NachoClient.iOS
 
             chiliButton = new UIBarButtonItem ("Hot", UIBarButtonItemStyle.Plain, null);
 
+            var deferButton = new UIBarButtonItem (UIImage.FromBundle ("navbar-icn-defer"), UIBarButtonItemStyle.Plain, null);
+
+            deadlineButton = new UIBarButtonItem (UIImage.FromBundle ("inbox-icn-deadline"), UIBarButtonItemStyle.Plain, null);
+
             // Multiple buttons spaced evently
             ToolbarItems = new UIBarButtonItem[] {
                 replyButton,
                 flexibleSpaceButton,
                 chiliButton,
-                fixedSpaceButton,
+                flexibleSpaceButton,
+                deferButton,
+                flexibleSpaceButton,
                 archiveButton,
-                fixedSpaceButton,
+                flexibleSpaceButton,
                 saveButton,
-                fixedSpaceButton,
-                deleteButton
+                flexibleSpaceButton,
+                deleteButton,
             };
 
             // Multiple buttons on the right side
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
-                deferButton,
-                quickReplyButton
+                quickReplyButton,
+                deadlineButton,
             };
 
             deferButton.Clicked += (object sender, EventArgs e) => {
@@ -85,9 +92,12 @@ namespace NachoClient.iOS
                 NavigationController.PopViewControllerAnimated (true);
             };
             chiliButton.Clicked += (object sender, EventArgs e) => {
-                var message = thread.SingleMessageSpecialCase();
-                message.ToggleHotOrNot();
+                var message = thread.SingleMessageSpecialCase ();
+                message.ToggleHotOrNot ();
                 ConfigureToolbar ();
+            };
+            deadlineButton.Clicked += (object sender, EventArgs e) => {
+                DeadlineActionSheet ();
             };
 
             FetchAttachments ();
@@ -173,6 +183,39 @@ namespace NachoClient.iOS
             actionSheet.ShowFromToolbar (NavigationController.Toolbar);
         }
 
+        protected void DeadlineActionSheet ()
+        {
+            var actionSheet = new UIActionSheet ();
+            actionSheet.Add ("Set Deadline");
+            actionSheet.Add ("Create Meeting");
+            actionSheet.Add ("Cancel");
+
+            actionSheet.CancelButtonIndex = 2;
+
+            actionSheet.Clicked += delegate(object a, UIButtonEventArgs b) {
+                switch (b.ButtonIndex) {
+                case 0:
+                    PerformSegue ("SegueToDatePicker", new SegueHolder (null));
+                    break;
+                case 1:
+                    var c = CalendarHelper.CreateMeeting(thread.SingleMessageSpecialCase());
+                    PerformSegue("SegueToEditEvent", new SegueHolder(c));
+                    break;
+                case 2:
+                    break; // Cancel
+                }
+            };
+            actionSheet.ShowFrom (deadlineButton, true);
+        }
+
+        public void DismissDatePicker (DatePickerViewController vc, DateTime chosenDateTime)
+        {
+            NcMessageDeferral.SetDueDate (thread, chosenDateTime);
+            vc.owner = null;
+            vc.DismissViewController (false, null);
+            ConfigureView ();
+        }
+
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             var blurry = segue.DestinationViewController as BlurryViewController;
@@ -184,10 +227,12 @@ namespace NachoClient.iOS
                 var vc = (MessagePriorityViewController)segue.DestinationViewController;
                 vc.thread = thread;
                 vc.SetOwner (this);
+                return;
             }
             if (segue.Identifier == "MessageViewToMessageAction") {
                 var vc = (MessageActionViewController)segue.DestinationViewController;
                 vc.SetOwner (this, thread);
+                return;
             }
             if (segue.Identifier == "MessageViewToCompose") {
                 var vc = (MessageComposeViewController)segue.DestinationViewController;
@@ -195,6 +240,7 @@ namespace NachoClient.iOS
                 vc.Action = (string)h.value;
                 vc.ActionThread = thread;
                 vc.SetOwner (this);
+                return;
             }
             if (segue.Identifier == "MessageViewToEditEvent") {
                 var vc = (EditEventViewController)segue.DestinationViewController;
@@ -202,6 +248,20 @@ namespace NachoClient.iOS
                 var c = h.value as McCalendar;
                 vc.SetOwner (this);
                 vc.SetCalendarItem (c, CalendarItemEditorAction.create);
+                return;
+            }
+            if (segue.Identifier == "SegueToDatePicker") {
+                var vc = (DatePickerViewController)segue.DestinationViewController;
+                vc.owner = this;
+                return;
+            }
+            if (segue.Identifier == "SegueToEditEvent") {
+                var vc = (EditEventViewController)segue.DestinationViewController;
+                var holder = sender as SegueHolder;
+                var c = holder.value as McCalendar;
+                vc.SetCalendarItem (c, CalendarItemEditorAction.create);
+                vc.SetOwner (this);
+                return;
             }
         }
 

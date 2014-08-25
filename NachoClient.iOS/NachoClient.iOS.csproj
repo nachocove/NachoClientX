@@ -1138,6 +1138,8 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\CalendarHelper.cs">
       <Link>NachoCore\Utils\CalendarHelper.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\FadeCustomSegue.cs" />
+    <Compile Include="NachoUI.iOS\Interfaces\INcDatePickerDelegate.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
