@@ -1277,7 +1277,7 @@ namespace NachoClient.iOS
         {
             //var tzid = RadioElementWithData.SelectedData (timezoneEntryElement);
 
-            CalendarHelper.SendInvites (account, c, "Local");
+            CalendarHelper.SendInvites (account, c, null, "Local");
         }
 
         public void UpdateAttendeeList (List<McAttendee> attendees)

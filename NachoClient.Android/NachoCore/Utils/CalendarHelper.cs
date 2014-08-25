@@ -209,63 +209,21 @@ namespace NachoCore.Utils
             return dday_tz;
         }
 
-        public static void SendInvites (McAccount account, McCalendar c, string tzid)
+        public static void SendInvites (McAccount account, McCalendar c, List<McAttendee> attendeeOverride, string tzid)
         {
-
             IICalendar iCal = CalendarHelper.iCalendarFromMcCalendar (account, c, tzid);
 
             var mimeMessage = new MimeMessage ();
 
             mimeMessage.From.Add (new MailboxAddress (Pretty.DisplayNameForAccount (account), account.EmailAddr));
 
-            foreach (var a in c.attendees) {
+            var attendees = attendeeOverride ?? c.attendees;
+
+            foreach (var a in attendees) {
                 mimeMessage.To.Add (new MailboxAddress (a.Name, a.Email));
             }
-            if (null != c.Subject) {
-                mimeMessage.Subject = c.Subject;
-            }
-            mimeMessage.Date = System.DateTime.UtcNow;
 
-            var body = new TextPart ("calendar");
-            body.ContentType.Parameters.Add ("METHOD", "REQUEST");
-            iCal.Method = "REQUEST";
-            using (var iCalStream = new MemoryStream ()) {
-                iCalendarSerializer serializer = new iCalendarSerializer ();
-                serializer.Serialize (iCal, iCalStream, System.Text.Encoding.ASCII);
-                iCalStream.Seek (0, SeekOrigin.Begin);
-                using (var textStream = new StreamReader (iCalStream)) {
-                    body.Text = textStream.ReadToEnd ();
-                }
-            }
-            body.ContentTransferEncoding = ContentEncoding.Base64;
-
-            var textPart = new TextPart ("plain") {
-                Text = ""
-            };
-
-            var alternative = new Multipart ("alternative");
-            alternative.Add (textPart);
-            alternative.Add (body);
-
-            mimeMessage.Body = alternative;
-
-            MimeHelpers.SendEmail (account.Id, mimeMessage, c.Id);
-        }
-
-        public static void SendInvite (McAccount account, McCalendar c, McAttendee attendee, string tzid)
-        {
-
-            IICalendar iCal = CalendarHelper.iCalendarFromMcCalendar (account, c, tzid);
-
-            var mimeMessage = new MimeMessage ();
-
-            mimeMessage.From.Add (new MailboxAddress (Pretty.DisplayNameForAccount (account), account.EmailAddr));
-
-            mimeMessage.To.Add (new MailboxAddress (attendee.Name, attendee.Email));
-
-            if (null != c.Subject) {
-                mimeMessage.Subject = c.Subject;
-            }
+            mimeMessage.Subject = Pretty.SubjectString (c.Subject);
             mimeMessage.Date = System.DateTime.UtcNow;
 
             var body = new TextPart ("calendar");
@@ -914,10 +872,11 @@ namespace NachoCore.Utils
             }
         }
 
-        public static void UpdateRecurrences(McCalendar c)
+        public static void UpdateRecurrences (McCalendar c)
         {
             c.DeleteRelatedEvents ();
-            c.RecurrencesGeneratedUntil = DateTime.MinValue;;
+            c.RecurrencesGeneratedUntil = DateTime.MinValue;
+            ;
             c.Update ();
             ExpandRecurrences ();
         }

@@ -253,7 +253,9 @@ namespace NachoClient.iOS
 
         public void SendAttendeeInvite (McAttendee attendee)
         {
-            CalendarHelper.SendInvite (account, c, attendee, "Local");
+            var attendeeOverride = new List<McAttendee> ();
+            attendeeOverride.Add (attendee);
+            CalendarHelper.SendInvites (account, c, attendeeOverride, "Local");
         }
 
         public void RemoveAttendee (McAttendee attendee)
