@@ -37,7 +37,7 @@ using NachoCore;
 using NachoCore.Utils;
 using System.Collections.Generic;
 using MonoTouch.CoreGraphics;
-
+using NachoClient.iOS;
 
 namespace NachoClient
 {
@@ -686,6 +686,22 @@ namespace NachoClient
             var lineUIView = new UIView (new RectangleF (offset, yVal, .5f, height));
             lineUIView.BackgroundColor = color;
             parentView.Add (lineUIView);
+        }
+
+        public static void ConfigureNavBar(bool isTransparent, UINavigationController nc) {
+            if (isTransparent) {
+                nc.NavigationBar.SetBackgroundImage (new UIImage (), UIBarMetrics.Default);
+                nc.NavigationBar.ShadowImage = new UIImage ();
+                nc.NavigationBar.Translucent = true;
+                nc.NavigationBar.BackgroundColor = UIColor.Clear;
+                nc.NavigationBar.TintColor = UIColor.White;
+            } else {
+                nc.NavigationBar.SetBackgroundImage (new UIImage (), UIBarMetrics.Default);
+                nc.NavigationBar.ShadowImage = new UIImage ();
+                nc.NavigationBar.Translucent = false;
+                nc.NavigationBar.BackgroundColor = A.Color_NachoGreen;
+                nc.NavigationBar.TintColor = A.Color_NachoBlue;
+            }
         }
 
         #endregion
