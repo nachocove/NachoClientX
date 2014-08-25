@@ -345,7 +345,9 @@ namespace NachoCore.Model
                 "SELECT e.Id as Id FROM McEmailMessage AS e " +
                 " WHERE " +
                 " e.IsAwaitingDelete = 0 AND " +
-                " e.FlagUtcStartDate > ? ORDER BY e.DateReceived DESC",
+                " e.FlagStatus <> 0 AND " +
+                " e.FlagUtcStartDate > ? " +
+                " ORDER BY e.DateReceived DESC",
                 DateTime.UtcNow);
         }
 
