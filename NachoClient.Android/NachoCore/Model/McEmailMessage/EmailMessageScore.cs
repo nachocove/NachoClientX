@@ -72,7 +72,7 @@ namespace NachoCore.Model
                 score = emailAddress.GetScore ();
                 NcTimeVariance.TimeVarianceList tvList = EvaluateTimeVariance ();
                 if (0 < tvList.Count) {
-                    DateTime now = DateTime.Now;
+                    DateTime now = DateTime.UtcNow;
                     foreach (NcTimeVariance tv in tvList) {
                         score *= tv.Adjustment (now);
                     }
@@ -308,6 +308,17 @@ namespace NachoCore.Model
             DateTime deadline = DateTime.MinValue;
             DateTime deferredUntil = DateTime.MinValue;
 
+            if (IsMeetingInvite (out deadline)) {
+                // Meeting invite is a special case. If the email message is a
+                // meeting invite with a valid stop time, a single deadline time
+                // variance state machine is created. No other consideration is
+                // needed.
+                NcMeetingTimeVariance tv = 
+                    new NcMeetingTimeVariance (TimeVarianceDescription (), TimeVarianceCallBack, Id, deadline);
+                tvList.Add (tv);
+                return tvList;
+            }
+
             ExtractDateTimeFromPair (FlagStartDate, FlagUtcStartDate, ref deferredUntil);
             ExtractDateTimeFromPair (FlagDue, FlagUtcDue, ref deadline);
 
@@ -456,7 +467,7 @@ namespace NachoCore.Model
             }
 
             /// Update time variance state if necessary
-            DateTime now = DateTime.Now;
+            DateTime now = DateTime.UtcNow;
             NcTimeVariance.TimeVarianceList tvList =
                 emailMessage.EvaluateTimeVariance ().FilterStillRunning (now);
             bool updated = emailMessage.UpdateTimeVarianceStates (tvList, now);
