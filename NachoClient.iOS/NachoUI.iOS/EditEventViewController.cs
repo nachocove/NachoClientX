@@ -431,7 +431,7 @@ namespace NachoClient.iOS
                     descriptionPlaceHolder.Hidden = false;
                 }
             };
-            //descriptionView.AddSubview (descriptionTextView);
+            descriptionView.AddSubview (descriptionTextView);
             descriptionView.AddSubview (descriptionPlaceHolder);
 
 
@@ -952,7 +952,8 @@ namespace NachoClient.iOS
             var titleFieldView = contentView.ViewWithTag (EVENT_TITLE_LABEL_TAG) as UITextField;
             titleFieldView.Text = c.Subject;
 
-            //            //description
+            // description
+            // We need to pull this out of the body
             //            var descriptionTextView = contentView.ViewWithTag (EVENT_DESCRIPTION_LABEL_TAG) as UITextView;
             //            descriptionTextView.Text = c.Description;
 
@@ -1223,7 +1224,10 @@ namespace NachoClient.iOS
             if (String.IsNullOrEmpty (c.UID)) {
                 c.UID = System.Guid.NewGuid ().ToString ().Replace ("-", null).ToUpper ();
             }
-
+                
+            var body = McBody.Save (descriptionTextView.Text);
+            c.BodyId = body.Id;
+            c.BodyType = McBody.PlainText;
         }
 
         protected void SyncMeetingRequest ()
