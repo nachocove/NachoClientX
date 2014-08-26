@@ -376,6 +376,7 @@ namespace NachoClient.iOS
                 saveEdit = true;
                 ExtractValues ();
                 SyncMeetingRequest ();
+                SendInvites();
                 ScheduleNotification ();
                 DismissView (showMenu);
             };
@@ -1224,7 +1225,8 @@ namespace NachoClient.iOS
             if (String.IsNullOrEmpty (c.UID)) {
                 c.UID = System.Guid.NewGuid ().ToString ().Replace ("-", null).ToUpper ();
             }
-                
+
+            // FIXME: Editing, reuse body id or what?
             var body = McBody.Save (descriptionTextView.Text);
             c.BodyId = body.Id;
             c.BodyType = McBody.PlainText;
@@ -1280,8 +1282,10 @@ namespace NachoClient.iOS
         protected void SendInvites ()
         {
             //var tzid = RadioElementWithData.SelectedData (timezoneEntryElement);
+            var iCalPart = CalendarHelper.iCalToMimePart (account, c, "Local");
+            var mimeBody = CalendarHelper.CreateMime (descriptionTextView.Text, iCalPart, attachments);
 
-            CalendarHelper.SendInvites (account, c, null, "Local");
+            CalendarHelper.SendInvites (account, c, null, mimeBody);
         }
 
         public void UpdateAttendeeList (List<McAttendee> attendees)

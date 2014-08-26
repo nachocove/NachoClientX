@@ -115,7 +115,7 @@ namespace NachoClient.iOS
             dontTrustCertificateButton.TouchUpInside += (object sender, EventArgs e) => {
                 DismissView ();
                 owner.ConfigureView (AdvancedLoginViewController.LoginStatus.EnterInfo);
-                owner.waitingView.DismissView ();
+                owner.waitScreen.DismissView ();
             };
             certificateView.Add (dontTrustCertificateButton);
 

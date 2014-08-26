@@ -251,13 +251,6 @@ namespace NachoClient.iOS
             parentView.Add (lineUIView);
         }
 
-        public void SendAttendeeInvite (McAttendee attendee)
-        {
-            var attendeeOverride = new List<McAttendee> ();
-            attendeeOverride.Add (attendee);
-            CalendarHelper.SendInvites (account, c, attendeeOverride, "Local");
-        }
-
         public void RemoveAttendee (McAttendee attendee)
         {
             List<McAttendee> tempList = new List<McAttendee> ();
@@ -339,6 +332,13 @@ namespace NachoClient.iOS
         {
             PerformSegue (identifier, sender);
         }
+
+        /// IContactsTableViewSourceDelegate
+        public void SendAttendeeInvite (McAttendee attendee)
+        {
+            NcAssert.CaseError ();
+        }
+
 
         /// IContactsTableViewSourceDelegate
         public void ContactSelectedCallback (McContact contact)

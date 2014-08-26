@@ -209,10 +209,8 @@ namespace NachoCore.Utils
             return dday_tz;
         }
 
-        public static void SendInvites (McAccount account, McCalendar c, List<McAttendee> attendeeOverride, string tzid)
+        public static void SendInvites (McAccount account, McCalendar c, List<McAttendee> attendeeOverride, MimeEntity mimeBody)
         {
-            IICalendar iCal = CalendarHelper.iCalendarFromMcCalendar (account, c, tzid);
-
             var mimeMessage = new MimeMessage ();
 
             mimeMessage.From.Add (new MailboxAddress (Pretty.DisplayNameForAccount (account), account.EmailAddr));
@@ -225,31 +223,61 @@ namespace NachoCore.Utils
 
             mimeMessage.Subject = Pretty.SubjectString (c.Subject);
             mimeMessage.Date = System.DateTime.UtcNow;
+            mimeMessage.Body = mimeBody;
 
-            var body = new TextPart ("calendar");
-            body.ContentType.Parameters.Add ("METHOD", "REQUEST");
+            MimeHelpers.SendEmail (account.Id, mimeMessage, c.Id);
+        }
+
+        public static TextPart iCalToMimePart (McAccount account, McCalendar c, string tzid)
+        {
+            var iCalPart = new TextPart ("calendar");
+            iCalPart.ContentType.Parameters.Add ("METHOD", "REQUEST");
+            IICalendar iCal = CalendarHelper.iCalendarFromMcCalendar (account, c, tzid);
             iCal.Method = "REQUEST";
             using (var iCalStream = new MemoryStream ()) {
                 iCalendarSerializer serializer = new iCalendarSerializer ();
                 serializer.Serialize (iCal, iCalStream, System.Text.Encoding.ASCII);
                 iCalStream.Seek (0, SeekOrigin.Begin);
                 using (var textStream = new StreamReader (iCalStream)) {
-                    body.Text = textStream.ReadToEnd ();
+                    iCalPart.Text = textStream.ReadToEnd ();
                 }
             }
-            body.ContentTransferEncoding = ContentEncoding.Base64;
+            iCalPart.ContentTransferEncoding = ContentEncoding.Base64;
+            return iCalPart;
+        }
 
-            var textPart = new TextPart ("plain") {
-                Text = ""
+        public static MimeEntity CreateMime (string description, TextPart iCalPart, List<McAttachment> attachments)
+        {
+            // attachments
+            var attachmentCollection = new MimeKit.AttachmentCollection ();
+            foreach (var a in attachments) {
+                attachmentCollection.Add (a.FilePath ());
+            }
+
+            MimeEntity bodyPart = null;
+
+            bodyPart = new TextPart ("plain") {
+                Text = description,
             };
 
-            var alternative = new Multipart ("alternative");
-            alternative.Add (textPart);
-            alternative.Add (body);
+            if (null != iCalPart) {
+                var alternative = new Multipart ("alternative");
+                alternative.Add (bodyPart);
+                alternative.Add (iCalPart);
+                bodyPart = alternative;
+            }
 
-            mimeMessage.Body = alternative;
+            if (0 == attachmentCollection.Count) {
+                return bodyPart;
+            }
 
-            MimeHelpers.SendEmail (account.Id, mimeMessage, c.Id);
+            var mixed = new Multipart ("mixed");
+            mixed.Add (bodyPart);
+
+            foreach (var attachmentPart in attachmentCollection) {
+                mixed.Add (attachmentPart);
+            }
+            return mixed;
         }
 
         protected static McAttendee CreateAttendee (InternetAddress address, NcAttendeeType attendeeType)
