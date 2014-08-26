@@ -462,7 +462,7 @@ namespace NachoClient.iOS
             contentView.AddSubview (view);
 
             var emailAddress = McEmailAddress.QueryById<McEmailAddress> (email.EmailAddress);
- var labelLabel = new UILabel (new RectangleF (15, 0, 45, 20));
+            var labelLabel = new UILabel (new RectangleF (15, 0, 45, 20));
             labelLabel.Font = A.Font_AvenirNextRegular14;
             labelLabel.TextColor = A.Color_0B3239;
             labelLabel.Text = "Email Address";
