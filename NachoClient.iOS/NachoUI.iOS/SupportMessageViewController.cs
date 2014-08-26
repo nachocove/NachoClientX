@@ -5,15 +5,9 @@ using System.Drawing;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using System.Collections.Generic;
-using NachoCore.Utils;
 using NachoCore.Model;
+using NachoCore.Utils;
 using NachoCore;
-using NachoCore.ActiveSync;
-using NachoCore.Model;
-using NachoCore.Utils;
-using NachoCore.Brain;
-using NachoPlatform;
-using NachoClient.iOS;
 
 namespace NachoClient.iOS
 {
