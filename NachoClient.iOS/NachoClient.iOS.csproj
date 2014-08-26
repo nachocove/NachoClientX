@@ -1441,6 +1441,7 @@
     <BundleResource Include="Resources\Spinner-1%402x.png" />
     <BundleResource Include="Resources\Loginscreen-BG%402x.png" />
     <BundleResource Include="Resources\Circular-Mask.png" />
+    <BundleResource Include="Resources\Loginscreen-1%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
