@@ -851,9 +851,7 @@ namespace NachoClient.iOS
                 actionSheet.Clicked += delegate(object a, UIButtonEventArgs b) {
                     switch (b.ButtonIndex) {
                     case 0:
-                        //delete event
-                        // DeleteEvent(item);
-                        //
+                        DeleteEvent();
                         break; 
                     case 1:
 
@@ -1264,14 +1262,17 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void DeleteEvent (int itemId)
+        protected void DeleteEvent ()
         {
             //remove item from db
-
+            c.Delete ();
             Notif eventNotif = Notif.Instance;
             if (null != eventNotif.FindNotif (c.Id)) {
                 eventNotif.CancelNotif (c.Id);
             }
+            var controllers = this.NavigationController.ViewControllers;
+            int currentVC = controllers.Count () - 1; // take 0 indexing into account
+            NavigationController.PopToViewController (controllers [currentVC - 2], true);
         }
 
         /// <summary>

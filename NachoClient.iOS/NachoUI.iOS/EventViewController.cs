@@ -329,11 +329,12 @@ namespace NachoClient.iOS
 
         protected void CreateEventView ()
         {
-            //NavigationItem.LeftBarButtonItem = null;
-            NavigationItem.RightBarButtonItem = editButton;
-            editButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("EventToEditEvent", this);
-            };
+            if (account.EmailAddr == c.OrganizerEmail) {
+                NavigationItem.RightBarButtonItem = editButton;
+                editButton.Clicked += (object sender, EventArgs e) => {
+                    PerformSegue ("EventToEditEvent", this);
+                };
+            }
             NavigationItem.Title = "Event Details";
 
             //Map/location header image
