@@ -518,6 +518,79 @@ namespace Test.Common
             Assert.IsNotNull (f.MeetingRequest);
         }
 
+        [Test]
+        public void TestQueryNeedsFetch ()
+        {
+            var keeper1 = new McEmailMessage () {
+                AccountId = 1,
+                ServerId = "keeper1",
+                IsAwaitingDelete = false,
+                Score = 0.98,
+                BodyState = McAbstrItem.BodyStateEnum.Missing_2,
+                DateReceived = DateTime.UtcNow.AddDays (-2),
+            };
+            keeper1.Insert ();
+            var keeper2 = new McEmailMessage () {
+                AccountId = 1,
+                ServerId = "keeper2",
+                IsAwaitingDelete = false,
+                Score = 0.98,
+                BodyState = McAbstrItem.BodyStateEnum.Truncated_1,
+                DateReceived = DateTime.UtcNow.AddDays (-3),
+            };
+            keeper2.Insert ();
+            var fallOff = new McEmailMessage () {
+                AccountId = 1,
+                ServerId = "falloff",
+                IsAwaitingDelete = false,
+                Score = 0.97,
+                BodyState = McAbstrItem.BodyStateEnum.Missing_2,
+                DateReceived = DateTime.UtcNow.AddDays (-1),
+            };
+            fallOff.Insert ();
+            var trash = new McEmailMessage () {
+                AccountId = 2,
+                ServerId = "other_account",
+                IsAwaitingDelete = false,
+                Score = 0.99,
+                BodyState = McAbstrItem.BodyStateEnum.Missing_2,
+                DateReceived = DateTime.UtcNow,
+            };
+            trash.Insert ();
+            trash = new McEmailMessage () {
+                AccountId = 1,
+                ServerId = "is_deleted",
+                IsAwaitingDelete = true,
+                Score = 0.99,
+                BodyState = McAbstrItem.BodyStateEnum.Missing_2,
+                DateReceived = DateTime.UtcNow,
+            };
+            trash.Insert ();
+            trash = new McEmailMessage () {
+                AccountId = 1,
+                ServerId = "low_score",
+                IsAwaitingDelete = false,
+                Score = 0.69,
+                BodyState = McAbstrItem.BodyStateEnum.Missing_2,
+                DateReceived = DateTime.UtcNow,
+            };
+            trash.Insert ();
+            trash = new McEmailMessage () {
+                AccountId = 1,
+                ServerId = "downloaded",
+                IsAwaitingDelete = false,
+                Score = 0.99,
+                BodyState = McAbstrItem.BodyStateEnum.Whole_0,
+                DateReceived = DateTime.UtcNow,
+            };
+            trash.Insert ();
+            var result = McEmailMessage.QueryNeedsFetch (1, 2, 0.9);
+            Assert.AreEqual (2, result.Count ());
+            Assert.True (result.Any (x => "keeper1" == x.ServerId));
+            Assert.True (result.Any (x => "keeper2" == x.ServerId));
+            Assert.AreEqual ("keeper1", result.First ().ServerId);
+        }
+
         public string CategoryTestXML = @"
            <Add xmlns = ""AirSync"">
           <ServerId>5:4</ServerId>

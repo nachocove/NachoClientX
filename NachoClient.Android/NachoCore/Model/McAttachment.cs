@@ -66,9 +66,11 @@ namespace NachoCore.Model
                 " e.AccountId = ? AND " +
                 " e.IsAwaitingDelete = 0 AND " +
                 " a.PercentDownloaded = 0 AND " +
-                " a.IsDownloaded != 0 " +
+                " e.Score >= ? AND " +
+                " a.EstimatedDataSize <= ? AND " +
+                " a.IsDownloaded = 0 " + 
                 " ORDER BY e.Score DESC, e.DateReceived DESC LIMIT ?",
-                accountId, accountId, limit);
+                accountId, accountId, minScore, maxSize, limit);
         }
 
         public override int Delete ()
