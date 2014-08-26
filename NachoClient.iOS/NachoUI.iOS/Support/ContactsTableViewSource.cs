@@ -255,13 +255,13 @@ namespace NachoClient.iOS
                 contact = contacts [indexPath.Row].GetContact ();
             }
 
-            var cell = CreateCell ();
+            var cell = CreateCell (contact);
             ConfigureCell (cell, contact);
 
             return cell;
         }
 
-        public MCSwipeTableViewCell CreateCell ()
+        public MCSwipeTableViewCell CreateCell (McContact contact)
         {
             var cell = new MCSwipeTableViewCell (UITableViewCellStyle.Subtitle, ContactCellReuseIdentifier);
             NcAssert.True (null != cell);
@@ -281,15 +281,21 @@ namespace NachoClient.iOS
                 cell.ContentView.AddSubview (userPhoneView);
 
                 // User userLabelView view, if no image
-                var userLabelView = new UILabel (new RectangleF (15, 15, 40, 40));
-                userLabelView.Font = A.Font_AvenirNextRegular24;
-                userLabelView.TextColor = UIColor.White;
-                userLabelView.TextAlignment = UITextAlignment.Center;
-                userLabelView.LineBreakMode = UILineBreakMode.Clip;
-                userLabelView.Layer.CornerRadius = 20;
-                userLabelView.Layer.MasksToBounds = true;
-                userLabelView.Tag = USER_LABEL_TAG;
-                cell.ContentView.AddSubview (userLabelView);
+                if (0 == contact.PortraitId) {
+                    var userLabelView = new UILabel (new RectangleF (15, 15, 40, 40));
+                    userLabelView.Font = A.Font_AvenirNextRegular24;
+                    userLabelView.TextColor = UIColor.White;
+                    userLabelView.TextAlignment = UITextAlignment.Center;
+                    userLabelView.LineBreakMode = UILineBreakMode.Clip;
+                    userLabelView.Layer.CornerRadius = 20;
+                    userLabelView.Layer.MasksToBounds = true;
+                    userLabelView.Tag = USER_LABEL_TAG;
+                    cell.ContentView.AddSubview (userLabelView);
+                } else {
+                    var userImageView = new UIImageView (new RectangleF (15, 15, 40, 40));
+                    userImageView.Tag = USER_LABEL_TAG;
+                    cell.ContentView.AddSubview (userImageView);
+                }
             }
             return cell;
         }
@@ -359,6 +365,14 @@ namespace NachoClient.iOS
                 var SubTitleLabelOne = cell.ViewWithTag (USER_EMAIL_TAG) as UILabel;
                 var SubTitleLabelTwo = cell.ViewWithTag (USER_PHONE_TAG) as UILabel;
                 var labelView = cell.ViewWithTag (USER_LABEL_TAG) as UILabel;
+                if (null == labelView) {
+                    var imageView = cell.ViewWithTag (USER_LABEL_TAG) as UIImageView;
+                    NcAssert.True (null != imageView);
+                    byte[] data = McPortrait.Get (contact.PortraitId);
+                    if (null != data) {
+                        imageView.Image = UIImage.LoadFromData (NSData.FromArray (data));
+                    }
+                }
 
                 switch (theItems) {
                 case WhichItems.None:
@@ -452,6 +466,11 @@ namespace NachoClient.iOS
 
         protected void ConfigureLabelView (UILabel labelView, string labelText, int colorIndex)
         {
+            if (null == labelView) {
+                // This happens when the contact has a picture and a UIImageView
+                // is created for the cell instead.
+                return;
+            }
             labelView.Hidden = false;
             labelView.Text = Util.NameToLetters (labelText);
             labelView.BackgroundColor = Util.ColorForUser (colorIndex);
