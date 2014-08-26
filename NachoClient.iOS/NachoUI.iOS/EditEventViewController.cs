@@ -838,11 +838,11 @@ namespace NachoClient.iOS
             deleteButton = UIButton.FromType (UIButtonType.RoundedRect);
             deleteButton.SetTitle ("Delete Event", UIControlState.Normal);
             deleteButton.Font = A.Font_AvenirNextRegular14;
-            deleteButton.Layer.CornerRadius = 3;
+            deleteButton.Layer.CornerRadius = 4;
             deleteButton.Layer.MasksToBounds = true;
             deleteButton.BackgroundColor = A.Color_NachoRed;
             deleteButton.SetTitleColor (UIColor.White, UIControlState.Normal);
-            deleteButton.Frame = new RectangleF (20, (LINE_OFFSET * 6) + (CELL_HEIGHT * 11) + TEXT_LINE_HEIGHT, 280, CELL_HEIGHT);
+            deleteButton.Frame = new RectangleF (18, (LINE_OFFSET * 6) + (CELL_HEIGHT * 11) + TEXT_LINE_HEIGHT, 284, CELL_HEIGHT);
             deleteButton.TouchUpInside += (sender, e) => {
                 var actionSheet = new UIActionSheet ();
                 actionSheet.Add ("Delete Event");
