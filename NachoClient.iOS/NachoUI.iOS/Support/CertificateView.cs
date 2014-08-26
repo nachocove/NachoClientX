@@ -98,11 +98,9 @@ namespace NachoClient.iOS
             trustCertificateButton.SetTitle ("Accept", UIControlState.Normal);
             trustCertificateButton.SetTitleColor (A.Color_SystemBlue, UIControlState.Normal);            
             trustCertificateButton.TouchUpInside += (object sender, EventArgs e) => {
-                //owner.waitScreen.DismissView();
                 DismissView ();
                 owner.ConfigureView (AdvancedLoginViewController.LoginStatus.EnterInfo);
                 owner.acceptCertificate ();
-                //owner.waitScreen.ShowView();
             };
             certificateView.Add (trustCertificateButton);
 
