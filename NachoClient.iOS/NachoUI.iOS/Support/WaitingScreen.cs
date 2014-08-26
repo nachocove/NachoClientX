@@ -66,7 +66,7 @@ namespace NachoClient.iOS
             this.BackgroundColor = A.Color_NachoGreen;
             LOWER_SECTION_Y_VAL = this.Frame.Height - 437 + 64;
 
-            spinnerView = new UIView (new RectangleF(this.Frame.Width / 2 - 40, LOWER_SECTION_Y_VAL, MASK_DIAMETER, MASK_DIAMETER));
+            spinnerView = new UIView (new RectangleF (this.Frame.Width / 2 - 40, LOWER_SECTION_Y_VAL, MASK_DIAMETER, MASK_DIAMETER));
             spinnerView.BackgroundColor = A.Color_NachoGreen;
             this.Add (spinnerView);
 
@@ -78,8 +78,8 @@ namespace NachoClient.iOS
             topHalfSpinner.Frame = new RectangleF (-35, LOWER_SECTION_Y_VAL - 530, SPINNER_WIDTH, SPINNER_HEIGHT);
             spinnerView.Add (topHalfSpinner);
 
-            circleMask = new UIImageView (maskImage (UIImage.FromBundle("Circular-Mask")));
-            circleMask.Frame = new RectangleF (this.Frame.Width / 2, LOWER_SECTION_Y_VAL + MASK_DIAMETER / 2 , .5f, .5f);
+            circleMask = new UIImageView (maskImage (UIImage.FromBundle ("Circular-Mask")));
+            circleMask.Frame = new RectangleF (this.Frame.Width / 2, LOWER_SECTION_Y_VAL + MASK_DIAMETER / 2, .5f, .5f);
             this.Add (circleMask);
 
             animationBlocker = new UIView (new RectangleF (this.Frame.Width / 2 - 40, LOWER_SECTION_Y_VAL, MASK_DIAMETER, MASK_DIAMETER));
@@ -125,11 +125,11 @@ namespace NachoClient.iOS
             finishedCircleImage.Alpha = 0.0f;
             this.Add (finishedCircleImage);
 
-            firstTrianglesImage = new UIImageView (UIImage.FromBundle("Bootscreen-3@2x"));
-            firstTrianglesImage.Frame = new RectangleF(0, LOWER_SECTION_Y_VAL + 309, this.Frame.Width, 39);
+            firstTrianglesImage = new UIImageView (UIImage.FromBundle ("Bootscreen-3@2x"));
+            firstTrianglesImage.Frame = new RectangleF (0, LOWER_SECTION_Y_VAL + 309, this.Frame.Width, 39);
             this.Add (firstTrianglesImage);
 
-            secondTriangleImage = new UIImageView (UIImage.FromBundle("Bootscreen-2@2x"));
+            secondTriangleImage = new UIImageView (UIImage.FromBundle ("Bootscreen-2@2x"));
             secondTriangleImage.Frame = new RectangleF (40, LOWER_SECTION_Y_VAL + 309, this.Frame.Width - 80, 25);
             this.Add (secondTriangleImage);
 
@@ -149,7 +149,7 @@ namespace NachoClient.iOS
             nachoMailLabel.TextAlignment = UITextAlignment.Center;
             this.Add (nachoMailLabel);
 
-            swipeUpTriangle = new UIImageView(UIImage.FromBundle("Bootscreen-4@2x"));
+            swipeUpTriangle = new UIImageView (UIImage.FromBundle ("Bootscreen-4@2x"));
             swipeUpTriangle.Frame = new RectangleF (this.Frame.Width / 2 - 11, LOWER_SECTION_Y_VAL + 289, 22, 9);
             swipeUpTriangle.Alpha = 0.0f;
             this.Add (swipeUpTriangle);
@@ -162,8 +162,8 @@ namespace NachoClient.iOS
             swipeUpLabel.TextAlignment = UITextAlignment.Center;
             swipeUpLabel.UserInteractionEnabled = true;
             tappedLabel = new UITapGestureRecognizer (() => {
-                DismissView();
-                owner.PerformSegue(StartupViewController.NextSegue (), owner);
+                DismissView ();
+                owner.PerformSegue (StartupViewController.NextSegue (), owner);
             });
             swipeUpLabel.AddGestureRecognizer (tappedLabel);
             this.Add (swipeUpLabel);
@@ -175,7 +175,7 @@ namespace NachoClient.iOS
             dismissLabel.TextAlignment = UITextAlignment.Center;
             dismissLabel.UserInteractionEnabled = true;
             UITapGestureRecognizer dismissLabelTap = new UITapGestureRecognizer (() => {
-                DismissView();
+                DismissView ();
             });
             dismissLabel.AddGestureRecognizer (dismissLabelTap);
             this.Add (dismissLabel);
@@ -183,11 +183,11 @@ namespace NachoClient.iOS
             this.Hidden = true;
         }
 
-        protected UIImage maskImage(UIImage maskImage)
+        protected UIImage maskImage (UIImage maskImage)
         {
             CGImage maskRef = maskImage.CGImage;
             CGImage imageMask = CGImage.CreateMask (maskRef.Width, maskRef.Height, maskRef.BitsPerComponent, maskRef.BitsPerPixel, maskRef.BytesPerRow, maskRef.DataProvider, null, true);
-            return new UIImage(imageMask);
+            return new UIImage (imageMask);
         }
 
         public void SetLoadingText (string loadingMessage)
@@ -203,14 +203,15 @@ namespace NachoClient.iOS
                     syncStatusLabel.Alpha = 1.0f;
                 });
 
-            }, ((bool finished) => {}));
+            }, ((bool finished) => {
+            }));
         }
 
         public void ShowView ()
         {
             this.Hidden = false;
             owner.NavigationItem.Title = "";
-            owner.NavigationController.NavigationBar.SetBackgroundImage (new UIImage(), UIBarMetrics.Default);
+            owner.NavigationController.NavigationBar.SetBackgroundImage (new UIImage (), UIBarMetrics.Default);
             owner.NavigationController.NavigationBar.BackgroundColor = A.Color_NachoGreen;
             owner.NavigationController.NavigationBar.ShadowImage = new UIImage ();
             quitLoadingAnimation = false;
@@ -223,7 +224,7 @@ namespace NachoClient.iOS
             owner.NavigationItem.Title = "Account Setup";
             this.Hidden = true;
             this.Layer.RemoveAllAnimations ();
-            ResetLoadingItems();
+            ResetLoadingItems ();
             quitLoadingAnimation = true;
             owner.ConfigureView (AdvancedLoginViewController.LoginStatus.EnterInfo);
         }
@@ -242,7 +243,7 @@ namespace NachoClient.iOS
             UIView.AnimateKeyframes (1, 0, (UIViewKeyframeAnimationOptions.OverrideInheritedDuration | UIViewKeyframeAnimationOptions.CalculationModeLinear), () => {
 
                 UIView.AddKeyframeWithRelativeStartTime (0, .5, () => {
-                    circleMask.Transform = CGAffineTransform.MakeScale(160,160);
+                    circleMask.Transform = CGAffineTransform.MakeScale (160, 160);
                     animationBlocker.Alpha = 0.0f;
                 });
 
@@ -252,8 +253,8 @@ namespace NachoClient.iOS
                 });
 
             }, ((bool finished) => {
-                    ArrowAnimation (topHalfSpinner, bottomHalfSpinner, topHalfSpinner.Center, bottomHalfSpinner.Center, false );
-                }));
+                ArrowAnimation (topHalfSpinner, bottomHalfSpinner, topHalfSpinner.Center, bottomHalfSpinner.Center, false);
+            }));
         }
 
         private void ArrowAnimation (UIImageView theTopSpinner, UIImageView theBottomSpinner, PointF topSpinnerCenter, PointF bottomSpinnerCenter, bool bottomIsOnTop)
@@ -267,14 +268,14 @@ namespace NachoClient.iOS
                         theBottomSpinner.Center = new PointF (bottomSpinnerCenter.X, bottomSpinnerCenter.Y + 187.5f);
                     });
                 }, ((bool finished) => { 
-                    if(finished) {
-                        if(bottomIsOnTop){
+                    if (finished) {
+                        if (bottomIsOnTop) {
                             theTopSpinner.Center = bottomSpinnerCenter;
-                            spinnerView.BringSubviewToFront(theTopSpinner);
+                            spinnerView.BringSubviewToFront (theTopSpinner);
                             bottomIsOnTop = false;
-                        }else{
+                        } else {
                             theBottomSpinner.Center = topSpinnerCenter;
-                            spinnerView.BringSubviewToFront(theBottomSpinner);
+                            spinnerView.BringSubviewToFront (theBottomSpinner);
                             bottomIsOnTop = true;
                         }
                         ArrowAnimation (theTopSpinner, theBottomSpinner, theTopSpinner.Center, theBottomSpinner.Center, bottomIsOnTop);
@@ -285,30 +286,30 @@ namespace NachoClient.iOS
 
         public void StartSyncedEmailAnimation ()
         {
-            UIView.AnimateKeyframes (4, .1,  UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+            UIView.AnimateKeyframes (4, .1, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
 
                 UIView.AddKeyframeWithRelativeStartTime (0, .075, () => {
                     syncStatusLabel.Alpha = 0.0f;
                 });
 
                 UIView.AddKeyframeWithRelativeStartTime (.075, .075, () => {
-                    circleMask.Transform = CGAffineTransform.MakeScale(.01f,.01f);
+                    circleMask.Transform = CGAffineTransform.MakeScale (.01f, .01f);
                     animationBlocker.Alpha = 1.0f;
                 });
 
                 UIView.AddKeyframeWithRelativeStartTime (.15, .075, () => {
                     startedCircleImage.Alpha = 1.0f;
-                    startedCircleImage.Transform = CGAffineTransform.MakeScale(120,120);
-                    firstTrianglesImage.Frame = new RectangleF(firstTrianglesImage.Frame.X, firstTrianglesImage.Frame.Y - 39, firstTrianglesImage.Frame.Width, firstTrianglesImage.Frame.Height);
+                    startedCircleImage.Transform = CGAffineTransform.MakeScale (120, 120);
+                    firstTrianglesImage.Frame = new RectangleF (firstTrianglesImage.Frame.X, firstTrianglesImage.Frame.Y - 39, firstTrianglesImage.Frame.Width, firstTrianglesImage.Frame.Height);
                 });
 
                 UIView.AddKeyframeWithRelativeStartTime (.225, .03, () => {
                     finishedCircleImage.Alpha = 1.0f;
-                    finishedCircleImage.Transform = CGAffineTransform.MakeScale(120,120);
+                    finishedCircleImage.Transform = CGAffineTransform.MakeScale (120, 120);
                 });
 
                 UIView.AddKeyframeWithRelativeStartTime (.225, .075, () => {
-                    secondTriangleImage.Frame = new RectangleF(secondTriangleImage.Frame.X, secondTriangleImage.Frame.Y - 25, secondTriangleImage.Frame.Width, secondTriangleImage.Frame.Height);
+                    secondTriangleImage.Frame = new RectangleF (secondTriangleImage.Frame.X, secondTriangleImage.Frame.Y - 25, secondTriangleImage.Frame.Width, secondTriangleImage.Frame.Height);
                 });
 
                 UIView.AddKeyframeWithRelativeStartTime (.3, .075, () => {
@@ -317,13 +318,13 @@ namespace NachoClient.iOS
                 });
 
                 UIView.AddKeyframeWithRelativeStartTime (.375, .075, () => {
-                    swipeUpTriangle.Frame = new RectangleF(swipeUpTriangle.Frame.X, swipeUpTriangle.Frame.Y - 10f, swipeUpTriangle.Frame.Width, swipeUpTriangle.Frame.Height);
+                    swipeUpTriangle.Frame = new RectangleF (swipeUpTriangle.Frame.X, swipeUpTriangle.Frame.Y - 10f, swipeUpTriangle.Frame.Width, swipeUpTriangle.Frame.Height);
                     swipeUpTriangle.Alpha = 1.0f;
                 });
 
                 UIView.AddKeyframeWithRelativeStartTime (.45, .075, () => {
                     swipeUpLabel.Alpha = 1.0f;
-                    swipeUpLabel.Frame = new RectangleF(swipeUpLabel.Frame.X, swipeUpLabel.Frame.Y - 2f, swipeUpLabel.Frame.Width, swipeUpLabel.Frame.Height);
+                    swipeUpLabel.Frame = new RectangleF (swipeUpLabel.Frame.X, swipeUpLabel.Frame.Y - 2f, swipeUpLabel.Frame.Width, swipeUpLabel.Frame.Height);
                 });
 
                 UIView.AddKeyframeWithRelativeStartTime (.525, .075, () => {
@@ -331,10 +332,11 @@ namespace NachoClient.iOS
                 });
 
                 UIView.AddKeyframeWithRelativeStartTime (.6, .075, () => {
-                    swipeUpTriangle.Transform = CGAffineTransform.MakeTranslation (0,2);
+                    swipeUpTriangle.Transform = CGAffineTransform.MakeTranslation (0, 2);
                 });
 
-            }, ((bool finished) => {}));
+            }, ((bool finished) => {
+            }));
         }
     }
 }

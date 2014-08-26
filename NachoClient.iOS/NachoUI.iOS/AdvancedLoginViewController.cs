@@ -685,9 +685,8 @@ namespace NachoClient.iOS
                 LoginHelpers.SetFirstSyncCompleted (LoginHelpers.GetCurrentAccountId (), true);
                 if (!hasSyncedEmail) {
                     waitScreen.StartSyncedEmailAnimation ();
+                    hasSyncedEmail = true;
                 }
-                hasSyncedEmail = true;
-                //PerformSegue (StartupViewController.NextSegue (), this);
             }
             if (NcResult.SubKindEnum.Info_AsAutoDComplete == s.Status.SubKind) {
                 Log.Info (Log.LOG_UI, "Auto-D-Completed Status Ind");
