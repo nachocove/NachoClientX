@@ -653,5 +653,20 @@ namespace NachoCore.Model
             }
             return emailAddress;
         }
+
+        public bool IsMeetingInvite (out DateTime endTime)
+        {
+            endTime = DateTime.MinValue;
+            if (null == MeetingRequest) {
+                return false; // not a meeting invite
+            }
+            NcAssert.True (0 < MeetingRequest.EmailMessageId);
+
+            if (MeetingRequest.EndTime > DateTime.MinValue) {
+                endTime = MeetingRequest.EndTime;
+                return true;
+            }
+            return false;
+        }
     }
 }

@@ -867,7 +867,7 @@ namespace NachoCore.ActiveSync
                             case Xml.Email.DtStamp:
                             case Xml.Email.EndTime:
                             case Xml.Email.RecurrenceId:
-                                TrySetCompactDateTimeFromXml (e, meetingRequestPart.Name.LocalName, meetingRequestPart.Value);
+                                TrySetDateTimeFromXml (e, meetingRequestPart.Name.LocalName, meetingRequestPart.Value);
                                 break;
                             case Xml.Email.InstanceType:
                                 e.InstanceType = meetingRequestPart.Value.ParseInteger<NcInstanceType> ();

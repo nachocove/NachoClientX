@@ -20,6 +20,7 @@ namespace NachoCore.Brain
         DEADLINE = 2,
         DEFERENCE = 3,
         AGING = 4,
+        MEETING = 5,
     }
 
     /// Time variance state machines keep track of temporal variatiional
@@ -274,7 +275,7 @@ namespace NachoCore.Brain
 
         public static DateTime PlatformGetCurrentDateTime ()
         {
-            return DateTime.Now;
+            return DateTime.UtcNow;
         }
 
         public override string ToString ()
@@ -715,5 +716,56 @@ namespace NachoCore.Brain
             }
             return retval;
         }
+    }
+
+    public class NcMeetingTimeVariance : NcTimeVariance
+    {
+        public DateTime EndTime { get; set; }
+
+        public NcMeetingTimeVariance (string description, TimeVarianceCallBack callback,
+            Int64 objId, DateTime endTime) : base (description, callback, objId)
+        {
+            EndTime = endTime;
+            MaxState = 1;
+        }
+
+        public override NcTimeVarianceType TimeVarianceType ()
+        {
+            return NcTimeVarianceType.MEETING;
+        }
+
+        public override double Adjustment (int state)
+        {
+            double factor;
+            switch (state) {
+            case 0:
+                factor = 0.05;
+                break;
+            case 1:
+                factor = 1.0;
+                break;
+            default:
+                string mesg = String.Format ("unknown meeting state {0}", State);
+                throw new NcAssert.NachoDefaultCaseFailure (mesg);
+            }
+            return factor;
+        }
+
+        protected override DateTime NextEventTime (int state)
+        {
+            DateTime retval;
+            switch (state) {
+            case 0:
+                retval = new DateTime (0, 0, 0, 0, 0, 0);
+                break;
+            case 1:
+                retval = EndTime;
+                break;
+            default:
+                string mesg = String.Format ("unknown meeting state {0}", State);
+                throw new NcAssert.NachoDefaultCaseFailure (mesg);
+            }
+            return LimitEventTime (retval);
+        }  
     }
 }
