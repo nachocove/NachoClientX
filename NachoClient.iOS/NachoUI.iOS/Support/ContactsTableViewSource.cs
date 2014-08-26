@@ -293,6 +293,8 @@ namespace NachoClient.iOS
                     cell.ContentView.AddSubview (userLabelView);
                 } else {
                     var userImageView = new UIImageView (new RectangleF (15, 15, 40, 40));
+                    userImageView.Layer.CornerRadius = 20;
+                    userImageView.Layer.MasksToBounds = true;
                     userImageView.Tag = USER_LABEL_TAG;
                     cell.ContentView.AddSubview (userImageView);
                 }
@@ -368,9 +370,9 @@ namespace NachoClient.iOS
                 if (null == labelView) {
                     var imageView = cell.ViewWithTag (USER_LABEL_TAG) as UIImageView;
                     NcAssert.True (null != imageView);
-                    byte[] data = McPortrait.Get (contact.PortraitId);
-                    if (null != data) {
-                        imageView.Image = UIImage.LoadFromData (NSData.FromArray (data));
+                    UIImage image = Util.ImageOfContact (contact);
+                    if (null != image) {
+                        imageView.Image = image;
                     }
                 }
 
