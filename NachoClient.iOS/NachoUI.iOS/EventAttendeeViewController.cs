@@ -334,6 +334,11 @@ namespace NachoClient.iOS
             }
         }
 
+        public Int64 GetAccountId ()
+        {
+            return account.Id;
+        }
+
         /// IContactsTableViewSourceDelegate
         public void PerformSegueForDelegate (string identifier, NSObject sender)
         {

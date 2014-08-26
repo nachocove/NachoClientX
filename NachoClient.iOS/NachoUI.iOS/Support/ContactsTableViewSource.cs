@@ -370,9 +370,10 @@ namespace NachoClient.iOS
                 if (null == labelView) {
                     var imageView = cell.ViewWithTag (USER_LABEL_TAG) as UIImageView;
                     NcAssert.True (null != imageView);
-                    UIImage image = Util.ImageOfContact (contact);
-                    if (null != image) {
-                        imageView.Image = image;
+                    using (UIImage image = Util.ImageOfContact (contact)) {
+                        if (null != image) {
+                            imageView.Image = image;
+                        }
                     }
                 }
 
