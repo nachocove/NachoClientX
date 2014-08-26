@@ -32,7 +32,9 @@ namespace NachoClient.iOS
         protected HashSet<int> MultiSelect = null;
         protected UITableView InteractionsTable;
         protected UIScrollView notesScrollView;
-        protected UITextView notesView;
+        protected UIView notesView;
+        protected UITextView notesTextView;
+        protected UIButton editNotes;
 
         public ContactDetailViewController (IntPtr handle) : base (handle)
         {
@@ -79,6 +81,7 @@ namespace NachoClient.iOS
             }
             ConfigureView ();
             UpdateVipButton ();
+            Util.ConfigureNavBar (true, NavigationController);
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 
@@ -90,6 +93,7 @@ namespace NachoClient.iOS
                 this.NavigationController.NavigationBar.BarTintColor = originalBarTintColor;
 
             }
+            Util.ConfigureNavBar (false, NavigationController);
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 
@@ -159,18 +163,13 @@ namespace NachoClient.iOS
         const int SEGMENTED_CONTROL_TAG = 108;
         const int SEGMENTED_CONTROL_HL_TAG = 109;
         const int TRANSIENT_TAG = 300;
+        const int NOTES_TEXT_VIEW_TAG = 400;
 
         const int FOO_SIZE = 64;
+        const float TEXT_LINE_HEIGHT = 19.124f;
 
         protected void CreateView ()
         {
-            NavigationController.NavigationBar.SetBackgroundImage (new UIImage (), UIBarMetrics.Default);
-            NavigationController.NavigationBar.ShadowImage = new UIImage ();
-            NavigationController.NavigationBar.Translucent = true;
-            NavigationController.NavigationBar.BackgroundColor = UIColor.Clear;
-            NavigationController.NavigationBar.TintColor = UIColor.White;
-
-
             var topImage = new UIView (new RectangleF (0, -FOO_SIZE, View.Frame.Width, 216));
             topImage.Tag = TOP_IMAGE_TAG;
             contentView.AddSubview (topImage);
@@ -259,16 +258,18 @@ namespace NachoClient.iOS
                     InteractionsTable.Hidden = true;
                     notesScrollView.Hidden = true;
                     contentView.Hidden = false;
+                    editNotes.Hidden = true;
                     break;
                 case 1:
                     InteractionsTable.Hidden = false;
                     notesScrollView.Hidden = true;
+                    editNotes.Hidden = true;
                     RefreshData ();
                     break;
                 case 2:
-                    PerformSegue ("ContactToNotes", new SegueHolder (contact));
-//                    InteractionsTable.Hidden = true;
-//                    notesScrollView.Hidden = false;
+                    InteractionsTable.Hidden = true;
+                    notesScrollView.Hidden = false;
+                    editNotes.Hidden = false;
                     break;
                 default:
                     NcAssert.CaseError ();
@@ -282,7 +283,7 @@ namespace NachoClient.iOS
             yOffset += 30;
             yOffset += 6;
 
-            //segmentedControl
+            // Segmented Control
             var segmentedControlHL = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 1));
             segmentedControlHL.BackgroundColor = A.Color_NachoSeparator;
             segmentedControlHL.Tag = SEGMENTED_CONTROL_HL_TAG;
@@ -296,11 +297,34 @@ namespace NachoClient.iOS
 
             // Notes
             notesScrollView = new UIScrollView (new RectangleF (0, yOffset + 66, View.Frame.Width, 300));
-            notesView = new UITextView ();
+            notesView = new UIView (new RectangleF (0, 0, View.Frame.Width, 309));
+            notesView.BackgroundColor = UIColor.White;
+            notesTextView = new UITextView (new RectangleF (15, 0, View.Frame.Width - 30, 309));
+            notesTextView.Font = A.Font_AvenirNextRegular14;
+            notesTextView.Editable = false;
+            notesTextView.TextColor = A.Color_NachoBlack;
+            notesTextView.BackgroundColor = UIColor.White;
+            notesTextView.Tag = NOTES_TEXT_VIEW_TAG;
+
+            // Notes Scroll View
+            notesView.Add (notesTextView);
             notesScrollView.Add (notesView);
+            notesScrollView.Frame = new RectangleF (0, yOffset + 65, View.Frame.Width, 309);
             notesScrollView.Hidden = true;
-            notesScrollView.BackgroundColor = UIColor.White;
+
             View.AddSubview (notesScrollView);
+
+            editNotes = new UIButton (UIButtonType.RoundedRect);
+            editNotes.SetTitle ("Edit", UIControlState.Normal);
+            editNotes.TintColor = A.Color_NachoBlue;
+            editNotes.Font = A.Font_AvenirNextMedium12;
+            editNotes.SizeToFit ();
+            editNotes.Hidden = true;
+            editNotes.Frame = new RectangleF (View.Frame.Width - editNotes.Frame.Width - 30, View.Frame.Height - editNotes.Frame.Height - 10, 50, 20);
+            editNotes.TouchUpInside += (sender, e) => {
+                PerformSegue ("ContactToNotes", new SegueHolder (contact));
+            };
+            View.Add (editNotes);
 
             yOffset += 6;
 
@@ -310,6 +334,10 @@ namespace NachoClient.iOS
         protected void ConfigureView ()
         {
             UIColor userBackgroundColor;
+            InteractionsTable.Hidden = true;
+            notesScrollView.Hidden = true;
+            contentView.Hidden = false;
+            editNotes.Hidden = true;
 
             if (0 == contact.EmailAddresses.Count) {
                 userBackgroundColor = Util.ColorForUser (Util.PickRandomColorForUser ());
@@ -392,6 +420,15 @@ namespace NachoClient.iOS
 
             contentView.Frame = new RectangleF (0, 0, View.Frame.Width, yOffset);
             scrollView.ContentSize = contentView.Frame.Size;
+
+            // Notes
+            var notesTextView = notesScrollView.ViewWithTag (NOTES_TEXT_VIEW_TAG) as UITextView;
+            var Note = McNote.QueryByTypeId (contact.Id, McNote.NoteType.Contact).FirstOrDefault ();
+            if (null == Note) {
+                Note = new McNote ();
+            }
+            notesTextView.Text = Note.noteContent;
+            notesScrollView.ContentSize = notesTextView.ContentSize;
         }
 
         protected float AddHeader (string header, float yOffset)
