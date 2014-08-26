@@ -224,8 +224,8 @@ namespace NachoClient.iOS
 
             public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
             {
-                var cell = Owner.contactTableViewSource.CreateCell ();
                 var contact = Owner.searchResults [indexPath.Row].GetContact ();
+                var cell = Owner.contactTableViewSource.CreateCell (contact);
                 Owner.contactTableViewSource.ConfigureCell (cell, contact);
                 return cell;
             }
