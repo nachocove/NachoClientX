@@ -268,7 +268,7 @@ namespace NachoClient.iOS
                 dc.ViewDisappearing += (object s, EventArgs e) => {
                     c.Reminder = dc.GetReminder ();
                     SyncMeetingRequest ();
-                    ScheduleNotification();
+                    ScheduleNotification ();
                     ConfigureEventView ();
                 };
                 return;
@@ -329,7 +329,7 @@ namespace NachoClient.iOS
 
         protected void CreateEventView ()
         {
-            if (account.EmailAddr == c.OrganizerEmail) {
+            if (account.EmailAddr == c.OrganizerEmail && account.Id == c.AccountId) {
                 NavigationItem.RightBarButtonItem = editButton;
                 editButton.Clicked += (object sender, EventArgs e) => {
                     PerformSegue ("EventToEditEvent", this);
@@ -618,7 +618,7 @@ namespace NachoClient.iOS
             }
 
         }
-          
+
         public void AddTextLabel (float xOffset, float yOffset, float width, float height, string text, UIView parentView)
         {
             var textLabel = new UILabel (new RectangleF (xOffset, yOffset, width, height));

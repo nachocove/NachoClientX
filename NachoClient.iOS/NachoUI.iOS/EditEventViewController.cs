@@ -376,6 +376,7 @@ namespace NachoClient.iOS
                 saveEdit = true;
                 ExtractValues ();
                 SyncMeetingRequest ();
+                SendInvites ();
                 ScheduleNotification ();
                 DismissView (showMenu);
             };
@@ -851,7 +852,7 @@ namespace NachoClient.iOS
                 actionSheet.Clicked += delegate(object a, UIButtonEventArgs b) {
                     switch (b.ButtonIndex) {
                     case 0:
-                        DeleteEvent();
+                        DeleteEvent ();
                         break; 
                     case 1:
 
@@ -1222,7 +1223,8 @@ namespace NachoClient.iOS
             if (String.IsNullOrEmpty (c.UID)) {
                 c.UID = System.Guid.NewGuid ().ToString ().Replace ("-", null).ToUpper ();
             }
-                
+
+            // FIXME: Editing, reuse body id or what?
             var body = McBody.Save (descriptionTextView.Text);
             c.BodyId = body.Id;
             c.BodyType = McBody.PlainText;
@@ -1264,12 +1266,13 @@ namespace NachoClient.iOS
 
         protected void DeleteEvent ()
         {
-            //remove item from db
-            c.Delete ();
             Notif eventNotif = Notif.Instance;
             if (null != eventNotif.FindNotif (c.Id)) {
                 eventNotif.CancelNotif (c.Id);
             }
+            //remove item from db
+            BackEnd.Instance.DeleteCalCmd (account.Id, c.Id);
+            c.Delete ();
             var controllers = this.NavigationController.ViewControllers;
             int currentVC = controllers.Count () - 1; // take 0 indexing into account
             NavigationController.PopToViewController (controllers [currentVC - 2], true);
@@ -1281,8 +1284,10 @@ namespace NachoClient.iOS
         protected void SendInvites ()
         {
             //var tzid = RadioElementWithData.SelectedData (timezoneEntryElement);
+            var iCalPart = CalendarHelper.iCalToMimePart (account, c, "Local");
+            var mimeBody = CalendarHelper.CreateMime (descriptionTextView.Text, iCalPart, attachments);
 
-            CalendarHelper.SendInvites (account, c, null, "Local");
+            CalendarHelper.SendInvites (account, c, null, mimeBody);
         }
 
         public void UpdateAttendeeList (List<McAttendee> attendees)

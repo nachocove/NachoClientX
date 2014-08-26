@@ -1140,6 +1140,7 @@
     </Compile>
     <Compile Include="NachoUI.iOS\Support\FadeCustomSegue.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INcDatePickerDelegate.cs" />
+    <Compile Include="NachoUI.iOS\Support\WaitingScreen.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -1431,6 +1432,15 @@
     <BundleResource Include="Resources\icn-red-chili-small%402x.png" />
     <BundleResource Include="Resources\icn-nothot%402x.png" />
     <BundleResource Include="Resources\icn-hot%402x.png" />
+    <BundleResource Include="Resources\Bootscreen-1%402x.png" />
+    <BundleResource Include="Resources\Bootscreen-3%402x.png" />
+    <BundleResource Include="Resources\Bootscreen-2%402x.png" />
+    <BundleResource Include="Resources\Bootscreen-4%402x.png" />
+    <BundleResource Include="Resources\Bootscreen-1.png" />
+    <BundleResource Include="Resources\Spinner-1.png" />
+    <BundleResource Include="Resources\Spinner-1%402x.png" />
+    <BundleResource Include="Resources\Loginscreen-BG%402x.png" />
+    <BundleResource Include="Resources\Circular-Mask.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
