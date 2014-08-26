@@ -29,9 +29,11 @@ namespace NachoClient.iOS
         UIScrollView scrollView;
         UILabel errorMessage;
 
+        public WaitingScreen waitScreen;
+
         public UIView statusViewBackground;
-        public WaitingView waitingView;
         public string certificateInformation = "";
+        public bool hasSyncedEmail = false;
 
         UIButton connectButton;
         AccountSettings theAccount;
@@ -67,6 +69,11 @@ namespace NachoClient.iOS
             loadSettingsForAccount ();
             CreateView ();
             NavigationItem.Title = "Account Setup";
+
+            waitScreen = new WaitingScreen (View.Frame);
+            waitScreen.SetOwner (this);
+            waitScreen.CreateView ();
+            View.Add (waitScreen);
         }
 
         public override void ViewDidAppear (bool animated)
@@ -77,11 +84,6 @@ namespace NachoClient.iOS
                 NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
                 NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
             }
-
-            waitingView = new WaitingView (View.Frame);
-            waitingView.SetOwner (this);
-            waitingView.CreateView ();
-            View.Add (waitingView);
 
             certificateView = new CertificateView (View.Frame);
             certificateView.SetOwner (this);
@@ -186,11 +188,11 @@ namespace NachoClient.iOS
                     } else {
                         if (haveEnteredHost ()) {
                             if (isValidHost ()) {
-                                waitingView.ShowView ();
+                                waitScreen.ShowView();
                                 tryValidateConfig ();
                             }
                         } else {
-                            waitingView.ShowView ();
+                            waitScreen.ShowView();
                             tryAutoD ();
                         }
                     }
@@ -208,7 +210,10 @@ namespace NachoClient.iOS
             customerSupportButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
             customerSupportButton.TouchUpInside += (object sender, EventArgs e) => {
                 View.EndEditing (true);
+
                 PerformSegue ("SegueToSupport", this);
+
+
             };
             contentView.AddSubview (customerSupportButton);
             yOffset = customerSupportButton.Frame.Bottom + 15;
@@ -396,17 +401,14 @@ namespace NachoClient.iOS
                 case BackEndAutoDStateEnum.CertAskWait:
                     Log.Info (Log.LOG_UI, "CertAskWait Auto-D-State-Enum On Page Load");
                     ConfigureView (LoginStatus.AcceptCertificate);
-                    waitingView.ShowView ();
+                    waitScreen.ShowView ();
                     certificateCallbackHandler ();
                     return;
 
                 case BackEndAutoDStateEnum.PostAutoDPreInboxSync:
                     errorMessage.Text = "Waiting for Inbox-Sync.";
-                    waitingView.foundServer = true;
-                    waitingView.statusMessage.TextColor = A.Color_SystemBlue;
-                    waitingView.ShowView ();
-
-                    //waitingView.statusMessage.Text = "Found Your Server...";
+                    waitScreen.SetLoadingText ("Syncing Your Inbox...");
+                    waitScreen.ShowView ();
                     return;
 
                 case BackEndAutoDStateEnum.PostAutoDPostInboxSync:
@@ -417,7 +419,7 @@ namespace NachoClient.iOS
                 case BackEndAutoDStateEnum.Running:
                     Log.Info (Log.LOG_UI, "Running Auto-D-State-Enum On Page Load");
                     errorMessage.Text = "Auto-D is running.";
-                    waitingView.ShowView ();
+                    waitScreen.ShowView ();
                     return;
                 }
             }
@@ -527,7 +529,7 @@ namespace NachoClient.iOS
             });
 
             startBe ();
-            waitingView.ShowView ();
+            waitScreen.ShowView ();
         }
 
         public void removeServerRecord ()
@@ -681,21 +683,21 @@ namespace NachoClient.iOS
             if (NcResult.SubKindEnum.Info_SyncSucceeded == s.Status.SubKind) {
                 Log.Info (Log.LOG_UI, "SyncSucceeded Status Ind");
                 LoginHelpers.SetFirstSyncCompleted (LoginHelpers.GetCurrentAccountId (), true);
-                waitingView.DismissView ();
-                PerformSegue (StartupViewController.NextSegue (), this);
+                if (!hasSyncedEmail) {
+                    waitScreen.StartSyncedEmailAnimation ();
+                }
+                hasSyncedEmail = true;
+                //PerformSegue (StartupViewController.NextSegue (), this);
             }
             if (NcResult.SubKindEnum.Info_AsAutoDComplete == s.Status.SubKind) {
                 Log.Info (Log.LOG_UI, "Auto-D-Completed Status Ind");
-                waitingView.foundServer = true;
-                waitingView.statusMessage.TextColor = A.Color_SystemBlue;
-
-                //waitingView.statusMessage.Text = "Found Your Server...";
+                waitScreen.SetLoadingText ("Syncing Your Inbox...");
                 theAccount.Server = McServer.QueryById<McServer> (1);
                 serverText.Text = theAccount.Server.Host;
             }
             if (NcResult.SubKindEnum.Error_NetworkUnavailable == s.Status.SubKind) {
                 ConfigureView (LoginStatus.NoNetwork);
-                waitingView.DismissView ();
+                waitScreen.DismissView ();
                 stopBeIfRunning ();
             }
             if (NcResult.SubKindEnum.Info_ValidateConfigSucceeded == s.Status.SubKind) {
@@ -718,26 +720,26 @@ namespace NachoClient.iOS
             }
             if (NcResult.SubKindEnum.Error_ValidateConfigFailedComm == s.Status.SubKind) {
                 ConfigureView (LoginStatus.BadServer);
-                waitingView.DismissView ();
+                waitScreen.DismissView ();
             }
             if (NcResult.SubKindEnum.Error_ValidateConfigFailedAuth == s.Status.SubKind) {
                 ConfigureView (LoginStatus.BadCredentials);
-                waitingView.DismissView ();
+                waitScreen.DismissView ();
             }
             if (NcResult.SubKindEnum.Error_ValidateConfigFailedUser == s.Status.SubKind) {
                 ConfigureView (LoginStatus.BadUsername);
-                waitingView.DismissView ();
+                waitScreen.DismissView ();
             }
             if (NcResult.SubKindEnum.Error_ServerConfReqCallback == s.Status.SubKind) {
                 Log.Info (Log.LOG_UI, "ServerConfReq Status Ind");
                 ConfigureView (LoginStatus.ServerConf);
-                waitingView.DismissView ();
+                waitScreen.DismissView ();
                 stopBeIfRunning ();
             }
             if (NcResult.SubKindEnum.Info_CredReqCallback == s.Status.SubKind) {
                 Log.Info (Log.LOG_UI, "CredReqCallback Status Ind");
                 ConfigureView (LoginStatus.BadCredentials);
-                waitingView.DismissView ();
+                waitScreen.DismissView ();
                 stopBeIfRunning ();
             }
             if (NcResult.SubKindEnum.Error_CertAskReqCallback == s.Status.SubKind) {
