@@ -10,14 +10,14 @@ using NachoPlatform;
 
 namespace NachoCore.ActiveSync
 {
-    // Partial for test purposes.
-    public partial class AsStrategy : IAsStrategy
+    public class AsStrategy : IAsStrategy
     {
         public const int KBaseOverallWindowSize = 150;
         public const int KBasePerFolderWindowSize = 100;
         public const int KBaseFetchSize = 10;
 
-        private class Scope
+        // Public for testing only.
+        public class Scope
         {
             public enum ItemType
             {
@@ -29,7 +29,7 @@ namespace NachoCore.ActiveSync
 
             public enum EmailEnum
             {
-                None,
+                None = 0,
                 Def1d,
                 Def3d,
                 Def1w,
@@ -43,7 +43,7 @@ namespace NachoCore.ActiveSync
 
             public enum CalEnum
             {
-                None,
+                None = 0,
                 Def2w,
                 All1m,
                 All3m,
@@ -53,7 +53,7 @@ namespace NachoCore.ActiveSync
 
             public enum ContactEnum
             {
-                None,
+                None = 0,
                 RicInf,
                 DefRicInf,
                 AllInf,
@@ -68,7 +68,7 @@ namespace NachoCore.ActiveSync
 
             private static ItemType[] ItemTypeSeq = new ItemType[] { ItemType.Email, ItemType.Cal, ItemType.Contact };
 
-            private static int[,] Ladder = new int[,] {
+            public static int[,] Ladder = new int[,] {
                 // { Email, Cal, Contact, Action }
                 { (int)EmailEnum.None, (int)CalEnum.None, (int)ContactEnum.RicInf, (int)FlagEnum.None },
                 { (int)EmailEnum.Def1d, (int)CalEnum.Def2w, (int)ContactEnum.RicInf, (int)FlagEnum.RicSynced },
@@ -117,9 +117,19 @@ namespace NachoCore.ActiveSync
                 if (limit == rung) {
                     return retval;
                 }
+                // Those that step up in the next run must complete to advance.
                 foreach (int track in ItemTypeSeq) {
-                    if (Ladder [rung, track] != Ladder [rung + 1, track]) {
+                    if (0 != (int)Ladder [rung, track] && // Exclude None(s).
+                        Ladder [rung, track] != Ladder [rung + 1, track]) {
                         retval.Add ((ItemType)track);
+                    }
+                }
+                // If there are no such, then the non-None(s) are required to advance.
+                if (0 == retval.Count) {
+                    foreach (int track in ItemTypeSeq) {
+                        if (0 != (int)Ladder [rung, track]) {
+                            retval.Add ((ItemType)track);
+                        }
                     }
                 }
                 return retval;
@@ -150,7 +160,7 @@ namespace NachoCore.ActiveSync
             CoinToss = new Random ();
         }
 
-        private bool CanAdvance (int accountId, int rung)
+        public bool CanAdvance (int accountId, int rung)
         {
             var musts = Scope.RequiredToAdvance (rung);
             var folders = new List<McFolder> ();
@@ -170,12 +180,12 @@ namespace NachoCore.ActiveSync
                     break;
                 }
             }
-            var stillExp = folders.Count (x => x.AsSyncMetaToClientExpected = true);
+            var stillExp = folders.Count (x => true == x.AsSyncMetaToClientExpected);
             Log.Info (Log.LOG_AS, "Strategy: CanAdvance: {0} folders with ToClientExpected.", stillExp);
             return (0 == stillExp);
         }
 
-        private int AdvanceIfPossible (int accountId, int rung)
+        public int AdvanceIfPossible (int accountId, int rung)
         {
             if (CanAdvance (accountId, rung)) {
                 Log.Info (Log.LOG_AS, "Strategy:AdvanceIfPossible: {0} => {1}", rung, rung + 1);
@@ -190,7 +200,7 @@ namespace NachoCore.ActiveSync
             return rung;
         }
 
-        private List<McFolder> EmailFolderListProvider (int accountId, Scope.EmailEnum scope, bool isNarrow)
+        public List<McFolder> EmailFolderListProvider (int accountId, Scope.EmailEnum scope, bool isNarrow)
         {
             switch (scope) {
             case Scope.EmailEnum.None:
@@ -222,7 +232,7 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private List<McFolder> CalFolderListProvider (int accountId, Scope.CalEnum scope, bool isNarrow)
+        public List<McFolder> CalFolderListProvider (int accountId, Scope.CalEnum scope, bool isNarrow)
         {
             switch (scope) {
             case Scope.CalEnum.None:
@@ -251,7 +261,7 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private List<McFolder> ContactFolderListProvider (int accountId, Scope.ContactEnum scope, bool isNarrow)
+        public List<McFolder> ContactFolderListProvider (int accountId, Scope.ContactEnum scope, bool isNarrow)
         {
             if (isNarrow) {
                 return new List<McFolder> ();
@@ -280,7 +290,7 @@ namespace NachoCore.ActiveSync
         }
 
         // function returning all folders at current level. Does NOT evaluate ToClientExpected.
-        private List<McFolder> FolderListProvider (int accountId, int rung, bool isNarrow)
+        public List<McFolder> FolderListProvider (int accountId, int rung, bool isNarrow)
         {
             var result = new List<McFolder> ();
             result.AddRange (EmailFolderListProvider (accountId, Scope.EmailScope (rung), isNarrow));
@@ -290,7 +300,7 @@ namespace NachoCore.ActiveSync
             return result;
         }
 
-        private Tuple<Xml.Provision.MaxAgeFilterCode, int> EmailParametersProvider (McFolder folder, Scope.EmailEnum scope, bool isNarrow, int perFolderWindowSize)
+        public Tuple<Xml.Provision.MaxAgeFilterCode, int> EmailParametersProvider (McFolder folder, Scope.EmailEnum scope, bool isNarrow, int perFolderWindowSize)
         {
             switch (scope) {
             case Scope.EmailEnum.None:
@@ -321,7 +331,7 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private Tuple<Xml.Provision.MaxAgeFilterCode, int> CalParametersProvider (McFolder folder, Scope.CalEnum scope, bool isNarrow, int perFolderWindowSize)
+        public Tuple<Xml.Provision.MaxAgeFilterCode, int> CalParametersProvider (McFolder folder, Scope.CalEnum scope, bool isNarrow, int perFolderWindowSize)
         {
             switch (scope) {
             case Scope.CalEnum.None:
@@ -346,7 +356,7 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private Tuple<Xml.Provision.MaxAgeFilterCode, int> ContactParametersProvider (McFolder folder, Scope.ContactEnum scope, bool isNarrow, int perFolderWindowSize)
+        public Tuple<Xml.Provision.MaxAgeFilterCode, int> ContactParametersProvider (McFolder folder, Scope.ContactEnum scope, bool isNarrow, int perFolderWindowSize)
         {
             switch (scope) {
             case Scope.ContactEnum.None:
@@ -365,7 +375,7 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private Tuple<Xml.Provision.MaxAgeFilterCode, int> ParametersProvider (McFolder folder, int rung, bool isNarrow)
+        public Tuple<Xml.Provision.MaxAgeFilterCode, int> ParametersProvider (McFolder folder, int rung, bool isNarrow)
         {
             int perFolderWindowSize = KBasePerFolderWindowSize;
             switch (NcCommStatus.Instance.Speed) {
@@ -392,7 +402,7 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private List<McFolder> AllSyncedFolders (int accountId)
+        public List<McFolder> AllSyncedFolders (int accountId)
         {
             // A folder must be created on the server before it can be the subject of a Sync/Ping.
             // Exclude the types of folders we don't yet Sync.
@@ -410,7 +420,7 @@ namespace NachoCore.ActiveSync
             return GenSyncKit (accountId, protocolState, false, cantBeEmpty);
         }
 
-        private SyncKit GenNarrowSyncKit (List<McFolder> folders, int rung, int overallWindowSize)
+        public SyncKit GenNarrowSyncKit (List<McFolder> folders, int rung, int overallWindowSize)
         {
             var perFolders = new List<SyncKit.PerFolder> ();
             foreach (var folder in folders) {
@@ -434,7 +444,7 @@ namespace NachoCore.ActiveSync
         }
 
         // Returns null if nothing to do.
-        private SyncKit GenSyncKit (int accountId, McProtocolState protocolState, bool isNarrow, bool cantBeEmpty)
+        public SyncKit GenSyncKit (int accountId, McProtocolState protocolState, bool isNarrow, bool cantBeEmpty)
         {
             var rung = protocolState.StrategyRung;
             int overallWindowSize = KBaseOverallWindowSize;
@@ -523,7 +533,7 @@ namespace NachoCore.ActiveSync
             return null;
         }
 
-        private PingKit GenPingKit (int accountId, McProtocolState protocolState, bool isNarrow)
+        public PingKit GenPingKit (int accountId, McProtocolState protocolState, bool isNarrow)
         {
             var folders = FolderListProvider (accountId, protocolState.StrategyRung, isNarrow);
             if (folders.Any (x => true == x.AsSyncMetaToClientExpected)) {
@@ -551,7 +561,7 @@ namespace NachoCore.ActiveSync
         }
 
         // Returns null if nothing to do.
-        private FetchKit GenFetchKit (int accountId)
+        public FetchKit GenFetchKit (int accountId)
         {
             var remaining = KBaseFetchSize;
             var fetchBodies = new List<FetchKit.FetchBody> ();
@@ -580,7 +590,7 @@ namespace NachoCore.ActiveSync
             return null;
         }
 
-        bool NarrowFoldersNoToClientExpected (int accountId)
+        public bool NarrowFoldersNoToClientExpected (int accountId)
         {
             var defInbox = McFolder.GetDefaultInboxFolder (accountId);
             var defCal = McFolder.GetDefaultCalendarFolder (accountId);
