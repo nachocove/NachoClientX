@@ -376,7 +376,7 @@ namespace NachoClient.iOS
                 saveEdit = true;
                 ExtractValues ();
                 SyncMeetingRequest ();
-                SendInvites();
+                SendInvites ();
                 ScheduleNotification ();
                 DismissView (showMenu);
             };
@@ -838,11 +838,11 @@ namespace NachoClient.iOS
             deleteButton = UIButton.FromType (UIButtonType.RoundedRect);
             deleteButton.SetTitle ("Delete Event", UIControlState.Normal);
             deleteButton.Font = A.Font_AvenirNextRegular14;
-            deleteButton.Layer.CornerRadius = 3;
+            deleteButton.Layer.CornerRadius = 4;
             deleteButton.Layer.MasksToBounds = true;
             deleteButton.BackgroundColor = A.Color_NachoRed;
             deleteButton.SetTitleColor (UIColor.White, UIControlState.Normal);
-            deleteButton.Frame = new RectangleF (20, (LINE_OFFSET * 6) + (CELL_HEIGHT * 11) + TEXT_LINE_HEIGHT, 280, CELL_HEIGHT);
+            deleteButton.Frame = new RectangleF (18, (LINE_OFFSET * 6) + (CELL_HEIGHT * 11) + TEXT_LINE_HEIGHT, 284, CELL_HEIGHT);
             deleteButton.TouchUpInside += (sender, e) => {
                 var actionSheet = new UIActionSheet ();
                 actionSheet.Add ("Delete Event");
@@ -852,9 +852,7 @@ namespace NachoClient.iOS
                 actionSheet.Clicked += delegate(object a, UIButtonEventArgs b) {
                     switch (b.ButtonIndex) {
                     case 0:
-                        //delete event
-                        // DeleteEvent(item);
-                        //
+                        DeleteEvent ();
                         break; 
                     case 1:
 
@@ -1266,14 +1264,18 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void DeleteEvent (int itemId)
+        protected void DeleteEvent ()
         {
-            //remove item from db
-
             Notif eventNotif = Notif.Instance;
             if (null != eventNotif.FindNotif (c.Id)) {
                 eventNotif.CancelNotif (c.Id);
             }
+            //remove item from db
+            BackEnd.Instance.DeleteCalCmd (account.Id, c.Id);
+            c.Delete ();
+            var controllers = this.NavigationController.ViewControllers;
+            int currentVC = controllers.Count () - 1; // take 0 indexing into account
+            NavigationController.PopToViewController (controllers [currentVC - 2], true);
         }
 
         /// <summary>
