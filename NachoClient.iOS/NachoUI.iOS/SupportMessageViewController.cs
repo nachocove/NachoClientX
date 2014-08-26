@@ -7,6 +7,13 @@ using MonoTouch.UIKit;
 using System.Collections.Generic;
 using NachoCore.Utils;
 using NachoCore.Model;
+using NachoCore;
+using NachoCore.ActiveSync;
+using NachoCore.Model;
+using NachoCore.Utils;
+using NachoCore.Brain;
+using NachoPlatform;
+using NachoClient.iOS;
 
 namespace NachoClient.iOS
 {
@@ -28,6 +35,27 @@ namespace NachoClient.iOS
             CreateView ();
             LayoutView ();
             ConfigureView ();
+        }
+
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+        }
+
+        public override void ViewWillDisappear (bool animated)
+        {
+            base.ViewWillDisappear (animated);
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+        }
+
+        protected void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+
+            if (NcResult.SubKindEnum.Info_TelemerySupportMessageReceived == s.Status.SubKind) {
+                MessageReceived ();
+            }
         }
 
         protected const int MESSAGEBODY_VIEW_TAG = 100;
@@ -52,20 +80,17 @@ namespace NachoClient.iOS
             navItems.LeftBarButtonItem = cancelButton;
             sendButton.Title = "Submit";
 
-            UIAlertView confirmSent = new UIAlertView();
-            confirmSent.Title = "Message Successfully Sent";
-            confirmSent.Message = "We have received your message and will respond as quickly as possible. Thank you for your feedback.";
-            confirmSent.AddButton("Close");
-            confirmSent.Clicked += (object sender, UIButtonEventArgs e) => {
-                this.DismissViewController (true, null);
-            };
 
             sendButton.Clicked += (object sender, EventArgs e) => {
                 Dictionary<string,string> supportInfo = new Dictionary<string, string> ();
                 supportInfo.Add ("ContactInfo", contactTextField.Text);
                 supportInfo.Add ("Message", messageBodyTextView.Text);
-                Telemetry.RecordSupport (supportInfo);
-                confirmSent.Show();
+                Telemetry.RecordSupport (supportInfo, () => {
+                    NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                        Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_TelemerySupportMessageReceived),
+                        Account = ConstMcAccount.NotAccountSpecific,
+                    });
+                });
             };
             navItems.RightBarButtonItem = sendButton;
             navigationBar.Items = new UINavigationItem[]{ navItems };
@@ -198,6 +223,18 @@ namespace NachoClient.iOS
             // Adjust the caretRect to be in our enclosing scrollview, and then scroll it
             caretRect.Y += notesView.Frame.Y + 30;
             scrollView.ScrollRectToVisible (caretRect, true);
+        }
+
+        public void MessageReceived()
+        {
+            UIAlertView confirmSent = new UIAlertView();
+            confirmSent.Title = "Message Successfully Sent";
+            confirmSent.Message = "We have received your message and will respond as quickly as possible. Thank you for your feedback.";
+            confirmSent.AddButton("Close");
+            confirmSent.Clicked += (object sender, UIButtonEventArgs e) => {
+                this.DismissViewController (true, null);
+            };
+            confirmSent.Show ();
         }
     }
 }
