@@ -1272,7 +1272,6 @@ namespace NachoClient.iOS
             }
             //remove item from db
             BackEnd.Instance.DeleteCalCmd (account.Id, c.Id);
-            c.Delete ();
             var controllers = this.NavigationController.ViewControllers;
             int currentVC = controllers.Count () - 1; // take 0 indexing into account
             NavigationController.PopToViewController (controllers [currentVC - 2], true);

@@ -164,6 +164,7 @@ namespace NachoClient.iOS
         const int SEGMENTED_CONTROL_HL_TAG = 109;
         const int TRANSIENT_TAG = 300;
         const int NOTES_TEXT_VIEW_TAG = 400;
+        const int EDIT_NOTES_BUTTON_TAG = 500;
 
         const int FOO_SIZE = 64;
         const float TEXT_LINE_HEIGHT = 19.124f;
@@ -297,9 +298,9 @@ namespace NachoClient.iOS
 
             // Notes
             notesScrollView = new UIScrollView (new RectangleF (0, yOffset + 66, View.Frame.Width, 300));
-            notesView = new UIView (new RectangleF (0, 0, View.Frame.Width, 309));
+            notesView = new UIView (new RectangleF (0, 0, View.Frame.Width, 309 - 40));
             notesView.BackgroundColor = UIColor.White;
-            notesTextView = new UITextView (new RectangleF (15, 0, View.Frame.Width - 30, 309));
+            notesTextView = new UITextView (new RectangleF (15, 0, View.Frame.Width - 30, 309 - 40));
             notesTextView.Font = A.Font_AvenirNextRegular14;
             notesTextView.Editable = false;
             notesTextView.TextColor = A.Color_NachoBlack;
@@ -309,18 +310,19 @@ namespace NachoClient.iOS
             // Notes Scroll View
             notesView.Add (notesTextView);
             notesScrollView.Add (notesView);
-            notesScrollView.Frame = new RectangleF (0, yOffset + 65, View.Frame.Width, 309);
+            notesScrollView.Frame = new RectangleF (0, yOffset + 65, View.Frame.Width, 309 - 40);
             notesScrollView.Hidden = true;
 
             View.AddSubview (notesScrollView);
 
             editNotes = new UIButton (UIButtonType.RoundedRect);
-            editNotes.SetTitle ("Edit", UIControlState.Normal);
+            editNotes.Tag = EDIT_NOTES_BUTTON_TAG;
             editNotes.TintColor = A.Color_NachoBlue;
-            editNotes.Font = A.Font_AvenirNextMedium12;
+            editNotes.BackgroundColor = A.Color_NachoNowBackground;
+            editNotes.Font = A.Font_AvenirNextMedium14;
             editNotes.SizeToFit ();
             editNotes.Hidden = true;
-            editNotes.Frame = new RectangleF (View.Frame.Width - editNotes.Frame.Width - 30, View.Frame.Height - editNotes.Frame.Height - 10, 50, 20);
+            editNotes.Frame = new RectangleF (0, View.Frame.Height - editNotes.Frame.Height, View.Frame.Width, 40);
             editNotes.TouchUpInside += (sender, e) => {
                 PerformSegue ("ContactToNotes", new SegueHolder (contact));
             };
@@ -429,6 +431,16 @@ namespace NachoClient.iOS
             }
             notesTextView.Text = Note.noteContent;
             notesScrollView.ContentSize = notesTextView.ContentSize;
+
+            var editNotesButton = View.ViewWithTag (EDIT_NOTES_BUTTON_TAG) as UIButton;
+            if ("" == notesTextView.Text) {
+                editNotesButton.SetTitle ("Add Note", UIControlState.Normal);
+                editNotesButton.SizeToFit ();
+            } else {
+                editNotesButton.SetTitle ("Edit Note", UIControlState.Normal);
+                editNotesButton.SizeToFit ();
+            }
+            editNotes.Frame = new RectangleF (0, UIScreen.MainScreen.Bounds.Height - 40, View.Frame.Width, 40);
         }
 
         protected float AddHeader (string header, float yOffset)
@@ -450,8 +462,7 @@ namespace NachoClient.iOS
             contentView.AddSubview (view);
 
             var emailAddress = McEmailAddress.QueryById<McEmailAddress> (email.EmailAddress);
-
-            var labelLabel = new UILabel (new RectangleF (15, 0, 45, 20));
+ var labelLabel = new UILabel (new RectangleF (15, 0, 45, 20));
             labelLabel.Font = A.Font_AvenirNextRegular14;
             labelLabel.TextColor = A.Color_0B3239;
             labelLabel.Text = "Email Address";
