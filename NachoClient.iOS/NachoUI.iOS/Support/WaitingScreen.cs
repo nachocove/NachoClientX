@@ -68,6 +68,8 @@ namespace NachoClient.iOS
 
             spinnerView = new UIView (new RectangleF (this.Frame.Width / 2 - 40, LOWER_SECTION_Y_VAL, MASK_DIAMETER, MASK_DIAMETER));
             spinnerView.BackgroundColor = A.Color_NachoGreen;
+            spinnerView.Layer.CornerRadius = MASK_DIAMETER / 2;
+            spinnerView.Layer.MasksToBounds = true;
             this.Add (spinnerView);
 
             bottomHalfSpinner = new UIImageView (UIImage.FromBundle ("Spinner-1@2x"));
@@ -80,32 +82,14 @@ namespace NachoClient.iOS
 
             circleMask = new UIImageView (maskImage (UIImage.FromBundle ("Circular-Mask")));
             circleMask.Frame = new RectangleF (this.Frame.Width / 2, LOWER_SECTION_Y_VAL + MASK_DIAMETER / 2, .5f, .5f);
+            circleMask.Layer.CornerRadius = MASK_DIAMETER / 2;
+            circleMask.Layer.MasksToBounds = true;
             this.Add (circleMask);
 
             animationBlocker = new UIView (new RectangleF (this.Frame.Width / 2 - 40, LOWER_SECTION_Y_VAL, MASK_DIAMETER, MASK_DIAMETER));
             animationBlocker.Alpha = 1.0f;
             animationBlocker.BackgroundColor = A.Color_NachoGreen;
             this.Add (animationBlocker);
-
-            //Temporary to cover up animation arrows
-            UIView greenBackUpper = new UIView (new RectangleF (0, 0, this.Frame.Width, LOWER_SECTION_Y_VAL));
-            greenBackUpper.BackgroundColor = A.Color_NachoGreen;
-            this.Add (greenBackUpper);
-
-            //Temporary to cover up animation arrows
-            UIView greenBackLower = new UIView (new RectangleF (0, LOWER_SECTION_Y_VAL + MASK_DIAMETER, this.Frame.Width, 400));
-            greenBackLower.BackgroundColor = A.Color_NachoGreen;
-            this.Add (greenBackLower);
-
-            //Temporary to cover up animation arrows
-            UIView greenLeftSide = new UIView (new RectangleF (0, LOWER_SECTION_Y_VAL, this.Frame.Width / 2 - 40, MASK_DIAMETER));
-            greenLeftSide.BackgroundColor = A.Color_NachoGreen;
-            this.Add (greenLeftSide);
-
-            //Temporary to cover up animation arrows
-            UIView greenRightSide = new UIView (new RectangleF (this.Frame.Width / 2 + 40, LOWER_SECTION_Y_VAL, this.Frame.Width / 2 - 40, MASK_DIAMETER));
-            greenRightSide.BackgroundColor = A.Color_NachoGreen;
-            this.Add (greenRightSide);
 
             syncStatusLabel = new UILabel (new RectangleF (0, LOWER_SECTION_Y_VAL + 89, this.Frame.Width, 30));
             syncStatusLabel.Font = A.Font_AvenirNextRegular17;
