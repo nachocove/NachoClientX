@@ -676,10 +676,10 @@ namespace NachoClient.iOS
                     duration = Math.Max (0.1, 1.0 - percentOpen);
                     UIView.Animate (duration, 0, UIViewAnimationOptions.CurveEaseOut,
                         () => {
-                            ConfigureCalendarListView ();
+//                            ConfigureCalendarListView ();
+                            PerformSegue("NachoNowToCalendar", new SegueHolder(null));
                         },
                         () => {
-                            PerformSegue ("NachoNowToCalendar", new SegueHolder (null));
                         }
                     );
                 } else {
