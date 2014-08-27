@@ -26,7 +26,7 @@ namespace NachoClient.iOS
         List<McAttendee> RequiredList = new List<McAttendee> ();
         List<McAttendee> OptionalList = new List<McAttendee> ();
 
-        UILabel emptyListLabel;
+        protected UILabel emptyListLabel;
 
         protected static int SEGMENTED_CONTROL_TAG = 100;
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
@@ -123,7 +123,6 @@ namespace NachoClient.iOS
             return this.AttendeeList;
         }
 
-
         public void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
@@ -145,13 +144,15 @@ namespace NachoClient.iOS
             } else {
                 NavigationItem.RightBarButtonItem = null;
             }
-            emptyListLabel = new UILabel (new RectangleF (0, 80, SCREEN_WIDTH, 20));
+            emptyListLabel = new UILabel (new RectangleF (80, 80, 160, 20));
             emptyListLabel.TextAlignment = UITextAlignment.Center;
             emptyListLabel.Font = A.Font_AvenirNextDemiBold14;
             emptyListLabel.TextColor = A.Color_NachoSeparator;
+            emptyListLabel.Lines = 0;
+            emptyListLabel.LineBreakMode = UILineBreakMode.WordWrap;
             emptyListLabel.Hidden = true;
             View.AddSubview (emptyListLabel);
-
+           
             var segmentedControlView = new UIView (new RectangleF (0, 0, SCREEN_WIDTH, 40));
             segmentedControlView.BackgroundColor = UIColor.White;
 
@@ -190,13 +191,17 @@ namespace NachoClient.iOS
             View.AddSubview (segmentedControlView);
         }
 
+        string addMessage = "Add attendees with the \"+\" button";
+
         protected void ConfigureEventAttendeesView ()
         {
             segmentedControl.SelectedSegment = 0;
             if (0 == AttendeeList.Count) {
                 EventAttendeesTableView.Hidden = true;
                 emptyListLabel.Hidden = false;
-                emptyListLabel.Text = "No attendees";
+                emptyListLabel.Text = addMessage;
+                emptyListLabel.Frame = new RectangleF (80, 80, 160, 20);
+                emptyListLabel.SizeToFit ();
             } else {
                 attendeeSource.SetAttendeeList (this.AttendeeList);
                 EventAttendeesTableView.ReloadData ();
@@ -210,7 +215,14 @@ namespace NachoClient.iOS
             if (0 == RequiredList.Count) {
                 EventAttendeesTableView.Hidden = true;
                 emptyListLabel.Hidden = false;
-                emptyListLabel.Text = "No required attendees";
+                if (0 == AttendeeList.Count) {
+                    emptyListLabel.Text = addMessage;
+                    emptyListLabel.Frame = new RectangleF (80, 80, 160, 20);
+                    emptyListLabel.SizeToFit ();
+                } else {
+                    emptyListLabel.Text = "No required attendees";
+                    emptyListLabel.Frame = new RectangleF (0, 80, SCREEN_WIDTH, 20);
+                }
             } else {
                 attendeeSource.SetAttendeeList (this.RequiredList);
                 EventAttendeesTableView.ReloadData ();
@@ -224,7 +236,14 @@ namespace NachoClient.iOS
             if (0 == OptionalList.Count) {
                 EventAttendeesTableView.Hidden = true;
                 emptyListLabel.Hidden = false;
-                emptyListLabel.Text = "No optional attendees";
+                if (0 == AttendeeList.Count) {
+                    emptyListLabel.Text = addMessage;
+                    emptyListLabel.Frame = new RectangleF (80, 80, 160, 20);
+                    emptyListLabel.SizeToFit ();
+                } else {
+                    emptyListLabel.Text = "No optional attendees";
+                    emptyListLabel.Frame = new RectangleF (0, 80, SCREEN_WIDTH, 20);
+                }
             } else {
                 attendeeSource.SetAttendeeList (this.OptionalList);
                 EventAttendeesTableView.ReloadData ();
