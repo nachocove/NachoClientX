@@ -47,7 +47,7 @@ namespace NachoClient.iOS
         {
             var s = (StatusIndEventArgs)e;
 
-            if (NcResult.SubKindEnum.Info_TelemerySupportMessageReceived == s.Status.SubKind) {
+            if (NcResult.SubKindEnum.Info_TelemetrySupportMessageReceived == s.Status.SubKind) {
                 MessageReceived ();
             }
         }
@@ -81,7 +81,7 @@ namespace NachoClient.iOS
                 supportInfo.Add ("Message", messageBodyTextView.Text);
                 Telemetry.RecordSupport (supportInfo, () => {
                     NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                        Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_TelemerySupportMessageReceived),
+                        Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_TelemetrySupportMessageReceived),
                         Account = ConstMcAccount.NotAccountSpecific,
                     });
                 });

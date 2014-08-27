@@ -77,7 +77,7 @@ namespace NachoCore.Utils
             Info_EmailMessageScoreUpdated,
             Info_RicInitialSyncCompleted,
             Info_CredReqCallback,
-            Info_TelemerySupportMessageReceived,
+            Info_TelemetrySupportMessageReceived,
 
             // Warning.
             // Error.
