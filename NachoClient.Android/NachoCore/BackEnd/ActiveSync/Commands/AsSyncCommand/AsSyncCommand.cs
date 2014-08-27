@@ -27,6 +27,7 @@ namespace NachoCore.ActiveSync
         private XNamespace EmailNs;
         private XNamespace TasksNs;
         private int WindowSize;
+        private bool IsNarrow;
 
         public static XNamespace Ns = Xml.AirSync.Ns;
 
@@ -39,6 +40,7 @@ namespace NachoCore.ActiveSync
             SuccessInd = NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded);
             FailureInd = NcResult.Error (NcResult.SubKindEnum.Error_SyncFailed);
             WindowSize = syncKit.OverallWindowSize;
+            IsNarrow = syncKit.IsNarrow;
             SyncKitList = syncKit.PerFolders;
             FoldersInRequest = new List<McFolder> ();
             foreach (var perFolder in SyncKitList) {
@@ -289,7 +291,7 @@ namespace NachoCore.ActiveSync
                         commands.Add (ToTaskDelete (pending, folder));
                         break;
                     default:
-                        NcAssert.True (false);
+                        NcAssert.CaseError (pending.Operation.ToString ());
                         break;
                     }
                 }
@@ -547,13 +549,20 @@ namespace NachoCore.ActiveSync
             if (FolderSyncIsMandated) {
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "SYNCREFSYNC0");
             } else {
-                // FIXME - need to know from synckit that this was narrow.
-                var update = BEContext.ProtocolState;
-                update.LastNarrowSync = DateTime.UtcNow;
-                BEContext.ProtocolState = update;
-                return Event.Create ((uint)SmEvt.E.Success, "SYNCSUCCESS0");
+                return SuccessEvent ("SYNCSUCCESS0");
             }
         }
+
+        private Event SuccessEvent (string mnemonic)
+        {
+            if (IsNarrow) {
+                var protocolState = BEContext.ProtocolState;
+                protocolState.LastNarrowSync = DateTime.UtcNow;
+                protocolState.Update ();
+            }
+            return Event.Create ((uint)SmEvt.E.Success, mnemonic);
+        }
+
         // Called when we get an empty Sync response body.
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
         {
@@ -568,7 +577,7 @@ namespace NachoCore.ActiveSync
                 }
                 PendingList.Clear ();
             }
-            return Event.Create ((uint)SmEvt.E.Success, "SYNCSUCCESS1");
+            return SuccessEvent ("SYNCSUCCESS1");
         }
 
         public override void StatusInd (bool didSucceed)

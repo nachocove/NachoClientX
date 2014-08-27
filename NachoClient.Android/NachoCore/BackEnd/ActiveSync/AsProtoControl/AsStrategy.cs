@@ -35,8 +35,6 @@ namespace NachoCore.ActiveSync
                 Def1w,
                 Def2w,
                 All1m,
-                All3m,
-                All6m,
                 AllInf,
 
             };
@@ -88,12 +86,12 @@ namespace NachoCore.ActiveSync
                     (int)ContactEnum.DefRicInf,
                     (int)FlagEnum.RicSynced | (int)FlagEnum.NarrowSyncOk
                 }, {
-                    (int)EmailEnum.All3m,
+                    (int)EmailEnum.All1m,
                     (int)CalEnum.All3m,
                     (int)ContactEnum.AllInf,
                     (int)FlagEnum.RicSynced | (int)FlagEnum.NarrowSyncOk
                 }, {
-                    (int)EmailEnum.All6m,
+                    (int)EmailEnum.AllInf,
                     (int)CalEnum.All6m,
                     (int)ContactEnum.AllInf,
                     (int)FlagEnum.RicSynced | (int)FlagEnum.NarrowSyncOk
@@ -105,6 +103,11 @@ namespace NachoCore.ActiveSync
                 },
             };
 
+            public static int MaxRung ()
+            {
+                return Ladder.GetLength (0) - 1;
+            }
+
             public static bool FlagIsSet (int rung, FlagEnum flag)
             {
                 return ((int)flag == (((int)Ladder [rung, (int)ItemType.Last + 1]) & (int)flag));
@@ -114,9 +117,6 @@ namespace NachoCore.ActiveSync
             {
                 var retval = new List<ItemType> ();
                 var limit = Ladder.GetLength (0);
-                if (limit == rung) {
-                    return retval;
-                }
                 // Those that step up in the next run must complete to advance.
                 foreach (int track in ItemTypeSeq) {
                     if (0 != (int)Ladder [rung, track] && // Exclude None(s).
@@ -162,6 +162,9 @@ namespace NachoCore.ActiveSync
 
         public bool CanAdvance (int accountId, int rung)
         {
+            if (rung >= Scope.MaxRung ()) {
+                return false;
+            }
             var musts = Scope.RequiredToAdvance (rung);
             var folders = new List<McFolder> ();
             foreach (var must in musts) {
@@ -193,6 +196,11 @@ namespace NachoCore.ActiveSync
                 protocolState.StrategyRung++;
                 protocolState.Update ();
                 rung = protocolState.StrategyRung;
+                var folders = FolderListProvider (accountId, rung, false);
+                foreach (var folder in folders) {
+                    folder.AsSyncMetaToClientExpected = true;
+                    folder.Update ();
+                }
                 if (Scope.FlagIsSet (rung, Scope.FlagEnum.RicSynced)) {
                     BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_RicInitialSyncCompleted));
                 }
@@ -216,8 +224,6 @@ namespace NachoCore.ActiveSync
                 return new List<McFolder> () { McFolder.GetDefaultInboxFolder (accountId) };
 
             case Scope.EmailEnum.All1m:
-            case Scope.EmailEnum.All3m:
-            case Scope.EmailEnum.All6m:
             case Scope.EmailEnum.AllInf:
                 if (isNarrow) {
                     return new List<McFolder> () { McFolder.GetDefaultInboxFolder (accountId) };
@@ -319,10 +325,6 @@ namespace NachoCore.ActiveSync
                 return Tuple.Create (Xml.Provision.MaxAgeFilterCode.TwoWeeks_4, perFolderWindowSize);
             case Scope.EmailEnum.All1m:
                 return Tuple.Create (Xml.Provision.MaxAgeFilterCode.OneMonth_5, perFolderWindowSize);
-            case Scope.EmailEnum.All3m:
-                return Tuple.Create (Xml.Provision.MaxAgeFilterCode.ThreeMonths_6, perFolderWindowSize);
-            case Scope.EmailEnum.All6m:
-                return Tuple.Create (Xml.Provision.MaxAgeFilterCode.SixMonths_7, perFolderWindowSize);
             case Scope.EmailEnum.AllInf:
                 return Tuple.Create (Xml.Provision.MaxAgeFilterCode.SyncAll_0, perFolderWindowSize);
             default:
@@ -440,6 +442,7 @@ namespace NachoCore.ActiveSync
             return new SyncKit () {
                 OverallWindowSize = overallWindowSize,
                 PerFolders = perFolders,
+                IsNarrow = true,
             };
         }
 
@@ -457,13 +460,11 @@ namespace NachoCore.ActiveSync
                 break;
             }
             var rawFolders = FolderListProvider (accountId, rung, isNarrow);
-            var eligibleForGetChanges = rawFolders.Where (x => true == x.AsSyncMetaToClientExpected).ToList ();
             // Don't bother with commands when doing a narrow Sync. Get new messages, get out.
             if (isNarrow) {
                 return GenNarrowSyncKit (rawFolders, rung, overallWindowSize);
             }
             // Wide Sync below.
-            rung = AdvanceIfPossible (accountId, rung);
             List<McPending> commands;
             bool inSerialMode = false;
             bool issuedAtLeast1 = false;
@@ -471,15 +472,16 @@ namespace NachoCore.ActiveSync
             var limit = protocolState.AsSyncLimit;
 
             // Loop through all synced folders. Choose those that exepect to-client items and
-            // those that have waiting pending items.
+            // those that have waiting pending items. We don't just use rawFolders because we may need
+            // to perform an operation for a folder that isn't in the set of synced folders on this rung.
             foreach (var folder in AllSyncedFolders (accountId)) {
                 if (0 >= limit) {
                     // TODO: prefer default folders in this scenario.
                     break;
                 }
-                // See if we can and should do GetChanges. O(N**2), small N.
+                // See if we can and should do GetChanges. Only rawFolders are eligible. O(N**2) alert.
                 bool getChanges = false;
-                if (null != eligibleForGetChanges.FirstOrDefault (x => x.Id == folder.Id)) {
+                if (null != rawFolders.FirstOrDefault (x => x.Id == folder.Id)) {
                     if (folder.AsSyncMetaToClientExpected) {
                         getChanges = (McFolder.AsSyncKey_Initial != folder.AsSyncKey);
                     } else {
@@ -509,14 +511,17 @@ namespace NachoCore.ActiveSync
                 }
                 // if initial-key || some pending || GetChanges, include folder in Sync.
                 if (McFolder.AsSyncKey_Initial == folder.AsSyncKey || getChanges || 0 < commands.Count) {
-                    var parms = ParametersProvider (folder, rung, false);
                     var perFolder = new SyncKit.PerFolder () {
                         Folder = folder,
                         Commands = commands,
-                        FilterCode = parms.Item1,
-                        WindowSize = parms.Item2,
                         GetChanges = getChanges,
                     };
+                    // Parameters are only valid/expressed when not AsSyncKey_Initial.
+                    if (getChanges && McFolder.AsSyncKey_Initial != folder.AsSyncKey) {
+                        var parms = ParametersProvider (folder, rung, false);
+                        perFolder.FilterCode = parms.Item1;
+                        perFolder.WindowSize = parms.Item2;
+                    }
                     retList.Add (perFolder);
                     --limit;
                 }
@@ -528,7 +533,7 @@ namespace NachoCore.ActiveSync
                 };
             }
             if (cantBeEmpty) {
-                return GenNarrowSyncKit (eligibleForGetChanges, rung, overallWindowSize);
+                return GenNarrowSyncKit (FolderListProvider (accountId, rung, true), rung, overallWindowSize);
             }
             return null;
         }
@@ -584,6 +589,7 @@ namespace NachoCore.ActiveSync
                 return new FetchKit () {
                     FetchBodies = fetchBodies,
                     FetchAttachments = fetchAtts,
+                    Pendings = new List<McPending> (),
                 };
             }
             Log.Info (Log.LOG_AS, "GenFetchKit: nothing to do.");
@@ -604,6 +610,7 @@ namespace NachoCore.ActiveSync
             var accountId = BEContext.Account.Id;
             var protocolState = BEContext.ProtocolState;
             var exeCtxt = NcApplication.Instance.ExecutionContext;
+            AdvanceIfPossible (accountId, protocolState.StrategyRung);
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
                 // (FG) If the user has initiated a Search command, we do that.
                 var search = McPending.QueryEligible (accountId).
@@ -665,10 +672,10 @@ namespace NachoCore.ActiveSync
             // (FG, BG) Unless one of these conditions are met, perform a narrow Sync Command...
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt ||
                 NcApplication.ExecutionContextEnum.Background == exeCtxt) {
-                var past120secs = DateTime.UtcNow.AddSeconds (-120);
+                var needNarrowSyncMarker = DateTime.UtcNow.AddSeconds (-300);
                 if (Scope.FlagIsSet (protocolState.StrategyRung, Scope.FlagEnum.NarrowSyncOk) &&
-                    protocolState.LastNarrowSync < past120secs &&
-                    (protocolState.LastPing < past120secs ||
+                    protocolState.LastNarrowSync < needNarrowSyncMarker &&
+                    (protocolState.LastPing < needNarrowSyncMarker ||
                     !NarrowFoldersNoToClientExpected (accountId))) {
                     Log.Info (Log.LOG_AS, "Strategy:FG/BG:Narrow Sync...");
                     var nSyncKit = GenSyncKit (accountId, protocolState, true, false);
@@ -743,7 +750,14 @@ namespace NachoCore.ActiveSync
                         cmd = new AsMeetingResponseCommand (BEContext.ProtoControl, next);
                         break;
                     default:
-                        NcAssert.CaseError (next.Operation.ToString ());
+                        if (AsSyncCommand.IsSyncCommand (next.Operation)) {
+                            Log.Info (Log.LOG_AS, "Strategy:FG/BG:QOp-IsSyncCommand:{0}", next.Operation.ToString ());
+                            var syncKit = GenSyncKit (accountId, protocolState, false, false);
+                            return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
+                                new AsSyncCommand (BEContext.ProtoControl, syncKit));
+                        } else {
+                            NcAssert.CaseError (next.Operation.ToString ());
+                        }
                         break;
                     }
                     return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.QOop, cmd);

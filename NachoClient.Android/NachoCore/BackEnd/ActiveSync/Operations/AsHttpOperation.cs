@@ -539,6 +539,7 @@ namespace NachoCore.ActiveSync
                             return Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPRDPEND4");
                         }
                         responseDoc = decoder.XmlDoc;
+                        Log.Debug (Log.LOG_XML, "{0} response:\n{1}", CommandName, responseDoc);
                         var xmlStatus = responseDoc.Root.ElementAnyNs (Xml.AirSync.Status);
                         if (null != xmlStatus) {
                             // FIXME - push TL status into pending.
@@ -556,7 +557,6 @@ namespace NachoCore.ActiveSync
                         throw new Exception ("FIXME: ContentTypeWbxmlMultipart unimplemented.");
                     case ContentTypeXml:
                         responseDoc = XDocument.Load (ContentData);
-                        Log.Debug (Log.LOG_XML, "{0} response:\n{1}", CommandName, responseDoc);
                         // Owner MUST resolve all pending.
                         return Final (Owner.ProcessResponse (this, response, responseDoc));
                     default:

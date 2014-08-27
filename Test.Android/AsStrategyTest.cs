@@ -43,8 +43,7 @@ namespace Test.iOS
             Assert.True (val.Contains (AsStrategy.Scope.ItemType.Email));
             Assert.True (val.Contains (AsStrategy.Scope.ItemType.Cal));
             val = AsStrategy.Scope.RequiredToAdvance (5);
-            Assert.AreEqual (3, val.Count);
-            Assert.True (val.Contains (AsStrategy.Scope.ItemType.Email));
+            Assert.AreEqual (2, val.Count);
             Assert.True (val.Contains (AsStrategy.Scope.ItemType.Cal));
             Assert.True (val.Contains (AsStrategy.Scope.ItemType.Contact));
         }
@@ -92,10 +91,10 @@ namespace Test.iOS
             result = strat.EmailFolderListProvider (account.Id, AsStrategy.Scope.EmailEnum.Def1w, false);
             Assert.AreEqual (1, result.Count);
             Assert.AreEqual (Xml.FolderHierarchy.TypeCode.DefaultInbox_2, result [0].Type);
-            result = strat.EmailFolderListProvider (account.Id, AsStrategy.Scope.EmailEnum.All3m, true);
+            result = strat.EmailFolderListProvider (account.Id, AsStrategy.Scope.EmailEnum.AllInf, true);
             Assert.AreEqual (1, result.Count);
             Assert.AreEqual (Xml.FolderHierarchy.TypeCode.DefaultInbox_2, result [0].Type);
-            result = strat.EmailFolderListProvider (account.Id, AsStrategy.Scope.EmailEnum.All3m, false);
+            result = strat.EmailFolderListProvider (account.Id, AsStrategy.Scope.EmailEnum.AllInf, false);
             Assert.AreEqual (2, result.Count);
             Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Type));
             Assert.True (result.Any (x => Xml.FolderHierarchy.TypeCode.UserCreatedMail_12 == x.Type));
@@ -189,10 +188,10 @@ namespace Test.iOS
             account.Insert ();
             var strat = new AsStrategy (context);
             var emailFolder = McFolder.Create (account.Id, false, false, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
-            emailFolder.AsSyncMetaToClientExpected = true;
+            emailFolder.AsSyncMetaToClientExpected = false;
             emailFolder.Insert ();
             var calFolder = McFolder.Create (account.Id, false, false, "0", "cal", "Cal", Xml.FolderHierarchy.TypeCode.DefaultCal_8);
-            calFolder.AsSyncMetaToClientExpected = false;
+            calFolder.AsSyncMetaToClientExpected = true;
             calFolder.Insert ();
             // Create folders.
             var conFolder = McFolder.Create (account.Id, false, false, "0", "contacts", "Contacts", Xml.FolderHierarchy.TypeCode.DefaultContacts_9);
@@ -201,12 +200,6 @@ namespace Test.iOS
             var ricFolder = McFolder.Create (account.Id, false, false, "0", "ric", "RIC", Xml.FolderHierarchy.TypeCode.Ric_19);
             ricFolder.AsSyncMetaToClientExpected = false;
             ricFolder.Insert ();
-            result = strat.CanAdvance (account.Id, 5);
-            Assert.False (result);
-            emailFolder.AsSyncMetaToClientExpected = false;
-            emailFolder.Update ();
-            calFolder.AsSyncMetaToClientExpected = true;
-            calFolder.Update ();
             result = strat.CanAdvance (account.Id, 5);
             Assert.False (result);
             calFolder.AsSyncMetaToClientExpected = false;
@@ -253,10 +246,10 @@ namespace Test.iOS
             int result;
             var strat = new AsStrategy (context);
             var emailFolder = McFolder.Create (account.Id, false, false, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
-            emailFolder.AsSyncMetaToClientExpected = true;
+            emailFolder.AsSyncMetaToClientExpected = false;
             emailFolder.Insert ();
             var calFolder = McFolder.Create (account.Id, false, false, "0", "cal", "Cal", Xml.FolderHierarchy.TypeCode.DefaultCal_8);
-            calFolder.AsSyncMetaToClientExpected = false;
+            calFolder.AsSyncMetaToClientExpected = true;
             calFolder.Insert ();
             // Create folders.
             var conFolder = McFolder.Create (account.Id, false, false, "0", "contacts", "Contacts", Xml.FolderHierarchy.TypeCode.DefaultContacts_9);
@@ -267,8 +260,8 @@ namespace Test.iOS
             ricFolder.Insert ();
             result = strat.AdvanceIfPossible (account.Id, context.ProtocolState.StrategyRung);
             Assert.AreEqual (context.ProtocolState.StrategyRung, result);
-            emailFolder.AsSyncMetaToClientExpected = false;
-            emailFolder.Update ();
+            calFolder.AsSyncMetaToClientExpected = false;
+            calFolder.Update ();
             var oldRung = context.ProtocolState.StrategyRung;
             result = strat.AdvanceIfPossible (account.Id, context.ProtocolState.StrategyRung);
             Assert.AreEqual (oldRung + 1, result);
@@ -663,11 +656,13 @@ namespace Test.iOS
         private void Fetch_DeleteAtts (int accountId)
         {
             foreach (var att in Fetch_Atts) {
-                var email = Fetch_Emails.SingleOrDefault (x => x.Id == att.EmailMessageId);
-                if (null != email) {
-                    Fetch_Folder.Unlink (email);
-                    email.Delete ();
-                    Fetch_Emails.Remove (email);
+                if (null != Fetch_Emails) {
+                    var email = Fetch_Emails.SingleOrDefault (x => x.Id == att.EmailMessageId);
+                    if (null != email) {
+                        Fetch_Folder.Unlink (email);
+                        email.Delete ();
+                        Fetch_Emails.Remove (email);
+                    }
                 }
                 att.Delete ();
             }
@@ -690,12 +685,15 @@ namespace Test.iOS
             result = strat.GenFetchKit (account.Id);
             Assert.AreEqual (0, result.FetchAttachments.Count);
             Assert.AreEqual (10, result.FetchBodies.Count);
+            Assert.NotNull (result.Pendings);
+            Assert.AreEqual (0, result.Pendings.Count);
             Fetch_DeleteEmails (account.Id);
 
             Fetch_InjectAtts (account.Id, 11);
             result = strat.GenFetchKit (account.Id);
             Assert.AreEqual (10, result.FetchAttachments.Count);
             Assert.AreEqual (0, result.FetchBodies.Count);
+            Assert.AreEqual (0, result.Pendings.Count);
             Fetch_DeleteAtts (account.Id);
 
             Fetch_InjectEmails (account.Id, 5);
@@ -703,6 +701,7 @@ namespace Test.iOS
             result = strat.GenFetchKit (account.Id);
             Assert.AreEqual (5, result.FetchAttachments.Count);
             Assert.AreEqual (5, result.FetchBodies.Count);
+            Assert.AreEqual (0, result.Pendings.Count);
             Fetch_DeleteEmails (account.Id);
             Fetch_DeleteAtts (account.Id);
         }
@@ -710,24 +709,266 @@ namespace Test.iOS
         [Test]
         public void TestGenSyncKit ()
         {
+            var serverIdGen = 1; // Mock server id to make pending insert happy.
+            var folders = new List<McFolder> ();
+            var context = new MockContext ();
+            var account = new McAccount () {
+                AccountType = McAccount.AccountTypeEnum.Exchange,
+            };
+            account.Insert ();
+            context.ProtocolState.StrategyRung = 6;
+            context.ProtocolState.AsSyncLimit = 5;
+            context.ProtocolState.Update ();
+            var strat = new AsStrategy (context);
+            var inbox = McFolder.Create (account.Id, false, false, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+            inbox.AsSyncKey = "1";
+            inbox.Insert ();
+            folders.Add (inbox);
+            var cal = McFolder.Create (account.Id, false, false, "0", "cal", "Cal", Xml.FolderHierarchy.TypeCode.DefaultCal_8);
+            cal.AsSyncKey = "1";
+            cal.Insert ();
+            folders.Add (cal);
+            var useremail = McFolder.Create (account.Id, false, false, "0", "useremail", "UserEmail", Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
+            useremail.AsSyncKey = "1";
+            useremail.Insert ();
+            folders.Add (useremail);
+            var contact = McFolder.Create (account.Id, false, false, "0", "contact", "Contact", Xml.FolderHierarchy.TypeCode.DefaultContacts_9);
+            contact.AsSyncKey = "1";
+            contact.Insert ();
+            folders.Add (contact);
+            var folder = McFolder.Create (account.Id, false, false, "0", "ric", "RIC", Xml.FolderHierarchy.TypeCode.Ric_19);
+            folder.AsSyncKey = "1";
+            folder.Insert ();
+            folders.Add (folder);
+
+            // Test of null result.
+            var result = strat.GenSyncKit (account.Id, context.ProtocolState, false, false);
+            Assert.IsNull (result);
+
+            // Test cant-be-null.
+            result = strat.GenSyncKit (account.Id, context.ProtocolState, false, true);
+            Assert.IsNotNull (result);
+            Assert.AreEqual (2, result.PerFolders.Count);
+            Assert.True (result.PerFolders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Folder.Type));
+            Assert.True (result.PerFolders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultCal_8 == x.Folder.Type));
+            Assert.True (AsStrategy.KBaseOverallWindowSize <= result.OverallWindowSize);
+            foreach (var rst in folders) {
+                rst.AsSyncMetaToClientExpected = false;
+                rst.Update ();
+            }
+
+            // Test of narrow.
+            result = strat.GenSyncKit (account.Id, context.ProtocolState, true, false);
+            Assert.AreEqual (2, result.PerFolders.Count);
+            Assert.True (result.PerFolders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Folder.Type));
+            Assert.True (result.PerFolders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultCal_8 == x.Folder.Type));
+            foreach (var rst in folders) {
+                rst.AsSyncMetaToClientExpected = false;
+                rst.Update ();
+            }
+
+            // Test simple more-available case.
+            folder.AsSyncMetaToClientExpected = true;
+            folder.Update ();
+            result = strat.GenSyncKit (account.Id, context.ProtocolState, false, false);
+            Assert.AreEqual (1, result.PerFolders.Count);
+            Assert.True (result.PerFolders.Any (x => Xml.FolderHierarchy.TypeCode.Ric_19 == x.Folder.Type));
+
+            // Broad test.
+            foreach (var rst in folders) {
+                rst.AsSyncMetaToClientExpected = true;
+                rst.Update ();
+            }
+            context.ProtocolState.AsSyncLimit = 4;
+            context.ProtocolState.Update ();
+            // Verify inbox does not have getChanges or pending attached.
+            inbox.AsSyncKey = McFolder.AsSyncKey_Initial;
+            inbox.AsSyncMetaToClientExpected = true;
+            inbox.Update ();
+            var pending = new McPending () {
+                Operation = McPending.Operations.EmailMarkRead,
+                AccountId = account.Id,
+                State = McPending.StateEnum.Eligible,
+                ParentId = inbox.ServerId,
+                ServerId = serverIdGen++.ToString(),
+            };
+            pending.Insert ();
+            // Verify cal has no pending.
+            cal.AsSyncMetaToClientExpected = true;
+            cal.Update ();
+            // Verify usermail has 2 pendings and no getChanges.
+            useremail.AsSyncMetaToClientExpected = false;
+            useremail.Update ();
+            pending = new McPending () {
+                Operation = McPending.Operations.EmailMarkRead,
+                AccountId = account.Id,
+                State = McPending.StateEnum.Eligible,
+                ParentId = useremail.ServerId,
+                ServerId = serverIdGen++.ToString(),
+            };
+            pending.Insert ();
+            pending = new McPending () {
+                Operation = McPending.Operations.EmailMarkRead,
+                AccountId = account.Id,
+                State = McPending.StateEnum.Eligible,
+                ParentId = useremail.ServerId,
+                ServerId = serverIdGen++.ToString(),
+            };
+            pending.Insert ();
+            pending = new McPending () {
+                Operation = McPending.Operations.EmailBodyDownload,
+                AccountId = account.Id,
+                State = McPending.StateEnum.Eligible,
+                ParentId = useremail.ServerId,
+                ServerId = serverIdGen++.ToString(),
+            };
+            pending.Insert ();
+            // Verify contact has 1 pending.
+            pending = new McPending () {
+                Operation = McPending.Operations.ContactDelete,
+                AccountId = account.Id,
+                State = McPending.StateEnum.Eligible,
+                ParentId = contact.ServerId,
+                ServerId = serverIdGen++.ToString(),
+            };
+            pending.Insert ();
+            result = strat.GenSyncKit (account.Id, context.ProtocolState, false, false);
+            Assert.AreEqual (4, result.PerFolders.Count);
+            var pfInbox = result.PerFolders.Single (x => "inbox" == x.Folder.ServerId);
+            Assert.False (pfInbox.GetChanges);
+            Assert.AreEqual (0, pfInbox.Commands.Count);
+            var pfCal = result.PerFolders.Single (x => "cal" == x.Folder.ServerId);
+            Assert.True (pfCal.GetChanges);
+            Assert.True (AsStrategy.KBasePerFolderWindowSize <= pfCal.WindowSize);
+            Assert.AreEqual (Xml.Provision.MaxAgeFilterCode.ThreeMonths_6, pfCal.FilterCode);
+            var pfUsermail = result.PerFolders.Single (x => "useremail" == x.Folder.ServerId);
+            Assert.False (pfUsermail.GetChanges);
+            Assert.AreEqual (2, pfUsermail.Commands.Count);
+            Assert.AreEqual (2, pfUsermail.Commands.Count (
+                x => useremail.ServerId == x.ParentId &&
+                McPending.Operations.EmailMarkRead == x.Operation));
+            var pfContact = result.PerFolders.Single (x => "contact" == x.Folder.ServerId);
+            Assert.AreEqual (1, pfContact.Commands.Count);
+            Assert.AreEqual (1, pfContact.Commands.Count (
+                x => contact.ServerId == x.ParentId &&
+                McPending.Operations.ContactDelete == x.Operation));
+            foreach (var pend in McPending.Query (account.Id)) {
+                pend.Delete ();
+            }
+
+            // normal, single-issue, normal => 2 pendings off useremail.
+            pending = new McPending () {
+                Operation = McPending.Operations.EmailMarkRead,
+                AccountId = account.Id,
+                State = McPending.StateEnum.Eligible,
+                ParentId = useremail.ServerId,
+                ServerId = serverIdGen++.ToString(),
+            };
+            pending.Insert ();
+            pending = new McPending () {
+                Operation = McPending.Operations.EmailMarkRead,
+                AccountId = account.Id,
+                State = McPending.StateEnum.Eligible,
+                ParentId = useremail.ServerId,
+                ServerId = serverIdGen++.ToString(),
+                DeferredSerialIssueOnly = true,
+            };
+            pending.Insert ();
+            pending = new McPending () {
+                Operation = McPending.Operations.EmailMarkRead,
+                AccountId = account.Id,
+                State = McPending.StateEnum.Eligible,
+                ParentId = useremail.ServerId,
+                ServerId = serverIdGen++.ToString(),
+            };
+            pending.Insert ();
+            result = strat.GenSyncKit (account.Id, context.ProtocolState, false, false);
+            pfUsermail = result.PerFolders.Single (x => "useremail" == x.Folder.ServerId);
+            Assert.False (pfUsermail.GetChanges);
+            Assert.AreEqual (2, pfUsermail.Commands.Count);
+            Assert.AreEqual (2, pfUsermail.Commands.Count (
+                x => useremail.ServerId == x.ParentId &&
+                McPending.Operations.EmailMarkRead == x.Operation &&
+                false == x.DeferredSerialIssueOnly));
+            foreach (var pend in McPending.Query (account.Id)) {
+                pend.Delete ();
+            }
+
+            // single-issue, normal => just single-issue pending off useremail.
+            pending = new McPending () {
+                Operation = McPending.Operations.EmailMarkRead,
+                AccountId = account.Id,
+                State = McPending.StateEnum.Eligible,
+                ParentId = useremail.ServerId,
+                ServerId = serverIdGen++.ToString(),
+                DeferredSerialIssueOnly = true,
+            };
+            pending.Insert ();
+            pending = new McPending () {
+                Operation = McPending.Operations.EmailMarkRead,
+                AccountId = account.Id,
+                State = McPending.StateEnum.Eligible,
+                ParentId = useremail.ServerId,
+                ServerId = serverIdGen++.ToString(),
+            };
+            pending.Insert ();
+            result = strat.GenSyncKit (account.Id, context.ProtocolState, false, false);
+            pfUsermail = result.PerFolders.Single (x => "useremail" == x.Folder.ServerId);
+            Assert.False (pfUsermail.GetChanges);
+            Assert.AreEqual (1, pfUsermail.Commands.Count);
+            Assert.AreEqual (1, pfUsermail.Commands.Count (
+                x => useremail.ServerId == x.ParentId &&
+                McPending.Operations.EmailMarkRead == x.Operation &&
+                true == x.DeferredSerialIssueOnly));
+            foreach (var pend in McPending.Query (account.Id)) {
+                pend.Delete ();
+            }
+        }
+
+        [Test]
+        public void TestPick ()
+        {
             /*
-             * No AsSyncMetaToClientExpected, not-narrow => null.
-             * narrow => narrow kit, != non-narrow kit.
-             * full suite test:
-             ** > limit folders.
-             ** one synckey_initial folder with AsSyncMetaToClientExpected and pending => no getChanges or pending.
-             ** one with AsSyncMetaToClientExpected and no pending => in kit w/no pending.
-             ** one with AsSyncMetaToClientExpected false and 3 pending (1 not synccommand).
-             ** folder gets added if: synckey_initial, get_changes, commands.
-             ** => 3 folders in kit.
-             *
-             * single issue tests
-             * A)
-             ** no AsSyncMetaToClientExpected.
-             ** 3 pendings: normal, single-issue, normal: kit w/folder and 2 normal pendings.
-             * B)
-             ** 3 pendings: single-issue, normal, normal: kit w/folder and 1 single-issue pending.
-             */  
+             * create conditions, get expected result.
+             * test1: Search, user-fetch, SendMail, 
+             *        long time since any search/ping, 
+             *        narrow not allowed,
+             *        we are not rate-limited, other ops in Q.
+             *        we have conditions for spec dnlds.
+             *        conditions are set to advance scope.
+             */
+            var context = new MockContext ();
+            var account = new McAccount () {
+                AccountType = McAccount.AccountTypeEnum.Exchange,
+            };
+            account.Insert ();
+            context.ProtocolState.StrategyRung = 3;
+            context.ProtocolState.Update ();
+            var folders = new List<McFolder> ();
+            var inbox = McFolder.Create (account.Id, false, false, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+            inbox.AsSyncKey = "1";
+            inbox.Insert ();
+            folders.Add (inbox);
+            var strat = new AsStrategy (context);
+            //var result = strat.Pick ();
+            /*
+             * a) in BG, get SendMail.
+             * b) in FG, get Search. Delete Search.
+             * b1) in QS, get narrow-sync. set recent narrow-sync.
+             * b2) in QS, get wait. clear recent narrow-sync.
+             * c) in FG, get user-fetch. Delete user-fetch.
+             * d) in FG get SendMail. Delete SendMail.
+             * e) in FG & BG get oldest op. enable narrow sync (new rung).
+             * f) in FG & BG get narrow sync. set recent narrow sync.
+             * g) in FG & BG get oldest op. clear recent narrow sync, set recent narrow ping.
+             * h) in FG & BG get oldest op. enable rate-limited and narrow-ping.
+             * i) in FG & BG get narrow ping. disable narrow ping.
+             * j) in BG, get wait. turn off rate limiting and clear pending Q. P1 condition.
+             * k) control coin, in FG/BG see spec-dnld and broad sync. disable both.
+             * l) in FG/BG see broad ping. disable broad ping.
+             * m) in FG/BG see narrow ping. disable narrow ping.
+             * n) in FG/BG see wait.
+             */
         }
     }
 }
