@@ -120,9 +120,9 @@ namespace NachoClient.iOS
                 suppressLayout = false;
                 attachmentView.Hidden = false;
                 attachmentViewHR.Hidden = false;
-                attachmentView.SetCompact(false);
+                attachmentView.SetCompact (false);
                 attachmentView.ConfigureView ();
-                attachmentView.PromptForAttachment("message");
+                attachmentView.PromptForAttachment ("message");
             };
 
             sendButton.Clicked += (object sender, EventArgs e) => {
@@ -279,7 +279,7 @@ namespace NachoClient.iOS
                 bodyTextView.InsertText (EmailTemplate);
             }
             if (!String.IsNullOrEmpty (account.Signature)) {
-                bodyTextView.InsertText ("\n"+ "\n" + account.Signature);
+                bodyTextView.InsertText ("\n" + "\n" + account.Signature);
             }
             var beginningRange = new NSRange (0, 0);
             bodyTextView.SelectedRange = beginningRange;
