@@ -44,6 +44,7 @@ namespace NachoClient.iOS
         protected static UIColor _Color_NachoRed = null;
         protected static UIColor _Color_NachoYellow = null;
         protected static UIColor _Color_NachoBlue = null;
+        protected static UIColor _Color_NachoLightGray = null;
         protected static UIColor _Color_NachoSeparator = null;
 
 
@@ -357,6 +358,15 @@ namespace NachoClient.iOS
             }
         }
 
+        public static UIColor Color_NachoLightGray {
+            get {
+                if (null == _Color_NachoLightGray) {
+                    _Color_NachoLightGray = UIColor.FromRGB (0xf7, 0xf7, 0xf7);
+                }
+                return _Color_NachoLightGray;
+            }
+        }
+
         public static UIColor Color_NachoSeparator {
             get {
                 if (null == _Color_NachoSeparator) {
@@ -382,7 +392,7 @@ namespace NachoClient.iOS
                 var image = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
                 var button = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
                 button.Clicked += (object sender, EventArgs e) => {
-                    vc.PerformSegue("SegueToNachoNow", new SegueHolder(null));
+                    vc.PerformSegue ("SegueToNachoNow", new SegueHolder (null));
                 };
                 return button;
             }
