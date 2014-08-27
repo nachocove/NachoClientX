@@ -146,7 +146,7 @@ namespace NachoClient.iOS
             swipeUpLabel.TextAlignment = UITextAlignment.Center;
             this.Add (swipeUpLabel);
 
-            dismissLabel = new UILabel (new RectangleF (this.Frame.Width / 2 - 50, 20 , 100, 15));
+            dismissLabel = new UILabel (new RectangleF (this.Frame.Width / 2 - 50, this.Frame.Bottom - 90 , 100, 15));
             dismissLabel.Font = A.Font_AvenirNextRegular12;
             dismissLabel.TextColor = UIColor.White;
             dismissLabel.Text = "Cancel";
@@ -154,6 +154,7 @@ namespace NachoClient.iOS
             dismissLabel.UserInteractionEnabled = true;
             UITapGestureRecognizer dismissLabelTap = new UITapGestureRecognizer (() => {
                 DismissView ();
+                owner.ConfigureView (AdvancedLoginViewController.LoginStatus.EnterInfo);
             });
             dismissLabel.AddGestureRecognizer (dismissLabelTap);
             this.Add (dismissLabel);
@@ -202,9 +203,8 @@ namespace NachoClient.iOS
             owner.NavigationItem.Title = "Account Setup";
             this.Hidden = true;
             this.Layer.RemoveAllAnimations ();
-            ResetLoadingItems ();
             quitLoadingAnimation = true;
-            owner.ConfigureView (AdvancedLoginViewController.LoginStatus.EnterInfo);
+            ResetLoadingItems ();
         }
 
         protected void ResetLoadingItems ()

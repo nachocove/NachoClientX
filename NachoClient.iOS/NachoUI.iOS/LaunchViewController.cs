@@ -25,6 +25,7 @@ namespace NachoClient.iOS
         protected UIView passwordBox;
         protected UIButton submitButton;
         protected UIButton advancedButton;
+        protected UIImageView loginTriangles;
 
         public LaunchViewController (IntPtr handle) : base (handle)
         {
@@ -217,16 +218,16 @@ namespace NachoClient.iOS
 
             yOffset = View.Frame.Height - 39;
 
-            UIImageView loginTriangles = new UIImageView (UIImage.FromBundle ("Bootscreen-5"));
+            loginTriangles = new UIImageView (UIImage.FromBundle ("Bootscreen-5"));
             loginTriangles.Frame = new RectangleF (0, yOffset, 320, 39);
             contentView.AddSubview (loginTriangles);
 
             yOffset = loginTriangles.Frame.Bottom;
 
-            LayoutView ();
+            LayoutView (false);
         }
 
-        protected void LayoutView ()
+        protected void LayoutView (bool keyboardChanged)
         {
             UIView.AnimateKeyframes (1, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
 
@@ -238,7 +239,39 @@ namespace NachoClient.iOS
                 });
 
             }, ((bool finished) => {
-            }));
+
+                if(keyboardChanged){
+                    if (keyboardHeight > 0){
+                        startLabel.Center = new PointF (startLabel.Center.X, startLabel.Center.Y + 38);
+                        emailBox.Center = new PointF (emailBox.Center.X, emailBox.Center.Y + 30);
+                        passwordBox.Center = new PointF(passwordBox.Center.X, passwordBox.Center.Y + 30);
+                        submitButton.Center = new PointF (submitButton.Center.X, submitButton.Center.Y + 20);
+                        advancedButton.Center = new PointF (advancedButton.Center.X, advancedButton.Center.Y + 30);
+
+                        if(View.Frame.Height == 480){
+                            loginTriangles.Center = new PointF (loginTriangles.Center.X, loginTriangles.Center.Y + 30);
+                            startLabel.Center = new PointF (startLabel.Center.X, startLabel.Center.Y + 50);
+                            emailBox.Center = new PointF (emailBox.Center.X, emailBox.Center.Y + 35);
+                            passwordBox.Center = new PointF(passwordBox.Center.X, passwordBox.Center.Y + 35);
+                            submitButton.Center = new PointF (submitButton.Center.X, submitButton.Center.Y + 20);
+                        }
+                    } else{
+                        startLabel.Center = new PointF (startLabel.Center.X, startLabel.Center.Y - 38);
+                        emailBox.Center = new PointF (emailBox.Center.X, emailBox.Center.Y - 30);
+                        passwordBox.Center = new PointF(passwordBox.Center.X, passwordBox.Center.Y - 30);
+                        submitButton.Center = new PointF (submitButton.Center.X, submitButton.Center.Y - 20);
+                        advancedButton.Center = new PointF (advancedButton.Center.X, advancedButton.Center.Y - 30);
+
+                        if(View.Frame.Height == 480){
+                            loginTriangles.Center = new PointF (loginTriangles.Center.X, loginTriangles.Center.Y - 30);
+                            startLabel.Center = new PointF (startLabel.Center.X, startLabel.Center.Y - 50);
+                            emailBox.Center = new PointF (emailBox.Center.X, emailBox.Center.Y - 35);
+                            passwordBox.Center = new PointF(passwordBox.Center.X, passwordBox.Center.Y - 35);
+                            submitButton.Center = new PointF (submitButton.Center.X, submitButton.Center.Y - 20);
+                        }
+                    }
+                }
+                }));
         }
 
         private bool EnterFullConfiguration ()
@@ -344,7 +377,7 @@ namespace NachoClient.iOS
             }
             keyboardHeight = newHeight;
 
-            LayoutView ();
+            LayoutView (true);
 
             var advancedButton = contentView.ViewWithTag (ADVANCED_SIGNIN_BUTTON_TAG);
             scrollView.ScrollRectToVisible (advancedButton.Frame, false);
