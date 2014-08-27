@@ -494,8 +494,35 @@ namespace NachoClient
             emailMessage.Update ();
         }
 
+        public static UIImage ImageOfContact (McContact contact)
+        {
+            if (null == contact) {
+                return null;
+            }
+            if (0 == contact.PortraitId) {
+                return null;
+            }
+            byte[] data = McPortrait.Get (contact.PortraitId);
+            if (null == data) {
+                return null;
+            }
+            return UIImage.LoadFromData (NSData.FromArray (data));
+        }
+
         public static UIImage ImageOfSender (int accountId, string emailAddress)
         {
+            List<McContact> contacts = McContact.QueryByEmailAddress (accountId, emailAddress);
+            if ((null == contacts) || (0 == contacts.Count)) {
+                return null;
+            }
+            // There may be more than one contact that matches an email address.
+            // Search thru all of them and look for the first one that has a portrait.
+            foreach (var contact in contacts) {
+                UIImage image = ImageOfContact (contact);
+                if (null != image) {
+                    return image;
+                }
+            }
             return null;
         }
 
