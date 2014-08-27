@@ -8,7 +8,8 @@ using NachoCore.Brain;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore.Wbxml;
-
+using NachoClient.Build;
+using NachoPlatform;
 using System.Security.Cryptography.X509Certificates;
 
 namespace NachoCore
@@ -200,6 +201,12 @@ namespace NachoCore
         {
             BackEnd.Instance.Start ();
             MonitorStart (); // Has a deferred timer start inside.
+            Log.Info (Log.LOG_LIFECYCLE, "{0} (build {1}) built at {2} by {3}",
+                BuildInfo.Version, BuildInfo.BuildNumber, BuildInfo.Time, BuildInfo.User);
+            Log.Info (Log.LOG_LIFECYCLE, "Device ID: {0}", Device.Instance.Identity ());
+            if (0 < BuildInfo.Source.Length) {
+                Log.Info (Log.LOG_LIFECYCLE, "Source Info: {0}", BuildInfo.Source);
+            }
             Class4EarlyShowTimer = new NcTimer ("NcApplication:Class4EarlyShowTimer", (state) => {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4EarlyShowTimer called.");
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4EarlyShowTimer exited.");

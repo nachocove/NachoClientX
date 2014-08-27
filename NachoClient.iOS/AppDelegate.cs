@@ -239,12 +239,6 @@ namespace NachoClient.iOS
                 }
                 // Telemetry is in AppDelegate because the implementation is iOS-only right now.
                 Telemetry.SharedInstance.Start<TelemetryBEParse> ();
-                Log.Info (Log.LOG_LIFECYCLE, "{0} (build {1}) built at {2} by {3}",
-                    BuildInfo.Version, BuildInfo.BuildNumber, BuildInfo.Time, BuildInfo.User);
-                Log.Info (Log.LOG_LIFECYCLE, "Device ID: {0}", Device.Instance.Identity ());
-                if (0 < BuildInfo.Source.Length) {
-                    Log.Info (Log.LOG_LIFECYCLE, "Source Info: {0}", BuildInfo.Source);
-                }
             };
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: NcApplication Class4LateShowEvent registered");
