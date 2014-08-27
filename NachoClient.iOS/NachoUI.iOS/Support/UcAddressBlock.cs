@@ -216,6 +216,7 @@ namespace NachoClient.iOS
             var moreCount = suppliedCount;
             if (moreCount < 0) {
                 moreCount = (list.Count + 1) / 2;  // count of text fields, assuming text+comma.
+                moreCount -= 1; // We are showing one address already
             }
 
             if (1 >= moreCount) {
