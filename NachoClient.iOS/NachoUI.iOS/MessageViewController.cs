@@ -426,7 +426,7 @@ namespace NachoClient.iOS
             // Subject label view
             // Size fields will be recalculated after text is known.
             var subjectLabelView = new UILabel (new RectangleF (65, yOffset, 250, 20));
-            subjectLabelView.LineBreakMode = UILineBreakMode.TailTruncation;
+            subjectLabelView.LineBreakMode = UILineBreakMode.WordWrap;
             subjectLabelView.Font = A.Font_AvenirNextMedium14;
             subjectLabelView.TextColor = A.Color_0F424C;
             subjectLabelView.Tag = SUBJECT_TAG;
@@ -547,29 +547,35 @@ namespace NachoClient.iOS
 
             // Subject label view
             var subjectLabelView = View.ViewWithTag (SUBJECT_TAG) as UILabel;
+            subjectLabelView.Lines = 0;
             subjectLabelView.Text = Pretty.SubjectString (message.Subject);
+            subjectLabelView.SizeToFit ();
 
+            var yOffset = subjectLabelView.Frame.Bottom;
+ 
             // Reminder image view and label
-            var ySeparator = 75;
             var reminderImageView = View.ViewWithTag (REMINDER_ICON_TAG) as UIImageView;
             var reminderLabelView = View.ViewWithTag (REMINDER_TEXT_TAG) as UILabel;
             if (message.HasDueDate () || message.IsDeferred ()) {
-                ySeparator = 95;
                 reminderImageView.Hidden = false;
                 reminderLabelView.Hidden = false;
                 if (message.IsDeferred ()) {
-                    reminderLabelView.Text = String.Format ("Message hidden until {0}", message.FlagDueAsUtc ());
+                    reminderLabelView.Text = String.Format ("Hidden until {0}", message.FlagDueAsUtc ());
                 } else if (message.IsOverdue ()) {
                     reminderLabelView.Text = String.Format ("Response was due {0}", message.FlagDueAsUtc ());
                 } else {
                     reminderLabelView.Text = String.Format ("Response is due {0}", message.FlagDueAsUtc ());
                 }
+                AdjustY (reminderImageView, yOffset + 4);
+                AdjustY (reminderLabelView, yOffset);
+                yOffset += 20;
             } else {
                 reminderImageView.Hidden = true;
                 reminderLabelView.Hidden = true;
             }
+            yOffset += 5;
             var separatorView = View.ViewWithTag (SEPARATOR_TAG);
-            separatorView.Frame = new RectangleF (0, ySeparator, View.Frame.Width, 1);
+            separatorView.Frame = new RectangleF (0, yOffset, View.Frame.Width, 1);
 
             // Received label view
             var receivedLabelView = View.ViewWithTag (RECEIVED_DATE_TAG) as UILabel;
@@ -615,6 +621,13 @@ namespace NachoClient.iOS
             if (0 == DeferLayoutDecrement ()) {
                 LayoutView ();
             }
+        }
+
+        protected void AdjustY(UIView view, float yOffset)
+        {
+            var rect = view.Frame;
+            rect.Y = yOffset;
+            view.Frame = rect;
         }
 
         protected void ConfigureToolbar ()
