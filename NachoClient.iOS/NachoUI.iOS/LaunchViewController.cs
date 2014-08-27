@@ -8,6 +8,7 @@ using MonoTouch.UIKit;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
+using MonoTouch.CoreGraphics;
 
 namespace NachoClient.iOS
 {
@@ -17,6 +18,13 @@ namespace NachoClient.iOS
 
         float yOffset;
         float keyboardHeight;
+
+        protected UIImageView circleMail;
+        protected UILabel startLabel;
+        protected UIView emailBox;
+        protected UIView passwordBox;
+        protected UIButton submitButton;
+        protected UIButton advancedButton;
 
         public LaunchViewController (IntPtr handle) : base (handle)
         {
@@ -47,6 +55,24 @@ namespace NachoClient.iOS
                 NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
                 NSNotificationCenter.DefaultCenter.AddObserver (UITextField.TextFieldTextDidChangeNotification, OnTextFieldChanged);
             }
+
+            UIView.AnimateKeyframes (1.6, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+
+                UIView.AddKeyframeWithRelativeStartTime (0, .5, () => {
+                    circleMail.Transform = CGAffineTransform.MakeScale (2.0f / 3.0f, 2.0f / 3.0f);
+                    circleMail.Center = new PointF (160, View.Frame.Height / 4.369f);
+                });
+
+                UIView.AddKeyframeWithRelativeStartTime (.5, .5, () => {
+                    startLabel.Alpha = 1.0f;
+                    emailBox.Alpha = 1.0f;
+                    passwordBox.Alpha = 1.0f;
+                    submitButton.Alpha = 1.0f;
+                    advancedButton.Alpha = 1.0f;
+                });
+
+            }, ((bool finished) => {
+            }));
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -78,27 +104,29 @@ namespace NachoClient.iOS
             scrollView.BackgroundColor = A.Color_NachoGreen;
             contentView.BackgroundColor = A.Color_NachoGreen;
 
-            yOffset = 90;
+            //yOffset = View.Frame.Height - 368;
 
-            UIImageView circleMail = new UIImageView (UIImage.FromBundle ("Loginscreen-1"));
-            circleMail.Frame = new RectangleF (120, yOffset, 80, 80);
+            circleMail = new UIImageView (UIImage.FromBundle ("Bootscreen-1"));
+            circleMail.Frame = new RectangleF (View.Frame.Width / 2 - 60, (View.Frame.Height == 480 ? 155 : 200), 120, 120);
             contentView.AddSubview (circleMail);
 
-            yOffset = circleMail.Frame.Bottom + 35;
+            yOffset = View.Frame.Height - 363 + (View.Frame.Height == 480 ? 40 : 0);
 
-            UILabel startLabel = new UILabel (new RectangleF (30, yOffset, View.Frame.Width - 60, 50));
+            startLabel = new UILabel (new RectangleF (30, yOffset, View.Frame.Width - 60, 50));
             startLabel.Text = "Start by entering your Exchange email address and password.";
             startLabel.Lines = 2;
             startLabel.BackgroundColor = A.Color_NachoGreen;
             startLabel.TextColor = UIColor.White;
             startLabel.Font = A.Font_AvenirNextRegular17;
             startLabel.TextAlignment = UITextAlignment.Center;
+            startLabel.Alpha = 0.0f;
             contentView.AddSubview (startLabel);
 
             yOffset = startLabel.Frame.Bottom + 32f;
 
-            UIView emailBox = new UIView (new RectangleF (25, yOffset, View.Frame.Width - 50, 46));
+            emailBox = new UIView (new RectangleF (25, yOffset, View.Frame.Width - 50, 46));
             emailBox.BackgroundColor = UIColor.White;
+            emailBox.Alpha = 0.0f;
 
             var emailField = new UITextField (new RectangleF (45, 0, emailBox.Frame.Width - 50, emailBox.Frame.Height));
             emailField.BackgroundColor = UIColor.White;
@@ -120,8 +148,9 @@ namespace NachoClient.iOS
 
             yOffset = emailBox.Frame.Bottom + 4f;
 
-            UIView passwordBox = new UIView (new RectangleF (25, yOffset, View.Frame.Width - 50, 46));
+            passwordBox = new UIView (new RectangleF (25, yOffset, View.Frame.Width - 50, 46));
             passwordBox.BackgroundColor = UIColor.White;
+            passwordBox.Alpha = 0.0f;
 
             var passwordField = new UITextField (new RectangleF (45, 0, passwordBox.Frame.Width - 50, passwordBox.Frame.Height));
             passwordField.BackgroundColor = UIColor.White;
@@ -145,7 +174,7 @@ namespace NachoClient.iOS
 
             yOffset = passwordBox.Frame.Bottom + 40f;
 
-            var submitButton = new UIButton (new System.Drawing.RectangleF (25, yOffset, View.Frame.Width - 50, 46));
+            submitButton = new UIButton (new System.Drawing.RectangleF (25, yOffset, View.Frame.Width - 50, 46));
             submitButton.BackgroundColor = A.Color_NachoBlue;
             submitButton.TitleLabel.TextAlignment = UITextAlignment.Center;
             submitButton.SetTitle ("Submit", UIControlState.Normal);
@@ -154,6 +183,7 @@ namespace NachoClient.iOS
             submitButton.Layer.CornerRadius = 4f;
             submitButton.Layer.MasksToBounds = true;
             submitButton.Tag = SUBMIT_BUTTON_TAG;
+            submitButton.Alpha = 0.0f;
             contentView.AddSubview (submitButton);
 
             yOffset = submitButton.Frame.Bottom + 20f;
@@ -164,12 +194,13 @@ namespace NachoClient.iOS
                 }
             };
 
-            var advancedButton = new UIButton (new RectangleF (0, yOffset, View.Frame.Width, 20));
+            advancedButton = new UIButton (new RectangleF (0, yOffset, View.Frame.Width, 20));
             advancedButton.BackgroundColor = A.Color_NachoGreen;
             advancedButton.SetTitle ("Advanced Sign In", UIControlState.Normal);
             advancedButton.TitleLabel.TextColor = A.Color_NachoYellow;
             advancedButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
             advancedButton.Tag = ADVANCED_SIGNIN_BUTTON_TAG;
+            advancedButton.Alpha = 0.0f;
             contentView.AddSubview (advancedButton);
             advancedButton.TouchUpInside += (object sender, EventArgs e) => {
                 PerformSegue ("SegueToAdvancedLogin", this);
@@ -184,7 +215,7 @@ namespace NachoClient.iOS
                 return true;
             };
 
-            yOffset = advancedButton.Frame.Bottom + 20;
+            yOffset = View.Frame.Height - 39;
 
             UIImageView loginTriangles = new UIImageView (UIImage.FromBundle ("Bootscreen-5"));
             loginTriangles.Frame = new RectangleF (0, yOffset, 320, 39);
@@ -197,10 +228,17 @@ namespace NachoClient.iOS
 
         protected void LayoutView ()
         {
-            scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
-            var contentFrame = new RectangleF (0, 0, View.Frame.Width, yOffset);
-            contentView.Frame = contentFrame;
-            scrollView.ContentSize = contentFrame.Size;
+            UIView.AnimateKeyframes (1, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+
+                UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
+                    scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
+                    var contentFrame = new RectangleF (0, 0, View.Frame.Width, yOffset);
+                    contentView.Frame = contentFrame;
+                    scrollView.ContentSize = contentFrame.Size;
+                });
+
+            }, ((bool finished) => {
+            }));
         }
 
         private bool EnterFullConfiguration ()

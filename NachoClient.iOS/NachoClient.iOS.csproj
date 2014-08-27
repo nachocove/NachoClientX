@@ -1191,7 +1191,6 @@
     </BundleResource>
     <BundleResource Include="Resources\Icon.png" />
     <BundleResource Include="Resources\Icon%402x.png" />
-    <BundleResource Include="Resources\Default.png" />
     <BundleResource Include="Resources\Menu%402x.png" />
     <BundleResource Include="Resources\Menu.png" />
     <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-all-target-headers.hmap" />
@@ -1232,7 +1231,6 @@
     <BundleResource Include="Resources\ic_action_cancel.png" />
     <BundleResource Include="Resources\ic_action_help.png" />
     <BundleResource Include="Resources\ic_action_add_person.png" />
-    <BundleResource Include="Resources\Default-568h%402x.png" />
     <BundleResource Include="Resources\ic_action_collection.png" />
     <BundleResource Include="Resources\ic_action_accounts.png" />
     <BundleResource Include="Resources\ic_action_settings.png" />
@@ -1383,7 +1381,6 @@
     <BundleResource Include="Resources\Icon-Small%402x.png" />
     <BundleResource Include="Resources\Icon-Small-40.png" />
     <BundleResource Include="Resources\Icon-Small-40%402x.png" />
-    <BundleResource Include="Resources\Default%402x.png" />
     <BundleResource Include="Resources\icn-contact-quickcall.png" />
     <BundleResource Include="Resources\icn-contact-quickcall%402x.png" />
     <BundleResource Include="Resources\icn-contact-quickemail.png" />
@@ -1450,6 +1447,9 @@
     <BundleResource Include="Resources\Loginscreen-2.png" />
     <BundleResource Include="Resources\Loginscreen-3.png" />
     <BundleResource Include="Resources\Loginscreen-BG.png" />
+    <BundleResource Include="Resources\Default.png" />
+    <BundleResource Include="Resources\Default-568h%402x.png" />
+    <BundleResource Include="Resources\Default%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
