@@ -78,35 +78,32 @@ namespace NachoClient.iOS
             scrollView.BackgroundColor = A.Color_NachoGreen;
             contentView.BackgroundColor = A.Color_NachoGreen;
 
-            yOffset = 0f;
+            yOffset = 90;
 
-            var triangleSplash = new UIImageView ();
-            using (var image = UIImage.FromBundle ("Launch")) {
-                triangleSplash.Frame = new RectangleF (new PointF (0, yOffset), image.Size);
-                triangleSplash.Image = image;
-            }
-            contentView.AddSubview (triangleSplash);
+            UIImageView circleMail = new UIImageView (UIImage.FromBundle ("Loginscreen-1"));
+            circleMail.Frame = new RectangleF (120, yOffset, 80, 80);
+            contentView.AddSubview (circleMail);
 
-            yOffset = triangleSplash.Frame.Bottom;
+            yOffset = circleMail.Frame.Bottom + 35;
 
-            UILabel startLabel = new UILabel (new RectangleF (30, yOffset, View.Frame.Width - 60, 60));
+            UILabel startLabel = new UILabel (new RectangleF (30, yOffset, View.Frame.Width - 60, 50));
             startLabel.Text = "Start by entering your Exchange email address and password.";
             startLabel.Lines = 2;
             startLabel.BackgroundColor = A.Color_NachoGreen;
             startLabel.TextColor = UIColor.White;
-            startLabel.Font = A.Font_AvenirNextMedium14;
+            startLabel.Font = A.Font_AvenirNextRegular17;
             startLabel.TextAlignment = UITextAlignment.Center;
             contentView.AddSubview (startLabel);
 
-            yOffset = startLabel.Frame.Bottom + 10f;
+            yOffset = startLabel.Frame.Bottom + 32f;
 
-            UIView emailBox = new UIView (new RectangleF (25, yOffset, View.Frame.Width - 50, 44));
+            UIView emailBox = new UIView (new RectangleF (25, yOffset, View.Frame.Width - 50, 46));
             emailBox.BackgroundColor = UIColor.White;
 
-            var emailField = new UITextField (new RectangleF (100, 0, emailBox.Frame.Width - 100, emailBox.Frame.Height));
+            var emailField = new UITextField (new RectangleF (45, 0, emailBox.Frame.Width - 50, emailBox.Frame.Height));
             emailField.BackgroundColor = UIColor.White;
-            emailField.Placeholder = "email@company.com";
-            emailField.Font = A.Font_AvenirNextRegular14;
+            emailField.Placeholder = "Email Address";
+            emailField.Font = A.Font_AvenirNextRegular17;
             emailField.BorderStyle = UITextBorderStyle.None;
             emailField.TextAlignment = UITextAlignment.Left;
             emailField.KeyboardType = UIKeyboardType.EmailAddress;
@@ -115,25 +112,21 @@ namespace NachoClient.iOS
             emailField.Tag = EMAIL_TEXTFIELD_TAG;
             emailBox.AddSubview (emailField);
 
-            UILabel emailLabel = new UILabel (new RectangleF (10, 0, 60, 44));
-            emailLabel.Text = "Email";
-            emailLabel.BackgroundColor = UIColor.White;
-            emailLabel.TextColor = A.Color_NachoGreen;
-            emailLabel.Font = A.Font_AvenirNextMedium14;
-            emailBox.AddSubview (emailLabel);
-            emailBox.UserInteractionEnabled = true;
+            UIImageView mailImage = new UIImageView (UIImage.FromBundle ("Loginscreen-2"));
+            mailImage.Frame = new RectangleF (15, 15, 16, 11);
+            emailBox.AddSubview (mailImage);
 
             contentView.AddSubview (emailBox);
 
-            yOffset = emailBox.Frame.Bottom + 10f;
+            yOffset = emailBox.Frame.Bottom + 4f;
 
-            UIView passwordBox = new UIView (new RectangleF (25, yOffset, View.Frame.Width - 50, 44));
+            UIView passwordBox = new UIView (new RectangleF (25, yOffset, View.Frame.Width - 50, 46));
             passwordBox.BackgroundColor = UIColor.White;
 
-            var passwordField = new UITextField (new RectangleF (100, 0, passwordBox.Frame.Width - 100, passwordBox.Frame.Height));
+            var passwordField = new UITextField (new RectangleF (45, 0, passwordBox.Frame.Width - 50, passwordBox.Frame.Height));
             passwordField.BackgroundColor = UIColor.White;
-            passwordField.Placeholder = "Required";
-            passwordField.Font = A.Font_AvenirNextRegular14;
+            passwordField.Placeholder = "Password";
+            passwordField.Font = A.Font_AvenirNextRegular17;
             passwordField.BorderStyle = UITextBorderStyle.None;
             passwordField.TextAlignment = UITextAlignment.Left;
             passwordField.SecureTextEntry = true;
@@ -144,24 +137,22 @@ namespace NachoClient.iOS
             passwordBox.AddSubview (passwordField);
             passwordBox.UserInteractionEnabled = true;
 
-            UILabel passwordLabel = new UILabel (new RectangleF (10, 0, 80, 44));
-            passwordLabel.Text = "Password";
-            passwordLabel.BackgroundColor = UIColor.White;
-            passwordLabel.TextColor = A.Color_NachoGreen;
-            passwordLabel.Font = A.Font_AvenirNextMedium14;
-
-            passwordBox.AddSubview (passwordLabel);
+            UIImageView lockImage = new UIImageView (UIImage.FromBundle ("Loginscreen-3"));
+            lockImage.Frame = new RectangleF (15, 15, 14, 15);
+            passwordBox.AddSubview (lockImage);
 
             contentView.AddSubview (passwordBox);
 
-            yOffset = passwordBox.Frame.Bottom + 10f;
+            yOffset = passwordBox.Frame.Bottom + 40f;
 
-            var submitButton = new UIButton (new System.Drawing.RectangleF (25, yOffset, View.Frame.Width - 50, 45));
+            var submitButton = new UIButton (new System.Drawing.RectangleF (25, yOffset, View.Frame.Width - 50, 46));
             submitButton.BackgroundColor = A.Color_NachoBlue;
             submitButton.TitleLabel.TextAlignment = UITextAlignment.Center;
             submitButton.SetTitle ("Submit", UIControlState.Normal);
             submitButton.TitleLabel.TextColor = UIColor.White;
-            submitButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
+            submitButton.TitleLabel.Font = A.Font_AvenirNextDemiBold17;
+            submitButton.Layer.CornerRadius = 4f;
+            submitButton.Layer.MasksToBounds = true;
             submitButton.Tag = SUBMIT_BUTTON_TAG;
             contentView.AddSubview (submitButton);
 
@@ -194,7 +185,13 @@ namespace NachoClient.iOS
             };
 
             yOffset = advancedButton.Frame.Bottom + 20;
-           
+
+            UIImageView loginTriangles = new UIImageView (UIImage.FromBundle ("Bootscreen-5"));
+            loginTriangles.Frame = new RectangleF (0, yOffset, 320, 39);
+            contentView.AddSubview (loginTriangles);
+
+            yOffset = loginTriangles.Frame.Bottom;
+
             LayoutView ();
         }
 
@@ -302,7 +299,7 @@ namespace NachoClient.iOS
         /// </param>
         protected virtual void OnKeyboardChanged (bool visible, float height)
         {
-            var newHeight = (visible ? height : 0);
+            var newHeight = (visible ? height + 15 : 0);
 
             if (newHeight == keyboardHeight) {
                 return;

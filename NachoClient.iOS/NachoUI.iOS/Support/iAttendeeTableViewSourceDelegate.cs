@@ -14,6 +14,7 @@ namespace NachoClient.iOS
         void UpdateLists ();
         void ConfigureAttendeeTable();
         void RemoveAttendee(McAttendee attendee);
+        Int64 GetAccountId ();
     }
 }
 

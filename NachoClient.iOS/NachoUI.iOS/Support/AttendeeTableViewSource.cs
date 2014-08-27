@@ -126,6 +126,7 @@ namespace NachoClient.iOS
         protected const int USER_LABEL_TAG = 334;
         protected const int USER_EMAIL_TAG = 335;
         protected const int USER_RESPONSE_TAG = 336;
+        protected const int USER_IMAGE_TAG = 337;
 
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
         {
@@ -220,6 +221,14 @@ namespace NachoClient.iOS
                 userEmailView.LineBreakMode = UILineBreakMode.TailTruncation;
                 userEmailView.Tag = USER_EMAIL_TAG;
                 cell.ContentView.AddSubview (userEmailView);
+
+                // User image
+                var userImageView = new UIImageView (new RectangleF (15, 15 - 2.5f, 45, 45));
+                userImageView.Layer.CornerRadius = (45.0f / 2.0f);
+                userImageView.Layer.MasksToBounds = true;
+                userImageView.Tag = USER_IMAGE_TAG;
+                cell.ContentView.AddSubview (userImageView);
+
                 // User userLabelView view, if no image
                 var userLabelView = new UILabel (new RectangleF (15, 15 - 2.5f, 45, 45));
                 userLabelView.Font = A.Font_AvenirNextRegular24;
@@ -230,6 +239,7 @@ namespace NachoClient.iOS
                 userLabelView.Layer.MasksToBounds = true;
                 userLabelView.Tag = USER_LABEL_TAG;
                 cell.ContentView.AddSubview (userLabelView);
+
                 var attendeeResponseView = new UIView (new RectangleF (15 + 27, 42 - 2.5f, 20, 20));
                 attendeeResponseView.BackgroundColor = UIColor.White;
                 attendeeResponseView.Layer.CornerRadius = 10;
@@ -266,6 +276,15 @@ namespace NachoClient.iOS
             var TextLabel = cell.ViewWithTag (USER_NAME_TAG) as UILabel;
             var DetailTextLabel = cell.ViewWithTag (USER_EMAIL_TAG) as UILabel;
             var labelView = cell.ViewWithTag (USER_LABEL_TAG) as UILabel;
+            var imageView = cell.ViewWithTag (USER_IMAGE_TAG) as UIImageView;
+            bool hasImage = false;
+
+            using (UIImage image = Util.ImageOfSender ((int)owner.GetAccountId (), attendee.Email)) {
+                if (null != image) {
+                    imageView.Image = image;
+                    hasImage = true;
+                }
+            }
 
             // Both empty
             if (String.IsNullOrEmpty (displayName) && String.IsNullOrEmpty (displayEmailAddress)) {
@@ -281,7 +300,7 @@ namespace NachoClient.iOS
                 TextLabel.Text = displayEmailAddress;
                 TextLabel.TextColor = A.Color_0B3239;
                 TextLabel.Font = A.Font_AvenirNextDemiBold17;
-                labelView.Hidden = false;
+                labelView.Hidden = hasImage;
                 labelView.Text = Util.NameToLetters (displayEmailAddress);
                 labelView.BackgroundColor = Util.ColorForUser (colorIndex);
                 return;
@@ -295,7 +314,7 @@ namespace NachoClient.iOS
                 TextLabel.Font = A.Font_AvenirNextDemiBold17;
                 DetailTextLabel.TextColor = UIColor.LightGray;
                 DetailTextLabel.Font = A.Font_AvenirNextRegular12;
-                labelView.Hidden = false;
+                labelView.Hidden = hasImage;
                 labelView.Text = Util.NameToLetters (displayName);
                 labelView.BackgroundColor = Util.ColorForUser (colorIndex);
                 return;
@@ -309,7 +328,7 @@ namespace NachoClient.iOS
             DetailTextLabel.TextColor = A.Color_0B3239;
             DetailTextLabel.Font = A.Font_AvenirNextRegular14;
 
-            labelView.Hidden = false;
+            labelView.Hidden = hasImage;
             labelView.Text = Util.NameToLetters (displayName);
             labelView.BackgroundColor = Util.ColorForUser (colorIndex);
 
