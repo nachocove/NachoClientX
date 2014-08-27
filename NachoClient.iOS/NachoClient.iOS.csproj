@@ -1441,6 +1441,15 @@
     <BundleResource Include="Resources\Spinner-1%402x.png" />
     <BundleResource Include="Resources\Loginscreen-BG%402x.png" />
     <BundleResource Include="Resources\Circular-Mask.png" />
+    <BundleResource Include="Resources\Loginscreen-1%402x.png" />
+    <BundleResource Include="Resources\Loginscreen-2%402x.png" />
+    <BundleResource Include="Resources\Loginscreen-3%402x.png" />
+    <BundleResource Include="Resources\Bootscreen-5.png" />
+    <BundleResource Include="Resources\Bootscreen-5%402x.png" />
+    <BundleResource Include="Resources\Loginscreen-1.png" />
+    <BundleResource Include="Resources\Loginscreen-2.png" />
+    <BundleResource Include="Resources\Loginscreen-3.png" />
+    <BundleResource Include="Resources\Loginscreen-BG.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
