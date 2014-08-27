@@ -49,7 +49,7 @@ namespace NachoClient.iOS
             //this.BackgroundColor = UIColor.LightGray.ColorWithAlpha (.4f);
             this.BackgroundColor = A.Color_NachoGreen;
             this.Frame = new RectangleF (0, 0, owner.View.Frame.Width, owner.View.Frame.Height);
-            certificateView = new UIView (new RectangleF (20, 20, owner.View.Frame.Width - 40, VIEW_HEIGHT - 40));
+            certificateView = new UIView (new RectangleF (20, 0, owner.View.Frame.Width - 40, VIEW_HEIGHT - 64));
             certificateView.Tag = CERTIFICATE_VIEW_TAG;
             certificateView.BackgroundColor = UIColor.White;
             certificateView.Layer.CornerRadius = 7.0f;
@@ -132,7 +132,7 @@ namespace NachoClient.iOS
             certificateView.Add (horizontalLineAfterDescriptionOfProblem);
 
             this.Add (certificateView);
-            this.Hidden = true;
+            this.Alpha = 0.0f;
 
         }
 
@@ -144,13 +144,20 @@ namespace NachoClient.iOS
 
         public void ShowView ()
         {
-            this.Hidden = false;
+            UIView.AnimateKeyframes (.5, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+
+                UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
+                    this.Alpha = 1.0f;
+                });
+
+            }, ((bool finished) => {
+            }));
         }
 
         public void DismissView ()
         {
             owner.setTextToRed (new UITextField[] { });
-            this.Hidden = true;
+            this.Alpha = 0.0f;
         }
     }
 }

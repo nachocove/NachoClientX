@@ -33,7 +33,7 @@ namespace NachoClient.iOS
         protected UIView spinnerView;
         protected UIView animationBlocker;
         public UITapGestureRecognizer tappedLabel;
-
+        protected UILabel dismissLabel;
         protected const int SPINNER_WIDTH = 150;
         protected const int SPINNER_HEIGHT = 338;
         protected const int MASK_DIAMETER = 80;
@@ -67,7 +67,7 @@ namespace NachoClient.iOS
             LOWER_SECTION_Y_VAL = this.Frame.Height - 437 + 64;
 
             spinnerView = new UIView (new RectangleF (this.Frame.Width / 2 - 40, LOWER_SECTION_Y_VAL, MASK_DIAMETER, MASK_DIAMETER));
-            spinnerView.BackgroundColor = A.Color_NachoGreen;
+            spinnerView.BackgroundColor = A.Color_NachoRed;
             spinnerView.Layer.CornerRadius = MASK_DIAMETER / 2;
             spinnerView.Layer.MasksToBounds = true;
             this.Add (spinnerView);
@@ -144,18 +144,12 @@ namespace NachoClient.iOS
             swipeUpLabel.Text = "Swipe up to start setting up";
             swipeUpLabel.Alpha = 0.0f;
             swipeUpLabel.TextAlignment = UITextAlignment.Center;
-            swipeUpLabel.UserInteractionEnabled = true;
-            tappedLabel = new UITapGestureRecognizer (() => {
-                DismissView ();
-                owner.PerformSegue (StartupViewController.NextSegue (), owner);
-            });
-            swipeUpLabel.AddGestureRecognizer (tappedLabel);
             this.Add (swipeUpLabel);
 
-            UILabel dismissLabel = new UILabel (new RectangleF (this.Frame.Width / 2 - 50, 25, 100, 20));
+            dismissLabel = new UILabel (new RectangleF (this.Frame.Width / 2 - 50, 20 , 100, 15));
             dismissLabel.Font = A.Font_AvenirNextRegular12;
             dismissLabel.TextColor = UIColor.White;
-            dismissLabel.Text = "Dismiss";
+            dismissLabel.Text = "Cancel";
             dismissLabel.TextAlignment = UITextAlignment.Center;
             dismissLabel.UserInteractionEnabled = true;
             UITapGestureRecognizer dismissLabelTap = new UITapGestureRecognizer (() => {
@@ -273,6 +267,7 @@ namespace NachoClient.iOS
             UIView.AnimateKeyframes (4, .1, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
 
                 UIView.AddKeyframeWithRelativeStartTime (0, .075, () => {
+                    dismissLabel.Alpha = 0.0f;
                     syncStatusLabel.Alpha = 0.0f;
                 });
 
@@ -319,7 +314,13 @@ namespace NachoClient.iOS
                     swipeUpTriangle.Transform = CGAffineTransform.MakeTranslation (0, 2);
                 });
 
+                UIView.AddKeyframeWithRelativeStartTime (.675, .25, () => {
+                });
+
             }, ((bool finished) => {
+
+                owner.PerformSegue (StartupViewController.NextSegue (), this);
+
             }));
         }
     }
