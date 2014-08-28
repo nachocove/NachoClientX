@@ -733,7 +733,7 @@ namespace NachoCore.ActiveSync
                 string value = null;
                 if (response.Headers.Contains (HeaderXMsThrottle)) {
                     //IsBeingThrottled = true;
-                    Log.Info (Log.LOG_HTTP, "Explicit throttling ({0}).", HeaderXMsThrottle);
+                    Log.Error (Log.LOG_HTTP, "Explicit throttling ({0}).", HeaderXMsThrottle);
                     try {
                         protocolState = BEContext.ProtocolState;
                         value = response.Headers.GetValues (HeaderXMsThrottle).First ();
