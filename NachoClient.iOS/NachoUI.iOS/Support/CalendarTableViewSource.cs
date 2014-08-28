@@ -442,7 +442,7 @@ namespace NachoClient.iOS
 
         public void RunningLate (int calendarIndex)
         {
-            owner.RunningLate (calendarIndex);
+            owner.SendRunningLateMessage (calendarIndex);
         }
 
 

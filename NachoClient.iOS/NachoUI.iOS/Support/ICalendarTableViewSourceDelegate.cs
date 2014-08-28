@@ -9,7 +9,7 @@ namespace NachoClient.iOS
     {
         void PerformSegueForDelegate (string identifier, NSObject sender);
 
-        void RunningLate (int calendarIndex);
+        void SendRunningLateMessage (int calendarIndex);
     }
 }
 

@@ -198,6 +198,15 @@ namespace NachoClient.iOS
                 // Nothing to do
                 return;
             }
+
+            if (segue.Identifier.Equals ("CalendarToEmailCompose")) {
+                var dc = (MessageComposeViewController)segue.DestinationViewController;
+                var holder = sender as SegueHolder;
+                var c = holder.value as McCalendar;
+                dc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, c.OrganizerEmail), c.Subject, "Running late");
+                return;
+            }
+
             if (segue.Identifier == "CalendarToEditEventView") {
                 var vc = (EditEventViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
@@ -886,52 +895,10 @@ namespace NachoClient.iOS
 
         }
 
-        public void RunningLate (int calendarIndex)
-        {
-            var actionSheet = new UIActionSheet ();
-            actionSheet.Add ("5 min");
-            actionSheet.Add ("10 min");
-            actionSheet.Add ("15 min");
-            actionSheet.Add ("Cancel");
-            actionSheet.CancelButtonIndex = 3;
-            actionSheet.Clicked += delegate(object a, UIButtonEventArgs b) {
-                switch (b.ButtonIndex) {
-                case 0:
-                    SendRunningLateMessage (5, calendarIndex);
-                    break; 
-                case 1:
-                    SendRunningLateMessage (10, calendarIndex);
-                    break;
-                case 2:
-                    SendRunningLateMessage (15, calendarIndex);
-                    break; 
-                case 3:
-                    break; // Cancel
-                default:
-                    NcAssert.CaseError ();
-                    break;
-                }
-            };
-            actionSheet.ShowInView (View);
-        }
-
-        public void SendRunningLateMessage (int min, int calendarIndex)
+        public void SendRunningLateMessage (int calendarIndex)
         {
             McCalendar c = McCalendar.QueryById<McCalendar> (calendarIndex);
-            var mimeMessage = new MimeMessage ();
-            NcEmailAddress myAddress = new NcEmailAddress (NcEmailAddress.Kind.To, c.OrganizerEmail);
-
-            var mailbox = myAddress.ToMailboxAddress ();
-            mimeMessage.To.Add (mailbox);
-
-            mimeMessage.Subject = Pretty.SubjectString (c.Subject);
-            mimeMessage.Date = System.DateTime.UtcNow;
-
-            var body = new BodyBuilder ();
-            body.TextBody = "Running " + min + " late";
-
-            mimeMessage.Body = body.ToMessageBody ();
-            MimeHelpers.SendEmail (account.Id, mimeMessage);
+            PerformSegue ("CalendarToEmailCompose", new SegueHolder (c));
         }
             
     }

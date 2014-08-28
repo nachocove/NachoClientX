@@ -429,7 +429,7 @@ namespace NachoClient.iOS
             PerformSegue (identifier, sender);
         }
 
-        public void RunningLate (int calendarIndex)
+        public void SendRunningLateMessage (int calendarIndex)
         {
             NcAssert.CaseError ();
         }
