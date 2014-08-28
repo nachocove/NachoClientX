@@ -51,24 +51,9 @@
                         <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
-                            <view contentMode="scaleToFill" id="Z7x-qk-TR0" userLabel="PhonyView1">
-                                <rect key="frame" x="28" y="388" width="265" height="116"/>
-                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
-                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
-                            </view>
-                            <view contentMode="scaleToFill" id="YUG-dS-1xg" userLabel="PhonyView2">
-                                <rect key="frame" x="38" y="383" width="245" height="111"/>
-                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
-                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
-                            </view>
                             <view contentMode="scaleToFill" id="y3I-K7-FUQ" customClass="iCarousel">
                                 <rect key="frame" x="0.0" y="160" width="320" height="215"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
-                            </view>
-                            <view contentMode="scaleToFill" id="LK2-5y-My2" customClass="UITableView">
-                                <rect key="frame" x="21" y="393" width="285" height="111"/>
-                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                             </view>
                             <view contentMode="scaleToFill" id="Xjy-3n-xIA" userLabel="Calendar View">
@@ -106,17 +91,11 @@
                         <outlet property="calendarTableView" destination="AA2-uw-Sad" id="XvA-gG-im4"/>
                         <outlet property="calendarThumbView" destination="wZZ-JO-qCp" id="Tqz-bx-MqT"/>
                         <outlet property="calendarView" destination="Xjy-3n-xIA" id="H26-sA-fEv"/>
-                        <outlet property="cancelButton" destination="oqK-FW-0L1" id="G9e-ty-vGO"/>
                         <outlet property="carouselView" destination="y3I-K7-FUQ" id="T7e-1d-zpR"/>
                         <outlet property="composeButton" destination="FUI-0Y-Rul" id="eJU-2G-GMs"/>
-                        <outlet property="deleteButton" destination="q2b-Qv-RwO" id="3UR-BJ-lwK"/>
-                        <outlet property="inboxTableView" destination="LK2-5y-My2" id="ldy-tx-2df"/>
                         <outlet property="nachoButton" destination="Mqq-sh-bns" id="fSw-0x-68Y"/>
                         <outlet property="newMeetingButton" destination="7Rc-PF-jdp" id="JDw-Li-2kf"/>
-                        <outlet property="phonyView1" destination="Z7x-qk-TR0" id="Eud-6R-3pQ"/>
-                        <outlet property="phonyView2" destination="YUG-dS-1xg" id="Frr-cF-vF5"/>
                         <outlet property="revealButton" destination="3Av-eh-eab" id="6O2-wL-g0p"/>
-                        <outlet property="saveButton" destination="Gfu-QM-YrL" id="6Hc-Oe-sAO"/>
                         <segue destination="kq1-eO-X0p" kind="push" identifier="NachoNowToMessageList" id="Rd3-YY-NMX"/>
                         <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="ja3-Zu-g6R"/>
                         <segue destination="jTc-Vg-SXZ" kind="push" identifier="NachoNowToContacts" id="FHc-YP-jWH"/>
@@ -131,9 +110,6 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="sh1-Qf-9vs" userLabel="First Responder" sceneMemberID="firstResponder"/>
                 <barButtonItem image="navbar-icn-menu.png" id="3Av-eh-eab" userLabel="Bar Button Item - Reveal"/>
                 <barButtonItem image="navbar-icn-inbox.png" id="Mqq-sh-bns" userLabel="Bar Button Item - Now"/>
-                <barButtonItem systemItem="trash" id="q2b-Qv-RwO" userLabel="Bar Button Item - Delete"/>
-                <barButtonItem systemItem="save" id="Gfu-QM-YrL" userLabel="Bar Button Item - Save"/>
-                <barButtonItem systemItem="cancel" id="oqK-FW-0L1" userLabel="Bar Button Item - Cancel"/>
                 <barButtonItem image="navbar-icn-newevent.png" id="7Rc-PF-jdp" userLabel="Bar Button Item - New Event"/>
                 <barButtonItem image="navbar-icn-newEmail.png" id="FUI-0Y-Rul" userLabel="Bar Button Item - Compose"/>
             </objects>
@@ -1394,15 +1370,15 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
             <objects>
                 <viewController storyboardIdentifier="PhoneViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="h6r-hi-wYu" customClass="PhoneViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="72U-9J-8TO">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="524"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" keyboardDismissMode="onDrag" id="0lh-SH-GHD">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="524"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="aLR-ed-Nzc" userLabel="Content View">
-                                        <rect key="frame" x="0.0" y="64" width="320" height="568"/>
+                                        <rect key="frame" x="0.0" y="64" width="320" height="524"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                                     </view>
@@ -2080,30 +2056,30 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="LTs-mH-KqM"/>
-        <segue reference="peA-r2-tjq"/>
-        <segue reference="kYM-OY-NE0"/>
-        <segue reference="fwk-9p-tlV"/>
-        <segue reference="FHc-YP-jWH"/>
-        <segue reference="eK3-Wd-Zbv"/>
-        <segue reference="Bq3-C6-QI6"/>
-        <segue reference="Kmd-x6-iCJ"/>
-        <segue reference="Rd3-YY-NMX"/>
-        <segue reference="Ery-e3-vSy"/>
-        <segue reference="r1y-34-GvV"/>
-        <segue reference="alQ-9Z-W4y"/>
-        <segue reference="UJb-nL-M4Z"/>
-        <segue reference="mLY-u0-R5O"/>
-        <segue reference="6J3-c2-bz5"/>
+        <segue reference="ja3-Zu-g6R"/>
+        <segue reference="BXA-38-Jy8"/>
+        <segue reference="J8i-gn-UTn"/>
+        <segue reference="iqA-wd-xqD"/>
+        <segue reference="g4G-tD-G9H"/>
+        <segue reference="ebP-h4-BhC"/>
+        <segue reference="ywO-BF-h0n"/>
         <segue reference="xrp-ey-B0j"/>
-        <segue reference="vUs-ft-xdy"/>
+        <segue reference="56g-2o-gUv"/>
+        <segue reference="Q8y-4K-BAb"/>
+        <segue reference="Bq3-C6-QI6"/>
+        <segue reference="Rd3-YY-NMX"/>
+        <segue reference="FHc-YP-jWH"/>
+        <segue reference="RaB-9o-azo"/>
+        <segue reference="Kmd-x6-iCJ"/>
+        <segue reference="peA-r2-tjq"/>
         <segue reference="w67-dy-XSq"/>
+        <segue reference="xSG-RA-4K6"/>
         <segue reference="m2D-2n-RiV"/>
         <segue reference="7sK-rg-HQL"/>
-        <segue reference="xSG-RA-4K6"/>
-        <segue reference="g4G-tD-G9H"/>
-        <segue reference="iqA-wd-xqD"/>
-        <segue reference="J8i-gn-UTn"/>
-        <segue reference="ebP-h4-BhC"/>
+        <segue reference="LTs-mH-KqM"/>
+        <segue reference="fwk-9p-tlV"/>
+        <segue reference="mLY-u0-R5O"/>
+        <segue reference="alQ-9Z-W4y"/>
+        <segue reference="vUs-ft-xdy"/>
     </inferredMetricsTieBreakers>
 </document>

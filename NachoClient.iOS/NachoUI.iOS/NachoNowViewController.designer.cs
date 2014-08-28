@@ -25,19 +25,10 @@ namespace NachoClient.iOS
 		MonoTouch.UIKit.UIView calendarView { get; set; }
 
 		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem cancelButton { get; set; }
-
-		[Outlet]
 		iCarouselBinding.iCarousel carouselView { get; set; }
 
 		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem composeButton { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem deleteButton { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UITableView inboxTableView { get; set; }
 
 		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem nachoButton { get; set; }
@@ -46,16 +37,7 @@ namespace NachoClient.iOS
 		MonoTouch.UIKit.UIBarButtonItem newMeetingButton { get; set; }
 
 		[Outlet]
-		MonoTouch.UIKit.UIView phonyView1 { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIView phonyView2 { get; set; }
-
-		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem revealButton { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem saveButton { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
@@ -79,11 +61,6 @@ namespace NachoClient.iOS
 				calendarView = null;
 			}
 
-			if (cancelButton != null) {
-				cancelButton.Dispose ();
-				cancelButton = null;
-			}
-
 			if (carouselView != null) {
 				carouselView.Dispose ();
 				carouselView = null;
@@ -92,16 +69,6 @@ namespace NachoClient.iOS
 			if (composeButton != null) {
 				composeButton.Dispose ();
 				composeButton = null;
-			}
-
-			if (deleteButton != null) {
-				deleteButton.Dispose ();
-				deleteButton = null;
-			}
-
-			if (inboxTableView != null) {
-				inboxTableView.Dispose ();
-				inboxTableView = null;
 			}
 
 			if (nachoButton != null) {
@@ -117,21 +84,6 @@ namespace NachoClient.iOS
 			if (revealButton != null) {
 				revealButton.Dispose ();
 				revealButton = null;
-			}
-
-			if (saveButton != null) {
-				saveButton.Dispose ();
-				saveButton = null;
-			}
-
-			if (phonyView1 != null) {
-				phonyView1.Dispose ();
-				phonyView1 = null;
-			}
-
-			if (phonyView2 != null) {
-				phonyView2.Dispose ();
-				phonyView2 = null;
 			}
 		}
 	}
