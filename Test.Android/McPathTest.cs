@@ -157,7 +157,7 @@ namespace Test.iOS
     }
 
     [TestFixture]
-    public class McPathDupTest
+    public class McPathDupTest : BaseMcPathTest
     {
         private static string dupServerId = "dup";
         private static string oldServerId = "old";
