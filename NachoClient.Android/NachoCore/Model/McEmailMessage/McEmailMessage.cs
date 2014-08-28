@@ -51,7 +51,7 @@ namespace NachoCore.Model
 
         public McEmailMessage GetMessage ()
         {
-            return NcModel.Instance.Db.Get<McEmailMessage> (Id);
+            return McEmailMessage.QueryById<McEmailMessage> (Id);
         }
     }
 

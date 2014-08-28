@@ -190,18 +190,18 @@ namespace NachoClient.iOS
                 vc.SetOwner (this);
                 return;
             }
-            //            if (segue.Identifier.Equals ("CalendarToNewCalendarItem")) {
-            //                CalendarItemViewController dvc = (CalendarItemViewController)segue.DestinationViewController;
-            //                dvc.SetCalendarItem (null, CalendarItemEditorAction.create);
-            //                dvc.SetOwner (this);
-            //                return;
-            //            }
+
             if (segue.Identifier.Equals ("CalendarToNachoNow")) {
                 // Nothing to do
                 return;
             }
             if (segue.Identifier == "CalendarToEditEventView") {
                 var vc = (EditEventViewController)segue.DestinationViewController;
+                var holder = sender as SegueHolder;
+                if (holder.value != null) {
+                    var dt = (DateTime)holder.value;
+                    vc.SetStartingDate (dt);
+                }
                 vc.SetCalendarItem (null, CalendarItemEditorAction.create);
                 vc.SetOwner (this);
                 return;

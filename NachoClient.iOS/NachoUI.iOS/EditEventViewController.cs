@@ -29,6 +29,7 @@ namespace NachoClient.iOS
         protected CalendarItemEditorAction action;
         protected McCalendar item;
         protected McCalendar c;
+        protected DateTime startingDate;
         protected McFolder folder;
         protected McAccount account;
         protected NachoFolders calendars;
@@ -169,6 +170,15 @@ namespace NachoClient.iOS
             case CalendarItemEditorAction.create:
                 if (null == item) {
                     c = CalendarHelper.DefaultMeeting ();
+                    if (0001 != startingDate.Year) {
+                        var start = DateTime.UtcNow.AddMinutes (30.0);
+                        if (start.Minute >= 30.0) {
+                            c.StartTime = new DateTime (startingDate.Year, startingDate.Month, startingDate.Day, start.Hour, 30, 0, DateTimeKind.Utc);
+                        } else {
+                            c.StartTime = new DateTime (startingDate.Year, startingDate.Month, startingDate.Day, start.Hour, 0, 0, DateTimeKind.Utc);
+                        }
+                        c.EndTime = c.StartTime.AddMinutes (60.0);
+                    }
                 } else {
                     c = item;
                 }
@@ -191,6 +201,11 @@ namespace NachoClient.iOS
         {
             this.item = item;
             this.action = action;
+        }
+
+        public void SetStartingDate (DateTime startingDate)
+        {
+            this.startingDate = startingDate;
         }
 
         public override void ViewWillDisappear (bool animated)

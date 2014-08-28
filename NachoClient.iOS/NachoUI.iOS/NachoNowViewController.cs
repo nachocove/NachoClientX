@@ -676,10 +676,10 @@ namespace NachoClient.iOS
                     duration = Math.Max (0.1, 1.0 - percentOpen);
                     UIView.Animate (duration, 0, UIViewAnimationOptions.CurveEaseOut,
                         () => {
-                            ConfigureCalendarListView ();
+//                            ConfigureCalendarListView ();
+                            PerformSegue("NachoNowToCalendar", new SegueHolder(null));
                         },
                         () => {
-                            PerformSegue("NachoNowToCalendar", new SegueHolder(null));
                         }
                     );
                 } else {
@@ -966,8 +966,9 @@ namespace NachoClient.iOS
 
                 var deferButton = new UIBarButtonItem (UIImage.FromBundle ("navbar-icn-defer"), UIBarButtonItemStyle.Plain, null);
                 deferButton.Clicked += (object sender, EventArgs e) => {
-                    onDeferButtonClicked(view);
+                    onDeferButtonClicked (view);
                 };
+                preventBarButtonGC.Add (deferButton);
 
                 var saveButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-move"), UIBarButtonItemStyle.Plain, null);
                 saveButton.Clicked += (object sender, EventArgs e) => {
@@ -1030,7 +1031,7 @@ namespace NachoClient.iOS
                 owner.carouselView.ReloadData ();
             }
 
-            void onDeferButtonClicked(UIView view)
+            void onDeferButtonClicked (UIView view)
             {
                 var messageThreadIndex = view.Tag;
                 var messageThread = owner.priorityInbox.GetEmailThread (messageThreadIndex);

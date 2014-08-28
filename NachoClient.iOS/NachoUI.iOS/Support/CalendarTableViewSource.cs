@@ -17,6 +17,7 @@ namespace NachoClient.iOS
         INcEventProvider calendar;
         public ICalendarTableViewSourceDelegate owner;
         protected bool compactMode;
+        static List<UIButton> preventAddButtonGC;
 
         protected const string UICellReuseIdentifier = "UICell";
         protected const string CalendarEventReuseIdentifier = "CalendarEvent";
@@ -437,31 +438,45 @@ namespace NachoClient.iOS
                 return 75;
             }
         }
-
+          
         public override UIView GetViewForHeader (UITableView tableView, int section)
         {
             var view = new UIView (new RectangleF (0, 0, tableView.Frame.Width, 75));
-            view.BackgroundColor = UIColor.White;
+            view.BackgroundColor = A.Color_NachoLightGray;
             view.Layer.BorderColor = A.Color_NachoNowBackground.CGColor;
             view.Layer.BorderWidth = 1;
 
-            var dayLabelView = new UILabel (new RectangleF (65, 21, tableView.Frame.Width - 65, 20));
+            var dayLabelView = new UILabel (new RectangleF (65, 20, tableView.Frame.Width - 65, 20));
             dayLabelView.Font = A.Font_AvenirNextDemiBold17;
             dayLabelView.TextColor = A.Color_114645;
             view.AddSubview (dayLabelView);
 
-            var dateLabelView = new UILabel (new RectangleF (65, 41, tableView.Frame.Width - 65, 20));
+            var dateLabelView = new UILabel (new RectangleF (65, 40, tableView.Frame.Width - 65, 20));
             dateLabelView.Font = A.Font_AvenirNextMedium14;
             dateLabelView.TextColor = A.Color_999999;
             view.AddSubview (dateLabelView);
 
             var bigNumberView = new UILabel (new RectangleF (0, 0, 65, 75));
-            bigNumberView.Font = A.Font_AvenirNextUltraLight32;
+            bigNumberView.Font = A.Font_AvenirNextDemiBold30;
             bigNumberView.TextColor = A.Color_29CCBE;
             bigNumberView.TextAlignment = UITextAlignment.Center;
             view.AddSubview (bigNumberView);
 
             var date = calendar.GetDateUsingDayIndex (section);
+
+            if (null == preventAddButtonGC) {
+                preventAddButtonGC = new List<UIButton> ();
+            }
+
+            var addButton = new UIButton (UIButtonType.ContactAdd);
+            addButton.TintColor = A.Color_NachoBlue;
+            addButton.Frame = new RectangleF (tableView.Frame.Width - 42, (view.Frame.Height / 2) - 15, 30, 30);
+            addButton.TouchUpInside += (sender, e) => {
+                owner.PerformSegueForDelegate ("CalendarToEditEventView", new SegueHolder (date));
+            };
+
+            preventAddButtonGC.Add (addButton);
+            view.AddSubview (addButton);
 
             dayLabelView.Text = date.ToString ("dddd");
             dateLabelView.Text = date.ToString ("MMMMM d, yyyy");
