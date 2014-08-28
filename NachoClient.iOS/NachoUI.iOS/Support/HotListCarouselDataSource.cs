@@ -17,7 +17,7 @@ using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
-    public class InboxCarouselDataSource : iCarouselDataSource
+    public class HotListCarouselDataSource : iCarouselDataSource
     {
         protected const int USER_IMAGE_TAG = 101;
         protected const int USER_LABEL_TAG = 109;
@@ -29,21 +29,22 @@ namespace NachoClient.iOS
         protected const int ATTACHMENT_TAG = 107;
         protected const int RECEIVED_DATE_TAG = 108;
         static List<UIView> PreventViewGC;
+        static List<UIBarButtonItem> preventBarButtonGC;
+        NachoNowViewController owner;
 
-        INachoEmailMessages inbox;
-
-        public InboxCarouselDataSource (NachoNowViewController owner, INachoEmailMessages inbox)
+        public HotListCarouselDataSource (NachoNowViewController o)
         {
-            this.inbox = inbox;
+            owner = o;
         }
 
         public override uint NumberOfItemsInCarousel (iCarousel carousel)
         {
-            if (null == inbox) {
-                return 0;
-            } else {
-                return (uint)inbox.Count ();
+            if (null != owner) {
+                if (null != owner.priorityInbox) {
+                    return (uint)owner.priorityInbox.Count ();
+                }
             }
+            return 0;
         }
 
         public override UIView ViewForItemAtIndex (iCarousel carousel, uint index, UIView view)
@@ -117,12 +118,25 @@ namespace NachoClient.iOS
 
             // Preview label view
             // Size fields will be recalculated after text is known
-            var previewLabelView = new UILabel (new RectangleF (12, 60, viewWidth - 15 - 12, 40));
+            var previewLabelView = new UILabel (new RectangleF (12, 60, viewWidth - 15 - 12, 120));
             previewLabelView.Font = A.Font_AvenirNextRegular14;
             previewLabelView.TextColor = A.Color_999999;
             previewLabelView.Lines = 0;
             previewLabelView.Tag = PREVIEW_TAG;
             view.AddSubview (previewLabelView);
+
+            //                // Reminder image view
+            //                var reminderImageView = new UIImageView (new RectangleF (65, 119, 12, 12));
+            //                reminderImageView.Image = UIImage.FromBundle ("inbox-icn-deadline");
+            //                reminderImageView.Tag = REMINDER_ICON_TAG;
+            //                view.AddSubview (reminderImageView);
+            //
+            //                // Reminder label view
+            //                var reminderLabelView = new UILabel (new RectangleF (87, 115, 230, 20));
+            //                reminderLabelView.Font = A.Font_AvenirNextRegular14;
+            //                reminderLabelView.TextColor = A.Color_9B9B9B;
+            //                reminderLabelView.Tag = REMINDER_TEXT_TAG;
+            //                view.AddSubview (reminderLabelView);
 
             // Attachment image view
             // Attachment 'x' will be adjusted to be left of date received field
@@ -137,9 +151,119 @@ namespace NachoClient.iOS
             receivedLabelView.TextColor = A.Color_9B9B9B;
             receivedLabelView.TextAlignment = UITextAlignment.Right;
             receivedLabelView.Tag = RECEIVED_DATE_TAG;
-            view.AddSubview (receivedLabelView);          
+            view.AddSubview (receivedLabelView);
+
+            if (null == preventBarButtonGC) {
+                preventBarButtonGC = new List<UIBarButtonItem> ();
+            }
+
+            var replyButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-reply"), UIBarButtonItemStyle.Plain, null);
+            replyButton.Clicked += (object sender, EventArgs e) => {
+                ReplyActionSheet (view);
+            };
+            preventBarButtonGC.Add (replyButton);
+
+            var chiliButton = new UIBarButtonItem (UIImage.FromBundle ("icn-nothot"), UIBarButtonItemStyle.Plain, null);
+            chiliButton.Clicked += (object sender, EventArgs e) => {
+                onChiliButtonClicked (view);
+            };
+            preventBarButtonGC.Add (chiliButton);
+
+            var deferButton = new UIBarButtonItem (UIImage.FromBundle ("navbar-icn-defer"), UIBarButtonItemStyle.Plain, null);
+            deferButton.Clicked += (object sender, EventArgs e) => {
+                onDeferButtonClicked (view);
+            };
+            preventBarButtonGC.Add (deferButton);
+
+            var saveButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-move"), UIBarButtonItemStyle.Plain, null);
+            saveButton.Clicked += (object sender, EventArgs e) => {
+                onSaveButtonClicked (view);
+            };
+            preventBarButtonGC.Add (saveButton);
+
+            var archiveButton = new UIBarButtonItem (UIImage.FromBundle ("icn-archive"), UIBarButtonItemStyle.Plain, null);
+            archiveButton.Clicked += (object sender, EventArgs e) => {
+                onArchiveButtonClicked (view);
+            };
+            preventBarButtonGC.Add (saveButton);
+
+            var flexibleSpace = new UIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace);
+            preventBarButtonGC.Add (flexibleSpace);
+
+            var fixedSpace = new UIBarButtonItem (UIBarButtonSystemItem.FixedSpace);
+            fixedSpace.Width = 25;
+            preventBarButtonGC.Add (fixedSpace);
+
+            var deleteButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-delete"), UIBarButtonItemStyle.Plain, null);
+            deleteButton.Clicked += (object sender, EventArgs e) => {
+                onDeleteButtonClicked (view);
+            };
+            preventBarButtonGC.Add (deleteButton);
+
+            var toolbar = new UIToolbar (new RectangleF (0, frame.Height - 44, frame.Width, 44));
+            toolbar.SetItems (new UIBarButtonItem[] {
+                replyButton,
+                flexibleSpace,
+                chiliButton,
+                flexibleSpace,
+                deferButton,
+                flexibleSpace,
+                archiveButton,
+                flexibleSpace,
+                saveButton,
+                flexibleSpace,
+                deleteButton
+            }, false);
+            view.AddSubview (toolbar);
 
             return view;
+        }
+
+        void onReplyButtonClicked (UIView view, string action)
+        {
+            var messageThreadIndex = view.Tag;
+            var messageThread = owner.priorityInbox.GetEmailThread (messageThreadIndex);
+            owner.PerformSegueForDelegate ("NachoNowToCompose", new SegueHolder (action, messageThread));
+        }
+
+        void onChiliButtonClicked (UIView view)
+        {
+            var messageThreadIndex = view.Tag;
+            var messageThread = owner.priorityInbox.GetEmailThread (messageThreadIndex);
+            var message = messageThread.SingleMessageSpecialCase ();
+            message.ToggleHotOrNot ();
+            owner.priorityInbox.Refresh ();
+            owner.ReloadHotListData ();
+        }
+
+        void onDeferButtonClicked (UIView view)
+        {
+            var messageThreadIndex = view.Tag;
+            var messageThread = owner.priorityInbox.GetEmailThread (messageThreadIndex);
+            owner.PerformSegueForDelegate ("NachoNowToMessagePriority", new SegueHolder (messageThread));
+        }
+
+        void onSaveButtonClicked (UIView view)
+        {
+            var messageThreadIndex = view.Tag;
+            var messageThread = owner.priorityInbox.GetEmailThread (messageThreadIndex);
+            owner.PerformSegueForDelegate ("NachoNowToMessageAction", new SegueHolder (messageThread));
+        }
+
+        void onArchiveButtonClicked (UIView view)
+        {
+            var messageThreadIndex = view.Tag;
+            var messageThread = owner.priorityInbox.GetEmailThread (messageThreadIndex);
+            var message = messageThread.SingleMessageSpecialCase ();
+            NcEmailArchiver.Archive (message);
+        }
+
+        void onDeleteButtonClicked (UIView view)
+        {
+            var messageThreadIndex = view.Tag;
+            var messageThread = owner.priorityInbox.GetEmailThread (messageThreadIndex);
+            var message = messageThread.SingleMessageSpecialCase ();
+            NcEmailArchiver.Delete (message);
         }
 
         /// <summary>
@@ -150,7 +274,7 @@ namespace NachoClient.iOS
             // Save thread index
 
             view.Tag = messageThreadIndex;
-            var messageThread = inbox.GetEmailThread (messageThreadIndex);
+            var messageThread = owner.priorityInbox.GetEmailThread (messageThreadIndex);
             var message = messageThread.SingleMessageSpecialCase ();
 
             var viewWidth = view.Frame.Width;
@@ -191,6 +315,22 @@ namespace NachoClient.iOS
                 cookedPreview = cookedPreview.Replace ("\n\n", "\n");
             } while(cookedPreview.Length != oldLength);
             previewLabelView.AttributedText = new NSAttributedString (cookedPreview);
+
+            //                // Reminder image view and label
+            //                var reminderImageView = cell.ViewWithTag (REMINDER_ICON_TAG) as UIImageView;
+            //                var reminderLabelView = cell.ViewWithTag (REMINDER_TEXT_TAG) as UILabel;
+            //                if (message.HasDueDate ()) {
+            //                    reminderImageView.Hidden = false;
+            //                    reminderLabelView.Hidden = false;
+            //                    if (message.IsOverdue ()) {
+            //                        reminderLabelView.Text = String.Format ("Response was due {0}", message.FlagDueAsUtc ());
+            //                    } else {
+            //                        reminderLabelView.Text = String.Format ("Response is due {0}", message.FlagDueAsUtc ());
+            //                    }
+            //                } else {
+            //                    reminderImageView.Hidden = true;
+            //                    reminderLabelView.Hidden = true;
+            //                }
 
             // Received label view
             var receivedLabelView = view.ViewWithTag (RECEIVED_DATE_TAG) as UILabel;
@@ -248,31 +388,56 @@ namespace NachoClient.iOS
                 view = v;
             }
             var label = (UILabel)view.ViewWithTag (1);
-            label.Text = "No messages in inbox!";
+            label.Text = "No hot items!";
 
             return view;
         }
 
+        protected void ReplyActionSheet (UIView view)
+        {
+            var actionSheet = new UIActionSheet ();
+            actionSheet.Add ("Reply");
+            actionSheet.Add ("Reply All");
+            actionSheet.Add ("Forward");
+            actionSheet.Add ("Cancel");
+
+            actionSheet.CancelButtonIndex = 3;
+
+            actionSheet.Clicked += delegate(object a, UIButtonEventArgs b) {
+                switch (b.ButtonIndex) {
+                case 0:
+                    onReplyButtonClicked (view, MessageComposeViewController.Reply);
+                    break;
+                case 1:
+                    onReplyButtonClicked (view, MessageComposeViewController.ReplyAll);
+                    break;
+                case 2:
+                    onReplyButtonClicked (view, MessageComposeViewController.Forward);
+                    break;
+                case 3:
+                    break; // Cancel
+                }
+            };
+            actionSheet.ShowInView (view);
+        }
     }
 
-    public class InboxCarouselDelegate : iCarouselDelegate
+    public class HotListCarouselDelegate : iCarouselDelegate
     {
-        INachoEmailMessages inbox;
         NachoNowViewController owner;
 
-        public InboxCarouselDelegate (NachoNowViewController owner, INachoEmailMessages inbox)
+        public HotListCarouselDelegate (NachoNowViewController o)
         {
-            this.owner = owner;
-            this.inbox = inbox;
+            owner = o;
         }
 
         public override void DidSelectItemAtIndex (iCarousel carousel, int index)
         {
             // Ignore placeholders
-            if ((0 > index) || (inbox.Count () <= index)) {
+            if ((0 > index) || (owner.priorityInbox.Count () <= index)) {
                 return;
             }
-            var messageThread = inbox.GetEmailThread (index);
+            var messageThread = owner.priorityInbox.GetEmailThread (index);
             owner.PerformSegue ("NachoNowToMessageView", new SegueHolder (messageThread));
         }
 
