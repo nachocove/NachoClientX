@@ -69,7 +69,7 @@ namespace Test.iOS
         [Test]
         public void TestMaxRung ()
         {
-            Assert.AreEqual (7, AsStrategy.Scope.MaxRung ());
+            Assert.AreEqual (8, AsStrategy.Scope.MaxRung ());
         }
 
         [Test]
