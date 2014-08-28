@@ -17,20 +17,17 @@ using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
-    public partial class NachoNowViewController : NcUIViewController, INachoMessageEditorParent, INachoFolderChooserParent, INachoCalendarItemEditorParent, IMessageTableViewSourceDelegate, ICalendarTableViewSourceDelegate
+    public partial class NachoNowViewController : NcUIViewController, INachoMessageEditorParent, INachoFolderChooserParent, INachoCalendarItemEditorParent, ICalendarTableViewSourceDelegate
     {
         public bool wrap = false;
         protected INachoEmailMessages priorityInbox;
-        protected MessageTableViewSource inboxSource;
         protected CalendarTableViewSource calendarSource;
-        UIPanGestureRecognizer inboxPanGestureRecognizer = null;
-        UILongPressGestureRecognizer inboxLongPressGestureRecognizer = null;
         UIPanGestureRecognizer calendarPanGestureRecognizer = null;
-        //        UIPanGestureRecognizer calendarThumbPanGestureRecognizer = null;
         UITapGestureRecognizer calendarCloseTapGestureRecognizer = null;
         UITapGestureRecognizer carouselTapGestureRecognizer = null;
-        UISwipeGestureRecognizer carouselSwipeUpGestureRecognizer = null;
-        UISwipeGestureRecognizer carouselSwipeDownGestureRecognizer = null;
+
+        protected INachoEmailMessages inbox;
+        protected iCarousel inboxCarousel;
 
         public NachoNowViewController (IntPtr handle) : base (handle)
         {
@@ -59,22 +56,6 @@ namespace NachoClient.iOS
                     });
                 carouselView.ScrollToItemAtIndex (0, true);
             };
-              
-            cancelButton.Clicked += (object sender, EventArgs e) => {
-                if (null != inboxSource) {
-                    inboxSource.MultiSelectCancel (inboxTableView);
-                }
-            };
-
-            deleteButton.Clicked += (object sender, EventArgs e) => {
-                if (null != inboxSource) {
-                    inboxSource.MultiSelectDelete (inboxTableView);
-                }
-            };
-
-            saveButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("NachoNowToMessageAction", this);
-            };
 
             composeButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("NachoNowToCompose", new SegueHolder (null));
@@ -101,40 +82,29 @@ namespace NachoClient.iOS
             };
             carouselView.AddGestureRecognizer (carouselTapGestureRecognizer);
 
-            carouselSwipeUpGestureRecognizer = new UISwipeGestureRecognizer ((UISwipeGestureRecognizer obj) => {
-                carouselSwipe (obj);
-            });
-            carouselSwipeUpGestureRecognizer.Direction = UISwipeGestureRecognizerDirection.Up;
-            carouselSwipeUpGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
-                return true;
-            };
-            carouselView.AddGestureRecognizer (carouselSwipeUpGestureRecognizer);
-
-            carouselSwipeDownGestureRecognizer = new UISwipeGestureRecognizer ((UISwipeGestureRecognizer obj) => {
-                carouselSwipe (obj);
-            });
-            carouselSwipeDownGestureRecognizer.Direction = UISwipeGestureRecognizerDirection.Down;
-            carouselSwipeDownGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
-                return true;
-            };
-            carouselView.AddGestureRecognizer (carouselSwipeUpGestureRecognizer);
-
             priorityInbox = NcEmailManager.PriorityInbox ();
 
             // configure carousel
-            carouselView.DataSource = new CarouselDataSource (this);
-            carouselView.Delegate = new CarouselDelegate (this);  
+            carouselView.DataSource = new HotListCarouselDataSource (this);
+            carouselView.Delegate = new HotListCarouselDelegate (this);  
             carouselView.Type = iCarouselType.Linear;
             carouselView.Vertical = false;
             carouselView.ContentOffset = new SizeF (0f, 0f);
             carouselView.BackgroundColor = UIColor.Clear;
 
-            inboxTableView.SeparatorStyle = UITableViewCellSeparatorStyle.SingleLine;
-            calendarTableView.SeparatorStyle = UITableViewCellSeparatorStyle.SingleLine;
+            inbox = NcEmailManager.Inbox ();
 
-            inboxSource = new MessageTableViewSource ();
-            inboxSource.owner = this;
-            inboxTableView.Source = inboxSource;
+            inboxCarousel = new iCarousel ();
+            inboxCarousel.Frame = new RectangleF (0, View.Frame.Height - INBOX_ROW_HEIGHT, 320, INBOX_ROW_HEIGHT);
+            inboxCarousel.DataSource = new InboxCarouselDataSource (this, inbox);
+            inboxCarousel.Delegate = new InboxCarouselDelegate (this, inbox);  
+            inboxCarousel.Type = iCarouselType.Linear;
+            inboxCarousel.Vertical = false;
+            inboxCarousel.ContentOffset = new SizeF (0f, 0f);
+            inboxCarousel.BackgroundColor = UIColor.Clear;
+            View.AddSubview (inboxCarousel);
+
+            calendarTableView.SeparatorStyle = UITableViewCellSeparatorStyle.SingleLine;
 
             calendarSource = new CalendarTableViewSource ();
             calendarSource.owner = this;
@@ -142,26 +112,6 @@ namespace NachoClient.iOS
             calendarTableView.Source = calendarSource;
 
             // Set up gesture recognizers; they'll be enabled and disabled as needed
-
-            // Pan the inbox up from the bottom
-            inboxPanGestureRecognizer = new UIPanGestureRecognizer ((UIPanGestureRecognizer obj) => {
-                inboxPan (obj);
-            });
-            inboxPanGestureRecognizer.Enabled = false;
-            inboxPanGestureRecognizer.MaximumNumberOfTouches = 1;
-            inboxPanGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
-                return true;
-            };
-//            inboxTableView.AddGestureRecognizer (inboxPanGestureRecognizer);
-
-            inboxLongPressGestureRecognizer = new UILongPressGestureRecognizer ((UILongPressGestureRecognizer obj) => {
-                inboxLongPress (obj);
-            });
-            inboxLongPressGestureRecognizer.Enabled = false;
-            inboxLongPressGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
-                return true;
-            };
-            inboxTableView.AddGestureRecognizer (inboxLongPressGestureRecognizer);
 
             // Pan the calendar down from the top
             calendarPanGestureRecognizer = new UIPanGestureRecognizer ((UIPanGestureRecognizer obj) => {
@@ -182,9 +132,6 @@ namespace NachoClient.iOS
             calendarCloseTapGestureRecognizer.Enabled = false;
             calendarCloseView.AddGestureRecognizer (calendarCloseTapGestureRecognizer);
 
-            View.SendSubviewToBack (phonyView1);
-            View.SendSubviewToBack (phonyView2);
- 
             View.BackgroundColor = A.Color_NachoNowBackground;
 
             ConfigureBasicView ();
@@ -193,17 +140,22 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-            if (null != this.NavigationController) {
-                this.NavigationController.ToolbarHidden = true;
-                if (this.NavigationController.NavigationBarHidden == true) {
-                    this.NavigationController.NavigationBarHidden = false;
-                }
-            }
-            carouselView.ReloadData ();
-            inboxSource.SetEmailMessages (NcEmailManager.Inbox ());
-            inboxTableView.ReloadData ();
 
+            if (null != this.NavigationController) {
+                NavigationController.SetToolbarItems (null, false);
+                this.NavigationController.ToolbarHidden = true;
+                this.NavigationController.NavigationBarHidden = false;
+            }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+        }
+
+        // After viewing a message, when returning to Now, after Now's ViewWillAppear
+        // is called, layout is called again but the toolbar size is still factored in,
+        // so the inboxCarousel is put in the wrong spot.  Can't figure it out.  So...
+        public override void ViewWillLayoutSubviews ()
+        {
+            base.ViewWillLayoutSubviews ();
+            inboxCarousel.Frame = inboxNormalSize ();
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -298,8 +250,8 @@ namespace NachoClient.iOS
             if (NcResult.SubKindEnum.Info_EmailMessageSetChanged == s.Status.SubKind) {
                 priorityInbox.Refresh ();
                 carouselView.ReloadData ();
-                inboxSource.RefreshEmailMessages ();
-                inboxTableView.ReloadData ();
+                inbox.Refresh ();
+                inboxCarousel.ReloadData ();
             }
             if (NcResult.SubKindEnum.Info_CalendarSetChanged == s.Status.SubKind) {
                 NcCalendarManager.Instance.Refresh ();
@@ -308,17 +260,16 @@ namespace NachoClient.iOS
             if (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated == s.Status.SubKind) {
                 priorityInbox.Refresh ();
                 carouselView.ReloadData ();
+                inbox.Refresh ();
+                inboxCarousel.ReloadData ();
             }
         }
 
         protected void DisableGestureRecognizers ()
         {
-            inboxPanGestureRecognizer.Enabled = false;
             calendarPanGestureRecognizer.Enabled = false;
             calendarCloseTapGestureRecognizer.Enabled = false;
             carouselTapGestureRecognizer.Enabled = false;
-            carouselSwipeUpGestureRecognizer.Enabled = false;
-            carouselSwipeDownGestureRecognizer.Enabled = false;
         }
 
         /// <summary>
@@ -327,31 +278,6 @@ namespace NachoClient.iOS
         protected void ConfigureBasicView ()
         {
             DisableGestureRecognizers ();
-
-            // Disable scroll & multi-select when inbox is small
-            inboxTableView.ScrollEnabled = false;
-            inboxSource.SetCompactMode (true);
-            inboxSource.MultiSelectEnable (inboxTableView, false);
-            inboxTableView.ScrollToRow (NSIndexPath.FromRowSection (0, 0), UITableViewScrollPosition.Top, false);
-            inboxTableView.Frame = inboxSmallSize ();
-            inboxTableView.ReloadData ();
-
-            inboxTableView.Layer.CornerRadius = 5;
-            inboxTableView.Layer.MasksToBounds = true;
-            inboxTableView.Layer.BorderColor = A.Color_NachoNowBackground.CGColor;
-            inboxTableView.Layer.BorderWidth = 1;
-
-            phonyView1.Frame = inboxShadowSize (10, 5);
-            phonyView1.Layer.CornerRadius = 5;
-            phonyView1.Layer.MasksToBounds = true;
-            phonyView1.Layer.BorderColor = A.Color_NachoNowBackground.CGColor;
-            phonyView1.Layer.BorderWidth = 1;
-
-            phonyView2.Frame = inboxShadowSize (20, 10);
-            phonyView2.Layer.CornerRadius = 5;
-            phonyView2.Layer.MasksToBounds = true;
-            phonyView2.Layer.BorderColor = A.Color_NachoNowBackground.CGColor;
-            phonyView2.Layer.BorderWidth = 1;
 
             calendarSource.SetCompactMode (true);
             calendarView.Frame = calendarSmallSize ();
@@ -364,51 +290,16 @@ namespace NachoClient.iOS
             carouselView.Frame = carouselNormalSize ();
             carouselView.Alpha = 1.0f;
 
+            inboxCarousel.ReloadData ();
+            inboxCarousel.Frame = inboxNormalSize ();
+
             // Enabled gestures
-            inboxPanGestureRecognizer.Enabled = true;
-            inboxLongPressGestureRecognizer.Enabled = true;
             calendarPanGestureRecognizer.Enabled = true;
             carouselTapGestureRecognizer.Enabled = true;
-            carouselSwipeUpGestureRecognizer.Enabled = true;
-            carouselSwipeDownGestureRecognizer.Enabled = true;
-        }
-
-        /// <summary>
-        /// Message list view in full screen
-        /// </summary>
-        protected void ConfigureMessageListView ()
-        {
-            DisableGestureRecognizers ();
-            inboxSource.SetCompactMode (false);
-            inboxSource.MultiSelectEnable (inboxTableView, true);
-            inboxTableView.Frame = inboxFullSize ();
-            inboxTableView.ScrollEnabled = true;
-            inboxTableView.ReloadData ();
-
-            carouselView.Alpha = 0.0f;
-
-            inboxTableView.Layer.CornerRadius = 0;
-            inboxTableView.Layer.MasksToBounds = false;
-            inboxTableView.Layer.BorderWidth = 0;
-        }
-
-        protected void ConfigureCalendarListView ()
-        {
-            DisableGestureRecognizers ();
-            calendarSource.SetCompactMode (false);
-            calendarView.Frame = calendarFullSize ();
-            calendarTableView.ScrollEnabled = true;
-            calendarCloseTapGestureRecognizer.Enabled = true;
-            calendarCloseView.Hidden = false;
-            calendarThumbView.Hidden = true;
-            calendarTableView.ReloadData ();
-
-            carouselView.Alpha = 0.0f;
         }
 
         int INBOX_ROW_HEIGHT = 69;
         int CALENDAR_VIEW_HEIGHT = (69 + 22);
-        float inboxStartingY;
         float calendarStartingY;
 
         protected RectangleF carouselNormalSize ()
@@ -419,193 +310,12 @@ namespace NachoClient.iOS
             return rect;
         }
 
-        /// Grows from bottom of View
-        protected RectangleF inboxSmallSize ()
+        protected RectangleF inboxNormalSize ()
         {
-            var parentFrame = View.Frame;
-            var inboxFrame = new RectangleF ();
-            inboxFrame.Y = parentFrame.Height - INBOX_ROW_HEIGHT;
-            inboxFrame.Height = INBOX_ROW_HEIGHT;
-            var adjust = 15;
-            inboxFrame.X = parentFrame.X + adjust;
-            inboxFrame.Width = parentFrame.Width - (2 * adjust);
-            return inboxFrame;
-        }
-
-        protected RectangleF inboxShadowSize (int widthAdjust, int yAdjust)
-        {
-            var frame = inboxSmallSize ();
-            frame.Inflate (-widthAdjust, 0);
-            frame.Y -= yAdjust;
-            return frame;
-        }
-
-        protected RectangleF inboxFullSize ()
-        {
-            var parentFrame = View.Frame;
-            var rect = new RectangleF (0, 0, parentFrame.Width, parentFrame.Height);
+            var rect = View.Frame;
+            rect.Height = INBOX_ROW_HEIGHT;
+            rect.Y = carouselView.Frame.Bottom + 10;
             return rect;
-        }
-
-        protected double inboxPercentOpen (float yOffset)
-        {
-            var fullSize = inboxFullSize ();
-            var Height = fullSize.Height - (inboxStartingY + yOffset);
-            return  Height / fullSize.Height;
-        }
-
-        /// Positive means shrinking
-        protected RectangleF inboxAdjustedSize (float yOffset)
-        {
-            var fullSize = inboxFullSize ();
-            var inboxFrame = fullSize;
-            yOffset = Math.Min (0, yOffset);
-            inboxFrame.Y = Math.Max (0, inboxStartingY + yOffset);
-            inboxFrame.Height = inboxFrame.Height - inboxFrame.Y;
-            inboxFrame.Height = Math.Max (inboxFrame.Height, inboxSmallSize ().Height);
-            inboxFrame.Height = Math.Min (inboxFrame.Height, fullSize.Height);
-            var adjust = 15;
-            inboxFrame.X = inboxFrame.X + adjust;
-            inboxFrame.Width = inboxFrame.Width - (2 * adjust);
-            return inboxFrame;
-        }
-
-        protected void inboxPan (UIPanGestureRecognizer obj)
-        {
-            if (UIGestureRecognizerState.Began == obj.State) {
-                inboxStartingY = inboxTableView.Frame.Y;
-                View.BringSubviewToFront (inboxTableView);
-                return;
-            }
-
-            if (UIGestureRecognizerState.Changed == obj.State) {
-                // yOffset is negative when going up!
-                var yOffset = obj.TranslationInView (inboxTableView).Y;
-                inboxTableView.Frame = inboxAdjustedSize (yOffset);
-                inboxTableView.SetNeedsDisplay ();
-                return;
-            }
-            if (UIGestureRecognizerState.Ended == obj.State) {
-                // Should we expand or contract?
-                Double duration;
-                var yOffset = obj.TranslationInView (inboxTableView).Y;
-                var percentOpen = inboxPercentOpen (yOffset);
-                if ((yOffset < 0) && (obj.VelocityInView (inboxTableView).Y < -1000) && (inboxPercentOpen (yOffset) < 0.5f)) {
-                    inboxFlick (yOffset);
-                    return;
-                }
-                if ((yOffset <= 0) && (inboxPercentOpen (yOffset) > 0.3f)) {
-                    duration = Math.Max (0.1, 1.0 - percentOpen);
-                    UIView.Animate (duration, 0, UIViewAnimationOptions.CurveEaseOut,
-                        () => {
-                            ConfigureMessageListView ();
-                        },
-                        () => {
-                        }
-                    );
-                } else {
-                    duration = percentOpen;
-                    UIView.Animate (duration, 0, UIViewAnimationOptions.CurveEaseOut,
-                        () => {
-                            ConfigureBasicView ();
-                        },
-                        () => {
-                            inboxTableView.ReloadData ();
-                        }
-                    );
-                }
-            }
-        }
-
-        public void inboxFlick (float yOffset)
-        {
-            var inboxRect = inboxAdjustedSize (yOffset);
-            inboxRect.Height = INBOX_ROW_HEIGHT;
-            var inboxImage = CaptureRectInView (inboxRect, inboxTableView);
-            var imageView = new UIImageView (inboxImage);
-            View.AddSubview (imageView);
-            imageView.Frame = inboxRect;
-
-            UIView.Animate (0.2, 0, UIViewAnimationOptions.CurveEaseIn,
-                () => {
-                    inboxTableView.Frame = inboxSmallSize ();
-                    imageView.Frame = carouselNormalSize ();
-                },
-                () => {
-                    UIView.Animate (0.2, 0, UIViewAnimationOptions.TransitionNone,
-                        () => {
-                            imageView.Alpha = 0;
-                        },
-                        () => {
-                            imageView.RemoveFromSuperview ();
-                        });
-                });
-        }
-
-        public UIImage CaptureRectInView (RectangleF rect, UIView view)
-        {
-            UIImage clonedImage = null;
-
-            UIGraphics.BeginImageContextWithOptions (rect.Size, false, 0.0f);
-            view.Layer.RenderInContext (UIGraphics.GetCurrentContext ());
-            clonedImage = UIGraphics.GetImageFromCurrentImageContext ();
-            UIGraphics.EndImageContext ();
-            return clonedImage;
-        }
-
-        public void inboxLongPress (UILongPressGestureRecognizer obj)
-        {
-            if (UIGestureRecognizerState.Ended != obj.State) {
-                return;
-            }
-
-            var actionSheet = new UIActionSheet ();
-            actionSheet.Add ("Make hot!");
-            actionSheet.Add ("Set priority");
-            actionSheet.Add ("Hide message");
-            actionSheet.Add ("Cancel");
-
-            actionSheet.CancelButtonIndex = 3;
-
-            var messageThread = inboxSource.GetFirstThread ();
-            if (null == messageThread) {
-                return;
-            }
-
-            actionSheet.Clicked += delegate(object a, UIButtonEventArgs b) {
-                switch (b.ButtonIndex) {
-                case 0:
-                    var message = messageThread.SingleMessageSpecialCase ();
-                    message.UserAction = 1;
-                    message.Update ();
-                    NcBrain.UpdateMessageScore (message.Id);
-                    break;
-                case 1:
-                    PerformSegue ("NachoNowToMessagePriority", new SegueHolder (messageThread));
-                    break;
-                case 2:
-                    PerformSegue ("NachoNowToMessagePriority", new SegueHolder (messageThread));
-                    break;
-                case 3:
-                    break; // Cancel
-                }
-            };
-            actionSheet.ShowFromToolbar (NavigationController.Toolbar);
-        }
-
-        public void MultiSelectToggle (MessageTableViewSource source, bool enabled)
-        {
-            UIView.Animate (0.2, new NSAction (
-                delegate {
-                    if (enabled) {
-                        NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { deleteButton, saveButton };
-                        NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { cancelButton };
-                    } else {
-                        NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, newMeetingButton };
-                        NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
-                    }
-                })
-            );
         }
 
         /// Grows from top of View
@@ -676,8 +386,7 @@ namespace NachoClient.iOS
                     duration = Math.Max (0.1, 1.0 - percentOpen);
                     UIView.Animate (duration, 0, UIViewAnimationOptions.CurveEaseOut,
                         () => {
-//                            ConfigureCalendarListView ();
-                            PerformSegue("NachoNowToCalendar", new SegueHolder(null));
+                            PerformSegue ("NachoNowToCalendar", new SegueHolder (null));
                         },
                         () => {
                         }
@@ -705,30 +414,6 @@ namespace NachoClient.iOS
                 () => {
                 }
             );
-        }
-
-        public void carouselSwipe (UISwipeGestureRecognizer obj)
-        {
-            if (UISwipeGestureRecognizerDirection.Up == obj.Direction) {
-                if (0 < priorityInbox.Count ()) {
-                    var i = carouselView.CurrentItemIndex;
-                    var messageThread = priorityInbox.GetEmailThread (i);
-                    PerformSegue ("NachoNowToMessagePriority", new SegueHolder (messageThread));
-                }
-                return;
-            }
-            if (UISwipeGestureRecognizerDirection.Down == obj.Direction) {
-                if (0 < priorityInbox.Count ()) {
-                    var i = carouselView.CurrentItemIndex;
-                    var messageThread = priorityInbox.GetEmailThread (i);
-                    var message = messageThread.SingleMessageSpecialCase ();
-                    message.UserAction = -1;
-                    message.Update ();
-                    NcBrain.UpdateMessageScore (message.Id);
-                }
-                return;
-            }
-            NcAssert.CaseError ();
         }
 
         [MonoTouch.Foundation.Export ("CarouselTapSelector:")]
@@ -797,9 +482,10 @@ namespace NachoClient.iOS
         /// </summary>
         public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
         {
-            if (null != inboxSource) {
-                inboxSource.MoveToFolder (inboxTableView, folder, cookie);
-            }
+            var segueHolder = (SegueHolder)cookie;
+            var messageThread = (McEmailMessageThread)segueHolder.value;
+            var message = messageThread.SingleMessageSpecialCase ();
+            NcEmailArchiver.Move (message, folder);
             vc.DismissFolderChooser (true, null);
         }
 
@@ -812,7 +498,7 @@ namespace NachoClient.iOS
             vc.DismissCalendarItemEditor (false, null);
         }
 
-        public class CarouselDataSource : iCarouselDataSource
+        public class HotListCarouselDataSource : iCarouselDataSource
         {
             protected const int USER_IMAGE_TAG = 101;
             protected const int USER_LABEL_TAG = 109;
@@ -827,7 +513,7 @@ namespace NachoClient.iOS
             static List<UIBarButtonItem> preventBarButtonGC;
             NachoNowViewController owner;
 
-            public CarouselDataSource (NachoNowViewController o)
+            public HotListCarouselDataSource (NachoNowViewController o)
             {
                 owner = o;
             }
@@ -1217,11 +903,11 @@ namespace NachoClient.iOS
             }
         }
 
-        public class CarouselDelegate : iCarouselDelegate
+        public class HotListCarouselDelegate : iCarouselDelegate
         {
             NachoNowViewController owner;
 
-            public CarouselDelegate (NachoNowViewController o)
+            public HotListCarouselDelegate (NachoNowViewController o)
             {
                 owner = o;
             }
