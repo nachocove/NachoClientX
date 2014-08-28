@@ -686,10 +686,10 @@ namespace NachoCore.ActiveSync
                     }
                 }
             }
-            // (QS) If a narrow Sync hasn’t successfully completed in the last 60 seconds, 
+            // (QS) If a narrow Sync hasn’t successfully completed in the last N seconds, 
             // perform a narrow Sync Command.
             if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
-                if (protocolState.LastNarrowSync < DateTime.UtcNow.AddSeconds (-120)) {
+                if (protocolState.LastNarrowSync < DateTime.UtcNow.AddSeconds (-300)) {
                     var nSyncKit = GenSyncKit (accountId, protocolState, true, false);
                     Log.Info (Log.LOG_AS, "Strategy:QS:Narrow Sync...");
                     if (null != nSyncKit) {
@@ -705,10 +705,11 @@ namespace NachoCore.ActiveSync
                 if (NcCommStatus.Instance.IsRateLimited (BEContext.Server.Id)) {
                     // (FG, BG) If we are rate-limited, and we can execute a narrow Ping command at the 
                     // current filter setting, execute a narrow Ping command.
-                    if (NarrowFoldersNoToClientExpected (accountId)) {
+                    var rlPingKit = GenPingKit (accountId, protocolState, true);
+                    if (null != rlPingKit) {
                         Log.Info (Log.LOG_AS, "Strategy:FG/BG,RL:Narrow Ping");
                         return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping, 
-                            new AsPingCommand (BEContext.ProtoControl, GenPingKit (accountId, protocolState, true)));
+                                new AsPingCommand (BEContext.ProtoControl, rlPingKit));
                     }
                     // (FG, BG) If we are rate-limited, and we can’t execute a narrow Ping command
                     // at the current filter setting, then wait.
