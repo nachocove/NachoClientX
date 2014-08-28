@@ -816,7 +816,7 @@ namespace NachoCore.ActiveSync
 
             pending.Insert ();
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCRESPCAL");
+                Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCRESPCAL");
             }, "RespondCalCmd");
 
             return pending.Token;
