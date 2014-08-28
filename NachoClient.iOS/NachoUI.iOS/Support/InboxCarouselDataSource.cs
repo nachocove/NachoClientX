@@ -203,7 +203,7 @@ namespace NachoClient.iOS
 
             // Attachment image view
             var attachmentImageView = view.ViewWithTag (ATTACHMENT_TAG) as UIImageView;
-            attachmentImageView.Hidden = false;
+            attachmentImageView.Hidden = !message.cachedHasAttachments;
             var attachmentImageRect = attachmentImageView.Frame;
             attachmentImageRect.X = receivedLabelRect.X - 10 - 16;
             attachmentImageView.Frame = attachmentImageRect;
