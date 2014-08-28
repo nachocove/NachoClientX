@@ -198,8 +198,8 @@ namespace NachoClient.iOS
                     PerformSegue ("SegueToDatePicker", new SegueHolder (null));
                     break;
                 case 1:
-                    var c = CalendarHelper.CreateMeeting(thread.SingleMessageSpecialCase());
-                    PerformSegue("SegueToEditEvent", new SegueHolder(c));
+                    var c = CalendarHelper.CreateMeeting (thread.SingleMessageSpecialCase ());
+                    PerformSegue ("SegueToEditEvent", new SegueHolder (c));
                     break;
                 case 2:
                     break; // Cancel
@@ -623,7 +623,7 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void AdjustY(UIView view, float yOffset)
+        protected void AdjustY (UIView view, float yOffset)
         {
             var rect = view.Frame;
             rect.Y = yOffset;
