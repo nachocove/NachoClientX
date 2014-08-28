@@ -55,6 +55,7 @@ namespace NachoClient.iOS
                     () => {
                     });
                 carouselView.ScrollToItemAtIndex (0, true);
+                inboxCarousel.ScrollToItemAtIndex (0, true);
             };
 
             composeButton.Clicked += (object sender, EventArgs e) => {
