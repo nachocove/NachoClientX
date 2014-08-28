@@ -32,23 +32,21 @@ namespace NachoCore.Utils
 
         public NcRateLimter Throttle { get; set; }
 
+        bool IsThrottled { get; set; }
+
         public ServerTracker (int serverId)
         {
             Accesses = new List<ServerAccess> ();
             DelayUntil = DateTime.MinValue;
             ServerId = serverId;
             // TODO: we will want to vary the parameters by protcol & server.
-            Throttle = new NcRateLimter (0.1, 15 * 60);
+            Throttle = new NcRateLimter (0.1, 5 * 60);
+            Throttle.Enabled = true;
             Reset ();
         }
 
         public void UpdateQuality ()
         {
-            var hasTokens = Throttle.HasTokens ();
-            Throttle.TakeToken ();
-            if (hasTokens && !Throttle.HasTokens ()) {
-                Log.Info (Log.LOG_SYS, "Proactive throttling threshold reached.");
-            }
             // Forced delay eclipses the rest of the logic.
             if (DateTime.UtcNow < DelayUntil) {
                 return;
@@ -87,6 +85,17 @@ namespace NachoCore.Utils
         {
             Accesses.Add (new ServerAccess () { DidFailGenerally = didFailGenerally, When = DateTime.UtcNow });
             UpdateQuality ();
+
+            // Count access against rate-limiter.
+            Throttle.TakeToken ();
+            if (Throttle.HasTokens ()) {
+                IsThrottled = false;
+            } else {
+                if (!IsThrottled) {
+                    Log.Info (Log.LOG_SYS, "Proactive throttling threshold reached.");
+                    IsThrottled = true;
+                }
+            }
         }
 
         public bool Reset ()
