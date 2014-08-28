@@ -116,7 +116,6 @@ namespace NachoCore.ActiveSync
             public static List<ItemType> RequiredToAdvance (int rung)
             {
                 var retval = new List<ItemType> ();
-                var limit = Ladder.GetLength (0);
                 // Those that step up in the next run must complete to advance.
                 foreach (int track in ItemTypeSeq) {
                     if (0 != (int)Ladder [rung, track] && // Exclude None(s).

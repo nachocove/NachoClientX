@@ -67,6 +67,12 @@ namespace Test.iOS
         }
 
         [Test]
+        public void TestMaxRung ()
+        {
+            Assert.AreEqual (7, AsStrategy.Scope.MaxRung ());
+        }
+
+        [Test]
         public void TestEmailFolderListProvider ()
         {
             var context = new MockContext ();
@@ -950,7 +956,8 @@ namespace Test.iOS
             inbox.AsSyncKey = "1";
             inbox.Insert ();
             folders.Add (inbox);
-            var strat = new AsStrategy (context);
+            // NYI.
+            //var strat = new AsStrategy (context);
             //var result = strat.Pick ();
             /*
              * a) in BG, get SendMail.
