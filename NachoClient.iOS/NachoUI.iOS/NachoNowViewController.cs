@@ -743,6 +743,11 @@ namespace NachoClient.iOS
             PerformSegue (identifier, sender);
         }
 
+        public void RunningLate (int calendarIndex)
+        {
+            NcAssert.CaseError ();
+        }
+
         ///  IMessageTableViewSourceDelegate
         public void MessageThreadSelected (McEmailMessageThread messageThread)
         {

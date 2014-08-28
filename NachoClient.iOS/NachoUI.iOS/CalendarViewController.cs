@@ -10,6 +10,7 @@ using SWRevealViewControllerBinding;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
+using MimeKit;
 
 namespace NachoClient.iOS
 {
@@ -19,6 +20,7 @@ namespace NachoClient.iOS
         protected CalendarTableViewSource calendarSource;
         public DateBarView DateDotView = new DateBarView ();
         public DateTime selectedDate = new DateTime ();
+        protected McAccount account;
         public int selectedDateTag = 0;
         public int todayWeekTag = 0;
         public int todayMonthTag = 0;
@@ -47,6 +49,7 @@ namespace NachoClient.iOS
             base.ViewDidLoad ();
 
             CalendarHelper.ExpandRecurrences ();
+            account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
 
             // Navigation
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
@@ -883,6 +886,54 @@ namespace NachoClient.iOS
 
         }
 
+        public void RunningLate (int calendarIndex)
+        {
+            var actionSheet = new UIActionSheet ();
+            actionSheet.Add ("5 min");
+            actionSheet.Add ("10 min");
+            actionSheet.Add ("15 min");
+            actionSheet.Add ("Cancel");
+            actionSheet.CancelButtonIndex = 3;
+            actionSheet.Clicked += delegate(object a, UIButtonEventArgs b) {
+                switch (b.ButtonIndex) {
+                case 0:
+                    SendRunningLateMessage (5, calendarIndex);
+                    break; 
+                case 1:
+                    SendRunningLateMessage (10, calendarIndex);
+                    break;
+                case 2:
+                    SendRunningLateMessage (15, calendarIndex);
+                    break; 
+                case 3:
+                    break; // Cancel
+                default:
+                    NcAssert.CaseError ();
+                    break;
+                }
+            };
+            actionSheet.ShowInView (View);
+        }
+
+        public void SendRunningLateMessage (int min, int calendarIndex)
+        {
+            McCalendar c = McCalendar.QueryById<McCalendar> (calendarIndex);
+            var mimeMessage = new MimeMessage ();
+            NcEmailAddress myAddress = new NcEmailAddress (NcEmailAddress.Kind.To, c.OrganizerEmail);
+
+            var mailbox = myAddress.ToMailboxAddress ();
+            mimeMessage.To.Add (mailbox);
+
+            mimeMessage.Subject = Pretty.SubjectString (c.Subject);
+            mimeMessage.Date = System.DateTime.UtcNow;
+
+            var body = new BodyBuilder ();
+            body.TextBody = "Running " + min + " late";
+
+            mimeMessage.Body = body.ToMessageBody ();
+            MimeHelpers.SendEmail (account.Id, mimeMessage);
+        }
+            
     }
 
 }

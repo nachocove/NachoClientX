@@ -343,6 +343,24 @@ namespace NachoClient.iOS
             ConfigureSwipes (cell as MCSwipeTableViewCell, c.Id);
         }
 
+        UIView ViewWithLabel (string text, string side)
+        {
+            var label = new UILabel ();
+            label.Text = text;
+            label.Font = A.Font_AvenirNextDemiBold14;
+            label.TextColor = UIColor.White;
+            //label.TextAlignment = ta;
+            label.SizeToFit ();
+            var labelView = new UIView ();
+            if ("left" == side) {
+                labelView.Frame = new RectangleF (0, 0, label.Frame.Width + 50, label.Frame.Height);
+            } else {
+                labelView.Frame = new RectangleF (65, 0, label.Frame.Width + 50, label.Frame.Height);
+            }
+            labelView.Add (label);
+            return labelView;
+        }
+
         /// <summary>
         /// Configures the swipes.
         /// </summary>
@@ -355,7 +373,7 @@ namespace NachoClient.iOS
             UIColor greenColor = null;
             UIView crossView = null;
             UIColor redColor = null;
-            UIView clockView = null;
+            UIView runningLateView = null;
             UIColor yellowColor = null;
             UIView listView = null;
             UIColor brownColor = null;
@@ -371,10 +389,10 @@ namespace NachoClient.iOS
                 cell.SetSwipeGestureWithView (crossView, redColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State2, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
                     DeleteThisMessage (calendarIndex);
                 });
-                clockView = ViewWithImageName ("clock");
-                yellowColor = new UIColor (254.0f / 255.0f, 217.0f / 255.0f, 56.0f / 255.0f, 1.0f);
-                cell.SetSwipeGestureWithView (clockView, yellowColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State3, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                    //                    PerformSegue ("MessageToMessagePriority", new SegueHolder (messageThreadIndex));
+                runningLateView = ViewWithLabel ("running late", "right");
+                yellowColor = new UIColor (A.Color_NachoYellow.CGColor);
+                cell.SetSwipeGestureWithView (runningLateView, yellowColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State3, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
+                    RunningLate (calendarIndex);
                 });
                 listView = ViewWithImageName ("list");
                 brownColor = new UIColor (206.0f / 255.0f, 149.0f / 255.0f, 98.0f / 255.0f, 1.0f);
@@ -394,8 +412,8 @@ namespace NachoClient.iOS
                 if (null != redColor) {
                     redColor.Dispose ();
                 }
-                if (null != clockView) {
-                    clockView.Dispose ();
+                if (null != runningLateView) {
+                    runningLateView.Dispose ();
                 }
                 if (null != yellowColor) {
                     yellowColor.Dispose ();
@@ -422,6 +440,12 @@ namespace NachoClient.iOS
 
         }
 
+        public void RunningLate (int calendarIndex)
+        {
+            owner.RunningLate (calendarIndex);
+        }
+
+
         UIView ViewWithImageName (string imageName)
         {
             var image = UIImage.FromBundle (imageName);
@@ -438,7 +462,7 @@ namespace NachoClient.iOS
                 return 75;
             }
         }
-          
+
         public override UIView GetViewForHeader (UITableView tableView, int section)
         {
             var view = new UIView (new RectangleF (0, 0, tableView.Frame.Width, 75));
