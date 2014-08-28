@@ -235,6 +235,7 @@ namespace Test.iOS
         [Test]
         public void TestAdvanceIfPossible ()
         {
+            // TODO: need AsSyncMetaToClientExpected setting sub-test.
             StatusIndCalled = false;
             var account = new McAccount () {
                 AccountType = McAccount.AccountTypeEnum.Exchange,

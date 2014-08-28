@@ -40,7 +40,7 @@ namespace NachoCore.Utils
             DelayUntil = DateTime.MinValue;
             ServerId = serverId;
             // TODO: we will want to vary the parameters by protcol & server.
-            Throttle = new NcRateLimter (0.1, 5 * 60);
+            Throttle = new NcRateLimter (0.1, 2 * 60);
             Throttle.Enabled = true;
             Reset ();
         }

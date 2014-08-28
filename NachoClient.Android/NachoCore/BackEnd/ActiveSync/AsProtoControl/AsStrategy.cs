@@ -772,7 +772,7 @@ namespace NachoCore.ActiveSync
                         fetchKit = GenFetchKit (accountId);
                     }
                     syncKit = GenSyncKit (accountId, protocolState, false, false);
-                    if (null != fetchKit && (null == syncKit || 0.5 < CoinToss.NextDouble ())) {
+                    if (null != fetchKit && (null == syncKit || 0.7 < CoinToss.NextDouble ())) {
                         Log.Info (Log.LOG_AS, "Strategy:FG/BG:Fetch");
                         return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Fetch, 
                             new AsItemOperationsCommand (BEContext.ProtoControl, fetchKit));
@@ -800,7 +800,7 @@ namespace NachoCore.ActiveSync
             // (QS) Wait.
             if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
                 return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Wait,
-                    new AsWaitCommand (BEContext.ProtoControl, 300, true));
+                    new AsWaitCommand (BEContext.ProtoControl, 120, true));
             }
             NcAssert.True (false);
             return null;
