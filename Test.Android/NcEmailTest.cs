@@ -154,7 +154,7 @@ namespace Test.Common
         public void EmptyOptionalFields ()
         {
             var emptyOptionalsXML = System.Xml.Linq.XElement.Parse (EmptyOptionalsXML);
-            McEmailMessage emptyOptionalsEmail = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddEmail (emptyOptionalsXML, new MockNcFolder ());
+            McEmailMessage emptyOptionalsEmail = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (emptyOptionalsXML, new MockNcFolder ());
 
             Assert.IsNull (emptyOptionalsEmail.To);
             Assert.IsNull (emptyOptionalsEmail.From);
@@ -169,7 +169,7 @@ namespace Test.Common
         public void SetOptionalFields ()
         {
             var setOptionalsXML = System.Xml.Linq.XElement.Parse (CategoryTestXML);
-            McEmailMessage setOptionalsEmail = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddEmail (setOptionalsXML, new MockNcFolder ());
+            McEmailMessage setOptionalsEmail = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (setOptionalsXML, new MockNcFolder ());
             Assert.NotNull (setOptionalsEmail.To);
             Assert.NotNull (setOptionalsEmail.From);
             Assert.NotNull (setOptionalsEmail.DisplayTo);
@@ -181,7 +181,7 @@ namespace Test.Common
         public void SameRecordTwice ()
         {
             var firstXMLcopy = System.Xml.Linq.XElement.Parse (CategoryTestXML);
-            McEmailMessage email1 = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddEmail (firstXMLcopy, new MockNcFolder ());
+            McEmailMessage email1 = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (firstXMLcopy, new MockNcFolder ());
             bool failedCopyInsert = false;
 
             try {
@@ -217,7 +217,7 @@ namespace Test.Common
         public void UpdateToIncludeCategories ()
         {
             var noCategoriesXML = System.Xml.Linq.XElement.Parse (createXMLEmail ("5:4", null));
-            McEmailMessage email1 = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddEmail (noCategoriesXML, new MockNcFolder ());
+            McEmailMessage email1 = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (noCategoriesXML, new MockNcFolder ());
 
             Assert.True (email1.Categories.Count == 0);
             email1.Categories = getCategories ();
@@ -229,7 +229,7 @@ namespace Test.Common
         public void UpdateWithSameCategories ()
         {
             var categoriesXML = System.Xml.Linq.XElement.Parse (createXMLEmail ("5:4", getCategories ()));
-            McEmailMessage email1 = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddEmail (categoriesXML, new MockNcFolder ());
+            McEmailMessage email1 = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (categoriesXML, new MockNcFolder ());
             List<McEmailMessageCategory> categories = email1.Categories;
 
             AssertListsAreEquals (categories, email1.Categories);
@@ -242,7 +242,7 @@ namespace Test.Common
         public void UpdateNonCategoryField ()
         {
             var categoriesXML = System.Xml.Linq.XElement.Parse (createXMLEmail ("5:4", getCategories ()));
-            McEmailMessage email1 = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddEmail (categoriesXML, new MockNcFolder ());
+            McEmailMessage email1 = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (categoriesXML, new MockNcFolder ());
 
             Assert.True (email1.Categories.Count == 6);
             Assert.True (email1.getInternalCategoriesList ().Count == 6);
@@ -264,7 +264,7 @@ namespace Test.Common
             catList.Add (getCategories () [0]);
             var categoriesXML = System.Xml.Linq.XElement.Parse (createXMLEmail ("5:4", catList));
 
-            McEmailMessage email1 = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddEmail (categoriesXML, new MockNcFolder ());
+            McEmailMessage email1 = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (categoriesXML, new MockNcFolder ());
 
             Assert.True (email1.Categories.Count == 1 && email1.Categories [0].Name.Trim ().Equals (catList [0].Name.Trim ()));
             email1.Categories = getCategories ();
@@ -276,7 +276,7 @@ namespace Test.Common
         public void UpdateRemovesCategories ()
         {
             var categoriesXML = System.Xml.Linq.XElement.Parse (createXMLEmail ("5:4", getCategories ()));
-            McEmailMessage email1 = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddEmail (categoriesXML, new MockNcFolder ());
+            McEmailMessage email1 = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (categoriesXML, new MockNcFolder ());
 
             Assert.True (email1.Categories.Count == 6);
             email1.Categories.Clear ();
@@ -288,7 +288,7 @@ namespace Test.Common
         public void ReadRecordWithoutAncillary ()
         {
             var categoriesXML = System.Xml.Linq.XElement.Parse (createXMLEmail ("5:4", getCategories ()));
-            NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddEmail (categoriesXML, new MockNcFolder ());
+            NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (categoriesXML, new MockNcFolder ());
             McEmailMessage email2 = NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE Id = ?", 1).First ();
             Assert.True (email2.getInternalCategoriesList ().Count () == 0);
         }
@@ -297,7 +297,7 @@ namespace Test.Common
         public void BackToBackUpdates ()
         {
             var categoriesXML = System.Xml.Linq.XElement.Parse (createXMLEmail ("5:4", getCategories ()));
-            NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddEmail (categoriesXML, new MockNcFolder ());
+            NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (categoriesXML, new MockNcFolder ());
 
             List<McEmailMessageCategory> oneItem = new List<McEmailMessageCategory> ();
             oneItem.Add (getCategories () [0]);
@@ -341,7 +341,7 @@ namespace Test.Common
         public void ChangeNonAncillaryFieldUpdate ()
         {
             var categoriesXML = System.Xml.Linq.XElement.Parse (createXMLEmail ("5:4", getCategories ()));
-            NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddEmail (categoriesXML, new MockNcFolder ());
+            NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (categoriesXML, new MockNcFolder ());
             McEmailMessage email2 = NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE Id = ?", 1).First ();
 
             email2.Cc = "ChangedTheCC";
@@ -356,7 +356,7 @@ namespace Test.Common
         public void ChangeAncillaryFieldUpdate ()
         {
             var categoriesXML = System.Xml.Linq.XElement.Parse (createXMLEmail ("5:4", getCategories ()));
-            NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddEmail (categoriesXML, new MockNcFolder ());
+            NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (categoriesXML, new MockNcFolder ());
             McEmailMessage email2 = NcModel.Instance.Db.Query<McEmailMessage> ("SELECT * FROM McEmailMessage WHERE Id = ?", 1).First ();
 
             Assert.True (email2.Categories [0].Name.Trim ().Equals ("Green"));
@@ -378,7 +378,7 @@ namespace Test.Common
         public McEmailMessage InsertEmailIntoDB (string serverID, List<McEmailMessageCategory> categories)
         {
             var categoriesXMLCommand = System.Xml.Linq.XElement.Parse (createXMLEmail (serverID, categories));
-            McEmailMessage insertedEmail = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddEmail (categoriesXMLCommand, new MockNcFolder ());
+            McEmailMessage insertedEmail = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (categoriesXMLCommand, new MockNcFolder ());
             Console.WriteLine ("TESTLOG: Inserted Email: ServerID: " + insertedEmail.ServerId.ToString () + " AccountID: " + insertedEmail.AccountId.ToString () + " ID: " + insertedEmail.Id.ToString () + "  ");
             return insertedEmail;
         }
@@ -499,7 +499,7 @@ namespace Test.Common
             var categoriesXMLCommand = System.Xml.Linq.XElement.Parse (CategoryTestXML);
             Assert.IsNotNull (categoriesXMLCommand);
             Assert.AreEqual (categoriesXMLCommand.Name.LocalName, Xml.AirSync.Add);
-            McEmailMessage helloCategory = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddEmail (categoriesXMLCommand, new MockNcFolder ());
+            McEmailMessage helloCategory = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (categoriesXMLCommand, new MockNcFolder ());
             Assert.AreEqual (2, helloCategory.Categories.Count);
 
             var f = McEmailMessage.QueryById<McEmailMessage> (helloCategory.Id);
@@ -512,7 +512,7 @@ namespace Test.Common
             var eXML = System.Xml.Linq.XElement.Parse (EmailWithMeetingRequest);
             Assert.IsNotNull (eXML);
             Assert.AreEqual (eXML.Name.LocalName, Xml.AirSync.Add);
-            McEmailMessage e = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddEmail (eXML, new MockNcFolder ());
+            McEmailMessage e = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (eXML, new MockNcFolder ());
 
             var f = McEmailMessage.QueryById<McEmailMessage> (e.Id);
             Assert.IsNotNull (f.MeetingRequest);

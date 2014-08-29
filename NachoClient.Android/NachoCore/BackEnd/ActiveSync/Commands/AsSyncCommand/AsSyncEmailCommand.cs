@@ -11,17 +11,7 @@ namespace NachoCore.ActiveSync
 {
     public partial class AsSyncCommand : AsCommand
     {
-        public static void ServerSaysChangeEmail (XElement command, McFolder folder)
-        {
-            ProcessEmailItem (command, folder, false);
-        }
-
-        public static McEmailMessage ServerSaysAddEmail (XElement command, McFolder folder)
-        {
-            return ProcessEmailItem (command, folder, true);
-        }
-
-        public static McEmailMessage ProcessEmailItem (XElement command, McFolder folder, bool isAdd)
+        public static McEmailMessage ServerSaysAddOrChangeEmail (XElement command, McFolder folder)
         {   
             AsHelpers aHelp = new AsHelpers ();
             var r = aHelp.ParseEmail (Ns, command);

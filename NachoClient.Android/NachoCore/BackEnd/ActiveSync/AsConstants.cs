@@ -457,7 +457,7 @@ namespace NachoCore.ActiveSync
         {
             public const string Ns = "ComposeMail";
             // Alpha order.
-            public const string ClientId = "ClientId";
+            public const string ClientId = AirSync.ClientId;
             public const string AccountId = "AccountId";
             public const string FolderId = "FolderId";
             public const string ItemId = "ItemId";
