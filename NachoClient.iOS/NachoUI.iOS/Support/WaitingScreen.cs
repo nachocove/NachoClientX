@@ -190,9 +190,7 @@ namespace NachoClient.iOS
         {
             this.Hidden = false;
             owner.NavigationItem.Title = "";
-            owner.NavigationController.NavigationBar.SetBackgroundImage (new UIImage (), UIBarMetrics.Default);
-            owner.NavigationController.NavigationBar.BackgroundColor = A.Color_NachoGreen;
-            owner.NavigationController.NavigationBar.ShadowImage = new UIImage ();
+            Util.ConfigureNavBar (true, owner.NavigationController);
             quitLoadingAnimation = false;
             StartLoadingAnimation ();
         }
@@ -201,6 +199,7 @@ namespace NachoClient.iOS
         {
             owner.stopBeIfRunning ();
             owner.NavigationItem.Title = "Account Setup";
+            Util.ConfigureNavBar (false, owner.NavigationController);
             this.Hidden = true;
             this.Layer.RemoveAllAnimations ();
             quitLoadingAnimation = true;

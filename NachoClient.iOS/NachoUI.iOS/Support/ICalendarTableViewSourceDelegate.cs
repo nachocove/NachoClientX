@@ -8,6 +8,8 @@ namespace NachoClient.iOS
     public interface ICalendarTableViewSourceDelegate
     {
         void PerformSegueForDelegate (string identifier, NSObject sender);
+
+        void SendRunningLateMessage (int calendarIndex);
     }
 }
 
