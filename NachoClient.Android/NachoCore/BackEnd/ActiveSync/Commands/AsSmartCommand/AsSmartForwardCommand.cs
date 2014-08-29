@@ -7,10 +7,10 @@ namespace NachoCore.ActiveSync
 {
     public class AsSmartForwardCommand : AsSmartCommand
     {
-        public AsSmartForwardCommand (IBEContext dataSource) : base (dataSource)
+        public AsSmartForwardCommand (IBEContext dataSource, McPending pending) : base (dataSource)
         {
             CommandName = Xml.ComposeMail.SmartForward;
-            PendingSingle = McPending.QueryFirstEligibleByOperation (BEContext.Account.Id, McPending.Operations.EmailForward);
+            PendingSingle = pending;
             PendingSingle.MarkDispached ();
             EmailMessage = McAbstrObject.QueryById<McEmailMessage> (PendingSingle.ItemId);
         }

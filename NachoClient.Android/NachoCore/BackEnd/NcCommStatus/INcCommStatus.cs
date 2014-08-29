@@ -22,6 +22,8 @@ namespace NachoCore.Utils
         void Reset (int serverId);
 
         void Refresh ();
+
+        bool IsRateLimited (int serverId);
     }
 }
 

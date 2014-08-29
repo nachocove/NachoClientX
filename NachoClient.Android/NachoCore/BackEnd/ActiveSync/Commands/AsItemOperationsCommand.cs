@@ -11,29 +11,24 @@ namespace NachoCore.ActiveSync
 {
     public class AsItemOperationsCommand : AsCommand
     {
+        private FetchKit FetchKit;
         private List<McAttachment> Attachments;
-        private List<Tuple<McAbstrItem, string>> Prefetches;
         private static XNamespace AirSyncNs = Xml.AirSync.Ns;
 
-        private void ApplyStrategy ()
-        {
-            var fetchKit = BEContext.ProtoControl.SyncStrategy.FetchKit ();
-            PendingList.AddRange (fetchKit.Item1);
-            Prefetches = fetchKit.Item2.ToList ();
-        }
-
-        public AsItemOperationsCommand (IBEContext dataSource) : base (Xml.ItemOperations.Ns, Xml.ItemOperations.Ns, dataSource)
+        public AsItemOperationsCommand (IBEContext dataSource, FetchKit fetchKit) :
+            base (Xml.ItemOperations.Ns, Xml.ItemOperations.Ns, dataSource)
         {
             Attachments = new List<McAttachment> ();
-            ApplyStrategy ();
+            FetchKit = fetchKit;
+            PendingList.AddRange (FetchKit.Pendings);
             foreach (var pending in PendingList) {
                 pending.MarkDispached ();
             }
         }
 
-        private XElement ToFetch (string parentId, string serverId)
+        private XElement ToEmailFetch (string parentId, string serverId)
         {
-            // TODO: Email only for now. Also, we should let strategy determine the BodyPref.
+            // TODO: we should let strategy determine the BodyPref.
             return new XElement (m_ns + Xml.ItemOperations.Fetch,
                 new XElement (m_ns + Xml.ItemOperations.Store, Xml.ItemOperations.StoreCode.Mailbox),
                 new XElement (AirSyncNs + Xml.AirSync.CollectionId, parentId),
@@ -46,6 +41,13 @@ namespace NachoCore.ActiveSync
                         new XElement (m_baseNs + Xml.AirSyncBase.AllOrNone, "1"))));
         }
 
+        private XElement ToAttaFetch (string fileRef)
+        {
+            return new XElement (m_ns + Xml.ItemOperations.Fetch,
+                new XElement (m_ns + Xml.ItemOperations.Store, Xml.ItemOperations.StoreCode.Mailbox),
+                new XElement (m_baseNs + Xml.AirSyncBase.FileReference, fileRef));
+        }
+
         public override XDocument ToXDocument (AsHttpOperation Sender)
         {
             var itemOp = new XElement (m_ns + Xml.ItemOperations.Ns);
@@ -56,13 +58,11 @@ namespace NachoCore.ActiveSync
                 case McPending.Operations.AttachmentDownload:
                     var attachment = McAbstrObject.QueryById<McAttachment> (pending.AttachmentId);
                     Attachments.Add (attachment);
-                    fetch = new XElement (m_ns + Xml.ItemOperations.Fetch,
-                        new XElement (m_ns + Xml.ItemOperations.Store, Xml.ItemOperations.StoreCode.Mailbox),
-                        new XElement (m_baseNs + Xml.AirSyncBase.FileReference, attachment.FileReference));
+                    fetch = ToAttaFetch (attachment.FileReference);
                     break;
 
                 case McPending.Operations.EmailBodyDownload:
-                    fetch = ToFetch (pending.ParentId, pending.ServerId);
+                    fetch = ToEmailFetch (pending.ParentId, pending.ServerId);
                     break;
 
                 case McPending.Operations.CalBodyDownload:
@@ -103,11 +103,12 @@ namespace NachoCore.ActiveSync
                 itemOp.Add (fetch);
             }
             // Add in the prefetches if any.
-            foreach (var prefetch in Prefetches) {
-                var email = prefetch.Item1;
-                var parentId = prefetch.Item2;
-                var fetch2 = ToFetch (parentId, email.ServerId);
-                itemOp.Add (fetch2);
+            foreach (var pfBody in FetchKit.FetchBodies) {
+                itemOp.Add (ToEmailFetch (pfBody.ParentId, pfBody.ServerId));
+            }
+            foreach (var pfAtta in FetchKit.FetchAttachments) {
+                Attachments.Add (pfAtta);
+                itemOp.Add (ToAttaFetch (pfAtta.FileReference));
             }
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (itemOp);
@@ -119,7 +120,7 @@ namespace NachoCore.ActiveSync
             if (null != xmlFileReference) {
                 var attachment = Attachments.Where (x => xmlFileReference.Value == x.FileReference).FirstOrDefault ();
                 if (null != attachment) {
-                    return PendingList.Where (x => x.AttachmentId == attachment.Id).First ();
+                    return PendingList.Where (x => x.AttachmentId == attachment.Id).FirstOrDefault ();
                 }
             }
             if (null != xmlServerId) {
@@ -154,19 +155,23 @@ namespace NachoCore.ActiveSync
                             // This means we are processing an AttachmentDownload response.
                             var attachment = Attachments.Where (x => x.FileReference == xmlFileReference.Value).First ();
                             // TODO: if we do predictive attachment fetching, there will not always be a pending.
-                            var pending = FindPending (xmlFileReference, null);
                             attachment.ContentType = xmlProperties.Element (m_baseNs + Xml.AirSyncBase.ContentType).Value;
                             var xmlData = xmlProperties.Element (m_ns + Xml.ItemOperations.Data);
                             // TODO: move the file-manip stuff to McAttachment.
                             var saveAttr = xmlData.Attributes ().Where (x => x.Name == "nacho-attachment-file").SingleOrDefault ();
+                            var pending = FindPending (xmlFileReference, null);
                             if (null != saveAttr) {
                                 attachment.SaveFromTemp (saveAttr.Value);
                                 attachment.PercentDownloaded = 100;
                                 attachment.IsDownloaded = true;
                                 attachment.Update ();
-                                pending.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_AttDownloadUpdate));
+                                if (null != pending) {
+                                    pending.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_AttDownloadUpdate));
+                                }
                             } else {
-                                pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed));
+                                if (null != pending) {
+                                    pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed));
+                                }
                             }
                             PendingList.Remove (pending);
                         } else if (null != xmlServerId) {

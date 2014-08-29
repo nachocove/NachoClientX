@@ -25,6 +25,8 @@ namespace NachoClient.iOS
         protected UIView passwordBox;
         protected UIButton submitButton;
         protected UIButton advancedButton;
+        protected UIImageView loginTriangles;
+        protected PointF originalStartLabelCenter;
 
         public LaunchViewController (IntPtr handle) : base (handle)
         {
@@ -104,15 +106,18 @@ namespace NachoClient.iOS
             scrollView.BackgroundColor = A.Color_NachoGreen;
             contentView.BackgroundColor = A.Color_NachoGreen;
 
-            //yOffset = View.Frame.Height - 368;
+            circleMail = new UIImageView ();
+            using (var circleImage = UIImage.FromBundle ("Bootscreen-1")) {
+                circleMail.Image = circleImage;
+            }
 
-            circleMail = new UIImageView (UIImage.FromBundle ("Bootscreen-1"));
             circleMail.Frame = new RectangleF (View.Frame.Width / 2 - 60, (View.Frame.Height == 480 ? 155 : 200), 120, 120);
             contentView.AddSubview (circleMail);
 
             yOffset = View.Frame.Height - 363 + (View.Frame.Height == 480 ? 40 : 0);
 
             startLabel = new UILabel (new RectangleF (30, yOffset, View.Frame.Width - 60, 50));
+            originalStartLabelCenter = startLabel.Center;
             startLabel.Text = "Start by entering your Exchange email address and password.";
             startLabel.Lines = 2;
             startLabel.BackgroundColor = A.Color_NachoGreen;
@@ -140,7 +145,10 @@ namespace NachoClient.iOS
             emailField.Tag = EMAIL_TEXTFIELD_TAG;
             emailBox.AddSubview (emailField);
 
-            UIImageView mailImage = new UIImageView (UIImage.FromBundle ("Loginscreen-2"));
+            UIImageView mailImage = new UIImageView ();
+            using (var loginImageTwo = UIImage.FromBundle ("Loginscreen-2")) {
+                mailImage.Image = loginImageTwo;
+            }
             mailImage.Frame = new RectangleF (15, 15, 16, 11);
             emailBox.AddSubview (mailImage);
 
@@ -166,7 +174,10 @@ namespace NachoClient.iOS
             passwordBox.AddSubview (passwordField);
             passwordBox.UserInteractionEnabled = true;
 
-            UIImageView lockImage = new UIImageView (UIImage.FromBundle ("Loginscreen-3"));
+            UIImageView lockImage = new UIImageView ();
+            using (var loginImageThree = UIImage.FromBundle ("Loginscreen-3")) {
+                lockImage.Image = loginImageThree;
+            }
             lockImage.Frame = new RectangleF (15, 15, 14, 15);
             passwordBox.AddSubview (lockImage);
 
@@ -207,17 +218,20 @@ namespace NachoClient.iOS
             };
 
             emailField.ShouldReturn += (textField) => {
-                passwordField.BecomeFirstResponder();
+                passwordField.BecomeFirstResponder ();
                 return true;
             };
             passwordField.ShouldReturn += (textField) => {
-                submitButton.SendActionForControlEvents(UIControlEvent.TouchUpInside);
+                submitButton.SendActionForControlEvents (UIControlEvent.TouchUpInside);
                 return true;
             };
 
             yOffset = View.Frame.Height - 39;
 
-            UIImageView loginTriangles = new UIImageView (UIImage.FromBundle ("Bootscreen-5"));
+            loginTriangles = new UIImageView ();
+            using (var bootImage = UIImage.FromBundle ("Bootscreen-5")) {
+                loginTriangles.Image = bootImage;
+            }
             loginTriangles.Frame = new RectangleF (0, yOffset, 320, 39);
             contentView.AddSubview (loginTriangles);
 
@@ -229,15 +243,44 @@ namespace NachoClient.iOS
         protected void LayoutView ()
         {
             UIView.AnimateKeyframes (1, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
-
                 UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
                     scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
                     var contentFrame = new RectangleF (0, 0, View.Frame.Width, yOffset);
                     contentView.Frame = contentFrame;
                     scrollView.ContentSize = contentFrame.Size;
                 });
-
             }, ((bool finished) => {
+                if (startLabel.Center != originalStartLabelCenter) {
+                    startLabel.Center = new PointF (startLabel.Center.X, startLabel.Center.Y - 38);
+                    emailBox.Center = new PointF (emailBox.Center.X, emailBox.Center.Y - 30);
+                    passwordBox.Center = new PointF (passwordBox.Center.X, passwordBox.Center.Y - 30);
+                    submitButton.Center = new PointF (submitButton.Center.X, submitButton.Center.Y - 20);
+                    advancedButton.Center = new PointF (advancedButton.Center.X, advancedButton.Center.Y - 30);
+
+                    if (View.Frame.Height == 480) {
+                        loginTriangles.Center = new PointF (loginTriangles.Center.X, loginTriangles.Center.Y - 30);
+                        startLabel.Center = new PointF (startLabel.Center.X, startLabel.Center.Y - 50);
+                        emailBox.Center = new PointF (emailBox.Center.X, emailBox.Center.Y - 35);
+                        passwordBox.Center = new PointF (passwordBox.Center.X, passwordBox.Center.Y - 35);
+                        submitButton.Center = new PointF (submitButton.Center.X, submitButton.Center.Y - 20);
+                    }
+                } else {
+                    if (keyboardHeight > 0) {
+                        startLabel.Center = new PointF (startLabel.Center.X, startLabel.Center.Y + 38);
+                        emailBox.Center = new PointF (emailBox.Center.X, emailBox.Center.Y + 30);
+                        passwordBox.Center = new PointF (passwordBox.Center.X, passwordBox.Center.Y + 30);
+                        submitButton.Center = new PointF (submitButton.Center.X, submitButton.Center.Y + 20);
+                        advancedButton.Center = new PointF (advancedButton.Center.X, advancedButton.Center.Y + 30);
+
+                        if (View.Frame.Height == 480) {
+                            loginTriangles.Center = new PointF (loginTriangles.Center.X, loginTriangles.Center.Y + 30);
+                            startLabel.Center = new PointF (startLabel.Center.X, startLabel.Center.Y + 50);
+                            emailBox.Center = new PointF (emailBox.Center.X, emailBox.Center.Y + 35);
+                            passwordBox.Center = new PointF (passwordBox.Center.X, passwordBox.Center.Y + 35);
+                            submitButton.Center = new PointF (submitButton.Center.X, submitButton.Center.Y + 20);
+                        }
+                    }
+                }
             }));
         }
 

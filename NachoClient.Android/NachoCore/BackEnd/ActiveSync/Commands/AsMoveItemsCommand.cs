@@ -16,32 +16,31 @@ namespace NachoCore.ActiveSync
         private NcResult LocalSuccessInd;
         private McAbstrItem.ClassCodeEnum ClassCode;
 
-        public AsMoveItemsCommand (IBEContext beContext) : base (Xml.Mov.MoveItems, Xml.Mov.Ns, beContext)
+        public AsMoveItemsCommand (IBEContext beContext, McPending pending, McAbstrFolderEntry.ClassCodeEnum classCode) : 
+            base (Xml.Mov.MoveItems, Xml.Mov.Ns, beContext)
         {
-            PendingSingle = McPending.QueryFirstEligibleByOperation (BEContext.Account.Id, McPending.Operations.EmailMove);
-            if (null != PendingSingle) {
-                ClassCode = McAbstrFolderEntry.ClassCodeEnum.Email;
+            PendingSingle = pending;
+            ClassCode = classCode;
+            switch (ClassCode) {
+            case McAbstrFolderEntry.ClassCodeEnum.Email:
                 LocalSuccessInd = NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageMoveSucceeded);
                 LocalFailureInd = NcResult.Error (NcResult.SubKindEnum.Error_EmailMessageMoveFailed);
-            } else {
-                PendingSingle = McPending.QueryFirstEligibleByOperation (BEContext.Account.Id, McPending.Operations.CalMove);
-                if (null != PendingSingle) {
-                    ClassCode = McAbstrFolderEntry.ClassCodeEnum.Calendar;
-                    LocalSuccessInd = NcResult.Info (NcResult.SubKindEnum.Info_CalendarMoveSucceeded);
-                    LocalFailureInd = NcResult.Error (NcResult.SubKindEnum.Error_CalendarMoveFailed);
-                } else {
-                    PendingSingle = McPending.QueryFirstEligibleByOperation (BEContext.Account.Id, McPending.Operations.ContactMove);
-                    if (null != PendingSingle) {
-                        ClassCode = McAbstrFolderEntry.ClassCodeEnum.Contact;
-                        LocalSuccessInd = NcResult.Info (NcResult.SubKindEnum.Info_ContactMoveSucceeded);
-                        LocalFailureInd = NcResult.Error (NcResult.SubKindEnum.Error_ContactMoveFailed);
-                    } else {
-                        ClassCode = McAbstrFolderEntry.ClassCodeEnum.Tasks;
-                        PendingSingle = McPending.QueryFirstEligibleByOperation (BEContext.Account.Id, McPending.Operations.TaskMove);
-                        LocalSuccessInd = NcResult.Info (NcResult.SubKindEnum.Info_TaskMoveSucceeded);
-                        LocalFailureInd = NcResult.Error (NcResult.SubKindEnum.Error_TaskMoveFailed);
-                    }
-                }
+                break;
+            case McAbstrFolderEntry.ClassCodeEnum.Calendar:
+                LocalSuccessInd = NcResult.Info (NcResult.SubKindEnum.Info_CalendarMoveSucceeded);
+                LocalFailureInd = NcResult.Error (NcResult.SubKindEnum.Error_CalendarMoveFailed);
+                break;
+            case McAbstrFolderEntry.ClassCodeEnum.Contact:
+                LocalSuccessInd = NcResult.Info (NcResult.SubKindEnum.Info_ContactMoveSucceeded);
+                LocalFailureInd = NcResult.Error (NcResult.SubKindEnum.Error_ContactMoveFailed);
+                break;
+            case McAbstrFolderEntry.ClassCodeEnum.Tasks:
+                LocalSuccessInd = NcResult.Info (NcResult.SubKindEnum.Info_TaskMoveSucceeded);
+                LocalFailureInd = NcResult.Error (NcResult.SubKindEnum.Error_TaskMoveFailed);
+                break;
+            default:
+                NcAssert.CaseError (ClassCode.ToString ());
+                break;
             }
             NcAssert.True (null != PendingSingle);
             PendingSingle.MarkDispached ();

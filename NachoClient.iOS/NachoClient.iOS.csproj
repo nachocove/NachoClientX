@@ -1143,6 +1143,9 @@
     <Compile Include="NachoUI.iOS\Support\WaitingScreen.cs" />
     <Compile Include="NachoUI.iOS\Support\InboxCarouselDataSource.cs" />
     <Compile Include="NachoUI.iOS\Support\HotListCarouselDataSource.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsWaitCommand.cs">
+      <Link>NachoCore\BackEnd\ActiveSync\Commands\AsWaitCommand.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

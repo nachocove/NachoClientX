@@ -56,6 +56,23 @@ namespace NachoCore.Model
                 accountId, itemId);
         }
 
+        public static IEnumerable<McAttachment> QueryNeedsFetch (int accountId, int limit, double minScore, int maxSize)
+        {
+            return NcModel.Instance.Db.Query<McAttachment> (
+                "SELECT a.* FROM McAttachment AS a " +
+                " JOIN McEmailMessage AS e ON e.Id = a.EmailMessageId " +
+                " WHERE " +
+                " a.AccountId = ? AND " +
+                " e.AccountId = ? AND " +
+                " e.IsAwaitingDelete = 0 AND " +
+                " a.PercentDownloaded = 0 AND " +
+                " e.Score >= ? AND " +
+                " a.EstimatedDataSize <= ? AND " +
+                " a.IsDownloaded = 0 " + 
+                " ORDER BY e.Score DESC, e.DateReceived DESC LIMIT ?",
+                accountId, accountId, minScore, maxSize, limit);
+        }
+
         public override int Delete ()
         {
             RemoveFromStorage ();

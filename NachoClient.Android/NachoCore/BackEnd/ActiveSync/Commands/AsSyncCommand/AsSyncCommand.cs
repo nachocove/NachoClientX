@@ -23,33 +23,30 @@ namespace NachoCore.ActiveSync
         private bool HadNewUnreadEmailMessageInInbox;
         private bool FolderSyncIsMandated;
         private Nullable<uint> Limit;
-        private List<Tuple<McFolder, List<McPending>>> SyncKitList;
+        private List<SyncKit.PerFolder> SyncKitList;
         private XNamespace EmailNs;
         private XNamespace TasksNs;
-        private uint WindowSize;
+        private int WindowSize;
+        private bool IsNarrow;
 
         public static XNamespace Ns = Xml.AirSync.Ns;
 
-        private void ApplyStrategy ()
-        {
-            var syncKit = BEContext.ProtoControl.SyncStrategy.SyncKit ();
-            WindowSize = syncKit.Item1;
-            SyncKitList = syncKit.Item2;
-            FoldersInRequest = new List<McFolder> ();
-            foreach (var tup in SyncKitList) {
-                FoldersInRequest.Add (tup.Item1);
-                PendingList.AddRange (tup.Item2);
-            }
-        }
-
-        public AsSyncCommand (IBEContext beContext) : base (Xml.AirSync.Sync, Xml.AirSync.Ns, beContext)
+        public AsSyncCommand (IBEContext beContext, SyncKit syncKit) 
+            : base (Xml.AirSync.Sync, Xml.AirSync.Ns, beContext)
         {
             Timeout = new TimeSpan (0, 0, 20);
             EmailNs = Xml.Email.Ns;
             TasksNs = Xml.Tasks.Ns;
             SuccessInd = NcResult.Info (NcResult.SubKindEnum.Info_SyncSucceeded);
             FailureInd = NcResult.Error (NcResult.SubKindEnum.Error_SyncFailed);
-            ApplyStrategy ();
+            WindowSize = syncKit.OverallWindowSize;
+            IsNarrow = syncKit.IsNarrow;
+            SyncKitList = syncKit.PerFolders;
+            FoldersInRequest = new List<McFolder> ();
+            foreach (var perFolder in SyncKitList) {
+                FoldersInRequest.Add (perFolder.Folder);
+                PendingList.AddRange (perFolder.Commands);
+            }
             foreach (var pending in PendingList) {
                 pending.MarkDispached ();
             }
@@ -186,21 +183,17 @@ namespace NachoCore.ActiveSync
 
         public override XDocument ToXDocument (AsHttpOperation Sender)
         {
-            if (0 == SyncKitList.Count) {
-                // Abort if there are no folders to Sync.
-                throw new AsCommand.AbortCommandException ();
-            }
             var collections = new XElement (m_ns + Xml.AirSync.Collections);
-            foreach (var tup in SyncKitList) {
-                var folder = tup.Item1;
-                var pendingSubList = tup.Item2;
+            foreach (var perFolder in SyncKitList) {
+                var folder = perFolder.Folder;
+                var pendingSubList = perFolder.Commands;
                 var collection = new XElement (m_ns + Xml.AirSync.Collection,
                                      new XElement (m_ns + Xml.AirSync.SyncKey, folder.AsSyncKey),
                                      new XElement (m_ns + Xml.AirSync.CollectionId, folder.ServerId));
                 // GetChanges.
-                if (folder.AsSyncMetaDoGetChanges) {
+                if (perFolder.GetChanges && McFolder.AsSyncKey_Initial != folder.AsSyncKey) {
                     collection.Add (new XElement (m_ns + Xml.AirSync.GetChanges));
-                    collection.Add (new XElement (m_ns + Xml.AirSync.WindowSize, folder.AsSyncMetaWindowSize));
+                    collection.Add (new XElement (m_ns + Xml.AirSync.WindowSize, perFolder.WindowSize));
                 
                     // WindowSize.
                     // Options.
@@ -208,7 +201,7 @@ namespace NachoCore.ActiveSync
                     var options = new XElement (m_ns + Xml.AirSync.Options);
                     switch (classCodeEnum) {
                     case McAbstrFolderEntry.ClassCodeEnum.Email:
-                        options.Add (new XElement (m_ns + Xml.AirSync.FilterType, (uint)folder.AsSyncMetaFilterCode));
+                        options.Add (new XElement (m_ns + Xml.AirSync.FilterType, (uint)perFolder.FilterCode));
                         options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.NoMime_0));
                         options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
                             new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.Html_2),
@@ -223,7 +216,7 @@ namespace NachoCore.ActiveSync
                         break;
 
                     case McAbstrFolderEntry.ClassCodeEnum.Calendar:
-                        options.Add (new XElement (m_ns + Xml.AirSync.FilterType, (uint)folder.AsSyncMetaFilterCode));
+                        options.Add (new XElement (m_ns + Xml.AirSync.FilterType, (uint)perFolder.FilterCode));
                         options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.AllMime_2));
                         options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
                             new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.Mime_4),
@@ -298,7 +291,7 @@ namespace NachoCore.ActiveSync
                         commands.Add (ToTaskDelete (pending, folder));
                         break;
                     default:
-                        NcAssert.True (false);
+                        NcAssert.CaseError (pending.Operation.ToString ());
                         break;
                     }
                 }
@@ -525,14 +518,6 @@ namespace NachoCore.ActiveSync
                 }
                 reloadedFolders.Add (folder);
             }
-            BEContext.ProtoControl.SyncStrategy.ReportSyncResult (reloadedFolders);
-
-            if (!BEContext.ProtocolState.HasSyncedInbox) {
-                // TODO: conditional will need to account for RIC-only 1st sync in the future.
-                var protocolState = BEContext.ProtocolState;
-                protocolState.HasSyncedInbox = true;
-                protocolState.Update ();
-            }
             if (HadEmailMessageSetChanges) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
             }
@@ -564,9 +549,20 @@ namespace NachoCore.ActiveSync
             if (FolderSyncIsMandated) {
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "SYNCREFSYNC0");
             } else {
-                return Event.Create ((uint)SmEvt.E.Success, "SYNCSUCCESS0");
+                return SuccessEvent ("SYNCSUCCESS0");
             }
         }
+
+        private Event SuccessEvent (string mnemonic)
+        {
+            if (IsNarrow) {
+                var protocolState = BEContext.ProtocolState;
+                protocolState.LastNarrowSync = DateTime.UtcNow;
+                protocolState.Update ();
+            }
+            return Event.Create ((uint)SmEvt.E.Success, mnemonic);
+        }
+
         // Called when we get an empty Sync response body.
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
         {
@@ -575,14 +571,13 @@ namespace NachoCore.ActiveSync
                 folder.AsSyncMetaToClientExpected = false;
                 folder.Update ();
             }
-            BEContext.ProtoControl.SyncStrategy.ReportSyncResult (FoldersInRequest);
             lock (PendingResolveLockObj) {
                 foreach (var pending in PendingList) {
                     pending.ResolveAsSuccess (BEContext.ProtoControl);
                 }
                 PendingList.Clear ();
             }
-            return Event.Create ((uint)SmEvt.E.Success, "SYNCSUCCESS1");
+            return SuccessEvent ("SYNCSUCCESS1");
         }
 
         public override void StatusInd (bool didSucceed)
@@ -615,7 +610,6 @@ namespace NachoCore.ActiveSync
                 }
                 PendingList.Clear ();
             }
-            ApplyStrategy ();
             return true;
         }
         // TODO - make this a generic extension.

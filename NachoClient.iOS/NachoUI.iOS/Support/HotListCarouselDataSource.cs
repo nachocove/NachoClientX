@@ -116,27 +116,29 @@ namespace NachoClient.iOS
             subjectLabelView.Tag = SUBJECT_TAG;
             view.AddSubview (subjectLabelView);
 
+            var bottomY = frame.Height - 44; // toolbar height is 44
+
+            // Reminder image view
+            var reminderImageView = new UIImageView (new RectangleF (12, 60 + 4, 12, 12));
+            reminderImageView.Image = UIImage.FromBundle ("inbox-icn-deadline");
+            reminderImageView.Tag = REMINDER_ICON_TAG;
+            view.AddSubview (reminderImageView);
+
+            // Reminder label view
+            var reminderLabelView = new UILabel (new RectangleF (34, 60, 230, 20));
+            reminderLabelView.Font = A.Font_AvenirNextRegular14;
+            reminderLabelView.TextColor = A.Color_9B9B9B;
+            reminderLabelView.Tag = REMINDER_TEXT_TAG;
+            view.AddSubview (reminderLabelView);
+
             // Preview label view
             // Size fields will be recalculated after text is known
-            var previewLabelView = new UILabel (new RectangleF (12, 60, viewWidth - 15 - 12, 120));
+            var previewLabelView = new UILabel (new RectangleF (12, 60, viewWidth - 15 - 12, bottomY - 60));
             previewLabelView.Font = A.Font_AvenirNextRegular14;
             previewLabelView.TextColor = A.Color_999999;
             previewLabelView.Lines = 0;
             previewLabelView.Tag = PREVIEW_TAG;
             view.AddSubview (previewLabelView);
-
-            //                // Reminder image view
-            //                var reminderImageView = new UIImageView (new RectangleF (65, 119, 12, 12));
-            //                reminderImageView.Image = UIImage.FromBundle ("inbox-icn-deadline");
-            //                reminderImageView.Tag = REMINDER_ICON_TAG;
-            //                view.AddSubview (reminderImageView);
-            //
-            //                // Reminder label view
-            //                var reminderLabelView = new UILabel (new RectangleF (87, 115, 230, 20));
-            //                reminderLabelView.Font = A.Font_AvenirNextRegular14;
-            //                reminderLabelView.TextColor = A.Color_9B9B9B;
-            //                reminderLabelView.Tag = REMINDER_TEXT_TAG;
-            //                view.AddSubview (reminderLabelView);
 
             // Attachment image view
             // Attachment 'x' will be adjusted to be left of date received field
@@ -275,6 +277,17 @@ namespace NachoClient.iOS
 
             view.Tag = messageThreadIndex;
             var messageThread = owner.priorityInbox.GetEmailThread (messageThreadIndex);
+
+            if (null == messageThread) {
+                foreach (var s in view.Subviews) {
+                    s.Hidden = true;
+                }
+                var slv = view.ViewWithTag (SUBJECT_TAG) as UILabel;
+                slv.Text = "This message is unavailable.";
+                slv.Hidden = false;
+                return;
+            }
+
             var message = messageThread.SingleMessageSpecialCase ();
 
             var viewWidth = view.Frame.Width;
@@ -303,10 +316,34 @@ namespace NachoClient.iOS
             var subjectLabelView = view.ViewWithTag (SUBJECT_TAG) as UILabel;
             subjectLabelView.Text = Pretty.SubjectString (message.Subject);
 
-            // Preview label view
+            float previewLabelAdjustment = 0;
+
+            // Reminder image view and label
+            var reminderImageView = view.ViewWithTag (REMINDER_ICON_TAG) as UIImageView;
+            var reminderLabelView = view.ViewWithTag (REMINDER_TEXT_TAG) as UILabel;
+            if (message.HasDueDate () || message.IsDeferred ()) {
+                reminderImageView.Hidden = false;
+                reminderLabelView.Hidden = false;
+                reminderLabelView.Text = Pretty.ReminderText (message);
+                previewLabelAdjustment = 24;
+            } else {
+                reminderImageView.Hidden = true;
+                reminderLabelView.Hidden = true;
+            }
+
+            // Size of preview, depends on reminder view
             var previewLabelView = view.ViewWithTag (PREVIEW_TAG) as UILabel;
+
+            var previewLabelViewHeight = view.Frame.Height - 60 - previewLabelAdjustment;
+            previewLabelViewHeight -= 44; // toolbar
+            previewLabelViewHeight -= 4; // padding
+
+            // Preview label view
+            var previewLabelViewRect = previewLabelView.Frame;
+            previewLabelViewRect.Height = previewLabelViewHeight;
+            previewLabelViewRect.Y = 60 + previewLabelAdjustment;
+            previewLabelView.Frame = previewLabelViewRect;
             var rawPreview = message.GetBodyPreviewOrEmpty ();
-            //                var cookedPreview = System.Text.RegularExpressions.Regex.Replace (rawPreview, @"\s+", " ");
             int oldLength;
             var cookedPreview = rawPreview;
             do {
@@ -315,22 +352,6 @@ namespace NachoClient.iOS
                 cookedPreview = cookedPreview.Replace ("\n\n", "\n");
             } while(cookedPreview.Length != oldLength);
             previewLabelView.AttributedText = new NSAttributedString (cookedPreview);
-
-            //                // Reminder image view and label
-            //                var reminderImageView = cell.ViewWithTag (REMINDER_ICON_TAG) as UIImageView;
-            //                var reminderLabelView = cell.ViewWithTag (REMINDER_TEXT_TAG) as UILabel;
-            //                if (message.HasDueDate ()) {
-            //                    reminderImageView.Hidden = false;
-            //                    reminderLabelView.Hidden = false;
-            //                    if (message.IsOverdue ()) {
-            //                        reminderLabelView.Text = String.Format ("Response was due {0}", message.FlagDueAsUtc ());
-            //                    } else {
-            //                        reminderLabelView.Text = String.Format ("Response is due {0}", message.FlagDueAsUtc ());
-            //                    }
-            //                } else {
-            //                    reminderImageView.Hidden = true;
-            //                    reminderLabelView.Hidden = true;
-            //                }
 
             // Received label view
             var receivedLabelView = view.ViewWithTag (RECEIVED_DATE_TAG) as UILabel;

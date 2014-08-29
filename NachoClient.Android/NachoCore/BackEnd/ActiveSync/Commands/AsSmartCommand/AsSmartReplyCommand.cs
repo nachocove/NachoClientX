@@ -7,10 +7,10 @@ namespace NachoCore.ActiveSync
 {
     public class AsSmartReplyCommand : AsSmartCommand
     {
-        public AsSmartReplyCommand (IBEContext dataSource) : base (dataSource)
+        public AsSmartReplyCommand (IBEContext dataSource, McPending pending) : base (dataSource)
         {
             CommandName = Xml.ComposeMail.SmartReply;
-            PendingSingle = McPending.QueryFirstEligibleByOperation (BEContext.Account.Id, McPending.Operations.EmailReply);
+            PendingSingle = pending;
             PendingSingle.MarkDispached ();
             EmailMessage = McAbstrObject.QueryById<McEmailMessage> (PendingSingle.ItemId);
         }

@@ -10,338 +10,375 @@ using NachoPlatform;
 
 namespace NachoCore.ActiveSync
 {
-    /* REWRITE GOALS
-     * A) No matter what state we're in w/r/t background activity, there is a priority of operations:
-     * 
-     * #1 user-is-wating-operations are most important (body download, search, ...).
-     * These cancel any primary operations and are driven to the HTTP request by the UI thread.
-     * #2 user needs to see new mail. So inbox-only fetches must occur regularly (by time, not %age of requests) 
-     * when we are getting all synced up.
-     * #3 user actions (pending Q) trump background activity.
-     * 
-     * B) We need to adhere to an overall rate limit of (N operations per hour). In reality, we want this 
-     * limiting to only apply to getting all synced up.
-     * 
-     * C) We want strategy to decide whether to get bodies or not on a sync (e.g. get bodies on 1st sync, quick-fetch).
-     * 
-     * D) Trend: for ops that can do N at a time, we want strategy to pick the N.
-     * 
-     * E) DoPick/DoQOp defers to strategy to decide what is next.
-     * 
-     */
     public class AsStrategy : IAsStrategy
     {
         public const int KBaseOverallWindowSize = 150;
         public const int KBasePerFolderWindowSize = 100;
         public const int KBaseFetchSize = 10;
 
-        public enum ECLst : uint
+        // Public for testing only.
+        public class Scope
         {
-            DefI1dC2w = (St.Last + 1),
-            DefI3dC2w,
-            DefI1wC2w,
-            DefI2wC2w,
-            All1m,
-            EInfC3m,
-            EInfC6m,
-            AllInf,
-        };
+            public enum ItemType
+            {
+                Email = 0,
+                Cal = 1,
+                Contact = 2,
+                Last = Contact,
+            };
 
-        private const uint ECLstLast = (uint)ECLst.AllInf;
+            public enum EmailEnum
+            {
+                None = 0,
+                Def1d,
+                Def3d,
+                Def1w,
+                Def2w,
+                All1m,
+                AllInf,
 
-        public enum CTLst : uint
-        {
-            RicOnly = (St.Last + 1),
-            DefNRic,
-            All,
-        };
+            };
 
-        // Anyone can set to request that the next Sync command be a "quick fetch".
-        public bool RequestQuickFetch { set; get; }
+            public enum CalEnum
+            {
+                None = 0,
+                Def2w,
+                All1m,
+                All3m,
+                All6m,
+                AllInf,
+            };
 
-        private bool IsQuickFetch;
-        private const uint CTLstLast = (uint)CTLst.All;
-        private NcStateMachine EmailCalendarSm;
-        private NcStateMachine ContactsTasksSm;
+            public enum ContactEnum
+            {
+                None = 0,
+                RicInf,
+                DefRicInf,
+                AllInf,
+            };
+
+            public enum FlagEnum
+            {
+                None = 0,
+                RicSynced = (1 << 0),
+                NarrowSyncOk = (1 << 1),
+            };
+
+            private static ItemType[] ItemTypeSeq = new ItemType[] { ItemType.Email, ItemType.Cal, ItemType.Contact };
+
+            public static int[,] Ladder = new int[,] {
+                // { Email, Cal, Contact, Action }
+                { (int)EmailEnum.None, (int)CalEnum.None, (int)ContactEnum.RicInf, (int)FlagEnum.None },
+                { (int)EmailEnum.Def1d, (int)CalEnum.Def2w, (int)ContactEnum.RicInf, (int)FlagEnum.RicSynced },
+                { (int)EmailEnum.Def3d, (int)CalEnum.Def2w, (int)ContactEnum.RicInf, (int)FlagEnum.RicSynced }, {
+                    (int)EmailEnum.Def1w,
+                    (int)CalEnum.Def2w,
+                    (int)ContactEnum.RicInf,
+                    (int)FlagEnum.RicSynced | (int)FlagEnum.NarrowSyncOk
+                }, {
+                    (int)EmailEnum.Def2w,
+                    (int)CalEnum.Def2w,
+                    (int)ContactEnum.DefRicInf,
+                    (int)FlagEnum.RicSynced | (int)FlagEnum.NarrowSyncOk
+                }, {
+                    (int)EmailEnum.All1m,
+                    (int)CalEnum.All1m,
+                    (int)ContactEnum.DefRicInf,
+                    (int)FlagEnum.RicSynced | (int)FlagEnum.NarrowSyncOk
+                }, {
+                    (int)EmailEnum.All1m,
+                    (int)CalEnum.All3m,
+                    (int)ContactEnum.AllInf,
+                    (int)FlagEnum.RicSynced | (int)FlagEnum.NarrowSyncOk
+                }, {
+                    (int)EmailEnum.AllInf,
+                    (int)CalEnum.All6m,
+                    (int)ContactEnum.AllInf,
+                    (int)FlagEnum.RicSynced | (int)FlagEnum.NarrowSyncOk
+                }, {
+                    (int)EmailEnum.AllInf,
+                    (int)CalEnum.AllInf,
+                    (int)ContactEnum.AllInf,
+                    (int)FlagEnum.RicSynced | (int)FlagEnum.NarrowSyncOk
+                },
+            };
+
+            public static int MaxRung ()
+            {
+                return Ladder.GetLength (0) - 1;
+            }
+
+            public static bool FlagIsSet (int rung, FlagEnum flag)
+            {
+                return ((int)flag == (((int)Ladder [rung, (int)ItemType.Last + 1]) & (int)flag));
+            }
+
+            public static List<ItemType> RequiredToAdvance (int rung)
+            {
+                var retval = new List<ItemType> ();
+                // Those that step up in the next run must complete to advance.
+                foreach (int track in ItemTypeSeq) {
+                    if (0 != (int)Ladder [rung, track] && // Exclude None(s).
+                        Ladder [rung, track] != Ladder [rung + 1, track]) {
+                        retval.Add ((ItemType)track);
+                    }
+                }
+                // If there are no such, then the non-None(s) are required to advance.
+                if (0 == retval.Count) {
+                    foreach (int track in ItemTypeSeq) {
+                        if (0 != (int)Ladder [rung, track]) {
+                            retval.Add ((ItemType)track);
+                        }
+                    }
+                }
+                return retval;
+            }
+
+            public static EmailEnum EmailScope (int rung)
+            {
+                return (EmailEnum)Ladder [rung, (int)ItemType.Email];
+            }
+
+            public static CalEnum CalScope (int rung)
+            {
+                return (CalEnum)Ladder [rung, (int)ItemType.Cal];
+            }
+
+            public static ContactEnum ContactScope (int rung)
+            {
+                return (ContactEnum)Ladder [rung, (int)ItemType.Contact];
+            }
+        }
+
         private IBEContext BEContext;
+        private Random CoinToss;
 
-        private delegate List<McFolder> FolderList ();
-
-        private delegate Tuple<Xml.Provision.MaxAgeFilterCode, uint> Parameters (McFolder folder);
-        // Success event happens when there is a sync indicating that there is no more available.
         public AsStrategy (IBEContext beContext)
         {
             BEContext = beContext;
-            EmailCalendarSm = new NcStateMachine ("ASSTRATEC") { 
-                Name = string.Format ("ASSyncStratEC({0})", BEContext.Account.Id),
-                LocalStateType = typeof(ECLst),
-                StateChangeIndication = UpdateSavedECState,
-                TransTable = new[] {
-                    new Node {
-                        State = (uint)St.Start,
-                        Invalid = new [] {
-                            (uint)SmEvt.E.Success,
-                            (uint)SmEvt.E.TempFail,
-                            (uint)SmEvt.E.HardFail,
-                        },
-                        On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)ECLst.DefI1dC2w },
-                        }
-                    },
-                    new Node {
-                        State = (uint)ECLst.DefI1dC2w,
-                        Invalid = new [] {
-                            (uint)SmEvt.E.TempFail,
-                        },
-                        Drop = new [] {
-                            (uint)SmEvt.E.Launch,
-                            (uint)SmEvt.E.HardFail,
-                        },
-                        On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoSayRicDone, State = (uint)ECLst.DefI3dC2w },
-                        }
-                    },
-                    new Node {
-                        State = (uint)ECLst.DefI3dC2w,
-                        Invalid = new [] {
-                            (uint)SmEvt.E.TempFail,
-                        },
-                        Drop = new [] {
-                            (uint)SmEvt.E.Launch,
-                        },
-                        On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)ECLst.DefI1wC2w },
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoNop, State = (uint)ECLst.DefI1dC2w },
-                        }
-                    },
-                    new Node {
-                        State = (uint)ECLst.DefI1wC2w,
-                        Invalid = new [] {
-                            (uint)SmEvt.E.TempFail,
-                        },
-                        Drop = new [] {
-                            (uint)SmEvt.E.Launch,
-                        },
-                        On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)ECLst.DefI2wC2w },
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoNop, State = (uint)ECLst.DefI1dC2w },
-                        }
-                    },
-                    new Node {
-                        State = (uint)ECLst.DefI2wC2w,
-                        Invalid = new [] {
-                            (uint)SmEvt.E.TempFail,
-                        },
-                        Drop = new [] {
-                            (uint)SmEvt.E.Launch,
-                        },
-                        On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoAvCon, State = (uint)ECLst.All1m },
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoNop, State = (uint)ECLst.DefI1dC2w },
-                        }
-                    },
-                    new Node {
-                        State = (uint)ECLst.All1m,
-                        Invalid = new [] {
-                            (uint)SmEvt.E.TempFail,
-                        },
-                        Drop = new [] {
-                            (uint)SmEvt.E.Launch,
-                        },
-                        On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoAvCon, State = (uint)ECLst.EInfC3m },
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoSpCon, State = (uint)ECLst.DefI1dC2w },
-                        }
-                    },
-                    new Node {
-                        State = (uint)ECLst.EInfC3m,
-                        Invalid = new [] {
-                            (uint)SmEvt.E.TempFail,
-                        },
-                        Drop = new [] {
-                            (uint)SmEvt.E.Launch,
-                        },
-                        On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoAvCon, State = (uint)ECLst.EInfC6m },
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoSpCon, State = (uint)ECLst.DefI1dC2w },
-                        }
-                    },
-                    new Node {
-                        State = (uint)ECLst.EInfC6m,
-                        Invalid = new [] {
-                            (uint)SmEvt.E.TempFail,
-                        },
-                        Drop = new [] {
-                            (uint)SmEvt.E.Launch,
-                        },
-                        On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoAvCon, State = (uint)ECLst.AllInf },
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoSpCon, State = (uint)ECLst.DefI1dC2w },
-                        }
-                    },
-                    new Node {
-                        State = (uint)ECLst.AllInf,
-                        Invalid = new [] {
-                            (uint)SmEvt.E.TempFail,
-                        },
-                        Drop = new [] {
-                            (uint)SmEvt.E.Launch,
-                        },
-                        On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoAvCon, State = (uint)ECLst.AllInf },
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoSpCon, State = (uint)ECLst.DefI1dC2w },
-                        }
-                    },
-                }
-            };
-            EmailCalendarSm.Validate ();
-
-            ContactsTasksSm = new NcStateMachine ("ASSTRATCT") {
-                Name = string.Format ("ASSyncStratC({0})", BEContext.Account.Id),
-                LocalStateType = typeof(CTLst),
-                StateChangeIndication = UpdateSavedCTState,
-                TransTable = new[] {
-                    new Node {
-                        State = (uint)St.Start,
-                        Invalid = new [] {
-                            (uint)SmEvt.E.Success,
-                            (uint)SmEvt.E.TempFail,
-                            (uint)SmEvt.E.HardFail,
-                        },
-                        On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)CTLst.RicOnly },
-                        }
-                    },
-                    new Node {
-                        State = (uint)CTLst.RicOnly,
-                        Invalid = new [] {
-                            (uint)SmEvt.E.TempFail,
-                        },
-                        Drop = new [] {
-                            (uint)SmEvt.E.Launch,
-                            (uint)SmEvt.E.HardFail,
-                        },
-                        On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)CTLst.DefNRic },
-                        }
-                    },
-                    new Node {
-                        State = (uint)CTLst.DefNRic,
-                        Invalid = new [] {
-                            (uint)SmEvt.E.TempFail,
-                        },
-                        Drop = new [] {
-                            (uint)SmEvt.E.Launch,
-                        },
-                        On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)CTLst.All },
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoNop, State = (uint)CTLst.RicOnly },
-                        }
-                    },
-                    new Node {
-                        State = (uint)CTLst.All,
-                        Invalid = new [] {
-                            (uint)SmEvt.E.TempFail,
-                        },
-                        Drop = new [] {
-                            (uint)SmEvt.E.Launch,
-                            (uint)SmEvt.E.Success,
-                        },
-                        On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoNop, State = (uint)CTLst.RicOnly },
-                        }
-                    },
-                }
-            };
-            ContactsTasksSm.Validate ();
-            RestoreSavedState ();
-            ContactsTasksSm.PostEvent ((uint)SmEvt.E.Launch, "SYNCSTRATGOS");
-            EmailCalendarSm.PostEvent ((uint)SmEvt.E.Launch, "SYNCSTRATGO");
-        }
-        // Almost actions for both SMs are DoNop.
-        private void DoNop ()
-        {
-            // Do nothing.
+            CoinToss = new Random ();
         }
 
-        private void DoSayRicDone ()
+        public bool CanAdvance (int accountId, int rung)
         {
-            // Once we get to "ping" on 1st series of Syncs, then RIC must be downloaded.
-            BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_RicInitialSyncCompleted));
-        }
-
-        private void DoAvCon ()
-        {
-            ContactsTasksSm.PostEvent ((uint)SmEvt.E.Success, "DOSTCON");
-        }
-
-        private void DoSpCon ()
-        {
-            ContactsTasksSm.PostEvent ((uint)SmEvt.E.HardFail, "DOSPCON");
-        }
-
-        private List<McFolder> ECFolderListProvider (bool quickFetch)
-        {
-            if (quickFetch) {
-                return DefaultInboxAndDefaultCalendarFolders ();
+            if (rung >= Scope.MaxRung ()) {
+                return false;
             }
-            switch ((ECLst)EmailCalendarSm.State) {
-            case ECLst.DefI1dC2w:
-            case ECLst.DefI3dC2w:
-            case ECLst.DefI1wC2w:
-            case ECLst.DefI2wC2w:
-                return DefaultInboxAndDefaultCalendarFolders ();
+            var musts = Scope.RequiredToAdvance (rung);
+            var folders = new List<McFolder> ();
+            foreach (var must in musts) {
+                switch (must) {
+                case Scope.ItemType.Email:
+                    folders.AddRange (EmailFolderListProvider (accountId, Scope.EmailScope (rung), false));
+                    break;
+                case Scope.ItemType.Cal:
+                    folders.AddRange (CalFolderListProvider (accountId, Scope.CalScope (rung), false));
+                    break;
+                case Scope.ItemType.Contact:
+                    folders.AddRange (ContactFolderListProvider (accountId, Scope.ContactScope (rung), false));
+                    break;
+                default:
+                    NcAssert.CaseError (must.ToString ());
+                    break;
+                }
+            }
+            var stillExp = folders.Count (x => true == x.AsSyncMetaToClientExpected);
+            Log.Info (Log.LOG_AS, "Strategy: CanAdvance: {0} folders with ToClientExpected.", stillExp);
+            return (0 == stillExp);
+        }
 
-            case ECLst.All1m:
-            case ECLst.EInfC3m:
-            case ECLst.EInfC6m:
-            case ECLst.AllInf:
-                return AllSyncedEmailAndCalendarFolders ();
+        public int AdvanceIfPossible (int accountId, int rung)
+        {
+            if (CanAdvance (accountId, rung)) {
+                Log.Info (Log.LOG_AS, "Strategy:AdvanceIfPossible: {0} => {1}", rung, rung + 1);
+                var protocolState = BEContext.ProtocolState;
+                protocolState.StrategyRung++;
+                protocolState.Update ();
+                rung = protocolState.StrategyRung;
+                var folders = FolderListProvider (accountId, rung, false);
+                foreach (var folder in folders) {
+                    folder.AsSyncMetaToClientExpected = true;
+                    folder.Update ();
+                }
+                if (Scope.FlagIsSet (rung, Scope.FlagEnum.RicSynced)) {
+                    BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_RicInitialSyncCompleted));
+                }
+            }
+            return rung;
+        }
+
+        public List<McFolder> EmailFolderListProvider (int accountId, Scope.EmailEnum scope, bool isNarrow)
+        {
+            switch (scope) {
+            case Scope.EmailEnum.None:
+                if (isNarrow) {
+                    return new List<McFolder> () { McFolder.GetDefaultInboxFolder (accountId) };
+                }
+                return new List<McFolder> ();
+
+            case Scope.EmailEnum.Def1d:
+            case Scope.EmailEnum.Def1w:
+            case Scope.EmailEnum.Def2w:
+            case Scope.EmailEnum.Def3d:
+                return new List<McFolder> () { McFolder.GetDefaultInboxFolder (accountId) };
+
+            case Scope.EmailEnum.All1m:
+            case Scope.EmailEnum.AllInf:
+                if (isNarrow) {
+                    return new List<McFolder> () { McFolder.GetDefaultInboxFolder (accountId) };
+                }
+                return McFolder.ServerEndQueryAll (accountId).Where (f => 
+                    Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) ==
+                McAbstrFolderEntry.ClassCodeEnum.Email).ToList ();
 
             default:
-                throw new Exception ();
+                NcAssert.CaseError (string.Format ("{0}", scope));
+                return null;
             }
         }
 
-        private List<McFolder> CTFolderListProvider (bool quickFetch)
+        public List<McFolder> CalFolderListProvider (int accountId, Scope.CalEnum scope, bool isNarrow)
         {
-            var ric = McFolder.GetRicContactFolder (BEContext.Account.Id);
-            var retval = new List<McFolder> ();
-            if (null != ric) {
-                retval.Add (ric);
-            }
-            if (quickFetch) {
-                // Only the RIC in a quickfetch.
-                return retval;
-            }
-            switch ((CTLst)ContactsTasksSm.State) {
-            case CTLst.RicOnly:
-                return retval;
+            switch (scope) {
+            case Scope.CalEnum.None:
+                if (isNarrow) {
+                    return new List<McFolder> () { McFolder.GetDefaultCalendarFolder (accountId) };
+                }
+                return new List<McFolder> ();
 
-            case CTLst.DefNRic:
-                retval.Add (McFolder.GetDefaultContactFolder (BEContext.Account.Id));
-                retval.Add (McFolder.GetDefaultTaskFolder (BEContext.Account.Id));
-                return retval; 
+            case Scope.CalEnum.Def2w:
+                return new List<McFolder> () { McFolder.GetDefaultCalendarFolder (accountId) };
 
-            case CTLst.All:
-                return AllSyncedContactsTasksFolders ();
+            case Scope.CalEnum.All1m:
+            case Scope.CalEnum.All3m:
+            case Scope.CalEnum.All6m:
+            case Scope.CalEnum.AllInf:
+                if (isNarrow) {
+                    return new List<McFolder> () { McFolder.GetDefaultCalendarFolder (accountId) };
+                }
+                return McFolder.ServerEndQueryAll (accountId).Where (f => 
+                    Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) ==
+                McAbstrFolderEntry.ClassCodeEnum.Calendar).ToList ();
 
             default:
-                throw new Exception ();
+                NcAssert.CaseError (string.Format ("{0}", scope));
+                return null;
             }
         }
 
-        private List<McFolder> FolderListProvider (bool quickFetch)
+        public List<McFolder> ContactFolderListProvider (int accountId, Scope.ContactEnum scope, bool isNarrow)
         {
-            List<McFolder> ecFolders = ECFolderListProvider (quickFetch);
-            List<McFolder> cFolders = CTFolderListProvider (quickFetch);
-            ecFolders.AddRange (cFolders);
-            return ecFolders;
+            if (isNarrow) {
+                return new List<McFolder> ();
+            }
+            switch (scope) {
+            case Scope.ContactEnum.None:
+                return new List<McFolder> ();
+
+            case Scope.ContactEnum.RicInf:
+                return new List<McFolder> () { McFolder.GetRicContactFolder (accountId) };
+
+            case Scope.ContactEnum.DefRicInf:
+                return new List<McFolder> () { McFolder.GetRicContactFolder (accountId),
+                    McFolder.GetDefaultContactFolder (accountId)
+                };
+
+            case Scope.ContactEnum.AllInf:
+                return McFolder.ServerEndQueryAll (accountId).Where (f => 
+                    Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) ==
+                McAbstrFolderEntry.ClassCodeEnum.Contact).ToList ();
+
+            default:
+                NcAssert.CaseError (string.Format ("{0}", scope));
+                return null;
+            }
         }
 
-        private Tuple<Xml.Provision.MaxAgeFilterCode, uint> ParametersProvider (McFolder folder)
+        // function returning all folders at current level. Does NOT evaluate ToClientExpected.
+        public List<McFolder> FolderListProvider (int accountId, int rung, bool isNarrow)
         {
-            uint perFolderWindowSize = KBasePerFolderWindowSize;
+            var result = new List<McFolder> ();
+            result.AddRange (EmailFolderListProvider (accountId, Scope.EmailScope (rung), isNarrow));
+            result.AddRange (CalFolderListProvider (accountId, Scope.CalScope (rung), isNarrow));
+            result.AddRange (ContactFolderListProvider (accountId, Scope.ContactScope (rung), isNarrow));
+            NcAssert.True (Scope.ItemType.Last == Scope.ItemType.Contact);
+            return result;
+        }
+
+        public Tuple<Xml.Provision.MaxAgeFilterCode, int> EmailParametersProvider (McFolder folder, Scope.EmailEnum scope, bool isNarrow, int perFolderWindowSize)
+        {
+            switch (scope) {
+            case Scope.EmailEnum.None:
+                if (isNarrow) {
+                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.OneDay_1, perFolderWindowSize);
+                }
+                NcAssert.True (false);
+                return null;
+            case Scope.EmailEnum.Def1d:
+                return Tuple.Create (Xml.Provision.MaxAgeFilterCode.OneDay_1, perFolderWindowSize);
+            case Scope.EmailEnum.Def3d:
+                return Tuple.Create (Xml.Provision.MaxAgeFilterCode.ThreeDays_2, perFolderWindowSize);
+            case Scope.EmailEnum.Def1w:
+                return Tuple.Create (Xml.Provision.MaxAgeFilterCode.OneWeek_3, perFolderWindowSize);
+            case Scope.EmailEnum.Def2w:
+                return Tuple.Create (Xml.Provision.MaxAgeFilterCode.TwoWeeks_4, perFolderWindowSize);
+            case Scope.EmailEnum.All1m:
+                return Tuple.Create (Xml.Provision.MaxAgeFilterCode.OneMonth_5, perFolderWindowSize);
+            case Scope.EmailEnum.AllInf:
+                return Tuple.Create (Xml.Provision.MaxAgeFilterCode.SyncAll_0, perFolderWindowSize);
+            default:
+                NcAssert.CaseError (string.Format ("{0}", scope));
+                return null;
+            }
+        }
+
+        public Tuple<Xml.Provision.MaxAgeFilterCode, int> CalParametersProvider (McFolder folder, Scope.CalEnum scope, bool isNarrow, int perFolderWindowSize)
+        {
+            switch (scope) {
+            case Scope.CalEnum.None:
+                if (isNarrow) {
+                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.TwoWeeks_4, perFolderWindowSize);
+                }
+                NcAssert.True (false);
+                return null;
+            case Scope.CalEnum.Def2w:
+                return Tuple.Create (Xml.Provision.MaxAgeFilterCode.TwoWeeks_4, perFolderWindowSize);
+            case Scope.CalEnum.All1m:
+                return Tuple.Create (Xml.Provision.MaxAgeFilterCode.OneMonth_5, perFolderWindowSize);
+            case Scope.CalEnum.All3m:
+                return Tuple.Create (Xml.Provision.MaxAgeFilterCode.ThreeMonths_6, perFolderWindowSize);
+            case Scope.CalEnum.All6m:
+                return Tuple.Create (Xml.Provision.MaxAgeFilterCode.SixMonths_7, perFolderWindowSize);
+            case Scope.CalEnum.AllInf:
+                return Tuple.Create (Xml.Provision.MaxAgeFilterCode.SyncAll_0, perFolderWindowSize);
+            default:
+                NcAssert.CaseError (string.Format ("{0}", scope));
+                return null;
+            }
+        }
+
+        public Tuple<Xml.Provision.MaxAgeFilterCode, int> ContactParametersProvider (McFolder folder, Scope.ContactEnum scope, bool isNarrow, int perFolderWindowSize)
+        {
+            switch (scope) {
+            case Scope.ContactEnum.None:
+                if (isNarrow) {
+                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.SyncAll_0, perFolderWindowSize);
+                }
+                NcAssert.True (false);
+                return null;
+            case Scope.ContactEnum.RicInf:
+            case Scope.ContactEnum.DefRicInf:
+            case Scope.ContactEnum.AllInf:
+                return Tuple.Create (Xml.Provision.MaxAgeFilterCode.SyncAll_0, perFolderWindowSize);
+            default:
+                NcAssert.CaseError (string.Format ("{0}", scope));
+                return null;
+            }
+        }
+
+        public Tuple<Xml.Provision.MaxAgeFilterCode, int> ParametersProvider (McFolder folder, int rung, bool isNarrow)
+        {
+            int perFolderWindowSize = KBasePerFolderWindowSize;
             switch (NcCommStatus.Instance.Speed) {
             case NetStatusSpeedEnum.CellFast:
                 perFolderWindowSize *= 2;
@@ -352,153 +389,67 @@ namespace NachoCore.ActiveSync
             }
             switch (Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (folder.Type)) {
             case McFolder.ClassCodeEnum.Email:
-                switch ((ECLst)EmailCalendarSm.State) {
-                case ECLst.DefI1dC2w:
-                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.OneDay_1, perFolderWindowSize);
-
-                case ECLst.DefI3dC2w:
-                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.ThreeDays_2, perFolderWindowSize);
-
-                case ECLst.DefI1wC2w:
-                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.OneWeek_3, perFolderWindowSize);
-
-                case ECLst.DefI2wC2w:
-                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.TwoWeeks_4, perFolderWindowSize);
-
-                case ECLst.All1m:
-                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.OneMonth_5, perFolderWindowSize);
-
-                case ECLst.EInfC3m:
-                case ECLst.EInfC6m:
-                case ECLst.AllInf:
-                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.SyncAll_0, perFolderWindowSize);
-
-                default:
-                    throw new Exception ();
-                }
+                return EmailParametersProvider (folder, Scope.EmailScope (rung), isNarrow, perFolderWindowSize);
 
             case McFolder.ClassCodeEnum.Calendar:
-                switch ((ECLst)EmailCalendarSm.State) {
-                case ECLst.DefI1dC2w:
-                case ECLst.DefI3dC2w:
-                case ECLst.DefI1wC2w:
-                case ECLst.DefI2wC2w:
-                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.TwoWeeks_4, perFolderWindowSize);
-
-                case ECLst.All1m:
-                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.OneMonth_5, perFolderWindowSize);
-
-                case ECLst.EInfC3m:
-                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.ThreeMonths_6, perFolderWindowSize);
-
-                case ECLst.EInfC6m:
-                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.SixMonths_7, perFolderWindowSize);
-
-                case ECLst.AllInf:
-                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.SyncAll_0, perFolderWindowSize);
-
-                default:
-                    throw new Exception ();
-                }
+                return CalParametersProvider (folder, Scope.CalScope (rung), isNarrow, perFolderWindowSize);
 
             case McFolder.ClassCodeEnum.Contact:
-                switch ((CTLst)ContactsTasksSm.State) {
-                case CTLst.RicOnly:
-                case CTLst.DefNRic:
-                case CTLst.All:
-                    return Tuple.Create (Xml.Provision.MaxAgeFilterCode.SyncAll_0, perFolderWindowSize);
-
-                default:
-                    throw new Exception ();
-                }
-
-            case McFolder.ClassCodeEnum.Tasks:
-                return Tuple.Create (Xml.Provision.MaxAgeFilterCode.SyncAll_0, perFolderWindowSize);
+                return ContactParametersProvider (folder, Scope.ContactScope (rung), isNarrow, perFolderWindowSize);
 
             default:
-                throw new Exception ();
-            }
-        }
-        // SM's state persistance callback.
-        private void UpdateSavedECState ()
-        {
-            var protocolState = BEContext.ProtocolState;
-            protocolState.SyncStratEmailCalendarState = EmailCalendarSm.State;
-            protocolState.Update ();
-            // Filter value changed, so go tickle all the changes-expected flags.
-            foreach (var folder in ECFolderListProvider (false)) {
-                if (null != folder) {
-                    // We may see null if the server hasn't yet created these folders.
-                    // Note that because we don't (yet) break out Cal into its own SM, it will get needlessly tickled here.
-                    folder.AsSyncMetaToClientExpected = true;
-                    folder.Update ();
-                }
+                NcAssert.CaseError (string.Format ("{0}", folder.Type));
+                return null;
             }
         }
 
-        private void UpdateSavedCTState ()
+        public List<McFolder> AllSyncedFolders (int accountId)
         {
-            var protocolState = BEContext.ProtocolState;
-            protocolState.SyncStratContactsState = ContactsTasksSm.State;
-            protocolState.Update ();
-            foreach (var folder in CTFolderListProvider (false)) {
-                if (null != folder) {
+            // A folder must be created on the server before it can be the subject of a Sync/Ping.
+            // Exclude the types of folders we don't yet Sync.
+            return McFolder.ServerEndQueryAll (accountId).Where (x => 
+                Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (x.Type) ==
+            McAbstrFolderEntry.ClassCodeEnum.Email ||
+            Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (x.Type) ==
+            McAbstrFolderEntry.ClassCodeEnum.Calendar ||
+            Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (x.Type) ==
+            McAbstrFolderEntry.ClassCodeEnum.Contact).ToList ();
+        }
+
+        public SyncKit GenSyncKit (int accountId, McProtocolState protocolState, bool cantBeEmpty)
+        {
+            return GenSyncKit (accountId, protocolState, false, cantBeEmpty);
+        }
+
+        public SyncKit GenNarrowSyncKit (List<McFolder> folders, int rung, int overallWindowSize)
+        {
+            var perFolders = new List<SyncKit.PerFolder> ();
+            foreach (var folder in folders) {
+                if (!folder.AsSyncMetaToClientExpected) {
                     folder.AsSyncMetaToClientExpected = true;
                     folder.Update ();
                 }
+                var parms = ParametersProvider (folder, rung, true);
+                perFolders.Add (new SyncKit.PerFolder () {
+                    Folder = folder,
+                    Commands = new List<McPending> (),
+                    FilterCode = parms.Item1,
+                    WindowSize = parms.Item2,
+                    GetChanges = true,
+                });
             }
-        }
-        // SM's state restore API.
-        private void RestoreSavedState ()
-        {
-            var protocolState = BEContext.ProtocolState;
-            EmailCalendarSm.State = protocolState.SyncStratEmailCalendarState;
-            ContactsTasksSm.State = protocolState.SyncStratContactsState;
-        }
-
-        private List<McFolder> DefaultInboxAndDefaultCalendarFolders ()
-        {
-            return new List<McFolder> { 
-                McFolder.GetDefaultInboxFolder (BEContext.Account.Id),
-                McFolder.GetDefaultCalendarFolder (BEContext.Account.Id)
+            return new SyncKit () {
+                OverallWindowSize = overallWindowSize,
+                PerFolders = perFolders,
+                IsNarrow = true,
             };
         }
 
-        private List<McFolder> AllSyncedFolders ()
+        // Returns null if nothing to do.
+        public SyncKit GenSyncKit (int accountId, McProtocolState protocolState, bool isNarrow, bool cantBeEmpty)
         {
-            // A folder must be created on the server before it can be the subject of a Sync/Ping.
-            return McFolder.ServerEndQueryAll (BEContext.Account.Id);
-        }
-
-        private List<McFolder> AllSyncedEmailAndCalendarFolders ()
-        {
-            return AllSyncedFolders ().Where (f => 
-                Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) == McAbstrFolderEntry.ClassCodeEnum.Email ||
-            Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) == McAbstrFolderEntry.ClassCodeEnum.Calendar).ToList ();
-        }
-
-        private List<McFolder> AllSyncedContactsTasksFolders ()
-        {
-            return AllSyncedFolders ().Where (f => 
-                Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) == McAbstrFolderEntry.ClassCodeEnum.Contact ||
-            Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) == McAbstrFolderEntry.ClassCodeEnum.Tasks).ToList ();
-        }
-
-        public void ReportSyncResult (List<McFolder> folders)
-        {
-            var stillExpected = folders.Where (f => true == f.AsSyncMetaToClientExpected).ToList ();
-            if (0 == stillExpected.Count ()) {
-                // There were no MoreAvailables.
-                EmailCalendarSm.PostEvent ((uint)SmEvt.E.Success, "SYNCSTRAT0");
-            }
-        }
-        // External API.
-        public Tuple<uint, List<Tuple<McFolder, List<McPending>>>> SyncKit ()
-        {
-            IsQuickFetch = RequestQuickFetch;
-            // Quick fetch request is good only for *next* Sync command.
-            RequestQuickFetch = false;
-            uint overallWindowSize = KBaseOverallWindowSize;
+            var rung = protocolState.StrategyRung;
+            int overallWindowSize = KBaseOverallWindowSize;
             switch (NcCommStatus.Instance.Speed) {
             case NetStatusSpeedEnum.CellFast:
                 overallWindowSize *= 2;
@@ -507,101 +458,95 @@ namespace NachoCore.ActiveSync
                 overallWindowSize *= 3;
                 break;
             }
-            List<McFolder> eligibleForGetChanges = FolderListProvider (IsQuickFetch);
-            List<McPending> issuePendings;
+            var rawFolders = FolderListProvider (accountId, rung, isNarrow);
+            // Don't bother with commands when doing a narrow Sync. Get new messages, get out.
+            if (isNarrow) {
+                return GenNarrowSyncKit (rawFolders, rung, overallWindowSize);
+            }
+            // Wide Sync below.
+            List<McPending> commands;
             bool inSerialMode = false;
             bool issuedAtLeast1 = false;
-            var includedFolders = new List<McFolder> ();
-            var retList = new List<Tuple<McFolder, List<McPending>>> ();
-            var limit = BEContext.ProtocolState.AsSyncLimit;
+            var retList = new List<SyncKit.PerFolder> ();
+            var limit = protocolState.AsSyncLimit;
 
-            // Loop through all synced folders.
-            foreach (var folder in AllSyncedFolders ()) {
+            // Loop through all synced folders. Choose those that exepect to-client items and
+            // those that have waiting pending items. We don't just use rawFolders because we may need
+            // to perform an operation for a folder that isn't in the set of synced folders on this rung.
+            foreach (var folder in AllSyncedFolders (accountId)) {
                 if (0 >= limit) {
+                    // TODO: prefer default folders in this scenario.
                     break;
                 }
-                // See if we can and should do GetChanges. O(N**2), small N. FIXME.
-                if (null != eligibleForGetChanges.FirstOrDefault (x => x.Id == folder.Id)) {
+                // See if we can and should do GetChanges. Only rawFolders are eligible. O(N**2) alert.
+                bool getChanges = false;
+                if (null != rawFolders.FirstOrDefault (x => x.Id == folder.Id)) {
                     if (folder.AsSyncMetaToClientExpected) {
-                        folder.AsSyncMetaDoGetChanges = (McFolder.AsSyncKey_Initial != folder.AsSyncKey);
-                        var parms = ParametersProvider (folder);
-                        folder.AsSyncMetaFilterCode = parms.Item1;
-                        folder.AsSyncMetaWindowSize = parms.Item2;
+                        getChanges = (McFolder.AsSyncKey_Initial != folder.AsSyncKey);
                     } else {
-                        folder.AsSyncMetaDoGetChanges = false;
+                        getChanges = false;
                     }
-                    folder.Update ();
                 }
                 // See if we can complete some McPending.
-                issuePendings = new List<McPending> ();
-                if (McFolder.AsSyncKey_Initial != folder.AsSyncKey) {
-                    // If we are in serial mode, we will issue no more pendings.
-                    if (!inSerialMode) {
-                        var rawPendings = McPending.QueryEligibleByFolderServerId (BEContext.Account.Id, folder.ServerId);
-                        issuePendings = rawPendings.Where (p => AsSyncCommand.IsSyncCommand (p.Operation)).ToList ();
-                        if (issuedAtLeast1) {
-                            // If we have issuedAtLeast1, then we exclude any serial pendings.
-                            issuePendings = issuePendings.Where (p => !p.DeferredSerialIssueOnly).ToList ();
-                        } else if (0 < issuePendings.Count) {
-                            // If we have not issuedAtLeast1, then grab the 1st and decide based on that.
-                            var first = issuePendings.First ();
-                            if (first.DeferredSerialIssueOnly) {
-                                inSerialMode = true;
-                                issuePendings = new List<McPending> () { first };
-                            } else {
-                                issuePendings = issuePendings.Where (p => !p.DeferredSerialIssueOnly).ToList ();
-                            }
-                            issuedAtLeast1 = true;
+                commands = new List<McPending> ();
+                // If we are in serial mode, we will issue no more pendings.
+                if (McFolder.AsSyncKey_Initial != folder.AsSyncKey && !inSerialMode) {
+                    var rawPendings = McPending.QueryEligibleByFolderServerId (accountId, folder.ServerId);
+                    commands = rawPendings.Where (p => AsSyncCommand.IsSyncCommand (p.Operation)).ToList ();
+                    if (issuedAtLeast1) {
+                        // If we have issuedAtLeast1, then we exclude any serial pendings.
+                        commands = commands.Where (p => !p.DeferredSerialIssueOnly).ToList ();
+                    } else if (0 < commands.Count) {
+                        // If we have not issuedAtLeast1, then grab the 1st and decide based on that.
+                        var first = commands.First ();
+                        if (first.DeferredSerialIssueOnly) {
+                            inSerialMode = true;
+                            commands = new List<McPending> () { first };
+                        } else {
+                            commands = commands.Where (p => !p.DeferredSerialIssueOnly).ToList ();
                         }
+                        issuedAtLeast1 = true;
                     }
                 }
                 // if initial-key || some pending || GetChanges, include folder in Sync.
-                if (McFolder.AsSyncKey_Initial == folder.AsSyncKey ||
-                    folder.AsSyncMetaDoGetChanges ||
-                    0 < issuePendings.Count) {
-                    retList.Add (Tuple.Create (folder, issuePendings));
-                    includedFolders.Add (folder);
+                if (McFolder.AsSyncKey_Initial == folder.AsSyncKey || getChanges || 0 < commands.Count) {
+                    var perFolder = new SyncKit.PerFolder () {
+                        Folder = folder,
+                        Commands = commands,
+                        GetChanges = getChanges,
+                    };
+                    // Parameters are only valid/expressed when not AsSyncKey_Initial.
+                    if (getChanges && McFolder.AsSyncKey_Initial != folder.AsSyncKey) {
+                        var parms = ParametersProvider (folder, rung, false);
+                        perFolder.FilterCode = parms.Item1;
+                        perFolder.WindowSize = parms.Item2;
+                    }
+                    retList.Add (perFolder);
                     --limit;
                 }
             }
-            return Tuple.Create (overallWindowSize, retList);
+            if (0 != retList.Count) {
+                return new SyncKit () {
+                    OverallWindowSize = overallWindowSize,
+                    PerFolders = retList,
+                };
+            }
+            if (cantBeEmpty) {
+                return GenNarrowSyncKit (FolderListProvider (accountId, rung, true), rung, overallWindowSize);
+            }
+            return null;
         }
 
-        public bool IsMoreSyncNeeded ()
+        public PingKit GenPingKit (int accountId, McProtocolState protocolState, bool isNarrow)
         {
-            // Are there any AsSyncMetaToClientExpected folders available?
-            bool areExpecting = FolderListProvider (false).Any (f => f.AsSyncMetaToClientExpected);
-
-            // if we're not in the ultimate state(s), then true.
-            if (ECLstLast != EmailCalendarSm.State || CTLstLast != ContactsTasksSm.State) {
-                if (!areExpecting && !IsQuickFetch) {
-                    EmailCalendarSm.PostEvent ((uint)SmEvt.E.Success, "SYNCSTRATIMSN");
-                }
-                Log.Info (Log.LOG_SYNC, "IsMoreSyncNeeded: EmailCalendarSm.State/ContactsTasksSm.State");
-                return true;
+            var folders = FolderListProvider (accountId, protocolState.StrategyRung, isNarrow);
+            if (folders.Any (x => true == x.AsSyncMetaToClientExpected)) {
+                return null;
             }
-            // if a within-scope folder has to-client stuff waiting on the server, then true.
-            // We must not go straight to Ping after a quick fetch, or EAS will know the wrong window size.
-            if (areExpecting || IsQuickFetch) {
-                Log.Info (Log.LOG_SYNC, "IsMoreSyncNeeded: areExpecting == {0}, IsQuickFetch == {1}", areExpecting, IsQuickFetch);
-                return true;
+            if (protocolState.MaxFolders >= folders.Count) {
+                return new PingKit () { Folders = folders };
             }
-            // if there is a sync-based operation pending, then true.
-            var waiting = McPending.QueryEligible (BEContext.Account.Id)
-                .Where (p => AsSyncCommand.IsSyncCommand (p.Operation)).ToList ();
-            if (0 != waiting.Count ()) {
-                Log.Info (Log.LOG_SYNC, "IsMoreSyncNeeded: QueryEligible/IsSyncCommand == {0}", waiting.Count ());
-                return true;
-            }
-            return false;
-        }
-
-        public IEnumerable<McFolder> PingKit ()
-        {
-            var folders = FolderListProvider (false);
-            if (BEContext.ProtocolState.MaxFolders >= folders.Count) {
-                return folders;
-            }
+            // If we have too many folders, then whittle down the list, but keep default inbox & cal.
             List<McFolder> fewer = new List<McFolder> ();
             var defInbox = folders.FirstOrDefault (x => x.Type == Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
             if (null != defInbox) {
@@ -613,98 +558,251 @@ namespace NachoCore.ActiveSync
                 fewer.Add (defCal);
                 folders.Remove (defCal);
             }
-            var stalest = folders.OrderBy (x => x.AsSyncLastPing).Take ((int)BEContext.ProtocolState.MaxFolders - fewer.Count);
+            // Prefer the least-recently-ping'd.
+            var stalest = folders.OrderBy (x => x.AsSyncLastPing).Take ((int)protocolState.MaxFolders - fewer.Count);
             fewer.AddRange (stalest);
-            return fewer;
+            return new PingKit () { Folders = fewer };
         }
 
-        public bool IsMoreFetchingNeeded ()
+        // Returns null if nothing to do.
+        public FetchKit GenFetchKit (int accountId)
         {
-            // If there are user-initiated fetches, then true.
-            if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.AttachmentDownload, 1).Count ()) {
-                return true;
+            var remaining = KBaseFetchSize;
+            var fetchBodies = new List<FetchKit.FetchBody> ();
+            var emails = McEmailMessage.QueryNeedsFetch (accountId, remaining, 0.7).ToList ();
+            foreach (var email in emails) {
+                // TODO: all this can be one SQL JOIN.
+                var folders = McFolder.QueryByFolderEntryId<McEmailMessage> (accountId, email.Id);
+                fetchBodies.Add (new FetchKit.FetchBody () {
+                    ServerId = email.ServerId,
+                    ParentId = folders [0].ServerId,
+                });
             }
-            if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.EmailBodyDownload, 1).Count ()) {
-                return true;
+            remaining -= fetchBodies.Count;
+            List<McAttachment> fetchAtts = new List<McAttachment> ();
+            if (0 < remaining) {
+                fetchAtts = McAttachment.QueryNeedsFetch (accountId, remaining, 0.9, 1024 * 1024).ToList ();
             }
-            if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.ContactBodyDownload, 1).Count ()) {
-                return true;
+            if (0 < fetchBodies.Count || 0 < fetchAtts.Count) {
+                Log.Info (Log.LOG_AS, "GenFetchKit: {0} emails, {1} attachments.", fetchBodies.Count, fetchAtts.Count);
+                return new FetchKit () {
+                    FetchBodies = fetchBodies,
+                    FetchAttachments = fetchAtts,
+                    Pendings = new List<McPending> (),
+                };
             }
-            if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.CalBodyDownload, 1).Count ()) {
-                return true;
-            }
-            if (0 < McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.TaskBodyDownload, 1).Count ()) {
-                return true;
-            }
-            // FIXME - don't prefetch until we are happy w/priority.
-            return false;
-            // If there is behind-the-scenes fetching to do, then true.
-            /*
-            var folders = FolderListProvider (false);
-            foreach (var folder in folders) {
-                if (0 < McEmailMessage.QueryNeedsFetch (BEContext.Account.Id, folder.Id, 1).Count ()) {
-                    return true;
+            Log.Info (Log.LOG_AS, "GenFetchKit: nothing to do.");
+            return null;
+        }
+
+        public bool NarrowFoldersNoToClientExpected (int accountId)
+        {
+            var defInbox = McFolder.GetDefaultInboxFolder (accountId);
+            var defCal = McFolder.GetDefaultCalendarFolder (accountId);
+            var retval = !(defInbox.AsSyncMetaToClientExpected || defCal.AsSyncMetaToClientExpected);
+            Log.Info (Log.LOG_AS, "NarrowFoldersNoToClientExpected is {0}", retval);
+            return retval;
+        }
+
+        public Tuple<PickActionEnum, AsCommand> Pick ()
+        {
+            var accountId = BEContext.Account.Id;
+            var protocolState = BEContext.ProtocolState;
+            var exeCtxt = NcApplication.Instance.ExecutionContext;
+            AdvanceIfPossible (accountId, protocolState.StrategyRung);
+            if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
+                // (FG) If the user has initiated a Search command, we do that.
+                var search = McPending.QueryEligible (accountId).
+                    Where (x => McPending.Operations.ContactSearch == x.Operation).FirstOrDefault ();
+                if (null != search) {
+                    Log.Info (Log.LOG_AS, "Strategy:FG:Search");
+                    return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.QOop, 
+                        new AsSearchCommand (BEContext.ProtoControl, search));
+                }
+                // (FG) If the user has initiated a ItemOperations Fetch (body or attachment), we do that.
+                var fetch = McPending.QueryEligible (accountId).
+                    Where (x => 
+                        McPending.Operations.AttachmentDownload == x.Operation ||
+                            McPending.Operations.EmailBodyDownload == x.Operation ||
+                            McPending.Operations.CalBodyDownload == x.Operation ||
+                            McPending.Operations.ContactBodyDownload == x.Operation ||
+                            McPending.Operations.TaskBodyDownload == x.Operation
+                            ).FirstOrDefault ();
+                if (null != fetch) {
+                    Log.Info (Log.LOG_AS, "Strategy:FG:Fetch");
+                    return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.QOop,
+                        new AsItemOperationsCommand (BEContext.ProtoControl,
+                            new FetchKit () {
+                                FetchBodies = new List<FetchKit.FetchBody> (),
+                                FetchAttachments = new List<McAttachment> (),
+                                Pendings = new List<McPending> { fetch },
+                            }));
                 }
             }
-            return false;
-            */
-        }
-
-        public Tuple<IEnumerable<McPending>, IEnumerable<Tuple<McAbstrItem, string>>> FetchKit ()
-        {
-            // TODO we may want to add a UI is waiting flag, and just fetch ONE so that the response will be faster.
-            var fetchSize = KBaseFetchSize;
-            switch (NcCommStatus.Instance.Speed) {
-            case NetStatusSpeedEnum.CellFast:
-                fetchSize *= 2;
-                break;
-            case NetStatusSpeedEnum.WiFi:
-                fetchSize *= 3;
-                break;
+            // (FG, BG) If there is a SendMail, SmartForward or SmartReply in the pending queue, send it.
+            if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt ||
+                NcApplication.ExecutionContextEnum.Background == exeCtxt) {
+                var send = McPending.QueryEligible (accountId).
+                    Where (x => 
+                        McPending.Operations.EmailSend == x.Operation ||
+                           McPending.Operations.EmailForward == x.Operation ||
+                           McPending.Operations.EmailReply == x.Operation
+                           ).FirstOrDefault ();
+                if (null != send) {
+                    Log.Info (Log.LOG_AS, "Strategy:FG/BG:Send");
+                    AsCommand cmd = null;
+                    switch (send.Operation) {
+                    case McPending.Operations.EmailSend:
+                        cmd = new AsSendMailCommand (BEContext.ProtoControl, send);
+                        break;
+                    case McPending.Operations.EmailForward:
+                        cmd = new AsSmartForwardCommand (BEContext.ProtoControl, send);
+                        break;
+                    case McPending.Operations.EmailReply:
+                        cmd = new AsSmartReplyCommand (BEContext.ProtoControl, send);
+                        break;
+                    default:
+                        NcAssert.CaseError (send.Operation.ToString ());
+                        break;
+                    }
+                    return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.QOop, cmd);
+                }
             }
-            // Address user-driven fetching first.
-            var pendings = McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.AttachmentDownload, fetchSize).ToList ();
-            if (pendings.Count < fetchSize) {
-                var emails = McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.EmailBodyDownload, fetchSize);
-                pendings.AddRange (emails);
-            }
-            if (pendings.Count < fetchSize) {
-                var contacts = McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.ContactBodyDownload, fetchSize);
-                pendings.AddRange (contacts);
-            }
-            if (pendings.Count < fetchSize) {
-                var cals = McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.CalBodyDownload, fetchSize);
-                pendings.AddRange (cals);
-            }
-            if (pendings.Count < fetchSize) {
-                var tasks = McPending.QueryFirstNEligibleByOperation (BEContext.Account.Id, McPending.Operations.TaskBodyDownload, fetchSize);
-                pendings.AddRange (tasks);
-            }
-            List<Tuple<McAbstrItem, string>> prefetches = new List<Tuple<McAbstrItem, string>> ();
-            var remaining = fetchSize - pendings.Count;
-
-            // Address background fetching if no immediate user need. TODO: we need to measure performance before we let BG fetching degrade latency.
-            if (0 == pendings.Count) {
-                if (0 < remaining) {
-                    var folders = FolderListProvider (false);
-                    foreach (var folder in folders) {
-                        var emails = McEmailMessage.QueryNeedsFetch (BEContext.Account.Id, folder.Id, fetchSize);
-                        foreach (var email in emails) {
-                            prefetches.Add (Tuple.Create ((McAbstrItem)email, folder.ServerId));
-                            if (remaining <= prefetches.Count) {
-                                break;
-                            }
-                            // TODO - if we choose to prefetch Tasks, Contacts, etc then add code here.
-                        }
-                        if (remaining <= prefetches.Count) {
-                            break;
-                        }
+            // (FG, BG) Unless one of these conditions are met, perform a narrow Sync Command...
+            if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt ||
+                NcApplication.ExecutionContextEnum.Background == exeCtxt) {
+                var needNarrowSyncMarker = DateTime.UtcNow.AddSeconds (-300);
+                if (Scope.FlagIsSet (protocolState.StrategyRung, Scope.FlagEnum.NarrowSyncOk) &&
+                    protocolState.LastNarrowSync < needNarrowSyncMarker &&
+                    (protocolState.LastPing < needNarrowSyncMarker ||
+                    !NarrowFoldersNoToClientExpected (accountId))) {
+                    Log.Info (Log.LOG_AS, "Strategy:FG/BG:Narrow Sync...");
+                    var nSyncKit = GenSyncKit (accountId, protocolState, true, false);
+                    if (null != nSyncKit) {
+                        Log.Info (Log.LOG_AS, "Strategy:FG/BG:...SyncKit");
+                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
+                            new AsSyncCommand (BEContext.ProtoControl, nSyncKit));
                     }
                 }
             }
-            // Return a tuple: Item1 is the list of McPendings (user-initiated fetches),
-            // Item2 is the list of McItems (background fetching).
-            return Tuple.Create (pendings.Take (fetchSize), prefetches.Take (remaining));
+            // (QS) If a narrow Sync hasn’t successfully completed in the last N seconds, 
+            // perform a narrow Sync Command.
+            if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
+                if (protocolState.LastNarrowSync < DateTime.UtcNow.AddSeconds (-300)) {
+                    var nSyncKit = GenSyncKit (accountId, protocolState, true, false);
+                    Log.Info (Log.LOG_AS, "Strategy:QS:Narrow Sync...");
+                    if (null != nSyncKit) {
+                        Log.Info (Log.LOG_AS, "Strategy:QS:...SyncKit");
+                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
+                            new AsSyncCommand (BEContext.ProtoControl, nSyncKit));
+                    }
+                }
+            }
+
+            if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt ||
+                NcApplication.ExecutionContextEnum.Background == exeCtxt) {
+                if (NcCommStatus.Instance.IsRateLimited (BEContext.Server.Id)) {
+                    // (FG, BG) If we are rate-limited, and we can execute a narrow Ping command at the 
+                    // current filter setting, execute a narrow Ping command.
+                    var rlPingKit = GenPingKit (accountId, protocolState, true);
+                    if (null != rlPingKit) {
+                        Log.Info (Log.LOG_AS, "Strategy:FG/BG,RL:Narrow Ping");
+                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping, 
+                                new AsPingCommand (BEContext.ProtoControl, rlPingKit));
+                    }
+                    // (FG, BG) If we are rate-limited, and we can’t execute a narrow Ping command
+                    // at the current filter setting, then wait.
+                    else {
+                        Log.Info (Log.LOG_AS, "Strategy:FG/BG,RL:Wait");
+                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Wait,
+                            new AsWaitCommand (BEContext.ProtoControl, 120, false));
+                    }
+                }
+                // I(FG, BG) If there are entries in the pending queue, execute the oldest.
+                var next = McPending.QueryEligible (accountId).FirstOrDefault ();
+                if (null != next) {
+                    Log.Info (Log.LOG_AS, "Strategy:FG/BG:QOp:{0}", next.Operation.ToString ());
+                    AsCommand cmd = null;
+                    switch (next.Operation) {
+                    case McPending.Operations.FolderCreate:
+                        cmd = new AsFolderCreateCommand (BEContext.ProtoControl, next);
+                        break;
+                    case McPending.Operations.FolderUpdate:
+                        cmd = new AsFolderUpdateCommand (BEContext.ProtoControl, next);
+                        break;
+                    case McPending.Operations.FolderDelete:
+                        cmd = new AsFolderDeleteCommand (BEContext.ProtoControl, next);
+                        break;
+                    // TODO: make move op n-ary.
+                    case McPending.Operations.EmailMove:
+                        cmd = new AsMoveItemsCommand (BEContext.ProtoControl, next, McAbstrFolderEntry.ClassCodeEnum.Email);
+                        break;
+                    case McPending.Operations.CalMove:
+                        cmd = new AsMoveItemsCommand (BEContext.ProtoControl, next, McAbstrFolderEntry.ClassCodeEnum.Calendar);
+                        break;
+                    case McPending.Operations.ContactMove:
+                        cmd = new AsMoveItemsCommand (BEContext.ProtoControl, next, McAbstrFolderEntry.ClassCodeEnum.Contact);
+                        break;
+                    case McPending.Operations.TaskMove:
+                        cmd = new AsMoveItemsCommand (BEContext.ProtoControl, next, McAbstrFolderEntry.ClassCodeEnum.Tasks);
+                        break;
+                    case McPending.Operations.CalRespond:
+                        cmd = new AsMeetingResponseCommand (BEContext.ProtoControl, next);
+                        break;
+                    default:
+                        if (AsSyncCommand.IsSyncCommand (next.Operation)) {
+                            Log.Info (Log.LOG_AS, "Strategy:FG/BG:QOp-IsSyncCommand:{0}", next.Operation.ToString ());
+                            var syncKit = GenSyncKit (accountId, protocolState, false, false);
+                            return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
+                                new AsSyncCommand (BEContext.ProtoControl, syncKit));
+                        } else {
+                            NcAssert.CaseError (next.Operation.ToString ());
+                        }
+                        break;
+                    }
+                    return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.QOop, cmd);
+                }
+                // (FG, BG) Choose eligible option by priority, split tie randomly...
+                if (Power.Instance.PowerState != PowerStateEnum.Unknown &&
+                    Power.Instance.BatteryLevel > 0.7) {
+                    FetchKit fetchKit = null;
+                    SyncKit syncKit = null;
+                    if (NetStatusSpeedEnum.WiFi == NcCommStatus.Instance.Speed) {
+                        fetchKit = GenFetchKit (accountId);
+                    }
+                    syncKit = GenSyncKit (accountId, protocolState, false, false);
+                    if (null != fetchKit && (null == syncKit || 0.7 < CoinToss.NextDouble ())) {
+                        Log.Info (Log.LOG_AS, "Strategy:FG/BG:Fetch");
+                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Fetch, 
+                            new AsItemOperationsCommand (BEContext.ProtoControl, fetchKit));
+                    }
+                    if (null != syncKit) {
+                        Log.Info (Log.LOG_AS, "Strategy:FG/BG:Sync");
+                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
+                            new AsSyncCommand (BEContext.ProtoControl, syncKit));
+                    }
+                }
+                var pingKit = GenPingKit (accountId, protocolState, false);
+                if (null == pingKit) {
+                    Log.Info (Log.LOG_AS, "Strategy:FG/BG:PingKit must be narrow.");
+                    pingKit = GenPingKit (accountId, protocolState, true);
+                }
+                if (null != pingKit) {
+                    Log.Info (Log.LOG_AS, "Strategy:FG/BG:Ping");
+                    return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping,
+                        new AsPingCommand (BEContext.ProtoControl, pingKit));
+                }
+                Log.Info (Log.LOG_AS, "Strategy:FG/BG:Wait");
+                return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Wait,
+                    new AsWaitCommand (BEContext.ProtoControl, 120, false));
+            }
+            // (QS) Wait.
+            if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
+                return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Wait,
+                    new AsWaitCommand (BEContext.ProtoControl, 120, true));
+            }
+            NcAssert.True (false);
+            return null;
         }
     }
 }

@@ -12,11 +12,11 @@ namespace NachoCore.ActiveSync
     {
         private IEnumerable<McFolder> FoldersInRequest;
 
-        public AsPingCommand (IBEContext dataSource) : base (Xml.Ping.Ns, Xml.Ping.Ns, dataSource)
+        public AsPingCommand (IBEContext dataSource, PingKit pingKit) : base (Xml.Ping.Ns, Xml.Ping.Ns, dataSource)
         {
             // Add a 10-second fudge so that orderly timeout doesn't look like a network failure.
             Timeout = new TimeSpan (0, 0, (int)BEContext.ProtocolState.HeartbeatInterval + 10);
-            FoldersInRequest = BEContext.ProtoControl.SyncStrategy.PingKit ();
+            FoldersInRequest = pingKit.Folders;
         }
 
         public override bool DoSendPolicyKey (AsHttpOperation Sender)
@@ -47,6 +47,9 @@ namespace NachoCore.ActiveSync
                 folder.AsSyncLastPing = DateTime.UtcNow;
                 folder.Update ();
             }
+            var update = BEContext.ProtocolState;
+            update.LastPing = DateTime.UtcNow;
+            BEContext.ProtocolState = update;
         }
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)

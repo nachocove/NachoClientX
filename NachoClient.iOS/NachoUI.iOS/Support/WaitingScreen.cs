@@ -141,12 +141,12 @@ namespace NachoClient.iOS
             swipeUpLabel = new UILabel (new RectangleF (70, LOWER_SECTION_Y_VAL + 255, 180, 20));
             swipeUpLabel.Font = A.Font_AvenirNextRegular14;
             swipeUpLabel.TextColor = A.Color_NachoYellow;
-            swipeUpLabel.Text = "Swipe up to start setting up";
+            swipeUpLabel.Text = "Get Started Now";
             swipeUpLabel.Alpha = 0.0f;
             swipeUpLabel.TextAlignment = UITextAlignment.Center;
             this.Add (swipeUpLabel);
 
-            dismissLabel = new UILabel (new RectangleF (this.Frame.Width / 2 - 50, 20 , 100, 15));
+            dismissLabel = new UILabel (new RectangleF (this.Frame.Width / 2 - 50, this.Frame.Bottom - 90 , 100, 15));
             dismissLabel.Font = A.Font_AvenirNextRegular12;
             dismissLabel.TextColor = UIColor.White;
             dismissLabel.Text = "Cancel";
@@ -154,6 +154,7 @@ namespace NachoClient.iOS
             dismissLabel.UserInteractionEnabled = true;
             UITapGestureRecognizer dismissLabelTap = new UITapGestureRecognizer (() => {
                 DismissView ();
+                owner.ConfigureView (AdvancedLoginViewController.LoginStatus.EnterInfo);
             });
             dismissLabel.AddGestureRecognizer (dismissLabelTap);
             this.Add (dismissLabel);
@@ -202,9 +203,8 @@ namespace NachoClient.iOS
             owner.NavigationItem.Title = "Account Setup";
             this.Hidden = true;
             this.Layer.RemoveAllAnimations ();
-            ResetLoadingItems ();
             quitLoadingAnimation = true;
-            owner.ConfigureView (AdvancedLoginViewController.LoginStatus.EnterInfo);
+            ResetLoadingItems ();
         }
 
         protected void ResetLoadingItems ()
@@ -296,26 +296,10 @@ namespace NachoClient.iOS
                     nachoMailLabel.Alpha = 1.0f;
                 });
 
-                UIView.AddKeyframeWithRelativeStartTime (.375, .075, () => {
-                    swipeUpTriangle.Frame = new RectangleF (swipeUpTriangle.Frame.X, swipeUpTriangle.Frame.Y - 10f, swipeUpTriangle.Frame.Width, swipeUpTriangle.Frame.Height);
-                    swipeUpTriangle.Alpha = 1.0f;
-                });
-
-                UIView.AddKeyframeWithRelativeStartTime (.45, .075, () => {
-                    swipeUpLabel.Alpha = 1.0f;
-                    swipeUpLabel.Frame = new RectangleF (swipeUpLabel.Frame.X, swipeUpLabel.Frame.Y - 2f, swipeUpLabel.Frame.Width, swipeUpLabel.Frame.Height);
-                });
-
-                UIView.AddKeyframeWithRelativeStartTime (.525, .075, () => {
-                    swipeUpTriangle.Transform = CGAffineTransform.MakeTranslation (0, 15);
-                });
-
-                UIView.AddKeyframeWithRelativeStartTime (.6, .075, () => {
-                    swipeUpTriangle.Transform = CGAffineTransform.MakeTranslation (0, 2);
-                });
-
-                UIView.AddKeyframeWithRelativeStartTime (.675, .25, () => {
-                });
+//                UIView.AddKeyframeWithRelativeStartTime (.375, .075, () => {
+//                    swipeUpLabel.Alpha = 1.0f;
+//                    swipeUpLabel.Frame = new RectangleF (swipeUpLabel.Frame.X, swipeUpLabel.Frame.Y - 2f, swipeUpLabel.Frame.Width, swipeUpLabel.Frame.Height);
+//                });
 
             }, ((bool finished) => {
 

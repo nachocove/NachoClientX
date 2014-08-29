@@ -12,10 +12,10 @@ namespace NachoCore.ActiveSync
 {
     public class AsFolderCreateCommand : AsCommand
     {
-        public AsFolderCreateCommand (IBEContext dataSource) :
+        public AsFolderCreateCommand (IBEContext dataSource, McPending pending) :
             base (Xml.FolderHierarchy.FolderCreate, Xml.FolderHierarchy.Ns, dataSource)
         {
-            PendingSingle = McPending.QueryFirstEligibleByOperation (BEContext.Account.Id, McPending.Operations.FolderCreate);
+            PendingSingle = pending;
             PendingSingle.MarkDispached ();
         }
 
