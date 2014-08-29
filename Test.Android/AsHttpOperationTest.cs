@@ -176,11 +176,13 @@ namespace Test.iOS
             };
         }
 
+        static string WBXMLContentType = "application/vnd.ms-sync.wbxml";
+
         [Test]
-        public void BasicPhonyPing ()
+        public void BasicPhonyPingOK ()
         {
             // header settings
-            string contentType = "application/vnd.ms-sync.wbxml";
+            string contentType = WBXMLContentType;
             string mockRequestLength = CommonMockData.MockRequestXml.ToWbxml ().Length.ToString ();
             string mockResponseLength = CommonMockData.Wbxml.Length.ToString ();
 
@@ -196,12 +198,102 @@ namespace Test.iOS
             });
         }
 
+        [Test]
+        public void BasicPhonyPingAccept ()
+        {
+            // header settings
+            string mockRequestLength = CommonMockData.MockRequestXml.ToWbxml ().Length.ToString ();
+            string mockResponseLength = CommonMockData.Wbxml.Length.ToString ();
+
+            PerformHttpOperationWithSettings (sm => {
+
+            }, response => {
+                response.StatusCode = System.Net.HttpStatusCode.Accepted;
+                response.Content.Headers.Add ("Content-Length", mockResponseLength);
+                response.Content.Headers.Add ("Content-Type", WBXMLContentType);
+            }, request => {
+                Assert.AreEqual (mockRequestLength, request.Content.Headers.ContentLength.ToString (), "request Content-Length should match expected");
+                Assert.AreEqual (WBXMLContentType, request.Content.Headers.ContentType.ToString (), "request Content-Type should match expected");
+            });
+        }
+
+        private const string HeaderXMsCredentialsExpire = "X-MS-Credentials-Expire";
+        private const string HeaderXMsCredentialServiceUrl = "X-MS-Credential-Service-Url";
+
+        [Test]
+        public void StatusCodeOkWithCredExpUri ()
+        {
+            bool isExpiryNotified = false;
+            Tuple<int,Uri> value = null;
+            const string match = "http://nacho.com";
+
+            string mockRequestLength = CommonMockData.MockRequestXml.ToWbxml ().Length.ToString ();
+            string mockResponseLength = CommonMockData.Wbxml.Length.ToString ();
+
+            BaseMockOwner.StatusIndCallback += (result) => {
+                if (result.SubKind == NcResult.SubKindEnum.Error_PasswordWillExpire) {
+                    isExpiryNotified = true;
+                    value = (Tuple<int,Uri>)result.Value;
+                }
+            };
+
+            PerformHttpOperationWithSettings (sm => {
+            }, response => {
+                response.StatusCode = System.Net.HttpStatusCode.OK;
+                response.Content.Headers.Add ("Content-Length", mockResponseLength);
+                response.Content.Headers.Add ("Content-Type", WBXMLContentType);
+                response.Headers.Add (HeaderXMsCredentialServiceUrl, match);
+            }, request => {
+                Assert.AreEqual (mockRequestLength, request.Content.Headers.ContentLength.ToString (), "request Content-Length should match expected");
+                Assert.AreEqual (WBXMLContentType, request.Content.Headers.ContentType.ToString (), "request Content-Type should match expected");
+            });
+
+            Assert.True (isExpiryNotified);
+            Assert.NotNull (value);
+            Assert.AreEqual (new Uri(match), value.Item2);
+            Assert.AreEqual (-1, value.Item1);
+            DoReportCommResultWithNonGeneralFailure ();
+        }
+
+        [Test]
+        public void StatusCodeOkWithCredExpDaysLeft ()
+        {
+            bool isExpiryNotified = false;
+            Tuple<int,Uri> value = null;
+
+            string mockRequestLength = CommonMockData.MockRequestXml.ToWbxml ().Length.ToString ();
+            string mockResponseLength = CommonMockData.Wbxml.Length.ToString ();
+
+            BaseMockOwner.StatusIndCallback += (result) => {
+                if (result.SubKind == NcResult.SubKindEnum.Error_PasswordWillExpire) {
+                    isExpiryNotified = true;
+                    value = (Tuple<int,Uri>)result.Value;
+                }
+            };
+
+            PerformHttpOperationWithSettings (sm => {
+            }, response => {
+                response.StatusCode = System.Net.HttpStatusCode.OK;
+                response.Content.Headers.Add ("Content-Length", mockResponseLength);
+                response.Content.Headers.Add ("Content-Type", WBXMLContentType);
+                response.Headers.Add (HeaderXMsCredentialsExpire, "2");
+            }, request => {
+                Assert.AreEqual (mockRequestLength, request.Content.Headers.ContentLength.ToString (), "request Content-Length should match expected");
+                Assert.AreEqual (WBXMLContentType, request.Content.Headers.ContentType.ToString (), "request Content-Type should match expected");
+            });
+            
+            Assert.True (isExpiryNotified);
+            Assert.NotNull (value);
+            Assert.IsNull (value.Item2);
+            Assert.AreEqual (2, value.Item1);
+            DoReportCommResultWithNonGeneralFailure ();
+        }
+
         // TODO Set timeout values to fix this test
 //        [Test]
         public void NegativeContentLength ()
         {
             // use this to test timeout values once they can be set
-            string contentType = "application/vnd.ms-sync.wbxml";
             string mockResponseLength = "-15";
 
             PerformHttpOperationWithSettings (sm => {
@@ -209,7 +301,7 @@ namespace Test.iOS
             }, response => {
                 response.StatusCode = System.Net.HttpStatusCode.OK;
                 response.Content.Headers.Add ("Content-Length", mockResponseLength);
-                response.Content.Headers.Add ("Content-Type", contentType);
+                response.Content.Headers.Add ("Content-Type", WBXMLContentType);
             }, request => {
             });
         }
@@ -219,7 +311,6 @@ namespace Test.iOS
         public void BadWbxmlShouldFailCommResult ()
         {
             // use this to test timeout values once they can be set
-            string contentType = "application/vnd.ms-sync.wbxml";
             string mockResponseLength = 10.ToString ();
 
             PerformHttpOperationWithSettings (sm => {
@@ -232,7 +323,7 @@ namespace Test.iOS
 
                 response.StatusCode = System.Net.HttpStatusCode.OK;
                 response.Content.Headers.Add ("Content-Length", mockResponseLength);
-                response.Content.Headers.Add ("Content-Type", contentType);
+                response.Content.Headers.Add ("Content-Type", WBXMLContentType);
             }, request => {
             });
 
@@ -317,17 +408,16 @@ namespace Test.iOS
         // Helper function for MismatchHeaderSizeValues Test
         private void PerformHttpOperationWithResponseLength (string responseLength)
         {
-            string contentType = "application/vnd.ms-sync.wbxml";
             string mockRequestLength = CommonMockData.MockRequestXml.ToWbxml ().Length.ToString ();
 
             PerformHttpOperationWithSettings (sm => {
             }, response => {
                 response.StatusCode = System.Net.HttpStatusCode.OK;
                 response.Content.Headers.Add ("Content-Length", responseLength);
-                response.Content.Headers.Add ("Content-Type", contentType);
+                response.Content.Headers.Add ("Content-Type", WBXMLContentType);
             }, request => {
                 Assert.AreEqual (mockRequestLength, request.Content.Headers.ContentLength.ToString (), "request Content-Length should match expected");
-                Assert.AreEqual (contentType, request.Content.Headers.ContentType.ToString (), "request Content-Type should match expected");
+                Assert.AreEqual (WBXMLContentType, request.Content.Headers.ContentType.ToString (), "request Content-Type should match expected");
             });
         }
 
@@ -364,7 +454,7 @@ namespace Test.iOS
         [Test]
         public void StatusCodeFound ()
         {
-            // Status Code -- Found (200)
+            // Status Code -- Found (302)
             PerformHttpOperationWithSettings (sm => {
 
             }, response => {
@@ -525,7 +615,7 @@ namespace Test.iOS
             }, response => {
                 if (!hasBeenThrottled) {
                     response.Headers.Add (HeaderRetryAfter, retryAfterSecs);
-                    response.Headers.Add (HeaderXMsThrottle, "Throttle reason");
+                    response.Headers.Add (HeaderXMsThrottle, "UnknownReason");
                     hasBeenThrottled = true;
                     stopwatch.Start ();
                 } else {
@@ -563,7 +653,7 @@ namespace Test.iOS
                 sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine");
             }, response => {
                 if (!hasBeenThrottled) {
-                    response.Headers.Add (HeaderXMsThrottle, "Throttle reason");
+                    response.Headers.Add (HeaderXMsThrottle, "UnknownReason");
                     hasBeenThrottled = true;
                 } else {
                     Assert.AreEqual (McProtocolState.AsThrottleReasons.Unknown, Context.ProtocolState.AsThrottleReason, "Should set throttle reason");

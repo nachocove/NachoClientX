@@ -64,7 +64,8 @@ namespace NachoCore.ActiveSync
         private const string HeaderRetryAfter = "Retry-After";
         private const string HeaderXMsRp = "X-MS-RP";
         private const string HeaderXMsLocation = "X-MS-Location";
-        private const string HeaderXMsThrottle = "X-MS-ASThrottle";
+        private const string HeaderXMsAsThrottle = "X-MS-ASThrottle";
+        private const string HeaderXMsCredentialsExpire = "X-MS-Credentials-Expire";
         private const string HeaderXMsCredentialServiceUrl = "X-MS-Credential-Service-Url";
         private const string KXsd = "xsd";
         private const string KCommon = "common";
@@ -480,13 +481,17 @@ namespace NachoCore.ActiveSync
             }
         }
 
+        private bool Is2xx (HttpStatusCode statusCode)
+        {
+            return (HttpStatusCode.OK <= statusCode && HttpStatusCode.MultipleChoices > statusCode);
+        }
+
         private Event ProcessHttpResponse (HttpResponseMessage response, CancellationToken cToken)
         {
-            if (HttpStatusCode.OK != response.StatusCode &&
-                ContentTypeHtml == ContentType) {
+            if (!Is2xx (response.StatusCode) && ContentTypeHtml == ContentType) {
                 // There is a chance that the non-OK status comes with an HTML explaination.
                 // If so, then dump it.
-                // FIXME: find some way to make cancellation token work here.
+                // TODO: find some way to make cancellation token work here.
                 var possibleMessage = new StreamReader (ContentData, Encoding.UTF8).ReadToEnd ();
                 Log.Info (Log.LOG_HTTP, "HTML response: {0}", possibleMessage);
             }
@@ -505,10 +510,33 @@ namespace NachoCore.ActiveSync
                 protocolState.Consec401Count = 0;
                 protocolState.Update ();
             }
-            switch (response.StatusCode) {
-            case HttpStatusCode.OK:
+            if (Is2xx (response.StatusCode)) {
+                // 2xx is "This class of status code indicates that the client's request was successfully received, understood, and accepted."
                 ReportCommResult (ServerUri.Host, false);
                 IndicateUriIfChanged ();
+                var credDaysLeft = -1;
+                Uri credUri = null;
+                if (response.Headers.Contains (HeaderXMsCredentialsExpire)) {
+                    var daysString = response.Headers.GetValues (HeaderXMsCredentialsExpire).First ();
+                    try {
+                        credDaysLeft = int.Parse (daysString);
+                    } catch {
+                        Log.Error (Log.LOG_AS, "HttpStatusCode.200 with days left: {0}", daysString);
+                    }
+                }
+                if (response.Headers.Contains (HeaderXMsCredentialServiceUrl)) {
+                    var urlString = response.Headers.GetValues (HeaderXMsCredentialServiceUrl).First ();
+                    try {
+                        credUri = new Uri (urlString);
+                    } catch {
+                        Log.Error (Log.LOG_AS, "HttpStatusCode.200 with credential URL: {0}", urlString);
+                    }
+                }
+                if (0 <= credDaysLeft || null != credUri) {
+                    var result = NcResult.Error (NcResult.SubKindEnum.Error_PasswordWillExpire);
+                    result.Value = new Tuple<int,Uri> (credDaysLeft, credUri);
+                    Owner.StatusInd (result);
+                }
                 if (0 > ContentData.Length) {
                     // We have seen this, but we've never see doc stating why possible.
                     return Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPZORNEG");
@@ -570,8 +598,11 @@ namespace NachoCore.ActiveSync
                 // Owner MUST resolve all pending.
                 return Final (Owner.ProcessResponse (this, response));
 
+            }
+            switch (response.StatusCode) {
             // NOTE: ALWAYS resolve pending on Final, and ONLY resolve pending on Final.
             // DO NOT resolve pending on Event.Create!
+            // All these cases are 300 and up.
 
             case HttpStatusCode.Found:
                 ReportCommResult (ServerUri.Host, false);
@@ -731,16 +762,16 @@ namespace NachoCore.ActiveSync
                 ReportCommResult (ServerUri.Host, true);
                 uint bestSecs, configuredSecs;
                 string value = null;
-                if (response.Headers.Contains (HeaderXMsThrottle)) {
+                if (response.Headers.Contains (HeaderXMsAsThrottle)) {
                     //IsBeingThrottled = true;
-                    Log.Error (Log.LOG_HTTP, "Explicit throttling ({0}).", HeaderXMsThrottle);
+                    Log.Error (Log.LOG_HTTP, "Explicit throttling ({0}).", HeaderXMsAsThrottle);
                     try {
                         protocolState = BEContext.ProtocolState;
-                        value = response.Headers.GetValues (HeaderXMsThrottle).First ();
+                        value = response.Headers.GetValues (HeaderXMsAsThrottle).First ();
                         protocolState.SetAsThrottleReason (value);
                         protocolState.Update ();
                     } catch {
-                        Log.Error (Log.LOG_HTTP, "Could not parse header {0}: {1}.", HeaderXMsThrottle, value);
+                        Log.Error (Log.LOG_HTTP, "Could not parse header {0}: {1}.", HeaderXMsAsThrottle, value);
                     }
                     Owner.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ExplicitThrottling));
                     configuredSecs = uint.Parse (McMutables.GetOrCreate ("HTTP", "ThrottleDelaySeconds", KDefaultThrottleDelaySeconds));
