@@ -1223,15 +1223,15 @@
             <objects>
                 <viewController storyboardIdentifier="EventViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="em2-Kh-10O" userLabel="Event View Controller" customClass="EventViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="7sU-e0-LE8">
-                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" keyboardDismissMode="onDrag" id="9Cj-t4-I4R">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="460"/>
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="TgG-lg-u6k" userLabel="Content View">
-                                        <rect key="frame" x="0.0" y="0.0" width="320" height="460"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                                     </view>
@@ -1242,7 +1242,7 @@
                     </view>
                     <navigationItem key="navigationItem" title="Add Event" id="9H9-AD-hMB" userLabel="Navigation Item - Add Event"/>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
-                    <simulatedToolbarMetrics key="simulatedBottomBarMetrics" translucent="NO"/>
+                    <nil key="simulatedBottomBarMetrics"/>
                     <connections>
                         <outlet property="acceptButton" destination="gN5-XG-Mfd" id="Jz6-6h-KQY"/>
                         <outlet property="cancelButton" destination="oR4-zY-1Lz" id="YEu-fr-5X7"/>
@@ -2059,28 +2059,28 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
     <inferredMetricsTieBreakers>
         <segue reference="zDw-Tx-fTt"/>
         <segue reference="Bq3-C6-QI6"/>
-        <segue reference="eK3-Wd-Zbv"/>
+        <segue reference="s9j-Ih-SWz"/>
         <segue reference="FHc-YP-jWH"/>
-        <segue reference="ja3-Zu-g6R"/>
-        <segue reference="RaB-9o-azo"/>
         <segue reference="Rd3-YY-NMX"/>
-        <segue reference="Q8y-4K-BAb"/>
         <segue reference="fwk-9p-tlV"/>
         <segue reference="mLY-u0-R5O"/>
-        <segue reference="alQ-9Z-W4y"/>
+        <segue reference="c79-xS-Npa"/>
+        <segue reference="Afu-47-Kju"/>
+        <segue reference="hxO-14-opZ"/>
         <segue reference="vUs-ft-xdy"/>
-        <segue reference="AiM-59-h7m"/>
-        <segue reference="6Lm-Uk-Knv"/>
-        <segue reference="xrp-ey-B0j"/>
-        <segue reference="kd2-jR-F9u"/>
-        <segue reference="peA-r2-tjq"/>
-        <segue reference="m2D-2n-RiV"/>
-        <segue reference="7sK-rg-HQL"/>
-        <segue reference="xSG-RA-4K6"/>
-        <segue reference="w67-dy-XSq"/>
+        <segue reference="Tfk-Mt-BlS"/>
+        <segue reference="4Sl-0E-160"/>
+        <segue reference="tdu-G2-PEp"/>
+        <segue reference="HCr-Oa-UHV"/>
+        <segue reference="11B-OX-HZh"/>
+        <segue reference="JTo-qU-j7O"/>
+        <segue reference="k2t-Pj-AhS"/>
+        <segue reference="RR1-bJ-URL"/>
         <segue reference="ebP-h4-BhC"/>
         <segue reference="J8i-gn-UTn"/>
         <segue reference="iqA-wd-xqD"/>
         <segue reference="g4G-tD-G9H"/>
+        <segue reference="qSV-ar-VcH"/>
+        <segue reference="xrp-ey-B0j"/>
     </inferredMetricsTieBreakers>
 </document>

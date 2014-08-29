@@ -20,7 +20,6 @@ namespace NachoClient.iOS
         protected CalendarTableViewSource calendarSource;
         public DateBarView DateDotView = new DateBarView ();
         public DateTime selectedDate = new DateTime ();
-        protected McAccount account;
         public int selectedDateTag = 0;
         public int todayWeekTag = 0;
         public int todayMonthTag = 0;
@@ -49,7 +48,6 @@ namespace NachoClient.iOS
             base.ViewDidLoad ();
 
             CalendarHelper.ExpandRecurrences ();
-            account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
 
             // Navigation
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
