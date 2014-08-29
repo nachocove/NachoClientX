@@ -17,6 +17,7 @@ namespace NachoClient.iOS
         protected static UIFont _Font_AvenirNextRegular17 = null;
         protected static UIFont _Font_AvenirNextRegular14 = null;
         protected static UIFont _Font_AvenirNextRegular12 = null;
+        protected static UIFont _Font_AvenirNextRegular10 = null;
         protected static UIFont _Font_AvenirNextRegular8 = null;
         protected static UIFont _Font_AvenirNextMedium24 = null;
         protected static UIFont _Font_AvenirNextMedium14 = null;
@@ -95,6 +96,15 @@ namespace NachoClient.iOS
                     _Font_AvenirNextRegular12 = UIFont.FromName ("AvenirNext-Regular", 12);
                 }
                 return _Font_AvenirNextRegular12;
+            }
+        }
+
+        public static UIFont Font_AvenirNextRegular10 {
+            get {
+                if (null == _Font_AvenirNextRegular10) {
+                    _Font_AvenirNextRegular10 = UIFont.FromName ("AvenirNext-Regular", 10);
+                }
+                return _Font_AvenirNextRegular10;
             }
         }
 

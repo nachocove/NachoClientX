@@ -963,24 +963,24 @@ namespace NachoClient.iOS
             rsvpBar.Add (tentativeButton);
             rsvpBar.Add (declineButton);
 
-            acceptLabel = new UILabel (new RectangleF (20, 34, 34, 10));
+            acceptLabel = new UILabel (new RectangleF (15, 36, 44, 10));
             acceptLabel.TextColor = UIColor.White;
             acceptLabel.TextAlignment = UITextAlignment.Center;
-            acceptLabel.Font = A.Font_AvenirNextRegular8;
+            acceptLabel.Font = A.Font_AvenirNextRegular10;
             acceptLabel.Text = "Accept";
             rsvpBar.Add (acceptLabel);
 
-            tentativeLabel = new UILabel (new RectangleF ((SCREEN_WIDTH / 2) - 17, 34, 34, 10));
+            tentativeLabel = new UILabel (new RectangleF ((SCREEN_WIDTH / 2) - 22, 36, 44, 10));
             tentativeLabel.TextColor = UIColor.White;
             tentativeLabel.TextAlignment = UITextAlignment.Center;
-            tentativeLabel.Font = A.Font_AvenirNextRegular8;
+            tentativeLabel.Font = A.Font_AvenirNextRegular10;
             tentativeLabel.Text = "Tentative";
             rsvpBar.Add (tentativeLabel);
 
-            declineLabel = new UILabel (new RectangleF (SCREEN_WIDTH - 24 - 30, 34, 34, 10));
+            declineLabel = new UILabel (new RectangleF (SCREEN_WIDTH - 24 - 35, 36, 44, 10));
             declineLabel.TextColor = UIColor.White;
             declineLabel.TextAlignment = UITextAlignment.Center;
-            declineLabel.Font = A.Font_AvenirNextRegular8;
+            declineLabel.Font = A.Font_AvenirNextRegular10;
             declineLabel.Text = "Decline";
             rsvpBar.Add (declineLabel);
 
