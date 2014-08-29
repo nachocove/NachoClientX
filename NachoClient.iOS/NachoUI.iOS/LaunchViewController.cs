@@ -106,9 +106,11 @@ namespace NachoClient.iOS
             scrollView.BackgroundColor = A.Color_NachoGreen;
             contentView.BackgroundColor = A.Color_NachoGreen;
 
-            //yOffset = View.Frame.Height - 368;
+            circleMail = new UIImageView ();
+            using (var circleImage = UIImage.FromBundle ("Bootscreen-1")) {
+                circleMail.Image = circleImage;
+            }
 
-            circleMail = new UIImageView (UIImage.FromBundle ("Bootscreen-1"));
             circleMail.Frame = new RectangleF (View.Frame.Width / 2 - 60, (View.Frame.Height == 480 ? 155 : 200), 120, 120);
             contentView.AddSubview (circleMail);
 
@@ -143,7 +145,10 @@ namespace NachoClient.iOS
             emailField.Tag = EMAIL_TEXTFIELD_TAG;
             emailBox.AddSubview (emailField);
 
-            UIImageView mailImage = new UIImageView (UIImage.FromBundle ("Loginscreen-2"));
+            UIImageView mailImage = new UIImageView ();
+            using (var loginImageTwo = UIImage.FromBundle ("Loginscreen-2")) {
+                mailImage.Image = loginImageTwo;
+            }
             mailImage.Frame = new RectangleF (15, 15, 16, 11);
             emailBox.AddSubview (mailImage);
 
@@ -169,7 +174,10 @@ namespace NachoClient.iOS
             passwordBox.AddSubview (passwordField);
             passwordBox.UserInteractionEnabled = true;
 
-            UIImageView lockImage = new UIImageView (UIImage.FromBundle ("Loginscreen-3"));
+            UIImageView lockImage = new UIImageView ();
+            using (var loginImageThree = UIImage.FromBundle ("Loginscreen-3")) {
+                lockImage.Image = loginImageThree;
+            }
             lockImage.Frame = new RectangleF (15, 15, 14, 15);
             passwordBox.AddSubview (lockImage);
 
@@ -220,7 +228,10 @@ namespace NachoClient.iOS
 
             yOffset = View.Frame.Height - 39;
 
-            loginTriangles = new UIImageView (UIImage.FromBundle ("Bootscreen-5"));
+            loginTriangles = new UIImageView ();
+            using (var bootImage = UIImage.FromBundle ("Bootscreen-5")) {
+                loginTriangles.Image = bootImage;
+            }
             loginTriangles.Frame = new RectangleF (0, yOffset, 320, 39);
             contentView.AddSubview (loginTriangles);
 
