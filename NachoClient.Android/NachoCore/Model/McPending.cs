@@ -773,12 +773,12 @@ namespace NachoCore.Model
                 .OrderBy (x => x.Priority).ToList ();
         }
 
-        public static List<McPending> QueryEligible (int accountId)
+        public static IEnumerable<McPending> QueryEligible (int accountId)
         {
             return NcModel.Instance.Db.Table<McPending> ().Where (rec => 
                 rec.AccountId == accountId &&
             rec.State == StateEnum.Eligible
-            ).OrderBy (x => x.Priority).ToList ();
+            ).OrderBy (x => x.Priority);
         }
 
         public static List<McPending> QueryPredecessors (int accountId, int succId)

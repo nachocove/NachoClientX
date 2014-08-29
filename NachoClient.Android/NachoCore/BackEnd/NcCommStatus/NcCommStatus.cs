@@ -151,6 +151,12 @@ namespace NachoCore.Utils
             UpdateState (currStatus, currSpeed);
         }
 
+        public bool IsRateLimited (int serverId)
+        {
+            var tracker = GetTracker (serverId);
+            return !tracker.Throttle.HasTokens ();
+        }
+
         private void UpdateState (NetStatusStatusEnum status, NetStatusSpeedEnum speed)
         {
             lock (syncRoot) {

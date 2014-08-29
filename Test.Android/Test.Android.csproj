@@ -105,6 +105,7 @@
     <Compile Include="NcTimerTest.cs" />
     <Compile Include="NcTimerPoolTest.cs" />
     <Compile Include="NcBrainTest.cs" />
+    <Compile Include="McAttachmentTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

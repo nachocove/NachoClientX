@@ -482,7 +482,7 @@ namespace NachoClient.iOS
             CompletionHandler = completionHandler;
             FetchResult = UIBackgroundFetchResult.Failed;
             NcApplication.Instance.StatusIndEvent += FetchStatusHandler;
-            NcApplication.Instance.QuickCheck (KPerformFetchTimeoutSeconds);
+            NcApplication.Instance.QuickSync (KPerformFetchTimeoutSeconds);
         }
 
 

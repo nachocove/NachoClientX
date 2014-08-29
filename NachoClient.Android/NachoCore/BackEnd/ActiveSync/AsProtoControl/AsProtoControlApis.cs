@@ -55,7 +55,7 @@ namespace NachoCore.ActiveSync
             };
             newSearch.Insert ();
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCSRCH");
+                Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCSRCH");
             }, "SearchContactsReq");
         }
 
@@ -73,7 +73,7 @@ namespace NachoCore.ActiveSync
             pending.Insert ();
 
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCSEND");
+                Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCSEND");
             }, "SendEmailCmd");
             Log.Info (Log.LOG_AS, "SendEmailCmd({0}) returning", emailMessageId);
             return pending.Token;
@@ -151,7 +151,7 @@ namespace NachoCore.ActiveSync
             pending.Insert ();
 
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCSMF");
+                Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCSMF");
             }, "SmartEmailCmd");
             return pending.Token;
         }
@@ -400,7 +400,7 @@ namespace NachoCore.ActiveSync
             pending.Insert ();
 
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCDNLDEBOD");
+                Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCDNLDEBOD");
             }, "DnldEmailBodyCmd");
             return pending.Token;
         }
@@ -427,7 +427,7 @@ namespace NachoCore.ActiveSync
             att.PercentDownloaded = 1;
             att.Update ();
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCDNLDATT");
+                Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCDNLDATT");
             }, "DnldAttCmd");
             return update.Token;
         }
@@ -544,7 +544,7 @@ namespace NachoCore.ActiveSync
             pending.Insert ();
 
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCDNLDCALBOD");
+                Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCDNLDCALBOD");
             }, "DnldCalBodyCmd");
             return pending.Token;
         }
@@ -660,7 +660,7 @@ namespace NachoCore.ActiveSync
             pending.Insert ();
 
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCDNLDCONBOD");
+                Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCDNLDCONBOD");
             }, "DnldContactBodyCmd");
             return pending.Token;
         }
@@ -776,7 +776,7 @@ namespace NachoCore.ActiveSync
             pending.Insert ();
 
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCDNLDTBOD");
+                Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCDNLDTBOD");
             }, "DnldTaskBodyCmd");
             return pending.Token;
         }
@@ -816,7 +816,7 @@ namespace NachoCore.ActiveSync
 
             pending.Insert ();
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCRESPCAL");
+                Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCRESPCAL");
             }, "RespondCalCmd");
 
             return pending.Token;

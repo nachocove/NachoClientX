@@ -2,8 +2,10 @@
 //
 using SQLite;
 using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
+using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
@@ -37,6 +39,30 @@ namespace NachoCore.Model
                 node = QueryByServerId (accountId, node.ParentId);
             }
             return false;
+        }
+
+        public override int Insert ()
+        {
+            var preExists = McPath.QueryByServerId (AccountId, ServerId);
+            if (null != preExists) {
+                Log.Error (Log.LOG_DB, string.Format ("Duplicate McPath: old entry {0}/{1} replaced with {2}/{3} @ {4}.",
+                    preExists.ParentId, preExists.ServerId,
+                    ParentId, ServerId, new StackTrace ().ToString ()));
+                preExists.Delete ();
+            }
+            return base.Insert ();
+        }
+
+        public override int Update ()
+        {
+            var preExists = McPath.QueryByServerId (AccountId, ServerId);
+            if (null != preExists && preExists.Id != Id) {
+                Log.Error (Log.LOG_DB, string.Format ("Duplicate McPath: old entry {0}/{1} replaced with {2}/{3} @ {4}.",
+                    preExists.ParentId, preExists.ServerId,
+                    ParentId, ServerId, new StackTrace ().ToString ()));
+                preExists.Delete ();
+            }
+            return base.Update ();
         }
 
         public override int Delete ()

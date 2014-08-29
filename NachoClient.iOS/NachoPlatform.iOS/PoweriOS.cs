@@ -33,8 +33,8 @@ namespace NachoPlatform
 
         public double BatteryLevel { 
             get {
-                if (Arch.SIMULATOR == Runtime.Arch) {
-                    return 1.0;
+                if (Device.Instance.IsSimulator ()) {
+                    return 0.99;
                 }
                 var iosLevel = UIDevice.CurrentDevice.BatteryLevel;
                 if (0.0 > iosLevel) {
@@ -47,7 +47,7 @@ namespace NachoPlatform
 
         public PowerStateEnum PowerState {
             get {
-                if (Arch.SIMULATOR == Runtime.Arch) {
+                if (Device.Instance.IsSimulator ()) {
                     return PowerStateEnum.Plugged;
                 }
                 switch (UIDevice.CurrentDevice.BatteryState) {

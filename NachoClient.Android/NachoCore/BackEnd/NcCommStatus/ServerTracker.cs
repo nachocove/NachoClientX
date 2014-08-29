@@ -30,11 +30,18 @@ namespace NachoCore.Utils
 
         public DateTime DelayUntil { get; set; }
 
+        public NcRateLimter Throttle { get; set; }
+
+        bool IsThrottled { get; set; }
+
         public ServerTracker (int serverId)
         {
             Accesses = new List<ServerAccess> ();
             DelayUntil = DateTime.MinValue;
             ServerId = serverId;
+            // TODO: we will want to vary the parameters by protcol & server.
+            Throttle = new NcRateLimter (0.1, 2 * 60);
+            Throttle.Enabled = true;
             Reset ();
         }
 
@@ -66,7 +73,6 @@ namespace NachoCore.Utils
             } else {
                 Quality = NcCommStatus.CommQualityEnum.OK;
             }
-            // FIXME - too noisy. Log.Info (Log.LOG_SYS, "COMM QUALITY {0}:{1}/{2}", ServerId, (pos / total), Quality);
         }
 
         public void UpdateQuality (DateTime delayUntil)
@@ -79,6 +85,17 @@ namespace NachoCore.Utils
         {
             Accesses.Add (new ServerAccess () { DidFailGenerally = didFailGenerally, When = DateTime.UtcNow });
             UpdateQuality ();
+
+            // Count access against rate-limiter.
+            Throttle.TakeToken ();
+            if (Throttle.HasTokens ()) {
+                IsThrottled = false;
+            } else {
+                if (!IsThrottled) {
+                    Log.Info (Log.LOG_SYS, "Proactive throttling threshold reached.");
+                    IsThrottled = true;
+                }
+            }
         }
 
         public bool Reset ()

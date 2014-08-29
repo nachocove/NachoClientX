@@ -27,15 +27,8 @@ namespace NachoCore.Model
         public string AsSyncKey { get; set; }
 
         public uint AsFolderSyncEpoch { get; set; }
-        // AsSyncMeta ONLY to be manipulated by sync strategy class.
         // AsSyncMetaToClientExpected true when we have a reason to believe that we're not synced up.
         public bool AsSyncMetaToClientExpected { get; set; }
-        // AsSyncMetaDoGetChanges true when strategy decides we should GetChanges for this folder.
-        public bool AsSyncMetaDoGetChanges { get; set; }
-        // When we GetChanges, AsSyncMetaFilterCode tells the date-range.
-        public Xml.Provision.MaxAgeFilterCode AsSyncMetaFilterCode { get; set; }
-        // When we GetChanges, AsSyncMetaWindowSize tells the number-of-messages-window.
-        public uint AsSyncMetaWindowSize { get; set; }
         // Updated when a Sync works on this folder. When we hit MaxFolders limit, this decides who goes next.
         public DateTime AsSyncLastPing { get; set; }
 

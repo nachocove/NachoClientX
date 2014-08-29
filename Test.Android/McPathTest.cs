@@ -155,4 +155,65 @@ namespace Test.iOS
             }
         }
     }
+
+    [TestFixture]
+    public class McPathDupTest : BaseMcPathTest
+    {
+        private static string dupServerId = "dup";
+        private static string oldServerId = "old";
+        private static string newServerId = "new";
+        private static string tmpServerId = "tmp";
+
+        [Test]
+        public void TestInsertDup ()
+        {
+            var first = new McPath () {
+                AccountId = 1,
+                ServerId = dupServerId,
+                ParentId = oldServerId,
+            };
+            first.Insert ();
+            var second = new McPath () {
+                AccountId = 1,
+                ServerId = dupServerId,
+                ParentId = newServerId,
+            };
+            second.Insert ();
+            var found = McPath.QueryByServerId (1, dupServerId);
+            Assert.NotNull (found);
+            Assert.AreEqual (dupServerId, found.ServerId);
+            Assert.AreEqual (newServerId, found.ParentId);
+        }
+
+        [Test]
+        public void TestUpdateDup ()
+        {
+            var first = new McPath () {
+                AccountId = 1,
+                ServerId = dupServerId,
+                ParentId = oldServerId,
+            };
+            first.Insert ();
+            var second = new McPath () {
+                AccountId = 1,
+                ServerId = tmpServerId,
+                ParentId = newServerId,
+            };
+            second.Insert ();
+            var found = McPath.QueryByServerId (1, dupServerId);
+            Assert.NotNull (found);
+            Assert.AreEqual (dupServerId, found.ServerId);
+            Assert.AreEqual (oldServerId, found.ParentId);
+            found = McPath.QueryByServerId (1, tmpServerId);
+            Assert.NotNull (found);
+            Assert.AreEqual (tmpServerId, found.ServerId);
+            Assert.AreEqual (newServerId, found.ParentId);
+            second.ServerId = dupServerId;
+            second.Update ();
+            found = McPath.QueryByServerId (1, dupServerId);
+            Assert.NotNull (found);
+            Assert.AreEqual (dupServerId, found.ServerId);
+            Assert.AreEqual (newServerId, found.ParentId);
+        }
+    }
 }

@@ -308,6 +308,19 @@ namespace NachoCore.Model
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, limit);
         }
 
+        public static IEnumerable<McEmailMessage> QueryNeedsFetch (int accountId, int limit, double minScore)
+        {
+            return NcModel.Instance.Db.Query<McEmailMessage> (
+                "SELECT e.* FROM McEmailMessage AS e " +
+                " WHERE " +
+                " e.AccountId = ? AND " +
+                " e.IsAwaitingDelete = 0 AND " +
+                " e.Score >= ? AND " +
+                " e.BodyState != ? " +
+                " ORDER BY e.Score DESC, e.DateReceived DESC LIMIT ?",
+                accountId, minScore, (int)BodyStateEnum.Whole_0, limit);
+        }
+
         public static List<NcEmailMessageIndex> QueryActiveMessageItemsByScore (int accountId, int folderId)
         {
             return NcModel.Instance.Db.Query<NcEmailMessageIndex> (

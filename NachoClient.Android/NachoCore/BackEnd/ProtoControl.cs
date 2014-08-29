@@ -77,7 +77,7 @@ namespace NachoCore
         {
         }
 
-        public virtual void ForceSync ()
+        public virtual void QuickSync ()
         {
         }
 

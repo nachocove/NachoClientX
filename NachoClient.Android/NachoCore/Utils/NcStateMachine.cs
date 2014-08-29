@@ -185,6 +185,11 @@ namespace NachoCore.Utils
             PostEvent (eventCode, mnemonic, null, null);
         }
 
+        public void PostEvent (uint eventCode, string mnemonic, object arg)
+        {
+            PostEvent (Event.Create (eventCode, mnemonic, arg, null));
+        }
+
         public void PostEvent (uint eventCode, string mnemonic, object arg, string message)
         {
             PostEvent (Event.Create (eventCode, mnemonic, arg, message));

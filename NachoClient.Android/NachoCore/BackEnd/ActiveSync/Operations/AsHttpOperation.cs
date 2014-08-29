@@ -344,13 +344,7 @@ namespace NachoCore.ActiveSync
 
         private bool CreateHttpRequest (out HttpRequestMessage request, CancellationToken cToken)
         {
-            XDocument doc;
-            try {
-                doc = Owner.ToXDocument (this);
-            } catch (AsCommand.AbortCommandException) {
-                request = null;
-                return false;
-            }
+            XDocument doc = Owner.ToXDocument (this);
             request = new HttpRequestMessage (Owner.Method (this), ServerUri);
             if (null != doc) {
                 Log.Debug (Log.LOG_XML, "{0}:\n{1}", CommandName, doc);
@@ -545,6 +539,7 @@ namespace NachoCore.ActiveSync
                             return Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPRDPEND4");
                         }
                         responseDoc = decoder.XmlDoc;
+                        Log.Debug (Log.LOG_XML, "{0} response:\n{1}", CommandName, responseDoc);
                         var xmlStatus = responseDoc.Root.ElementAnyNs (Xml.AirSync.Status);
                         if (null != xmlStatus) {
                             // FIXME - push TL status into pending.
@@ -562,7 +557,6 @@ namespace NachoCore.ActiveSync
                         throw new Exception ("FIXME: ContentTypeWbxmlMultipart unimplemented.");
                     case ContentTypeXml:
                         responseDoc = XDocument.Load (ContentData);
-                        Log.Debug (Log.LOG_XML, "{0} response:\n{1}", CommandName, responseDoc);
                         // Owner MUST resolve all pending.
                         return Final (Owner.ProcessResponse (this, response, responseDoc));
                     default:
@@ -739,7 +733,7 @@ namespace NachoCore.ActiveSync
                 string value = null;
                 if (response.Headers.Contains (HeaderXMsThrottle)) {
                     //IsBeingThrottled = true;
-                    Log.Info (Log.LOG_HTTP, "Explicit throttling ({0}).", HeaderXMsThrottle);
+                    Log.Error (Log.LOG_HTTP, "Explicit throttling ({0}).", HeaderXMsThrottle);
                     try {
                         protocolState = BEContext.ProtocolState;
                         value = response.Headers.GetValues (HeaderXMsThrottle).First ();

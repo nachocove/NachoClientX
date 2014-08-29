@@ -106,6 +106,14 @@ namespace Test.iOS
                                     action ();
                                 },
                                 State = (uint)St.Start },
+                            new Trans { 
+                                Event = (uint)AsProtoControl.CtlEvt.E.PendQHot, 
+                                Act = delegate () {
+                                    // DoPick happens here in AsProtoControl
+                                    // Stop the operation here: We don't need to go any further (item has already been added to pending queue)
+                                    action ();
+                                },
+                                State = (uint)St.Start },
                         }
                     },
                 }

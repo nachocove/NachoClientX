@@ -12,10 +12,10 @@ namespace NachoCore.ActiveSync
 {
     public class AsFolderDeleteCommand : AsCommand
     {
-        public AsFolderDeleteCommand (IBEContext dataSource) :
+        public AsFolderDeleteCommand (IBEContext dataSource, McPending pending) :
             base (Xml.FolderHierarchy.FolderDelete, Xml.FolderHierarchy.Ns, dataSource)
         {
-            PendingSingle = McPending.QueryFirstEligibleByOperation (BEContext.Account.Id, McPending.Operations.FolderDelete);
+            PendingSingle = pending;
             PendingSingle.MarkDispached ();
         }
 

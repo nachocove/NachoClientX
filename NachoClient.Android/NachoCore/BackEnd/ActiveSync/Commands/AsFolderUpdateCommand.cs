@@ -13,10 +13,10 @@ namespace NachoCore.ActiveSync
 {
     public class AsFolderUpdateCommand : AsCommand
     {
-        public AsFolderUpdateCommand (IBEContext dataSource) :
+        public AsFolderUpdateCommand (IBEContext dataSource, McPending pending) :
             base (Xml.FolderHierarchy.FolderUpdate, Xml.FolderHierarchy.Ns, dataSource)
         {
-            PendingSingle = McPending.QueryFirstEligibleByOperation (BEContext.Account.Id, McPending.Operations.FolderUpdate);
+            PendingSingle = pending;
             PendingSingle.MarkDispached ();
         }
 
@@ -66,7 +66,7 @@ namespace NachoCore.ActiveSync
                         return Event.Create ((uint)SmEvt.E.HardFail, "FUPFAILSPECC");
                     } else if (0 == PendingSingle.DefersRemaining) {
                         PendingSingle.ResolveAsHardFail (BEContext.ProtoControl,
-                            NcResult.Error (NcResult.SubKindEnum.Error_FolderDeleteFailed,
+                            NcResult.Error (NcResult.SubKindEnum.Error_FolderUpdateFailed,
                                 NcResult.WhyEnum.MissingOnServer));
                         PendingSingle = null;
                         return Event.Create ((uint)SmEvt.E.HardFail, "FUPFAILSPEC");
@@ -83,7 +83,7 @@ namespace NachoCore.ActiveSync
                         return Event.Create ((uint)SmEvt.E.HardFail, "FUPFAILMPC");
                     } else if (0 == PendingSingle.DefersRemaining) {
                         PendingSingle.ResolveAsHardFail (BEContext.ProtoControl,
-                            NcResult.Error (NcResult.SubKindEnum.Error_FolderDeleteFailed,
+                            NcResult.Error (NcResult.SubKindEnum.Error_FolderUpdateFailed,
                                 NcResult.WhyEnum.MissingOnServer));
                         PendingSingle = null;
                         return Event.Create ((uint)SmEvt.E.HardFail, "FUPFAILMP");
@@ -95,7 +95,7 @@ namespace NachoCore.ActiveSync
                 }
 
             case Xml.FolderHierarchy.FolderUpdateStatusCode.ServerError_6:
-                /* TODO: "Retry the FolderDelete command. If continued attempts to synchronization fail,
+                /* TODO: "Retry the FolderUpdate command. If continued attempts to synchronization fail,
                  * consider returning to synchronization key zero (0)."
                  * Right now, we don't retry - we just slam the key to 0.
                  */
