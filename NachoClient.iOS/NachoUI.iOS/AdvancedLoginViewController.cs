@@ -91,7 +91,6 @@ namespace NachoClient.iOS
             View.Add (certificateView);
 
             fillInKnownFields ();
-            ConfigureView (LoginStatus.EnterInfo);
             handleStatusEnums ();
         }
 
@@ -401,8 +400,8 @@ namespace NachoClient.iOS
                 case BackEndAutoDStateEnum.CertAskWait:
                     Log.Info (Log.LOG_UI, "CertAskWait Auto-D-State-Enum On Page Load");
                     ConfigureView (LoginStatus.AcceptCertificate);
-                    waitScreen.ShowView ();
                     certificateCallbackHandler ();
+                    waitScreen.ShowView ();
                     return;
 
                 case BackEndAutoDStateEnum.PostAutoDPreInboxSync:
@@ -421,7 +420,13 @@ namespace NachoClient.iOS
                     errorMessage.Text = "Auto-D is running.";
                     waitScreen.ShowView ();
                     return;
+
+                default:
+                    ConfigureView(LoginStatus.EnterInfo);
+                    return;
                 }
+            } else {
+                ConfigureView (LoginStatus.EnterInfo);
             }
         }
 
