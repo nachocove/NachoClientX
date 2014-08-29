@@ -189,7 +189,7 @@ namespace Test.Common
             var command = System.Xml.Linq.XElement.Parse (addString_01);
             Assert.IsNotNull (command);
             Assert.AreEqual (command.Name.LocalName, Xml.AirSync.Add);
-            NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddCalendarItem (command, new MockNcFolder ());
+            NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeCalendarItem (command, new MockNcFolder ());
         }
         //        [Test]
         public void UpdateEntryWithAdd ()

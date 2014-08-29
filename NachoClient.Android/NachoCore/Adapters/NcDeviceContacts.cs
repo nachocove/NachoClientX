@@ -58,7 +58,7 @@ namespace NachoCore
                             });
                         }
                     }
-                }, "NcDeviceContacts:Process");
+                }, "NcDeviceContacts:Process", true);
                 task.Wait (NcTask.Cts.Token);
                 NcTask.Cts.Token.ThrowIfCancellationRequested ();
             }
@@ -70,7 +70,7 @@ namespace NachoCore
                         folder.Unlink (map.FolderEntryId, McAbstrFolderEntry.ClassCodeEnum.Contact);
                         McContact.DeleteById<McContact> (map.FolderEntryId);
                     });
-                }, "NcDeviceContacts:Delete");
+                }, "NcDeviceContacts:Delete", true);
                 task.Wait (NcTask.Cts.Token);
                 NcTask.Cts.Token.ThrowIfCancellationRequested ();
             }

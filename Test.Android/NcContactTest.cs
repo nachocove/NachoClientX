@@ -78,7 +78,7 @@ namespace Test.Common
             var command02a = System.Xml.Linq.XElement.Parse (string_02a);
             Assert.IsNotNull (command02a);
             Assert.AreEqual (command02a.Name.LocalName, Xml.AirSync.Add);
-            NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddContact (command02a, new MockNcFolder ());
+            NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeContact (command02a, new MockNcFolder ());
 
             var c02a = NcModel.Instance.Db.Get<McContact> (x => x.LastName == "Steve");
             Assert.IsNotNull (c02a);
@@ -87,12 +87,12 @@ namespace Test.Common
             var command02b = System.Xml.Linq.XElement.Parse (string_02b);
             Assert.IsNotNull (command02b);
             Assert.AreEqual (command02b.Name.LocalName, Xml.AirSync.Add);
-            NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddContact (command02b, new MockNcFolder ());
+            NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeContact (command02b, new MockNcFolder ());
 
             var command03 = System.Xml.Linq.XElement.Parse (string_03);
             Assert.IsNotNull (command03);
             Assert.AreEqual (command03.Name.LocalName, Xml.AirSync.Change);
-            NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddContact (command03, new MockNcFolder ());
+            NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeContact (command03, new MockNcFolder ());
         }
 
         [Test]
@@ -101,7 +101,7 @@ namespace Test.Common
             var command04 = System.Xml.Linq.XElement.Parse (string_04);
             Assert.IsNotNull (command04);
             Assert.AreEqual (command04.Name.LocalName, Xml.AirSync.Change);
-            NachoCore.ActiveSync.AsSyncCommand.ServerSaysChangeContact (command04, new MockNcFolder ());
+            NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeContact (command04, new MockNcFolder ());
         }
 
         [Test]

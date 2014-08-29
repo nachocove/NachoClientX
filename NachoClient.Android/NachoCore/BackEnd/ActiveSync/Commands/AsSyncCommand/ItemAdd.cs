@@ -46,16 +46,16 @@ namespace NachoCore.ActiveSync
             {
                 switch (ClassCode) {
                 case Xml.AirSync.ClassCode.Contacts:
-                    ServerSaysAddContact (XmlCommand, Folder);
+                    ServerSaysAddOrChangeContact (XmlCommand, Folder);
                     break;
                 case Xml.AirSync.ClassCode.Email:
-                    ServerSaysAddEmail (XmlCommand, Folder);
+                    ServerSaysAddOrChangeEmail (XmlCommand, Folder);
                     break;
                 case Xml.AirSync.ClassCode.Calendar:
-                    ServerSaysAddCalendarItem (XmlCommand, Folder);
+                    ServerSaysAddOrChangeCalendarItem (XmlCommand, Folder);
                     break;
                 case Xml.AirSync.ClassCode.Tasks:
-                    ServerSaysAddTask (XmlCommand, Folder);
+                    ServerSaysAddOrChangeTask (XmlCommand, Folder);
                     break;
                 default:
                     Log.Error (Log.LOG_AS, "AsSyncCommand ProcessCollectionCommands UNHANDLED class " + ClassCode);

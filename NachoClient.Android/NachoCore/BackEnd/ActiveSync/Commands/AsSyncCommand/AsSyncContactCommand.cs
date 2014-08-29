@@ -12,17 +12,7 @@ namespace NachoCore.ActiveSync
 {
     public partial class AsSyncCommand : AsCommand
     {
-        public static void ServerSaysAddContact (XElement command, McFolder folder)
-        {
-            ProcessContactItem (command, folder, true);
-        }
-
-        public static void ServerSaysChangeContact (XElement command, McFolder folder)
-        {
-            ProcessContactItem (command, folder, false);
-        }
-
-        public static void ProcessContactItem (XElement command, McFolder folder, bool isAdd)
+        public static void ServerSaysAddOrChangeContact (XElement command, McFolder folder)
         {
             // Convert the XML to an AsContact
             var asResult = AsContact.FromXML (Ns, command);

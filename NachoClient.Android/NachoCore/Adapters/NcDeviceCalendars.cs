@@ -59,7 +59,7 @@ namespace NachoCore
                             });
                         }
                     }
-                }, "NcDeviceCalendars:Process");
+                }, "NcDeviceCalendars:Process", true);
                 task.Wait (NcTask.Cts.Token);
                 NcTask.Cts.Token.ThrowIfCancellationRequested ();
             }
@@ -71,7 +71,7 @@ namespace NachoCore
                         folder.Unlink (map.FolderEntryId, McAbstrFolderEntry.ClassCodeEnum.Calendar);
                         McCalendar.DeleteById<McCalendar> (map.FolderEntryId);
                     });
-                }, "NcDeviceCalendars:Delete");
+                }, "NcDeviceCalendars:Delete", true);
                 task.Wait (NcTask.Cts.Token);
                 NcTask.Cts.Token.ThrowIfCancellationRequested ();
             }

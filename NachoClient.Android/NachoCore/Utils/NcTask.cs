@@ -40,11 +40,20 @@ namespace NachoCore.Utils
 
         public static Task Run (Action action, string name)
         {
+            return Run (action, name, false);
+        }
+
+        public static Task Run (Action action, string name, bool stfu)
+        {
             WeakReference taskRef = null;
             var task = Task.Run (delegate {
-                Log.Info (Log.LOG_SYS, "NcTask {0} started.", name);
+                if (!stfu) {
+                    Log.Info (Log.LOG_SYS, "NcTask {0} started.", name);
+                }
                 action.Invoke ();
-                Log.Info (Log.LOG_SYS, "NcTask {0} completed.", name);
+                if (!stfu) {
+                    Log.Info (Log.LOG_SYS, "NcTask {0} completed.", name);
+                }
                 if (null == taskRef) {
                     // XAMMIT - Likely inappropriate Task inlining.
                     Log.Warn (Log.LOG_SYS, "NcTask {0}: Weak reference unavailable", name);
