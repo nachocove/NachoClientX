@@ -177,21 +177,21 @@ namespace NachoClient.iOS
                 View.EndEditing (true);
                 if (canUserConnect ()) {
                     if (!LoginHelpers.IsCurrentAccountSet ()) {
-                        if(haveEnteredHost()){
-                            if(isValidHost()){
+                        if (haveEnteredHost ()) {
+                            if (isValidHost ()) {
                                 basicEnterFullConfiguration ();
                             }
-                        }else{
+                        } else {
                             basicEnterFullConfiguration ();
                         }
                     } else {
                         if (haveEnteredHost ()) {
                             if (isValidHost ()) {
-                                waitScreen.ShowView();
+                                waitScreen.ShowView ();
                                 tryValidateConfig ();
                             }
                         } else {
-                            waitScreen.ShowView();
+                            waitScreen.ShowView ();
                             tryAutoD ();
                         }
                     }
@@ -422,7 +422,7 @@ namespace NachoClient.iOS
                     return;
 
                 default:
-                    ConfigureView(LoginStatus.EnterInfo);
+                    ConfigureView (LoginStatus.EnterInfo);
                     return;
                 }
             } else {

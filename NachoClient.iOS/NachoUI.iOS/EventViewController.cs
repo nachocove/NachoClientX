@@ -43,6 +43,7 @@ namespace NachoClient.iOS
         List<McAttachment> attachments = new List<McAttachment> ();
 
         protected UIView EventInfoView;
+        protected UIView TitleView;
         protected UIImageView MapImage;
         protected MKMapView map;
 
@@ -51,6 +52,13 @@ namespace NachoClient.iOS
         UIView eventAlertsView;
         UIView eventAttachmentsView;
         UIView eventNotesView;
+
+        UILabel acceptLabel;
+        UILabel tentativeLabel;
+        UILabel declineLabel;
+
+        UILabel messageLabel;
+        UIButton changeResponseButton;
 
         UIColor separatorColor = A.Color_NachoSeparator;
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
@@ -62,6 +70,7 @@ namespace NachoClient.iOS
         protected float DESCRIPTION_OFFSET = 0f;
         public float IMAGE_HEIGHT = SCREEN_WIDTH / 2 - 45;
         protected float TOOL_BAR_HEIGHT = 65f;
+        protected float TITLE_OFFSET = 0f;
         protected float keyboardHeight;
         protected bool suppressLayout = false;
         protected bool suppressLowerLayout = false;
@@ -143,7 +152,7 @@ namespace NachoClient.iOS
 
             CalendarHelper.ExpandRecurrences ();
 
-            MakeToolbar ();
+
             var g = new UITapGestureRecognizer (() => View.EndEditing (true));
             contentView.AddGestureRecognizer (g);
 
@@ -158,6 +167,7 @@ namespace NachoClient.iOS
                     isRecurring = true;
                 }
                 CreateEventView ();
+                ConfigureRsvpBar ();
                 break;
             default:
                 NcAssert.CaseError ();
@@ -172,13 +182,6 @@ namespace NachoClient.iOS
             PresetsWereSet = true;
         }
 
-        protected void ToggleButtons ()
-        {
-            acceptButton.Selected = false;
-            declineButton.Selected = false;
-            tentativeButton.Selected = false;
-        }
-
         public void SetCalendarItem (McCalendar item, CalendarItemEditorAction action)
         {
             this.item = item;
@@ -189,8 +192,6 @@ namespace NachoClient.iOS
         {
             base.ViewWillDisappear (animated);
             if (null != this.NavigationController) {
-                this.NavigationController.ToolbarHidden = true;
-
             }
         }
 
@@ -268,7 +269,7 @@ namespace NachoClient.iOS
                 dc.ViewDisappearing += (object s, EventArgs e) => {
                     c.Reminder = dc.GetReminder ();
                     SyncMeetingRequest ();
-                    ScheduleNotification ();
+                    //ScheduleNotification ();
                     ConfigureEventView ();
                 };
                 return;
@@ -329,6 +330,8 @@ namespace NachoClient.iOS
 
         protected void CreateEventView ()
         {
+            scrollView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, View.Frame.Height - 54);
+
             if (account.EmailAddr == c.OrganizerEmail && account.Id == c.AccountId) {
                 NavigationItem.RightBarButtonItem = editButton;
                 editButton.Clicked += (object sender, EventArgs e) => {
@@ -349,38 +352,42 @@ namespace NachoClient.iOS
 //                }
             IMAGE_HEIGHT = 0;
 
-            //event view
-            EventInfoView = new UIView (new RectangleF (0, IMAGE_HEIGHT, SCREEN_WIDTH, 700));
-            EventInfoView.BackgroundColor = UIColor.White;
+            //title view
+            TitleView = new UIView (new RectangleF (0, IMAGE_HEIGHT, SCREEN_WIDTH, 18 + 19));
+            TitleView.BackgroundColor = UIColor.White;
 
             //title label
             UILabel eventTitleLabel = new UILabel (new RectangleF (25, 19, SCREEN_WIDTH - 50, 18));
             eventTitleLabel.Font = A.Font_AvenirNextDemiBold17;
             eventTitleLabel.TextColor = A.Color_NachoBlack;
             eventTitleLabel.Tag = EVENT_TITLE_LABEL_TAG;
-            EventInfoView.Add (eventTitleLabel);
+            TitleView.Add (eventTitleLabel);
+
+            //event view
+            EventInfoView = new UIView (new RectangleF (0, IMAGE_HEIGHT + TitleView.Frame.Height, SCREEN_WIDTH, 700));
+            EventInfoView.BackgroundColor = UIColor.White;
 
             //desciption label
-            AddDetailTextLabel (25, 43, SCREEN_WIDTH - 50, 15, EVENT_DESCRIPTION_LABEL_TAG, EventInfoView);
+            AddDetailTextLabel (25, 6, SCREEN_WIDTH - 50, 15, EVENT_DESCRIPTION_LABEL_TAG, EventInfoView);
 
             //location label, image and detail
-            AddTextLabelWithImage (45, 78, SCREEN_WIDTH - 50, 15, "Location", UIImage.FromBundle ("icn-mtng-location"), 77, EventInfoView);
-            AddDetailTextLabel (25, 103, SCREEN_WIDTH - 50, 15, EVENT_LOCATION_DETAIL_LABEL_TAG, EventInfoView);
+            AddTextLabelWithImage (45, 41, SCREEN_WIDTH - 50, 15, "Location", UIImage.FromBundle ("icn-mtng-location"), 40, EventInfoView);
+            AddDetailTextLabel (25, 66, SCREEN_WIDTH - 50, 15, EVENT_LOCATION_DETAIL_LABEL_TAG, EventInfoView);
 
             //when label, image and detail
-            AddTextLabelWithImage (45, 135, SCREEN_WIDTH - 50, 15, "When", UIImage.FromBundle ("icn-mtng-time"), 134, EventInfoView);
-            AddDetailTextLabel (25, 160, SCREEN_WIDTH - 50, 15, EVENT_WHEN_DETAIL_LABEL_TAG, EventInfoView);
-            AddDetailTextLabel (25, 180, SCREEN_WIDTH - 50, 15, 500, EventInfoView);
-            AddDetailTextLabel (25, 200, SCREEN_WIDTH - 50, 30, 600, EventInfoView);
-            float RECURRING_OFFEST = 0f;
+            AddTextLabelWithImage (45, 98, SCREEN_WIDTH - 50, 15, "When", UIImage.FromBundle ("icn-mtng-time"), 97, EventInfoView);
+            AddDetailTextLabel (25, 123, SCREEN_WIDTH - 50, 15, EVENT_WHEN_DETAIL_LABEL_TAG, EventInfoView);
+            AddDetailTextLabel (25, 143, SCREEN_WIDTH - 50, 15, 500, EventInfoView);
+            AddDetailTextLabel (25, 163, SCREEN_WIDTH - 50, 30, 600, EventInfoView);
+            float RECURRING_OFFSET = 0f;
             if (isRecurring) {
-                RECURRING_OFFEST = 40f;
+                RECURRING_OFFSET = 40f;
             } 
 
             //phone label, image and detail
-            AddTextLabelWithImage (45, RECURRING_OFFEST + 20 + 135 + 57, SCREEN_WIDTH - 50, 15, "Phone", UIImage.FromBundle ("icn-mtng-phone"), RECURRING_OFFEST + 20 + 134 + 57, EventInfoView);
+            AddTextLabelWithImage (45, RECURRING_OFFSET + 175, SCREEN_WIDTH - 50, 15, "Phone", UIImage.FromBundle ("icn-mtng-phone"), RECURRING_OFFSET + 174, EventInfoView);
 
-            UIButton eventPhoneDetailButton = new UIButton (new RectangleF (25, RECURRING_OFFEST + 20 + 160 + 57, SCREEN_WIDTH - 50, 15));
+            UIButton eventPhoneDetailButton = new UIButton (new RectangleF (25, RECURRING_OFFSET + 200, SCREEN_WIDTH - 50, 15));
             eventPhoneDetailButton.Font = A.Font_AvenirNextRegular14;
             eventPhoneDetailButton.SetTitleColor (UIColor.LightGray, UIControlState.Normal);
             eventPhoneDetailButton.Tag = EVENT_PHONE_DETAIL_BUTTON_TAG;
@@ -392,9 +399,9 @@ namespace NachoClient.iOS
             EventInfoView.Add (eventPhoneDetailButton);  
 
             //attendees label, image and detail
-            AddTextLabelWithImage (45, RECURRING_OFFEST + 20 + 135 + 57 + 57, SCREEN_WIDTH - 50, 15, "Attendees", UIImage.FromBundle ("icn-mtng-people"), RECURRING_OFFEST + 20 + 134 + 57 + 57, EventInfoView);
+            AddTextLabelWithImage (45, RECURRING_OFFSET + 175 + 57, SCREEN_WIDTH - 50, 15, "Attendees", UIImage.FromBundle ("icn-mtng-people"), RECURRING_OFFSET + 174 + 57, EventInfoView);
 
-            eventAttendeeView = new UIView (new RectangleF (0, RECURRING_OFFEST + 20 + 135 + 57 + 57 + 15, SCREEN_WIDTH, 96));
+            eventAttendeeView = new UIView (new RectangleF (0, RECURRING_OFFSET + 175 + 57 + 15, SCREEN_WIDTH, 96));
             var attendeeTap = new UITapGestureRecognizer ();
             attendeeTap.AddTarget (() => {
                 PerformSegue ("EventToEventAttendees", this);
@@ -408,7 +415,7 @@ namespace NachoClient.iOS
             //////////////////////
 
             //alerts 
-            eventAlertsView = new UIView (new RectangleF (0, RECURRING_OFFEST + 20 + 245 + IMAGE_HEIGHT + 115, SCREEN_WIDTH, CELL_HEIGHT));
+            eventAlertsView = new UIView (new RectangleF (0, RECURRING_OFFSET + 228 + IMAGE_HEIGHT + 115, SCREEN_WIDTH, CELL_HEIGHT));
             eventAlertsView.BackgroundColor = UIColor.White;
 
             UIImageView alertsAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
@@ -435,7 +442,7 @@ namespace NachoClient.iOS
             EventInfoView.Add (eventAlertsView);
 
             //attachments
-            eventAttachmentsView = new UIView (new RectangleF (0, RECURRING_OFFEST + 20 + 245 + IMAGE_HEIGHT + CELL_HEIGHT + 115, SCREEN_WIDTH, CELL_HEIGHT));
+            eventAttachmentsView = new UIView (new RectangleF (0, RECURRING_OFFSET + 228 + IMAGE_HEIGHT + CELL_HEIGHT + 115, SCREEN_WIDTH, CELL_HEIGHT));
             eventAttachmentsView.BackgroundColor = UIColor.White;
 
             UIImageView attachmentAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
@@ -462,7 +469,7 @@ namespace NachoClient.iOS
             EventInfoView.Add (eventAttachmentsView);
 
             //notes
-            eventNotesView = new UIView (new RectangleF (0, RECURRING_OFFEST + 20 + 245 + IMAGE_HEIGHT + 115 + (CELL_HEIGHT * 2), SCREEN_WIDTH, CELL_HEIGHT));
+            eventNotesView = new UIView (new RectangleF (0, RECURRING_OFFSET + 228 + IMAGE_HEIGHT + 115 + (CELL_HEIGHT * 2), SCREEN_WIDTH, CELL_HEIGHT));
             eventNotesView.BackgroundColor = UIColor.White;
 
             UIImageView notesAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
@@ -492,17 +499,20 @@ namespace NachoClient.iOS
             EventInfoView.Add (eventNotesView);
 
             for (int i = 0; i < 4; i++) {
-                Util.AddHorizontalLine (23f, RECURRING_OFFEST + 20 + 245 + IMAGE_HEIGHT + 115 + (CELL_HEIGHT * i), SCREEN_WIDTH, separatorColor, EventInfoView);
+                Util.AddHorizontalLine (23f, RECURRING_OFFSET + 228 + IMAGE_HEIGHT + 115 + (CELL_HEIGHT * i), SCREEN_WIDTH, separatorColor, EventInfoView);
             }
 
+            MakeToolbar ();
+
             //Content View
+            contentView.Add (TitleView);
             contentView.Add (EventInfoView);
             contentView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, 700);
             contentView.BackgroundColor = UIColor.White;
 
             //Scroll View
             scrollView.BackgroundColor = UIColor.White;
-            scrollView.ContentSize = new SizeF (SCREEN_WIDTH, RECURRING_OFFEST + 20 + 608 + 20 - 115);
+            scrollView.ContentSize = new SizeF (SCREEN_WIDTH, RECURRING_OFFSET + 20 + 608 + 20 - 115);
             scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
 
         }
@@ -512,15 +522,16 @@ namespace NachoClient.iOS
 
             item = McCalendar.QueryById<McCalendar> (item.Id);
             c = item;
-
-            if (c.ResponseRequested) {
-                this.NavigationController.ToolbarHidden = false;
-            }
+           
             contentView.BackgroundColor = UIColor.White;
 
             //title view
             var titleLabelView = View.ViewWithTag (EVENT_TITLE_LABEL_TAG) as UILabel;
             titleLabelView.Text = c.Subject;
+            titleLabelView.Lines = 0;
+            titleLabelView.LineBreakMode = UILineBreakMode.WordWrap;
+            titleLabelView.SizeToFit ();
+            TITLE_OFFSET = titleLabelView.Frame.Height;
 
             //description view
             var descriptionLabelView = View.ViewWithTag (EVENT_DESCRIPTION_LABEL_TAG) as UILabel;
@@ -616,6 +627,14 @@ namespace NachoClient.iOS
                     i++;
                 }
             }
+            LayoutView ();
+        }
+
+        public void LayoutView ()
+        {
+            TitleView.Frame = new RectangleF (0, IMAGE_HEIGHT, SCREEN_WIDTH, 18 + 19 + TITLE_OFFSET);
+            EventInfoView.Frame = new RectangleF (0, IMAGE_HEIGHT + 19 + TITLE_OFFSET, SCREEN_WIDTH, 700);
+            scrollView.ContentSize = new SizeF (SCREEN_WIDTH, scrollView.ContentSize.Height + TITLE_OFFSET);
 
         }
 
@@ -800,6 +819,77 @@ namespace NachoClient.iOS
             return null;
         }
 
+        public void ConfigureRsvpBar ()
+        {
+            if (account.EmailAddr == c.OrganizerEmail) {
+                messageLabel.Hidden = false;
+                messageLabel.Text = "You are the organinizer";
+                messageLabel.Frame = new RectangleF (25 + 24 + 10, 15, 150, 24);
+                acceptButton.Hidden = false;
+                acceptButton.UserInteractionEnabled = false;
+                acceptButton.Selected = true;
+                acceptButton.Frame = new RectangleF (25, 15, 24, 24);
+                acceptLabel.Hidden = true;
+                tentativeButton.Hidden = true;
+                tentativeLabel.Hidden = true;
+                declineButton.Hidden = true;
+                declineLabel.Hidden = true;
+            }
+
+            foreach (var a in c.attendees) {
+                if (account.EmailAddr == a.Email) {
+                    if (a.AttendeeStatus == NcAttendeeStatus.Accept) {
+                        acceptButton.Selected = true;
+                        messageLabel.Text = "You are going";
+                        messageLabel.Hidden = false;
+                        changeResponseButton.Hidden = false;
+
+                        acceptButton.Frame = new RectangleF (25, 15, 24, 24);
+
+                        acceptLabel.Hidden = true;
+                        tentativeButton.Hidden = true;
+                        declineButton.Hidden = true;
+                        tentativeLabel.Hidden = true;
+                        declineLabel.Hidden = true;
+                        acceptButton.UserInteractionEnabled = false;
+                    } 
+                    if (a.AttendeeStatus == NcAttendeeStatus.Tentative) {
+                        tentativeButton.Selected = true;
+                        messageLabel.Text = "Tentative";
+                        messageLabel.Hidden = false;
+                        changeResponseButton.Hidden = false;
+
+                        tentativeButton.Frame = new RectangleF (25, 15, 24, 24);
+
+                        acceptButton.Hidden = true;
+                        acceptLabel.Hidden = true;
+                        tentativeLabel.Hidden = true;
+                        declineButton.Hidden = true;
+                        declineLabel.Hidden = true;
+                        tentativeButton.UserInteractionEnabled = false;
+
+                    }
+                    if (a.AttendeeStatus == NcAttendeeStatus.Decline) {
+                        declineButton.Selected = true;
+                        messageLabel.Text = "You are not going to this meeting";
+                        messageLabel.Hidden = false;
+                        changeResponseButton.Hidden = false;
+
+                        declineButton.Frame = new RectangleF (25, 15, 24, 24);
+
+                        acceptButton.Hidden = true;
+                        acceptLabel.Hidden = true;
+                        tentativeButton.Hidden = true;
+                        tentativeLabel.Hidden = true;
+                        declineLabel.Hidden = true;
+                        declineButton.UserInteractionEnabled = false;
+
+                    }
+                    return; 
+                }
+            }
+        }
+
         public void ClearView (UIView parentView)
         {
             foreach (var s in parentView.Subviews) {
@@ -819,7 +909,8 @@ namespace NachoClient.iOS
 
         public void MakeToolbar ()
         {
-            NavigationController.Toolbar.BarTintColor = A.Color_NachoBlack;
+            UIView rsvpBar = new UIView (new RectangleF (0, View.Frame.Height - 118, SCREEN_WIDTH, 54));
+            rsvpBar.BackgroundColor = A.Color_NachoBlack;
 
             //acceptButton
             using (var acceptButtonImage = UIImage.FromBundle ("btn-mtng-accept")) {
@@ -828,7 +919,6 @@ namespace NachoClient.iOS
             using (var acceptPressedButtonImage = UIImage.FromBundle ("btn-mtng-accept-pressed")) {
                 acceptButton.SetImage (acceptPressedButtonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal), UIControlState.Selected);
             }
-            acceptButton.SetTitle ("", UIControlState.Normal);
             acceptButton.Frame = new RectangleF (25, 10, 24, 24);
             acceptButton.TintColor = UIColor.Clear;
 
@@ -839,8 +929,7 @@ namespace NachoClient.iOS
             using (var tentativePressedButtonImage = UIImage.FromBundle ("btn-mtng-tenative-pressed")) {
                 tentativeButton.SetImage (tentativePressedButtonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal), UIControlState.Selected);
             }
-            tentativeButton.SetTitle ("", UIControlState.Normal);
-            tentativeButton.Frame = new RectangleF ((float)137.5, 10, 24, 24);
+            tentativeButton.Frame = new RectangleF ((SCREEN_WIDTH / 2) - 12, 10, 24, 24);
             tentativeButton.TintColor = UIColor.Clear;
 
             //declineButton
@@ -851,38 +940,214 @@ namespace NachoClient.iOS
             using (var declinePressedButtonImage = UIImage.FromBundle ("btn-mtng-decline-pressed")) {
                 declineButton.SetImage (declinePressedButtonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal), UIControlState.Selected);
             }
-            declineButton.SetTitle ("", UIControlState.Normal);
-            declineButton.Frame = new RectangleF (325, 10, 24, 24);
+            declineButton.Frame = new RectangleF (SCREEN_WIDTH - 24 - 25, 10, 24, 24);
             declineButton.TintColor = UIColor.Clear;
 
-            var b1 = new UIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace);
-            var b2 = new UIBarButtonItem (acceptButton);
-            var b3 = new UIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace);
-            var b4 = new UIBarButtonItem (tentativeButton);
-            var b5 = new UIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace);
-            var b6 = new UIBarButtonItem (declineButton);
-            var b7 = new UIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace);
 
             acceptButton.TouchUpInside += (object sender, EventArgs e) => {
-                ToggleButtons ();
-                acceptButton.Selected = true;
+                ToggleButtons (NcResponseType.Accepted);
                 UpdateStatus (NcResponseType.Accepted);
             };
 
             tentativeButton.TouchUpInside += (object sender, EventArgs e) => {
-                ToggleButtons ();
-                tentativeButton.Selected = true;
+                ToggleButtons (NcResponseType.Tentative);
                 UpdateStatus (NcResponseType.Tentative);
             };
 
             declineButton.TouchUpInside += (object sender, EventArgs e) => {
-                ToggleButtons ();
-                declineButton.Selected = true;
+                ToggleButtons (NcResponseType.Declined);
                 UpdateStatus (NcResponseType.Declined);
             };
-            this.SetToolbarItems (new UIBarButtonItem[] {
-                b1, b2, b3, b4, b5, b6, b7
-            }, false);
+
+            rsvpBar.Add (acceptButton);
+            rsvpBar.Add (tentativeButton);
+            rsvpBar.Add (declineButton);
+
+            acceptLabel = new UILabel (new RectangleF (20, 34, 34, 10));
+            acceptLabel.TextColor = UIColor.White;
+            acceptLabel.TextAlignment = UITextAlignment.Center;
+            acceptLabel.Font = A.Font_AvenirNextRegular8;
+            acceptLabel.Text = "Accept";
+            rsvpBar.Add (acceptLabel);
+
+            tentativeLabel = new UILabel (new RectangleF ((SCREEN_WIDTH / 2) - 17, 34, 34, 10));
+            tentativeLabel.TextColor = UIColor.White;
+            tentativeLabel.TextAlignment = UITextAlignment.Center;
+            tentativeLabel.Font = A.Font_AvenirNextRegular8;
+            tentativeLabel.Text = "Tentative";
+            rsvpBar.Add (tentativeLabel);
+
+            declineLabel = new UILabel (new RectangleF (SCREEN_WIDTH - 24 - 30, 34, 34, 10));
+            declineLabel.TextColor = UIColor.White;
+            declineLabel.TextAlignment = UITextAlignment.Center;
+            declineLabel.Font = A.Font_AvenirNextRegular8;
+            declineLabel.Text = "Decline";
+            rsvpBar.Add (declineLabel);
+
+            messageLabel = new UILabel (new RectangleF (25 + 24 + 10, 15, 100, 24));
+            messageLabel.TextColor = UIColor.White;
+            messageLabel.TextAlignment = UITextAlignment.Left;
+            messageLabel.Font = A.Font_AvenirNextRegular12;
+            messageLabel.Hidden = true;
+            rsvpBar.Add (messageLabel);
+
+            changeResponseButton = new UIButton (UIButtonType.RoundedRect);
+
+            changeResponseButton.SetTitle ("Change response", UIControlState.Normal);
+            changeResponseButton.Font = A.Font_AvenirNextRegular12;
+            changeResponseButton.SizeToFit ();
+            changeResponseButton.Frame = new RectangleF (SCREEN_WIDTH - changeResponseButton.Frame.Width - 25, 16, changeResponseButton.Frame.Width, 24);
+            changeResponseButton.SetTitleColor (A.Color_NachoBlue, UIControlState.Normal);
+            changeResponseButton.Hidden = true;
+            changeResponseButton.TouchUpInside += (object sender, EventArgs e) => {
+                RestoreButtons ();
+            };
+            rsvpBar.Add (changeResponseButton);
+
+            View.Add (rsvpBar);
+        }
+
+
+        protected void ToggleButtons (NcResponseType r)
+        {
+            if (NcResponseType.Accepted == r) {
+                acceptButton.Selected = true;
+                tentativeButton.Selected = false;
+                declineButton.Selected = false;
+                messageLabel.Text = "You are going";
+                messageLabel.Hidden = false;
+                messageLabel.Alpha = 0;
+                changeResponseButton.Hidden = false;
+                changeResponseButton.Alpha = 0;
+
+                UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
+                    () => {
+                        acceptLabel.Alpha = 0;
+                        tentativeButton.Alpha = 0;
+                        declineButton.Alpha = 0;
+                        tentativeLabel.Alpha = 0;
+                        declineLabel.Alpha = 0;
+                        messageLabel.Alpha = 1;
+                        changeResponseButton.Alpha = 1;
+
+                        acceptButton.Frame = new RectangleF (25, 15, 24, 24);
+                    },
+                    () => {
+                        acceptLabel.Hidden = true;
+                        tentativeButton.Hidden = true;
+                        declineButton.Hidden = true;
+                        tentativeLabel.Hidden = true;
+                        declineLabel.Hidden = true;
+                        acceptButton.UserInteractionEnabled = false;
+                    }
+                );
+            } else if (NcResponseType.Tentative == r) {
+                acceptButton.Selected = false;
+                tentativeButton.Selected = true;
+                declineButton.Selected = false;
+                messageLabel.Text = "Tentative";
+                messageLabel.Hidden = false;
+                messageLabel.Alpha = 0;
+                changeResponseButton.Hidden = false;
+                changeResponseButton.Alpha = 0;
+
+                UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
+                    () => {
+                        acceptLabel.Alpha = 0;
+                        acceptButton.Alpha = 0;
+                        declineButton.Alpha = 0;
+                        tentativeLabel.Alpha = 0;
+                        declineLabel.Alpha = 0;
+                        messageLabel.Alpha = 1;
+                        changeResponseButton.Alpha = 1;
+
+                        tentativeButton.Frame = new RectangleF (25, 15, 24, 24);
+                    },
+                    () => {
+                        acceptLabel.Hidden = true;
+                        acceptButton.Hidden = true;
+                        declineButton.Hidden = true;
+                        tentativeLabel.Hidden = true;
+                        declineLabel.Hidden = true;
+                        tentativeButton.UserInteractionEnabled = false;
+                    }
+                );
+            } else {
+                acceptButton.Selected = false;
+                tentativeButton.Selected = false;
+                declineButton.Selected = true;
+                messageLabel.Text = "You are not going";
+                messageLabel.Hidden = false;
+                messageLabel.Alpha = 0;
+                changeResponseButton.Hidden = false;
+                changeResponseButton.Alpha = 0;
+
+                UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
+                    () => {
+                        acceptLabel.Alpha = 0;
+                        acceptButton.Alpha = 0;
+                        tentativeButton.Alpha = 0;
+                        tentativeLabel.Alpha = 0;
+                        declineLabel.Alpha = 0;
+                        messageLabel.Alpha = 1;
+                        changeResponseButton.Alpha = 1;
+
+                        declineButton.Frame = new RectangleF (25, 15, 24, 24);
+                    },
+                    () => {
+                        acceptLabel.Hidden = true;
+                        acceptButton.Hidden = true;
+                        tentativeButton.Hidden = true;
+                        tentativeLabel.Hidden = true;
+                        declineLabel.Hidden = true;
+                        declineButton.UserInteractionEnabled = false;
+
+                    }
+                );
+            }
+        }
+
+        protected void RestoreButtons ()
+        {
+
+            acceptButton.Selected = false;
+            tentativeButton.Selected = false;
+            declineButton.Selected = false;
+            acceptButton.Hidden = false;
+            acceptLabel.Hidden = false;
+            tentativeButton.Hidden = false;
+            declineButton.Hidden = false;
+            tentativeLabel.Hidden = false;
+            declineLabel.Hidden = false;
+            acceptButton.UserInteractionEnabled = true;
+            tentativeButton.UserInteractionEnabled = true;
+            declineButton.UserInteractionEnabled = true;
+
+            UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
+                () => {
+
+                    acceptButton.Alpha = 1;
+                    tentativeButton.Alpha = 1;
+                    declineButton.Alpha = 1;
+                    acceptLabel.Alpha = 1;
+                    tentativeLabel.Alpha = 1;
+                    declineLabel.Alpha = 1;
+
+                    messageLabel.Alpha = 0;
+                    changeResponseButton.Alpha = 0;
+
+                    acceptButton.Frame = new RectangleF (25, 10, 24, 24);
+                    tentativeButton.Frame = new RectangleF ((SCREEN_WIDTH / 2) - 12, 10, 24, 24);
+                    declineButton.Frame = new RectangleF (SCREEN_WIDTH - 24 - 25, 10, 24, 24);
+                },
+                () => {
+
+                    messageLabel.Hidden = true;
+                    changeResponseButton.Hidden = true;
+
+                }
+            );
+
         }
 
         public class TupleList<T1, T2> : List<Tuple<T1, T2>>

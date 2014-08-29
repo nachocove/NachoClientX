@@ -37,6 +37,8 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
+            Util.ConfigureNavBar (false, NavigationController);
+
             CalendarHelper.ExpandRecurrences ();
 
             // Navigation
@@ -427,6 +429,11 @@ namespace NachoClient.iOS
         public void PerformSegueForDelegate (string identifier, NSObject sender)
         {
             PerformSegue (identifier, sender);
+        }
+
+        public void SendRunningLateMessage (int calendarIndex)
+        {
+            NcAssert.CaseError ();
         }
 
         ///  IMessageTableViewSourceDelegate

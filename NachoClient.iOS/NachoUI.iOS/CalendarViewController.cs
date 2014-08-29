@@ -10,6 +10,7 @@ using SWRevealViewControllerBinding;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
+using MimeKit;
 
 namespace NachoClient.iOS
 {
@@ -195,6 +196,15 @@ namespace NachoClient.iOS
                 // Nothing to do
                 return;
             }
+
+            if (segue.Identifier.Equals ("CalendarToEmailCompose")) {
+                var dc = (MessageComposeViewController)segue.DestinationViewController;
+                var holder = sender as SegueHolder;
+                var c = holder.value as McCalendar;
+                dc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, c.OrganizerEmail), c.Subject, "Running late");
+                return;
+            }
+
             if (segue.Identifier == "CalendarToEditEventView") {
                 var vc = (EditEventViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
@@ -883,6 +893,12 @@ namespace NachoClient.iOS
 
         }
 
+        public void SendRunningLateMessage (int calendarIndex)
+        {
+            McCalendar c = McCalendar.QueryById<McCalendar> (calendarIndex);
+            PerformSegue ("CalendarToEmailCompose", new SegueHolder (c));
+        }
+            
     }
 
 }
