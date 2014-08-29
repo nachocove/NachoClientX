@@ -58,7 +58,7 @@ namespace NachoClient.iOS
 
             ActionView actionView = new ActionView (new RectangleF (windowX, windowY, frameWidth, frameHeight));
             actionView.SetOwner (this);
-            actionView.setTableViewDelegate(new FolderTableDelegate(this));
+            actionView.setTableViewDelegate (new FolderTableDelegate (this));
             actionView.BackgroundColor = UIColor.White;
             actionView.Layer.CornerRadius = 6.0f;
             actionView.AddMoveMessageLabel (80, 15);

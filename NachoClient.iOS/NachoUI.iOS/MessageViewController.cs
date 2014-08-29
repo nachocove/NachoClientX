@@ -198,8 +198,8 @@ namespace NachoClient.iOS
                     PerformSegue ("SegueToDatePicker", new SegueHolder (null));
                     break;
                 case 1:
-                    var c = CalendarHelper.CreateMeeting(thread.SingleMessageSpecialCase());
-                    PerformSegue("SegueToEditEvent", new SegueHolder(c));
+                    var c = CalendarHelper.CreateMeeting (thread.SingleMessageSpecialCase ());
+                    PerformSegue ("SegueToEditEvent", new SegueHolder (c));
                     break;
                 case 2:
                     break; // Cancel
@@ -559,13 +559,7 @@ namespace NachoClient.iOS
             if (message.HasDueDate () || message.IsDeferred ()) {
                 reminderImageView.Hidden = false;
                 reminderLabelView.Hidden = false;
-                if (message.IsDeferred ()) {
-                    reminderLabelView.Text = String.Format ("Hidden until {0}", message.FlagDueAsUtc ());
-                } else if (message.IsOverdue ()) {
-                    reminderLabelView.Text = String.Format ("Response was due {0}", message.FlagDueAsUtc ());
-                } else {
-                    reminderLabelView.Text = String.Format ("Response is due {0}", message.FlagDueAsUtc ());
-                }
+                reminderLabelView.Text = Pretty.ReminderText (message);
                 AdjustY (reminderImageView, yOffset + 4);
                 AdjustY (reminderLabelView, yOffset);
                 yOffset += 20;
@@ -623,7 +617,7 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void AdjustY(UIView view, float yOffset)
+        protected void AdjustY (UIView view, float yOffset)
         {
             var rect = view.Frame;
             rect.Y = yOffset;

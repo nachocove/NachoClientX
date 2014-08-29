@@ -512,13 +512,7 @@ namespace NachoClient.iOS
             if ((!compactMode) && (message.HasDueDate () || message.IsDeferred ())) {
                 reminderImageView.Hidden = false;
                 reminderLabelView.Hidden = false;
-                if (message.IsDeferred ()) {
-                    reminderLabelView.Text = String.Format ("Message hidden until {0}", message.FlagStartDate);
-                } else if (message.IsOverdue ()) {
-                    reminderLabelView.Text = String.Format ("Response was due {0}", message.FlagDueAsUtc ());
-                } else {
-                    reminderLabelView.Text = String.Format ("Response is due {0}", message.FlagDueAsUtc ());
-                }
+                reminderLabelView.Text = Pretty.ReminderText (message);
             } else {
                 reminderImageView.Hidden = true;
                 reminderLabelView.Hidden = true;
@@ -782,7 +776,7 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void DumpInfo(McEmailMessageThread messageThread)
+        protected void DumpInfo (McEmailMessageThread messageThread)
         {
             var message = messageThread.SingleMessageSpecialCase ();
             Log.Debug (Log.LOG_UI, "message Id={0} bodyId={1} Score={2}", message.Id, message.BodyId, message.Score);

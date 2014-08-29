@@ -128,7 +128,7 @@ namespace NachoCore.Utils
         static public string FullDateTimeString (DateTime d)
         {
             NcAssert.True (DateTimeKind.Local != d.Kind);
-            return LocalT (d).ToString ("ddd, MMM d - h:mm ") + LocalT (d).ToString("tt").ToLower();
+            return LocalT (d).ToString ("ddd, MMM d - h:mm ") + LocalT (d).ToString ("tt").ToLower ();
 
         }
 
@@ -153,9 +153,9 @@ namespace NachoCore.Utils
         static public string FullTimeString (DateTime d)
         {
             NcAssert.True (DateTimeKind.Local != d.Kind);
-            return LocalT (d).ToString ("t").ToLower();
+            return LocalT (d).ToString ("t").ToLower ();
         }
-            
+
 
         /// <summary>
         /// Compact version of event duration
@@ -273,6 +273,28 @@ namespace NachoCore.Utils
                 return account.EmailAddr;
             } else {
                 return account.DisplayName;
+            }
+        }
+
+        static public string ReminderDate (DateTime utcDueDate)
+        {
+            var local = LocalT (utcDueDate);
+            var duration = System.DateTime.UtcNow - utcDueDate;
+            if (365 < Math.Abs (duration.Days)) {
+                return local.ToString ("MMM dd, yyyy"); // FIXME: Localize
+            } else {
+                return local.ToString ("MMM dd, h:mm tt"); // FIXME: Localize
+            }
+        }
+
+        static public string ReminderText (McEmailMessage message)
+        {
+            if (message.IsDeferred ()) {
+                return  String.Format ("Hidden until {0}", Pretty.ReminderDate (message.FlagDueAsUtc ()));
+            } else if (message.IsOverdue ()) {
+                return String.Format ("Response was due {0}", Pretty.ReminderDate (message.FlagDueAsUtc ()));
+            } else {
+                return  String.Format ("Response is due {0}", Pretty.ReminderDate (message.FlagDueAsUtc ()));
             }
         }
     }
