@@ -379,15 +379,15 @@ namespace NachoClient.iOS
             AddDetailTextLabel (25, 123, SCREEN_WIDTH - 50, 15, EVENT_WHEN_DETAIL_LABEL_TAG, EventInfoView);
             AddDetailTextLabel (25, 143, SCREEN_WIDTH - 50, 15, 500, EventInfoView);
             AddDetailTextLabel (25, 163, SCREEN_WIDTH - 50, 30, 600, EventInfoView);
-            float RECURRING_OFFEST = 0f;
+            float RECURRING_OFFSET = 0f;
             if (isRecurring) {
-                RECURRING_OFFEST = 40f;
+                RECURRING_OFFSET = 40f;
             } 
 
             //phone label, image and detail
-            AddTextLabelWithImage (45, RECURRING_OFFEST + 175, SCREEN_WIDTH - 50, 15, "Phone", UIImage.FromBundle ("icn-mtng-phone"), RECURRING_OFFEST + 174, EventInfoView);
+            AddTextLabelWithImage (45, RECURRING_OFFSET + 175, SCREEN_WIDTH - 50, 15, "Phone", UIImage.FromBundle ("icn-mtng-phone"), RECURRING_OFFSET + 174, EventInfoView);
 
-            UIButton eventPhoneDetailButton = new UIButton (new RectangleF (25, RECURRING_OFFEST + 200, SCREEN_WIDTH - 50, 15));
+            UIButton eventPhoneDetailButton = new UIButton (new RectangleF (25, RECURRING_OFFSET + 200, SCREEN_WIDTH - 50, 15));
             eventPhoneDetailButton.Font = A.Font_AvenirNextRegular14;
             eventPhoneDetailButton.SetTitleColor (UIColor.LightGray, UIControlState.Normal);
             eventPhoneDetailButton.Tag = EVENT_PHONE_DETAIL_BUTTON_TAG;
@@ -399,9 +399,9 @@ namespace NachoClient.iOS
             EventInfoView.Add (eventPhoneDetailButton);  
 
             //attendees label, image and detail
-            AddTextLabelWithImage (45, RECURRING_OFFEST + 175 + 57, SCREEN_WIDTH - 50, 15, "Attendees", UIImage.FromBundle ("icn-mtng-people"), RECURRING_OFFEST + 174 + 57, EventInfoView);
+            AddTextLabelWithImage (45, RECURRING_OFFSET + 175 + 57, SCREEN_WIDTH - 50, 15, "Attendees", UIImage.FromBundle ("icn-mtng-people"), RECURRING_OFFSET + 174 + 57, EventInfoView);
 
-            eventAttendeeView = new UIView (new RectangleF (0, RECURRING_OFFEST + 175 + 57 + 15, SCREEN_WIDTH, 96));
+            eventAttendeeView = new UIView (new RectangleF (0, RECURRING_OFFSET + 175 + 57 + 15, SCREEN_WIDTH, 96));
             var attendeeTap = new UITapGestureRecognizer ();
             attendeeTap.AddTarget (() => {
                 PerformSegue ("EventToEventAttendees", this);
@@ -415,7 +415,7 @@ namespace NachoClient.iOS
             //////////////////////
 
             //alerts 
-            eventAlertsView = new UIView (new RectangleF (0, RECURRING_OFFEST + 228 + IMAGE_HEIGHT + 115, SCREEN_WIDTH, CELL_HEIGHT));
+            eventAlertsView = new UIView (new RectangleF (0, RECURRING_OFFSET + 228 + IMAGE_HEIGHT + 115, SCREEN_WIDTH, CELL_HEIGHT));
             eventAlertsView.BackgroundColor = UIColor.White;
 
             UIImageView alertsAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
@@ -442,7 +442,7 @@ namespace NachoClient.iOS
             EventInfoView.Add (eventAlertsView);
 
             //attachments
-            eventAttachmentsView = new UIView (new RectangleF (0, RECURRING_OFFEST + 228 + IMAGE_HEIGHT + CELL_HEIGHT + 115, SCREEN_WIDTH, CELL_HEIGHT));
+            eventAttachmentsView = new UIView (new RectangleF (0, RECURRING_OFFSET + 228 + IMAGE_HEIGHT + CELL_HEIGHT + 115, SCREEN_WIDTH, CELL_HEIGHT));
             eventAttachmentsView.BackgroundColor = UIColor.White;
 
             UIImageView attachmentAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
@@ -469,7 +469,7 @@ namespace NachoClient.iOS
             EventInfoView.Add (eventAttachmentsView);
 
             //notes
-            eventNotesView = new UIView (new RectangleF (0, RECURRING_OFFEST + 228 + IMAGE_HEIGHT + 115 + (CELL_HEIGHT * 2), SCREEN_WIDTH, CELL_HEIGHT));
+            eventNotesView = new UIView (new RectangleF (0, RECURRING_OFFSET + 228 + IMAGE_HEIGHT + 115 + (CELL_HEIGHT * 2), SCREEN_WIDTH, CELL_HEIGHT));
             eventNotesView.BackgroundColor = UIColor.White;
 
             UIImageView notesAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
@@ -499,7 +499,7 @@ namespace NachoClient.iOS
             EventInfoView.Add (eventNotesView);
 
             for (int i = 0; i < 4; i++) {
-                Util.AddHorizontalLine (23f, RECURRING_OFFEST + 228 + IMAGE_HEIGHT + 115 + (CELL_HEIGHT * i), SCREEN_WIDTH, separatorColor, EventInfoView);
+                Util.AddHorizontalLine (23f, RECURRING_OFFSET + 228 + IMAGE_HEIGHT + 115 + (CELL_HEIGHT * i), SCREEN_WIDTH, separatorColor, EventInfoView);
             }
 
             MakeToolbar ();
@@ -512,7 +512,7 @@ namespace NachoClient.iOS
 
             //Scroll View
             scrollView.BackgroundColor = UIColor.White;
-            scrollView.ContentSize = new SizeF (SCREEN_WIDTH, RECURRING_OFFEST + 20 + 608 + 20 - 115);
+            scrollView.ContentSize = new SizeF (SCREEN_WIDTH, RECURRING_OFFSET + 20 + 608 + 20 - 115);
             scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
 
         }

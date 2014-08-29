@@ -37,6 +37,8 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
+            Util.ConfigureNavBar (false, NavigationController);
+
             CalendarHelper.ExpandRecurrences ();
 
             // Navigation
