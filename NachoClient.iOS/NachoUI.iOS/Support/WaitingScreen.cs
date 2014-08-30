@@ -64,7 +64,7 @@ namespace NachoClient.iOS
         public void CreateView ()
         {
             this.BackgroundColor = A.Color_NachoGreen;
-            LOWER_SECTION_Y_VAL = this.Frame.Height - 437 + 64;
+            LOWER_SECTION_Y_VAL = this.Frame.Height - 437 + 64 + 64;
 
             spinnerView = new UIView (new RectangleF (this.Frame.Width / 2 - 40, LOWER_SECTION_Y_VAL, MASK_DIAMETER, MASK_DIAMETER));
             spinnerView.BackgroundColor = A.Color_NachoRed;
