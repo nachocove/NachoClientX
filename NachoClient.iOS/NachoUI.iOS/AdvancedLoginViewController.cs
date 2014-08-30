@@ -167,12 +167,14 @@ namespace NachoClient.iOS
             whiteInset.BackgroundColor = UIColor.White;
             contentView.AddSubview (whiteInset);
 
-            connectButton = new UIButton (new RectangleF (30, yOffset, View.Frame.Width - 60, CELL_HEIGHT));
-            connectButton.BackgroundColor = A.Color_NachoGreen;
+            connectButton = new UIButton (new RectangleF (25, yOffset, View.Frame.Width - 50, 46));
+            connectButton.BackgroundColor = A.Color_NachoBlue;
             connectButton.TitleLabel.TextAlignment = UITextAlignment.Center;
             connectButton.SetTitle ("Connect", UIControlState.Normal);
             connectButton.TitleLabel.TextColor = UIColor.White;
-            connectButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
+            connectButton.TitleLabel.Font = A.Font_AvenirNextDemiBold17;
+            connectButton.Layer.CornerRadius = 4f;
+            connectButton.Layer.MasksToBounds = true;
             connectButton.TouchUpInside += (object sender, EventArgs e) => {
                 View.EndEditing (true);
                 if (canUserConnect ()) {
@@ -435,7 +437,7 @@ namespace NachoClient.iOS
             UIView inputBox = new UIView (new RectangleF (0, yVal, View.Frame.Width + 1, CELL_HEIGHT));
             inputBox.BackgroundColor = UIColor.White;
             if (hasBorder) {
-                inputBox.Layer.BorderColor = UIColor.LightGray.CGColor;
+                inputBox.Layer.BorderColor = A.Color_NachoSeparator.CGColor;
                 inputBox.Layer.BorderWidth = .4f;
             }
 
