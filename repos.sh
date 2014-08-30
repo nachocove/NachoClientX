@@ -20,4 +20,5 @@ bc-csharp
 MimeKit
 DnDns
 DDay-iCal-Xamarin
+Telemetry
 "
