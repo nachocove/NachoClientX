@@ -567,6 +567,9 @@ namespace NachoClient.iOS
                 reminderImageView.Hidden = true;
                 reminderLabelView.Hidden = true;
             }
+            if (yOffset < userImageView.Frame.Bottom) {
+                yOffset = userImageView.Frame.Bottom;
+            }
             yOffset += 5;
             var separatorView = View.ViewWithTag (SEPARATOR_TAG);
             separatorView.Frame = new RectangleF (0, yOffset, View.Frame.Width, 1);
