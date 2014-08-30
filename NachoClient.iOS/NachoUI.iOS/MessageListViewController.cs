@@ -88,27 +88,22 @@ namespace NachoClient.iOS
 
             // Search button brings up the search controller
             searchButton.Clicked += (object sender, EventArgs e) => {
-//                if (SearchDisplayController.Active) {
-//                    return;
-//                }
-//                // Cleans up the UI
-//                if (RefreshControl.Refreshing) {
-//                    RefreshControl.EndRefreshing ();
-//                }
-//                // Save the tableview location, then scroll
-//                // searchbar into view.  This searchbar is
-//                // not used; it works around an iOS bug.
-//                savedContentOffset = TableView.ContentOffset;
-//                TableView.SetContentOffset (new PointF (0.0f, 0.0f), false);
-//                if (44.0f >= savedContentOffset.Y) {
-//                    SearchDisplayController.SetActive (true, true);
-//                } else {
-//                    SearchDisplayController.SetActive (true, false);
-//                }
-
-                SearchDisplayController.SearchBar.BecomeFirstResponder ();
+                if (SearchDisplayController.Active) {
+                    return;
+                }
+                // Cleans up the UI
                 if (RefreshControl.Refreshing) {
                     RefreshControl.EndRefreshing ();
+                }
+                // Save the tableview location, then scroll
+                // searchbar into view.  This searchbar is
+                // not used; it works around an iOS bug.
+                savedContentOffset = TableView.ContentOffset;
+                TableView.SetContentOffset (new PointF (0.0f, 0.0f), false);
+                if (44.0f >= savedContentOffset.Y) {
+                    SearchDisplayController.SetActive (true, true);
+                } else {
+                    SearchDisplayController.SetActive (true, false);
                 }
             };
 
