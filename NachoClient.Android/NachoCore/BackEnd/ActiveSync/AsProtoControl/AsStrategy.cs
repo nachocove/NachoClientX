@@ -62,24 +62,25 @@ namespace NachoCore.ActiveSync
                 None = 0,
                 RicSynced = (1 << 0),
                 NarrowSyncOk = (1 << 1),
+                IgnorePower = (1 << 2),
             };
 
             private static ItemType[] ItemTypeSeq = new ItemType[] { ItemType.Email, ItemType.Cal, ItemType.Contact };
 
             public static int[,] Ladder = new int[,] {
                 // { Email, Cal, Contact, Action }
-                { (int)EmailEnum.None, (int)CalEnum.None, (int)ContactEnum.RicInf, (int)FlagEnum.None },
-                { (int)EmailEnum.Def1d, (int)CalEnum.Def2w, (int)ContactEnum.RicInf, (int)FlagEnum.RicSynced },
-                { (int)EmailEnum.Def3d, (int)CalEnum.Def2w, (int)ContactEnum.RicInf, (int)FlagEnum.RicSynced }, {
+                { (int)EmailEnum.None, (int)CalEnum.None, (int)ContactEnum.RicInf, (int)FlagEnum.IgnorePower },
+                { (int)EmailEnum.Def1d, (int)CalEnum.Def2w, (int)ContactEnum.RicInf, (int)FlagEnum.RicSynced | (int)FlagEnum.IgnorePower },
+                { (int)EmailEnum.Def3d, (int)CalEnum.Def2w, (int)ContactEnum.RicInf, (int)FlagEnum.RicSynced | (int)FlagEnum.IgnorePower }, {
                     (int)EmailEnum.Def1w,
                     (int)CalEnum.Def2w,
                     (int)ContactEnum.RicInf,
-                    (int)FlagEnum.RicSynced | (int)FlagEnum.NarrowSyncOk
+                    (int)FlagEnum.RicSynced | (int)FlagEnum.NarrowSyncOk | (int)FlagEnum.IgnorePower
                 }, {
                     (int)EmailEnum.Def2w,
                     (int)CalEnum.Def2w,
                     (int)ContactEnum.DefRicInf,
-                    (int)FlagEnum.RicSynced | (int)FlagEnum.NarrowSyncOk
+                    (int)FlagEnum.RicSynced | (int)FlagEnum.NarrowSyncOk | (int)FlagEnum.IgnorePower
                 }, {
                     (int)EmailEnum.All1m,
                     (int)CalEnum.All1m,
@@ -763,8 +764,9 @@ namespace NachoCore.ActiveSync
                     return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.QOop, cmd);
                 }
                 // (FG, BG) Choose eligible option by priority, split tie randomly...
-                if (Power.Instance.PowerState != PowerStateEnum.Unknown &&
-                    Power.Instance.BatteryLevel > 0.7) {
+                if (Scope.FlagIsSet(protocolState.StrategyRung, Scope.FlagEnum.IgnorePower) ||
+                    (Power.Instance.PowerState != PowerStateEnum.Unknown &&
+                        Power.Instance.BatteryLevel > 0.7)) {
                     FetchKit fetchKit = null;
                     SyncKit syncKit = null;
                     if (NetStatusSpeedEnum.WiFi == NcCommStatus.Instance.Speed) {

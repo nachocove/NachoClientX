@@ -664,14 +664,23 @@ namespace NachoClient.iOS
             var datestring = McMutables.GetOrCreate ("IOS", "GoInactiveTime", DateTime.UtcNow.ToString ());
             var since = DateTime.Parse (datestring);
             var unreadAndHot = McEmailMessage.QueryUnreadAndHotAfter (since);
-
-            UIApplication.SharedApplication.ApplicationIconBadgeNumber = unreadAndHot.Count ();
-
+            var badgeCount = unreadAndHot.Count ();
             var soundExpressed = false;
             int remainingVisibleSlots = 10;
+
             foreach (var message in unreadAndHot) {
                 if (message.HasBeenNotified) {
+                    // Notify once.
                     continue;
+                }
+                var fromAddr = message.GetFromAddress ();
+                if (null != fromAddr && null != fromAddr.CanonicalEmailAddress) {
+                    if (fromAddr.CanonicalEmailAddress == Account.EmailAddr) {
+                        // Don't notify or count in badge number from-me messages.
+                        Log.Info (Log.LOG_UI, "Not notifying on to-{0} message.", Account.EmailAddr);
+                        --badgeCount;
+                        continue;
+                    }
                 }
                 var notif = new UILocalNotification () {
                     AlertAction = "Nacho Mail",
@@ -691,6 +700,8 @@ namespace NachoClient.iOS
                     break;
                 }
             }
+
+            UIApplication.SharedApplication.ApplicationIconBadgeNumber = badgeCount;
         }
     }
 
