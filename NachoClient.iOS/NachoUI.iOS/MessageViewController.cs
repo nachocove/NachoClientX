@@ -1007,7 +1007,7 @@ namespace NachoClient.iOS
 
             Util.AddHorizontalLine (0, LINE_OFFSET, SCREEN_WIDTH, A.Color_NachoSeparator, calendarEventView);
             Util.AddHorizontalLine (0, LINE_OFFSET + 66, SCREEN_WIDTH, A.Color_NachoSeparator, calendarEventView);
-            Util.AddHorizontalLine (0, LINE_OFFSET + 110, SCREEN_WIDTH, A.Color_NachoSeparator, calendarEventView);
+            Util.AddHorizontalLine (0, LINE_OFFSET + 120, SCREEN_WIDTH, A.Color_NachoSeparator, calendarEventView);
             Util.AddVerticalLine (65, LINE_OFFSET, 66, A.Color_NachoSeparator, calendarEventView);
 //            var root = new RootElement ("");
 //            var section = new ThinSection ();
@@ -1071,9 +1071,16 @@ namespace NachoClient.iOS
         UIButton tentativeButton;
         UIButton declineButton;
 
+        UILabel acceptLabel;
+        UILabel tentativeLabel;
+        UILabel declineLabel;
+
+        UILabel messageLabel;
+        UIButton changeResponseButton;
+
         public void MakeResponseBar (DDay.iCal.Event evt, UIView parentView)
         {
-            UIView responseView = new UIView (new RectangleF (0, LINE_OFFSET + 66, SCREEN_WIDTH, 44));
+            UIView responseView = new UIView (new RectangleF (0, LINE_OFFSET + 66, SCREEN_WIDTH, 54));
             responseView.BackgroundColor = UIColor.White;
 
             acceptButton = new UIButton (UIButtonType.RoundedRect);
@@ -1115,19 +1122,19 @@ namespace NachoClient.iOS
             declineButton.TintColor = UIColor.Clear;
 
             acceptButton.TouchUpInside += (object sender, EventArgs e) => {
-                ToggleButtons ();
+                ToggleButtons (NcResponseType.Accepted);
                 acceptButton.Selected = true;
                 UpdateMeetingStatus (evt, NcAttendeeStatus.Accept);
             };
 
             tentativeButton.TouchUpInside += (object sender, EventArgs e) => {
-                ToggleButtons ();
+                ToggleButtons (NcResponseType.Tentative);
                 tentativeButton.Selected = true;
                 UpdateMeetingStatus (evt, NcAttendeeStatus.Tentative);
             };
 
             declineButton.TouchUpInside += (object sender, EventArgs e) => {
-                ToggleButtons ();
+                ToggleButtons (NcResponseType.Declined);
                 declineButton.Selected = true;
                 UpdateMeetingStatus (evt, NcAttendeeStatus.Decline);
             };
@@ -1136,14 +1143,191 @@ namespace NachoClient.iOS
             responseView.Add (tentativeButton);
             responseView.Add (declineButton);
 
+            acceptLabel = new UILabel (new RectangleF (15, 36, 44, 10));
+            acceptLabel.TextColor = A.Color_NachoBlack;
+            acceptLabel.TextAlignment = UITextAlignment.Center;
+            acceptLabel.Font = A.Font_AvenirNextRegular10;
+            acceptLabel.Text = "Accept";
+            responseView.Add (acceptLabel);
+
+            tentativeLabel = new UILabel (new RectangleF ((SCREEN_WIDTH / 2) - 22, 36, 44, 10));
+            tentativeLabel.TextColor = A.Color_NachoBlack;
+            tentativeLabel.TextAlignment = UITextAlignment.Center;
+            tentativeLabel.Font = A.Font_AvenirNextRegular10;
+            tentativeLabel.Text = "Tentative";
+            responseView.Add (tentativeLabel);
+
+            declineLabel = new UILabel (new RectangleF (SCREEN_WIDTH - 24 - 35, 36, 44, 10));
+            declineLabel.TextColor = A.Color_NachoBlack;
+            declineLabel.TextAlignment = UITextAlignment.Center;
+            declineLabel.Font = A.Font_AvenirNextRegular10;
+            declineLabel.Text = "Decline";
+            responseView.Add (declineLabel);
+
+            messageLabel = new UILabel (new RectangleF (25 + 24 + 10, 15, 100, 24));
+            messageLabel.TextColor = A.Color_NachoBlack;
+            messageLabel.TextAlignment = UITextAlignment.Left;
+            messageLabel.Font = A.Font_AvenirNextRegular12;
+            messageLabel.Hidden = true;
+            responseView.Add (messageLabel);
+
+            changeResponseButton = new UIButton (UIButtonType.RoundedRect);
+
+            changeResponseButton.SetTitle ("Change response", UIControlState.Normal);
+            changeResponseButton.Font = A.Font_AvenirNextRegular12;
+            changeResponseButton.SizeToFit ();
+            changeResponseButton.Frame = new RectangleF (SCREEN_WIDTH - changeResponseButton.Frame.Width - 25, 16, changeResponseButton.Frame.Width, 24);
+            changeResponseButton.SetTitleColor (A.Color_NachoBlue, UIControlState.Normal);
+            changeResponseButton.Hidden = true;
+            changeResponseButton.TouchUpInside += (object sender, EventArgs e) => {
+                RestoreButtons ();
+            };
+            responseView.Add (changeResponseButton);
+
+
             parentView.Add (responseView);
         }
 
-        protected void ToggleButtons ()
+        protected void ToggleButtons (NcResponseType r)
         {
+            if (NcResponseType.Accepted == r) {
+                acceptButton.Selected = true;
+                tentativeButton.Selected = false;
+                declineButton.Selected = false;
+                messageLabel.Text = "You are going";
+                messageLabel.Hidden = false;
+                messageLabel.Alpha = 0;
+                changeResponseButton.Hidden = false;
+                changeResponseButton.Alpha = 0;
+
+                UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
+                    () => {
+                        acceptLabel.Alpha = 0;
+                        tentativeButton.Alpha = 0;
+                        declineButton.Alpha = 0;
+                        tentativeLabel.Alpha = 0;
+                        declineLabel.Alpha = 0;
+                        messageLabel.Alpha = 1;
+                        changeResponseButton.Alpha = 1;
+
+                        acceptButton.Frame = new RectangleF (25, 15, 24, 24);
+                    },
+                    () => {
+                        acceptLabel.Hidden = true;
+                        tentativeButton.Hidden = true;
+                        declineButton.Hidden = true;
+                        tentativeLabel.Hidden = true;
+                        declineLabel.Hidden = true;
+                        acceptButton.UserInteractionEnabled = false;
+                    }
+                );
+            } else if (NcResponseType.Tentative == r) {
+                acceptButton.Selected = false;
+                tentativeButton.Selected = true;
+                declineButton.Selected = false;
+                messageLabel.Text = "Tentative";
+                messageLabel.Hidden = false;
+                messageLabel.Alpha = 0;
+                changeResponseButton.Hidden = false;
+                changeResponseButton.Alpha = 0;
+
+                UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
+                    () => {
+                        acceptLabel.Alpha = 0;
+                        acceptButton.Alpha = 0;
+                        declineButton.Alpha = 0;
+                        tentativeLabel.Alpha = 0;
+                        declineLabel.Alpha = 0;
+                        messageLabel.Alpha = 1;
+                        changeResponseButton.Alpha = 1;
+
+                        tentativeButton.Frame = new RectangleF (25, 15, 24, 24);
+                    },
+                    () => {
+                        acceptLabel.Hidden = true;
+                        acceptButton.Hidden = true;
+                        declineButton.Hidden = true;
+                        tentativeLabel.Hidden = true;
+                        declineLabel.Hidden = true;
+                        tentativeButton.UserInteractionEnabled = false;
+                    }
+                );
+            } else {
+                acceptButton.Selected = false;
+                tentativeButton.Selected = false;
+                declineButton.Selected = true;
+                messageLabel.Text = "You are not going";
+                messageLabel.Hidden = false;
+                messageLabel.Alpha = 0;
+                changeResponseButton.Hidden = false;
+                changeResponseButton.Alpha = 0;
+
+                UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
+                    () => {
+                        acceptLabel.Alpha = 0;
+                        acceptButton.Alpha = 0;
+                        tentativeButton.Alpha = 0;
+                        tentativeLabel.Alpha = 0;
+                        declineLabel.Alpha = 0;
+                        messageLabel.Alpha = 1;
+                        changeResponseButton.Alpha = 1;
+
+                        declineButton.Frame = new RectangleF (25, 15, 24, 24);
+                    },
+                    () => {
+                        acceptLabel.Hidden = true;
+                        acceptButton.Hidden = true;
+                        tentativeButton.Hidden = true;
+                        tentativeLabel.Hidden = true;
+                        declineLabel.Hidden = true;
+                        declineButton.UserInteractionEnabled = false;
+
+                    }
+                );
+            }
+        }
+
+        protected void RestoreButtons ()
+        {
+
             acceptButton.Selected = false;
-            declineButton.Selected = false;
             tentativeButton.Selected = false;
+            declineButton.Selected = false;
+            acceptButton.Hidden = false;
+            acceptLabel.Hidden = false;
+            tentativeButton.Hidden = false;
+            declineButton.Hidden = false;
+            tentativeLabel.Hidden = false;
+            declineLabel.Hidden = false;
+            acceptButton.UserInteractionEnabled = true;
+            tentativeButton.UserInteractionEnabled = true;
+            declineButton.UserInteractionEnabled = true;
+
+            UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
+                () => {
+
+                    acceptButton.Alpha = 1;
+                    tentativeButton.Alpha = 1;
+                    declineButton.Alpha = 1;
+                    acceptLabel.Alpha = 1;
+                    tentativeLabel.Alpha = 1;
+                    declineLabel.Alpha = 1;
+
+                    messageLabel.Alpha = 0;
+                    changeResponseButton.Alpha = 0;
+
+                    acceptButton.Frame = new RectangleF (25, 10, 24, 24);
+                    tentativeButton.Frame = new RectangleF ((SCREEN_WIDTH / 2) - 12, 10, 24, 24);
+                    declineButton.Frame = new RectangleF (SCREEN_WIDTH - 24 - 25, 10, 24, 24);
+                },
+                () => {
+
+                    messageLabel.Hidden = true;
+                    changeResponseButton.Hidden = true;
+
+                }
+            );
+
         }
 
         /// <summary>

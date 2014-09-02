@@ -19,7 +19,7 @@ namespace NachoClient.iOS
         public EventAttachmentViewController (IntPtr handle) : base (handle)
         {
         }
-            
+
         protected AttachmentTableViewSource attachmentSource;
         protected McAccount account;
         protected McCalendar c;
@@ -31,6 +31,7 @@ namespace NachoClient.iOS
 
         protected static int SEGMENTED_CONTROL_TAG = 100;
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
+
         public void SetOwner (INachoAttachmentListChooserDelegate owner, List<McAttachment> attachments, McCalendar c, bool editing)
         {
             this.owner = owner;
@@ -75,7 +76,7 @@ namespace NachoClient.iOS
             owner.UpdateAttachmentList (this.AttachmentsList);
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
-            
+
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             if (segue.Identifier.Equals ("EventAttachmentToFiles")) {
@@ -147,9 +148,15 @@ namespace NachoClient.iOS
             if (0 == AttachmentsList.Count) {
                 EventAttachmentsTableView.Hidden = true;
                 emptyListLabel.Hidden = false;
-                emptyListLabel.Text = "Add attachments with the \"+\" button";
-                emptyListLabel.Frame = new RectangleF (85, 80, 150, 20);
-                emptyListLabel.SizeToFit ();
+                if (editing) {
+                    emptyListLabel.Text = "Add attachments with the \"+\" button";
+                    emptyListLabel.SizeToFit ();
+                } else {
+                    emptyListLabel.Text = "No attachments";
+                    emptyListLabel.SizeToFit ();
+                }
+                emptyListLabel.Frame = new RectangleF (85, 80, 150, emptyListLabel.Frame.Width);
+
             } else {
                 attachmentSource.SetAttachmentList (this.AttachmentsList);
                 EventAttachmentsTableView.ReloadData ();
@@ -157,7 +164,7 @@ namespace NachoClient.iOS
                 emptyListLabel.Hidden = true;
             }
         }
-         
+
         protected void AttachFileActionSheet ()
         {
             var actionSheet = new UIActionSheet ();
@@ -281,7 +288,7 @@ namespace NachoClient.iOS
         {
             PerformSegue ("ContactsToContactDetail", new SegueHolder (contact));
         }
-            
+
         /// <summary>
         /// INachoFileChooserParent delegate
         /// </summary>

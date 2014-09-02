@@ -199,9 +199,15 @@ namespace NachoClient.iOS
             if (0 == AttendeeList.Count) {
                 EventAttendeesTableView.Hidden = true;
                 emptyListLabel.Hidden = false;
-                emptyListLabel.Text = addMessage;
-                emptyListLabel.Frame = new RectangleF (80, 80, 160, 20);
-                emptyListLabel.SizeToFit ();
+                if (editing) {
+                    emptyListLabel.Text = addMessage;
+                    emptyListLabel.SizeToFit ();
+                    emptyListLabel.Frame = new RectangleF (80, 80, 160, 40);
+                } else {
+                    emptyListLabel.Text = "No attendees";
+                    emptyListLabel.SizeToFit ();
+                    emptyListLabel.Frame = new RectangleF (80, 80, 160, 20);
+                }
             } else {
                 attendeeSource.SetAttendeeList (this.AttendeeList);
                 EventAttendeesTableView.ReloadData ();
@@ -216,9 +222,15 @@ namespace NachoClient.iOS
                 EventAttendeesTableView.Hidden = true;
                 emptyListLabel.Hidden = false;
                 if (0 == AttendeeList.Count) {
-                    emptyListLabel.Text = addMessage;
-                    emptyListLabel.Frame = new RectangleF (80, 80, 160, 20);
-                    emptyListLabel.SizeToFit ();
+                    if (editing) {
+                        emptyListLabel.Text = addMessage;
+                        emptyListLabel.SizeToFit ();
+                        emptyListLabel.Frame = new RectangleF (80, 80, 160, 40);
+                    } else {
+                        emptyListLabel.Text = "No required attendees";
+                        emptyListLabel.SizeToFit ();
+                        emptyListLabel.Frame = new RectangleF (80, 80, 160, 20);
+                    }
                 } else {
                     emptyListLabel.Text = "No required attendees";
                     emptyListLabel.Frame = new RectangleF (0, 80, SCREEN_WIDTH, 20);
@@ -237,9 +249,15 @@ namespace NachoClient.iOS
                 EventAttendeesTableView.Hidden = true;
                 emptyListLabel.Hidden = false;
                 if (0 == AttendeeList.Count) {
-                    emptyListLabel.Text = addMessage;
-                    emptyListLabel.Frame = new RectangleF (80, 80, 160, 20);
-                    emptyListLabel.SizeToFit ();
+                    if (editing) {
+                        emptyListLabel.Text = addMessage;
+                        emptyListLabel.SizeToFit ();
+                        emptyListLabel.Frame = new RectangleF (80, 80, 160, 40);
+                    } else {
+                        emptyListLabel.Text = "No optional attendees";
+                        emptyListLabel.SizeToFit ();
+                        emptyListLabel.Frame = new RectangleF (80, 80, 160, 20);
+                    }
                 } else {
                     emptyListLabel.Text = "No optional attendees";
                     emptyListLabel.Frame = new RectangleF (0, 80, SCREEN_WIDTH, 20);
