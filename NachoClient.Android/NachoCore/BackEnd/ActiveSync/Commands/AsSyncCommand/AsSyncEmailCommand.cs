@@ -14,8 +14,9 @@ namespace NachoCore.ActiveSync
         public static McEmailMessage ServerSaysAddOrChangeEmail (XElement command, McFolder folder)
         {   
             AsHelpers aHelp = new AsHelpers ();
-            var r = aHelp.ParseEmail (Ns, command);
+            var r = aHelp.ParseEmail (Ns, command, folder);
             McEmailMessage emailMessage = r.GetValue<McEmailMessage> ();
+
             bool justCreated = false;
 
             var eMsg = McAbstrFolderEntry.QueryByServerId<McEmailMessage> (folder.AccountId, emailMessage.ServerId);
