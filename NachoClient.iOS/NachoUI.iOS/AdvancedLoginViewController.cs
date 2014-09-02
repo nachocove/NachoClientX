@@ -74,6 +74,11 @@ namespace NachoClient.iOS
             waitScreen.SetOwner (this);
             waitScreen.CreateView ();
             View.Add (waitScreen);
+
+            certificateView = new CertificateView (View.Frame);
+            certificateView.SetOwner (this);
+            certificateView.CreateView ();
+            View.Add (certificateView);
         }
 
         public override void ViewDidAppear (bool animated)
@@ -84,11 +89,6 @@ namespace NachoClient.iOS
                 NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
                 NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
             }
-
-            certificateView = new CertificateView (View.Frame);
-            certificateView.SetOwner (this);
-            certificateView.CreateView ();
-            View.Add (certificateView);
 
             fillInKnownFields ();
             handleStatusEnums ();

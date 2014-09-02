@@ -44,7 +44,7 @@ namespace NachoClient.iOS
         public void CreateView ()
         {
             float VIEW_HEIGHT;
-            VIEW_HEIGHT = this.Frame.Height;// - 64f;
+            VIEW_HEIGHT = this.Frame.Height - 64f;
 
             //this.BackgroundColor = UIColor.LightGray.ColorWithAlpha (.4f);
             this.BackgroundColor = A.Color_NachoGreen;
