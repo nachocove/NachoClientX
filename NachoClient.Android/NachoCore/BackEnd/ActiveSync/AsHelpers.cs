@@ -640,14 +640,19 @@ namespace NachoCore.ActiveSync
             return NcResult.OK (c);
         }
 
-        public NcResult ParseEmail (XNamespace ns, XElement command)
+        public NcResult ParseEmail (XNamespace ns, XElement command, McFolder folder)
         {
 
             var serverId = command.Element (ns + Xml.AirSync.ServerId);
             NcAssert.True (null != serverId);
 
-            McEmailMessage emailMessage = new McEmailMessage ();
-            emailMessage.ServerId = serverId.Value;
+            McEmailMessage emailMessage = McAbstrFolderEntry.QueryByServerId<McEmailMessage> (folder.AccountId, serverId.Value);
+
+            if (null == emailMessage) {
+                emailMessage = new McEmailMessage ();
+                emailMessage.ServerId = serverId.Value;
+            }
+
             var appData = command.Element (ns + Xml.AirSync.ApplicationData);
             NcAssert.NotNull (appData);
 
