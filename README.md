@@ -1,7 +1,11 @@
-# NachoClient (X is for Xamarin)
+# NachoClient using Xamarin
 
-## Look at the code, huh?
+Install the NDK & set up an environment variable:
 
-Let's test code review. 
-The plus sign is the diff, dude.:wq
+.bash_profile:NDK=/Users/.../Software/android-ndk-r9b
+.bash_profile:export NDK
+
+Get a copy of this project.
+
+Run build.sh
 
