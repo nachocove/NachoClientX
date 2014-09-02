@@ -30,6 +30,7 @@ namespace NachoCore
         //        Xml.FolderHierarchy.TypeCode.UserCreatedNotes,
 
         public static readonly Xml.FolderHierarchy.TypeCode[] FilterForEmail = {
+            Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1,
             Xml.FolderHierarchy.TypeCode.DefaultInbox_2,
             Xml.FolderHierarchy.TypeCode.DefaultDrafts_3,
             Xml.FolderHierarchy.TypeCode.DefaultDeleted_4,

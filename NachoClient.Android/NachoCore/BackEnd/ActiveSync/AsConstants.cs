@@ -707,16 +707,15 @@ namespace NachoCore.ActiveSync
                 case TypeCode.UserCreatedJournal_16:
                     return McAbstrFolderEntry.ClassCodeEnum.Journal;
 
-                case TypeCode.Unknown_18:
-                case TypeCode.UserCreatedGeneric_1:
-                    return McAbstrFolderEntry.ClassCodeEnum.Generic;
-
                 case TypeCode.DefaultInbox_2:
                 case TypeCode.DefaultDrafts_3:
                 case TypeCode.DefaultDeleted_4:
                 case TypeCode.DefaultSent_5:
                 case TypeCode.DefaultOutbox_6:
                 case TypeCode.UserCreatedMail_12:
+                    // Treat Unknown/Generic as Email until proven otherwise.
+                case TypeCode.Unknown_18:
+                case TypeCode.UserCreatedGeneric_1:
                     return McAbstrFolderEntry.ClassCodeEnum.Email;
 
                 case TypeCode.DefaultTasks_7:

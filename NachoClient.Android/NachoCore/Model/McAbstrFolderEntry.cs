@@ -23,6 +23,7 @@ namespace NachoCore.Model
             MaxSyncable = 6,
             // Values created by Nacho are >= 100.
             Folder = 100,
+            // We are not using generic or journal.
             Journal = 101,
             Generic = 102,
             Exception = 103,
