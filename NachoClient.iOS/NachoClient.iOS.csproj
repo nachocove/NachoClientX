@@ -86,7 +86,7 @@
     </CustomCommands>
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
-    <CodesignProvision>6bae56aa-3715-4d05-84ad-8dfb2cc73d20</CodesignProvision>
+    <CodesignProvision>A5A410CF-93E6-4AC9-979B-27C42C717007</CodesignProvision>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
     <Optimize>true</Optimize>
@@ -1452,6 +1452,11 @@
     <BundleResource Include="Resources\icn-red-chili-large%402x.png" />
     <BundleResource Include="Resources\icn-red-chili-small.png" />
     <BundleResource Include="Resources\icn-red-chili-small%402x.png" />
+    <BundleResource Include="Content\Slide3-3%402x.png" />
+    <BundleResource Include="Content\Slide3-1B%402x.png" />
+    <BundleResource Include="Content\Slide3-1A%402x.png" />
+    <BundleResource Include="Content\Slide3-4%402x.png" />
+    <BundleResource Include="Content\Slide3-2%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

@@ -27,6 +27,9 @@ namespace NachoClient.iOS
         private UILabel helperTitleText; // text Title
         private UILabel helperBodyText; // text body
         private UIImageView msg1View;
+        private UIImageView pullimageView; // animation - page3
+        private UIImageView calimageView;  // animation - page3
+
         private bool retinaDisplay = (UIScreen.MainScreen.Scale > 1.0); // if so, then we are on a retinadisplay
         private int scaleIt; 
 
@@ -159,6 +162,8 @@ namespace NachoClient.iOS
                 AnimateHotlistItemLeft ();
                 break;
             case 2:
+                this.calimageView.Frame = new RectangleF (0, 0, contentContainer.Frame.Width, 46);
+                this.pullimageView.Frame = new RectangleF (0, calimageView.Frame.Bottom, contentContainer.Frame.Width, 7);
                 AnimateTimelineDown ();
                 break;
             case 3:
@@ -268,17 +273,17 @@ namespace NachoClient.iOS
             bgImage.Frame = new RectangleF (0,0, pageContainerView.Frame.Width, pageContainerView.Frame.Height - helperContainer.Frame.Height);
 
             UIImageView screenImage = new UIImageView (UIImage.FromBundle ("Content/Slide3-2@2x.png"));
-            UIImageView pullimage = new UIImageView (UIImage.FromBundle ("Content/Slide3-1B@2x.png"));
+            pullimageView = new UIImageView (UIImage.FromBundle ("Content/Slide3-1B@2x.png"));
 
 
             screenImage.Frame = (new RectangleF (0,0, contentContainer.Frame.Width, contentContainer.Frame.Height));
-            UIImageView calimageView = new UIImageView(UIImage.FromBundle ("Content/Slide3-1A@2x.png"));
-           
-            calimageView.Center = new PointF (contentContainer.Frame.Width / 2,  23);// is centerpoint relative to local view?
-            pullimage.Center = new PointF (calimageView.Center.X, calimageView.Center.Y + 10);
+            calimageView = new UIImageView(UIImage.FromBundle ("Content/Slide3-1A@2x.png"));
+            calimageView.Frame = new RectangleF (0, 0, contentContainer.Frame.Width, 46);
+            pullimageView.Frame = new RectangleF (0, calimageView.Frame.Bottom, contentContainer.Frame.Width, 7);
+
             contentContainer.AddSubview(screenImage);
             contentContainer.AddSubview (calimageView);
-            contentContainer.AddSubview (pullimage);
+            contentContainer.AddSubview (pullimageView);
 
             pageContainerView.AddSubview (bgImage);
             pageContainerView.AddSubview(contentContainer);
@@ -456,19 +461,23 @@ namespace NachoClient.iOS
         private UIImageView CreateTimelineSprite ()
         {
             var timelineSize = new RectangleF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 2, this.contentContainer.Frame.Width, this.contentContainer.Frame.Height);
-            UIImageView timeline = new UIImageView (UIImage.FromBundle ("Icon"));
-            timeline.Frame = timelineSize;
+            UIImageView timeline = new UIImageView (UIImage.FromBundle ("Content/Slide3-3@2x.png"));
+
+            //timeline.Frame = new RectangleF (0, 0, contentContainer.Frame.Width, contentContainer.Frame.Height);
+           timeline.Frame = timelineSize;
             // timeline starts at top of screen
-            timeline.Center = new PointF (this.contentContainer.Frame.Width / 2, - timeline.Frame.Size.Height * 4 / 10);
+            timeline.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Top - this.pageContainerView.Frame.Height/2);
             return timeline;
         }
             
         public void AnimateTimelineDown ()
         {
+
+
             Action<UIImageView> animateSprite = (timeline) => {
                 UIView.Animate (
                     duration: 0.7,
-                    delay: 1.0,
+                    delay: 2.0,
                     options: UIViewAnimationOptions.CurveEaseInOut,
                     animation: () => {
                         // Move the hotlist item all the way off the bottom of the screen
@@ -479,9 +488,24 @@ namespace NachoClient.iOS
                     }
                 );
             };
+            Action<UIImageView> animatepull = (pull) => {
+                UIView.Animate (
+                    duration: 0.7,
+                    delay: 2.0,
+                    options: UIViewAnimationOptions.CurveEaseInOut,
+                    animation: () => {
+                        // Move the hotlist item all the way off the bottom of the screen
+                        pull.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height+10);
+                    },
+                    completion: () => {
 
+                    }
+                );
+            };
             var timelineSprite = CreateTimelineSprite ();
             SetSpriteCallbacks (timelineSprite, animateSprite);
+            SetSpriteCallbacks (calimageView, animatepull);
+            SetSpriteCallbacks (pullimageView, animatepull);
         }
 
         private UIImageView CreateEmailCell ()
