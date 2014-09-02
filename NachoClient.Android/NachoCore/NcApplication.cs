@@ -88,7 +88,11 @@ namespace NachoCore
         private bool IsXammit (Exception ex)
         {
             var message = ex.ToString ();
-            Log.Error (Log.LOG_SYS, "UnobservedTaskException: {0}", message);
+            if (ex is OperationCanceledException && message.Contains ("NcTask")) {
+                Log.Error (Log.LOG_SYS, "XAMMIT AggregateException: UnobservedTaskException from cancelled Task.");
+                // XAMMIT. Known bug, Task should absorb OperationCanceledException when CancellationToken is bound to Task.
+                return true;
+            }
             if (ex is InvalidCastException &&
                 (message.Contains ("WriteRequestAsyncCB") || message.Contains ("GetResponseAsyncCB"))) {
                 Log.Error (Log.LOG_SYS, "XAMMIT AggregateException: InvalidCastException with WriteRequestAsyncCB/GetResponseAsyncCB");
@@ -110,6 +114,7 @@ namespace NachoCore
                 // XAMMIT. Cancel exception should be caught by system when c-token is the Task's c-token.
                 return true;
             }
+            Log.Error (Log.LOG_SYS, "UnobservedTaskException: {0}", message);
             return false;
         }
 
