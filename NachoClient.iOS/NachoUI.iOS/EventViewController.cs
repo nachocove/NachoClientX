@@ -823,7 +823,7 @@ namespace NachoClient.iOS
         {
             if (account.EmailAddr == c.OrganizerEmail) {
                 messageLabel.Hidden = false;
-                messageLabel.Text = "You are the organinizer";
+                messageLabel.Text = "You are the organizer";
                 messageLabel.Frame = new RectangleF (25 + 24 + 10, 15, 150, 24);
                 acceptButton.Hidden = false;
                 acceptButton.UserInteractionEnabled = false;
