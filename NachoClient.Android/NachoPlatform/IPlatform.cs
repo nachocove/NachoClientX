@@ -124,5 +124,7 @@ namespace NachoPlatform
 
         // Plugged is returned when AC vs USB is not known.
         PowerStateEnum PowerState { get; }
+
+        bool PowerStateIsPlugged ();
     }
 }

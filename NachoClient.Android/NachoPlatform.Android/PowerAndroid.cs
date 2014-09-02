@@ -40,6 +40,18 @@ namespace NachoPlatform
                 return PowerStateEnum.Unknown;
             }
         }
+
+        public bool PowerStateIsPlugged ()
+        {
+            switch (PowerState) {
+            case PowerStateEnum.Plugged:
+            case PowerStateEnum.PluggedAC:
+            case PowerStateEnum.PluggedUSB:
+                return true;
+            default:
+                return false;
+            }
+        }
     }
 }
 

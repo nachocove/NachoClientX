@@ -67,6 +67,11 @@ namespace NachoPlatform
                 }
             }
         }
+
+        public bool PowerStateIsPlugged ()
+        {
+            return PowerStateEnum.Plugged == PowerState;
+        }
     }
 }
 

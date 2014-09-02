@@ -765,8 +765,8 @@ namespace NachoCore.ActiveSync
                 }
                 // (FG, BG) Choose eligible option by priority, split tie randomly...
                 if (Scope.FlagIsSet(protocolState.StrategyRung, Scope.FlagEnum.IgnorePower) ||
-                    (Power.Instance.PowerState != PowerStateEnum.Unknown &&
-                        Power.Instance.BatteryLevel > 0.7)) {
+                    (Power.Instance.PowerState != PowerStateEnum.Unknown && Power.Instance.BatteryLevel > 0.7) ||
+                    (Power.Instance.PowerStateIsPlugged () && Power.Instance.BatteryLevel > 0.2)) {
                     FetchKit fetchKit = null;
                     SyncKit syncKit = null;
                     if (NetStatusSpeedEnum.WiFi == NcCommStatus.Instance.Speed) {
