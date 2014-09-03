@@ -612,7 +612,8 @@ namespace NachoClient.iOS
                 
             RenderBody (message);
             if (null != message.MeetingRequest && !calendarRendered) {
-                MakeStyledCalendarInvite (message.Subject, message.MeetingRequest.AllDayEvent, message.MeetingRequest.StartTime, message.MeetingRequest.EndTime, message.MeetingRequest.Location, view);
+                var UID = Util.GlobalObjIdToUID (message.MeetingRequest.GlobalObjId);
+                MakeStyledCalendarInvite (UID, message.Subject, message.MeetingRequest.AllDayEvent, message.MeetingRequest.StartTime, message.MeetingRequest.EndTime, message.MeetingRequest.Location, view);
             }
 
             ConfigureAttachments ();
@@ -944,11 +945,11 @@ namespace NachoClient.iOS
             var evt = iCal.Events.First () as DDay.iCal.Event;
             NachoCore.Utils.CalendarHelper.ExtrapolateTimes (ref evt);
 
-            MakeStyledCalendarInvite (evt.Summary, evt.IsAllDay, evt.Start.Value, evt.End.Value, evt.Location, view);
+            MakeStyledCalendarInvite (evt.UID, evt.Summary, evt.IsAllDay, evt.Start.Value, evt.End.Value, evt.Location, view);
             calendarRendered = true;
         }
 
-        public void MakeStyledCalendarInvite (string subject, bool isAllDay, DateTime start, DateTime end, string location, UIView parentView)
+        public void MakeStyledCalendarInvite (string UID, string subject, bool isAllDay, DateTime start, DateTime end, string location, UIView parentView)
         {
             UIView calendarEventView = new UIView (new RectangleF (0, 0, SCREEN_WIDTH, 140));
             calendarEventView.Tag = MESSAGE_PART_TAG;
@@ -1014,7 +1015,7 @@ namespace NachoClient.iOS
             calendarEventView.Add (durationLabel);
             calendarEventView.Add (locationLabel);
 
-            MakeResponseBar (calendarEventView);
+            MakeResponseBar (UID, calendarEventView);
 
             Util.AddHorizontalLine (0, 0, SCREEN_WIDTH, A.Color_NachoSeparator, calendarEventView);
             Util.AddHorizontalLine (0, 66, SCREEN_WIDTH, A.Color_NachoSeparator, calendarEventView);
@@ -1035,7 +1036,7 @@ namespace NachoClient.iOS
         UILabel messageLabel;
         UIButton changeResponseButton;
 
-        public void MakeResponseBar (UIView parentView)
+        public void MakeResponseBar (string UID, UIView parentView)
         {
             UIView responseView = new UIView (new RectangleF (0, 66, SCREEN_WIDTH, 54));
             responseView.BackgroundColor = UIColor.Clear;
@@ -1078,25 +1079,33 @@ namespace NachoClient.iOS
             declineButton.Frame = new RectangleF (SCREEN_WIDTH - 24 - 25, 10, 24, 24);
             declineButton.TintColor = UIColor.Clear;
 
+            //FIXME Use UID to get calendarItem in order to respond to meeting requests
+            ///////////////////////////////////
+            //if (null != queryByUID(UID)) {
+            //  calendarItem = queryByUID(UID);
+            //}
+            ///////////////////////////////////
+
             acceptButton.TouchUpInside += (object sender, EventArgs e) => {
                 ToggleButtons (NcResponseType.Accepted);
                 acceptButton.Selected = true;
+
                 //FIXME
-                //UpdateMeetingStatus (evt, NcAttendeeStatus.Accept);
+                //UpdateMeetingStatus (calendarItem, NcAttendeeStatus.Accept);
             };
 
             tentativeButton.TouchUpInside += (object sender, EventArgs e) => {
                 ToggleButtons (NcResponseType.Tentative);
                 tentativeButton.Selected = true;
                 //FIXME
-                //UpdateMeetingStatus (evt, NcAttendeeStatus.Tentative);
+                //UpdateMeetingStatus (calendarItem, NcAttendeeStatus.Tentative);
             };
 
             declineButton.TouchUpInside += (object sender, EventArgs e) => {
                 ToggleButtons (NcResponseType.Declined);
                 declineButton.Selected = true;
                 //FIXME
-                //UpdateMeetingStatus (evt, NcAttendeeStatus.Decline);
+                //UpdateMeetingStatus (calendarItem, NcAttendeeStatus.Decline);
             };
 
             responseView.Add (acceptButton);
@@ -1143,7 +1152,6 @@ namespace NachoClient.iOS
                 RestoreButtons ();
             };
             responseView.Add (changeResponseButton);
-
 
             parentView.Add (responseView);
         }
