@@ -426,7 +426,7 @@ namespace NachoClient.iOS
 
             Action<UIImageView> animateSprite = (sprite) => {
                 UIView.Animate (
-                    duration: 0.7,
+                    duration: 1.0,
                     delay: 2.0,
                     options: UIViewAnimationOptions.CurveEaseInOut,
                     animation: () => {
@@ -476,7 +476,7 @@ namespace NachoClient.iOS
 
             Action<UIImageView> animateSprite = (timeline) => {
                 UIView.Animate (
-                    duration: 0.7,
+                    duration: 1.0,
                     delay: 2.0,
                     options: UIViewAnimationOptions.CurveEaseInOut,
                     animation: () => {
@@ -490,7 +490,7 @@ namespace NachoClient.iOS
             };
             Action<UIImageView> animatepull = (pull) => {
                 UIView.Animate (
-                    duration: 0.7,
+                    duration: 1.0,
                     delay: 2.0,
                     options: UIViewAnimationOptions.CurveEaseInOut,
                     animation: () => {
@@ -512,10 +512,12 @@ namespace NachoClient.iOS
         {
             // same approach as above. SAnimate one cell, but behind scenes have three cells lined up.
             // the animation wil look smooth, but only one vie is sliding..
-            var emailSize = new RectangleF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 2, this.contentContainer.Frame.Width, 55);
-            UIImageView emailCell = new UIImageView (UIImage.FromBundle ("Icon"));
-            emailCell.Frame = emailSize;
-            emailCell.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 2);
+            //var emailSize = new RectangleF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 2, this.contentContainer.Frame.Width, 55);
+            UIImageView emailCell = new UIImageView (UIImage.FromBundle ("Content/Slide4-3.png"));
+            emailCell.Frame = new RectangleF (0, 77, this.contentContainer.Frame.Width, 93);
+            //emailCell.Center = new PointF (this.contentContainer.Center.X, 104);
+           
+            //emailCell.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 2);
             return emailCell;
         }
 
@@ -523,12 +525,12 @@ namespace NachoClient.iOS
         {
             Action<UIImageView> animateSprite = (emailCell) => {
                 UIView.Animate (
-                    duration: 0.7,
+                    duration: 1.0,
                     delay: 2.0,
                     options: UIViewAnimationOptions.CurveEaseInOut,
                     animation: () => {
-                        // Move the hotlist item all the way off the bottom of the screen
-                        emailCell.Center = new PointF (this.contentContainer.Bounds.X - emailCell.Frame.Width / 2, this.contentContainer.Frame.Height / 2);
+                        // Move the  item all the way off theleft side of the screen
+                        emailCell.Center = new PointF (emailCell.Center.X- emailCell.Frame.Width, emailCell.Center.Y);
                     },
                     completion: () => {
                         emailCell.RemoveFromSuperview ();

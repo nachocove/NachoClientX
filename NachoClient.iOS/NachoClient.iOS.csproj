@@ -1457,6 +1457,11 @@
     <BundleResource Include="Content\Slide3-1A%402x.png" />
     <BundleResource Include="Content\Slide3-4%402x.png" />
     <BundleResource Include="Content\Slide3-2%402x.png" />
+    <BundleResource Include="Content\Slide4-BG%402x.png" />
+    <BundleResource Include="Content\Slide4-1%402x.png" />
+    <BundleResource Include="Content\Slide4-2A%402x.png" />
+    <BundleResource Include="Content\Slide4-2B%402X.png" />
+    <BundleResource Include="Content\Slide4-3%402X.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
