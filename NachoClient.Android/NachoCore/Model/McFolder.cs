@@ -237,7 +237,7 @@ namespace NachoCore.Model
                 accountId, folderEntryId, (uint)classCode).ToList ();
         }
 
-        public static List<McFolder> QueryClientOwned (int accountId, bool isClientOwned)
+        public static List<McFolder> QueryByIsClientOwned (int accountId, bool isClientOwned)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
                           " f.AccountId = ? AND " +

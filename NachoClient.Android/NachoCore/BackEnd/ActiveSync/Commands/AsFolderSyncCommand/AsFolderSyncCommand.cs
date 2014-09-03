@@ -132,7 +132,7 @@ namespace NachoCore.ActiveSync
         private void PerformFolderSyncEpochScrub ()
         {
             var laf = McFolder.GetLostAndFoundFolder (BEContext.Account.Id);
-            var orphaned = McFolder.QueryClientOwned (BEContext.Account.Id, false)
+            var orphaned = McFolder.QueryByIsClientOwned (BEContext.Account.Id, false)
                 .Where (x => x.AsFolderSyncEpoch < BEContext.ProtocolState.AsFolderSyncEpoch).ToList ();
             foreach (var folder in orphaned) {
                 folder.ParentId = laf.ServerId;

@@ -355,11 +355,11 @@ namespace Test.iOS
                 McFolder folder4 = FolderOps.CreateFolder (2, isClientOwned: false);
 
                 // should return folders that are client owned if asked
-                List<McFolder> retrieved1 = McFolder.QueryClientOwned (1, isClientOwned: true);
+                List<McFolder> retrieved1 = McFolder.QueryByIsClientOwned (1, isClientOwned: true);
                 Assert.AreEqual (2, retrieved1.Count, "Querying client-owned folders not awaiting delete should return correct number of folders");
 
                 // should return folders that are not client-owned if asked
-                List<McFolder> retrieved2 = McFolder.QueryClientOwned (2, isClientOwned: false);
+                List<McFolder> retrieved2 = McFolder.QueryByIsClientOwned (2, isClientOwned: false);
                 Assert.AreEqual (1, retrieved2.Count, "Querying non-client-owned folders awaiting delete should return correct number of folders");
                 FoldersAreEqual (folder4, retrieved2.FirstOrDefault (), "Retrieved folder awaiting delete should match inserted folder");
             }
@@ -370,18 +370,18 @@ namespace Test.iOS
                 // should not return folders that are awaiting delete
                 FolderOps.CreateFolder (1, isAwaitingDelete: true, isClientOwned: true);
 
-                List<McFolder> retrieved1 = McFolder.QueryClientOwned (1, true);
+                List<McFolder> retrieved1 = McFolder.QueryByIsClientOwned (1, true);
                 Assert.AreEqual (0, retrieved1.Count, "Should not retrieve any folders if only folder inserted is awaiting delete");
 
                 McFolder folder1 = FolderOps.CreateFolder (1, isAwaitingDelete: false, isClientOwned: true);
 
-                List <McFolder> retrieved2 = McFolder.QueryClientOwned (1, true);
+                List <McFolder> retrieved2 = McFolder.QueryByIsClientOwned (1, true);
                 Assert.AreEqual (1, retrieved2.Count, "Should only retrieve client-owned folders that are not awaiting delete");
                 FoldersAreEqual (folder1, retrieved2.FirstOrDefault (), "Retrieved folder should match inserted folder");
 
                 McFolder folder2 = FolderOps.CreateFolder (1, isAwaitingDelete: false, isClientOwned: false);
 
-                List <McFolder> retrieved3 = McFolder.QueryClientOwned (1, false);
+                List <McFolder> retrieved3 = McFolder.QueryByIsClientOwned (1, false);
                 Assert.AreEqual (1, retrieved3.Count, "Should only retrieve non-client-owned folders that are not awaiting delete");
                 FoldersAreEqual (folder2, retrieved3.FirstOrDefault (), "Retrieved folder should match inserted folder");
             }
