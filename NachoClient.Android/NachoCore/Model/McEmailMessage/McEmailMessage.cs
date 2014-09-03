@@ -321,7 +321,7 @@ namespace NachoCore.Model
                 accountId, minScore, (int)BodyStateEnum.Whole_0, limit);
         }
 
-        public static List<NcEmailMessageIndex> QueryActiveMessageItemsByScore (int accountId, int folderId)
+        public static List<NcEmailMessageIndex> QueryActiveMessageItemsByScore (int accountId, int folderId, double hotScore)
         {
             return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
                 "SELECT e.Id as Id, e.DateReceived FROM McEmailMessage AS e " +
@@ -346,8 +346,13 @@ namespace NachoCore.Model
                 " m.FolderId = ? AND " +
                 " d.EmailAddressId IN (SELECT a.Id FROM McEmailAddress AS a WHERE a.IsVip != 0) " +
                 " ORDER BY e.DateReceived DESC",
-                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow, minHotScore,
+                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow, hotScore,
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId);
+        }
+
+        public static List<NcEmailMessageIndex> QueryActiveMessageItemsByScore (int accountId, int folderId)
+        {
+            return QueryActiveMessageItemsByScore (accountId, folderId, minHotScore);
         }
 
         /// TODO: Need account id
