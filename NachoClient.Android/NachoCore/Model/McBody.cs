@@ -52,8 +52,20 @@ namespace NachoCore.Model
         {
             var body = SaveStart ();
             File.WriteAllText (GetBodyPath (body.Id), content);
+
             body.SaveDone ();
             return body;
+        }
+
+        public void UpdateBody (string content)
+        {
+            File.WriteAllText (GetBodyPath (Id), content);
+
+            if (!IsValid) {
+                SaveDone ();
+            } else {
+                Update ();
+            }
         }
 
         public FileStream SaveFileStream ()
