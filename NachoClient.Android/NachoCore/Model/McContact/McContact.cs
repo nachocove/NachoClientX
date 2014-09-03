@@ -565,7 +565,9 @@ namespace NachoCore.Model
         public override int Update ()
         {
             int retval = base.Update ();
-            InsertAncillaryData (NcModel.Instance.Db);
+            if (HasReadAncillaryData) {
+                InsertAncillaryData (NcModel.Instance.Db);
+            }
             return retval;
         }
 
