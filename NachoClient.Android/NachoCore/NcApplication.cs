@@ -202,8 +202,8 @@ namespace NachoCore
         public void StopClass2Services ()
         {
             // No need to turn off the model rate limiter.
-            // No need to explicitly stop brain.
             NcContactGleaner.Stop ();
+            NcBrain.StopService ();
         }
 
         public void StartClass3Services ()

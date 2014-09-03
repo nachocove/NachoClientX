@@ -78,6 +78,11 @@ namespace NachoCore.Brain
             }, "Brain");
         }
 
+        public static void StopService ()
+        {
+            NcBrain.SharedInstance.Enqueue (new NcBrainEvent (NcBrainEventType.TERMINATE));
+        }
+
         public void Enqueue (NcBrainEvent brainEvent)
         {
             EventQueue.Enqueue (brainEvent);
@@ -328,6 +333,7 @@ namespace NachoCore.Brain
             while (true) {
                 var brainEvent = EventQueue.Dequeue ();
                 if (NcBrainEventType.TERMINATE == brainEvent.Type) {
+                    Log.Info (Log.LOG_BRAIN, "NcBrain Task exits");
                     return;
                 }
                 if (ENABLED) {
