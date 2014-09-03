@@ -269,7 +269,6 @@ namespace NachoClient.iOS
                 dc.ViewDisappearing += (object s, EventArgs e) => {
                     c.Reminder = dc.GetReminder ();
                     SyncMeetingRequest ();
-                    //ScheduleNotification ();
                     ConfigureEventView ();
                 };
                 return;
@@ -1264,26 +1263,6 @@ namespace NachoClient.iOS
                 + " of " + rPattern.MonthOfYear.ToString ();
             }
             return "Case error: " + rPattern.Type.ToString ();
-        }
-
-        protected void ScheduleNotification ()
-        {
-            Notif eventNotif = Notif.Instance;
-            if (0 != c.Reminder) {
-                var alertMessage = Util.FormatAlert (c.Reminder);
-                alertMessage = c.Subject + alertMessage;
-                var fireTime = c.StartTime.AddMinutes (-c.Reminder);
-                if (null != eventNotif.FindNotif (c.Id)) {
-                    eventNotif.CancelNotif (c.Id);
-                    eventNotif.ScheduleNotif (c.Id, fireTime, alertMessage);
-                } else {
-                    eventNotif.ScheduleNotif (c.Id, fireTime, alertMessage);
-                }
-                return;
-            }
-            if (null != eventNotif.FindNotif (c.Id)) {
-                eventNotif.CancelNotif (c.Id);
-            }
         }
 
         protected void SyncMeetingRequest ()
