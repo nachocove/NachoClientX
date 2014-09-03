@@ -345,9 +345,11 @@ namespace NachoCore
         // method can be used to post to StatusIndEvent from outside NcApplication.
         public void InvokeStatusIndEvent (StatusIndEventArgs e)
         {
-            if (null != StatusIndEvent) {
-                StatusIndEvent.Invoke (this, e);
-            }
+            InvokeOnUIThread.Instance.Invoke (() => {
+                if (null != StatusIndEvent) {
+                    StatusIndEvent.Invoke (this, e);
+                }
+            });
         }
         // IBackEndOwner methods below.
         public void CredReq (int accountId)

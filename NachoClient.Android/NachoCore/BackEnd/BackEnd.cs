@@ -458,9 +458,7 @@ namespace NachoCore
         //
         private void InvokeStatusIndEvent (StatusIndEventArgs e)
         {
-            InvokeOnUIThread.Instance.Invoke (delegate() {
-                NcApplication.Instance.InvokeStatusIndEvent (e);
-            });
+            NcApplication.Instance.InvokeStatusIndEvent (e);
         }
 
         public void StatusInd (ProtoControl sender, NcResult status)
