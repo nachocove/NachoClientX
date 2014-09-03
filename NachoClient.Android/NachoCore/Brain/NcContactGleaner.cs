@@ -14,6 +14,7 @@ namespace NachoCore.Brain
 {
     public class NcContactGleaner
     {
+        public const int GLEAN_PERIOD = 10;
         private const uint MaxSaneAddressLength = 40;
         #pragma warning disable 414
         private static NcTimer Invoker;
@@ -27,7 +28,8 @@ namespace NachoCore.Brain
         public static void Start ()
         {
             if (NcBrain.ENABLED) {
-                Invoker = new NcTimer ("NcContactGleaner", InvokerCallback, null, TimeSpan.Zero, new TimeSpan (0, 0, 10));
+                Invoker = new NcTimer ("NcContactGleaner", InvokerCallback, null,
+                    TimeSpan.Zero, new TimeSpan (0, 0, GLEAN_PERIOD));
                 Invoker.Stfu = true;
             }
         }

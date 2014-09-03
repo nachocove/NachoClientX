@@ -52,8 +52,11 @@ namespace NachoCore.Brain
         private DateTime LastEmailAddressScoreUpdate;
         private DateTime LastEmailMessageScoreUpdate;
 
+        private DateTime LastPeriodicGlean;
+
         public NcBrain ()
         {
+            LastPeriodicGlean = new DateTime ();
             LastEmailAddressScoreUpdate = new DateTime ();
             LastEmailMessageScoreUpdate = new DateTime ();
 
@@ -289,6 +292,9 @@ namespace NachoCore.Brain
 
             switch (brainEvent.Type) {
             case NcBrainEventType.PERIODIC_GLEAN:
+                if (!NcApplication.Instance.IsBackgroundAbateRequired) {
+                    LastPeriodicGlean = DateTime.Now;
+                }
                 EvaluateRunRate ();
                 int num_entries = WorkCredits;
                 num_entries -= AnalyzeEmailAddresses (num_entries);
@@ -329,6 +335,7 @@ namespace NachoCore.Brain
             if (ENABLED) {
                 McEmailMessage.StartTimeVariance ();
                 NcApplication.Instance.StatusIndEvent += GenerateInitialContactScores;
+                NcApplication.Instance.StatusIndEvent += UIScrollingEnd;
             }
             while (true) {
                 var brainEvent = EventQueue.Dequeue ();
@@ -381,6 +388,18 @@ namespace NachoCore.Brain
                 return;
             }
             NcBrain.SharedInstance.Enqueue (new NcBrainInitialRicEvent (eventArgs.Account.Id));
+        }
+
+        public void UIScrollingEnd (object sender, EventArgs args)
+        {
+            StatusIndEventArgs eventArgs = args as StatusIndEventArgs;
+            if (NcResult.SubKindEnum.Info_BackgroundAbateStopped != eventArgs.Status.SubKind) {
+                return;
+            }
+            if ((double)NcContactGleaner.GLEAN_PERIOD < (DateTime.Now - LastPeriodicGlean).TotalSeconds) {
+                NcContactGleaner.Stop ();
+                NcContactGleaner.Start ();
+            }
         }
 
         public static void UpdateAddressScore (Int64 emailAddressId, bool forcedUpdateDependentMessages = false)
