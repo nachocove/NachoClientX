@@ -83,6 +83,7 @@ namespace NachoPlatform
     {
         void ScheduleNotif (int handle, DateTime when, string message);
         void CancelNotif (int handle);
+        void CancelNotif (List<int> handles);
     }
 
     public abstract class PlatformContactRecord

@@ -215,5 +215,34 @@ namespace Test.iOS
             Assert.AreEqual (dupServerId, found.ServerId);
             Assert.AreEqual (newServerId, found.ParentId);
         }
+
+        [Test]
+        public void TestQueryDup ()
+        {
+            var first = new McPath () {
+                AccountId = 1,
+                ServerId = dupServerId,
+                ParentId = oldServerId,
+            };
+            first.Insert ();
+            var found = McPath.QueryByServerId (1, dupServerId);
+            Assert.AreEqual (dupServerId, found.ServerId);
+            Assert.AreEqual (oldServerId, found.ParentId);
+            var second = new McPath () {
+                AccountId = 1,
+                ServerId = dupServerId,
+                ParentId = newServerId,
+            };
+            // Need to avoid dup-catcher in McPath.Insert().
+            NcModel.Instance.Db.Insert (second);
+            Assert.True (0 < second.Id);
+            var count = NcModel.Instance.Db.Table<McPath> ().Count ();
+            Assert.AreEqual (2, count);
+            found = McPath.QueryByServerId (1, dupServerId);
+            Assert.AreEqual (dupServerId, found.ServerId);
+            Assert.AreEqual (oldServerId, found.ParentId);
+            count = NcModel.Instance.Db.Table<McPath> ().Count ();
+            Assert.AreEqual (1, count);
+        }
     }
 }

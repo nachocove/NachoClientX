@@ -87,6 +87,15 @@ namespace NachoPlatform
 
         public string Type ()
         {
+            if (IsPhone ()) {
+                return "iPhone";
+            } else {
+                return "iPad";
+            }
+        }
+
+        private string UserAgentType ()
+        {
             return UserAgentModel ().Split (null) [0];
         }
 
@@ -118,7 +127,7 @@ namespace NachoPlatform
 
         public string Os ()
         {
-            // MINOR FIXME - we could make the OS rev match that which is being simulated.
+            // MINOR TODO - we could make the OS rev match that which is being simulated.
             if (IsSimulator ()) {
                 return "iOS 6.1.4 10B350";
             }
@@ -132,7 +141,7 @@ namespace NachoPlatform
 
         public string OsLanguage ()
         {
-            // FIXME - we will need to update (a) to handle locale, (b) to take into account our bundle (possibly).
+            // TODO - we will need to update (a) to handle locale, (b) to take into account our bundle (possibly).
             return "en";
             //return NSUserDefaults.StandardUserDefaults.StringForKey ("AppleLanguages");
         }
@@ -153,7 +162,7 @@ namespace NachoPlatform
             var lhs = ((Convert.ToInt32 (sides [0]) * 100) +
                       Encoding.ASCII.GetBytes (letter) [0] -
                       Encoding.ASCII.GetBytes ("A") [0] + 1).ToString ();
-            return "Apple-" + Type () + "/" + lhs + "." + sides [1];
+            return "Apple-" + UserAgentType () + "/" + lhs + "." + sides [1];
         }
 
         public bool Wipe (string username, string password, string url, string protoVersion)
