@@ -227,6 +227,7 @@
     <Compile Include="..\Test.Android\McAttachmentTest.cs">
       <Link>McAttachmentTest.cs</Link>
     </Compile>
+    <Compile Include="McContactTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.MonoTouch.CSharp.targets" />

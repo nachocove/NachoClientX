@@ -138,7 +138,15 @@ namespace NachoClient.iOS
 
         public void ConfigureNotesView ()
         {
-            notesTextView.Text = Note.noteContent;
+            if (contactItem.Source != McAbstrItem.ItemSource.ActiveSync) {
+                notesTextView.Text = "This contact has not been synced. Adding or editing notes is disabled.";
+            } else {
+                McBody contactBody = McBody.QueryById<McBody> (contactItem.BodyId);
+                if (null != contactBody) {
+                    notesTextView.Text = contactBody.Body;
+                }
+            }
+
             //date
             var dateDetailLabel = contentView.ViewWithTag (DATE_DETAIL_TAG) as UILabel;
             dateDetailLabel.Text = Pretty.ExtendedDateString (DateTime.UtcNow);
@@ -195,11 +203,15 @@ namespace NachoClient.iOS
 
         public void SaveContactNote ()
         {
-            Note.DisplayName = (contactItem.DisplayName + " - " + Pretty.ShortDateString (DateTime.UtcNow));
-            Note.TypeId = contactItem.Id;
-            Note.noteContent = notesTextView.Text;
-            Note.noteType = McNote.NoteType.Contact;
-            SyncNoteRequest (Note);
+            McBody contactBody = McBody.QueryById<McBody> (contactItem.BodyId);
+            if (null != contactBody) {
+                contactBody.UpdateBody (notesTextView.Text);
+            } else {
+                contactItem.BodyId = McBody.Save (notesTextView.Text).Id;
+            }
+
+            contactItem.Update ();
+            NachoCore.BackEnd.Instance.UpdateContactCmd (contactItem.AccountId, contactItem.Id);
         }
 
         public void SaveEventNote ()
@@ -219,8 +231,6 @@ namespace NachoClient.iOS
                 note.Update ();
             }
         }
-            
-
     }
 }
 
