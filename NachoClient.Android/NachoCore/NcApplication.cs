@@ -194,13 +194,16 @@ namespace NachoCore
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass2Services called.");
             NcModel.Instance.EngageRateLimiter ();
+            NcBrain.StartService ();
+            NcContactGleaner.Start ();
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass2Services exited.");
         }
 
         public void StopClass2Services ()
         {
-            // Empty so far.
             // No need to turn off the model rate limiter.
+            // No need to explicitly stop brain.
+            NcContactGleaner.Stop ();
         }
 
         public void StartClass3Services ()
@@ -242,7 +245,6 @@ namespace NachoCore
                 NcModel.Instance.Info ();
                 NcDeviceContacts.Run ();
                 NcDeviceCalendars.Run ();
-                NcContactGleaner.Start ();
                 NcCapture.ResumeAll ();
                 NcTimeVariance.ResumeAll ();
                 if (null != Class4LateShowEvent) {
@@ -263,7 +265,6 @@ namespace NachoCore
 
             if (Class4LateShowTimer.DisposeAndCheckHasFired ()) {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4LateShowTimer.DisposeAndCheckHasFired.");
-                NcContactGleaner.Stop ();
                 NcCapture.PauseAll ();
                 NcTimeVariance.PauseAll ();
             }
