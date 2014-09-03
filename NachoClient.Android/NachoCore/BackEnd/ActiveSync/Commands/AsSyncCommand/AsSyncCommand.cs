@@ -31,7 +31,7 @@ namespace NachoCore.ActiveSync
 
         public static XNamespace Ns = Xml.AirSync.Ns;
 
-        public AsSyncCommand (IBEContext beContext, SyncKit syncKit) 
+        public AsSyncCommand (IBEContext beContext, SyncKit syncKit)
             : base (Xml.AirSync.Sync, Xml.AirSync.Ns, beContext)
         {
             Timeout = new TimeSpan (0, 0, 20);
@@ -572,10 +572,7 @@ namespace NachoCore.ActiveSync
                 folder.Update ();
             }
             lock (PendingResolveLockObj) {
-                foreach (var pending in PendingList) {
-                    pending.ResolveAsSuccess (BEContext.ProtoControl);
-                }
-                PendingList.Clear ();
+                ProcessImplicitResponses (PendingList);
             }
             return SuccessEvent ("SYNCSUCCESS1");
         }
@@ -755,40 +752,55 @@ namespace NachoCore.ActiveSync
 
         private void ProcessCollectionResponses (McFolder folder, XElement xmlResponses)
         {
-            if (null == xmlResponses) {
-                return;
-            }
-            var responses = xmlResponses.Elements ();
-            foreach (var response in responses) {
-                var classCode = GetClassCode (response, folder);
-                // Underlying McPending are resolved by this switch statement and the loop below.
-                switch (response.Name.LocalName) {
-                case Xml.AirSync.Add:
-                    ProcessCollectionAddResponse (folder, response, classCode);
-                    break;
+            if (null != xmlResponses) {
+                var responses = xmlResponses.Elements ();
+                foreach (var response in responses) {
+                    var classCode = GetClassCode (response, folder);
+                    // Underlying McPending are resolved by this switch statement and the loop below.
+                    switch (response.Name.LocalName) {
+                    case Xml.AirSync.Add:
+                        ProcessCollectionAddResponse (folder, response, classCode);
+                        break;
 
-                case Xml.AirSync.Change:
-                    ProcessCollectionChangeResponse (folder, response, classCode);
-                    break;
+                    case Xml.AirSync.Change:
+                        ProcessCollectionChangeResponse (folder, response, classCode);
+                        break;
 
-                case Xml.AirSync.Fetch:
-                    ProcessCollectionFetchResponse (folder, response, classCode);
-                    break;
+                    case Xml.AirSync.Fetch:
+                        ProcessCollectionFetchResponse (folder, response, classCode);
+                        break;
 
-                default:
-                    Log.Error (Log.LOG_AS, "AsSyncCommand ProcessCollectionResponses UNHANDLED response " + response.Name.LocalName);
-                    break;
+                    default:
+                        Log.Error (Log.LOG_AS, "AsSyncCommand ProcessCollectionResponses UNHANDLED response " + response.Name.LocalName);
+                        break;
+                    }
                 }
             }
-            // Because success is not reported in the response document.
+            // Because success is not reported in the response document for some commands.
             lock (PendingResolveLockObj) {
-                var pendingChanges = PendingList.Where (x => 
-                x.State == McPending.StateEnum.Dispatched &&
-                                     (x.Operation == McPending.Operations.CalUpdate ||
-                                     x.Operation == McPending.Operations.ContactUpdate));
-                foreach (var pendingChange in pendingChanges) {
-                    pendingChange.ResolveAsSuccess (BEContext.ProtoControl);
+                var noResponsePendings = PendingList.Where (x => x.ParentId == folder.ServerId);
+                ProcessImplicitResponses (noResponsePendings);
+            }
+        }
+
+        // The list MUST be a subset of the OBJECTs in the PendingList.
+        private void ProcessImplicitResponses (IEnumerable<McPending> fromPendingList)
+        {
+            foreach (var pending in fromPendingList) {
+                // For Adds we need to add to McPath, and for Deletes we need to delete from McPath.
+                if (IsSyncAddCommand (pending.Operation)) {
+                    Log.Error (Log.LOG_AS, "ProcessImplicitResponses: Add command did not receive response.");
                 }
+                if (IsSyncDeleteCommand (pending.Operation)) {
+                    var pathElem = McPath.QueryByServerId (pending.AccountId, pending.ServerId);
+                    if (null == pathElem) {
+                        Log.Error (Log.LOG_AS, "ProcessImplicitResponses: McPath entry missing for Delete of {0}", pending.ServerId);
+                    } else {
+                        pathElem.Delete ();
+                    }
+                }
+                pending.ResolveAsSuccess (BEContext.ProtoControl);
+                PendingList.RemoveAll (x => pending.Id == x.Id);
             }
         }
 
@@ -801,65 +813,70 @@ namespace NachoCore.ActiveSync
             // Status and ClientId are required to be present.
             var xmlClientId = xmlAdd.Element (m_ns + Xml.AirSync.ClientId);
             var clientId = xmlClientId.Value;
-            pending = McPending.QueryByClientId (folder.AccountId, clientId); 
-            // FIXME - need to use lock for PendingList. need to see pending in list before processing.
-            var xmlStatus = xmlAdd.Element (m_ns + Xml.AirSync.Status);
-            var status = (Xml.AirSync.StatusCode)uint.Parse (xmlStatus.Value);
-            switch (status) {
-            case Xml.AirSync.StatusCode.Success_1:
-                PendingList.RemoveAll (x => x.Id == pending.Id);
-                pending.ResolveAsSuccess (BEContext.ProtoControl);
-                success = true;
-                break;
-
-            case Xml.AirSync.StatusCode.ProtocolError_4:
-            case Xml.AirSync.StatusCode.ClientError_6:
-                PendingList.RemoveAll (x => x.Id == pending.Id);
-                pending.ResolveAsHardFail (BEContext.ProtoControl, 
-                    NcResult.Error (NcResult.SubKindEnum.Error_ProtocolError));
-                break;
-
-            case Xml.AirSync.StatusCode.ServerWins_7:
-                PendingList.RemoveAll (x => x.Id == pending.Id);
-                pending.ResolveAsHardFail (BEContext.ProtoControl,
-                    NcResult.Error (NcResult.SubKindEnum.Error_ServerConflict));
-                break;
-
-            case Xml.AirSync.StatusCode.NoSpace_9:
-                PendingList.RemoveAll (x => x.Id == pending.Id);
-                pending.ResolveAsUserBlocked (BEContext.ProtoControl,
-                    McPending.BlockReasonEnum.UserRemediation,
-                    NcResult.Error (NcResult.SubKindEnum.Error_NoSpace));
-                break;
-
-            case Xml.AirSync.StatusCode.LimitReWait_14:
-                Log.Warn (Log.LOG_AS, "Received Sync Response status code LimitReWait_14, but we don't use HeartBeatInterval with Sync.");
-                PendingList.RemoveAll (x => x.Id == pending.Id);
-                pending.ResolveAsSuccess (BEContext.ProtoControl);
-                success = true;
-                break;
-
-            case Xml.AirSync.StatusCode.TooMany_15:
-                var protocolState = BEContext.ProtoControl.ProtocolState;
-                if (null != Limit) {
-                    protocolState.AsSyncLimit = (uint)Limit;
+            lock (PendingResolveLockObj) {
+                pending = McPending.QueryByClientId (folder.AccountId, clientId); 
+                if (null == pending) {
+                    Log.Error (Log.LOG_AS, "ProcessCollectionAddResponse: could not find McPending with ClientId of {0}.",
+                        clientId);
+                    return;
                 }
-                PendingList.RemoveAll (x => x.Id == pending.Id);
-                pending.ResolveAsSuccess (BEContext.ProtoControl);
-                success = true;
-                break;
+                var xmlStatus = xmlAdd.Element (m_ns + Xml.AirSync.Status);
+                var status = (Xml.AirSync.StatusCode)uint.Parse (xmlStatus.Value);
+                switch (status) {
+                case Xml.AirSync.StatusCode.Success_1:
+                    PendingList.RemoveAll (x => x.Id == pending.Id);
+                    pending.ResolveAsSuccess (BEContext.ProtoControl);
+                    success = true;
+                    break;
 
-            default:
-            case Xml.AirSync.StatusCode.NotFound_8:
+                case Xml.AirSync.StatusCode.ProtocolError_4:
+                case Xml.AirSync.StatusCode.ClientError_6:
+                    PendingList.RemoveAll (x => x.Id == pending.Id);
+                    pending.ResolveAsHardFail (BEContext.ProtoControl, 
+                        NcResult.Error (NcResult.SubKindEnum.Error_ProtocolError));
+                    break;
+
+                case Xml.AirSync.StatusCode.ServerWins_7:
+                    PendingList.RemoveAll (x => x.Id == pending.Id);
+                    pending.ResolveAsHardFail (BEContext.ProtoControl,
+                        NcResult.Error (NcResult.SubKindEnum.Error_ServerConflict));
+                    break;
+
+                case Xml.AirSync.StatusCode.NoSpace_9:
+                    PendingList.RemoveAll (x => x.Id == pending.Id);
+                    pending.ResolveAsUserBlocked (BEContext.ProtoControl,
+                        McPending.BlockReasonEnum.UserRemediation,
+                        NcResult.Error (NcResult.SubKindEnum.Error_NoSpace));
+                    break;
+
+                case Xml.AirSync.StatusCode.LimitReWait_14:
+                    Log.Warn (Log.LOG_AS, "Received Sync Response status code LimitReWait_14, but we don't use HeartBeatInterval with Sync.");
+                    PendingList.RemoveAll (x => x.Id == pending.Id);
+                    pending.ResolveAsSuccess (BEContext.ProtoControl);
+                    success = true;
+                    break;
+
+                case Xml.AirSync.StatusCode.TooMany_15:
+                    var protocolState = BEContext.ProtoControl.ProtocolState;
+                    if (null != Limit) {
+                        protocolState.AsSyncLimit = (uint)Limit;
+                    }
+                    PendingList.RemoveAll (x => x.Id == pending.Id);
+                    pending.ResolveAsSuccess (BEContext.ProtoControl);
+                    success = true;
+                    break;
+
+                default:
+                case Xml.AirSync.StatusCode.NotFound_8:
                 // Note: we don't send partial Sync requests.
-            case Xml.AirSync.StatusCode.ResendFull_13:
-                PendingList.RemoveAll (x => x.Id == pending.Id);
-                pending.ResponsegXmlStatus = (uint)status; // FIXME move this up.
-                pending.ResolveAsHardFail (BEContext.ProtoControl,
-                    NcResult.Error (NcResult.SubKindEnum.Error_InappropriateStatus));
-                break;
+                case Xml.AirSync.StatusCode.ResendFull_13:
+                    PendingList.RemoveAll (x => x.Id == pending.Id);
+                    pending.ResponsegXmlStatus = (uint)status; // FIXME move this up.
+                    pending.ResolveAsHardFail (BEContext.ProtoControl,
+                        NcResult.Error (NcResult.SubKindEnum.Error_InappropriateStatus));
+                    break;
+                }
             }
-
             if (!success) {
                 return;
             }
@@ -883,10 +900,19 @@ namespace NachoCore.ActiveSync
             }
             var xmlServerId = xmlAdd.Element (m_ns + Xml.AirSync.ServerId);
             var serverId = xmlServerId.Value;
-            if (null != serverId) {
+            if (null == serverId) {
+                Log.Error (Log.LOG_AS, "AsSyncCommand: Add command response without ServerId.");
+            } else {
+                var pathElem = new McPath (BEContext.Account.Id) {
+                    ServerId = serverId,
+                    ParentId = folder.ServerId,
+                };
                 item.ServerId = serverId;
+                NcModel.Instance.RunInTransaction (() => {
+                    pathElem.Insert ();
+                    item.Update ();
+                });
             }
-            item.Update ();
         }
 
         private void ProcessCollectionChangeResponse (McFolder folder, XElement xmlChange, string classCode)
@@ -902,62 +928,68 @@ namespace NachoCore.ActiveSync
                     // If we don't have Status and ServerId - how do we identify & react?
                     var status = (Xml.AirSync.StatusCode)uint.Parse (xmlStatus.Value);
                     var serverId = xmlServerId.Value;
-                    // FIXME - need to use lock for PendingList. need to see pending in list before processing.
-                    var pending = McPending.QueryByServerId (folder.AccountId, serverId);
-                    switch (status) {
-                    case Xml.AirSync.StatusCode.ProtocolError_4:
-                    case Xml.AirSync.StatusCode.ClientError_6:
-                        PendingList.RemoveAll (x => x.Id == pending.Id);
-                        pending.ResolveAsHardFail (BEContext.ProtoControl, 
-                            NcResult.Error (NcResult.SubKindEnum.Error_ProtocolError));
-                        break;
-
-                    case Xml.AirSync.StatusCode.ServerWins_7:
-                        PendingList.RemoveAll (x => x.Id == pending.Id);
-                        pending.ResolveAsHardFail (BEContext.ProtoControl,
-                            NcResult.Error (NcResult.SubKindEnum.Error_ServerConflict));
-                        break;
-
-                    case Xml.AirSync.StatusCode.NotFound_8:
-                        folder.AsSyncMetaToClientExpected = true;
-                        folder.Update ();
-                        PendingList.RemoveAll (x => x.Id == pending.Id);
-                        pending.ResolveAsDeferred (BEContext.ProtoControl,
-                            McPending.DeferredEnum.UntilSync,
-                            NcResult.Error (NcResult.SubKindEnum.Error_ObjectNotFoundOnServer));
-                        break;
-
-                    case Xml.AirSync.StatusCode.NoSpace_9:
-                        PendingList.RemoveAll (x => x.Id == pending.Id);
-                        pending.ResolveAsUserBlocked (BEContext.ProtoControl,
-                            McPending.BlockReasonEnum.UserRemediation,
-                            NcResult.Error (NcResult.SubKindEnum.Error_NoSpace));
-                        break;
-
-                    case Xml.AirSync.StatusCode.LimitReWait_14:
-                        Log.Warn (Log.LOG_AS, "Received Sync Response status code LimitReWait_14, but we don't use HeartBeatInterval with Sync.");
-                        PendingList.RemoveAll (x => x.Id == pending.Id);
-                        pending.ResolveAsSuccess (BEContext.ProtoControl);
-                        break;
-
-                    case Xml.AirSync.StatusCode.TooMany_15:
-                        var protocolState = BEContext.ProtoControl.ProtocolState;
-                        if (null != Limit) {
-                            protocolState.AsSyncLimit = (uint)Limit;
-                            protocolState.Update ();
+                    lock (PendingResolveLockObj) {
+                        var pending = McPending.QueryByServerId (folder.AccountId, serverId);
+                        if (null == pending) {
+                            Log.Error (Log.LOG_AS, "ProcessCollectionChangeResponse: could not find McPending with ServerId of {0}.",
+                                serverId);
+                            return;
                         }
-                        PendingList.RemoveAll (x => x.Id == pending.Id);
-                        pending.ResolveAsSuccess (BEContext.ProtoControl);
-                        break;
+                        switch (status) {
+                        case Xml.AirSync.StatusCode.ProtocolError_4:
+                        case Xml.AirSync.StatusCode.ClientError_6:
+                            PendingList.RemoveAll (x => x.Id == pending.Id);
+                            pending.ResolveAsHardFail (BEContext.ProtoControl, 
+                                NcResult.Error (NcResult.SubKindEnum.Error_ProtocolError));
+                            break;
 
-                    default:
+                        case Xml.AirSync.StatusCode.ServerWins_7:
+                            PendingList.RemoveAll (x => x.Id == pending.Id);
+                            pending.ResolveAsHardFail (BEContext.ProtoControl,
+                                NcResult.Error (NcResult.SubKindEnum.Error_ServerConflict));
+                            break;
+
+                        case Xml.AirSync.StatusCode.NotFound_8:
+                            folder.AsSyncMetaToClientExpected = true;
+                            folder.Update ();
+                            PendingList.RemoveAll (x => x.Id == pending.Id);
+                            pending.ResolveAsDeferred (BEContext.ProtoControl,
+                                McPending.DeferredEnum.UntilSync,
+                                NcResult.Error (NcResult.SubKindEnum.Error_ObjectNotFoundOnServer));
+                            break;
+
+                        case Xml.AirSync.StatusCode.NoSpace_9:
+                            PendingList.RemoveAll (x => x.Id == pending.Id);
+                            pending.ResolveAsUserBlocked (BEContext.ProtoControl,
+                                McPending.BlockReasonEnum.UserRemediation,
+                                NcResult.Error (NcResult.SubKindEnum.Error_NoSpace));
+                            break;
+
+                        case Xml.AirSync.StatusCode.LimitReWait_14:
+                            Log.Warn (Log.LOG_AS, "Received Sync Response status code LimitReWait_14, but we don't use HeartBeatInterval with Sync.");
+                            PendingList.RemoveAll (x => x.Id == pending.Id);
+                            pending.ResolveAsSuccess (BEContext.ProtoControl);
+                            break;
+
+                        case Xml.AirSync.StatusCode.TooMany_15:
+                            var protocolState = BEContext.ProtoControl.ProtocolState;
+                            if (null != Limit) {
+                                protocolState.AsSyncLimit = (uint)Limit;
+                                protocolState.Update ();
+                            }
+                            PendingList.RemoveAll (x => x.Id == pending.Id);
+                            pending.ResolveAsSuccess (BEContext.ProtoControl);
+                            break;
+
+                        default:
                         // Note: we don't send partial Sync requests.
-                    case Xml.AirSync.StatusCode.ResendFull_13:
-                        PendingList.RemoveAll (x => x.Id == pending.Id);
-                        pending.ResponsegXmlStatus = (uint)status;
-                        pending.ResolveAsHardFail (BEContext.ProtoControl,
-                            NcResult.Error (NcResult.SubKindEnum.Error_InappropriateStatus));
-                        break;
+                        case Xml.AirSync.StatusCode.ResendFull_13:
+                            PendingList.RemoveAll (x => x.Id == pending.Id);
+                            pending.ResponsegXmlStatus = (uint)status;
+                            pending.ResolveAsHardFail (BEContext.ProtoControl,
+                                NcResult.Error (NcResult.SubKindEnum.Error_InappropriateStatus));
+                            break;
+                        }
                     }
                 }
                 return;
@@ -969,27 +1001,50 @@ namespace NachoCore.ActiveSync
 
         private void ProcessCollectionFetchResponse (McFolder folder, XElement xmlFetch, string classCode)
         {
-            // Note: we are only supposed to see Fetch here if it succeeded.
+            // TODO: we are only supposed to see Fetch here if it succeeded.
             // We don't implement fetch yet. When we do, we will need to resolve all the McPendings,
             // even those that aren't in the response document.
         }
 
         public static bool IsSyncCommand (McPending.Operations op)
         {
+            return (IsSyncAddCommand (op) || IsSyncDeleteCommand (op) || IsSyncUpdateCommand (op));
+        }
+
+        public static bool IsSyncUpdateCommand (McPending.Operations op)
+        {
             switch (op) {
-            case McPending.Operations.EmailDelete:
             case McPending.Operations.EmailMarkRead:
             case McPending.Operations.EmailSetFlag:
             case McPending.Operations.EmailClearFlag:
             case McPending.Operations.EmailMarkFlagDone:
-            case McPending.Operations.CalCreate:
             case McPending.Operations.CalUpdate:
-            case McPending.Operations.CalDelete:
-            case McPending.Operations.ContactCreate:
             case McPending.Operations.ContactUpdate:
-            case McPending.Operations.ContactDelete:
-            case McPending.Operations.TaskCreate:
             case McPending.Operations.TaskUpdate:
+                return true;
+            default:
+                return false;
+            }
+        }
+
+        public static bool IsSyncAddCommand (McPending.Operations op)
+        {
+            switch (op) {
+            case McPending.Operations.CalCreate:
+            case McPending.Operations.ContactCreate:
+            case McPending.Operations.TaskCreate:
+                return true;
+            default:
+                return false;
+            }
+        }
+
+        public static bool IsSyncDeleteCommand (McPending.Operations op)
+        {
+            switch (op) {
+            case McPending.Operations.EmailDelete:
+            case McPending.Operations.CalDelete:
+            case McPending.Operations.ContactDelete:
             case McPending.Operations.TaskDelete:
                 return true;
             default:

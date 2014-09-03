@@ -228,12 +228,14 @@ namespace NachoCore.ActiveSync
                 ConsolidatePending ();
                 if ((uint)SmEvt.E.HardFail == evt.EventCode) {
                     foreach (var pending in PendingList) {
+                        Log.Error (Log.LOG_AS, "PostProcessEvent: AsCommand (HardFail) failed to resolve pending {0}.", pending.Operation.ToString ());
                         if (McPending.StateEnum.Dispatched == pending.State) {
                             pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.WhyEnum.Unknown);
                         }
                     }
                 } else {
                     foreach (var pending in PendingList) {
+                        Log.Error (Log.LOG_AS, "PostProcessEvent: AsCommand failed to resolve pending {0}.", pending.Operation.ToString ());
                         if (McPending.StateEnum.Dispatched == pending.State) {
                             pending.ResolveAsDeferredForce ();
                         }
