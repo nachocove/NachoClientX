@@ -1,6 +1,7 @@
 ﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Collections.Generic;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using NachoCore.Utils;
@@ -71,10 +72,18 @@ namespace NachoPlatform
 
         public void CancelNotif (int handle)
         {
+            CancelNotif (new List<int> () { handle });
+        }
+
+        public void CancelNotif (List<int> handles)
+        {
             InvokeOnUIThread.Instance.Invoke (delegate {
-                var notif = FindNotif (handle);
-                if (null != notif) {
-                    UIApplication.SharedApplication.CancelLocalNotification (notif);
+                // TODO: O(N**2).
+                foreach (var handle in handles) {
+                    var notif = FindNotif (handle);
+                    if (null != notif) {
+                        UIApplication.SharedApplication.CancelLocalNotification (notif);
+                    }
                 }
             });
         }

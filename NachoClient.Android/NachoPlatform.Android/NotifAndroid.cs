@@ -1,6 +1,7 @@
 ﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Collections.Generic;
 using NachoCore.Utils;
 
 namespace NachoPlatform
@@ -36,6 +37,11 @@ namespace NachoPlatform
         }
 
         public void CancelNotif (int handle)
+        {
+            NcAssert.True (false);
+        }
+
+        public void CancelNotif (List<int> handles)
         {
             NcAssert.True (false);
         }
