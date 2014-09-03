@@ -38,6 +38,7 @@ namespace NachoClient.iOS
         protected int CELL_HEIGHT = 44;
 
         protected bool errorLoadingBody;
+        protected bool calendarRendered;
 
         public MessageViewController (IntPtr handle) : base (handle)
         {
@@ -472,7 +473,7 @@ namespace NachoClient.iOS
             // Separator
             yOffset += 5;
             var separatorView = new UIView (new RectangleF (0, yOffset, 320, 1));
-            separatorView.BackgroundColor = A.Color_NachoNowBackground;
+            separatorView.BackgroundColor = A.Color_NachoSeparator;
             separatorView.Tag = SEPARATOR_TAG;
             view.AddSubview (separatorView);
 
@@ -489,7 +490,7 @@ namespace NachoClient.iOS
 
             for (int i = 0; i < attachments.Count; i++) {
                 var attachmentView = new UIView (new RectangleF (0, i * 61, View.Frame.Width, 61));
-                attachmentView.Layer.BorderColor = A.Color_NachoNowBackground.CGColor;
+                attachmentView.Layer.BorderColor = A.Color_NachoSeparator.CGColor;
                 attachmentView.Layer.BorderWidth = 1;
                 attachmentView.Tag = i;
                 attachmentListView.AddSubview (attachmentView);
@@ -610,6 +611,10 @@ namespace NachoClient.iOS
             }
                 
             RenderBody (message);
+            if (null != message.MeetingRequest && !calendarRendered) {
+                var UID = Util.GlobalObjIdToUID (message.MeetingRequest.GlobalObjId);
+                MakeStyledCalendarInvite (UID, message.Subject, message.MeetingRequest.AllDayEvent, message.MeetingRequest.StartTime, message.MeetingRequest.EndTime, message.MeetingRequest.Location, view);
+            }
 
             ConfigureAttachments ();
 
@@ -718,7 +723,7 @@ namespace NachoClient.iOS
             var separatorView = view.ViewWithTag (SEPARATOR_TAG);
             var yOffset = separatorView.Frame.Y + separatorView.Frame.Height;
 
-            yOffset += 15;
+            yOffset += 20;
 
             attachmentListView.RemoveFromSuperview ();
             view.AddSubview (attachmentListView);
@@ -940,60 +945,67 @@ namespace NachoClient.iOS
             var evt = iCal.Events.First () as DDay.iCal.Event;
             NachoCore.Utils.CalendarHelper.ExtrapolateTimes (ref evt);
 
-            UIView calendarEventView = new UIView (new RectangleF (0, 0, SCREEN_WIDTH, LINE_OFFSET + 110));
-            calendarEventView.Tag = MESSAGE_PART_TAG;
-            //calendarEventView.BackgroundColor = A.Color_NachoNowBackground;
-            //calendarEventView.BackgroundColor = A.Color_NachoBlue;
+            MakeStyledCalendarInvite (evt.UID, evt.Summary, evt.IsAllDay, evt.Start.Value, evt.End.Value, evt.Location, view);
+            calendarRendered = true;
+        }
 
-            UILabel monthLabel = new UILabel (new RectangleF (19, LINE_OFFSET + 3, 36, 20));
+        public void MakeStyledCalendarInvite (string UID, string subject, bool isAllDay, DateTime start, DateTime end, string location, UIView parentView)
+        {
+            UIView calendarEventView = new UIView (new RectangleF (0, 0, SCREEN_WIDTH, 140));
+            calendarEventView.Tag = MESSAGE_PART_TAG;
+
+            UIView backGroundView = new UIView (new RectangleF (0, 0, SCREEN_WIDTH, 120));
+            backGroundView.BackgroundColor = UIColor.White;
+            calendarEventView.Add (backGroundView);
+
+            UILabel monthLabel = new UILabel (new RectangleF (19, 3, 36, 20));
             monthLabel.Font = A.Font_AvenirNextRegular12;
             monthLabel.TextColor = A.Color_NachoBlack;
             monthLabel.TextAlignment = UITextAlignment.Center;
-            monthLabel.Text = evt.Start.Value.ToString ("MMM");
-            //monthLabel.BackgroundColor = A.Color_NachoNowBackground;
+            monthLabel.Text = start.ToString ("MMM");
 
-            UIImageView dateImage = new UIImageView (new RectangleF (19, LINE_OFFSET + 23, 36, 36));
+            UIImageView dateImage = new UIImageView (new RectangleF (19, 23, 36, 36));
             var size = new SizeF (40, 40);
             dateImage.Image = NachoClient.Util.DrawCalDot (A.Color_FEBA32, size);
 
-            UILabel dateLabel = new UILabel (new RectangleF (19, LINE_OFFSET + 23, 36, 36));
+            UILabel dateLabel = new UILabel (new RectangleF (19, 23, 36, 36));
             dateLabel.Font = A.Font_AvenirNextDemiBold17;
             dateLabel.TextColor = UIColor.White;
             dateLabel.TextAlignment = UITextAlignment.Center;
-            dateLabel.Text = evt.Start.Value.ToString ("dd");
+            dateLabel.Text = start.ToString ("%d");
 
-            UILabel titleLabel = new UILabel (new RectangleF (74, LINE_OFFSET + 7, SCREEN_WIDTH - 89, 20));
+            UILabel titleLabel = new UILabel (new RectangleF (74, 7, SCREEN_WIDTH - 89, 20));
             titleLabel.Font = A.Font_AvenirNextDemiBold14;
             titleLabel.TextColor = A.Color_NachoBlack;
             titleLabel.TextAlignment = UITextAlignment.Left;
-            titleLabel.Text = evt.Summary;
+            titleLabel.Text = subject;
             titleLabel.SizeToFit ();
 
-            UILabel durationLabel = new UILabel (new RectangleF (74, LINE_OFFSET + 27, SCREEN_WIDTH - 89, 20));
+            UILabel durationLabel = new UILabel (new RectangleF (74, 27, SCREEN_WIDTH - 89, 20));
             durationLabel.Font = A.Font_AvenirNextRegular12;
             durationLabel.TextColor = A.Color_NachoBlack;
             durationLabel.TextAlignment = UITextAlignment.Left;
-            durationLabel.Text = evt.Start.Value.ToString ("dd");
-            if (!evt.IsAllDay) {
-                if (evt.Start.Value.DayOfYear == evt.End.Value.DayOfYear) {
-                    durationLabel.Text = "from " + Pretty.FullTimeString (evt.Start.Value) + " until " + Pretty.FullTimeString (evt.End.Value);
+            durationLabel.Text = start.ToString ("dd");
+            if (!isAllDay) {
+                if (start.DayOfYear == end.DayOfYear) {
+                    durationLabel.Text = "from " + Pretty.FullTimeString (start) + " until " + Pretty.FullTimeString (end);
                 } else {
-                    durationLabel.Text = "from " + Pretty.FullTimeString (evt.Start.Value) + " until " + Pretty.FullDateTimeString (evt.End.Value);
+                    durationLabel.Text = "from " + Pretty.FullTimeString (start) + " until " + Pretty.FullDateTimeString (end);
                 }
             } else {
-                if (evt.Start.Value.DayOfYear == evt.End.Value.DayOfYear) {
+                if (start.DayOfYear == end.DayOfYear) {
                     durationLabel.Text = "all day event";
                 } else {
-                    durationLabel.Text = "from " + Pretty.FullDateString (evt.Start.Value) + " until " + Pretty.FullDateString (evt.End.Value);
+                    durationLabel.Text = "from " + Pretty.FullDateString (start) + " until " + Pretty.FullDateString (end);
                 }
             }
             durationLabel.SizeToFit ();
 
-            UILabel locationLabel = new UILabel (new RectangleF (74, LINE_OFFSET + 45, SCREEN_WIDTH - 89, 20));
+            UILabel locationLabel = new UILabel (new RectangleF (74, 45, SCREEN_WIDTH - 89, 20));
             locationLabel.Font = A.Font_AvenirNextRegular12;
             locationLabel.TextColor = A.Color_NachoBlack;
             locationLabel.TextAlignment = UITextAlignment.Left;
-            locationLabel.Text = evt.Location;
+            locationLabel.Text = location;
             locationLabel.SizeToFit ();
 
             calendarEventView.Add (monthLabel);
@@ -1003,68 +1015,14 @@ namespace NachoClient.iOS
             calendarEventView.Add (durationLabel);
             calendarEventView.Add (locationLabel);
 
-            MakeResponseBar (evt, calendarEventView);
+            MakeResponseBar (UID, calendarEventView);
 
-            Util.AddHorizontalLine (0, LINE_OFFSET, SCREEN_WIDTH, A.Color_NachoSeparator, calendarEventView);
-            Util.AddHorizontalLine (0, LINE_OFFSET + 66, SCREEN_WIDTH, A.Color_NachoSeparator, calendarEventView);
-            Util.AddHorizontalLine (0, LINE_OFFSET + 120, SCREEN_WIDTH, A.Color_NachoSeparator, calendarEventView);
-            Util.AddVerticalLine (65, LINE_OFFSET, 66, A.Color_NachoSeparator, calendarEventView);
-//            var root = new RootElement ("");
-//            var section = new ThinSection ();
-//            root.Add (section);
-//
-//            if (null != evt.Summary) {
-//                section.Add (new SubjectElement (evt.Summary));
-//            }
-//            section.Add (new StartTimeElement (Pretty.FullDateTimeString (evt.Start.Value)));
-//            if (evt.IsAllDay) {
-//                section.Add (new DurationElement (Pretty.AllDayStartToEnd (evt.Start.Value, evt.End.Value)));
-//            } else {
-//                section.Add (new DurationElement (Pretty.EventStartToEnd (evt.Start.Value, evt.End.Value)));
-//            }
-//
-//            if (null != evt.Location) {
-//                section = new ThinSection ();
-//                section.Add (new LocationElement (evt.Location));
-//            }
-//
-//            var button1 = new StyledStringElementWithDot ("Accept", UIColor.Green);
-//            button1.Tapped += () => {
-//                UpdateMeetingStatus (evt, NcAttendeeStatus.Accept);
-//            };
-//            var button2 = new StyledStringElementWithDot ("Tentative", UIColor.Yellow);
-//            button2.Tapped += () => {
-//                UpdateMeetingStatus (evt, NcAttendeeStatus.Tentative);
-//            };
-//            var button3 = new StyledStringElementWithDot ("Decline", UIColor.Red);
-//            button3.Tapped += () => {
-//                UpdateMeetingStatus (evt, NcAttendeeStatus.Decline);
-//            };
-//            section.Add (button1);
-//            section.Add (button2);
-//            section.Add (button3);
-//
-//            {
-//                var e = new StyledStringElement ("People");
-//                var image = UIImage.FromBundle ("ic_action_group");
-//                e.Image = image.Scale (new SizeF (22.0f, 22.0f));
-//                e.Font = UIFont.SystemFontOfSize (17.0f);
-//                //                e.Tapped += () => {
-//                //                    PushAttendeeView ();
-//                //                };
-//                e.Accessory = UITableViewCellAccessory.DisclosureIndicator;
-//            }
-//
-//            //            section = new ThinSection ();
-//            //            using (var image = UIImage.FromBundle ("ic_action_alarms")) {
-//            //                var scaledImage = image.Scale (new SizeF (22.0f, 22.0f));
-//            //                section.Add (new StyledStringElementWithIcon ("Reminder", Pretty.ReminderString (evt.Alarms.First()), scaledImage));
-//            //            }
-//            //            root.Add (section);
-//
-//            var dvc = new DialogViewController (root);
-//            dvc.View.Tag = MESSAGE_PART_TAG;
-            view.AddSubview (calendarEventView);
+            Util.AddHorizontalLine (0, 0, SCREEN_WIDTH, A.Color_NachoSeparator, calendarEventView);
+            Util.AddHorizontalLine (0, 66, SCREEN_WIDTH, A.Color_NachoSeparator, calendarEventView);
+            Util.AddHorizontalLine (0, 120, SCREEN_WIDTH, A.Color_NachoSeparator, calendarEventView);
+            Util.AddVerticalLine (65, 0, 66, A.Color_NachoSeparator, calendarEventView);
+
+            parentView.AddSubview (calendarEventView);
         }
 
         UIButton acceptButton;
@@ -1078,10 +1036,10 @@ namespace NachoClient.iOS
         UILabel messageLabel;
         UIButton changeResponseButton;
 
-        public void MakeResponseBar (DDay.iCal.Event evt, UIView parentView)
+        public void MakeResponseBar (string UID, UIView parentView)
         {
-            UIView responseView = new UIView (new RectangleF (0, LINE_OFFSET + 66, SCREEN_WIDTH, 54));
-            responseView.BackgroundColor = UIColor.White;
+            UIView responseView = new UIView (new RectangleF (0, 66, SCREEN_WIDTH, 54));
+            responseView.BackgroundColor = UIColor.Clear;
 
             acceptButton = new UIButton (UIButtonType.RoundedRect);
             tentativeButton = new UIButton (UIButtonType.RoundedRect);
@@ -1121,22 +1079,33 @@ namespace NachoClient.iOS
             declineButton.Frame = new RectangleF (SCREEN_WIDTH - 24 - 25, 10, 24, 24);
             declineButton.TintColor = UIColor.Clear;
 
+            //FIXME Use UID to get calendarItem in order to respond to meeting requests
+            ///////////////////////////////////
+            //if (null != queryByUID(UID)) {
+            //  calendarItem = queryByUID(UID);
+            //}
+            ///////////////////////////////////
+
             acceptButton.TouchUpInside += (object sender, EventArgs e) => {
                 ToggleButtons (NcResponseType.Accepted);
                 acceptButton.Selected = true;
-                UpdateMeetingStatus (evt, NcAttendeeStatus.Accept);
+
+                //FIXME
+                //UpdateMeetingStatus (calendarItem, NcAttendeeStatus.Accept);
             };
 
             tentativeButton.TouchUpInside += (object sender, EventArgs e) => {
                 ToggleButtons (NcResponseType.Tentative);
                 tentativeButton.Selected = true;
-                UpdateMeetingStatus (evt, NcAttendeeStatus.Tentative);
+                //FIXME
+                //UpdateMeetingStatus (calendarItem, NcAttendeeStatus.Tentative);
             };
 
             declineButton.TouchUpInside += (object sender, EventArgs e) => {
                 ToggleButtons (NcResponseType.Declined);
                 declineButton.Selected = true;
-                UpdateMeetingStatus (evt, NcAttendeeStatus.Decline);
+                //FIXME
+                //UpdateMeetingStatus (calendarItem, NcAttendeeStatus.Decline);
             };
 
             responseView.Add (acceptButton);
@@ -1183,7 +1152,6 @@ namespace NachoClient.iOS
                 RestoreButtons ();
             };
             responseView.Add (changeResponseButton);
-
 
             parentView.Add (responseView);
         }
@@ -1289,7 +1257,6 @@ namespace NachoClient.iOS
 
         protected void RestoreButtons ()
         {
-
             acceptButton.Selected = false;
             tentativeButton.Selected = false;
             declineButton.Selected = false;
@@ -1321,13 +1288,10 @@ namespace NachoClient.iOS
                     declineButton.Frame = new RectangleF (SCREEN_WIDTH - 24 - 25, 10, 24, 24);
                 },
                 () => {
-
                     messageLabel.Hidden = true;
                     changeResponseButton.Hidden = true;
-
                 }
             );
-
         }
 
         /// <summary>
@@ -1337,7 +1301,6 @@ namespace NachoClient.iOS
         {
             //BackEnd.Instance.RespondCalCmd (account.Id, evt, status);
         }
-
 
         protected void onAttachmentSelected (UITapGestureRecognizer obj)
         {
