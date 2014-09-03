@@ -41,6 +41,9 @@ namespace NachoCore.Model
             return false;
         }
 
+        // Note: by design there should only be one entry per ServerId && AccountId.
+        // We choose to announce inconsistency and keep running rather than crash w/r/t this.
+
         public override int Insert ()
         {
             var preExists = McPath.QueryByServerId (AccountId, ServerId);
@@ -82,9 +85,24 @@ namespace NachoCore.Model
 
         public static McPath QueryByServerId (int accountId, string serverId)
         {
-            var path = NcModel.Instance.Db.Table<McPath> ().Where (pe => 
-                pe.ServerId == serverId && pe.AccountId == accountId).SingleOrDefault ();
-            return path;
+            var paths = NcModel.Instance.Db.Table<McPath> ().Where (pe => 
+                pe.ServerId == serverId && pe.AccountId == accountId).ToList ();
+            if (0 == paths.Count) {
+                return null;
+            }
+            if (1 < paths.Count) {
+                var pastFirst = false;
+                Log.Error (Log.LOG_DB, "McPath.QueryByServerId: Multiple entries (returning first) ...");
+                foreach (var path in paths) {
+                    Log.Error (Log.LOG_DB, "... {0}/{1}", path.ParentId, path.ServerId);
+                    if (pastFirst) {
+                        path.Delete ();
+                    } else {
+                        pastFirst = true;
+                    }
+                }
+            }
+            return paths.First ();
         }
     }
 }
