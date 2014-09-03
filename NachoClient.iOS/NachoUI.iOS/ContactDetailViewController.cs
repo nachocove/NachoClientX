@@ -425,11 +425,16 @@ namespace NachoClient.iOS
 
             // Notes
             var notesTextView = notesScrollView.ViewWithTag (NOTES_TEXT_VIEW_TAG) as UITextView;
-            var Note = McNote.QueryByTypeId (contact.Id, McNote.NoteType.Contact).FirstOrDefault ();
-            if (null == Note) {
-                Note = new McNote ();
+
+            McBody contactBody = McBody.QueryById<McBody> (contact.BodyId);
+            if (null != contactBody) {
+                notesTextView.Text = contactBody.Body;
             }
-            notesTextView.Text = Note.noteContent;
+
+            if (contact.Source != McAbstrItem.ItemSource.ActiveSync) {
+                notesTextView.Text = "This contact has not been synced. Adding or editing notes is disabled.";
+            }
+
             notesScrollView.ContentSize = notesTextView.ContentSize;
 
             var editNotesButton = View.ViewWithTag (EDIT_NOTES_BUTTON_TAG) as UIButton;
@@ -439,6 +444,12 @@ namespace NachoClient.iOS
             } else {
                 editNotesButton.SetTitle ("Edit Note", UIControlState.Normal);
                 editNotesButton.SizeToFit ();
+            }
+
+            if (contact.Source != McAbstrItem.ItemSource.ActiveSync) {
+                editNotesButton.Enabled = false;
+            } else {
+                editNotesButton.Enabled = true;
             }
             editNotes.Frame = new RectangleF (0, UIScreen.MainScreen.Bounds.Height - 40, View.Frame.Width, 40);
         }
@@ -674,6 +685,11 @@ namespace NachoClient.iOS
             var s = (StatusIndEventArgs)e;
             if (NcResult.SubKindEnum.Info_EmailMessageSetChanged == s.Status.SubKind) {
                 Log.Debug (Log.LOG_UI, "StatusIndicatorCallback");
+                RefreshData ();
+            }
+
+            if (NcResult.SubKindEnum.Info_ContactSetChanged == s.Status.SubKind) {
+                Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: Contact Set Changed");
                 RefreshData ();
             }
         }

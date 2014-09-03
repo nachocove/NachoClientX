@@ -67,10 +67,20 @@ namespace NachoCore.Brain
             RootCounter.ReportPeriod = 5 * 60; // report once every 5 min
 
             EventQueue = new NcQueue<NcBrainEvent> ();
+        }
+
+        public static void StartService ()
+        {
+            NcBrain brain = NcBrain.SharedInstance;
             NcTask.Run (() => {
-                EventQueue.Token = NcTask.Cts.Token;
-                Process ();
+                brain.EventQueue.Token = NcTask.Cts.Token;
+                brain.Process ();
             }, "Brain");
+        }
+
+        public static void StopService ()
+        {
+            NcBrain.SharedInstance.Enqueue (new NcBrainEvent (NcBrainEventType.TERMINATE));
         }
 
         public void Enqueue (NcBrainEvent brainEvent)
@@ -90,12 +100,13 @@ namespace NachoCore.Brain
             while (numGleaned < count && !NcApplication.Instance.IsBackgroundAbateRequired) {
                 McEmailMessage emailMessage = McEmailMessage.QueryNeedGleaning ();
                 if (null == emailMessage) {
-                    return numGleaned;
+                    break;
                 }
                 Log.Info (Log.LOG_BRAIN, "glean contact from email message {0}", emailMessage.Id);
                 NcContactGleaner.GleanContacts (emailMessage.AccountId, emailMessage);
                 numGleaned++;
             }
+            Log.Info (Log.LOG_BRAIN, "{0} email message gleaned", numGleaned);
             return numGleaned;
         }
 
@@ -137,7 +148,7 @@ namespace NachoCore.Brain
             while (numUpdated < count && !NcApplication.Instance.IsBackgroundAbateRequired) {
                 McEmailAddress emailAddress = McEmailAddress.QueryNeedUpdate ();
                 if (null == emailAddress) {
-                    return numUpdated;
+                    break;
                 }
                 emailAddress.Score = emailAddress.GetScore ();
                 Log.Debug (Log.LOG_BRAIN, "[McEmailAddress:{0}] update score -> {1:F6}",
@@ -147,6 +158,7 @@ namespace NachoCore.Brain
 
                 numUpdated++;
             }
+            Log.Info (Log.LOG_BRAIN, "{0} email address scores updated", numUpdated);
             return numUpdated;
         }
 
@@ -156,7 +168,7 @@ namespace NachoCore.Brain
             while (numUpdated < count  && !NcApplication.Instance.IsBackgroundAbateRequired) {
                 McEmailMessage emailMessage = McEmailMessage.QueryNeedUpdate ();
                 if (null == emailMessage) {
-                    return numUpdated;
+                    break;
                 }
                 emailMessage.Score = emailMessage.GetScore ();
                 Log.Debug (Log.LOG_BRAIN, "[McEmailMessage:{0}] update score -> {1:F6}",
@@ -166,6 +178,7 @@ namespace NachoCore.Brain
 
                 numUpdated++;
             }
+            Log.Info (Log.LOG_BRAIN, "{0} email message scores updated", numUpdated);
             return numUpdated;
         }
 
@@ -278,26 +291,11 @@ namespace NachoCore.Brain
             case NcBrainEventType.PERIODIC_GLEAN:
                 EvaluateRunRate ();
                 int num_entries = WorkCredits;
-                num_entries -= GleanContacts (num_entries);
-                if (0 >= num_entries) {
-                    break;
-                }
                 num_entries -= AnalyzeEmailAddresses (num_entries);
-                if (0 >= num_entries) {
-                    break;
-                }
                 num_entries -= AnalyzeEmails (num_entries);
-                if (0 >= num_entries) {
-                    break;
-                }
+                num_entries -= GleanContacts (num_entries);
                 num_entries -= UpdateEmailAddressScores (num_entries);
-                if (0 >= num_entries) {
-                    break;
-                }
                 num_entries -= UpdateEmailMessageScores (num_entries);
-                if (0 >= num_entries) {
-                    break;
-                }
                 break;
             case NcBrainEventType.STATE_MACHINE:
                 GleanContacts (int.MaxValue);
@@ -326,7 +324,7 @@ namespace NachoCore.Brain
             }
         }
 
-        private void Process ()
+        public void Process ()
         {
             if (ENABLED) {
                 McEmailMessage.StartTimeVariance ();
@@ -335,6 +333,7 @@ namespace NachoCore.Brain
             while (true) {
                 var brainEvent = EventQueue.Dequeue ();
                 if (NcBrainEventType.TERMINATE == brainEvent.Type) {
+                    Log.Info (Log.LOG_BRAIN, "NcBrain Task exits");
                     return;
                 }
                 if (ENABLED) {

@@ -552,6 +552,7 @@ namespace NachoCore.ActiveSync
         public override string CreateContactCmd (int contactId, int folderId)
         {
             McContact contact;
+
             McFolder folder;
             if (!GetItemAndFolder<McContact> (contactId, out contact, folderId, out folder)) {
                 return null;
@@ -593,6 +594,7 @@ namespace NachoCore.ActiveSync
             };   
             pending.Insert ();
 
+            StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ContactSetChanged));
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCCHGCTC");
             }, "UpdateContactCmd");
