@@ -297,6 +297,30 @@ namespace NachoCore.Utils
                 return  String.Format ("Response is due {0}", Pretty.ReminderDate (message.FlagDueAsUtc ()));
             }
         }
+
+
+        public static string FormatAlert (uint alert)
+        {
+            var alertMessage = "";
+            if (1 == alert) {
+                alertMessage = " in a minute";
+            } else if (5 == alert || 15 == alert || 30 == alert) {
+                alertMessage = " in " + alert + " minutes";
+            } else if (60 == alert) {
+                alertMessage = " in an hour";
+            } else if (120 == alert) {
+                alertMessage = " in two hours";
+            } else if ((60 * 24) == alert) {
+                alertMessage = " in one day";
+            } else if ((60 * 48) == alert) {
+                alertMessage = " in two days";
+            } else if ((60 * 24 * 7) == alert) {
+                alertMessage = " in a week";
+            } else {
+                alertMessage = String.Format (" in {0} minutes", alert);
+            }
+            return alertMessage;
+        }
     }
 }
 

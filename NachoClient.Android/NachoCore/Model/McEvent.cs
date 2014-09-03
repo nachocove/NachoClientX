@@ -23,7 +23,7 @@ namespace NachoCore.Model
 
         public int ExceptionId { get; set; }
 
-        static public void Create(int accountId, DateTime startTime, DateTime endTime, int calendarId, int exceptionId)
+        static public McEvent Create (int accountId, DateTime startTime, DateTime endTime, int calendarId, int exceptionId)
         {
             // Save the event
             var e = new McEvent ();
@@ -36,6 +36,14 @@ namespace NachoCore.Model
             if (0 != exceptionId) {
                 NachoCore.Utils.Log.Info (Utils.Log.LOG_DB, "McException found: eventId={0} exceptionId={1}", e.Id, exceptionId);
             }
+            return e;
+        }
+
+        public override int Delete ()
+        {
+            var notifier = NachoPlatform.Notif.Instance;
+            notifier.CancelNotif (this.Id);
+            return base.Delete ();
         }
     }
 }
