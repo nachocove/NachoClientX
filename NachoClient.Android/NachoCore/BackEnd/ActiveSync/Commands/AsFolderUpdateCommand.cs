@@ -71,7 +71,7 @@ namespace NachoCore.ActiveSync
                         PendingSingle = null;
                         return Event.Create ((uint)SmEvt.E.HardFail, "FUPFAILSPEC");
                     } else {
-                        PendingSingle.ResolveAsDeferredForce ();
+                        PendingSingle.ResolveAsDeferredForce (BEContext.ProtoControl);
                         PendingSingle = null;
                         return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FUPFSYNC1");
                     }
@@ -88,7 +88,7 @@ namespace NachoCore.ActiveSync
                         PendingSingle = null;
                         return Event.Create ((uint)SmEvt.E.HardFail, "FUPFAILMP");
                     } else {
-                        PendingSingle.ResolveAsDeferredForce ();
+                        PendingSingle.ResolveAsDeferredForce (BEContext.ProtoControl);
                         PendingSingle = null;
                         return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FUPFSYNC1");
                     }
@@ -102,7 +102,7 @@ namespace NachoCore.ActiveSync
                 protocolState.IncrementAsFolderSyncEpoch ();
                 protocolState.Update ();
                 PendingResolveApply ((pending) => {
-                    PendingSingle.ResolveAsDeferredForce ();
+                    PendingSingle.ResolveAsDeferredForce (BEContext.ProtoControl);
                 });
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FUPFSYNC2");
 
@@ -110,7 +110,7 @@ namespace NachoCore.ActiveSync
                 protocolState.IncrementAsFolderSyncEpoch ();
                 protocolState.Update ();
                 PendingResolveApply ((pending) => {
-                    PendingSingle.ResolveAsDeferredForce ();
+                    PendingSingle.ResolveAsDeferredForce (BEContext.ProtoControl);
                 });
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FUPFSYNC3");
 

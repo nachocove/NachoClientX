@@ -88,7 +88,7 @@ namespace NachoCore.ActiveSync
                         PendingSingle = null;
                         return Event.Create ((uint)SmEvt.E.HardFail, "FCREBADP");
                     } else {
-                        PendingSingle.ResolveAsDeferredForce ();
+                        PendingSingle.ResolveAsDeferredForce (BEContext.ProtoControl);
                         PendingSingle = null;
                         return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FCREFSYNC");
                     }
@@ -97,13 +97,13 @@ namespace NachoCore.ActiveSync
             case Xml.FolderHierarchy.FolderCreateStatusCode.ServerError_6:
                 // Trust server to tell FolderSync if we need to reset SyncKey.
                 PendingResolveApply ((pending) => {
-                    pending.ResolveAsDeferredForce ();
+                    pending.ResolveAsDeferredForce (BEContext.ProtoControl);
                 });
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FCREFSYNC");
 
             case Xml.FolderHierarchy.FolderCreateStatusCode.ReSync_9:
                 PendingResolveApply ((pending) => {
-                    pending.ResolveAsDeferredForce ();
+                    pending.ResolveAsDeferredForce (BEContext.ProtoControl);
                 });
                 protocolState.IncrementAsFolderSyncEpoch ();
                 protocolState.Update ();

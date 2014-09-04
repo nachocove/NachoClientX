@@ -105,7 +105,7 @@ namespace NachoCore.ActiveSync
                  * may fail the 2nd time because the item exists. Don't want to bug the user.
                  */
                     if (McPending.StateEnum.Dispatched == pending.State) {
-                        pending.ResolveAsDeferredForce ();
+                        pending.ResolveAsDeferredForce (BEContext.ProtoControl);
                     }
                 }
                 PendingList.Clear ();
@@ -237,7 +237,7 @@ namespace NachoCore.ActiveSync
                     foreach (var pending in PendingList) {
                         Log.Error (Log.LOG_AS, "PostProcessEvent: AsCommand failed to resolve pending {0}.", pending.Operation.ToString ());
                         if (McPending.StateEnum.Dispatched == pending.State) {
-                            pending.ResolveAsDeferredForce ();
+                            pending.ResolveAsDeferredForce (BEContext.ProtoControl);
                         }
                     }
                 }
@@ -267,7 +267,7 @@ namespace NachoCore.ActiveSync
             lock (PendingResolveLockObj) {
                 ConsolidatePending ();
                 foreach (var pending in PendingList) {
-                    pending.ResolveAsDeferredForce ();
+                    pending.ResolveAsDeferredForce (BEContext.ProtoControl);
                 }
                 PendingList.Clear ();
             }
@@ -336,7 +336,7 @@ namespace NachoCore.ActiveSync
             PendingResolveApply (pending => {
                 pending.ResponseXmlStatusKind = McPending.XmlStatusKindEnum.TopLevel;
                 pending.ResponsegXmlStatus = (uint)status;
-                pending.ResolveAsDeferredForce ();
+                pending.ResolveAsDeferredForce (BEContext.ProtoControl);
             });
             return Event.Create ((uint)SmEvt.E.TempFail,
                 string.Format ("TLS{0}", ((uint)status).ToString ()), null, 
@@ -433,7 +433,7 @@ namespace NachoCore.ActiveSync
             case Xml.StatusCode.SyncStateAlreadyExists_135:
             case Xml.StatusCode.SyncStateVersionInvalid_136:
                 PendingResolveApply (pending => {
-                    pending.ResolveAsDeferredForce ();
+                    pending.ResolveAsDeferredForce (BEContext.ProtoControl);
                 });
                 McFolder.AsSetExpected (BEContext.Account.Id);
                 return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "TLS132-6");
@@ -448,26 +448,26 @@ namespace NachoCore.ActiveSync
                 protocolState.IsWipeRequired = true;
                 protocolState.Update ();
                 PendingResolveApply (pending => {
-                    pending.ResolveAsDeferredForce ();
+                    pending.ResolveAsDeferredForce (BEContext.ProtoControl);
                 });
                 return Event.Create ((uint)AsProtoControl.AsEvt.E.ReProv, "TLS140");
 
             case Xml.StatusCode.LegacyDeviceOnStrictPolicy_141:
                 PendingResolveApply (pending => {
-                    pending.ResolveAsDeferredForce ();
+                    pending.ResolveAsDeferredForce (BEContext.ProtoControl);
                 });
                 return CompleteAsHardFail (status, NcResult.WhyEnum.ProtocolError);
 
             case Xml.StatusCode.DeviceNotProvisioned_142:
             case Xml.StatusCode.PolicyRefresh_143:
                 PendingResolveApply (pending => {
-                    pending.ResolveAsDeferredForce ();
+                    pending.ResolveAsDeferredForce (BEContext.ProtoControl);
                 });
                 return Event.Create ((uint)AsProtoControl.AsEvt.E.ReProv, "TLS142-3");
 
             case Xml.StatusCode.InvalidPolicyKey_144:
                 PendingResolveApply (pending => {
-                    pending.ResolveAsDeferredForce ();
+                    pending.ResolveAsDeferredForce (BEContext.ProtoControl);
                 });
                 BEContext.ProtocolState.AsPolicyKey = McProtocolState.AsPolicyKey_Initial;
                 return Event.Create ((uint)AsProtoControl.AsEvt.E.ReProv, "TLS142-3");

@@ -496,7 +496,7 @@ namespace NachoCore.ActiveSync
                         pendingInFolder = PendingList.Where (x => x.ParentId == folder.ServerId).ToList ();
                         foreach (var pending in pendingInFolder) {
                             PendingList.Remove (pending);
-                            pending.ResolveAsDeferredForce ();
+                            pending.ResolveAsDeferredForce (BEContext.ProtoControl);
                         }
                     }
                     break;
@@ -603,7 +603,7 @@ namespace NachoCore.ActiveSync
                         pending.Update ();
                         continue;
                     }
-                    pending.ResolveAsDeferredForce ();
+                    pending.ResolveAsDeferredForce (BEContext.ProtoControl);
                 }
                 PendingList.Clear ();
             }

@@ -464,7 +464,7 @@ namespace Test.iOS
                 // Test ResolveAsDeferredForce
                 var pending1 = CreatePending ();
                 TestForNachoExceptionFailure (() => {
-                    pending1.ResolveAsDeferredForce ();
+                    pending1.ResolveAsDeferredForce (protoControl);
                 }, "Should throw NachoExceptionFailure if ResolveAsDeferredForce is called on a non-dispatched pending object");
 
                 // Test ResolveAsDeferred
@@ -482,7 +482,7 @@ namespace Test.iOS
             {
                 var pending = CreatePending ();
                 pending.MarkDispached ();
-                pending.ResolveAsDeferredForce ();
+                pending.ResolveAsDeferredForce (protoControl);
 
                 var retrieved = McPending.QueryById<McPending> (pending.Id);
                 Assert.AreEqual (StateEnum.Deferred, retrieved.State, "ResolveAsDeferredForce should set state to deferred in DB");

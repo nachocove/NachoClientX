@@ -723,7 +723,7 @@ namespace NachoCore.ActiveSync
             Sm.State = ProtocolState.ProtoControlState;
             SyncStrategy = new AsStrategy (this);
 
-            McPending.ResolveAllDispatchedAsDeferred (Account.Id);
+            McPending.ResolveAllDispatchedAsDeferred (ProtoControl, Account.Id);
             NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
         }

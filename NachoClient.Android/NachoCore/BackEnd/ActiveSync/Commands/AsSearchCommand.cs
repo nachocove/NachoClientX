@@ -126,7 +126,7 @@ namespace NachoCore.ActiveSync
 
                         case Xml.Search.StoreStatusCode.FSyncRequired_11:
                             PendingResolveApply ((pending) => {
-                                pending.ResolveAsDeferredForce ();
+                                pending.ResolveAsDeferredForce (BEContext.ProtoControl);
                             });
                             return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "SRCHREFSYNC");
 

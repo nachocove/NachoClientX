@@ -69,7 +69,7 @@ namespace NachoCore.ActiveSync
                         PendingSingle = null;
                         return Event.Create ((uint)SmEvt.E.HardFail, "FDELFAILSPEC");
                     } else {
-                        PendingSingle.ResolveAsDeferredForce ();
+                        PendingSingle.ResolveAsDeferredForce (BEContext.ProtoControl);
                         PendingSingle = null;
                         return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FDELFSYNC1");
                     }
@@ -83,7 +83,7 @@ namespace NachoCore.ActiveSync
                 protocolState.IncrementAsFolderSyncEpoch ();
                 protocolState.Update ();
                 PendingResolveApply ((pending) => {
-                    pending.ResolveAsDeferredForce ();
+                    pending.ResolveAsDeferredForce (BEContext.ProtoControl);
                 });
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FDELFSYNC2");
 
@@ -91,7 +91,7 @@ namespace NachoCore.ActiveSync
                 protocolState.IncrementAsFolderSyncEpoch ();
                 protocolState.Update ();
                 PendingResolveApply ((pending) => {
-                    pending.ResolveAsDeferredForce ();
+                    pending.ResolveAsDeferredForce (BEContext.ProtoControl);
                 });
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "FDELFSYNC3");
 

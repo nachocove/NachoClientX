@@ -598,19 +598,15 @@ namespace NachoCore.Model
             ResolveAsDeferred (control, eligibleAfter, result);
         }
 
-        public void ResolveAsDeferredForce ()
+        public void ResolveAsDeferredForce (ProtoControl control)
         {
-            NcAssert.True (StateEnum.Dispatched == State);
-            State = StateEnum.Deferred;
-            DeferredReason = DeferredEnum.UntilTime;
-            DeferredUntilTime = DateTime.UtcNow;
-            Update ();
             Log.Info (Log.LOG_SYNC, "Pending:ResolveAsDeferredForce:{0}", Id);
+            ResolveAsDeferred (control, DateTime.UtcNow, NcResult.WhyEnum.NotSpecified);
         }
 
         public void ResolveAsUserBlocked (ProtoControl control, BlockReasonEnum reason, NcResult result)
         {
-            // This is the designated ResoveAsUserBlocked.
+            // This is the designated ResolveAsUserBlocked.
             NcAssert.True (StateEnum.Dispatched == State);
             NcAssert.True (NcResult.KindEnum.Error == result.Kind);
             ResultKind = result.Kind;
@@ -642,13 +638,13 @@ namespace NachoCore.Model
             }
         }
 
-        public static void ResolveAllDispatchedAsDeferred (int accountId)
+        public static void ResolveAllDispatchedAsDeferred (ProtoControl control, int accountId)
         {
             NcModel.Instance.Db.Table<McPending> ()
                 .Where (rec =>
                     rec.AccountId == accountId &&
             rec.State == StateEnum.Dispatched).All (y => {
-                y.ResolveAsDeferredForce ();
+                y.ResolveAsDeferredForce (control);
                 return true;
             });
         }
