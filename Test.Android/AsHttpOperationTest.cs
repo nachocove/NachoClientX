@@ -57,7 +57,7 @@ namespace Test.iOS
 
         public virtual Event ProcessResponse (AsHttpOperation sender, HttpResponseMessage response)
         {
-            return null;
+            return Event.Create ((uint)SmEvt.E.Success, "MOCKSUCCESS");
         }
 
         public virtual Event ProcessResponse (AsHttpOperation sender, HttpResponseMessage response, XDocument doc)
@@ -424,7 +424,7 @@ namespace Test.iOS
         // Content-Type is not required if Content-Length is missing or zero
         /* TODO: Both of these tests currently fail. An exception is thrown in AsHttpOperation.cs
          * Need to inspect */
-//        [Test]
+        [Test]
         public void ContentTypeNotRequired ()
         {
             /* Content-Length is zero --> must not require content type */
