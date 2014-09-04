@@ -42,13 +42,13 @@ namespace NachoCore.ActiveSync
                 protocolState.Update ();
                 var changes = doc.Root.Element (m_ns + Xml.FolderHierarchy.Changes).Elements ();
                 if (null != changes) {
-                    HadFolderChanges = true;
                     // FIXME: should we try-block each op, since we are saving the syncKey up front?
                     foreach (var change in changes) {
                         string serverId, parentId;
                         McPath pathElem;
                         switch (change.Name.LocalName) {
                         case Xml.FolderHierarchy.Add:
+                            HadFolderChanges = true;
                             serverId = change.Element (m_ns + Xml.FolderHierarchy.ServerId).Value;
                             parentId = change.Element (m_ns + Xml.FolderHierarchy.ParentId).Value;
                             pathElem = new McPath (BEContext.Account.Id);
@@ -64,6 +64,7 @@ namespace NachoCore.ActiveSync
                             applyAdd.ProcessServerCommand ();
                             break;
                         case Xml.FolderHierarchy.Update:
+                            HadFolderChanges = true;
                             serverId = change.Element (m_ns + Xml.FolderHierarchy.ServerId).Value;
                             parentId = change.Element (m_ns + Xml.FolderHierarchy.ParentId).Value;
                             pathElem = McPath.QueryByServerId (BEContext.Account.Id, serverId);
@@ -78,6 +79,7 @@ namespace NachoCore.ActiveSync
                             applyUpdate.ProcessServerCommand ();
                             break;
                         case Xml.FolderHierarchy.Delete:
+                            HadFolderChanges = true;
                             serverId = change.Element (m_ns + Xml.FolderHierarchy.ServerId).Value;
                             var applyDelete = new ApplyFolderDelete (BEContext.Account.Id) {
                                 ServerId = serverId,
