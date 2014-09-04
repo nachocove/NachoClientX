@@ -178,6 +178,11 @@ namespace NachoCore.Brain
                     }
                 }
             }
+
+            public void Clear ()
+            {
+                TvLists.Clear ();
+            }
         }
 
         /// A list of all active Time variance state machine

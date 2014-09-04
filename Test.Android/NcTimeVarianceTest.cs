@@ -27,6 +27,7 @@ namespace Test.Common
         public void SetUp ()
         {
             NcTimeVariance.GetCurrentDateTime = MockTimer.GetCurrentDateTime;
+            NcTimeVariance.ActiveList.Clear ();
             CallbackState = 0;
             Adjustment = 0.0;
             Signal = new AutoResetEvent (false);
