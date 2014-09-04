@@ -6,10 +6,11 @@ using NUnit.Framework;
 using NachoCore.Utils;
 using NachoCore.Model;
 using NachoCore.Brain;
+using NachoCore;
 
 namespace Test.Common
 {
-    public class NcBrainTest
+    public class NcBrainTest : NcTestBase
     {
         static bool Initialized = false;
 
@@ -22,6 +23,10 @@ namespace Test.Common
         [SetUp]
         public void SetUp ()
         {
+            base.Setup ();
+            NcApplication.Instance.TestOnlyInvokeUseCurrentThread = true;
+            NcTask.StartService ();
+            NcBrain.StartService ();
             Telemetry.ENABLED = false;
             if (!Initialized) {
                 NcTask.StartService ();
@@ -57,6 +62,11 @@ namespace Test.Common
             if (0 != Address.Id) {
                 Address.Delete ();
             }
+            NcBrain.StopService ();
+            while (!NcBrain.SharedInstance.IsQueueEmpty ()) {
+                Thread.Sleep (50);
+            }
+            NcTask.StopService ();
         }
 
         private void WaitForBrain ()

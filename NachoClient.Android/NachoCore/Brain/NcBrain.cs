@@ -157,7 +157,7 @@ namespace NachoCore.Brain
                 Log.Debug (Log.LOG_BRAIN, "[McEmailAddress:{0}] update score -> {1:F6}",
                     emailAddress.Id, emailAddress.Score);
                 emailAddress.NeedUpdate = false;
-                emailAddress.Update ();
+                emailAddress.UpdateByBrain ();
 
                 numUpdated++;
             }
@@ -177,7 +177,7 @@ namespace NachoCore.Brain
                 Log.Debug (Log.LOG_BRAIN, "[McEmailMessage:{0}] update score -> {1:F6}",
                     emailMessage.Id, emailMessage.Score);
                 emailMessage.NeedUpdate = false;
-                emailMessage.Update ();
+                emailMessage.UpdateByBrain ();
 
                 numUpdated++;
             }
@@ -238,7 +238,7 @@ namespace NachoCore.Brain
 
                     // Generate an initial score
                     address.Score = score;
-                    address.Update ();
+                    address.UpdateByBrain ();
                 }
             }
         }
@@ -282,7 +282,7 @@ namespace NachoCore.Brain
             double newScore = emailMessage.GetScore ();
             if (newScore != emailMessage.Score) {
                 emailMessage.Score = newScore;
-                emailMessage.Update ();
+                emailMessage.UpdateByBrain ();
             }
         }
 
