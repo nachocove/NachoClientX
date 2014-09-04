@@ -821,7 +821,6 @@ namespace NachoClient.iOS
             var frame = label.Frame;
             frame.Height = frame.Height + 30;
             label.Frame = frame;
-            //label.BackgroundColor = A.Color_NachoGreen;
             label.Tag = MESSAGE_PART_TAG;
             view.AddSubview (label);
         }
