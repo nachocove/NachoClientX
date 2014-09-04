@@ -767,7 +767,10 @@ namespace NachoCore.ActiveSync
                 var xmlResponse = doc.Root.ElementAnyNs (Xml.Autodisco.Response);
                 var xmlUser = xmlResponse.ElementAnyNs (Xml.Autodisco.User);
                 if (null != xmlUser) {
-                    SrEmailAddr = xmlUser.ElementAnyNs (Xml.Autodisco.EMailAddress).Value;
+                    var xmlEMailAddress = xmlUser.ElementAnyNs (Xml.Autodisco.EMailAddress);
+                    if (null != xmlEMailAddress) {
+                        SrEmailAddr = xmlEMailAddress.Value;
+                    }
                     var xmlDisplayName = xmlUser.ElementAnyNs (Xml.Autodisco.DisplayName);
                     if (null != xmlDisplayName) {
                         SrDisplayName = xmlDisplayName.Value;
