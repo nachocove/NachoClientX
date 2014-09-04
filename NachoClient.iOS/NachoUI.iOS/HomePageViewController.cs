@@ -168,6 +168,8 @@ namespace NachoClient.iOS
                 break;
             case 3:
                 AnimateEmailCellLeft ();
+
+                //AnimateEmailCellRight ();
                 break;
             }
         }
@@ -507,7 +509,24 @@ namespace NachoClient.iOS
             SetSpriteCallbacks (calimageView, animatepull);
             SetSpriteCallbacks (pullimageView, animatepull);
         }
-
+        private UIImageView CreateRightCell ()
+        {
+            // same approach as above. SAnimate one cell, but behind scenes have three cells lined up.
+            // the animation wil look smooth, but only one vie is sliding..
+            //var emailSize = new RectangleF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 2, this.contentContainer.Frame.Width, 55);
+            UIImageView rightCell = new UIImageView (UIImage.FromBundle ("Content/Slide4-2B.png"));
+            rightCell.Frame = new RectangleF (this.contentContainer.Frame.Width, 77, this.contentContainer.Frame.Width, 93);
+            return rightCell;
+        }
+        private UIImageView CreateLeftCell ()
+        {
+            // same approach as above. SAnimate one cell, but behind scenes have three cells lined up.
+            // the animation wil look smooth, but only one vie is sliding..
+            //var emailSize = new RectangleF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 2, this.contentContainer.Frame.Width, 55);
+            UIImageView leftCell = new UIImageView (UIImage.FromBundle ("Content/Slide4-2A.png"));
+            leftCell.Frame = new RectangleF (0-this.contentContainer.Frame.Width, 77, this.contentContainer.Frame.Width, 93);
+           return leftCell;
+        }
         private UIImageView CreateEmailCell ()
         {
             // same approach as above. SAnimate one cell, but behind scenes have three cells lined up.
@@ -521,16 +540,16 @@ namespace NachoClient.iOS
             return emailCell;
         }
 
-        public void AnimateEmailCellLeft ()
+        public void AnimateEmailCellRight ()
         {
             Action<UIImageView> animateSprite = (emailCell) => {
                 UIView.Animate (
                     duration: 1.0,
-                    delay: 2.0,
+                    delay: 3.0,
                     options: UIViewAnimationOptions.CurveEaseInOut,
                     animation: () => {
-                        // Move the  item all the way off theleft side of the screen
-                        emailCell.Center = new PointF (emailCell.Center.X- emailCell.Frame.Width, emailCell.Center.Y);
+                        // Move the  item all the way to the right side of the screen
+                        emailCell.Center = new PointF (emailCell.Center.X + emailCell.Frame.Width, emailCell.Center.Y);
                     },
                     completion: () => {
                         emailCell.RemoveFromSuperview ();
@@ -544,9 +563,157 @@ namespace NachoClient.iOS
                     }
                 );
             };
-
+            Action<UIImageView> animateLeftSprite = (leftCell) => {
+                UIView.Animate (
+                    duration: 1.0,
+                    delay: 3.0,
+                    options: UIViewAnimationOptions.CurveEaseInOut,
+                    animation: () => {
+                        // Move the  item all the way off theleft side of the screen
+                        leftCell.Center = new PointF (leftCell.Center.X + leftCell.Frame.Width, leftCell.Center.Y);
+                    },
+                    completion: () => {
+                        leftCell.RemoveFromSuperview ();
+                        this.owner.pageController.DidFinishAnimating += (object sender, UIPageViewFinishedAnimationEventArgs e) => {
+                            var previousPageView = (HomePageController)e.PreviousViewControllers [0];
+                            if (this.PageIndex == previousPageView.PageIndex) {
+                                // we are moving away from this view
+                                leftCell.RemoveFromSuperview ();
+                            }
+                        };
+                    }
+                );
+            };
+            Action<UIImageView> animateRightSprite = (rightCell) => {
+                UIView.Animate (
+                    duration: 1.0,
+                    delay: 3.0,
+                    options: UIViewAnimationOptions.CurveEaseInOut,
+                    animation: () => {
+                        // Move the  item all the way off theleft side of the screen
+                        rightCell.Center = new PointF (rightCell.Center.X + rightCell.Frame.Width, rightCell.Center.Y);
+                    },
+                    completion: () => {
+                        rightCell.RemoveFromSuperview ();
+                        this.owner.pageController.DidFinishAnimating += (object sender, UIPageViewFinishedAnimationEventArgs e) => {
+                            var previousPageView = (HomePageController)e.PreviousViewControllers [0];
+                            if (this.PageIndex == previousPageView.PageIndex) {
+                                // we are moving away from this view
+                                rightCell.RemoveFromSuperview ();
+                            }
+                        };
+                    }
+                );
+            };
             var emailCellSprite = CreateEmailCell ();
             SetSpriteCallbacks (emailCellSprite, animateSprite);
+
+            var leftCellSprite = CreateLeftCell ();
+            SetSpriteCallbacks (leftCellSprite, animateLeftSprite);
+
+            var rightCellSprite = CreateRightCell ();
+            SetSpriteCallbacks (rightCellSprite, animateRightSprite);
+        }
+   
+
+
+        public void AnimateEmailCellLeft ()
+        {
+            Action<UIImageView> animateSprite = (emailCell) => {
+                UIView.Animate (
+                    duration: 1.0,
+                    delay: 2.0,
+                    options: UIViewAnimationOptions.CurveEaseInOut,
+                    animation: () => {
+                        // Move the  item all the way off theleft side of the screen
+                        emailCell.Center = new PointF (emailCell.Center.X - emailCell.Frame.Width, emailCell.Center.Y);
+                    },
+                    completion: () => {
+                        emailCell.RemoveFromSuperview ();
+                        this.owner.pageController.DidFinishAnimating += (object sender, UIPageViewFinishedAnimationEventArgs e) => {
+                            var previousPageView = (HomePageController)e.PreviousViewControllers [0];
+                            if (this.PageIndex == previousPageView.PageIndex) {
+                                // we are moving away from this view
+                                emailCell.RemoveFromSuperview ();
+                            }
+                           
+                        };
+                    }
+                );
+            };
+            /*Action<UIImageView> animateemailRightSprite = (emailCell) => {
+                UIView.Animate (
+                    duration: 1.0,
+                    delay: 4.0,
+                    options: UIViewAnimationOptions.CurveEaseInOut,
+                    animation: () => {
+                        // Move the  item all the way off theleft side of the screen
+                        emailCell.Center = new PointF (emailCell.Center.X + emailCell.Frame.Width, emailCell.Center.Y);
+                    },
+                    completion: () => {
+                        emailCell.RemoveFromSuperview ();
+                        this.owner.pageController.DidFinishAnimating += (object sender, UIPageViewFinishedAnimationEventArgs e) => {
+                            var previousPageView = (HomePageController)e.PreviousViewControllers [0];
+                            if (this.PageIndex == previousPageView.PageIndex) {
+                                // we are moving away from this view
+                                emailCell.RemoveFromSuperview ();
+                            }
+
+                        };
+                    }
+                );
+            };*/
+            Action<UIImageView> animateLeftSprite = (leftCell) => {
+                UIView.Animate (
+                    duration: 1.0,
+                    delay: 2.0,
+                    options: UIViewAnimationOptions.CurveEaseInOut,
+                    animation: () => {
+                        // Move the  item all the way off theleft side of the screen
+                        leftCell.Center = new PointF (leftCell.Center.X- leftCell.Frame.Width, leftCell.Center.Y);
+                    },
+                    completion: () => {
+                        leftCell.RemoveFromSuperview ();
+                        this.owner.pageController.DidFinishAnimating += (object sender, UIPageViewFinishedAnimationEventArgs e) => {
+                            var previousPageView = (HomePageController)e.PreviousViewControllers [0];
+                            if (this.PageIndex == previousPageView.PageIndex) {
+                                // we are moving away from this view
+                                leftCell.RemoveFromSuperview ();
+                            }
+                        };
+                    }
+                );
+            };
+            Action<UIImageView> animateRightSprite = (rightCell) => {
+                UIView.Animate (
+                    duration: 1.0,
+                    delay: 2.0,
+                    options: UIViewAnimationOptions.CurveEaseInOut,
+                    animation: () => {
+                        // Move the  item all the way off theleft side of the screen
+                        rightCell.Center = new PointF (rightCell.Center.X- rightCell.Frame.Width, rightCell.Center.Y);
+                    },
+                    completion: () => {
+                        rightCell.RemoveFromSuperview ();
+                        this.owner.pageController.DidFinishAnimating += (object sender, UIPageViewFinishedAnimationEventArgs e) => {
+                            var previousPageView = (HomePageController)e.PreviousViewControllers [0];
+                            if (this.PageIndex == previousPageView.PageIndex) {
+                                // we are moving away from this view
+                                rightCell.RemoveFromSuperview ();
+                            }
+                        };
+                    }
+                );
+            };
+            var emailCellSprite = CreateEmailCell ();
+            SetSpriteCallbacks (emailCellSprite, animateSprite);
+            //SetSpriteCallbacks (emailCellSprite, animateemailRightSprite);
+
+            //var leftCellSprite = CreateLeftCell ();
+            //SetSpriteCallbacks (leftCellSprite, animateLeftSprite);
+
+            var rightCellSprite = CreateRightCell ();
+            SetSpriteCallbacks (rightCellSprite, animateRightSprite);
         }
 
         // remove the animated sprite once you complete the movement to the next page
