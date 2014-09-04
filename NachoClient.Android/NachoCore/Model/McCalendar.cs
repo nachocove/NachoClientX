@@ -164,6 +164,13 @@ namespace NachoCore.Model
             ).SingleOrDefault ();
         }
 
+        public static McCalendar QueryByUID (string UID)
+        {
+            return NcModel.Instance.Db.Table<McCalendar> ().Where (x => 
+                x.UID == UID
+            ).SingleOrDefault ();
+        }
+
         public static List<McCalendar> QueryOutOfDateRecurrences (DateTime generateUntil)
         {
             return NcModel.Instance.Db.Table<McCalendar> ().Where (x => x.RecurrencesGeneratedUntil < generateUntil).ToList ();

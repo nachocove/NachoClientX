@@ -748,13 +748,15 @@ namespace NachoClient
             } else {
                 sb.Clear ();
                 int uidLength = uidHolderLength - 13;
-                for (int i = 0; i < uidLength - 2; i++) {
-                    sb.Append (Convert.ToChar (data [53 + i]));
+                for (int i = 0; i < uidLength; i++) {
+                    sb.Append (Convert.ToChar (data [52 + i]));
                 }
                 UID = sb.ToString ();
             }
 
             UID = UID.Replace ("-", "");
+            UID = UID.Replace ("{", "");
+            UID = UID.Replace ("}", "");
             return UID;
         }
 
