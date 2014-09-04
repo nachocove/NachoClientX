@@ -65,6 +65,7 @@ namespace NachoCore.Model
             TaskMove,
             TaskBodyDownload,
             AttachmentDownload,
+            Last = AttachmentDownload,
         };
         // Lifecycle of McPending:
         // - Protocol control API creates it (Eligible or PredBlocked) and puts it into the Q. Event goes to TL SM.

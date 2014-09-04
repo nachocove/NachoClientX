@@ -647,7 +647,8 @@ namespace NachoCore.ActiveSync
                     Where (x => 
                         McPending.Operations.EmailSend == x.Operation ||
                            McPending.Operations.EmailForward == x.Operation ||
-                           McPending.Operations.EmailReply == x.Operation
+                           McPending.Operations.EmailReply == x.Operation ||
+                           McPending.Operations.CalRespond == x.Operation
                            ).FirstOrDefault ();
                 if (null != send) {
                     Log.Info (Log.LOG_AS, "Strategy:FG/BG:Send");
@@ -661,6 +662,9 @@ namespace NachoCore.ActiveSync
                         break;
                     case McPending.Operations.EmailReply:
                         cmd = new AsSmartReplyCommand (BEContext.ProtoControl, send);
+                        break;
+                    case McPending.Operations.CalRespond:
+                        cmd = new AsMeetingResponseCommand (BEContext.ProtoControl, send);
                         break;
                     default:
                         NcAssert.CaseError (send.Operation.ToString ());
@@ -722,9 +726,11 @@ namespace NachoCore.ActiveSync
                 // I(FG, BG) If there are entries in the pending queue, execute the oldest.
                 var next = McPending.QueryEligible (accountId).FirstOrDefault ();
                 if (null != next) {
+                    NcAssert.True (McPending.Operations.Last == McPending.Operations.AttachmentDownload);
                     Log.Info (Log.LOG_AS, "Strategy:FG/BG:QOp:{0}", next.Operation.ToString ());
                     AsCommand cmd = null;
                     switch (next.Operation) {
+                    // It is likely that next is one of these at the top of the switch () ...
                     case McPending.Operations.FolderCreate:
                         cmd = new AsFolderCreateCommand (BEContext.ProtoControl, next);
                         break;
@@ -747,8 +753,34 @@ namespace NachoCore.ActiveSync
                     case McPending.Operations.TaskMove:
                         cmd = new AsMoveItemsCommand (BEContext.ProtoControl, next, McAbstrFolderEntry.ClassCodeEnum.Tasks);
                         break;
+                        // ... however one of these below, which would have been handled above, could have been
+                        // inserted into the Q while Pick() is in the middle of running.
+                    case McPending.Operations.EmailForward:
+                        cmd = new AsSmartForwardCommand (BEContext.ProtoControl, next);
+                        break;
+                    case McPending.Operations.EmailReply:
+                        cmd = new AsSmartReplyCommand (BEContext.ProtoControl, next);
+                        break;
+                    case McPending.Operations.EmailSend:
+                        cmd = new AsSendMailCommand (BEContext.ProtoControl, next);
+                        break;
+                    case McPending.Operations.ContactSearch:
+                        cmd = new AsSearchCommand (BEContext.ProtoControl, next);
+                        break;
                     case McPending.Operations.CalRespond:
                         cmd = new AsMeetingResponseCommand (BEContext.ProtoControl, next);
+                        break;
+                    case McPending.Operations.EmailBodyDownload:
+                    case McPending.Operations.ContactBodyDownload:
+                    case McPending.Operations.CalBodyDownload:
+                    case McPending.Operations.TaskBodyDownload:
+                    case McPending.Operations.AttachmentDownload:
+                        cmd = new AsItemOperationsCommand (BEContext.ProtoControl,
+                            new FetchKit () {
+                                FetchBodies = new List<FetchKit.FetchBody> (),
+                                FetchAttachments = new List<McAttachment> (),
+                                Pendings = new List<McPending> { next },
+                            });
                         break;
                     default:
                         if (AsSyncCommand.IsSyncCommand (next.Operation)) {
