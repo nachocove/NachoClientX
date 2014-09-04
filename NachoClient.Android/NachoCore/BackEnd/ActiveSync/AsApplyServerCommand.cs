@@ -75,23 +75,7 @@ namespace NachoCore.ActiveSync
             foreach (var rw in ReWrites) {
                 switch (rw.ObjAction) {
                 case McPending.ReWrite.ObjActionEnum.ReWriteServerParentIdString:
-                    var maybes = new List<McAbstrFolderEntry> ();
-                    maybes.Add (McAbstrFolderEntry.QueryByServerId<McFolder> (AccountId, rw.MatchString));
-                    maybes.Add (McAbstrFolderEntry.QueryByServerId<McEmailMessage> (AccountId, rw.MatchString));
-                    maybes.Add (McAbstrFolderEntry.QueryByServerId<McContact> (AccountId, rw.MatchString));
-                    maybes.Add (McAbstrFolderEntry.QueryByServerId<McCalendar> (AccountId, rw.MatchString));
-                    maybes.Add (McAbstrFolderEntry.QueryByServerId<McTask> (AccountId, rw.MatchString));
-                    foreach (var entry in maybes) {
-                        if (null != entry) {
-                            entry.ServerId = rw.ReplaceString;
-                            entry.Update ();
-                        }
-                    }
-                    var folders = McFolder.QueryByParentId (AccountId, rw.MatchString);
-                    foreach (var folder in folders) {
-                        folder.ParentId = rw.ReplaceString;
-                        folder.Update ();
-                    }
+                    McAbstrFolderEntry.GloballyReWriteServerId (AccountId, rw.MatchString, rw.ReplaceString);
                     break;
                 }
             }

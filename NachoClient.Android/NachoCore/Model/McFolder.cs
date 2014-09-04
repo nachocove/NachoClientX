@@ -165,6 +165,7 @@ namespace NachoCore.Model
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
                           " f.AccountId = ? AND " +
                           " f.IsAwaitingDelete = 0 AND " +
+                          " f.IsClientOwned = 0 AND " +
                           " f.Type = ? ",
                               accountId, (uint)typeCode);
             if (0 == folders.Count) {

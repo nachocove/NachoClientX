@@ -64,5 +64,27 @@ namespace NachoCore.Model
                 folderEntries.Add (item);
             }
         }
+
+        public static void GloballyReWriteServerId (int accountId, string oldServerId, string newServerId)
+        {
+            var maybes = new List<McAbstrFolderEntry> ();
+            maybes.Add (McAbstrFolderEntry.QueryByServerId<McFolder> (accountId, oldServerId));
+            maybes.Add (McAbstrFolderEntry.QueryByServerId<McEmailMessage> (accountId, oldServerId));
+            maybes.Add (McAbstrFolderEntry.QueryByServerId<McContact> (accountId, oldServerId));
+            maybes.Add (McAbstrFolderEntry.QueryByServerId<McCalendar> (accountId, oldServerId));
+            maybes.Add (McAbstrFolderEntry.QueryByServerId<McTask> (accountId, oldServerId));
+
+            foreach (var entry in maybes) {
+                if (null != entry) {
+                    entry.ServerId = newServerId;
+                    entry.Update ();
+                }
+            }
+            var folders = McFolder.QueryByParentId (accountId, oldServerId);
+            foreach (var folder in folders) {
+                folder.ParentId = newServerId;
+                folder.Update ();
+            }
+        }
     }
 }

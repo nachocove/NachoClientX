@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoCore.ActiveSync
 {
@@ -99,11 +100,26 @@ namespace NachoCore.ActiveSync
                     // The FolderSync:Add is really the same as this old folder.
                     maybeSame.ParentId = ParentId;
                     // We tried leaving the AsSyncKey untouched, and the server took it.
-                    // We are going to rely on the server resetting the AsSyncKey if it wants it.
+                    // We are going to rely on the server resetting the AsSyncKey if it wants it reset.
                     maybeSame.AsFolderSyncEpoch = folderSyncEpoch;
                     maybeSame.AsSyncMetaToClientExpected = true;
                     maybeSame.Update ();
                 } else {
+                    if (null != maybeSame) {
+                        // We aren't confident that the folder is the same, but we can't keep executing 
+                        // with two folders having the same ServerId. The folder will be moved to LAF later,
+                        // assuming it was from a prior epoch.
+                        if (maybeSame.AsFolderSyncEpoch == folderSyncEpoch) {
+                            Log.Error (Log.LOG_AS, "ApplyFolderAdd Clobber: new: {0}, existing {1}.", 
+                                maybeSame.ToString (), folder.ToString ());
+                        }
+                        var newServerId = Guid.NewGuid ().ToString ("N");
+                        maybeSame.ServerId = newServerId;
+                        NcModel.Instance.RunInTransaction (() => {
+                            maybeSame.Update ();
+                            McAbstrFolderEntry.GloballyReWriteServerId (AccountId, ServerId, newServerId);
+                        });
+                    }
                     folder.Insert ();
                 }
             }

@@ -91,8 +91,10 @@ namespace NachoCore.ActiveSync
                     }
                 }
 
-                if (BEContext.ProtocolState.AsFolderSyncEpochScrubNeeded) {
+                if (protocolState.AsFolderSyncEpochScrubNeeded) {
                     PerformFolderSyncEpochScrub ();
+                    protocolState.AsFolderSyncEpochScrubNeeded = false;
+                    protocolState.Update ();
                 }
 
                 if (HadFolderChanges) {
@@ -131,12 +133,18 @@ namespace NachoCore.ActiveSync
 
         private void PerformFolderSyncEpochScrub ()
         {
+            Log.Info (Log.LOG_AS, "PerformFolderSyncEpochScrub");
             var laf = McFolder.GetLostAndFoundFolder (BEContext.Account.Id);
             var orphaned = McFolder.QueryByIsClientOwned (BEContext.Account.Id, false)
                 .Where (x => x.AsFolderSyncEpoch < BEContext.ProtocolState.AsFolderSyncEpoch).ToList ();
+            Log.Info (Log.LOG_AS, "PerformFolderSyncEpochScrub: {0} folders.", orphaned.Count);
             foreach (var folder in orphaned) {
+                Log.Info (Log.LOG_AS, "PerformFolderSyncEpochScrub: moving old {0} under LAF.", folder.DisplayName);
+                // If an Add command from the server re-used this folder's ServerId, then
+                // we changed that server id to a GUID when applying the Add to the model.
                 folder.ParentId = laf.ServerId;
                 folder.IsClientOwned = true;
+                folder.Update ();
             }
         }
     }
