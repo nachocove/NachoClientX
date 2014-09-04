@@ -50,15 +50,17 @@ namespace NachoCore.ActiveSync
         {
             IEnumerable<string> values;
             bool retval = headers.TryGetValues ("MS-ASProtocolVersions", out values);
-            foreach (var value in values) {
-                float[] float_versions = Array.ConvertAll (value.Split (','), x => float.Parse (x));
-                Array.Sort (float_versions);
-                Array.Reverse (float_versions);
-                string[] versions = Array.ConvertAll (float_versions, x => x.ToString ("0.0"));
-                McProtocolState update = beContext.ProtocolState;
-                update.AsProtocolVersion = versions [0];
-                beContext.ProtocolState = update;
-                // NOTE: We don't have any reason to do anything with MS-ASProtocolCommands yet.
+            if (null != values) {
+                foreach (var value in values) {
+                    float[] float_versions = Array.ConvertAll (value.Split (','), x => float.Parse (x));
+                    Array.Sort (float_versions);
+                    Array.Reverse (float_versions);
+                    string[] versions = Array.ConvertAll (float_versions, x => x.ToString ("0.0"));
+                    McProtocolState update = beContext.ProtocolState;
+                    update.AsProtocolVersion = versions [0];
+                    beContext.ProtocolState = update;
+                    // NOTE: We don't have any reason to do anything with MS-ASProtocolCommands yet.
+                }
             }
             return retval;
         }
