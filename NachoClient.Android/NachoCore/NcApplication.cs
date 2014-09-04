@@ -84,6 +84,7 @@ namespace NachoCore
         public event EventHandler StatusIndEvent;
         // when true, everything in the background needs to chill.
         public bool IsBackgroundAbateRequired { get; set; }
+        public bool TestOnlyInvokeUseCurrentThread { get; set; }
 
         private bool IsXammit (Exception ex)
         {
@@ -345,11 +346,17 @@ namespace NachoCore
         // method can be used to post to StatusIndEvent from outside NcApplication.
         public void InvokeStatusIndEvent (StatusIndEventArgs e)
         {
-            InvokeOnUIThread.Instance.Invoke (() => {
+            if (TestOnlyInvokeUseCurrentThread) {
                 if (null != StatusIndEvent) {
                     StatusIndEvent.Invoke (this, e);
                 }
-            });
+            } else {
+                InvokeOnUIThread.Instance.Invoke (() => {
+                    if (null != StatusIndEvent) {
+                        StatusIndEvent.Invoke (this, e);
+                    }
+                });
+            }
         }
         // IBackEndOwner methods below.
         public void CredReq (int accountId)

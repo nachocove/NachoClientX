@@ -14,6 +14,7 @@ namespace Test.Common
         [Test]
         public void RateLimitBgDbWritesInScroll ()
         {
+            NcApplication.Instance.TestOnlyInvokeUseCurrentThread = true;
             var server = new McServer () {
                 Host = "example.com"
             };
