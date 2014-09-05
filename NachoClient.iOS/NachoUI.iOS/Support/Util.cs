@@ -760,6 +760,14 @@ namespace NachoClient
             return UID;
         }
 
+        public static void SetOriginalImageForButton (UIBarButtonItem button, string iconName)
+        {
+            using (var buttonImage = UIImage.FromBundle (iconName)) {
+                button.Image = buttonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
+            }
+        }
+
+
         #endregion
     }
 }

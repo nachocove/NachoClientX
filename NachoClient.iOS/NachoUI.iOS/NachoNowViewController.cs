@@ -46,6 +46,7 @@ namespace NachoClient.iOS
             revealButton.Target = this.RevealViewController ();
 
             // Multiple buttons on the left side
+            Util.SetOriginalImageForButton (nachoButton, "nav-nachonow");
 
             NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
 
@@ -67,6 +68,9 @@ namespace NachoClient.iOS
             newMeetingButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("NachoNowToEditEventView", new SegueHolder (null));
             };
+                
+            Util.SetOriginalImageForButton (composeButton, "contact-newemail");
+            Util.SetOriginalImageForButton (newMeetingButton, "cal-add");
 
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, newMeetingButton };
 

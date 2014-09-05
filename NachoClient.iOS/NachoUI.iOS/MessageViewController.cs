@@ -53,29 +53,33 @@ namespace NachoClient.iOS
 
             chiliButton = new UIBarButtonItem ("Hot", UIBarButtonItemStyle.Plain, null);
 
-            var deferButton = new UIBarButtonItem (UIImage.FromBundle ("navbar-icn-defer"), UIBarButtonItemStyle.Plain, null);
-
-            deadlineButton = new UIBarButtonItem (UIImage.FromBundle ("inbox-icn-deadline"), UIBarButtonItemStyle.Plain, null);
+            var deferButton = new UIBarButtonItem ();
+            deadlineButton = new UIBarButtonItem ();
+            Util.SetOriginalImageForButton (deferButton, "email-defer");
+            Util.SetOriginalImageForButton (quickReplyButton, "contact-quickemail");
+            Util.SetOriginalImageForButton (deadlineButton, "email-calendartime");
+            var spacer = new UIBarButtonItem(UIBarButtonSystemItem.FlexibleSpace) { Width = 5 };
 
             // Multiple buttons spaced evently
             ToolbarItems = new UIBarButtonItem[] {
                 replyButton,
                 flexibleSpaceButton,
-                chiliButton,
-                flexibleSpaceButton,
-                deferButton,
-                flexibleSpaceButton,
                 archiveButton,
-                flexibleSpaceButton,
+                spacer,
                 saveButton,
-                flexibleSpaceButton,
+                spacer,
                 deleteButton,
             };
 
+            Util.SetOriginalImageForButton (archiveButton, "email-archive");
+            Util.SetOriginalImageForButton (saveButton, "email-fileinfolder");
+            Util.SetOriginalImageForButton (deleteButton, "email-delete");
+
             // Multiple buttons on the right side
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
-                quickReplyButton,
+                deferButton,
                 deadlineButton,
+                quickReplyButton,
             };
 
             deferButton.Clicked += (object sender, EventArgs e) => {

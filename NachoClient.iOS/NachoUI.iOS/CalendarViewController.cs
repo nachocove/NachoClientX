@@ -53,6 +53,8 @@ namespace NachoClient.iOS
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
             revealButton.Target = this.RevealViewController ();
 
+            Util.SetOriginalImageForButton (nachoButton, "nav-nachonow");
+
             // Multiple buttons on the left side
             NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { newCalEventButton, todayButton };

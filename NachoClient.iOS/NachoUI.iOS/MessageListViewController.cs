@@ -56,15 +56,9 @@ namespace NachoClient.iOS
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
             revealButton.Target = this.RevealViewController ();
 
-            using (var nachoImage = UIImage.FromBundle ("navbar-icn-inbox-active")) {
-                nachoButton.Image = nachoImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
-            }
-            using (var revealImage = UIImage.FromBundle ("navbar-icn-menu")) {
-                revealButton.Image = revealImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
-            }
-            using (var composeImage = UIImage.FromBundle ("navbar-icn-newEmail")) {
-                composeButton.Image = composeImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
-            }
+            Util.SetOriginalImageForButton (nachoButton, "nav-nachonow");
+            Util.SetOriginalImageForButton (revealButton, "navbar-icn-menu");
+            Util.SetOriginalImageForButton (composeButton, "navbar-icn-newEmail");
 
             nachoButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("MessageListToNachoNow", this);
