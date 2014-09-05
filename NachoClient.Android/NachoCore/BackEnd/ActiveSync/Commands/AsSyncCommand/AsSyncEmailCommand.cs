@@ -24,20 +24,15 @@ namespace NachoCore.ActiveSync
                 justCreated = true;
                 emailMessage.AccountId = folder.AccountId;
             }
-
             if (justCreated) {
                 emailMessage.Insert ();
+                folder.Link (emailMessage);
+                aHelp.InsertAttachments (emailMessage);
             } else {
                 emailMessage.AccountId = folder.AccountId;
                 emailMessage.Id = eMsg.Id;
                 emailMessage.Update ();
             }
-
-            folder.Link (emailMessage);
-            if (!justCreated) {
-                return null;
-            }
-            aHelp.InsertAttachments (emailMessage);
             return emailMessage;
         }
     }
