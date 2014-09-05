@@ -138,6 +138,11 @@ namespace NachoClient.iOS
 
         public void ConfigureNotesView ()
         {
+            if (null == contactItem) {
+                notesTextView.Text = Note.noteContent;
+                return;
+            }
+
             if (contactItem.Source != McAbstrItem.ItemSource.ActiveSync) {
                 notesTextView.Text = "This contact has not been synced. Adding or editing notes is disabled.";
             } else {
@@ -150,7 +155,6 @@ namespace NachoClient.iOS
             //date
             var dateDetailLabel = contentView.ViewWithTag (DATE_DETAIL_TAG) as UILabel;
             dateDetailLabel.Text = Pretty.ExtendedDateString (DateTime.UtcNow);
-
         }
 
         public void MakeDateLabel (float xOffset, float yOffset, float width, float height, int tag, UIView parentView)
