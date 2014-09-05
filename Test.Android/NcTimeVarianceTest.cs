@@ -103,7 +103,7 @@ namespace Test.Common
             Assert.AreEqual (0, NcTimeVariance.ActiveList.Count);
         }
 
-        [TestCase]
+        [Test]
         public void DeadlineTimeVariance ()
         {
             DateTime deadline = MockTimer.GetCurrentDateTime () + new TimeSpan (5, 0, 0, 0);
@@ -117,21 +117,7 @@ namespace Test.Common
             CheckFinalState (ID_DEADLINE, 0.1);
         }
 
-        [TestCase]
-        public void DeadlineTimeVarianceMaxDateTime ()
-        {
-            DateTime deadline = DateTime.MaxValue;
-            TimeVariance [ID_DEADLINE] =
-                (NcTimeVariance)new NcDeadlineTimeVariance ("deadline", Callback, ID_DEADLINE, deadline);
-
-            TimeVariance [ID_DEADLINE].Start ();
-            // Check that the state machine advances at the capped event time.
-            AdvanceAndCheckState (ID_DEADLINE, 1, 1.0, 9998 * 365 + 2424);
-            /// Due to out-of-range rounding, state 2 and 3 are skipped
-            CheckFinalState (ID_DEADLINE, 0.1);
-        }
-
-        [TestCase]
+        [Test]
         public void DeferenceTimeVariance ()
         {
             DateTime deferredUntil = MockTimer.GetCurrentDateTime () + new TimeSpan (3, 0, 0, 0);
@@ -143,7 +129,7 @@ namespace Test.Common
             CheckFinalState (ID_DEFERENCE, 1.0);
         }
 
-        [TestCase]
+        [Test]
         public void AgingTimeVariance ()
         {
             DateTime dateReceived = MockTimer.GetCurrentDateTime ();
@@ -162,7 +148,7 @@ namespace Test.Common
             CheckFinalState (ID_AGING, 0.1);
         }
 
-        [TestCase]
+        [Test]
         public void PauseResume ()
         {
             DateTime dateReceived = MockTimer.GetCurrentDateTime ();
