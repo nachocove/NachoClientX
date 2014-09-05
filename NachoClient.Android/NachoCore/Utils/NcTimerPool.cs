@@ -90,7 +90,9 @@ namespace NachoCore.Utils
 
         public void Dispose ()
         {
-            Pool.Remove (this);
+            if (null != Pool.Find (this)) {
+                Pool.Remove (this);
+            }
             Period = new TimeSpan (0);
             DueTime = DateTime.MinValue;
         }
@@ -135,6 +137,11 @@ namespace NachoCore.Utils
         {
             NcAssert.True (null != Callback);
             Callback (Object_);
+        }
+
+        public override string ToString ()
+        {
+            return string.Format ("[NcTimerPoolTimer: Name={0}, Id={1}, DueTIme={2}]", Name, Id, DueTime);
         }
     }
 
@@ -225,6 +232,15 @@ namespace NachoCore.Utils
             }
         }
 
+        public NcTimerPoolTimer Find (NcTimerPoolTimerId timerId)
+        {
+            NcTimerPoolTimer timer;
+            if (!ChildrenTimers.TryGetValue (timerId, out timer)) {
+                return null;
+            }
+            return timer;
+        }
+
         public void Remove (NcTimerPoolTimer timer)
         {
             lock (LockObj) {
@@ -232,7 +248,7 @@ namespace NachoCore.Utils
                     return; // nothing to remove
                 }
 
-                if (!ChildrenTimers.Remove(timer)) {
+                if (!ChildrenTimers.Remove (timer)) {
                     Log.Warn (Log.LOG_UTILS, "Cannot remove {0}", timer.ToString ());
                 }
 
