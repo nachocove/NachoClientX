@@ -732,9 +732,7 @@ namespace NachoClient.iOS
             view.AddSubview (attachmentListView);
 
             if (null != view.ViewWithTag (CALENDAR_PART_TAG)) {
-                if (!calendarRendered) {
-                    view.InsertSubview (view.ViewWithTag (CALENDAR_PART_TAG), 0);
-                }
+                view.InsertSubview (view.ViewWithTag (CALENDAR_PART_TAG), 0);
                 view.ViewWithTag (CALENDAR_PART_TAG).Tag = MESSAGE_PART_TAG;
             }
 
@@ -957,7 +955,9 @@ namespace NachoClient.iOS
             IICalendar iCal = iCalendar.LoadFromStream (stringReader) [0];
             var evt = iCal.Events.First () as DDay.iCal.Event;
             NachoCore.Utils.CalendarHelper.ExtrapolateTimes (ref evt);
-
+            if (null != evt.Description) {
+                RenderTextString (evt.Description);
+            }
             MakeStyledCalendarInvite (evt.UID, evt.Summary, evt.IsAllDay, evt.Start.Value, evt.End.Value, evt.Location, view);
             calendarRendered = true;
         }
