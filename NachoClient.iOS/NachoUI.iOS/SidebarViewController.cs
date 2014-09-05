@@ -106,7 +106,7 @@ namespace NachoClient.iOS
                 new ButtonInfo ("Contacts", "menu-contacts", SidebarToContactsSegueId),
                 new ButtonInfo (null, null, null),
                 new ButtonInfo ("Hot List", "menu-chili", SidebarToHotListSegueId),
-                new ButtonInfo ("Nacho Now", "menu-chili", SidebarToNachoNowSegueId),
+                new ButtonInfo ("Nacho Now", "nav-nachonow-white", SidebarToNachoNowSegueId),
                 new ButtonInfo ("Deferred", "menu-deferred", SidebarToDeferredMessagesSegueId),
                 // new ButtonInfo ("New Email", "menu-new-email", SidebarToNewEmailSegueId),
                 // new ButtonInfo ("New Event", "menu-new-event", SidebarToNewEventSegueId),

@@ -171,19 +171,19 @@ namespace NachoClient.iOS
             };
             preventBarButtonGC.Add (chiliButton);
 
-            var deferButton = new UIBarButtonItem (UIImage.FromBundle ("navbar-icn-defer"), UIBarButtonItemStyle.Plain, null);
+            var deferButton = new UIBarButtonItem (UIImage.FromBundle ("email-defer"), UIBarButtonItemStyle.Plain, null);
             deferButton.Clicked += (object sender, EventArgs e) => {
                 onDeferButtonClicked (view);
             };
             preventBarButtonGC.Add (deferButton);
 
-            var saveButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-move"), UIBarButtonItemStyle.Plain, null);
+            var saveButton = new UIBarButtonItem (UIImage.FromBundle ("email-fileinfolder"), UIBarButtonItemStyle.Plain, null);
             saveButton.Clicked += (object sender, EventArgs e) => {
                 onSaveButtonClicked (view);
             };
             preventBarButtonGC.Add (saveButton);
 
-            var archiveButton = new UIBarButtonItem (UIImage.FromBundle ("icn-archive"), UIBarButtonItemStyle.Plain, null);
+            var archiveButton = new UIBarButtonItem (UIImage.FromBundle ("email-archive"), UIBarButtonItemStyle.Plain, null);
             archiveButton.Clicked += (object sender, EventArgs e) => {
                 onArchiveButtonClicked (view);
             };
@@ -196,7 +196,7 @@ namespace NachoClient.iOS
             fixedSpace.Width = 25;
             preventBarButtonGC.Add (fixedSpace);
 
-            var deleteButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-delete"), UIBarButtonItemStyle.Plain, null);
+            var deleteButton = new UIBarButtonItem (UIImage.FromBundle ("email-delete"), UIBarButtonItemStyle.Plain, null);
             deleteButton.Clicked += (object sender, EventArgs e) => {
                 onDeleteButtonClicked (view);
             };

@@ -354,7 +354,7 @@ namespace NachoClient.iOS
         public static UIColor Color_NachoBlue {
             get {
                 if (null == _Color_NachoBlue) {
-                    _Color_NachoBlue = UIColor.FromRGB (0x1c, 0xce, 0xc2);
+                    _Color_NachoBlue = UIColor.FromRGB (0x73, 0xff, 0xf3);
                 }
                 return _Color_NachoBlue;
             }
@@ -408,7 +408,7 @@ namespace NachoClient.iOS
 
         public static UIBarButtonItem NachoNowButton (UIViewController vc)
         {
-            using (var rawImage = UIImage.FromBundle ("navbar-icn-inbox-active")) {
+            using (var rawImage = UIImage.FromBundle ("nav-nachonow")) {
                 var image = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
                 var button = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
                 button.Clicked += (object sender, EventArgs e) => {

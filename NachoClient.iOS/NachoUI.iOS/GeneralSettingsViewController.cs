@@ -39,7 +39,7 @@ namespace NachoClient.iOS
             menuButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
             menuButton.Target = this.RevealViewController ();
             menuButton.Image = UIImage.FromBundle ("navbar-icn-menu");
-            nowButton.Image = UIImage.FromBundle ("navbar-icn-inbox");
+            Util.SetOriginalImageForButton (nowButton, "nav-nachonow");
             nowButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("GeneralSettingsToNachoNow", this);
             };

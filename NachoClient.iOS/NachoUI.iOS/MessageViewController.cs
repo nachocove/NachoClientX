@@ -29,6 +29,7 @@ namespace NachoClient.iOS
 
         protected UIBarButtonItem chiliButton;
         protected UIBarButtonItem deadlineButton;
+        protected McAccount account;
 
         protected int htmlBusy;
         protected int deferLayout;
@@ -48,31 +49,37 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
+            account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
+
             chiliButton = new UIBarButtonItem ("Hot", UIBarButtonItemStyle.Plain, null);
 
-            var deferButton = new UIBarButtonItem (UIImage.FromBundle ("navbar-icn-defer"), UIBarButtonItemStyle.Plain, null);
-
-            deadlineButton = new UIBarButtonItem (UIImage.FromBundle ("inbox-icn-deadline"), UIBarButtonItemStyle.Plain, null);
+            var deferButton = new UIBarButtonItem ();
+            deadlineButton = new UIBarButtonItem ();
+            Util.SetOriginalImageForButton (deferButton, "email-defer");
+            Util.SetOriginalImageForButton (quickReplyButton, "contact-quickemail");
+            Util.SetOriginalImageForButton (deadlineButton, "email-calendartime");
+            var spacer = new UIBarButtonItem(UIBarButtonSystemItem.FlexibleSpace) { Width = 5 };
 
             // Multiple buttons spaced evently
             ToolbarItems = new UIBarButtonItem[] {
                 replyButton,
                 flexibleSpaceButton,
-                chiliButton,
-                flexibleSpaceButton,
-                deferButton,
-                flexibleSpaceButton,
                 archiveButton,
-                flexibleSpaceButton,
+                spacer,
                 saveButton,
-                flexibleSpaceButton,
+                spacer,
                 deleteButton,
             };
 
+            Util.SetOriginalImageForButton (archiveButton, "email-archive");
+            Util.SetOriginalImageForButton (saveButton, "email-fileinfolder");
+            Util.SetOriginalImageForButton (deleteButton, "email-delete");
+
             // Multiple buttons on the right side
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
-                quickReplyButton,
+                deferButton,
                 deadlineButton,
+                quickReplyButton,
             };
 
             deferButton.Clicked += (object sender, EventArgs e) => {
@@ -365,6 +372,7 @@ namespace NachoClient.iOS
         const int SEPARATOR_TAG = 108;
         const int SPINNER_TAG = 109;
         const int MESSAGE_PART_TAG = 300;
+        const int CALENDAR_PART_TAG = 400;
         const int ATTACHMENT_VIEW_TAG = 301;
         const int ATTACHMENT_NAME_TAG = 302;
         const int ATTACHMENT_STATUS_TAG = 303;
@@ -609,13 +617,12 @@ namespace NachoClient.iOS
                     v.RemoveFromSuperview ();
                 }
             }
-                
+
             RenderBody (message);
             if (null != message.MeetingRequest && !calendarRendered) {
                 var UID = Util.GlobalObjIdToUID (message.MeetingRequest.GlobalObjId);
                 MakeStyledCalendarInvite (UID, message.Subject, message.MeetingRequest.AllDayEvent, message.MeetingRequest.StartTime, message.MeetingRequest.EndTime, message.MeetingRequest.Location, view);
-            }
-
+            } 
             ConfigureAttachments ();
 
             ConfigureToolbar ();
@@ -723,10 +730,15 @@ namespace NachoClient.iOS
             var separatorView = view.ViewWithTag (SEPARATOR_TAG);
             var yOffset = separatorView.Frame.Y + separatorView.Frame.Height;
 
-            yOffset += 20;
+            yOffset += 0;
 
             attachmentListView.RemoveFromSuperview ();
             view.AddSubview (attachmentListView);
+
+            if (null != view.ViewWithTag (CALENDAR_PART_TAG)) {
+                view.InsertSubview (view.ViewWithTag (CALENDAR_PART_TAG), 0);
+                view.ViewWithTag (CALENDAR_PART_TAG).Tag = MESSAGE_PART_TAG;
+            }
 
             for (int i = 0; i < view.Subviews.Count (); i++) {
                 var v = view.Subviews [i];
@@ -808,6 +820,9 @@ namespace NachoClient.iOS
             label.LineBreakMode = UILineBreakMode.WordWrap;
             label.AttributedText = attributedString;
             label.SizeToFit ();
+            var frame = label.Frame;
+            frame.Height = frame.Height + 30;
+            label.Frame = frame;
             label.Tag = MESSAGE_PART_TAG;
             view.AddSubview (label);
         }
@@ -944,7 +959,9 @@ namespace NachoClient.iOS
             IICalendar iCal = iCalendar.LoadFromStream (stringReader) [0];
             var evt = iCal.Events.First () as DDay.iCal.Event;
             NachoCore.Utils.CalendarHelper.ExtrapolateTimes (ref evt);
-
+            if (null != evt.Description) {
+                RenderTextString (evt.Description);
+            }
             MakeStyledCalendarInvite (evt.UID, evt.Summary, evt.IsAllDay, evt.Start.Value, evt.End.Value, evt.Location, view);
             calendarRendered = true;
         }
@@ -952,36 +969,32 @@ namespace NachoClient.iOS
         public void MakeStyledCalendarInvite (string UID, string subject, bool isAllDay, DateTime start, DateTime end, string location, UIView parentView)
         {
             UIView calendarEventView = new UIView (new RectangleF (0, 0, SCREEN_WIDTH, 140));
-            calendarEventView.Tag = MESSAGE_PART_TAG;
+            calendarEventView.Tag = CALENDAR_PART_TAG;
 
-            UIView backGroundView = new UIView (new RectangleF (0, 0, SCREEN_WIDTH, 120));
-            backGroundView.BackgroundColor = UIColor.White;
-            calendarEventView.Add (backGroundView);
-
-            UILabel monthLabel = new UILabel (new RectangleF (19, 3, 36, 20));
+            UILabel monthLabel = new UILabel (new RectangleF (19, 23, 36, 20));
             monthLabel.Font = A.Font_AvenirNextRegular12;
             monthLabel.TextColor = A.Color_NachoBlack;
             monthLabel.TextAlignment = UITextAlignment.Center;
             monthLabel.Text = start.ToString ("MMM");
 
-            UIImageView dateImage = new UIImageView (new RectangleF (19, 23, 36, 36));
+            UIImageView dateImage = new UIImageView (new RectangleF (19, 43, 36, 36));
             var size = new SizeF (40, 40);
             dateImage.Image = NachoClient.Util.DrawCalDot (A.Color_FEBA32, size);
 
-            UILabel dateLabel = new UILabel (new RectangleF (19, 23, 36, 36));
+            UILabel dateLabel = new UILabel (new RectangleF (19, 43, 36, 36));
             dateLabel.Font = A.Font_AvenirNextDemiBold17;
             dateLabel.TextColor = UIColor.White;
             dateLabel.TextAlignment = UITextAlignment.Center;
             dateLabel.Text = start.ToString ("%d");
 
-            UILabel titleLabel = new UILabel (new RectangleF (74, 7, SCREEN_WIDTH - 89, 20));
+            UILabel titleLabel = new UILabel (new RectangleF (74, 27, SCREEN_WIDTH - 89, 20));
             titleLabel.Font = A.Font_AvenirNextDemiBold14;
             titleLabel.TextColor = A.Color_NachoBlack;
             titleLabel.TextAlignment = UITextAlignment.Left;
             titleLabel.Text = subject;
             titleLabel.SizeToFit ();
 
-            UILabel durationLabel = new UILabel (new RectangleF (74, 27, SCREEN_WIDTH - 89, 20));
+            UILabel durationLabel = new UILabel (new RectangleF (74, 47, SCREEN_WIDTH - 89, 20));
             durationLabel.Font = A.Font_AvenirNextRegular12;
             durationLabel.TextColor = A.Color_NachoBlack;
             durationLabel.TextAlignment = UITextAlignment.Left;
@@ -1001,7 +1014,7 @@ namespace NachoClient.iOS
             }
             durationLabel.SizeToFit ();
 
-            UILabel locationLabel = new UILabel (new RectangleF (74, 45, SCREEN_WIDTH - 89, 20));
+            UILabel locationLabel = new UILabel (new RectangleF (74, 65, SCREEN_WIDTH - 89, 20));
             locationLabel.Font = A.Font_AvenirNextRegular12;
             locationLabel.TextColor = A.Color_NachoBlack;
             locationLabel.TextAlignment = UITextAlignment.Left;
@@ -1017,13 +1030,15 @@ namespace NachoClient.iOS
 
             MakeResponseBar (UID, calendarEventView);
 
-            Util.AddHorizontalLine (0, 0, SCREEN_WIDTH, A.Color_NachoSeparator, calendarEventView);
-            Util.AddHorizontalLine (0, 66, SCREEN_WIDTH, A.Color_NachoSeparator, calendarEventView);
-            Util.AddHorizontalLine (0, 120, SCREEN_WIDTH, A.Color_NachoSeparator, calendarEventView);
-            Util.AddVerticalLine (65, 0, 66, A.Color_NachoSeparator, calendarEventView);
+            Util.AddHorizontalLine (0, 20, SCREEN_WIDTH, A.Color_NachoSeparator, calendarEventView);
+            Util.AddHorizontalLine (0, 86, SCREEN_WIDTH, A.Color_NachoSeparator, calendarEventView);
+            Util.AddHorizontalLine (0, 140, SCREEN_WIDTH, A.Color_NachoSeparator, calendarEventView);
+            Util.AddVerticalLine (65, 20, 66, A.Color_NachoSeparator, calendarEventView);
 
             parentView.AddSubview (calendarEventView);
         }
+
+        UILabel eventDoesNotExistLabel;
 
         UIButton acceptButton;
         UIButton tentativeButton;
@@ -1038,8 +1053,16 @@ namespace NachoClient.iOS
 
         public void MakeResponseBar (string UID, UIView parentView)
         {
-            UIView responseView = new UIView (new RectangleF (0, 66, SCREEN_WIDTH, 54));
+            UIView responseView = new UIView (new RectangleF (0, 86, SCREEN_WIDTH, 54));
             responseView.BackgroundColor = UIColor.Clear;
+
+            eventDoesNotExistLabel = new UILabel (new RectangleF (25, 15, SCREEN_WIDTH, 24));
+            eventDoesNotExistLabel.TextColor = A.Color_NachoBlack;
+            eventDoesNotExistLabel.TextAlignment = UITextAlignment.Left;
+            eventDoesNotExistLabel.Text = "This event has either been cancelled or removed";
+            eventDoesNotExistLabel.Font = A.Font_AvenirNextRegular12;
+            eventDoesNotExistLabel.Hidden = true;
+            responseView.Add (eventDoesNotExistLabel);
 
             acceptButton = new UIButton (UIButtonType.RoundedRect);
             tentativeButton = new UIButton (UIButtonType.RoundedRect);
@@ -1078,35 +1101,6 @@ namespace NachoClient.iOS
             declineButton.SetTitle ("", UIControlState.Normal);
             declineButton.Frame = new RectangleF (SCREEN_WIDTH - 24 - 25, 10, 24, 24);
             declineButton.TintColor = UIColor.Clear;
-
-            //FIXME Use UID to get calendarItem in order to respond to meeting requests
-            ///////////////////////////////////
-            //if (null != queryByUID(UID)) {
-            //  calendarItem = queryByUID(UID);
-            //}
-            ///////////////////////////////////
-
-            acceptButton.TouchUpInside += (object sender, EventArgs e) => {
-                ToggleButtons (NcResponseType.Accepted);
-                acceptButton.Selected = true;
-
-                //FIXME
-                //UpdateMeetingStatus (calendarItem, NcAttendeeStatus.Accept);
-            };
-
-            tentativeButton.TouchUpInside += (object sender, EventArgs e) => {
-                ToggleButtons (NcResponseType.Tentative);
-                tentativeButton.Selected = true;
-                //FIXME
-                //UpdateMeetingStatus (calendarItem, NcAttendeeStatus.Tentative);
-            };
-
-            declineButton.TouchUpInside += (object sender, EventArgs e) => {
-                ToggleButtons (NcResponseType.Declined);
-                declineButton.Selected = true;
-                //FIXME
-                //UpdateMeetingStatus (calendarItem, NcAttendeeStatus.Decline);
-            };
 
             responseView.Add (acceptButton);
             responseView.Add (tentativeButton);
@@ -1152,6 +1146,37 @@ namespace NachoClient.iOS
                 RestoreButtons ();
             };
             responseView.Add (changeResponseButton);
+
+            McCalendar calendarItem;
+            if (null != McCalendar.QueryByUID (UID)) {
+                calendarItem = McCalendar.QueryByUID (UID);
+
+                acceptButton.TouchUpInside += (object sender, EventArgs e) => {
+                    ToggleButtons (NcResponseType.Accepted);
+                    acceptButton.Selected = true;
+                    UpdateMeetingStatus (calendarItem, NcResponseType.Accepted);
+                };
+
+                tentativeButton.TouchUpInside += (object sender, EventArgs e) => {
+                    ToggleButtons (NcResponseType.Tentative);
+                    tentativeButton.Selected = true;
+                    UpdateMeetingStatus (calendarItem, NcResponseType.Tentative);
+                };
+
+                declineButton.TouchUpInside += (object sender, EventArgs e) => {
+                    ToggleButtons (NcResponseType.Declined);
+                    declineButton.Selected = true;
+                    UpdateMeetingStatus (calendarItem, NcResponseType.Declined);
+                };
+            } else {
+                eventDoesNotExistLabel.Hidden = false;
+                acceptButton.Hidden = true;
+                acceptLabel.Hidden = true;
+                tentativeButton.Hidden = true;
+                tentativeLabel.Hidden = true;
+                declineButton.Hidden = true;
+                declineLabel.Hidden = true;
+            }
 
             parentView.Add (responseView);
         }
@@ -1297,9 +1322,9 @@ namespace NachoClient.iOS
         /// <summary>
         /// Map meeting uid to calendar record.
         /// </summary>
-        void UpdateMeetingStatus (IEvent evt, NcAttendeeStatus status)
+        void UpdateMeetingStatus (McCalendar c, NcResponseType status)
         {
-            //BackEnd.Instance.RespondCalCmd (account.Id, evt, status);
+            BackEnd.Instance.RespondCalCmd (account.Id, c.Id, status);
         }
 
         protected void onAttachmentSelected (UITapGestureRecognizer obj)

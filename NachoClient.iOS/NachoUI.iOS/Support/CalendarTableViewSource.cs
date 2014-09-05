@@ -379,22 +379,22 @@ namespace NachoClient.iOS
             UIColor brownColor = null;
 
             try { 
-                checkView = ViewWithImageName ("check");
+                checkView = ViewWithImageName ("cal-dialintomeeting-white");
                 greenColor = new UIColor (85.0f / 255.0f, 213.0f / 255.0f, 80.0f / 255.0f, 1.0f);
                 cell.SetSwipeGestureWithView (checkView, greenColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State1, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                    ArchiveThisMessage (calendarIndex);
+
                 });
-                crossView = ViewWithImageName ("cross");
+                crossView = ViewWithImageName ("cal-forwardinvitation-white");
                 redColor = new UIColor (232.0f / 255.0f, 61.0f / 255.0f, 14.0f / 255.0f, 1.0f);
                 cell.SetSwipeGestureWithView (crossView, redColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State2, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                    DeleteThisMessage (calendarIndex);
+
                 });
-                runningLateView = ViewWithLabel ("running late", "right");
+                runningLateView = ViewWithImageName ("contact-quickemail-white");
                 yellowColor = new UIColor (A.Color_NachoYellow.CGColor);
                 cell.SetSwipeGestureWithView (runningLateView, yellowColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State3, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
                     RunningLate (calendarIndex);
                 });
-                listView = ViewWithImageName ("list");
+                listView = ViewWithImageName ("cal-openmaptomeeting-white");
                 brownColor = new UIColor (206.0f / 255.0f, 149.0f / 255.0f, 98.0f / 255.0f, 1.0f);
                 cell.SetSwipeGestureWithView (listView, brownColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State4, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
                     //                    PerformSegue ("MessageToMessageAction", new SegueHolder (messageThreadIndex));
