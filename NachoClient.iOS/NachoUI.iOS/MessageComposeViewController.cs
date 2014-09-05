@@ -677,7 +677,32 @@ namespace NachoClient.iOS
                 
             mimeMessage.Body = body.ToMessageBody ();
 
-            MimeHelpers.SendEmail (account.Id, mimeMessage);
+            var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
+
+            bool messageSent = false;
+            if (Action.Equals (Reply) || Action.Equals (ReplyAll) || Action.Equals (Forward)) {
+                var actionMessage = ActionThread.SingleMessageSpecialCase ();
+                var folders = McFolder.QueryByFolderEntryId<McEmailMessage> (actionMessage.AccountId, actionMessage.Id);
+                if (folders.Count == 0) {
+                    Log.Error (Log.LOG_UI, "The message being forwarded or replied to is not owned by any folder. It will be sent as a regular outgoing message. Message: {0}", actionMessage.ToString ());
+                    // Fall through and send it as a regular message.
+                } else {
+                    if (folders.Count > 1) {
+                        Log.Warn (Log.LOG_UI, "The message being forwarded or replied to is owned by {0} folders. One of the folders will be picked at random as the official owner when sending the message. Message: {0}", folders.Count, actionMessage.ToString ());
+                    }
+                    int folderId = folders [0].Id;
+                    if (Action.Equals (Forward)) {
+                        NachoCore.BackEnd.Instance.ForwardEmailCmd (mcMessage.AccountId, mcMessage.Id, actionMessage.Id, folderId, true);
+                    } else {
+                        NachoCore.BackEnd.Instance.ReplyEmailCmd (mcMessage.AccountId, mcMessage.Id, actionMessage.Id, folderId, true);
+                    }
+                    messageSent = true;
+                }
+            }
+            if (!messageSent) {
+                // A new outgoing message.  Or a forward/reply that has problems.
+                NachoCore.BackEnd.Instance.SendEmailCmd (mcMessage.AccountId, mcMessage.Id);
+            }
 
             owner = null;
             NavigationController.PopViewControllerAnimated (true);
