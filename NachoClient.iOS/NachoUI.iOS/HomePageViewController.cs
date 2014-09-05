@@ -5,7 +5,12 @@ using System.IO;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using System.Drawing;
+using MonoTouch.CoreGraphics;
+using MonoTouch.CoreAnimation;
+
 using NachoCore.Utils;
+
+// Animation guide http://developer.xamarin.com/guides/cross-platform/application_fundamentals/touch/part_1_touch_in_ios/
 
 namespace NachoClient.iOS
 {
@@ -13,6 +18,28 @@ namespace NachoClient.iOS
     {
         //loads the HomePageController.xib file and connects it to this object
         public HomeViewController owner;
+
+        // container for iPhone screen-in-screen 
+        // doing these as internal globals
+        private UIView pageContainerView; // full screen
+        private UIView contentContainer; // the phone-image content
+        private UIView helperContainer; // the helpful text container
+        private UILabel helperTitleText; // text Title
+        private UILabel helperBodyText; // text body
+        private UIImageView msg1View;
+        private UIImageView msg2View;
+        private UIImageView pullimageView; // animation - page3
+        private UIImageView calimageView;  // animation - page3
+
+        private UIImageView emailCellView;
+        private UIImageView redSwipeCellView;
+        private UIImageView greenSwipeCellView;
+
+        UIImageView redButtonTwo;
+        PointF redbuttonCenter; 
+
+        private bool retinaDisplay = (UIScreen.MainScreen.Scale > 1.0); // if so, then we are on a retinadisplay
+        private int scaleIt; 
 
         public HomePageController (int pageIndex) : base ("HomePageController", null)
         {
@@ -25,16 +52,50 @@ namespace NachoClient.iOS
             private set;
         }
 
-        const string TutPageOne = "Content/Tutorial-Page1.png";
-        const string TutPageTwo = "Content/Tutorial-Page2.png";
-        const string TutPageThree = "Content/Tutorial-Page3.png";
-        const string TutPageFour = "Content/Tutorial-Page4.png";
+        // Helper Text Strings
+        const string TitleOne = "Your Messages";
+        const string TitleTwo = "Navigating Your Hot List";
+        const string TitleThree= "Time Line View";
+        const string TitleFour = "Just One Last Thing ...";
+
+        const string BodyOne = "Your hot messages go in your hot list" + "\n" + "All other messages will be in your inbox";
+        const string BodyTwo = "Quickly browse through your hot list" + "\n" + "by swiping left and right";
+        const string BodyThree = "This contains your upcoming meetings" + "\n" + "and events";
+        const string BodyFour = "Sliding right or left elsewhere will get you" + "\n" + "shortcusts and options for the items";
+
+        // Background
+
+        const string bgscreen = "Content/Slide1-BG.png"; // background screen
+        const string contentscreen = "Content/Slide1-3@2x.png"; // phone-face image
+        const string calendarpull = "Content/Slide1-2.png"; // calendar pull down
+        const string msg1loc = "Content/Slide1-1A@2x.png"; // Meagan message
+        const string msg2loc = "Content/Slide1-1B.png"; // next message
+        const string inboxloc = "Content/Slide1-4@2x.png"; // inbox msg at bottom of screen
+       
+        //const string TutPageOne = "Content/Tutorial-Page1.png";
+        const string TutPageOne = "Content/01_img_only.png";
+        const string TutPageTwo = "Content/02_img_only.png";
+        const string TutPageThree = "Content/02_img_only.png";
+        const string TutPageFour = "Content/02_img_only.png";
+
+        string[] titleText = {
+            TitleOne,
+            TitleTwo,
+            TitleThree,
+            TitleFour,
+        };
+        string[] bodyText = {
+            BodyOne,
+            BodyTwo,
+            BodyThree,
+            BodyFour,
+        };
 
         string[] Tutorial = {
             TutPageOne,
             TutPageTwo,
             TutPageThree,
-            TutPageFour
+            TutPageFour,
         };
 
         public override void ViewDidLoad ()
@@ -43,22 +104,64 @@ namespace NachoClient.iOS
             // inside the UIPVC with gesture controls and other cool shit from that class
             // Known issue :: If I Hide the UINavControllerbar we have no way home (see homeViewcontroll..cs)
            
-
             string fileName = Tutorial [this.PageIndex];
+            scaleIt = retinaDisplay ? 2 : 1; // retina display test, not used right now
            
-            UIImageView tutImage = new UIImageView (UIImage.FromBundle (fileName));
-            tutImage.Frame = this.View.Frame;
+            // set up the container frame sizes. Note all containers are referenced globally within this object
+            // so as to allow animations to access the elements as needed
+
+            this.pageContainerView = new UIView (new RectangleF(0,0, this.owner.View.Bounds.Width, this.owner.View.Bounds.Height-48));
+            this.contentContainer = new UIView (new RectangleF (54 , 60, 212, 306)); // see size of helpercontainer
+            this.helperContainer = new UIView (new RectangleF(0,this.contentContainer.Frame.Bottom, pageContainerView.Frame.Width, pageContainerView.Frame.Bottom- this.contentContainer.Frame.Bottom));// contains the helpertext and labels  
+            //this.helperTitleText = new UILabel (new RectangleF(0,24, helperContainer.Frame.Width, 20));
+            this.helperTitleText = new UILabel (new RectangleF(0,12, helperContainer.Frame.Width, 20));
+            //this.helperBodyText = new UILabel (new RectangleF((helperContainer.Frame.Width - 284) / 2, helperTitleText.Frame.Bottom + 10, 284, 40));
+            this.helperBodyText = new UILabel (new RectangleF((helperContainer.Frame.Width - 284) / 2, helperTitleText.Frame.Bottom, 284, 40));
+
             base.ViewDidLoad ();
-            tutImage.ContentMode = UIViewContentMode.ScaleToFill;
-            //tutImage.Image = ResizeImage (fullImage, tutImage.Frame.Width, tutImage.Frame.Height);
-            tutImage.UserInteractionEnabled = true;
-            this.View.AddSubview (tutImage);
+
+            // build the pages based on index
+
+            string leftNachos = "";
+            string rightNachos = "";
+
+            switch (this.PageIndex) {
+            case 0:
+                leftNachos = "Content/BG-S01Left@2x";
+                rightNachos = "Content/BG-S01Right@2x";
+                CreatePage1 ();
+                break;
+            case 1:
+                leftNachos = "Content/BG-S02Left@2x";
+                rightNachos = "Content/BG-S02Right@2x";
+                CreatePage2 ();
+                break;
+            case 2:
+                leftNachos = "Content/BG-S03Left@2x";
+                rightNachos = "Content/BG-S03Right@2x";
+                CreatePage3 ();
+                break;
+            case 3:
+                leftNachos = "Content/BG-S04Left@2x";
+                rightNachos = "Content/BG-S04Right@2x";
+                CreatePage4 ();
+                break;
+            }
+
+            this.View.AddSubview (pageContainerView);
+            CreateCovers ();
+            CreateNachos (leftNachos, rightNachos);
+
             Log.Info (Log.LOG_UI, "Book page #{0} loaded!", this.PageIndex + 1);
             Log.Info (Log.LOG_UI, "{0}", this.View.Frame.ToString ());
         }
 
         public override void ViewWillAppear (bool animated)
         {
+            Log.Info (Log.LOG_UI, "HPVC - View_Will_Appear");
+            // need to know why animate toolTip not called on first appearance??
+
+
             base.ViewWillAppear (animated);
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
@@ -68,8 +171,644 @@ namespace NachoClient.iOS
             } else {
                 this.owner.pageDots.CurrentPage = this.PageIndex; // update containerView.PageDots
             }
+
+
+//            switch (this.PageIndex) {
+//            case 0:
+//                View.Layer.RemoveAllAnimations ();
+//                AnimateRedToolTip ();
+//                AnimateGreenToolTip ();
+//                break;
+//            case 1:
+//                msg1View.Hidden = false;
+//                this.msg1View.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 2 + 10);
+//                redButtonTwo.Hidden = false;
+//                redButtonTwo.Center = redbuttonCenter;
+//                AnimateHotlistItemLeft ();
+//                break;
+//            case 2:
+//                this.calimageView.Frame = new RectangleF (0, 0, contentContainer.Frame.Width, 46);
+//                this.pullimageView.Frame = new RectangleF (0, calimageView.Frame.Bottom, contentContainer.Frame.Width, 7);
+//                AnimateTimelineDown ();
+//                break;
+//            case 3:
+//                AnimateEmailCellLeft ();
+//                break;
+//            }
         }
 
+        public override void ViewDidAppear (bool animated)
+        {
+            base.ViewDidAppear (animated);
+
+            switch (this.PageIndex) {
+            case 0:
+                AnimateRedToolTip ();
+                AnimateGreenToolTip ();
+                owner.isFirstLoad = false;
+                break;
+            case 1:
+                msg1View.Hidden = false;
+                this.msg1View.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 2 + 10);
+                redButtonTwo.Hidden = false;
+                redButtonTwo.Center = redbuttonCenter;
+                AnimateHotlistItemLeft ();
+
+                NSTimer loadingTimer = NSTimer.CreateScheduledTimer (4, delegate {
+                    AnimateHotlistItemRight ();
+                });
+
+                break;
+            case 2:
+                this.calimageView.Frame = new RectangleF (0, 0, contentContainer.Frame.Width, 46);
+                this.pullimageView.Frame = new RectangleF (0, calimageView.Frame.Bottom, contentContainer.Frame.Width, 7);
+                AnimateTimelineDown ();
+                break;
+            case 3:
+                AnimateEmailCellLeft ();
+
+                NSTimer swipeTimer = NSTimer.CreateScheduledTimer (3, delegate {
+                    AnimateEmailCellLeftToCenter();
+                });
+
+                NSTimer swipeRightTimer = NSTimer.CreateScheduledTimer (5, delegate {
+                    AnimateEmailCellCenterToRight();
+                });
+
+                NSTimer swipeLeftTimer = NSTimer.CreateScheduledTimer (6, delegate {
+                    AnimateEmailCellRightToCenter();
+                });
+
+                break;
+            }
+        }
+
+        void CreateHelperText(){
+            helperContainer.BackgroundColor = UIColor.White;
+
+            helperTitleText.BackgroundColor = UIColor.White; // debug
+
+            helperBodyText.BackgroundColor = UIColor.White; // debug
+            helperBodyText.Lines = 2;
+            helperTitleText.TextColor = A.Color_11464F;
+            helperBodyText.TextColor = A.Color_9B9B9B;
+
+
+            helperTitleText.Text = titleText [this.PageIndex];
+            helperBodyText.Text = bodyText[this.PageIndex];
+            helperBodyText.Font = A.Font_AvenirNextRegular14;
+            helperTitleText.Font = A.Font_AvenirNextDemiBold17;
+            helperBodyText.TextAlignment = UITextAlignment.Center;
+            helperTitleText.TextAlignment = UITextAlignment.Center;
+
+    
+            helperContainer.Add (helperTitleText);
+            helperContainer.Add (helperBodyText);
+
+            Util.AddHorizontalLine (0, helperContainer.Frame.Height , helperContainer.Frame.Width, A.Color_NachoSeparator, helperContainer);
+        }
+
+       
+        private void CreatePage1()
+        {
+            // build up the page for index 1
+
+            CreateHelperText ();
+
+            UIImageView bgImage = new UIImageView (UIImage.FromBundle (bgscreen));
+            bgImage.Frame = new RectangleF (0,0, pageContainerView.Frame.Width, pageContainerView.Frame.Height - helperContainer.Frame.Height);
+
+            UIImageView screenImage = new UIImageView (UIImage.FromBundle (contentscreen));
+
+            screenImage.Frame = (new RectangleF (0,0, contentContainer.Frame.Width, contentContainer.Frame.Height));
+            UIImageView pullimageView = new UIImageView(UIImage.FromBundle (calendarpull));
+            msg1View = new UIImageView (UIImage.FromBundle (msg1loc));
+            msg1View.Frame = new RectangleF (10, 60, 192, 207);
+            UIImageView inboximageView = new UIImageView (UIImage.FromBundle (inboxloc));
+            inboximageView.Frame = new RectangleF (10, msg1View.Frame.Bottom + 20, 192, 20);
+
+            //pullimageView.Frame = (new RectangleF (0, 0, contentContainer.Frame.Width, 46));
+            pullimageView.Center = new PointF (contentContainer.Frame.Width / 2,  23);// is centerpoint relative to local view?
+            msg1View.Center = new PointF (contentContainer.Frame.Width / 2 , contentContainer.Frame.Height / 2 +10);
+            inboximageView.Center = new PointF (contentContainer.Frame.Width / 2, contentContainer.Frame.Height - 10);
+
+
+            contentContainer.AddSubview(screenImage);
+            //contentContainer.AddSubview (pullimageView);
+            contentContainer.AddSubview (msg1View);
+            contentContainer.AddSubview (inboximageView);
+
+
+            pageContainerView.AddSubview (bgImage);
+            pageContainerView.AddSubview(contentContainer);
+            pageContainerView.AddSubview (helperContainer);
+
+        }
+
+
+
+        private void CreatePage2()
+        {
+
+            CreateHelperText ();
+
+            UIImageView bgImage = new UIImageView (UIImage.FromBundle (bgscreen));
+            bgImage.Frame = new RectangleF (0,0, pageContainerView.Frame.Width, pageContainerView.Frame.Height - helperContainer.Frame.Height);
+
+            UIImageView screenImage = new UIImageView (UIImage.FromBundle (contentscreen));
+
+            screenImage.Frame = (new RectangleF (0,0, contentContainer.Frame.Width, contentContainer.Frame.Height));
+            UIImageView pullimageView = new UIImageView(UIImage.FromBundle (calendarpull));
+            msg1View = new UIImageView (UIImage.FromBundle (msg1loc));
+            UIImageView inboximageView = new UIImageView (UIImage.FromBundle (inboxloc));
+            msg1View.Frame = new RectangleF (10, 60, 192, 207);
+            inboximageView.Frame = new RectangleF (10, msg1View.Frame.Bottom + 20, 192, 20);
+            pullimageView.Center = new PointF (contentContainer.Frame.Width / 2,  23);// is centerpoint relative to local view?
+            msg1View.Center = new PointF (contentContainer.Frame.Width / 2 , contentContainer.Frame.Height / 2 +10);
+            inboximageView.Center = new PointF (contentContainer.Frame.Width / 2, contentContainer.Frame.Height - 10);
+
+
+            contentContainer.AddSubview(screenImage);
+            contentContainer.AddSubview (msg1View);
+            contentContainer.AddSubview (inboximageView);
+
+            redButtonTwo = new UIImageView (UIImage.FromBundle ("Content/red_pointer.png"));
+            redButtonTwo.Center = new PointF (this.contentContainer.Frame.Width / 2, 240);
+            redbuttonCenter = redButtonTwo.Center;
+            redButtonTwo.Layer.Transform = CATransform3D.MakeScale (1.0f, 1.0f, 1.0f);
+
+            pageContainerView.AddSubview (bgImage);
+            pageContainerView.AddSubview(contentContainer);
+            pageContainerView.AddSubview(redButtonTwo);
+            pageContainerView.AddSubview (helperContainer);
+        }
+
+        private void CreatePage3()
+        {
+
+            CreateHelperText ();
+
+            UIImageView bgImage = new UIImageView (UIImage.FromBundle (bgscreen));
+            bgImage.Frame = new RectangleF (0,0, pageContainerView.Frame.Width, pageContainerView.Frame.Height - helperContainer.Frame.Height);
+
+            UIImageView screenImage = new UIImageView (UIImage.FromBundle ("Content/Slide3-2@2x.png"));
+            pullimageView = new UIImageView (UIImage.FromBundle ("Content/Slide3-1B@2x.png"));
+
+
+            screenImage.Frame = (new RectangleF (0,0, contentContainer.Frame.Width, contentContainer.Frame.Height));
+            calimageView = new UIImageView(UIImage.FromBundle ("Content/Slide3-1A@2x.png"));
+            calimageView.Frame = new RectangleF (0, 0, contentContainer.Frame.Width, 46);
+            pullimageView.Frame = new RectangleF (0, calimageView.Frame.Bottom, contentContainer.Frame.Width, 7);
+
+            contentContainer.AddSubview(screenImage);
+            contentContainer.AddSubview (calimageView);
+            contentContainer.AddSubview (pullimageView);
+
+            pageContainerView.AddSubview (bgImage);
+            pageContainerView.AddSubview(contentContainer);
+            pageContainerView.AddSubview (helperContainer);
+        }
+
+        private void CreatePage4()
+        {
+           
+            CreateHelperText ();
+
+            UIImageView bgImage = new UIImageView (UIImage.FromBundle (bgscreen));
+            bgImage.Frame = new RectangleF (0,0, pageContainerView.Frame.Width, pageContainerView.Frame.Height - helperContainer.Frame.Height);
+
+            UIImageView screenImage = new UIImageView (UIImage.FromBundle ("Content/Slide4-1.png"));
+            screenImage.Frame = (new RectangleF (0,0, contentContainer.Frame.Width, contentContainer.Frame.Height));
+            contentContainer.AddSubview(screenImage);
+           
+
+            pageContainerView.AddSubview (bgImage);
+            pageContainerView.AddSubview(contentContainer);
+            pageContainerView.AddSubview (helperContainer);
+        }
+
+
+        private void CreateCovers ()
+        {
+            UIView topCoverRect = new UIView (new RectangleF (0, 0, this.View.Bounds.Width, this.contentContainer.Frame.Y));
+            UIView leftCoverRect = new UIView (new RectangleF (0, this.contentContainer.Frame.Y, this.contentContainer.Frame.X, this.contentContainer.Bounds.Height));
+            UIView rightCoverRect = new UIView (new RectangleF (this.contentContainer.Bounds.Right + this.contentContainer.Frame.X, leftCoverRect.Frame.Y, leftCoverRect.Bounds.Width, this.contentContainer.Bounds.Height));
+
+            topCoverRect.BackgroundColor = A.Color_NachoGreen;
+            leftCoverRect.BackgroundColor = A.Color_NachoGreen;
+            rightCoverRect.BackgroundColor = A.Color_NachoGreen;
+
+//            leftCoverRect.Layer.ZPosition = 100;
+//            rightCoverRect.Layer.ZPosition = 100;
+//            topCoverRect.Layer.ZPosition = 100;
+
+            this.View.AddSubview (topCoverRect);
+            this.View.AddSubview (leftCoverRect);
+            this.View.AddSubview (rightCoverRect);
+        }
+
+        private void CreateNachos(string leftNachos, string rightNachos)
+        {
+            UIImageView leftSideNachos = new UIImageView (UIImage.FromBundle (leftNachos));
+            leftSideNachos.Frame = new RectangleF (0, this.contentContainer.Frame.Bottom - leftSideNachos.Frame.Height / 2, this.contentContainer.Frame.X, leftSideNachos.Frame.Height / 2);
+            this.View.AddSubview (leftSideNachos);
+
+            UIImageView rightSideNachos = new UIImageView (UIImage.FromBundle (rightNachos));
+            rightSideNachos.Frame = new RectangleF (this.contentContainer.Frame.X + this.contentContainer.Frame.Width, this.contentContainer.Frame.Bottom - rightSideNachos.Frame.Height / 2, this.contentContainer.Frame.X, rightSideNachos.Frame.Height / 2);
+            this.View.AddSubview (rightSideNachos);
+        }
+
+        private UIImageView CreateRedButton ()
+        {
+            UIImageView redButton = new UIImageView (UIImage.FromBundle ("Content/red_pointer.png"));
+            redButton.Center = new PointF (this.contentContainer.Frame.Width / 2, this.msg1View.Frame.Height / 3 + 70);
+            redButton.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
+            return redButton;
+        }
+
+        private UIImageView CreateRedTooltip ()
+        {
+            UIImageView redTooltip = new UIImageView (UIImage.FromBundle ("Content/red_balloon.png"));
+            redTooltip.Center = new PointF (this.contentContainer.Frame.Width / 2, this.msg1View.Frame.Height / 3 + 35 + 70);
+            redTooltip.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
+            return redTooltip;
+        }
+
+        private UIImageView CreateGreenButton ()
+        {
+            UIImageView greenButton = new UIImageView (UIImage.FromBundle ("Content/teal_pointer.png"));
+            greenButton.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height - 15);
+            greenButton.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
+            return greenButton;
+        }
+
+        private UIImageView CreateGreenTooltip ()
+        {
+            UIImageView greenTooltip = new UIImageView (UIImage.FromBundle ("Content/teal_balloon.png"));
+            greenTooltip.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height - 50);
+            greenTooltip.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
+            return greenTooltip;
+        }
+
+        private void AnimateRedToolTip ()
+        {
+            AnimateTooltip (CreateRedButton (), CreateRedTooltip ());
+        }
+
+        private void AnimateGreenToolTip ()
+        {
+            AnimateTooltip (CreateGreenButton (), CreateGreenTooltip ());
+        }
+
+        private void AnimateTooltip (UIImageView button, UIImageView tooltip)
+        {
+            Action<UIImageView> animateSprite = (sprite) => {
+                UIView.Animate (
+                    duration: 0.7,
+                    delay: .5,
+                    options: UIViewAnimationOptions.CurveEaseInOut,
+                    animation: () => {
+                        sprite.Layer.Transform = CATransform3D.MakeScale (1.0f, 1.0f, 1.0f);
+                    },
+                    completion: () => {
+                    }
+                );
+            };
+
+            SetSpriteCallbacks (button, animateSprite);
+            SetSpriteCallbacks (tooltip, animateSprite);
+        }
+
+        private UIImageView CreateHotlistOne ()
+        {
+            // slide left
+            // make image be "2 images with center on "containerView.width boundary". This
+            // will allow animation to "slide it out, but feel like the actual app is running.
+            UIImageView msg1 = new UIImageView (UIImage.FromBundle("Content/Slide1-1A.png"));
+           // UIImageView hotlist = new UIImageView (UIImage.FromBundle ("Content/Slide1-1B.png"));
+            msg1.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 2 +10);
+            //hotlist.Frame = new RectangleF (0, 0, 192, 207);
+            //hotlist.Center = new PointF (this.pageContainerView.Frame.Width/2, this.contentContainer.Frame.Height / 2);
+            return msg1;
+
+        }
+
+        private UIImageView CreateHotlistTwo ()
+        {
+            // slide left
+            // make image be "2 images with center on "containerView.width boundary". This
+            // will allow animation to "slide it out, but feel like the actual app is running.
+            //UIImageView msg1 = new UIImageView (UIImage.FromBundle("Content/Slide1-1A.png"));
+            UIImageView hotlist = new UIImageView (UIImage.FromBundle ("Content/Slide1-1B.png"));
+            //msg1.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 2);
+            //hotlist.Frame = new RectangleF (0, 0, 192, 207);
+            hotlist.Center = new PointF (this.pageContainerView.Frame.Width, this.contentContainer.Frame.Height / 2 +10);
+            return hotlist;
+        }
+
+        private void AnimateHotlistItemLeft ()
+        {
+            // One of two options here. We could have two images, each one animating at same time to
+            // show new "card" coming in. Other option would be to have a "wide" image that is hidden under
+            //the right cover and slides out. in this way the animation would be smooth, and could 
+            // even snap back.
+
+            UIView.AnimateKeyframes (2, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+
+                UIView.AddKeyframeWithRelativeStartTime (0, .5, () => {
+                    redButtonTwo.Alpha = 0.5f;
+                });
+
+                UIView.AddKeyframeWithRelativeStartTime (.5, .5, () => {
+                    redButtonTwo.Alpha = 1.0f;
+                });
+
+            }, ((bool finished) => {
+
+                UIView.AnimateKeyframes (.7, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+
+                    UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
+                        redButtonTwo.Center = new PointF(-106, redButtonTwo.Center.Y);
+                    });
+
+                }, ((bool isFinished) => {
+                    redButtonTwo.Hidden = true;
+                }));
+
+            }));
+
+            Action<UIImageView> animateSprite = (sprite) => {
+                UIView.Animate (
+                    duration: 0.7,
+                    delay: 2,
+                    options: UIViewAnimationOptions.CurveEaseInOut,
+                    animation: () => {
+                        // Move the hotlist item all the way off the bottom of the screen
+                        sprite.Center = new PointF (sprite.Center.X - this.contentContainer.Frame.Width, this.contentContainer.Frame.Height/2 +10 );
+                        //sprite.Center = new PointF (this.contentContainer.Frame.Width / 2 , this.contentContainer.Frame.Height/2 + sprite.Frame.Height);
+
+                    },
+                    completion: () => {
+                        msg1View.Hidden = true;
+                        //AnimateHotlistItemRight ();
+                    }// need to work on clean up so there are no artifacts here
+                    /*completion: () => {
+                        sprite.RemoveFromSuperview ();
+                        this.owner.pageController.DidFinishAnimating += (object sender, UIPageViewFinishedAnimationEventArgs e) => {
+                            var previousPageView = (HomePageController)e.PreviousViewControllers [0];
+                            if (this.PageIndex == previousPageView.PageIndex) {
+                                // we are moving away from this view
+                                sprite.RemoveFromSuperview ();
+                            }
+                        };
+                    }*/
+                );
+            };
+            
+            var hotlistOne = this.msg1View;
+            //CreateHotlistOne ();
+            var hotlistTwo = CreateHotlistTwo ();
+            msg2View = hotlistTwo;
+
+            SetSpriteCallbacks (hotlistOne, animateSprite);
+            SetSpriteCallbacks (hotlistTwo, animateSprite);
+        }
+
+        private void AnimateHotlistItemRight ()
+        {
+            redButtonTwo.Center = new PointF (redbuttonCenter.X + 90, redbuttonCenter.Y);
+            redButtonTwo.Hidden = false;
+
+            UIView.AnimateKeyframes (2, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+
+                UIView.AddKeyframeWithRelativeStartTime (0, .5, () => {
+                    redButtonTwo.Alpha = 0.5f;
+                });
+
+                UIView.AddKeyframeWithRelativeStartTime (.5, .5, () => {
+                    redButtonTwo.Alpha = 1.0f;
+                });
+
+            }, ((bool finished) => {
+
+                UIView.AnimateKeyframes (.7, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+
+                    UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
+                        redButtonTwo.Center = new PointF(redButtonTwo.Center.X + 212, redButtonTwo.Center.Y);
+                    });
+
+                }, ((bool isFinished) => {
+                    redButtonTwo.Hidden = true;
+                }));
+
+            }));
+
+            msg1View.Hidden = false;
+            UIView.AnimateKeyframes (.7, 2, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+
+                UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
+                    msg2View.Center = new PointF(msg2View.Center.X + contentContainer.Frame.Width, msg2View.Center.Y);
+                    msg1View.Center = new PointF(msg1View.Center.X + contentContainer.Frame.Width, msg1View.Center.Y);
+                });
+
+            }, ((bool finished) => {
+
+            }));
+        }
+
+        private UIImageView CreateTimelineSprite ()
+        {
+            var timelineSize = new RectangleF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 2, this.contentContainer.Frame.Width, this.contentContainer.Frame.Height);
+            UIImageView timeline = new UIImageView (UIImage.FromBundle ("Content/Slide3-5@2x.png"));
+
+            //timeline.Frame = new RectangleF (0, 0, contentContainer.Frame.Width, contentContainer.Frame.Height);
+           timeline.Frame = timelineSize;
+            // timeline starts at top of screen
+            timeline.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Top - this.pageContainerView.Frame.Height/2 + 50);
+            return timeline;
+        }
+            
+        public void AnimateTimelineDown ()
+        {
+            Action<UIImageView> animateSprite = (timeline) => {
+                UIView.Animate (
+                    duration: 0.7,
+                    delay: 2.0,
+                    options: UIViewAnimationOptions.CurveEaseInOut,
+                    animation: () => {
+                        // Move the hotlist item all the way off the bottom of the screen
+                        timeline.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 2);
+                    },
+                    completion: () => {
+
+                    }
+                );
+            };
+            Action<UIImageView> animatepull = (pull) => {
+                UIView.Animate (
+                    duration: 0.7,
+                    delay: 2.0,
+                    options: UIViewAnimationOptions.CurveEaseInOut,
+                    animation: () => {
+                        // Move the hotlist item all the way off the bottom of the screen
+                        pull.Center = new PointF (this.contentContainer.Frame.Width / 2, pull.Center.Y + 303);
+                    },
+                    completion: () => {
+                        //pull.Hidden = true;
+                    }
+                );
+            };
+            var timelineSprite = CreateTimelineSprite ();
+            SetSpriteCallbacks (timelineSprite, animateSprite);
+            SetSpriteCallbacks (calimageView, animatepull);
+            SetSpriteCallbacks (pullimageView, animatepull);
+        }
+
+        private UIImageView CreateRightCell ()
+        {
+            // same approach as above. SAnimate one cell, but behind scenes have three cells lined up.
+            // the animation wil look smooth, but only one vie is sliding..
+            //var emailSize = new RectangleF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 2, this.contentContainer.Frame.Width, 55);
+            UIImageView rightCell = new UIImageView (UIImage.FromBundle ("Content/Slide4-2B.png"));
+            rightCell.Frame = new RectangleF (this.contentContainer.Frame.Width, 77, this.contentContainer.Frame.Width, 93);
+            return rightCell;
+        }
+        private UIImageView CreateLeftCell ()
+        {
+            // same approach as above. SAnimate one cell, but behind scenes have three cells lined up.
+            // the animation wil look smooth, but only one vie is sliding..
+            //var emailSize = new RectangleF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 2, this.contentContainer.Frame.Width, 55);
+            UIImageView leftCell = new UIImageView (UIImage.FromBundle ("Content/Slide4-2A.png"));
+            leftCell.Frame = new RectangleF (0-this.contentContainer.Frame.Width, 77, this.contentContainer.Frame.Width, 93);
+            return leftCell;
+        }
+
+        private UIImageView CreateEmailCell ()
+        {
+            // same approach as above. SAnimate one cell, but behind scenes have three cells lined up.
+            // the animation wil look smooth, but only one vie is sliding..
+//            var emailSize = new RectangleF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 2, this.contentContainer.Frame.Width, 55);
+            UIImageView emailCell = new UIImageView (UIImage.FromBundle ("Content/Slide4-3"));
+            emailCell.Frame = new RectangleF(0, 77, this.contentContainer.Frame.Width, 93);
+            return emailCell;
+        }
+
+        public void AnimateEmailCellLeft ()
+        {
+            Action<UIImageView> animateSprite = (sprite) => {
+                UIView.Animate (
+                    duration: 0.7,
+                    delay: 2.0,
+                    options: UIViewAnimationOptions.CurveEaseInOut,
+                    animation: () => {
+                        // Move the hotlist item all the way off the bottom of the screen
+                        sprite.Center = new PointF (sprite.Center.X - sprite.Frame.Width, sprite.Center.Y);
+                    },
+                    completion: () => {
+//                        emailCell.RemoveFromSuperview ();
+//                        this.owner.pageController.DidFinishAnimating += (object sender, UIPageViewFinishedAnimationEventArgs e) => {
+//                            var previousPageView = (HomePageController)e.PreviousViewControllers [0];
+//                            if (this.PageIndex == previousPageView.PageIndex) {
+//                                // we are moving away from this view
+//                                emailCell.RemoveFromSuperview ();
+//                            }
+//                        };
+                    }
+                );
+            };
+
+            var emailCellSprite = CreateEmailCell ();
+            emailCellView = emailCellSprite;
+
+            var swipeCellRight = CreateRightCell ();
+            redSwipeCellView = swipeCellRight;
+
+            SetSpriteCallbacks (emailCellSprite, animateSprite);
+            SetSpriteCallbacks (swipeCellRight, animateSprite);
+        }
+
+        public void AnimateEmailCellLeftToCenter()
+        {
+            UIView.AnimateKeyframes (.7, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+
+                UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
+                    redSwipeCellView.Center = new PointF(redSwipeCellView.Center.X + redSwipeCellView.Frame.Width, redSwipeCellView.Center.Y);
+                    emailCellView.Center = new PointF(emailCellView.Center.X + emailCellView.Frame.Width, emailCellView.Center.Y);
+                });
+
+            }, ((bool finished) => {
+
+            }));
+        }
+
+        public void AnimateEmailCellCenterToRight()
+        {
+            greenSwipeCellView = CreateLeftCell ();
+            this.contentContainer.AddSubview (greenSwipeCellView);
+
+            UIView.AnimateKeyframes (.7, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+
+                UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
+                    emailCellView.Center = new PointF(emailCellView.Center.X + emailCellView.Frame.Width, emailCellView.Center.Y);
+                    greenSwipeCellView.Center = new PointF (greenSwipeCellView.Center.X + greenSwipeCellView.Frame.Width, greenSwipeCellView.Center.Y);
+                });
+
+            }, ((bool finished) => {
+
+            }));
+        }
+
+        public void AnimateEmailCellRightToCenter()
+        {
+            UIView.AnimateKeyframes (.7, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+
+                UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
+                    emailCellView.Center = new PointF(emailCellView.Center.X - emailCellView.Frame.Width, emailCellView.Center.Y);
+                    greenSwipeCellView.Center = new PointF (greenSwipeCellView.Center.X - greenSwipeCellView.Frame.Width, greenSwipeCellView.Center.Y);
+                });
+
+            }, ((bool finished) => {
+                greenSwipeCellView.Hidden = true;
+            }));
+        }
+
+        // remove the animated sprite once you complete the movement to the next page
+        private EventHandler<UIPageViewFinishedAnimationEventArgs> DidNavigateAwayFromPage (UIImageView sprite)
+        {
+            return (object sender, UIPageViewFinishedAnimationEventArgs e) => {
+                var previousPageView = (HomePageController)e.PreviousViewControllers [0];
+                if (this.PageIndex == previousPageView.PageIndex && e.Completed) {
+                    // we are moving away from this view
+                    sprite.RemoveFromSuperview ();
+                }
+            };
+        }
+
+        // Moving to another page and back should reset sprite
+        // Moving the page just slightly, but back to original should not reset sprite
+        private void SetSpriteCallbacks (UIImageView sprite, Action<UIImageView> animateSprite)
+        {
+            EventHandler<UIPageViewFinishedAnimationEventArgs> moveToPage = null;
+            moveToPage = (object sender, UIPageViewFinishedAnimationEventArgs e) => {
+                var previousPageView = (HomePageController)e.PreviousViewControllers[0];
+                if (this.PageIndex != previousPageView.PageIndex) {
+                    this.contentContainer.AddSubview (sprite);
+                    animateSprite (sprite);
+                    this.owner.pageController.DidFinishAnimating -= moveToPage;
+                    this.owner.pageController.DidFinishAnimating += DidNavigateAwayFromPage (sprite);
+                }
+            };
+
+            if (owner.isFirstLoad) {
+                this.contentContainer.AddSubview (sprite);
+                animateSprite (sprite);
+                this.owner.pageController.DidFinishAnimating -= moveToPage;
+                this.owner.pageController.DidFinishAnimating += DidNavigateAwayFromPage (sprite);
+            } else {
+                this.owner.pageController.DidFinishAnimating += moveToPage;
+
+            }
+        }
 
         // Utilities for resizing images.  May not use
 

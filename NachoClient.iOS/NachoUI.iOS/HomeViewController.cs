@@ -12,9 +12,11 @@ namespace NachoClient.iOS
 {
     public partial class HomeViewController : NcUIViewController
     {
-        UIPageViewController pageController;
+        public UIPageViewController pageController;
         int accountId;
         public UIPageControl pageDots;
+        HomePageController firstPageController;
+        public bool isFirstLoad = true;
 
         public HomeViewController (IntPtr handle) : base (handle)
         {
@@ -26,6 +28,7 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+
             /*
             // ideally we get rid of Navcontroller and have a dismiss button in toolbar
             // that said, for now, leave the NachoNow navigation controller so we can exit
@@ -107,13 +110,15 @@ namespace NachoClient.iOS
              //setup 
             pageDots.Pages = this.TotalPages;
             pageDots.CurrentPage = 0;
-            pageDots.BackgroundColor = A.Color_NachoGreen;
+            pageDots.BackgroundColor = UIColor.White;
+            pageDots.PageIndicatorTintColor = UIColor.Gray;
+            pageDots.CurrentPageIndicatorTintColor = UIColor.Black;
 
             //containerView.Frame = new System.Drawing.RectangleF (0, View.Frame.Bottom - 50, View.Frame.Width, 50);
-            containerView.Frame = new System.Drawing.RectangleF (0, this.View.Frame.Height-50  , this.View.Frame.Width, 50);
-            containerView.BackgroundColor = A.Color_NachoGreen;
-            pageDots.Frame = new System.Drawing.RectangleF(10,0, 50, 40);  // relative to containerView
-           this.pageController = new UIPageViewController (UIPageViewControllerTransitionStyle.Scroll, 
+            containerView.Frame = new System.Drawing.RectangleF (0, this.View.Frame.Bottom-40  , this.View.Frame.Width, 40);
+            containerView.BackgroundColor = UIColor.White;
+            pageDots.Frame = new System.Drawing.RectangleF(20,0, 62, 40);  // relative to containerView
+            this.pageController = new UIPageViewController (UIPageViewControllerTransitionStyle.Scroll, 
                 UIPageViewControllerNavigationOrientation.Horizontal, UIPageViewControllerSpineLocation.None);
 
             this.pageController.SetViewControllers (new UIViewController[] { firstPageController }, UIPageViewControllerNavigationDirection.Forward, 
@@ -127,11 +132,13 @@ namespace NachoClient.iOS
             this.View.AddSubview (this.pageController.View);
 
             //Simulates a user dismissing tutorial, or the tutorial finishing on its own
-            UIButton closeTutorial = new UIButton (new System.Drawing.RectangleF (View.Frame.Width-100, View.Frame.Top, 100, 50));
-            closeTutorial.SetTitle ("Dismiss", UIControlState.Normal);
-            closeTutorial.TitleLabel.TextColor = UIColor.White;
-            closeTutorial.TitleLabel.Font = A.Font_AvenirNextRegular14;
-            closeTutorial.BackgroundColor = A.Color_NachoGreen;
+            UIButton closeTutorial = new UIButton (new System.Drawing.RectangleF (View.Frame.Width-65, 5, 45, 30));
+            closeTutorial.TitleLabel.TextColor = UIColor.Black;
+            closeTutorial.SetTitle ("Skip", UIControlState.Normal);
+            closeTutorial.TitleLabel.TextColor = UIColor.Black;
+            closeTutorial.TitleLabel.Font = A.Font_AvenirNextRegular17;
+            closeTutorial.SetTitleColor (UIColor.Black, UIControlState.Normal);
+            closeTutorial.BackgroundColor = UIColor.White;
             //closeTutorial.BackgroundColor = A.Color_NachoRed; // debug
             closeTutorial.TouchUpInside += (object sender, EventArgs e) => {
                 LoginHelpers.SetHasViewedTutorial (accountId, true);
@@ -139,6 +146,10 @@ namespace NachoClient.iOS
             };
             containerView.Add (pageDots);
             containerView.Add (closeTutorial);
+
+            UIImageView skipArrow = new UIImageView (UIImage.FromBundle("Content/SlideNav-Arrow@2x"));
+            skipArrow.Frame = new System.Drawing.RectangleF (closeTutorial.Frame.Right, closeTutorial.Center.Y - 5, 8, 12);
+            containerView.Add (skipArrow);
             View.Add (containerView);
         }
 
