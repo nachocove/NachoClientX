@@ -273,7 +273,7 @@ namespace NachoClient.iOS
                 return;
             }
             var messageThread = inbox.GetEmailThread (index);
-            owner.PerformSegue ("NachoNowToMessageView", new SegueHolder (messageThread));
+            owner.PerformSegue ("NachoNowToMessageList", new SegueHolder (inbox));
         }
 
         /// <summary>
