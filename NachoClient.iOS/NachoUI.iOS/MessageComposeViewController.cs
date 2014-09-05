@@ -680,7 +680,7 @@ namespace NachoClient.iOS
             var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
 
             bool messageSent = false;
-            if (Action.Equals (Reply) || Action.Equals (ReplyAll) || Action.Equals (Forward)) {
+            if (ActionThread != null && (Action.Equals (Reply) || Action.Equals (ReplyAll) || Action.Equals (Forward))) {
                 var actionMessage = ActionThread.SingleMessageSpecialCase ();
                 var folders = McFolder.QueryByFolderEntryId<McEmailMessage> (actionMessage.AccountId, actionMessage.Id);
                 if (folders.Count == 0) {
