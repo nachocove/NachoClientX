@@ -225,7 +225,8 @@ namespace NachoCore.Utils
             mimeMessage.Date = System.DateTime.UtcNow;
             mimeMessage.Body = mimeBody;
 
-            MimeHelpers.SendEmail (account.Id, mimeMessage, c.Id);
+            var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
+            BackEnd.Instance.SendEmailCmd (mcMessage.AccountId, mcMessage.Id, c.Id);
         }
 
         public static TextPart iCalToMimePart (McAccount account, McCalendar c, string tzid)
