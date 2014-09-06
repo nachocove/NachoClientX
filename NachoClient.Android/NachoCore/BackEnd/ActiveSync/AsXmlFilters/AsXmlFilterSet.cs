@@ -52,6 +52,7 @@ namespace NachoCore.Wbxml
             AsXmlFilterSet._Requests.Add (new AsXmlFilterDocumentLibrary ());
             AsXmlFilterSet._Requests.Add (new AsXmlFilterEmail ());
             AsXmlFilterSet._Requests.Add (new AsXmlFilterEmail2 ());
+            AsXmlFilterSet._Requests.Add (new AsXmlFilterGAL ());
             AsXmlFilterSet._Requests.Add (new AsXmlFilterRightsManagement ());
             AsXmlFilterSet._Requests.Add (new AsXmlFilterTasks ());
         }
@@ -78,6 +79,7 @@ namespace NachoCore.Wbxml
             AsXmlFilterSet._Responses.Add (new AsXmlFilterDocumentLibrary ());
             AsXmlFilterSet._Responses.Add (new AsXmlFilterEmail ());
             AsXmlFilterSet._Responses.Add (new AsXmlFilterEmail2 ());
+            AsXmlFilterSet._Responses.Add (new AsXmlFilterGAL ());
             AsXmlFilterSet._Responses.Add (new AsXmlFilterRightsManagement ());
             AsXmlFilterSet._Responses.Add (new AsXmlFilterTasks ());
         }
