@@ -33,7 +33,7 @@ namespace NachoCore
             }
             for (var i = 0; i < list.Count; i++) {
                 var c = list [i];
-                AddItem (c.StartTime, i);
+                AddItem (c.StartTime.ToLocalTime(), i);
             }
             listOfDaysThatHaveEvents = bag.Keys.ToList ();
             listOfDaysThatHaveEvents.Sort ();

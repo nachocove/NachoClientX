@@ -391,12 +391,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoContacts.cs">
       <Link>NachoCore\Adapters\NachoContacts.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoCalendar.cs">
-      <Link>NachoCore\Adapters\NachoCalendar.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\INachoCalendar.cs">
-      <Link>NachoCore\Adapters\INachoCalendar.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\INachoContacts.cs">
       <Link>NachoCore\Adapters\INachoContacts.cs</Link>
     </Compile>
@@ -538,9 +532,6 @@
     <Compile Include="NachoPlatform.iOS\NetStatusiOS.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcCommStatus\ServerTracker.cs">
       <Link>NachoCore\BackEnd\NcCommStatus\ServerTracker.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoCalendarCommon.cs">
-      <Link>NachoCore\Adapters\NachoCalendarCommon.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsProtoControl\AsProtoControl.cs">
       <Link>NachoCore\BackEnd\ActiveSync\AsProtoControl\AsProtoControl.cs</Link>
@@ -772,9 +763,6 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcEmailAddress.cs">
       <Link>NachoCore\Utils\NcEmailAddress.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcCalendarManager.cs">
-      <Link>NachoCore\Adapters\NcCalendarManager.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\NcApplication.cs">
       <Link>NachoCore\NcApplication.cs</Link>

@@ -261,7 +261,7 @@ namespace NachoClient.iOS
                 inboxCarousel.ReloadData ();
             }
             if (NcResult.SubKindEnum.Info_CalendarSetChanged == s.Status.SubKind) {
-                NcCalendarManager.Instance.Refresh ();
+                NcEventManager.Instance.Refresh ();
                 calendarTableView.ReloadData ();
             }
             if (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated == s.Status.SubKind) {
