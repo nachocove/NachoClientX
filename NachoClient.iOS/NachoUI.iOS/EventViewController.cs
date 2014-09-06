@@ -193,6 +193,7 @@ namespace NachoClient.iOS
             base.ViewWillDisappear (animated);
             if (null != this.NavigationController) {
             }
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 
         public override void ViewWillAppear (bool animated)
@@ -200,8 +201,17 @@ namespace NachoClient.iOS
             base.ViewWillAppear (animated);
             if (null != this.NavigationController) {
             }
- 
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+
             ConfigureEventView ();
+        }
+
+        public void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+            if (NcResult.SubKindEnum.Info_CalendarChanged == s.Status.SubKind) {
+                ConfigureEventView ();
+            }
         }
 
         public override void ViewDidAppear (bool animated)
