@@ -191,6 +191,8 @@ namespace NachoClient.iOS
                 cookedPreview = cookedPreview.Replace ("\n\n", "\n");
             } while(cookedPreview.Length != oldLength);
             previewLabelView.AttributedText = new NSAttributedString (cookedPreview);
+            // Not enough room for the preview so hid it
+            previewLabelView.Hidden = true;
 
             // Received label view
             var receivedLabelView = view.ViewWithTag (RECEIVED_DATE_TAG) as UILabel;

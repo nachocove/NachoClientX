@@ -48,7 +48,8 @@ namespace NachoClient.iOS
         protected static UIColor _Color_NachoBlue = null;
         protected static UIColor _Color_NachoLightGray = null;
         protected static UIColor _Color_NachoSeparator = null;
-
+        protected static UIColor _Color_NachoDarkText = null;
+        protected static UIColor _Color_NachoLightText = null;
 
         public A ()
         {
@@ -393,6 +394,24 @@ namespace NachoClient.iOS
                     _Color_NachoSeparator = new UIColor (.8f, .8f, .8f, .7f);
                 }
                 return _Color_NachoSeparator;
+            }
+        }
+            
+        public static UIColor Color_NachoDarkText {
+            get {
+                if (null == _Color_NachoDarkText) {
+                    _Color_NachoDarkText = UIColor.Black;
+                }
+                return _Color_NachoDarkText;
+            }
+        }
+
+        public static UIColor Color_NachoLightText {
+            get {
+                if (null == _Color_NachoLightText) {
+                    _Color_NachoLightText = Color_999999;
+                }
+                return _Color_NachoLightText;
             }
         }
 

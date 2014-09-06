@@ -364,7 +364,7 @@ namespace NachoClient.iOS
                 var previewLabelView = new UILabel (new RectangleF (65, 60, cellWidth - 15 - 65, 60));
                 previewLabelView.ContentMode = UIViewContentMode.TopLeft;
                 previewLabelView.Font = A.Font_AvenirNextRegular14;
-                previewLabelView.TextColor = A.Color_999999;
+                previewLabelView.TextColor = A.Color_NachoDarkText;
                 previewLabelView.Lines = 2;
                 previewLabelView.Tag = PREVIEW_TAG;
                 cell.ContentView.AddSubview (previewLabelView);

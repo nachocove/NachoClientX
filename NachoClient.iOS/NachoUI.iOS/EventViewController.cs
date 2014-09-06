@@ -371,13 +371,13 @@ namespace NachoClient.iOS
 
             //location label, image and detail
             AddTextLabelWithImage (45, 41, SCREEN_WIDTH - 50, 15, "Location", UIImage.FromBundle ("icn-mtng-location"), 40, EventInfoView);
-            AddDetailTextLabel (25, 66, SCREEN_WIDTH - 50, 15, EVENT_LOCATION_DETAIL_LABEL_TAG, EventInfoView);
+            AddDetailTextLabel (45, 66, SCREEN_WIDTH - 50, 15, EVENT_LOCATION_DETAIL_LABEL_TAG, EventInfoView);
 
             //when label, image and detail
             AddTextLabelWithImage (45, 98, SCREEN_WIDTH - 50, 15, "When", UIImage.FromBundle ("icn-mtng-time"), 97, EventInfoView);
-            AddDetailTextLabel (25, 123, SCREEN_WIDTH - 50, 15, EVENT_WHEN_DETAIL_LABEL_TAG, EventInfoView);
-            AddDetailTextLabel (25, 143, SCREEN_WIDTH - 50, 15, 500, EventInfoView);
-            AddDetailTextLabel (25, 163, SCREEN_WIDTH - 50, 30, 600, EventInfoView);
+            AddDetailTextLabel (45, 123, SCREEN_WIDTH - 50, 15, EVENT_WHEN_DETAIL_LABEL_TAG, EventInfoView);
+            AddDetailTextLabel (45, 143, SCREEN_WIDTH - 50, 15, 500, EventInfoView);
+            AddDetailTextLabel (45, 163, SCREEN_WIDTH - 50, 30, 600, EventInfoView);
             float RECURRING_OFFSET = 0f;
             if (isRecurring) {
                 RECURRING_OFFSET = 40f;
@@ -386,9 +386,9 @@ namespace NachoClient.iOS
             //phone label, image and detail
             AddTextLabelWithImage (45, RECURRING_OFFSET + 175, SCREEN_WIDTH - 50, 15, "Phone", UIImage.FromBundle ("icn-mtng-phone"), RECURRING_OFFSET + 174, EventInfoView);
 
-            UIButton eventPhoneDetailButton = new UIButton (new RectangleF (25, RECURRING_OFFSET + 200, SCREEN_WIDTH - 50, 15));
+            UIButton eventPhoneDetailButton = new UIButton (new RectangleF (45, RECURRING_OFFSET + 200, SCREEN_WIDTH - 50, 15));
             eventPhoneDetailButton.Font = A.Font_AvenirNextRegular14;
-            eventPhoneDetailButton.SetTitleColor (UIColor.LightGray, UIControlState.Normal);
+            eventPhoneDetailButton.SetTitleColor (A.Color_NachoDarkText, UIControlState.Normal);
             eventPhoneDetailButton.Tag = EVENT_PHONE_DETAIL_BUTTON_TAG;
             eventPhoneDetailButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
             eventPhoneDetailButton.TouchUpInside += (object sender, EventArgs e) => {
@@ -421,7 +421,9 @@ namespace NachoClient.iOS
             alertsAccessoryImage.Image = Util.MakeArrow (A.Color_NachoBlue);
             eventAlertsView.AddSubview (alertsAccessoryImage);
 
-            AddTextLabel (23, 12.438f, 70, TEXT_LINE_HEIGHT, "Alerts", eventAlertsView);
+//            AddTextLabel (23, 12.438f, 70, TEXT_LINE_HEIGHT, "Alerts", eventAlertsView);
+            AddTextLabelWithImage (45, 12.438f, 79, TEXT_LINE_HEIGHT, "Alerts", UIImage.FromBundle ("icn-defer"), 14.5f, eventAlertsView);
+
 
             UILabel alertsDetailLabel = new UILabel ();
             alertsDetailLabel.Text = "None";
@@ -642,7 +644,7 @@ namespace NachoClient.iOS
             var textLabel = new UILabel (new RectangleF (xOffset, yOffset, width, height));
             textLabel.Text = text;
             textLabel.Font = A.Font_AvenirNextRegular14;
-            textLabel.TextColor = solidTextColor;
+            textLabel.TextColor = A.Color_NachoLightText;
             parentView.AddSubview (textLabel);
         }
 
@@ -651,7 +653,7 @@ namespace NachoClient.iOS
             var textLabel = new UILabel (new RectangleF (xOffset, yOffset, width, height));
             textLabel.Text = text;
             textLabel.Font = A.Font_AvenirNextRegular14;
-            textLabel.TextColor = solidTextColor;
+            textLabel.TextColor = A.Color_NachoLightText;
             parentView.AddSubview (textLabel);
 
             UIImageView theImage = new UIImageView (new RectangleF ((xOffset - 22), imageOffset, 15, 15));
@@ -664,7 +666,7 @@ namespace NachoClient.iOS
             UILabel DetailTextLabel = new UILabel (new RectangleF (xOffset, yOffset, width, height));
             DetailTextLabel.Font = A.Font_AvenirNextRegular14;
 
-            DetailTextLabel.TextColor = UIColor.LightGray;
+            DetailTextLabel.TextColor = A.Color_NachoDarkText;
             DetailTextLabel.Tag = tag;
             parentView.Add (DetailTextLabel);
         }

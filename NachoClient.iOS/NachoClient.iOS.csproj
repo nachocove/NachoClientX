@@ -1517,6 +1517,7 @@
     <BundleResource Include="Resources\icn-preview-white%402x.png" />
     <BundleResource Include="Resources\nav-nachonow-white%402x.png" />
     <BundleResource Include="Resources\email-readmore-gray%402x.png" />
+    <BundleResource Include="Resources\icn-defer%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

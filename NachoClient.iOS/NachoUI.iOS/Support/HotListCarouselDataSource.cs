@@ -135,7 +135,7 @@ namespace NachoClient.iOS
             // Size fields will be recalculated after text is known
             var previewLabelView = new UILabel (new RectangleF (12, 60, viewWidth - 15 - 12, bottomY - 60));
             previewLabelView.Font = A.Font_AvenirNextRegular14;
-            previewLabelView.TextColor = A.Color_999999;
+            previewLabelView.TextColor = A.Color_NachoDarkText;
             previewLabelView.Lines = 0;
             previewLabelView.Tag = PREVIEW_TAG;
             view.AddSubview (previewLabelView);
