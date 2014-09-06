@@ -1277,13 +1277,11 @@
     <BundleResource Include="Resources\toolbar-icn-fwd%402x.png" />
     <BundleResource Include="Resources\toolbar-icn-flag%402x.png" />
     <BundleResource Include="Resources\toolbar-icn-delete%402x.png" />
-    <BundleResource Include="Resources\navbar-icn-quickreply%402x.png" />
     <BundleResource Include="Resources\navbar-icn-download%402x.png" />
     <BundleResource Include="Resources\navbar-icn-defer%402x.png" />
     <BundleResource Include="Resources\navbar-icn-close%402x.png" />
     <BundleResource Include="Resources\navbar-icn-close.png" />
     <BundleResource Include="Resources\toolbar-icn-delete.png" />
-    <BundleResource Include="Resources\navbar-icn-quickreply.png" />
     <BundleResource Include="Resources\navbar-icn-download.png" />
     <BundleResource Include="Resources\navbar-icn-defer.png" />
     <BundleResource Include="Resources\toolbar-icn-move.png" />

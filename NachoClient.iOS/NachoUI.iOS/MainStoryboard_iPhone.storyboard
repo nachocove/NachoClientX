@@ -1161,7 +1161,7 @@
                         <barButtonItem image="toolbar-icn-delete.png" id="PNM-D1-huA" userLabel="Bar Button Item - Delete"/>
                     </items>
                 </toolbar>
-                <barButtonItem image="navbar-icn-quickreply.png" id="AWp-LH-tHp" userLabel="Bar Button Item - Quick Reply"/>
+                <barButtonItem image="icn-quick-message.png" id="AWp-LH-tHp" userLabel="Bar Button Item - Quick Reply"/>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="LjP-vQ-4le" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-2141" y="84"/>
@@ -1686,7 +1686,7 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
                     <rect key="frame" x="2" y="11" width="69" height="23"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                     <accessibility key="accessibilityConfiguration" label="Quick"/>
-                    <state key="normal" title="Quick" image="navbar-icn-quickreply.png">
+                    <state key="normal" title="Quick" image="icn-quick-message.png">
                         <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
                     </state>
                 </button>
@@ -2035,6 +2035,7 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <image name="icn-archive.png" width="24" height="24"/>
         <image name="icn-attach-files.png" width="16" height="16"/>
         <image name="icn-calendar-top.png" width="24" height="24"/>
+        <image name="icn-quick-message.png" width="24" height="24"/>
         <image name="icn-send.png" width="24" height="24"/>
         <image name="list.png" width="20" height="18"/>
         <image name="navbar-icn-close.png" width="17" height="17"/>
@@ -2043,7 +2044,6 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <image name="navbar-icn-menu.png" width="24" height="24"/>
         <image name="navbar-icn-newEmail.png" width="24" height="24"/>
         <image name="navbar-icn-newevent.png" width="24" height="24"/>
-        <image name="navbar-icn-quickreply.png" width="22" height="23"/>
         <image name="toolbar-icn-delete.png" width="19" height="21"/>
         <image name="toolbar-icn-fwd.png" width="21" height="16"/>
         <image name="toolbar-icn-move.png" width="24" height="20"/>
@@ -2057,30 +2057,30 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
+        <segue reference="HCr-Oa-UHV"/>
         <segue reference="zDw-Tx-fTt"/>
         <segue reference="Bq3-C6-QI6"/>
-        <segue reference="s9j-Ih-SWz"/>
-        <segue reference="FHc-YP-jWH"/>
+        <segue reference="tkk-6o-6oa"/>
+        <segue reference="RHB-Or-A5o"/>
+        <segue reference="c79-xS-Npa"/>
         <segue reference="Rd3-YY-NMX"/>
+        <segue reference="twQ-jE-jZd"/>
+        <segue reference="G1z-aV-19B"/>
+        <segue reference="vUs-ft-xdy"/>
+        <segue reference="qB9-ce-7gT"/>
+        <segue reference="xrp-ey-B0j"/>
+        <segue reference="kd2-jR-F9u"/>
+        <segue reference="FHc-YP-jWH"/>
         <segue reference="fwk-9p-tlV"/>
         <segue reference="mLY-u0-R5O"/>
-        <segue reference="c79-xS-Npa"/>
-        <segue reference="Afu-47-Kju"/>
-        <segue reference="hxO-14-opZ"/>
-        <segue reference="vUs-ft-xdy"/>
-        <segue reference="Tfk-Mt-BlS"/>
         <segue reference="4Sl-0E-160"/>
-        <segue reference="tdu-G2-PEp"/>
-        <segue reference="HCr-Oa-UHV"/>
-        <segue reference="11B-OX-HZh"/>
-        <segue reference="JTo-qU-j7O"/>
-        <segue reference="k2t-Pj-AhS"/>
         <segue reference="RR1-bJ-URL"/>
-        <segue reference="ebP-h4-BhC"/>
-        <segue reference="J8i-gn-UTn"/>
+        <segue reference="tdu-G2-PEp"/>
+        <segue reference="JTo-qU-j7O"/>
+        <segue reference="Tfk-Mt-BlS"/>
         <segue reference="iqA-wd-xqD"/>
         <segue reference="g4G-tD-G9H"/>
-        <segue reference="qSV-ar-VcH"/>
-        <segue reference="xrp-ey-B0j"/>
+        <segue reference="J8i-gn-UTn"/>
+        <segue reference="ebP-h4-BhC"/>
     </inferredMetricsTieBreakers>
 </document>
