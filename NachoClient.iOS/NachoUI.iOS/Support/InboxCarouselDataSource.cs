@@ -274,7 +274,6 @@ namespace NachoClient.iOS
             if ((0 > index) || (inbox.Count () <= index)) {
                 return;
             }
-            var messageThread = inbox.GetEmailThread (index);
             owner.PerformSegue ("NachoNowToMessageList", new SegueHolder (inbox));
         }
 
