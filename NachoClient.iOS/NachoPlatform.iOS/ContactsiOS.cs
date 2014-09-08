@@ -50,10 +50,11 @@ namespace NachoPlatform
 
             public override NcResult ToMcContact ()
             {
+                var accountId = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Device).Single ().Id;
                 var contact = new McContact () {
                     Source = McAbstrItem.ItemSource.Device,
                     ServerId = "NachoDeviceContact:" + UniqueId,
-                    AccountId = McAccount.QueryByAccountType(McAccount.AccountTypeEnum.Device).Single ().Id,
+                    AccountId = accountId,
                     OwnerEpoch = SchemaRev,
                 };
                 contact.FirstName = Person.FirstName;
@@ -77,7 +78,7 @@ namespace NachoPlatform
                     contact.AddDateAttribute ("Birthday", null, birthday.ToDateTime ());
                 }
                 if (null != Person.Note) {
-                    var body = McBody.Save (Person.Note);
+                    var body = McBody.Instance.InsertFile (accountId, Person.Note);
                     contact.BodyId = body.Id;
                     contact.BodyType = McBody.PlainText;
                 }

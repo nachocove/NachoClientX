@@ -31,7 +31,7 @@ namespace NachoCore.ActiveSync
                 if (null != saveAttr) {
                     item.BodyId = int.Parse (saveAttr.Value);
                 } else {
-                    var body = McBody.Save (xmlData.Value); 
+                    var body = McBody.Instance.InsertFile (item.AccountId, xmlData.Value); 
                     item.BodyId = body.Id;
                 }
                 item.BodyType = bodyType;
@@ -147,7 +147,7 @@ namespace NachoCore.ActiveSync
                 NcAssert.True (null != body);
                 xmlAppData.Add (new XElement (AirSyncBaseNs + Xml.AirSyncBase.Body,
                     new XElement (AirSyncBaseNs + Xml.AirSyncBase.Type, cal.BodyType),
-                    new XElement (AirSyncBaseNs + Xml.AirSyncBase.Data, body.Body)));
+                    new XElement (AirSyncBaseNs + Xml.AirSyncBase.Data, body.GetContents ())));
             }
 
             if (0 != cal.attendees.Count) {
@@ -432,7 +432,7 @@ namespace NachoCore.ActiveSync
             return r;
         }
 
-        public List<McException> ParseExceptions (XNamespace ns, XElement exceptions)
+        public List<McException> ParseExceptions (int accountId, XNamespace ns, XElement exceptions)
         {
             NcAssert.True (null != exceptions);
             NcAssert.True (exceptions.Name.LocalName.Equals (Xml.Calendar.Calendar_Exceptions));
@@ -443,6 +443,7 @@ namespace NachoCore.ActiveSync
             foreach (var exception in exceptions.Elements()) {
                 NcAssert.True (exception.Name.LocalName.Equals (Xml.Calendar.Exceptions.Exception));
                 var e = new McException ();
+                e.AccountId = accountId;
                 e.attendees = new List<McAttendee> ();
                 e.categories = new List<McCalendarCategory> ();
                 foreach (var child in exception.Elements()) {
@@ -536,13 +537,14 @@ namespace NachoCore.ActiveSync
         // <TimeZone xmlns="Calendar:"> LAEAAEUAUw...P///w== </TimeZone>
         // <Organizer_Email xmlns="Calendar:"> steves@nachocove.com </Organizer_Email>
         // <Organizer_Name xmlns="Calendar:"> Steve Scalpone </Organizer_Name>
-        public NcResult ParseCalendar (XNamespace ns, XElement command)
+        public NcResult ParseCalendar (int accountId, XNamespace ns, XElement command)
         {
             // <ServerId>..</ServerId>
             var serverId = command.Element (ns + Xml.AirSync.ServerId);
             NcAssert.True (null != serverId);
 
             McCalendar c = new McCalendar ();
+            c.AccountId = accountId;
             c.ServerId = serverId.Value;
 
             c.attendees = new List<McAttendee> ();
@@ -568,7 +570,7 @@ namespace NachoCore.ActiveSync
                     c.categories.AddRange (categories);
                     break;
                 case Xml.Calendar.Calendar_Exceptions:
-                    var exceptions = ParseExceptions (nsCalendar, child);
+                    var exceptions = ParseExceptions (accountId, nsCalendar, child);
                     c.exceptions.AddRange (exceptions);
                     break;
                 case Xml.Calendar.Calendar_Recurrence:
@@ -649,8 +651,10 @@ namespace NachoCore.ActiveSync
             McEmailMessage emailMessage = McAbstrFolderEntry.QueryByServerId<McEmailMessage> (folder.AccountId, serverId.Value);
 
             if (null == emailMessage) {
-                emailMessage = new McEmailMessage ();
-                emailMessage.ServerId = serverId.Value;
+                emailMessage = new McEmailMessage () {
+                    ServerId = serverId.Value,
+                    AccountId = folder.AccountId,
+                };
             }
 
             var appData = command.Element (ns + Xml.AirSync.ApplicationData);

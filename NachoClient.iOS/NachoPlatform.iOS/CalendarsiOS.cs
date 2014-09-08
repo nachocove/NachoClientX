@@ -75,10 +75,11 @@ namespace NachoPlatform
 
             public override NcResult ToMcCalendar ()
             {
+                var accountId = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Device).Single ().Id;
                 var cal = new McCalendar () {
                     Source = McAbstrItem.ItemSource.Device,
                     ServerId = "NachoDeviceCalendar:" + UniqueId,
-                    AccountId = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Device).Single ().Id,
+                    AccountId = accountId,
                     OwnerEpoch = SchemaRev,
                 };
 
@@ -119,7 +120,7 @@ namespace NachoPlatform
                 }
 
                 if (null != Event.Notes) {
-                    var body = McBody.Save (Event.Notes);
+                    var body = McBody.Instance.InsertFile (accountId, Event.Notes);
                     cal.BodyId = body.Id;
                     cal.BodyType = McBody.PlainText;
                 }

@@ -63,13 +63,18 @@ namespace NachoCore.Model
         private ConcurrentDictionary<int, SQLiteConnection> DbConns;
         private ConcurrentDictionary<int, int> TransDepth;
 
+        public string GetFileDirPath (string segment)
+        {
+            return Path.Combine (Documents, segment);
+        }
+
         private void InitalizeDirs ()
         {
             FilesDir = Path.Combine (Documents, "files");
             Directory.CreateDirectory (Path.Combine (Documents, FilesDir));
             AttachmentsDir = Path.Combine (Documents, "attachments");
             Directory.CreateDirectory (Path.Combine (Documents, AttachmentsDir));
-            BodiesDir = Path.Combine (Documents, "bodies");
+            BodiesDir = GetFileDirPath (McBody.Instance.GetFilePathSegment ());
             Directory.CreateDirectory (Path.Combine (Documents, BodiesDir));
             PortraitsDir = Path.Combine (Documents, "portraits");
             Directory.CreateDirectory (Path.Combine (Documents, PortraitsDir));

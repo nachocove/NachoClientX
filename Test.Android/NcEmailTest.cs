@@ -199,8 +199,7 @@ namespace Test.Common
             List<McEmailMessage> email = new List<McEmailMessage> ();
             email.Add (InsertEmailIntoDB (getServerIDs (1) [0], categories));
             Assert.True (email [0].Delete () > 0);
-            Assert.Throws<System.InvalidOperationException> (() => email [0].Delete ());
-
+            Assert.True (0 == email [0].Delete ());
         }
 
         [Test]

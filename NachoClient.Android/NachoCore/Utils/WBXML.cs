@@ -46,7 +46,7 @@ namespace NachoCore.Wbxml
             return XmlDoc.ToString (SaveOptions.DisableFormatting);
         }
 
-        public void LoadBytes (Stream byteWBXML, Boolean? doFiltering = null)
+        public void LoadBytes (int accountId, Stream byteWBXML, Boolean? doFiltering = null)
         {
             XmlDoc = new XDocument (new XDeclaration ("1.0", "utf-8", "yes"));
             int level = 0;
@@ -140,12 +140,15 @@ namespace NachoCore.Wbxml
                         switch (currentCodePage) {
                         case ASWBXML.KCodePage_AirSyncBase:
                             #if (!WBXMLTOOL)
-                            var data = McBody.SaveStart ();
-                            using (var fileStream = data.SaveFileStream ()) {
-                                bytes.DequeueStringToStream (fileStream, CToken);
+                            // We don't need to save the body to a file in the redacted XML case.
+                            if (0 < accountId) {
+                                var data = McBody.Instance.InsertSaveStart (accountId);
+                                using (var fileStream = data.SaveFileStream ()) {
+                                    bytes.DequeueStringToStream (fileStream, CToken);
+                                }
+                                currentNode.Add (new XAttribute ("nacho-body-id", data.Id.ToString ()));
+                                data.UpdateSaveFinish ();
                             }
-                            currentNode.Add (new XAttribute ("nacho-body-id", data.Id.ToString ()));
-                            data.SaveDone ();
                             #else
                             // In WbxmlTool, we just write it to a memory stream and create a node for it.
                             NcAssert.True (false); // not implemented yet

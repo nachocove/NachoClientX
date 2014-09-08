@@ -454,7 +454,7 @@ namespace NachoCore.Wbxml
             // because it walks the tree twice.
             ASWBXML wbxml = new ASWBXML (new CancellationToken (false));
             MemoryStream byteStream = new MemoryStream (Wbxml.ToArray (), false);
-            wbxml.LoadBytes (byteStream);
+            wbxml.LoadBytes (0, byteStream);
             return new XDocument (wbxml.XmlDoc);
         }
     }

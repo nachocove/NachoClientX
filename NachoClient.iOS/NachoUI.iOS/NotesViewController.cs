@@ -143,7 +143,7 @@ namespace NachoClient.iOS
             } else {
                 McBody contactBody = McBody.QueryById<McBody> (contactItem.BodyId);
                 if (null != contactBody) {
-                    notesTextView.Text = contactBody.Body;
+                    notesTextView.Text = contactBody.GetContents ();
                 }
             }
 
@@ -205,9 +205,9 @@ namespace NachoClient.iOS
         {
             McBody contactBody = McBody.QueryById<McBody> (contactItem.BodyId);
             if (null != contactBody) {
-                contactBody.UpdateBody (notesTextView.Text);
+                contactBody.UpdateFile (notesTextView.Text);
             } else {
-                contactItem.BodyId = McBody.Save (notesTextView.Text).Id;
+                contactItem.BodyId = McBody.Instance.InsertFile (contactItem.AccountId, notesTextView.Text).Id;
             }
 
             contactItem.Update ();

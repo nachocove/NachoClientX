@@ -189,7 +189,7 @@ namespace Test.Common
             var command = System.Xml.Linq.XElement.Parse (addString_01);
             Assert.IsNotNull (command);
             Assert.AreEqual (command.Name.LocalName, Xml.AirSync.Add);
-            NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeCalendarItem (command, new MockNcFolder ());
+            NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeCalendarItem (1, command, new MockNcFolder ());
         }
         //        [Test]
         public void UpdateEntryWithAdd ()
@@ -388,7 +388,7 @@ namespace Test.Common
             Assert.AreEqual (command.Name.LocalName, Xml.AirSync.Add);
             var h = new NachoCore.ActiveSync.AsHelpers ();
             XNamespace Ns = Xml.AirSync.Ns;
-            NcResult r = h.ParseCalendar (Ns, command);
+            NcResult r = h.ParseCalendar (1, Ns, command);
             Assert.IsNotNull (r.GetValue<McCalendar> ());
             var c = r.GetValue<McCalendar> ();
             Assert.IsNotNull (c);
@@ -433,7 +433,7 @@ namespace Test.Common
             Assert.AreEqual (command.Name.LocalName, Xml.AirSync.Add);
             var h = new NachoCore.ActiveSync.AsHelpers ();
             XNamespace Ns = Xml.AirSync.Ns;
-            NcResult r = h.ParseCalendar (Ns, command);
+            NcResult r = h.ParseCalendar (1, Ns, command);
             Assert.IsNotNull (r.GetValue<McCalendar> ());
             var c = r.GetValue<McCalendar> ();
             Assert.IsNull (c.Location);
@@ -463,7 +463,7 @@ namespace Test.Common
             Assert.AreEqual (command.Name.LocalName, Xml.AirSync.Add);
             var h = new NachoCore.ActiveSync.AsHelpers ();
             XNamespace Ns = Xml.AirSync.Ns;
-            NcResult r = h.ParseCalendar (Ns, command);
+            NcResult r = h.ParseCalendar (1, Ns, command);
             Assert.IsNotNull (r.GetValue<McCalendar> ());
             var c = r.GetValue<McCalendar> ();
             Assert.IsNotNull (c);
@@ -477,13 +477,13 @@ namespace Test.Common
             Assert.AreEqual (command.Name.LocalName, Xml.AirSync.Add);
             var h = new NachoCore.ActiveSync.AsHelpers ();
             XNamespace Ns = Xml.AirSync.Ns;
-            NcResult r = h.ParseCalendar (Ns, command);
+            NcResult r = h.ParseCalendar (1, Ns, command);
             Assert.IsNotNull (r.GetValue<McCalendar> ());
             var c = r.GetValue<McCalendar> ();
             Assert.IsNotNull (c);
 
             var changeCommand = System.Xml.Linq.XElement.Parse (changeString_04);
-            r = h.ParseCalendar (Ns, changeCommand);
+            r = h.ParseCalendar (1, Ns, changeCommand);
             Assert.IsNotNull (r.GetValue<McCalendar> ());
             var d = r.GetValue<McCalendar> ();
             Assert.IsNotNull (d);
@@ -497,7 +497,7 @@ namespace Test.Common
             Assert.IsNotNull (command);
             var h = new NachoCore.ActiveSync.AsHelpers ();
             XNamespace Ns = Xml.Calendar.Ns;
-            var exception = h.ParseExceptions (Ns, command);
+            var exception = h.ParseExceptions (1, Ns, command);
             Assert.IsNotNull (exception);
         }
 

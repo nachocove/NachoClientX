@@ -1,120 +1,81 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
+using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
-    public class McBody : McAbstrObject
+    public class McBody : McAbstrFileDesc
     {
-        public bool IsValid { get; set; }
+        public static McBody Instance {
+            get {
+                if (instance == null) {
+                    lock (syncRoot) {
+                        if (instance == null) {
+                            instance = new McBody ();
+                        }
+                    }
+                }
+                return (McBody)instance; 
+            }
+        }
+
+        public override string GetFilePathSegment ()
+        {
+            return "bodies";
+        }
+
+        public override bool IsReferenced ()
+        {
+            // TODO: find a clean way to iterate over all derived classes of McAbstrItem.
+            return (0 != McEmailMessage.QueryByBodyIdIncAwaitDel<McEmailMessage> (AccountId, Id).Count () ||
+                0 != McCalendar.QueryByBodyIdIncAwaitDel<McCalendar> (AccountId, Id).Count () ||
+                0 != McContact.QueryByBodyIdIncAwaitDel<McContact> (AccountId, Id).Count () ||
+                0 != McTask.QueryByBodyIdIncAwaitDel<McTask> (AccountId, Id).Count ());
+        }
+
+        public McBody InsertSaveStart (int accountId)
+        {
+            var body = new McBody () {
+                AccountId = accountId,
+            };
+            return (McBody)CompleteInsertSaveStart (body);
+        }
+
+        public McBody InsertFile (int accountId, string content)
+        {
+            var body = new McBody () {
+                AccountId = accountId,
+            };
+            return (McBody)CompleteInsertFile (body, content);
+        }
+
+        public McBody InsertDuplicate (int accountId)
+        {
+            var body = new McBody () {
+                AccountId = accountId,
+            };
+            return (McBody)CompleteInsertDuplicate (body);
+        }
+
+        public McBody InsertDuplicate (int accountId, int srcBodyId)
+        {
+            var body = new McBody () {
+                AccountId = accountId,
+            };
+            return (McBody)CompleteInsertDuplicate (body, srcBodyId);
+        }
 
         /// Body type is stored in McItem, along with the item's index to McBody.
         /// This circumvents reading db just to get body type. Most references to
         /// bodies are to get its path, which is computed with the body id, without
         /// reading from the database.
         /// 
+        /// TODO: covernt to using AirSync TypeCode so enum is defined in one place.
         /// AirSync.TypeCode PlainText_1, Html_2, Rtf_3, Mime_4
         public const int PlainText = 1;
         public const int HTML = 2;
         public const int RTF = 3;
         public const int MIME = 4;
-
-        public string Body {
-            get { return Get (Id); }
-        }
-
-        public string BodyPath {
-            get { return GetBodyPath (Id); }
-        }
-
-        public static string GetBodyPath (int id)
-        {
-            if (0 == id) {
-                return null;
-            }
-            return Path.Combine (NcModel.Instance.BodiesDir, id.ToString ());
-        }
-
-        public static McBody SaveStart ()
-        {
-            var body = new McBody ();
-            body.IsValid = false;
-            body.Insert ();
-            return body;
-        }
-
-        public void SaveDone ()
-        {
-            IsValid = true;
-            Update ();
-        }
-
-        public static McBody Save (string content)
-        {
-            var body = SaveStart ();
-            File.WriteAllText (GetBodyPath (body.Id), content);
-
-            body.SaveDone ();
-            return body;
-        }
-
-        public void UpdateBody (string content)
-        {
-            File.WriteAllText (GetBodyPath (Id), content);
-
-            if (!IsValid) {
-                SaveDone ();
-            } else {
-                Update ();
-            }
-        }
-
-        public FileStream SaveFileStream ()
-        {
-            return File.OpenWrite (GetBodyPath (Id));
-        }
-
-        public static int Duplicate (int id)
-        {
-            if (0 == id) {
-                return 0;
-            }
-            var body = SaveStart ();
-            File.Copy (GetBodyPath (id), GetBodyPath (body.Id));
-            body.SaveDone ();
-            return body.Id;
-        }
-
-        public static McBody GetDescr (int id)
-        {
-            if (0 == id) {
-                return null;
-            }
-            var body = NcModel.Instance.Db.Get<McBody> (id);
-            return (null == body || !body.IsValid) ? null : body;
-        }
-
-        public static string Get (int id)
-        {
-            if (0 == id) {
-                return null;
-            }
-            var body = NcModel.Instance.Db.Get<McBody> (id);
-            if (!body.IsValid) {
-                return null;
-            }
-            return File.ReadAllText (GetBodyPath (id));
-        }
-
-        public static void Delete (int id)
-        {
-            if (0 == id) {
-                return;
-            }
-            var body = NcModel.Instance.Db.Get<McBody> (id);
-            body.IsValid = false;
-            body.Update ();
-            File.Delete (GetBodyPath (id));
-            body.Delete ();
-        }
     }
 }
