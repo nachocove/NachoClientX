@@ -540,7 +540,7 @@ namespace NachoClient.iOS
 
             var smsButton = UIButton.FromType (UIButtonType.RoundedRect);
             smsButton.Frame = new RectangleF (View.Frame.Width - 24 - 15 - 24 - 15, 10, 24, 24);
-            smsButton.SetImage (UIImage.FromBundle ("contact-call-grey"), UIControlState.Normal);
+            smsButton.SetImage (UIImage.FromBundle ("icn-sms"), UIControlState.Normal);
             smsButton.TouchUpInside += (sender, e) => {
                 TouchedSmsButton (phone.Value);
             };
