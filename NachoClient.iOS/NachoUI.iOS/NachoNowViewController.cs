@@ -46,6 +46,7 @@ namespace NachoClient.iOS
             revealButton.Target = this.RevealViewController ();
 
             // Multiple buttons on the left side
+            Util.SetOriginalImageForButton (revealButton, "navbar-icn-menu");
             Util.SetOriginalImageForButton (nachoButton, "nav-nachonow");
 
             NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };

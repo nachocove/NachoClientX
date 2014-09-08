@@ -73,9 +73,11 @@ namespace NachoClient.iOS
                 deleteButton,
             };
 
-            Util.SetOriginalImageForButton (archiveButton, "email-archive");
-            Util.SetOriginalImageForButton (saveButton, "email-fileinfolder");
-            Util.SetOriginalImageForButton (deleteButton, "email-delete");
+
+            Util.SetOriginalImageForButton (replyButton, "toolbar-icn-reply");
+            Util.SetOriginalImageForButton (archiveButton, "email-archive-gray");
+            Util.SetOriginalImageForButton (saveButton, "email-fileinfolder-gray");
+            Util.SetOriginalImageForButton (deleteButton, "email-delete-gray");
 
             // Multiple buttons on the right side
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
@@ -648,20 +650,20 @@ namespace NachoClient.iOS
             string icon;
             switch (message.UserAction) {
             case 0:
-                icon = (message.isHot () ? "icn-nothot" : "icn-hot");
+                icon = (message.isHot () ? "icn-nothot-gray" : "icn-hot-gray");
                 break;
             case 1:
-                icon = "icn-nothot";
+                icon = "icn-nothot-gray";
                 break;
             case -1:
-                icon = "icn-hot";
+                icon = "icn-hot-gray";
                 break;
             default:
                 icon = "shutup";
                 NcAssert.CaseError ();
                 break;
             }
-            chiliButton.Image = UIImage.FromBundle (icon);
+            Util.SetOriginalImageForButton (chiliButton, icon);
         }
 
         protected void RenderBody (McEmailMessage message)

@@ -47,6 +47,7 @@ namespace NachoClient.iOS
         protected static UIColor _Color_NachoYellow = null;
         protected static UIColor _Color_NachoBlue = null;
         protected static UIColor _Color_NachoLightGray = null;
+        protected static UIColor _Color_NachoGray = null;
         protected static UIColor _Color_NachoSeparator = null;
         protected static UIColor _Color_NachoDarkText = null;
         protected static UIColor _Color_NachoLightText = null;
@@ -385,6 +386,15 @@ namespace NachoClient.iOS
                     _Color_NachoLightGray = UIColor.FromRGB (0xf7, 0xf7, 0xf7);
                 }
                 return _Color_NachoLightGray;
+            }
+        }
+
+        public static UIColor Color_NachoGray {
+            get {
+                if (null == _Color_NachoGray) {
+                    _Color_NachoGray = UIColor.FromRGB (0x77, 0x77, 0x77);
+                }
+                return _Color_NachoGray;
             }
         }
 

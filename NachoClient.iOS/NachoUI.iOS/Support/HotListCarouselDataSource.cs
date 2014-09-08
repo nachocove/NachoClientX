@@ -159,31 +159,36 @@ namespace NachoClient.iOS
                 preventBarButtonGC = new List<UIBarButtonItem> ();
             }
 
-            var replyButton = new UIBarButtonItem (UIImage.FromBundle ("toolbar-icn-reply"), UIBarButtonItemStyle.Plain, null);
+            var replyButton = new UIBarButtonItem ();
+            Util.SetOriginalImageForButton (replyButton, "toolbar-icn-reply");
             replyButton.Clicked += (object sender, EventArgs e) => {
                 ReplyActionSheet (view);
             };
             preventBarButtonGC.Add (replyButton);
 
-            var chiliButton = new UIBarButtonItem (UIImage.FromBundle ("icn-nothot"), UIBarButtonItemStyle.Plain, null);
+            var chiliButton = new UIBarButtonItem ();
+            Util.SetOriginalImageForButton (chiliButton, "icn-nothot-gray");
             chiliButton.Clicked += (object sender, EventArgs e) => {
                 onChiliButtonClicked (view);
             };
             preventBarButtonGC.Add (chiliButton);
 
-            var deferButton = new UIBarButtonItem (UIImage.FromBundle ("email-defer"), UIBarButtonItemStyle.Plain, null);
+            var deferButton = new UIBarButtonItem ();
+            Util.SetOriginalImageForButton (deferButton, "email-defer-gray");
             deferButton.Clicked += (object sender, EventArgs e) => {
                 onDeferButtonClicked (view);
             };
             preventBarButtonGC.Add (deferButton);
 
-            var saveButton = new UIBarButtonItem (UIImage.FromBundle ("email-fileinfolder"), UIBarButtonItemStyle.Plain, null);
+            var saveButton = new UIBarButtonItem ();
+            Util.SetOriginalImageForButton (saveButton, "email-fileinfolder-gray");
             saveButton.Clicked += (object sender, EventArgs e) => {
                 onSaveButtonClicked (view);
             };
             preventBarButtonGC.Add (saveButton);
 
-            var archiveButton = new UIBarButtonItem (UIImage.FromBundle ("email-archive"), UIBarButtonItemStyle.Plain, null);
+            var archiveButton = new UIBarButtonItem ();
+            Util.SetOriginalImageForButton (archiveButton, "email-archive-gray");
             archiveButton.Clicked += (object sender, EventArgs e) => {
                 onArchiveButtonClicked (view);
             };
@@ -196,7 +201,8 @@ namespace NachoClient.iOS
             fixedSpace.Width = 25;
             preventBarButtonGC.Add (fixedSpace);
 
-            var deleteButton = new UIBarButtonItem (UIImage.FromBundle ("email-delete"), UIBarButtonItemStyle.Plain, null);
+            var deleteButton = new UIBarButtonItem ();
+            Util.SetOriginalImageForButton (deleteButton, "email-delete-gray");
             deleteButton.Clicked += (object sender, EventArgs e) => {
                 onDeleteButtonClicked (view);
             };
