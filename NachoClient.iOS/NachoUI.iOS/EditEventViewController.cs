@@ -501,8 +501,9 @@ namespace NachoClient.iOS
                     startDateLabel.Text = Pretty.FullDateTimeString (date);
                 }
                 startDate = date;
-                if (!endChanged) {
+                if (!endChanged && !allDaySwitch.On) {
                     endDate = date.AddHours (1);
+                    endDatePicker.Date = endDate;
                     endDateLabel.Text = Pretty.FullTimeString (endDate);
                     endDateLabel.SizeToFit ();
                     endDateLabel.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, 12.438f, endDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
