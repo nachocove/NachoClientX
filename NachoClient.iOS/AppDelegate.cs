@@ -11,6 +11,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Xml.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Diagnostics;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using NachoCore;
@@ -73,6 +74,11 @@ namespace NachoClient.iOS
                 // For an explanation, see:
                 // http://forums.xamarin.com/discussion/187/how-do-i-generate-dsym-for-simulator
                 Log.Info (Log.LOG_LIFECYCLE, "Crash reporting is disabled on simulator");
+                return;
+            }
+
+            if (Debugger.IsAttached) {
+                Log.Info (Log.LOG_LIFECYCLE, "Crash reporting is disabled when debugger is attached");
                 return;
             }
 
