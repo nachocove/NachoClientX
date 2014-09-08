@@ -7,6 +7,10 @@ namespace NachoCore.Model
 {
     public class McBody : McAbstrFileDesc
     {
+        protected static object syncRoot = new Object ();
+
+        protected static volatile McBody instance;
+
         public static McBody Instance {
             get {
                 if (instance == null) {
@@ -20,6 +24,11 @@ namespace NachoCore.Model
             }
         }
 
+        protected override bool IsInstance ()
+        {
+            return this == instance;
+        }
+
         public override string GetFilePathSegment ()
         {
             return "bodies";
@@ -27,6 +36,7 @@ namespace NachoCore.Model
 
         public override bool IsReferenced ()
         {
+            NcAssert.True (!IsInstance ());
             // TODO: find a clean way to iterate over all derived classes of McAbstrItem.
             return (0 != McEmailMessage.QueryByBodyIdIncAwaitDel<McEmailMessage> (AccountId, Id).Count () ||
                 0 != McCalendar.QueryByBodyIdIncAwaitDel<McCalendar> (AccountId, Id).Count () ||

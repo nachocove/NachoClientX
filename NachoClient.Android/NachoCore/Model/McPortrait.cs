@@ -1,73 +1,59 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
+using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
-    // TODO - copy paste from McBody here. Need to unify descriptor + file logic.
-    public class McPortrait : McAbstrObject
+    public class McPortrait : McAbstrFileDesc
     {
-        public bool IsValid { get; set; }
+        protected static object syncRoot = new Object ();
 
-        public byte[] Body {
-            get { return Get (Id); }
-        }
+        protected static volatile McPortrait instance;
 
-        public string PortraitPath {
-            get { return GetPortraitPath (Id); }
-        }
-
-        public static string GetPortraitPath (int id)
-        {
-            if (0 == id) {
-                return null;
+        public static McPortrait Instance {
+            get {
+                if (instance == null) {
+                    lock (syncRoot) {
+                        if (instance == null) {
+                            instance = new McPortrait ();
+                        }
+                    }
+                }
+                return (McPortrait)instance; 
             }
-            return Path.Combine (NcModel.Instance.PortraitsDir, id.ToString ());
         }
 
-        public static McPortrait SaveStart ()
+        protected override bool IsInstance ()
         {
-            var portrait = new McPortrait ();
-            portrait.IsValid = false;
-            portrait.Insert ();
-            return portrait;
+            return this == instance;
         }
 
-        public void SaveDone ()
+        public override string GetFilePathSegment ()
         {
-            IsValid = true;
-            Update ();
+            return "portraits";
         }
 
-        public static McPortrait Save (byte[] content)
+        public override bool IsReferenced ()
         {
-            var portrait = SaveStart ();
-            File.WriteAllBytes (GetPortraitPath (portrait.Id), content);
-            portrait.SaveDone ();
-            return portrait;
+            NcAssert.True (!IsReferenced ());
+            return (0 != McContact.QueryByPortraitIdIncAwaitDel (AccountId, Id).Count ());
         }
 
-        public static byte[] Get (int id)
+        public McPortrait InsertSaveStart (int accountId)
         {
-            if (0 == id) {
-                return null;
-            }
-            var portrait = NcModel.Instance.Db.Get<McPortrait> (id);
-            if (!portrait.IsValid) {
-                return null;
-            }
-            return File.ReadAllBytes (GetPortraitPath (id));
+            var body = new McPortrait () {
+                AccountId = accountId,
+            };
+            return (McPortrait)CompleteInsertSaveStart (body);
         }
 
-        public static void Delete (int id)
+        public McPortrait InsertFile (int accountId, byte[] content)
         {
-            if (0 == id) {
-                return;
-            }
-            var portrait = McPortrait.QueryById<McPortrait> (id);
-            portrait.IsValid = false;
-            portrait.Update ();
-            File.Delete (GetPortraitPath (id));
-            portrait.Delete ();
+            var body = new McPortrait () {
+                AccountId = accountId,
+            };
+            return (McPortrait)CompleteInsertFile (body, content);
         }
     }
 }

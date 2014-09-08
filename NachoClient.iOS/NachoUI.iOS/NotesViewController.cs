@@ -143,7 +143,7 @@ namespace NachoClient.iOS
             } else {
                 McBody contactBody = McBody.QueryById<McBody> (contactItem.BodyId);
                 if (null != contactBody) {
-                    notesTextView.Text = contactBody.GetContents ();
+                    notesTextView.Text = contactBody.GetContentsString ();
                 }
             }
 
