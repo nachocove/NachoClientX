@@ -64,6 +64,8 @@ namespace NachoClient.iOS
             ToolbarItems = new UIBarButtonItem[] {
                 replyButton,
                 flexibleSpaceButton,
+                chiliButton,
+                flexibleSpaceButton,
                 archiveButton,
                 spacer,
                 saveButton,
