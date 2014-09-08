@@ -53,6 +53,7 @@ namespace NachoClient.iOS
             revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
             revealButton.Target = this.RevealViewController ();
 
+            Util.SetOriginalImageForButton (revealButton, "navbar-icn-menu");
             Util.SetOriginalImageForButton (nachoButton, "nav-nachonow");
 
             // Multiple buttons on the left side

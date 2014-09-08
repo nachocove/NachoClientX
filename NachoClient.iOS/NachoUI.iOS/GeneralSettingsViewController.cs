@@ -38,7 +38,7 @@ namespace NachoClient.iOS
             NavigationItem.Title = "Settings";
             menuButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
             menuButton.Target = this.RevealViewController ();
-            menuButton.Image = UIImage.FromBundle ("navbar-icn-menu");
+            Util.SetOriginalImageForButton (menuButton, "navbar-icn-menu");
             Util.SetOriginalImageForButton (nowButton, "nav-nachonow");
             nowButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("GeneralSettingsToNachoNow", this);

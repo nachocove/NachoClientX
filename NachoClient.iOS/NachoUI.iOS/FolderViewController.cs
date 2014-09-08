@@ -32,6 +32,7 @@ namespace NachoClient.iOS
 
             // Multiple buttons on the left side
             NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
+            Util.SetOriginalImageForButton (revealButton, "navbar-icn-menu");
             Util.SetOriginalImageForButton (nachoButton, "nav-nachonow");
             nachoButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue("FoldersToNachoNow", this);
