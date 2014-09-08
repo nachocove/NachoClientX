@@ -482,7 +482,7 @@ namespace NachoClient.iOS
 
             var bigNumberView = new UILabel (new RectangleF (0, 0, 65, 75));
             bigNumberView.Font = A.Font_AvenirNextDemiBold30;
-            bigNumberView.TextColor = A.Color_29CCBE;
+            bigNumberView.TextColor = A.Color_NachoBlue;
             bigNumberView.TextAlignment = UITextAlignment.Center;
             view.AddSubview (bigNumberView);
 
@@ -493,7 +493,7 @@ namespace NachoClient.iOS
             }
 
             var addButton = new UIButton (UIButtonType.ContactAdd);
-            addButton.TintColor = A.Color_NachoBlue;
+            addButton.TintColor = A.Color_999999;
             addButton.Frame = new RectangleF (tableView.Frame.Width - 42, (view.Frame.Height / 2) - 15, 30, 30);
             addButton.TouchUpInside += (sender, e) => {
                 owner.PerformSegueForDelegate ("CalendarToEditEventView", new SegueHolder (date));
