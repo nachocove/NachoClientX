@@ -529,8 +529,8 @@ namespace Test.Common
             }
             if (type.Equals ("exceptions")) {
                 List<McException> exceptions = new List<McException> ();
-                exceptions.Add (new McException () { AccountId = c.AccountId });
-                exceptions.Add (new McException () { AccountId = c.AccountId });
+                exceptions.Add (new McException () { AccountId = c.AccountId, ExceptionStartTime = new DateTime(2011, 3, 17), });
+                exceptions.Add (new McException () { AccountId = c.AccountId, ExceptionStartTime = new DateTime(2011, 3, 18), });
                 c.exceptions = exceptions;
             }
 
@@ -725,6 +725,36 @@ namespace Test.Common
             var f = McCalendar.QueryById<McCalendar> (c.Id);
             Assert.AreEqual (0, c.exceptions.Count);
             Assert.AreEqual (0, f.exceptions.Count);
+        }
+
+        [Test]
+        public void QueryExceptionDateLimits()
+        {
+            var e0 = McException.QueryForExceptionId (0, DateTime.MinValue);
+            Assert.IsNull (e0);
+            var e1 = McException.QueryForExceptionId (1, DateTime.MinValue);
+            Assert.IsNull (e1);
+            var e2 = McException.QueryForExceptionId (1, DateTime.MaxValue);
+            Assert.IsNull (e2);
+
+            var c = InsertSimpleEvent ("exceptions");
+            var e3 = McException.QueryForExceptionId (c.Id, DateTime.MinValue);
+            Assert.IsNull (e3);
+            var e4 = McException.QueryForExceptionId (c.Id, DateTime.MaxValue);
+            Assert.IsNull (e4);
+        }
+
+        [Test]
+        [ExpectedException( "System.InvalidOperationException" )]
+        public void QueryExceptionDuplicate()
+        {
+            var c = InsertSimpleEvent ("exceptions");
+            foreach (var e in c.exceptions) {
+                e.ExceptionStartTime = new DateTime (2011, 3, 17);
+            }
+            c.Update ();
+            var e5 = McException.QueryForExceptionId (c.Id, new DateTime (2011, 3, 17));
+            Assert.IsNotNull (e5);
         }
 
         String addString_01 = @"
