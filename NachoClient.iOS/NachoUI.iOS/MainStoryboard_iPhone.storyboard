@@ -911,6 +911,38 @@
             </objects>
             <point key="canvasLocation" x="-48" y="860"/>
         </scene>
+        <!--Credentials Ask View Controller-->
+        <scene sceneID="Mxz-Dm-4gL">
+            <objects>
+                <viewController storyboardIdentifier="CredentialsAskViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="VDO-OG-GJY" customClass="CredentialsAskViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="uUY-QH-xp7">
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <subviews>
+                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="xqS-6N-LvE">
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                <subviews>
+                                    <view contentMode="scaleToFill" id="JB1-8n-Xrf">
+                                        <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                                    </view>
+                                </subviews>
+                            </scrollView>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                    </view>
+                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
+                    <connections>
+                        <outlet property="contentView" destination="JB1-8n-Xrf" id="35e-Fw-bzN"/>
+                        <outlet property="scrollView" destination="xqS-6N-LvE" id="5dg-41-9nG"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="rSD-4U-AAw" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="695" y="875"/>
+        </scene>
         <!--Contact Chooser View Controller - Chooser-->
         <scene sceneID="Ora-ag-cc2">
             <objects>
