@@ -388,7 +388,7 @@ namespace NachoCore.ActiveSync
             n.LastName = c.LastName;
             n.MiddleName = c.MiddleName;
             if (0 != c.PortraitId) {
-                var data = McPortrait.Get (c.PortraitId);
+                var data = McPortrait.Instance.GetContentsByteArray (c.PortraitId);
                 n.Picture = Convert.ToBase64String (data);
             }
             n.Suffix = c.Suffix;
@@ -491,7 +491,7 @@ namespace NachoCore.ActiveSync
             c.MiddleName = MiddleName;
             c.OfficeLocation = OfficeLocation;
             if (null != Picture) {
-                var portrait = McPortrait.Save (Convert.FromBase64String (Picture));
+                var portrait = McPortrait.Instance.InsertFile (AccountId, Convert.FromBase64String (Picture));
                 c.PortraitId = portrait.Id;
             }
             c.Suffix = Suffix;

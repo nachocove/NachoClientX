@@ -147,7 +147,7 @@ namespace NachoCore.ActiveSync
                 NcAssert.True (null != body);
                 xmlAppData.Add (new XElement (AirSyncBaseNs + Xml.AirSyncBase.Body,
                     new XElement (AirSyncBaseNs + Xml.AirSyncBase.Type, cal.BodyType),
-                    new XElement (AirSyncBaseNs + Xml.AirSyncBase.Data, body.GetContents ())));
+                    new XElement (AirSyncBaseNs + Xml.AirSyncBase.Data, body.GetContentsString ())));
             }
 
             if (0 != cal.attendees.Count) {

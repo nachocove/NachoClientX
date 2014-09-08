@@ -100,7 +100,7 @@ namespace NachoPlatform
 
                 if (Person.HasImage) {
                     var data = Person.GetImage (ABPersonImageFormat.OriginalSize);
-                    var portrait = McPortrait.Save (data.ToArray ());
+                    var portrait = McPortrait.Instance.InsertFile (accountId, data.ToArray ());
                     contact.PortraitId = portrait.Id;
                 }
                 // TODO: Street addresses, IM addresses, etc.

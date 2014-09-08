@@ -132,7 +132,7 @@ namespace NachoCore.Model
 
         public string GetBody ()
         {
-            return McBody.Instance.GetContents (BodyId);
+            return McBody.Instance.GetContentsString (BodyId);
         }
 
         public string GetBodyPath ()

@@ -14,13 +14,6 @@ namespace NachoCore.Model
     // Derived classes must implement singleton logic (C# FAIL).
     public class McAbstrFileDesc : McAbstrObjectPerAcc
     {
-        protected static volatile McAbstrFileDesc instance;
-        protected static object syncRoot = new Object ();
-        protected bool IsInstance ()
-        {
-            return this == instance;
-        }
-
         public bool IsValid { get; set; }
 
         public DateTime FileGCOkAfter { get; set; }
@@ -33,6 +26,13 @@ namespace NachoCore.Model
 
         public FilePresenceEnum FilePresence { get; set; }
 
+        protected virtual bool IsInstance ()
+        {
+            // Pseudo-abstract.
+            NcAssert.True (false);
+            return false;
+        }
+
         public virtual string GetFilePathSegment ()
         {
             // Pseudo-abstract.
@@ -40,22 +40,22 @@ namespace NachoCore.Model
             return null;
         }
 
+        public virtual bool IsReferenced ()
+        {
+            // Pseudo-abstract. Derived class must not allow for Instance.
+            NcAssert.True (false);
+            return true;
+        }
+
         public string GetFilePath ()
         {
             NcAssert.True (!IsInstance () && 0 != Id);
-            return instance.GetFilePath (Id);
+            return GetFilePath (Id);
         }
 
         public string GetFilePath (int descId)
         {
             return Path.Combine (NcModel.Instance.GetFileDirPath (GetFilePathSegment ()), descId.ToString ());
-        }
-
-        public virtual bool IsReferenced ()
-        {
-            // Pseudo-abstract. Derived class must block for Instance.
-            NcAssert.True (false);
-            return true;
         }
 
         public enum FileSizeAccuracyEnum
@@ -74,6 +74,7 @@ namespace NachoCore.Model
 
         public FileStream SaveFileStream ()
         {
+            NcAssert.True (!IsInstance ());
             return File.OpenWrite (GetFilePath ());
         }
 
@@ -102,6 +103,17 @@ namespace NachoCore.Model
             return desc2;
         }
 
+        // Derived class must implement McXxx InsertFile (). This calls the derived class 
+        // constructor and passes it through CompleteInsertFile. Must be IsInstance only.
+        protected McAbstrFileDesc CompleteInsertFile (McAbstrFileDesc desc, byte[] content)
+        {
+            NcAssert.True (IsInstance ());
+            var desc2 = _CompleteInsertSaveStart (desc);
+            File.WriteAllBytes (desc2.GetFilePath (), content);
+            desc2.UpdateSaveFinish ();
+            return desc2;
+        }
+
         // Derived class must implement McXxx InsertDuplicate (). This calls the derived class 
         // constructor and passes it through CompleteInsertDuplicate. Must not be IsInstance only.
         protected McAbstrFileDesc CompleteInsertDuplicate (McAbstrFileDesc desc)
@@ -119,7 +131,7 @@ namespace NachoCore.Model
         {
             NcAssert.True (IsInstance ());
             var desc2 = _CompleteInsertSaveStart (desc);
-            File.Copy (instance.GetFilePath (descId), desc2.GetFilePath ());
+            File.Copy (GetFilePath (descId), desc2.GetFilePath ());
             desc2.UpdateSaveFinish ();
             return desc;
         }
@@ -141,25 +153,63 @@ namespace NachoCore.Model
                 Update ();
             }
         }
-
-        public string GetContents ()
+        /// <summary>
+        /// Gets the contents as a string.
+        /// Not callable on Instance.
+        /// </summary>
+        /// <returns>The contents string.</returns>
+        public string GetContentsString ()
         {
             NcAssert.True (!IsInstance ());
-            return _GetContents (Id);
+            return _GetContentsString (Id);
         }
-
-        public string GetContents (int descId)
+        /// <summary>
+        /// Gets the contents as a byte array.
+        /// Not callable on Instance.
+        /// </summary>
+        /// <returns>The contents byte array.</returns>
+        public byte[] GetContentsByteArray ()
+        {
+            NcAssert.True (!IsInstance ());
+            return _GetContentsByteArray (Id);
+        }
+        /// <summary>
+        /// Gets the contents as string.
+        /// Callable only via Instance.
+        /// </summary>
+        /// <returns>The contents string.</returns>
+        /// <param name="descId">Desc identifier.</param>
+        public string GetContentsString (int descId)
         {
             NcAssert.True (IsInstance ());
-            return _GetContents (descId);
+            return _GetContentsString (descId);
+        }
+        /// <summary>
+        /// Gets the contents as byte array.
+        /// Callable only via Instance.
+        /// </summary>
+        /// <returns>The contents byte array.</returns>
+        /// <param name="descId">Desc identifier.</param>
+        public byte[] GetContentsByteArray (int descId)
+        {
+            NcAssert.True (IsInstance ());
+            return _GetContentsByteArray (descId);
         }
 
-        private string _GetContents (int descId)
+        private string _GetContentsString (int descId)
         {
             if (0 == descId) {
                 return null;
             }
             return File.ReadAllText (GetFilePath (descId));
+        }
+
+        private byte[] _GetContentsByteArray (int descId)
+        {
+            if (0 == descId) {
+                return null;
+            }
+            return File.ReadAllBytes (GetFilePath (descId));
         }
 
         public override int Delete ()

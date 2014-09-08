@@ -76,7 +76,7 @@ namespace NachoCore.Model
             Directory.CreateDirectory (Path.Combine (Documents, AttachmentsDir));
             BodiesDir = GetFileDirPath (McBody.Instance.GetFilePathSegment ());
             Directory.CreateDirectory (Path.Combine (Documents, BodiesDir));
-            PortraitsDir = Path.Combine (Documents, "portraits");
+            PortraitsDir = GetFileDirPath (McPortrait.Instance.GetFilePathSegment ());
             Directory.CreateDirectory (Path.Combine (Documents, PortraitsDir));
         }
 
