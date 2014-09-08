@@ -430,7 +430,7 @@ namespace NachoClient.iOS
 
             McBody contactBody = McBody.QueryById<McBody> (contact.BodyId);
             if (null != contactBody) {
-                notesTextView.Text = contactBody.Body;
+                notesTextView.Text = contactBody.GetContents ();
             }
 
             if (contact.Source != McAbstrItem.ItemSource.ActiveSync) {

@@ -242,7 +242,7 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        public static NcResult FromXML (XNamespace ns, XElement command)
+        public static NcResult FromXML (int accountId, XNamespace ns, XElement command)
         {
             var h = new AsHelpers ();
 
@@ -273,7 +273,7 @@ namespace NachoCore.ActiveSync
                         if (null != saveAttr) {
                             c.BodyId = int.Parse (saveAttr.Value);
                         } else {
-                            var body = McBody.Save (bodyElement.Value);
+                            var body = McBody.Instance.InsertFile (accountId, bodyElement.Value);
                             c.BodyId = body.Id;
                         }
                         c.BodyType = bodyType;

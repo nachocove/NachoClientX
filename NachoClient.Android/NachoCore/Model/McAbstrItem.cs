@@ -75,6 +75,12 @@ namespace NachoCore.Model
                     McFolder.UnlinkAll (this);
                     if (0 == PendingRefCount) {
                         var result = base.Delete ();
+                        if (0 < BodyId) {
+                            var body = McBody.QueryById<McBody> (BodyId);
+                            if (null != body) {
+                                body.Delete ();
+                            }
+                        }
                         DeleteAncillary ();
                         returnVal = result;
                     } else {
@@ -88,6 +94,16 @@ namespace NachoCore.Model
                 return -1;
             }
             return returnVal;
+        }
+
+        public static IEnumerable<T> QueryByBodyIdIncAwaitDel<T> (int accountId, int bodyId) where T : McAbstrItem, new()
+        {
+            return NcModel.Instance.Db.Query<T> (
+                string.Format ("SELECT f.* FROM {0} AS f WHERE " +
+                    " f.AccountId = ? AND " +
+                    " f.BodyId = ? ",
+                    typeof(T).Name), 
+                accountId, bodyId);
         }
 
         public static T QueryByClientId<T> (int accountId, string clientId) where T : McAbstrItem, new()
@@ -116,27 +132,17 @@ namespace NachoCore.Model
 
         public string GetBody ()
         {
-            return McBody.Get (BodyId);
-        }
-
-        public McBody GetBodyDescr ()
-        {
-            return McBody.GetDescr (BodyId);
+            return McBody.Instance.GetContents (BodyId);
         }
 
         public string GetBodyPath ()
         {
-            return McBody.GetBodyPath (BodyId);
+            return McBody.Instance.GetFilePath (BodyId);
         }
 
         public int GetBodyType ()
         {
             return BodyType;
-        }
-
-        protected void DeleteBody ()
-        {
-            McBody.Delete (BodyId);
         }
 
         public string GetBodyPreviewOrEmpty()

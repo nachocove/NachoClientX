@@ -733,7 +733,7 @@ namespace NachoCore.Model
                 NcAssert.True (null != body);
                 xmlAppData.Add (new XElement (AirSyncBaseNs + Xml.AirSyncBase.Body,
                     new XElement (AirSyncBaseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
-                    new XElement (AirSyncBaseNs + Xml.AirSyncBase.Data, body.Body)));
+                    new XElement (AirSyncBaseNs + Xml.AirSyncBase.Data, body.GetContents ())));
             }
 
             if (0 != NativeBodyType) {

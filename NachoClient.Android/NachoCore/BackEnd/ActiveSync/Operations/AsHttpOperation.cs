@@ -545,13 +545,12 @@ namespace NachoCore.ActiveSync
                     case ContentTypeWbxml:
                         var decoder = new ASWBXML (cToken);
                         try {
-                            decoder.LoadBytes (ContentData);
+                            decoder.LoadBytes (BEContext.Account.Id, ContentData);
                         } catch (OperationCanceledException) {
                             // FIXME: we could have orphaned McBody(s). HardFail isn't accurate.
                             Owner.ResolveAllDeferred ();
                             return Final ((uint)SmEvt.E.HardFail, "WBXCANCEL");
                         } catch (WBXMLReadPastEndException) {
-                            // FIXME: we could have orphaned McBody(s). HardFail isn't accurate.
                             // We are deferring because we think that an invalid WBXML string is likely transient.
                             Owner.ResolveAllDeferred ();
                             return Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPRDPEND");

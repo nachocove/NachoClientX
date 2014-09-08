@@ -109,7 +109,7 @@ namespace Test.Common
         {
             // Set up folder
             var x05 = System.Xml.Linq.XElement.Parse (string_05);
-            var cr05 = AsContact.FromXML (NachoCore.ActiveSync.AsSyncCommand.Ns, x05);
+            var cr05 = AsContact.FromXML (1, NachoCore.ActiveSync.AsSyncCommand.Ns, x05);
             var c05 = cr05.GetValue<AsContact> ();
             Assert.True (cr05.isOK ());
             Assert.NotNull (c05);

@@ -52,7 +52,7 @@ namespace NachoCore.ActiveSync
                     ServerSaysAddOrChangeEmail (XmlCommand, Folder);
                     break;
                 case Xml.AirSync.ClassCode.Calendar:
-                    ServerSaysAddOrChangeCalendarItem (XmlCommand, Folder);
+                    ServerSaysAddOrChangeCalendarItem (AccountId, XmlCommand, Folder);
                     break;
                 case Xml.AirSync.ClassCode.Tasks:
                     ServerSaysAddOrChangeTask (XmlCommand, Folder);

@@ -224,11 +224,7 @@ namespace NachoCore.Model
 
         public string MimePath ()
         {
-            var body = McBody.GetDescr (BodyId);
-            if (null == body) {
-                return null;
-            }
-            return body.BodyPath;
+            return McBody.Instance.GetFilePath (BodyId);
         }
 
         public void DeleteAttachments ()
@@ -642,8 +638,7 @@ namespace NachoCore.Model
                     }
                 }
             }
-            DeleteBody ();
-            DeleteAttachments ();
+            DeleteAttachments (); // FIXME.
             DeleteAncillaryData (NcModel.Instance.Db);
         }
 

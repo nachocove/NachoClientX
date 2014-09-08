@@ -314,7 +314,8 @@ namespace NachoCore.Utils
         {
             var c = DefaultMeeting ();
             c.Subject = message.Subject;
-            c.BodyId = McBody.Duplicate (message.BodyId);
+            var dupBody = McBody.Instance.InsertDuplicate (message.AccountId, message.BodyId);
+            c.BodyId = dupBody.Id;
             c.attendees = new System.Collections.Generic.List<McAttendee> ();
             c.attendees.AddRange (CreateAttendeeList (message.From, NcAttendeeType.Required));
             c.attendees.AddRange (CreateAttendeeList (message.To, NcAttendeeType.Required));
