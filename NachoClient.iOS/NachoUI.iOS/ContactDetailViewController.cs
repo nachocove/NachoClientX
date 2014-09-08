@@ -242,6 +242,7 @@ namespace NachoClient.iOS
 
             var segmentedControl = new UISegmentedControl ();
             segmentedControl.Frame = new RectangleF (6, yOffset, View.Frame.Width - 12, 30);
+            segmentedControl.TintColor = A.Color_NachoGray;
             segmentedControl.InsertSegment ("Contact Info", 0, false);
             segmentedControl.InsertSegment ("Interactions", 1, false);
             segmentedControl.InsertSegment ("Notes", 2, false);
@@ -249,7 +250,7 @@ namespace NachoClient.iOS
 
             var segmentedControlTextAttributes = new UITextAttributes ();
             segmentedControlTextAttributes.Font = A.Font_AvenirNextRegular14;
-            segmentedControlTextAttributes.TextColor = A.Color_NachoBlue;
+            segmentedControlTextAttributes.TextColor = A.Color_NachoGray;
             segmentedControl.SetTitleTextAttributes (segmentedControlTextAttributes, UIControlState.Normal);
 
             segmentedControl.ValueChanged += (sender, e) => {
@@ -482,7 +483,7 @@ namespace NachoClient.iOS
             view.AddSubview (labelLabel);
 
             var imageView = new UIImageView (new RectangleF (View.Frame.Width - 24 - 15, 10, 24, 24));
-            imageView.Image = UIImage.FromBundle ("contact-quickemail");
+            imageView.Image = UIImage.FromBundle ("contact-quickemail-gray");
             view.AddSubview (imageView);
 
             var tap = new UITapGestureRecognizer ((UITapGestureRecognizer obj) => {

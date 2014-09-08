@@ -37,9 +37,13 @@ namespace NachoClient.iOS
 
             TableView.Source = contactTableViewSource;
             TableView.SeparatorColor = A.Color_NachoSeparator;
+            TableView.Frame = new RectangleF (0, -1, View.Frame.Width, View.Frame.Height);
             SearchDisplayController.SearchResultsTableView.Source = contactTableViewSource;
 
-            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { A.RevealButton (this), A.NachoNowButton (this) };
+            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] {
+                A.RevealButton (this),
+                A.NachoNowButton (this)
+            };
 
             var searchButton = new UIBarButtonItem (UIBarButtonSystemItem.Search);
 
@@ -50,7 +54,7 @@ namespace NachoClient.iOS
             };
 
             searchButton.Clicked += (object sender, EventArgs e) => {
-                SearchDisplayController.SearchBar.BecomeFirstResponder();
+                SearchDisplayController.SearchBar.BecomeFirstResponder ();
             };
         }
 

@@ -162,6 +162,9 @@ namespace NachoClient.iOS
             segmentedControl.InsertSegment ("Required", 1, false);
             segmentedControl.InsertSegment ("Optional", 2, false);
             segmentedControl.SelectedSegment = 0;
+            segmentedControl.SelectedSegment = 0;
+            segmentedControl.TintColor = A.Color_NachoGray;
+
 
             var segmentedControlTextAttributes = new UITextAttributes ();
             segmentedControlTextAttributes.Font = A.Font_AvenirNextRegular12;
