@@ -13,6 +13,7 @@ using MimeKit;
 using NachoCore.Model;
 using NachoCore.Utils;
 using SWRevealViewControllerBinding;
+using System.Text;
 
 namespace NachoClient.iOS
 {
@@ -55,6 +56,10 @@ namespace NachoClient.iOS
         string PresetSubject;
         string EmailTemplate;
         McAttachment PresetAttachment;
+
+        // If this is a reply or forward, keep track of the quoted text that is inserted.
+        // This makes it possible to check later if the user changed the text.
+        private string initialQuotedText = null;
 
         protected float LINE_HEIGHT = 40;
         protected float LEFT_INDENT = 15;
@@ -667,9 +672,19 @@ namespace NachoClient.iOS
             mimeMessage.Subject = Pretty.SubjectString (subjectField.Text);
             mimeMessage.Date = System.DateTime.UtcNow;
 
+            bool originalEmailIsEmbedded = true;
+            string bodyText = bodyTextView.Text;
+            if (initialQuotedText != null && bodyText.EndsWith (initialQuotedText)) {
+                // This is a reply or forward, and the user didn't changed the quoted text.
+                // Strip the quoted text from the body of the message and instead have the
+                // server add in the original message.
+                originalEmailIsEmbedded = false;
+                bodyText = bodyText.Remove (bodyText.Length - initialQuotedText.Length);
+            }
+
             var body = new BodyBuilder ();
 
-            body.TextBody = bodyTextView.Text;
+            body.TextBody = bodyText;
 
             foreach (var attachment in attachmentView.AttachmentList) {
                 body.Attachments.Add (attachment.FilePath ());
@@ -692,9 +707,9 @@ namespace NachoClient.iOS
                     }
                     int folderId = folders [0].Id;
                     if (Action.Equals (Forward)) {
-                        NachoCore.BackEnd.Instance.ForwardEmailCmd (mcMessage.AccountId, mcMessage.Id, actionMessage.Id, folderId, true);
+                        NachoCore.BackEnd.Instance.ForwardEmailCmd (mcMessage.AccountId, mcMessage.Id, actionMessage.Id, folderId, originalEmailIsEmbedded);
                     } else {
-                        NachoCore.BackEnd.Instance.ReplyEmailCmd (mcMessage.AccountId, mcMessage.Id, actionMessage.Id, folderId, true);
+                        NachoCore.BackEnd.Instance.ReplyEmailCmd (mcMessage.AccountId, mcMessage.Id, actionMessage.Id, folderId, originalEmailIsEmbedded);
                     }
                     messageSent = true;
                 }
@@ -770,28 +785,29 @@ namespace NachoClient.iOS
             subjectField.Text = CreateInitialSubjectLine ();
 
             // TODO: Setup message id, etc etc.
-            // Handle body
-            if (Action.Equals (Forward)) {
-                // TODO: Compose needs to be smart about MIME messages.
-                string fwdText = MimeHelpers.ExtractTextPart (ActionMessage);
-                string fwdquotedText = QuoteForReply (fwdText);
-                bodyTextView.Text = fwdquotedText;
-                return;
-            }
 
-            string someText = MimeHelpers.ExtractTextPart (ActionMessage);
-            string quotedText = QuoteForReply (someText);
-            bodyTextView.Text = quotedText;
+            // Populate the body of the outgoing message with the quoted text from the message being acted on.
+            // Right now this is identical for forward and reply.  But that might change as the behavior is refined.
+            initialQuotedText = MimeHelpers.ExtractTextPart (ActionMessage);
+            string headersText = FormatBasicHeaders (ActionMessage);
+            bodyTextView.Text = "\n\n" + headersText + initialQuotedText;
         }
 
-        string QuoteForReply (string s)
+        // Build up the text for the header part of the message being forwarded or replied to.
+        private string FormatBasicHeaders (McEmailMessage message)
         {
-            if (null == s) {
-                return s;
+            StringBuilder result = new StringBuilder ();
+            result.Append ("-------------------\n");
+            result.Append ("From: ").Append (message.From ?? "").Append ("\n");
+            if (message.To != null && message.To.Length > 0) {
+                result.Append ("To: ").Append (message.To).Append ("\n");
             }
-            string[] lines = s.Split (new Char[] { '\n' });
-            string quotes = "\n> " + String.Join ("\n> ", lines);
-            return quotes;
+            if (message.Cc != null && message.Cc.Length > 0) {
+                result.Append ("Cc: ").Append (message.Cc).Append ("\n");
+            }
+            result.Append ("Subject: ").Append (message.Subject ?? "").Append ("\n");
+            result.Append ("Date: ").Append (message.DateReceived.ToLocalTime().ToString ("U")).Append ("\n\n");
+            return result.ToString ();
         }
 
         /// <summary>
