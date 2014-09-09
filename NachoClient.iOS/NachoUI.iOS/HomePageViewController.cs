@@ -132,7 +132,8 @@ namespace NachoClient.iOS
             this.pageContainerView = new UIView (new RectangleF(0,0, this.owner.View.Bounds.Width, this.owner.View.Bounds.Height-48));
             pageContainerView.BackgroundColor = A.Color_NachoGreen;
 
-            if (View.Frame.Height == 480) {
+            if (UIScreen.MainScreen.Bounds.Height == 480) {
+
                 this.contentContainer = new UIView (new RectangleF (54 , 60, 212, 306)); // see size of helpercontainer
                 this.helperContainer = new UIView (new RectangleF (0, this.contentContainer.Frame.Bottom, pageContainerView.Frame.Width, pageContainerView.Frame.Bottom - this.contentContainer.Frame.Bottom));// contains the helpertext and labels  
                 this.helperTitleText = new UILabel (new RectangleF (0, 12, helperContainer.Frame.Width, 20));
