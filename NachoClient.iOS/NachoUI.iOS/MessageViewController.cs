@@ -366,7 +366,6 @@ namespace NachoClient.iOS
         }
 
         const int USER_IMAGE_TAG = 101;
-        const int USER_LABEL_TAG = 110;
         const int FROM_TAG = 102;
         const int SUBJECT_TAG = 103;
         const int REMINDER_TEXT_TAG = 104;
@@ -375,6 +374,8 @@ namespace NachoClient.iOS
         const int RECEIVED_DATE_TAG = 107;
         const int SEPARATOR_TAG = 108;
         const int SPINNER_TAG = 109;
+        const int USER_LABEL_TAG = 110;
+        const int USER_CHILI_TAG = 111;
         const int MESSAGE_PART_TAG = 300;
         const int CALENDAR_PART_TAG = 400;
         const int ATTACHMENT_VIEW_TAG = 301;
@@ -447,6 +448,16 @@ namespace NachoClient.iOS
 
             yOffset += 20;
 
+            // Received label view
+            var receivedLabelView = new UILabel (new RectangleF (65, yOffset, 250, 20));
+            receivedLabelView.Font = A.Font_AvenirNextRegular14;
+            receivedLabelView.TextColor = A.Color_9B9B9B;
+            receivedLabelView.TextAlignment = UITextAlignment.Left;
+            receivedLabelView.Tag = RECEIVED_DATE_TAG;
+            view.AddSubview (receivedLabelView);
+
+            yOffset += 20;
+
             // Reminder image view
             var reminderImageView = new UIImageView (new RectangleF (65, yOffset + 4, 12, 12));
             reminderImageView.Image = UIImage.FromBundle ("inbox-icn-deadline");
@@ -460,8 +471,15 @@ namespace NachoClient.iOS
             reminderLabelView.Tag = REMINDER_TEXT_TAG;
             view.AddSubview (reminderLabelView);
 
+
+            // Chili image view
+            var chiliImageView = new UIImageView (new RectangleF (View.Frame.Width - 20 - 15, 18, 20, 20));
+            chiliImageView.Image = UIImage.FromBundle("icn-red-chili-small");
+            chiliImageView.Tag = USER_CHILI_TAG;
+            view.AddSubview (chiliImageView);
+
             // Attachment image view
-            // Attachment 'x' will be adjusted to be left of date received field
+            // Attachment 'x' will be adjusted to be left of hot image field
             var attachmentImageView = new UIImageView (new RectangleF (200, 18, 16, 16));
             attachmentImageView.Image = UIImage.FromBundle ("inbox-icn-attachment");
             attachmentImageView.Tag = ATTACHMENT_ICON_TAG;
@@ -473,14 +491,6 @@ namespace NachoClient.iOS
             tapAttachmentIconGestureRecognizer.Enabled = true;
             attachmentImageView.UserInteractionEnabled = true;
             attachmentImageView.AddGestureRecognizer (tapAttachmentIconGestureRecognizer);
-
-            // Received label view
-            var receivedLabelView = new UILabel (new RectangleF (220, 18, 100, 20));
-            receivedLabelView.Font = A.Font_AvenirNextRegular14;
-            receivedLabelView.TextColor = A.Color_9B9B9B;
-            receivedLabelView.TextAlignment = UITextAlignment.Right;
-            receivedLabelView.Tag = RECEIVED_DATE_TAG;
-            view.AddSubview (receivedLabelView);
 
             // Separator
             yOffset += 5;
@@ -564,7 +574,15 @@ namespace NachoClient.iOS
             subjectLabelView.Text = Pretty.SubjectString (message.Subject);
             subjectLabelView.SizeToFit ();
 
-            var yOffset = subjectLabelView.Frame.Bottom;
+            // Received label view
+            var receivedLabelView = View.ViewWithTag (RECEIVED_DATE_TAG) as UILabel;
+            receivedLabelView.Text = Pretty.FullDateTimeString (message.DateReceived);
+            receivedLabelView.SizeToFit ();
+            var receivedLabelFrame = receivedLabelView.Frame;
+            receivedLabelFrame.Y = subjectLabelView.Frame.Bottom;
+            receivedLabelView.Frame = receivedLabelFrame;
+
+            var yOffset = receivedLabelView.Frame.Bottom;
  
             // Reminder image view and label
             var reminderImageView = View.ViewWithTag (REMINDER_ICON_TAG) as UIImageView;
@@ -587,20 +605,22 @@ namespace NachoClient.iOS
             var separatorView = View.ViewWithTag (SEPARATOR_TAG);
             separatorView.Frame = new RectangleF (0, yOffset, View.Frame.Width, 1);
 
-            // Received label view
-            var receivedLabelView = View.ViewWithTag (RECEIVED_DATE_TAG) as UILabel;
-            receivedLabelView.Text = Pretty.CompactDateString (message.DateReceived);
-            receivedLabelView.SizeToFit ();
-            var receivedLabelRect = receivedLabelView.Frame;
-            receivedLabelRect.X = View.Frame.Width - 15 - receivedLabelRect.Width;
-            receivedLabelRect.Height = 20;
-            receivedLabelView.Frame = receivedLabelRect;
+            // Chili image view
+            var chiliImageView = View.ViewWithTag (USER_CHILI_TAG) as UIImageView;
+            float X;
+            if (message.isHot ()) {
+                chiliImageView.Hidden = false;
+                X = chiliImageView.Frame.X;
+            } else {
+                chiliImageView.Hidden = true;
+                X = View.Frame.Width;
+            }
 
             // Attachment image view
             var attachmentImageView = View.ViewWithTag (ATTACHMENT_ICON_TAG) as UIImageView;
             attachmentImageView.Hidden = (0 == attachments.Count);
             var attachmentImageRect = attachmentImageView.Frame;
-            attachmentImageRect.X = receivedLabelRect.X - 10 - 16;
+            attachmentImageRect.X = X - 10 - 16;
             attachmentImageView.Frame = attachmentImageRect;
 
             // From label view
