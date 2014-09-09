@@ -38,6 +38,8 @@ namespace NachoClient.iOS
 
         protected NSTimer toolTipTimer;
 
+        protected bool animationOneHasReset = true;
+
         //View Two Components
         protected UIImageView mailRedDot;
         protected UIImageView swipeMailLeft;
@@ -52,6 +54,8 @@ namespace NachoClient.iOS
         protected NSTimer swipeMailLeftTimer;
         protected NSTimer swipeMailRightTimer;
 
+        protected bool animationTwoHasReset = true;
+
         //View Three Components
         protected UIImageView pullimageView;
         protected UIImageView calimageView;
@@ -65,6 +69,8 @@ namespace NachoClient.iOS
 
         protected NSTimer pullDownCalendarTimer;
         protected NSTimer flashPullDotTimer;
+
+        protected bool animationThreeHasReset = true;
 
         //View Four Components
         protected UIImageView emailCellView;
@@ -83,8 +89,9 @@ namespace NachoClient.iOS
         protected NSTimer flashDotsSecondTimer;
         protected NSTimer swipeRightTimer;
         protected NSTimer revertRightToCenterTimer;
+        protected NSTimer moveDotsTimer;
 
-
+        protected bool animationFourHasReset = true;
 
         public HomePageController (int pageIndex) : base ("HomePageController", null)
         {
@@ -229,16 +236,28 @@ namespace NachoClient.iOS
 
             switch (this.PageIndex) {
             case 0:
-                AnimateViewOne ();
+                if (animationOneHasReset) {
+                    AnimateViewOne ();
+                    animationOneHasReset = false;
+                }
                 break;
             case 1:
-                AnimateViewTwo ();
+                if (animationTwoHasReset) {
+                    AnimateViewTwo ();
+                    animationTwoHasReset = false;
+                }
                 break;
             case 2:
-                AnimateViewThree ();
+                if (animationThreeHasReset) {
+                    AnimateViewThree ();
+                    animationThreeHasReset = false;
+                }
                 break;
             case 3:
-                AnimateViewFour ();
+                if (animationFourHasReset == true) {
+                    AnimateViewFour ();
+                    animationFourHasReset = false;
+                }
                 break;
             }
         }
@@ -340,7 +359,7 @@ namespace NachoClient.iOS
             contentView.AddSubview (inboximageView);
 
             mailRedDot = new UIImageView (UIImage.FromBundle ("red_pointer.png"));
-            mailRedDot.Center = new PointF (swipeMailLeft.Frame.X + 60, swipeMailLeft.Center.Y);
+            mailRedDot.Center = new PointF (swipeMailLeft.Frame.X + 130, swipeMailLeft.Center.Y);
             mailRedDotCenter = mailRedDot.Center;
             contentView.AddSubview(mailRedDot);
 
@@ -404,7 +423,7 @@ namespace NachoClient.iOS
             contentContainer.AddSubview (redSwipeCellView);
 
             swipeDotView = new UIImageView (UIImage.FromBundle ("red_pointer.png"));
-            swipeDotView.Center = new PointF (emailCellView.Center.X - 30, emailCellView.Center.Y);
+            swipeDotView.Center = new PointF (emailCellView.Center.X + 30, emailCellView.Center.Y);
             swipeDotCenter = swipeDotView.Center;
             contentContainer.AddSubview(swipeDotView);
 
@@ -452,11 +471,11 @@ namespace NachoClient.iOS
                         swipeMailRight.Center = new PointF (swipeMailRight.Center.X - this.contentContainer.Frame.Width, this.contentContainer.Frame.Height/2 +10 );
                     });
                 }, ((bool finished) => {
-                    mailRedDot.Center = new PointF(mailRedDotCenter.X + 70, mailRedDotCenter.Y);
                 }));
             });
 
             flashTwoTimer = NSTimer.CreateScheduledTimer (3.6, delegate {
+                mailRedDot.Center = new PointF(mailRedDotCenter.X - 80, mailRedDotCenter.Y);
                 UIView.AnimateKeyframes (2.1, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
                     UIView.AddKeyframeWithRelativeStartTime (0, .5, () => {
                         mailRedDot.Alpha = .5f;
@@ -511,80 +530,92 @@ namespace NachoClient.iOS
 
         public void AnimateViewFour ()
         {
-            flashDotsFirstTimer = NSTimer.CreateScheduledTimer (.5, delegate {
-                UIView.AnimateKeyframes (1.5, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
-                    UIView.AddKeyframeWithRelativeStartTime (0, .5, () => {
-                        swipeDotView.Alpha = 0.4f;
-                    });
 
-                    UIView.AddKeyframeWithRelativeStartTime (.5, .5, () => {
-                        swipeDotView.Alpha = 1.0f;
-                    });
-                }, ((bool finished) => {
-                }));
+            flashDotsFirstTimer = NSTimer.CreateScheduledTimer (.5, delegate {
+                    UIView.AnimateKeyframes (1.5, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+                        UIView.AddKeyframeWithRelativeStartTime (0, .5, () => {
+                            swipeDotView.Alpha = 0.4f;
+                        });
+
+                        UIView.AddKeyframeWithRelativeStartTime (.5, .5, () => {
+                            swipeDotView.Alpha = 1.0f;
+                        });
+                    }, ((bool finished) => {
+                    }));
             });
 
             swipeLeftTimer = NSTimer.CreateScheduledTimer (3, delegate {
-                UIView.AnimateKeyframes (.7, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
-                    UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
-                        swipeDotView.Center = new PointF(swipeDotView.Center.X - redSwipeCellView.Frame.Width, swipeDotView.Center.Y);
-                        redSwipeCellView.Center = new PointF(redSwipeCellView.Center.X - redSwipeCellView.Frame.Width, redSwipeCellView.Center.Y);
-                        emailCellView.Center = new PointF(emailCellView.Center.X - emailCellView.Frame.Width, emailCellView.Center.Y);
-                    });
+                    UIView.AnimateKeyframes (.7, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+                        UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
+                            swipeDotView.Center = new PointF(swipeDotView.Center.X - redSwipeCellView.Frame.Width, swipeDotView.Center.Y);
+                            redSwipeCellView.Center = new PointF(redSwipeCellView.Center.X - redSwipeCellView.Frame.Width, redSwipeCellView.Center.Y);
+                            emailCellView.Center = new PointF(emailCellView.Center.X - emailCellView.Frame.Width, emailCellView.Center.Y);
+                            swipeDotView.Alpha = 0.0f;
+                        });
 
-                }, ((bool finished) => {
-                    swipeDotView.Alpha = 0.0f;
-                }));
+                    }, ((bool finished) => {
+                    }));
             });
 
             revertLeftToCenterTimer = NSTimer.CreateScheduledTimer (4, delegate {
-                UIView.AnimateKeyframes (.7, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
-                    UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
-                        swipeDotView.Center = new PointF(swipeDotView.Center.X + redSwipeCellView.Frame.Width, swipeDotView.Center.Y);
-                        redSwipeCellView.Center = new PointF(redSwipeCellView.Center.X + redSwipeCellView.Frame.Width, redSwipeCellView.Center.Y);
-                        emailCellView.Center = new PointF(emailCellView.Center.X + emailCellView.Frame.Width, emailCellView.Center.Y);
-                    });
+                    UIView.AnimateKeyframes (.7, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+                        UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
+                            swipeDotView.Center = new PointF(swipeDotView.Center.X + redSwipeCellView.Frame.Width, swipeDotView.Center.Y);
+                            redSwipeCellView.Center = new PointF(redSwipeCellView.Center.X + redSwipeCellView.Frame.Width, redSwipeCellView.Center.Y);
+                            emailCellView.Center = new PointF(emailCellView.Center.X + emailCellView.Frame.Width, emailCellView.Center.Y);
+                        });
 
-                }, ((bool finished) => {
-                    swipeDotView.Center = new PointF(swipeDotCenter.X + 70, swipeDotCenter.Y);
-                    swipeDotView.Alpha = 1.0f;
-                }));
+                    }, ((bool finished) => {
+
+                    }));
             });
+
+            moveDotsTimer = NSTimer.CreateScheduledTimer (4.7, delegate {
+                    UIView.AnimateKeyframes (.2, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+                        UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
+                            swipeDotView.Center = new PointF(swipeDotCenter.X - 70, swipeDotCenter.Y);
+                        });
+
+                    }, ((bool finished) => {
+
+                    }));
+            });
+
 
             flashDotsSecondTimer = NSTimer.CreateScheduledTimer (5.2, delegate {
-                UIView.AnimateKeyframes (1.7, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+                    UIView.AnimateKeyframes (1.7, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
 
-                    UIView.AddKeyframeWithRelativeStartTime (0, .5, () => {
-                        swipeDotView.Alpha = 0.4f;
-                    });
+                        UIView.AddKeyframeWithRelativeStartTime (0, .5, () => {
+                            swipeDotView.Alpha = 0.4f;
+                        });
 
-                    UIView.AddKeyframeWithRelativeStartTime (.5, .5, () => {
-                        swipeDotView.Alpha = 1.0f;
-                    });
-                }, ((bool finished) => {
-                }));
+                        UIView.AddKeyframeWithRelativeStartTime (.5, .5, () => {
+                            swipeDotView.Alpha = 1.0f;
+                        });
+                    }, ((bool finished) => {
+                    }));
             });
 
-            swipeRightTimer = NSTimer.CreateScheduledTimer (6.9, delegate {
-                UIView.AnimateKeyframes (.8, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
-                    UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
-                        swipeDotView.Center = new PointF(swipeDotView.Center.X + redSwipeCellView.Frame.Width, swipeDotView.Center.Y);
-                        emailCellView.Center = new PointF(emailCellView.Center.X + emailCellView.Frame.Width, emailCellView.Center.Y);
-                        greenSwipeCellView.Center = new PointF (greenSwipeCellView.Center.X + greenSwipeCellView.Frame.Width, greenSwipeCellView.Center.Y);
-                    });
+            swipeRightTimer = NSTimer.CreateScheduledTimer (7.1, delegate {
+                    UIView.AnimateKeyframes (.8, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+                        UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
+                            swipeDotView.Center = new PointF(swipeDotView.Center.X + redSwipeCellView.Frame.Width, swipeDotView.Center.Y);
+                            emailCellView.Center = new PointF(emailCellView.Center.X + emailCellView.Frame.Width, emailCellView.Center.Y);
+                            greenSwipeCellView.Center = new PointF (greenSwipeCellView.Center.X + greenSwipeCellView.Frame.Width, greenSwipeCellView.Center.Y);
+                        });
 
-                }, ((bool finished) => {
-                }));
+                    }, ((bool finished) => {
+                    }));
             });
 
-            revertRightToCenterTimer = NSTimer.CreateScheduledTimer (8, delegate {
-                UIView.AnimateKeyframes (.8, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
-                    UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
-                        emailCellView.Center = new PointF(emailCellView.Center.X - emailCellView.Frame.Width, emailCellView.Center.Y);
-                        greenSwipeCellView.Center = new PointF (greenSwipeCellView.Center.X - greenSwipeCellView.Frame.Width, greenSwipeCellView.Center.Y);
-                    });
-                }, ((bool finished) => {
-                }));
+            revertRightToCenterTimer = NSTimer.CreateScheduledTimer (8.1, delegate {
+                    UIView.AnimateKeyframes (.8, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+                        UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
+                            emailCellView.Center = new PointF(emailCellView.Center.X - emailCellView.Frame.Width, emailCellView.Center.Y);
+                            greenSwipeCellView.Center = new PointF (greenSwipeCellView.Center.X - greenSwipeCellView.Frame.Width, greenSwipeCellView.Center.Y);
+                        });
+                    }, ((bool finished) => {
+                    }));
             });
         }
 
@@ -606,10 +637,17 @@ namespace NachoClient.iOS
             redToolTip.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
             greenButton.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
             greenToolTip.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
+
+            animationOneHasReset = true;
         }
 
         protected void ResetViewTwo()
         {
+            //Cancel any live animations
+            swipeMailLeft.Layer.RemoveAllAnimations ();
+            swipeMailRight.Layer.RemoveAllAnimations ();
+            mailRedDot.Layer.RemoveAllAnimations ();
+
             //Disable any active timers
             if (null != flashOneTimer) {
                 flashOneTimer.Invalidate ();
@@ -624,15 +662,12 @@ namespace NachoClient.iOS
                 swipeMailRightTimer.Invalidate ();
             }
 
-            //Cancel any live animations
-            swipeMailLeft.Layer.RemoveAllAnimations ();
-            swipeMailRight.Layer.RemoveAllAnimations ();
-            mailRedDot.Layer.RemoveAllAnimations ();
-
             //Move items back to original position
             swipeMailLeft.Center = swipeMailLeftCenter;
             swipeMailRight.Center = swipeMailRightCenter;
             mailRedDot.Center = mailRedDotCenter;
+
+            animationTwoHasReset = true;
         }
 
         protected void ResetViewThree ()
@@ -653,6 +688,8 @@ namespace NachoClient.iOS
             pullimageView.Center = pullimageCenter;
             timelineView.Center = timelineCenter;
             pullDownDotView.Center = pullDownDotCenter;
+
+            animationThreeHasReset = true;
         }
 
         protected void ResetViewFour()
@@ -667,11 +704,17 @@ namespace NachoClient.iOS
             if (null != revertLeftToCenterTimer) {
                 revertLeftToCenterTimer.Invalidate ();
             }
+
+            if (null != moveDotsTimer) {
+                moveDotsTimer.Invalidate ();
+            }
+
             if (null != flashDotsSecondTimer) {
                 flashDotsSecondTimer.Invalidate ();
             }
             if (null != swipeRightTimer) {
                 swipeRightTimer.Invalidate ();
+
             }
             if (null != revertRightToCenterTimer) {
                 revertRightToCenterTimer.Invalidate ();
@@ -688,6 +731,8 @@ namespace NachoClient.iOS
             greenSwipeCellView.Center = greenSwipeCenter;
             emailCellView.Center = emailCellViewCenter;
             swipeDotView.Center = swipeDotCenter;
+
+            animationFourHasReset = true;
         }
     }
 }
