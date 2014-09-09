@@ -248,39 +248,44 @@ namespace NachoClient.iOS
                     var contentFrame = new RectangleF (0, 0, View.Frame.Width, yOffset);
                     contentView.Frame = contentFrame;
                     scrollView.ContentSize = contentFrame.Size;
-                });
-            }, ((bool finished) => {
-                if (startLabel.Center != originalStartLabelCenter) {
-                    startLabel.Center = new PointF (startLabel.Center.X, startLabel.Center.Y - 38);
-                    emailBox.Center = new PointF (emailBox.Center.X, emailBox.Center.Y - 30);
-                    passwordBox.Center = new PointF (passwordBox.Center.X, passwordBox.Center.Y - 30);
-                    submitButton.Center = new PointF (submitButton.Center.X, submitButton.Center.Y - 20);
-                    advancedButton.Center = new PointF (advancedButton.Center.X, advancedButton.Center.Y - 30);
 
-                    if (View.Frame.Height == 480) {
-                        loginTriangles.Center = new PointF (loginTriangles.Center.X, loginTriangles.Center.Y - 30);
-                        startLabel.Center = new PointF (startLabel.Center.X, startLabel.Center.Y - 50);
-                        emailBox.Center = new PointF (emailBox.Center.X, emailBox.Center.Y - 35);
-                        passwordBox.Center = new PointF (passwordBox.Center.X, passwordBox.Center.Y - 35);
-                        submitButton.Center = new PointF (submitButton.Center.X, submitButton.Center.Y - 20);
-                    }
-                } else {
-                    if (keyboardHeight > 0) {
-                        startLabel.Center = new PointF (startLabel.Center.X, startLabel.Center.Y + 38);
-                        emailBox.Center = new PointF (emailBox.Center.X, emailBox.Center.Y + 30);
-                        passwordBox.Center = new PointF (passwordBox.Center.X, passwordBox.Center.Y + 30);
-                        submitButton.Center = new PointF (submitButton.Center.X, submitButton.Center.Y + 20);
-                        advancedButton.Center = new PointF (advancedButton.Center.X, advancedButton.Center.Y + 30);
+                    if (startLabel.Center != originalStartLabelCenter) {
+                        startLabel.Center = new PointF (startLabel.Center.X, startLabel.Center.Y - 23);
+                        emailBox.Center = new PointF (emailBox.Center.X, emailBox.Center.Y - 15);
+                        passwordBox.Center = new PointF (passwordBox.Center.X, passwordBox.Center.Y - 15);
+                        submitButton.Center = new PointF (submitButton.Center.X, submitButton.Center.Y - 5);
+                        advancedButton.Center = new PointF (advancedButton.Center.X, advancedButton.Center.Y - 20);
+                        loginTriangles.Center = new PointF (loginTriangles.Center.X, loginTriangles.Center.Y - 10);
 
                         if (View.Frame.Height == 480) {
-                            loginTriangles.Center = new PointF (loginTriangles.Center.X, loginTriangles.Center.Y + 30);
-                            startLabel.Center = new PointF (startLabel.Center.X, startLabel.Center.Y + 50);
-                            emailBox.Center = new PointF (emailBox.Center.X, emailBox.Center.Y + 35);
-                            passwordBox.Center = new PointF (passwordBox.Center.X, passwordBox.Center.Y + 35);
-                            submitButton.Center = new PointF (submitButton.Center.X, submitButton.Center.Y + 20);
+                            loginTriangles.Center = new PointF (loginTriangles.Center.X, loginTriangles.Center.Y - 55);
+                            startLabel.Center = new PointF (startLabel.Center.X, startLabel.Center.Y - 55);
+                            emailBox.Center = new PointF (emailBox.Center.X, emailBox.Center.Y - 40);
+                            passwordBox.Center = new PointF (passwordBox.Center.X, passwordBox.Center.Y - 40);
+                            submitButton.Center = new PointF (submitButton.Center.X, submitButton.Center.Y - 20);
+                        }
+                    } else {
+                        if (keyboardHeight > 0) {
+                            startLabel.Center = new PointF (startLabel.Center.X, startLabel.Center.Y + 23);
+                            emailBox.Center = new PointF (emailBox.Center.X, emailBox.Center.Y + 15);
+                            passwordBox.Center = new PointF (passwordBox.Center.X, passwordBox.Center.Y + 15);
+                            submitButton.Center = new PointF (submitButton.Center.X, submitButton.Center.Y + 5);
+                            advancedButton.Center = new PointF (advancedButton.Center.X, advancedButton.Center.Y + 20);
+                            loginTriangles.Center = new PointF (loginTriangles.Center.X, loginTriangles.Center.Y + 10);
+
+                            if (View.Frame.Height == 480) {
+                                loginTriangles.Center = new PointF (loginTriangles.Center.X, loginTriangles.Center.Y + 55);
+                                startLabel.Center = new PointF (startLabel.Center.X, startLabel.Center.Y + 55);
+                                emailBox.Center = new PointF (emailBox.Center.X, emailBox.Center.Y + 40);
+                                passwordBox.Center = new PointF (passwordBox.Center.X, passwordBox.Center.Y + 40);
+                                submitButton.Center = new PointF (submitButton.Center.X, submitButton.Center.Y + 20);
+                            }
                         }
                     }
-                }
+
+                });
+            }, ((bool finished) => {
+
             }));
         }
 
@@ -380,7 +385,7 @@ namespace NachoClient.iOS
         /// </param>
         protected virtual void OnKeyboardChanged (bool visible, float height)
         {
-            var newHeight = (visible ? height + 15 : 0);
+            var newHeight = (visible ? height : 0);
 
             if (newHeight == keyboardHeight) {
                 return;
@@ -390,7 +395,7 @@ namespace NachoClient.iOS
             LayoutView ();
 
             var advancedButton = contentView.ViewWithTag (ADVANCED_SIGNIN_BUTTON_TAG);
-            scrollView.ScrollRectToVisible (advancedButton.Frame, false);
+            scrollView.ScrollRectToVisible (new RectangleF(advancedButton.Frame.X, advancedButton.Frame.Y + 10, advancedButton.Frame.Width, advancedButton.Frame.Height), false);
         }
 
         protected void OnKeyboardChangeCompleted ()
