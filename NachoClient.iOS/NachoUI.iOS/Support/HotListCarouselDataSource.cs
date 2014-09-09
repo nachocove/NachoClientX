@@ -20,7 +20,6 @@ namespace NachoClient.iOS
     public class HotListCarouselDataSource : iCarouselDataSource
     {
         protected const int USER_IMAGE_TAG = 101;
-        protected const int USER_LABEL_TAG = 109;
         protected const int FROM_TAG = 102;
         protected const int SUBJECT_TAG = 103;
         protected const int PREVIEW_TAG = 104;
@@ -28,6 +27,8 @@ namespace NachoClient.iOS
         protected const int REMINDER_TEXT_TAG = 106;
         protected const int ATTACHMENT_TAG = 107;
         protected const int RECEIVED_DATE_TAG = 108;
+        protected const int USER_LABEL_TAG = 109;
+        protected const int USER_CHILI_TAG = 110;
         static List<UIView> PreventViewGC;
         static List<UIBarButtonItem> preventBarButtonGC;
         NachoNowViewController owner;
@@ -100,7 +101,7 @@ namespace NachoClient.iOS
             // From label view
             // Font will vary bold or regular, depending on isRead.
             // Size fields will be recalculated after text is known.
-            var fromLabelView = new UILabel (new RectangleF (65, 20, 150, 20));
+            var fromLabelView = new UILabel (new RectangleF (65, 10, 150, 20));
             fromLabelView.Font = A.Font_AvenirNextDemiBold17;
             fromLabelView.TextColor = A.Color_0F424C;
             fromLabelView.Tag = FROM_TAG;
@@ -109,23 +110,30 @@ namespace NachoClient.iOS
             // Subject label view
             // Size fields will be recalculated after text is known.
             // TODO: Confirm 'y' of Subject
-            var subjectLabelView = new UILabel (new RectangleF (65, 40, viewWidth - 15 - 65, 20));
+            var subjectLabelView = new UILabel (new RectangleF (65, 30, viewWidth - 15 - 65, 20));
             subjectLabelView.LineBreakMode = UILineBreakMode.TailTruncation;
             subjectLabelView.Font = A.Font_AvenirNextMedium14;
             subjectLabelView.TextColor = A.Color_0F424C;
             subjectLabelView.Tag = SUBJECT_TAG;
             view.AddSubview (subjectLabelView);
 
+            // Received label view
+            var receivedLabelView = new UILabel (new RectangleF (64, 50, 250, 20));
+            receivedLabelView.Font = A.Font_AvenirNextRegular14;
+            receivedLabelView.TextColor = A.Color_9B9B9B;
+            receivedLabelView.Tag = RECEIVED_DATE_TAG;
+            view.AddSubview (receivedLabelView);
+
             var bottomY = frame.Height - 44; // toolbar height is 44
 
             // Reminder image view
-            var reminderImageView = new UIImageView (new RectangleF (12, 60 + 4, 12, 12));
+            var reminderImageView = new UIImageView (new RectangleF (12, 70 + 4, 12, 12));
             reminderImageView.Image = UIImage.FromBundle ("inbox-icn-deadline");
             reminderImageView.Tag = REMINDER_ICON_TAG;
             view.AddSubview (reminderImageView);
 
             // Reminder label view
-            var reminderLabelView = new UILabel (new RectangleF (34, 60, 230, 20));
+            var reminderLabelView = new UILabel (new RectangleF (34, 70, 230, 20));
             reminderLabelView.Font = A.Font_AvenirNextRegular14;
             reminderLabelView.TextColor = A.Color_9B9B9B;
             reminderLabelView.Tag = REMINDER_TEXT_TAG;
@@ -133,27 +141,27 @@ namespace NachoClient.iOS
 
             // Preview label view
             // Size fields will be recalculated after text is known
-            var previewLabelView = new UILabel (new RectangleF (12, 60, viewWidth - 15 - 12, bottomY - 60));
+            var previewLabelView = new UILabel (new RectangleF (12, 70, viewWidth - 15 - 12, bottomY - 60));
             previewLabelView.Font = A.Font_AvenirNextRegular14;
             previewLabelView.TextColor = A.Color_NachoDarkText;
             previewLabelView.Lines = 0;
             previewLabelView.Tag = PREVIEW_TAG;
             view.AddSubview (previewLabelView);
 
+            // Chili image view
+            float rightMargin = viewWidth - 15;
+            float chiliX = rightMargin - 20;
+            var chiliImageView = new UIImageView (new RectangleF (chiliX, 8, 20, 20));
+            chiliImageView.Image = UIImage.FromBundle("icn-red-chili-small");
+            chiliImageView.Tag = USER_CHILI_TAG;
+            view.AddSubview (chiliImageView);
+
             // Attachment image view
-            // Attachment 'x' will be adjusted to be left of date received field
-            var attachmentImageView = new UIImageView (new RectangleF (200, 18, 16, 16));
+            // Attachment 'x' will be adjusted to be left of chili field
+            var attachmentImageView = new UIImageView (new RectangleF (chiliX - 10 - 16, 10, 16, 16));
             attachmentImageView.Image = UIImage.FromBundle ("inbox-icn-attachment");
             attachmentImageView.Tag = ATTACHMENT_TAG;
             view.AddSubview (attachmentImageView);
-
-            // Received label view
-            var receivedLabelView = new UILabel (new RectangleF (220, 18, 100, 20));
-            receivedLabelView.Font = A.Font_AvenirNextRegular14;
-            receivedLabelView.TextColor = A.Color_9B9B9B;
-            receivedLabelView.TextAlignment = UITextAlignment.Right;
-            receivedLabelView.Tag = RECEIVED_DATE_TAG;
-            view.AddSubview (receivedLabelView);
 
             if (null == preventBarButtonGC) {
                 preventBarButtonGC = new List<UIBarButtonItem> ();
@@ -334,14 +342,14 @@ namespace NachoClient.iOS
             // Size of preview, depends on reminder view
             var previewLabelView = view.ViewWithTag (PREVIEW_TAG) as UILabel;
 
-            var previewLabelViewHeight = view.Frame.Height - 60 - previewLabelAdjustment;
+            var previewLabelViewHeight = view.Frame.Height - 80 - previewLabelAdjustment;
             previewLabelViewHeight -= 44; // toolbar
             previewLabelViewHeight -= 4; // padding
 
             // Preview label view
             var previewLabelViewRect = previewLabelView.Frame;
             previewLabelViewRect.Height = previewLabelViewHeight;
-            previewLabelViewRect.Y = 60 + previewLabelAdjustment;
+            previewLabelViewRect.Y = 80 + previewLabelAdjustment;
             previewLabelView.Frame = previewLabelViewRect;
             var rawPreview = message.GetBodyPreviewOrEmpty ();
             int oldLength;
@@ -355,18 +363,16 @@ namespace NachoClient.iOS
 
             // Received label view
             var receivedLabelView = view.ViewWithTag (RECEIVED_DATE_TAG) as UILabel;
-            receivedLabelView.Text = Pretty.CompactDateString (message.DateReceived);
+            receivedLabelView.Text = Pretty.FullDateTimeString (message.DateReceived);
             receivedLabelView.SizeToFit ();
-            var receivedLabelRect = receivedLabelView.Frame;
-            receivedLabelRect.X = viewWidth - 15 - receivedLabelRect.Width;
-            receivedLabelRect.Height = 20;
-            receivedLabelView.Frame = receivedLabelRect;
+
+            // Chili image view - nothing to do. It is also shown
 
             // Attachment image view
             var attachmentImageView = view.ViewWithTag (ATTACHMENT_TAG) as UIImageView;
             attachmentImageView.Hidden = !message.cachedHasAttachments;
             var attachmentImageRect = attachmentImageView.Frame;
-            attachmentImageRect.X = receivedLabelRect.X - 10 - 16;
+            attachmentImageRect.X = viewWidth - 15 - 20 - 10 - 16;
             attachmentImageView.Frame = attachmentImageRect;
 
             // From label view
