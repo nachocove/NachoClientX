@@ -280,6 +280,11 @@ namespace NachoCore.Model
         private bool DependsUpon (McPending pred)
         {
             switch (Operation) {
+            case Operations.EmailForward:
+                return Smart_OriginalEmailIsEmbedded &&
+                Operations.AttachmentDownload == pred.Operation &&
+                pred.ServerId == ServerId;
+
             case Operations.FolderCreate:
                 return Operations.FolderCreate == pred.Operation && pred.ServerId == ParentId;
 
