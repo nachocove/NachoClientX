@@ -20,12 +20,15 @@ using MonoTouch.Dialog;
 
 namespace NachoClient.iOS
 {
-    public partial class MessageViewController : NcUIViewController, INachoMessageEditorParent, INachoFolderChooserParent, INachoCalendarItemEditorParent, INcDatePickerDelegate
+    public partial class MessageViewController : NcUIViewController, INachoMessageEditorParent,
+        INachoFolderChooserParent, INachoCalendarItemEditorParent, INcDatePickerDelegate, IUcAddressBlockDelegate
     {
         public McEmailMessageThread thread;
         protected UIView view;
         protected UIView attachmentListView;
         protected List<McAttachment> attachments;
+        protected UcAddressBlock toView;
+        protected UcAddressBlock ccView;
 
         protected UIBarButtonItem chiliButton;
         protected UIBarButtonItem deadlineButton;
@@ -40,6 +43,7 @@ namespace NachoClient.iOS
 
         protected bool errorLoadingBody;
         protected bool calendarRendered;
+        protected bool expandedHeader = false;
 
         public MessageViewController (IntPtr handle) : base (handle)
         {
@@ -404,6 +408,16 @@ namespace NachoClient.iOS
             };
             scrollView.AddGestureRecognizer (doubletap);
 
+            // A single tap on the header section (everything above the horizontal rule separator)
+            // toggles between the compact and expanded view of the header.
+            var singletap = new UITapGestureRecognizer ();
+            singletap.NumberOfTapsRequired = 1;
+            singletap.AddTarget (this, new MonoTouch.ObjCRuntime.Selector ("SingleTapSelector:"));
+            singletap.ShouldRecognizeSimultaneously = delegate {
+                return true;
+            };
+            view.AddGestureRecognizer (singletap);
+
             // User image view
             var userImageView = new UIImageView (new RectangleF (15, 15, 40, 40));
             userImageView.Layer.CornerRadius = 20;
@@ -431,6 +445,7 @@ namespace NachoClient.iOS
             fromLabelView.Font = A.Font_AvenirNextDemiBold17;
             fromLabelView.TextColor = A.Color_0F424C;
             fromLabelView.Tag = FROM_TAG;
+            fromLabelView.UserInteractionEnabled = true;
             view.AddSubview (fromLabelView);
 
             yOffset += 20;
@@ -455,6 +470,34 @@ namespace NachoClient.iOS
             view.AddSubview (receivedLabelView);
 
             yOffset += 20;
+
+            // To label view
+            toView = new UcAddressBlock (this, "To:", View.Frame.Width);
+            toView.SetCompact (false, -1);
+            toView.SetEditable (false);
+            toView.SetLineHeight (20);
+
+            var toViewFrame = toView.Frame;
+            toViewFrame.X = 8;
+            toViewFrame.Y = yOffset;
+            toViewFrame.Width = 250;
+            toViewFrame.Height = 0;
+            toView.Frame = toViewFrame;
+            view.AddSubview (toView);
+
+            // CC label view
+            ccView = new UcAddressBlock (this, "Cc:", View.Frame.Width);
+            ccView.SetCompact (false, -1);
+            ccView.SetEditable (false);
+            ccView.SetLineHeight (20);
+
+            var ccViewFrame = ccView.Frame;
+            ccViewFrame.X = 8;
+            ccViewFrame.Y = yOffset;
+            ccViewFrame.Width = 250;
+            ccViewFrame.Height = 0;
+            ccView.Frame = ccViewFrame;
+            view.AddSubview (ccView);
 
             // Reminder image view
             var reminderImageView = new UIImageView (new RectangleF (65, yOffset + 4, 12, 12));
@@ -580,7 +623,35 @@ namespace NachoClient.iOS
             receivedLabelFrame.Y = subjectLabelView.Frame.Bottom;
             receivedLabelView.Frame = receivedLabelFrame;
 
-            var yOffset = receivedLabelView.Frame.Bottom;
+            float yOffset;
+            if (!expandedHeader) {
+                yOffset = receivedLabelView.Frame.Bottom;
+                toView.Hidden = true;
+                ccView.Hidden = true;
+            } else {
+                toView.Clear ();
+                foreach (var address in NcEmailAddress.ParseToAddressListString (message.To, message.AccountId)) {
+                    toView.Append (address);
+                }
+                ccView.Clear ();
+                foreach (var address in NcEmailAddress.ParseCcAddressListString (message.Cc, message.AccountId)) {
+                    ccView.Append (address);
+                }
+                toView.Hidden = false;
+                ccView.Hidden = false;
+                toView.ConfigureView ();
+                ccView.ConfigureView ();
+
+                var toViewFrame = toView.Frame;
+                toViewFrame.Y = receivedLabelView.Frame.Bottom;
+                toView.Frame = toViewFrame;
+
+                var ccViewFrame = ccView.Frame;
+                ccViewFrame.Y = toView.Frame.Bottom;
+                ccView.Frame = ccViewFrame;
+
+                yOffset = ccView.Frame.Bottom;
+            }
  
             // Reminder image view and label
             var reminderImageView = View.ViewWithTag (REMINDER_ICON_TAG) as UIImageView;
@@ -787,6 +858,26 @@ namespace NachoClient.iOS
             } else {
                 scrollView.SetZoomScale (1.0f, true);
             }
+        }
+
+        [MonoTouch.Foundation.Export ("SingleTapSelector:")]
+        public void OnSingleTap (UIGestureRecognizer sender)
+        {
+            // Make sure the touch is in the header area
+            PointF touch = sender.LocationInView (view);
+            float bottom;
+            if (expandedHeader) {
+                bottom = ccView.Frame.Bottom;
+            } else {
+                bottom = view.ViewWithTag (RECEIVED_DATE_TAG).Frame.Bottom;
+            }
+            if (touch.Y > bottom) {
+                return;
+            }
+
+            // Toggle header display mode and redraw
+            expandedHeader = !expandedHeader;
+            ConfigureView ();
         }
 
         protected void RenderMime (string bodyPath)
@@ -1393,5 +1484,23 @@ namespace NachoClient.iOS
             spinner.StopAnimating ();
         }
 
+
+        // IUcAddressBlockDelegate
+        public void AddressBlockNeedsLayout (UcAddressBlock view)
+        {
+            view.Layout ();
+        }
+
+        public void AddressBlockWillBecomeActive (UcAddressBlock view)
+        {
+        }
+
+        public void AddressBlockWillBecomeInactive (UcAddressBlock view)
+        {
+        }
+
+        public void AddressBlockAddContactClicked(UcAddressBlock view, string prefix)
+        {
+        }
     }
 }

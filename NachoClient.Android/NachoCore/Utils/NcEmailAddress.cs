@@ -1,6 +1,7 @@
 //  Copyright (C) 2013 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Collections.Generic;
 using MimeKit;
 using NachoCore;
 using NachoCore.Model;
@@ -208,6 +209,51 @@ namespace NachoCore.Utils
             } else {
                 return new InternetAddressList ();
             }
+        }
+
+        private static List<NcEmailAddress> ParseAddressListString (string addressString,
+            Kind addressKind,int accountId = 0)
+        {
+            List<NcEmailAddress> addressList = new List<NcEmailAddress> ();
+            if (null == addressString) {
+                return addressList;
+            }
+            InternetAddressList inetAddressList;
+            if (!InternetAddressList.TryParse (addressString, out inetAddressList)) {
+                return addressList;
+            }
+            foreach (var inetAddress in inetAddressList.Mailboxes) {
+                NcEmailAddress address = new NcEmailAddress (addressKind, inetAddress.Address);
+                if (0 < accountId) {
+                    var contactList = McContact.QueryByEmailAddress (accountId, address.address);
+                    if (0 < contactList.Count) {
+                        // If there is more than one McContact that matches the email address,
+                        // prefer one that has a proper display name.
+                        foreach (var contact in contactList) {
+                            if ("" != contact.GetDisplayName ()) {
+                                address.contact = contact;
+                                break;
+                            }
+                        }
+                        // If no contact has a proper display name, default to 1st contact
+                        if (null == address.contact) {
+                            address.contact = contactList [0];
+                        }
+                    }
+                }
+                addressList.Add (address);
+            }
+            return addressList;
+        }
+
+        public static List<NcEmailAddress> ParseToAddressListString (string toAddressString, int accountId = 0)
+        {
+            return ParseAddressListString (toAddressString, Kind.To, accountId);
+        }
+
+        public static List<NcEmailAddress> ParseCcAddressListString (string ccAddressString, int accountId = 0)
+        {
+            return ParseAddressListString (ccAddressString, Kind.Cc, accountId);
         }
 
         /// <summary>
