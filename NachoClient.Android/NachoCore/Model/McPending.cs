@@ -253,6 +253,7 @@ namespace NachoCore.Model
             case Operations.FolderCreate:
             case Operations.FolderDelete:
             case Operations.FolderUpdate:
+            case Operations.EmailForward:
             case Operations.CalRespond:
             case Operations.CalMove:
             case Operations.ContactMove:
