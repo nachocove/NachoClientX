@@ -38,8 +38,6 @@ namespace NachoClient.iOS
 
         protected NSTimer toolTipTimer;
 
-        protected bool animationOneHasReset = true;
-
         //View Two Components
         protected UIImageView mailRedDot;
         protected UIImageView swipeMailLeft;
@@ -54,8 +52,6 @@ namespace NachoClient.iOS
         protected NSTimer swipeMailLeftTimer;
         protected NSTimer swipeMailRightTimer;
 
-        protected bool animationTwoHasReset = true;
-
         //View Three Components
         protected UIImageView pullimageView;
         protected UIImageView calimageView;
@@ -69,8 +65,6 @@ namespace NachoClient.iOS
 
         protected NSTimer pullDownCalendarTimer;
         protected NSTimer flashPullDotTimer;
-
-        protected bool animationThreeHasReset = true;
 
         //View Four Components
         protected UIImageView emailCellView;
@@ -90,8 +84,6 @@ namespace NachoClient.iOS
         protected NSTimer swipeRightTimer;
         protected NSTimer revertRightToCenterTimer;
         protected NSTimer moveDotsTimer;
-
-        protected bool animationFourHasReset = true;
 
         public HomePageController (int pageIndex) : base ("HomePageController", null)
         {
@@ -234,28 +226,20 @@ namespace NachoClient.iOS
 
             switch (this.PageIndex) {
             case 0:
-                if (animationOneHasReset) {
-                    AnimateViewOne ();
-                    animationOneHasReset = false;
-                }
+                ResetViewOne ();
+                AnimateViewOne ();
                 break;
             case 1:
-                if (animationTwoHasReset) {
-                    AnimateViewTwo ();
-                    animationTwoHasReset = false;
-                }
+                ResetViewTwo ();
+                AnimateViewTwo ();
                 break;
             case 2:
-                if (animationThreeHasReset) {
-                    AnimateViewThree ();
-                    animationThreeHasReset = false;
-                }
+                ResetViewThree ();
+                AnimateViewThree ();
                 break;
             case 3:
-                if (animationFourHasReset == true) {
-                    AnimateViewFour ();
-                    animationFourHasReset = false;
-                }
+                ResetViewFour ();
+                AnimateViewFour ();
                 break;
             }
         }
@@ -330,6 +314,7 @@ namespace NachoClient.iOS
             contentContainer.AddSubview (greenToolTip);
 
             CreateHelperText ();
+            contentContainer.ClipsToBounds = true;
             pageContainerView.AddSubview(contentContainer);
             pageContainerView.AddSubview (helperContainer);
         }
@@ -513,7 +498,7 @@ namespace NachoClient.iOS
             });
 
             pullDownCalendarTimer = NSTimer.CreateScheduledTimer (2, delegate {
-                UIView.AnimateKeyframes (.7, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+                UIView.AnimateKeyframes (1.1, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
                     UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
                         pullimageView.Center = new PointF (pullimageView.Center.X, pullimageView.Center.Y + contentContainer.Frame.Height);
                         calimageView.Center = new PointF (calimageView.Center.X, calimageView.Center.Y + contentContainer.Frame.Height);
@@ -635,8 +620,6 @@ namespace NachoClient.iOS
             redToolTip.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
             greenButton.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
             greenToolTip.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
-
-            animationOneHasReset = true;
         }
 
         protected void ResetViewTwo()
@@ -664,8 +647,6 @@ namespace NachoClient.iOS
             swipeMailLeft.Center = swipeMailLeftCenter;
             swipeMailRight.Center = swipeMailRightCenter;
             mailRedDot.Center = mailRedDotCenter;
-
-            animationTwoHasReset = true;
         }
 
         protected void ResetViewThree ()
@@ -686,8 +667,6 @@ namespace NachoClient.iOS
             pullimageView.Center = pullimageCenter;
             timelineView.Center = timelineCenter;
             pullDownDotView.Center = pullDownDotCenter;
-
-            animationThreeHasReset = true;
         }
 
         protected void ResetViewFour()
@@ -729,8 +708,6 @@ namespace NachoClient.iOS
             greenSwipeCellView.Center = greenSwipeCenter;
             emailCellView.Center = emailCellViewCenter;
             swipeDotView.Center = swipeDotCenter;
-
-            animationFourHasReset = true;
         }
     }
 }
