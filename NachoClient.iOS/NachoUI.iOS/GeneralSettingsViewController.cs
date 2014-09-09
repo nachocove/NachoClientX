@@ -107,7 +107,7 @@ namespace NachoClient.iOS
 
             var privacyTap = new UITapGestureRecognizer ();
             privacyTap.AddTarget (() => {
-                legalUrl = "https://nachocove.com/license";
+                legalUrl = "https://nachocove.com/privacy-policy-text/";
                 legalTitle = "Privacy Policy";
                 isUrl = true;
                 PerformSegue ("GeneralSettingsToSettingsLegal", this);
@@ -133,7 +133,7 @@ namespace NachoClient.iOS
 
             var licenseTap = new UITapGestureRecognizer ();
             licenseTap.AddTarget (() => {
-                legalUrl = "https://nachocove.com/legal/";
+                legalUrl = "https://nachocove.com/legal-text/";
                 legalTitle = "License Agreement";
                 isUrl = true;
                 PerformSegue ("GeneralSettingsToSettingsLegal", this);
