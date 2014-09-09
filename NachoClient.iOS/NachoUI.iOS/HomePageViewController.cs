@@ -206,11 +206,9 @@ namespace NachoClient.iOS
             case 1:
                 ResetViewTwo ();
                 break;
-
             case 2:
                 ResetViewThree ();
                 break;
-
             case 3:
                 ResetViewFour ();
                 break;
@@ -643,11 +641,6 @@ namespace NachoClient.iOS
 
         protected void ResetViewTwo()
         {
-            //Cancel any live animations
-            swipeMailLeft.Layer.RemoveAllAnimations ();
-            swipeMailRight.Layer.RemoveAllAnimations ();
-            mailRedDot.Layer.RemoveAllAnimations ();
-
             //Disable any active timers
             if (null != flashOneTimer) {
                 flashOneTimer.Invalidate ();
@@ -662,6 +655,11 @@ namespace NachoClient.iOS
                 swipeMailRightTimer.Invalidate ();
             }
 
+            //Cancel any live animations
+            swipeMailLeft.Layer.RemoveAllAnimations ();
+            swipeMailRight.Layer.RemoveAllAnimations ();
+            mailRedDot.Layer.RemoveAllAnimations ();
+
             //Move items back to original position
             swipeMailLeft.Center = swipeMailLeftCenter;
             swipeMailRight.Center = swipeMailRightCenter;
@@ -672,8 +670,8 @@ namespace NachoClient.iOS
 
         protected void ResetViewThree ()
         {
-            if (null != pullDownCalendarTimer) {
-                pullDownCalendarTimer.Invalidate ();
+            if (null != flashPullDotTimer) {
+                flashPullDotTimer.Invalidate ();
             }
             if (null != pullDownCalendarTimer) {
                 pullDownCalendarTimer.Invalidate ();
