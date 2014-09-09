@@ -15,7 +15,6 @@ namespace NachoClient.iOS
         public UIPageViewController pageController;
         int accountId;
         public UIPageControl pageDots;
-        HomePageController firstPageController;
         public bool isFirstLoad = true;
 
         public HomeViewController (IntPtr handle) : base (handle)
