@@ -5,14 +5,86 @@ using System.IO;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using System.Drawing;
+using MonoTouch.CoreGraphics;
+using MonoTouch.CoreAnimation;
+
 using NachoCore.Utils;
+
+// Animation guide http://developer.xamarin.com/guides/cross-platform/application_fundamentals/touch/part_1_touch_in_ios/
 
 namespace NachoClient.iOS
 {
     public partial class HomePageController : NcUIViewController
     {
-        //loads the HomePageController.xib file and connects it to this object
         public HomeViewController owner;
+
+        // container for iPhone screen-in-screen 
+        // doing these as internal globals
+        protected UIView pageContainerView; // full screen
+
+        protected UIView contentContainer; // the phone-image content
+        protected UIView helperContainer; // the helpful text container
+        protected UILabel helperTitleText; // text Title
+        protected UILabel helperBodyText; // text body
+
+        protected UIView pageView;
+        protected UIView contentView;
+
+        //View One Components
+        protected UIImageView redButton;
+        protected UIImageView redToolTip;
+        protected UIImageView greenButton;
+        protected UIImageView greenToolTip;
+
+        protected NSTimer toolTipTimer;
+
+        //View Two Components
+        protected UIImageView mailRedDot;
+        protected UIImageView swipeMailLeft;
+        protected UIImageView swipeMailRight;
+
+        protected PointF swipeMailLeftCenter;
+        protected PointF swipeMailRightCenter;
+        protected PointF mailRedDotCenter;
+
+        protected NSTimer flashOneTimer;
+        protected NSTimer flashTwoTimer;
+        protected NSTimer swipeMailLeftTimer;
+        protected NSTimer swipeMailRightTimer;
+
+        //View Three Components
+        protected UIImageView pullimageView;
+        protected UIImageView calimageView;
+        protected UIImageView timelineView;
+        protected UIImageView pullDownDotView;
+
+        protected PointF pullimageCenter;
+        protected PointF calimageCenter;
+        protected PointF timelineCenter;
+        protected PointF pullDownDotCenter;
+
+        protected NSTimer pullDownCalendarTimer;
+        protected NSTimer flashPullDotTimer;
+
+        //View Four Components
+        protected UIImageView emailCellView;
+        protected UIImageView redSwipeCellView;
+        protected UIImageView greenSwipeCellView;
+        protected UIImageView swipeDotView;
+
+        protected PointF emailCellViewCenter;
+        protected PointF redSwipeCenter;
+        protected PointF greenSwipeCenter;
+        protected PointF swipeDotCenter;
+
+        protected NSTimer flashDotsFirstTimer;
+        protected NSTimer swipeLeftTimer;
+        protected NSTimer revertLeftToCenterTimer;
+        protected NSTimer flashDotsSecondTimer;
+        protected NSTimer swipeRightTimer;
+        protected NSTimer revertRightToCenterTimer;
+
+
 
         public HomePageController (int pageIndex) : base ("HomePageController", null)
         {
@@ -25,36 +97,116 @@ namespace NachoClient.iOS
             private set;
         }
 
-        const string TutPageOne = "Content/Tutorial-Page1.png";
-        const string TutPageTwo = "Content/Tutorial-Page2.png";
-        const string TutPageThree = "Content/Tutorial-Page3.png";
-        const string TutPageFour = "Content/Tutorial-Page4.png";
+        // Helper Text Strings
+        const string TitleOne = "Your Messages";
+        const string TitleTwo = "Navigating Your Hot List";
+        const string TitleThree= "Time Line View";
+        const string TitleFour = "Just One Last Thing ...";
 
-        string[] Tutorial = {
-            TutPageOne,
-            TutPageTwo,
-            TutPageThree,
-            TutPageFour
+        const string BodyOne = "Your hot messages go in your hot list" + "\n" + "All other messages will be in your inbox";
+        const string BodyTwo = "Quickly browse through your hot list" + "\n" + "by swiping left and right";
+        const string BodyThree = "This contains your upcoming meetings" + "\n" + "and events";
+        const string BodyFour = "Sliding right or left elsewhere will get you" + "\n" + "shortcusts and options for the items";
+
+        const string contentscreen = "Slide1-3.png"; // phone-face image
+        const string calendarpull = "Slide1-2.png"; // calendar pull down
+        const string msg1loc = "Slide1-1A.png"; // Meagan message
+        const string msg2loc = "Slide1-1B.png"; // next message
+        const string inboxloc = "Slide1-4.png"; // inbox msg at bottom of screen
+
+        string[] titleText = {
+            TitleOne,
+            TitleTwo,
+            TitleThree,
+            TitleFour,
+        };
+        string[] bodyText = {
+            BodyOne,
+            BodyTwo,
+            BodyThree,
+            BodyFour,
         };
 
         public override void ViewDidLoad ()
         {
-            // This builds the UIPVC datasource image. This source is then displayed
-            // inside the UIPVC with gesture controls and other cool shit from that class
-            // Known issue :: If I Hide the UINavControllerbar we have no way home (see homeViewcontroll..cs)
-           
+            this.pageContainerView = new UIView (new RectangleF(0,0, this.owner.View.Bounds.Width, this.owner.View.Bounds.Height-48));
+            pageContainerView.BackgroundColor = A.Color_NachoGreen;
 
-            string fileName = Tutorial [this.PageIndex];
-           
-            UIImageView tutImage = new UIImageView (UIImage.FromBundle (fileName));
-            tutImage.Frame = this.View.Frame;
+            if (View.Frame.Height == 480) {
+                this.contentContainer = new UIView (new RectangleF (54 , 60, 212, 306)); // see size of helpercontainer
+                this.helperContainer = new UIView (new RectangleF (0, this.contentContainer.Frame.Bottom, pageContainerView.Frame.Width, pageContainerView.Frame.Bottom - this.contentContainer.Frame.Bottom));// contains the helpertext and labels  
+                this.helperTitleText = new UILabel (new RectangleF (0, 12, helperContainer.Frame.Width, 20));
+                this.helperBodyText = new UILabel (new RectangleF ((helperContainer.Frame.Width - 284) / 2, helperTitleText.Frame.Bottom, 284, 40));
+
+            } else {
+                this.contentContainer = new UIView (new RectangleF (54 , 85, 212, 306)); // see size of helpercontainer
+                this.helperContainer = new UIView (new RectangleF(0,this.contentContainer.Frame.Bottom, pageContainerView.Frame.Width, 130));// contains the helpertext and labels  
+                this.helperTitleText = new UILabel (new RectangleF(0,24, helperContainer.Frame.Width, 20));
+                this.helperBodyText = new UILabel (new RectangleF((helperContainer.Frame.Width - 284) / 2, helperTitleText.Frame.Bottom + 10, 284, 40));
+            }
+
+            pageView = new UIView (pageContainerView.Frame);
+            contentView = new UIView (contentContainer.Frame);
+
             base.ViewDidLoad ();
-            tutImage.ContentMode = UIViewContentMode.ScaleToFill;
-            //tutImage.Image = ResizeImage (fullImage, tutImage.Frame.Width, tutImage.Frame.Height);
-            tutImage.UserInteractionEnabled = true;
-            this.View.AddSubview (tutImage);
-            Log.Info (Log.LOG_UI, "Book page #{0} loaded!", this.PageIndex + 1);
-            Log.Info (Log.LOG_UI, "{0}", this.View.Frame.ToString ());
+
+            string leftNachos = "";
+            string rightNachos = "";
+
+            switch (this.PageIndex) {
+            case 0:
+                leftNachos = "BG-S01Left@2x";
+                rightNachos = "BG-S01Right@2x";
+                CreateViewOne ();
+                break;
+            case 1:
+                leftNachos = "BG-S02Left@2x";
+                rightNachos = "BG-S02Right@2x";
+                CreateViewTwo ();
+                break;
+            case 2:
+                leftNachos = "BG-S03Left@2x";
+                rightNachos = "BG-S03Right@2x";
+                CreateViewThree ();
+                break;
+            case 3:
+                leftNachos = "BG-S04Left@2x";
+                rightNachos = "BG-S04Right@2x";
+                CreateViewFour ();
+                break;
+            }
+
+            this.View.AddSubview (pageContainerView);
+            this.View.AddSubview (pageView);
+            CreateNachos (leftNachos, rightNachos);
+        }
+
+        public override void ViewWillDisappear (bool animated)
+        {
+            base.ViewWillDisappear (animated);
+        }
+
+        public override void ViewDidDisappear (bool animated)
+        {
+            base.ViewDidDisappear (animated);
+
+            switch (this.PageIndex) {
+
+            case 0:
+                ResetViewOne ();
+                break;
+            case 1:
+                ResetViewTwo ();
+                break;
+
+            case 2:
+                ResetViewThree ();
+                break;
+
+            case 3:
+                ResetViewFour ();
+                break;
+            }
         }
 
         public override void ViewWillAppear (bool animated)
@@ -70,46 +222,471 @@ namespace NachoClient.iOS
             }
         }
 
+        public override void ViewDidAppear (bool animated)
+        {
+            base.ViewDidAppear (animated);
 
-        // Utilities for resizing images.  May not use
+            switch (this.PageIndex) {
+            case 0:
+                AnimateViewOne ();
+                break;
+            case 1:
+                AnimateViewTwo ();
+                break;
+            case 2:
+                AnimateViewThree ();
+                break;
+            case 3:
+                AnimateViewFour ();
+                break;
+            }
+        }
 
-        // resize the image to be contained within a maximum width and height, keeping aspect ratio
-        // from StackOverflow
-        private UIImage MaxResizeImage(UIImage sourceImage, float maxWidth, float maxHeight)
+        private void CreateNachos(string leftNachos, string rightNachos)
         {
-            var sourceSize = sourceImage.Size;
-            var maxResizeFactor = Math.Max(maxWidth / sourceSize.Width, maxHeight / sourceSize.Height);
-            if (maxResizeFactor > 1) return sourceImage;
-            var width = maxResizeFactor * sourceSize.Width;
-            var height = maxResizeFactor * sourceSize.Height;
-            UIGraphics.BeginImageContext(new SizeF(width, height));
-            sourceImage.Draw(new RectangleF(0, 0, width, height));
-            var resultImage = UIGraphics.GetImageFromCurrentImageContext();
-            UIGraphics.EndImageContext();
-            return resultImage;
+            UIImageView leftSideNachos = new UIImageView (UIImage.FromBundle (leftNachos));
+            leftSideNachos.Frame = new RectangleF (0, this.contentContainer.Frame.Bottom - leftSideNachos.Frame.Height / 2, this.contentContainer.Frame.X, leftSideNachos.Frame.Height / 2);
+            this.View.AddSubview (leftSideNachos);
+
+            UIImageView rightSideNachos = new UIImageView (UIImage.FromBundle (rightNachos));
+            rightSideNachos.Frame = new RectangleF (this.contentContainer.Frame.X + this.contentContainer.Frame.Width, this.contentContainer.Frame.Bottom - rightSideNachos.Frame.Height / 2, this.contentContainer.Frame.X, rightSideNachos.Frame.Height / 2);
+            this.View.AddSubview (rightSideNachos);
         }
-        // resize the image (without trying to maintain aspect ratio)
-        private UIImage ResizeImage(UIImage sourceImage, float width, float height)
+
+        void CreateHelperText()
         {
-            UIGraphics.BeginImageContext(new SizeF(width, height));
-            sourceImage.Draw(new RectangleF(0, 0, width, height));
-            var resultImage = UIGraphics.GetImageFromCurrentImageContext();
-            UIGraphics.EndImageContext();
-            return resultImage;
+            helperContainer.BackgroundColor = UIColor.White;
+
+            helperTitleText.BackgroundColor = UIColor.White; // debug
+            helperTitleText.TextColor = A.Color_11464F;
+            helperTitleText.Text = titleText [this.PageIndex];
+            helperTitleText.Font = A.Font_AvenirNextDemiBold17;
+            helperTitleText.TextAlignment = UITextAlignment.Center;
+            helperContainer.Add (helperTitleText);
+
+            helperBodyText.BackgroundColor = UIColor.White; // debug
+            helperBodyText.TextColor = A.Color_9B9B9B;
+            helperBodyText.Lines = 2;
+            helperBodyText.Text = bodyText[this.PageIndex];
+            helperBodyText.Font = A.Font_AvenirNextRegular14;
+            helperBodyText.TextAlignment = UITextAlignment.Center;
+            helperContainer.Add (helperBodyText);
+
+            Util.AddHorizontalLine (0, helperContainer.Frame.Height + 10 , helperContainer.Frame.Width, A.Color_NachoSeparator, helperContainer);
         }
-        // crop the image, without resizing
-        private UIImage CropImage(UIImage sourceImage, int crop_x, int crop_y, int width, int height)
+
+        protected void CreateViewOne()
         {
-            var imgSize = sourceImage.Size;
-            UIGraphics.BeginImageContext(new SizeF(width, height));
-            var context = UIGraphics.GetCurrentContext();
-            var clippedRect = new RectangleF(0, 0, width, height);
-            context.ClipToRect(clippedRect);
-            var drawRect = new RectangleF(-crop_x, -crop_y, imgSize.Width, imgSize.Height);
-            sourceImage.Draw(drawRect);
-            var modifiedImage = UIGraphics.GetImageFromCurrentImageContext();
-            UIGraphics.EndImageContext();
-            return modifiedImage;
+            UIImageView screenImage = new UIImageView (UIImage.FromBundle (contentscreen));
+            screenImage.Frame = (new RectangleF (0,0, contentContainer.Frame.Width, contentContainer.Frame.Height));
+            contentContainer.AddSubview(screenImage);
+
+            UIImageView centerMessage = new UIImageView (UIImage.FromBundle (msg1loc));
+            centerMessage.Frame = new RectangleF (10, 60, 192, 207);
+            centerMessage.Center = new PointF (contentContainer.Frame.Width / 2 , contentContainer.Frame.Height / 2 +10);
+            contentContainer.AddSubview (centerMessage);
+
+            UIImageView inboximageView = new UIImageView (UIImage.FromBundle (inboxloc));
+            inboximageView.Frame = new RectangleF (10, centerMessage.Frame.Bottom + 20, 192, 20);
+            inboximageView.Center = new PointF (contentContainer.Frame.Width / 2, contentContainer.Frame.Height - 10);
+            contentContainer.AddSubview (inboximageView);
+
+            redButton = new UIImageView (UIImage.FromBundle ("red_pointer.png"));
+            redButton.Center = new PointF (this.contentContainer.Frame.Width / 2, centerMessage.Frame.Height / 3 + 70);
+            redButton.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
+            contentContainer.AddSubview (redButton);
+
+            redToolTip = new UIImageView (UIImage.FromBundle ("red_balloon.png"));
+            redToolTip.Center = new PointF (this.contentContainer.Frame.Width / 2, centerMessage.Frame.Height / 3 + 35 + 70);
+            redToolTip.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
+            contentContainer.AddSubview (redToolTip);
+
+            greenButton = new UIImageView (UIImage.FromBundle ("teal_pointer.png"));
+            greenButton.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height - 15);
+            greenButton.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
+            contentContainer.AddSubview (greenButton);
+
+            greenToolTip = new UIImageView (UIImage.FromBundle ("teal_balloon.png"));
+            greenToolTip.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height - 50);
+            greenToolTip.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
+            contentContainer.AddSubview (greenToolTip);
+
+            CreateHelperText ();
+            pageContainerView.AddSubview(contentContainer);
+            pageContainerView.AddSubview (helperContainer);
+        }
+
+        protected void CreateViewTwo()
+        {
+            UIImageView screenImage = new UIImageView (UIImage.FromBundle (contentscreen));
+            screenImage.Frame = (new RectangleF (0,0, contentContainer.Frame.Width, contentContainer.Frame.Height));
+            contentView.AddSubview(screenImage);
+
+            swipeMailLeft = new UIImageView (UIImage.FromBundle (msg1loc));
+            swipeMailLeft.Frame = new RectangleF (10, 60, 192, 207);
+            swipeMailLeft.Center = new PointF (contentContainer.Frame.Width / 2 , contentContainer.Frame.Height / 2 +10);
+            swipeMailLeftCenter = swipeMailLeft.Center;
+            contentView.AddSubview (swipeMailLeft);
+
+            swipeMailRight = new UIImageView (UIImage.FromBundle ("Slide1-1B.png"));
+            swipeMailRight.Center = new PointF (this.pageContainerView.Frame.Width, this.contentContainer.Frame.Height / 2 +10);
+            swipeMailRightCenter = swipeMailRight.Center;
+            contentView.AddSubview (swipeMailRight);
+
+            UIImageView inboximageView = new UIImageView (UIImage.FromBundle (inboxloc));
+            inboximageView.Frame = new RectangleF (10, swipeMailLeft.Frame.Bottom + 20, 192, 20);
+            inboximageView.Center = new PointF (contentContainer.Frame.Width / 2, contentContainer.Frame.Height - 10);
+            contentView.AddSubview (inboximageView);
+
+            mailRedDot = new UIImageView (UIImage.FromBundle ("red_pointer.png"));
+            mailRedDot.Center = new PointF (swipeMailLeft.Frame.X + 60, swipeMailLeft.Center.Y);
+            mailRedDotCenter = mailRedDot.Center;
+            contentView.AddSubview(mailRedDot);
+
+            CreateHelperText ();
+            contentView.ClipsToBounds = true;
+            pageView.AddSubview(contentView);
+            pageView.AddSubview (helperContainer);
+        }
+
+        protected void CreateViewThree()
+        {
+            UIImageView screenImage = new UIImageView (UIImage.FromBundle ("Slide3-2.png"));
+            screenImage.Frame = (new RectangleF (0,0, contentContainer.Frame.Width, contentContainer.Frame.Height));
+            contentContainer.AddSubview(screenImage);
+
+            calimageView = new UIImageView(UIImage.FromBundle ("Slide3-1A.png"));
+            calimageView.Frame = new RectangleF (0, 0, contentContainer.Frame.Width, 46);
+            calimageCenter = calimageView.Center;
+            contentContainer.AddSubview (calimageView);
+
+            pullimageView = new UIImageView (UIImage.FromBundle ("Slide3-1B.png"));
+            pullimageView.Frame = new RectangleF (0, calimageView.Frame.Bottom, contentContainer.Frame.Width, 7);
+            pullimageCenter = pullimageView.Center;
+            contentContainer.AddSubview (pullimageView);
+
+            timelineView = new UIImageView (UIImage.FromBundle ("Slide3-5.png"));
+            timelineView.Frame = new RectangleF (0,  -contentContainer.Frame.Height, this.contentContainer.Frame.Width, this.contentContainer.Frame.Height);
+            timelineCenter = timelineView.Center;
+            contentContainer.AddSubview(timelineView);
+
+            pullDownDotView = new UIImageView (UIImage.FromBundle ("red_pointer.png"));
+            pullDownDotView.Center = new PointF(pullimageCenter.X, pullimageCenter.Y - 12);
+            pullDownDotCenter = pullDownDotView.Center;
+            contentContainer.AddSubview (pullDownDotView);
+
+            CreateHelperText ();
+            contentContainer.ClipsToBounds = true;
+            pageContainerView.AddSubview(contentContainer);
+            pageContainerView.AddSubview (helperContainer);
+        }
+
+        private void CreateViewFour()
+        {
+            UIImageView screenImage = new UIImageView (UIImage.FromBundle ("Slide4-1.png"));
+            screenImage.Frame = (new RectangleF (0,0, contentContainer.Frame.Width, contentContainer.Frame.Height));
+            contentContainer.AddSubview(screenImage);
+
+            greenSwipeCellView = new UIImageView (UIImage.FromBundle ("Slide4-2A.png"));
+            greenSwipeCellView.Frame = new RectangleF (0-this.contentContainer.Frame.Width, 77, this.contentContainer.Frame.Width, 93);
+            greenSwipeCenter = greenSwipeCellView.Center;
+            contentContainer.AddSubview (greenSwipeCellView);
+
+            emailCellView = new UIImageView (UIImage.FromBundle ("Slide4-3.png"));
+            emailCellView.Frame = new RectangleF(0, 77, this.contentContainer.Frame.Width, 93);
+            emailCellViewCenter = emailCellView.Center;
+            contentContainer.AddSubview (emailCellView);
+
+            redSwipeCellView = new UIImageView (UIImage.FromBundle ("Slide4-2B.png"));
+            redSwipeCellView.Frame = new RectangleF (this.contentContainer.Frame.Width, 77, this.contentContainer.Frame.Width, 93);
+            redSwipeCenter = redSwipeCellView.Center;
+            contentContainer.AddSubview (redSwipeCellView);
+
+            swipeDotView = new UIImageView (UIImage.FromBundle ("red_pointer.png"));
+            swipeDotView.Center = new PointF (emailCellView.Center.X - 30, emailCellView.Center.Y);
+            swipeDotCenter = swipeDotView.Center;
+            contentContainer.AddSubview(swipeDotView);
+
+            CreateHelperText ();
+            contentContainer.ClipsToBounds = true;
+            pageContainerView.AddSubview(contentContainer);
+            pageContainerView.AddSubview (helperContainer);
+        }
+
+        protected void AnimateViewOne()
+        {
+            toolTipTimer = NSTimer.CreateScheduledTimer (1, delegate {
+                UIView.AnimateKeyframes (1, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+                    UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
+                        redButton.Layer.Transform = CATransform3D.MakeScale (1.0f, 1.0f, 1.0f);
+                        redToolTip.Layer.Transform = CATransform3D.MakeScale (1.0f, 1.0f, 1.0f);
+                        greenButton.Layer.Transform = CATransform3D.MakeScale (1.0f, 1.0f, 1.0f);
+                        greenToolTip.Layer.Transform = CATransform3D.MakeScale (1.0f, 1.0f, 1.0f);
+                    });
+                }, ((bool finished) => {
+                }));
+            });
+        }
+
+        protected void AnimateViewTwo ()
+        {
+            flashOneTimer = NSTimer.CreateScheduledTimer (.5, delegate {
+                UIView.AnimateKeyframes (2, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+                    UIView.AddKeyframeWithRelativeStartTime (0, .5, () => {
+                        mailRedDot.Alpha = 0.5f;
+                    });
+
+                    UIView.AddKeyframeWithRelativeStartTime (.5, .5, () => {
+                        mailRedDot.Alpha = 1.0f;
+                    });
+                }, ((bool finished) => {
+                }));
+            });
+
+            swipeMailLeftTimer = NSTimer.CreateScheduledTimer (2.5, delegate {
+                UIView.AnimateKeyframes (1, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+                    UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
+                        mailRedDot.Center = new PointF(mailRedDot.Center.X - this.contentContainer.Frame.Width, mailRedDot.Center.Y);
+                        swipeMailLeft.Center = new PointF (swipeMailLeft.Center.X - this.contentContainer.Frame.Width, this.contentContainer.Frame.Height/2 +10 );
+                        swipeMailRight.Center = new PointF (swipeMailRight.Center.X - this.contentContainer.Frame.Width, this.contentContainer.Frame.Height/2 +10 );
+                    });
+                }, ((bool finished) => {
+                    mailRedDot.Center = new PointF(mailRedDotCenter.X + 70, mailRedDotCenter.Y);
+                }));
+            });
+
+            flashTwoTimer = NSTimer.CreateScheduledTimer (3.6, delegate {
+                UIView.AnimateKeyframes (2.1, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+                    UIView.AddKeyframeWithRelativeStartTime (0, .5, () => {
+                        mailRedDot.Alpha = .5f;
+                    });
+                    UIView.AddKeyframeWithRelativeStartTime (.5, .5, () => {
+                        mailRedDot.Alpha = 1.0f;
+                    });
+                }, ((bool finished) => {
+                }));
+            });
+
+            swipeMailRightTimer = NSTimer.CreateScheduledTimer (5.7, delegate {
+                UIView.AnimateKeyframes (1, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+                    UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
+                        mailRedDot.Center = new PointF(mailRedDot.Center.X + this.contentContainer.Frame.Width, mailRedDot.Center.Y);
+                        swipeMailLeft.Center = new PointF (swipeMailLeft.Center.X + this.contentContainer.Frame.Width, this.contentContainer.Frame.Height/2 +10 );
+                        swipeMailRight.Center = new PointF (swipeMailRight.Center.X + this.contentContainer.Frame.Width, this.contentContainer.Frame.Height/2 +10 );
+                    });
+                }, ((bool finished) => {
+                }));
+            });
+        }
+
+        public void AnimateViewThree ()
+        {
+            flashPullDotTimer = NSTimer.CreateScheduledTimer (.5, delegate {
+                UIView.AnimateKeyframes (1.5, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+                    UIView.AddKeyframeWithRelativeStartTime (0, .5, () => {
+                        pullDownDotView.Alpha = 0.4f;
+                    });
+
+                    UIView.AddKeyframeWithRelativeStartTime (.5, .5, () => {
+                        pullDownDotView.Alpha = 1.0f;
+                    });
+                }, ((bool finished) => {
+                }));
+            });
+
+            pullDownCalendarTimer = NSTimer.CreateScheduledTimer (2, delegate {
+                UIView.AnimateKeyframes (.7, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+                    UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
+                        pullimageView.Center = new PointF (pullimageView.Center.X, pullimageView.Center.Y + contentContainer.Frame.Height);
+                        calimageView.Center = new PointF (calimageView.Center.X, calimageView.Center.Y + contentContainer.Frame.Height);
+                        timelineView.Center = new PointF(timelineView.Center.X, timelineView.Center.Y + contentContainer.Frame.Height); 
+                        pullDownDotView.Center = new PointF(pullDownDotView.Center.X, pullDownDotView.Center.Y + contentContainer.Frame.Height);
+                    });
+
+                }, ((bool finished) => {
+                }));
+            });
+        }
+
+        public void AnimateViewFour ()
+        {
+            flashDotsFirstTimer = NSTimer.CreateScheduledTimer (.5, delegate {
+                UIView.AnimateKeyframes (1.5, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+                    UIView.AddKeyframeWithRelativeStartTime (0, .5, () => {
+                        swipeDotView.Alpha = 0.4f;
+                    });
+
+                    UIView.AddKeyframeWithRelativeStartTime (.5, .5, () => {
+                        swipeDotView.Alpha = 1.0f;
+                    });
+                }, ((bool finished) => {
+                }));
+            });
+
+            swipeLeftTimer = NSTimer.CreateScheduledTimer (3, delegate {
+                UIView.AnimateKeyframes (.7, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+                    UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
+                        swipeDotView.Center = new PointF(swipeDotView.Center.X - redSwipeCellView.Frame.Width, swipeDotView.Center.Y);
+                        redSwipeCellView.Center = new PointF(redSwipeCellView.Center.X - redSwipeCellView.Frame.Width, redSwipeCellView.Center.Y);
+                        emailCellView.Center = new PointF(emailCellView.Center.X - emailCellView.Frame.Width, emailCellView.Center.Y);
+                    });
+
+                }, ((bool finished) => {
+                    swipeDotView.Alpha = 0.0f;
+                }));
+            });
+
+            revertLeftToCenterTimer = NSTimer.CreateScheduledTimer (4, delegate {
+                UIView.AnimateKeyframes (.7, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+                    UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
+                        swipeDotView.Center = new PointF(swipeDotView.Center.X + redSwipeCellView.Frame.Width, swipeDotView.Center.Y);
+                        redSwipeCellView.Center = new PointF(redSwipeCellView.Center.X + redSwipeCellView.Frame.Width, redSwipeCellView.Center.Y);
+                        emailCellView.Center = new PointF(emailCellView.Center.X + emailCellView.Frame.Width, emailCellView.Center.Y);
+                    });
+
+                }, ((bool finished) => {
+                    swipeDotView.Center = new PointF(swipeDotCenter.X + 70, swipeDotCenter.Y);
+                    swipeDotView.Alpha = 1.0f;
+                }));
+            });
+
+            flashDotsSecondTimer = NSTimer.CreateScheduledTimer (5.2, delegate {
+                UIView.AnimateKeyframes (1.7, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+
+                    UIView.AddKeyframeWithRelativeStartTime (0, .5, () => {
+                        swipeDotView.Alpha = 0.4f;
+                    });
+
+                    UIView.AddKeyframeWithRelativeStartTime (.5, .5, () => {
+                        swipeDotView.Alpha = 1.0f;
+                    });
+                }, ((bool finished) => {
+                }));
+            });
+
+            swipeRightTimer = NSTimer.CreateScheduledTimer (6.9, delegate {
+                UIView.AnimateKeyframes (.8, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+                    UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
+                        swipeDotView.Center = new PointF(swipeDotView.Center.X + redSwipeCellView.Frame.Width, swipeDotView.Center.Y);
+                        emailCellView.Center = new PointF(emailCellView.Center.X + emailCellView.Frame.Width, emailCellView.Center.Y);
+                        greenSwipeCellView.Center = new PointF (greenSwipeCellView.Center.X + greenSwipeCellView.Frame.Width, greenSwipeCellView.Center.Y);
+                    });
+
+                }, ((bool finished) => {
+                }));
+            });
+
+            revertRightToCenterTimer = NSTimer.CreateScheduledTimer (8, delegate {
+                UIView.AnimateKeyframes (.8, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+                    UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
+                        emailCellView.Center = new PointF(emailCellView.Center.X - emailCellView.Frame.Width, emailCellView.Center.Y);
+                        greenSwipeCellView.Center = new PointF (greenSwipeCellView.Center.X - greenSwipeCellView.Frame.Width, greenSwipeCellView.Center.Y);
+                    });
+                }, ((bool finished) => {
+                }));
+            });
+        }
+
+        protected void ResetViewOne ()
+        {
+            //Disable any active timers
+            if (null != toolTipTimer) {
+                toolTipTimer.Invalidate ();
+            }
+
+            //Cancel any live animations
+            redButton.Layer.RemoveAllAnimations ();
+            redToolTip.Layer.RemoveAllAnimations ();
+            greenButton.Layer.RemoveAllAnimations ();
+            greenToolTip.Layer.RemoveAllAnimations ();
+
+            //Place items back to original position
+            redButton.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
+            redToolTip.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
+            greenButton.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
+            greenToolTip.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
+        }
+
+        protected void ResetViewTwo()
+        {
+            //Disable any active timers
+            if (null != flashOneTimer) {
+                flashOneTimer.Invalidate ();
+            }
+            if (null != swipeMailLeftTimer) {
+                swipeMailLeftTimer.Invalidate ();
+            }
+            if (null != flashTwoTimer) {
+                flashTwoTimer.Invalidate ();
+            }
+            if (null != swipeMailRightTimer) {
+                swipeMailRightTimer.Invalidate ();
+            }
+
+            //Cancel any live animations
+            swipeMailLeft.Layer.RemoveAllAnimations ();
+            swipeMailRight.Layer.RemoveAllAnimations ();
+            mailRedDot.Layer.RemoveAllAnimations ();
+
+            //Move items back to original position
+            swipeMailLeft.Center = swipeMailLeftCenter;
+            swipeMailRight.Center = swipeMailRightCenter;
+            mailRedDot.Center = mailRedDotCenter;
+        }
+
+        protected void ResetViewThree ()
+        {
+            if (null != pullDownCalendarTimer) {
+                pullDownCalendarTimer.Invalidate ();
+            }
+            if (null != pullDownCalendarTimer) {
+                pullDownCalendarTimer.Invalidate ();
+            }
+
+            pullDownDotView.Layer.RemoveAllAnimations ();
+            calimageView.Layer.RemoveAllAnimations ();
+            pullimageView.Layer.RemoveAllAnimations ();
+            timelineView.Layer.RemoveAllAnimations ();
+
+            calimageView.Center = calimageCenter;
+            pullimageView.Center = pullimageCenter;
+            timelineView.Center = timelineCenter;
+            pullDownDotView.Center = pullDownDotCenter;
+        }
+
+        protected void ResetViewFour()
+        {
+            //Disable any active timers
+            if (null != flashDotsFirstTimer) {
+                flashDotsFirstTimer.Invalidate ();
+            }
+            if (null != swipeLeftTimer) {
+                swipeLeftTimer.Invalidate ();
+            }
+            if (null != revertLeftToCenterTimer) {
+                revertLeftToCenterTimer.Invalidate ();
+            }
+            if (null != flashDotsSecondTimer) {
+                flashDotsSecondTimer.Invalidate ();
+            }
+            if (null != swipeRightTimer) {
+                swipeRightTimer.Invalidate ();
+            }
+            if (null != revertRightToCenterTimer) {
+                revertRightToCenterTimer.Invalidate ();
+            } 
+
+            //Cancel any live animations
+            redSwipeCellView.Layer.RemoveAllAnimations ();
+            greenSwipeCellView.Layer.RemoveAllAnimations ();
+            emailCellView.Layer.RemoveAllAnimations ();
+            swipeDotView.Layer.RemoveAllAnimations ();
+
+            //Move items back to original position
+            redSwipeCellView.Center = redSwipeCenter;
+            greenSwipeCellView.Center = greenSwipeCenter;
+            emailCellView.Center = emailCellViewCenter;
+            swipeDotView.Center = swipeDotCenter;
         }
     }
 }
