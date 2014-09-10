@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 
+using MimeKit;
 using NachoCore.Utils;
 
 namespace NachoClient.iOS
@@ -103,7 +104,18 @@ namespace NachoClient.iOS
             }
 
             if (null == address.contact) {
-                AppendInternal (address.address, address, UcAddressField.TEXT_FIELD);
+                string text;
+                InternetAddress parsedAddress;
+                if (!InternetAddress.TryParse (address.address, out parsedAddress)) {
+                    text = address.address; // can't parse the string. just display verbatim
+                } else {
+                    if ((null != parsedAddress.Name) && (0 < parsedAddress.Name.Length)) {
+                        text = parsedAddress.Name; // prefer display name
+                    } else {
+                        text = (parsedAddress as MailboxAddress).Address; // fallback to email address
+                    }
+                }
+                AppendInternal (text, address, UcAddressField.TEXT_FIELD);
             } else {
                 AppendInternal (address.contact.GetDisplayNameOrEmailAddress(), address, UcAddressField.TEXT_FIELD);
             }

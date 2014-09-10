@@ -630,11 +630,11 @@ namespace NachoClient.iOS
                 ccView.Hidden = true;
             } else {
                 toView.Clear ();
-                foreach (var address in NcEmailAddress.ParseToAddressListString (message.To, message.AccountId)) {
+                foreach (var address in NcEmailAddress.ParseToAddressListString (message.To)) {
                     toView.Append (address);
                 }
                 ccView.Clear ();
-                foreach (var address in NcEmailAddress.ParseCcAddressListString (message.Cc, message.AccountId)) {
+                foreach (var address in NcEmailAddress.ParseCcAddressListString (message.Cc)) {
                     ccView.Append (address);
                 }
                 toView.Hidden = false;
@@ -877,7 +877,10 @@ namespace NachoClient.iOS
 
             // Toggle header display mode and redraw
             expandedHeader = !expandedHeader;
-            ConfigureView ();
+
+            UIView.Animate (0.2, 0, UIViewAnimationOptions.CurveLinear, () => {
+                ConfigureView ();
+            }, () => {});
         }
 
         protected void RenderMime (string bodyPath)
