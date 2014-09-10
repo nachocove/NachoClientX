@@ -705,9 +705,9 @@ namespace NachoClient.iOS
                 var status = attachmentView.ViewWithTag (ATTACHMENT_STATUS_TAG) as UILabel;
                 if (attachment.IsInline) {
                     status.Text = "Is an inline attachment.";
-                } else if (attachment.IsDownloaded) {
+                } else if (McAbstrFileDesc.FilePresenceEnum.Complete == attachment.FilePresence) {
                     status.Text = "Attachment is downloaded.";
-                } else if (0 < attachment.PercentDownloaded) {
+                } else if (McAbstrFileDesc.FilePresenceEnum.Partial == attachment.FilePresence) {
                     status.Text = "Attachment is downloading.";
                 } else {
                     status.Text = "Touch to download attachment.";
@@ -1307,7 +1307,7 @@ namespace NachoClient.iOS
             var attachmentView = obj.View;
             var attachment = attachments [attachmentView.Tag];
 
-            if (attachment.IsDownloaded) {
+            if (McAbstrFileDesc.FilePresenceEnum.Complete == attachment.FilePresence) {
                 PlatformHelpers.DisplayAttachment (this, attachment);
             } else {
                 PlatformHelpers.DownloadAttachment (attachment);

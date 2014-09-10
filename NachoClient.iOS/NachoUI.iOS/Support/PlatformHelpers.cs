@@ -120,13 +120,13 @@ namespace NachoClient
 
         public static void DisplayAttachment (UIViewController vc, McAttachment attachment)
         {
-            var path = attachment.FilePath ();
+            var path = attachment.GetFilePath ();
             DisplayFile (vc, path);
         }
 
         public static void DisplayFile (UIViewController vc, McDocument file)
         {
-            var path = file.FilePath ();
+            var path = file.GetFilePath ();
             DisplayFile (vc, path);
         }
 
@@ -139,9 +139,9 @@ namespace NachoClient
 
         public static string DownloadAttachment (McAttachment attachment)
         {
-            if (!attachment.IsDownloaded && (attachment.PercentDownloaded == 0)) {
+            if (McAbstrFileDesc.FilePresenceEnum.None == attachment.FilePresence) {
                 return BackEnd.Instance.DnldAttCmd (attachment.AccountId, attachment.Id);
-            } else if (attachment.PercentDownloaded > 0 && attachment.PercentDownloaded < 100) {
+            } else if (McAbstrFileDesc.FilePresenceEnum.Partial == attachment.FilePresence) {
                 return McPending.QueryByAttachmentId (attachment.AccountId, attachment.Id).Token;
             } 
             NcAssert.True (false, "Should not try to download an already-downloaded attachment");

@@ -138,6 +138,10 @@ namespace NachoClient.iOS
 
         public void ConfigureNotesView ()
         {
+            if (null == contactItem) {
+                notesTextView.Text = Note.noteContent;
+                return;
+            }
             if (contactItem.Source != McAbstrItem.ItemSource.ActiveSync) {
                 notesTextView.Text = "This contact has not been synced. Adding or editing notes is disabled.";
             } else {
@@ -205,7 +209,7 @@ namespace NachoClient.iOS
         {
             McBody contactBody = McBody.QueryById<McBody> (contactItem.BodyId);
             if (null != contactBody) {
-                contactBody.UpdateFile (notesTextView.Text);
+                contactBody.UpdateData (notesTextView.Text);
             } else {
                 contactItem.BodyId = McBody.Instance.InsertFile (contactItem.AccountId, notesTextView.Text).Id;
             }

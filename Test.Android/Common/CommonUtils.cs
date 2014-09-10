@@ -202,11 +202,11 @@ namespace Test.iOS
 
         public static McAttachment CreateAttachment (McAbstrItem item, int accountId = defaultAccountId, string displayName = "")
         {
-            var att =  new McAttachment {
+            var att = new McAttachment {
                 AccountId = accountId,
-                DisplayName = displayName,
                 EmailMessageId = item.Id,
             };
+            att.SetDisplayName (displayName);
             att.Insert ();
             return att;
         }

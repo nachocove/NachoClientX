@@ -20,7 +20,7 @@ namespace NachoCore.Model
                         }
                     }
                 }
-                return (McPortrait)instance; 
+                return instance; 
             }
         }
 
@@ -42,18 +42,24 @@ namespace NachoCore.Model
 
         public McPortrait InsertSaveStart (int accountId)
         {
-            var body = new McPortrait () {
+            var portrait = new McPortrait () {
                 AccountId = accountId,
             };
-            return (McPortrait)CompleteInsertSaveStart (body);
+            return (McPortrait)CompleteInsertSaveStart (portrait);
         }
 
         public McPortrait InsertFile (int accountId, byte[] content)
         {
-            var body = new McPortrait () {
+            var portrait = new McPortrait () {
                 AccountId = accountId,
             };
-            return (McPortrait)CompleteInsertFile (body, content);
+            return (McPortrait)CompleteInsertFile (portrait, content);
+        }
+
+        public byte[] GetContentsByteArray (int portraitId)
+        {
+            var portrait = QueryById<McPortrait> (portraitId);
+            return CompleteGetContentsByteArray (portrait);
         }
     }
 }

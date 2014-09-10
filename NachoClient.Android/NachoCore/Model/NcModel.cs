@@ -18,7 +18,9 @@ namespace NachoCore.Model
         // RateLimiter PUBLIC FOR TEST ONLY.
         public NcRateLimter RateLimiter { set; get; }
 
-        public string FilesDir { set; get; }
+        public string TmpDir { set; get; }
+
+        public string DocumentsDir { set; get; }
 
         public string AttachmentsDir { set; get; }
 
@@ -70,9 +72,11 @@ namespace NachoCore.Model
 
         private void InitalizeDirs ()
         {
-            FilesDir = Path.Combine (Documents, "files");
-            Directory.CreateDirectory (Path.Combine (Documents, FilesDir));
-            AttachmentsDir = Path.Combine (Documents, "attachments");
+            TmpDir = Path.Combine (Documents, "tmp");
+            Directory.CreateDirectory (Path.Combine (Documents, TmpDir));
+            DocumentsDir = GetFileDirPath (McDocument.Instance.GetFilePathSegment ());
+            Directory.CreateDirectory (Path.Combine (Documents, DocumentsDir));
+            AttachmentsDir = GetFileDirPath (McAttachment.Instance.GetFilePathSegment ());
             Directory.CreateDirectory (Path.Combine (Documents, AttachmentsDir));
             BodiesDir = GetFileDirPath (McBody.Instance.GetFilePathSegment ());
             Directory.CreateDirectory (Path.Combine (Documents, BodiesDir));
@@ -362,6 +366,12 @@ namespace NachoCore.Model
             DbFileName = dbFileName;
             InitializeDb ();
         }
+
+        public string TmpPath (int accountId)
+        {
+            // FIXME - segregate by account.
+            var guidString = Guid.NewGuid ().ToString ("N");
+            return Path.Combine (NcModel.Instance.TmpDir, guidString);
+        }
     }
 }
-

@@ -672,7 +672,7 @@ namespace NachoClient.iOS
             body.TextBody = bodyTextView.Text;
 
             foreach (var attachment in attachmentView.AttachmentList) {
-                body.Attachments.Add (attachment.FilePath ());
+                body.Attachments.Add (attachment.GetFilePath ());
             }
                 
             mimeMessage.Body = body.ToMessageBody ();
@@ -774,7 +774,6 @@ namespace NachoClient.iOS
         /// </summary>
         public void SelectFile (INachoFileChooser vc, McAbstrObject obj)
         {
-            // Attachment
             var a = obj as McAttachment;
             if (null != a) {
                 attachmentView.Append (a);
@@ -782,40 +781,23 @@ namespace NachoClient.iOS
                 return;
             }
 
-            // File
             var file = obj as McDocument;
             if (null != file) {
-                var attachment = new McAttachment ();
-                attachment.DisplayName = file.DisplayName;
-                attachment.AccountId = account.Id;
-                attachment.Insert ();
-                var guidString = Guid.NewGuid ().ToString ("N");
-                // TODO: Decide on copy, move, delete, etc
-                File.Copy (file.FilePath (), McAttachment.TempPath (guidString));
-                //                File.Move (file.FilePath (), McAttachment.TempPath (guidString));
-                //                file.Delete ();
-                attachment.SaveFromTemp (guidString);
-                attachment.IsDownloaded = true;
+                var attachment = McAttachment.Instance.InsertSaveStart (account.Id);
+                attachment.SetDisplayName (file.DisplayName);
                 attachment.IsInline = true;
-                attachment.Update ();
+                attachment.UpdateFileCopy (file.GetFilePath ());
                 attachmentView.Append (attachment);
                 vc.DismissFileChooser (true, null);
                 return;
             }
 
-            // Note
             var note = obj as McNote;
             if (null != note) {
-                var attachment = new McAttachment ();
-                attachment.DisplayName = note.DisplayName + ".txt";
-                attachment.AccountId = account.Id;
-                attachment.Insert ();
-                var guidString = Guid.NewGuid ().ToString ("N");
-                File.WriteAllText (McAttachment.TempPath (guidString), note.noteContent);
-                attachment.SaveFromTemp (guidString);
-                attachment.IsDownloaded = true;
+                var attachment = McAttachment.Instance.InsertSaveStart (account.Id);
+                attachment.SetDisplayName (note.DisplayName + ".txt");
                 attachment.IsInline = true;
-                attachment.Update ();
+                attachment.UpdateData (note.noteContent);
                 attachmentView.Append (attachment);
                 vc.DismissFileChooser (true, null);
                 return;
@@ -831,6 +813,5 @@ namespace NachoClient.iOS
         {
             vc.DismissFileChooser (true, null);
         }
-
     }
 }

@@ -20,7 +20,7 @@ namespace NachoCore.Model
                         }
                     }
                 }
-                return (McBody)instance; 
+                return instance; 
             }
         }
 
@@ -42,6 +42,12 @@ namespace NachoCore.Model
                 0 != McCalendar.QueryByBodyIdIncAwaitDel<McCalendar> (AccountId, Id).Count () ||
                 0 != McContact.QueryByBodyIdIncAwaitDel<McContact> (AccountId, Id).Count () ||
                 0 != McTask.QueryByBodyIdIncAwaitDel<McTask> (AccountId, Id).Count ());
+        }
+
+        public string GetFilePath (int bodyId)
+        {
+            var body = QueryById<McBody> (bodyId);
+            return CompleteGetFilePath (body);
         }
 
         public McBody InsertSaveStart (int accountId)
@@ -70,10 +76,17 @@ namespace NachoCore.Model
 
         public McBody InsertDuplicate (int accountId, int srcBodyId)
         {
-            var body = new McBody () {
+            var dstBody = new McBody () {
                 AccountId = accountId,
             };
-            return (McBody)CompleteInsertDuplicate (body, srcBodyId);
+            var srcBody = QueryById<McBody> (srcBodyId);
+            return (McBody)CompleteInsertDuplicate (dstBody, srcBody);
+        }
+
+        public string GetContentsString (int bodyId)
+        {
+            var body = QueryById<McBody> (bodyId);
+            return CompleteGetContentsString (body);
         }
 
         /// Body type is stored in McItem, along with the item's index to McBody.

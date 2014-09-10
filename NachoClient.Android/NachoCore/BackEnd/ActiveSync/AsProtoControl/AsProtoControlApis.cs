@@ -411,7 +411,7 @@ namespace NachoCore.ActiveSync
             if (null == att) {
                 return null;
             }
-            if (att.IsDownloaded) {
+            if (McAbstrFileDesc.FilePresenceEnum.None != att.FilePresence) {
                 return null;
             }
             var emailMessage = McAbstrObject.QueryById<McEmailMessage> (att.EmailMessageId);
@@ -424,7 +424,8 @@ namespace NachoCore.ActiveSync
                 AttachmentId = attId,
             };
             update.Insert ();
-            att.PercentDownloaded = 1;
+
+            att.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Partial);
             att.Update ();
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCDNLDATT");

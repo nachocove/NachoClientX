@@ -20,11 +20,18 @@ namespace NachoCore.Model
 
         public bool GCWaitForReLaunch { get; set; }
 
-        public int FileSize { get; set; }
+        public long FileSize { get; set; }
 
         public FileSizeAccuracyEnum FileSizeAccuracy { get; set; }
 
         public FilePresenceEnum FilePresence { get; set; }
+
+        public double FilePresenceFraction { get; set; }
+        // Use of LocalFileName is optional. If not used, it must be null.
+        public string LocalFileName { get; set; }
+        // Use of DisplayName is optional. If not used, it must be null.
+        [Indexed]
+        public string DisplayName { get; set; }
 
         protected virtual bool IsInstance ()
         {
@@ -50,12 +57,15 @@ namespace NachoCore.Model
         public string GetFilePath ()
         {
             NcAssert.True (!IsInstance () && 0 != Id);
-            return GetFilePath (Id);
-        }
-
-        public string GetFilePath (int descId)
-        {
-            return Path.Combine (NcModel.Instance.GetFileDirPath (GetFilePathSegment ()), descId.ToString ());
+            var dirPath = DirPath ();
+            if (!Directory.Exists (dirPath)) {
+                Directory.CreateDirectory (dirPath);
+            }
+            if (null == LocalFileName) {
+                return Path.Combine (dirPath, Id.ToString ());
+            } else {
+                return Path.Combine (dirPath, LocalFileName);
+            }
         }
 
         public enum FileSizeAccuracyEnum
@@ -78,82 +88,204 @@ namespace NachoCore.Model
             return File.OpenWrite (GetFilePath ());
         }
 
-        private McAbstrFileDesc _CompleteInsertSaveStart (McAbstrFileDesc desc)
+        protected string CompleteGetFilePath (McAbstrFileDesc desc)
         {
+            NcAssert.True (IsInstance ());
+            if (null == desc) {
+                return null;
+            }
+            return desc.GetFilePath ();
+        }
+
+        private string DirPath ()
+        {
+            NcAssert.True (!IsInstance ());
+            return Path.Combine (NcModel.Instance.GetFileDirPath (GetFilePathSegment ()), Id.ToString ());
+        }
+
+        private void CheckInsertMkDir (McAbstrFileDesc desc, bool isInstance)
+        {
+            NcAssert.True (isInstance == IsInstance ());
             desc.Insert ();
-            return desc;
+            Directory.CreateDirectory (desc.DirPath ());
         }
 
         // Derived class must implement McXxx InsertSaveStart (). This calls the derived class 
         // constructor and passes it through CompleteInsertSaveStart. Must be IsInstance only.
         protected McAbstrFileDesc CompleteInsertSaveStart (McAbstrFileDesc desc)
         {
-            NcAssert.True (IsInstance ());
-            return _CompleteInsertSaveStart (desc);
+            CheckInsertMkDir (desc, true);
+            return desc;
         }
 
         // Derived class must implement McXxx InsertFile (). This calls the derived class 
         // constructor and passes it through CompleteInsertFile. Must be IsInstance only.
         protected McAbstrFileDesc CompleteInsertFile (McAbstrFileDesc desc, string content)
         {
-            NcAssert.True (IsInstance ());
-            var desc2 = _CompleteInsertSaveStart (desc);
-            File.WriteAllText (desc2.GetFilePath (), content);
-            desc2.UpdateSaveFinish ();
-            return desc2;
+            CheckInsertMkDir (desc, true);
+            File.WriteAllText (desc.GetFilePath (), content);
+            desc.UpdateSaveFinish ();
+            return desc;
         }
 
         // Derived class must implement McXxx InsertFile (). This calls the derived class 
         // constructor and passes it through CompleteInsertFile. Must be IsInstance only.
         protected McAbstrFileDesc CompleteInsertFile (McAbstrFileDesc desc, byte[] content)
         {
-            NcAssert.True (IsInstance ());
-            var desc2 = _CompleteInsertSaveStart (desc);
-            File.WriteAllBytes (desc2.GetFilePath (), content);
-            desc2.UpdateSaveFinish ();
-            return desc2;
+            CheckInsertMkDir (desc, true);
+            File.WriteAllBytes (desc.GetFilePath (), content);
+            desc.UpdateSaveFinish ();
+            return desc;
         }
 
         // Derived class must implement McXxx InsertDuplicate (). This calls the derived class 
-        // constructor and passes it through CompleteInsertDuplicate. Must not be IsInstance only.
+        // constructor and passes it through CompleteInsertDuplicate. Must not be IsInstance.
         protected McAbstrFileDesc CompleteInsertDuplicate (McAbstrFileDesc desc)
         {
-            NcAssert.True (!IsInstance ());
-            var desc2 = _CompleteInsertSaveStart (desc);
-            File.Copy (GetFilePath (), desc2.GetFilePath ());
-            desc2.UpdateSaveFinish ();
+            CheckInsertMkDir (desc, false);
+            File.Copy (GetFilePath (), desc.GetFilePath ());
+            desc.UpdateSaveFinish ();
             return desc;
         }
 
         // Derived class must implement McXxx InsertDuplicate (int descId). This calls the derived class 
         // constructor and passes it through CompleteInsertDuplicate. Must be IsInstance only.
-        protected McAbstrFileDesc CompleteInsertDuplicate (McAbstrFileDesc desc, int descId)
+        protected McAbstrFileDesc CompleteInsertDuplicate (McAbstrFileDesc destDesc, McAbstrFileDesc srcDesc)
+        {
+            CheckInsertMkDir (destDesc, true);
+            File.Copy (destDesc.GetFilePath (), srcDesc.GetFilePath ());
+            destDesc.UpdateSaveFinish ();
+            return destDesc;
+        }
+
+        protected string CompleteGetContentsString (McAbstrFileDesc desc)
         {
             NcAssert.True (IsInstance ());
-            var desc2 = _CompleteInsertSaveStart (desc);
-            File.Copy (GetFilePath (descId), desc2.GetFilePath ());
-            desc2.UpdateSaveFinish ();
-            return desc;
+            if (null == desc) {
+                return null;
+            }
+            return desc.GetContentsString ();
+        }
+
+        protected byte[] CompleteGetContentsByteArray (McAbstrFileDesc desc)
+        {
+            NcAssert.True (IsInstance ());
+            if (null == desc) {
+                return null;
+            }
+            return desc.GetContentsByteArray ();
+        }
+
+        public void SetDisplayName (string displayName)
+        {
+            NcAssert.True (!IsInstance ());
+            string oldPath = null;
+            if (0 < Id) {
+                oldPath = GetFilePath ();
+            }
+            DisplayName = displayName;
+            LocalFileName = null;
+            // See if we can make a legit LocalFileName. If we can't, leave it null.
+            var tmp = NcModel.Instance.TmpPath (AccountId);
+            Directory.CreateDirectory (tmp);
+            var justName = displayName.SantizeFileName ();
+            var target = Path.Combine (tmp, justName);
+            try {
+                // Test to see if sanitized display name will work as a file name.
+                File.OpenWrite (target);
+                LocalFileName = justName;
+                Directory.Delete (tmp, true);
+            } catch {
+                // Add appropriate extension to id, and see if that works as a file name.
+                var ext = Path.GetExtension (DisplayName);
+                if (null != ext) {
+                    var idExt = Id.ToString () + ext;
+                    target = Path.Combine (tmp, idExt);
+                    try {
+                        File.OpenWrite (target);
+                        LocalFileName = idExt;
+                        Directory.Delete (tmp, true);
+                    } catch {
+                        Directory.Delete (tmp, true);
+                    }
+                }
+            }
+            if (null != oldPath && File.Exists (oldPath)) {
+                File.Move (oldPath, GetFilePath ());
+            }
+        }
+
+        public void SetFilePresence (FilePresenceEnum presence)
+        {
+            switch (presence) {
+            case FilePresenceEnum.None:
+                FilePresenceFraction = 0.0;
+                break;
+            case FilePresenceEnum.Partial:
+                if (0.0 >= FilePresenceFraction || 1.0 <= FilePresenceFraction) {
+                    FilePresenceFraction = 0.01;
+                }
+                break;
+            case FilePresenceEnum.Complete:
+                FilePresenceFraction = 1.0;
+                break;
+            default:
+                NcAssert.CaseError (string.Format ("{0}", presence.ToString ()));
+                break;
+            }
+            FilePresence = presence;
+        }
+
+        public void UpdateSavePresence (long incBytes)
+        {
+            if (FileSizeAccuracyEnum.Invalid == FileSizeAccuracy) {
+                return;
+            }
+            var soFar = FilePresenceFraction * FileSize;
+            soFar += incBytes;
+            FilePresenceFraction = soFar / FileSize;
+            if (1 < FilePresenceFraction) {
+                // Rely on UpdateSaveFinish to change FilePresence.
+                FilePresenceFraction = 1;
+            }
+            Update ();
         }
 
         public virtual void UpdateSaveFinish ()
         {
             NcAssert.True (!IsInstance ());
             IsValid = true;
+            var fileInfo = new FileInfo (GetFilePath ());
+            FileSize = fileInfo.Length;
+            FileSizeAccuracy = FileSizeAccuracyEnum.Actual;
+            SetFilePresence (FilePresenceEnum.Complete);
             Update ();
         }
 
-        public void UpdateFile (string content)
+        public void UpdateData (string content)
         {
             File.WriteAllText (GetFilePath (), content);
-
-            if (!IsValid) {
-                UpdateSaveFinish ();
-            } else {
-                Update ();
-            }
+            UpdateSaveFinish ();
         }
-        /// <summary>
+
+        public void UpdateData (byte[] content)
+        {
+            File.WriteAllBytes (GetFilePath (), content);
+            UpdateSaveFinish ();
+        }
+
+        public void UpdateFileCopy (string srcPath)
+        {
+            File.Copy (srcPath, GetFilePath ());
+            UpdateSaveFinish ();           
+        }
+
+        public void UpdateFileMove (string srcPath)
+        {
+            File.Move (srcPath, GetFilePath ());
+            UpdateSaveFinish ();           
+        }
+
         /// Gets the contents as a string.
         /// Not callable on Instance.
         /// </summary>
@@ -161,7 +293,7 @@ namespace NachoCore.Model
         public string GetContentsString ()
         {
             NcAssert.True (!IsInstance ());
-            return _GetContentsString (Id);
+            return File.ReadAllText (GetFilePath ());
         }
         /// <summary>
         /// Gets the contents as a byte array.
@@ -171,59 +303,22 @@ namespace NachoCore.Model
         public byte[] GetContentsByteArray ()
         {
             NcAssert.True (!IsInstance ());
-            return _GetContentsByteArray (Id);
-        }
-        /// <summary>
-        /// Gets the contents as string.
-        /// Callable only via Instance.
-        /// </summary>
-        /// <returns>The contents string.</returns>
-        /// <param name="descId">Desc identifier.</param>
-        public string GetContentsString (int descId)
-        {
-            NcAssert.True (IsInstance ());
-            return _GetContentsString (descId);
-        }
-        /// <summary>
-        /// Gets the contents as byte array.
-        /// Callable only via Instance.
-        /// </summary>
-        /// <returns>The contents byte array.</returns>
-        /// <param name="descId">Desc identifier.</param>
-        public byte[] GetContentsByteArray (int descId)
-        {
-            NcAssert.True (IsInstance ());
-            return _GetContentsByteArray (descId);
-        }
-
-        private string _GetContentsString (int descId)
-        {
-            if (0 == descId) {
-                return null;
-            }
-            return File.ReadAllText (GetFilePath (descId));
-        }
-
-        private byte[] _GetContentsByteArray (int descId)
-        {
-            if (0 == descId) {
-                return null;
-            }
-            return File.ReadAllBytes (GetFilePath (descId));
+            return File.ReadAllBytes (GetFilePath ());
         }
 
         public override int Delete ()
         {
             DeleteFile ();
+            Directory.Delete (DirPath (), true);
             return base.Delete ();
         }
 
         public void DeleteFile ()
         {
-            FilePresence = FilePresenceEnum.None;
+            var path = GetFilePath ();
+            SetFilePresence (FilePresenceEnum.None);
             Update ();
-            File.Delete (GetFilePath ());
+            File.Delete (path);
         }
     }
 }
-
