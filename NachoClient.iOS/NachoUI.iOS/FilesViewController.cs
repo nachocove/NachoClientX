@@ -205,8 +205,8 @@ namespace NachoClient.iOS
         public void DownloadAndDoAction (int attachmentId, UITableViewCell cell, Action<McAttachment> attachmentAction)
         {
             var a = McAttachment.QueryById<McAttachment> (attachmentId);
-            if (!a.IsDownloaded) {
-                if (a.PercentDownloaded > 0) {
+            if (McAbstrFileDesc.FilePresenceEnum.Complete != a.FilePresence) {
+                if (McAbstrFileDesc.FilePresenceEnum.Partial == a.FilePresence) {
                     // replace animations if one is already going
                     FilesTableSource.StopAnimationsOnCell (cell);
                     FilesSource.StartArrowAnimation (cell);
@@ -227,7 +227,7 @@ namespace NachoClient.iOS
                     // open attachment if the statusInd says this attachment has downloaded
                     if (NcResult.SubKindEnum.Info_AttDownloadUpdate == s.Status.SubKind && eventTokens.Contains (token)) {
                         a = McAttachment.QueryById<McAttachment> (attachmentId); // refresh the now-downloaded attachment
-                        if (a.IsDownloaded) {
+                        if (McAbstrFileDesc.FilePresenceEnum.Complete == a.FilePresence) {
                             // wait until download-complete animation finishes to do the attachment action
                             FilesTableSource.DownloadCompleteAnimation (cell, displayAttachment: () => {
                                 // check if this is still the next attachment we want to open
@@ -260,7 +260,7 @@ namespace NachoClient.iOS
                 );
                 alert.Show();
             } else {
-                attachment.RemoveFromStorage ();
+                attachment.DeleteFile ();
                 RefreshTableSource ();
             }
         }
@@ -281,7 +281,7 @@ namespace NachoClient.iOS
         public void OpenInOtherApp (McAttachment attachment, UITableViewCell cell)
         {
             DownloadAndDoAction (attachment.Id, cell, (a) => {
-                UIDocumentInteractionController Preview = UIDocumentInteractionController.FromUrl (NSUrl.FromFilename (a.FilePath ()));
+                UIDocumentInteractionController Preview = UIDocumentInteractionController.FromUrl (NSUrl.FromFilename (a.GetFilePath ()));
                 Preview.Delegate = new NachoClient.PlatformHelpers.DocumentInteractionControllerDelegate (this);
                 Preview.PresentOpenInMenu (View.Frame, View, true);
             });
@@ -466,9 +466,9 @@ namespace NachoClient.iOS
                 cell.DetailTextLabel.Text += extension.Length > 1 ? extension.Substring (1) + " " : "Unrecognized "; // get rid of period and format
                 cell.DetailTextLabel.Text += "file";
 
-                if (attachment.IsDownloaded || attachment.IsInline) {
+                if (McAbstrFileDesc.FilePresenceEnum.Complete == attachment.FilePresence || attachment.IsInline) {
                     cell.ImageView.Image = UIImage.FromFile (DownloadCompleteIcon);
-                } else if (attachment.PercentDownloaded > 0 && attachment.PercentDownloaded < 100) {
+                } else if (McAbstrFileDesc.FilePresenceEnum.Partial == attachment.FilePresence) {
                     vc.AttachmentAction (attachment.Id, cell);
                 } else {
                     cell.ImageView.Image = UIImage.FromFile (DownloadIcon);

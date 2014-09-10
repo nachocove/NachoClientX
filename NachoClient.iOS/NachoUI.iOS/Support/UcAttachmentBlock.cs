@@ -259,19 +259,15 @@ namespace NachoClient.iOS
                     image = e.Info [UIImagePickerController.OriginalImage] as UIImage;
                 }
                 NcAssert.True (null != image);
-                var attachment = new McAttachment ();
-                attachment.AccountId = accountId;
-                attachment.Insert ();
-                attachment.DisplayName = attachment.Id.ToString () + ".jpg";
-                var guidString = Guid.NewGuid ().ToString ("N");
-                using (var stream = McAttachment.TempFileStream (guidString)) {
+                var attachment = McAttachment.Instance.InsertSaveStart (accountId);
+                using (var fileStream = attachment.SaveFileStream ()) {
                     using (var jpg = image.AsJPEG ().AsStream ()) {
-                        jpg.CopyTo (stream);
+                        jpg.CopyTo (fileStream);
                         jpg.Close ();
                     }
                 }
-                attachment.SaveFromTemp (guidString);
-                attachment.Update ();
+                attachment.SetDisplayName (attachment.Id.ToString () + ".jpg");
+                attachment.UpdateSaveFinish ();
                 Append (attachment);
             }
 

@@ -261,10 +261,12 @@ namespace NachoPlatform
             ).ToArray ();
             var predicate = EventStore.PredicateForEvents (start, end, calendars);
             var calEvents = EventStore.EventsMatching (predicate);
-            foreach (var calEvent in calEvents) {
-                retval.Add (new PlatformCalendarRecordiOS () {
-                    Event = calEvent,
-                });
+            if (null != calEvents) {
+                foreach (var calEvent in calEvents) {
+                    retval.Add (new PlatformCalendarRecordiOS () {
+                        Event = calEvent,
+                    });
+                }
             }
             return retval;
         }

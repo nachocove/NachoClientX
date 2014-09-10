@@ -252,7 +252,7 @@ namespace NachoCore.Utils
             // attachments
             var attachmentCollection = new MimeKit.AttachmentCollection ();
             foreach (var a in attachments) {
-                attachmentCollection.Add (a.FilePath ());
+                attachmentCollection.Add (a.GetFilePath ());
             }
 
             MimeEntity bodyPart = null;

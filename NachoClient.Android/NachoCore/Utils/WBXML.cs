@@ -157,12 +157,14 @@ namespace NachoCore.Wbxml
 
                         case ASWBXML.KCodePage_ItemOperations:
                             #if (!WBXMLTOOL)
-                            var guidString = Guid.NewGuid ().ToString ("N");
-                            using (var fileStream = McAttachment.TempFileStream (guidString)) {
-                                using (var cryptoStream = new CryptoStream (new BufferedStream (fileStream), 
-                                                                  new FromBase64Transform (), CryptoStreamMode.Write)) {
-                                    bytes.DequeueStringToStream (cryptoStream, CToken);
-                                    currentNode.Add (new XAttribute ("nacho-attachment-file", guidString));
+                            if (0 < accountId) {
+                                var tmpPath = NcModel.Instance.TmpPath (accountId);
+                                using (var fileStream = File.OpenWrite (tmpPath)) {
+                                    using (var cryptoStream = new CryptoStream (new BufferedStream (fileStream), 
+                                        new FromBase64Transform (), CryptoStreamMode.Write)) {
+                                        bytes.DequeueStringToStream (cryptoStream, CToken);
+                                        currentNode.Add (new XAttribute ("nacho-attachment-file", tmpPath));
+                                    }
                                 }
                             }
                             #else
