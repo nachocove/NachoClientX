@@ -140,7 +140,7 @@ namespace NachoClient.iOS
             calendarCloseTapGestureRecognizer.Enabled = false;
             calendarCloseView.AddGestureRecognizer (calendarCloseTapGestureRecognizer);
 
-            View.BackgroundColor = A.Color_NachoNowBackground;
+            View.BackgroundColor = A.Color_NachoBackgroundGray;
 
             ConfigureBasicView ();
         }

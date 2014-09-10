@@ -48,7 +48,7 @@ namespace NachoClient.iOS
             base.ViewDidLoad ();
 
             EventAttendeesTableView.Frame = new RectangleF (0, 40, SCREEN_WIDTH, View.Frame.Height - 40);
-            EventAttendeesTableView.SeparatorColor = A.Color_NachoSeparator;
+            EventAttendeesTableView.SeparatorColor = A.Color_NachoBorderGray;
 
             account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
             attendeeSource = new AttendeeTableViewSource ();
@@ -147,7 +147,7 @@ namespace NachoClient.iOS
             emptyListLabel = new UILabel (new RectangleF (80, 80, 160, 20));
             emptyListLabel.TextAlignment = UITextAlignment.Center;
             emptyListLabel.Font = A.Font_AvenirNextDemiBold14;
-            emptyListLabel.TextColor = A.Color_NachoSeparator;
+            emptyListLabel.TextColor = A.Color_NachoBorderGray;
             emptyListLabel.Lines = 0;
             emptyListLabel.LineBreakMode = UILineBreakMode.WordWrap;
             emptyListLabel.Hidden = true;
@@ -163,7 +163,7 @@ namespace NachoClient.iOS
             segmentedControl.InsertSegment ("Optional", 2, false);
             segmentedControl.SelectedSegment = 0;
             segmentedControl.SelectedSegment = 0;
-            segmentedControl.TintColor = A.Color_NachoGray;
+            segmentedControl.TintColor = A.Color_NachoIconGray;
 
 
             var segmentedControlTextAttributes = new UITextAttributes ();
@@ -188,7 +188,7 @@ namespace NachoClient.iOS
                 }
             };
 
-            AddLine (0, 40, SCREEN_WIDTH, A.Color_NachoSeparator, segmentedControlView);
+            AddLine (0, 40, SCREEN_WIDTH, A.Color_NachoBorderGray, segmentedControlView);
             segmentedControl.Tag = SEGMENTED_CONTROL_TAG;
             segmentedControlView.Add (segmentedControl);
             View.AddSubview (segmentedControlView);

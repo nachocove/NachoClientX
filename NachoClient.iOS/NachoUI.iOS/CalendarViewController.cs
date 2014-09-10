@@ -55,17 +55,21 @@ namespace NachoClient.iOS
 
             Util.SetOriginalImageForButton (revealButton, "navbar-icn-menu");
             Util.SetOriginalImageForButton (nachoButton, "nav-nachonow");
+            Util.SetOriginalImageForButton (todayButton, "nav-calendar-empty");
+
+            var addEventButton = new UIBarButtonItem (UIBarButtonSystemItem.Add);
+            addEventButton.TintColor = A.Color_NachoBlue;
 
             // Multiple buttons on the left side
             NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
-            NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { newCalEventButton, todayButton };
+            NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { addEventButton, todayButton };
             nachoButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("CalendarToNachoNow", this);
             };
             todayButton.Clicked += (object sender, EventArgs e) => {
                 ReturnToToday ();
             };
-            newCalEventButton.Clicked += (object sender, EventArgs e) => {
+            addEventButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("CalendarToEditEventView", new SegueHolder (null));
             };
 
@@ -81,11 +85,13 @@ namespace NachoClient.iOS
             calendar = NcEventManager.Instance;
             calendarTableView.ReloadData ();
 
-            var todayButtonLabel = new UIButton (new RectangleF (86, 2, (dateBarHeight - 8), 44));
-            todayButtonLabel.SetTitle (DateTime.Today.Day.ToString (), UIControlState.Normal);
-            todayButtonLabel.SetTitleColor (A.Color_NachoBlue, UIControlState.Normal);
-            todayButtonLabel.SetTitleColor (UIColor.White, UIControlState.Selected);
+            calendarTableView.SeparatorColor = A.Color_NachoBorderGray;
+
+            var todayButtonLabel = new UILabel (new RectangleF (108, 3, 23, 44));
+            todayButtonLabel.Text =  DateTime.Today.Day.ToString ();
+            todayButtonLabel.TextColor = A.Color_NachoBlue;
             todayButtonLabel.Font = A.Font_AvenirNextRegular14;
+            todayButtonLabel.TextAlignment = UITextAlignment.Center;
             var titleView = new UIView (new RectangleF (0, 0, (dateBarHeight - 8), 44));
             var titleLabel = new UILabel (new RectangleF (0, 0, (dateBarHeight - 8), 44));
             titleLabel.Font = A.Font_AvenirNextDemiBold17;

@@ -437,7 +437,7 @@ namespace NachoClient.iOS
             UIView inputBox = new UIView (new RectangleF (0, yVal, View.Frame.Width + 1, CELL_HEIGHT));
             inputBox.BackgroundColor = UIColor.White;
             if (hasBorder) {
-                inputBox.Layer.BorderColor = A.Color_NachoSeparator.CGColor;
+                inputBox.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
                 inputBox.Layer.BorderWidth = .4f;
             }
 

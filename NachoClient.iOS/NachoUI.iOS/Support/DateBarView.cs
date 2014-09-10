@@ -101,7 +101,7 @@ namespace NachoClient.iOS
                     buttonRect.Layer.CornerRadius = 18;
                     buttonRect.Layer.MasksToBounds = true;
                     buttonRect.TintColor = UIColor.Clear;
-                    buttonRect.BackgroundColor = A.Color_NachoNowBackground;
+                    buttonRect.BackgroundColor = A.Color_NachoLightGrayBackground;
                     buttonRect.TouchUpInside += (sender, e) => {
                         ToggleButtons (buttonRect.Tag);
                         buttonRect.Selected = true;
@@ -148,7 +148,7 @@ namespace NachoClient.iOS
                     owner.selectedDateTag = button.Tag;
                 } else {
                     button.Selected = false;
-                    button.BackgroundColor = A.Color_NachoNowBackground;
+                    button.BackgroundColor = A.Color_NachoLightGrayBackground;
                 }
                 i++;
                 dayOffset++;
@@ -212,7 +212,7 @@ namespace NachoClient.iOS
                     owner.selectedDateTag = button.Tag;
                 } else {
                     button.Selected = false;
-                    button.BackgroundColor = A.Color_NachoNowBackground;
+                    button.BackgroundColor = A.Color_NachoLightGrayBackground;
                 }
                 button.SetTitle (date, UIControlState.Normal);
                 button.SetTitle (date, UIControlState.Selected);
@@ -275,7 +275,7 @@ namespace NachoClient.iOS
                 while (i < numDaysOffset) {
                     UIButton button = (this.ViewWithTag (i + 100)) as UIButton;
                     if (true == button.Selected) {
-                        button.BackgroundColor = A.Color_NachoNowBackground;
+                        button.BackgroundColor = A.Color_NachoLightGrayBackground;
                         button.Selected = false;
                     } 
                     if (i == selectedButtonTag - 100) {
@@ -305,7 +305,7 @@ namespace NachoClient.iOS
                         button.BackgroundColor = A.Color_FEBA32;
                         button.Selected = true;
                     } else {
-                        button.BackgroundColor = A.Color_NachoNowBackground;
+                        button.BackgroundColor = A.Color_NachoLightGrayBackground;
                         button.Selected = false;
                     } 
                     i++;
@@ -318,7 +318,7 @@ namespace NachoClient.iOS
             int i = 0;
             while (i < 42) {
                 UIButton button = (this.ViewWithTag (i + 100)) as UIButton;
-                button.BackgroundColor = A.Color_NachoNowBackground;
+                button.BackgroundColor = A.Color_NachoLightGrayBackground;
                 i++;
             }
         }

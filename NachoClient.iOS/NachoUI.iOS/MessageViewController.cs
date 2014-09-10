@@ -495,7 +495,7 @@ namespace NachoClient.iOS
             // Separator
             yOffset += 5;
             var separatorView = new UIView (new RectangleF (0, yOffset, 320, 1));
-            separatorView.BackgroundColor = A.Color_NachoSeparator;
+            separatorView.BackgroundColor = A.Color_NachoBorderGray;
             separatorView.Tag = SEPARATOR_TAG;
             view.AddSubview (separatorView);
 
@@ -512,7 +512,7 @@ namespace NachoClient.iOS
 
             for (int i = 0; i < attachments.Count; i++) {
                 var attachmentView = new UIView (new RectangleF (0, i * 61, View.Frame.Width, 61));
-                attachmentView.Layer.BorderColor = A.Color_NachoSeparator.CGColor;
+                attachmentView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
                 attachmentView.Layer.BorderWidth = 1;
                 attachmentView.Tag = i;
                 attachmentListView.AddSubview (attachmentView);
@@ -1054,10 +1054,10 @@ namespace NachoClient.iOS
 
             MakeResponseBar (UID, calendarEventView);
 
-            Util.AddHorizontalLine (0, 20, SCREEN_WIDTH, A.Color_NachoSeparator, calendarEventView);
-            Util.AddHorizontalLine (0, 86, SCREEN_WIDTH, A.Color_NachoSeparator, calendarEventView);
-            Util.AddHorizontalLine (0, 140, SCREEN_WIDTH, A.Color_NachoSeparator, calendarEventView);
-            Util.AddVerticalLine (65, 20, 66, A.Color_NachoSeparator, calendarEventView);
+            Util.AddHorizontalLine (0, 20, SCREEN_WIDTH, A.Color_NachoBorderGray, calendarEventView);
+            Util.AddHorizontalLine (0, 86, SCREEN_WIDTH, A.Color_NachoBorderGray, calendarEventView);
+            Util.AddHorizontalLine (0, 140, SCREEN_WIDTH, A.Color_NachoBorderGray, calendarEventView);
+            Util.AddVerticalLine (65, 20, 66, A.Color_NachoBorderGray, calendarEventView);
 
             parentView.AddSubview (calendarEventView);
         }

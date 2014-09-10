@@ -73,8 +73,8 @@ namespace NachoClient.iOS
             view.ContentMode = UIViewContentMode.Center;
             view.Layer.CornerRadius = 5;
             view.Layer.MasksToBounds = true;
-            view.Layer.BorderColor = A.Color_NachoNowBackground.CGColor;
-            view.Layer.BorderWidth = 1;
+            view.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
+            view.Layer.BorderWidth = .5f;
 
             var viewWidth = view.Frame.Width;
 

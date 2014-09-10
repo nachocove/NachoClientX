@@ -274,7 +274,7 @@ namespace NachoClient.iOS
             helperBodyText.TextAlignment = UITextAlignment.Center;
             helperContainer.Add (helperBodyText);
 
-            Util.AddHorizontalLine (0, helperContainer.Frame.Height + 10 , helperContainer.Frame.Width, A.Color_NachoSeparator, helperContainer);
+            Util.AddHorizontalLine (0, helperContainer.Frame.Height + 10 , helperContainer.Frame.Width, A.Color_NachoBorderGray, helperContainer);
         }
 
         protected void CreateViewOne()

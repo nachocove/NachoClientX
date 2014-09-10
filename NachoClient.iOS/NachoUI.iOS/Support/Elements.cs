@@ -245,7 +245,7 @@ namespace NachoClient.iOS
         public override UITableViewCell GetCell (UITableView tv)
         {
             var cell = base.GetCell (tv);
-            tv.SeparatorColor = A.Color_NachoSeparator;
+            tv.SeparatorColor = A.Color_NachoBorderGray;
             cell.TextLabel.Font = A.Font_AvenirNextRegular14;
             cell.TintColor = A.Color_NachoBlue;
             return cell;
@@ -746,7 +746,7 @@ namespace NachoClient.iOS
         public override UITableViewCell GetCell (UITableView tv)
         {
             var cell = base.GetCell (tv);
-            tv.SeparatorColor = A.Color_NachoSeparator;
+            tv.SeparatorColor = A.Color_NachoBorderGray;
             var size = new SizeF (10, 10);
             cell.ImageView.Image = NachoClient.Util.DrawCalDot (color, size);
             cell.TextLabel.Font = A.Font_AvenirNextRegular14;

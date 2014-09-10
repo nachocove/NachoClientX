@@ -68,7 +68,7 @@ namespace NachoClient.iOS
 
             yOffset = accountSettingsLabel.Frame.Bottom + 5;
 
-            contentView.AddSubview (AddHorizontalLine (0, yOffset - .5f, View.Frame.Width, A.Color_NachoSeparator));
+            contentView.AddSubview (AddHorizontalLine (0, yOffset - .5f, View.Frame.Width, A.Color_NachoBorderGray));
 
             UIView accountSettingsCell = new UIView (new RectangleF (0, yOffset, contentView.Frame.Width, CELL_HEIGHT));
             accountSettingsCell.BackgroundColor = UIColor.White;
@@ -98,7 +98,7 @@ namespace NachoClient.iOS
 
             yOffset = accountSettingsCell.Frame.Bottom;
 
-            contentView.AddSubview (AddHorizontalLine (0, yOffset, View.Frame.Width, A.Color_NachoSeparator));
+            contentView.AddSubview (AddHorizontalLine (0, yOffset, View.Frame.Width, A.Color_NachoBorderGray));
 
             yOffset += 30;
 
@@ -176,10 +176,10 @@ namespace NachoClient.iOS
 
             yOffset = openSourceCell.Frame.Bottom;
 
-            contentView.AddSubview (AddHorizontalLine (0, privacyStatementCell.Frame.Top, View.Frame.Width, A.Color_NachoSeparator));
-            contentView.AddSubview (AddHorizontalLine (INSET, privacyStatementCell.Frame.Bottom, View.Frame.Width, A.Color_NachoSeparator));
-            contentView.AddSubview (AddHorizontalLine (INSET, licenseAgreementCell.Frame.Bottom, View.Frame.Width, A.Color_NachoSeparator));
-            contentView.AddSubview (AddHorizontalLine (0, openSourceCell.Frame.Bottom, View.Frame.Width, A.Color_NachoSeparator));
+            contentView.AddSubview (AddHorizontalLine (0, privacyStatementCell.Frame.Top, View.Frame.Width, A.Color_NachoBorderGray));
+            contentView.AddSubview (AddHorizontalLine (INSET, privacyStatementCell.Frame.Bottom, View.Frame.Width, A.Color_NachoBorderGray));
+            contentView.AddSubview (AddHorizontalLine (INSET, licenseAgreementCell.Frame.Bottom, View.Frame.Width, A.Color_NachoBorderGray));
+            contentView.AddSubview (AddHorizontalLine (0, openSourceCell.Frame.Bottom, View.Frame.Width, A.Color_NachoBorderGray));
         }
 
         protected void LayoutView ()

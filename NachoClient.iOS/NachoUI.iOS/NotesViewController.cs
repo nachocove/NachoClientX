@@ -25,7 +25,7 @@ namespace NachoClient.iOS
         protected McCalendar eventItem;
         protected McContact contactItem;
         protected McAccount account;
-        UIColor separatorColor = A.Color_NachoSeparator;
+        UIColor separatorColor = A.Color_NachoBorderGray;
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
         protected static float LINE_OFFSET = 30f;
         protected static float KEYBOARD_HEIGHT = 216f;

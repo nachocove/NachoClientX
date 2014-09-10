@@ -141,14 +141,14 @@ namespace NachoClient.iOS
                 // Subject label view
                 var subjectLabelView = new UILabel (new RectangleF (65, 15, cellWidth - 65, 20));
                 subjectLabelView.Font = A.Font_AvenirNextDemiBold17;
-                subjectLabelView.TextColor = A.Color_114645;
+                subjectLabelView.TextColor = A.Color_NachoBlack;
                 subjectLabelView.Tag = SUBJECT_TAG;
                 cell.ContentView.AddSubview (subjectLabelView);
 
                 // Duration label view
                 var durationLabelView = new UILabel (new RectangleF (65, 35, cellWidth - 65, 20));
                 durationLabelView.Font = A.Font_AvenirNextMedium14;
-                durationLabelView.TextColor = A.Color_999999;
+                durationLabelView.TextColor = A.Color_NachoBlack;
                 durationLabelView.Tag = DURATION_TAG;
                 cell.ContentView.AddSubview (durationLabelView);
 
@@ -160,13 +160,13 @@ namespace NachoClient.iOS
                 // Location label view
                 var locationLabelView = new UILabel (new RectangleF (80, 55, cellWidth - 80, 20));
                 locationLabelView.Font = A.Font_AvenirNextRegular14;
-                locationLabelView.TextColor = A.Color_999999;
+                locationLabelView.TextColor = A.Color_NachoTextGray;
                 locationLabelView.Tag = LOCATION_TEXT_TAG;
                 cell.ContentView.AddSubview (locationLabelView);
 
                 // Vertical line
                 var lineView = new UIView (new RectangleF (35, 0, 1, 20));
-                lineView.BackgroundColor = A.Color_NachoNowBackground;
+                lineView.BackgroundColor = A.Color_NachoLightBorderGray;
                 lineView.Tag = LINE_TAG;
                 cell.ContentView.AddSubview (lineView);
 
@@ -466,23 +466,23 @@ namespace NachoClient.iOS
         public override UIView GetViewForHeader (UITableView tableView, int section)
         {
             var view = new UIView (new RectangleF (0, 0, tableView.Frame.Width, 75));
-            view.BackgroundColor = A.Color_NachoLightGray;
-            view.Layer.BorderColor = A.Color_NachoNowBackground.CGColor;
-            view.Layer.BorderWidth = 1;
+            view.BackgroundColor = A.Color_NachoLightGrayBackground;
+            view.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
+            view.Layer.BorderWidth = .5f;
 
             var dayLabelView = new UILabel (new RectangleF (65, 20, tableView.Frame.Width - 65, 20));
             dayLabelView.Font = A.Font_AvenirNextDemiBold17;
-            dayLabelView.TextColor = A.Color_114645;
+            dayLabelView.TextColor = A.Color_NachoBlack;
             view.AddSubview (dayLabelView);
 
             var dateLabelView = new UILabel (new RectangleF (65, 40, tableView.Frame.Width - 65, 20));
             dateLabelView.Font = A.Font_AvenirNextMedium14;
-            dateLabelView.TextColor = A.Color_999999;
+            dateLabelView.TextColor = A.Color_NachoTextGray;
             view.AddSubview (dateLabelView);
 
             var bigNumberView = new UILabel (new RectangleF (0, 0, 65, 75));
-            bigNumberView.Font = A.Font_AvenirNextDemiBold30;
-            bigNumberView.TextColor = A.Color_NachoBlue;
+            bigNumberView.Font = A.Font_AvenirNextRegular34;
+            bigNumberView.TextColor = A.Color_NachoTeal;
             bigNumberView.TextAlignment = UITextAlignment.Center;
             view.AddSubview (bigNumberView);
 
@@ -493,7 +493,7 @@ namespace NachoClient.iOS
             }
 
             var addButton = new UIButton (UIButtonType.ContactAdd);
-            addButton.TintColor = A.Color_999999;
+            addButton.TintColor = A.Color_NachoTeal;
             addButton.Frame = new RectangleF (tableView.Frame.Width - 42, (view.Frame.Height / 2) - 15, 30, 30);
             addButton.TouchUpInside += (sender, e) => {
                 owner.PerformSegueForDelegate ("CalendarToEditEventView", new SegueHolder (date));
