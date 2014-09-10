@@ -46,8 +46,6 @@ namespace NachoClient.iOS
         const string SidebarToNewEventSegueId = "SidebarToEditEvent";
         const string SidebarToHotListSegueId = "SidebarToHotList";
 
-
-
         protected class ButtonInfo
         {
             public string label { get; set; }
@@ -97,26 +95,27 @@ namespace NachoClient.iOS
         protected void CreateView ()
         {
             contentView = new UIView (View.Frame);
-            contentView.BackgroundColor = UIColor.Black;
+            contentView.BackgroundColor = UIColor.FromRGB(0x0d,0x1e,0x21);
+            contentView.Alpha = .82f;
             View.AddSubview (contentView);
 
             List<ButtonInfo> buttonInfoList = new List<ButtonInfo> (new ButtonInfo[] {
-                new ButtonInfo ("Inbox", "icn-inbox", SidebarToMessagesSegueId),
-                new ButtonInfo ("Calendar", "icn-calendar", SidebarToCalendarSegueId),
-                new ButtonInfo ("Contacts", "icn-contacts", SidebarToContactsSegueId),
+                new ButtonInfo ("Inbox", "menu-icn-inbox", SidebarToMessagesSegueId),
+                new ButtonInfo ("Calendar", "menu-icn-calendar", SidebarToCalendarSegueId),
+                new ButtonInfo ("Contacts", "menu-icn-contacts", SidebarToContactsSegueId),
                 new ButtonInfo (null, null, null),
-                new ButtonInfo ("Hot List", "icn-chili", SidebarToHotListSegueId),
-                new ButtonInfo ("Nacho Now", "icn-nacho-now", SidebarToNachoNowSegueId),
-                new ButtonInfo ("Deferred", "icn-deferred", SidebarToDeferredMessagesSegueId),
+                new ButtonInfo ("Hot List", "menu-icn-chili", SidebarToHotListSegueId),
+                new ButtonInfo ("Nacho Now", "menu-icn-nacho-now", SidebarToNachoNowSegueId),
+                new ButtonInfo ("Deferred", "menu-icn-deferred", SidebarToDeferredMessagesSegueId),
                 // new ButtonInfo ("New Email", "menu-new-email", SidebarToNewEmailSegueId),
                 // new ButtonInfo ("New Event", "menu-new-event", SidebarToNewEventSegueId),
                 new ButtonInfo (null, null, null),
-                new ButtonInfo ("Files", "icn-attachments", SidebarToFilesSegueId),
-                new ButtonInfo ("Folders", "icn-folders", SidebarToFoldersSegueId),
-                new ButtonInfo ("Settings", "icn-settings", SidebarToGeneralSettingsSegueId),
+                new ButtonInfo ("Files", "menu-icn-attachments", SidebarToFilesSegueId),
+                new ButtonInfo ("Folders", "menu-icn-folders", SidebarToFoldersSegueId),
+                new ButtonInfo ("Settings", "menu-icn-settings", SidebarToGeneralSettingsSegueId),
                 new ButtonInfo (null, null, null),
                 null,
-                new ButtonInfo ("Support", "menu-help", SidebarToSupportSegueId),
+                new ButtonInfo ("Support", "menu-icn-help", SidebarToSupportSegueId),
                 null,
             });
 
@@ -140,8 +139,6 @@ namespace NachoClient.iOS
                 var button = UIButton.FromType (UIButtonType.RoundedRect);
                 button.Layer.CornerRadius = (BUTTON_SIZE / 2);
                 button.Layer.MasksToBounds = true;
-                button.Layer.BorderColor = UIColor.White.CGColor;
-                button.Layer.BorderWidth = 1;
                 button.Frame = new RectangleF (0, 0, BUTTON_SIZE, BUTTON_SIZE);
                 button.Center = new PointF (xOffset, yOffset);
                 button.SetImage (UIImage.FromBundle (buttonInfo.imageName), UIControlState.Normal);

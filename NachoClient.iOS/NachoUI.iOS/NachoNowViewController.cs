@@ -41,16 +41,8 @@ namespace NachoClient.iOS
 
             CalendarHelper.ExpandRecurrences ();
 
-            // Navigation
-            revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
-            revealButton.Target = this.RevealViewController ();
-
-            // Multiple buttons on the left side
-            Util.SetOriginalImageForButton (revealButton, "navbar-icn-menu");
+            var nachoButton = new UIBarButtonItem ();
             Util.SetOriginalImageForButton (nachoButton, "nav-nachonow");
-
-            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
-
             nachoButton.Clicked += (object sender, EventArgs e) => {
                 UIView.Animate (1, 0, UIViewAnimationOptions.CurveEaseOut,
                     () => {
@@ -62,18 +54,23 @@ namespace NachoClient.iOS
                 inboxCarousel.ScrollToItemAtIndex (0, true);
             };
 
+            var composeButton = new UIBarButtonItem ();
+            Util.SetOriginalImageForButton (composeButton, "contact-newemail");
             composeButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("NachoNowToCompose", new SegueHolder (null));
             };
 
+            var newMeetingButton = new UIBarButtonItem ();
+            Util.SetOriginalImageForButton (newMeetingButton, "cal-add");
             newMeetingButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("NachoNowToEditEventView", new SegueHolder (null));
             };
-                
-            Util.SetOriginalImageForButton (composeButton, "contact-newemail");
-            Util.SetOriginalImageForButton (newMeetingButton, "cal-add");
 
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, newMeetingButton };
+            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] {
+                A.RevealButton (this),
+                nachoButton,
+            };
 
             carouselTapGestureRecognizer = new UITapGestureRecognizer ();
             carouselTapGestureRecognizer.NumberOfTapsRequired = 2;

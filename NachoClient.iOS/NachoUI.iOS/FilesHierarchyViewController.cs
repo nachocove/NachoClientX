@@ -48,7 +48,6 @@ namespace NachoClient.iOS
                     A.NachoNowButton (this),
                 };
             }
-                
             FilesHierarchyView ();
         }
 
@@ -68,12 +67,14 @@ namespace NachoClient.iOS
         {
             scrollView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, View.Frame.Height);
 
+            NavigationItem.Title = "Files";
+
             // Attechment Cell
             UIView filesAttachmentsView = new UIView (new RectangleF (0, LINE_OFFSET, SCREEN_WIDTH, CELL_HEIGHT));
             filesAttachmentsView.BackgroundColor = UIColor.White;
 
             UIImageView attachmentAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
-            attachmentAccessoryImage.Image = Util.MakeArrow (A.Color_NachoBlue);
+            attachmentAccessoryImage.Image = Util.MakeArrow (A.Color_NachoTeal);
             filesAttachmentsView.AddSubview (attachmentAccessoryImage);
 
             AddTextLabelWithImage (40, 12.438f, 100, TEXT_LINE_HEIGHT, "Attachments", UIImage.FromBundle ("icn-mtng-attachment"), 14.5f, filesAttachmentsView);
@@ -92,7 +93,7 @@ namespace NachoClient.iOS
             filesSharedFilesView.BackgroundColor = UIColor.White;
 
             UIImageView sharedFilesAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
-            sharedFilesAccessoryImage.Image = Util.MakeArrow (A.Color_NachoBlue);
+            sharedFilesAccessoryImage.Image = Util.MakeArrow (A.Color_NachoTeal);
             filesSharedFilesView.AddSubview (sharedFilesAccessoryImage);
 
             AddTextLabelWithImage (40, 12.438f, 100, TEXT_LINE_HEIGHT, "Shared Files", UIImage.FromBundle ("icn-mtng-attachment"), 14.5f, filesSharedFilesView);
@@ -109,7 +110,7 @@ namespace NachoClient.iOS
             filesNotesView.BackgroundColor = UIColor.White;
 
             UIImageView noteAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
-            noteAccessoryImage.Image = Util.MakeArrow (A.Color_NachoBlue);
+            noteAccessoryImage.Image = Util.MakeArrow (A.Color_NachoTeal);
             filesNotesView.AddSubview (noteAccessoryImage);
 
             AddTextLabelWithImage (40, 12.438f, 100, TEXT_LINE_HEIGHT, "Notes", UIImage.FromBundle ("icn-mtng-attachment"), 14.5f, filesNotesView);

@@ -27,22 +27,13 @@ namespace NachoClient.iOS
             base.ViewDidLoad ();
 
             // Navigation
-            revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
-            revealButton.Target = this.RevealViewController ();
-
-            // Multiple buttons on the left side
-            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
-            Util.SetOriginalImageForButton (revealButton, "navbar-icn-menu");
-            Util.SetOriginalImageForButton (nachoButton, "nav-nachonow");
-            nachoButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("FoldersToNachoNow", this);
+            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] {
+                A.RevealButton (this),
+                A.NachoNowButton (this),
             };
 
             var addButton = new UIBarButtonItem (UIBarButtonSystemItem.Add);
             addButton.TintColor = A.Color_NachoBlue;
-            nachoButton.Clicked += (object sender, EventArgs e) => {
-                //addfolder
-            };
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { addButton };
 
             // Stylize TableView
@@ -89,7 +80,17 @@ namespace NachoClient.iOS
                 var folder = source.getFolder (rowPath);
                 var messageList = new NachoEmailMessages (folder);
                 msgview.SetEmailMessages (messageList);
+                return;
             }
+
+            if (segue.Identifier.Equals ("SegueToNachoNow")) {
+                // Nothing to do
+                return;
+            }
+
+            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
+            NcAssert.CaseError ();
+
         }
 
         public FolderViewController (IntPtr handle) : base (handle)

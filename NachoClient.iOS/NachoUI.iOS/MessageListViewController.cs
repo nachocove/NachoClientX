@@ -54,11 +54,10 @@ namespace NachoClient.iOS
             ReloadCapture = NcCapture.Create (ReloadCaptureName);
 
             // Navigation
-            revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
-            revealButton.Target = this.RevealViewController ();
-
-            Util.SetOriginalImageForButton (nachoButton, "nav-nachonow");
-            Util.SetOriginalImageForButton (revealButton, "navbar-icn-menu");
+            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] {
+                A.RevealButton (this),
+                A.NachoNowButton (this),
+            };
 
             composeMailButton = new UIBarButtonItem (UIBarButtonSystemItem.Compose);
             composeMailButton.TintColor = A.Color_NachoBlue;
@@ -66,10 +65,7 @@ namespace NachoClient.iOS
             composeMailButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("MessageListToCompose", this);
             };
-
-            nachoButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("MessageListToNachoNow", this);
-            };
+                
             cancelButton.Clicked += (object sender, EventArgs e) => {
                 messageSource.MultiSelectCancel (TableView);
             };
@@ -154,7 +150,7 @@ namespace NachoClient.iOS
                         NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { cancelButton };
                     } else {
                         NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeMailButton, /* beta 1 searchButton */ };
-                        NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
+                        NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { A.RevealButton (this), A.NachoNowButton (this) };
                     }
                 })
             );
@@ -282,7 +278,7 @@ namespace NachoClient.iOS
                 vc.SetOwner (this);
                 return;
             }
-            if (segue.Identifier == "MessageListToNachoNow") {
+            if (segue.Identifier == "SegueToNachoNow") {
                 return;
             }
             if (segue.Identifier == "MessageListToCompose") {

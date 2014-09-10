@@ -165,7 +165,6 @@ namespace NachoClient.iOS
             account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
             calendars = new NachoFolders (NachoFolders.FilterForCalendars);
 
-
             switch (action) {
             case CalendarItemEditorAction.create:
                 if (null == item) {
@@ -361,12 +360,12 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }
-
-
+            
         protected void CreateEditEventView ()
         {
             scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height);
 
+            Util.SetOriginalImageForButton (cancelButton, "icn-close");
             cancelButton.Clicked += (sender, e) => {
                 View.EndEditing (true);
                 if (eventEditStarted) {

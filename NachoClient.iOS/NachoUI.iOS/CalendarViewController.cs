@@ -48,29 +48,24 @@ namespace NachoClient.iOS
 
             CalendarHelper.ExpandRecurrences ();
 
-            // Navigation
-            revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
-            revealButton.Target = this.RevealViewController ();
-
-            Util.SetOriginalImageForButton (revealButton, "navbar-icn-menu");
-            Util.SetOriginalImageForButton (nachoButton, "nav-nachonow");
+            var todayButton = new UIBarButtonItem ();
             Util.SetOriginalImageForButton (todayButton, "nav-calendar-empty");
-
-            var addEventButton = new UIBarButtonItem (UIBarButtonSystemItem.Add);
-            addEventButton.TintColor = A.Color_NachoBlue;
-
-            // Multiple buttons on the left side
-            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
-            NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { addEventButton, todayButton };
-            nachoButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("CalendarToNachoNow", this);
-            };
             todayButton.Clicked += (object sender, EventArgs e) => {
                 ReturnToToday ();
             };
+
+            var addEventButton = new UIBarButtonItem (UIBarButtonSystemItem.Add);
+            addEventButton.TintColor = A.Color_NachoBlue;
             addEventButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("CalendarToEditEventView", new SegueHolder (null));
             };
+
+            // Navigation
+            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] {
+                A.RevealButton (this),
+                A.NachoNowButton (this),
+            };
+            NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { addEventButton, todayButton };
 
             calendarSource = new CalendarTableViewSource ();
             calendarSource.owner = this;
@@ -195,7 +190,7 @@ namespace NachoClient.iOS
                 return;
             }
 
-            if (segue.Identifier.Equals ("CalendarToNachoNow")) {
+            if (segue.Identifier.Equals ("SegueToNachoNow")) {
                 // Nothing to do
                 return;
             }

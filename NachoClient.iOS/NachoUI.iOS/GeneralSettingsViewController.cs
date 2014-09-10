@@ -30,25 +30,20 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            CreateView ();
-            LayoutView ();
-            ConfigureView ();
-
             // Navigation
             NavigationItem.Title = "Settings";
-            menuButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
-            menuButton.Target = this.RevealViewController ();
-            Util.SetOriginalImageForButton (menuButton, "navbar-icn-menu");
-            Util.SetOriginalImageForButton (nowButton, "nav-nachonow");
-            nowButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("GeneralSettingsToNachoNow", this);
+            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] {
+                A.RevealButton (this),
+                A.NachoNowButton (this),
             };
-            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { menuButton, nowButton };
+
+            CreateView ();
         }
 
-        public override void ViewDidAppear (bool animated)
+        public override void ViewWillAppear (bool animated)
         {
-            base.ViewDidAppear (animated);
+            base.ViewWillAppear (animated);
+            ConfigureView ();
         }
 
         protected const int EMAIL_ADDRESS_LABEL_TAG = 100;
@@ -92,7 +87,7 @@ namespace NachoClient.iOS
             accountSettingsCell.AddSubview (accountEmailAddress);
 
             UIImageView emailAccessoryImage = new UIImageView (new RectangleF (contentView.Frame.Width - 23, 14, 10, 16));
-            emailAccessoryImage.Image = Util.MakeArrow (A.Color_NachoBlue);
+            emailAccessoryImage.Image = Util.MakeArrow (A.Color_NachoTeal);
             accountSettingsCell.AddSubview (emailAccessoryImage);
             contentView.AddSubview (accountSettingsCell);
 
@@ -122,7 +117,7 @@ namespace NachoClient.iOS
             privacyStatementCell.AddSubview (privacyStatmentLabel);
 
             UIImageView privacyStatmentAccessory = new UIImageView (new RectangleF (contentView.Frame.Width - 23, 14, 10, 16));
-            privacyStatmentAccessory.Image = Util.MakeArrow (A.Color_NachoBlue);
+            privacyStatmentAccessory.Image = Util.MakeArrow (A.Color_NachoTeal);
             privacyStatementCell.AddSubview (privacyStatmentAccessory);
             contentView.AddSubview (privacyStatementCell);
 
@@ -148,7 +143,7 @@ namespace NachoClient.iOS
             licenseAgreementCell.AddSubview (licenseAgreementLabel);
 
             UIImageView licenseAgreementAccessory = new UIImageView (new RectangleF (contentView.Frame.Width - 23, 14, 10, 16));
-            licenseAgreementAccessory.Image = Util.MakeArrow (A.Color_NachoBlue);
+            licenseAgreementAccessory.Image = Util.MakeArrow (A.Color_NachoTeal);
             licenseAgreementCell.AddSubview (licenseAgreementAccessory);
             contentView.AddSubview (licenseAgreementCell);
 
@@ -170,7 +165,7 @@ namespace NachoClient.iOS
             openSourceCell.AddSubview (openSourceLabel);
 
             UIImageView openSourceAccessory = new UIImageView (new RectangleF (contentView.Frame.Width - 23, 14, 10, 16));
-            openSourceAccessory.Image = Util.MakeArrow (A.Color_NachoBlue);
+            openSourceAccessory.Image = Util.MakeArrow (A.Color_NachoTeal);
             openSourceCell.AddSubview (openSourceAccessory);
             contentView.AddSubview (openSourceCell);
 
@@ -194,6 +189,7 @@ namespace NachoClient.iOS
         {
             var emailLabel = (UILabel)contentView.ViewWithTag (EMAIL_ADDRESS_LABEL_TAG);
             emailLabel.Text = GetEmailAddress ();
+            LayoutView ();
         }
 
         protected string GetEmailAddress ()
@@ -228,6 +224,13 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("GeneralSettingsToSettings")) {
                 return;
             }
+            if (segue.Identifier.Equals ("SegueToNachoNow")) {
+                // Nothing to do
+                return;
+            }
+                
+            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
+            NcAssert.CaseError ();
         }
     }
 }
