@@ -100,7 +100,7 @@ namespace NachoClient.iOS
         public void Append (NcEmailAddress address)
         {
             if (0 < list.Count) {
-                AppendInternal (",", null, UcAddressField.COMMA_FIELD);
+                AppendInternal (", ", null, UcAddressField.COMMA_FIELD);
             }
 
             if (null == address.contact) {
