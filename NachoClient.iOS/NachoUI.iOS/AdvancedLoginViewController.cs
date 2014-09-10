@@ -698,9 +698,10 @@ namespace NachoClient.iOS
             if (newHeight == keyboardHeight) {
                 return;
             }
-            keyboardHeight = newHeight;
 
+            keyboardHeight = newHeight;
             LayoutView ();
+            scrollView.SetContentOffset (new PointF (0, -scrollView.ContentInset.Top), false);
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
