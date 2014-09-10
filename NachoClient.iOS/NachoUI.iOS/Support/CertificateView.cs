@@ -47,7 +47,7 @@ namespace NachoClient.iOS
             VIEW_HEIGHT = this.Frame.Height - 64f;
 
             //this.BackgroundColor = UIColor.LightGray.ColorWithAlpha (.4f);
-            this.BackgroundColor = A.Color_NachoGreen;
+            this.BackgroundColor = A.Color_NachoGreen.ColorWithAlpha (.7f);;
             this.Frame = new RectangleF (0, 0, owner.View.Frame.Width, owner.View.Frame.Height);
             certificateView = new UIView (new RectangleF (20, 64, owner.View.Frame.Width - 40, VIEW_HEIGHT - 64));
             certificateView.Tag = CERTIFICATE_VIEW_TAG;

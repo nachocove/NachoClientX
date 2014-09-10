@@ -77,7 +77,7 @@ namespace NachoClient.iOS
             spinnerView.Add (bottomHalfSpinner);
 
             topHalfSpinner = new UIImageView (UIImage.FromBundle ("Spinner-1@2x"));
-            topHalfSpinner.Frame = new RectangleF (-35, LOWER_SECTION_Y_VAL - 530, SPINNER_WIDTH, SPINNER_HEIGHT);
+            topHalfSpinner.Frame = new RectangleF (-35, LOWER_SECTION_Y_VAL - 620f, SPINNER_WIDTH, SPINNER_HEIGHT);
             spinnerView.Add (topHalfSpinner);
 
             circleMask = new UIImageView (maskImage (UIImage.FromBundle ("Circular-Mask")));
@@ -146,10 +146,10 @@ namespace NachoClient.iOS
             swipeUpLabel.TextAlignment = UITextAlignment.Center;
             this.Add (swipeUpLabel);
 
-            dismissLabel = new UILabel (new RectangleF (this.Frame.Width / 2 - 50, this.Frame.Bottom - 90 , 100, 15));
+            dismissLabel = new UILabel (new RectangleF (this.Frame.Width / 2 - 75, this.Frame.Bottom - 30 , 150, 15));
             dismissLabel.Font = A.Font_AvenirNextRegular12;
             dismissLabel.TextColor = UIColor.White;
-            dismissLabel.Text = "Cancel";
+            dismissLabel.Text = "Return To Advanced Login";
             dismissLabel.TextAlignment = UITextAlignment.Center;
             dismissLabel.UserInteractionEnabled = true;
             UITapGestureRecognizer dismissLabelTap = new UITapGestureRecognizer (() => {
@@ -192,18 +192,20 @@ namespace NachoClient.iOS
             owner.NavigationItem.Title = "";
             Util.ConfigureNavBar (true, owner.NavigationController);
             quitLoadingAnimation = false;
+            ResetLoadingItems ();
             StartLoadingAnimation ();
         }
 
         public void DismissView ()
         {
+            quitLoadingAnimation = true;
+            bottomHalfSpinner.Layer.RemoveAllAnimations ();
+            topHalfSpinner.Layer.RemoveAllAnimations ();
             owner.stopBeIfRunning ();
             owner.NavigationItem.Title = "Account Setup";
             Util.ConfigureNavBar (false, owner.NavigationController);
+            owner.loadingCover.Hidden = true;
             this.Hidden = true;
-            this.Layer.RemoveAllAnimations ();
-            quitLoadingAnimation = true;
-            ResetLoadingItems ();
         }
 
         protected void ResetLoadingItems ()
@@ -212,12 +214,13 @@ namespace NachoClient.iOS
             circleMask.Transform = CGAffineTransform.MakeIdentity ();
             circleMask.Frame = new RectangleF (this.Frame.Width / 2, LOWER_SECTION_Y_VAL + MASK_DIAMETER / 2, .5f, .5f);
             bottomHalfSpinner.Frame = new RectangleF (-35, LOWER_SECTION_Y_VAL - 430, SPINNER_WIDTH, SPINNER_HEIGHT);
-            topHalfSpinner.Frame = new RectangleF (-35, LOWER_SECTION_Y_VAL - 530, SPINNER_WIDTH, SPINNER_HEIGHT);
+            topHalfSpinner.Frame = new RectangleF (-35, LOWER_SECTION_Y_VAL - 617.5f, SPINNER_WIDTH, SPINNER_HEIGHT);
+            spinnerView.BringSubviewToFront (topHalfSpinner);
         }
 
         protected void StartLoadingAnimation ()
         {
-            UIView.AnimateKeyframes (1, 0, (UIViewKeyframeAnimationOptions.OverrideInheritedDuration | UIViewKeyframeAnimationOptions.CalculationModeLinear), () => {
+            UIView.AnimateKeyframes (1, 0, (UIViewKeyframeAnimationOptions.OverrideInheritedOptions |  UIViewKeyframeAnimationOptions.OverrideInheritedDuration | UIViewKeyframeAnimationOptions.CalculationModeCubicPaced), () => {
 
                 UIView.AddKeyframeWithRelativeStartTime (0, .5, () => {
                     circleMask.Transform = CGAffineTransform.MakeScale (160, 160);
@@ -237,22 +240,20 @@ namespace NachoClient.iOS
         private void ArrowAnimation (UIImageView theTopSpinner, UIImageView theBottomSpinner, PointF topSpinnerCenter, PointF bottomSpinnerCenter, bool bottomIsOnTop)
         {
             if (!quitLoadingAnimation) {
-
                 UIView.AnimateKeyframes (3, 0, (UIViewKeyframeAnimationOptions.OverrideInheritedDuration | UIViewKeyframeAnimationOptions.CalculationModeLinear), () => {
-
                     UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
-                        theTopSpinner.Center = new PointF (topSpinnerCenter.X, topSpinnerCenter.Y + 187.5f);
-                        theBottomSpinner.Center = new PointF (bottomSpinnerCenter.X, bottomSpinnerCenter.Y + 187.5f);
+                        theTopSpinner.Center = new PointF (topSpinnerCenter.X, topSpinnerCenter.Y + 190f);
+                        theBottomSpinner.Center = new PointF (bottomSpinnerCenter.X, bottomSpinnerCenter.Y + 190f);
                     });
                 }, ((bool finished) => { 
                     if (finished) {
                         if (bottomIsOnTop) {
-                            theTopSpinner.Center = bottomSpinnerCenter;
                             spinnerView.BringSubviewToFront (theTopSpinner);
+                            theTopSpinner.Center = bottomSpinnerCenter;
                             bottomIsOnTop = false;
                         } else {
-                            theBottomSpinner.Center = topSpinnerCenter;
                             spinnerView.BringSubviewToFront (theBottomSpinner);
+                            theBottomSpinner.Center = topSpinnerCenter;
                             bottomIsOnTop = true;
                         }
                         ArrowAnimation (theTopSpinner, theBottomSpinner, theTopSpinner.Center, theBottomSpinner.Center, bottomIsOnTop);
