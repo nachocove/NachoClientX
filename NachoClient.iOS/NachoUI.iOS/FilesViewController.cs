@@ -80,7 +80,7 @@ namespace NachoClient.iOS
             EmptyListLabel = new UILabel (new RectangleF (0, 80, UIScreen.MainScreen.Bounds.Width, 20));
             EmptyListLabel.TextAlignment = UITextAlignment.Center;
             EmptyListLabel.Font = A.Font_AvenirNextDemiBold14;
-            EmptyListLabel.TextColor = A.Color_NachoSeparator;
+            EmptyListLabel.TextColor = A.Color_NachoBorderGray;
             EmptyListLabel.Hidden = true;
             View.AddSubview (EmptyListLabel);
 

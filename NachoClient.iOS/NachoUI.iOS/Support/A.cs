@@ -12,6 +12,7 @@ namespace NachoClient.iOS
         protected static UIFont _Font_AvenirNextDemiBold14 = null;
         protected static UIFont _Font_AvenirNextDemiBold17 = null;
         protected static UIFont _Font_AvenirNextDemiBold30 = null;
+        protected static UIFont _Font_AvenirNextRegular34 = null;
         protected static UIFont _Font_AvenirNextRegular28 = null;
         protected static UIFont _Font_AvenirNextRegular24 = null;
         protected static UIFont _Font_AvenirNextRegular17 = null;
@@ -46,8 +47,13 @@ namespace NachoClient.iOS
         protected static UIColor _Color_NachoRed = null;
         protected static UIColor _Color_NachoYellow = null;
         protected static UIColor _Color_NachoBlue = null;
+        protected static UIColor _Color_NachoTeal = null;
         protected static UIColor _Color_NachoLightGray = null;
-        protected static UIColor _Color_NachoGray = null;
+        protected static UIColor _Color_NachoLightGrayBackground = null;
+        protected static UIColor _Color_NachoBackgroundGray = null;
+        protected static UIColor _Color_NachoIconGray = null;
+        protected static UIColor _Color_NachoTextGray = null;
+        protected static UIColor _Color_NachoBorderGray = null;
         protected static UIColor _Color_NachoSeparator = null;
         protected static UIColor _Color_NachoDarkText = null;
         protected static UIColor _Color_NachoLightText = null;
@@ -116,6 +122,15 @@ namespace NachoClient.iOS
                     _Font_AvenirNextRegular8 = UIFont.FromName ("AvenirNext-Regular", 8);
                 }
                 return _Font_AvenirNextRegular8;
+            }
+        }
+
+        public static UIFont Font_AvenirNextRegular34 {
+            get {
+                if (null == _Font_AvenirNextRegular34) {
+                    _Font_AvenirNextRegular34 = UIFont.FromName ("AvenirNext-Regular", 34);
+                }
+                return _Font_AvenirNextRegular34;
             }
         }
 
@@ -362,6 +377,15 @@ namespace NachoClient.iOS
             }
         }
 
+        public static UIColor Color_NachoTeal {
+            get {
+                if (null == _Color_NachoTeal) {
+                    _Color_NachoTeal = UIColor.FromRGB (0x29, 0xCC, 0xBE);
+                }
+                return _Color_NachoTeal;
+            }
+        }
+
         public static UIColor Color_CalDotBlue {
             get {
                 if (null == _Color_CalDotBlue) {
@@ -380,33 +404,60 @@ namespace NachoClient.iOS
             }
         }
 
-        public static UIColor Color_NachoLightGray {
+        public static UIColor Color_NachoLightGrayBackground {
+            get {
+                if (null == _Color_NachoLightGrayBackground) {
+                    _Color_NachoLightGrayBackground = UIColor.FromRGB (0xf4, 0xf6, 0xf6);
+                }
+                return _Color_NachoLightGrayBackground;
+            }
+        }
+
+        public static UIColor Color_NachoIconGray {
+            get {
+                if (null == _Color_NachoIconGray) {
+                    _Color_NachoIconGray = UIColor.FromRGB (0x77, 0x77, 0x77);
+                }
+                return _Color_NachoIconGray;
+            }
+        }
+
+        public static UIColor Color_NachoTextGray {
+            get {
+                if (null == _Color_NachoTextGray) {
+                    _Color_NachoTextGray = UIColor.FromRGB (0x77, 0x77, 0x77);
+                }
+                return _Color_NachoTextGray;
+            }
+        }
+
+        public static UIColor Color_NachoBorderGray {
+            get {
+                if (null == _Color_NachoBorderGray) {
+                    _Color_NachoBorderGray = UIColor.FromRGB (0xc0, 0xc5, 0xc6);
+                }
+                return _Color_NachoBorderGray;
+            }
+        }
+
+        public static UIColor Color_NachoLightBorderGray {
             get {
                 if (null == _Color_NachoLightGray) {
-                    _Color_NachoLightGray = UIColor.FromRGB (0xf7, 0xf7, 0xf7);
+                    _Color_NachoLightGray = UIColor.FromRGB (0xe1, 0xe5, 0xe6);
                 }
                 return _Color_NachoLightGray;
             }
         }
 
-        public static UIColor Color_NachoGray {
+        public static UIColor Color_NachoBackgroundGray {
             get {
-                if (null == _Color_NachoGray) {
-                    _Color_NachoGray = UIColor.FromRGB (0x77, 0x77, 0x77);
+                if (null == _Color_NachoBackgroundGray) {
+                    _Color_NachoBackgroundGray = UIColor.FromRGB (0xe1, 0xe5, 0xe6);
                 }
-                return _Color_NachoGray;
+                return _Color_NachoBackgroundGray;
             }
         }
 
-        public static UIColor Color_NachoSeparator {
-            get {
-                if (null == _Color_NachoSeparator) {
-                    _Color_NachoSeparator = new UIColor (.8f, .8f, .8f, .7f);
-                }
-                return _Color_NachoSeparator;
-            }
-        }
-            
         public static UIColor Color_NachoDarkText {
             get {
                 if (null == _Color_NachoDarkText) {

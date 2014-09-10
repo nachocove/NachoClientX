@@ -407,7 +407,7 @@ namespace NachoClient.iOS
             var attendeeResponseView = new UIView (new RectangleF (2.5f, 2.5f, 15, 15));
             attendeeResponseView.BackgroundColor = UIColor.White;
             attendeeResponseView.Layer.CornerRadius = 15 / 2;
-            attendeeResponseView.Layer.BorderColor = A.Color_NachoSeparator.CGColor;
+            attendeeResponseView.Layer.BorderColor = A.Color_NachoLightGrayBackground.CGColor;
             attendeeResponseView.Layer.BorderWidth = 1;
             parentView.Add (attendeeResponseView);
         }

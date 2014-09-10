@@ -242,7 +242,7 @@ namespace NachoClient.iOS
 
             var segmentedControl = new UISegmentedControl ();
             segmentedControl.Frame = new RectangleF (6, yOffset, View.Frame.Width - 12, 30);
-            segmentedControl.TintColor = A.Color_NachoGray;
+            segmentedControl.TintColor = A.Color_NachoIconGray;
             segmentedControl.InsertSegment ("Contact Info", 0, false);
             segmentedControl.InsertSegment ("Interactions", 1, false);
             segmentedControl.InsertSegment ("Notes", 2, false);
@@ -250,7 +250,7 @@ namespace NachoClient.iOS
 
             var segmentedControlTextAttributes = new UITextAttributes ();
             segmentedControlTextAttributes.Font = A.Font_AvenirNextRegular14;
-            segmentedControlTextAttributes.TextColor = A.Color_NachoGray;
+            segmentedControlTextAttributes.TextColor = A.Color_NachoIconGray;
             segmentedControl.SetTitleTextAttributes (segmentedControlTextAttributes, UIControlState.Normal);
 
             segmentedControl.ValueChanged += (sender, e) => {
@@ -287,7 +287,7 @@ namespace NachoClient.iOS
 
             // Segmented Control
             var segmentedControlHL = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 1));
-            segmentedControlHL.BackgroundColor = A.Color_NachoSeparator;
+            segmentedControlHL.BackgroundColor = A.Color_NachoIconGray;
             segmentedControlHL.Tag = SEGMENTED_CONTROL_HL_TAG;
             contentView.AddSubview (segmentedControlHL);
 
@@ -392,7 +392,7 @@ namespace NachoClient.iOS
             yOffset += 3;
 
             var emailSectionSeparator = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 1));
-            emailSectionSeparator.BackgroundColor = A.Color_NachoSeparator;
+            emailSectionSeparator.BackgroundColor = A.Color_NachoBorderGray;
             emailSectionSeparator.Tag = TRANSIENT_TAG;
             ;
             contentView.AddSubview (emailSectionSeparator);
@@ -414,7 +414,7 @@ namespace NachoClient.iOS
             yOffset += 3;
 
             var phoneSectionSeparator = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 1));
-            phoneSectionSeparator.BackgroundColor = A.Color_NachoSeparator;
+            phoneSectionSeparator.BackgroundColor = A.Color_NachoBorderGray;
             phoneSectionSeparator.Tag = TRANSIENT_TAG;
             ;
             contentView.AddSubview (phoneSectionSeparator);

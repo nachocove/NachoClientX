@@ -68,7 +68,7 @@ namespace NachoClient.iOS
         UILabel startDateLabel;
         UILabel endDateLabel;
 
-        UIColor separatorColor = A.Color_NachoSeparator;
+        UIColor separatorColor = A.Color_NachoBorderGray;
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
         protected int LINE_OFFSET = 30;
         protected int CELL_HEIGHT = 44;
@@ -462,7 +462,7 @@ namespace NachoClient.iOS
             UISwitch allDaySwitch = new UISwitch ();
             allDaySwitch.Tag = ALL_DAY_SWITCH_TAG;
             allDaySwitch.SizeToFit ();
-            allDaySwitch.OnTintColor = A.Color_NachoBlue;
+            allDaySwitch.OnTintColor = A.Color_NachoTeal;
             allDaySwitch.HorizontalAlignment = UIControlContentHorizontalAlignment.Right;
             allDaySwitch.Frame = new RectangleF (SCREEN_WIDTH - allDaySwitch.Frame.Width - 15, 6.5f, allDaySwitch.Frame.Width, TEXT_LINE_HEIGHT);
             allDayView.AddSubview (allDaySwitch);
@@ -507,11 +507,11 @@ namespace NachoClient.iOS
                     endDateLabel.Text = Pretty.FullTimeString (endDate);
                     endDateLabel.SizeToFit ();
                     endDateLabel.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, 12.438f, endDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
-                    endDateLabel.TextColor = A.Color_NachoBlue;
+                    endDateLabel.TextColor = A.Color_NachoTeal;
                 }
                 startDateLabel.SizeToFit ();
                 startDateLabel.Frame = new RectangleF (SCREEN_WIDTH - startDateLabel.Frame.Width - 15, 12.438f, startDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
-                startDateLabel.TextColor = A.Color_NachoBlue;
+                startDateLabel.TextColor = A.Color_NachoTeal;
                 if (0 > endDate.CompareTo (startDate)) {
                     strikethrough.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, CELL_HEIGHT / 2, endDateLabel.Frame.Width, 1);
                     strikethrough.Hidden = false;
@@ -586,7 +586,7 @@ namespace NachoClient.iOS
                     endDateLabel.TextColor = A.Color_NachoRed;
                 } else { 
                     strikethrough.Hidden = true;
-                    endDateLabel.TextColor = A.Color_NachoBlue;
+                    endDateLabel.TextColor = A.Color_NachoTeal;
                 }
             };
 
@@ -691,7 +691,7 @@ namespace NachoClient.iOS
             phoneView.AddSubview (phoneLabel);
 
             UIImageView phoneAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
-            phoneAccessoryImage.Image = Util.MakeArrow (A.Color_NachoBlue);
+            phoneAccessoryImage.Image = Util.MakeArrow (A.Color_NachoTeal);
             phoneView.AddSubview (phoneAccessoryImage);
 
             phoneDetailLabel = new UILabel ();
@@ -726,7 +726,7 @@ namespace NachoClient.iOS
             attachmentsView.AddSubview (attachmentsLabel);
 
             UIImageView attachmentsAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
-            attachmentsAccessoryImage.Image = Util.MakeArrow (A.Color_NachoBlue);
+            attachmentsAccessoryImage.Image = Util.MakeArrow (A.Color_NachoTeal);
             attachmentsView.AddSubview (attachmentsAccessoryImage);
 
             UILabel attachmentsDetailLabel = new UILabel ();
@@ -761,7 +761,7 @@ namespace NachoClient.iOS
             peopleView.AddSubview (peopleLabel);
 
             UIImageView peopleAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
-            peopleAccessoryImage.Image = Util.MakeArrow (A.Color_NachoBlue);
+            peopleAccessoryImage.Image = Util.MakeArrow (A.Color_NachoTeal);
             peopleView.AddSubview (peopleAccessoryImage);
 
             UILabel peopleDetailLabel = new UILabel ();
@@ -790,7 +790,7 @@ namespace NachoClient.iOS
             alertsView.AddSubview (alertsImage);
 
             UIImageView alertsAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
-            alertsAccessoryImage.Image = Util.MakeArrow (A.Color_NachoBlue);
+            alertsAccessoryImage.Image = Util.MakeArrow (A.Color_NachoTeal);
             alertsView.AddSubview (alertsAccessoryImage);
 
             UILabel alertsLabel = new UILabel (new RectangleF (37, 12.438f, 70, TEXT_LINE_HEIGHT));
@@ -831,7 +831,7 @@ namespace NachoClient.iOS
             calendarView.AddSubview (calendarLabel);
 
             UIImageView calendarAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
-            calendarAccessoryImage.Image = Util.MakeArrow (A.Color_NachoBlue);
+            calendarAccessoryImage.Image = Util.MakeArrow (A.Color_NachoTeal);
             calendarView.AddSubview (calendarAccessoryImage);
 
             UILabel calendarDetailLabel = new UILabel ();
@@ -966,10 +966,8 @@ namespace NachoClient.iOS
             var titleFieldView = contentView.ViewWithTag (EVENT_TITLE_LABEL_TAG) as UITextField;
             titleFieldView.Text = c.Subject;
 
-            // description
-            // We need to pull this out of the body
-            //            var descriptionTextView = contentView.ViewWithTag (EVENT_DESCRIPTION_LABEL_TAG) as UITextView;
-            //            descriptionTextView.Text = c.Description;
+            //var descriptionTextView = contentView.ViewWithTag (EVENT_DESCRIPTION_LABEL_TAG) as UITextView;
+            //descriptionTextView.Text = McBody.Get(c.BodyId);
 
             //all day event
             var allDaySwitchView = contentView.ViewWithTag (ALL_DAY_SWITCH_TAG) as UISwitch;

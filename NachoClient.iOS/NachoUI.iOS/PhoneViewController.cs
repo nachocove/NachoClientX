@@ -22,7 +22,7 @@ namespace NachoClient.iOS
         UIButton myNumberButton;
         UIButton myConferenceButton;
 
-        UIColor separatorColor = A.Color_NachoSeparator;
+        UIColor separatorColor = A.Color_NachoBorderGray;
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
         protected int LINE_OFFSET = 30;
         protected int CELL_HEIGHT = 44;

@@ -64,7 +64,7 @@ namespace NachoClient.iOS
         {
             UITableView tv = new UITableView (new RectangleF(0, 45, this.Frame.Width, (this.Frame.Height - 35.0f)));
             tv.Layer.CornerRadius = 6.0f;
-            tv.SeparatorColor = A.Color_NachoSeparator;
+            tv.SeparatorColor = A.Color_NachoBorderGray;
             var folderSource = new HierarchicalFolderTableSource (tv);
             tv.Delegate = this.del;
             tv.DataSource = folderSource;
@@ -106,7 +106,7 @@ namespace NachoClient.iOS
         public void AddLine(int yVal, float width)
         {
             var lineUIView = new UIView (new RectangleF (0, yVal, width, .5f));
-            lineUIView.BackgroundColor = A.Color_NachoSeparator;
+            lineUIView.BackgroundColor = A.Color_NachoBorderGray;
             this.Add (lineUIView);
         }
 

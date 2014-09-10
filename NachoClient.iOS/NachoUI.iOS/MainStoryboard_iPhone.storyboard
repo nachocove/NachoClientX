@@ -199,15 +199,15 @@
             <objects>
                 <viewController storyboardIdentifier="FilesHierarchyViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="j5A-VG-u0P" customClass="FilesHierarchyViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="TVD-m5-4u5">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="jnW-WZ-zcs">
-                                <rect key="frame" x="-1" y="0.0" width="320" height="504"/>
+                                <rect key="frame" x="-1" y="0.0" width="320" height="460"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="LNu-UJ-Y6e" userLabel="Content View">
-                                        <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="320" height="460"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                                     </view>
@@ -234,7 +234,7 @@
             <objects>
                 <tableViewController storyboardIdentifier="FilesViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="bBy-CW-6ix" customClass="FilesViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="oA2-OL-dXa">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <searchBar key="tableHeaderView" contentMode="redraw" id="vTn-fI-R0o">
@@ -811,7 +811,6 @@
                     <navigationItem key="navigationItem" title="Folders" id="rc6-gG-qc6">
                         <barButtonItem key="backBarButtonItem" title="Folders" id="8Rb-XO-7If"/>
                         <barButtonItem key="leftBarButtonItem" image="navbar-icn-menu.png" id="puc-hC-DdW" userLabel="Bar Button Item - Menu"/>
-                        <barButtonItem key="rightBarButtonItem" systemItem="add" id="JfL-cu-kdr"/>
                     </navigationItem>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <nil key="simulatedBottomBarMetrics"/>
@@ -1101,7 +1100,6 @@
                     </refreshControl>
                     <connections>
                         <outlet property="cancelButton" destination="JBa-CL-cDv" id="7AV-LL-P9s"/>
-                        <outlet property="composeButton" destination="A97-xe-h8f" id="ik2-qX-BDT"/>
                         <outlet property="deleteButton" destination="s53-5r-Ts6" id="FG3-1A-cHd"/>
                         <outlet property="nachoButton" destination="lwb-Kh-Nak" id="FlC-aR-3AG"/>
                         <outlet property="revealButton" destination="2XU-yE-OMg" id="j7H-HA-a1S"/>
@@ -1113,6 +1111,7 @@
                         <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="c79-xS-Npa"/>
                         <segue destination="ygr-ff-C2f" kind="push" identifier="MessageListToNachoNow" id="gkM-dU-I3K"/>
                         <segue destination="15q-DA-GFk" kind="push" identifier="NachoNowToEditEvent" id="uqv-uq-oCq"/>
+                        <segue destination="tAw-fh-hJX" kind="push" identifier="MessageListToCompose" id="Sbt-au-uDg"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="oEd-e8-ueO" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1126,11 +1125,6 @@
                     </connections>
                 </searchDisplayController>
                 <barButtonItem systemItem="search" id="zTu-79-4b2"/>
-                <barButtonItem systemItem="compose" id="A97-xe-h8f" userLabel="Bar Button Item - New Email">
-                    <connections>
-                        <segue destination="tAw-fh-hJX" kind="push" identifier="NachoNowToCompose" id="qSV-ar-VcH"/>
-                    </connections>
-                </barButtonItem>
                 <barButtonItem image="Nacho-Cove-Icon.png" id="lwb-Kh-Nak" userLabel="Bar Button Item - Nacho"/>
                 <barButtonItem image="navbar-icn-menu.png" id="2XU-yE-OMg" userLabel="Bar Button Item - Reveal"/>
                 <barButtonItem systemItem="trash" id="s53-5r-Ts6" userLabel="Bar Button Item - Delete"/>
@@ -1442,15 +1436,15 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
             <objects>
                 <viewController storyboardIdentifier="ChooseCalendarViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="cXD-rq-iSl" userLabel="Choose Calendar View Controller" customClass="ChooseCalendarViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="eJB-Pb-Y39">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="2Bb-OE-BsP">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="ucq-Ja-oju" userLabel="Content View">
-                                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                                     </view>
@@ -1576,15 +1570,15 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
             <objects>
                 <viewController storyboardIdentifier="AlertChooserViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="p7r-P8-BKK" customClass="AlertChooserViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="87C-EB-0MK">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="Utd-6b-paG">
-                                <rect key="frame" x="-1" y="0.0" width="320" height="568"/>
+                                <rect key="frame" x="-1" y="0.0" width="320" height="504"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="Qls-U5-Qsb" userLabel="Content View">
-                                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                                     </view>
@@ -2077,10 +2071,10 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <image name="navbar-icn-newEmail.png" width="24" height="24"/>
         <image name="navbar-icn-newevent.png" width="24" height="24"/>
         <image name="toolbar-icn-delete.png" width="19" height="21"/>
-        <image name="toolbar-icn-fwd.png" width="21" height="16"/>
+        <image name="toolbar-icn-fwd.png" width="24" height="24"/>
         <image name="toolbar-icn-move.png" width="24" height="20"/>
         <image name="toolbar-icn-reply-all.png" width="24" height="16"/>
-        <image name="toolbar-icn-reply.png" width="21" height="16"/>
+        <image name="toolbar-icn-reply.png" width="24" height="24"/>
     </resources>
     <color key="tintColor" red="0.45098039215686275" green="1" blue="0.95294117647058818" alpha="1" colorSpace="deviceRGB"/>
     <simulatedMetricsContainer key="defaultSimulatedMetrics">
@@ -2089,30 +2083,30 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="HCr-Oa-UHV"/>
+        <segue reference="RR1-bJ-URL"/>
         <segue reference="zDw-Tx-fTt"/>
         <segue reference="Bq3-C6-QI6"/>
-        <segue reference="tkk-6o-6oa"/>
-        <segue reference="RHB-Or-A5o"/>
+        <segue reference="4qv-ZA-Stq"/>
+        <segue reference="g4G-tD-G9H"/>
+        <segue reference="iqA-wd-xqD"/>
+        <segue reference="ebP-h4-BhC"/>
+        <segue reference="J8i-gn-UTn"/>
+        <segue reference="JGd-do-Y28"/>
+        <segue reference="uqv-uq-oCq"/>
+        <segue reference="Sbt-au-uDg"/>
+        <segue reference="Afu-47-Kju"/>
         <segue reference="c79-xS-Npa"/>
-        <segue reference="Rd3-YY-NMX"/>
-        <segue reference="twQ-jE-jZd"/>
-        <segue reference="G1z-aV-19B"/>
-        <segue reference="vUs-ft-xdy"/>
-        <segue reference="qB9-ce-7gT"/>
+        <segue reference="hxO-14-opZ"/>
         <segue reference="xrp-ey-B0j"/>
         <segue reference="kd2-jR-F9u"/>
+        <segue reference="vUs-ft-xdy"/>
         <segue reference="FHc-YP-jWH"/>
         <segue reference="fwk-9p-tlV"/>
         <segue reference="mLY-u0-R5O"/>
-        <segue reference="4Sl-0E-160"/>
-        <segue reference="RR1-bJ-URL"/>
-        <segue reference="tdu-G2-PEp"/>
         <segue reference="JTo-qU-j7O"/>
         <segue reference="Tfk-Mt-BlS"/>
-        <segue reference="iqA-wd-xqD"/>
-        <segue reference="g4G-tD-G9H"/>
-        <segue reference="J8i-gn-UTn"/>
-        <segue reference="ebP-h4-BhC"/>
+        <segue reference="4Sl-0E-160"/>
+        <segue reference="HCr-Oa-UHV"/>
+        <segue reference="tdu-G2-PEp"/>
     </inferredMetricsTieBreakers>
 </document>
