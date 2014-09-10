@@ -62,8 +62,9 @@ namespace NachoCore
 
         public int IndexOfDate (DateTime target)
         {
+            var t = target.ToLocalTime ();
             for (var i = 0; i < listOfDaysThatHaveEvents.Count; i++) {
-                if (listOfDaysThatHaveEvents [i] >= target) {
+                if (listOfDaysThatHaveEvents [i] >= t) {
                     return i;
                 }
             }

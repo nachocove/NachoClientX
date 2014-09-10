@@ -80,7 +80,7 @@ namespace NachoClient.iOS
             UpdateAutocompleteResults (0, address.address);
 
             AutocompleteTextField.BecomeFirstResponder ();
-            TableView.SeparatorColor = A.Color_NachoSeparator;
+            TableView.SeparatorColor = A.Color_NachoBorderGray;
         }
 
         public override void ViewWillAppear (bool animated)

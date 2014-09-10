@@ -132,11 +132,11 @@ namespace NachoClient.iOS
                 NavigationItem.RightBarButtonItem = null;
             }
             EventAttachmentsTableView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height);
-            EventAttachmentsTableView.SeparatorColor = A.Color_NachoSeparator;
+            EventAttachmentsTableView.SeparatorColor = A.Color_NachoBorderGray;
             emptyListLabel = new UILabel (new RectangleF (80, 80, 160, 20));
             emptyListLabel.TextAlignment = UITextAlignment.Center;
             emptyListLabel.Font = A.Font_AvenirNextDemiBold14;
-            emptyListLabel.TextColor = A.Color_NachoSeparator;
+            emptyListLabel.TextColor = A.Color_NachoBorderGray;
             emptyListLabel.Lines = 0;
             emptyListLabel.LineBreakMode = UILineBreakMode.WordWrap;
             emptyListLabel.Hidden = true;

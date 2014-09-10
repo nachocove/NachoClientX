@@ -20,12 +20,15 @@ using MonoTouch.Dialog;
 
 namespace NachoClient.iOS
 {
-    public partial class MessageViewController : NcUIViewController, INachoMessageEditorParent, INachoFolderChooserParent, INachoCalendarItemEditorParent, INcDatePickerDelegate
+    public partial class MessageViewController : NcUIViewController, INachoMessageEditorParent,
+        INachoFolderChooserParent, INachoCalendarItemEditorParent, INcDatePickerDelegate, IUcAddressBlockDelegate
     {
         public McEmailMessageThread thread;
         protected UIView view;
         protected UIView attachmentListView;
         protected List<McAttachment> attachments;
+        protected UcAddressBlock toView;
+        protected UcAddressBlock ccView;
 
         protected UIBarButtonItem chiliButton;
         protected UIBarButtonItem deadlineButton;
@@ -40,6 +43,7 @@ namespace NachoClient.iOS
 
         protected bool errorLoadingBody;
         protected bool calendarRendered;
+        protected bool expandedHeader = false;
 
         public MessageViewController (IntPtr handle) : base (handle)
         {
@@ -406,6 +410,16 @@ namespace NachoClient.iOS
             };
             scrollView.AddGestureRecognizer (doubletap);
 
+            // A single tap on the header section (everything above the horizontal rule separator)
+            // toggles between the compact and expanded view of the header.
+            var singletap = new UITapGestureRecognizer ();
+            singletap.NumberOfTapsRequired = 1;
+            singletap.AddTarget (this, new MonoTouch.ObjCRuntime.Selector ("SingleTapSelector:"));
+            singletap.ShouldRecognizeSimultaneously = delegate {
+                return true;
+            };
+            view.AddGestureRecognizer (singletap);
+
             // User image view
             var userImageView = new UIImageView (new RectangleF (15, 15, 40, 40));
             userImageView.Layer.CornerRadius = 20;
@@ -433,6 +447,7 @@ namespace NachoClient.iOS
             fromLabelView.Font = A.Font_AvenirNextDemiBold17;
             fromLabelView.TextColor = A.Color_0F424C;
             fromLabelView.Tag = FROM_TAG;
+            fromLabelView.UserInteractionEnabled = true;
             view.AddSubview (fromLabelView);
 
             yOffset += 20;
@@ -457,6 +472,34 @@ namespace NachoClient.iOS
             view.AddSubview (receivedLabelView);
 
             yOffset += 20;
+
+            // To label view
+            toView = new UcAddressBlock (this, "To:", View.Frame.Width);
+            toView.SetCompact (false, -1);
+            toView.SetEditable (false);
+            toView.SetLineHeight (20);
+
+            var toViewFrame = toView.Frame;
+            toViewFrame.X = 8;
+            toViewFrame.Y = yOffset;
+            toViewFrame.Width = 250;
+            toViewFrame.Height = 0;
+            toView.Frame = toViewFrame;
+            view.AddSubview (toView);
+
+            // CC label view
+            ccView = new UcAddressBlock (this, "Cc:", View.Frame.Width);
+            ccView.SetCompact (false, -1);
+            ccView.SetEditable (false);
+            ccView.SetLineHeight (20);
+
+            var ccViewFrame = ccView.Frame;
+            ccViewFrame.X = 8;
+            ccViewFrame.Y = yOffset;
+            ccViewFrame.Width = 250;
+            ccViewFrame.Height = 0;
+            ccView.Frame = ccViewFrame;
+            view.AddSubview (ccView);
 
             // Reminder image view
             var reminderImageView = new UIImageView (new RectangleF (65, yOffset + 4, 12, 12));
@@ -495,7 +538,7 @@ namespace NachoClient.iOS
             // Separator
             yOffset += 5;
             var separatorView = new UIView (new RectangleF (0, yOffset, 320, 1));
-            separatorView.BackgroundColor = A.Color_NachoSeparator;
+            separatorView.BackgroundColor = A.Color_NachoBorderGray;
             separatorView.Tag = SEPARATOR_TAG;
             view.AddSubview (separatorView);
 
@@ -512,7 +555,7 @@ namespace NachoClient.iOS
 
             for (int i = 0; i < attachments.Count; i++) {
                 var attachmentView = new UIView (new RectangleF (0, i * 61, View.Frame.Width, 61));
-                attachmentView.Layer.BorderColor = A.Color_NachoSeparator.CGColor;
+                attachmentView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
                 attachmentView.Layer.BorderWidth = 1;
                 attachmentView.Tag = i;
                 attachmentListView.AddSubview (attachmentView);
@@ -576,13 +619,41 @@ namespace NachoClient.iOS
 
             // Received label view
             var receivedLabelView = View.ViewWithTag (RECEIVED_DATE_TAG) as UILabel;
-            receivedLabelView.Text = Pretty.FullDateTimeString (message.DateReceived);
+            receivedLabelView.Text = Pretty.FullDateTimeString (message.DateReceived.ToUniversalTime ());
             receivedLabelView.SizeToFit ();
             var receivedLabelFrame = receivedLabelView.Frame;
             receivedLabelFrame.Y = subjectLabelView.Frame.Bottom;
             receivedLabelView.Frame = receivedLabelFrame;
 
-            var yOffset = receivedLabelView.Frame.Bottom;
+            float yOffset;
+            if (!expandedHeader) {
+                yOffset = receivedLabelView.Frame.Bottom;
+                toView.Hidden = true;
+                ccView.Hidden = true;
+            } else {
+                toView.Clear ();
+                foreach (var address in NcEmailAddress.ParseToAddressListString (message.To)) {
+                    toView.Append (address);
+                }
+                ccView.Clear ();
+                foreach (var address in NcEmailAddress.ParseCcAddressListString (message.Cc)) {
+                    ccView.Append (address);
+                }
+                toView.Hidden = false;
+                ccView.Hidden = false;
+                toView.ConfigureView ();
+                ccView.ConfigureView ();
+
+                var toViewFrame = toView.Frame;
+                toViewFrame.Y = receivedLabelView.Frame.Bottom;
+                toView.Frame = toViewFrame;
+
+                var ccViewFrame = ccView.Frame;
+                ccViewFrame.Y = toView.Frame.Bottom;
+                ccView.Frame = ccViewFrame;
+
+                yOffset = ccView.Frame.Bottom;
+            }
  
             // Reminder image view and label
             var reminderImageView = View.ViewWithTag (REMINDER_ICON_TAG) as UIImageView;
@@ -789,6 +860,29 @@ namespace NachoClient.iOS
             } else {
                 scrollView.SetZoomScale (1.0f, true);
             }
+        }
+
+        [MonoTouch.Foundation.Export ("SingleTapSelector:")]
+        public void OnSingleTap (UIGestureRecognizer sender)
+        {
+            // Make sure the touch is in the header area
+            PointF touch = sender.LocationInView (view);
+            float bottom;
+            if (expandedHeader) {
+                bottom = ccView.Frame.Bottom;
+            } else {
+                bottom = view.ViewWithTag (RECEIVED_DATE_TAG).Frame.Bottom;
+            }
+            if (touch.Y > bottom) {
+                return;
+            }
+
+            // Toggle header display mode and redraw
+            expandedHeader = !expandedHeader;
+
+            UIView.Animate (0.2, 0, UIViewAnimationOptions.CurveLinear, () => {
+                ConfigureView ();
+            }, () => {});
         }
 
         protected void RenderMime (string bodyPath)
@@ -1054,10 +1148,10 @@ namespace NachoClient.iOS
 
             MakeResponseBar (UID, calendarEventView);
 
-            Util.AddHorizontalLine (0, 20, SCREEN_WIDTH, A.Color_NachoSeparator, calendarEventView);
-            Util.AddHorizontalLine (0, 86, SCREEN_WIDTH, A.Color_NachoSeparator, calendarEventView);
-            Util.AddHorizontalLine (0, 140, SCREEN_WIDTH, A.Color_NachoSeparator, calendarEventView);
-            Util.AddVerticalLine (65, 20, 66, A.Color_NachoSeparator, calendarEventView);
+            Util.AddHorizontalLine (0, 20, SCREEN_WIDTH, A.Color_NachoBorderGray, calendarEventView);
+            Util.AddHorizontalLine (0, 86, SCREEN_WIDTH, A.Color_NachoBorderGray, calendarEventView);
+            Util.AddHorizontalLine (0, 140, SCREEN_WIDTH, A.Color_NachoBorderGray, calendarEventView);
+            Util.AddVerticalLine (65, 20, 66, A.Color_NachoBorderGray, calendarEventView);
 
             parentView.AddSubview (calendarEventView);
         }
@@ -1395,5 +1489,23 @@ namespace NachoClient.iOS
             spinner.StopAnimating ();
         }
 
+
+        // IUcAddressBlockDelegate
+        public void AddressBlockNeedsLayout (UcAddressBlock view)
+        {
+            view.Layout ();
+        }
+
+        public void AddressBlockWillBecomeActive (UcAddressBlock view)
+        {
+        }
+
+        public void AddressBlockWillBecomeInactive (UcAddressBlock view)
+        {
+        }
+
+        public void AddressBlockAddContactClicked(UcAddressBlock view, string prefix)
+        {
+        }
     }
 }

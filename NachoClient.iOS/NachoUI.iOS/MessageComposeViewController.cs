@@ -131,7 +131,12 @@ namespace NachoClient.iOS
             };
 
             sendButton.Clicked += (object sender, EventArgs e) => {
-                SendMessage ();
+                if (OkToSend ()) {
+                    SendMessage ();
+                    // Done with the view.
+                    owner = null;
+                    NavigationController.PopViewControllerAnimated (true);
+                }
             };
 
             CreateView ();
@@ -639,6 +644,44 @@ namespace NachoClient.iOS
             // Chooser returned an empty stirng; ignore it.
         }
 
+        private bool OkToSend ()
+        {
+            // Check for any unavailable attachments when forwarding a message.
+            if (null != ActionThread && Action.Equals (Forward) && !bodyTextView.Text.EndsWith (initialQuotedText)) {
+                bool attachmentMustBeDownloaded = false;
+                var attachments = McAttachment.QueryByItemId<McEmailMessage> (account.Id, ActionThread.SingleMessageSpecialCase ().Id);
+                foreach (var attachment in attachments) {
+                    if (!attachment.IsDownloaded) {
+                        attachmentMustBeDownloaded = true;
+                        break;
+                    }
+                }
+                if (attachmentMustBeDownloaded) {
+                    bool alertDismissed = false;
+                    bool sendAnyway = true;
+                    UIAlertView alert = new UIAlertView (
+                                            "Missing Attachments",
+                                            "Some attachments have not been downloaded to the device. Do you want to forward the message without the attachments?",
+                                            null,
+                                            "Cancel",
+                                            new string[] { "Send" });
+                    alert.Clicked += (object sender, UIButtonEventArgs e) => {
+                        sendAnyway = e.ButtonIndex == 1;
+                        alertDismissed = true;
+                    };
+                    alert.Show ();
+                    while (!alertDismissed) {
+                        NSRunLoop.Current.RunUntil (NSDate.FromTimeIntervalSinceNow (0.2));
+                    }
+                    if (!sendAnyway) {
+                        return false;
+                    }
+                }
+            }
+            // Add other checks here...
+            return true;
+        }
+
         /// <summary>
         /// Backend is converting to mime.
         /// TODO: SendMessage should encode as mime or not.
@@ -647,6 +690,7 @@ namespace NachoClient.iOS
         {
             var mimeMessage = new MimeMessage ();
 
+            mimeMessage.From.Add (new MailboxAddress (Pretty.DisplayNameForAccount (account), account.EmailAddr));
             foreach (var view in new UcAddressBlock[] { toView, ccView, bccView }) {
                 foreach (var a in view.AddressList) {
                     var mailbox = a.ToMailboxAddress ();
@@ -689,6 +733,17 @@ namespace NachoClient.iOS
             foreach (var attachment in attachmentView.AttachmentList) {
                 body.Attachments.Add (attachment.FilePath ());
             }
+            if (null != ActionThread && Action.Equals (Forward) && originalEmailIsEmbedded) {
+                // The user edited the body of the message being forwarded. That means the server won't
+                // automatically include the attachments from the forwarded message (if any).  That needs
+                // to be done explicitly.
+                foreach (var attachment in McAttachment.QueryByItemId<McEmailMessage> (account.Id, ActionThread.SingleMessageSpecialCase ().Id)) {
+                    // TODO Deal with attachments that haven't been downloaded yet.
+                    if (attachment.IsDownloaded) {
+                        body.Attachments.Add (attachment.FilePath ());
+                    }
+                }
+            }
                 
             mimeMessage.Body = body.ToMessageBody ();
 
@@ -718,9 +773,6 @@ namespace NachoClient.iOS
                 // A new outgoing message.  Or a forward/reply that has problems.
                 NachoCore.BackEnd.Instance.SendEmailCmd (mcMessage.AccountId, mcMessage.Id);
             }
-
-            owner = null;
-            NavigationController.PopViewControllerAnimated (true);
         }
 
         // TODO: Put in pretty

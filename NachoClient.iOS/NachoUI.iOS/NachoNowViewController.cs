@@ -140,7 +140,7 @@ namespace NachoClient.iOS
             calendarCloseTapGestureRecognizer.Enabled = false;
             calendarCloseView.AddGestureRecognizer (calendarCloseTapGestureRecognizer);
 
-            View.BackgroundColor = A.Color_NachoNowBackground;
+            View.BackgroundColor = A.Color_NachoBackgroundGray;
 
             ConfigureBasicView ();
         }
@@ -262,7 +262,7 @@ namespace NachoClient.iOS
                 inboxCarousel.ReloadData ();
             }
             if (NcResult.SubKindEnum.Info_CalendarSetChanged == s.Status.SubKind) {
-                NcEventManager.Instance.Refresh ();
+                calendarSource.Refresh ();
                 calendarTableView.ReloadData ();
             }
             if (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated == s.Status.SubKind) {
@@ -293,7 +293,7 @@ namespace NachoClient.iOS
             calendarThumbView.Hidden = false;
             calendarCloseView.Hidden = true;
             calendarTableView.ReloadData ();
-            calendarSource.ScrollToNow (calendarTableView);
+            calendarSource.ScrollToNearestEvent (calendarTableView, DateTime.UtcNow);
 
             carouselView.Frame = carouselNormalSize ();
             carouselView.Alpha = 1.0f;

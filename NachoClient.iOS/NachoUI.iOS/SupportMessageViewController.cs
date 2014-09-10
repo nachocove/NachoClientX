@@ -118,7 +118,7 @@ namespace NachoClient.iOS
             yOffset = contactTextField.Frame.Bottom;
 
             UIView horizontalBottomBorder = new UIView (new RectangleF (0, yOffset - .5f, View.Frame.Width, .5f));
-            horizontalBottomBorder.BackgroundColor = A.Color_NachoSeparator;
+            horizontalBottomBorder.BackgroundColor = A.Color_NachoBorderGray;
             contentView.AddSubview (horizontalBottomBorder);
 
             UIView sectionTwo = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 35));

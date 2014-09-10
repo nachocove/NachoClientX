@@ -75,8 +75,8 @@ namespace NachoClient.iOS
             view.ContentMode = UIViewContentMode.Center;
             view.Layer.CornerRadius = 5;
             view.Layer.MasksToBounds = true;
-            view.Layer.BorderColor = A.Color_NachoNowBackground.CGColor;
-            view.Layer.BorderWidth = 1;
+            view.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
+            view.Layer.BorderWidth = .5f;
 
             var viewWidth = view.Frame.Width;
 
@@ -369,7 +369,7 @@ namespace NachoClient.iOS
 
             // Received label view
             var receivedLabelView = view.ViewWithTag (RECEIVED_DATE_TAG) as UILabel;
-            receivedLabelView.Text = Pretty.FullDateTimeString (message.DateReceived);
+            receivedLabelView.Text = Pretty.FullDateTimeString (message.DateReceived.ToUniversalTime ());
             receivedLabelView.SizeToFit ();
 
             // Chili image view - nothing to do. It is also shown

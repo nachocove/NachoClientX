@@ -21,7 +21,7 @@ namespace NachoClient.iOS
         }
 
         HierarchicalFolderTableSource folders;
-            
+
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
@@ -35,19 +35,26 @@ namespace NachoClient.iOS
             Util.SetOriginalImageForButton (revealButton, "navbar-icn-menu");
             Util.SetOriginalImageForButton (nachoButton, "nav-nachonow");
             nachoButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue("FoldersToNachoNow", this);
+                PerformSegue ("FoldersToNachoNow", this);
             };
 
+            var addButton = new UIBarButtonItem (UIBarButtonSystemItem.Add);
+            addButton.TintColor = A.Color_NachoBlue;
+            nachoButton.Clicked += (object sender, EventArgs e) => {
+                //addfolder
+            };
+            NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { addButton };
+
             // Stylize TableView
-            folders = new HierarchicalFolderTableSource(TableView);
+            folders = new HierarchicalFolderTableSource (TableView);
             TableView.DataSource = folders;
-            TableView.SeparatorColor = A.Color_NachoSeparator;
-            UISearchBar sb = new UISearchBar(new RectangleF (0, 45, TableView.Frame.Width, 45));
-            sb.BarTintColor = A.Color_NachoSeparator;
+            TableView.SeparatorColor = A.Color_NachoBorderGray;
+            UISearchBar sb = new UISearchBar (new RectangleF (0, 45, TableView.Frame.Width, 45));
+            sb.BarTintColor = A.Color_NachoLightGrayBackground;
             sb.Placeholder = "Search";
             NSString x = new NSString ("_searchField");
             UITextField txtField = (UITextField)sb.ValueForKey (x);
-            txtField.BackgroundColor = UIColor.White;;
+            txtField.BackgroundColor = UIColor.White;
             TableView.TableHeaderView = sb;
 
             // Initially let's hide the search controller
@@ -57,7 +64,7 @@ namespace NachoClient.iOS
             NcApplication.Instance.StatusIndEvent += (object sender, EventArgs e) => {
                 var s = (StatusIndEventArgs)e;
                 if (NcResult.SubKindEnum.Info_FolderSetChanged == s.Status.SubKind) {
-                    folders.Refresh();
+                    folders.Refresh ();
                     this.TableView.ReloadData ();
                 }
             };

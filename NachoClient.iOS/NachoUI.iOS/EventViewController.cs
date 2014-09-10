@@ -60,7 +60,7 @@ namespace NachoClient.iOS
         UILabel messageLabel;
         UIButton changeResponseButton;
 
-        UIColor separatorColor = A.Color_NachoSeparator;
+        UIColor separatorColor = A.Color_NachoBorderGray;
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
         protected int LINE_OFFSET = 30;
         protected int CELL_HEIGHT = 44;
@@ -428,7 +428,7 @@ namespace NachoClient.iOS
             eventAlertsView.BackgroundColor = UIColor.White;
 
             UIImageView alertsAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
-            alertsAccessoryImage.Image = Util.MakeArrow (A.Color_NachoBlue);
+            alertsAccessoryImage.Image = Util.MakeArrow (A.Color_NachoTeal);
             eventAlertsView.AddSubview (alertsAccessoryImage);
 
 //            AddTextLabel (23, 12.438f, 70, TEXT_LINE_HEIGHT, "Alerts", eventAlertsView);
@@ -457,7 +457,7 @@ namespace NachoClient.iOS
             eventAttachmentsView.BackgroundColor = UIColor.White;
 
             UIImageView attachmentAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
-            attachmentAccessoryImage.Image = Util.MakeArrow (A.Color_NachoBlue);
+            attachmentAccessoryImage.Image = Util.MakeArrow (A.Color_NachoTeal);
             eventAttachmentsView.AddSubview (attachmentAccessoryImage);
 
             AddTextLabelWithImage (45, 12.438f, 100, TEXT_LINE_HEIGHT, "Attachments", UIImage.FromBundle ("icn-mtng-attachment"), 14.5f, eventAttachmentsView);
@@ -484,7 +484,7 @@ namespace NachoClient.iOS
             eventNotesView.BackgroundColor = UIColor.White;
 
             UIImageView notesAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
-            notesAccessoryImage.Image = Util.MakeArrow (A.Color_NachoBlue);
+            notesAccessoryImage.Image = Util.MakeArrow (A.Color_NachoTeal);
             eventNotesView.AddSubview (notesAccessoryImage);
 
             UIImageView notesImage = new UIImageView (new RectangleF (23, 14.5f, 15, 15));
@@ -544,10 +544,10 @@ namespace NachoClient.iOS
             titleLabelView.SizeToFit ();
             TITLE_OFFSET = titleLabelView.Frame.Height;
 
-            //description view
-            var descriptionLabelView = View.ViewWithTag (EVENT_DESCRIPTION_LABEL_TAG) as UILabel;
-            descriptionLabelView.Text = "Description";
-            //descriptionLabelView.Text = c.Description;
+            //description view TODO
+            //var descriptionLabelView = View.ViewWithTag (EVENT_DESCRIPTION_LABEL_TAG) as UILabel;
+            //descriptionLabelView.Text = "Description";
+            //descriptionLabelView.Text = McBody.Get(c.BodyId);
 
             //location view
             var locationLabelView = View.ViewWithTag (EVENT_LOCATION_DETAIL_LABEL_TAG) as UILabel;
@@ -714,7 +714,7 @@ namespace NachoClient.iOS
             var attendeeResponseView = new UIView (new RectangleF (2.5f, 2.5f, 15, 15));
             attendeeResponseView.BackgroundColor = UIColor.White;
             attendeeResponseView.Layer.CornerRadius = 15 / 2;
-            attendeeResponseView.Layer.BorderColor = A.Color_NachoSeparator.CGColor;
+            attendeeResponseView.Layer.BorderColor = A.Color_NachoLightGrayBackground.CGColor;
             attendeeResponseView.Layer.BorderWidth = 1;
             parentView.Add (attendeeResponseView);
         }
@@ -742,7 +742,7 @@ namespace NachoClient.iOS
             int SPACING = 0;
 
             UIImageView attendeesAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 24.5f, 10, 16));
-            attendeesAccessoryImage.Image = Util.MakeArrow (A.Color_NachoBlue);
+            attendeesAccessoryImage.Image = Util.MakeArrow (A.Color_NachoTeal);
 
             if (0 == c.attendees.Count) {
                 UILabel noAttendeeDetailTextLabel = new UILabel (new RectangleF (25, 10, SCREEN_WIDTH - 50, 15));

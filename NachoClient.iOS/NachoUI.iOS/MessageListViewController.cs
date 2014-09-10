@@ -24,6 +24,7 @@ namespace NachoClient.iOS
         // The cancel button on the search bar breaks
         // if the searchbar is hidden by a scrolled tableview.
         PointF savedContentOffset;
+        protected UIBarButtonItem composeMailButton;
         //        private static Object StaticLockObj = new Object ();
         protected const string UICellReuseIdentifier = "UICell";
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
@@ -58,7 +59,13 @@ namespace NachoClient.iOS
 
             Util.SetOriginalImageForButton (nachoButton, "nav-nachonow");
             Util.SetOriginalImageForButton (revealButton, "navbar-icn-menu");
-            Util.SetOriginalImageForButton (composeButton, "navbar-icn-newEmail");
+
+            composeMailButton = new UIBarButtonItem (UIBarButtonSystemItem.Compose);
+            composeMailButton.TintColor = A.Color_NachoBlue;
+
+            composeMailButton.Clicked += (object sender, EventArgs e) => {
+                PerformSegue ("MessageListToCompose", this);
+            };
 
             nachoButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("MessageListToNachoNow", this);
@@ -78,7 +85,7 @@ namespace NachoClient.iOS
 
             // Initially let's hide the search controller
 //            TableView.SetContentOffset (new PointF (0.0f, 44.0f), false);
-            TableView.SeparatorColor = A.Color_NachoSeparator;
+            TableView.SeparatorColor = A.Color_NachoBorderGray;
 
             // Search button brings up the search controller
             searchButton.Clicked += (object sender, EventArgs e) => {
@@ -146,7 +153,7 @@ namespace NachoClient.iOS
                         NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { deleteButton, saveButton };
                         NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { cancelButton };
                     } else {
-                        NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, /* beta 1 searchButton */ };
+                        NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeMailButton, /* beta 1 searchButton */ };
                         NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
                     }
                 })
@@ -276,6 +283,9 @@ namespace NachoClient.iOS
                 return;
             }
             if (segue.Identifier == "MessageListToNachoNow") {
+                return;
+            }
+            if (segue.Identifier == "MessageListToCompose") {
                 return;
             }
             if (segue.Identifier == "NachoNowToMessageView") {

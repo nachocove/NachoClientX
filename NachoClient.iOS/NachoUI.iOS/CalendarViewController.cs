@@ -16,7 +16,6 @@ namespace NachoClient.iOS
 {
     public partial class CalendarViewController : NcUIViewController, INachoCalendarItemEditorParent, ICalendarTableViewSourceDelegate
     {
-        INcEventProvider calendar;
         protected CalendarTableViewSource calendarSource;
         public DateBarView DateDotView = new DateBarView ();
         public DateTime selectedDate = new DateTime ();
@@ -55,17 +54,21 @@ namespace NachoClient.iOS
 
             Util.SetOriginalImageForButton (revealButton, "navbar-icn-menu");
             Util.SetOriginalImageForButton (nachoButton, "nav-nachonow");
+            Util.SetOriginalImageForButton (todayButton, "nav-calendar-empty");
+
+            var addEventButton = new UIBarButtonItem (UIBarButtonSystemItem.Add);
+            addEventButton.TintColor = A.Color_NachoBlue;
 
             // Multiple buttons on the left side
             NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
-            NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { newCalEventButton, todayButton };
+            NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { addEventButton, todayButton };
             nachoButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("CalendarToNachoNow", this);
             };
             todayButton.Clicked += (object sender, EventArgs e) => {
                 ReturnToToday ();
             };
-            newCalEventButton.Clicked += (object sender, EventArgs e) => {
+            addEventButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("CalendarToEditEventView", new SegueHolder (null));
             };
 
@@ -78,14 +81,16 @@ namespace NachoClient.iOS
             // This will prompt the user on platforms that ask, or it will validate
             // manifest permissions on platforms that declare their required permissions.
 
-            calendar = NcEventManager.Instance;
+            calendarSource.Refresh ();
             calendarTableView.ReloadData ();
 
-            var todayButtonLabel = new UIButton (new RectangleF (86, 2, (dateBarHeight - 8), 44));
-            todayButtonLabel.SetTitle (DateTime.Today.Day.ToString (), UIControlState.Normal);
-            todayButtonLabel.SetTitleColor (A.Color_NachoBlue, UIControlState.Normal);
-            todayButtonLabel.SetTitleColor (UIColor.White, UIControlState.Selected);
+            calendarTableView.SeparatorColor = A.Color_NachoBorderGray;
+
+            var todayButtonLabel = new UILabel (new RectangleF (108, 3, 23, 44));
+            todayButtonLabel.Text = DateTime.Today.Day.ToString ();
+            todayButtonLabel.TextColor = A.Color_NachoBlue;
             todayButtonLabel.Font = A.Font_AvenirNextRegular14;
+            todayButtonLabel.TextAlignment = UITextAlignment.Center;
             var titleView = new UIView (new RectangleF (0, 0, (dateBarHeight - 8), 44));
             var titleLabel = new UILabel (new RectangleF (0, 0, (dateBarHeight - 8), 44));
             titleLabel.Font = A.Font_AvenirNextDemiBold17;
@@ -151,24 +156,19 @@ namespace NachoClient.iOS
                 this.NavigationController.ToolbarHidden = true;
             }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
-            calendar.Refresh ();
+            calendarSource.Refresh ();
             calendarTableView.ReloadData ();
 
-            if (adjustScrollPosition && (calendar.NumberOfDays () > 0)) {
+            if (adjustScrollPosition) {
                 adjustScrollPosition = false;
-                var i = calendar.IndexOfDate (DateTime.Today);
-                if (i >= 0) {
-                    var p = NSIndexPath.FromItemSection (0, i);
-                    calendarTableView.ScrollToRow (p, UITableViewScrollPosition.Top, false);
-                }
+                calendarSource.ScrollToDate (calendarTableView, DateTime.Today);
             }
-
         }
 
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
-            calendar.Refresh ();
+            calendarSource.Refresh ();
             calendarTableView.ReloadData ();
         }
 
@@ -228,7 +228,7 @@ namespace NachoClient.iOS
             var s = (StatusIndEventArgs)e;
             if (NcResult.SubKindEnum.Info_CalendarSetChanged == s.Status.SubKind) {
                 Log.Debug (Log.LOG_UI, "StatusIndicatorCallback");
-                calendar.Refresh ();
+                calendarSource.Refresh ();
                 calendarTableView.ReloadData ();
             }
         }

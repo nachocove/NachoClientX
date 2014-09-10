@@ -1,6 +1,7 @@
 //  Copyright (C) 2013 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Collections.Generic;
 using MimeKit;
 using NachoCore;
 using NachoCore.Model;
@@ -208,6 +209,34 @@ namespace NachoCore.Utils
             } else {
                 return new InternetAddressList ();
             }
+        }
+
+        private static List<NcEmailAddress> ParseAddressListString (string addressString,
+            Kind addressKind)
+        {
+            List<NcEmailAddress> addressList = new List<NcEmailAddress> ();
+            if (null == addressString) {
+                return addressList;
+            }
+            InternetAddressList inetAddressList;
+            if (!InternetAddressList.TryParse (addressString, out inetAddressList)) {
+                return addressList;
+            }
+            foreach (var inetAddress in inetAddressList.Mailboxes) {
+                NcEmailAddress address = new NcEmailAddress (addressKind, inetAddress.ToString ());
+                addressList.Add (address);
+            }
+            return addressList;
+        }
+
+        public static List<NcEmailAddress> ParseToAddressListString (string toAddressString)
+        {
+            return ParseAddressListString (toAddressString, Kind.To);
+        }
+
+        public static List<NcEmailAddress> ParseCcAddressListString (string ccAddressString)
+        {
+            return ParseAddressListString (ccAddressString, Kind.Cc);
         }
 
         /// <summary>
