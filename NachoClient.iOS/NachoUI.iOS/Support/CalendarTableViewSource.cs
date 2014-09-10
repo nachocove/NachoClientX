@@ -37,6 +37,13 @@ namespace NachoClient.iOS
             this.compactMode = compactMode;
         }
 
+        public void Refresh ()
+        {
+            if (null != calendar) {
+                calendar.Refresh ();
+            }
+        }
+
         protected bool NoCalendarEvents ()
         {
             return ((null == calendar) || (0 == calendar.NumberOfDays ()));
@@ -529,20 +536,30 @@ namespace NachoClient.iOS
            
         }
 
-        public void ScrollToNow (UITableView tableView)
+        public void ScrollToNearestEvent (UITableView tableView, DateTime date)
         {
-            ScrollToDate (tableView, DateTime.UtcNow);
+            if (null == calendar) {
+                return;
+            }
+            var i = calendar.IndexOfDate (date);
+            if (0 > i) {
+                return;
+            }
+            var p = NSIndexPath.FromItemSection (0, i);
+            tableView.ScrollToRow (p, UITableViewScrollPosition.Top, true);
         }
 
         public void ScrollToDate (UITableView tableView, DateTime date)
         {
-            if (calendar.NumberOfDays () > 0) {
-                var i = calendar.IndexOfDate (date);
-                if (i >= 0) {
-                    var p = NSIndexPath.FromItemSection (0, i);
-                    tableView.ScrollToRow (p, UITableViewScrollPosition.Top, true);
-                }
+            if (null == calendar) {
+                return;
             }
+            var i = calendar.IndexOfDate (date);
+            if (0 > i) {
+                return;
+            }
+            var p = NSIndexPath.FromItemSection (NSRange.NotFound, i);
+            tableView.ScrollToRow (p, UITableViewScrollPosition.Top, true);
         }
 
         public override void DraggingStarted (UIScrollView scrollView)

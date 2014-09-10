@@ -16,7 +16,6 @@ namespace NachoClient.iOS
 {
     public partial class CalendarViewController : NcUIViewController, INachoCalendarItemEditorParent, ICalendarTableViewSourceDelegate
     {
-        INcEventProvider calendar;
         protected CalendarTableViewSource calendarSource;
         public DateBarView DateDotView = new DateBarView ();
         public DateTime selectedDate = new DateTime ();
@@ -82,13 +81,13 @@ namespace NachoClient.iOS
             // This will prompt the user on platforms that ask, or it will validate
             // manifest permissions on platforms that declare their required permissions.
 
-            calendar = NcEventManager.Instance;
+            calendarSource.Refresh ();
             calendarTableView.ReloadData ();
 
             calendarTableView.SeparatorColor = A.Color_NachoBorderGray;
 
             var todayButtonLabel = new UILabel (new RectangleF (108, 3, 23, 44));
-            todayButtonLabel.Text =  DateTime.Today.Day.ToString ();
+            todayButtonLabel.Text = DateTime.Today.Day.ToString ();
             todayButtonLabel.TextColor = A.Color_NachoBlue;
             todayButtonLabel.Font = A.Font_AvenirNextRegular14;
             todayButtonLabel.TextAlignment = UITextAlignment.Center;
@@ -157,24 +156,19 @@ namespace NachoClient.iOS
                 this.NavigationController.ToolbarHidden = true;
             }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
-            calendar.Refresh ();
+            calendarSource.Refresh ();
             calendarTableView.ReloadData ();
 
-            if (adjustScrollPosition && (calendar.NumberOfDays () > 0)) {
+            if (adjustScrollPosition) {
                 adjustScrollPosition = false;
-                var i = calendar.IndexOfDate (DateTime.Today);
-                if (i >= 0) {
-                    var p = NSIndexPath.FromItemSection (0, i);
-                    calendarTableView.ScrollToRow (p, UITableViewScrollPosition.Top, false);
-                }
+                calendarSource.ScrollToDate (calendarTableView, DateTime.Today);
             }
-
         }
 
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
-            calendar.Refresh ();
+            calendarSource.Refresh ();
             calendarTableView.ReloadData ();
         }
 
@@ -234,7 +228,7 @@ namespace NachoClient.iOS
             var s = (StatusIndEventArgs)e;
             if (NcResult.SubKindEnum.Info_CalendarSetChanged == s.Status.SubKind) {
                 Log.Debug (Log.LOG_UI, "StatusIndicatorCallback");
-                calendar.Refresh ();
+                calendarSource.Refresh ();
                 calendarTableView.ReloadData ();
             }
         }
