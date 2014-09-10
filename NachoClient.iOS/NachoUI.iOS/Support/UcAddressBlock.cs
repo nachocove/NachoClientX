@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 
+using MimeKit;
 using NachoCore.Utils;
 
 namespace NachoClient.iOS
@@ -13,6 +14,7 @@ namespace NachoClient.iOS
     {
         protected int isActive;
         protected bool isCompact;
+        protected bool isEditable;
 
         protected float parentWidth;
         protected string topLeftString;
@@ -38,6 +40,7 @@ namespace NachoClient.iOS
             this.parentWidth = width;
             this.BackgroundColor = UIColor.White;
             this.list = new List<UcAddressField> ();
+            this.isEditable = true;
 
             this.AutoresizingMask = UIViewAutoresizing.None;
             this.AutosizesSubviews = false;
@@ -49,6 +52,16 @@ namespace NachoClient.iOS
         {
             this.isCompact = isCompact;
             this.suppliedCount = moreCount;
+        }
+
+        public void SetEditable (bool isEditable)
+        {
+            this.isEditable = isEditable;
+        }
+
+        public void SetLineHeight (float height)
+        {
+            this.LINE_HEIGHT = height;
         }
 
         public List<NcEmailAddress> AddressList {
@@ -66,6 +79,7 @@ namespace NachoClient.iOS
         protected void AppendInternal (string text, NcEmailAddress address, int type)
         {
             var a = new UcAddressField (type);
+            a.UserInteractionEnabled = isEditable;
             a.ContentMode = UIViewContentMode.Left;
             a.Font = A.Font_AvenirNextRegular14;
             a.TextColor = A.Color_154750;
@@ -78,6 +92,11 @@ namespace NachoClient.iOS
             list.Add (a);
         }
 
+        public void Clear ()
+        {
+            list.Clear ();
+        }
+
         public void Append (NcEmailAddress address)
         {
             if (0 < list.Count) {
@@ -85,7 +104,18 @@ namespace NachoClient.iOS
             }
 
             if (null == address.contact) {
-                AppendInternal (address.address, address, UcAddressField.TEXT_FIELD);
+                string text;
+                InternetAddress parsedAddress;
+                if (!InternetAddress.TryParse (address.address, out parsedAddress)) {
+                    text = address.address; // can't parse the string. just display verbatim
+                } else {
+                    if ((null != parsedAddress.Name) && (0 < parsedAddress.Name.Length)) {
+                        text = parsedAddress.Name; // prefer display name
+                    } else {
+                        text = (parsedAddress as MailboxAddress).Address; // fallback to email address
+                    }
+                }
+                AppendInternal (text, address, UcAddressField.TEXT_FIELD);
             } else {
                 AppendInternal (address.contact.GetDisplayNameOrEmailAddress(), address, UcAddressField.TEXT_FIELD);
             }
@@ -119,21 +149,25 @@ namespace NachoClient.iOS
             chooserButton = UIButton.FromType (UIButtonType.ContactAdd);
             chooserButton.SizeToFit ();
             chooserButton.Frame = new RectangleF (parentWidth - chooserButton.Frame.Width - RIGHT_INDENT, 0, chooserButton.Frame.Width, chooserButton.Frame.Height);
-
+            chooserButton.Hidden = !isEditable;
             chooserButton.TouchUpInside += (object sender, EventArgs e) => {
                 if (null != owner) {
                     owner.AddressBlockAddContactClicked (this, null);
                 }
             };
 
-            entryTextField = new UcAddressField (UcAddressField.ENTRY_FIELD);
-            entryTextField.Font = A.Font_AvenirNextRegular14;
-            entryTextField.TextColor = A.Color_808080;
-            entryTextField.Text = " ";
-            entryTextField.SizeToFit ();
-            entryTextField.Delegate = new UcAddressFieldDelegate (this);
+            if (isEditable) {
+                entryTextField = new UcAddressField (UcAddressField.ENTRY_FIELD);
+                entryTextField.Font = A.Font_AvenirNextRegular14;
+                entryTextField.TextColor = A.Color_808080;
+                entryTextField.Text = " ";
+                entryTextField.SizeToFit ();
+                entryTextField.Delegate = new UcAddressFieldDelegate (this);
 
-            this.AddSubviews (new UIView[] { topLeftLabel, moreLabel, chooserButton, entryTextField });
+                this.AddSubviews (new UIView[] { topLeftLabel, moreLabel, chooserButton, entryTextField });
+            } else {
+                this.AddSubviews (new UIView[] { topLeftLabel, moreLabel, chooserButton });
+            }
 
 //            entryTextField.BackgroundColor = UIColor.Yellow;
         }
@@ -141,6 +175,9 @@ namespace NachoClient.iOS
         [MonoTouch.Foundation.Export ("MoreLabelTapSelector:")]
         public void MoreLabelTapSelector (UIGestureRecognizer sender)
         {
+            if (!isEditable) {
+                return;
+            }
             if (null != owner) {
                 owner.AddressBlockWillBecomeActive (this);
             }
@@ -235,9 +272,11 @@ namespace NachoClient.iOS
                 moreLabel.Frame = new RectangleF (xOffset, yMoreLabel, (xLimit - xOffset), moreLabel.Frame.Height);
                 xOffset += moreLabel.Frame.Width;
             }
-            var yEntryTextField = yOffset + (LINE_HEIGHT / 2) - (entryTextField.Frame.Height / 2);
-            entryTextField.Frame = new RectangleF (xOffset, yEntryTextField, (xLimit - xOffset), entryTextField.Frame.Height);
-            xOffset += entryTextField.Frame.Width;
+            if (isEditable) {
+                var yEntryTextField = yOffset + (LINE_HEIGHT / 2) - (entryTextField.Frame.Height / 2);
+                entryTextField.Frame = new RectangleF (xOffset, yEntryTextField, (xLimit - xOffset), entryTextField.Frame.Height);
+                xOffset += entryTextField.Frame.Width;
+            }
             yOffset += LINE_HEIGHT;
             // Size the whole control
             this.Frame = new RectangleF (this.Frame.X, this.Frame.Y, parentWidth, yOffset);
@@ -304,9 +343,11 @@ namespace NachoClient.iOS
                 xOffset = LEFT_ADDRESS_INDENT;
                 xLimit = parentWidth;
             }
-            var yEntryTextField = yOffset + (LINE_HEIGHT / 2) - (entryTextField.Frame.Height / 2);
-            entryTextField.Frame = new RectangleF (xOffset, yEntryTextField, (xLimit - xOffset), entryTextField.Frame.Height);
-            xOffset += entryTextField.Frame.Width;
+            if (isEditable) {
+                var yEntryTextField = yOffset + (LINE_HEIGHT / 2) - (entryTextField.Frame.Height / 2);
+                entryTextField.Frame = new RectangleF (xOffset, yEntryTextField, (xLimit - xOffset), entryTextField.Frame.Height);
+                xOffset += entryTextField.Frame.Width;
+            }
             yOffset += LINE_HEIGHT;
             // Size the whole control
             this.Frame = new RectangleF (this.Frame.X, this.Frame.Y, parentWidth, yOffset);
