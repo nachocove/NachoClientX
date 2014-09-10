@@ -892,14 +892,16 @@ namespace NachoCore.Utils
 
         protected static void CreateEventRecord (McCalendar c, DateTime startTime, DateTime endTime)
         {
-            var exception = McException.QueryForExceptionId (c.Id, startTime);
+            var exceptions = McException.QueryForExceptionId (c.Id, startTime);
 
-            if (null == exception) {
+            if ((null == exceptions) || (0 == exceptions.Count)) {
                 var e = McEvent.Create (c.AccountId, startTime, endTime, c.Id, 0);
                 ScheduleNotification (e, c.Reminder);
             } else {
-                var e = McEvent.Create (c.AccountId, exception.StartTime, exception.EndTime, c.Id, exception.Id);
-                ScheduleNotification (e, exception.Reminder);
+                foreach (var exception in exceptions) {
+                    var e = McEvent.Create (c.AccountId, exception.StartTime, exception.EndTime, c.Id, exception.Id);
+                    ScheduleNotification (e, exception.Reminder);
+                }
             }
         }
 

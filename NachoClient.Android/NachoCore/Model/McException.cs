@@ -28,10 +28,10 @@ namespace NachoCore.Model
             return McAbstrFolderEntry.ClassCodeEnum.Exception;
         }
 
-        public static McException QueryForExceptionId (int calendarId, DateTime exceptionStartTime)
+        public static List<McException> QueryForExceptionId (int calendarId, DateTime exceptionStartTime)
         {
             var query = "SELECT * from McException WHERE CalendarId = ? AND ExceptionStartTime = ?";
-            var result = NcModel.Instance.Db.Query<McException> (query, calendarId, exceptionStartTime).SingleOrDefault ();
+            var result = NcModel.Instance.Db.Query<McException> (query, calendarId, exceptionStartTime).ToList ();
             return result;
         }
     }
