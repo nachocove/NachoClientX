@@ -8,7 +8,7 @@ using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using UIImageEffectsBinding;
 using MonoTouch.CoreGraphics;
-
+using MonoTouch.CoreAnimation;
 
 namespace NachoClient.iOS
 {
@@ -38,8 +38,9 @@ namespace NachoClient.iOS
         protected const int SPINNER_HEIGHT = 338;
         protected const int MASK_DIAMETER = 80;
         protected float LOWER_SECTION_Y_VAL;
-
         protected bool quitLoadingAnimation;
+        protected PointF topHalfSpinnerCenter;
+        protected PointF bottomHalfSpinnerCenter;
 
         public WaitingScreen ()
         {
@@ -69,20 +70,24 @@ namespace NachoClient.iOS
             spinnerView = new UIView (new RectangleF (this.Frame.Width / 2 - 40, LOWER_SECTION_Y_VAL, MASK_DIAMETER, MASK_DIAMETER));
             spinnerView.BackgroundColor = A.Color_NachoRed;
             spinnerView.Layer.CornerRadius = MASK_DIAMETER / 2;
+            spinnerView.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
             spinnerView.Layer.MasksToBounds = true;
             this.Add (spinnerView);
 
             bottomHalfSpinner = new UIImageView (UIImage.FromBundle ("Spinner-1@2x"));
-            bottomHalfSpinner.Frame = new RectangleF (-35, LOWER_SECTION_Y_VAL - 430, SPINNER_WIDTH, SPINNER_HEIGHT);
+            bottomHalfSpinner.Frame = new RectangleF (-35, LOWER_SECTION_Y_VAL - 400, SPINNER_WIDTH, SPINNER_HEIGHT);
+            bottomHalfSpinnerCenter = bottomHalfSpinner.Center;
             spinnerView.Add (bottomHalfSpinner);
 
             topHalfSpinner = new UIImageView (UIImage.FromBundle ("Spinner-1@2x"));
-            topHalfSpinner.Frame = new RectangleF (-35, LOWER_SECTION_Y_VAL - 620f, SPINNER_WIDTH, SPINNER_HEIGHT);
+            topHalfSpinner.Frame = new RectangleF (-35, LOWER_SECTION_Y_VAL - 590, SPINNER_WIDTH, SPINNER_HEIGHT);
+            topHalfSpinnerCenter = topHalfSpinner.Center;
             spinnerView.Add (topHalfSpinner);
 
             circleMask = new UIImageView (maskImage (UIImage.FromBundle ("Circular-Mask")));
             circleMask.Frame = new RectangleF (this.Frame.Width / 2, LOWER_SECTION_Y_VAL + MASK_DIAMETER / 2, .5f, .5f);
             circleMask.Layer.CornerRadius = MASK_DIAMETER / 2;
+            circleMask.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
             circleMask.Layer.MasksToBounds = true;
             this.Add (circleMask);
 
@@ -211,29 +216,29 @@ namespace NachoClient.iOS
         protected void ResetLoadingItems ()
         {
             syncStatusLabel.Alpha = 0.0f;
-            circleMask.Transform = CGAffineTransform.MakeIdentity ();
-            circleMask.Frame = new RectangleF (this.Frame.Width / 2, LOWER_SECTION_Y_VAL + MASK_DIAMETER / 2, .5f, .5f);
-            bottomHalfSpinner.Frame = new RectangleF (-35, LOWER_SECTION_Y_VAL - 430, SPINNER_WIDTH, SPINNER_HEIGHT);
-            topHalfSpinner.Frame = new RectangleF (-35, LOWER_SECTION_Y_VAL - 617.5f, SPINNER_WIDTH, SPINNER_HEIGHT);
+            circleMask.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
+            spinnerView.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
+            bottomHalfSpinner.Center = bottomHalfSpinnerCenter;
+            topHalfSpinner.Center = topHalfSpinnerCenter;
             spinnerView.BringSubviewToFront (topHalfSpinner);
         }
 
         protected void StartLoadingAnimation ()
         {
-            UIView.AnimateKeyframes (1, 0, (UIViewKeyframeAnimationOptions.OverrideInheritedOptions |  UIViewKeyframeAnimationOptions.OverrideInheritedDuration | UIViewKeyframeAnimationOptions.CalculationModeCubicPaced), () => {
+            UIView.AnimateKeyframes (1, 0, (UIViewKeyframeAnimationOptions.OverrideInheritedDuration | UIViewKeyframeAnimationOptions.CalculationModeLinear), () => {
 
                 UIView.AddKeyframeWithRelativeStartTime (0, .5, () => {
-                    circleMask.Transform = CGAffineTransform.MakeScale (160, 160);
+                    circleMask.Layer.Transform = CATransform3D.MakeScale (1.0f, 1.0f, 1.0f);
+                    spinnerView.Layer.Transform = CATransform3D.MakeScale (1.0f, 1.0f, 1.0f);
                     animationBlocker.Alpha = 0.0f;
                 });
 
                 UIView.AddKeyframeWithRelativeStartTime (.5, .5, () => {
-
                     syncStatusLabel.Alpha = 1.0f;
                 });
 
             }, ((bool finished) => {
-                ArrowAnimation (topHalfSpinner, bottomHalfSpinner, topHalfSpinner.Center, bottomHalfSpinner.Center, false);
+                ArrowAnimation (topHalfSpinner, bottomHalfSpinner, topHalfSpinnerCenter, bottomHalfSpinnerCenter, false);
             }));
         }
 
@@ -272,7 +277,7 @@ namespace NachoClient.iOS
                 });
 
                 UIView.AddKeyframeWithRelativeStartTime (.075, .075, () => {
-                    circleMask.Transform = CGAffineTransform.MakeScale (.01f, .01f);
+                    circleMask.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
                     animationBlocker.Alpha = 1.0f;
                 });
 
