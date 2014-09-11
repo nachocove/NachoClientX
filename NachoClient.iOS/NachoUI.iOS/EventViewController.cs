@@ -25,7 +25,7 @@ using MonoTouch.MapKit;
 
 namespace NachoClient.iOS
 {
-    public partial class EventViewController : NcUIViewController, INachoCalendarItemEditor, INachoAttendeeListChooserDelegate, INachoAttachmentListChooserDelegate
+    public partial class EventViewController : NcUIViewController, INachoCalendarItemEditor, INachoAttendeeListChooserDelegate, INachoAttachmentListChooserDelegate, INachoNotesControllerParent
     {
         protected INachoCalendarItemEditorParent owner;
         protected CalendarItemEditorAction action;
@@ -316,7 +316,7 @@ namespace NachoClient.iOS
 
             if (segue.Identifier.Equals ("EventToNotes")) {
                 var dc = (NotesViewController)segue.DestinationViewController;
-                dc.SetEvent (item);
+                dc.SetOwner (this);
                 dc.ViewDisappearing += (object s, EventArgs e) => {
                     displayEvent = true;
                 };
@@ -1315,5 +1315,35 @@ namespace NachoClient.iOS
             NcAssert.CaseError ();
         }
             
+        public string GetNoteText ()
+        {
+            McNote Note;
+            if (null != c) {
+                Note = McNote.QueryByTypeId (c.Id, McNote.NoteType.Event).FirstOrDefault ();
+                return (null != Note ? Note.noteContent : "");
+            } else {
+                return "";
+            }
+        }
+        public void SaveNote (string noteText)
+        {
+            McNote Note;
+            if (null != c) {
+                Note = McNote.QueryByTypeId (c.Id, McNote.NoteType.Event).FirstOrDefault ();
+                if (null == Note) {
+                    Note = new McNote ();
+                }
+
+                Note.DisplayName = (c.Subject + " - " + Pretty.ShortDateString (DateTime.UtcNow));
+                Note.TypeId = c.Id;
+                Note.noteContent = noteText;
+                Note.noteType = McNote.NoteType.Event;
+                if (0 == Note.Id) {
+                    Note.Insert (); 
+                } else {
+                    Note.Update ();
+                }
+            }
+        }
     }
 }
