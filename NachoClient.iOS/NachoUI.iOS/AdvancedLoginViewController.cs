@@ -129,6 +129,11 @@ namespace NachoClient.iOS
             }
         }
 
+        public override bool ShouldAutorotate ()
+        {
+            return false;
+        }
+
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             if (segue.Identifier.Equals ("SegueToSupport")) {
