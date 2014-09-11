@@ -43,6 +43,8 @@ namespace NachoClient.iOS
         UIView contentView;
         float yOffset;
 
+        public UIView loadingCover;
+
         public enum LoginStatus
         {
             ValidateSuccessful,
@@ -68,7 +70,6 @@ namespace NachoClient.iOS
             theAccount = new AccountSettings ();
             loadSettingsForAccount ();
             CreateView ();
-            NavigationItem.Title = "Account Setup";
 
             waitScreen = new WaitingScreen (View.Frame);
             waitScreen.SetOwner (this);
@@ -92,6 +93,11 @@ namespace NachoClient.iOS
 
             fillInKnownFields ();
             handleStatusEnums ();
+
+            if (waitScreen.Hidden == true) {
+                NavigationItem.Title = "Account Setup";
+                loadingCover.Hidden = true;
+            }
         }
 
         public override void ViewWillAppear (bool animated)
@@ -189,12 +195,20 @@ namespace NachoClient.iOS
                     } else {
                         if (haveEnteredHost ()) {
                             if (isValidHost ()) {
-                                waitScreen.ShowView ();
                                 tryValidateConfig ();
+                                if(LoginHelpers.HasViewedTutorial(LoginHelpers.GetCurrentAccountId())){
+                                    waitScreen.ShowView ();
+                                }else{
+                                    PerformSegue (StartupViewController.NextSegue (), this);
+                                }
                             }
                         } else {
-                            waitScreen.ShowView ();
                             tryAutoD ();
+                            if(LoginHelpers.HasViewedTutorial(LoginHelpers.GetCurrentAccountId())){
+                                waitScreen.ShowView ();
+                            }else{
+                                PerformSegue (StartupViewController.NextSegue (), this);
+                            }
                         }
                     }
                 }
@@ -213,11 +227,13 @@ namespace NachoClient.iOS
                 View.EndEditing (true);
 
                 PerformSegue ("SegueToSupport", this);
-
-
             };
             contentView.AddSubview (customerSupportButton);
-            yOffset = customerSupportButton.Frame.Bottom + 15;
+            yOffset = customerSupportButton.Frame.Bottom;
+
+            loadingCover = new UIView (View.Frame);
+            loadingCover.BackgroundColor = A.Color_NachoGreen;
+            contentView.Add (loadingCover);
 
             scrollView.Add (contentView);
             LayoutView ();
@@ -536,7 +552,11 @@ namespace NachoClient.iOS
             });
 
             startBe ();
-            waitScreen.ShowView ();
+            if(LoginHelpers.HasViewedTutorial(LoginHelpers.GetCurrentAccountId())){
+                waitScreen.ShowView ();
+            }else{
+                PerformSegue (StartupViewController.NextSegue (), this);
+            }
         }
 
         public void removeServerRecord ()
@@ -678,9 +698,10 @@ namespace NachoClient.iOS
             if (newHeight == keyboardHeight) {
                 return;
             }
-            keyboardHeight = newHeight;
 
+            keyboardHeight = newHeight;
             LayoutView ();
+            scrollView.SetContentOffset (new PointF (0, -scrollView.ContentInset.Top), false);
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
