@@ -152,6 +152,7 @@ namespace NachoClient.iOS
             }
             if (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded == s.Status.SubKind) {
                 Log.Info (Log.LOG_EMAIL, "EmailMessageBodyDownloadSucceeded");
+                errorLoadingBody = false;
                 StopSpinner ();
                 ConfigureView ();
                 return;
@@ -385,6 +386,7 @@ namespace NachoClient.iOS
         const int ATTACHMENT_VIEW_TAG = 301;
         const int ATTACHMENT_NAME_TAG = 302;
         const int ATTACHMENT_STATUS_TAG = 303;
+        const int DOWNLOAD_TAG = 304;
 
         protected void CreateView ()
         {
@@ -706,9 +708,9 @@ namespace NachoClient.iOS
             deferLayout = 1;
 
             // TODO: Revisit
-            for (int i = 0; i < view.Subviews.Count (); i++) {
+            for (int i = view.Subviews.Count() - 1; i >= 0; i--) {
                 var v = view.Subviews [i];
-                if (MESSAGE_PART_TAG == v.Tag) {
+                if ((MESSAGE_PART_TAG == v.Tag) || (DOWNLOAD_TAG == v.Tag)) {
                     v.RemoveFromSuperview ();
                 }
             }
@@ -761,7 +763,8 @@ namespace NachoClient.iOS
         {
             if (errorLoadingBody) {
                 Log.Info (Log.LOG_EMAIL, "Previous download resulted in error");
-                RenderTextString ("Error loading body.");
+                RenderPartialDownloadMessage ("[ Message preview only. Tap here to download ]");
+                RenderTextString (message.GetBodyPreviewOrEmpty ());
                 return;
             }
 
@@ -769,7 +772,6 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_EMAIL, "Starting download of whole message body");
                 StartSpinner ();
                 BackEnd.Instance.DnldEmailBodyCmd (message.AccountId, message.Id);
-                //RenderTextString (message.GetBodyPreviewOrEmpty ());
                 return;
             }
  
@@ -837,7 +839,7 @@ namespace NachoClient.iOS
 
             for (int i = 0; i < view.Subviews.Count (); i++) {
                 var v = view.Subviews [i];
-                if ((MESSAGE_PART_TAG == v.Tag) || (ATTACHMENT_VIEW_TAG == v.Tag)) {
+                if ((MESSAGE_PART_TAG == v.Tag) || (ATTACHMENT_VIEW_TAG == v.Tag) || (DOWNLOAD_TAG == v.Tag)) {
                     var frame = v.Frame;
                     frame.Y = yOffset;
                     v.Frame = frame;
@@ -883,6 +885,18 @@ namespace NachoClient.iOS
             UIView.Animate (0.2, 0, UIViewAnimationOptions.CurveLinear, () => {
                 ConfigureView ();
             }, () => {});
+        }
+
+        [MonoTouch.Foundation.Export ("DownloadMessage:")]
+        public void OnDownloadMessage (UIGestureRecognizer sender)
+        {
+            var spinner = View.ViewWithTag (SPINNER_TAG) as UIActivityIndicatorView;
+            if (spinner.IsAnimating) {
+                // A download is already in progress... Wait for it to either complete or time out
+                return;
+            }
+            errorLoadingBody = false;
+            ConfigureView (); // this will call RenderBody() which will trigger the download
         }
 
         protected void RenderMime (string bodyPath)
@@ -942,6 +956,34 @@ namespace NachoClient.iOS
             frame.Height = frame.Height + 30;
             label.Frame = frame;
             label.Tag = MESSAGE_PART_TAG;
+            view.AddSubview (label);
+        }
+
+        void RenderPartialDownloadMessage (string message)
+        {
+            var attributedString = new NSAttributedString (message);
+            var label = new UILabel (new RectangleF (15.0f, 0.0f, 290.0f, 1.0f));
+            label.Lines = 0;
+            label.Font = A.Font_AvenirNextDemiBold14;
+            label.LineBreakMode = UILineBreakMode.WordWrap;
+            label.AttributedText = attributedString;
+            label.TextColor = A.Color_808080;
+            label.SizeToFit ();
+            var frame = label.Frame;
+            frame.Height = frame.Height + 30;
+            label.Frame = frame;
+            label.Tag = DOWNLOAD_TAG;
+            label.UserInteractionEnabled = true;
+
+            // Detect tap of the partially download mesasge label
+            var singletap = new UITapGestureRecognizer ();
+            singletap.NumberOfTapsRequired = 1;
+            singletap.AddTarget (this, new MonoTouch.ObjCRuntime.Selector ("DownloadMessage:"));
+            singletap.ShouldRecognizeSimultaneously = delegate {
+                return false;
+            };
+            label.AddGestureRecognizer (singletap);
+
             view.AddSubview (label);
         }
 
