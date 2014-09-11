@@ -291,7 +291,7 @@ namespace NachoClient.iOS
             }
             preview = MimeHelpers.ExtractTextPartWithError (message, out error);
             if (null == preview) {
-                return null;
+                preview = " ";
             }
 
             // Truncate the body to 1000 characters
