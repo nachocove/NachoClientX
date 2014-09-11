@@ -768,8 +768,6 @@ namespace NachoClient.iOS
 
             if (McAbstrItem.BodyStateEnum.Whole_0 != message.BodyState) {
                 Log.Info (Log.LOG_EMAIL, "Starting download of whole message body");
-                RenderPartialDownloadMessage ("[ Message preview only. Downloading the complete message ]");
-                RenderTextString (message.GetBodyPreviewOrEmpty ());
                 StartSpinner ();
                 BackEnd.Instance.DnldEmailBodyCmd (message.AccountId, message.Id);
                 return;
