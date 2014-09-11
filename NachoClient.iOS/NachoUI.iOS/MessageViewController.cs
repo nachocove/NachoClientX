@@ -77,7 +77,6 @@ namespace NachoClient.iOS
                 deleteButton,
             };
 
-
             Util.SetOriginalImageForButton (replyButton, "toolbar-icn-reply");
             Util.SetOriginalImageForButton (archiveButton, "email-archive-gray");
             Util.SetOriginalImageForButton (saveButton, "email-fileinfolder-gray");

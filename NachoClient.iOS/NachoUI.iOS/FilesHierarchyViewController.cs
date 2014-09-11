@@ -73,13 +73,11 @@ namespace NachoClient.iOS
             UIView filesAttachmentsView = new UIView (new RectangleF (0, LINE_OFFSET, SCREEN_WIDTH, CELL_HEIGHT));
             filesAttachmentsView.BackgroundColor = UIColor.White;
 
-            UIImageView attachmentAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
-            attachmentAccessoryImage.Image = Util.MakeArrow (A.Color_NachoTeal);
-            filesAttachmentsView.AddSubview (attachmentAccessoryImage);
+            Util.AddArrowAccessory (SCREEN_WIDTH - 23, CELL_HEIGHT / 2 - 6, 12, filesAttachmentsView);
 
-            AddTextLabelWithImage (40, 12.438f, 100, TEXT_LINE_HEIGHT, "Attachments", UIImage.FromBundle ("icn-mtng-attachment"), 14.5f, filesAttachmentsView);
+            AddTextLabelWithImage (40, 12.438f, 100, TEXT_LINE_HEIGHT, "Attachments", UIImage.FromBundle ("icn-attachedfile"), 14.5f, filesAttachmentsView);
 
-            var holder = new SegueHolder(owner); // ok if owner is null
+            var holder = new SegueHolder (owner); // ok if owner is null
 
             var attachmentTap = new UITapGestureRecognizer ();
             attachmentTap.AddTarget (() => {
@@ -88,15 +86,13 @@ namespace NachoClient.iOS
             });
             filesAttachmentsView.AddGestureRecognizer (attachmentTap);
 
-            // Notes Cell
+            // Shared Files Cell
             UIView filesSharedFilesView = new UIView (new RectangleF (0, LINE_OFFSET + CELL_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
             filesSharedFilesView.BackgroundColor = UIColor.White;
 
-            UIImageView sharedFilesAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
-            sharedFilesAccessoryImage.Image = Util.MakeArrow (A.Color_NachoTeal);
-            filesSharedFilesView.AddSubview (sharedFilesAccessoryImage);
+            Util.AddArrowAccessory (SCREEN_WIDTH - 23, CELL_HEIGHT / 2 - 6, 12, filesSharedFilesView);
 
-            AddTextLabelWithImage (40, 12.438f, 100, TEXT_LINE_HEIGHT, "Shared Files", UIImage.FromBundle ("icn-mtng-attachment"), 14.5f, filesSharedFilesView);
+            AddTextLabelWithImage (40, 12.438f, 100, TEXT_LINE_HEIGHT, "Shared Files", UIImage.FromBundle ("icn-sharedfiles"), 14.5f, filesSharedFilesView);
 
             var sharedFilesTap = new UITapGestureRecognizer ();
             sharedFilesTap.AddTarget (() => {
@@ -105,15 +101,13 @@ namespace NachoClient.iOS
             });
             filesSharedFilesView.AddGestureRecognizer (sharedFilesTap);
 
-            // Shared Files Cell
+            // Notes Cell
             UIView filesNotesView = new UIView (new RectangleF (0, LINE_OFFSET + CELL_HEIGHT * 2, SCREEN_WIDTH, CELL_HEIGHT));
             filesNotesView.BackgroundColor = UIColor.White;
 
-            UIImageView noteAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
-            noteAccessoryImage.Image = Util.MakeArrow (A.Color_NachoTeal);
-            filesNotesView.AddSubview (noteAccessoryImage);
+            Util.AddArrowAccessory (SCREEN_WIDTH - 23, CELL_HEIGHT / 2 - 6, 12, filesNotesView);
 
-            AddTextLabelWithImage (40, 12.438f, 100, TEXT_LINE_HEIGHT, "Notes", UIImage.FromBundle ("icn-mtng-attachment"), 14.5f, filesNotesView);
+            AddTextLabelWithImage (40, 12.438f, 100, TEXT_LINE_HEIGHT, "Notes", UIImage.FromBundle ("icn-notes"), 14.5f, filesNotesView);
 
             var noteTap = new UITapGestureRecognizer ();
             noteTap.AddTarget (() => {
@@ -129,17 +123,17 @@ namespace NachoClient.iOS
                 filesSharedFilesView
             }); 
 
-            AddLine (0, LINE_OFFSET, SCREEN_WIDTH, separatorColor, contentView);
-            AddLine (15, LINE_OFFSET + CELL_HEIGHT, SCREEN_WIDTH, separatorColor, contentView);
-            AddLine (15, LINE_OFFSET + CELL_HEIGHT * 2, SCREEN_WIDTH, separatorColor, contentView);
-            AddLine (0, LINE_OFFSET + CELL_HEIGHT * 3, SCREEN_WIDTH, separatorColor, contentView);
+            Util.AddHorizontalLine (0, LINE_OFFSET, SCREEN_WIDTH, separatorColor, contentView);
+            Util.AddHorizontalLine (15, LINE_OFFSET + CELL_HEIGHT, SCREEN_WIDTH, separatorColor, contentView);
+            Util.AddHorizontalLine (15, LINE_OFFSET + CELL_HEIGHT * 2, SCREEN_WIDTH, separatorColor, contentView);
+            Util.AddHorizontalLine (0, LINE_OFFSET + CELL_HEIGHT * 3, SCREEN_WIDTH, separatorColor, contentView);
 
             contentView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, View.Frame.Height);
             contentView.BackgroundColor = A.Color_NachoNowBackground;
 
             //Scroll View
             scrollView.BackgroundColor = A.Color_NachoNowBackground;
-            scrollView.ContentSize = new SizeF (SCREEN_WIDTH, contentView.Frame.Height);
+            scrollView.ContentSize = new SizeF (SCREEN_WIDTH, contentView.Frame.Height - 64);
 
         }
 
@@ -176,13 +170,6 @@ namespace NachoClient.iOS
             UIImageView theImage = new UIImageView (new RectangleF ((xOffset - 25), imageOffset, 15, 15));
             theImage.Image = image;
             parentView.Add (theImage);
-        }
-
-        public void AddLine (float offset, float yVal, float width, UIColor color, UIView parentView)
-        {
-            var lineUIView = new UIView (new RectangleF (offset, yVal, width, .5f));
-            lineUIView.BackgroundColor = color;
-            parentView.Add (lineUIView);
-        }
+        }  
     }
 }

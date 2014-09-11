@@ -1583,6 +1583,11 @@
     <BundleResource Include="Resources\red_pointer%402x.png" />
     <BundleResource Include="Resources\red_balloon%402x.png" />
     <BundleResource Include="Resources\teal_balloon%402x.png" />
+    <BundleResource Include="Resources\icn-attachedfile%402x.png" />
+    <BundleResource Include="Resources\icn-notes%402x.png" />
+    <BundleResource Include="Resources\icn-photos%402x.png" />
+    <BundleResource Include="Resources\icn-rightarrow%402x.png" />
+    <BundleResource Include="Resources\icn-sharedfiles%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
