@@ -282,6 +282,17 @@ namespace NachoClient.iOS
             NcEmailArchiver.Delete (message);
         }
 
+        private string GetPreview (McEmailMessage message)
+        {
+            string error;
+            string preview = MimeHelpers.ExtractTextPartWithError (message, out error);
+            if (null != preview) {
+                // FIXME - may need to trim the output for really long emails
+                return preview;
+            }
+            return message.GetBodyPreviewOrEmpty ();
+        }
+
         /// <summary>
         /// Populate message cells with data, adjust sizes and visibility
         /// </summary>
@@ -357,7 +368,7 @@ namespace NachoClient.iOS
             previewLabelViewRect.Height = previewLabelViewHeight;
             previewLabelViewRect.Y = 80 + previewLabelAdjustment;
             previewLabelView.Frame = previewLabelViewRect;
-            var rawPreview = message.GetBodyPreviewOrEmpty ();
+            var rawPreview = GetPreview (message);
             int oldLength;
             var cookedPreview = rawPreview;
             do {

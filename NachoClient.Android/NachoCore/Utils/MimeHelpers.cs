@@ -159,8 +159,20 @@ namespace NachoCore.Utils
 
         static public string ExtractTextPart (McEmailMessage message)
         {
+            string error;
+            string text = ExtractTextPartWithError (message, out error);
+            if (null != error) {
+                return error;
+            }
+            return text;
+        }
+
+        static public string ExtractTextPartWithError (McEmailMessage message, out string error)
+        {
+            error = null;
             if (McAbstrItem.BodyStateEnum.Whole_0 != message.BodyState) {
-                return "Nacho Mail has not downloaded the body of this message yet.\n" + message.GetBodyPreviewOrEmpty();
+                error = "Nacho Mail has not downloaded the body of this message yet.\n" + message.GetBodyPreviewOrEmpty();
+                return null;
             }
 
             if (McBody.PlainText == message.BodyType) {
@@ -168,11 +180,13 @@ namespace NachoCore.Utils
             }
 
             if (McBody.HTML == message.BodyType) {
-                return "Nacho Mail has not converted the HTML to reply text.\n" + message.GetBodyPreviewOrEmpty ();
+                error = "Nacho Mail has not converted the HTML to reply text.\n" + message.GetBodyPreviewOrEmpty ();
+                return null;
             }
 
             if (McBody.RTF == message.BodyType) {
-                return "Nacho Mail has not converted the RTF to reply text.\n" + message.GetBodyPreviewOrEmpty ();
+                error = "Nacho Mail has not converted the RTF to reply text.\n" + message.GetBodyPreviewOrEmpty ();
+                return null;
             }
 
             NcAssert.True (McBody.MIME == message.BodyType);
