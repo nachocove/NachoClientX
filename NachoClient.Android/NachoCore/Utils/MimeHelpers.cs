@@ -235,6 +235,10 @@ namespace NachoCore.Utils
             } else {
                 BackEnd.Instance.SendEmailCmd (msg.AccountId, msg.Id, CalendarId);
             }
+            // TODO: Subtle ugliness. Id is passed to BE, ref-count is ++ in the DB.
+            // The object here still has ref-count of 0, so interlock is lost, and delete really happens in the DB.
+            // BE goes to reference the object later on, and it is missing.
+            msg = McEmailMessage.QueryById<McEmailMessage> (msg.Id);
             msg.Delete ();
         }
 
