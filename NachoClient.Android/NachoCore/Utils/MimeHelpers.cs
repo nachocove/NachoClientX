@@ -235,6 +235,7 @@ namespace NachoCore.Utils
             } else {
                 BackEnd.Instance.SendEmailCmd (msg.AccountId, msg.Id, CalendarId);
             }
+            msg.Delete ();
         }
 
         public static void MimeDisplayList (MimeMessage message, ref List<MimeEntity> list)
