@@ -15,13 +15,15 @@ using MonoTouch.CoreAnimation;
 
 namespace NachoClient.iOS
 {
-    public partial class FilesViewController : NcUITableViewController, INachoFileChooser, IUISearchDisplayDelegate, IUISearchBarDelegate
+    public partial class FilesViewController : NcUITableViewController, INachoFileChooser, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoNotesControllerParent
     {
         INachoFileChooserParent Owner;
         FilesTableSource FilesSource;
         SearchDelegate searchDelegate;
         string Token;
         public ItemType itemType;
+
+        protected McNote selectedNote;
 
         UILabel EmptyListLabel;
 
@@ -149,12 +151,26 @@ namespace NachoClient.iOS
                 var dc = (NotesViewController)segue.DestinationViewController;
 
                 var holder = sender as SegueHolder;
-                var note = (McNote)holder.value;
-                var calEvent = McCalendar.QueryById<McCalendar> (note.TypeId);
-                dc.SetEvent (calEvent);
+                selectedNote = (McNote)holder.value;
 
+                dc.SetOwner (this);
                 return;
             }
+        }
+
+        public string GetNoteText ()
+        {
+            if (null != selectedNote) {
+                return selectedNote.noteContent;
+            } else {
+                return "";
+            }
+        }
+
+        public void SaveNote (string noteText)
+        {
+            selectedNote.noteContent = noteText;
+            selectedNote.Update ();
         }
 
         public void RefreshTableSource ()

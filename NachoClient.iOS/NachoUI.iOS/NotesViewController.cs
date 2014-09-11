@@ -15,15 +15,13 @@ using NachoCore.Model;
 
 namespace NachoClient.iOS
 {
-    public partial class NotesViewController : NcUIViewController
+    public partial class NotesViewController : NcUIViewController, INachoNotesController
     {
         public NotesViewController (IntPtr handle) : base (handle)
         {
         }
 
-        protected McNote Note;
-        protected McCalendar eventItem;
-        protected McContact contactItem;
+        protected INachoNotesControllerParent Owner;
         protected McAccount account;
         UIColor separatorColor = A.Color_NachoBorderGray;
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
@@ -49,7 +47,6 @@ namespace NachoClient.iOS
             base.ViewDidLoad ();
             account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
             CreateNotesView ();
-            ConfigureItem ();
             notesTextView.BecomeFirstResponder ();
         }
 
@@ -70,25 +67,14 @@ namespace NachoClient.iOS
 
         public override void ViewWillDisappear (bool animated)
         {
-            if (eventItem != null) {
-                SaveEventNote ();
-            } else if (contactItem != null) {
-                SaveContactNote ();
-            } else {
-                NcAssert.True (false, "Owner of note was not found; unable to save note");
-            }
-
             base.ViewWillDisappear (animated);
+
+            Owner.SaveNote (notesTextView.Text);
         }
 
-        public void SetEvent (McCalendar item)
+        public void SetOwner (INachoNotesControllerParent owner)
         {
-            this.eventItem = item;
-        }
-
-        public void SetContact (McContact item)
-        {
-            this.contactItem = item;
+            this.Owner = owner;
         }
 
         protected void CreateNotesView ()
@@ -128,7 +114,6 @@ namespace NachoClient.iOS
 
         }
 
-
         public UIView AddLine (float offset, float yVal, float width, UIColor color)
         {
             var lineUIView = new UIView (new RectangleF (offset, yVal, width, .5f));
@@ -138,19 +123,7 @@ namespace NachoClient.iOS
 
         public void ConfigureNotesView ()
         {
-            if (null == contactItem) {
-                notesTextView.Text = Note.noteContent;
-                return;
-            }
-
-            if (contactItem.Source != McAbstrItem.ItemSource.ActiveSync) {
-                notesTextView.Text = "This contact has not been synced. Adding or editing notes is disabled.";
-            } else {
-                McBody contactBody = McBody.QueryById<McBody> (contactItem.BodyId);
-                if (null != contactBody) {
-                    notesTextView.Text = contactBody.Body;
-                }
-            }
+            notesTextView.Text = Owner.GetNoteText ();
 
             //date
             var dateDetailLabel = contentView.ViewWithTag (DATE_DETAIL_TAG) as UILabel;
@@ -184,56 +157,6 @@ namespace NachoClient.iOS
             // Adjust the caretRect to be in our enclosing scrollview, and then scroll it
             caretRect.Y += notesView.Frame.Y + 30;
             scrollView.ScrollRectToVisible (caretRect, true);
-        }
-
-        public void ConfigureItem ()
-        {
-            if (null != eventItem) {
-                Note = McNote.QueryByTypeId (eventItem.Id, McNote.NoteType.Event).FirstOrDefault ();
-                if (null == Note) {
-                    Note = new McNote ();
-                }
-                return;
-            }
-            if (null != contactItem) {
-                Note = McNote.QueryByTypeId (contactItem.Id, McNote.NoteType.Contact).FirstOrDefault ();
-                if (null == Note) {
-                    Note = new McNote ();
-                }
-                return;
-            }
-            NcAssert.CaseError ();
-        }
-
-        public void SaveContactNote ()
-        {
-            McBody contactBody = McBody.QueryById<McBody> (contactItem.BodyId);
-            if (null != contactBody) {
-                contactBody.UpdateBody (notesTextView.Text);
-            } else {
-                contactItem.BodyId = McBody.Save (notesTextView.Text).Id;
-            }
-
-            contactItem.Update ();
-            NachoCore.BackEnd.Instance.UpdateContactCmd (contactItem.AccountId, contactItem.Id);
-        }
-
-        public void SaveEventNote ()
-        {
-            Note.DisplayName = (eventItem.Subject + " - " + Pretty.ShortDateString (DateTime.UtcNow));
-            Note.TypeId = eventItem.Id;
-            Note.noteContent = notesTextView.Text;
-            Note.noteType = McNote.NoteType.Event;
-            SyncNoteRequest (Note);
-        }
-
-        protected void SyncNoteRequest (McNote note)
-        {
-            if (0 == note.Id) {
-                note.Insert (); // new entry
-            } else {
-                note.Update ();
-            }
         }
     }
 }

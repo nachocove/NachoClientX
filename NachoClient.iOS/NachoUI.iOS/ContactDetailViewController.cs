@@ -16,7 +16,7 @@ using System.Text.RegularExpressions;
 
 namespace NachoClient.iOS
 {
-    public partial class ContactDetailViewController : NcUIViewController, IMessageTableViewSourceDelegate, INachoMessageEditorParent, INachoCalendarItemEditorParent, INachoFolderChooserParent
+    public partial class ContactDetailViewController : NcUIViewController, IMessageTableViewSourceDelegate, INachoMessageEditorParent, INachoCalendarItemEditorParent, INachoFolderChooserParent, INachoNotesControllerParent
     {
         public McContact contact;
 
@@ -102,12 +102,13 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("ContactToNotes")) {
                 var dc = (NotesViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
-                dc.SetContact (holder.value as McContact);
+                dc.SetOwner (this);
                 dc.ViewDisappearing += (object s, EventArgs e) => {
                     DisplayContactInfo ();
                 };
                 return;
             }
+
             if (segue.Identifier.Equals ("ContactToEmailCompose")) {
                 var dc = (MessageComposeViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
@@ -758,6 +759,36 @@ namespace NachoClient.iOS
         public void SetEmailMessages (INachoEmailMessages messageThreads)
         {
             this.messageSource.SetEmailMessages (messageThreads);
+        }
+
+        public void SaveNote (string noteText)
+        {
+            if (null != contact) {
+                McBody contactBody = McBody.QueryById<McBody> (contact.BodyId);
+                if (null != contactBody) {
+                    contactBody.UpdateBody (noteText);
+                } else {
+                    contact.BodyId = McBody.Save (noteText).Id;
+                }
+
+                contact.Update ();
+                NachoCore.BackEnd.Instance.UpdateContactCmd (contact.AccountId, contact.Id);
+            }
+        }
+
+        public string GetNoteText ()
+        {
+            NcAssert.True (null != contact);
+
+            if (contact.Source != McAbstrItem.ItemSource.ActiveSync) {
+                return "This contact has not been synced. Adding or editing notes is disabled.";
+            } else {
+                McBody contactBody = McBody.QueryById<McBody> (contact.BodyId);
+                if (null != contactBody) {
+                    return contactBody.Body;
+                }
+                return "";
+            }
         }
     }
 }
