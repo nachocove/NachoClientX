@@ -1325,6 +1325,7 @@ namespace NachoClient.iOS
                 return "";
             }
         }
+
         public void SaveNote (string noteText)
         {
             McNote Note;
@@ -1332,15 +1333,13 @@ namespace NachoClient.iOS
                 Note = McNote.QueryByTypeId (c.Id, McNote.NoteType.Event).FirstOrDefault ();
                 if (null == Note) {
                     Note = new McNote ();
-                }
-
-                Note.DisplayName = (c.Subject + " - " + Pretty.ShortDateString (DateTime.UtcNow));
-                Note.TypeId = c.Id;
-                Note.noteContent = noteText;
-                Note.noteType = McNote.NoteType.Event;
-                if (0 == Note.Id) {
-                    Note.Insert (); 
+                    Note.DisplayName = (c.Subject + " - " + Pretty.ShortDateString (DateTime.UtcNow));
+                    Note.TypeId = c.Id;
+                    Note.noteType = McNote.NoteType.Event;
+                    Note.noteContent = noteText;
+                    Note.Insert ();
                 } else {
+                    Note.noteContent = noteText;
                     Note.Update ();
                 }
             }

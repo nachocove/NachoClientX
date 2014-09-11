@@ -763,27 +763,31 @@ namespace NachoClient.iOS
 
         public void SaveNote (string noteText)
         {
-            McBody contactBody = McBody.QueryById<McBody> (contact.BodyId);
-            if (null != contactBody) {
-                contactBody.UpdateBody (noteText);
-            } else {
-                contact.BodyId = McBody.Save (noteText).Id;
-            }
+            if (null != contact) {
+                McBody contactBody = McBody.QueryById<McBody> (contact.BodyId);
+                if (null != contactBody) {
+                    contactBody.UpdateBody (noteText);
+                } else {
+                    contact.BodyId = McBody.Save (noteText).Id;
+                }
 
-            contact.Update ();
-            NachoCore.BackEnd.Instance.UpdateContactCmd (contact.AccountId, contact.Id);
+                contact.Update ();
+                NachoCore.BackEnd.Instance.UpdateContactCmd (contact.AccountId, contact.Id);
+            }
         }
 
         public string GetNoteText ()
         {
-            if (contact.Source != McAbstrItem.ItemSource.ActiveSync) {
-                return "This contact has not been synced. Adding or editing notes is disabled.";
-            } else {
-                McBody contactBody = McBody.QueryById<McBody> (contact.BodyId);
-                if (null != contactBody) {
-                    return contactBody.Body;
+            if (null != contact) {
+                if (contact.Source != McAbstrItem.ItemSource.ActiveSync) {
+                    return "This contact has not been synced. Adding or editing notes is disabled.";
+                } else {
+                    McBody contactBody = McBody.QueryById<McBody> (contact.BodyId);
+                    if (null != contactBody) {
+                        return contactBody.Body;
+                    }
+                    return "";
                 }
-                return "";
             }
         }
     }
