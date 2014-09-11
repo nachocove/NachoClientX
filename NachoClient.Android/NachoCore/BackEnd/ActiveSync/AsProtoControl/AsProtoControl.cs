@@ -793,6 +793,8 @@ namespace NachoCore.ActiveSync
                     freshMade.Insert ();
                 }
             });
+            // Create file directories.
+            NcModel.Instance.InitalizeDirs (AccountId);
         }
 
         // Methods callable by the owner.

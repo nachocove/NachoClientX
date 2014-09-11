@@ -4,6 +4,7 @@ using SQLite;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.IO;
 using NachoCore.Utils;
@@ -18,15 +19,7 @@ namespace NachoCore.Model
         // RateLimiter PUBLIC FOR TEST ONLY.
         public NcRateLimter RateLimiter { set; get; }
 
-        public string TmpDir { set; get; }
-
-        public string DocumentsDir { set; get; }
-
-        public string AttachmentsDir { set; get; }
-
-        public string BodiesDir { set; get; }
-
-        public string PortraitsDir { set; get; }
+        private const string KTmpPathSegment = "tmp";
 
         public string DbFileName { set; get; }
 
@@ -65,23 +58,18 @@ namespace NachoCore.Model
         private ConcurrentDictionary<int, SQLiteConnection> DbConns;
         private ConcurrentDictionary<int, int> TransDepth;
 
-        public string GetFileDirPath (string segment)
+        public string GetFileDirPath (int accountId, string segment)
         {
-            return Path.Combine (Documents, segment);
+            return Path.Combine (Documents, accountId.ToString (), segment);
         }
 
-        private void InitalizeDirs ()
+        public void InitalizeDirs (int accountId)
         {
-            TmpDir = Path.Combine (Documents, "tmp");
-            Directory.CreateDirectory (Path.Combine (Documents, TmpDir));
-            DocumentsDir = GetFileDirPath (McDocument.Instance.GetFilePathSegment ());
-            Directory.CreateDirectory (Path.Combine (Documents, DocumentsDir));
-            AttachmentsDir = GetFileDirPath (McAttachment.Instance.GetFilePathSegment ());
-            Directory.CreateDirectory (Path.Combine (Documents, AttachmentsDir));
-            BodiesDir = GetFileDirPath (McBody.Instance.GetFilePathSegment ());
-            Directory.CreateDirectory (Path.Combine (Documents, BodiesDir));
-            PortraitsDir = GetFileDirPath (McPortrait.Instance.GetFilePathSegment ());
-            Directory.CreateDirectory (Path.Combine (Documents, PortraitsDir));
+            Directory.CreateDirectory (GetFileDirPath (accountId, KTmpPathSegment));
+            Directory.CreateDirectory (GetFileDirPath (accountId, McDocument.Instance.GetFilePathSegment ()));
+            Directory.CreateDirectory (GetFileDirPath (accountId, McAttachment.Instance.GetFilePathSegment ()));
+            Directory.CreateDirectory (GetFileDirPath (accountId, McBody.Instance.GetFilePathSegment ()));
+            Directory.CreateDirectory (GetFileDirPath (accountId, McPortrait.Instance.GetFilePathSegment ()));
         }
 
         private void ConfigureDb (SQLiteConnection db)
@@ -187,7 +175,6 @@ namespace NachoCore.Model
             }), 
                 (IntPtr)null);
             Documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
-            InitalizeDirs ();
             DbFileName = Path.Combine (Documents, "db");
             InitializeDb ();
             TeleDbFileName = Path.Combine (Documents, "teledb");
@@ -365,13 +352,18 @@ namespace NachoCore.Model
         {
             DbFileName = dbFileName;
             InitializeDb ();
+            Regex regex = new Regex(@"^[0-9]+$");
+            foreach (var dir in Directory.GetDirectories (Documents)) {
+                if (regex.IsMatch (Path.GetFileName (dir))) {
+                    Directory.Delete (dir, true);
+                }
+            }
         }
 
         public string TmpPath (int accountId)
         {
-            // FIXME - segregate by account.
             var guidString = Guid.NewGuid ().ToString ("N");
-            return Path.Combine (NcModel.Instance.TmpDir, guidString);
+            return Path.Combine (GetFileDirPath (accountId, KTmpPathSegment), guidString);
         }
     }
 }
