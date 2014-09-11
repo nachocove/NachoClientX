@@ -778,7 +778,7 @@ namespace NachoClient.iOS
 
         public string GetNoteText ()
         {
-            NcAssert.True (contact != null);
+            NcAssert.True (null != contact);
 
             if (contact.Source != McAbstrItem.ItemSource.ActiveSync) {
                 return "This contact has not been synced. Adding or editing notes is disabled.";
