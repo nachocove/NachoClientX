@@ -139,22 +139,22 @@ namespace NachoClient.iOS
                 checkView = ViewWithImageName ("check");
                 greenColor = new UIColor (85.0f / 255.0f, 213.0f / 255.0f, 80.0f / 255.0f, 1.0f);
                 cell.SetSwipeGestureWithView (checkView, greenColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State1, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                    SwipedCall(cellsContact.GetPhoneNumber());
+                    SwipedCall (cellsContact.GetPhoneNumber ());
                 });
                 crossView = ViewWithImageName ("cross");
                 redColor = new UIColor (232.0f / 255.0f, 61.0f / 255.0f, 14.0f / 255.0f, 1.0f);
                 cell.SetSwipeGestureWithView (crossView, redColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State2, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                    SwipedSMS(cellsContact.GetPhoneNumber());
+                    SwipedSMS (cellsContact.GetPhoneNumber ());
                 });
                 clockView = ViewWithImageName ("clock");
                 yellowColor = new UIColor (254.0f / 255.0f, 217.0f / 255.0f, 56.0f / 255.0f, 1.0f);
                 cell.SetSwipeGestureWithView (clockView, yellowColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State3, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                    SwipedEmail(cellsContact.GetEmailAddress());                
+                    SwipedEmail (cellsContact.GetEmailAddress ());                
                 });
                 listView = ViewWithImageName ("list");
                 brownColor = new UIColor (206.0f / 255.0f, 149.0f / 255.0f, 98.0f / 255.0f, 1.0f);
                 cell.SetSwipeGestureWithView (listView, brownColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State4, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                    SwipedQuickMessage(cellsContact.GetEmailAddress());
+                    SwipedQuickMessage (cellsContact.GetEmailAddress ());
                 });
             } finally {
                 if (null != checkView) {
@@ -192,7 +192,7 @@ namespace NachoClient.iOS
                 Util.ComplainAbout ("No email address", "You've selected a contact who does not have an email address");
                 return;
             }
-            owner.PerformSegueForDelegate ("ContactsToQuickMessageCompose", new SegueHolder(address));
+            owner.PerformSegueForDelegate ("ContactsToQuickMessageCompose", new SegueHolder (address));
         }
 
         protected void SwipedEmail (string address)
@@ -203,7 +203,7 @@ namespace NachoClient.iOS
                 Util.ComplainAbout ("No email address", "You've selected a contact who does not have an email address");
                 return;
             }
-            owner.PerformSegueForDelegate ("ContactsToMessageCompose", new SegueHolder(address));
+            owner.PerformSegueForDelegate ("ContactsToMessageCompose", new SegueHolder (address));
         }
 
         protected void SwipedCall (string number)
@@ -355,7 +355,7 @@ namespace NachoClient.iOS
                 }
 
                 if (1 == colorIndex) {
-                    colorIndex = contact.CircleColor;
+                    colorIndex = Util.PickRandomColorForUser ();
                 }
 
                 ConfigureSwipes (cell, contact.Id);
