@@ -100,7 +100,7 @@ namespace NachoCore.Model
         private string DirPath ()
         {
             NcAssert.True (!IsInstance ());
-            return Path.Combine (NcModel.Instance.GetFileDirPath (GetFilePathSegment ()), Id.ToString ());
+            return Path.Combine (NcModel.Instance.GetFileDirPath (AccountId, GetFilePathSegment ()), Id.ToString ());
         }
 
         private void CheckInsertMkDir (McAbstrFileDesc desc, bool isInstance)
