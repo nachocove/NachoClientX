@@ -290,7 +290,7 @@ namespace NachoClient.iOS
                 return preview;
             }
             preview = MimeHelpers.ExtractTextPartWithError (message, out error);
-            if (null == preview) {
+            if ((null == preview) || (String.Empty == preview)) {
                 preview = " ";
             }
 
