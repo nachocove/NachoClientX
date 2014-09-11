@@ -731,21 +731,20 @@ namespace Test.Common
         public void QueryExceptionDateLimits()
         {
             var e0 = McException.QueryForExceptionId (0, DateTime.MinValue);
-            Assert.IsNull (e0);
+            Assert.AreEqual (0, e0.Count);
             var e1 = McException.QueryForExceptionId (1, DateTime.MinValue);
-            Assert.IsNull (e1);
+            Assert.AreEqual (0, e1.Count);
             var e2 = McException.QueryForExceptionId (1, DateTime.MaxValue);
-            Assert.IsNull (e2);
+            Assert.AreEqual (0, e2.Count);
 
             var c = InsertSimpleEvent ("exceptions");
             var e3 = McException.QueryForExceptionId (c.Id, DateTime.MinValue);
-            Assert.IsNull (e3);
+            Assert.AreEqual (0, e3.Count);
             var e4 = McException.QueryForExceptionId (c.Id, DateTime.MaxValue);
-            Assert.IsNull (e4);
+            Assert.AreEqual (0, e4.Count);
         }
 
         [Test]
-        [ExpectedException( "System.InvalidOperationException" )]
         public void QueryExceptionDuplicate()
         {
             var c = InsertSimpleEvent ("exceptions");
