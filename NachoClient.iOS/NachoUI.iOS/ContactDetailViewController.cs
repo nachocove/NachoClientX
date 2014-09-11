@@ -778,16 +778,16 @@ namespace NachoClient.iOS
 
         public string GetNoteText ()
         {
-            if (null != contact) {
-                if (contact.Source != McAbstrItem.ItemSource.ActiveSync) {
-                    return "This contact has not been synced. Adding or editing notes is disabled.";
-                } else {
-                    McBody contactBody = McBody.QueryById<McBody> (contact.BodyId);
-                    if (null != contactBody) {
-                        return contactBody.Body;
-                    }
-                    return "";
+            NcAssert.True (contact != null);
+
+            if (contact.Source != McAbstrItem.ItemSource.ActiveSync) {
+                return "This contact has not been synced. Adding or editing notes is disabled.";
+            } else {
+                McBody contactBody = McBody.QueryById<McBody> (contact.BodyId);
+                if (null != contactBody) {
+                    return contactBody.Body;
                 }
+                return "";
             }
         }
     }
