@@ -418,6 +418,13 @@ namespace NachoCore.ActiveSync
             if (null == emailMessage) {
                 return null;
             }
+
+            // Check for command already in the Q.
+            var pendings = McPending.QueryByOperationAndAttId (Account.Id, McPending.Operations.AttachmentDownload, attId);
+            if (0 != pendings.Count ()) {
+                return pendings.First ().Token;
+            }
+
             var update = new McPending (Account.Id) {
                 Operation = McPending.Operations.AttachmentDownload,
                 ServerId = emailMessage.ServerId,
