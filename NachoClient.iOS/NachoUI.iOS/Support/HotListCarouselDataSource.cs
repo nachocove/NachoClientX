@@ -285,12 +285,25 @@ namespace NachoClient.iOS
         private string GetPreview (McEmailMessage message)
         {
             string error;
-            string preview = MimeHelpers.ExtractTextPartWithError (message, out error);
-            if (null != preview) {
-                // FIXME - may need to trim the output for really long emails
+            string preview = message.GetBodyPreviewOrEmpty ();
+            if (String.Empty != preview) {
                 return preview;
             }
-            return message.GetBodyPreviewOrEmpty ();
+            preview = MimeHelpers.ExtractTextPartWithError (message, out error);
+            if (null == preview) {
+                return null;
+            }
+
+            // Truncate the body to 1000 characters
+            if (preview.Length > 1000) {
+                preview = preview.Substring (0, 1000);
+            }
+
+            // Cache a truncated version of preview
+            message.BodyPreview = preview;
+            message.Update ();
+
+            return preview;
         }
 
         /// <summary>
