@@ -164,13 +164,16 @@ namespace NachoClient.iOS
 
             switch (itemType) {
             case ItemType.Attachment:
+                NavigationItem.Title = "Attachments";
                 FilesSource.Items.AddRange (NcModel.Instance.Db.Table<McAttachment> ().OrderByDescending (a => a.Id));
                 break;
             case ItemType.Note:
+                NavigationItem.Title = "Notes";
                 FilesSource.Items.AddRange (NcModel.Instance.Db.Table<McNote> ().Where (a => a.noteType == McNote.NoteType.Event)
                     .OrderByDescending (a => a.Id));
                 break;
             case ItemType.Document:
+                NavigationItem.Title = "Shared Files";
                 FilesSource.Items.AddRange (NcModel.Instance.Db.Table<McDocument> ().OrderByDescending (a => a.Id));
                 break;
             }

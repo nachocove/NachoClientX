@@ -101,6 +101,8 @@ namespace NachoClient.iOS
                 NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
             }
 
+            Util.SetOriginalImageForButton (sendButton, "icn-send");
+
             NavigationItem.RightBarButtonItem = sendButton;
 
             attachButton.SetTitle (" Attach Files", UIControlState.Normal);

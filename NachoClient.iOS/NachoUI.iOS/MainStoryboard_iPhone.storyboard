@@ -92,10 +92,6 @@
                         <outlet property="calendarThumbView" destination="wZZ-JO-qCp" id="Tqz-bx-MqT"/>
                         <outlet property="calendarView" destination="Xjy-3n-xIA" id="H26-sA-fEv"/>
                         <outlet property="carouselView" destination="y3I-K7-FUQ" id="T7e-1d-zpR"/>
-                        <outlet property="composeButton" destination="FUI-0Y-Rul" id="eJU-2G-GMs"/>
-                        <outlet property="nachoButton" destination="Mqq-sh-bns" id="fSw-0x-68Y"/>
-                        <outlet property="newMeetingButton" destination="7Rc-PF-jdp" id="JDw-Li-2kf"/>
-                        <outlet property="revealButton" destination="3Av-eh-eab" id="6O2-wL-g0p"/>
                         <segue destination="kq1-eO-X0p" kind="push" identifier="NachoNowToMessageList" id="Rd3-YY-NMX"/>
                         <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="ja3-Zu-g6R"/>
                         <segue destination="jTc-Vg-SXZ" kind="push" identifier="NachoNowToContacts" id="FHc-YP-jWH"/>
@@ -108,10 +104,6 @@
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="sh1-Qf-9vs" userLabel="First Responder" sceneMemberID="firstResponder"/>
-                <barButtonItem image="navbar-icn-menu.png" id="3Av-eh-eab" userLabel="Bar Button Item - Reveal"/>
-                <barButtonItem image="navbar-icn-inbox.png" id="Mqq-sh-bns" userLabel="Bar Button Item - Now"/>
-                <barButtonItem image="navbar-icn-newevent.png" id="7Rc-PF-jdp" userLabel="Bar Button Item - New Event"/>
-                <barButtonItem image="navbar-icn-newEmail.png" id="FUI-0Y-Rul" userLabel="Bar Button Item - Compose"/>
             </objects>
             <point key="canvasLocation" x="-3747" y="-2353"/>
         </scene>
@@ -176,21 +168,13 @@
                     <connections>
                         <outlet property="calendarTableView" destination="NDf-lZ-rUS" id="Zhg-FK-Mel"/>
                         <outlet property="dateView" destination="OaC-4H-Y1h" id="g76-sY-DyU"/>
-                        <outlet property="nachoButton" destination="TQm-zA-PCB" id="B2c-bY-AYR"/>
-                        <outlet property="newCalEventButton" destination="0XF-CC-jLN" id="VuE-dI-87l"/>
-                        <outlet property="revealButton" destination="fxd-gq-OpJ" id="n5i-C3-vu1"/>
-                        <outlet property="todayButton" destination="RPJ-Y3-1md" id="OfS-q9-XPJ"/>
-                        <segue destination="ygr-ff-C2f" kind="push" identifier="CalendarToNachoNow" id="eK3-Wd-Zbv"/>
+                        <segue destination="ygr-ff-C2f" kind="push" identifier="SegueToNachoNow" id="eK3-Wd-Zbv"/>
                         <segue destination="em2-Kh-10O" kind="push" identifier="NachoNowToEventView" id="zDw-Tx-fTt"/>
                         <segue destination="15q-DA-GFk" kind="push" identifier="CalendarToEditEventView" id="6Lm-Uk-Knv"/>
                         <segue destination="tAw-fh-hJX" kind="push" identifier="CalendarToEmailCompose" id="AiM-59-h7m"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="k65-2v-IXe" userLabel="First Responder" sceneMemberID="firstResponder"/>
-                <barButtonItem image="navbar-icn-menu.png" id="fxd-gq-OpJ" userLabel="Bar Button Item - revealButton"/>
-                <barButtonItem systemItem="add" id="0XF-CC-jLN" userLabel="Bar Button Item - newCalEventButton"/>
-                <barButtonItem image="navbar-icn-inbox.png" id="TQm-zA-PCB" userLabel="Bar Button Item - nachoButton"/>
-                <barButtonItem image="icn-calendar-top.png" id="RPJ-Y3-1md" userLabel="Bar Button Item - todayButton"/>
             </objects>
             <point key="canvasLocation" x="-3205" y="-955"/>
         </scene>
@@ -434,7 +418,6 @@
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <connections>
                         <outlet property="addButton" destination="uyu-bB-1zI" id="Ygf-sH-FIu"/>
-                        <outlet property="nachoButton" destination="DbK-yy-Alh" id="YgY-Zo-4hj"/>
                         <outlet property="revealButton" destination="jLa-UU-2VJ" id="dUB-Zb-Sre"/>
                         <outlet property="searchDisplayController" destination="rbr-Tg-MJy" id="gRe-Gf-Fmo"/>
                         <segue destination="MG9-1p-N0l" kind="push" identifier="ContactsToContactDetail" id="fwk-9p-tlV"/>
@@ -454,7 +437,6 @@
                         <outlet property="searchResultsDelegate" destination="jTc-Vg-SXZ" id="l09-nH-VUH"/>
                     </connections>
                 </searchDisplayController>
-                <barButtonItem title="Item" id="DbK-yy-Alh" userLabel="Bar Button Item - Nacho"/>
             </objects>
             <point key="canvasLocation" x="-2151" y="-955"/>
         </scene>
@@ -483,17 +465,13 @@
                     <navigationItem key="navigationItem" id="t0b-mf-IZ6"/>
                     <connections>
                         <outlet property="contentView" destination="73b-MM-u7g" id="Erf-qp-QXw"/>
-                        <outlet property="menuButton" destination="LKw-Vz-JvF" id="PGw-n1-SYw"/>
-                        <outlet property="nowButton" destination="fLx-eC-MkR" id="w8O-bK-RjZ"/>
                         <outlet property="scrollView" destination="R7v-6c-XcH" id="hya-iQ-4du"/>
                         <segue destination="2DH-ex-Jce" kind="modal" identifier="GeneralSettingsToSettings" id="AbJ-I5-x4b"/>
                         <segue destination="0HP-De-GcZ" kind="modal" identifier="GeneralSettingsToSettingsLegal" id="K8c-x2-hEf"/>
-                        <segue destination="ygr-ff-C2f" kind="push" identifier="GeneralSettingsToNachoNow" id="v9F-jf-qe1"/>
+                        <segue destination="ygr-ff-C2f" kind="push" identifier="SegueToNachoNow" id="v9F-jf-qe1"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="yGs-h9-8Dq" userLabel="First Responder" sceneMemberID="firstResponder"/>
-                <barButtonItem title="Item" id="LKw-Vz-JvF" userLabel="Bar Button Item - menuButton"/>
-                <barButtonItem title="Item" id="fLx-eC-MkR" userLabel="Bar Button Item - nowButton"/>
             </objects>
             <point key="canvasLocation" x="-1931" y="-3171"/>
         </scene>
@@ -810,18 +788,14 @@
                     <toolbarItems/>
                     <navigationItem key="navigationItem" title="Folders" id="rc6-gG-qc6">
                         <barButtonItem key="backBarButtonItem" title="Folders" id="8Rb-XO-7If"/>
-                        <barButtonItem key="leftBarButtonItem" image="navbar-icn-menu.png" id="puc-hC-DdW" userLabel="Bar Button Item - Menu"/>
                     </navigationItem>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <nil key="simulatedBottomBarMetrics"/>
                     <connections>
-                        <outlet property="nachoButton" destination="KaA-7V-JQm" id="9Hn-RD-U9Q"/>
-                        <outlet property="revealButton" destination="puc-hC-DdW" id="cgH-Sc-5L7"/>
-                        <segue destination="ygr-ff-C2f" kind="push" identifier="FoldersToNachoNow" id="4qv-ZA-Stq"/>
+                        <segue destination="ygr-ff-C2f" kind="push" identifier="SegueToNachoNow" id="4qv-ZA-Stq"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="61c-Dw-Qpc" userLabel="First Responder" sceneMemberID="firstResponder"/>
-                <barButtonItem title="Item" id="KaA-7V-JQm" userLabel="Bar Button Item - Nacho"/>
             </objects>
             <point key="canvasLocation" x="-3205" y="-242"/>
         </scene>
@@ -1101,15 +1075,13 @@
                     <connections>
                         <outlet property="cancelButton" destination="JBa-CL-cDv" id="7AV-LL-P9s"/>
                         <outlet property="deleteButton" destination="s53-5r-Ts6" id="FG3-1A-cHd"/>
-                        <outlet property="nachoButton" destination="lwb-Kh-Nak" id="FlC-aR-3AG"/>
-                        <outlet property="revealButton" destination="2XU-yE-OMg" id="j7H-HA-a1S"/>
                         <outlet property="saveButton" destination="vFg-TU-IRT" id="JBm-Qx-P3Q"/>
                         <outlet property="searchButton" destination="zTu-79-4b2" id="EGO-9q-D24"/>
                         <outlet property="searchDisplayController" destination="Ug7-2K-mbR" id="1qh-sO-pLj"/>
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="NachoNowToMessagePriority" modalTransitionStyle="crossDissolve" id="hxO-14-opZ"/>
                         <segue destination="wY7-Wf-QPv" kind="modal" identifier="NachoNowToMessageAction" modalTransitionStyle="crossDissolve" id="Afu-47-Kju"/>
                         <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="c79-xS-Npa"/>
-                        <segue destination="ygr-ff-C2f" kind="push" identifier="MessageListToNachoNow" id="gkM-dU-I3K"/>
+                        <segue destination="ygr-ff-C2f" kind="push" identifier="SegueToNachoNow" id="gkM-dU-I3K"/>
                         <segue destination="15q-DA-GFk" kind="push" identifier="NachoNowToEditEvent" id="uqv-uq-oCq"/>
                         <segue destination="tAw-fh-hJX" kind="push" identifier="MessageListToCompose" id="Sbt-au-uDg"/>
                     </connections>
@@ -1125,8 +1097,6 @@
                     </connections>
                 </searchDisplayController>
                 <barButtonItem systemItem="search" id="zTu-79-4b2"/>
-                <barButtonItem image="Nacho-Cove-Icon.png" id="lwb-Kh-Nak" userLabel="Bar Button Item - Nacho"/>
-                <barButtonItem image="navbar-icn-menu.png" id="2XU-yE-OMg" userLabel="Bar Button Item - Reveal"/>
                 <barButtonItem systemItem="trash" id="s53-5r-Ts6" userLabel="Bar Button Item - Delete"/>
                 <barButtonItem systemItem="save" id="vFg-TU-IRT"/>
                 <barButtonItem systemItem="cancel" id="JBa-CL-cDv" userLabel="Bar Button Item - Cancel"/>
@@ -1688,9 +1658,7 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
                     <connections>
                         <outlet property="attachButton" destination="jLf-LW-xg9" id="oGY-nT-pPz"/>
                         <outlet property="contentView" destination="Za1-Fi-gqx" id="Lgz-hX-jFU"/>
-                        <outlet property="nachoButton" destination="DhQ-FE-t8N" id="pay-Xl-oCF"/>
                         <outlet property="quckButton" destination="NJd-R3-mHv" id="TN2-HE-L4v"/>
-                        <outlet property="revealButton" destination="GJM-bv-Pbt" id="Q4t-B9-RDB"/>
                         <outlet property="scrollView" destination="Ad7-zj-0RZ" id="oxX-sO-fdG"/>
                         <outlet property="sendButton" destination="7vA-of-pNi" id="xiN-6Z-B9R"/>
                         <outlet property="taskButton" destination="WmS-2K-Dgt" id="eXM-YJ-TnQ"/>
@@ -1725,8 +1693,6 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
                     </state>
                 </button>
                 <barButtonItem image="icn-send.png" id="7vA-of-pNi" userLabel="Bar Button Item - sendButton"/>
-                <barButtonItem image="navbar-icn-menu.png" id="GJM-bv-Pbt" userLabel="Bar Button Item - revealButton"/>
-                <barButtonItem image="navbar-icn-inbox.png" id="DhQ-FE-t8N" userLabel="Bar Button Item - nachoButton"/>
             </objects>
             <point key="canvasLocation" x="-1049" y="73"/>
         </scene>
@@ -2060,16 +2026,12 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <image name="cal-handle.png" width="320" height="11"/>
         <image name="icn-archive.png" width="24" height="24"/>
         <image name="icn-attach-files.png" width="16" height="16"/>
-        <image name="icn-calendar-top.png" width="24" height="24"/>
         <image name="icn-quick-message.png" width="24" height="24"/>
         <image name="icn-send.png" width="24" height="24"/>
         <image name="list.png" width="20" height="18"/>
         <image name="navbar-icn-close.png" width="17" height="17"/>
         <image name="navbar-icn-defer.png" width="20" height="24"/>
         <image name="navbar-icn-inbox.png" width="24" height="24"/>
-        <image name="navbar-icn-menu.png" width="24" height="24"/>
-        <image name="navbar-icn-newEmail.png" width="24" height="24"/>
-        <image name="navbar-icn-newevent.png" width="24" height="24"/>
         <image name="toolbar-icn-delete.png" width="19" height="21"/>
         <image name="toolbar-icn-fwd.png" width="24" height="24"/>
         <image name="toolbar-icn-move.png" width="24" height="20"/>
@@ -2083,30 +2045,30 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="RR1-bJ-URL"/>
-        <segue reference="zDw-Tx-fTt"/>
-        <segue reference="Bq3-C6-QI6"/>
-        <segue reference="4qv-ZA-Stq"/>
-        <segue reference="g4G-tD-G9H"/>
-        <segue reference="iqA-wd-xqD"/>
-        <segue reference="ebP-h4-BhC"/>
-        <segue reference="J8i-gn-UTn"/>
-        <segue reference="JGd-do-Y28"/>
-        <segue reference="uqv-uq-oCq"/>
-        <segue reference="Sbt-au-uDg"/>
-        <segue reference="Afu-47-Kju"/>
-        <segue reference="c79-xS-Npa"/>
-        <segue reference="hxO-14-opZ"/>
-        <segue reference="xrp-ey-B0j"/>
-        <segue reference="kd2-jR-F9u"/>
-        <segue reference="vUs-ft-xdy"/>
         <segue reference="FHc-YP-jWH"/>
-        <segue reference="fwk-9p-tlV"/>
-        <segue reference="mLY-u0-R5O"/>
+        <segue reference="v9F-jf-qe1"/>
+        <segue reference="iqA-wd-xqD"/>
+        <segue reference="g4G-tD-G9H"/>
+        <segue reference="J8i-gn-UTn"/>
+        <segue reference="ebP-h4-BhC"/>
+        <segue reference="JGd-do-Y28"/>
+        <segue reference="Afu-47-Kju"/>
+        <segue reference="hxO-14-opZ"/>
+        <segue reference="c79-xS-Npa"/>
+        <segue reference="vUs-ft-xdy"/>
+        <segue reference="Bq3-C6-QI6"/>
+        <segue reference="6Lm-Uk-Knv"/>
+        <segue reference="zDw-Tx-fTt"/>
         <segue reference="JTo-qU-j7O"/>
         <segue reference="Tfk-Mt-BlS"/>
         <segue reference="4Sl-0E-160"/>
-        <segue reference="HCr-Oa-UHV"/>
         <segue reference="tdu-G2-PEp"/>
+        <segue reference="HCr-Oa-UHV"/>
+        <segue reference="RR1-bJ-URL"/>
+        <segue reference="Wvd-xL-8Ik"/>
+        <segue reference="W3H-fb-nEJ"/>
+        <segue reference="fwk-9p-tlV"/>
+        <segue reference="xrp-ey-B0j"/>
+        <segue reference="kd2-jR-F9u"/>
     </inferredMetricsTieBreakers>
 </document>
