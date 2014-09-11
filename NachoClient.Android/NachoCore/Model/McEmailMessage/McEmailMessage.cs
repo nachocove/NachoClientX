@@ -638,7 +638,7 @@ namespace NachoCore.Model
                     }
                 }
             }
-            DeleteAttachments (); // FIXME.
+            DeleteAttachments ();
             DeleteAncillaryData (NcModel.Instance.Db);
         }
 
