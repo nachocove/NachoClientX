@@ -870,14 +870,6 @@ namespace NachoCore.Model
                 Id, type).ToList ();
         }
 
-        public static IEnumerable<McContact> QueryByPortraitIdIncAwaitDel (int accountId, int portraitId)
-        {
-            return NcModel.Instance.Db.Query<McContact> ("SELECT f.* FROM McContact AS f WHERE " +
-            " f.AccountId = ? AND " +
-            " f.PortraitId = ? ",
-                accountId, portraitId);
-        }
-
         public static List<McContact> QueryByEmailAddress (int accountId, string emailAddress)
         {
             List<McContact> contactList = NcModel.Instance.Db.Query<McContact> (

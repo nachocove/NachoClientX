@@ -182,6 +182,7 @@ namespace NachoCore
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass1Services called.");
             NcTask.StartService ();
+            NcModel.Instance.GarbageCollectFiles ();
             NcModel.Instance.Start ();
             EstablishService ();
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass1Services exited.");
