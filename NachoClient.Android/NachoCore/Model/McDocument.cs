@@ -34,12 +34,6 @@ namespace NachoCore.Model
             return "documents";
         }
 
-        public override bool IsReferenced ()
-        {
-            // FIXME.
-            return false;
-        }
-
         public string SourceApplication { get; set; }
 
         public McDocument InsertSaveStart (int accountId)

@@ -47,13 +47,6 @@ namespace NachoCore.Model
             return null;
         }
 
-        public virtual bool IsReferenced ()
-        {
-            // Pseudo-abstract. Derived class must not allow for Instance.
-            NcAssert.True (false);
-            return true;
-        }
-
         public string GetFilePath ()
         {
             NcAssert.True (!IsInstance () && 0 != Id);
@@ -138,16 +131,6 @@ namespace NachoCore.Model
             return desc;
         }
 
-        // Derived class must implement McXxx InsertDuplicate (). This calls the derived class 
-        // constructor and passes it through CompleteInsertDuplicate. Must not be IsInstance.
-        protected McAbstrFileDesc CompleteInsertDuplicate (McAbstrFileDesc desc)
-        {
-            CheckInsertMkDir (desc, false);
-            File.Copy (GetFilePath (), desc.GetFilePath ());
-            desc.UpdateSaveFinish ();
-            return desc;
-        }
-
         // Derived class must implement McXxx InsertDuplicate (int descId). This calls the derived class 
         // constructor and passes it through CompleteInsertDuplicate. Must be IsInstance only.
         protected McAbstrFileDesc CompleteInsertDuplicate (McAbstrFileDesc destDesc, McAbstrFileDesc srcDesc)
@@ -196,7 +179,7 @@ namespace NachoCore.Model
                 LocalFileName = justName;
                 Directory.Delete (tmp, true);
             } catch {
-                // Add appropriate extension to id, and see if that works as a file name.
+                // Try adding appropriate extension to id, and see if that works as a file name.
                 var ext = Path.GetExtension (DisplayName);
                 if (null != ext) {
                     var idExt = Id.ToString () + ext;
@@ -210,6 +193,7 @@ namespace NachoCore.Model
                     }
                 }
             }
+            // If there is a pre-existing file, move it to where it needs to be.
             if (null != oldPath && File.Exists (oldPath)) {
                 File.Move (oldPath, GetFilePath ());
             }
@@ -244,9 +228,9 @@ namespace NachoCore.Model
             var soFar = FilePresenceFraction * FileSize;
             soFar += incBytes;
             FilePresenceFraction = soFar / FileSize;
-            if (1 < FilePresenceFraction) {
+            if (1 <= FilePresenceFraction) {
                 // Rely on UpdateSaveFinish to change FilePresence.
-                FilePresenceFraction = 1;
+                FilePresenceFraction = 0.999;
             }
             Update ();
         }
@@ -308,8 +292,13 @@ namespace NachoCore.Model
 
         public override int Delete ()
         {
+            // We Must delete the file first. Complete the delete even if something goes wrong with the file delete.
             DeleteFile ();
-            Directory.Delete (DirPath (), true);
+            try {
+                Directory.Delete (DirPath (), true);
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_DB, "McAbstrFileDesc: Exception trying to delete DirPath: {0}", ex);
+            }
             return base.Delete ();
         }
 
@@ -318,7 +307,11 @@ namespace NachoCore.Model
             var path = GetFilePath ();
             SetFilePresence (FilePresenceEnum.None);
             Update ();
-            File.Delete (path);
+            try {
+                File.Delete (path);
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_DB, "McAbstrFileDesc: Exception trying to delete file: {0}", ex);
+            }
         }
     }
 }

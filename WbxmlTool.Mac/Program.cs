@@ -131,7 +131,7 @@ namespace WbxmlTool.Mac
                 try {
                     byte[] data = Convert.FromBase64String (Base64);
                     MemoryStream memStream = new MemoryStream (data);
-                    wbxml.LoadBytes (memStream, false);
+                    wbxml.LoadBytes (0, memStream, false);
                 }
                 catch (System.FormatException e) {
                     Error (String.Format("Invalid base64 data ({0})", e.Message));

@@ -36,16 +36,6 @@ namespace NachoCore.Model
             return "attachments";
         }
 
-        public override bool IsReferenced ()
-        {
-            NcAssert.True (!IsInstance ());
-            if (0 >= EmailMessageId) {
-                return false;
-            }
-            var emailMessage = McEmailMessage.QueryById<McEmailMessage> (EmailMessageId);
-            return (null != emailMessage);
-        }
-
         public McAttachment InsertSaveStart (int accountId)
         {
             var att = new McAttachment () {

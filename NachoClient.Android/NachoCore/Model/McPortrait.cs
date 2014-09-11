@@ -34,20 +34,6 @@ namespace NachoCore.Model
             return "portraits";
         }
 
-        public override bool IsReferenced ()
-        {
-            NcAssert.True (!IsReferenced ());
-            return (0 != McContact.QueryByPortraitIdIncAwaitDel (AccountId, Id).Count ());
-        }
-
-        public McPortrait InsertSaveStart (int accountId)
-        {
-            var portrait = new McPortrait () {
-                AccountId = accountId,
-            };
-            return (McPortrait)CompleteInsertSaveStart (portrait);
-        }
-
         public McPortrait InsertFile (int accountId, byte[] content)
         {
             var portrait = new McPortrait () {
