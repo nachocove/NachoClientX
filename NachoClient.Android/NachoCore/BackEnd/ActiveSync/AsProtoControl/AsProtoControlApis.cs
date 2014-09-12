@@ -166,6 +166,17 @@ namespace NachoCore.ActiveSync
         public override string ForwardEmailCmd (int newEmailMessageId, int forwardedEmailMessageId,
                                                 int folderId, bool originalEmailIsEmbedded)
         {
+            if (originalEmailIsEmbedded) {
+                var attachments = McAttachment.QueryByItemId<McEmailMessage> (AccountId, forwardedEmailMessageId);
+                foreach (var attach in attachments) {
+                    if (!attach.IsDownloaded && 0 == attach.PercentDownloaded) {
+                        var token = DnldAttCmd (attach.Id);
+                        if (null == token) {
+                            return null;
+                        }
+                    }
+                }
+            }
             return SmartEmailCmd (McPending.Operations.EmailForward,
                 newEmailMessageId, forwardedEmailMessageId, folderId, originalEmailIsEmbedded);
         }
