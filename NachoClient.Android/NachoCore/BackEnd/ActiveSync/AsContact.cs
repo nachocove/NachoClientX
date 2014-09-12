@@ -242,7 +242,7 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        public static NcResult FromXML (XNamespace ns, XElement command)
+        public static NcResult FromXML (int accountId, XNamespace ns, XElement command)
         {
             var h = new AsHelpers ();
 
@@ -273,7 +273,7 @@ namespace NachoCore.ActiveSync
                         if (null != saveAttr) {
                             c.BodyId = int.Parse (saveAttr.Value);
                         } else {
-                            var body = McBody.Save (bodyElement.Value);
+                            var body = McBody.InsertFile (accountId, bodyElement.Value);
                             c.BodyId = body.Id;
                         }
                         c.BodyType = bodyType;
@@ -388,7 +388,7 @@ namespace NachoCore.ActiveSync
             n.LastName = c.LastName;
             n.MiddleName = c.MiddleName;
             if (0 != c.PortraitId) {
-                var data = McPortrait.Get (c.PortraitId);
+                var data = McPortrait.GetContentsByteArray (c.PortraitId);
                 n.Picture = Convert.ToBase64String (data);
             }
             n.Suffix = c.Suffix;
@@ -491,7 +491,7 @@ namespace NachoCore.ActiveSync
             c.MiddleName = MiddleName;
             c.OfficeLocation = OfficeLocation;
             if (null != Picture) {
-                var portrait = McPortrait.Save (Convert.FromBase64String (Picture));
+                var portrait = McPortrait.InsertFile (AccountId, Convert.FromBase64String (Picture));
                 c.PortraitId = portrait.Id;
             }
             c.Suffix = Suffix;

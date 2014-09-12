@@ -649,9 +649,10 @@ namespace Test.iOS
                 var att = new McAttachment () {
                     EmailMessageId = email.Id,
                     AccountId = email.AccountId,
-                    PercentDownloaded = 0,
-                    EstimatedDataSize = 50000,
-                    IsDownloaded = false,
+                    FilePresenceFraction = 0,
+                    FileSize = 50000,
+                    FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
+                    FilePresence = McAbstrFileDesc.FilePresenceEnum.None,
                 };
                 att.Insert ();
                 Fetch_Atts.Add (att);

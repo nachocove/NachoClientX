@@ -69,7 +69,7 @@ namespace NachoClient.iOS
         {
             base.ViewWillDisappear (animated);
 
-            Owner.SaveNote (notesTextView.Text);
+            Owner.SaveNote (account.Id, notesTextView.Text);
         }
 
         public void SetOwner (INachoNotesControllerParent owner)

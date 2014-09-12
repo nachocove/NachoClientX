@@ -154,17 +154,13 @@ namespace NachoCore.ActiveSync
                         if (null != xmlFileReference) {
                             // This means we are processing an AttachmentDownload response.
                             var attachment = Attachments.Where (x => x.FileReference == xmlFileReference.Value).First ();
-                            // TODO: if we do predictive attachment fetching, there will not always be a pending.
                             attachment.ContentType = xmlProperties.Element (m_baseNs + Xml.AirSyncBase.ContentType).Value;
                             var xmlData = xmlProperties.Element (m_ns + Xml.ItemOperations.Data);
-                            // TODO: move the file-manip stuff to McAttachment.
                             var saveAttr = xmlData.Attributes ().Where (x => x.Name == "nacho-attachment-file").SingleOrDefault ();
                             var pending = FindPending (xmlFileReference, null);
                             if (null != saveAttr) {
-                                attachment.SaveFromTemp (saveAttr.Value);
-                                attachment.PercentDownloaded = 100;
-                                attachment.IsDownloaded = true;
-                                attachment.Update ();
+                                attachment.UpdateFileCopy (saveAttr.Value);
+                                File.Delete (saveAttr.Value);
                                 if (null != pending) {
                                     pending.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_AttDownloadUpdate));
                                 }

@@ -74,9 +74,9 @@ namespace NachoClient.AndroidClient
                 foreach (var a in attachments) {
                     if (a.IsInline) {
                         AddHeader ("Inline attachment: ", a.DisplayName);
-                    } else if (a.IsDownloaded) {
+                    } else if (McAbstrFileDesc.FilePresenceEnum.Complete == a.FilePresence) {
                         AddHeader ("Downloaded attachment: ", a.DisplayName);
-                    } else if (a.PercentDownloaded > 0) {
+                    } else if (McAbstrFileDesc.FilePresenceEnum.Partial == a.FilePresence) {
                         AddHeader ("Downloading attachment: ", a.DisplayName);
                     } else {
                         AddHeader ("Attachment on server: ", a.DisplayName);
@@ -284,8 +284,9 @@ namespace NachoClient.AndroidClient
 
         void DownloadAttachment (McAttachment attachment)
         {
-            if (!attachment.IsDownloaded && (attachment.PercentDownloaded == 0)) {
+            if (McAbstrFileDesc.FilePresenceEnum.None == attachment.FilePresence) {
                 var account = NcModel.Instance.Db.Table<McAccount> ().First ();
+                // FIXME - first account only works for the moment...
                 BackEnd.Instance.DnldAttCmd (account.Id, attachment.Id);
 //                ReloadRoot ();
             }

@@ -644,7 +644,7 @@ namespace NachoCore.Model
                     var xmlData = prop.ElementAnyNs (Xml.Gal.Data);
                     if (null != xmlData) {
                         var data = Convert.FromBase64String (xmlData.Value);
-                        var portrait = McPortrait.Save (data);
+                        var portrait = McPortrait.InsertFile (AccountId, data);
                         PortraitId = portrait.Id;
                     }
                     break;
@@ -733,7 +733,7 @@ namespace NachoCore.Model
                 NcAssert.True (null != body);
                 xmlAppData.Add (new XElement (AirSyncBaseNs + Xml.AirSyncBase.Body,
                     new XElement (AirSyncBaseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
-                    new XElement (AirSyncBaseNs + Xml.AirSyncBase.Data, body.Body)));
+                    new XElement (AirSyncBaseNs + Xml.AirSyncBase.Data, body.GetContentsString ())));
             }
 
             if (0 != NativeBodyType) {
@@ -764,7 +764,7 @@ namespace NachoCore.Model
                 xmlAppData.Add (new XElement (ContactsNs + Xml.Contacts.MiddleName, MiddleName));
             }
             if (0 != PortraitId) {
-                var data = McPortrait.Get (PortraitId);
+                var data = McPortrait.GetContentsByteArray (PortraitId);
                 var portraitB64 = Convert.ToBase64String (data);
                 // MS-ASCNTC 2.2.2.56 Picture.
                 if (48 * 1024 > portraitB64.Length) {
@@ -1124,7 +1124,7 @@ namespace NachoCore.Model
             return EmailAddresses.First ().Value;
         }
 
-        public string GetPhoneNumber()
+        public string GetPhoneNumber ()
         {
             if (null == PhoneNumbers) {
                 return "";
@@ -1145,7 +1145,7 @@ namespace NachoCore.Model
             }
         }
 
-        public void SetVIP(bool IsVip)
+        public void SetVIP (bool IsVip)
         {
             this.IsVip = IsVip;
             this.Update ();

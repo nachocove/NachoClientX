@@ -15,7 +15,7 @@ namespace NachoCore.ActiveSync
         public static void ServerSaysAddOrChangeContact (XElement command, McFolder folder)
         {
             // Convert the XML to an AsContact
-            var asResult = AsContact.FromXML (Ns, command);
+            var asResult = AsContact.FromXML (folder.AccountId, Ns, command);
             var asContact = asResult.GetValue<AsContact> ();
             NcAssert.True (asResult.isOK (), "asResult.isOK");
             NcAssert.NotNull (asContact, "asContact");

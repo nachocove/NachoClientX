@@ -83,7 +83,7 @@ namespace NachoCore.Model
                 xmlAppData.Add (new XElement (AirSyncBaseNs + Xml.AirSyncBase.Body,
                     // FIXME - need to have dynamic Body type.
                     new XElement (AirSyncBaseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
-                    new XElement (AirSyncBaseNs + Xml.AirSyncBase.Data, body.Body)));
+                    new XElement (AirSyncBaseNs + Xml.AirSyncBase.Data, body.GetContentsString ())));
             }
             xmlAppData.Add (new XElement (TaskNs + Xml.Tasks.Complete, Convert.ToUInt32 (Complete)));
             if (DateTime.MinValue != DateCompleted) {

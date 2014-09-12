@@ -4,7 +4,9 @@ using SQLite;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using System.IO;
 using NachoCore.Utils;
 using NachoPlatform;
@@ -18,13 +20,8 @@ namespace NachoCore.Model
         // RateLimiter PUBLIC FOR TEST ONLY.
         public NcRateLimter RateLimiter { set; get; }
 
-        public string FilesDir { set; get; }
-
-        public string AttachmentsDir { set; get; }
-
-        public string BodiesDir { set; get; }
-
-        public string PortraitsDir { set; get; }
+        private const string KTmpPathSegment = "tmp";
+        private const string KFilesPathSegment = "files";
 
         public string DbFileName { set; get; }
 
@@ -63,16 +60,18 @@ namespace NachoCore.Model
         private ConcurrentDictionary<int, SQLiteConnection> DbConns;
         private ConcurrentDictionary<int, int> TransDepth;
 
-        private void InitalizeDirs ()
+        public string GetFileDirPath (int accountId, string segment)
         {
-            FilesDir = Path.Combine (Documents, "files");
-            Directory.CreateDirectory (Path.Combine (Documents, FilesDir));
-            AttachmentsDir = Path.Combine (Documents, "attachments");
-            Directory.CreateDirectory (Path.Combine (Documents, AttachmentsDir));
-            BodiesDir = Path.Combine (Documents, "bodies");
-            Directory.CreateDirectory (Path.Combine (Documents, BodiesDir));
-            PortraitsDir = Path.Combine (Documents, "portraits");
-            Directory.CreateDirectory (Path.Combine (Documents, PortraitsDir));
+            return Path.Combine (Documents, KFilesPathSegment, accountId.ToString (), segment);
+        }
+
+        public void InitalizeDirs (int accountId)
+        {
+            Directory.CreateDirectory (GetFileDirPath (accountId, KTmpPathSegment));
+            Directory.CreateDirectory (GetFileDirPath (accountId, new McDocument ().GetFilePathSegment ()));
+            Directory.CreateDirectory (GetFileDirPath (accountId, new McAttachment ().GetFilePathSegment ()));
+            Directory.CreateDirectory (GetFileDirPath (accountId, new McBody ().GetFilePathSegment ()));
+            Directory.CreateDirectory (GetFileDirPath (accountId, new McPortrait ().GetFilePathSegment ()));
         }
 
         private void ConfigureDb (SQLiteConnection db)
@@ -178,7 +177,6 @@ namespace NachoCore.Model
             }), 
                 (IntPtr)null);
             Documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
-            InitalizeDirs ();
             DbFileName = Path.Combine (Documents, "db");
             InitializeDb ();
             TeleDbFileName = Path.Combine (Documents, "teledb");
@@ -356,7 +354,51 @@ namespace NachoCore.Model
         {
             DbFileName = dbFileName;
             InitializeDb ();
+            GarbageCollectFiles ();
+        }
+
+        public string TmpPath (int accountId)
+        {
+            var guidString = Guid.NewGuid ().ToString ("N");
+            return Path.Combine (GetFileDirPath (accountId, KTmpPathSegment), guidString);
+        }
+
+        // To be run synchronously only on app boot.
+        public void GarbageCollectFiles ()
+        {
+            // Find any top-level file dir not backed by McAccount. Delete it.
+            var acctLevelDirs = Directory.GetDirectories (Documents);
+            // Foreach account...
+            foreach (var acctDir in acctLevelDirs) {
+                int accountId;
+                var suffix = Path.GetFileName (acctDir);
+                try {
+                    accountId = (int)uint.Parse (suffix);
+                    if (null == McAccount.QueryById<McAccount> (accountId)) {
+                        try {
+                            Directory.Delete (acctDir, true);
+                        } catch (Exception ex) {
+                            Log.Error (Log.LOG_DB, "GarbageCollectFiles: Exception deleting account-level dir: {0}", ex);
+                        }
+                        continue;
+                    }
+                } catch {
+                    // Must not be a number, so we're not interested in it. Loop.
+                    continue;
+                }
+                var tmpTop = GetFileDirPath (accountId, KTmpPathSegment);
+                try {
+                    // Remove any tmp files/dirs.
+                    foreach (var dir in Directory.GetDirectories (tmpTop)) {
+                        Directory.Delete (dir, true);
+                    }
+                    foreach (var file in Directory.GetFiles (tmpTop)) {
+                        File.Delete (file);
+                    }
+                } catch (Exception ex) {
+                    Log.Error (Log.LOG_DB, "GarbageCollectFiles: Exception cleaning up tmp files: {0}", ex);
+                }
+            }
         }
     }
 }
-

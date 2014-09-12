@@ -281,14 +281,12 @@ namespace NachoClient.iOS
             if (!url.IsFileUrl) {
                 return false;
             }
-            var file = new McDocument ();
-            file.DisplayName = Path.GetFileName (url.Path);
-            file.SourceApplication = sourceApplication;
-            file.Insert ();
-            var destDirectory = Path.Combine (NcModel.Instance.FilesDir, file.Id.ToString ());
-            Directory.CreateDirectory (destDirectory);
-            var destFile = Path.Combine (destDirectory, Path.GetFileName (url.Path));
-            File.Move (url.Path, destFile);
+            // We will be called here whether or not we were launched to Rx the file. So no need to handle in DFLwO.
+            var accountId = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Device).Single ().Id;
+            var document = McDocument.InsertSaveStart (accountId);
+            document.SetDisplayName (Path.GetFileName (url.Path));
+            document.SourceApplication = sourceApplication;
+            document.UpdateFileMove (url.Path);
             return true;
         }
 

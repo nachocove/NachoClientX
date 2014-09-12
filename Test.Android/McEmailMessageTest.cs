@@ -2,6 +2,7 @@
 //
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -120,6 +121,34 @@ namespace Test.Common
 
             messageList = McEmailMessage.QueryActiveMessageItemsByScore (defaultAccountId, Folder.Id, 0.4);
             CheckMessages (messages, messageList, 5, 4, 0, 2);
+        }
+
+        [Test]
+        public void TestQueryByBodyIdIncAwaitDel ()
+        {
+            var outAccount = new McEmailMessage () {
+                AccountId = 2,
+                BodyId = 55,
+            };
+            NcAssert.Equals (1, outAccount.Insert ());
+            var outBody = new McEmailMessage () {
+                AccountId = 1,
+                BodyId = 77,
+            };
+            NcAssert.Equals (1, outBody.Insert ());
+            var in1 = new McEmailMessage () {
+                AccountId = 1,
+                BodyId = 55,
+            };
+            NcAssert.Equals (1, in1.Insert ());
+            var in2 = new McEmailMessage () {
+                AccountId = 1,
+                BodyId = 55,
+            };
+            NcAssert.Equals (1, in2.Insert ());
+            var result = McEmailMessage.QueryByBodyIdIncAwaitDel<McEmailMessage> (1, 55);
+            NcAssert.Equals (2, result.Count ());
+            NcAssert.True (result.All (x => x.AccountId == 1 && x.BodyId == 55));
         }
     }
 }

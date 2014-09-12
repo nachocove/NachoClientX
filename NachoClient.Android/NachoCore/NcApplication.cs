@@ -182,6 +182,7 @@ namespace NachoCore
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass1Services called.");
             NcTask.StartService ();
+            NcModel.Instance.GarbageCollectFiles ();
             NcModel.Instance.Start ();
             EstablishService ();
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass1Services exited.");
@@ -317,6 +318,9 @@ namespace NachoCore
                     deviceAccount.Insert ();
                 }
             });
+            // Create file directories.
+            NcModel.Instance.InitalizeDirs (deviceAccount.Id);
+
             // Create Device contacts/calendars if not yet there.
             NcModel.Instance.RunInTransaction (() => {
                 if (null == McFolder.GetDeviceContactsFolder ()) {

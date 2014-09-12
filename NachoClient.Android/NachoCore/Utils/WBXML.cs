@@ -46,7 +46,7 @@ namespace NachoCore.Wbxml
             return XmlDoc.ToString (SaveOptions.DisableFormatting);
         }
 
-        public void LoadBytes (Stream byteWBXML, Boolean? doFiltering = null)
+        public void LoadBytes (int accountId, Stream byteWBXML, Boolean? doFiltering = null)
         {
             XmlDoc = new XDocument (new XDeclaration ("1.0", "utf-8", "yes"));
             int level = 0;
@@ -140,12 +140,15 @@ namespace NachoCore.Wbxml
                         switch (currentCodePage) {
                         case ASWBXML.KCodePage_AirSyncBase:
                             #if (!WBXMLTOOL)
-                            var data = McBody.SaveStart ();
-                            using (var fileStream = data.SaveFileStream ()) {
-                                bytes.DequeueStringToStream (fileStream, CToken);
+                            // We don't need to save the body to a file in the redacted XML case.
+                            if (0 < accountId) {
+                                var data = McBody.InsertSaveStart (accountId);
+                                using (var fileStream = data.SaveFileStream ()) {
+                                    bytes.DequeueStringToStream (fileStream, CToken);
+                                }
+                                currentNode.Add (new XAttribute ("nacho-body-id", data.Id.ToString ()));
+                                data.UpdateSaveFinish ();
                             }
-                            currentNode.Add (new XAttribute ("nacho-body-id", data.Id.ToString ()));
-                            data.SaveDone ();
                             #else
                             // In WbxmlTool, we just write it to a memory stream and create a node for it.
                             NcAssert.True (false); // not implemented yet
@@ -154,12 +157,14 @@ namespace NachoCore.Wbxml
 
                         case ASWBXML.KCodePage_ItemOperations:
                             #if (!WBXMLTOOL)
-                            var guidString = Guid.NewGuid ().ToString ("N");
-                            using (var fileStream = McAttachment.TempFileStream (guidString)) {
-                                using (var cryptoStream = new CryptoStream (new BufferedStream (fileStream), 
-                                                                  new FromBase64Transform (), CryptoStreamMode.Write)) {
-                                    bytes.DequeueStringToStream (cryptoStream, CToken);
-                                    currentNode.Add (new XAttribute ("nacho-attachment-file", guidString));
+                            if (0 < accountId) {
+                                var tmpPath = NcModel.Instance.TmpPath (accountId);
+                                using (var fileStream = File.OpenWrite (tmpPath)) {
+                                    using (var cryptoStream = new CryptoStream (new BufferedStream (fileStream), 
+                                        new FromBase64Transform (), CryptoStreamMode.Write)) {
+                                        bytes.DequeueStringToStream (cryptoStream, CToken);
+                                        currentNode.Add (new XAttribute ("nacho-attachment-file", tmpPath));
+                                    }
                                 }
                             }
                             #else

@@ -227,6 +227,11 @@ namespace NachoCore.Utils
 
             var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
             BackEnd.Instance.SendEmailCmd (mcMessage.AccountId, mcMessage.Id, c.Id);
+            // TODO: Subtle ugliness. Id is passed to BE, ref-count is ++ in the DB.
+            // The object here still has ref-count of 0, so interlock is lost, and delete really happens in the DB.
+            // BE goes to reference the object later on, and it is missing.
+            mcMessage = McEmailMessage.QueryById<McEmailMessage> (mcMessage.Id);
+            mcMessage.Delete ();
         }
 
         public static TextPart iCalToMimePart (McAccount account, McCalendar c, string tzid)
@@ -252,7 +257,7 @@ namespace NachoCore.Utils
             // attachments
             var attachmentCollection = new MimeKit.AttachmentCollection ();
             foreach (var a in attachments) {
-                attachmentCollection.Add (a.FilePath ());
+                attachmentCollection.Add (a.GetFilePath ());
             }
 
             MimeEntity bodyPart = null;
@@ -314,7 +319,8 @@ namespace NachoCore.Utils
         {
             var c = DefaultMeeting ();
             c.Subject = message.Subject;
-            c.BodyId = McBody.Duplicate (message.BodyId);
+            var dupBody = McBody.InsertDuplicate (message.AccountId, message.BodyId);
+            c.BodyId = dupBody.Id;
             c.attendees = new System.Collections.Generic.List<McAttendee> ();
             c.attendees.AddRange (CreateAttendeeList (message.From, NcAttendeeType.Required));
             c.attendees.AddRange (CreateAttendeeList (message.To, NcAttendeeType.Required));

@@ -235,19 +235,15 @@ namespace NachoClient.iOS
                     image = e.Info [UIImagePickerController.OriginalImage] as UIImage;
                 }
                 NcAssert.True (null != image);
-                var attachment = new McAttachment ();
-                attachment.AccountId = account.Id;
-                attachment.Insert ();
-                attachment.DisplayName = attachment.Id.ToString () + ".jpg";
-                var guidString = Guid.NewGuid ().ToString ("N");
-                using (var stream = McAttachment.TempFileStream (guidString)) {
+                var attachment = McAttachment.InsertSaveStart (account.Id);
+                using (var fileStream = attachment.SaveFileStream ()) {
                     using (var jpg = image.AsJPEG ().AsStream ()) {
-                        jpg.CopyTo (stream);
+                        jpg.CopyTo (fileStream);
                         jpg.Close ();
                     }
                 }
-                attachment.SaveFromTemp (guidString);
-                attachment.Update ();
+                attachment.SetDisplayName (attachment.Id.ToString () + ".jpg");
+                attachment.UpdateSaveFinish ();
                 AttachmentsList.Add (attachment);
             }
 
@@ -294,7 +290,6 @@ namespace NachoClient.iOS
         /// </summary>
         public void SelectFile (INachoFileChooser vc, McAbstrObject obj)
         {
-            // Attachment
             var a = obj as McAttachment;
             if (null != a) {
                 AttachmentsList.Add (a);
@@ -303,41 +298,24 @@ namespace NachoClient.iOS
                 return;
             }
 
-            // File
             var file = obj as McDocument;
             if (null != file) {
-                var attachment = new McAttachment ();
-                attachment.DisplayName = file.DisplayName;
-                attachment.AccountId = account.Id;
-                attachment.Insert ();
-                var guidString = Guid.NewGuid ().ToString ("N");
-                // TODO: Decide on copy, move, delete, etc
-                File.Copy (file.FilePath (), McAttachment.TempPath (guidString));
-                //                File.Move (file.FilePath (), McAttachment.TempPath (guidString));
-                //                file.Delete ();
-                attachment.SaveFromTemp (guidString);
-                attachment.IsDownloaded = true;
+                var attachment = McAttachment.InsertSaveStart (account.Id);
+                attachment.SetDisplayName (file.DisplayName);
                 attachment.IsInline = true;
-                attachment.Update ();
+                attachment.UpdateFileCopy (file.GetFilePath ());
                 AttachmentsList.Add (attachment);
                 vc.DismissFileChooser (true, null);
                 ConfigureEventAttachmentView ();
                 return;
             }
 
-            // Note
             var note = obj as McNote;
             if (null != note) {
-                var attachment = new McAttachment ();
-                attachment.DisplayName = note.DisplayName + ".txt";
-                attachment.AccountId = account.Id;
-                attachment.Insert ();
-                var guidString = Guid.NewGuid ().ToString ("N");
-                File.WriteAllText (McAttachment.TempPath (guidString), note.noteContent);
-                attachment.SaveFromTemp (guidString);
-                attachment.IsDownloaded = true;
+                var attachment = McAttachment.InsertSaveStart (account.Id);
+                attachment.SetDisplayName (note.DisplayName + ".txt");
                 attachment.IsInline = true;
-                attachment.Update ();
+                attachment.UpdateData (note.noteContent);
                 AttachmentsList.Add (attachment);
                 vc.DismissFileChooser (true, null);
                 ConfigureEventAttachmentView ();

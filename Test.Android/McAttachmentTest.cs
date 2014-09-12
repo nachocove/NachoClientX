@@ -28,9 +28,10 @@ namespace Test.iOS
             var keeper1att = new McAttachment () {
                 EmailMessageId = keeper1.Id,
                 AccountId = keeper1.AccountId,
-                PercentDownloaded = 0,
-                EstimatedDataSize = 50001,
-                IsDownloaded = false,
+                FilePresenceFraction = 0,
+                FileSize = 50001,
+                FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
+                FilePresence = McAbstrFileDesc.FilePresenceEnum.None,
             };
             keeper1att.Insert ();
 
@@ -45,9 +46,10 @@ namespace Test.iOS
             var keeper2att = new McAttachment () {
                 EmailMessageId = keeper2.Id,
                 AccountId = keeper2.AccountId,
-                PercentDownloaded = 0,
-                EstimatedDataSize = 50002,
-                IsDownloaded = false,
+                FilePresenceFraction = 0,
+                FileSize = 50002,
+                FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
+                FilePresence = McAbstrFileDesc.FilePresenceEnum.None,
             };
             keeper2att.Insert ();
 
@@ -62,9 +64,10 @@ namespace Test.iOS
             var fallOffatt = new McAttachment () {
                 EmailMessageId = fallOff.Id,
                 AccountId = fallOff.AccountId,
-                PercentDownloaded = 0,
-                EstimatedDataSize = 50000,
-                IsDownloaded = false,
+                FilePresenceFraction = 0,
+                FileSize = 50000,
+                FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
+                FilePresence = McAbstrFileDesc.FilePresenceEnum.None,
             };
             fallOffatt.Insert ();
 
@@ -79,9 +82,10 @@ namespace Test.iOS
             var trashatt = new McAttachment () {
                 EmailMessageId = trash.Id,
                 AccountId = trash.AccountId,
-                PercentDownloaded = 0,
-                EstimatedDataSize = 50000,
-                IsDownloaded = false,
+                FilePresenceFraction = 0,
+                FileSize = 50000,
+                FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
+                FilePresence = McAbstrFileDesc.FilePresenceEnum.None,
             };
             trashatt.Insert ();
 
@@ -96,10 +100,10 @@ namespace Test.iOS
             trashatt = new McAttachment () {
                 EmailMessageId = trash.Id,
                 AccountId = trash.AccountId,
-                PercentDownloaded = 0,
-                EstimatedDataSize = 50000,
-                IsDownloaded = false,
+                FileSize = 50000,
+                FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
             };
+            trashatt.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.None);
             trashatt.Insert ();
 
             trash = new McEmailMessage () {
@@ -113,10 +117,10 @@ namespace Test.iOS
             trashatt = new McAttachment () {
                 EmailMessageId = trash.Id,
                 AccountId = trash.AccountId,
-                PercentDownloaded = 1,
-                EstimatedDataSize = 50000,
-                IsDownloaded = false,
+                FileSize = 50000,
+                FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
             };
+            trashatt.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Partial);
             trashatt.Insert ();
 
             trash = new McEmailMessage () {
@@ -130,10 +134,10 @@ namespace Test.iOS
             trashatt = new McAttachment () {
                 EmailMessageId = trash.Id,
                 AccountId = trash.AccountId,
-                PercentDownloaded = 0,
-                EstimatedDataSize = 50000,
-                IsDownloaded = false,
+                FileSize = 50000,
+                FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
             };
+            trashatt.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.None);
             trashatt.Insert ();
 
             trash = new McEmailMessage () {
@@ -147,10 +151,10 @@ namespace Test.iOS
             trashatt = new McAttachment () {
                 EmailMessageId = trash.Id,
                 AccountId = trash.AccountId,
-                PercentDownloaded = 0,
-                EstimatedDataSize = 500000,
-                IsDownloaded = false,
+                FileSize = 500000,
+                FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
             };
+            trashatt.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.None);
             trashatt.Insert ();
 
             trash = new McEmailMessage () {
@@ -164,17 +168,17 @@ namespace Test.iOS
             trashatt = new McAttachment () {
                 EmailMessageId = trash.Id,
                 AccountId = trash.AccountId,
-                PercentDownloaded = 0,
-                EstimatedDataSize = 50000,
-                IsDownloaded = true,
+                FileSize = 50000,
+                FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
             };
+            trashatt.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Complete);
             trashatt.Insert ();
 
             var result = McAttachment.QueryNeedsFetch (1, 2, 0.9, 100000);
             Assert.AreEqual (2, result.Count ());
-            Assert.True (result.Any (x => 50001 == x.EstimatedDataSize));
-            Assert.True (result.Any (x => 50002 == x.EstimatedDataSize));
-            Assert.AreEqual (50001, result.First ().EstimatedDataSize);
+            Assert.True (result.Any (x => 50001 == x.FileSize));
+            Assert.True (result.Any (x => 50002 == x.FileSize));
+            Assert.AreEqual (50001, result.First ().FileSize);
         }
     }
 }

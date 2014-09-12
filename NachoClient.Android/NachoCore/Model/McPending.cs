@@ -833,6 +833,15 @@ namespace NachoCore.Model
             x.Token == token);
         }
 
+        public static IEnumerable<McPending> QueryByOperationAndAttId (int accountId, McPending.Operations operation, int attId)
+        {
+            return NcModel.Instance.Db.Table<McPending> ()
+                .Where (rec =>
+                    rec.AccountId == accountId &&
+                    rec.Operation == operation &&
+                    rec.AttachmentId == attId).OrderBy (x => x.Priority);
+        }
+
         public static List<McPending> QueryByOperation (int accountId, McPending.Operations operation)
         {
             return NcModel.Instance.Db.Table<McPending> ()

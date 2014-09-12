@@ -5,29 +5,22 @@ using System.Collections.Generic;
 
 namespace NachoCore.Model
 {
-    public class McDocument : McAbstrObject, IFilesViewItem
+    public class McDocument : McAbstrFileDesc, IFilesViewItem
     {
-        [Indexed]
-        public string DisplayName { get; set; }
+        public override string GetFilePathSegment ()
+        {
+            return "documents";
+        }
 
         public string SourceApplication { get; set; }
 
-        public string LocalFileName { get; set; }
-
-        public string FilePath ()
+        public static McDocument InsertSaveStart (int accountId)
         {
-            return Path.Combine (NcModel.Instance.FilesDir, Id.ToString(), DisplayName);
-        }
-
-        public override int Delete ()
-        {
-            File.Delete (FilePath ());
-            return base.Delete ();
-        }
-
-        public static List<McDocument> QueryAllFiles ()
-        {
-            return NcModel.Instance.Db.Query<McDocument> ("SELECT * FROM McFile ORDER BY DisplayName");
+            var document = new McDocument () {
+                AccountId = accountId,
+            };
+            document.CompleteInsertSaveStart ();
+            return document;
         }
     }
 }

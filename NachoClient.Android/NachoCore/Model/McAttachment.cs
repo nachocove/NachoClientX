@@ -7,20 +7,29 @@ using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
-    public class McAttachment : McAbstrObjectPerAcc, IFilesViewItem
+    public class McAttachment : McAbstrFileDesc, IFilesViewItem
     {
-        [Indexed]
-        public int EmailMessageId { get; set; }
+        public override string GetFilePathSegment ()
+        {
+            return "attachments";
+        }
+
+        public static McAttachment InsertSaveStart (int accountId)
+        {
+            var att = new McAttachment () {
+                AccountId = accountId,
+            };
+            att.CompleteInsertSaveStart ();
+            return att;
+        }
 
         [Indexed]
-        public string DisplayName { get; set; }
+        public int EmailMessageId { get; set; }
 
         [Indexed]
         public string FileReference { get; set; }
 
         public uint Method { get; set; }
-
-        public uint EstimatedDataSize { get; set; }
 
         public string ContentId { get; set; }
 
@@ -32,19 +41,7 @@ namespace NachoCore.Model
 
         public int VoiceOrder { get; set; }
 
-        public bool IsDownloaded { get; set; }
-
-        public uint PercentDownloaded { get; set; }
-
-        public int DataSize { get; set; }
-
-        public string LocalFileName { get; set; }
-
         public string ContentType { get; set; }
-
-        public uint AttachedTo { get; set; }
-
-        public enum OwnerTypes {Email = 0, Event};
 
         public static List<McAttachment> QueryByItemId<T> (int accountId, int itemId)
         {
@@ -65,73 +62,11 @@ namespace NachoCore.Model
                 " a.AccountId = ? AND " +
                 " e.AccountId = ? AND " +
                 " e.IsAwaitingDelete = 0 AND " +
-                " a.PercentDownloaded = 0 AND " +
                 " e.Score >= ? AND " +
-                " a.EstimatedDataSize <= ? AND " +
-                " a.IsDownloaded = 0 " + 
+                " a.FileSize <= ? AND " +
+                " a.FilePresence = ? " + 
                 " ORDER BY e.Score DESC, e.DateReceived DESC LIMIT ?",
-                accountId, accountId, minScore, maxSize, limit);
-        }
-
-        public override int Delete ()
-        {
-            RemoveFromStorage ();
-            return base.Delete ();
-        }
-
-        // best-effort attempt to find and remove the file
-        public void RemoveFromStorage ()
-        {
-            if (IsDownloaded) {
-                try {
-                    File.Delete (FilePath ());
-                    // reset fields
-                    IsDownloaded = false;
-                    PercentDownloaded = 0;
-                    LocalFileName = null;
-                    base.Update ();
-                } catch (Exception e) {
-                    Log.Error (Log.LOG_STATE, "Exception thrown while removing attachment from storage: {0}", e.Message);
-                }
-            }
-        }
-
-        public static FileStream TempFileStream (string guidString)
-        {
-            // Intentionally above all the Id-dirs.
-            return File.OpenWrite (TempPath (guidString));
-        }
-
-        public static string TempPath (string guidString)
-        {
-            return Path.Combine (NcModel.Instance.AttachmentsDir, guidString);
-        }
-
-        public string FilePath ()
-        {
-            NcAssert.True (0 != Id);
-            return Path.Combine (NcModel.Instance.AttachmentsDir, Id.ToString (), LocalFileName);
-        }
-
-        public void SaveFromTemp (string guidString)
-        {
-            var savePath = Path.Combine (NcModel.Instance.AttachmentsDir, Id.ToString ());
-            Directory.CreateDirectory (savePath);
-            try {
-                LocalFileName = DisplayName.SantizeFileName ();
-                File.Move (TempPath (guidString), FilePath ());
-            } catch {
-                LocalFileName = Id.ToString ();
-                try {
-                    var ext = Path.GetExtension (DisplayName);
-                    if (null != ext) {
-                        LocalFileName += ext;
-                    }
-                } catch {
-                    // Give up on extension. TODO - generate correct extension based on ContentType.
-                }
-                File.Move (TempPath (guidString), FilePath ());
-            }
+                accountId, accountId, minScore, maxSize, (int)FilePresenceEnum.None, limit);
         }
     }
 }
