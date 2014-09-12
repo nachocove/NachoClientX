@@ -1062,7 +1062,6 @@ namespace NachoCore.ActiveSync
             foreach (var pending in pendings) {
                 switch (pending.State) {
                 case McPending.StateEnum.Eligible:
-                // FIXME - may need to deal with successors.
                     pending.Delete ();
                     break;
 

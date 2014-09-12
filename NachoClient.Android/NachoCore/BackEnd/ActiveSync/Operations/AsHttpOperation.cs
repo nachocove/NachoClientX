@@ -547,7 +547,6 @@ namespace NachoCore.ActiveSync
                         try {
                             decoder.LoadBytes (BEContext.Account.Id, ContentData);
                         } catch (OperationCanceledException) {
-                            // FIXME: we could have orphaned McBody(s). HardFail isn't accurate.
                             Owner.ResolveAllDeferred ();
                             return Final ((uint)SmEvt.E.HardFail, "WBXCANCEL");
                         } catch (WBXMLReadPastEndException) {
@@ -581,7 +580,8 @@ namespace NachoCore.ActiveSync
                         // Owner MUST resolve all pending.
                         return Final (Owner.ProcessResponse (this, response, responseDoc));
                     case ContentTypeWbxmlMultipart:
-                        throw new Exception ("FIXME: ContentTypeWbxmlMultipart unimplemented.");
+                        NcAssert.True (false, "ContentTypeWbxmlMultipart unimplemented.");
+                        return null;
                     case ContentTypeXml:
                         responseDoc = XDocument.Load (ContentData);
                         // Owner MUST resolve all pending.

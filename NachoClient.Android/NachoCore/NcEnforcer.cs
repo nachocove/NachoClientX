@@ -32,7 +32,7 @@ namespace NachoCore
 
         public Xml.Provision.PolicyReqStatusCode Compliance (McAccount account)
         {
-            // FIXME - this is unimplemented.
+            // By design, we always say we are compliant.
             return Xml.Provision.PolicyReqStatusCode.Success_1;
         }
 
