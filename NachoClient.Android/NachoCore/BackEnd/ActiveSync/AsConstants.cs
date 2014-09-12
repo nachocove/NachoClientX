@@ -630,7 +630,6 @@ namespace NachoCore.ActiveSync
             public const string SyncKey = AirSync.SyncKey;
             public const string Type = AirSync.Type;
             public const string Update = "Update";
-            // FIXME: with Unknown, we need to retry & watch for a loop.
             public enum FolderSyncStatusCode : uint
             {
                 Success_1 = 1,

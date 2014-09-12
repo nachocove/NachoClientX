@@ -878,7 +878,7 @@ namespace NachoCore.ActiveSync
                     if (null != xmlType) {
                         serverType = xmlType.Value;
                     } else {
-                        // FIXME: log that Type is missing, assume MobileSync.
+                        Log.Error (Log.LOG_AS, "ProcessXmlSettings: Type is missing.");
                         serverType = Xml.Autodisco.TypeCode.MobileSync;
                     }
                     var xmlUrl = xmlServer.ElementAnyNs (Xml.Autodisco.Url);
@@ -889,10 +889,10 @@ namespace NachoCore.ActiveSync
                             xmlUrlValue = xmlUrl.Value;
                             serverUri = new Uri (xmlUrlValue);
                         } catch (ArgumentNullException) {
-                            // FIXME - log it.
+                            Log.Error (Log.LOG_AS, "ProcessXmlSettings: illegal value {0}.", xmlUrl.ToString ());
                             return Event.Create ((uint)SmEvt.E.HardFail, "SRPXRHARD0");
                         } catch (UriFormatException) {
-                            // FIXME - log it.
+                            Log.Error (Log.LOG_AS, "ProcessXmlSettings: illegal value {0}.", xmlUrl.ToString ());
                             return Event.Create ((uint)SmEvt.E.HardFail, "SRPXRHARD1");
                         }
                         if (Xml.Autodisco.TypeCode.MobileSync == serverType) {
@@ -907,7 +907,7 @@ namespace NachoCore.ActiveSync
                     }
                     var xmlName = xmlServer.ElementAnyNs (Xml.Autodisco.Name);
                     if (null != xmlName) {
-                        // FIXME - log it.
+                        Log.Error (Log.LOG_AS, "ProcessXmlSettings: missing Name.");
                         // We should have gotten our server info from Url.
                     }
                     var xmlServerData = xmlServer.ElementAnyNs (Xml.Autodisco.ServerData);

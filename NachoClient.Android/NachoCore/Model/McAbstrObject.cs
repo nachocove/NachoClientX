@@ -80,7 +80,7 @@ namespace NachoCore.Model
         // Set only on Insert.
         public DateTime CreatedAt { get; set; }
 
-        private Boolean isDeleted;
+        protected Boolean isDeleted;
 
         public McAbstrObject ()
         {

@@ -22,7 +22,6 @@ namespace NachoCore.Model
 
     public class McTask : McAbstrItem
     {
-        // FIXME - add categories.
         public bool Complete { set; get; }
 
         public DateTime DateCompleted { set; get; }
@@ -44,7 +43,7 @@ namespace NachoCore.Model
         public DateTime UtcDueDate { get; set; }
 
         public DateTime UtcStartDate { get; set; }
-        /* FIXME - figure out how these work.
+        /* TODO - figure out how these work.
         public uint Recurrence_DeadOccur { set; get; }
 
         public bool Recurrence_Regenerate { get; set; }
@@ -81,7 +80,7 @@ namespace NachoCore.Model
                 var body = McBody.QueryById<McBody> (BodyId);
                 NcAssert.True (null != body);
                 xmlAppData.Add (new XElement (AirSyncBaseNs + Xml.AirSyncBase.Body,
-                    // FIXME - need to have dynamic Body type.
+                    // TODO - need to have dynamic Body type.
                     new XElement (AirSyncBaseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
                     new XElement (AirSyncBaseNs + Xml.AirSyncBase.Data, body.GetContentsString ())));
             }
@@ -121,7 +120,7 @@ namespace NachoCore.Model
 
             var recurrence = McRecurrence.QueryByTaskId (Id);
             if (null != recurrence) {
-                // FIXME - express recurrence.
+                // TODO - express recurrence.
             }
             return xmlAppData;
         }
@@ -151,12 +150,12 @@ namespace NachoCore.Model
                     break;
 
                 case Xml.Tasks.Importance:
-                    // FIXME - Importance can be > 2. kill the enum?
+                    // TODO - Importance can be > 2. kill the enum?
                     Importance = (NcImportance)uint.Parse (child.Value);
                     break;
 
                 case Xml.Tasks.Recurrence:
-                    // FIXME parse recurrence.
+                    // TODO parse recurrence.
                     break;
 
                 case Xml.Tasks.ReminderSet:
