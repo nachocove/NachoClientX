@@ -761,14 +761,14 @@ namespace NachoClient.iOS
             this.messageSource.SetEmailMessages (messageThreads);
         }
 
-        public void SaveNote (string noteText)
+        public void SaveNote (int accountId, string noteText)
         {
             if (null != contact) {
                 McBody contactBody = McBody.QueryById<McBody> (contact.BodyId);
                 if (null != contactBody) {
-                    contactBody.UpdateBody (noteText);
+                    contactBody.UpdateData (noteText);
                 } else {
-                    contact.BodyId = McBody.Save (noteText).Id;
+                    contact.BodyId = McBody.InsertFile (accountId, noteText).Id;
                 }
 
                 contact.Update ();
@@ -785,7 +785,7 @@ namespace NachoClient.iOS
             } else {
                 McBody contactBody = McBody.QueryById<McBody> (contact.BodyId);
                 if (null != contactBody) {
-                    return contactBody.Body;
+                    return contactBody.GetContentsString ();
                 }
                 return "";
             }

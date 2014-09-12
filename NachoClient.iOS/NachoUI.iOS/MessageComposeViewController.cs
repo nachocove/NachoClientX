@@ -653,7 +653,7 @@ namespace NachoClient.iOS
                 bool attachmentMustBeDownloaded = false;
                 var attachments = McAttachment.QueryByItemId<McEmailMessage> (account.Id, ActionThread.SingleMessageSpecialCase ().Id);
                 foreach (var attachment in attachments) {
-                    if (!attachment.IsDownloaded) {
+                    if (McAbstrFileDesc.FilePresenceEnum.None == attachment.FilePresence) {
                         attachmentMustBeDownloaded = true;
                         break;
                     }
@@ -741,8 +741,8 @@ namespace NachoClient.iOS
                 // to be done explicitly.
                 foreach (var attachment in McAttachment.QueryByItemId<McEmailMessage> (account.Id, ActionThread.SingleMessageSpecialCase ().Id)) {
                     // TODO Deal with attachments that haven't been downloaded yet.
-                    if (attachment.IsDownloaded) {
-                        body.Attachments.Add (attachment.FilePath ());
+                    if (McAbstrFileDesc.FilePresenceEnum.Complete == attachment.FilePresence) {
+                        body.Attachments.Add (attachment.GetFilePath ());
                     }
                 }
             }
@@ -774,6 +774,11 @@ namespace NachoClient.iOS
             if (!messageSent) {
                 // A new outgoing message.  Or a forward/reply that has problems.
                 NachoCore.BackEnd.Instance.SendEmailCmd (mcMessage.AccountId, mcMessage.Id);
+                // TODO: Subtle ugliness. Id is passed to BE, ref-count is ++ in the DB.
+                // The object here still has ref-count of 0, so interlock is lost, and delete really happens in the DB.
+                // BE goes to reference the object later on, and it is missing.
+                mcMessage = McEmailMessage.QueryById<McEmailMessage> (mcMessage.Id);
+                mcMessage.Delete ();
             }
         }
 

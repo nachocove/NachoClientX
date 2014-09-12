@@ -167,7 +167,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public void SaveNote (string noteText)
+        public void SaveNote (int accountId, string noteText)
         {
             selectedNote.noteContent = noteText;
             selectedNote.Update ();

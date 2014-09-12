@@ -13,7 +13,7 @@ namespace NachoClient.iOS
 
     public interface INachoNotesControllerParent
     {
-        void SaveNote (string noteText);
+        void SaveNote (int accountId, string noteText);
         string GetNoteText ();
     }
 }
