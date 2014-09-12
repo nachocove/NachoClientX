@@ -327,6 +327,9 @@ namespace NachoCore.ActiveSync
             public const string Url = "Url";
             public const string User = "User";
 
+            public const string Error_Attr_Id = Ping.Id;
+            public const string Error_Attr_Time = "Time";
+
             public enum ErrorCodeCode : uint
             {
                 InvalidRequest_600 = 600,
