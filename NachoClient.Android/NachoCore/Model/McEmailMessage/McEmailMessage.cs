@@ -224,7 +224,7 @@ namespace NachoCore.Model
 
         public string MimePath ()
         {
-            return McBody.Instance.GetFilePath (BodyId);
+            return McBody.GetFilePath (BodyId);
         }
 
         public void DeleteAttachments ()

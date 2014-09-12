@@ -78,7 +78,7 @@ namespace NachoPlatform
                     contact.AddDateAttribute ("Birthday", null, birthday.ToDateTime ());
                 }
                 if (null != Person.Note) {
-                    var body = McBody.Instance.InsertFile (accountId, Person.Note);
+                    var body = McBody.InsertFile (accountId, Person.Note);
                     contact.BodyId = body.Id;
                     contact.BodyType = McBody.PlainText;
                 }
@@ -100,7 +100,7 @@ namespace NachoPlatform
 
                 if (Person.HasImage) {
                     var data = Person.GetImage (ABPersonImageFormat.OriginalSize);
-                    var portrait = McPortrait.Instance.InsertFile (accountId, data.ToArray ());
+                    var portrait = McPortrait.InsertFile (accountId, data.ToArray ());
                     contact.PortraitId = portrait.Id;
                 }
                 // TODO: Street addresses, IM addresses, etc.

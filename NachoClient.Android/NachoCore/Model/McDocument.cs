@@ -7,28 +7,6 @@ namespace NachoCore.Model
 {
     public class McDocument : McAbstrFileDesc, IFilesViewItem
     {
-        protected static object syncRoot = new Object ();
-
-        protected static volatile McDocument instance;
-
-        public static McDocument Instance {
-            get {
-                if (instance == null) {
-                    lock (syncRoot) {
-                        if (instance == null) {
-                            instance = new McDocument ();
-                        }
-                    }
-                }
-                return instance; 
-            }
-        }
-
-        protected override bool IsInstance ()
-        {
-            return this == instance;
-        }
-
         public override string GetFilePathSegment ()
         {
             return "documents";
@@ -36,12 +14,13 @@ namespace NachoCore.Model
 
         public string SourceApplication { get; set; }
 
-        public McDocument InsertSaveStart (int accountId)
+        public static McDocument InsertSaveStart (int accountId)
         {
             var document = new McDocument () {
                 AccountId = accountId,
             };
-            return (McDocument)CompleteInsertSaveStart (document);
+            document.CompleteInsertSaveStart ();
+            return document;
         }
     }
 }

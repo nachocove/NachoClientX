@@ -479,7 +479,7 @@ namespace NachoClient
             if (0 == contact.PortraitId) {
                 return null;
             }
-            var data = McPortrait.Instance.GetContentsByteArray (contact.PortraitId);
+            var data = McPortrait.GetContentsByteArray (contact.PortraitId);
             if (null == data) {
                 return null;
             }

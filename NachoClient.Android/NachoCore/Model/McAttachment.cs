@@ -9,39 +9,18 @@ namespace NachoCore.Model
 {
     public class McAttachment : McAbstrFileDesc, IFilesViewItem
     {
-        protected static object syncRoot = new Object ();
-
-        protected static volatile McAttachment instance;
-
-        public static McAttachment Instance {
-            get {
-                if (instance == null) {
-                    lock (syncRoot) {
-                        if (instance == null) {
-                            instance = new McAttachment ();
-                        }
-                    }
-                }
-                return instance; 
-            }
-        }
-
-        protected override bool IsInstance ()
-        {
-            return this == instance;
-        }
-
         public override string GetFilePathSegment ()
         {
             return "attachments";
         }
 
-        public McAttachment InsertSaveStart (int accountId)
+        public static McAttachment InsertSaveStart (int accountId)
         {
             var att = new McAttachment () {
                 AccountId = accountId,
             };
-            return (McAttachment)CompleteInsertSaveStart (att);
+            att.CompleteInsertSaveStart ();
+            return att;
         }
 
         [Indexed]

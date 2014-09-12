@@ -120,7 +120,7 @@ namespace NachoPlatform
                 }
 
                 if (null != Event.Notes) {
-                    var body = McBody.Instance.InsertFile (accountId, Event.Notes);
+                    var body = McBody.InsertFile (accountId, Event.Notes);
                     cal.BodyId = body.Id;
                     cal.BodyType = McBody.PlainText;
                 }

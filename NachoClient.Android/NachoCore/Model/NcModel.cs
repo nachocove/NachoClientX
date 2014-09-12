@@ -21,6 +21,7 @@ namespace NachoCore.Model
         public NcRateLimter RateLimiter { set; get; }
 
         private const string KTmpPathSegment = "tmp";
+        private const string KFilesPathSegment = "files";
 
         public string DbFileName { set; get; }
 
@@ -61,16 +62,16 @@ namespace NachoCore.Model
 
         public string GetFileDirPath (int accountId, string segment)
         {
-            return Path.Combine (Documents, accountId.ToString (), segment);
+            return Path.Combine (Documents, KFilesPathSegment, accountId.ToString (), segment);
         }
 
         public void InitalizeDirs (int accountId)
         {
             Directory.CreateDirectory (GetFileDirPath (accountId, KTmpPathSegment));
-            Directory.CreateDirectory (GetFileDirPath (accountId, McDocument.Instance.GetFilePathSegment ()));
-            Directory.CreateDirectory (GetFileDirPath (accountId, McAttachment.Instance.GetFilePathSegment ()));
-            Directory.CreateDirectory (GetFileDirPath (accountId, McBody.Instance.GetFilePathSegment ()));
-            Directory.CreateDirectory (GetFileDirPath (accountId, McPortrait.Instance.GetFilePathSegment ()));
+            Directory.CreateDirectory (GetFileDirPath (accountId, new McDocument ().GetFilePathSegment ()));
+            Directory.CreateDirectory (GetFileDirPath (accountId, new McAttachment ().GetFilePathSegment ()));
+            Directory.CreateDirectory (GetFileDirPath (accountId, new McBody ().GetFilePathSegment ()));
+            Directory.CreateDirectory (GetFileDirPath (accountId, new McPortrait ().GetFilePathSegment ()));
         }
 
         private void ConfigureDb (SQLiteConnection db)

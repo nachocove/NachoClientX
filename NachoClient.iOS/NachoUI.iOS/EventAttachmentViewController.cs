@@ -235,7 +235,7 @@ namespace NachoClient.iOS
                     image = e.Info [UIImagePickerController.OriginalImage] as UIImage;
                 }
                 NcAssert.True (null != image);
-                var attachment = McAttachment.Instance.InsertSaveStart (account.Id);
+                var attachment = McAttachment.InsertSaveStart (account.Id);
                 using (var fileStream = attachment.SaveFileStream ()) {
                     using (var jpg = image.AsJPEG ().AsStream ()) {
                         jpg.CopyTo (fileStream);
@@ -300,7 +300,7 @@ namespace NachoClient.iOS
 
             var file = obj as McDocument;
             if (null != file) {
-                var attachment = McAttachment.Instance.InsertSaveStart (account.Id);
+                var attachment = McAttachment.InsertSaveStart (account.Id);
                 attachment.SetDisplayName (file.DisplayName);
                 attachment.IsInline = true;
                 attachment.UpdateFileCopy (file.GetFilePath ());
@@ -312,7 +312,7 @@ namespace NachoClient.iOS
 
             var note = obj as McNote;
             if (null != note) {
-                var attachment = McAttachment.Instance.InsertSaveStart (account.Id);
+                var attachment = McAttachment.InsertSaveStart (account.Id);
                 attachment.SetDisplayName (note.DisplayName + ".txt");
                 attachment.IsInline = true;
                 attachment.UpdateData (note.noteContent);

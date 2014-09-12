@@ -8,68 +8,55 @@ namespace NachoCore.Model
 {
     public class McBody : McAbstrFileDesc
     {
-        protected static object syncRoot = new Object ();
-
-        protected static volatile McBody instance;
-
-        public static McBody Instance {
-            get {
-                if (instance == null) {
-                    lock (syncRoot) {
-                        if (instance == null) {
-                            instance = new McBody ();
-                        }
-                    }
-                }
-                return instance; 
-            }
-        }
-
-        protected override bool IsInstance ()
-        {
-            return this == instance;
-        }
-
         public override string GetFilePathSegment ()
         {
             return "bodies";
         }
 
-        public string GetFilePath (int bodyId)
+        public static string GetFilePath (int bodyId)
         {
             var body = QueryById<McBody> (bodyId);
-            return CompleteGetFilePath (body);
+            if (null == body) {
+                return null;
+            }
+            return body.GetFilePath ();
         }
 
-        public McBody InsertSaveStart (int accountId)
+        public static McBody InsertSaveStart (int accountId)
         {
             var body = new McBody () {
                 AccountId = accountId,
             };
-            return (McBody)CompleteInsertSaveStart (body);
+            body.CompleteInsertSaveStart ();
+            return body;
         }
 
-        public McBody InsertFile (int accountId, string content)
+        public static McBody InsertFile (int accountId, string content)
         {
             var body = new McBody () {
                 AccountId = accountId,
             };
-            return (McBody)CompleteInsertFile (body, content);
+            body.CompleteInsertFile (content);
+            return body;
         }
 
-        public McBody InsertDuplicate (int accountId, int srcBodyId)
+        public static McBody InsertDuplicate (int accountId, int srcBodyId)
         {
             var dstBody = new McBody () {
                 AccountId = accountId,
             };
             var srcBody = QueryById<McBody> (srcBodyId);
-            return (McBody)CompleteInsertDuplicate (dstBody, srcBody);
+            dstBody.CompleteInsertDuplicate (srcBody);
+            return dstBody;
         }
 
-        public string GetContentsString (int bodyId)
+        public static string GetContentsString (int bodyId)
         {
             var body = QueryById<McBody> (bodyId);
-            return CompleteGetContentsString (body);
+            if (null == body) {
+                return null;
+            }
+            return body.GetContentsString ();
         }
 
         /// Body type is stored in McItem, along with the item's index to McBody.

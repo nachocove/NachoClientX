@@ -235,7 +235,7 @@ namespace NachoCore.Utils
             msg.Subject = mimeMessage.Subject;
 
             // Create body
-            var body = McBody.Instance.InsertSaveStart (AccountId);
+            var body = McBody.InsertSaveStart (AccountId);
             using (var fileStream = body.SaveFileStream ()) {
                 mimeMessage.WriteTo (fileStream);
             }

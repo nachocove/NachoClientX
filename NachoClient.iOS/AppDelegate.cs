@@ -283,7 +283,7 @@ namespace NachoClient.iOS
             }
             // We will be called here whether or not we were launched to Rx the file. So no need to handle in DFLwO.
             var accountId = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Device).Single ().Id;
-            var document = McDocument.Instance.InsertSaveStart (accountId);
+            var document = McDocument.InsertSaveStart (accountId);
             document.SetDisplayName (Path.GetFileName (url.Path));
             document.SourceApplication = sourceApplication;
             document.UpdateFileMove (url.Path);

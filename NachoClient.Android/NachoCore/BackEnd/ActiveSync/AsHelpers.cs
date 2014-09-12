@@ -31,7 +31,7 @@ namespace NachoCore.ActiveSync
                 if (null != saveAttr) {
                     item.BodyId = int.Parse (saveAttr.Value);
                 } else {
-                    var body = McBody.Instance.InsertFile (item.AccountId, xmlData.Value); 
+                    var body = McBody.InsertFile (item.AccountId, xmlData.Value); 
                     item.BodyId = body.Id;
                 }
                 item.BodyType = bodyType;

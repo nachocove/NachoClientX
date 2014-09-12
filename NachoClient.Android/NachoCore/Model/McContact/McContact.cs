@@ -644,7 +644,7 @@ namespace NachoCore.Model
                     var xmlData = prop.ElementAnyNs (Xml.Gal.Data);
                     if (null != xmlData) {
                         var data = Convert.FromBase64String (xmlData.Value);
-                        var portrait = McPortrait.Instance.InsertFile (AccountId, data);
+                        var portrait = McPortrait.InsertFile (AccountId, data);
                         PortraitId = portrait.Id;
                     }
                     break;
@@ -764,7 +764,7 @@ namespace NachoCore.Model
                 xmlAppData.Add (new XElement (ContactsNs + Xml.Contacts.MiddleName, MiddleName));
             }
             if (0 != PortraitId) {
-                var data = McPortrait.Instance.GetContentsByteArray (PortraitId);
+                var data = McPortrait.GetContentsByteArray (PortraitId);
                 var portraitB64 = Convert.ToBase64String (data);
                 // MS-ASCNTC 2.2.2.56 Picture.
                 if (48 * 1024 > portraitB64.Length) {

@@ -259,7 +259,7 @@ namespace NachoClient.iOS
                     image = e.Info [UIImagePickerController.OriginalImage] as UIImage;
                 }
                 NcAssert.True (null != image);
-                var attachment = McAttachment.Instance.InsertSaveStart (accountId);
+                var attachment = McAttachment.InsertSaveStart (accountId);
                 using (var fileStream = attachment.SaveFileStream ()) {
                     using (var jpg = image.AsJPEG ().AsStream ()) {
                         jpg.CopyTo (fileStream);

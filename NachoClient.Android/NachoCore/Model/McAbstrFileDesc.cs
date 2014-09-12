@@ -33,13 +33,6 @@ namespace NachoCore.Model
         [Indexed]
         public string DisplayName { get; set; }
 
-        protected virtual bool IsInstance ()
-        {
-            // Pseudo-abstract.
-            NcAssert.True (false);
-            return false;
-        }
-
         public virtual string GetFilePathSegment ()
         {
             // Pseudo-abstract.
@@ -49,7 +42,7 @@ namespace NachoCore.Model
 
         public string GetFilePath ()
         {
-            NcAssert.True (!IsInstance () && 0 != Id);
+            NcAssert.True (0 != Id);
             var dirPath = DirPath ();
             if (!Directory.Exists (dirPath)) {
                 Directory.CreateDirectory (dirPath);
@@ -77,91 +70,48 @@ namespace NachoCore.Model
 
         public FileStream SaveFileStream ()
         {
-            NcAssert.True (!IsInstance ());
             return File.OpenWrite (GetFilePath ());
-        }
-
-        protected string CompleteGetFilePath (McAbstrFileDesc desc)
-        {
-            NcAssert.True (IsInstance ());
-            if (null == desc) {
-                return null;
-            }
-            return desc.GetFilePath ();
         }
 
         private string DirPath ()
         {
-            NcAssert.True (!IsInstance ());
             return Path.Combine (NcModel.Instance.GetFileDirPath (AccountId, GetFilePathSegment ()), Id.ToString ());
         }
 
-        private void CheckInsertMkDir (McAbstrFileDesc desc, bool isInstance)
+        private void Prep ()
         {
-            NcAssert.True (isInstance == IsInstance ());
-            desc.Insert ();
-            Directory.CreateDirectory (desc.DirPath ());
+            Insert ();
+            Directory.CreateDirectory (DirPath ());
         }
 
-        // Derived class must implement McXxx InsertSaveStart (). This calls the derived class 
-        // constructor and passes it through CompleteInsertSaveStart. Must be IsInstance only.
-        protected McAbstrFileDesc CompleteInsertSaveStart (McAbstrFileDesc desc)
+        protected void CompleteInsertSaveStart ()
         {
-            CheckInsertMkDir (desc, true);
-            return desc;
+            Prep ();
         }
 
-        // Derived class must implement McXxx InsertFile (). This calls the derived class 
-        // constructor and passes it through CompleteInsertFile. Must be IsInstance only.
-        protected McAbstrFileDesc CompleteInsertFile (McAbstrFileDesc desc, string content)
+        protected void CompleteInsertFile (string content)
         {
-            CheckInsertMkDir (desc, true);
-            File.WriteAllText (desc.GetFilePath (), content);
-            desc.UpdateSaveFinish ();
-            return desc;
+            Prep ();
+            File.WriteAllText (GetFilePath (), content);
+            UpdateSaveFinish ();
         }
 
-        // Derived class must implement McXxx InsertFile (). This calls the derived class 
-        // constructor and passes it through CompleteInsertFile. Must be IsInstance only.
-        protected McAbstrFileDesc CompleteInsertFile (McAbstrFileDesc desc, byte[] content)
+        protected void CompleteInsertFile (byte[] content)
         {
-            CheckInsertMkDir (desc, true);
-            File.WriteAllBytes (desc.GetFilePath (), content);
-            desc.UpdateSaveFinish ();
-            return desc;
+            Prep ();
+            File.WriteAllBytes (GetFilePath (), content);
+            UpdateSaveFinish ();
         }
 
-        // Derived class must implement McXxx InsertDuplicate (int descId). This calls the derived class 
-        // constructor and passes it through CompleteInsertDuplicate. Must be IsInstance only.
-        protected McAbstrFileDesc CompleteInsertDuplicate (McAbstrFileDesc destDesc, McAbstrFileDesc srcDesc)
+        protected void CompleteInsertDuplicate (McAbstrFileDesc srcDesc)
         {
-            CheckInsertMkDir (destDesc, true);
-            File.Copy (destDesc.GetFilePath (), srcDesc.GetFilePath ());
-            destDesc.UpdateSaveFinish ();
-            return destDesc;
-        }
-
-        protected string CompleteGetContentsString (McAbstrFileDesc desc)
-        {
-            NcAssert.True (IsInstance ());
-            if (null == desc) {
-                return null;
-            }
-            return desc.GetContentsString ();
-        }
-
-        protected byte[] CompleteGetContentsByteArray (McAbstrFileDesc desc)
-        {
-            NcAssert.True (IsInstance ());
-            if (null == desc) {
-                return null;
-            }
-            return desc.GetContentsByteArray ();
+            Prep ();
+            File.Copy (GetFilePath (), srcDesc.GetFilePath ());
+            UpdateSaveFinish ();
         }
 
         public void SetDisplayName (string displayName)
         {
-            NcAssert.True (!IsInstance ());
             string oldPath = null;
             if (0 < Id) {
                 oldPath = GetFilePath ();
@@ -175,9 +125,10 @@ namespace NachoCore.Model
             var target = Path.Combine (tmp, justName);
             try {
                 // Test to see if sanitized display name will work as a file name.
-                File.OpenWrite (target);
-                LocalFileName = justName;
-                Directory.Delete (tmp, true);
+                using (var dummy1 = File.OpenWrite (target)) {
+                    LocalFileName = justName;
+                    Directory.Delete (tmp, true);
+                }
             } catch {
                 // Try adding appropriate extension to id, and see if that works as a file name.
                 var ext = Path.GetExtension (DisplayName);
@@ -185,9 +136,10 @@ namespace NachoCore.Model
                     var idExt = Id.ToString () + ext;
                     target = Path.Combine (tmp, idExt);
                     try {
-                        File.OpenWrite (target);
-                        LocalFileName = idExt;
-                        Directory.Delete (tmp, true);
+                        using (var dummy2 = File.OpenWrite (target)) {
+                            LocalFileName = idExt;
+                            Directory.Delete (tmp, true);
+                        }
                     } catch {
                         Directory.Delete (tmp, true);
                     }
@@ -237,7 +189,6 @@ namespace NachoCore.Model
 
         public virtual void UpdateSaveFinish ()
         {
-            NcAssert.True (!IsInstance ());
             IsValid = true;
             var fileInfo = new FileInfo (GetFilePath ());
             FileSize = fileInfo.Length;
@@ -276,7 +227,6 @@ namespace NachoCore.Model
         /// <returns>The contents string.</returns>
         public string GetContentsString ()
         {
-            NcAssert.True (!IsInstance ());
             return File.ReadAllText (GetFilePath ());
         }
         /// <summary>
@@ -286,7 +236,6 @@ namespace NachoCore.Model
         /// <returns>The contents byte array.</returns>
         public byte[] GetContentsByteArray ()
         {
-            NcAssert.True (!IsInstance ());
             return File.ReadAllBytes (GetFilePath ());
         }
 

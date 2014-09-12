@@ -1227,7 +1227,7 @@ namespace NachoClient.iOS
             }
 
             // FIXME: Editing, reuse body id or what?
-            var body = McBody.Instance.InsertFile (c.AccountId, descriptionTextView.Text);
+            var body = McBody.InsertFile (c.AccountId, descriptionTextView.Text);
             c.BodyId = body.Id;
             c.BodyType = McBody.PlainText;
         }
