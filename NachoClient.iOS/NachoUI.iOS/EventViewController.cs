@@ -92,42 +92,30 @@ namespace NachoClient.iOS
         protected UIView line2;
         protected UIView line3;
         protected UIView line4;
-        protected UIView line5;
-        protected UIView line6;
-        protected UIView line7;
-        protected UIView line8;
-        protected UIView line9;
-        protected UIView line10;
-        protected UIView line11;
-        protected UIView line12;
-        protected UIView line13;
-        protected UIView line14;
-        protected UIView line15;
-        protected UIView line16;
-        protected UIView strikethrough;
-        protected UIView endDivider;
-        protected UIView startDivider;
         protected UIColor solidTextColor = A.Color_NachoBlack;
 
-        const int ALL_DAY_SWITCH_TAG = 200;
-        const int START_DATE_TAG = 201;
-        const int END_DATE_TAG = 202;
-        const int LOCATION_DETAIL_TAG = 203;
-        const int PHONE_DETAIL_TAG = 204;
-        const int ATTACHMENTS_DETAIL_TAG = 205;
-        const int PEOPLE_DETAIL_TAG = 206;
         const int ALERT_DETAIL_TAG = 207;
-        const int CAL_DETAIL_TAG = 210;
 
         const int EVENT_TITLE_LABEL_TAG = 101;
         const int EVENT_DESCRIPTION_LABEL_TAG = 102;
         const int EVENT_LOCATION_DETAIL_LABEL_TAG = 103;
         const int EVENT_WHEN_DETAIL_LABEL_TAG = 104;
+        const int EVENT_WHEN_DURATION_TAG = 500;
+        const int EVENT_WHEN_RECURRENCE_TAG = 600;
         const int EVENT_PHONE_DETAIL_BUTTON_TAG = 105;
         const int EVENT_ATTENDEE_TAG = 106;
         const int EVENT_ATTENDEE_DETAIL_TAG = 110;
         const int EVENT_ATTENDEE_LABEL_TAG = 120;
+        const int EVENT_ATTENDEE_VIEW_TAG = 1000;
         const int EVENT_ATTACHMENT_DETAIL_TAG = 121;
+
+        const int EVENT_LOCATION_TITLE_TAG = 301;
+        const int EVENT_WHEN_TITLE_TAG = 302;
+        const int EVENT_PHONE_TITLE_TAG = 303;
+        const int EVENT_ATTENDEE_TITLE_TAG = 304;
+        const int EVENT_ALERT_TITLE_TAG = 305;
+        const int EVENT_ATTACHMENT_TITLE_TAG = 306;
+        const int EVENT_NOTE_TITLE_TAG = 307;
 
         protected static TupleList<uint, string> minList = new TupleList<uint, string> {
             { 0, "None" },
@@ -202,8 +190,8 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
             }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
-
             ConfigureEventView ();
+
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
@@ -361,79 +349,87 @@ namespace NachoClient.iOS
 //                }
             IMAGE_HEIGHT = 0;
 
-            //title view
-            TitleView = new UIView (new RectangleF (0, IMAGE_HEIGHT, SCREEN_WIDTH, 18 + 19));
-            TitleView.BackgroundColor = UIColor.White;
+            var yOffset = 20;
 
             //title label
-            UILabel eventTitleLabel = new UILabel (new RectangleF (25, 19, SCREEN_WIDTH - 50, 18));
+            UILabel eventTitleLabel = new UILabel (new RectangleF (25, yOffset, SCREEN_WIDTH - 50, 20));
             eventTitleLabel.Font = A.Font_AvenirNextDemiBold17;
             eventTitleLabel.TextColor = A.Color_NachoBlack;
             eventTitleLabel.Tag = EVENT_TITLE_LABEL_TAG;
-            TitleView.Add (eventTitleLabel);
+            contentView.Add (eventTitleLabel);
 
-            //event view
-            EventInfoView = new UIView (new RectangleF (0, IMAGE_HEIGHT + TitleView.Frame.Height, SCREEN_WIDTH, 700));
-            EventInfoView.BackgroundColor = UIColor.White;
+            yOffset += 30;
 
             //desciption label
-            AddDetailTextLabel (25, 6, SCREEN_WIDTH - 50, 15, EVENT_DESCRIPTION_LABEL_TAG, EventInfoView);
+            AddDetailTextLabel (25, yOffset, SCREEN_WIDTH - 50, 20, EVENT_DESCRIPTION_LABEL_TAG, contentView);
+
+            yOffset += 20 + 20;
 
             //location label, image and detail
-            AddTextLabelWithImage (45, 41, SCREEN_WIDTH - 50, 15, "Location", UIImage.FromBundle ("icn-mtng-location"), 40, EventInfoView);
-            AddDetailTextLabel (45, 66, SCREEN_WIDTH - 50, 15, EVENT_LOCATION_DETAIL_LABEL_TAG, EventInfoView);
+            AddTextLabelWithImageView (45, yOffset, "Location", UIImage.FromBundle ("icn-mtng-location"), EVENT_LOCATION_TITLE_TAG, contentView);
+
+            yOffset += 20 + 5;
+
+            AddDetailTextLabel (45, yOffset, SCREEN_WIDTH - 90, 20, EVENT_LOCATION_DETAIL_LABEL_TAG, contentView);
+
+            yOffset += 20 + 20;
 
             //when label, image and detail
-            AddTextLabelWithImage (45, 98, SCREEN_WIDTH - 50, 15, "When", UIImage.FromBundle ("icn-mtng-time"), 97, EventInfoView);
-            AddDetailTextLabel (45, 123, SCREEN_WIDTH - 50, 15, EVENT_WHEN_DETAIL_LABEL_TAG, EventInfoView);
-            AddDetailTextLabel (45, 143, SCREEN_WIDTH - 50, 15, 500, EventInfoView);
-            AddDetailTextLabel (45, 163, SCREEN_WIDTH - 50, 30, 600, EventInfoView);
-            float RECURRING_OFFSET = 0f;
-            if (isRecurring) {
-                RECURRING_OFFSET = 40f;
-            } 
+            AddTextLabelWithImageView (45, yOffset, "When", UIImage.FromBundle ("icn-mtng-time"), EVENT_WHEN_TITLE_TAG, contentView);
+
+            yOffset += 20 + 5;
+
+            AddDetailTextLabel (45, yOffset, SCREEN_WIDTH - 50, 20, EVENT_WHEN_DETAIL_LABEL_TAG, contentView);
+            yOffset += 20;
+            AddDetailTextLabel (45, yOffset, SCREEN_WIDTH - 50, 20, EVENT_WHEN_DURATION_TAG, contentView);
+            yOffset += 20;
+            AddDetailTextLabel (45, yOffset, SCREEN_WIDTH - 90, 20, EVENT_WHEN_RECURRENCE_TAG, contentView);
+            yOffset += 20 + 20;
 
             //phone label, image and detail
-            AddTextLabelWithImage (45, RECURRING_OFFSET + 175, SCREEN_WIDTH - 50, 15, "Phone", UIImage.FromBundle ("icn-mtng-phone"), RECURRING_OFFSET + 174, EventInfoView);
-
-            UIButton eventPhoneDetailButton = new UIButton (new RectangleF (45, RECURRING_OFFSET + 200, SCREEN_WIDTH - 50, 15));
+            AddTextLabelWithImageView (45, yOffset, "Phone", UIImage.FromBundle ("icn-mtng-phone"), EVENT_PHONE_TITLE_TAG, contentView);
+            yOffset += 20 + 5;
+            UIButton eventPhoneDetailButton = new UIButton (new RectangleF (45, yOffset, SCREEN_WIDTH - 50, 20));
             eventPhoneDetailButton.Font = A.Font_AvenirNextRegular14;
             eventPhoneDetailButton.SetTitleColor (A.Color_NachoDarkText, UIControlState.Normal);
             eventPhoneDetailButton.Tag = EVENT_PHONE_DETAIL_BUTTON_TAG;
             eventPhoneDetailButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
             eventPhoneDetailButton.TouchUpInside += (object sender, EventArgs e) => {
-                var urlToSend = new NSUrl ("tel:" + "5036861654"); 
-                UIApplication.SharedApplication.OpenUrl (urlToSend);
+
             };
-            EventInfoView.Add (eventPhoneDetailButton);  
+            contentView.Add (eventPhoneDetailButton);  
+
+            yOffset += 20 + 20;
 
             //attendees label, image and detail
-            AddTextLabelWithImage (45, RECURRING_OFFSET + 175 + 57, SCREEN_WIDTH - 50, 15, "Attendees", UIImage.FromBundle ("icn-mtng-people"), RECURRING_OFFSET + 174 + 57, EventInfoView);
-
-            eventAttendeeView = new UIView (new RectangleF (0, RECURRING_OFFSET + 175 + 57 + 15, SCREEN_WIDTH, 96));
+            AddTextLabelWithImageView (45, yOffset, "Attendees", UIImage.FromBundle ("icn-mtng-people"), EVENT_ATTENDEE_TITLE_TAG, contentView);
+            yOffset += 20;
+            eventAttendeeView = new UIView (new RectangleF (0, yOffset, SCREEN_WIDTH, 96));
+            eventAttendeeView.Tag = EVENT_ATTENDEE_VIEW_TAG;
             var attendeeTap = new UITapGestureRecognizer ();
             attendeeTap.AddTarget (() => {
                 PerformSegue ("EventToEventAttendees", this);
             });
             eventAttendeeView.AddGestureRecognizer (attendeeTap);
-            EventInfoView.Add (eventAttendeeView);
+            contentView.Add (eventAttendeeView);
             CreateAttendeesButtons (eventAttendeeView);
 
             //////////////////////
             /// Bottom three cells
             //////////////////////
 
+            yOffset += 96 + 20;
+
+            var bottomCellsyOffset = yOffset;
+
             //alerts 
-            eventAlertsView = new UIView (new RectangleF (0, RECURRING_OFFSET + 228 + IMAGE_HEIGHT + 115, SCREEN_WIDTH, CELL_HEIGHT));
+            eventAlertsView = new UIView (new RectangleF (0, yOffset, SCREEN_WIDTH, CELL_HEIGHT));
+            eventAlertsView.Tag = 700;
             eventAlertsView.BackgroundColor = UIColor.White;
 
-            UIImageView alertsAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
-            alertsAccessoryImage.Image = Util.MakeArrow (A.Color_NachoTeal);
-            eventAlertsView.AddSubview (alertsAccessoryImage);
+            Util.AddArrowAccessory (SCREEN_WIDTH - 23, CELL_HEIGHT / 2 - 6, 12, eventAlertsView);
 
-//            AddTextLabel (23, 12.438f, 70, TEXT_LINE_HEIGHT, "Alerts", eventAlertsView);
-            AddTextLabelWithImage (45, 12.438f, 79, TEXT_LINE_HEIGHT, "Alerts", UIImage.FromBundle ("icn-defer"), 14.5f, eventAlertsView);
-
+            AddTextLabelWithImageView (45, 12.438f, "Alerts", UIImage.FromBundle ("icn-defer"), EVENT_ALERT_TITLE_TAG, eventAlertsView);
 
             UILabel alertsDetailLabel = new UILabel ();
             alertsDetailLabel.Text = "None";
@@ -450,17 +446,18 @@ namespace NachoClient.iOS
                 PerformSegue ("EventToAlert", this);
             });
             eventAlertsView.AddGestureRecognizer (alertTap);
-            EventInfoView.Add (eventAlertsView);
+            contentView.Add (eventAlertsView);
+
+            yOffset += CELL_HEIGHT;
 
             //attachments
-            eventAttachmentsView = new UIView (new RectangleF (0, RECURRING_OFFSET + 228 + IMAGE_HEIGHT + CELL_HEIGHT + 115, SCREEN_WIDTH, CELL_HEIGHT));
+            eventAttachmentsView = new UIView (new RectangleF (0, yOffset, SCREEN_WIDTH, CELL_HEIGHT));
+            eventAttachmentsView.Tag = 800;
             eventAttachmentsView.BackgroundColor = UIColor.White;
 
-            UIImageView attachmentAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
-            attachmentAccessoryImage.Image = Util.MakeArrow (A.Color_NachoTeal);
-            eventAttachmentsView.AddSubview (attachmentAccessoryImage);
+            Util.AddArrowAccessory (SCREEN_WIDTH - 23, CELL_HEIGHT / 2 - 6, 12, eventAttachmentsView);
 
-            AddTextLabelWithImage (45, 12.438f, 100, TEXT_LINE_HEIGHT, "Attachments", UIImage.FromBundle ("icn-mtng-attachment"), 14.5f, eventAttachmentsView);
+            AddTextLabelWithImageView (45, 12.438f, "Attachments", UIImage.FromBundle ("icn-attachedfile"), EVENT_ATTACHMENT_TITLE_TAG, eventAttachmentsView);
 
             UILabel attachmentDetailLabel = new UILabel ();
             attachmentDetailLabel.Text = "(0)";
@@ -477,21 +474,18 @@ namespace NachoClient.iOS
                 PerformSegue ("EventToAttachment", this);
             });
             eventAttachmentsView.AddGestureRecognizer (attachmentTap);
-            EventInfoView.Add (eventAttachmentsView);
+            contentView.Add (eventAttachmentsView);
+
+            yOffset += CELL_HEIGHT;
 
             //notes
-            eventNotesView = new UIView (new RectangleF (0, RECURRING_OFFSET + 228 + IMAGE_HEIGHT + 115 + (CELL_HEIGHT * 2), SCREEN_WIDTH, CELL_HEIGHT));
+            eventNotesView = new UIView (new RectangleF (0, yOffset, SCREEN_WIDTH, CELL_HEIGHT));
+            eventNotesView.Tag = 900;
             eventNotesView.BackgroundColor = UIColor.White;
 
-            UIImageView notesAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
-            notesAccessoryImage.Image = Util.MakeArrow (A.Color_NachoTeal);
-            eventNotesView.AddSubview (notesAccessoryImage);
+            Util.AddArrowAccessory (SCREEN_WIDTH - 23, CELL_HEIGHT / 2 - 6, 12, eventNotesView);
 
-            UIImageView notesImage = new UIImageView (new RectangleF (23, 14.5f, 15, 15));
-            notesImage.Image = UIImage.FromBundle ("icn-mtng-notes");
-            eventNotesView.AddSubview (notesImage);
-
-            AddTextLabel (45, 12.438f, 100, TEXT_LINE_HEIGHT, "Notes", eventNotesView);
+            AddTextLabelWithImageView (45, 12.438f, "Notes", UIImage.FromBundle ("icn-notes"), EVENT_NOTE_TITLE_TAG, eventNotesView);
 
             UILabel notesDetailLabel = new UILabel ();
             notesDetailLabel.Tag = EVENT_ATTACHMENT_DETAIL_TAG;
@@ -507,23 +501,30 @@ namespace NachoClient.iOS
                 PerformSegue ("EventToNotes", this);
             });
             eventNotesView.AddGestureRecognizer (notesTap);
-            EventInfoView.Add (eventNotesView);
+            contentView.Add (eventNotesView);
 
-            for (int i = 0; i < 4; i++) {
-                Util.AddHorizontalLine (23f, RECURRING_OFFSET + 228 + IMAGE_HEIGHT + 115 + (CELL_HEIGHT * i), SCREEN_WIDTH, separatorColor, EventInfoView);
-            }
+            yOffset += CELL_HEIGHT;
+
+            line1 = Util.AddHorizontalLineView (23f, bottomCellsyOffset, SCREEN_WIDTH - 23f, separatorColor);
+            line2 = Util.AddHorizontalLineView (23f, bottomCellsyOffset + CELL_HEIGHT, SCREEN_WIDTH - 23f, separatorColor);
+            line3 = Util.AddHorizontalLineView (23f, bottomCellsyOffset + (CELL_HEIGHT * 2), SCREEN_WIDTH - 23f, separatorColor);
+            line4 = Util.AddHorizontalLineView (23f, bottomCellsyOffset + (CELL_HEIGHT * 3), SCREEN_WIDTH - 23f, separatorColor);
+
+            contentView.AddSubviews (new UIView[] {
+                line1,
+                line2,
+                line3,
+                line4
+            }); 
 
             MakeToolbar ();
 
             //Content View
-            contentView.Add (TitleView);
-            contentView.Add (EventInfoView);
-            contentView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, 700);
             contentView.BackgroundColor = UIColor.White;
 
             //Scroll View
             scrollView.BackgroundColor = UIColor.White;
-            scrollView.ContentSize = new SizeF (SCREEN_WIDTH, RECURRING_OFFSET + 20 + 608 + 20 - 115);
+            scrollView.ContentSize = new SizeF (SCREEN_WIDTH, yOffset + 20);
             scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
 
         }
@@ -542,11 +543,13 @@ namespace NachoClient.iOS
             titleLabelView.Lines = 0;
             titleLabelView.LineBreakMode = UILineBreakMode.WordWrap;
             titleLabelView.SizeToFit ();
-            TITLE_OFFSET = titleLabelView.Frame.Height;
 
             //description view TODO
-            //var descriptionLabelView = View.ViewWithTag (EVENT_DESCRIPTION_LABEL_TAG) as UILabel;
-            //descriptionLabelView.Text = "Description";
+            var descriptionLabelView = View.ViewWithTag (EVENT_DESCRIPTION_LABEL_TAG) as UILabel;
+            descriptionLabelView.Text = "Description";
+            descriptionLabelView.Lines = 0;
+            descriptionLabelView.LineBreakMode = UILineBreakMode.WordWrap;
+            descriptionLabelView.SizeToFit ();
             //descriptionLabelView.Text = McBody.Get(c.BodyId);
 
             //location view
@@ -556,6 +559,9 @@ namespace NachoClient.iOS
             } else {
                 locationLabelView.Text = "Not specified";
             }
+            locationLabelView.Lines = 0;
+            locationLabelView.LineBreakMode = UILineBreakMode.WordWrap;
+            locationLabelView.SizeToFit ();
 
             //when view
             var whenLabelView = View.ViewWithTag (EVENT_WHEN_DETAIL_LABEL_TAG) as UILabel;
@@ -579,7 +585,6 @@ namespace NachoClient.iOS
             var recurrenceLabelView = View.ViewWithTag (600) as UILabel;
             if (isRecurring) {
                 recurrenceLabelView.Text = MakeRecurrenceString (c.recurrences);
-
                 recurrenceLabelView.Lines = 0;
                 recurrenceLabelView.LineBreakMode = UILineBreakMode.WordWrap;
                 recurrenceLabelView.SizeToFit ();
@@ -643,12 +648,89 @@ namespace NachoClient.iOS
 
         public void LayoutView ()
         {
-            TitleView.Frame = new RectangleF (0, IMAGE_HEIGHT, SCREEN_WIDTH, 18 + 19 + TITLE_OFFSET);
-            EventInfoView.Frame = new RectangleF (0, IMAGE_HEIGHT + 19 + TITLE_OFFSET, SCREEN_WIDTH, 700);
-            scrollView.ContentSize = new SizeF (SCREEN_WIDTH, scrollView.ContentSize.Height + TITLE_OFFSET);
+            var yOffset = 20f;
+            var tl = View.ViewWithTag (EVENT_TITLE_LABEL_TAG) as UILabel;
+            tl.Frame = new RectangleF (25, yOffset, SCREEN_WIDTH - 50, tl.Frame.Height);
+            yOffset += tl.Frame.Height;
 
+            yOffset += 5;
+            var dl = View.ViewWithTag (EVENT_DESCRIPTION_LABEL_TAG) as UILabel;
+            dl.Frame = new RectangleF (25, yOffset, SCREEN_WIDTH - 50, dl.Frame.Height);
+            yOffset += dl.Frame.Height;
+
+            yOffset += 20;
+            var lt = View.ViewWithTag (EVENT_LOCATION_TITLE_TAG) as UIView;
+            lt.Frame = new RectangleF (23, yOffset, SCREEN_WIDTH - 50, lt.Frame.Height);
+            yOffset += lt.Frame.Height;
+
+            yOffset += 5;
+            var ll = View.ViewWithTag (EVENT_LOCATION_DETAIL_LABEL_TAG) as UILabel;
+            ll.Frame = new RectangleF (45, yOffset, SCREEN_WIDTH - 90, ll.Frame.Height);
+            yOffset += ll.Frame.Height;
+
+            yOffset += 20;
+            var wt = View.ViewWithTag (EVENT_WHEN_TITLE_TAG) as UIView;
+            wt.Frame = new RectangleF (23, yOffset, SCREEN_WIDTH - 50, wt.Frame.Height);
+            yOffset += wt.Frame.Height;
+
+            yOffset += 5;
+            var wl = View.ViewWithTag (EVENT_WHEN_DETAIL_LABEL_TAG) as UILabel;
+            wl.Frame = new RectangleF (45, yOffset, SCREEN_WIDTH - 50, wl.Frame.Height);
+            yOffset += wl.Frame.Height;
+
+            var wdl = View.ViewWithTag (EVENT_WHEN_DURATION_TAG) as UILabel;
+            wdl.Frame = new RectangleF (45, yOffset, wdl.Frame.Width, wdl.Frame.Height);
+            yOffset += wdl.Frame.Height;
+
+            var wrl = View.ViewWithTag (EVENT_WHEN_RECURRENCE_TAG) as UILabel;
+            wrl.Frame = new RectangleF (45, yOffset, wrl.Frame.Width, wrl.Frame.Height);
+            if (isRecurring) {
+                yOffset += wrl.Frame.Height;
+            }
+
+            yOffset += 20;
+            var pt = View.ViewWithTag (EVENT_PHONE_TITLE_TAG) as UIView;
+            pt.Frame = new RectangleF (23, yOffset, SCREEN_WIDTH - 50, pt.Frame.Height);
+            yOffset += pt.Frame.Height;
+
+            yOffset += 5;
+            var pl = View.ViewWithTag (EVENT_PHONE_DETAIL_BUTTON_TAG) as UIButton;
+            pl.Frame = new RectangleF (45, yOffset, pl.Frame.Width, pl.Frame.Height);
+            yOffset += pl.Frame.Height;
+
+            yOffset += 20;
+            var at = View.ViewWithTag (EVENT_ATTENDEE_TITLE_TAG) as UIView;
+            at.Frame = new RectangleF (23, yOffset, SCREEN_WIDTH - 50, at.Frame.Height);
+            yOffset += at.Frame.Height;
+
+            yOffset += 5;
+            var av = View.ViewWithTag (EVENT_ATTENDEE_VIEW_TAG) as UIView;
+            av.Frame = new RectangleF (0, yOffset, av.Frame.Width, av.Frame.Height);
+            yOffset += av.Frame.Height;
+
+            yOffset += 20;
+            var alv = View.ViewWithTag (700) as UIView;
+            alv.Frame = new RectangleF (0, yOffset, alv.Frame.Width, alv.Frame.Height);
+            line1.Frame = new RectangleF (23f, yOffset, line1.Frame.Width, line1.Frame.Height);
+            yOffset += alv.Frame.Height;
+
+            var atv = View.ViewWithTag (800) as UIView;
+            atv.Frame = new RectangleF (0, yOffset, atv.Frame.Width, atv.Frame.Height);
+            line2.Frame = new RectangleF (23f, yOffset, line1.Frame.Width, line1.Frame.Height);
+            yOffset += atv.Frame.Height;
+
+            var nv = View.ViewWithTag (900) as UIView;
+            nv.Frame = new RectangleF (0, yOffset, nv.Frame.Width, nv.Frame.Height);
+            line3.Frame = new RectangleF (23f, yOffset, line1.Frame.Width, line1.Frame.Height);
+            yOffset += nv.Frame.Height;
+
+            line4.Frame = new RectangleF (23f, yOffset, line1.Frame.Width, line1.Frame.Height);
+
+            var bottom = yOffset + 20;
+            contentView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, bottom);
+            scrollView.ContentSize = new SizeF (SCREEN_WIDTH, bottom);
         }
-
+            
         public void AddTextLabel (float xOffset, float yOffset, float width, float height, string text, UIView parentView)
         {
             var textLabel = new UILabel (new RectangleF (xOffset, yOffset, width, height));
@@ -658,24 +740,26 @@ namespace NachoClient.iOS
             parentView.AddSubview (textLabel);
         }
 
-        public void AddTextLabelWithImage (float xOffset, float yOffset, float width, float height, string text, UIImage image, float imageOffset, UIView parentView)
+        public void AddTextLabelWithImageView (float xOffset, float yOffset, string text, UIImage image, int tag, UIView parentView)
         {
-            var textLabel = new UILabel (new RectangleF (xOffset, yOffset, width, height));
+            UIView view = new UIView (new RectangleF (xOffset - 22, yOffset, SCREEN_WIDTH, 20));
+            view.Tag = tag;
+            var textLabel = new UILabel (new RectangleF (22, 0, 100, 20));
             textLabel.Text = text;
             textLabel.Font = A.Font_AvenirNextRegular14;
             textLabel.TextColor = A.Color_NachoLightText;
-            parentView.AddSubview (textLabel);
+            view.AddSubview (textLabel);
 
-            UIImageView theImage = new UIImageView (new RectangleF ((xOffset - 22), imageOffset, 15, 15));
+            UIImageView theImage = new UIImageView (new RectangleF (0, 0, 15, 15));
             theImage.Image = image;
-            parentView.Add (theImage);
+            view.AddSubview (theImage);
+            parentView.Add (view);
         }
 
         public void AddDetailTextLabel (float xOffset, float yOffset, float width, float height, int tag, UIView parentView)
         {
             UILabel DetailTextLabel = new UILabel (new RectangleF (xOffset, yOffset, width, height));
             DetailTextLabel.Font = A.Font_AvenirNextRegular14;
-
             DetailTextLabel.TextColor = A.Color_NachoDarkText;
             DetailTextLabel.Tag = tag;
             parentView.Add (DetailTextLabel);
@@ -736,13 +820,9 @@ namespace NachoClient.iOS
 
         public void CreateAttendeesButtons (UIView parentView)
         {
-
             ClearView (parentView);
             int counter = 0;
             int SPACING = 0;
-
-            UIImageView attendeesAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 24.5f, 10, 16));
-            attendeesAccessoryImage.Image = Util.MakeArrow (A.Color_NachoTeal);
 
             if (0 == c.attendees.Count) {
                 UILabel noAttendeeDetailTextLabel = new UILabel (new RectangleF (25, 10, SCREEN_WIDTH - 50, 15));
@@ -770,7 +850,7 @@ namespace NachoClient.iOS
                     counter++;
                     SPACING = SPACING + 55;
                 }
-                parentView.Add (attendeesAccessoryImage);
+                Util.AddArrowAccessory (SCREEN_WIDTH - 23, 24.5f, 12, parentView);
             } else {
                 foreach (var attendee in c.attendees) {
                     AttendeeButton (23 + SPACING, 10, 45, 45, EVENT_ATTENDEE_TAG + counter, parentView);
@@ -807,7 +887,7 @@ namespace NachoClient.iOS
                 eventAttendeeDetailButton.TouchUpInside += (object sender, EventArgs e) => {
                     PerformSegue ("EventToEventAttendees", this);
                 };
-                parentView.Add (attendeesAccessoryImage);
+                Util.AddArrowAccessory (SCREEN_WIDTH - 23, 24.5f, 12, parentView);
                 parentView.Add (eventAttendeeDetailButton);
             }
         }

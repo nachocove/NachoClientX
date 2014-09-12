@@ -689,9 +689,7 @@ namespace NachoClient.iOS
             phoneLabel.TextColor = solidTextColor;
             phoneView.AddSubview (phoneLabel);
 
-            UIImageView phoneAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
-            phoneAccessoryImage.Image = Util.MakeArrow (A.Color_NachoTeal);
-            phoneView.AddSubview (phoneAccessoryImage);
+            Util.AddArrowAccessory (SCREEN_WIDTH - 23, CELL_HEIGHT / 2 - 6, 12, phoneView);
 
             phoneDetailLabel = new UILabel ();
             phoneDetailLabel.Text = "";
@@ -724,9 +722,7 @@ namespace NachoClient.iOS
             attachmentsLabel.TextColor = solidTextColor;
             attachmentsView.AddSubview (attachmentsLabel);
 
-            UIImageView attachmentsAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
-            attachmentsAccessoryImage.Image = Util.MakeArrow (A.Color_NachoTeal);
-            attachmentsView.AddSubview (attachmentsAccessoryImage);
+            Util.AddArrowAccessory (SCREEN_WIDTH - 23, CELL_HEIGHT / 2 - 6, 12, attachmentsView);
 
             UILabel attachmentsDetailLabel = new UILabel ();
             attachmentsDetailLabel.Text = "(" + attachments.Count + ")";
@@ -759,9 +755,7 @@ namespace NachoClient.iOS
             peopleLabel.TextColor = solidTextColor;
             peopleView.AddSubview (peopleLabel);
 
-            UIImageView peopleAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
-            peopleAccessoryImage.Image = Util.MakeArrow (A.Color_NachoTeal);
-            peopleView.AddSubview (peopleAccessoryImage);
+            Util.AddArrowAccessory (SCREEN_WIDTH - 23, CELL_HEIGHT / 2 - 6, 12, peopleView);
 
             UILabel peopleDetailLabel = new UILabel ();
             peopleDetailLabel.Text = "(" + c.attendees.Count + ")";
@@ -788,9 +782,7 @@ namespace NachoClient.iOS
             alertsImage.Image = UIImage.FromBundle ("icn-mtng-time");
             alertsView.AddSubview (alertsImage);
 
-            UIImageView alertsAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
-            alertsAccessoryImage.Image = Util.MakeArrow (A.Color_NachoTeal);
-            alertsView.AddSubview (alertsAccessoryImage);
+            Util.AddArrowAccessory (SCREEN_WIDTH - 23, CELL_HEIGHT / 2 - 6, 12, alertsView);
 
             UILabel alertsLabel = new UILabel (new RectangleF (37, 12.438f, 70, TEXT_LINE_HEIGHT));
             alertsLabel.Text = "Add Alert";
@@ -829,9 +821,7 @@ namespace NachoClient.iOS
             calendarLabel.TextColor = solidTextColor;
             calendarView.AddSubview (calendarLabel);
 
-            UIImageView calendarAccessoryImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 23, 14, 10, 16));
-            calendarAccessoryImage.Image = Util.MakeArrow (A.Color_NachoTeal);
-            calendarView.AddSubview (calendarAccessoryImage);
+            Util.AddArrowAccessory (SCREEN_WIDTH - 23, CELL_HEIGHT / 2 - 6, 12, calendarView);
 
             UILabel calendarDetailLabel = new UILabel ();
             calendarDetailLabel.Text = "Calendar";

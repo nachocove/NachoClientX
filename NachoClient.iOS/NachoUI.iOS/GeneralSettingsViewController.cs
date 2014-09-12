@@ -17,6 +17,7 @@ namespace NachoClient.iOS
         protected static float CELL_HEIGHT = 44f;
         protected static float INSET = 15f;
         protected float TEXT_LINE_HEIGHT = 19.124f;
+        protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
         protected float yOffset;
         protected string legalUrl;
         protected string legalTitle;
@@ -86,9 +87,7 @@ namespace NachoClient.iOS
             accountEmailAddress.TextColor = A.Color_NachoBlack;
             accountSettingsCell.AddSubview (accountEmailAddress);
 
-            UIImageView emailAccessoryImage = new UIImageView (new RectangleF (contentView.Frame.Width - 23, 14, 10, 16));
-            emailAccessoryImage.Image = Util.MakeArrow (A.Color_NachoTeal);
-            accountSettingsCell.AddSubview (emailAccessoryImage);
+            Util.AddArrowAccessory (SCREEN_WIDTH - 23, CELL_HEIGHT / 2 - 6, 12, accountSettingsCell);
             contentView.AddSubview (accountSettingsCell);
 
             yOffset = accountSettingsCell.Frame.Bottom;
@@ -116,9 +115,7 @@ namespace NachoClient.iOS
             privacyStatmentLabel.TextColor = A.Color_NachoBlack;
             privacyStatementCell.AddSubview (privacyStatmentLabel);
 
-            UIImageView privacyStatmentAccessory = new UIImageView (new RectangleF (contentView.Frame.Width - 23, 14, 10, 16));
-            privacyStatmentAccessory.Image = Util.MakeArrow (A.Color_NachoTeal);
-            privacyStatementCell.AddSubview (privacyStatmentAccessory);
+            Util.AddArrowAccessory (SCREEN_WIDTH - 23, CELL_HEIGHT / 2 - 6, 12, privacyStatementCell);
             contentView.AddSubview (privacyStatementCell);
 
             yOffset = privacyStatementCell.Frame.Bottom;
@@ -142,9 +139,7 @@ namespace NachoClient.iOS
             licenseAgreementLabel.TextColor = A.Color_NachoBlack;
             licenseAgreementCell.AddSubview (licenseAgreementLabel);
 
-            UIImageView licenseAgreementAccessory = new UIImageView (new RectangleF (contentView.Frame.Width - 23, 14, 10, 16));
-            licenseAgreementAccessory.Image = Util.MakeArrow (A.Color_NachoTeal);
-            licenseAgreementCell.AddSubview (licenseAgreementAccessory);
+            Util.AddArrowAccessory (SCREEN_WIDTH - 23, CELL_HEIGHT / 2 - 6, 12, licenseAgreementCell);
             contentView.AddSubview (licenseAgreementCell);
 
             yOffset = licenseAgreementCell.Frame.Bottom;
@@ -164,9 +159,7 @@ namespace NachoClient.iOS
             openSourceLabel.TextColor = A.Color_NachoBlack;
             openSourceCell.AddSubview (openSourceLabel);
 
-            UIImageView openSourceAccessory = new UIImageView (new RectangleF (contentView.Frame.Width - 23, 14, 10, 16));
-            openSourceAccessory.Image = Util.MakeArrow (A.Color_NachoTeal);
-            openSourceCell.AddSubview (openSourceAccessory);
+            Util.AddArrowAccessory (SCREEN_WIDTH - 23, CELL_HEIGHT / 2 - 6, 12, openSourceCell);
             contentView.AddSubview (openSourceCell);
 
             yOffset = openSourceCell.Frame.Bottom;
