@@ -25,5 +25,10 @@ namespace NachoCore
         DateTime GetDateUsingDayIndex (int day);
 
         McCalendar GetCalendarItem (int day, int item);
+
+        int ExtendEventMap (DateTime untilDate);
+
+        bool FindEventNearestTo (DateTime date, out int item, out int section);
+
     }
 }

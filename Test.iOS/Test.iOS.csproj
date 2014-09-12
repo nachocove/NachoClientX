@@ -232,6 +232,9 @@
       <Link>McEmailMessageTest.cs</Link>
     </Compile>
     <Compile Include="GlobalObjIdToUid.cs" />
+    <Compile Include="..\Test.Android\NcEventsCommonTest.cs">
+      <Link>NcEventsCommonTest.cs</Link>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.MonoTouch.CSharp.targets" />

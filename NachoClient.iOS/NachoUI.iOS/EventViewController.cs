@@ -138,9 +138,6 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            CalendarHelper.ExpandRecurrences ();
-
-
             var g = new UITapGestureRecognizer (() => View.EndEditing (true));
             contentView.AddGestureRecognizer (g);
 

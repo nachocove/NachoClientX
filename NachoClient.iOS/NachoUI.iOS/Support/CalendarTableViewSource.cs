@@ -536,30 +536,72 @@ namespace NachoClient.iOS
            
         }
 
-        public void ScrollToNearestEvent (UITableView tableView, DateTime date)
+        protected void ExtendTableViewUntil (UITableView tableView, DateTime date)
         {
             if (null == calendar) {
                 return;
             }
-            var i = calendar.IndexOfDate (date);
-            if (0 > i) {
+            if (null == tableView) {
                 return;
             }
-            var p = NSIndexPath.FromItemSection (0, i);
-            tableView.ScrollToRow (p, UITableViewScrollPosition.Top, true);
+            int len1 = calendar.NumberOfDays ();
+            int ext2 = calendar.ExtendEventMap (date);
+            int len2 = calendar.NumberOfDays ();
+            NcAssert.True (len2 == (len1 + ext2));
+
+            if (0 == ext2) {
+                return;
+            }
+
+            NSMutableIndexSet set = new NSMutableIndexSet ();
+            for (int i = len1; i < len2; i++) {
+                set.Add ((uint)i);
+            }
+            tableView.BeginUpdates ();
+            tableView.InsertSections (set, UITableViewRowAnimation.Automatic);
+            tableView.EndUpdates ();
+        }
+
+        public void ScrollToNearestEvent (UITableView tableView, DateTime date, int lookaheadDays)
+        {
+            ExtendTableViewUntil (tableView, date.AddDays (lookaheadDays));
+            int item;
+            int section;
+            if (calendar.FindEventNearestTo (date, out item, out section)) {
+                var p = NSIndexPath.FromItemSection (item, section);
+                tableView.ScrollToRow (p, UITableViewScrollPosition.Top, true);
+            }
         }
 
         public void ScrollToDate (UITableView tableView, DateTime date)
         {
-            if (null == calendar) {
-                return;
-            }
+            ExtendTableViewUntil (tableView, date);
             var i = calendar.IndexOfDate (date);
-            if (0 > i) {
+            if (0 <= i) {
+                var p = NSIndexPath.FromItemSection (NSRange.NotFound, i);
+                tableView.ScrollToRow (p, UITableViewScrollPosition.Top, true);
+            }
+        }
+
+        public void MaybeExtendTableView(UITableView tableView)
+        {
+            var visibleRows = tableView.IndexPathsForVisibleRows;
+            if ((null == visibleRows) || (0 == visibleRows.Length)) {
                 return;
             }
-            var p = NSIndexPath.FromItemSection (NSRange.NotFound, i);
-            tableView.ScrollToRow (p, UITableViewScrollPosition.Top, true);
+            var path = visibleRows [visibleRows.Length - 1];
+            var displayedDate = calendar.GetDateUsingDayIndex (path.Section);
+
+            DateTime finalDayInList;
+            if (0 == calendar.NumberOfDays ()) {
+                finalDayInList = displayedDate;
+            } else {
+                finalDayInList = calendar.GetDateUsingDayIndex (calendar.NumberOfDays () - 1);
+            }
+            if (30 > (finalDayInList - displayedDate).Days) {
+                Log.Info (Log.LOG_UI, "Calendar: extending until {0}", finalDayInList.AddDays (30));
+                ExtendTableViewUntil(tableView, finalDayInList.AddDays (30));
+            }
         }
 
         public override void DraggingStarted (UIScrollView scrollView)
@@ -574,6 +616,9 @@ namespace NachoClient.iOS
         public override void DecelerationEnded (UIScrollView scrollView)
         {
             Log.Info (Log.LOG_UI, "DecelerationEnded");
+            if (null != owner) {
+                owner.CalendarTableViewScrollingEnded ();
+            }
             NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                 Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStopped),
                 Account = ConstMcAccount.NotAccountSpecific,
@@ -584,6 +629,9 @@ namespace NachoClient.iOS
         {
             if (!willDecelerate) {
                 Log.Info (Log.LOG_UI, "DraggingEnded");
+                if (null != owner) {
+                    owner.CalendarTableViewScrollingEnded ();
+                }
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                     Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStopped),
                     Account = ConstMcAccount.NotAccountSpecific,

@@ -107,6 +107,7 @@
     <Compile Include="NcBrainTest.cs" />
     <Compile Include="McAttachmentTest.cs" />
     <Compile Include="McEmailMessageTest.cs" />
+    <Compile Include="NcEventsCommonTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

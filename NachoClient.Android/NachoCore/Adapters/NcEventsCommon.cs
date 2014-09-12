@@ -13,31 +13,93 @@ namespace NachoCore
     public class NcEventsCommon : INcEventProvider
     {
         protected List<McEvent> list;
-        protected Dictionary<DateTime, List<int>> bag;
-        protected List<DateTime> listOfDaysThatHaveEvents;
-        protected List<int>[] listOfEventsOnADay;
+        protected List<List<int>> listOfEventsOnADay;
+
+        protected DateTime firstDayInList;
+        protected DateTime finalDayInList;
 
         protected NcEventsCommon ()
         {
             Refresh ();
         }
 
+        protected DateTime LocalT (DateTime date)
+        {
+            if (DateTimeKind.Local == date.Kind) {
+                return date;
+            } else {
+                return date.ToLocalTime ();
+            }
+        }
+
+        protected DateTime MidnightOf (DateTime date)
+        {
+            return new DateTime (date.Year, date.Month, date.Day, 0, 0, 0, 0, DateTimeKind.Local);
+        }
+
+        public int IndexOfDate (DateTime date)
+        {
+            date = LocalT (date);
+            var ts = date - firstDayInList;
+            return ts.Days;
+        }
+
+        protected void Initialize()
+        {
+            listOfEventsOnADay = new List<List<int>> ();
+
+        }
+
+        public void ExpandRecurrences()
+        {
+            CalendarHelper.ExpandRecurrences (finalDayInList);
+        }
+
+        // We extend from midnight of the previous finalDayInList to
+        // midnight of the date after the until date. This insures that
+        // each per-day bin won't change size, which is important to iOS
+        // UITableView's InsertSections call.
+        public int ExtendEventMap (DateTime untilDate)
+        {
+            var sentinelDate = MidnightOf (untilDate).AddDays (1);
+
+            if (sentinelDate < finalDayInList) {
+                sentinelDate = finalDayInList;
+            }
+
+            var daysInList = IndexOfDate (sentinelDate);
+            var daysAdded = daysInList - listOfEventsOnADay.Count;
+
+            CalendarHelper.ExpandRecurrences (sentinelDate);
+            Reload ();
+
+            listOfEventsOnADay = new List<List<int>> (daysInList);
+            for (int i = 0; i < daysInList; i++) {
+                listOfEventsOnADay.Add (null);
+            }
+
+            for (var i = 0; i < list.Count; i++) {
+                var e = list [i];
+                var startTime = e.StartTime.ToLocalTime ();
+                if ((firstDayInList <= startTime) && (sentinelDate > startTime)) {
+                    AddItem (IndexOfDate (startTime), i);
+                }
+            }
+            finalDayInList = sentinelDate;
+            return daysAdded;
+        }
+
+        protected const int startingOffsetInDays = 30;
+
         public void Refresh ()
         {
+            // Update list from data base
             Reload ();
-            bag = new Dictionary<DateTime, List<int>> ();
-            if (null == list) {
-                listOfDaysThatHaveEvents = new List<DateTime> ();
-                listOfEventsOnADay = new List<int>[0];
-                return;
-            }
-            for (var i = 0; i < list.Count; i++) {
-                var c = list [i];
-                AddItem (c.StartTime.ToLocalTime(), i);
-            }
-            listOfDaysThatHaveEvents = bag.Keys.ToList ();
-            listOfDaysThatHaveEvents.Sort ();
-            listOfEventsOnADay = new List<int>[listOfDaysThatHaveEvents.Count];
+            listOfEventsOnADay = new List<List<int>> ();
+            firstDayInList = MidnightOf (DateTime.Today).AddDays (-startingOffsetInDays);
+            finalDayInList = firstDayInList;
+            // Initialize the table
+            ExtendEventMap (firstDayInList.AddDays (6*startingOffsetInDays));
         }
 
         protected virtual void Reload ()
@@ -45,60 +107,38 @@ namespace NachoCore
             throw new Exception ("You must implement Reload()");
         }
 
-        protected void AddItem (DateTime d, int i)
+        protected void AddItem (int index, int i)
         {
-            List<int> day;
-            if (false == bag.TryGetValue (d.Date, out day)) {
-                day = new List<int> ();
-                bag.Add (d.Date, day);
+            if (null == listOfEventsOnADay.ElementAt (index)) {
+                listOfEventsOnADay [index] = new List<int> ();
             }
-            day.Add (i);
+            listOfEventsOnADay [index].Add (i);
         }
 
         public int NumberOfDays ()
         {
-            return listOfDaysThatHaveEvents.Count;
-        }
-
-        public int IndexOfDate (DateTime target)
-        {
-            var t = target.ToLocalTime ();
-            for (var i = 0; i < listOfDaysThatHaveEvents.Count; i++) {
-                if (listOfDaysThatHaveEvents [i] >= t) {
-                    return i;
-                }
-            }
-            return listOfDaysThatHaveEvents.Count - 1;
-        }
-
-        public int IndexOfThisOrNext (DateTime target)
-        {
-            for (var i = 0; i < listOfDaysThatHaveEvents.Count; i++) {
-                if (target >= listOfDaysThatHaveEvents [i]) {
-                    return i;
-                }
-            }
-            return Math.Max (0, listOfDaysThatHaveEvents.Count - 1);
+            return listOfEventsOnADay.Count;
         }
 
         public int NumberOfItemsForDay (int i)
         {
             if (null == listOfEventsOnADay [i]) {
-                listOfEventsOnADay [i] = bag [listOfDaysThatHaveEvents [i]];
+                return 0;
+            } else {
+                return listOfEventsOnADay [i].Count;
             }
-            return listOfEventsOnADay [i].Count;
         }
 
         public DateTime GetDateUsingDayIndex (int day)
         {
-            return listOfDaysThatHaveEvents [day];
+            return firstDayInList.AddDays (day);
         }
 
         public McCalendar GetCalendarItem (int day, int item)
         {
-            NcAssert.True (0 != listOfEventsOnADay.Length, "List is empty");
+            NcAssert.True (0 != listOfEventsOnADay.Count, "List is empty");
             NcAssert.True (day >= 0, "Day is negative");
-            NcAssert.True (day < listOfEventsOnADay.Length, "Day greater than or equal to list count");
+            NcAssert.True (day < listOfEventsOnADay.Count, "Day greater than or equal to list count");
             NcAssert.True (item >= 0, "Day is negative");
             NcAssert.True (item < listOfEventsOnADay [day].Count, "Day greater than or equal to list count");
             return GetCalendarItem (listOfEventsOnADay [day] [item]);
@@ -109,5 +149,27 @@ namespace NachoCore
             var e = list.ElementAt (i);
             return McCalendar.QueryById<McCalendar> (e.CalendarId);
         }
+
+        public bool FindEventNearestTo (DateTime date, out int item, out int section)
+        {
+            date = LocalT (date);
+            for (int i = IndexOfDate (date); i < listOfEventsOnADay.Count; i++) {
+                if (null == listOfEventsOnADay [i]) {
+                    continue;
+                }
+                for (int j = 0; j < listOfEventsOnADay [i].Count; j++) {
+                    var e = listOfEventsOnADay [i] [j];
+                    if (date <= list [e].StartTime.ToLocalTime()) {
+                        item = j;
+                        section = i;
+                        return true;
+                    }
+                }
+            }
+            item = -1;
+            section = -1;
+            return false;
+        }
+
     }
 }

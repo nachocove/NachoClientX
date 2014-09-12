@@ -757,7 +757,7 @@ namespace NachoCore.Utils
         }
 
 
-        public static DateTime ExpandRecurrences (McCalendar c, McRecurrence r, DateTime startingTime, DateTime endingTime)
+        protected static DateTime ExpandRecurrences (McCalendar c, McRecurrence r, DateTime startingTime, DateTime endingTime)
         {
             if (NcRecurrenceType.Daily == r.Type) {
                 if (0 == r.DayOfWeek) {
@@ -844,7 +844,7 @@ namespace NachoCore.Utils
             }
         }
 
-        public static void ExpandRecurrences ()
+        public static bool ExpandRecurrences (DateTime untilDate)
         {
 //            // Debug
 //            NcModel.Instance.Db.DeleteAll<McEvent> ();
@@ -855,12 +855,17 @@ namespace NachoCore.Utils
 //                e.RecurrencesGeneratedUntil = DateTime.MinValue;
 //                e.Update ();
 //            }
-
+//
             // Decide how long into the future we are going to generate recurrences
-            DateTime GenerateUntil = DateTime.UtcNow.AddMonths (3);
+            DateTime GenerateUntil = untilDate;
 
             // Fetch calendar entries that haven't been generated that far in advance
             var list = McCalendar.QueryOutOfDateRecurrences (GenerateUntil);
+
+            // Abandon if nothing to do
+            if ((null == list) || (0 == list.Count)) {
+                return false;
+            }
 
             // Loop thru 'em, generating recurrences
             foreach (var calendarItem in list) {
@@ -888,6 +893,7 @@ namespace NachoCore.Utils
 
             var el = NcModel.Instance.Db.Table<McEvent> ().ToList ();
             Log.Info (Log.LOG_CALENDAR, "Events in db: {0}", el.Count);
+            return true;
         }
 
         protected static void CreateEventRecord (McCalendar c, DateTime startTime, DateTime endTime)
@@ -910,7 +916,7 @@ namespace NachoCore.Utils
             c.DeleteRelatedEvents ();
             c.RecurrencesGeneratedUntil = DateTime.MinValue;
             c.Update ();
-            ExpandRecurrences ();
+            NcEventManager.Instance.ExpandRecurrences ();
         }
 
         /// Note that McEvent Ids are not immutable; they change often as the

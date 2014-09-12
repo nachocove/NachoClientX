@@ -10,6 +10,8 @@ namespace NachoClient.iOS
         void PerformSegueForDelegate (string identifier, NSObject sender);
 
         void SendRunningLateMessage (int calendarIndex);
+
+        void CalendarTableViewScrollingEnded();
     }
 }
 

@@ -39,8 +39,6 @@ namespace NachoClient.iOS
 
             Util.ConfigureNavBar (false, NavigationController);
 
-            CalendarHelper.ExpandRecurrences ();
-
             var nachoButton = new UIBarButtonItem ();
             Util.SetOriginalImageForButton (nachoButton, "nav-nachonow");
             nachoButton.Clicked += (object sender, EventArgs e) => {
@@ -290,7 +288,7 @@ namespace NachoClient.iOS
             calendarThumbView.Hidden = false;
             calendarCloseView.Hidden = true;
             calendarTableView.ReloadData ();
-            calendarSource.ScrollToNearestEvent (calendarTableView, DateTime.UtcNow);
+            calendarSource.ScrollToNearestEvent (calendarTableView, DateTime.UtcNow, 7);
 
             carouselView.Frame = carouselNormalSize ();
             carouselView.Alpha = 1.0f;
@@ -433,9 +431,15 @@ namespace NachoClient.iOS
             PerformSegue (identifier, sender);
         }
 
+        // ICalendarTableViewSourceDelegate
         public void SendRunningLateMessage (int calendarIndex)
         {
             NcAssert.CaseError ();
+        }
+
+        // ICalendarTableViewSourceDelegate
+        public void CalendarTableViewScrollingEnded ()
+        {
         }
 
         ///  IMessageTableViewSourceDelegate

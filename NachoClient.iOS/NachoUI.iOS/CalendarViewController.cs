@@ -46,8 +46,6 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            CalendarHelper.ExpandRecurrences ();
-
             var todayButton = new UIBarButtonItem ();
             Util.SetOriginalImageForButton (todayButton, "nav-calendar-empty");
             todayButton.Clicked += (object sender, EventArgs e) => {
@@ -891,10 +889,17 @@ namespace NachoClient.iOS
 
         }
 
+        // ICalendarTableViewSourceDelegate
         public void SendRunningLateMessage (int calendarIndex)
         {
             McCalendar c = McCalendar.QueryById<McCalendar> (calendarIndex);
             PerformSegue ("CalendarToEmailCompose", new SegueHolder (c));
+        }
+
+        // ICalendarTableViewSourceDelegate
+        public void CalendarTableViewScrollingEnded()
+        {
+            calendarSource.MaybeExtendTableView (calendarTableView);
         }
             
     }
