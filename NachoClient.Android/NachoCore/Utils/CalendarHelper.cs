@@ -67,8 +67,8 @@ namespace NachoCore.Utils
             evt.UID = c.UID;
             evt.Summary = c.Subject;
             evt.LastModified = new iCalDateTime (DateTime.UtcNow);
-            evt.Start = new iCalDateTime (c.StartTime.ToLocalTime (), localTimeZone.TZID);
-            evt.End = new iCalDateTime (c.EndTime.ToLocalTime (), localTimeZone.TZID);
+            evt.Start = new iCalDateTime (c.StartTime.LocalT (), localTimeZone.TZID);
+            evt.End = new iCalDateTime (c.EndTime.LocalT (), localTimeZone.TZID);
             NachoCore.Utils.CalendarHelper.ExtrapolateTimes (ref evt);
             evt.IsAllDay = c.AllDayEvent;
             evt.Priority = 5;

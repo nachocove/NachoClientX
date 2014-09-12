@@ -696,7 +696,7 @@ namespace NachoCore.ActiveSync
 
                             case Xml.Tasks.StartDate:
                                 try {
-                                    emailMessage.FlagStartDate = DateTime.Parse (flagPart.Value);
+                                    emailMessage.FlagStartDate = ParseAsDateTime (flagPart.Value);
                                 } catch {
                                     // FIXME log.
                                 }
@@ -704,7 +704,7 @@ namespace NachoCore.ActiveSync
 
                             case Xml.Tasks.UtcStartDate:
                                 try {
-                                    emailMessage.FlagUtcStartDate = DateTime.Parse (flagPart.Value);
+                                    emailMessage.FlagUtcStartDate = ParseAsDateTime (flagPart.Value);
                                 } catch {
                                     // FIXME log.
                                 }
@@ -712,7 +712,7 @@ namespace NachoCore.ActiveSync
 
                             case Xml.Tasks.DueDate:
                                 try {
-                                    emailMessage.FlagDue = DateTime.Parse (flagPart.Value);
+                                    emailMessage.FlagDue = ParseAsDateTime (flagPart.Value);
                                 } catch {
                                     // FIXME log.
                                 }
@@ -720,7 +720,7 @@ namespace NachoCore.ActiveSync
 
                             case Xml.Tasks.UtcDueDate:
                                 try {
-                                    emailMessage.FlagUtcDue = DateTime.Parse (flagPart.Value);
+                                    emailMessage.FlagUtcDue = ParseAsDateTime (flagPart.Value);
                                 } catch {
                                     // FIXME log.
                                 }
@@ -747,7 +747,7 @@ namespace NachoCore.ActiveSync
 
                             case Xml.Tasks.ReminderTime:
                                 try {
-                                    emailMessage.FlagReminderTime = DateTime.Parse (flagPart.Value);
+                                    emailMessage.FlagReminderTime = ParseAsDateTime (flagPart.Value);
                                 } catch {
                                     // FIXME log.
                                 }
@@ -755,7 +755,7 @@ namespace NachoCore.ActiveSync
 
                             case Xml.Email.CompleteTime:
                                 try {
-                                    emailMessage.FlagCompleteTime = DateTime.Parse (flagPart.Value);
+                                    emailMessage.FlagCompleteTime = ParseAsDateTime (flagPart.Value);
                                 } catch {
                                     // FIXME log.
                                 }
@@ -763,7 +763,7 @@ namespace NachoCore.ActiveSync
 
                             case Xml.Tasks.DateCompleted:
                                 try {
-                                    emailMessage.FlagDateCompleted = DateTime.Parse (flagPart.Value);
+                                    emailMessage.FlagDateCompleted = ParseAsDateTime (flagPart.Value);
                                 } catch {
                                     // FIXME log.
                                 }
@@ -797,7 +797,7 @@ namespace NachoCore.ActiveSync
 
                 case Xml.Email.DateReceived:
                     try {
-                        emailMessage.DateReceived = DateTime.Parse (child.Value);
+                        emailMessage.DateReceived = ParseAsDateTime (child.Value);
                     } catch {
                         // FIXME - just log it.
                     }
@@ -927,7 +927,7 @@ namespace NachoCore.ActiveSync
                     emailMessage.LastVerbExecuted = child.Value.ToInt ();
                     break;
                 case Xml.Email2.LastVerbExecutionTime:
-                    emailMessage.LastVerbExecutionTime = DateTime.Parse (child.Value);
+                    emailMessage.LastVerbExecutionTime = ParseAsDateTime (child.Value);
                     break;
                 default:
                     Log.Warn (Log.LOG_AS, "ProcessEmailItem UNHANDLED: " + child.Name.LocalName + " value=" + child.Value);

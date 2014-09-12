@@ -80,7 +80,7 @@ namespace NachoCore
 
             for (var i = 0; i < list.Count; i++) {
                 var e = list [i];
-                var startTime = e.StartTime.ToLocalTime ();
+                var startTime = e.StartTime.LocalT ();
                 if ((firstDayInList <= startTime) && (sentinelDate > startTime)) {
                     AddItem (IndexOfDate (startTime), i);
                 }
@@ -159,7 +159,7 @@ namespace NachoCore
                 }
                 for (int j = 0; j < listOfEventsOnADay [i].Count; j++) {
                     var e = listOfEventsOnADay [i] [j];
-                    if (date <= list [e].StartTime.ToLocalTime()) {
+                    if (date <= list [e].StartTime.LocalT()) {
                         item = j;
                         section = i;
                         return true;

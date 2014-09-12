@@ -393,7 +393,7 @@ namespace NachoClient.iOS
 
             // Received label view
             var receivedLabelView = view.ViewWithTag (RECEIVED_DATE_TAG) as UILabel;
-            receivedLabelView.Text = Pretty.FullDateTimeString (message.DateReceived.ToUniversalTime ());
+            receivedLabelView.Text = Pretty.FullDateTimeString (message.DateReceived);
             receivedLabelView.SizeToFit ();
 
             // Chili image view - nothing to do. It is also shown

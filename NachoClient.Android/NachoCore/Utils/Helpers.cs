@@ -21,5 +21,29 @@ namespace NachoCore.Utils
             return char.ToUpper (original [0]) + original.Substring (1);
         }
     }
+
+    public static class DateTime_Helpers
+    {
+        /// <summary>
+        /// Convert DateTime to a local time, asserting our rule
+        /// that times are stores in UTC or unspecified. Getting
+        /// a local time here is a problem that must be fixed up
+        /// stream.
+        /// </summary>
+        public static DateTime LocalT(this DateTime date)
+        {
+            switch(date.Kind) {
+            case DateTimeKind.Utc:
+                return date.ToLocalTime ();
+            case DateTimeKind.Unspecified:
+                return DateTime.SpecifyKind (date, DateTimeKind.Utc).ToLocalTime ();
+            case DateTimeKind.Local:
+                Log.Error (Log.LOG_UTILS, "LocalT received local time");
+                return date;
+            }
+            NcAssert.CaseError ("C# compiler cannot do proper flow analysis.");
+            return date;
+        }
+    }
 }
 

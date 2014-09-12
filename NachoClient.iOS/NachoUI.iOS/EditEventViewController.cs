@@ -963,8 +963,8 @@ namespace NachoClient.iOS
             allDaySwitchView.SetState (c.AllDayEvent, false);
 
             //date views
-            startDatePicker.Date = c.StartTime.ToLocalTime ();
-            endDatePicker.Date = c.EndTime.ToLocalTime ();
+            startDatePicker.Date = c.StartTime.LocalT ();
+            endDatePicker.Date = c.EndTime.LocalT ();
 
             //start date
             var startDateLabelView = contentView.ViewWithTag (START_DATE_TAG) as UILabel;

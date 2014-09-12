@@ -860,7 +860,8 @@ namespace NachoClient.iOS
                 result.Append ("Cc: ").Append (message.Cc).Append ("\n");
             }
             result.Append ("Subject: ").Append (message.Subject ?? "").Append ("\n");
-            result.Append ("Date: ").Append (message.DateReceived.ToLocalTime().ToString ("U")).Append ("\n\n");
+            result.Append ("Date: ").Append (Pretty.UniversalFullDateTimeString(message.DateReceived));
+            result.Append ("\n\n");
             return result.ToString ();
         }
 

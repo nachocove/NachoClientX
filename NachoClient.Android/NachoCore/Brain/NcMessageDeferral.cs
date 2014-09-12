@@ -47,7 +47,7 @@ namespace NachoCore.Brain
                 message.DeferralType = deferralType;
                 message.Update ();
                 var utc = deferUntil;
-                var local = deferUntil.ToLocalTime ();
+                var local = deferUntil.LocalT ();
                 BackEnd.Instance.SetEmailFlagCmd (message.AccountId, message.Id, "Defer until", local, utc, local, utc);
                 NcBrain.SharedInstance.Enqueue (new NcBrainMessageFlagEvent (message.AccountId, message.Id));
             }
@@ -72,7 +72,7 @@ namespace NachoCore.Brain
         {
             foreach (var message in thread) {
                 var start = DateTime.UtcNow;
-                BackEnd.Instance.SetEmailFlagCmd (message.AccountId, message.Id, "For follow up by", start.ToLocalTime (), start, dueOn.ToLocalTime (), dueOn);
+                BackEnd.Instance.SetEmailFlagCmd (message.AccountId, message.Id, "For follow up by", start.LocalT (), start, dueOn.LocalT (), dueOn);
                 NcBrain.SharedInstance.Enqueue (new NcBrainMessageFlagEvent (message.AccountId, message.Id));
             }
             return NcResult.OK ();

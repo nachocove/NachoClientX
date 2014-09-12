@@ -620,7 +620,7 @@ namespace NachoClient.iOS
 
             // Received label view
             var receivedLabelView = View.ViewWithTag (RECEIVED_DATE_TAG) as UILabel;
-            receivedLabelView.Text = Pretty.FullDateTimeString (message.DateReceived.ToUniversalTime ());
+            receivedLabelView.Text = Pretty.FullDateTimeString (message.DateReceived);
             receivedLabelView.SizeToFit ();
             var receivedLabelFrame = receivedLabelView.Frame;
             receivedLabelFrame.Y = subjectLabelView.Frame.Bottom;

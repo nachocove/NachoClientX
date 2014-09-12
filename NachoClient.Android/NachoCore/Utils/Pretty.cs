@@ -80,26 +80,6 @@ namespace NachoCore.Utils
             return String.Format ("All day ({0} days)", d.Days);
         }
 
-        static DateTime LocalT (DateTime d)
-        {
-            switch (d.Kind) {
-            case DateTimeKind.Utc:
-                {
-                    var l = d.ToLocalTime ();
-                    return l;
-                }
-            case DateTimeKind.Unspecified:
-                {
-                    var l = d.ToLocalTime ();
-                    return l;
-                }
-            case DateTimeKind.Local:
-            default:
-                NcAssert.CaseError ();
-                return DateTime.MinValue;
-            }
-        }
-
         /// <summary>
         /// StartTime - EndTime, on two lines.
         /// </summary>
@@ -108,12 +88,12 @@ namespace NachoCore.Utils
             NcAssert.True (DateTimeKind.Local != startTime.Kind);
             NcAssert.True (DateTimeKind.Local != endTime.Kind);
 
-            var startString = LocalT (startTime).ToString ("t");
+            var startString = startTime.LocalT().ToString ("t");
 
             if (startTime == endTime) {
                 return startString;
             }
-            var localEndTime = LocalT (endTime);
+            var localEndTime = endTime.LocalT();
             var durationString = PrettyEventDuration (startTime, endTime);
             if (startTime.Date == endTime.Date) {
                 return String.Format ("{0} - {1} ({2})", startString, localEndTime.ToString ("t"), durationString);
@@ -128,32 +108,37 @@ namespace NachoCore.Utils
         static public string FullDateTimeString (DateTime d)
         {
             NcAssert.True (DateTimeKind.Local != d.Kind);
-            return LocalT (d).ToString ("ddd, MMM d - h:mm ") + LocalT (d).ToString ("tt").ToLower ();
+            return d.LocalT ().ToString ("ddd, MMM d - h:mm ") + d.LocalT ().ToString ("tt").ToLower ();
 
+        }
+
+        static public string UniversalFullDateTimeString(DateTime d)
+        {
+            return d.LocalT ().ToString ("U");
         }
 
         static public string FullDateString (DateTime d)
         {
             NcAssert.True (DateTimeKind.Local != d.Kind);
-            return LocalT (d).ToString ("ddd, MMM d");
+            return d.LocalT ().ToString ("ddd, MMM d");
         }
 
         static public string ShortDateString (DateTime d)
         {
             NcAssert.True (DateTimeKind.Local != d.Kind);
-            return LocalT (d).ToString ("M/d/yy");
+            return d.LocalT ().ToString ("M/d/yy");
         }
 
         static public string ExtendedDateString (DateTime d)
         {
             NcAssert.True (DateTimeKind.Local != d.Kind);
-            return LocalT (d).ToString ("dddd, MMMM d");
+            return d.LocalT ().ToString ("dddd, MMMM d");
         }
 
         static public string FullTimeString (DateTime d)
         {
             NcAssert.True (DateTimeKind.Local != d.Kind);
-            return LocalT (d).ToString ("t").ToLower ();
+            return d.LocalT ().ToString ("t").ToLower ();
         }
 
 
@@ -246,7 +231,8 @@ namespace NachoCore.Utils
         /// </summary>
         static public string CompactDateString (DateTime Date)
         {
-            var diff = DateTime.Now - Date;
+            var local = Date.LocalT ();
+            var diff = DateTime.Now - local;
             if (diff < TimeSpan.FromMinutes (60)) {
                 return String.Format ("{0:n0}m", diff.TotalMinutes);
             }
@@ -257,14 +243,14 @@ namespace NachoCore.Utils
                 return "Yesterday";
             }
             if (diff < TimeSpan.FromDays (6)) {
-                return LocalT (Date).ToString ("dddd");
+                return local.ToString ("dddd");
             }
-            return LocalT (Date).ToShortDateString ();
+            return local.ToShortDateString ();
         }
 
         static public string ShortTimeString (DateTime Date)
         {
-            return LocalT (Date).ToString ("t");
+            return Date.LocalT ().ToString ("t");
         }
 
         static public string DisplayNameForAccount (McAccount account)
@@ -278,7 +264,7 @@ namespace NachoCore.Utils
 
         static public string ReminderDate (DateTime utcDueDate)
         {
-            var local = LocalT (utcDueDate);
+            var local = utcDueDate.LocalT();
             var duration = System.DateTime.UtcNow - utcDueDate;
             if (365 < Math.Abs (duration.Days)) {
                 return local.ToString ("MMM dd, yyyy"); // FIXME: Localize
