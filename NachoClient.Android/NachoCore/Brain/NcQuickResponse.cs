@@ -41,13 +41,13 @@ namespace NachoCore.Brain
             }
         }
 
-        public void CreateQuickResponse (QuickResponse whichOne, ref McEmailMessage msg)
+        public void CreateQuickResponse (QuickResponse whichOne, ref McEmailMessage emailMessage)
         {
             switch (whatType) {
             case QRTypeEnum.Compose:
-                msg.Subject = whichOne.subject;
-                McBody bod = McBody.QueryById<McBody> (msg.BodyId);
-                bod.UpdateBody (whichOne.body);
+                emailMessage.Subject = whichOne.subject;
+                McBody emailBody = McBody.QueryById<McBody> (emailMessage.BodyId);
+                emailBody.UpdateData (whichOne.body);
                 break;
             default:
                 return;

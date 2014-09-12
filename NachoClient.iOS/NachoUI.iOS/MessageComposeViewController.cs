@@ -165,14 +165,13 @@ namespace NachoClient.iOS
             ConfigureFullView ();
 
             if (isQuickResponse) {
-                ShowQuickResponses (NcQuickResponse.QRType.Compose);
+                ShowQuickResponses (NcQuickResponse.QRTypeEnum.Compose);
             }
         }
 
-        protected void ShowQuickResponses(NcQuickResponse.QRType whichType)
+        protected void ShowQuickResponses(NcQuickResponse.QRTypeEnum whichType)
         {
-            mcBody = McBody.Save ("");
-            mcMessage.BodyId = mcBody.Id;
+            mcMessage.BodyId = McBody.InsertFile (account.Id, "").Id;
 
             QuickResponseView x = new QuickResponseView(whichType, ref mcMessage);
             x.SetOwner(this);
@@ -180,12 +179,12 @@ namespace NachoClient.iOS
             x.ShowView();
         }
 
-        public void PopulateMessageFromQR(NcQuickResponse.QRType whichType)
+        public void PopulateMessageFromQR(NcQuickResponse.QRTypeEnum whichType)
         {
             switch (whichType) {
-            case NcQuickResponse.QRType.Compose:
+            case NcQuickResponse.QRTypeEnum.Compose:
                 subjectField.Text = mcMessage.Subject;
-                bodyTextView.Text = mcBody.Body;
+                bodyTextView.Text = McBody.GetContentsString (mcMessage.BodyId);
                 bodyTextView.BecomeFirstResponder ();
                 break;
             default:

@@ -22,7 +22,7 @@ namespace NachoClient.iOS
         protected NcQuickResponse ncQuick;
         protected McEmailMessage emailMessage;
 
-        public QuickResponseView (NcQuickResponse.QRType whatType, ref McEmailMessage emailMessage)
+        public QuickResponseView (NcQuickResponse.QRTypeEnum whatType, ref McEmailMessage emailMessage)
         {
             ncQuick = new NcQuickResponse (whatType);
             this.emailMessage = emailMessage;
