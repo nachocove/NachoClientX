@@ -169,7 +169,7 @@ namespace NachoCore.ActiveSync
             if (originalEmailIsEmbedded) {
                 var attachments = McAttachment.QueryByItemId<McEmailMessage> (AccountId, forwardedEmailMessageId);
                 foreach (var attach in attachments) {
-                    if (!attach.IsDownloaded && 0 == attach.PercentDownloaded) {
+                    if (McAbstrFileDesc.FilePresenceEnum.None == attach.FilePresence) {
                         var token = DnldAttCmd (attach.Id);
                         if (null == token) {
                             return null;
