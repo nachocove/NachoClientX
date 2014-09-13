@@ -17,7 +17,7 @@ namespace NachoClient.iOS
     public interface INachoCalendarItemEditor
     {
         void SetOwner (INachoCalendarItemEditorParent owner);
-        void SetCalendarItem (McCalendar item, CalendarItemEditorAction action);
+        void SetCalendarItem (McEvent item, CalendarItemEditorAction action);
         void DismissCalendarItemEditor (bool animated, NSAction action);
     }
 
