@@ -174,6 +174,7 @@ namespace NachoCore.Model
         public string FlagType { set; get; }
 
         /// User has asked to hide the message for a while
+        [Indexed]
         public DateTime FlagUtcStartDate { set; get; }
 
         public DateTime FlagStartDate { set; get; }
