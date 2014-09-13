@@ -97,7 +97,6 @@ namespace NachoCore.ActiveSync
 
             // 0 means pending has already been completed & deleted.
             if (0 != pendingCalCreId) {
-                // FIXME - race condition WRT state of pred pending obj - it could change between switch and case.
                 switch (pendingCalCre.State) {
                 case McPending.StateEnum.Deferred:
                 case McPending.StateEnum.Dispatched:
@@ -108,7 +107,6 @@ namespace NachoCore.ActiveSync
                     break;
 
                 case McPending.StateEnum.Failed:
-                    // FIXME needs to be a transaction.
                     return null;
 
                 case McPending.StateEnum.Deleted:

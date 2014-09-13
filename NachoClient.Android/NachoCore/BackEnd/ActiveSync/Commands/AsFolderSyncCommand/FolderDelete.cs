@@ -62,7 +62,7 @@ namespace NachoCore.ActiveSync
                             cancelCommand = false;
                             return null;
                         } else if (pending.CommandDominatesParentId (ServerId)) {
-                            // FIXME - convert into SyncAdds (in-place). This means injecting new McPendings.
+                            // TODO - convert into SyncAdds (in-place). This means injecting new McPendings.
                             action = McPending.DbActionEnum.Delete;
                             cancelCommand = false;
                             return null;
@@ -92,7 +92,7 @@ namespace NachoCore.ActiveSync
                         action = McPending.DbActionEnum.Delete;
                         return null;
                     } else if (pending.CommandDominatesParentId (ServerId)) {
-                        // FIXME - convert into SyncAdds (in-place).
+                        // TODO - convert into SyncAdds (in-place).
                         action = McPending.DbActionEnum.Delete;
                         return null;
                     }

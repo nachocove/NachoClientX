@@ -424,7 +424,6 @@ namespace NachoCore.Model
 
         public void ResolveAsCancelled (bool onlyDeferred)
         {
-            // FIXME - need lock to ensure that pending state does not change while in this function.
             NcAssert.True (StateEnum.Dispatched == State || !onlyDeferred);
             State = StateEnum.Deleted;
             Log.Info (Log.LOG_SYNC, "Pending:ResolveAsCancelled:{0}", Id);
@@ -951,8 +950,7 @@ namespace NachoCore.Model
 
         public void ConvertToEmailSend ()
         {
-            NcAssert.True (false);
-            // FIXME. NYI.
+            Log.Error (Log.LOG_AS, "SmartForward/Reply not converted to SendMail. Command will likely fail.");
         }
 
         public bool CommandDominatesParentId (string cmdServerId)

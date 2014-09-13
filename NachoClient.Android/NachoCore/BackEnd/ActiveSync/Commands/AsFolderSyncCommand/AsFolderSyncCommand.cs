@@ -42,7 +42,6 @@ namespace NachoCore.ActiveSync
                 protocolState.Update ();
                 var changes = doc.Root.Element (m_ns + Xml.FolderHierarchy.Changes).Elements ();
                 if (null != changes) {
-                    // FIXME: should we try-block each op, since we are saving the syncKey up front?
                     foreach (var change in changes) {
                         string serverId, parentId;
                         McPath pathElem;

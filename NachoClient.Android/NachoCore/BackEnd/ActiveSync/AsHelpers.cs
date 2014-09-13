@@ -955,13 +955,13 @@ namespace NachoCore.ActiveSync
 
         public static bool EmailMessageHasAttachment (XElement command, int attachId)
         {
-            // FIXME - need to implement.
+            // TODO https://github.com/nachocove/NachoClientX/issues/473
             return true;
         }
 
         public static bool TimeOrLocationChanged (XElement command, string serverId)
         {
-            // FIXME - need to implement.
+            // TODO https://github.com/nachocove/NachoClientX/issues/474
             return false;
         }
 

@@ -49,20 +49,6 @@ namespace NachoCore.ActiveSync
                         McPending.DbActionEnum.Delete : McPending.DbActionEnum.DoNothing;
                     return null;
 
-                case McPending.Operations.EmailMove:
-                case McPending.Operations.CalMove:
-                case McPending.Operations.ContactMove:
-                case McPending.Operations.TaskMove:
-                    cancelCommand = false;
-                    if (pending.ServerId == ServerId) {
-                        // FIXME - need to Alter the command to INSERT the Item in the new location.
-                        // FIXME - need to DELETE the item from the old location.
-                        action = McPending.DbActionEnum.Delete;
-                    } else {
-                        action = McPending.DbActionEnum.DoNothing;
-                    }
-                    return null;
-
                 case McPending.Operations.EmailForward:
                 case McPending.Operations.EmailReply:
                     cancelCommand = false;
@@ -86,7 +72,6 @@ namespace NachoCore.ActiveSync
                 case McPending.Operations.EmailMarkFlagDone:
                 case McPending.Operations.EmailMarkRead:
                 case McPending.Operations.EmailSetFlag:
-                    // FIXME - need analysis to know what to do.
                     cancelCommand = false;
                     action = McPending.DbActionEnum.DoNothing;
                     return null;

@@ -22,7 +22,7 @@ namespace NachoCore.ActiveSync
         {
             foreach (var pending in McPending.Query (AccountId).OrderBy (x => x.Id)) {
                 if (McPending.StateEnum.Dispatched == pending.State) {
-                    // FIXME - what if there is an impact? will it cause this pending to fail?
+                    // TODO: apply changes to pending after the server rejects them. Or should we mark them as maybe-gonna-fail?
                     continue;
                 }
 

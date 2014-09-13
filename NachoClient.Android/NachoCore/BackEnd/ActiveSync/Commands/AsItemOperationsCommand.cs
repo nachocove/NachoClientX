@@ -307,17 +307,18 @@ namespace NachoCore.ActiveSync
 
             case Xml.ItemOperations.StatusCode.ResourceAccessDenied_16:
                 PendingResolveApply ((pending) => {
-                    PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, NcResult.WhyEnum.AccessDeniedOrBlocked);
+                    pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.WhyEnum.AccessDeniedOrBlocked);
                 });
                 return Event.Create ((uint)SmEvt.E.HardFail, "IOHARD4");
 
-            /* FIXME. Need to be able to trigger cred-req from here.
-             * case Xml.ItemOperations.StatusCode.CredRequired_18:
-             * PendingSingle.ResoveAsDeferredForce ();
-             */
+            case Xml.ItemOperations.StatusCode.CredRequired_18:
+                PendingResolveApply ((pending) => {
+                    pending.ResolveAsDeferredForce (BEContext.ProtoControl);
+                });
+                return Event.Create ((uint)AsProtoControl.AsEvt.E.AuthFail, "IOAUTH");
             default:
                 PendingResolveApply ((pending) => {
-                    PendingSingle.ResolveAsHardFail (BEContext.ProtoControl, NcResult.WhyEnum.Unknown);
+                    pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.WhyEnum.Unknown);
                 });
                 return Event.Create ((uint)SmEvt.E.Success, "IOFAIL");
             }
