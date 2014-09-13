@@ -407,9 +407,9 @@ namespace NachoClient.iOS
         const int HORIZONTAL_SCROLLVIEW_INSET = 4;
         const int MESSAGEVIEW_INSET = 4;
         #else
-        const int VIEW_INSET = 1;
-        const int HORIZONTAL_SCROLLVIEW_INSET = 2;
-        const int MESSAGEVIEW_INSET = 1;
+        const int VIEW_INSET = 2;
+        const int HORIZONTAL_SCROLLVIEW_INSET = 4;
+        const int MESSAGEVIEW_INSET = 2;
         #endif
 
         protected void CreateView ()
