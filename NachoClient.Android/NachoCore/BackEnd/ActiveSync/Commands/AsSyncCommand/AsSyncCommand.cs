@@ -207,11 +207,6 @@ namespace NachoCore.ActiveSync
                             new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "128"),
                             new XElement (m_baseNs + Xml.AirSyncBase.AllOrNone, "1"),
                             new XElement (m_baseNs + Xml.AirSyncBase.Preview, "255")));
-                        options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
-                            new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
-                            new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "128"),
-                            new XElement (m_baseNs + Xml.AirSyncBase.AllOrNone, "1"),
-                            new XElement (m_baseNs + Xml.AirSyncBase.Preview, "255")));
                         break;
 
                     case McAbstrFolderEntry.ClassCodeEnum.Calendar:
