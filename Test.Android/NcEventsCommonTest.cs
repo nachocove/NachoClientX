@@ -96,7 +96,7 @@ namespace Test.Common
                 int section;
                 var b = instance.FindEventNearestTo (date, out item, out section);
                 if (b) {
-                    var c = instance.GetCalendarItem (section, item);
+                    var c = instance.GetEvent (section, item);
                     Assert.NotNull (c);
                 }
             }
@@ -113,7 +113,7 @@ namespace Test.Common
                 int section;
                 var b = instance.FindEventNearestTo (date, out item, out section);
                 if (b) {
-                    var c = instance.GetCalendarItem (section, item);
+                    var c = instance.GetEvent (section, item);
                     Assert.NotNull (c);
                 }
             }

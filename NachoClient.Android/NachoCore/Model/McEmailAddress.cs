@@ -24,6 +24,7 @@ namespace NachoCore.Model
         [Indexed]
         public string CanonicalEmailAddress { get; set; }
 
+        [Indexed]
         public bool IsVip { get; set; }
 
         public bool IsBlacklisted { get; set; }

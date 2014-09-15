@@ -101,7 +101,6 @@ namespace NachoClient.iOS
         {
             if (segue.Identifier.Equals ("ContactToNotes")) {
                 var dc = (NotesViewController)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
                 dc.SetOwner (this);
                 dc.ViewDisappearing += (object s, EventArgs e) => {
                     DisplayContactInfo ();
@@ -113,7 +112,12 @@ namespace NachoClient.iOS
                 var dc = (MessageComposeViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
                 var address = holder.value as string;
-                dc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, address));
+                if (holder.value2 != null) {
+                    var isQr = (bool)holder.value2;
+                    dc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, address), null, null, null, isQr);
+                }else {
+                    dc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, address));
+                }
                 return;
             }
             if (segue.Identifier.Equals ("ContactToContactEdit")) {
@@ -488,7 +492,7 @@ namespace NachoClient.iOS
             view.AddSubview (imageView);
 
             var tap = new UITapGestureRecognizer ((UITapGestureRecognizer obj) => {
-                TouchedEmailButton (email.Value);
+                TouchedQROption (email.Value);
             });
             view.AddGestureRecognizer (tap);
             view.UserInteractionEnabled = true;
@@ -501,6 +505,17 @@ namespace NachoClient.iOS
             view.AddSubview (valueLabel);
 
             return 40;
+        }
+
+        public void TouchedQROption (string emailAddress)
+        {
+            Log.Info (Log.LOG_UI, "TouchedEmailButton");
+
+            if (string.IsNullOrEmpty (emailAddress)) {
+                ComplainAbout ("No email address", "You've selected a contact who does not have an email address");
+                return;
+            }
+            PerformSegue ("ContactToEmailCompose", new SegueHolder (emailAddress, true));
         }
 
         protected float AddPhoneNumber (McContactStringAttribute phone, float yOffset)

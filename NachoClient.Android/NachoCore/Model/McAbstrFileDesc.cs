@@ -14,6 +14,7 @@ namespace NachoCore.Model
     // Derived classes must implement singleton logic (C# FAIL).
     public class McAbstrFileDesc : McAbstrObjectPerAcc
     {
+        [Indexed]
         public bool IsValid { get; set; }
 
         public DateTime FileGCOkAfter { get; set; }
