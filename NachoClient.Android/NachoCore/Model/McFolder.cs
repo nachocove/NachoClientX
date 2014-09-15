@@ -40,7 +40,8 @@ namespace NachoCore.Model
         public Xml.FolderHierarchy.TypeCode Type { get; set; }
         // Client-owned distinguised folders.
         public const string ClientOwned_Outbox = "Outbox2";
-        public const string ClientOwned_Drafts = "Drafts2";
+        public const string ClientOwned_EmailDrafts = "EmailDrafts2";
+        public const string ClientOwned_CalDrafts = "CalDrafts2";
         public const string ClientOwned_GalCache = "GAL";
         public const string ClientOwned_Gleaned = "GLEANED";
         public const string ClientOwned_LostAndFound = "LAF";
