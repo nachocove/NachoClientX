@@ -934,10 +934,10 @@ namespace NachoCore.Utils
                 return;
             }
             var notifier = NachoPlatform.Notif.Instance;
-            notifier.CancelNotif (e.CalendarId);
-            var notificationTime = e.StartTime.AddDays (-reminder);
+            notifier.CancelNotif (e.Id);
+            var notificationTime = e.StartTime.AddMinutes (-reminder);
             if (DateTime.UtcNow < notificationTime) {
-                notifier.ScheduleNotif (e.CalendarId, e.StartTime.AddMinutes (-reminder), Pretty.FormatAlert (reminder));
+                notifier.ScheduleNotif (e.Id, e.StartTime.AddMinutes (-reminder), Pretty.FormatAlert (reminder));
             }
         }
 

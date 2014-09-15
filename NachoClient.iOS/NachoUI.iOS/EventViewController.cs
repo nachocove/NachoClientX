@@ -29,6 +29,7 @@ namespace NachoClient.iOS
     {
         protected INachoCalendarItemEditorParent owner;
         protected CalendarItemEditorAction action;
+        protected McEvent e;
         protected McCalendar item;
         protected McCalendar c;
         protected McFolder folder;
@@ -167,10 +168,15 @@ namespace NachoClient.iOS
             PresetsWereSet = true;
         }
 
-        public void SetCalendarItem (McCalendar item, CalendarItemEditorAction action)
+        public void SetCalendarItem (McEvent e, CalendarItemEditorAction action)
         {
-            this.item = item;
+            this.e = e;
             this.action = action;
+            if (null == e) {
+                this.item = null;
+            } else {
+                this.item = McCalendar.QueryById<McCalendar> (e.CalendarId);
+            }
         }
 
         public override void ViewWillDisappear (bool animated)
