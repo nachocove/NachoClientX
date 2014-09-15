@@ -61,7 +61,7 @@ namespace NachoCore
 
         public void Refresh()
         {
-            // TODO: Fix this
+            // TODO: Make this a query
             list = new List<McFolder> ();
             var temp = NcModel.Instance.Db.Table<McFolder> ().OrderBy (f => f.DisplayName).ToList ();
             foreach (var l in temp) {

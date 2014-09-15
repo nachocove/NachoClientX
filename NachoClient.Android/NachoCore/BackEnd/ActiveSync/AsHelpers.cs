@@ -335,8 +335,6 @@ namespace NachoCore.ActiveSync
         /// <returns>
         /// A list of categories not yet associated with an NcCalendar or NcException. Not null.
         /// </returns>
-        // TODO: Handle missing name & email better
-        // TODO: Make sure we don't have extra fields
         public List<McCalendarCategory> ParseCategories (XNamespace ns, XElement categories)
         {
             NcAssert.True (null != categories);
@@ -877,8 +875,6 @@ namespace NachoCore.ActiveSync
                                 break;
                             case Xml.Email.InstanceType:
                                 e.InstanceType = meetingRequestPart.Value.ParseInteger<NcInstanceType> ();
-
-                                // TODO
                                 break;
                             case Xml.Email.Location:
                             case Xml.Email.Organizer:

@@ -161,7 +161,7 @@ namespace NachoClient.iOS
                     var didStart = BackEnd.Instance.ValidateConfig (theAccount.Id, theServer, theCred);
 
                     if (!didStart) {
-                        //TODO what happens when there's a network failure?
+                        //FIXME what happens when there's a network failure?
                         Console.WriteLine ("NETWORK FAILURE");
                     } else {
                         configureStatusViewFor (statusType.Validating);

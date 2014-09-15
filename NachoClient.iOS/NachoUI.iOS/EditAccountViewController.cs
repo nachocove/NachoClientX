@@ -23,7 +23,7 @@ namespace NachoClient.iOS
         void CheckAccount (Action<string> result)
         {
             Util.PushNetworkActive ();
-            // TODO: Check credentials
+            // FIXME: Check credentials
             bool Success = true; // Crowbar
             BeginInvokeOnMainThread (delegate {
                 result (Success ? null : Locale.GetText ("Attempted to login failed"));
@@ -39,7 +39,7 @@ namespace NachoClient.iOS
             if (newAccount) {
                 account = new McAccount ();
             } else {
-                // TODO: Init info with McAccount data
+                // FIXME: Init info with McAccount data
             }
 
             var info = new AccountInfo ();
@@ -58,7 +58,7 @@ namespace NachoClient.iOS
                         if (null == errorMessage) {
                             var cred = new McCred ();
                             cred.Password = info.Password;
-                            // TODO: Update the database
+                            // FIXME: Update the database
                             NavigationController.PopViewControllerAnimated (true);
                         } else {
                             dlg = new UIAlertView (Locale.GetText ("Login error"), errorMessage, null, Locale.GetText ("Close"));
