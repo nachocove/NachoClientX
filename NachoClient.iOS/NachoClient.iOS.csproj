@@ -237,10 +237,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\XmlDocument+Wbxml.cs">
       <Link>NachoCore\Extensions\XmlDocument+Wbxml.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\AccountViewController.cs" />
-    <Compile Include="NachoUI.iOS\AccountViewController.designer.cs">
-      <DependentUpon>AccountViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\FolderViewController.cs" />
     <Compile Include="NachoUI.iOS\FolderViewController.designer.cs">
       <DependentUpon>FolderViewController.cs</DependentUpon>
@@ -271,10 +267,6 @@
     <Compile Include="NachoUI.iOS\SettingsViewController.cs" />
     <Compile Include="NachoUI.iOS\SettingsViewController.designer.cs">
       <DependentUpon>SettingsViewController.cs</DependentUpon>
-    </Compile>
-    <Compile Include="NachoUI.iOS\AccountsViewController.cs" />
-    <Compile Include="NachoUI.iOS\AccountsViewController.designer.cs">
-      <DependentUpon>AccountsViewController.cs</DependentUpon>
     </Compile>
     <Compile Include="NachoUI.iOS\HomeViewController.cs" />
     <Compile Include="NachoUI.iOS\HomeViewController.designer.cs">

@@ -125,7 +125,6 @@
                         <segue destination="kq1-eO-X0p" kind="custom" identifier="SidebarToMessages" customClass="SWRevealViewControllerSegue" id="n8e-Oj-wO2"/>
                         <segue destination="kq1-eO-X0p" kind="custom" identifier="SidebarToDeferredMessages" customClass="SWRevealViewControllerSegue" id="vRC-Oi-s8D"/>
                         <segue destination="ygr-ff-C2f" kind="custom" identifier="SidebarToNachoNow" customClass="SWRevealViewControllerSegue" id="wdd-u9-GeA"/>
-                        <segue destination="KvB-j8-wfn" kind="custom" identifier="SidebarToAccounts" customClass="SWRevealViewControllerSegue" id="qb2-sr-GOb"/>
                         <segue destination="T5y-Ms-wQ4" kind="push" identifier="SidebarToCalendarSettings" id="ebP-h4-BhC"/>
                         <segue destination="sao-Pd-u1t" kind="custom" identifier="SidebarToTasks" customClass="SWRevealViewControllerSegue" id="wOY-cG-Eg7"/>
                         <segue destination="d8n-da-LP7" kind="custom" identifier="SidebarToCalendar" customClass="SWRevealViewControllerSegue" id="g6P-mU-XFC"/>
@@ -500,56 +499,6 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="YtI-ix-b1g" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-1301" y="-2467"/>
-        </scene>
-        <!--Accounts View Controller - Accounts-->
-        <scene sceneID="Axk-hT-xAZ">
-            <objects>
-                <tableViewController storyboardIdentifier="AccountsViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="KvB-j8-wfn" customClass="AccountsViewController" sceneMemberID="viewController">
-                    <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="aZb-Ef-WnL">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                        <prototypes>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" textLabel="td8-g0-kOI" style="IBUITableViewCellStyleDefault" id="qEC-dh-Ymr">
-                                <rect key="frame" x="0.0" y="22" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="qEC-dh-Ymr" id="9Wt-kb-l6I">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                    <subviews>
-                                        <label opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="left" text="This is Accounts" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="td8-g0-kOI">
-                                            <rect key="frame" x="15" y="0.0" width="290" height="43"/>
-                                            <autoresizingMask key="autoresizingMask"/>
-                                            <fontDescription key="fontDescription" type="system" pointSize="18"/>
-                                            <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
-                                            <nil key="highlightedColor"/>
-                                        </label>
-                                    </subviews>
-                                </tableViewCellContentView>
-                            </tableViewCell>
-                        </prototypes>
-                        <connections>
-                            <outlet property="dataSource" destination="KvB-j8-wfn" id="NVa-gC-Nic"/>
-                            <outlet property="delegate" destination="KvB-j8-wfn" id="aJB-20-YcH"/>
-                        </connections>
-                    </tableView>
-                    <extendedEdge key="edgesForExtendedLayout"/>
-                    <toolbarItems/>
-                    <navigationItem key="navigationItem" title="Accounts" id="dQE-jZ-sB2">
-                        <barButtonItem key="leftBarButtonItem" image="list.png" id="o0L-DA-IuO"/>
-                    </navigationItem>
-                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
-                    <nil key="simulatedBottomBarMetrics"/>
-                    <connections>
-                        <outlet property="nachoButton" destination="Dvq-sT-DNT" id="bTP-Ab-3BX"/>
-                        <outlet property="revealButton" destination="o0L-DA-IuO" id="sNC-t6-Mxf"/>
-                        <segue destination="ygr-ff-C2f" kind="push" identifier="AccountsToNachoNow" id="850-wG-qo0"/>
-                    </connections>
-                </tableViewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="DfX-V3-vYh" userLabel="First Responder" sceneMemberID="firstResponder"/>
-                <barButtonItem title="Item" id="Dvq-sT-DNT" userLabel="Bar Button Item - Nacho"/>
-            </objects>
-            <point key="canvasLocation" x="-2681" y="-1627"/>
         </scene>
         <!--Support View Controller - Support-->
         <scene sceneID="vbl-v1-uBK">
@@ -2009,29 +1958,29 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="HCr-Oa-UHV"/>
-        <segue reference="zDw-Tx-fTt"/>
-        <segue reference="Bq3-C6-QI6"/>
-        <segue reference="v9F-jf-qe1"/>
+        <segue reference="hxO-14-opZ"/>
+        <segue reference="JGd-do-Y28"/>
         <segue reference="g4G-tD-G9H"/>
         <segue reference="iqA-wd-xqD"/>
-        <segue reference="J8i-gn-UTn"/>
         <segue reference="ebP-h4-BhC"/>
-        <segue reference="JGd-do-Y28"/>
-        <segue reference="Afu-47-Kju"/>
-        <segue reference="c79-xS-Npa"/>
-        <segue reference="hxO-14-opZ"/>
-        <segue reference="vUs-ft-xdy"/>
+        <segue reference="J8i-gn-UTn"/>
+        <segue reference="v9F-jf-qe1"/>
         <segue reference="FHc-YP-jWH"/>
-        <segue reference="Wvd-xL-8Ik"/>
-        <segue reference="fwk-9p-tlV"/>
+        <segue reference="Bq3-C6-QI6"/>
         <segue reference="W3H-fb-nEJ"/>
+        <segue reference="fwk-9p-tlV"/>
+        <segue reference="Wvd-xL-8Ik"/>
         <segue reference="kd2-jR-F9u"/>
         <segue reference="xrp-ey-B0j"/>
+        <segue reference="zDw-Tx-fTt"/>
         <segue reference="6Lm-Uk-Knv"/>
         <segue reference="Tfk-Mt-BlS"/>
-        <segue reference="RR1-bJ-URL"/>
+        <segue reference="HCr-Oa-UHV"/>
         <segue reference="tdu-G2-PEp"/>
+        <segue reference="RR1-bJ-URL"/>
         <segue reference="JTo-qU-j7O"/>
+        <segue reference="Afu-47-Kju"/>
+        <segue reference="c79-xS-Npa"/>
+        <segue reference="vUs-ft-xdy"/>
     </inferredMetricsTieBreakers>
 </document>
