@@ -12,6 +12,7 @@ namespace NachoCore.Utils
     {
         public const int MaxCancellationTestInterval = 100;
         private static ConcurrentDictionary<WeakReference,string> TaskMap;
+        private static int TaskId = 0;
         public static CancellationTokenSource Cts = new CancellationTokenSource ();
 
         public static void StartService ()
@@ -45,29 +46,33 @@ namespace NachoCore.Utils
 
         public static Task Run (Action action, string name, bool stfu)
         {
+            string dummy = null;
+            var taskId = Interlocked.Increment (ref TaskId);
+            var taskName = name + taskId.ToString ();
             WeakReference taskRef = null;
             var task = Task.Run (delegate {
                 if (!stfu) {
-                    Log.Info (Log.LOG_SYS, "NcTask {0} started.", name);
+                    Log.Info (Log.LOG_SYS, "NcTask {0} started.", taskName);
                 }
                 action.Invoke ();
                 if (!stfu) {
-                    Log.Info (Log.LOG_SYS, "NcTask {0} completed.", name);
+                    Log.Info (Log.LOG_SYS, "NcTask {0} completed.", taskName);
                 }
                 if (null == taskRef) {
                     // XAMMIT - Likely inappropriate Task inlining.
-                    Log.Warn (Log.LOG_SYS, "NcTask {0}: Weak reference unavailable", name);
+                    Log.Warn (Log.LOG_SYS, "NcTask {0}: Weak reference unavailable", taskName);
                 }
-                else if (!TaskMap.TryRemove (taskRef, out name)) {
-                    Log.Error (Log.LOG_SYS, "Task {0} already removed from TaskMap.", name);
+                else if (!TaskMap.TryRemove (taskRef, out dummy)) {
+                    Log.Error (Log.LOG_SYS, "Task {0} already removed from TaskMap.", taskName);
                 }
             }, Cts.Token);
             taskRef = new WeakReference (task);
-            if (!TaskMap.TryAdd (taskRef, name)) {
-                Log.Error (Log.LOG_SYS, "Task {0} already added to TaskMap.", name);
+            if (!TaskMap.TryAdd (taskRef, taskName)) {
+                Log.Error (Log.LOG_SYS, "Task {0} already added to TaskMap.", taskName);
             }
             return task;
             /*
+             * XAMMIT - this code does not work reliably (FYI).
             WeakReference taskRef = null;
             var task = new NcTask (delegate {
                 Log.Info (Log.LOG_SYS, "NcTask {0} started.", name);
