@@ -151,6 +151,7 @@ namespace NachoCore.Model
 
         public int PortraitId { get; set; }
 
+        [Indexed]
         public bool IsVip { get; set; }
 
         public static ClassCodeEnum GetClassCode ()

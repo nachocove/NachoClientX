@@ -812,8 +812,14 @@ namespace NachoCore.ActiveSync
             private Event ProcessXmlError (AsHttpOperation Sender, XElement xmlError)
             {
                 var xmlStatus = xmlError.ElementAnyNs (Xml.Autodisco.Status);
-                // FIXME: log Time and Id attributes if present:
-                // Time="16:56:32.6164027" Id="1054084152".
+                var xmlAttrId = xmlError.Attribute (Xml.Autodisco.Error_Attr_Id);
+                if (null != xmlAttrId) {
+                    Log.Error (Log.LOG_AS, "ProcessXmlError: Id = {0}.", xmlAttrId.Value);
+                }
+                var xmlAttrTime = xmlError.Attribute (Xml.Autodisco.Error_Attr_Time);
+                if (null != xmlAttrTime) {
+                    Log.Error (Log.LOG_AS, "ProcessXmlError: Time = {0}.", xmlAttrTime.Value);
+                }
                 if (null != xmlStatus) {
                     // ProtocolError is the only valid value, but MSFT does not always obey! See
                     // http://blogs.msdn.com/b/exchangedev/archive/2011/07/08/autodiscover-for-exchange-activesync-developers.aspx
@@ -830,17 +836,20 @@ namespace NachoCore.ActiveSync
                         Log.Error (Log.LOG_AS, "Rx of unknown Auto-d Status code {0}", xmlStatus.Value);
                         break;
                     }
-                    if ((uint)Xml.Autodisco.StatusCode.ProtocolError_2 != uint.Parse (xmlStatus.Value)) {
-                        
-                    }
                 }
                 var xmlMessage = xmlError.ElementAnyNs (Xml.Autodisco.Message);
                 if (null != xmlMessage) {
-                    ; // FIXME: pass this back to the user.
+                    Log.Error (Log.LOG_AS, "Rx of Message: {0}", xmlMessage.Value);
+                    var result = NcResult.Error (NcResult.SubKindEnum.Error_AutoDUserMessage);
+                    result.Message = xmlMessage.Value;
+                    StatusInd (result);
                 }
                 var xmlDebugData = xmlError.ElementAnyNs (Xml.Autodisco.DebugData);
                 if (null != xmlDebugData) {
-                    ; // FIXME: pass back to admin.
+                    Log.Error (Log.LOG_AS, "Rx of DebugData: {0}", xmlDebugData.Value);
+                    var result = NcResult.Error (NcResult.SubKindEnum.Error_AutoDAdminMessage);
+                    result.Message = xmlMessage.Value;
+                    StatusInd (result); 
                 }
                 var xmlErrorCode = xmlError.ElementAnyNs (Xml.Autodisco.ErrorCode);
                 if (null != xmlErrorCode) {
@@ -878,7 +887,7 @@ namespace NachoCore.ActiveSync
                     if (null != xmlType) {
                         serverType = xmlType.Value;
                     } else {
-                        // FIXME: log that Type is missing, assume MobileSync.
+                        Log.Error (Log.LOG_AS, "ProcessXmlSettings: Type is missing.");
                         serverType = Xml.Autodisco.TypeCode.MobileSync;
                     }
                     var xmlUrl = xmlServer.ElementAnyNs (Xml.Autodisco.Url);
@@ -889,10 +898,10 @@ namespace NachoCore.ActiveSync
                             xmlUrlValue = xmlUrl.Value;
                             serverUri = new Uri (xmlUrlValue);
                         } catch (ArgumentNullException) {
-                            // FIXME - log it.
+                            Log.Error (Log.LOG_AS, "ProcessXmlSettings: illegal value {0}.", xmlUrl.ToString ());
                             return Event.Create ((uint)SmEvt.E.HardFail, "SRPXRHARD0");
                         } catch (UriFormatException) {
-                            // FIXME - log it.
+                            Log.Error (Log.LOG_AS, "ProcessXmlSettings: illegal value {0}.", xmlUrl.ToString ());
                             return Event.Create ((uint)SmEvt.E.HardFail, "SRPXRHARD1");
                         }
                         if (Xml.Autodisco.TypeCode.MobileSync == serverType) {
@@ -903,16 +912,16 @@ namespace NachoCore.ActiveSync
                                 haveServerSettings = true;
                             }
                         }
-                        // FIXME: add support for CertEnroll.
+                        // TODO: add support for CertEnroll.
                     }
                     var xmlName = xmlServer.ElementAnyNs (Xml.Autodisco.Name);
                     if (null != xmlName) {
-                        // FIXME - log it.
+                        Log.Error (Log.LOG_AS, "ProcessXmlSettings: missing Name.");
                         // We should have gotten our server info from Url.
                     }
                     var xmlServerData = xmlServer.ElementAnyNs (Xml.Autodisco.ServerData);
                     if (null != xmlServerData) {
-                        // FIXME - add support for CertEnroll.
+                        Log.Error (Log.LOG_AS, "ProcessXmlSettings: (no CertEnroll) got ServerData {0}", xmlServerData.Value);
                     }
                 }
                 if (haveServerSettings) {

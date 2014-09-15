@@ -554,7 +554,7 @@ namespace NachoCore.ActiveSync
                     NcResult.WhyEnum.QuotaExceeded);
 
             case Xml.StatusCode.BodyPart_ConversationTooLarge_176:
-                // FIXME - The conversation is too large to compute the body parts. 
+                // TODO - The conversation is too large to compute the body parts. 
                 // Try requesting the body of the item again, without body parts.
                 return CompleteAsHardFail (status, NcResult.WhyEnum.ProtocolError);
 

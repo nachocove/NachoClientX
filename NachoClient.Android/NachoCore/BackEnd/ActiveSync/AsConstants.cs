@@ -327,6 +327,9 @@ namespace NachoCore.ActiveSync
             public const string Url = "Url";
             public const string User = "User";
 
+            public const string Error_Attr_Id = Ping.Id;
+            public const string Error_Attr_Time = "Time";
+
             public enum ErrorCodeCode : uint
             {
                 InvalidRequest_600 = 600,
@@ -630,7 +633,6 @@ namespace NachoCore.ActiveSync
             public const string SyncKey = AirSync.SyncKey;
             public const string Type = AirSync.Type;
             public const string Update = "Update";
-            // FIXME: with Unknown, we need to retry & watch for a loop.
             public enum FolderSyncStatusCode : uint
             {
                 Success_1 = 1,

@@ -80,10 +80,13 @@ namespace NachoCore.Model
         // Set only on Insert.
         public DateTime CreatedAt { get; set; }
 
+        protected Boolean isDeleted;
+
         public McAbstrObject ()
         {
             Id = 0;
             LastModified = DateTime.MinValue;
+            isDeleted = false;
 
             string className = ClassName ();
             if (null == InsertCaptures) {
@@ -108,6 +111,7 @@ namespace NachoCore.Model
         public virtual int Insert ()
         {
             NcAssert.True (0 == Id);
+            NcAssert.True (!isDeleted);
             NcModel.Instance.TakeTokenOrSleep ();
             LastModified = DateTime.UtcNow;
             CreatedAt = LastModified;
@@ -124,6 +128,7 @@ namespace NachoCore.Model
         public virtual int Delete ()
         {
             NcAssert.True (0 < Id);
+            isDeleted = true;
             NcModel.Instance.TakeTokenOrSleep ();
             NcCapture capture = DeleteCaptures.Find (ClassName ());
             capture.Start ();
@@ -138,6 +143,7 @@ namespace NachoCore.Model
         public virtual int Update ()
         {
             NcAssert.True (0 < Id);
+            NcAssert.True (!isDeleted);
             NcModel.Instance.TakeTokenOrSleep ();
             LastModified = DateTime.UtcNow;
             NcCapture capture = UpdateCaptures.Find (ClassName ());

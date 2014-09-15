@@ -182,8 +182,8 @@ namespace NachoClient.iOS
             if (segue.Identifier == "NachoNowToEventView") {
                 var vc = (EventViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
-                var c = holder.value as McCalendar;
-                vc.SetCalendarItem (c, CalendarItemEditorAction.view);
+                var e = holder.value as McEvent;
+                vc.SetCalendarItem (e, CalendarItemEditorAction.view);
                 vc.SetOwner (this);
                 return;
             }

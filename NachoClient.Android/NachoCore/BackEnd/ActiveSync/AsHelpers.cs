@@ -108,10 +108,7 @@ namespace NachoCore.ActiveSync
                 xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.Reminder, cal.Reminder));
             }
 
-            // TODO TimeZoneId - TimeZone table not implemented yet.
              xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.Timezone, cal.TimeZone));
-
-//            xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.Timezone, "4AEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAsAAAABAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAAAACAAMAAAAAAAAAxP///w=="));//FIXME.
 
             if (null != cal.Subject) {
                 xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.Subject, cal.Subject));
@@ -685,12 +682,12 @@ namespace NachoCore.ActiveSync
                                 try {
                                     uint statusValue = uint.Parse (flagPart.Value);
                                     if (2 < statusValue) {
-                                        // FIXME log.
+                                        Log.Error (Log.LOG_AS, "Illegal Status value {0}", statusValue);
                                     } else {
                                         emailMessage.FlagStatus = statusValue;
                                     }
                                 } catch {
-                                    // FIXME log.
+                                    Log.Error (Log.LOG_AS, "Illegal Status value {0}", flagPart.Value);
                                 }
                                 break;
 
@@ -702,7 +699,7 @@ namespace NachoCore.ActiveSync
                                 try {
                                     emailMessage.FlagStartDate = ParseAsDateTime (flagPart.Value);
                                 } catch {
-                                    // FIXME log.
+                                    Log.Error (Log.LOG_AS, "Illegal StartDate value {0}", flagPart.Value);
                                 }
                                 break;
 
@@ -710,7 +707,7 @@ namespace NachoCore.ActiveSync
                                 try {
                                     emailMessage.FlagUtcStartDate = ParseAsDateTime (flagPart.Value);
                                 } catch {
-                                    // FIXME log.
+                                    Log.Error (Log.LOG_AS, "Illegal UtcStartDate value {0}", flagPart.Value);
                                 }
                                 break;
 
@@ -718,7 +715,7 @@ namespace NachoCore.ActiveSync
                                 try {
                                     emailMessage.FlagDue = ParseAsDateTime (flagPart.Value);
                                 } catch {
-                                    // FIXME log.
+                                    Log.Error (Log.LOG_AS, "Illegal DueDate value {0}", flagPart.Value);
                                 }
                                 break;
 
@@ -726,7 +723,7 @@ namespace NachoCore.ActiveSync
                                 try {
                                     emailMessage.FlagUtcDue = ParseAsDateTime (flagPart.Value);
                                 } catch {
-                                    // FIXME log.
+                                    Log.Error (Log.LOG_AS, "Illegal UtcDueDate value {0}", flagPart.Value);
                                 }
                                 break;
 
@@ -738,10 +735,10 @@ namespace NachoCore.ActiveSync
                                     } else if (1 == boolInt) {
                                         emailMessage.FlagReminderSet = true;
                                     } else {
-                                        // FIXME log.
+                                        Log.Error (Log.LOG_AS, "Illegal ReminderSet value {0}", flagPart.Value);
                                     }
                                 } catch {
-                                    // FIXME log.
+                                    Log.Error (Log.LOG_AS, "Illegal ReminderSet value {0}", flagPart.Value);
                                 }
                                 break;
 
@@ -753,7 +750,7 @@ namespace NachoCore.ActiveSync
                                 try {
                                     emailMessage.FlagReminderTime = ParseAsDateTime (flagPart.Value);
                                 } catch {
-                                    // FIXME log.
+                                    Log.Error (Log.LOG_AS, "Illegal ReminderTime value {0}", flagPart.Value);
                                 }
                                 break;
 
@@ -761,7 +758,7 @@ namespace NachoCore.ActiveSync
                                 try {
                                     emailMessage.FlagCompleteTime = ParseAsDateTime (flagPart.Value);
                                 } catch {
-                                    // FIXME log.
+                                    Log.Error (Log.LOG_AS, "Illegal CompleteTime value {0}", flagPart.Value);
                                 }
                                 break;
 
@@ -769,7 +766,7 @@ namespace NachoCore.ActiveSync
                                 try {
                                     emailMessage.FlagDateCompleted = ParseAsDateTime (flagPart.Value);
                                 } catch {
-                                    // FIXME log.
+                                    Log.Error (Log.LOG_AS, "Illegal DateCompleted value {0}", flagPart.Value);
                                 }
                                 break;
                             }
@@ -803,7 +800,7 @@ namespace NachoCore.ActiveSync
                     try {
                         emailMessage.DateReceived = ParseAsDateTime (child.Value);
                     } catch {
-                        // FIXME - just log it.
+                        Log.Error (Log.LOG_AS, "Illegal DateReceived value {0}", child.Value);
                     }
                     break;
                 case Xml.Email.DisplayTo:
@@ -813,7 +810,7 @@ namespace NachoCore.ActiveSync
                     try {
                         emailMessage.Importance = (NcImportance)uint.Parse (child.Value);
                     } catch {
-                        // FIXME - just log it.
+                        Log.Error (Log.LOG_AS, "Illegal Importance value {0}", child.Value);
                     }
                     break;
                 case Xml.Email.Read:
@@ -958,13 +955,13 @@ namespace NachoCore.ActiveSync
 
         public static bool EmailMessageHasAttachment (XElement command, int attachId)
         {
-            // FIXME - need to implement.
+            // TODO https://github.com/nachocove/NachoClientX/issues/473
             return true;
         }
 
         public static bool TimeOrLocationChanged (XElement command, string serverId)
         {
-            // FIXME - need to implement.
+            // TODO https://github.com/nachocove/NachoClientX/issues/474
             return false;
         }
 

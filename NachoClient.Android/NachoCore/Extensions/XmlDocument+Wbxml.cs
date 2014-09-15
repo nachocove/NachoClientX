@@ -21,7 +21,7 @@ namespace NachoCore.Utils
             ASWBXML encoder = new ASWBXML (cToken);
             encoder.XmlDoc = doc;
             if (isLarge) {
-                var tmp = Path.GetTempFileName (); // FIXME take out the trash, maybe on launch.
+                var tmp = Path.GetTempFileName ();
                 var fileStream = new FileStream (tmp, FileMode.Create);
                 var writer = new BinaryWriter (fileStream);
                 encoder.EmitToStream (writer);

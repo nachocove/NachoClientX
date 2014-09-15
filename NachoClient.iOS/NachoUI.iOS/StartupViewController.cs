@@ -72,9 +72,9 @@ namespace NachoClient.iOS
         {
 
             if (segue.Identifier == "SegueToEventView") {
-                var calendarId = Convert.ToInt32(McMutables.Get ("EventNotif", LoginHelpers.GetCurrentAccountId ().ToString ()));
-                var item = McCalendar.QueryById<McCalendar> (calendarId);
                 var vc = (EventViewController)segue.DestinationViewController;
+                var eventId = Convert.ToInt32(McMutables.Get ("EventNotif", LoginHelpers.GetCurrentAccountId ().ToString ()));
+                var item = McEvent.QueryById<McEvent> (eventId);
                 vc.SetCalendarItem (item, CalendarItemEditorAction.view);
                 McMutables.Delete ("EventNotif", LoginHelpers.GetCurrentAccountId ().ToString ());
                 //vc.SetOwner (this);

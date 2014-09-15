@@ -133,9 +133,7 @@ namespace NachoCore.Model
         public Operations Operation { set; get; }
         // Valid when in Deferred state.
         [Indexed]
-        // FIXME - need code in sync, fsync and here to manage this reason state.
         public DeferredEnum DeferredReason { set; get; }
-        // FIXME - need code to make time part of the ready query.
         // Valid when in Deferred state and DeferredReason is UntilTime.
         [Indexed]
         public DateTime DeferredUntilTime { set; get; }
@@ -290,7 +288,7 @@ namespace NachoCore.Model
                 return Operations.FolderCreate == pred.Operation && pred.ServerId == ParentId;
 
             case Operations.FolderDelete:
-                // FIXME - this could create too many McPendDeps. 
+                // TODO - this could create too many McPendDeps. 
                 return true;
 
             case Operations.FolderUpdate:
@@ -415,7 +413,7 @@ namespace NachoCore.Model
             State = StateEnum.Deleted;
             Update ();
             Log.Info (Log.LOG_SYNC, "Pending:ResolveAsSuccess:{0}", Id);
-            // FIXME: Find a clean way to send UpdateQ event to TL SM.
+            // TODO: Find a clean way to send UpdateQ event to TL SM.
             UnblockSuccessors ();
             // Why update and then delete? I think we may want to defer deletion at some point.
             // If we do, then these are a good "log" of what has been done. So keep the records 
@@ -426,7 +424,6 @@ namespace NachoCore.Model
 
         public void ResolveAsCancelled (bool onlyDeferred)
         {
-            // FIXME - need lock to ensure that pending state does not change while in this function.
             NcAssert.True (StateEnum.Dispatched == State || !onlyDeferred);
             State = StateEnum.Deleted;
             Log.Info (Log.LOG_SYNC, "Pending:ResolveAsCancelled:{0}", Id);
@@ -953,8 +950,7 @@ namespace NachoCore.Model
 
         public void ConvertToEmailSend ()
         {
-            NcAssert.True (false);
-            // FIXME. NYI.
+            Log.Error (Log.LOG_AS, "SmartForward/Reply not converted to SendMail. Command will likely fail.");
         }
 
         public bool CommandDominatesParentId (string cmdServerId)

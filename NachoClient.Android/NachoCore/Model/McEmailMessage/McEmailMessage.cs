@@ -174,6 +174,7 @@ namespace NachoCore.Model
         public string FlagType { set; get; }
 
         /// User has asked to hide the message for a while
+        [Indexed]
         public DateTime FlagUtcStartDate { set; get; }
 
         public DateTime FlagStartDate { set; get; }
@@ -493,14 +494,12 @@ namespace NachoCore.Model
 
     public partial class McEmailMessage
     {
-        protected Boolean isDeleted;
         protected Boolean isAncillaryInMemory;
 
         public McEmailMessage () : base ()
         {
             _Categories = new List<McEmailMessageCategory> ();
             _MeetingRequest = null;
-            isDeleted = false;
             isAncillaryInMemory = false;
         }
 
@@ -579,9 +578,6 @@ namespace NachoCore.Model
 
         public override int Insert ()
         {
-            NcAssert.True (!isDeleted);
-
-            //FIXME better default returnVal
             int returnVal = -1; 
 
             try {
@@ -605,11 +601,7 @@ namespace NachoCore.Model
 
         public override int Update ()
         {
-            NcAssert.True (!isDeleted);
-
-            //FIXME better default returnVal
             int returnVal = -1;  
-
             try {
                 NcModel.Instance.RunInTransaction (() => {
                     returnVal = base.Update ();
@@ -644,11 +636,8 @@ namespace NachoCore.Model
 
         public override int Delete ()
         {
-            //FIXME better default returnVal
             int returnVal = base.Delete ();
-            if (0 != returnVal || -1 != returnVal) {
-                isDeleted = true;
-            }
+
             return returnVal;
         }
 

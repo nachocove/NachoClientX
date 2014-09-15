@@ -1057,12 +1057,10 @@ namespace NachoCore.ActiveSync
 
         public override void Cancel (string token)
         {
-            // FIXME - need lock to ensure that pending state does not change while in this function.
             var pendings = McPending.QueryByToken (Account.Id, token);
             foreach (var pending in pendings) {
                 switch (pending.State) {
                 case McPending.StateEnum.Eligible:
-                // FIXME - may need to deal with successors.
                     pending.Delete ();
                     break;
 
@@ -1082,9 +1080,8 @@ namespace NachoCore.ActiveSync
                         // Command Cancel moves state to Deferred. Maybe many pending objs.
                         Cmd.Cancel ();
                     }
-                // FIXME - command should cancel deferred pending.
                     pending.ResolveAsCancelled (false);
-                // Don't REALLY know that we killed it before the server saw it.
+                    // Don't REALLY know that we killed it before the server saw it.
                     break;
 
                 case McPending.StateEnum.Deleted:

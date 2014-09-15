@@ -54,7 +54,6 @@ namespace NachoCore.ActiveSync
 
         private XElement ToEmailDelete (McPending pending)
         {
-            // FIXME - add Class?
             return new XElement (m_ns + Xml.AirSync.Delete,
                 new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId));
         }
@@ -317,9 +316,9 @@ namespace NachoCore.ActiveSync
             case Xml.AirSync.StatusCode.Success_1:
                 return null;
 
-            case Xml.AirSync.StatusCode.SyncKeyInvalid_3: // FIXME see folder AsResetState.
-                // FIXME - need resolution logic to deal with _Initial-level re-sync of a folder.
+            case Xml.AirSync.StatusCode.SyncKeyInvalid_3:
                 // FoldersInRequest is NOT stale here.
+                // TODO - combine logic with AsResetState?
                 foreach (var folder in FoldersInRequest) {
                     folder.AsSyncKey = McFolder.AsSyncKey_Initial;
                     folder.AsSyncMetaToClientExpected = true;
@@ -439,10 +438,6 @@ namespace NachoCore.ActiveSync
                 case Xml.AirSync.StatusCode.ServerError_5:
                     // TODO: try ReSync again a FEW times before resetting the SyncKey value.
                 case Xml.AirSync.StatusCode.SyncKeyInvalid_3:
-                    /* FIXME: The client SHOULD either delete any items that were added since the last successful 
-                     * Sync or the client MUST add those items back to the server after completing the full
-                     * resynchronization.
-                     */
                     folder.AsSyncKey = McFolder.AsSyncKey_Initial;
                     folder.AsSyncMetaToClientExpected = true;
                     lock (PendingResolveLockObj) {
@@ -822,6 +817,7 @@ namespace NachoCore.ActiveSync
                 }
                 var xmlStatus = xmlAdd.Element (m_ns + Xml.AirSync.Status);
                 var status = (Xml.AirSync.StatusCode)uint.Parse (xmlStatus.Value);
+                pending.ResponsegXmlStatus = (uint)status;
                 switch (status) {
                 case Xml.AirSync.StatusCode.Success_1:
                     PendingList.RemoveAll (x => x.Id == pending.Id);
@@ -871,7 +867,6 @@ namespace NachoCore.ActiveSync
                 // Note: we don't send partial Sync requests.
                 case Xml.AirSync.StatusCode.ResendFull_13:
                     PendingList.RemoveAll (x => x.Id == pending.Id);
-                    pending.ResponsegXmlStatus = (uint)status; // FIXME move this up.
                     pending.ResolveAsHardFail (BEContext.ProtoControl,
                         NcResult.Error (NcResult.SubKindEnum.Error_InappropriateStatus));
                     break;

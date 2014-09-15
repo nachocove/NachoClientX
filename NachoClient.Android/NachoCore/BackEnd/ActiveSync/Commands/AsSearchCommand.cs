@@ -138,10 +138,11 @@ namespace NachoCore.ActiveSync
                             });
                             return Event.Create ((uint)SmEvt.E.HardFail, "SRCHEORR");
 
-                        /* FIXME. Need to be able to trigger cred-req from here.
-                         * case Xml.Search.StoreStatusCode.CredRequired_14:
-                         * PendingSingle.ResoveAsDeferredForce ();
-                         */
+                        case Xml.Search.StoreStatusCode.CredRequired_14:
+                            PendingResolveApply ((pending) => {
+                                pending.ResolveAsDeferredForce (BEContext.ProtoControl);
+                            });
+                            return Event.Create ((uint)AsProtoControl.AsEvt.E.AuthFail, "SRCHAUTH");
 
                         default:
                             PendingResolveApply ((pending) => {

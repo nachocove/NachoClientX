@@ -547,7 +547,6 @@ namespace NachoCore.ActiveSync
                         try {
                             decoder.LoadBytes (BEContext.Account.Id, ContentData);
                         } catch (OperationCanceledException) {
-                            // FIXME: we could have orphaned McBody(s). HardFail isn't accurate.
                             Owner.ResolveAllDeferred ();
                             return Final ((uint)SmEvt.E.HardFail, "WBXCANCEL");
                         } catch (WBXMLReadPastEndException) {
@@ -569,7 +568,7 @@ namespace NachoCore.ActiveSync
                         Log.Debug (Log.LOG_XML, "{0} response:\n{1}", CommandName, responseDoc);
                         var xmlStatus = responseDoc.Root.ElementAnyNs (Xml.AirSync.Status);
                         if (null != xmlStatus) {
-                            // FIXME - push TL status into pending.
+                            // TODO - push TL status into pending.
                             var statusEvent = Owner.ProcessTopLevelStatus (this, uint.Parse (xmlStatus.Value));
                             if (null != statusEvent) {
                                 Log.Info (Log.LOG_AS, "Top-level XML Status {0}:{1}", xmlStatus.Value, statusEvent);
@@ -581,7 +580,8 @@ namespace NachoCore.ActiveSync
                         // Owner MUST resolve all pending.
                         return Final (Owner.ProcessResponse (this, response, responseDoc));
                     case ContentTypeWbxmlMultipart:
-                        throw new Exception ("FIXME: ContentTypeWbxmlMultipart unimplemented.");
+                        NcAssert.True (false, "ContentTypeWbxmlMultipart unimplemented.");
+                        return null;
                     case ContentTypeXml:
                         responseDoc = XDocument.Load (ContentData);
                         // Owner MUST resolve all pending.
@@ -736,7 +736,6 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)SmEvt.E.HardFail, "HTTPOP457");
 
             case HttpStatusCode.InternalServerError:
-                // FIXME: Have some way to detect big loops (e.g. 500->auto-d->500).
                 ReportCommResult (ServerUri.Host, false); // Non-general failure.
                 if (response.Headers.Contains (HeaderXMsRp)) {
                     McFolder.AsResetState (BEContext.Account.Id);

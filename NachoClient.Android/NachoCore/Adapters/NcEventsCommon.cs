@@ -134,20 +134,20 @@ namespace NachoCore
             return firstDayInList.AddDays (day);
         }
 
-        public McCalendar GetCalendarItem (int day, int item)
+        public McEvent GetEvent (int day, int item)
         {
             NcAssert.True (0 != listOfEventsOnADay.Count, "List is empty");
             NcAssert.True (day >= 0, "Day is negative");
             NcAssert.True (day < listOfEventsOnADay.Count, "Day greater than or equal to list count");
             NcAssert.True (item >= 0, "Day is negative");
             NcAssert.True (item < listOfEventsOnADay [day].Count, "Day greater than or equal to list count");
-            return GetCalendarItem (listOfEventsOnADay [day] [item]);
+            return GetEvent (listOfEventsOnADay [day] [item]);
         }
 
-        public McCalendar GetCalendarItem (int i)
+        public McEvent GetEvent (int i)
         {
             var e = list.ElementAt (i);
-            return McCalendar.QueryById<McCalendar> (e.CalendarId);
+            return e;
         }
 
         public bool FindEventNearestTo (DateTime date, out int item, out int section)

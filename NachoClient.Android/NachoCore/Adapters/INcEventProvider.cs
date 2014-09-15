@@ -24,7 +24,7 @@ namespace NachoCore
 
         DateTime GetDateUsingDayIndex (int day);
 
-        McCalendar GetCalendarItem (int day, int item);
+        McEvent GetEvent (int day, int item);
 
         int ExtendEventMap (DateTime untilDate);
 
