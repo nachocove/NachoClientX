@@ -1132,6 +1132,13 @@ namespace NachoClient.iOS
             };
 
             DeferLayoutIncrement ();
+
+            int index = html.IndexOf ("<html>", 0);
+            if (0 <= index) {
+                html = html.Substring (0, index) +
+                    "<meta http-equiv=\"Content-Security-Policy\" content=\"script-src 'none'\">" +
+                    html.Substring (index);
+            }
             wv.LoadHtmlString (html, null);
         }
 
