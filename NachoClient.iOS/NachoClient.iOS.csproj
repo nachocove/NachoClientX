@@ -1574,11 +1574,8 @@
     <BundleResource Include="Resources\Slide3-2%402x.png" />
     <BundleResource Include="Resources\Slide3-3%402x.png" />
     <BundleResource Include="Resources\Slide3-4%402x.png" />
-    <BundleResource Include="Resources\Slide3-5%402X.png" />
     <BundleResource Include="Resources\Slide4-1%402x.png" />
     <BundleResource Include="Resources\Slide4-2A%402x.png" />
-    <BundleResource Include="Resources\Slide4-2B%402X.png" />
-    <BundleResource Include="Resources\Slide4-3%402X.png" />
     <BundleResource Include="Resources\SlideNav-Arrow%402x.png" />
     <BundleResource Include="Resources\SlideNav-Btn%402x.png" />
     <BundleResource Include="Resources\SlideNav-BtnHover%402x.png" />
@@ -1592,6 +1589,9 @@
     <BundleResource Include="Resources\icn-photos%402x.png" />
     <BundleResource Include="Resources\icn-rightarrow%402x.png" />
     <BundleResource Include="Resources\icn-sharedfiles%402x.png" />
+    <BundleResource Include="Resources\Slide3-5%402x.png" />
+    <BundleResource Include="Resources\Slide4-2B%402x.png" />
+    <BundleResource Include="Resources\Slide4-3%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
