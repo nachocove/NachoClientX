@@ -15,6 +15,8 @@ using NachoCore.Utils;
 using SWRevealViewControllerBinding;
 using System.Text;
 
+using NachoCore.Brain;
+
 namespace NachoClient.iOS
 {
     public partial class MessageComposeViewController : UIViewController, IUcAddressBlockDelegate, IUcAttachmentBlockDelegate, INachoContactChooserDelegate, INachoFileChooserParent
@@ -28,6 +30,9 @@ namespace NachoClient.iOS
         public INachoMessageEditorParent owner;
         public bool showMenu;
         protected McAccount account;
+
+        protected McEmailMessage mcMessage = new McEmailMessage ();
+        protected McBody mcBody = new McBody ();
 
 
         bool suppressLayout;
@@ -64,6 +69,7 @@ namespace NachoClient.iOS
         protected float LINE_HEIGHT = 40;
         protected float LEFT_INDENT = 15;
         protected float RIGHT_INDENT = 15;
+        protected bool isQuickResponse = false;
 
         public MessageComposeViewController (IntPtr handle) : base (handle)
         {
@@ -75,12 +81,13 @@ namespace NachoClient.iOS
         }
 
         // Can be called by owner to set a pre-existing To: address, subject, email template and/or attachment
-        public void SetEmailPresetFields (NcEmailAddress toAddress = null, string subject = null, string emailTemplate = null, McAttachment attachment = null)
+        public void SetEmailPresetFields (NcEmailAddress toAddress = null, string subject = null, string emailTemplate = null, McAttachment attachment = null, bool isQR = false)
         {
             PresetToAddress = toAddress;
             PresetSubject = subject;
             EmailTemplate = emailTemplate;
             PresetAttachment = attachment;
+            isQuickResponse = isQR;
         }
 
         public override void ViewDidLoad ()
@@ -156,6 +163,33 @@ namespace NachoClient.iOS
             }
 
             ConfigureFullView ();
+
+            if (isQuickResponse) {
+                ShowQuickResponses (NcQuickResponse.QRTypeEnum.Compose);
+            }
+        }
+
+        protected void ShowQuickResponses(NcQuickResponse.QRTypeEnum whichType)
+        {
+            mcMessage.BodyId = McBody.InsertFile (account.Id, "").Id;
+
+            QuickResponseView x = new QuickResponseView(whichType, ref mcMessage);
+            x.SetOwner(this);
+            x.CreateView();
+            x.ShowView();
+        }
+
+        public void PopulateMessageFromQR(NcQuickResponse.QRTypeEnum whichType)
+        {
+            switch (whichType) {
+            case NcQuickResponse.QRTypeEnum.Compose:
+                subjectField.Text = mcMessage.Subject;
+                bodyTextView.Text = McBody.GetContentsString (mcMessage.BodyId);
+                bodyTextView.BecomeFirstResponder ();
+                break;
+            default:
+                break;
+            }
         }
 
         public override UIView InputAccessoryView {

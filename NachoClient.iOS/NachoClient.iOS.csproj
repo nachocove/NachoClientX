@@ -1139,6 +1139,10 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McAbstrFileDesc.cs">
       <Link>NachoCore\Model\McAbstrFileDesc.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\QuickResponseView.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcQuickResponse.cs">
+      <Link>NachoCore\Brain\NcQuickResponse.cs</Link>
+    </Compile>
     <Compile Include="NachoUI.iOS\Support\ViewHelper.cs" />
   </ItemGroup>
   <ItemGroup>
