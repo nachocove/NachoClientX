@@ -33,6 +33,7 @@ namespace Test.Android
 			global::Xamarin.Android.NUnitLite.Resource.Id.ResultFullName = global::Test.Android.Resource.Id.ResultFullName;
 			global::Xamarin.Android.NUnitLite.Resource.Id.ResultMessage = global::Test.Android.Resource.Id.ResultMessage;
 			global::Xamarin.Android.NUnitLite.Resource.Id.ResultResultState = global::Test.Android.Resource.Id.ResultResultState;
+			global::Xamarin.Android.NUnitLite.Resource.Id.ResultRunSingleMethodTest = global::Test.Android.Resource.Id.ResultRunSingleMethodTest;
 			global::Xamarin.Android.NUnitLite.Resource.Id.ResultStackTrace = global::Test.Android.Resource.Id.ResultStackTrace;
 			global::Xamarin.Android.NUnitLite.Resource.Id.ResultsFailed = global::Test.Android.Resource.Id.ResultsFailed;
 			global::Xamarin.Android.NUnitLite.Resource.Id.ResultsId = global::Test.Android.Resource.Id.ResultsId;
@@ -818,20 +819,23 @@ namespace Test.Android
 			// aapt resource value: 0x7f050042
 			public const int OptionRemoteServer = 2131034178;
 			
-			// aapt resource value: 0x7f050051
-			public const int OptionsButton = 2131034193;
-			
-			// aapt resource value: 0x7f05004c
-			public const int ResultFullName = 2131034188;
-			
-			// aapt resource value: 0x7f05004e
-			public const int ResultMessage = 2131034190;
+			// aapt resource value: 0x7f050052
+			public const int OptionsButton = 2131034194;
 			
 			// aapt resource value: 0x7f05004d
-			public const int ResultResultState = 2131034189;
+			public const int ResultFullName = 2131034189;
 			
 			// aapt resource value: 0x7f05004f
-			public const int ResultStackTrace = 2131034191;
+			public const int ResultMessage = 2131034191;
+			
+			// aapt resource value: 0x7f05004e
+			public const int ResultResultState = 2131034190;
+			
+			// aapt resource value: 0x7f05004c
+			public const int ResultRunSingleMethodTest = 2131034188;
+			
+			// aapt resource value: 0x7f050050
+			public const int ResultStackTrace = 2131034192;
 			
 			// aapt resource value: 0x7f050048
 			public const int ResultsFailed = 2131034184;
@@ -854,11 +858,11 @@ namespace Test.Android
 			// aapt resource value: 0x7f050046
 			public const int ResultsResult = 2131034182;
 			
-			// aapt resource value: 0x7f050050
-			public const int RunTestsButton = 2131034192;
+			// aapt resource value: 0x7f050051
+			public const int RunTestsButton = 2131034193;
 			
-			// aapt resource value: 0x7f050052
-			public const int TestSuiteListView = 2131034194;
+			// aapt resource value: 0x7f050053
+			public const int TestSuiteListView = 2131034195;
 			
 			// aapt resource value: 0x7f05001a
 			public const int action_bar = 2131034138;

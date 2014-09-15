@@ -550,10 +550,6 @@
       <Link>NachoCore\BackEnd\ActiveSync\Commands\AsFolderUpdateCommand.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\AppointmentEntryElement.cs" />
-    <Compile Include="NachoUI.iOS\AttendeeViewController.cs" />
-    <Compile Include="NachoUI.iOS\AttendeeViewController.designer.cs">
-      <DependentUpon>AttendeeViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\Interfaces\INachoContactChooser.cs" />
     <Compile Include="NachoUI.iOS\Support\SegueHolder.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\Pretty.cs">

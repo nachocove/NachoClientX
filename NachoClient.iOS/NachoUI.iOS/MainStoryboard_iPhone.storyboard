@@ -312,40 +312,6 @@
             </objects>
             <point key="canvasLocation" x="-3914" y="-3890"/>
         </scene>
-        <!--Attendee View Controller-->
-        <scene sceneID="Qdn-rb-w8l">
-            <objects>
-                <tableViewController storyboardIdentifier="AttendeeViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="PUz-nc-h33" customClass="AttendeeViewController" sceneMemberID="viewController">
-                    <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="CVB-up-ERg">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                        <prototypes>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" id="zmC-Ff-rpD">
-                                <rect key="frame" x="0.0" y="22" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="zmC-Ff-rpD" id="THa-lK-abm">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                </tableViewCellContentView>
-                            </tableViewCell>
-                        </prototypes>
-                        <connections>
-                            <outlet property="dataSource" destination="PUz-nc-h33" id="BhN-Ee-SOR"/>
-                            <outlet property="delegate" destination="PUz-nc-h33" id="jHT-K3-bMC"/>
-                        </connections>
-                    </tableView>
-                    <extendedEdge key="edgesForExtendedLayout"/>
-                    <navigationItem key="navigationItem" id="aU2-wW-1ge"/>
-                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
-                    <connections>
-                        <segue destination="Mow-Gy-F9N" kind="push" identifier="AttendeeViewToContactChooser" id="nAp-rc-bND"/>
-                    </connections>
-                </tableViewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="var-bn-Y7r" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-589" y="-939"/>
-        </scene>
         <!--Contacts View Controller - Contacts-->
         <scene sceneID="pLr-jq-dgQ">
             <objects>
@@ -1252,7 +1218,6 @@
                         <outlet property="startDatePicker" destination="AyJ-GR-EP6" id="Aoa-Pn-SYG"/>
                         <outlet property="tentativeButton" destination="37n-Uz-Q3f" id="hcV-w3-2uZ"/>
                         <segue destination="ygr-ff-C2f" kind="push" identifier="EventToNachoNow" id="s9j-Ih-SWz"/>
-                        <segue destination="PUz-nc-h33" kind="push" identifier="EventToAttendee" id="4Sl-0E-160"/>
                         <segue destination="h6r-hi-wYu" kind="push" identifier="EventToPhone" id="Qo9-HW-pyp"/>
                         <segue destination="p7r-P8-BKK" kind="push" identifier="EventToAlert" id="tdu-G2-PEp"/>
                         <segue destination="cXD-rq-iSl" kind="push" identifier="EventToCal" id="Tfk-Mt-BlS"/>
@@ -1468,7 +1433,6 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
                         <outlet property="startDatePicker" destination="SN5-N4-3xJ" id="L24-7Y-NEp"/>
                         <segue destination="p7r-P8-BKK" kind="push" identifier="EditEventToAlert" id="m2D-2n-RiV"/>
                         <segue destination="cXD-rq-iSl" kind="push" identifier="EditEventToCalendarChooser" id="7sK-rg-HQL"/>
-                        <segue destination="PUz-nc-h33" kind="push" identifier="EditEventToAttendee" id="xSG-RA-4K6"/>
                         <segue destination="rp9-J1-cgU" kind="push" identifier="EditEventToEventAttendees" id="w67-dy-XSq"/>
                         <segue destination="Nbe-45-5AM" kind="push" identifier="EditEventToAttachment" id="peA-r2-tjq"/>
                     </connections>
@@ -2045,30 +2009,29 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="FHc-YP-jWH"/>
+        <segue reference="HCr-Oa-UHV"/>
+        <segue reference="zDw-Tx-fTt"/>
+        <segue reference="Bq3-C6-QI6"/>
         <segue reference="v9F-jf-qe1"/>
-        <segue reference="iqA-wd-xqD"/>
         <segue reference="g4G-tD-G9H"/>
+        <segue reference="iqA-wd-xqD"/>
         <segue reference="J8i-gn-UTn"/>
         <segue reference="ebP-h4-BhC"/>
         <segue reference="JGd-do-Y28"/>
         <segue reference="Afu-47-Kju"/>
-        <segue reference="hxO-14-opZ"/>
         <segue reference="c79-xS-Npa"/>
+        <segue reference="hxO-14-opZ"/>
         <segue reference="vUs-ft-xdy"/>
-        <segue reference="Bq3-C6-QI6"/>
-        <segue reference="6Lm-Uk-Knv"/>
-        <segue reference="zDw-Tx-fTt"/>
-        <segue reference="JTo-qU-j7O"/>
-        <segue reference="Tfk-Mt-BlS"/>
-        <segue reference="4Sl-0E-160"/>
-        <segue reference="tdu-G2-PEp"/>
-        <segue reference="HCr-Oa-UHV"/>
-        <segue reference="RR1-bJ-URL"/>
+        <segue reference="FHc-YP-jWH"/>
         <segue reference="Wvd-xL-8Ik"/>
-        <segue reference="W3H-fb-nEJ"/>
         <segue reference="fwk-9p-tlV"/>
-        <segue reference="xrp-ey-B0j"/>
+        <segue reference="W3H-fb-nEJ"/>
         <segue reference="kd2-jR-F9u"/>
+        <segue reference="xrp-ey-B0j"/>
+        <segue reference="6Lm-Uk-Knv"/>
+        <segue reference="Tfk-Mt-BlS"/>
+        <segue reference="RR1-bJ-URL"/>
+        <segue reference="tdu-G2-PEp"/>
+        <segue reference="JTo-qU-j7O"/>
     </inferredMetricsTieBreakers>
 </document>
