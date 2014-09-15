@@ -69,7 +69,10 @@ namespace NachoClient.iOS
         protected float LINE_HEIGHT = 40;
         protected float LEFT_INDENT = 15;
         protected float RIGHT_INDENT = 15;
-        protected bool isQuickResponse = false;
+
+        protected NcQuickResponse.QRTypeEnum QRType = NcQuickResponse.QRTypeEnum.None;
+
+        UIBarButtonItem quickResponseButton;
 
         public MessageComposeViewController (IntPtr handle) : base (handle)
         {
@@ -80,6 +83,10 @@ namespace NachoClient.iOS
             owner = o;
         }
 
+        public void SetQRType (NcQuickResponse.QRTypeEnum QRType)
+        {
+            this.QRType = QRType;
+        }
         // Can be called by owner to set a pre-existing To: address, subject, email template and/or attachment
         public void SetEmailPresetFields (NcEmailAddress toAddress = null, string subject = null, string emailTemplate = null, McAttachment attachment = null, bool isQR = false)
         {
@@ -87,7 +94,6 @@ namespace NachoClient.iOS
             PresetSubject = subject;
             EmailTemplate = emailTemplate;
             PresetAttachment = attachment;
-            isQuickResponse = isQR;
         }
 
         public override void ViewDidLoad ()
@@ -108,9 +114,15 @@ namespace NachoClient.iOS
                 NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
             }
 
+            quickResponseButton = new UIBarButtonItem ();
+
+            Util.SetOriginalImageForButton (quickResponseButton, "contact-quickemail");
             Util.SetOriginalImageForButton (sendButton, "icn-send");
 
-            NavigationItem.RightBarButtonItem = sendButton;
+            NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
+                sendButton,
+                quickResponseButton,
+            };
 
             attachButton.SetTitle (" Attach Files", UIControlState.Normal);
             attachButton.SizeToFit ();
@@ -164,16 +176,42 @@ namespace NachoClient.iOS
 
             ConfigureFullView ();
 
-            if (isQuickResponse) {
-                ShowQuickResponses (NcQuickResponse.QRTypeEnum.Compose);
+            if (NcQuickResponse.QRTypeEnum.None != QRType) {
+                ShowQuickResponses ();
             }
+
+            quickResponseButton.Clicked += (object sender, EventArgs e) => {
+                if(null != ActionThread){
+                    if(Action.Equals (Reply) || Action.Equals(ReplyAll)){
+                        QRType = NcQuickResponse.QRTypeEnum.Reply;
+                    }
+                    if (Action.Equals (Forward)){
+                        QRType = NcQuickResponse.QRTypeEnum.Forward;
+                    }
+                }else {
+                    QRType = NcQuickResponse.QRTypeEnum.Compose;
+                }
+                ShowQuickResponses ();
+            };
+
+
         }
 
-        protected void ShowQuickResponses(NcQuickResponse.QRTypeEnum whichType)
+        protected void ShowQuickResponses()
         {
-            mcMessage.BodyId = McBody.InsertFile (account.Id, "").Id;
+            switch (QRType) {
+            case NcQuickResponse.QRTypeEnum.Compose:
+                mcMessage.BodyId = McBody.InsertFile (account.Id, "").Id;
+                break;
+            case NcQuickResponse.QRTypeEnum.Reply:
+                mcMessage.BodyId = McBody.InsertFile (account.Id, bodyTextView.Text).Id;
+                break;
+            case NcQuickResponse.QRTypeEnum.Forward:
+                mcMessage.BodyId = McBody.InsertFile (account.Id, bodyTextView.Text).Id;
+                break;
+            }
 
-            QuickResponseView x = new QuickResponseView(whichType, ref mcMessage);
+            QuickResponseView x = new QuickResponseView(QRType, ref mcMessage);
             x.SetOwner(this);
             x.CreateView();
             x.ShowView();
@@ -185,10 +223,20 @@ namespace NachoClient.iOS
             case NcQuickResponse.QRTypeEnum.Compose:
                 subjectField.Text = mcMessage.Subject;
                 bodyTextView.Text = McBody.GetContentsString (mcMessage.BodyId);
-                bodyTextView.BecomeFirstResponder ();
+                break;
+            case NcQuickResponse.QRTypeEnum.Reply:
+                bodyTextView.Text = McBody.GetContentsString (mcMessage.BodyId);
+                break;
+            case NcQuickResponse.QRTypeEnum.Forward:
+                bodyTextView.Text = McBody.GetContentsString (mcMessage.BodyId);
                 break;
             default:
                 break;
+            }
+
+            bodyTextView.BecomeFirstResponder ();
+            if (bodyTextView.Text.Contains ("\n")) {
+                bodyTextView.SelectedRange = new NSRange (bodyTextView.Text.IndexOf ("\n"), 0);
             }
         }
 

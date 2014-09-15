@@ -17,11 +17,28 @@ namespace NachoCore.Brain
             new QuickResponse ("Expense reports", "Can you approve my expense report?"),
         };
 
+        protected List <QuickResponse> QuickReplyList = new List<QuickResponse> () {
+            new QuickResponse (null, "Nice job!"),
+            new QuickResponse (null, "Thanks."),
+            new QuickResponse (null, "Approved."),
+            new QuickResponse (null, "Please call me to discuss."),
+            new QuickResponse (null, "Ok."),
+            new QuickResponse (null, "Not at this time."),
+        };
+
+        protected List <QuickResponse> QuickForwardList = new List<QuickResponse> () {
+            new QuickResponse (null, "FYI"),
+            new QuickResponse (null, "Please Read and Respond by ... "),
+            new QuickResponse (null, "Do you agree?"),
+            new QuickResponse (null, "Please call me ASAP to discuss."),
+        };
+
         public enum QRTypeEnum
         {
             Compose,
             Reply,
             Forward,
+            None,
         }
 
         public QRTypeEnum whatType { get; private set; }
@@ -36,21 +53,32 @@ namespace NachoCore.Brain
             switch (whatType) {
             case QRTypeEnum.Compose:
                 return QuickComposeList;
+            case QRTypeEnum.Reply:
+                return QuickReplyList;
+            case QRTypeEnum.Forward:
+                return QuickForwardList;
             default:
                 return null;
             }
         }
 
-        public void CreateQuickResponse (QuickResponse whichOne, ref McEmailMessage emailMessage)
+        public void CreateQuickResponse (QuickResponse selectedResponse, ref McEmailMessage emailMessage)
         {
+            McBody emailBody = McBody.QueryById<McBody> (emailMessage.BodyId);
+
             switch (whatType) {
             case QRTypeEnum.Compose:
-                emailMessage.Subject = whichOne.subject;
-                McBody emailBody = McBody.QueryById<McBody> (emailMessage.BodyId);
-                emailBody.UpdateData (whichOne.body);
+                emailMessage.Subject = selectedResponse.subject;
+                emailBody.UpdateData (selectedResponse.body);
+                break;
+            case QRTypeEnum.Reply:
+                emailBody.UpdateData (selectedResponse.body + emailBody.GetContentsString ());
+                break;
+            case QRTypeEnum.Forward:
+                emailBody.UpdateData (selectedResponse.body + emailBody.GetContentsString ());
                 break;
             default:
-                return;
+                break;
             }
         }
 
