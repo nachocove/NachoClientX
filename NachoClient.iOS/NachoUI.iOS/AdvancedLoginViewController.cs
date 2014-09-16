@@ -713,8 +713,8 @@ namespace NachoClient.iOS
         {
             var s = (StatusIndEventArgs)e;
 
-            if (NcResult.SubKindEnum.Info_SyncSucceeded == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "SyncSucceeded Status Ind");
+            if (NcResult.SubKindEnum.Info_EmailMessageSetChanged == s.Status.SubKind) {
+                Log.Info (Log.LOG_UI, "Info_EmailMessageSetChanged Status Ind (AdvancedView)");
                 LoginHelpers.SetFirstSyncCompleted (LoginHelpers.GetCurrentAccountId (), true);
                 if (!hasSyncedEmail) {
                     waitScreen.StartSyncedEmailAnimation ();

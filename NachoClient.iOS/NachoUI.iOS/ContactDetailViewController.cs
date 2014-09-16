@@ -12,6 +12,7 @@ using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using MimeKit;
+using NachoCore.Brain;
 using System.Text.RegularExpressions;
 
 namespace NachoClient.iOS
@@ -112,11 +113,9 @@ namespace NachoClient.iOS
                 var dc = (MessageComposeViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
                 var address = holder.value as string;
-                if (holder.value2 != null) {
-                    var isQr = (bool)holder.value2;
-                    dc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, address), null, null, null, isQr);
-                }else {
-                    dc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, address));
+                dc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, address));
+                if (null != holder.value2) {
+                    dc.SetQRType (NcQuickResponse.QRTypeEnum.Compose);
                 }
                 return;
             }
