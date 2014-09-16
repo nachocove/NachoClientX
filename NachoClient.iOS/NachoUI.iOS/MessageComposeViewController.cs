@@ -201,7 +201,7 @@ namespace NachoClient.iOS
             QuickResponseView qr = (QuickResponseView)View.ViewWithTag (100);
 
             if (null != qr) {
-                if (qr.Hidden == true) {
+                if (qr.Hidden) {
                     qr.Hidden = false;
                 }
             }else {
