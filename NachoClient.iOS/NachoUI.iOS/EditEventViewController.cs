@@ -41,7 +41,6 @@ namespace NachoClient.iOS
 
         UITextField titleField;
         UITextView descriptionTextView;
-        bool descriptionWasEdited;
 
         UIView titleView;
         UIView descriptionView;
@@ -437,11 +436,9 @@ namespace NachoClient.iOS
             descriptionTextView.ContentInset = new UIEdgeInsets (-7, -4, 0, 0);
             descriptionTextView.Text = c.Description;
             descriptionPlaceHolder.Hidden = descriptionTextView.HasText;
-            descriptionWasEdited = false;
 
             descriptionTextView.Changed += (object sender, EventArgs e) => {
                 eventEditStarted = true;
-                descriptionWasEdited = true;
                 descriptionPlaceHolder.Hidden = true;
                 SelectionChanged (descriptionTextView);
             };
@@ -1193,10 +1190,7 @@ namespace NachoClient.iOS
         {
             c.AccountId = account.Id;
             c.Subject = titleField.Text;
-            if (descriptionWasEdited || 0 == c.BodyId) {
-                // Setting the description is more expensive than just setting a field. Only set it if necessary.
-                c.Description = descriptionTextView.Text;
-            }
+            c.Description = descriptionTextView.Text;
             c.AllDayEvent = allDayEvent;
             c.StartTime = startDate;
             c.EndTime = endDate;
