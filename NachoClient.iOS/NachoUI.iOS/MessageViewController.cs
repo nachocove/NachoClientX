@@ -883,7 +883,6 @@ namespace NachoClient.iOS
             float duration = animated ? 0.3f : 0.0f;
             UIView.Animate (duration, 0, UIViewAnimationOptions.CurveLinear, () => {
                 LayoutView ();
-                ViewHelper.DumpViews<TagType> (scrollView); // hack alert - do not commit
             }, () => {
             });
         }
