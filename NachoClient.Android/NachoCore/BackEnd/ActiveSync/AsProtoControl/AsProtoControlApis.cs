@@ -135,6 +135,8 @@ namespace NachoCore.ActiveSync
 
             var refdEmailMessage = McAbstrObject.QueryById<McEmailMessage> (refdEmailMessageId);
             var newEmailMessage = McAbstrObject.QueryById<McEmailMessage> (newEmailMessageId);
+            newEmailMessage.ReferencedEmailId = refdEmailMessageId;
+            newEmailMessage.Update ();
             folder = McAbstrObject.QueryById<McFolder> (folderId);
             if (null == refdEmailMessage || null == newEmailMessage || null == folder) {
                 return null;

@@ -129,6 +129,11 @@ namespace NachoCore.Model
         /// Specifies the content class of the data (optional) - Must be 'urn:content-classes:message' for email
         public string ContentClass { set; get; }
 
+        /// When passed as the "new" email to a Reply/ForwardEmailCmd, this will get set to the DB Id of the email
+        /// being replied-to or forwarded. If set, the MIME generator can gather content from the referenced email.
+        [Indexed]
+        public int ReferencedEmailId { set; get; }
+
         [Ignore]
         /// Internal list of category elements
         protected List<McEmailMessageCategory> _Categories{ get; set; }
