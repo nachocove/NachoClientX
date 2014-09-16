@@ -149,6 +149,10 @@ namespace NachoClient.iOS
 
             var openSourceTap = new UITapGestureRecognizer ();
             openSourceTap.AddTarget (() => {
+                legalUrl = NSBundle.MainBundle.GetUrlForResource("LegalInfo", "html", "", "").ToString();
+                legalTitle = "Legal Information";
+                isUrl = true;
+                PerformSegue("GeneralSettingsToSettingsLegal", this);
                 View.EndEditing (true);
             });
             openSourceCell.AddGestureRecognizer (openSourceTap);
