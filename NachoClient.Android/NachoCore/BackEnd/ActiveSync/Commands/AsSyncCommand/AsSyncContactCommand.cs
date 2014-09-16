@@ -14,17 +14,31 @@ namespace NachoCore.ActiveSync
     {
         public static void ServerSaysAddOrChangeContact (XElement command, McFolder folder)
         {
-            // Convert the XML to an AsContact
-            var asResult = AsContact.FromXML (folder.AccountId, Ns, command);
-            var asContact = asResult.GetValue<AsContact> ();
-            NcAssert.True (asResult.isOK (), "asResult.isOK");
-            NcAssert.NotNull (asContact, "asContact");
-
-            // Convert the AsContact to an McContact
-            var mcResult = asContact.ToMcContact (folder.AccountId);
-            var mcContact = mcResult.GetValue<McContact> ();
-            NcAssert.True (mcResult.isOK ());
-            NcAssert.NotNull (mcContact, "mcContact");
+            var xmlServerId = command.Element (Ns + Xml.AirSync.ServerId);
+            if (null == xmlServerId || null == xmlServerId.Value || string.Empty == xmlServerId.Value) {
+                Log.Error (Log.LOG_AS, "ServerSaysAddOrChangeContact: No ServerId present.");
+                return;
+            }
+            McContact mcContact = null;
+            try {
+                var asResult = AsContact.FromXML (folder.AccountId, Ns, command);
+                var asContact = asResult.GetValue<AsContact> ();
+                NcAssert.True (asResult.isOK (), "asResult.isOK");
+                NcAssert.NotNull (asContact, "asContact");
+                var mcResult = asContact.ToMcContact (folder.AccountId);
+                mcContact = mcResult.GetValue<McContact> ();
+                NcAssert.True (mcResult.isOK ());
+                NcAssert.NotNull (mcContact, "mcContact");
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_AS, "ServerSaysAddOrChangeContact: Exception parsing: {0}", ex.ToString ());
+                if (null == mcContact || null == mcContact.ServerId || string.Empty == mcContact.ServerId) {
+                    mcContact = new McContact () {
+                        ServerId = xmlServerId.Value,
+                    };
+                }
+                mcContact.AccountId = folder.AccountId;
+                mcContact.IsIncomplete = true;
+            }
 
             var existingContact = McAbstrFolderEntry.QueryByServerId<McContact> (folder.AccountId, mcContact.ServerId);
 

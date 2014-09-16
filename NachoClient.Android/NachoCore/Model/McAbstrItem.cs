@@ -43,6 +43,8 @@ namespace NachoCore.Model
 
         // Platform-specific code sets this when a user-notification is sent.
         public bool HasBeenNotified { get; set; }
+        /// The parser blew up when parsing this item, so we know it is missing some fields.
+        public bool IsIncomplete { get; set; }
 
         public McAbstrItem ()
         {

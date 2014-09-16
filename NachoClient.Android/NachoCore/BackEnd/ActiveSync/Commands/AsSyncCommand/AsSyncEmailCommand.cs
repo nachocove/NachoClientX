@@ -13,10 +13,25 @@ namespace NachoCore.ActiveSync
     {
         public static McEmailMessage ServerSaysAddOrChangeEmail (XElement command, McFolder folder)
         {   
+            var xmlServerId = command.Element (Ns + Xml.AirSync.ServerId);
+            if (null == xmlServerId || null == xmlServerId.Value || string.Empty == xmlServerId.Value) {
+                Log.Error (Log.LOG_AS, "ServerSaysAddOrChangeEmail: No ServerId present.");
+                return null;
+            }
+            McEmailMessage emailMessage = null;
             AsHelpers aHelp = new AsHelpers ();
-            var r = aHelp.ParseEmail (Ns, command, folder);
-            McEmailMessage emailMessage = r.GetValue<McEmailMessage> ();
-
+            try {
+                var r = aHelp.ParseEmail (Ns, command, folder);
+                emailMessage = r.GetValue<McEmailMessage> ();
+            } catch (Exception ex) {
+                Log.Error (Log.LOG_AS, "ServerSaysAddOrChangeEmail: Exception parsing: {0}", ex.ToString ());
+                if (null == emailMessage || null == emailMessage.ServerId || string.Empty == emailMessage.ServerId) {
+                    emailMessage = new McEmailMessage () {
+                        ServerId = xmlServerId.Value,
+                    };
+                }
+                emailMessage.IsIncomplete = true;
+            }
             bool justCreated = false;
 
             var eMsg = McAbstrFolderEntry.QueryByServerId<McEmailMessage> (folder.AccountId, emailMessage.ServerId);
