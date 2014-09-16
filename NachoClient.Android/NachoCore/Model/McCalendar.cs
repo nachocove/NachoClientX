@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using NachoCore.Utils;
+using MimeKit;
 
 namespace NachoCore.Model
 {
@@ -41,6 +42,53 @@ namespace NachoCore.Model
 
         /// Recurrences are generated into the McEvent table thru this date.
         public DateTime RecurrencesGeneratedUntil { get; set; }
+
+        /// <summary>
+        /// The plain text version of the description of the event.
+        /// </summary>
+        /// The description is stored in the item's body, along with other information,
+        /// such as attachments.  It is not stored in the database directly.
+        [Ignore]
+        public string Description {
+            get {
+                if (0 == BodyId) {
+                    return "";
+                }
+                McBody body = McBody.QueryById<McBody> (BodyId);
+                if (McBody.MIME == BodyType) {
+                    return MimeHelpers.ExtractTextPart (body);
+                } else {
+                    return body.GetContentsString ();
+                }
+            }
+            set {
+                if (0 == BodyId) {
+                    // No existing body.  Create one.
+                    McBody body = McBody.InsertFile (AccountId, value);
+                    BodyId = body.Id;
+                    BodyType = McBody.PlainText;
+                } else {
+                    // Existing body.  Preserve the parts of it that we aren't changing.
+                    var oldBody = McBody.QueryById<McBody> (BodyId);
+                    McBody newBody;
+                    if (McBody.MIME == BodyType) {
+                        MimeMessage message = MimeHelpers.LoadMessage (oldBody.GetFilePath ());
+                        MimeHelpers.SetPlainText (message, value);
+                        newBody = McBody.InsertSaveStart (AccountId);
+                        using (var fileStream = newBody.SaveFileStream ()) {
+                            message.WriteTo (fileStream);
+                        }
+                        newBody.UpdateSaveFinish ();
+                    } else {
+                        // Plain text.  Replace the entire contents of the body.
+                        newBody = McBody.InsertFile (AccountId, value);
+                        BodyType = McBody.PlainText;
+                    }
+                    BodyId = newBody.Id;
+                    oldBody.Delete ();
+                }
+            }
+        }
 
         public static ClassCodeEnum GetClassCode ()
         {

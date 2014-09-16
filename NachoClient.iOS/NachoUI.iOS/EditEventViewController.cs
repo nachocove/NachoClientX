@@ -41,6 +41,7 @@ namespace NachoClient.iOS
 
         UITextField titleField;
         UITextView descriptionTextView;
+        bool descriptionWasEdited;
 
         UIView titleView;
         UIView descriptionView;
@@ -434,9 +435,13 @@ namespace NachoClient.iOS
             var beginningRange = new NSRange (0, 0);
             descriptionTextView.SelectedRange = beginningRange;
             descriptionTextView.ContentInset = new UIEdgeInsets (-7, -4, 0, 0);
+            descriptionTextView.Text = c.Description;
+            descriptionPlaceHolder.Hidden = descriptionTextView.HasText;
+            descriptionWasEdited = false;
 
             descriptionTextView.Changed += (object sender, EventArgs e) => {
                 eventEditStarted = true;
+                descriptionWasEdited = true;
                 descriptionPlaceHolder.Hidden = true;
                 SelectionChanged (descriptionTextView);
             };
@@ -955,9 +960,6 @@ namespace NachoClient.iOS
             var titleFieldView = contentView.ViewWithTag (EVENT_TITLE_LABEL_TAG) as UITextField;
             titleFieldView.Text = c.Subject;
 
-            //var descriptionTextView = contentView.ViewWithTag (EVENT_DESCRIPTION_LABEL_TAG) as UITextView;
-            //descriptionTextView.Text = McBody.Get(c.BodyId);
-
             //all day event
             var allDaySwitchView = contentView.ViewWithTag (ALL_DAY_SWITCH_TAG) as UISwitch;
             allDaySwitchView.SetState (c.AllDayEvent, false);
@@ -1189,8 +1191,12 @@ namespace NachoClient.iOS
 
         protected void ExtractValues ()
         {
+            c.AccountId = account.Id;
             c.Subject = titleField.Text;
-            //c.Description = descriptionTextView.Text;
+            if (descriptionWasEdited || 0 == c.BodyId) {
+                // Setting the description is more expensive than just setting a field. Only set it if necessary.
+                c.Description = descriptionTextView.Text;
+            }
             c.AllDayEvent = allDayEvent;
             c.StartTime = startDate;
             c.EndTime = endDate;
@@ -1202,7 +1208,6 @@ namespace NachoClient.iOS
             // Extras
             c.OrganizerName = Pretty.DisplayNameForAccount (account);
             c.OrganizerEmail = account.EmailAddr;
-            c.AccountId = account.Id;
             c.DtStamp = DateTime.UtcNow;
             if (0 == c.attendees.Count) {
                 c.MeetingStatusIsSet = true;
@@ -1225,11 +1230,6 @@ namespace NachoClient.iOS
             if (String.IsNullOrEmpty (c.UID)) {
                 c.UID = System.Guid.NewGuid ().ToString ().Replace ("-", null).ToUpper ();
             }
-
-            // FIXME: Editing, reuse body id or what?
-            var body = McBody.InsertFile (c.AccountId, descriptionTextView.Text);
-            c.BodyId = body.Id;
-            c.BodyType = McBody.PlainText;
         }
 
         protected void SyncMeetingRequest ()
@@ -1266,7 +1266,7 @@ namespace NachoClient.iOS
         {
             //var tzid = RadioElementWithData.SelectedData (timezoneEntryElement);
             var iCalPart = CalendarHelper.iCalToMimePart (account, c, "Local");
-            var mimeBody = CalendarHelper.CreateMime (descriptionTextView.Text, iCalPart, attachments);
+            var mimeBody = CalendarHelper.CreateMime (c.Description, iCalPart, attachments);
 
             CalendarHelper.SendInvites (account, c, null, mimeBody);
         }

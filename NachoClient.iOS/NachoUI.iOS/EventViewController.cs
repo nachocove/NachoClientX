@@ -287,11 +287,7 @@ namespace NachoClient.iOS
 
             if (segue.Identifier.Equals ("EventToAttachment")) {
                 var dc = (EventAttachmentViewController)segue.DestinationViewController;
-                if (createEvent) {
-                    dc.SetOwner (this, attachments, c, true);
-                } else {
-                    dc.SetOwner (this, attachments, c, false);
-                }
+                dc.SetOwner (this, attachments, c, createEvent);
                 return;
             }
 
@@ -537,13 +533,12 @@ namespace NachoClient.iOS
             titleLabelView.LineBreakMode = UILineBreakMode.WordWrap;
             titleLabelView.SizeToFit ();
 
-            //description view TODO
+            //description view
             var descriptionLabelView = View.ViewWithTag (EVENT_DESCRIPTION_LABEL_TAG) as UILabel;
-            descriptionLabelView.Text = "Description";
+            descriptionLabelView.Text = c.Description;
             descriptionLabelView.Lines = 0;
             descriptionLabelView.LineBreakMode = UILineBreakMode.WordWrap;
             descriptionLabelView.SizeToFit ();
-            //descriptionLabelView.Text = McBody.Get(c.BodyId);
 
             //location view
             var locationLabelView = View.ViewWithTag (EVENT_LOCATION_DETAIL_LABEL_TAG) as UILabel;
@@ -636,6 +631,7 @@ namespace NachoClient.iOS
                     i++;
                 }
             }
+
             LayoutView ();
         }
 
