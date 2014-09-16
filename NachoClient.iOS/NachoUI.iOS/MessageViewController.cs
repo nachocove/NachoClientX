@@ -57,6 +57,15 @@ namespace NachoClient.iOS
         protected bool errorLoadingBody;
         protected bool calendarRendered;
         protected bool expandedHeader = false;
+        protected bool firstConfig = true;
+        protected float expandedSeparatorYOffset;
+        protected float compactSeparatorYOffset;
+
+        protected float separatorYOffset {
+            get {
+                return (expandedHeader ? expandedSeparatorYOffset : compactSeparatorYOffset);
+            }
+        }
 
         public MessageViewController (IntPtr handle) : base (handle)
         {
@@ -468,12 +477,12 @@ namespace NachoClient.iOS
             userLabelView.Tag = (int)TagType.USER_LABEL_TAG;
             view.AddSubview (userLabelView);
 
-            yOffset = 20;
+            yOffset = 15;
 
             // From label view
             // Font will vary bold or regular, depending on isRead.
             // Size fields will be recalculated after text is known.
-            var fromLabelView = new UILabel (new RectangleF (65, 20, 150, 20));
+            var fromLabelView = new UILabel (new RectangleF (65, 15, 150, 20));
             fromLabelView.Font = A.Font_AvenirNextDemiBold17;
             fromLabelView.TextColor = A.Color_0F424C;
             fromLabelView.Tag = (int)TagType.FROM_TAG;
@@ -508,8 +517,9 @@ namespace NachoClient.iOS
             toView.SetCompact (false, -1);
             toView.SetEditable (false);
             toView.SetLineHeight (20);
+            toView.SetAddressIndentation (45);
             ViewFramer.Create (toView)
-                .X (8)
+                .X (20)
                 .Y (yOffset)
                 .Width (250)
                 .Height (0);
@@ -520,8 +530,9 @@ namespace NachoClient.iOS
             ccView.SetCompact (false, -1);
             ccView.SetEditable (false);
             ccView.SetLineHeight (20);
+            ccView.SetAddressIndentation (45);
             ViewFramer.Create (ccView)
-                .X (8)
+                .X (20)
                 .Y (yOffset)
                 .Width (250)
                 .Height (0);
@@ -562,7 +573,6 @@ namespace NachoClient.iOS
             attachmentImageView.AddGestureRecognizer (tapAttachmentIconGestureRecognizer);
 
             // Separator
-            yOffset += 5;
             var separatorView = new UIView (new RectangleF (0, yOffset, 320, 1));
             separatorView.BackgroundColor = A.Color_NachoBorderGray;
             separatorView.Tag = (int)TagType.SEPARATOR_TAG;
@@ -570,13 +580,15 @@ namespace NachoClient.iOS
 
             // Horizontal scroll bar - All message parts go inside here.
             horizontalScrollView = new UIScrollView ();
+            horizontalScrollView.Layer.ZPosition = 1.0f;
+            horizontalScrollView.BackgroundColor = UIColor.White;
             #if (DEBUG_UI)
             horizontalScrollView.BackgroundColor = A.Color_NachoGreen;
             #endif
             horizontalScrollView.Frame = new RectangleF (
                 HORIZONTAL_SCROLLVIEW_INSET, 
-                yOffset + HORIZONTAL_SCROLLVIEW_INSET,
-                view.Frame.Width - 2 * HORIZONTAL_SCROLLVIEW_INSET, 0);
+                yOffset,
+                view.Frame.Width - HORIZONTAL_SCROLLVIEW_INSET, 0);
             horizontalScrollView.DidZoom += (object sender, EventArgs e) => {
                 Log.Info (Log.LOG_UI, "horizontal scrollview did zoom");
             };
@@ -600,6 +612,8 @@ namespace NachoClient.iOS
 
             view.AddSubview (horizontalScrollView);
             messageView = new UIView ();
+            messageView.Layer.ZPosition = 1.0f;
+            messageView.BackgroundColor = UIColor.White;
             messageView.Frame = horizontalScrollView.Frame;
             #if (DEBUG_UI)
             messageView.BackgroundColor = A.Color_NachoYellow;
@@ -678,46 +692,22 @@ namespace NachoClient.iOS
                 userLabelView.BackgroundColor = Util.ColorForUser (message.cachedFromColor);
             }
 
+            VerticalLayoutCursor cursor = new VerticalLayoutCursor (view);
+            cursor.AddSpace (35); // for From and top inset
+
             // Subject label view
             var subjectLabelView = View.ViewWithTag ((int)TagType.SUBJECT_TAG) as UILabel;
             subjectLabelView.Lines = 0;
             subjectLabelView.Text = Pretty.SubjectString (message.Subject);
-            subjectLabelView.SizeToFit ();
+            cursor.LayoutView (subjectLabelView);
 
             // Received label view
             var receivedLabelView = View.ViewWithTag ((int)TagType.RECEIVED_DATE_TAG) as UILabel;
             receivedLabelView.Text = Pretty.FullDateTimeString (message.DateReceived);
-            receivedLabelView.SizeToFit ();
-            var receivedLabelFrame = receivedLabelView.Frame;
-            receivedLabelFrame.Y = subjectLabelView.Frame.Bottom;
-            receivedLabelView.Frame = receivedLabelFrame;
+            cursor.LayoutView (receivedLabelView);
 
-            float yOffset;
-            if (!expandedHeader) {
-                yOffset = receivedLabelView.Frame.Bottom;
-                toView.Hidden = true;
-                ccView.Hidden = true;
-            } else {
-                toView.Clear ();
-                foreach (var address in NcEmailAddress.ParseToAddressListString (message.To)) {
-                    toView.Append (address);
-                }
-                ccView.Clear ();
-                foreach (var address in NcEmailAddress.ParseCcAddressListString (message.Cc)) {
-                    ccView.Append (address);
-                }
-                toView.Hidden = false;
-                ccView.Hidden = false;
-                toView.ConfigureView ();
-                ccView.ConfigureView ();
-
-                ViewFramer.Create (toView).Y (receivedLabelView.Frame.Bottom);
-                ViewFramer.Create (ccView).Y (toView.Frame.Bottom);
-
-                yOffset = ccView.Frame.Bottom;
-            }
- 
             // Reminder image view and label
+            float yOffset = receivedLabelView.Frame.Bottom;
             var reminderImageView = View.ViewWithTag ((int)TagType.REMINDER_ICON_TAG) as UIImageView;
             var reminderLabelView = View.ViewWithTag ((int)TagType.REMINDER_TEXT_TAG) as UILabel;
             if (message.HasDueDate () || message.IsDeferred ()) {
@@ -727,16 +717,34 @@ namespace NachoClient.iOS
                 AdjustY (reminderImageView, yOffset + 4);
                 AdjustY (reminderLabelView, yOffset);
                 yOffset += 20;
+                cursor.AddSpace (20);
             } else {
                 reminderImageView.Hidden = true;
                 reminderLabelView.Hidden = true;
             }
-            if (yOffset < userImageView.Frame.Bottom) {
-                yOffset = userImageView.Frame.Bottom;
+
+            compactSeparatorYOffset = cursor.TotalHeight;
+
+            if (firstConfig) {
+                toView.Clear ();
+                foreach (var address in NcEmailAddress.ParseToAddressListString (message.To)) {
+                    toView.Append (address);
+                }
+                ccView.Clear ();
+                foreach (var address in NcEmailAddress.ParseCcAddressListString (message.Cc)) {
+                    ccView.Append (address);
+                }
+                toView.ConfigureView ();
+                ccView.ConfigureView ();
+                cursor.LayoutView (toView);
+                cursor.LayoutView (ccView);
+
+                expandedSeparatorYOffset = cursor.TotalHeight;
+
+                var separatorView = View.ViewWithTag ((int)TagType.SEPARATOR_TAG);
+                separatorView.Frame = new RectangleF (0, compactSeparatorYOffset, View.Frame.Width, 1);
+                firstConfig = false;
             }
-            yOffset += 5;
-            var separatorView = View.ViewWithTag ((int)TagType.SEPARATOR_TAG);
-            separatorView.Frame = new RectangleF (0, yOffset, View.Frame.Width, 1);
 
             // Chili image view
             var chiliImageView = View.ViewWithTag ((int)TagType.USER_CHILI_TAG) as UIImageView;
@@ -785,7 +793,7 @@ namespace NachoClient.iOS
             ConfigureToolbar ();
 
             if (0 == DeferLayoutDecrement ()) {
-                LayoutView ();
+                LayoutView (true);
             }
         }
 
@@ -880,12 +888,19 @@ namespace NachoClient.iOS
             }
         }
 
+        protected void LayoutView (bool animated)
+        {
+            float duration = animated ? 0.3f : 0.0f;
+            UIView.Animate (duration, 0, UIViewAnimationOptions.CurveLinear, () => {
+                LayoutView ();
+            }, () => {
+            });
+        }
+
         protected void LayoutView ()
         {
             var separatorView = view.ViewWithTag ((int)TagType.SEPARATOR_TAG);
-            var viewCursor = new VerticalLayoutCursor (view);
-            viewCursor.AddSpace (separatorView.Frame.Y + separatorView.Frame.Height);
-
+            ViewFramer.Create (separatorView).Y (separatorYOffset);
             attachmentListView.RemoveFromSuperview ();
             view.AddSubview (attachmentListView);
 
@@ -925,21 +940,14 @@ namespace NachoClient.iOS
             // Make sure the touch is in the header area
             PointF touch = sender.LocationInView (view);
             float bottom;
-            if (expandedHeader) {
-                bottom = ccView.Frame.Bottom;
-            } else {
-                bottom = view.ViewWithTag ((int)TagType.RECEIVED_DATE_TAG).Frame.Bottom;
-            }
-            if (touch.Y > bottom) {
+            if (touch.Y > separatorYOffset) {
                 return;
             }
 
             // Toggle header display mode and redraw
             expandedHeader = !expandedHeader;
 
-            UIView.Animate (0.2, 0, UIViewAnimationOptions.CurveLinear, () => {
-                ConfigureView ();
-            }, () => {});
+            ConfigureView ();
         }
 
         [MonoTouch.Foundation.Export ("DownloadMessage:")]
@@ -1121,7 +1129,7 @@ namespace NachoClient.iOS
                         horizontalScrollView.MinimumZoomScale = (0.95f * View.Bounds.Width) / wv.ScrollView.ContentSize.Width;
                     }
                     if (0 == DeferLayoutDecrement ()) {
-                        LayoutView ();
+                        LayoutView (true);
                     }
                 }
             };
@@ -1129,7 +1137,7 @@ namespace NachoClient.iOS
             wv.LoadError += (object sender, UIWebErrorArgs e) => {
                 htmlBusy -= 1;
                 if (0 == DeferLayoutDecrement ()) {
-                    LayoutView ();
+                    LayoutView (true);
                 }
             };
 
@@ -1642,19 +1650,11 @@ namespace NachoClient.iOS
             );
             horizontalScrollView.ContentSize = new SizeF (width, height);
 
-            // Set up horizontal scroll view
-            float y;
-            if (expandedHeader) {
-                y = ccView.Frame.Bottom;
-            } else {
-                var v = view.ViewWithTag ((int)TagType.RECEIVED_DATE_TAG);
-                y = v.Frame.Bottom;
-            }
             width = scrollView.Frame.Width - 2 * VIEW_INSET - 2 * HORIZONTAL_SCROLLVIEW_INSET;
-            height = messageView.Frame.Height + 2 * HORIZONTAL_SCROLLVIEW_INSET;
+            height = messageView.Frame.Height + HORIZONTAL_SCROLLVIEW_INSET;
             horizontalScrollView.Frame = new RectangleF (
                 HORIZONTAL_SCROLLVIEW_INSET,
-                y + HORIZONTAL_SCROLLVIEW_INSET,
+                separatorYOffset + 1,
                 width,
                 height
             );

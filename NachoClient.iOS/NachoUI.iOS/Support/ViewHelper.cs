@@ -95,6 +95,7 @@ namespace NachoClient.iOS
         public void LayoutView (UIView subview)
         {
             NcAssert.True (subview.Superview == ParentView);
+            subview.SizeToFit ();
             ViewFramer.Create (subview).Y (YOffset);
             YOffset += subview.Frame.Height;
             if (subview.Frame.Width > _MaxSubViewWidth) {
