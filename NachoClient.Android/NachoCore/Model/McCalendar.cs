@@ -5,7 +5,6 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using NachoCore.Utils;
-using MimeKit;
 
 namespace NachoCore.Model
 {
