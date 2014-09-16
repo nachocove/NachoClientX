@@ -939,7 +939,6 @@ namespace NachoClient.iOS
         {
             // Make sure the touch is in the header area
             PointF touch = sender.LocationInView (view);
-            float bottom;
             if (touch.Y > separatorYOffset) {
                 return;
             }
