@@ -64,6 +64,11 @@ namespace NachoClient.iOS
             this.LINE_HEIGHT = height;
         }
 
+        public void SetAddressIndentation (float width)
+        {
+            this.LEFT_ADDRESS_INDENT = width;
+        }
+
         public List<NcEmailAddress> AddressList {
             get {
                 var l = new List<NcEmailAddress> ();
