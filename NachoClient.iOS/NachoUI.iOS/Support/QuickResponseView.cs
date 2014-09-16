@@ -41,7 +41,8 @@ namespace NachoClient.iOS
         public void CreateView ()
         {
             this.BackgroundColor = UIColor.DarkGray.ColorWithAlpha (.85f);
-            this.Frame = owner.View.Frame;
+            this.Frame = new RectangleF(0, 0, owner.View.Frame.Width, owner.View.Frame.Height);
+            this.Tag = 100;
 
             float viewHeight = 64 + (ncQuick.GetResponseList ().Count * 41);
             UIView viewBody = new UIView ();

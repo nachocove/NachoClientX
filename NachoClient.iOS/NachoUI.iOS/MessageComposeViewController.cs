@@ -181,6 +181,7 @@ namespace NachoClient.iOS
             }
 
             quickResponseButton.Clicked += (object sender, EventArgs e) => {
+                View.EndEditing (true);
                 if(null != ActionThread){
                     if(Action.Equals (Reply) || Action.Equals(ReplyAll)){
                         QRType = NcQuickResponse.QRTypeEnum.Reply;
@@ -193,28 +194,34 @@ namespace NachoClient.iOS
                 }
                 ShowQuickResponses ();
             };
-
-
         }
 
         protected void ShowQuickResponses()
         {
-            switch (QRType) {
-            case NcQuickResponse.QRTypeEnum.Compose:
-                mcMessage.BodyId = McBody.InsertFile (account.Id, "").Id;
-                break;
-            case NcQuickResponse.QRTypeEnum.Reply:
-                mcMessage.BodyId = McBody.InsertFile (account.Id, bodyTextView.Text).Id;
-                break;
-            case NcQuickResponse.QRTypeEnum.Forward:
-                mcMessage.BodyId = McBody.InsertFile (account.Id, bodyTextView.Text).Id;
-                break;
-            }
+            QuickResponseView qr = (QuickResponseView)View.ViewWithTag (100);
 
-            QuickResponseView x = new QuickResponseView(QRType, ref mcMessage);
-            x.SetOwner(this);
-            x.CreateView();
-            x.ShowView();
+            if (null != qr) {
+                if (qr.Hidden == true) {
+                    qr.Hidden = false;
+                }
+            }else {
+                switch (QRType) {
+                case NcQuickResponse.QRTypeEnum.Compose:
+                    mcMessage.BodyId = McBody.InsertFile (account.Id, "").Id;
+                    break;
+                case NcQuickResponse.QRTypeEnum.Reply:
+                    mcMessage.BodyId = McBody.InsertFile (account.Id, bodyTextView.Text).Id;
+                    break;
+                case NcQuickResponse.QRTypeEnum.Forward:
+                    mcMessage.BodyId = McBody.InsertFile (account.Id, bodyTextView.Text).Id;
+                    break;
+                }
+
+                qr = new QuickResponseView (QRType, ref mcMessage);
+                qr.SetOwner (this);
+                qr.CreateView ();
+                qr.ShowView ();
+            }
         }
 
         public void PopulateMessageFromQR(NcQuickResponse.QRTypeEnum whichType)
