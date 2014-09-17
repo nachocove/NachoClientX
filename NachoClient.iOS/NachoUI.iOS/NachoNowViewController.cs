@@ -207,11 +207,9 @@ namespace NachoClient.iOS
                 var h = sender as SegueHolder;
                 if (null == h) {
                     // Composing a message
-                    vc.Action = null;
-                    vc.ActionThread = null;
+                    vc.SetAction (null, null);
                 } else {
-                    vc.Action = (string)h.value;
-                    vc.ActionThread = (McEmailMessageThread)h.value2;
+                    vc.SetAction ((McEmailMessageThread)h.value2, (string)h.value);
                 }
                 vc.SetOwner (this);
                 return;
