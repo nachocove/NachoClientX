@@ -197,6 +197,12 @@ namespace NachoClient.iOS
 
         }
 
+        public override bool HidesBottomBarWhenPushed {
+            get {
+                return this.NavigationController.TopViewController == this;
+            }
+        }
+
         public void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
@@ -325,6 +331,7 @@ namespace NachoClient.iOS
                 };
             }
             NavigationItem.Title = "Event Details";
+            NavigationController.NavigationBar.Translucent = false;
 
             //Map/location header image
             map = new MKMapView (new RectangleF (0, 0, SCREEN_WIDTH, IMAGE_HEIGHT));

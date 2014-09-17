@@ -40,7 +40,7 @@ namespace NachoClient.iOS
             Util.ConfigureNavBar (false, NavigationController);
 
             var nachoButton = new UIBarButtonItem ();
-            Util.SetOriginalImageForButton (nachoButton, "nav-nachonow");
+            Util.SetOriginalImageForButton (nachoButton, "nav-calendar-empty");
             nachoButton.Clicked += (object sender, EventArgs e) => {
                 UIView.Animate (1, 0, UIViewAnimationOptions.CurveEaseOut,
                     () => {
@@ -66,7 +66,6 @@ namespace NachoClient.iOS
 
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, newMeetingButton };
             NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] {
-                A.RevealButton (this),
                 nachoButton,
             };
 
@@ -125,7 +124,7 @@ namespace NachoClient.iOS
             calendarPanGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
                 return true;
             };
-            calendarView.AddGestureRecognizer (calendarPanGestureRecognizer);
+            //calendarView.AddGestureRecognizer (calendarPanGestureRecognizer);
 
             // Tap the calendar thumb to hid the calendar again
             calendarCloseTapGestureRecognizer = new UITapGestureRecognizer ((UITapGestureRecognizer obj) => {

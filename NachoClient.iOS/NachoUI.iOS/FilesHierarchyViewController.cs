@@ -42,12 +42,6 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            if (null == owner) {
-                NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] {
-                    A.RevealButton (this),
-                    A.NachoNowButton (this),
-                };
-            }
             FilesHierarchyView ();
         }
 

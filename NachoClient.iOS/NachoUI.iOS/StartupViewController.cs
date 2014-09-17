@@ -56,7 +56,7 @@ namespace NachoClient.iOS
             } else if (null != hasOpenedFromEvent) {
                 return "SegueToEventView";
             } else {
-                return "SegueToNachoNow";
+                return "SegueToTabController";
             }
         }
 
@@ -90,6 +90,9 @@ namespace NachoClient.iOS
                 return;
             }
             if (segue.Identifier == "SegueToLaunch") {
+                return;
+            }
+            if (segue.Identifier == "SegueToTabController") {
                 return;
             }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);

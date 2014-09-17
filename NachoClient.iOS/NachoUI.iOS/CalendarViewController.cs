@@ -57,12 +57,7 @@ namespace NachoClient.iOS
             addEventButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("CalendarToEditEventView", new SegueHolder (null));
             };
-
-            // Navigation
-            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] {
-                A.RevealButton (this),
-                A.NachoNowButton (this),
-            };
+                
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { addEventButton, todayButton };
 
             calendarSource = new CalendarTableViewSource ();
@@ -77,66 +72,7 @@ namespace NachoClient.iOS
             calendarSource.Refresh ();
             calendarTableView.ReloadData ();
 
-            calendarTableView.SeparatorColor = A.Color_NachoBorderGray;
-
-            var todayButtonLabel = new UILabel (new RectangleF (108, 3, 23, 44));
-            todayButtonLabel.Text = DateTime.Today.Day.ToString ();
-            todayButtonLabel.TextColor = A.Color_NachoBlue;
-            todayButtonLabel.Font = A.Font_AvenirNextRegular14;
-            todayButtonLabel.TextAlignment = UITextAlignment.Center;
-            var titleView = new UIView (new RectangleF (0, 0, (dateBarHeight - 8), 44));
-            var titleLabel = new UILabel (new RectangleF (0, 0, (dateBarHeight - 8), 44));
-            titleLabel.Font = A.Font_AvenirNextDemiBold17;
-            titleLabel.AdjustsFontSizeToFitWidth = true;
-            titleLabel.TextColor = UIColor.White;
-            titleLabel.Text = "Calendar";
-            titleView.Add (todayButtonLabel);
-            titleView.Add (titleLabel);
-
-            this.NavigationItem.TitleView = titleView;
-            DateDotView.Frame = (new RectangleF (0, 0, View.Frame.Width, dateBarHeight));
-            DateDotView.ClipsToBounds = true;
-            DateDotView.BackgroundColor = UIColor.White;
-
-            DateDotWeekPanGestureRecognizer = new UIPanGestureRecognizer ((UIPanGestureRecognizer obj) => {
-                DateDotWeekPan (obj);
-            });
-            DateDotWeekPanGestureRecognizer.Enabled = false;
-            DateDotWeekPanGestureRecognizer.MaximumNumberOfTouches = 1;
-            DateDotView.AddGestureRecognizer (DateDotWeekPanGestureRecognizer);
-
-            DateDotToggleOpenMonthPanGestureRecognizer = new UIPanGestureRecognizer ((UIPanGestureRecognizer obj) => {
-                DateDotToggleOpenMonthPan (obj);
-            });
-            DateDotToggleOpenMonthPanGestureRecognizer.Enabled = false;
-            DateDotToggleOpenMonthPanGestureRecognizer.MaximumNumberOfTouches = 1;
-            DateDotView.AddGestureRecognizer (DateDotToggleOpenMonthPanGestureRecognizer);
-            DateDotToggleOpenMonthPanGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
-                return true;
-            };
-
-            DateDotMonthViewPanGestureRecognizer = new UIPanGestureRecognizer ((UIPanGestureRecognizer obj) => {
-                DateDotMonthViewPan (obj);
-            });
-            DateDotMonthViewPanGestureRecognizer.Enabled = false;
-            DateDotMonthViewPanGestureRecognizer.MaximumNumberOfTouches = 1;
-            DateDotView.AddGestureRecognizer (DateDotMonthViewPanGestureRecognizer);
-            DateDotMonthViewPanGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
-                return true;
-            };
-            this.View.AddSubview (DateDotView);
-
-            DateDotView.SetOwner (this);
-            DateDotView.MakeDayLabels ();
-            DateDotView.MakeDateDotButtons ();
-
-            DateDotView.ViewDate = DateTime.Today;
-            currentDate = DateTime.Today;
-            selectedDate = DateTime.Today;
-
-            todayMonthTag = DateDotView.GetMonthTag (DateTime.Today);
-            DateDotView.UpdateButtons ();
-            View.BringSubviewToFront (DateDotView);
+            CreateView ();
             ConfigureBasicView ();
 
 
@@ -249,6 +185,69 @@ namespace NachoClient.iOS
         {
             DateDotMonthViewPanGestureRecognizer.Enabled = true;
             BasicView = false;
+        }
+
+        protected void CreateView ()
+        {
+
+            NavigationController.NavigationBar.Translucent = false;
+
+            calendarTableView.SeparatorColor = A.Color_NachoBorderGray;
+
+            var todayButtonLabel = new UILabel (new RectangleF (108, 3, 23, 44));
+            todayButtonLabel.Text = DateTime.Today.Day.ToString ();
+            todayButtonLabel.TextColor = A.Color_NachoBlue;
+            todayButtonLabel.Font = A.Font_AvenirNextRegular14;
+            todayButtonLabel.TextAlignment = UITextAlignment.Center;
+            var titleView = new UIView (new RectangleF (0, 0, (dateBarHeight - 8), 44));
+            titleView.Add (todayButtonLabel);
+            NavigationItem.Title = "Calendar";
+
+            //this.NavigationItem.TitleView = titleView;
+            DateDotView.Frame = (new RectangleF (0, 0, View.Frame.Width, dateBarHeight));
+            DateDotView.ClipsToBounds = true;
+            DateDotView.BackgroundColor = UIColor.White;
+
+            DateDotWeekPanGestureRecognizer = new UIPanGestureRecognizer ((UIPanGestureRecognizer obj) => {
+                DateDotWeekPan (obj);
+            });
+            DateDotWeekPanGestureRecognizer.Enabled = false;
+            DateDotWeekPanGestureRecognizer.MaximumNumberOfTouches = 1;
+            DateDotView.AddGestureRecognizer (DateDotWeekPanGestureRecognizer);
+
+            DateDotToggleOpenMonthPanGestureRecognizer = new UIPanGestureRecognizer ((UIPanGestureRecognizer obj) => {
+                DateDotToggleOpenMonthPan (obj);
+            });
+            DateDotToggleOpenMonthPanGestureRecognizer.Enabled = false;
+            DateDotToggleOpenMonthPanGestureRecognizer.MaximumNumberOfTouches = 1;
+            DateDotView.AddGestureRecognizer (DateDotToggleOpenMonthPanGestureRecognizer);
+            DateDotToggleOpenMonthPanGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
+                return true;
+            };
+
+            DateDotMonthViewPanGestureRecognizer = new UIPanGestureRecognizer ((UIPanGestureRecognizer obj) => {
+                DateDotMonthViewPan (obj);
+            });
+            DateDotMonthViewPanGestureRecognizer.Enabled = false;
+            DateDotMonthViewPanGestureRecognizer.MaximumNumberOfTouches = 1;
+            DateDotView.AddGestureRecognizer (DateDotMonthViewPanGestureRecognizer);
+            DateDotMonthViewPanGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
+                return true;
+            };
+            this.View.AddSubview (DateDotView);
+
+            DateDotView.SetOwner (this);
+            DateDotView.MakeDayLabels ();
+            DateDotView.MakeDateDotButtons ();
+
+            DateDotView.ViewDate = DateTime.Today;
+            currentDate = DateTime.Today;
+            selectedDate = DateTime.Today;
+
+            todayMonthTag = DateDotView.GetMonthTag (DateTime.Today);
+            DateDotView.UpdateButtons ();
+            View.BringSubviewToFront (DateDotView);
+
         }
 
         protected void DisableGestureRecognizers ()
@@ -897,7 +896,7 @@ namespace NachoClient.iOS
         }
 
         // ICalendarTableViewSourceDelegate
-        public void CalendarTableViewScrollingEnded()
+        public void CalendarTableViewScrollingEnded ()
         {
             calendarSource.MaybeExtendTableView (calendarTableView);
         }

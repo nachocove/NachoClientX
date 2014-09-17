@@ -40,17 +40,15 @@ namespace NachoClient.iOS
             TableView.Frame = new RectangleF (0, -1, View.Frame.Width, View.Frame.Height);
             SearchDisplayController.SearchResultsTableView.Source = contactTableViewSource;
 
-            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] {
-                A.RevealButton (this),
-                A.NachoNowButton (this)
-            };
-
             var searchButton = new UIBarButtonItem (UIBarButtonSystemItem.Search);
             searchButton.TintColor = A.Color_NachoBlue;
             var addContactButton = new UIBarButtonItem (UIBarButtonSystemItem.Add);
             addContactButton.TintColor = A.Color_NachoBlue;
 
-            NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { addContactButton, searchButton };
+            NavigationItem.RightBarButtonItem = addContactButton;
+            NavigationItem.LeftBarButtonItem = searchButton;
+
+            NavigationController.NavigationBar.Translucent = false;
 
             addContactButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("ContactsToContactEdit", new SegueHolder (null));

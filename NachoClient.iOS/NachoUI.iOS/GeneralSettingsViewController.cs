@@ -33,10 +33,6 @@ namespace NachoClient.iOS
 
             // Navigation
             NavigationItem.Title = "Settings";
-            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] {
-                A.RevealButton (this),
-                A.NachoNowButton (this),
-            };
 
             CreateView ();
         }
@@ -53,6 +49,8 @@ namespace NachoClient.iOS
         {
             View.BackgroundColor = A.Color_NachoNowBackground;
             contentView.BackgroundColor = A.Color_NachoNowBackground;
+            NavigationController.NavigationBar.Translucent = false;
+            NavigationController.NavigationBar.TintColor = A.Color_NachoBlue;
 
             yOffset = 20;
 

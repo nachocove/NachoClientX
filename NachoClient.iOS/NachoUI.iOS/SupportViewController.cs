@@ -62,12 +62,7 @@ namespace NachoClient.iOS
 
             if (CalledFromLogin) {
                 NavigationItem.SetHidesBackButton (false, true);
-            } else {
-                NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] {
-                    A.RevealButton (this),
-                    A.NachoNowButton (this)
-                };
-            }
+            } 
         }
 
         public override void ViewWillDisappear (bool animated)
