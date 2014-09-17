@@ -208,13 +208,13 @@ namespace NachoClient.iOS
             actionSheet.Clicked += delegate(object a, UIButtonEventArgs b) {
                 switch (b.ButtonIndex) {
                 case 0:
-                    PerformSegue ("MessageViewToCompose", new SegueHolder (MessageComposeViewController.Reply));
+                    PerformSegue ("MessageViewToCompose", new SegueHolder (MessageComposeViewController.REPLY_ACTION));
                     break;
                 case 1:
-                    PerformSegue ("MessageViewToCompose", new SegueHolder (MessageComposeViewController.ReplyAll));
+                    PerformSegue ("MessageViewToCompose", new SegueHolder (MessageComposeViewController.REPLY_ALL_ACTION));
                     break;
                 case 2:
-                    PerformSegue ("MessageViewToCompose", new SegueHolder (MessageComposeViewController.Forward));
+                    PerformSegue ("MessageViewToCompose", new SegueHolder (MessageComposeViewController.FORWARD_ACTION));
                     break;
                 case 3:
                     break; // Cancel
@@ -280,8 +280,7 @@ namespace NachoClient.iOS
 
                 if (null != h.value) {
                     if (h.value.GetType () == "".GetType()) {
-                        vc.Action = (string)h.value;
-                        vc.ActionThread = thread;
+                        vc.SetAction (thread, (string)h.value);
                         vc.SetOwner (this);
                     } else {
                         vc.SetQRType((NcQuickResponse.QRTypeEnum)h.value);
