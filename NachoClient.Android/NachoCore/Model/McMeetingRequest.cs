@@ -48,6 +48,7 @@ namespace NachoCore.Model
         // DisallowNewTimeProposal - in McAbstrClassRoot
         // MeetingMessageType
 
+        [Indexed]
         public int EmailMessageId { get; set; }
 
         protected bool HasReadAncillaryData;
