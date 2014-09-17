@@ -1005,15 +1005,14 @@ namespace NachoClient.iOS
             RenderTextString (text);
         }
 
-        UILabel RenderAttributedString (NSAttributedString attributedString)
+        UITextView RenderAttributedString (NSAttributedString attributedString)
         {
-            var label = new UILabel (new RectangleF (15.0f, 0.0f, 290.0f, 1.0f));
+            var label = new UITextView (new RectangleF (15.0f, 0.0f, 290.0f, 1.0f));
+            label.Editable = false;
             #if (DEBUG_UI)
             label.BackgroundColor = A.Color_NachoBlue;
             #endif
-            label.Lines = 0;
             label.Font = A.Font_AvenirNextRegular17;
-            label.LineBreakMode = UILineBreakMode.WordWrap;
             label.AttributedText = attributedString;
             label.SizeToFit ();
             ViewFramer.Create (label).AdjustHeight (30.0f);
@@ -1024,7 +1023,15 @@ namespace NachoClient.iOS
 
         void RenderTextString (string text)
         {
-            var attributedString = new NSAttributedString (text);
+            MonoTouch.CoreText.CTStringAttributes attributes;
+            MonoTouch.CoreText.CTFont font;
+            UIFont uiFont = A.Font_AvenirNextRegular17;
+            font = new MonoTouch.CoreText.CTFont (uiFont.Name, uiFont.PointSize);
+
+            attributes = new MonoTouch.CoreText.CTStringAttributes ();
+            attributes.Font = font;
+
+            var attributedString = new NSAttributedString (text, attributes);
             RenderAttributedString (attributedString);
         }
 

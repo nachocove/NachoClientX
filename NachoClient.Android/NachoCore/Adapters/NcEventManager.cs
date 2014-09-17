@@ -26,7 +26,7 @@ namespace NachoCore
 
         protected override void Reload ()
         {
-            list = NcModel.Instance.Db.Table<McEvent> ().ToList ();
+            list = NcModel.Instance.Db.Table<McEvent> ().OrderBy (v => v.StartTime).ToList ();
         }
 
     }
