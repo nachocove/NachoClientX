@@ -154,20 +154,24 @@ namespace NachoClient.iOS
 
         public void MultiSelectToggle (MessageTableViewSource source, bool enabled)
         {
-            UIView.Animate (0.2, new NSAction (
-                delegate {
-                    if (enabled) {
-                        NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { deleteSelectedButton, saveSelectedButton };
-                        NavigationItem.SetLeftBarButtonItem(cancelSelectedButton, false);
-                        NavigationItem.HidesBackButton = true;
+//            UIView.Animate (0.2, new NSAction (
+//                delegate {
+            if (enabled) {
+                NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
+                    deleteSelectedButton,
+                    saveSelectedButton
+                };
+                NavigationItem.SetLeftBarButtonItem (cancelSelectedButton, false);
+                NavigationItem.HidesBackButton = true;
 
-                    } else {
-                        NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeMailButton, /* beta 1 searchButton */ };
-                        NavigationItem.LeftBarButtonItem = null;
-                        NavigationItem.HidesBackButton = false;
-                    }
-                })
-            );
+            } else {
+                NavigationItem.RightBarButtonItem = null;
+                NavigationItem.RightBarButtonItem = composeMailButton; /* beta 1 searchButton */ 
+                NavigationItem.LeftBarButtonItem = null;
+                NavigationItem.HidesBackButton = false;
+            }
+//                })
+//            );
         }
 
         public int GetFirstVisibleRow ()

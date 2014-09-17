@@ -996,7 +996,7 @@ namespace NachoClient.iOS
 
         public void MakeToolbar ()
         {
-            UIView rsvpBar = new UIView (new RectangleF (0, UIScreen.MainScreen.Bounds.Height - 118, SCREEN_WIDTH, 54));
+            UIView rsvpBar = new UIView (new RectangleF (0, View.Frame.Height - 118, SCREEN_WIDTH, 54));
             rsvpBar.BackgroundColor = A.Color_NachoBlack;
 
             //acceptButton
