@@ -95,7 +95,7 @@ namespace NachoClient.iOS
             cancelSearchButton = new UIButton (UIButtonType.RoundedRect);
             cancelSearchButton.Frame = new RectangleF (View.Frame.Width - 58, 6, 50, 32);
             cancelSearchButton.SetTitle ("Cancel", UIControlState.Normal);
-            cancelSearchButton.Font = A.Font_AvenirNextMedium12;
+            cancelSearchButton.Font = A.Font_AvenirNextMedium14;
             cancelSearchButton.SetTitleColor (A.Color_NachoIconGray, UIControlState.Normal);
             cancelSearchButton.TouchUpInside += (object sender, EventArgs e) => {
                 CancelSelected ();
@@ -110,6 +110,7 @@ namespace NachoClient.iOS
             autoCompleteTextField.BackgroundColor = UIColor.White;
             autoCompleteTextField.Font = A.Font_AvenirNextMedium14;
             autoCompleteTextField.ClearButtonMode = UITextFieldViewMode.Always;
+            autoCompleteTextField.TintColor = A.Color_NachoIconGray;
 
             // Update the auto-complete on each keystroke
             autoCompleteTextField.EditingChanged += delegate {
