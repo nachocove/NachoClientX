@@ -19,27 +19,33 @@ namespace NachoCore.ActiveSync
         {
             XNamespace Ns = Xml.AirSync.Ns;
             var xmlServerId = command.Element (Ns + Xml.AirSync.ServerId);
+            if (null == xmlServerId || null == xmlServerId.Value || string.Empty == xmlServerId.Value) {
+                Log.Error (Log.LOG_AS, "ServerSaysAddOrChangeTask: No ServerId present.");
+                return;
+            }
             var applicationData = command.Element (Ns + Xml.AirSync.ApplicationData);
             var task = McTask.QueryByServerId<McTask> (folder.AccountId, xmlServerId.Value);
             if (null == task) {
                 task = new McTask () {
                     AccountId = folder.AccountId,
                 };
-                var result = task.FromXmlApplicationData (applicationData);
-                if (result.isOK ()) {
-                    task.ServerId = xmlServerId.Value;
-                    task.Insert ();
-                    folder.Link (task);
-                } else {
-                    Log.Error (Log.LOG_AS, "Parse of Task failed. Task not added, ServerId {0}", xmlServerId.Value);
+                try {
+                    var result = task.FromXmlApplicationData (applicationData);
+                    NcAssert.True (result.isOK());
+                } catch (Exception ex) {
+                    Log.Error (Log.LOG_AS, "Parse of Task failed on Add. ServerId {0}", xmlServerId.Value);
                 }
+                task.ServerId = xmlServerId.Value;
+                task.Insert ();
+                folder.Link (task);
             } else {
-                var result = task.FromXmlApplicationData (applicationData);
-                if (result.isOK ()) {
-                    task.Update ();
-                } else {
-                    Log.Error (Log.LOG_AS, "Parse of Task failed. Task not updated, ServerId {0}", xmlServerId.Value);
+                try {
+                    var result = task.FromXmlApplicationData (applicationData);
+                    NcAssert.True (result.isOK());
+                } catch (Exception ex) {
+                    Log.Error (Log.LOG_AS, "Parse of Task failed on Change. ServerId {0}", xmlServerId.Value);
                 }
+                task.Update ();
             }
         }
     }
