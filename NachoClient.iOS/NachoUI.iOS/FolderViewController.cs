@@ -26,12 +26,6 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            // Navigation
-            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] {
-                A.RevealButton (this),
-                A.NachoNowButton (this),
-            };
-
             var addButton = new UIBarButtonItem (UIBarButtonSystemItem.Add);
             addButton.TintColor = A.Color_NachoBlue;
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { addButton };

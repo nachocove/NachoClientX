@@ -237,6 +237,12 @@ namespace NachoClient.iOS
             }
         }
 
+        public override bool HidesBottomBarWhenPushed {
+            get {
+                return this.NavigationController.TopViewController == this;
+            }
+        }
+
         /// <summary>
         /// Interface INachoCalendarItemEditor
         /// </summary>
@@ -360,7 +366,7 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }
-            
+
         protected void CreateEditEventView ()
         {
             scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height);

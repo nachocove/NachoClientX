@@ -197,6 +197,12 @@ namespace NachoClient.iOS
 
         }
 
+        public override bool HidesBottomBarWhenPushed {
+            get {
+                return this.NavigationController.TopViewController == this;
+            }
+        }
+
         public void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
@@ -325,6 +331,7 @@ namespace NachoClient.iOS
                 };
             }
             NavigationItem.Title = "Event Details";
+            NavigationController.NavigationBar.Translucent = false;
 
             //Map/location header image
             map = new MKMapView (new RectangleF (0, 0, SCREEN_WIDTH, IMAGE_HEIGHT));
@@ -989,7 +996,7 @@ namespace NachoClient.iOS
 
         public void MakeToolbar ()
         {
-            UIView rsvpBar = new UIView (new RectangleF (0, View.Frame.Height - 118, SCREEN_WIDTH, 54));
+            UIView rsvpBar = new UIView (new RectangleF (0, UIScreen.MainScreen.Bounds.Height - 118, SCREEN_WIDTH, 54));
             rsvpBar.BackgroundColor = A.Color_NachoBlack;
 
             //acceptButton

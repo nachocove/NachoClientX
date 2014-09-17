@@ -180,15 +180,15 @@ namespace NachoClient.iOS
                                                                  PointF point1, PointF point2, PointF point3) {
                 string touches = "";
                 if (0 < numTouches) {
-                    touches = String.Format("({0},{1})", point1.X, point1.Y);
+                    touches = String.Format ("({0},{1})", point1.X, point1.Y);
                     if (1 < numTouches) {
-                        touches += String.Format(", ({0},{1})", point2.X, point2.Y);
+                        touches += String.Format (", ({0},{1})", point2.X, point2.Y);
                         if (2 < numTouches) {
-                            touches += String.Format(", ({0},{1})", point3.X, point3.Y);
+                            touches += String.Format (", ({0},{1})", point3.X, point3.Y);
                         }
                     }
                 }
-                Telemetry.RecordUiTapGestureRecognizer(description, touches);
+                Telemetry.RecordUiTapGestureRecognizer (description, touches);
             });
 
             NachoUIMonitor.SetupUITableView (delegate(string description, string operation) {
@@ -503,9 +503,9 @@ namespace NachoClient.iOS
             value = (NSNumber)notification.UserInfo.ObjectForKey (EventKey);
             if (null != value) {
                 var eventId = value.IntValue;
-                McMutables.Set ("EventNotif", Account.Id.ToString(), eventId.ToString());
+                McMutables.Set ("EventNotif", Account.Id.ToString (), eventId.ToString ());
 
-                Log.Info (Log.LOG_LIFECYCLE, "ReceivedLocalNotification: set value: {0}.", McMutables.Get ("EventNotif", Account.Id.ToString()));
+                Log.Info (Log.LOG_LIFECYCLE, "ReceivedLocalNotification: set value: {0}.", McMutables.Get ("EventNotif", Account.Id.ToString ()));
                 Log.Info (Log.LOG_LIFECYCLE, "ReceivedLocalNotification: from local notification: NotifiOS.handle is {0}.", eventId);
             }
         }

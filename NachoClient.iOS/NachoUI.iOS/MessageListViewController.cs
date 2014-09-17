@@ -25,6 +25,11 @@ namespace NachoClient.iOS
         // if the searchbar is hidden by a scrolled tableview.
         PointF savedContentOffset;
         protected UIBarButtonItem composeMailButton;
+        protected UIBarButtonItem cancelSelectedButton;
+        protected UIBarButtonItem deleteSelectedButton;
+        protected UIBarButtonItem saveSelectedButton;
+
+        protected UIRefreshControl RefreshListControl;
         //        private static Object StaticLockObj = new Object ();
         protected const string UICellReuseIdentifier = "UICell";
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
@@ -53,28 +58,32 @@ namespace NachoClient.iOS
             NcCapture.AddKind (ReloadCaptureName);
             ReloadCapture = NcCapture.Create (ReloadCaptureName);
 
-            // Navigation
-            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] {
-                A.RevealButton (this),
-                A.NachoNowButton (this),
-            };
-
             composeMailButton = new UIBarButtonItem (UIBarButtonSystemItem.Compose);
             composeMailButton.TintColor = A.Color_NachoBlue;
 
             composeMailButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("MessageListToCompose", this);
             };
-                
-            cancelButton.Clicked += (object sender, EventArgs e) => {
+
+            cancelSelectedButton = new UIBarButtonItem (UIBarButtonSystemItem.Cancel);
+            cancelSelectedButton.TintColor = A.Color_NachoBlue;
+
+            cancelSelectedButton.Clicked += (object sender, EventArgs e) => {
                 messageSource.MultiSelectCancel (TableView);
             };
-            deleteButton.Clicked += (object sender, EventArgs e) => {
+
+
+            deleteSelectedButton = new UIBarButtonItem ();
+            Util.SetOriginalImageForButton (deleteSelectedButton, "email-delete");
+            deleteSelectedButton.Clicked += (object sender, EventArgs e) => {
                 if (null != messageSource) {
                     messageSource.MultiSelectDelete (TableView);
                 }
             };
-            saveButton.Clicked += (object sender, EventArgs e) => {
+
+            saveSelectedButton = new UIBarButtonItem (UIBarButtonSystemItem.Save);
+            saveSelectedButton.TintColor = A.Color_NachoBlue;
+            saveSelectedButton.Clicked += (object sender, EventArgs e) => {
                 var h = new SegueHolder (TableView);
                 PerformSegue ("NachoNowToMessageAction", h);
             };
@@ -82,41 +91,43 @@ namespace NachoClient.iOS
             // Initially let's hide the search controller
 //            TableView.SetContentOffset (new PointF (0.0f, 44.0f), false);
             TableView.SeparatorColor = A.Color_NachoBorderGray;
+            NavigationController.NavigationBar.Translucent = false;
 
             // Search button brings up the search controller
-            searchButton.Clicked += (object sender, EventArgs e) => {
-                if (SearchDisplayController.Active) {
-                    return;
-                }
-                // Cleans up the UI
-                if (RefreshControl.Refreshing) {
-                    RefreshControl.EndRefreshing ();
-                }
-                // Save the tableview location, then scroll
-                // searchbar into view.  This searchbar is
-                // not used; it works around an iOS bug.
-                savedContentOffset = TableView.ContentOffset;
-                TableView.SetContentOffset (new PointF (0.0f, 0.0f), false);
-                if (44.0f >= savedContentOffset.Y) {
-                    SearchDisplayController.SetActive (true, true);
-                } else {
-                    SearchDisplayController.SetActive (true, false);
-                }
-            };
-
-            // Search cancel handler needed as workaround for 'inactive button' bug
-            SearchDisplayController.SearchBar.CancelButtonClicked += (object sender, EventArgs e) => {
-                // Disable search & reset the tableview
-                if (44.0f >= savedContentOffset.Y) {
-                    SearchDisplayController.SetActive (false, true);
-                } else {
-                    SearchDisplayController.SetActive (false, false);
-                }
-                TableView.SetContentOffset (savedContentOffset, false);
-            };
+//            searchButton.Clicked += (object sender, EventArgs e) => {
+//                if (SearchDisplayController.Active) {
+//                    return;
+//                }
+//                // Cleans up the UI
+//                if (RefreshControl.Refreshing) {
+//                    RefreshControl.EndRefreshing ();
+//                }
+//                // Save the tableview location, then scroll
+//                // searchbar into view.  This searchbar is
+//                // not used; it works around an iOS bug.
+//                savedContentOffset = TableView.ContentOffset;
+//                TableView.SetContentOffset (new PointF (0.0f, 0.0f), false);
+//                if (44.0f >= savedContentOffset.Y) {
+//                    SearchDisplayController.SetActive (true, true);
+//                } else {
+//                    SearchDisplayController.SetActive (true, false);
+//                }
+//            };
+//
+//            // Search cancel handler needed as workaround for 'inactive button' bug
+//            SearchDisplayController.SearchBar.CancelButtonClicked += (object sender, EventArgs e) => {
+//                // Disable search & reset the tableview
+//                if (44.0f >= savedContentOffset.Y) {
+//                    SearchDisplayController.SetActive (false, true);
+//                } else {
+//                    SearchDisplayController.SetActive (false, false);
+//                }
+//                TableView.SetContentOffset (savedContentOffset, false);
+//            };
 
             // Refreshing
-            RefreshControl.ValueChanged += delegate {
+            RefreshListControl = new UIRefreshControl ();
+            RefreshListControl.ValueChanged += delegate {
                 // iOS 7 BUGS
                 // Setting Title in ViewDidLoad hides the SearchBar
                 // Title is misaligned the first time a refresh controller is displayed
@@ -131,7 +142,7 @@ namespace NachoClient.iOS
 
             // iOS 7 BUG Workaround
             // iOS 7 puts the  background view over the refresh view, hiding it.
-            RefreshControl.Layer.ZPosition = TableView.BackgroundView.Layer.ZPosition + 1;
+            RefreshListControl.Layer.ZPosition = TableView.BackgroundView.Layer.ZPosition + 1;
 
             messageSource.owner = this;
             TableView.Source = messageSource;
@@ -146,11 +157,14 @@ namespace NachoClient.iOS
             UIView.Animate (0.2, new NSAction (
                 delegate {
                     if (enabled) {
-                        NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { deleteButton, saveButton };
-                        NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { cancelButton };
+                        NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { deleteSelectedButton, saveSelectedButton };
+                        NavigationItem.SetLeftBarButtonItem(cancelSelectedButton, false);
+                        NavigationItem.HidesBackButton = true;
+
                     } else {
                         NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeMailButton, /* beta 1 searchButton */ };
-                        NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { A.RevealButton (this), A.NachoNowButton (this) };
+                        NavigationItem.LeftBarButtonItem = null;
+                        NavigationItem.HidesBackButton = false;
                     }
                 })
             );

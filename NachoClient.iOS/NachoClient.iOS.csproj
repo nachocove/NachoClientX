@@ -252,10 +252,6 @@
     <Compile Include="NachoUI.iOS\MainViewController.designer.cs">
       <DependentUpon>MainViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="NachoUI.iOS\SidebarViewController.cs" />
-    <Compile Include="NachoUI.iOS\SidebarViewController.designer.cs">
-      <DependentUpon>SidebarViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\ContactsViewController.cs" />
     <Compile Include="NachoUI.iOS\ContactsViewController.designer.cs">
       <DependentUpon>ContactsViewController.cs</DependentUpon>
@@ -1126,6 +1122,22 @@
       <Link>NachoCore\Brain\NcQuickResponse.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\ViewHelper.cs" />
+    <Compile Include="NachoUI.iOS\NachoTabBarController.cs" />
+    <Compile Include="NachoUI.iOS\NachoTabBarController.designer.cs">
+      <DependentUpon>NachoTabBarController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\HotListViewController.cs" />
+    <Compile Include="NachoUI.iOS\HotListViewController.designer.cs">
+      <DependentUpon>HotListViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\DeferredViewController.cs" />
+    <Compile Include="NachoUI.iOS\DeferredViewController.designer.cs">
+      <DependentUpon>DeferredViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\InboxViewController.cs" />
+    <Compile Include="NachoUI.iOS\InboxViewController.designer.cs">
+      <DependentUpon>InboxViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
