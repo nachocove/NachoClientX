@@ -61,6 +61,12 @@ namespace NachoClient.iOS
 
         }
 
+        public override bool HidesBottomBarWhenPushed {
+            get {
+                return this.NavigationController.TopViewController == this;
+            }
+        }
+
         public void SetReminder (uint reminder)
         {
             this.Reminder = reminder;

@@ -24,6 +24,9 @@ namespace NachoClient.iOS
         protected NcEmailAddress address;
         protected NachoContactType contactType;
         protected INachoContactChooserDelegate owner;
+        protected UIButton cancelSearchButton;
+        protected UITextField autoCompleteTextField;
+        protected UITableView resultsTableView;
         // Internal state
         List<McContactEmailAddressAttribute> searchResults;
         // ContactTableViewSource is used solely to create & config a cell
@@ -58,29 +61,7 @@ namespace NachoClient.iOS
 
             contactTableViewSource = new ContactsTableViewSource ();
 
-            cancelButton.TouchUpInside += (object sender, EventArgs e) => {
-                CancelSelected ();
-            };
-
-            // Update the auto-complete on each keystroke
-            AutocompleteTextField.EditingChanged += delegate {
-                KickoffSearchApi (0, AutocompleteTextField.Text);
-                UpdateAutocompleteResults (0, AutocompleteTextField.Text);
-            };
-
-            // Finish up when the Done key is selected
-            AutocompleteTextField.ShouldReturn = ((textField) => {
-                DoneSelected (textField);
-                return false;
-            });
-
-            TableView.Source = new ContactChooserDataSource (this);
-
-            AutocompleteTextField.Text = address.address;
-            UpdateAutocompleteResults (0, address.address);
-
-            AutocompleteTextField.BecomeFirstResponder ();
-            TableView.SeparatorColor = A.Color_NachoBorderGray;
+            CreateView ();
         }
 
         public override void ViewWillAppear (bool animated)
@@ -91,7 +72,7 @@ namespace NachoClient.iOS
             }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
             NachoClient.Util.HighPriority ();
-            TableView.ReloadData ();
+            resultsTableView.ReloadData ();
             NachoClient.Util.RegularPriority ();
         }
 
@@ -102,12 +83,63 @@ namespace NachoClient.iOS
             CancelSearchIfActive ();
         }
 
+        public void CreateView ()
+        {
+            UIView inputView = new UIView (new RectangleF (0, 0, 320, 44));
+            inputView.BackgroundColor = A.Color_NachoBackgroundGray;
+
+            resultsTableView = new UITableView (new RectangleF (0, 44, 320, View.Frame.Height - 44));
+            resultsTableView.SeparatorColor = A.Color_NachoBorderGray;
+            resultsTableView.Source = new ContactChooserDataSource (this);
+
+            cancelSearchButton = new UIButton (UIButtonType.RoundedRect);
+            cancelSearchButton.Frame = new RectangleF (View.Frame.Width - 58, 6, 50, 32);
+            cancelSearchButton.SetTitle ("Cancel", UIControlState.Normal);
+            cancelSearchButton.Font = A.Font_AvenirNextMedium12;
+            cancelSearchButton.SetTitleColor (A.Color_NachoIconGray, UIControlState.Normal);
+            cancelSearchButton.TouchUpInside += (object sender, EventArgs e) => {
+                CancelSelected ();
+            };
+            inputView.Add (cancelSearchButton);
+
+            UIView textInputView = new UIView (new RectangleF (8, 6, 246, 32));
+            textInputView.BackgroundColor = UIColor.White;
+            textInputView.Layer.CornerRadius = 4;
+
+            autoCompleteTextField = new UITextField (new RectangleF (6, 0, 234, 32));
+            autoCompleteTextField.BackgroundColor = UIColor.White;
+            autoCompleteTextField.Font = A.Font_AvenirNextMedium14;
+            autoCompleteTextField.ClearButtonMode = UITextFieldViewMode.Always;
+
+            // Update the auto-complete on each keystroke
+            autoCompleteTextField.EditingChanged += delegate {
+                KickoffSearchApi (0, autoCompleteTextField.Text);
+                UpdateAutocompleteResults (0, autoCompleteTextField.Text);
+            };
+
+            // Finish up when the Done key is selected
+            autoCompleteTextField.ShouldReturn = ((textField) => {
+                DoneSelected (textField);
+                return false;
+            });
+
+            autoCompleteTextField.Text = address.address;
+            UpdateAutocompleteResults (0, address.address);
+
+            autoCompleteTextField.BecomeFirstResponder ();
+            textInputView.Add (autoCompleteTextField);
+            inputView.Add (textInputView);
+
+            View.Add (inputView);
+            View.Add (resultsTableView);
+        }
+
         public void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
             if (NcResult.SubKindEnum.Info_SearchCommandSucceeded == s.Status.SubKind) {
                 Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: Info_SearchCommandSucceeded");
-                UpdateAutocompleteResults (0, AutocompleteTextField.Text);
+                UpdateAutocompleteResults (0, autoCompleteTextField.Text);
             }
         }
 
@@ -116,7 +148,7 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("ContactChooserToContactSearch")) {
                 ContactSearchViewController destinationController = (ContactSearchViewController)segue.DestinationViewController;
                 destinationController.owner = this;
-                destinationController.initialSearchString = AutocompleteTextField.Text;
+                destinationController.initialSearchString = autoCompleteTextField.Text;
                 return;
             }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
@@ -162,7 +194,7 @@ namespace NachoClient.iOS
             if (null == forSearchString) {
                 searchResults = null;
                 NachoClient.Util.HighPriority ();
-                TableView.ReloadData ();
+                resultsTableView.ReloadData ();
                 NachoClient.Util.RegularPriority ();
                 return;
             }
@@ -171,7 +203,7 @@ namespace NachoClient.iOS
                 InvokeOnMainThread (() => {
                     searchResults = results;
                     NachoClient.Util.HighPriority ();
-                    TableView.ReloadData ();
+                    resultsTableView.ReloadData ();
                     NachoClient.Util.RegularPriority ();
                 });
             })).Start ();

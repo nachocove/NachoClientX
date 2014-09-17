@@ -154,8 +154,8 @@ namespace NachoClient.iOS
 
         public void MultiSelectToggle (MessageTableViewSource source, bool enabled)
         {
-//            UIView.Animate (0.2, new NSAction (
-//                delegate {
+            //            UIView.Animate (0.2, new NSAction (
+            //                delegate {
             if (enabled) {
                 NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
                     deleteSelectedButton,
@@ -170,8 +170,8 @@ namespace NachoClient.iOS
                 NavigationItem.LeftBarButtonItem = null;
                 NavigationItem.HidesBackButton = false;
             }
-//                })
-//            );
+            //                })
+            //            );
         }
 
         public int GetFirstVisibleRow ()

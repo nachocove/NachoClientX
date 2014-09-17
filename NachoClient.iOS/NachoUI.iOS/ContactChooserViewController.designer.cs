@@ -13,37 +13,13 @@ namespace NachoClient.iOS
 	partial class ContactChooserViewController
 	{
 		[Outlet]
-		MonoTouch.UIKit.UITextField AutocompleteTextField { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIButton cancelButton { get; set; }
-
-		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem ContactsButton { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UITableView TableView { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
-			if (AutocompleteTextField != null) {
-				AutocompleteTextField.Dispose ();
-				AutocompleteTextField = null;
-			}
-
-			if (cancelButton != null) {
-				cancelButton.Dispose ();
-				cancelButton = null;
-			}
-
 			if (ContactsButton != null) {
 				ContactsButton.Dispose ();
 				ContactsButton = null;
-			}
-
-			if (TableView != null) {
-				TableView.Dispose ();
-				TableView = null;
 			}
 		}
 	}
