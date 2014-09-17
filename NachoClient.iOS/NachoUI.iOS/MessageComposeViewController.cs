@@ -21,12 +21,16 @@ namespace NachoClient.iOS
 {
     public partial class MessageComposeViewController : UIViewController, IUcAddressBlockDelegate, IUcAttachmentBlockDelegate, INachoContactChooserDelegate, INachoFileChooserParent
     {
+        // The reason for sending this message
+        protected enum Action {
+            Send, Reply, ReplyAll, Forward
+        };
 
-        public static readonly string Reply = "Reply";
-        public static readonly string ReplyAll = "ReplyAll";
-        public static readonly string Forward = "Forward";
-        public string Action;
-        public McEmailMessageThread ActionThread;
+        // Strings to be used when calling SetAction()
+        public static readonly string REPLY_ACTION = "Reply";
+        public static readonly string REPLY_ALL_ACTION = "ReplyAll";
+        public static readonly string FORWARD_ACTION = "Forward";
+
         public INachoMessageEditorParent owner;
         public bool showMenu;
         protected McAccount account;
@@ -34,6 +38,8 @@ namespace NachoClient.iOS
         protected McEmailMessage mcMessage = new McEmailMessage ();
         protected McBody mcBody = new McBody ();
 
+        protected McEmailMessage referencedMessage; // The message being forwarded or replied to, if any
+        protected Action action; // The reason for sending this message
 
         bool suppressLayout;
         float keyboardHeight;
@@ -162,7 +168,7 @@ namespace NachoClient.iOS
 
             CreateView ();
 
-            if (null != ActionThread) {
+            if (IsForwardOrReplyAction ()) {
                 InitializeMessageForAction ();
             }
         }
@@ -182,14 +188,11 @@ namespace NachoClient.iOS
 
             quickResponseButton.Clicked += (object sender, EventArgs e) => {
                 View.EndEditing (true);
-                if(null != ActionThread){
-                    if(Action.Equals (Reply) || Action.Equals(ReplyAll)){
-                        QRType = NcQuickResponse.QRTypeEnum.Reply;
-                    }
-                    if (Action.Equals (Forward)){
-                        QRType = NcQuickResponse.QRTypeEnum.Forward;
-                    }
-                }else {
+                if (IsReplyAction ()) {
+                    QRType = NcQuickResponse.QRTypeEnum.Reply;
+                } else if (IsForwardAction ()) {
+                    QRType = NcQuickResponse.QRTypeEnum.Forward;
+                } else {
                     QRType = NcQuickResponse.QRTypeEnum.Compose;
                 }
                 ShowQuickResponses ();
@@ -738,9 +741,9 @@ namespace NachoClient.iOS
         private bool OkToSend ()
         {
             // Check for any unavailable attachments when forwarding a message.
-            if (null != ActionThread && Action.Equals (Forward) && !bodyTextView.Text.EndsWith (initialQuotedText)) {
+            if (IsForwardAction () && !bodyTextView.Text.EndsWith (initialQuotedText)) {
                 bool attachmentMustBeDownloaded = false;
-                var attachments = McAttachment.QueryByItemId<McEmailMessage> (account.Id, ActionThread.SingleMessageSpecialCase ().Id);
+                var attachments = McAttachment.QueryByItemId<McEmailMessage> (account.Id, referencedMessage.Id);
                 foreach (var attachment in attachments) {
                     if (McAbstrFileDesc.FilePresenceEnum.None == attachment.FilePresence) {
                         attachmentMustBeDownloaded = true;
@@ -824,11 +827,11 @@ namespace NachoClient.iOS
             foreach (var attachment in attachmentView.AttachmentList) {
                 body.Attachments.Add (attachment.GetFilePath ());
             }
-            if (null != ActionThread && Action.Equals (Forward) && originalEmailIsEmbedded) {
+            if (IsForwardAction () && originalEmailIsEmbedded) {
                 // The user edited the body of the message being forwarded. That means the server won't
                 // automatically include the attachments from the forwarded message (if any).  That needs
                 // to be done explicitly.
-                foreach (var attachment in McAttachment.QueryByItemId<McEmailMessage> (account.Id, ActionThread.SingleMessageSpecialCase ().Id)) {
+                foreach (var attachment in McAttachment.QueryByItemId<McEmailMessage> (account.Id, referencedMessage.Id)) {
                     // TODO Deal with attachments that haven't been downloaded yet.
                     if (McAbstrFileDesc.FilePresenceEnum.Complete == attachment.FilePresence) {
                         body.Attachments.Add (attachment.GetFilePath ());
@@ -841,21 +844,20 @@ namespace NachoClient.iOS
             var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
 
             bool messageSent = false;
-            if (ActionThread != null && (Action.Equals (Reply) || Action.Equals (ReplyAll) || Action.Equals (Forward))) {
-                var actionMessage = ActionThread.SingleMessageSpecialCase ();
-                var folders = McFolder.QueryByFolderEntryId<McEmailMessage> (actionMessage.AccountId, actionMessage.Id);
+            if (IsForwardOrReplyAction ()) {
+                var folders = McFolder.QueryByFolderEntryId<McEmailMessage> (referencedMessage.AccountId, referencedMessage.Id);
                 if (folders.Count == 0) {
-                    Log.Error (Log.LOG_UI, "The message being forwarded or replied to is not owned by any folder. It will be sent as a regular outgoing message. Message: {0}", actionMessage.ToString ());
+                    Log.Error (Log.LOG_UI, "The message being forwarded or replied to is not owned by any folder. It will be sent as a regular outgoing message. Message: {0}", referencedMessage.ToString ());
                     // Fall through and send it as a regular message.
                 } else {
                     if (folders.Count > 1) {
-                        Log.Warn (Log.LOG_UI, "The message being forwarded or replied to is owned by {0} folders. One of the folders will be picked at random as the official owner when sending the message. Message: {0}", folders.Count, actionMessage.ToString ());
+                        Log.Warn (Log.LOG_UI, "The message being forwarded or replied to is owned by {0} folders. One of the folders will be picked at random as the official owner when sending the message. Message: {0}", folders.Count, referencedMessage.ToString ());
                     }
                     int folderId = folders [0].Id;
-                    if (Action.Equals (Forward)) {
-                        NachoCore.BackEnd.Instance.ForwardEmailCmd (mcMessage.AccountId, mcMessage.Id, actionMessage.Id, folderId, originalEmailIsEmbedded);
+                    if (IsForwardAction ()) {
+                        NachoCore.BackEnd.Instance.ForwardEmailCmd (mcMessage.AccountId, mcMessage.Id, referencedMessage.Id, folderId, originalEmailIsEmbedded);
                     } else {
-                        NachoCore.BackEnd.Instance.ReplyEmailCmd (mcMessage.AccountId, mcMessage.Id, actionMessage.Id, folderId, originalEmailIsEmbedded);
+                        NachoCore.BackEnd.Instance.ReplyEmailCmd (mcMessage.AccountId, mcMessage.Id, referencedMessage.Id, folderId, originalEmailIsEmbedded);
                     }
                     messageSent = true;
                 }
@@ -874,25 +876,22 @@ namespace NachoClient.iOS
         // TODO: Put in pretty
         protected string CreateInitialSubjectLine ()
         {
-            if (null == ActionThread) {
+            if (IsSendAction ()) {
                 return ""; // Creating a message
             }
 
-            var ActionMessage = ActionThread.SingleMessageSpecialCase ();
-            NcAssert.True (null != ActionMessage);
-
             var Subject = "";
-            if (null != ActionMessage.Subject) {
-                Subject = ActionMessage.Subject;
+            if (null != referencedMessage.Subject) {
+                Subject = referencedMessage.Subject;
             }
 
-            if (Action.Equals (Reply) || Action.Equals (ReplyAll)) {
+            if (IsReplyAction ()) {
                 if (Subject.StartsWith ("Re:")) {
                     return Subject;
                 }
                 return "Re: " + Subject;
             }
-            if (Action.Equals (Forward)) {
+            if (IsForwardAction ()) {
                 return "Fwd: " + Subject;
             }
             return "";
@@ -904,15 +903,13 @@ namespace NachoClient.iOS
         /// </summary>
         void InitializeMessageForAction ()
         {
-            var ActionMessage = ActionThread.SingleMessageSpecialCase ();
-
-            if (Action.Equals (Reply) || Action.Equals (ReplyAll)) {
-                toView.Append (new NcEmailAddress (NcEmailAddress.Kind.To, ActionMessage.From));
+            if (IsReplyAction ()) {
+                toView.Append (new NcEmailAddress (NcEmailAddress.Kind.To, referencedMessage.From));
             }
-            if (Action.Equals (ReplyAll)) {
+            if (Action.ReplyAll == action) {
                 // Add the To list to the CC list
-                if (null != ActionMessage.To) {
-                    string[] ToList = ActionMessage.To.Split (new Char [] { ',' });
+                if (null != referencedMessage.To) {
+                    string[] ToList = referencedMessage.To.Split (new Char [] { ',' });
                     if (null != ToList) {
                         foreach (var a in ToList) {
                             ccView.Append (new NcEmailAddress (NcEmailAddress.Kind.Cc, a));
@@ -920,8 +917,8 @@ namespace NachoClient.iOS
                     }
                 }
                 // And keep the existing CC list
-                if (null != ActionMessage.Cc) {
-                    string[] ccList = ActionMessage.Cc.Split (new Char [] { ',' });
+                if (null != referencedMessage.Cc) {
+                    string[] ccList = referencedMessage.Cc.Split (new Char [] { ',' });
                     if (null != ccList) {
                         foreach (var a in ccList) {
                             ccView.Append (new NcEmailAddress (NcEmailAddress.Kind.Cc, a));
@@ -936,8 +933,8 @@ namespace NachoClient.iOS
 
             // Populate the body of the outgoing message with the quoted text from the message being acted on.
             // Right now this is identical for forward and reply.  But that might change as the behavior is refined.
-            initialQuotedText = MimeHelpers.ExtractTextPart (ActionMessage);
-            string headersText = FormatBasicHeaders (ActionMessage);
+            initialQuotedText = MimeHelpers.ExtractTextPart (referencedMessage);
+            string headersText = FormatBasicHeaders (referencedMessage);
             bodyTextView.Text = "\n\n" + headersText + initialQuotedText;
         }
 
@@ -1002,6 +999,48 @@ namespace NachoClient.iOS
         public void DismissChildFileChooser (INachoFileChooser vc)
         {
             vc.DismissFileChooser (true, null);
+        }
+
+        public void SetAction (McEmailMessageThread thread, string actionString)
+        {
+            if (null != thread) {
+                referencedMessage = thread.SingleMessageSpecialCase ();
+            }
+            if (null == actionString) {
+                action = Action.Send;
+            } else if (REPLY_ACTION.Equals (actionString)) {
+                action = Action.Reply;
+            } else if (REPLY_ALL_ACTION.Equals (actionString)) {
+                action = Action.ReplyAll;
+            } else if (FORWARD_ACTION.Equals (actionString)) {
+                action = Action.Forward;
+            } else {
+                NcAssert.CaseError(String.Format("Unexpected value for message action: {0}", actionString));
+            }
+            if (Action.Send != action) {
+                NcAssert.NotNull (referencedMessage, String.Format ("A null message was passed to MessageComposeViewController for an action of {0}", actionString));
+            }
+        }
+
+        protected bool IsSendAction ()
+        {
+            return Action.Send == action;
+        }
+
+        protected bool IsForwardOrReplyAction ()
+        {
+            return Action.Send != action;
+        }
+
+        // Reply or ReplyAll.  In almost all cases the two are treated the same.  There is only one case where they are different.
+        protected bool IsReplyAction ()
+        {
+            return Action.Reply == action || Action.ReplyAll == action;
+        }
+
+        protected bool IsForwardAction ()
+        {
+            return Action.Forward == action;
         }
     }
 }

@@ -463,13 +463,13 @@ namespace NachoClient.iOS
             actionSheet.Clicked += delegate(object a, UIButtonEventArgs b) {
                 switch (b.ButtonIndex) {
                 case 0:
-                    onReplyButtonClicked (view, MessageComposeViewController.Reply);
+                    onReplyButtonClicked (view, MessageComposeViewController.REPLY_ACTION);
                     break;
                 case 1:
-                    onReplyButtonClicked (view, MessageComposeViewController.ReplyAll);
+                    onReplyButtonClicked (view, MessageComposeViewController.REPLY_ALL_ACTION);
                     break;
                 case 2:
-                    onReplyButtonClicked (view, MessageComposeViewController.Forward);
+                    onReplyButtonClicked (view, MessageComposeViewController.FORWARD_ACTION);
                     break;
                 case 3:
                     break; // Cancel
