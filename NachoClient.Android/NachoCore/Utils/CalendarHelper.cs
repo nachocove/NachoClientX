@@ -211,11 +211,14 @@ namespace NachoCore.Utils
 
         public static void SendInvites (McAccount account, McCalendar c, List<McAttendee> attendeeOverride, MimeEntity mimeBody)
         {
+            var attendees = attendeeOverride ?? c.attendees;
+            if (0 == attendees.Count) {
+                // Nobody to invite.
+                return;
+            }
             var mimeMessage = new MimeMessage ();
 
             mimeMessage.From.Add (new MailboxAddress (Pretty.DisplayNameForAccount (account), account.EmailAddr));
-
-            var attendees = attendeeOverride ?? c.attendees;
 
             foreach (var a in attendees) {
                 mimeMessage.To.Add (new MailboxAddress (a.Name, a.Email));

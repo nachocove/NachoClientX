@@ -18,6 +18,30 @@ namespace NachoCore.Utils
         {
         }
 
+        /// <summary>
+        /// Loads a MIME message from a file.
+        /// </summary>
+        /// <remarks>
+        /// If the file doesn't exist, can't be read, or can't be parsed as a MIME message, then an
+        /// empty MIME message is returned.
+        /// </remarks>
+        /// <returns>The MIME message.</returns>
+        /// <param name="path">The path to the file containing the text of the MIME message.</param>
+        public static MimeMessage LoadMessage (string path)
+        {
+            try {
+                using (var fileStream = new FileStream(path, FileMode.Open, FileAccess.Read)) {
+                    return MimeMessage.Load (fileStream);
+                }
+            } catch {
+                var emptyMessage = new MimeMessage ();
+                emptyMessage.Body = new TextPart ("plain") {
+                    Text = ""
+                };
+                return emptyMessage;
+            }
+        }
+
         public static MimeEntity SearchMessage (string cid, MimeMessage message)
         {
             NcAssert.True (null != message);
@@ -82,28 +106,29 @@ namespace NachoCore.Utils
             Log.Info (Log.LOG_EMAIL, "{0}MimeEntity: {1} {2}", Indent (indent), entity, entity.ContentType);
         }
 
+        /// <summary>
+        /// Return the first "text/plain" entity found in the given subtree, or null if none was found.
+        /// </summary>
+        /// <param name="entity">The portion of the MIME message to search.</param>
         static protected TextPart FindTextPart (MimeEntity entity)
         {
             if (null == entity) {
                 return null;
             }
-            if (entity is Multipart) {
-                var multipart = (Multipart)entity;
-                foreach (var subpart in multipart) {
-                    var s = FindTextPart (subpart);
-                    if (null != s) {
-                        return s;
-                    }
-                }
-                return null;
+            if (entity is MimeKit.Tnef.TnefPart) {
+                // Pull apart the TNEF part and see what is inside.
+                var tnef = entity as MimeKit.Tnef.TnefPart;
+                var mimeMessage = tnef.ConvertToMessage ();
+                return FindTextPart (mimeMessage.Body);
             }
-
-            if (entity is MimePart) {
-                var part = (MimePart)entity;
-                if (part is TextPart) {
-                    var text = (TextPart)part;
-                    if (text.ContentType.Matches ("text", "plain")) {
-                        return text;
+            if (entity is TextPart && entity.ContentType.Matches ("text", "plain")) {
+                return entity as TextPart;
+            }
+            if (entity is Multipart) {
+                foreach (var subpart in entity as Multipart) {
+                    var textPart = FindTextPart (subpart);
+                    if (null != textPart) {
+                        return textPart;
                     }
                 }
             }
@@ -157,6 +182,12 @@ namespace NachoCore.Utils
             return cooked;
         }
 
+        /// <summary>
+        /// Returns the plain text part of a message body, an error message if the body is in
+        /// a format other than plain text, or <code>null</code> if no body can be found.
+        /// </summary>
+        /// <returns>The plain text part of a message body.</returns>
+        /// <param name="message">The e-mail message to search.</param>
         static public string ExtractTextPart (McEmailMessage message)
         {
             string error;
@@ -167,6 +198,13 @@ namespace NachoCore.Utils
             return text;
         }
 
+        /// <summary>
+        /// Returns the plain text part of a message body, or <code>null</code> if no body can be found.
+        /// <code>error</code> is set to a suitable error message if something goes wrong.
+        /// </summary>
+        /// <returns>The plain text part of a message body.</returns>
+        /// <param name="message">The e-mail message to search.</param>
+        /// <param name="error">Return an error message if something goes wrong.</param>
         static public string ExtractTextPartWithError (McEmailMessage message, out string error)
         {
             error = null;
@@ -191,21 +229,132 @@ namespace NachoCore.Utils
 
             NcAssert.True (McBody.MIME == message.BodyType);
 
-            var path = message.GetBodyPath ();
-            if (null == path) {
+            return ExtractTextPart (McBody.QueryById<McBody> (message.BodyId));
+        }
+
+        /// <summary>
+        /// Returns the plain text part of a body, or <code>null</code> if no plain text can be found.
+        /// </summary>
+        /// <remarks>
+        /// The body is assumed to be in MIME format.
+        /// </remarks>
+        /// <returns>The plain text part of a body.</returns>
+        /// <param name="messageBody">The McBody item in MIME format to search.</param>
+        static public string ExtractTextPart (McBody messageBody)
+        {
+            if (null == messageBody || null == messageBody.GetFilePath ()) {
                 return null;
             }
-            using (var fileStream = new FileStream (path, FileMode.Open, FileAccess.Read)) {
-                var mimeParser = new MimeParser (fileStream, true);
-                var mimeMessage = mimeParser.ParseMessage ();
-                var textPart = FindTextPart (mimeMessage.Body);
-                if (null == textPart) {
-                    return null;
+            return ExtractTextPart (LoadMessage (messageBody.GetFilePath ()));
+        }
+
+        /// <summary>
+        /// Returns the plain text part of the MIME message, or <code>null</code> if no plain text can be found.
+        /// </summary>
+        /// <returns>The plain text part of the MIME message.</returns>
+        /// <param name="message">The MIME message to search.</param>
+        static public string ExtractTextPart (MimeMessage message)
+        {
+            if (null == message) {
+                return null;
+            }
+            var textPart = FindTextPart (message.Body);
+            if (null == textPart) {
+                return null;
+            }
+            return textPart.Text;
+        }
+
+        /// <summary>
+        /// Remove all "text" parts of the MIME message, replacing them with a single "text/plain" part with the given string.
+        /// </summary>
+        /// <param name="message">The MIME message to be changed.</param>
+        /// <param name="text">The text value to insert into the MIME message.</param>
+        static public void SetPlainText (MimeMessage message, string text)
+        {
+            bool replaced = SetPlainTextHelper (message.Body, null, message, text, false);
+            if (!replaced) {
+                // No "text/plain" parts were found, so a one needs to be created.
+                TextPart newTextPart = new TextPart ("plain") {
+                    Text = text
+                };
+                if (null == message.Body) {
+                    // It's the only thing in the message.
+                    message.Body = newTextPart;
+                } else if (message.Body.ContentType.Matches ("multipart", "mixed")) {
+                    // The top-level entity is already a "multipart/mixed". Just add the "text/plain" to it.
+                    ((Multipart)message.Body).Add (newTextPart);
+                } else {
+                    // The top-level entity is something other than "multipart/mixed". Create a new
+                    // "multipart/mixed" at the top and add the "text/plain" and the old top-level entity
+                    // to it.
+                    var multipartBody = new Multipart ("mixed");
+                    multipartBody.Add (message.Body);
+                    multipartBody.Add (newTextPart);
+                    message.Body = multipartBody;
                 }
-                if (null == textPart.Text) {
-                    return null;
+            }
+        }
+
+        static private bool SetPlainTextHelper (
+            MimeEntity entity, Multipart parent, MimeMessage message,
+            string text, bool alreadyReplaced)
+        {
+            if (entity.ContentType.Matches ("text", "plain") && !alreadyReplaced) {
+                ((TextPart)entity).Text = text;
+                return true;
+            }
+            if (entity.ContentType.Matches ("text", "*")) {
+                RemoveEntity (entity, parent, message);
+                return false;
+            }
+            if (entity is MimeKit.Tnef.TnefPart) {
+                // Replace the TNEF part with an equivalent MIME entity
+                var tnef = entity as MimeKit.Tnef.TnefPart;
+                var tnefAsMime = tnef.ConvertToMessage ();
+                ReplaceEntity (entity, tnefAsMime.Body, parent, message);
+                return SetPlainTextHelper (tnefAsMime.Body, parent, message, text, alreadyReplaced);
+            }
+            if (entity is Multipart) {
+                var multipart = entity as Multipart;
+                // Child entities might get removed or replaced as they are being iterated over.
+                // So create a copy of the list of children and iterate over the copy.
+                List<MimeEntity> children = new List<MimeEntity> (multipart);
+                foreach (var subpart in children) {
+                    bool didReplacement = SetPlainTextHelper (subpart, multipart, message, text, alreadyReplaced);
+                    alreadyReplaced = alreadyReplaced || didReplacement;
                 }
-                return textPart.Text;
+                if (multipart.ContentType.Matches ("multipart", "mixed") || 
+                        multipart.ContentType.Matches ("multipart", "alternative")) {
+                    // Get rid of any multipart entities that are no longer necessary now that
+                    // some entities may have been removed.
+                    if (0 == multipart.Count) {
+                        RemoveEntity (multipart, parent, message);
+                    } else if (1 == multipart.Count) {
+                        ReplaceEntity (multipart, multipart [0], parent, message);
+                    }
+                }
+                return alreadyReplaced;
+            }
+            return false;
+        }
+
+        static private void RemoveEntity (MimeEntity entity, Multipart parent, MimeMessage message)
+        {
+            if (null == parent) {
+                message.Body = null;
+            } else {
+                parent.Remove (entity);
+            }
+        }
+
+        static private void ReplaceEntity (MimeEntity oldEntity, MimeEntity newEntity, Multipart parent, MimeMessage message)
+        {
+            if (null == parent) {
+                message.Body = newEntity;
+            } else {
+                parent.Remove (oldEntity);
+                parent.Add (newEntity);
             }
         }
 
@@ -321,6 +470,65 @@ namespace NachoCore.Utils
             var e = multipart.Last ();
             MimeEntityDisplayList (e, ref list);
 
+        }
+
+        /// <summary>
+        /// Find all the attachments in the given MIME message.
+        /// </summary>
+        /// <param name="message">The MIME message to be searched.</param>
+        public static List<MimeEntity> AllAttachments (MimeMessage message)
+        {
+            List<MimeEntity> result = new List<MimeEntity> ();
+            FindAttachments (message.Body, result);
+            return result;
+        }
+
+        private static void FindAttachments (MimeEntity entity, List<MimeEntity> result)
+        {
+            if (entity.ContentDisposition.IsAttachment) {
+                result.Add (entity);
+            } else if (entity is MimeKit.Tnef.TnefPart) {
+                // Pull apart the TNEF part and see what is inside.
+                var tnef = entity as MimeKit.Tnef.TnefPart;
+                var mimeMessage = tnef.ConvertToMessage ();
+                FindAttachments (mimeMessage.Body, result);
+            } else if (entity is Multipart) {
+                foreach (var subpart in entity as Multipart) {
+                    FindAttachments (subpart, result);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Add the attachments to the MIME message.
+        /// </summary>
+        /// <param name="message">The MIME message to which the attachments should be added.</param>
+        /// <param name="attachments">The list of attachments to be added to the message.</param>
+        public static void AddAttachments (MimeMessage message, List<McAttachment> attachments)
+        {
+            // Convert the McAttachments into MIME attachments.
+            AttachmentCollection mimeAttachments = new AttachmentCollection ();
+            foreach (var attachment in attachments) {
+                NcAssert.True (McAttachment.FilePresenceEnum.Complete == attachment.FilePresence, "An attachment needs to be downloaded before it can be added to a message.");
+                mimeAttachments.Add (attachment.GetFilePath ());
+            }
+
+            Multipart attachmentsParent = null; // Where to put the attachments
+            MimeEntity existingBody = message.Body;
+            if (existingBody.ContentType.Matches ("multipart", "mixed")) {
+                // Attachments can be added directly into the existing body.
+                attachmentsParent = existingBody as Multipart;
+            } else {
+                // Create a new multipart/mixed entity that will hold the existing body and the attachments.
+                attachmentsParent = new Multipart ("mixed");
+                attachmentsParent.Add (existingBody);
+                message.Body = attachmentsParent;
+            }
+
+            // Ttransfer the attachment entities to their new home.
+            foreach (MimeEntity mimeAttachment in mimeAttachments) {
+                attachmentsParent.Add (mimeAttachment);
+            }
         }
     }
 }
