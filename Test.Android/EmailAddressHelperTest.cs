@@ -36,6 +36,12 @@ namespace Test.Android
                 new MailboxAddress ("Jeff Enderwick", "jeffe@nachocove.com"),
                 new MailboxAddress ("Steve Scalpone", "steves@nachocove.com"),
             };
+            MailboxAddress[] expected5 = new MailboxAddress[1] {
+                new MailboxAddress ("Amazon Web Services, Inc.", "no-reply-aws@amazon.com"),
+            };
+            MailboxAddress[] expected6 = new MailboxAddress[1] {
+                new MailboxAddress ("Jeff Enderwick", "jeffe@nachocove.com"),
+            };
             MailboxAddress[] expected7 = new MailboxAddress[1] {
                 new MailboxAddress ("Henry Kwok", "henryk@nachocove.com"),
             };
@@ -63,11 +69,11 @@ namespace Test.Android
 
             // We think this address is illegal
             InternetAddressList got5 = NcEmailAddress.ParseAddressListString(@"""Amazon Web Services, Inc."" <no-reply-aws@amazon.com<mailto:no-reply-aws@amazon.com>>");
-            Assert.AreEqual (0, got5.Count);
+            Compare (expected5, got5);
 
             // We think this address is illegal
             InternetAddressList got6 = NcEmailAddress.ParseAddressListString(@"""Jeff Enderwick"" <jeffe@nachocove.com<mailto:jeffe@nachocove.com>>");
-            Assert.AreEqual (0, got6.Count);
+            Compare (expected6, got6);
 
             InternetAddressList got7 = NcEmailAddress.ParseAddressListString ("\"Henry Kwok\" <henryk@nachocove.com>");
             Compare (expected7, got7);
