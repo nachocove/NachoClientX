@@ -63,7 +63,7 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Table<McRecurrence> ().Where (x => x.TaskId == Id).SingleOrDefault ();
         }
 
-        public static ClassCodeEnum GetClassCode ()
+        public override ClassCodeEnum GetClassCode ()
         {
             return McAbstrFolderEntry.ClassCodeEnum.Tasks;
         }

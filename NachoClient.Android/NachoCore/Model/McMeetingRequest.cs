@@ -147,7 +147,7 @@ namespace NachoCore.Model
             return NcResult.OK ();
         }
 
-        public static ClassCodeEnum GetClassCode ()
+        public override ClassCodeEnum GetClassCode ()
         {
             return McAbstrFolderEntry.ClassCodeEnum.MeetingRequest;
         }
