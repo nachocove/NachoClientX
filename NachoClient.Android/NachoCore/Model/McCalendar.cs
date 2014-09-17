@@ -42,7 +42,7 @@ namespace NachoCore.Model
         /// Recurrences are generated into the McEvent table thru this date.
         public DateTime RecurrencesGeneratedUntil { get; set; }
 
-        public static ClassCodeEnum GetClassCode ()
+        public override ClassCodeEnum GetClassCode ()
         {
             return McAbstrFolderEntry.ClassCodeEnum.Calendar;
         }

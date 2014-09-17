@@ -36,6 +36,12 @@ namespace NachoCore.Model
         [Indexed]
         public bool IsAwaitingDelete { get; set; }
 
+        public virtual ClassCodeEnum GetClassCode ()
+        {
+            NcAssert.True (false);
+            return ClassCodeEnum.Sms; // Just to make compiler happy.
+        }
+
         public static T QueryByServerId<T> (int accountId, string serverId) where T : McAbstrFolderEntry, new()
         {
             return NcModel.Instance.Db.Query<T> (

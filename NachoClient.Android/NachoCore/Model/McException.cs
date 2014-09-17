@@ -23,7 +23,7 @@ namespace NachoCore.Model
         /// Start time of the original recurring meeting (Compact DateTime). Exception only.
         public DateTime ExceptionStartTime { get; set; }
 
-        public static ClassCodeEnum GetClassCode ()
+        public override ClassCodeEnum GetClassCode ()
         {
             return McAbstrFolderEntry.ClassCodeEnum.Exception;
         }

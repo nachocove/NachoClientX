@@ -33,7 +33,7 @@ namespace NachoCore.ActiveSync
                     var result = task.FromXmlApplicationData (applicationData);
                     NcAssert.True (result.isOK());
                 } catch (Exception ex) {
-                    Log.Error (Log.LOG_AS, "Parse of Task failed on Add. ServerId {0}", xmlServerId.Value);
+                    Log.Error (Log.LOG_AS, "Parse of Task failed on Add. ServerId {0}, ex {1}", xmlServerId.Value, ex);
                 }
                 task.ServerId = xmlServerId.Value;
                 task.Insert ();
@@ -43,7 +43,7 @@ namespace NachoCore.ActiveSync
                     var result = task.FromXmlApplicationData (applicationData);
                     NcAssert.True (result.isOK());
                 } catch (Exception ex) {
-                    Log.Error (Log.LOG_AS, "Parse of Task failed on Change. ServerId {0}", xmlServerId.Value);
+                    Log.Error (Log.LOG_AS, "Parse of Task failed on Change. ServerId {0}, ex {1}", xmlServerId.Value, ex);
                 }
                 task.Update ();
             }
