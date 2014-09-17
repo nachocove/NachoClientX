@@ -13,6 +13,7 @@ namespace NachoCore.Model
     public partial class McEmailAddress : McAbstrObjectPerAcc, IScorable
     {   
         // Score version of this object
+        [Indexed]
         public int ScoreVersion { get; set; }
 
         /// Time variance state machine type
