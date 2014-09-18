@@ -70,12 +70,12 @@ namespace NachoPlatform
                 var emails = Person.GetEmails ();
                 int i = 1;
                 foreach (var email in emails) {
-                    contact.AddEmailAddressAttribute (string.Format ("Email{0}Address", i), null, email.Value);
+                    contact.AddEmailAddressAttribute (accountId, string.Format ("Email{0}Address", i), null, email.Value);
                     ++i;
                 }
                 var birthday = Person.Birthday;
                 if (null != birthday) {
-                    contact.AddDateAttribute ("Birthday", null, birthday.ToDateTime ());
+                    contact.AddDateAttribute (accountId, "Birthday", null, birthday.ToDateTime ());
                 }
                 if (null != Person.Note) {
                     var body = McBody.InsertFile (accountId, Person.Note);
@@ -86,12 +86,12 @@ namespace NachoPlatform
                 foreach (var phone in phones) {
                     var phoneLabel = phone.Label.ToString ();
                     if (phoneLabel.Contains ("Work")) {
-                        contact.AddPhoneNumberAttribute ("BusinessPhoneNumber", "Work", phone.Value);
+                        contact.AddPhoneNumberAttribute (accountId, "BusinessPhoneNumber", "Work", phone.Value);
                     } else if (phoneLabel.Contains ("Home")) {
-                        contact.AddPhoneNumberAttribute ("HomePhoneNumber", "Home", phone.Value);
+                        contact.AddPhoneNumberAttribute (accountId, "HomePhoneNumber", "Home", phone.Value);
                     } else {
                         // Guess mobile.
-                        contact.AddPhoneNumberAttribute ("MobilePhoneNumber", null, phone.Value);
+                        contact.AddPhoneNumberAttribute (accountId, "MobilePhoneNumber", null, phone.Value);
                     }
                 }
                 contact.DeviceCreation = Person.CreationDate.ToDateTime ();

@@ -17,7 +17,7 @@ namespace Test.Common
         {
             var c = new McContact ();
             c.AccountId = 1;
-            c.AddEmailAddressAttribute ("bob", "home", "bob@foo.com");
+            c.AddEmailAddressAttribute (c.AccountId, "bob", "home", "bob@foo.com");
             c.Insert ();
             var d = McContact.QueryById<McContact> (c.Id);
             // Don't assert anything about 'd' because we don't want to read it in

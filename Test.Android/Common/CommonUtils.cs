@@ -44,7 +44,7 @@ namespace Test.iOS
             // clean static property
             MockOwner.Status = null;
 
-            var account = CreateAccount ();
+            CreateAccount ();
             NcTask.StartService ();
 
             MockOwner mockOwner = new MockOwner ();
