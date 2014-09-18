@@ -319,7 +319,7 @@ namespace NachoCore.ActiveSync
             return list;
         }
 
-        public static List<McEmailMessageCategory> ParseEmailCategories (XNamespace ns, XElement categories)
+        public static List<McEmailMessageCategory> ParseEmailCategories (int accountId, XNamespace ns, XElement categories)
         {
             var list = new List<McEmailMessageCategory> ();
             if (categories.Elements ().Count () != 0) {
@@ -329,7 +329,7 @@ namespace NachoCore.ActiveSync
 
                 foreach (var category in categories.Elements()) {
                     NcAssert.True (category.Name.LocalName.Equals (Xml.Email.Category));
-                    var n = new McEmailMessageCategory (category.Value);
+                    var n = new McEmailMessageCategory (accountId, category.Value);
                     list.Add (n);
                 }
             }
@@ -821,7 +821,7 @@ namespace NachoCore.ActiveSync
                     emailMessage.ContentClass = child.Value;
                     break;
                 case Xml.Email.Categories:
-                    var categories = AsHelpers.ParseEmailCategories (nsEmail, child);
+                    var categories = AsHelpers.ParseEmailCategories (folder.AccountId, nsEmail, child);
                     if (0 == emailMessage.Categories.Count) {
                         emailMessage.Categories = categories;
                     } else {
