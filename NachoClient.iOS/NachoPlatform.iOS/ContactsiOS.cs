@@ -50,7 +50,7 @@ namespace NachoPlatform
 
             public override NcResult ToMcContact ()
             {
-                var accountId = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Device).Single ().Id;
+                var accountId = McAccount.GetDeviceAccount ().Id;
                 var contact = new McContact () {
                     Source = McAbstrItem.ItemSource.Device,
                     ServerId = "NachoDeviceContact:" + UniqueId,

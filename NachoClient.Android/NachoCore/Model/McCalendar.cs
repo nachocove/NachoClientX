@@ -157,7 +157,7 @@ namespace NachoCore.Model
 
         public static McCalendar QueryByDeviceUniqueId (string deviceUniqueId)
         {
-            var account = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Device).Single ();
+            var account = McAccount.GetDeviceAccount ();
             return NcModel.Instance.Db.Table<McCalendar> ().Where (x => 
                 x.DeviceUniqueId == deviceUniqueId &&
             x.AccountId == account.Id

@@ -282,8 +282,7 @@ namespace NachoClient.iOS
                 return false;
             }
             // We will be called here whether or not we were launched to Rx the file. So no need to handle in DFLwO.
-            var accountId = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Device).Single ().Id;
-            var document = McDocument.InsertSaveStart (accountId);
+            var document = McDocument.InsertSaveStart (McAccount.GetDeviceAccount ().Id);
             document.SetDisplayName (Path.GetFileName (url.Path));
             document.SourceApplication = sourceApplication;
             document.UpdateFileMove (url.Path);
@@ -503,9 +502,11 @@ namespace NachoClient.iOS
             value = (NSNumber)notification.UserInfo.ObjectForKey (EventKey);
             if (null != value) {
                 var eventId = value.IntValue;
-                McMutables.Set ("EventNotif", Account.Id.ToString (), eventId.ToString ());
+                var devAccountId = McAccount.GetDeviceAccount ().Id;
+                McMutables.Set (devAccountId, "EventNotif", Account.Id.ToString (), eventId.ToString ());
 
-                Log.Info (Log.LOG_LIFECYCLE, "ReceivedLocalNotification: set value: {0}.", McMutables.Get ("EventNotif", Account.Id.ToString ()));
+                Log.Info (Log.LOG_LIFECYCLE, "ReceivedLocalNotification: set value: {0}.", 
+                    McMutables.Get (devAccountId, "EventNotif", Account.Id.ToString ()));
                 Log.Info (Log.LOG_LIFECYCLE, "ReceivedLocalNotification: from local notification: NotifiOS.handle is {0}.", eventId);
             }
         }
@@ -650,7 +651,7 @@ namespace NachoClient.iOS
 
         private void BadgeNotifGoInactive ()
         {
-            McMutables.Set ("IOS", "GoInactiveTime", DateTime.UtcNow.ToString ());
+            McMutables.Set (McAccount.GetDeviceAccount ().Id, "IOS", "GoInactiveTime", DateTime.UtcNow.ToString ());
             BadgeNotifAllowed = true;
             Log.Info (Log.LOG_UI, "BadgeNotifGoInactive: exit");
         }
@@ -662,7 +663,7 @@ namespace NachoClient.iOS
             if (!BadgeNotifAllowed) {
                 return;
             }
-            var datestring = McMutables.GetOrCreate ("IOS", "GoInactiveTime", DateTime.UtcNow.ToString ());
+            var datestring = McMutables.GetOrCreate (McAccount.GetDeviceAccount ().Id, "IOS", "GoInactiveTime", DateTime.UtcNow.ToString ());
             var since = DateTime.Parse (datestring);
             var unreadAndHot = McEmailMessage.QueryUnreadAndHotAfter (since);
             var badgeCount = unreadAndHot.Count ();

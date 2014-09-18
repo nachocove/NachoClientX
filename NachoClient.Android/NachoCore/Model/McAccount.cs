@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using SQLite;
 using NachoCore.Utils;
 using NachoCore.ActiveSync;
@@ -29,6 +30,11 @@ namespace NachoCore.Model
         public static IEnumerable<McAccount> QueryByAccountType (AccountTypeEnum accountType)
         {
             return NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == accountType);
+        }
+
+        public static McAccount GetDeviceAccount ()
+        {
+            return McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Device).SingleOrDefault ();
         }
     }
 

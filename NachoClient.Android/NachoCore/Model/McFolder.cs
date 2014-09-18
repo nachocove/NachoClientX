@@ -115,14 +115,12 @@ namespace NachoCore.Model
          */
         public static McFolder GetDeviceContactsFolder ()
         {
-            var account = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Device).Single ();
-            return McFolder.GetClientOwnedFolder (account.Id, ClientOwned_DeviceContacts);
+            return McFolder.GetClientOwnedFolder (McAccount.GetDeviceAccount ().Id, ClientOwned_DeviceContacts);
         }
 
         public static McFolder GetDeviceCalendarsFolder ()
         {
-            var account = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Device).Single ();
-            return McFolder.GetClientOwnedFolder (account.Id, ClientOwned_DeviceCalendars);
+            return McFolder.GetClientOwnedFolder (McAccount.GetDeviceAccount ().Id, ClientOwned_DeviceCalendars);
         }
 
         public static McFolder GetOutboxFolder (int accountId)

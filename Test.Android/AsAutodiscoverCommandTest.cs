@@ -240,7 +240,7 @@ namespace Test.iOS
             public void TestFailureHasRetries ()
             {
                 int retries = 5;
-                McMutables.Set ("HTTPOP", "Retries", (retries).ToString ());
+                McMutables.Set (1, "HTTPOP", "Retries", (retries).ToString ());
                 int expectedRetries = (retries + 1) * 2; // 2x because 2 robots are sending retry StatusInds
 
                 string successXml = CommonMockData.AutodOffice365ResponseXml;
@@ -368,9 +368,9 @@ namespace Test.iOS
 
             private void SetTimeoutConstants ()
             {
-                McMutables.Set ("HTTPOP", "TimeoutSeconds", (TimeoutTime / 1000).ToString ());
-                McMutables.Set ("AUTOD", "CertTimeoutSeconds", (TimeoutTime / 1000).ToString ());
-                McMutables.Set ("DNSOP", "TimeoutSeconds", (TimeoutTime / 1000).ToString ());
+                McMutables.Set (1, "HTTPOP", "TimeoutSeconds", (TimeoutTime / 1000).ToString ());
+                McMutables.Set (1, "AUTOD", "CertTimeoutSeconds", (TimeoutTime / 1000).ToString ());
+                McMutables.Set (1, "DNSOP", "TimeoutSeconds", (TimeoutTime / 1000).ToString ());
             }
 
             [Test]

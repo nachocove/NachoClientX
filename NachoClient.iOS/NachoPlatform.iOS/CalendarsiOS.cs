@@ -75,7 +75,7 @@ namespace NachoPlatform
 
             public override NcResult ToMcCalendar ()
             {
-                var accountId = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Device).Single ().Id;
+                var accountId = McAccount.GetDeviceAccount ().Id;
                 var cal = new McCalendar () {
                     Source = McAbstrItem.ItemSource.Device,
                     ServerId = "NachoDeviceCalendar:" + UniqueId,

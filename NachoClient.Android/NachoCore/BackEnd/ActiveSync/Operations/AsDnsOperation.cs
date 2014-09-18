@@ -28,7 +28,7 @@ namespace NachoCore.ActiveSync
         public AsDnsOperation (IAsDnsOperationOwner owner)
         {
             LockObj = new object ();
-            var timeoutSeconds = McMutables.GetOrCreate ("DNSOP", "TimeoutSeconds", KDefaultTimeoutSeconds);
+            var timeoutSeconds = McMutables.GetOrCreate (McAccount.GetDeviceAccount ().Id, "DNSOP", "TimeoutSeconds", KDefaultTimeoutSeconds);
             Timeout = new TimeSpan (0, 0, timeoutSeconds.ToInt ());
             DnsQueryRequestType = typeof(MockableDnsQueryRequest);
             m_owner = owner;

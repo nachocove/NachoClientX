@@ -272,7 +272,10 @@ namespace Test.iOS
         public void SetUp ()
         {
             NcModel.Instance.Reset (System.IO.Path.GetTempFileName ());
-           
+            var deviceAccount = new McAccount () {
+                AccountType = McAccount.AccountTypeEnum.Device,
+            };
+            deviceAccount.Insert ();
             // turn off telemetry logging for tests
             LogSettings settings = Log.SharedInstance.Settings;
             settings.Error.DisableTelemetry ();
