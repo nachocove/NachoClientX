@@ -6,7 +6,7 @@ using SQLite;
 
 namespace NachoCore.Model
 {
-    public class McConference : McAbstrObject
+    public class McConference : McAbstrObjectPerAcc
     {
         public string DefaultPhoneNumber { get; set;}
     }

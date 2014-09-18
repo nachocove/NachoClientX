@@ -583,6 +583,7 @@ namespace NachoClient.iOS
                 Account.PreferredConferenceId = userConference.Id;
             } else {
                 McConference x = new McConference ();
+                x.AccountId = whatAccount.Id;
                 x.DefaultPhoneNumber = "";
                 x.Insert ();
                 whatAccount.PreferredConferenceId = x.Id;
