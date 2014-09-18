@@ -954,7 +954,7 @@ namespace NachoClient.iOS
             // Toggle header display mode and redraw
             expandedHeader = !expandedHeader;
 
-            ConfigureView ();
+            LayoutView (true);
         }
 
         [MonoTouch.Foundation.Export ("DownloadMessage:")]
