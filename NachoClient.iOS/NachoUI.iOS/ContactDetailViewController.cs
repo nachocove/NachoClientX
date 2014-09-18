@@ -181,6 +181,8 @@ namespace NachoClient.iOS
 
         protected void CreateView ()
         {
+            Util.SetBackButton (NavigationController, NavigationItem, UIColor.White);
+
             var topImage = new UIView (new RectangleF (0, -FOO_SIZE, View.Frame.Width, 216));
             topImage.Tag = TOP_IMAGE_TAG;
             contentView.AddSubview (topImage);

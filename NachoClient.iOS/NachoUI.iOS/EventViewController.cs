@@ -72,6 +72,7 @@ namespace NachoClient.iOS
         public float IMAGE_HEIGHT = SCREEN_WIDTH / 2 - 45;
         protected float TOOL_BAR_HEIGHT = 65f;
         protected float TITLE_OFFSET = 0f;
+        protected int attachmentCount = 0;
         protected float keyboardHeight;
         protected bool suppressLayout = false;
         protected bool suppressLowerLayout = false;
@@ -322,6 +323,7 @@ namespace NachoClient.iOS
 
         protected void CreateEventView ()
         {
+            Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
             scrollView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, View.Frame.Height - 54);
 
             if (account.EmailAddr == c.OrganizerEmail && account.Id == c.AccountId) {
@@ -484,7 +486,6 @@ namespace NachoClient.iOS
             AddTextLabelWithImageView (45, 12.438f, "Notes", UIImage.FromBundle ("icn-notes"), EVENT_NOTE_TITLE_TAG, eventNotesView);
 
             UILabel notesDetailLabel = new UILabel ();
-            notesDetailLabel.Tag = EVENT_ATTACHMENT_DETAIL_TAG;
             notesDetailLabel.SizeToFit ();
             notesDetailLabel.TextAlignment = UITextAlignment.Right;
             notesDetailLabel.Frame = new RectangleF (SCREEN_WIDTH - notesDetailLabel.Frame.Width - 34, 12.438f, notesDetailLabel.Frame.Width, TEXT_LINE_HEIGHT);
@@ -639,6 +640,22 @@ namespace NachoClient.iOS
                 }
             }
 
+            //TODO 
+            //get attachments out of an event
+            attachmentCount = 0;  //set to zero until we get the real count of attachments
+            var attachmentView = contentView.ViewWithTag (800) as UIView;
+            if (0 == attachmentCount) {
+                attachmentView.Hidden = true;
+                line2.Hidden = true;
+            } else {
+                var attachmentDetailLabelView = contentView.ViewWithTag (EVENT_ATTACHMENT_DETAIL_TAG) as UILabel;
+                //attachmentDetailLabelView.Text = "(" + c.attachments.Count() +  ")";
+                attachmentDetailLabelView.SizeToFit ();
+                attachmentDetailLabelView.Frame = new RectangleF (SCREEN_WIDTH - attachmentDetailLabelView.Frame.Width - 34, 12.438f, attachmentDetailLabelView.Frame.Width, TEXT_LINE_HEIGHT);
+                attachmentView.Hidden = false;
+                line2.Hidden = false;
+            }
+
             LayoutView ();
         }
 
@@ -710,10 +727,12 @@ namespace NachoClient.iOS
             line1.Frame = new RectangleF (23f, yOffset, line1.Frame.Width, line1.Frame.Height);
             yOffset += alv.Frame.Height;
 
-            var atv = View.ViewWithTag (800) as UIView;
-            atv.Frame = new RectangleF (0, yOffset, atv.Frame.Width, atv.Frame.Height);
-            line2.Frame = new RectangleF (23f, yOffset, line1.Frame.Width, line1.Frame.Height);
-            yOffset += atv.Frame.Height;
+            if (0 != attachmentCount) {
+                var atv = View.ViewWithTag (800) as UIView;
+                atv.Frame = new RectangleF (0, yOffset, atv.Frame.Width, atv.Frame.Height);
+                line2.Frame = new RectangleF (23f, yOffset, line1.Frame.Width, line1.Frame.Height);
+                yOffset += atv.Frame.Height;
+            }
 
             var nv = View.ViewWithTag (900) as UIView;
             nv.Frame = new RectangleF (0, yOffset, nv.Frame.Width, nv.Frame.Height);

@@ -61,10 +61,9 @@ namespace NachoClient.iOS
             newMeetingButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("NachoNowToEditEventView", new SegueHolder (null));
             };
-
-            NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, newMeetingButton };
-            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] {
-            };
+                
+            NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton };
+            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { newMeetingButton };
 
             carouselView = new iCarousel ();
             carouselView.Frame = carouselNormalSize ();

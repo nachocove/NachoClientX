@@ -79,7 +79,9 @@ namespace NachoClient.iOS
 
         protected void CreateNotesView ()
         {
-
+            NavigationItem.Title = "Note";
+            Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
+             
             scrollView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, View.Frame.Height - KEYBOARD_HEIGHT);
             //notes
             notesView = new UIView (new RectangleF (0, LINE_OFFSET + 10, SCREEN_WIDTH, NOTES_TEXT_VIEW_HEIGHT + 200));

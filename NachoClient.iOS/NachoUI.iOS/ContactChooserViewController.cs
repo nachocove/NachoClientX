@@ -85,6 +85,8 @@ namespace NachoClient.iOS
 
         public void CreateView ()
         {
+            Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
+
             UIView inputView = new UIView (new RectangleF (0, 0, 320, 44));
             inputView.BackgroundColor = A.Color_NachoBackgroundGray;
 

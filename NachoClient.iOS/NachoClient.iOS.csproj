@@ -1592,6 +1592,7 @@
     <BundleResource Include="Resources\Slide4-2B%402x.png" />
     <BundleResource Include="Resources\Slide4-3%402x.png" />
     <BundleResource Include="Resources\LegalInfo.html" />
+    <BundleResource Include="Resources\nav-backarrow%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

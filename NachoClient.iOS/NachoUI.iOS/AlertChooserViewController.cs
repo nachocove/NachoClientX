@@ -81,6 +81,9 @@ namespace NachoClient.iOS
 
         protected void CreateAlertView ()
         {
+            NavigationItem.Title = "Alert";
+            Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
+
             //None
             noneView = MakeCheckCell (101, "None", 0f, LINE_OFFSET, SCREEN_WIDTH, CELL_HEIGHT);
             atTimeView = MakeCheckCell (102, "At time of event", 0f, LINE_OFFSET + CELL_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT);

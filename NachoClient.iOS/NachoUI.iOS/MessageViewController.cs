@@ -437,6 +437,7 @@ namespace NachoClient.iOS
 
         protected void CreateView ()
         {
+            Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
             view = new UIView ();
             scrollView.AddSubview (view);
             #if (DEBUG_UI)
