@@ -1138,6 +1138,10 @@
     <Compile Include="NachoUI.iOS\InboxViewController.designer.cs">
       <DependentUpon>InboxViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\IntentSelectView.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcMessageIntent.cs">
+      <Link>NachoCore\Brain\NcMessageIntent.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

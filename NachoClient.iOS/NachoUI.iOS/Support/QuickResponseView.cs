@@ -82,6 +82,12 @@ namespace NachoClient.iOS
                 quickButton.TouchUpInside += (object sender, EventArgs e) => {
                     ncQuick.CreateQuickResponse (response, ref emailMessage);
                     owner.PopulateMessageFromQR (ncQuick.whatType);
+                    if(null != response.intent){
+                        if(null == owner.messageIntent){
+                            owner.messageIntent = new NcMessageIntent(ncQuick.whatType);
+                        }
+                        owner.EmbedIntentIntoMessage(response.intent);
+                    }
                     this.DismissView ();
                 };
 
