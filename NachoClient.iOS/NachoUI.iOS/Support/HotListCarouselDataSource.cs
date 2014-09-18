@@ -68,7 +68,7 @@ namespace NachoClient.iOS
         protected UIView CreateView (iCarousel carousel)
         {
             var carouselFrame = carousel.Frame;
-            var frame = new RectangleF (0, 0, carouselFrame.Width - 30.0f, carouselFrame.Height - 0.0f);
+            var frame = new RectangleF (0, 10, carouselFrame.Width - 15.0f, carouselFrame.Height - 30);
             var view = new UIView (frame);
             view.BackgroundColor = UIColor.White;
             view.AutoresizingMask = UIViewAutoresizing.None;
@@ -310,9 +310,8 @@ namespace NachoClient.iOS
         /// Populate message cells with data, adjust sizes and visibility
         /// </summary>
         protected void ConfigureView (UIView view, int messageThreadIndex)
-        {
+        {           
             // Save thread index
-
             view.Tag = messageThreadIndex;
             var messageThread = owner.priorityInbox.GetEmailThread (messageThreadIndex);
 

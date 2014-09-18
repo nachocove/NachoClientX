@@ -22,12 +22,10 @@ namespace NachoClient.iOS
         public bool wrap = false;
         public INachoEmailMessages priorityInbox;
         protected CalendarTableViewSource calendarSource;
-        UIPanGestureRecognizer calendarPanGestureRecognizer = null;
-        UITapGestureRecognizer calendarCloseTapGestureRecognizer = null;
         UITapGestureRecognizer carouselTapGestureRecognizer = null;
 
-        protected INachoEmailMessages inbox;
-        protected iCarousel inboxCarousel;
+        protected iCarousel carouselView;
+        protected UITableView calendarTableView;
 
         public NachoNowViewController (IntPtr handle) : base (handle)
         {
@@ -37,21 +35,21 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            Util.ConfigureNavBar (false, NavigationController);
+            priorityInbox = NcEmailManager.PriorityInbox ();
 
-            var nachoButton = new UIBarButtonItem ();
-            Util.SetOriginalImageForButton (nachoButton, "nav-calendar-empty");
-            nachoButton.Clicked += (object sender, EventArgs e) => {
-                UIView.Animate (1, 0, UIViewAnimationOptions.CurveEaseOut,
-                    () => {
-                        ConfigureBasicView ();
-                    },
-                    () => {
-                    });
-                carouselView.ScrollToItemAtIndex (0, true);
-                inboxCarousel.ScrollToItemAtIndex (0, true);
-            };
+            calendarSource = new CalendarTableViewSource ();
+            calendarSource.owner = this;
+            calendarSource.SetCalendar (NcEventManager.Instance);
 
+            CreateView ();
+
+            // configure carousel
+            carouselView.DataSource = new HotListCarouselDataSource (this);
+            carouselView.Delegate = new HotListCarouselDelegate (this);  
+        }
+
+        protected void CreateView ()
+        {
             var composeButton = new UIBarButtonItem ();
             Util.SetOriginalImageForButton (composeButton, "contact-newemail");
             composeButton.Clicked += (object sender, EventArgs e) => {
@@ -66,8 +64,15 @@ namespace NachoClient.iOS
 
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, newMeetingButton };
             NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] {
-                nachoButton,
             };
+
+            carouselView = new iCarousel ();
+            carouselView.Frame = carouselNormalSize ();
+            carouselView.Type = iCarouselType.Linear;
+            carouselView.Vertical = true;
+            carouselView.ContentOffset = new SizeF (0f, 0f);
+            carouselView.BackgroundColor = UIColor.Clear;
+            View.AddSubview (carouselView);
 
             carouselTapGestureRecognizer = new UITapGestureRecognizer ();
             carouselTapGestureRecognizer.NumberOfTapsRequired = 2;
@@ -82,82 +87,25 @@ namespace NachoClient.iOS
                     return true;
                 }
             };
+            carouselTapGestureRecognizer.Enabled = true;
             carouselView.AddGestureRecognizer (carouselTapGestureRecognizer);
 
-            priorityInbox = NcEmailManager.PriorityInbox ();
-
-            // configure carousel
-            carouselView.DataSource = new HotListCarouselDataSource (this);
-            carouselView.Delegate = new HotListCarouselDelegate (this);  
-            carouselView.Type = iCarouselType.Linear;
-            carouselView.Vertical = false;
-            carouselView.ContentOffset = new SizeF (0f, 0f);
-            carouselView.BackgroundColor = UIColor.Clear;
-
-            inbox = NcEmailManager.Inbox ();
-
-            inboxCarousel = new iCarousel ();
-            inboxCarousel.Frame = new RectangleF (0, View.Frame.Height - INBOX_ROW_HEIGHT, 320, INBOX_ROW_HEIGHT);
-            inboxCarousel.DataSource = new InboxCarouselDataSource (this, inbox);
-            inboxCarousel.Delegate = new InboxCarouselDelegate (this, inbox);  
-            inboxCarousel.Type = iCarouselType.Linear;
-            inboxCarousel.Vertical = false;
-            inboxCarousel.ContentOffset = new SizeF (0f, 0f);
-            inboxCarousel.BackgroundColor = UIColor.Clear;
-            View.AddSubview (inboxCarousel);
-
+            calendarTableView = new UITableView ();
             calendarTableView.SeparatorStyle = UITableViewCellSeparatorStyle.SingleLine;
-
-            calendarSource = new CalendarTableViewSource ();
-            calendarSource.owner = this;
-            calendarSource.SetCalendar (NcEventManager.Instance);
             calendarTableView.Source = calendarSource;
-
-            // Set up gesture recognizers; they'll be enabled and disabled as needed
-
-            // Pan the calendar down from the top
-            calendarPanGestureRecognizer = new UIPanGestureRecognizer ((UIPanGestureRecognizer obj) => {
-                calendarPan (obj);
-            });
-            calendarPanGestureRecognizer.Enabled = false;
-            calendarPanGestureRecognizer.MaximumNumberOfTouches = 1;
-            calendarPanGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
-                return true;
-            };
-            //calendarView.AddGestureRecognizer (calendarPanGestureRecognizer);
-
-            // Tap the calendar thumb to hid the calendar again
-            calendarCloseTapGestureRecognizer = new UITapGestureRecognizer ((UITapGestureRecognizer obj) => {
-                calendarThumbTouch (obj);
-            });
-            calendarCloseView.UserInteractionEnabled = true;
-            calendarCloseTapGestureRecognizer.Enabled = false;
-            calendarCloseView.AddGestureRecognizer (calendarCloseTapGestureRecognizer);
+            View.AddSubview (calendarTableView);
 
             View.BackgroundColor = A.Color_NachoBackgroundGray;
-
-            ConfigureBasicView ();
         }
 
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-
             if (null != this.NavigationController) {
-                NavigationController.SetToolbarItems (null, false);
                 this.NavigationController.ToolbarHidden = true;
-                this.NavigationController.NavigationBarHidden = false;
             }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
-        }
 
-        // After viewing a message, when returning to Now, after Now's ViewWillAppear
-        // is called, layout is called again but the toolbar size is still factored in,
-        // so the inboxCarousel is put in the wrong spot.  Can't figure it out.  So...
-        public override void ViewWillLayoutSubviews ()
-        {
-            base.ViewWillLayoutSubviews ();
-            inboxCarousel.Frame = inboxNormalSize ();
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -250,8 +198,6 @@ namespace NachoClient.iOS
             if (NcResult.SubKindEnum.Info_EmailMessageSetChanged == s.Status.SubKind) {
                 priorityInbox.Refresh ();
                 carouselView.ReloadData ();
-                inbox.Refresh ();
-                inboxCarousel.ReloadData ();
             }
             if (NcResult.SubKindEnum.Info_CalendarSetChanged == s.Status.SubKind) {
                 calendarSource.Refresh ();
@@ -260,61 +206,36 @@ namespace NachoClient.iOS
             if (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated == s.Status.SubKind) {
                 priorityInbox.Refresh ();
                 carouselView.ReloadData ();
-                inbox.Refresh ();
-                inboxCarousel.ReloadData ();
             }
-        }
-
-        protected void DisableGestureRecognizers ()
-        {
-            calendarPanGestureRecognizer.Enabled = false;
-            calendarCloseTapGestureRecognizer.Enabled = false;
-            carouselTapGestureRecognizer.Enabled = false;
         }
 
         /// <summary>
         /// Show event, inbox, and hot list
         /// </summary>
-        protected void ConfigureBasicView ()
+        protected void LayoutView ()
         {
-            DisableGestureRecognizers ();
-
             calendarSource.SetCompactMode (true);
-            calendarView.Frame = calendarSmallSize ();
             calendarTableView.ScrollEnabled = false;
-            calendarThumbView.Hidden = false;
-            calendarCloseView.Hidden = true;
+            calendarTableView.Frame = calendarSmallSize ();
             calendarTableView.ReloadData ();
             calendarSource.ScrollToNearestEvent (calendarTableView, DateTime.UtcNow, 7);
 
             carouselView.Frame = carouselNormalSize ();
             carouselView.Alpha = 1.0f;
-
-            inboxCarousel.ReloadData ();
-            inboxCarousel.Frame = inboxNormalSize ();
-
-            // Enabled gestures
-            calendarPanGestureRecognizer.Enabled = true;
-            carouselTapGestureRecognizer.Enabled = true;
+            carouselView.ClipsToBounds = true;
         }
 
-        int INBOX_ROW_HEIGHT = 69;
-        int CALENDAR_VIEW_HEIGHT = (69 + 22);
-        float calendarStartingY;
+        public override void ViewDidLayoutSubviews ()
+        {
+            base.ViewDidLayoutSubviews ();
+            LayoutView ();
+        }
+
+        int CALENDAR_VIEW_HEIGHT = (69);
 
         protected RectangleF carouselNormalSize ()
         {
-            var rect = View.Frame;
-            rect.Height = rect.Height - (INBOX_ROW_HEIGHT + CALENDAR_VIEW_HEIGHT + 20);
-            rect.Y = CALENDAR_VIEW_HEIGHT;
-            return rect;
-        }
-
-        protected RectangleF inboxNormalSize ()
-        {
-            var rect = View.Frame;
-            rect.Height = INBOX_ROW_HEIGHT;
-            rect.Y = carouselView.Frame.Bottom + 10;
+            var rect = new RectangleF (0, CALENDAR_VIEW_HEIGHT, View.Frame.Width, View.Frame.Height - CALENDAR_VIEW_HEIGHT);
             return rect;
         }
 
@@ -330,91 +251,7 @@ namespace NachoClient.iOS
             return inboxFrame;
         }
 
-        protected RectangleF calendarFullSize ()
-        {
-            var parentFrame = View.Frame;
-            var rect = new RectangleF (0, 0, parentFrame.Width, parentFrame.Height);
-            return rect;
-        }
-
-        protected double calendarPercentOpen (float yOffset)
-        {
-            var fullSize = calendarFullSize ();
-            var Height = calendarStartingY + yOffset;
-            return  Height / fullSize.Height;
-        }
-
-        /// Positive means growing
-        protected RectangleF calendarAdjustedSize (float yOffset)
-        {
-            var smallSize = calendarSmallSize ();
-            var fullSize = calendarFullSize ();
-            // Compute new size
-            var rect = fullSize;
-            rect.Height = calendarStartingY + yOffset;
-            // Don't get smaller than small size
-            if (rect.Height < smallSize.Height) {
-                return smallSize;
-            }
-            if (rect.Height > fullSize.Height) {
-                return fullSize;
-            }
-            return rect;
-        }
-
-        protected void calendarPan (UIPanGestureRecognizer obj)
-        {
-            if (UIGestureRecognizerState.Began == obj.State) {
-                calendarStartingY = calendarTableView.Frame.Bottom;
-                View.BringSubviewToFront (calendarView);
-                return;
-            }
-
-            if (UIGestureRecognizerState.Changed == obj.State) {
-                // yOffset is negative when going up!
-                var yOffset = obj.TranslationInView (calendarTableView).Y;
-                calendarView.Frame = calendarAdjustedSize (yOffset);
-                calendarView.SetNeedsDisplay ();
-                return;
-            }
-            if (UIGestureRecognizerState.Ended == obj.State) {
-                // Should we expand or contract?
-                Double duration;
-                var yOffset = obj.TranslationInView (calendarTableView).Y;
-                var percentOpen = calendarPercentOpen (yOffset);
-                if (percentOpen > 0.7f) {
-                    duration = Math.Max (0.1, 1.0 - percentOpen);
-                    UIView.Animate (duration, 0, UIViewAnimationOptions.CurveEaseOut,
-                        () => {
-                            PerformSegue ("NachoNowToCalendar", new SegueHolder (null));
-                        },
-                        () => {
-                        }
-                    );
-                } else {
-                    duration = percentOpen;
-                    UIView.Animate (duration, 0, UIViewAnimationOptions.CurveEaseOut,
-                        () => {
-                            ConfigureBasicView ();
-                        },
-                        () => {
-                        }
-                    );
-                }
-                return;
-            }
-        }
-
-        protected void calendarThumbTouch (UITapGestureRecognizer obj)
-        {
-            UIView.Animate (0.2, 0, UIViewAnimationOptions.CurveEaseIn,
-                () => {
-                    ConfigureBasicView ();
-                },
-                () => {
-                }
-            );
-        }
+  
 
         [MonoTouch.Foundation.Export ("CarouselTapSelector:")]
         public void OnDoubleTapCarousel (UIGestureRecognizer sender)

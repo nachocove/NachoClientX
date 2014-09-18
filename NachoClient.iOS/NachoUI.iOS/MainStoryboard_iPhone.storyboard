@@ -43,54 +43,20 @@
             </objects>
             <point key="canvasLocation" x="-4557" y="-4212"/>
         </scene>
-        <!--Nacho Now View Controller - Now!-->
+        <!--Nacho Now View Controller-->
         <scene sceneID="w1N-3O-jJd">
             <objects>
                 <viewController storyboardIdentifier="NachoNowViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="ygr-ff-C2f" customClass="NachoNowViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="BSK-Fb-RSa">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="455"/>
                         <autoresizingMask key="autoresizingMask"/>
-                        <subviews>
-                            <view contentMode="scaleToFill" id="y3I-K7-FUQ" customClass="iCarousel">
-                                <rect key="frame" x="0.0" y="160" width="320" height="215"/>
-                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
-                            </view>
-                            <view contentMode="scaleToFill" id="Xjy-3n-xIA" userLabel="Calendar View">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="112"/>
-                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
-                                <subviews>
-                                    <imageView userInteractionEnabled="NO" contentMode="top" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="cal-handle.png" id="wZZ-JO-qCp">
-                                        <rect key="frame" x="0.0" y="87" width="320" height="25"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMinY="YES"/>
-                                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
-                                    </imageView>
-                                    <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="AA2-uw-Sad">
-                                        <rect key="frame" x="0.0" y="0.0" width="320" height="87"/>
-                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                                    </tableView>
-                                    <imageView userInteractionEnabled="NO" contentMode="center" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="cal-close-grabber.png" id="PiF-Mg-iGb" userLabel="Image View - cal-close-gripper.png">
-                                        <rect key="frame" x="0.0" y="87" width="320" height="25"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMinY="YES"/>
-                                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                                    </imageView>
-                                </subviews>
-                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
-                            </view>
-                        </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
                     <extendedEdge key="edgesForExtendedLayout"/>
                     <toolbarItems/>
-                    <navigationItem key="navigationItem" title="Now!" id="47A-TQ-Je6"/>
+                    <navigationItem key="navigationItem" id="47A-TQ-Je6"/>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <connections>
-                        <outlet property="calendarCloseView" destination="PiF-Mg-iGb" id="bHh-6e-Lqz"/>
-                        <outlet property="calendarTableView" destination="AA2-uw-Sad" id="XvA-gG-im4"/>
-                        <outlet property="calendarThumbView" destination="wZZ-JO-qCp" id="Tqz-bx-MqT"/>
-                        <outlet property="calendarView" destination="Xjy-3n-xIA" id="H26-sA-fEv"/>
-                        <outlet property="carouselView" destination="y3I-K7-FUQ" id="T7e-1d-zpR"/>
                         <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="ja3-Zu-g6R"/>
                         <segue destination="Ncm-tW-u3E" kind="push" identifier="NachoNowToContacts" id="FHc-YP-jWH"/>
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="NachoNowToMessagePriority" id="RaB-9o-azo"/>
@@ -111,7 +77,7 @@
             <objects>
                 <viewController storyboardIdentifier="CalendarViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="d8n-da-LP7" customClass="CalendarViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="T2Q-uC-Zpf">
-                        <rect key="frame" x="0.0" y="64" width="320" height="455"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
                             <view contentMode="scaleToFill" id="OaC-4H-Y1h">
@@ -120,7 +86,7 @@
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                             </view>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="NDf-lZ-rUS">
-                                <rect key="frame" x="0.0" y="78" width="320" height="378"/>
+                                <rect key="frame" x="0.0" y="78" width="320" height="427"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                             </tableView>
@@ -473,7 +439,7 @@
             <objects>
                 <tableViewController storyboardIdentifier="SupportViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="MRl-Tp-bqC" customClass="SupportViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="3Ax-0N-BUW">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="455"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <prototypes>
@@ -1796,7 +1762,7 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <!--Navigation Controller-->
         <scene sceneID="qgS-M8-2Bx">
             <objects>
-                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="2DH-ex-Jce" sceneMemberID="viewController">
+                <navigationController storyboardIdentifier="Settings" automaticallyAdjustsScrollViewInsets="NO" id="2DH-ex-Jce" sceneMemberID="viewController">
                     <toolbarItems/>
                     <navigationItem key="navigationItem" id="C1p-i5-Dr6"/>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
@@ -1839,7 +1805,8 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
                     <tabBarItem key="tabBarItem" title="Now" id="Ok9-iq-PJ3"/>
                     <toolbarItems/>
                     <navigationItem key="navigationItem" id="LmX-rK-fGn"/>
-                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="bKN-AG-p4V">
+                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" translucent="NO" id="bKN-AG-p4V">
                         <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
                         <autoresizingMask key="autoresizingMask"/>
                     </navigationBar>
@@ -2059,8 +2026,6 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
     </scenes>
     <resources>
         <image name="Nacho-Cove-Icon.png" width="24" height="24"/>
-        <image name="cal-close-grabber.png" width="36" height="12"/>
-        <image name="cal-handle.png" width="320" height="11"/>
         <image name="icn-archive.png" width="24" height="24"/>
         <image name="icn-attach-files.png" width="16" height="16"/>
         <image name="icn-quick-message.png" width="24" height="24"/>
@@ -2082,29 +2047,29 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="fHx-e4-Ujt"/>
+        <segue reference="B5b-jg-ZNg"/>
+        <segue reference="RaB-9o-azo"/>
+        <segue reference="HwV-au-Wta"/>
         <segue reference="V0S-kd-9OI"/>
         <segue reference="iqA-wd-xqD"/>
-        <segue reference="lXf-yZ-Qj9"/>
         <segue reference="tzJ-j2-YOi"/>
-        <segue reference="Dxn-bx-hdu"/>
-        <segue reference="XQg-JR-vxA"/>
-        <segue reference="NoB-Ny-Mf5"/>
         <segue reference="vXz-gG-vL2"/>
-        <segue reference="zDw-Tx-fTt"/>
-        <segue reference="559-W6-vfH"/>
-        <segue reference="fwk-9p-tlV"/>
-        <segue reference="W3H-fb-nEJ"/>
+        <segue reference="Eb2-K0-nI3"/>
         <segue reference="RnP-wd-ySV"/>
-        <segue reference="b7l-xO-b4e"/>
+        <segue reference="Zli-hF-qvP"/>
+        <segue reference="56g-2o-gUv"/>
+        <segue reference="rew-s7-VAQ"/>
+        <segue reference="ja3-Zu-g6R"/>
+        <segue reference="FHc-YP-jWH"/>
+        <segue reference="Bq3-C6-QI6"/>
+        <segue reference="Kmd-x6-iCJ"/>
+        <segue reference="Q8y-4K-BAb"/>
         <segue reference="xrp-ey-B0j"/>
-        <segue reference="TXU-m3-8i5"/>
-        <segue reference="FLp-fw-o2T"/>
-        <segue reference="Zm9-al-nRG"/>
-        <segue reference="B5b-jg-ZNg"/>
+        <segue reference="peA-r2-tjq"/>
         <segue reference="w67-dy-XSq"/>
         <segue reference="m2D-2n-RiV"/>
         <segue reference="7sK-rg-HQL"/>
-        <segue reference="peA-r2-tjq"/>
+        <segue reference="fwk-9p-tlV"/>
+        <segue reference="W3H-fb-nEJ"/>
     </inferredMetricsTieBreakers>
 </document>
