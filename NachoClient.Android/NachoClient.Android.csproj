@@ -350,6 +350,7 @@
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsWaitCommand.cs" />
     <Compile Include="NachoCore\Model\McAbstrFileDesc.cs" />
     <Compile Include="NachoCore\Brain\NcQuickResponse.cs" />
+    <Compile Include="NachoCore\Brain\NcMessageIntent.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

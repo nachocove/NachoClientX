@@ -79,6 +79,7 @@ namespace NachoClient.iOS
         protected NcQuickResponse.QRTypeEnum QRType = NcQuickResponse.QRTypeEnum.None;
 
         UIBarButtonItem quickResponseButton;
+        public NcMessageIntent messageIntent;
 
         public MessageComposeViewController (IntPtr handle) : base (handle)
         {
@@ -197,6 +198,11 @@ namespace NachoClient.iOS
                 }
                 ShowQuickResponses ();
             };
+
+            priorityButton.TouchUpInside += (object sender, EventArgs e) => {
+                View.EndEditing (true);
+                ShowMessageIntents ();
+            };
         }
 
         protected void ShowQuickResponses()
@@ -220,10 +226,39 @@ namespace NachoClient.iOS
                     break;
                 }
 
+                mcMessage.Subject = subjectField.Text;
                 qr = new QuickResponseView (QRType, ref mcMessage);
                 qr.SetOwner (this);
                 qr.CreateView ();
                 qr.ShowView ();
+            }
+        }
+
+        protected void ShowMessageIntents()
+        {
+            IntentSelectView selectIntentView = (IntentSelectView)View.ViewWithTag (101);
+
+            if (null != selectIntentView) {
+                if (selectIntentView.Hidden) {
+                    selectIntentView.ShowView ();
+                }
+            } else {
+                if (null == messageIntent) {
+                    mcMessage.Subject = subjectField.Text;
+                    var messageType = new NcQuickResponse.QRTypeEnum ();
+                    if (IsReplyAction ()) {
+                        messageType = NcQuickResponse.QRTypeEnum.Reply;
+                    } else if (IsForwardAction ()) {
+                        messageType = NcQuickResponse.QRTypeEnum.Forward;
+                    } else {
+                        messageType = NcQuickResponse.QRTypeEnum.Compose;
+                    }
+                    messageIntent = new NcMessageIntent (messageType);
+                }
+                selectIntentView = new IntentSelectView (ref messageIntent, ref mcMessage);
+                selectIntentView.SetOwner (this);
+                selectIntentView.CreateView ();
+                selectIntentView.ShowView ();
             }
         }
 
@@ -248,6 +283,11 @@ namespace NachoClient.iOS
             if (bodyTextView.Text.Contains ("\n")) {
                 bodyTextView.SelectedRange = new NSRange (bodyTextView.Text.IndexOf ("\n"), 0);
             }
+        }
+
+        public void PopulateMessageFromSelectedIntent ()
+        {
+            subjectField.Text = mcMessage.Subject;
         }
 
         public override UIView InputAccessoryView {
@@ -281,6 +321,8 @@ namespace NachoClient.iOS
                 NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillHideNotification);
                 NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillShowNotification);
             }
+
+            QRType = NcQuickResponse.QRTypeEnum.None;
         }
 
         public override void ViewDidDisappear (bool animated)

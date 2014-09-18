@@ -81,6 +81,13 @@ namespace NachoClient.iOS
                 quickButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
                 quickButton.TouchUpInside += (object sender, EventArgs e) => {
                     ncQuick.CreateQuickResponse (response, ref emailMessage);
+                    if(null != response.intent){
+                        if(null == owner.messageIntent){
+                            owner.messageIntent = new NcMessageIntent(ncQuick.whatType);
+                        }
+                        owner.messageIntent.EmbedIntentIntoMessage(response.intent, ref emailMessage);
+                        owner.PopulateMessageFromSelectedIntent();
+                    }
                     owner.PopulateMessageFromQR (ncQuick.whatType);
                     this.DismissView ();
                 };

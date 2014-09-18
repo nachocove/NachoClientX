@@ -111,7 +111,7 @@ namespace NachoClient.iOS
                 quickReplyButton,
             };
             quickReplyButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("MessageViewToCompose", new SegueHolder (NcQuickResponse.QRTypeEnum.Compose));
+                PerformSegue ("MessageViewToCompose", new SegueHolder (MessageComposeViewController.REPLY_ACTION, NcQuickResponse.QRTypeEnum.Reply));
             };
             deferButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("MessageViewToMessagePriority", this);
@@ -285,11 +285,10 @@ namespace NachoClient.iOS
                 var h = sender as SegueHolder;
 
                 if (null != h.value) {
-                    if (h.value.GetType () == "".GetType()) {
-                        vc.SetAction (thread, (string)h.value);
-                        vc.SetOwner (this);
-                    } else {
-                        vc.SetQRType((NcQuickResponse.QRTypeEnum)h.value);
+                    vc.SetAction (thread, (string)h.value);
+                    vc.SetOwner (this);  
+                    if (null != h.value2) {
+                        vc.SetQRType((NcQuickResponse.QRTypeEnum)h.value2);
                     }
                 }
 
