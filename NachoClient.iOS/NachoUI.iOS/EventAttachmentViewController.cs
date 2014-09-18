@@ -219,13 +219,11 @@ namespace NachoClient.iOS
             var yOffset = 20f;
 
             if (editing) {
-
                 var abv = View.ViewWithTag (ADD_BUTTON_VIEW_TAG) as UIView;
                 abv.Frame = new RectangleF (0, yOffset, View.Frame.Width, 44);
                 yOffset += abv.Frame.Height;
 
                 line.Frame = new RectangleF (0, yOffset, View.Frame.Width, line.Frame.Height);
-
                 yOffset += 16;
             }
 
@@ -238,7 +236,6 @@ namespace NachoClient.iOS
             at.Frame = new RectangleF (0, yOffset, View.Frame.Width, View.Frame.Height - yOffset);
 
         }
-
 
         protected void AttachFileActionSheet ()
         {
