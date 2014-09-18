@@ -13,7 +13,7 @@ namespace NachoCore.Model
     /// updated, this table can quickly list all objects (of a certain type)
     /// that needs to be updated. 
     /// 
-    public class McEmailMessageDependency : McAbstrObject
+    public class McEmailMessageDependency : McAbstrObjectPerAcc
     {
         public enum AddressType {
             UNKNOWN = 0,
@@ -36,6 +36,11 @@ namespace NachoCore.Model
             EmailAddressId = 0;
             EmailMessageId = 0;
             EmailAddressType = (int)AddressType.UNKNOWN;
+        }
+
+        public McEmailMessageDependency (int accountId) : this ()
+        {
+            AccountId = accountId;
         }
 
         // Get all McEmailMessage given a contact id

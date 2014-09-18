@@ -98,6 +98,7 @@ namespace NachoCore.Model
                 return;
             }
             SyncInfo = new McEmailAddressScoreSyncInfo ();
+            SyncInfo.AccountId = AccountId;
             SyncInfo.EmailAddressId = Id;
             SyncInfo.InsertByBrain ();
         }

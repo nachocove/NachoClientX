@@ -103,7 +103,7 @@ namespace NachoCore.Model
                     emailAddress.UpdateByBrain ();
 
                     // Add Sender dependency
-                    McEmailMessageDependency dep = new McEmailMessageDependency ();
+                    McEmailMessageDependency dep = new McEmailMessageDependency (AccountId);
                     dep.EmailMessageId = Id;
                     dep.EmailAddressId = emailAddress.Id;
                     dep.EmailAddressType = (int)McEmailMessageDependency.AddressType.SENDER;

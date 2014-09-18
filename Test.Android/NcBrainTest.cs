@@ -43,7 +43,7 @@ namespace Test.Common
             Message.DateReceived = DateTime.Now;
             Message.Insert ();
 
-            Dependency = new McEmailMessageDependency ();
+            Dependency = new McEmailMessageDependency (1);
             Dependency.EmailMessageId = Message.Id;
             Dependency.EmailAddressId = Address.Id;
             Dependency.EmailAddressType = (int)McEmailMessageDependency.AddressType.SENDER;
