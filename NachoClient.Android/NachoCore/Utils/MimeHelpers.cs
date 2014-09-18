@@ -509,8 +509,9 @@ namespace NachoCore.Utils
             // Convert the McAttachments into MIME attachments.
             AttachmentCollection mimeAttachments = new AttachmentCollection ();
             foreach (var attachment in attachments) {
-                NcAssert.True (McAttachment.FilePresenceEnum.Complete == attachment.FilePresence, "An attachment needs to be downloaded before it can be added to a message.");
-                mimeAttachments.Add (attachment.GetFilePath ());
+                if (McAttachment.FilePresenceEnum.Complete == attachment.FilePresence) {
+                    mimeAttachments.Add (attachment.GetFilePath ());
+                }
             }
 
             Multipart attachmentsParent = null; // Where to put the attachments

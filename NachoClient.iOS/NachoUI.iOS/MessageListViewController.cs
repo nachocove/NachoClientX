@@ -23,7 +23,7 @@ namespace NachoClient.iOS
         // iOS Bug Workaround
         // The cancel button on the search bar breaks
         // if the searchbar is hidden by a scrolled tableview.
-        PointF savedContentOffset;
+        //PointF savedContentOffset; all uses are commented out, so comment out the definition to avoid a warning.
         protected UIBarButtonItem composeMailButton;
         protected UIBarButtonItem cancelSelectedButton;
         protected UIBarButtonItem deleteSelectedButton;

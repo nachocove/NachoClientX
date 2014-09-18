@@ -740,39 +740,10 @@ namespace NachoClient.iOS
 
         private bool OkToSend ()
         {
-            // Check for any unavailable attachments when forwarding a message.
-            if (IsForwardAction () && !bodyTextView.Text.EndsWith (initialQuotedText)) {
-                bool attachmentMustBeDownloaded = false;
-                var attachments = McAttachment.QueryByItemId<McEmailMessage> (account.Id, referencedMessage.Id);
-                foreach (var attachment in attachments) {
-                    if (McAbstrFileDesc.FilePresenceEnum.None == attachment.FilePresence) {
-                        attachmentMustBeDownloaded = true;
-                        break;
-                    }
-                }
-                if (attachmentMustBeDownloaded) {
-                    bool alertDismissed = false;
-                    bool sendAnyway = true;
-                    UIAlertView alert = new UIAlertView (
-                                            "Missing Attachments",
-                                            "Some attachments have not been downloaded to the device. Do you want to forward the message without the attachments?",
-                                            null,
-                                            "Cancel",
-                                            new string[] { "Send" });
-                    alert.Clicked += (object sender, UIButtonEventArgs e) => {
-                        sendAnyway = e.ButtonIndex == 1;
-                        alertDismissed = true;
-                    };
-                    alert.Show ();
-                    while (!alertDismissed) {
-                        NSRunLoop.Current.RunUntil (NSDate.FromTimeIntervalSinceNow (0.2));
-                    }
-                    if (!sendAnyway) {
-                        return false;
-                    }
-                }
-            }
-            // Add other checks here...
+            // TODO Check if any large attachments will need to be downloaded.
+            // Ask the user whether to send without the attachments or to wait
+            // for them to be downloaded.
+
             return true;
         }
 
@@ -810,6 +781,8 @@ namespace NachoClient.iOS
             mimeMessage.Subject = Pretty.SubjectString (subjectField.Text);
             mimeMessage.Date = System.DateTime.UtcNow;
 
+            // TODO Check whether or not the back end supports SmartReply and SmartForward
+
             bool originalEmailIsEmbedded = true;
             string bodyText = bodyTextView.Text;
             if (initialQuotedText != null && bodyText.EndsWith (initialQuotedText)) {
@@ -827,13 +800,22 @@ namespace NachoClient.iOS
             foreach (var attachment in attachmentView.AttachmentList) {
                 body.Attachments.Add (attachment.GetFilePath ());
             }
+            bool attachmentNeedsDownloading = false;
             if (IsForwardAction () && originalEmailIsEmbedded) {
                 // The user edited the body of the message being forwarded. That means the server won't
                 // automatically include the attachments from the forwarded message (if any).  That needs
-                // to be done explicitly.
-                foreach (var attachment in McAttachment.QueryByItemId<McEmailMessage> (account.Id, referencedMessage.Id)) {
-                    // TODO Deal with attachments that haven't been downloaded yet.
-                    if (McAbstrFileDesc.FilePresenceEnum.Complete == attachment.FilePresence) {
+                // to be done explicitly.  If all of the necessary attachments are available, go ahead and
+                // add them to the message now.  If any of the attachments need to be downloaded, then
+                // wait until later to add them.
+                var originalAttachments = McAttachment.QueryByItemId<McEmailMessage> (account.Id, referencedMessage.Id);
+                foreach (var attachment in originalAttachments) {
+                    if (McAbstrFileDesc.FilePresenceEnum.Complete != attachment.FilePresence) {
+                        attachmentNeedsDownloading = true;
+                        break;
+                    }
+                }
+                if (!attachmentNeedsDownloading) {
+                    foreach (var attachment in originalAttachments) {
                         body.Attachments.Add (attachment.GetFilePath ());
                     }
                 }
@@ -842,6 +824,13 @@ namespace NachoClient.iOS
             mimeMessage.Body = body.ToMessageBody ();
 
             var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
+            if (IsForwardOrReplyAction ()) {
+                mcMessage.ReferencedEmailId = referencedMessage.Id;
+                mcMessage.ReferencedBodyIsIncluded = originalEmailIsEmbedded;
+                mcMessage.ReferencedIsForward = IsForwardAction ();
+                mcMessage.WaitingForAttachmentsToDownload = attachmentNeedsDownloading;
+                mcMessage.Update ();
+            }
 
             bool messageSent = false;
             if (IsForwardOrReplyAction ()) {
