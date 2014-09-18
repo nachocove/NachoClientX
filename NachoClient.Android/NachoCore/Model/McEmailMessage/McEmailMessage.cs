@@ -129,10 +129,23 @@ namespace NachoCore.Model
         /// Specifies the content class of the data (optional) - Must be 'urn:content-classes:message' for email
         public string ContentClass { set; get; }
 
-        /// When passed as the "new" email to a Reply/ForwardEmailCmd, this will get set to the DB Id of the email
-        /// being replied-to or forwarded. If set, the MIME generator can gather content from the referenced email.
+        // The following four fields are used when composing a forward or reply.
+        // When composing a new message, ReferencedEmailId should be zero, and the other three are ignored.
+        // After the message has been successfully sent, all four fields are ignored.
+
+        /// The DB Id of the message being forwarded or replied to.
         [Indexed]
         public int ReferencedEmailId { set; get; }
+
+        /// Whether or not the body of the referenced message is explicitly included in the body of the outgoing message.
+        public bool ReferencedBodyIsIncluded { set; get; }
+
+        /// Whether or not this outgoing message is a forward.
+        public bool ReferencedIsForward { set; get; }
+
+        /// Indicates that a forwarded message is waiting for attachments to be downloaded so they can
+        /// be included in the outgoing message.
+        public bool WaitingForAttachmentsToDownload { set; get; }
 
         [Ignore]
         /// Internal list of category elements
@@ -230,7 +243,77 @@ namespace NachoCore.Model
 
         public string MimePath ()
         {
+            if (WaitingForAttachmentsToDownload) {
+                // TODO This is not the right place to make this call. Move this call to a more
+                // appropriate place, once one is found.
+                AddMissingAttachmentsToBody ();
+            }
             return McBody.GetFilePath (BodyId);
+        }
+
+        public void AddMissingAttachmentsToBody ()
+        {
+            if (!WaitingForAttachmentsToDownload) {
+                // Attachments, if any, are already taken care of.
+                return;
+            }
+            var originalAttachments = McAttachment.QueryByItemId<McEmailMessage> (AccountId, ReferencedEmailId);
+            var oldBody = McBody.QueryById<McBody> (BodyId);
+            MimeMessage mime = MimeHelpers.LoadMessage (oldBody.GetFilePath ());
+            MimeHelpers.AddAttachments (mime, originalAttachments);
+            NcModel.Instance.RunInTransaction (() => {
+                var newBody = McBody.InsertSaveStart (AccountId);
+                using (var fileStream = newBody.SaveFileStream ()) {
+                    mime.WriteTo (fileStream);
+                }
+                newBody.UpdateSaveFinish ();
+                BodyId = newBody.Id;
+                WaitingForAttachmentsToDownload = false;
+                this.Update ();
+                oldBody.Delete ();
+            });
+        }
+
+        public void ConvertToRegularSend ()
+        {
+            if (ReferencedEmailId == 0 ||
+                    (ReferencedBodyIsIncluded && (!ReferencedIsForward || !WaitingForAttachmentsToDownload))) {
+                // No conversion necessary.
+                return;
+            }
+            var originalMessage = McEmailMessage.QueryById<McEmailMessage> (ReferencedEmailId);
+            if (null == originalMessage) {
+                // Original message no longer exists.  There is nothing we can do.
+                return;
+            }
+            var oldBody = McBody.QueryById<McBody> (BodyId);
+            var outgoingMime = MimeHelpers.LoadMessage (oldBody.GetFilePath ());
+            if (!ReferencedBodyIsIncluded) {
+                // Append the body of the original message to the outgoing message.
+                // TODO Be smart about formatting.  Right now everything is forced to plain text.
+                string originalBodyText = MimeHelpers.ExtractTextPart (originalMessage);
+                string outgoingBodyText = MimeHelpers.ExtractTextPart (outgoingMime);
+                MimeHelpers.SetPlainText (outgoingMime, outgoingBodyText + originalBodyText);
+            }
+            if (ReferencedIsForward && (!ReferencedBodyIsIncluded || WaitingForAttachmentsToDownload)) {
+                // Add all the attachments from the original message.
+                var originalAttachments = McAttachment.QueryByItemId<McEmailMessage> (AccountId, ReferencedEmailId);
+                MimeHelpers.AddAttachments (outgoingMime, originalAttachments);
+            }
+            NcModel.Instance.RunInTransaction (() => {
+                var newBody = McBody.InsertSaveStart (AccountId);
+                using (var fileStream = newBody.SaveFileStream ()) {
+                    outgoingMime.WriteTo (fileStream);
+                }
+                newBody.UpdateSaveFinish ();
+                BodyId = newBody.Id;
+                ReferencedEmailId = 0;
+                ReferencedBodyIsIncluded = false;
+                ReferencedIsForward = false;
+                WaitingForAttachmentsToDownload = false;
+                this.Update ();
+                oldBody.Delete ();
+            });
         }
 
         public void DeleteAttachments ()
