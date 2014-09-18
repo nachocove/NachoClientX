@@ -65,5 +65,20 @@ namespace NachoCore.Brain
                 return null;
             }
         }
+
+        public void EmbedIntentIntoMessage (string intent, ref McEmailMessage emailMessage)
+        {
+            if (null != intentValue) {
+                if (emailMessage.Subject.Contains (intentValue)) {
+                    emailMessage.Subject = emailMessage.Subject.Replace (intentValue, intent);
+                } else {
+                    emailMessage.Subject = intent + " - " + emailMessage.Subject;
+                }
+            } else {
+                emailMessage.Subject = intent + " - " + emailMessage.Subject;
+            }
+            this.intentValue = intent;
+        }
+
     }
 }

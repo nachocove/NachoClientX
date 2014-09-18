@@ -30,11 +30,13 @@ namespace NachoClient.iOS
         public MessageType messageType { get; private set; }
 
         NcMessageIntent messageIntent;
+        McEmailMessage emailMessage;
 
 
-        public IntentSelectView (ref NcMessageIntent messageIntent)
+        public IntentSelectView (ref NcMessageIntent messageIntent, ref McEmailMessage emailMessage)
         {
             this.messageIntent = messageIntent;
+            this.emailMessage = emailMessage;
         }
 
         public void SetOwner (MessageComposeViewController owner)
@@ -89,7 +91,8 @@ namespace NachoClient.iOS
                 intentButton.Font = A.Font_AvenirNextRegular14;
                 intentButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
                 intentButton.TouchUpInside += (object sender, EventArgs e) => {
-                    owner.EmbedIntentIntoMessage (intent);
+                    messageIntent.EmbedIntentIntoMessage (intent, ref emailMessage);
+                    owner.PopulateMessageFromSelectedIntent ();
                     this.DismissView ();
                 };
 

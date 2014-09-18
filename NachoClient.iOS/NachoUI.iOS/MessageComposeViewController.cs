@@ -201,13 +201,6 @@ namespace NachoClient.iOS
 
             priorityButton.TouchUpInside += (object sender, EventArgs e) => {
                 View.EndEditing (true);
-                if (IsReplyAction ()) {
-                    QRType = NcQuickResponse.QRTypeEnum.Reply;
-                } else if (IsForwardAction ()) {
-                    QRType = NcQuickResponse.QRTypeEnum.Forward;
-                } else {
-                    QRType = NcQuickResponse.QRTypeEnum.Compose;
-                }
                 ShowMessageIntents ();
             };
         }
@@ -233,6 +226,7 @@ namespace NachoClient.iOS
                     break;
                 }
 
+                mcMessage.Subject = subjectField.Text;
                 qr = new QuickResponseView (QRType, ref mcMessage);
                 qr.SetOwner (this);
                 qr.CreateView ();
@@ -250,9 +244,18 @@ namespace NachoClient.iOS
                 }
             } else {
                 if (null == messageIntent) {
-                    messageIntent = new NcMessageIntent (QRType);
+                    mcMessage.Subject = subjectField.Text;
+                    var messageType = new NcQuickResponse.QRTypeEnum ();
+                    if (IsReplyAction ()) {
+                        messageType = NcQuickResponse.QRTypeEnum.Reply;
+                    } else if (IsForwardAction ()) {
+                        messageType = NcQuickResponse.QRTypeEnum.Forward;
+                    } else {
+                        messageType = NcQuickResponse.QRTypeEnum.Compose;
+                    }
+                    messageIntent = new NcMessageIntent (messageType);
                 }
-                selectIntentView = new IntentSelectView (ref messageIntent);
+                selectIntentView = new IntentSelectView (ref messageIntent, ref mcMessage);
                 selectIntentView.SetOwner (this);
                 selectIntentView.CreateView ();
                 selectIntentView.ShowView ();
@@ -282,18 +285,9 @@ namespace NachoClient.iOS
             }
         }
 
-        public void EmbedIntentIntoMessage (string intent)
+        public void PopulateMessageFromSelectedIntent ()
         {
-            if (null != messageIntent.intentValue) {
-                if (subjectField.Text.Contains (messageIntent.intentValue)) {
-                    subjectField.Text = subjectField.Text.Replace (messageIntent.intentValue, intent);
-                } else {
-                    subjectField.Text = intent + " - " + subjectField.Text;
-                }
-            } else {
-                subjectField.Text = intent + " - " + subjectField.Text;
-            }
-            messageIntent.intentValue = intent;
+            subjectField.Text = mcMessage.Subject;
         }
 
         public override UIView InputAccessoryView {
