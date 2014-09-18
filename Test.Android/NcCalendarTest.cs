@@ -446,8 +446,8 @@ namespace Test.Common
             }
             if (type.Equals ("recurs")) {
                 List<McRecurrence> recurrences = new List<McRecurrence> ();
-                recurrences.Add (new McRecurrence ());
-                recurrences.Add (new McRecurrence ());
+                recurrences.Add (new McRecurrence (1));
+                recurrences.Add (new McRecurrence (1));
                 c.recurrences = recurrences;
             }
             if (type.Equals ("exceptions")) {
@@ -571,7 +571,7 @@ namespace Test.Common
             var c = InsertSimpleEvent ("recurs");
 
             var recurrences = c.recurrences;
-            recurrences.Add (new McRecurrence ());
+            recurrences.Add (new McRecurrence (1));
             c.recurrences = recurrences;
             c.Update ();
             var f = McCalendar.QueryById<McCalendar> (c.Id);

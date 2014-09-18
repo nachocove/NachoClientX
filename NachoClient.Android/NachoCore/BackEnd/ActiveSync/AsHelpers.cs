@@ -342,13 +342,12 @@ namespace NachoCore.ActiveSync
         /// <returns>The recurrence record</returns>
         /// <param name="ns">XML namespace to use to fetch elements</param>
         /// <param name="recurrence">Recurrence element</param>
-        public McRecurrence ParseRecurrence (XNamespace ns, XElement recurrence, string LocalName)
+        public McRecurrence ParseRecurrence (int accountId, XNamespace ns, XElement recurrence, string LocalName)
         {
             NcAssert.True (null != recurrence);
             NcAssert.True (recurrence.Name.LocalName.Equals (LocalName));
 
-            var r = new McRecurrence ();
-
+            var r = new McRecurrence (accountId);
             foreach (var child in recurrence.Elements()) {
                 switch (child.Name.LocalName) {
                 // Note: LocalNames and values are the same in the Calendar and Task namespaces.
@@ -538,7 +537,7 @@ namespace NachoCore.ActiveSync
                     c.exceptions.AddRange (exceptions);
                     break;
                 case Xml.Calendar.Calendar_Recurrence:
-                    var recurrence = ParseRecurrence (nsCalendar, child, Xml.Calendar.Calendar_Recurrence);
+                    var recurrence = ParseRecurrence (accountId, nsCalendar, child, Xml.Calendar.Calendar_Recurrence);
                     c.recurrences.Add (recurrence);
                     break;
                 case Xml.AirSyncBase.Body:
@@ -859,7 +858,7 @@ namespace NachoCore.ActiveSync
                             case Xml.Email.Recurrences:
                                 if (meetingRequestPart.HasElements) {
                                     foreach (var recurrencePart in meetingRequestPart.Elements()) {
-                                        var recurrence = ParseRecurrence (nsEmail, recurrencePart, Xml.Email.Recurrence);
+                                        var recurrence = ParseRecurrence (folder.AccountId, nsEmail, recurrencePart, Xml.Email.Recurrence);
                                         e.recurrences.Add (recurrence);
                                     }
                                 }
