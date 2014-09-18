@@ -22,8 +22,10 @@ namespace NachoCore.Model
         /// Time variance state machine current state
         public int TimeVarianceState { get; set; }
 
+        [Indexed]
         public double Score { get; set; }
 
+        [Indexed]
         public bool NeedUpdate { get; set; }
 
         // DO NOT update these fields directly. Use IncrementXXX methods instead.
