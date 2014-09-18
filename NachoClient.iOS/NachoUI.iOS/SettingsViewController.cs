@@ -565,8 +565,8 @@ namespace NachoClient.iOS
                 return;
             }
 
-            McCred userCredentials = McCred.QueryById<McCred> (whatAccount.CredId);
-            McServer userMailServer = McServer.QueryById<McServer> (whatAccount.ServerId);
+            McCred userCredentials = McCred.QueryByAccountId<McCred> (whatAccount.Id).SingleOrDefault ();
+            McServer userMailServer = McServer.QueryByAccountId<McServer> (whatAccount.Id).SingleOrDefault ();
             McConference userConference = McConference.QueryById<McConference> (whatAccount.PreferredConferenceId);
             Account.AccountId = whatAccount.Id;
             Account.McCredId = userCredentials.Id;

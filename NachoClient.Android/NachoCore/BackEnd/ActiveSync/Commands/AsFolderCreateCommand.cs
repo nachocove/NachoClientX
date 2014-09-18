@@ -162,7 +162,7 @@ namespace NachoCore.ActiveSync
                     target.IsAwaitingCreate = false;
                     target.Update ();
                     var account = McAccount.QueryById<McAccount> (AccountId);
-                    var protocolState = McProtocolState.QueryById<McProtocolState> (account.ProtocolStateId);
+                    var protocolState = McProtocolState.QueryByAccountId<McProtocolState> (account.Id).SingleOrDefault ();
                     var folders = McFolder.QueryByParentId (AccountId, PlaceholderId);
                     foreach (var child in folders) {
                         child.ParentId = FinalServerId;

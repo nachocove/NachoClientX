@@ -17,10 +17,6 @@ namespace NachoCore.Model
         public string DisplayName { get; set; }
 
         public string Culture { get; set; }
-        // Relationships.
-        public int CredId { get; set; }
-
-        public int ServerId { get; set; }
 
         public ActiveSync.Xml.Provision.MaxAgeFilterCode DaysToSyncEmail { get; set; }
 
@@ -29,10 +25,6 @@ namespace NachoCore.Model
         public int PreferredConferenceId { get; set; }
 
         public string Signature { get; set; }
-
-        public int ProtocolStateId { get; set; }
-
-        public int PolicyId { get; set; }
 
         public static IEnumerable<McAccount> QueryByAccountType (AccountTypeEnum accountType)
         {

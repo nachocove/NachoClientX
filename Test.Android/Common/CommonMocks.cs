@@ -2,6 +2,7 @@
 //
 
 using System;
+using System.Linq;
 using System.Net.Http;
 using NachoCore.Utils;
 using System.Net.Sockets;
@@ -141,9 +142,7 @@ namespace Test.iOS
         public MockContext (AsProtoControl protoControl = null, McServer server = null)
         {
             Owner = new MockOwner ();
-            var protoState = new McProtocolState ();
-            protoState.Insert ();
-            ProtocolState = protoState;
+           
             // READ AsPolicyKey
             // R/W AsProtocolVersion
             // READ InitialProvisionCompleted
@@ -151,10 +150,19 @@ namespace Test.iOS
             Account = new McAccount () {
                 Id = 1,
                 EmailAddr = "johnd@foo.utopiasystems.net",
-                ServerId = 1,
             };
+            var protoState = McProtocolState.QueryByAccountId<McProtocolState> (Account.Id).SingleOrDefault ();
+            if (null == protoState) {
+
+                protoState = new McProtocolState () {
+                    AccountId = Account.Id,
+                };
+                protoState.Insert ();
+            }
+            ProtocolState = protoState;
             ProtoControl = protoControl;
             Cred = new McCred () {
+                AccountId = Account.Id,
                 Username = "dummy",
                 Password = "password",
             };

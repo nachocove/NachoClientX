@@ -305,16 +305,16 @@ namespace NachoClient.iOS
             NcModel.Instance.RunInTransaction (() => {
                 // Need to regex-validate UI inputs.
                 // You will always need to supply user credentials (until certs, for sure).
-
-                var cred = new McCred () { Username = email, Password = password };
-                cred.Insert ();
-                int serverId = 0;
                 // You will always need to supply the user's email address.
                 appDelegate.Account = new McAccount () { EmailAddr = email };
-                appDelegate.Account.CredId = cred.Id;
-                appDelegate.Account.ServerId = serverId;
                 appDelegate.Account.Signature = "Sent from Nacho Mail";
                 appDelegate.Account.Insert ();
+                var cred = new McCred () { 
+                    AccountId = appDelegate.Account.Id,
+                    Username = email,
+                    Password = password,
+                };
+                cred.Insert ();
                 Telemetry.RecordAccountEmailAddress (appDelegate.Account);
                 // Maintain the state of our progress
                 LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, true);

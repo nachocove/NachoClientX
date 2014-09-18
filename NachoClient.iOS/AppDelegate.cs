@@ -575,15 +575,12 @@ namespace NachoClient.iOS
                         if (txt != null) {
                             Log.Info (Log.LOG_LIFECYCLE, " New Server Name = " + txt);
                             NcModel.Instance.RunInTransaction (() => {
-                                var account = McAccount.QueryById<McAccount> (accountId);
-                                var tmpServer = McServer.QueryById<McServer> (account.ServerId);
+                                var tmpServer = McServer.QueryByAccountId<McServer> (accountId).SingleOrDefault ();
                                 if (null == tmpServer) {
                                     tmpServer = new McServer () {
                                         Host = txt,
                                     };
                                     tmpServer.Insert ();
-                                    account.ServerId = tmpServer.Id;
-                                    account.Update ();
                                 } else {
                                     tmpServer.Host = txt;
                                     tmpServer.Update ();

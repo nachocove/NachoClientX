@@ -58,7 +58,7 @@ namespace NachoClient.iOS
                         if (null == errorMessage) {
                             var cred = new McCred ();
                             cred.Password = info.Password;
-                            // FIXME: Update the database
+                            // FIXME: Update the database and make sure cred has AccountId set.
                             NavigationController.PopViewControllerAnimated (true);
                         } else {
                             dlg = new UIAlertView (Locale.GetText ("Login error"), errorMessage, null, Locale.GetText ("Close"));

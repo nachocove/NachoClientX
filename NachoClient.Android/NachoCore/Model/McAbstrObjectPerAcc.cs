@@ -1,6 +1,8 @@
 //  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using SQLite;
 using NachoCore.Utils;
 
@@ -28,6 +30,15 @@ namespace NachoCore.Model
         {
             NcAssert.True (0 < AccountId);
             return base.Update ();
+        }
+
+        public static IEnumerable<T> QueryByAccountId<T> (int id) where T : McAbstrObjectPerAcc, new()
+        {
+            return NcModel.Instance.Db.Query<T> (
+                string.Format ("SELECT f.* FROM {0} AS f WHERE " +
+                    " f.AccountId = ? ", 
+                    typeof(T).Name), 
+                id);
         }
     }
 }

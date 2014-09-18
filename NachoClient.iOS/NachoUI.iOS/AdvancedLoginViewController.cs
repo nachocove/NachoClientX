@@ -499,8 +499,8 @@ namespace NachoClient.iOS
             if (LoginHelpers.IsCurrentAccountSet ()) {
                 if (LoginHelpers.HasProvidedCreds (LoginHelpers.GetCurrentAccountId ())) {
                     theAccount.Account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
-                    theAccount.Credentials = McCred.QueryById<McCred> (theAccount.Account.CredId);
-                    theAccount.Server = McServer.QueryById<McServer> (theAccount.Account.ServerId);
+                    theAccount.Credentials = McCred.QueryByAccountId<McCred> (theAccount.Account.Id).SingleOrDefault ();
+                    theAccount.Server = McServer.QueryByAccountId<McServer> (theAccount.Account.Id).SingleOrDefault ();
                 }
             }
         }
@@ -508,7 +508,7 @@ namespace NachoClient.iOS
         public void setUsersSettings ()
         {
             theAccount.Account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
-            theAccount.Credentials = McCred.QueryById<McCred> (theAccount.Account.CredId); 
+            theAccount.Credentials = McCred.QueryByAccountId<McCred> (theAccount.Account.Id).SingleOrDefault (); 
 
             if (usernameText.Text.Length > 0) {
                 theAccount.Credentials.Username = usernameText.Text;
@@ -518,7 +518,6 @@ namespace NachoClient.iOS
 
             theAccount.Credentials.Password = passwordText.Text;
             theAccount.Credentials.Update ();
-            theAccount.Account.CredId = theAccount.Credentials.Id;
             theAccount.Account.EmailAddr = emailText.Text;
             theAccount.Account.Update ();
         }
@@ -527,32 +526,37 @@ namespace NachoClient.iOS
         {
             string credUserName = "";
             NcModel.Instance.RunInTransaction (() => {
-                // Need to regex-validate UI inputs.
+
+                // You will always need to supply the user's email address.
+                appDelegate.Account = new McAccount () { EmailAddr = emailText.Text };
+                appDelegate.Account.Signature = "Sent from Nacho Mail";
+                appDelegate.Account.Insert ();
+                // FIXME Need to regex-validate UI inputs.
                 // You will always need to supply user credentials (until certs, for sure).
                 if (usernameText.Text.Length == 0) {
                     credUserName = emailText.Text;
                 } else {
                     credUserName = usernameText.Text;
                 }
-                var cred = new McCred () { Username = credUserName, Password = passwordText.Text };
+                var cred = new McCred () { 
+                    AccountId = appDelegate.Account.Id,
+                    Username = credUserName, 
+                    Password = passwordText.Text,
+                };
                 cred.Insert ();
                 theAccount.Credentials = cred;
                 int serverId = 0;
                 if (haveEnteredHost ()) {
-                    var server = new McServer () { Host = serverText.Text };
+                    var server = new McServer () { 
+                        AccountId = appDelegate.Account.Id,
+                        Host = serverText.Text,
+                    };
                     server.Insert ();
                     serverId = server.Id;
                 }
 
-                // You will always need to supply the user's email address.
-                appDelegate.Account = new McAccount () { EmailAddr = emailText.Text };
-                // The account object is the "top", pointing to credential, server, and opaque protocol state.
-                appDelegate.Account.CredId = cred.Id;
-                appDelegate.Account.ServerId = serverId;
-                appDelegate.Account.Signature = "Sent from Nacho Mail";
-                appDelegate.Account.Insert ();
-                Telemetry.RecordAccountEmailAddress (appDelegate.Account);
                 theAccount.Account = appDelegate.Account;
+                Telemetry.RecordAccountEmailAddress (appDelegate.Account);
                 LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, true);
             });
 
@@ -568,11 +572,9 @@ namespace NachoClient.iOS
         {
             if (LoginHelpers.IsCurrentAccountSet ()) {
                 var account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
-                if (0 != account.ServerId) {
-                    McServer removeServerRecord = McServer.QueryById<McServer> (account.ServerId);
+                var removeServerRecord = McServer.QueryByAccountId<McServer> (account.Id).SingleOrDefault ();
+                if (null != removeServerRecord) {
                     removeServerRecord.Delete ();
-                    account.ServerId = 0;
-                    account.Update ();
                 }
             }
         }
@@ -738,13 +740,11 @@ namespace NachoClient.iOS
                 ConfigureView (LoginStatus.ValidateSuccessful);
 
                 var account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
-                if (0 == account.ServerId) {
+                var existingServer = McServer.QueryByAccountId<McServer> (account.Id).SingleOrDefault ();
+                if ( null == existingServer) {
                     serverToValidate.Insert ();
-                    account.ServerId = serverToValidate.Id;
-                    account.Update ();
                 } else {
-                    var server = McServer.QueryById<McServer> (account.ServerId);
-                    serverToValidate.Id = server.Id;
+                    serverToValidate.Id = existingServer.Id;
                     serverToValidate.Update ();
                 }
                 loadSettingsForAccount ();

@@ -501,8 +501,11 @@ namespace Test.iOS
             autodCommand = null;
             mockContext = null;
 
+            mockContext = new MockContext ();
+
             // insert phony server to db (this allows Auto-d 'DoAcceptServerConf' to update the record later)
             var phonyServer = new McServer ();
+            phonyServer.AccountId = mockContext.Account.Id;
             phonyServer.Host = "/Phony-Server";
             phonyServer.Path = "/phonypath";
             phonyServer.Port = 500;
@@ -511,7 +514,6 @@ namespace Test.iOS
 
             NcModel.Instance.Db.Insert (phonyServer);
 
-            mockContext = new MockContext ();
             mockContext.ProtoControl = ProtoOps.CreateProtoControl (mockContext.Account.Id);
 
             // flush the certificate cache so it doesn't interfere with future tests

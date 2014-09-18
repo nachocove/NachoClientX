@@ -693,12 +693,7 @@ namespace NachoCore.ActiveSync
                             return Final ((uint)AsProtoControl.AsEvt.E.ReDisc, "HTTPOP451B");
                         }
                         ServerUriBeingTested = true;
-                        McServer dummy = new McServer () {
-                            Scheme = redirUri.Scheme,
-                            Host = redirUri.Host,
-                            Port = redirUri.Port,
-                            Path = redirUri.AbsolutePath
-                        };
+                        var dummy = McServer.Create (BEContext.Account.Id, redirUri);
                         ServerUri = new Uri (AsCommand.BaseUri (dummy), redirUri.Query);
                         return Event.Create ((uint)SmEvt.E.Launch, "HTTPOP451C");
                     } catch (Exception ex) {
