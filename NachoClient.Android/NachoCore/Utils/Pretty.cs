@@ -19,7 +19,7 @@ namespace NachoCore.Utils
         static public string SubjectString (String Subject)
         {
             if (null == Subject) {
-                return "";
+                return "No subject";
             } else {
                 return Subject;
             }

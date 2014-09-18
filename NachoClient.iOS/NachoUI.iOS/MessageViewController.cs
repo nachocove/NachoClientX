@@ -704,6 +704,9 @@ namespace NachoClient.iOS
             var subjectLabelView = View.ViewWithTag ((int)TagType.SUBJECT_TAG) as UILabel;
             subjectLabelView.Lines = 0;
             subjectLabelView.Text = Pretty.SubjectString (message.Subject);
+            if (String.IsNullOrEmpty (message.Subject)) {
+                subjectLabelView.TextColor = A.Color_9B9B9B;
+            }
             cursor.LayoutView (subjectLabelView);
 
             // Received label view

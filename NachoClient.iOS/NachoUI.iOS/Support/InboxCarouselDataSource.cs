@@ -178,6 +178,9 @@ namespace NachoClient.iOS
             // Subject label view
             var subjectLabelView = view.ViewWithTag (SUBJECT_TAG) as UILabel;
             subjectLabelView.Text = Pretty.SubjectString (message.Subject);
+            if (String.IsNullOrWhiteSpace (message.Subject)) {
+                subjectLabelView.TextColor = A.Color_9B9B9B;
+            }
 
             // Preview label view
             var previewLabelView = view.ViewWithTag (PREVIEW_TAG) as UILabel;
