@@ -4,6 +4,7 @@ using System.Linq;
 using System.Collections.Generic;
 using NachoCore.Utils;
 using MimeKit;
+using System.IO;
 
 namespace NachoCore.Model
 {
@@ -138,23 +139,18 @@ namespace NachoCore.Model
                 BodyType = McBody.PlainText;
             } else {
                 // Existing body.  Preserve the parts of it that we aren't changing.
-                var oldBody = McBody.QueryById<McBody> (BodyId);
-                McBody newBody;
+                var body = McBody.QueryById<McBody> (BodyId);
                 if (McBody.MIME == BodyType) {
-                    MimeMessage message = MimeHelpers.LoadMessage (oldBody.GetFilePath ());
+                    MimeMessage message = MimeHelpers.LoadMessage (body.GetFilePath ());
                     MimeHelpers.SetPlainText (message, cachedDescription);
-                    newBody = McBody.InsertSaveStart (AccountId);
-                    using (var fileStream = newBody.SaveFileStream ()) {
-                        message.WriteTo (fileStream);
-                    }
-                    newBody.UpdateSaveFinish ();
+                    body.UpdateData ((FileStream stream) => {
+                        message.WriteTo (stream);
+                    });
                 } else {
                     // Plain text.  Replace the entire contents of the body.
-                    newBody = McBody.InsertFile (AccountId, cachedDescription);
+                    body.UpdateData (cachedDescription);
                     BodyType = McBody.PlainText;
                 }
-                BodyId = newBody.Id;
-                oldBody.Delete ();
             }
             descriptionWasChanged = false;
             cachedDescription = null;

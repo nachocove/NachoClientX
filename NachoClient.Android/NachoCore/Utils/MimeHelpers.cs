@@ -384,14 +384,12 @@ namespace NachoCore.Utils
             msg.Subject = mimeMessage.Subject;
 
             // Create body
-            var body = McBody.InsertSaveStart (AccountId);
-            using (var fileStream = body.SaveFileStream ()) {
-                mimeMessage.WriteTo (fileStream);
-            }
-            body.UpdateSaveFinish ();
+            var body = McBody.InsertFile (AccountId, (FileStream stream) => {
+                mimeMessage.WriteTo (stream);
+            });
             msg.BodyId = body.Id;
 
-            NcModel.Instance.Db.Insert (msg);
+            msg.Insert ();
 
             return msg;
         }

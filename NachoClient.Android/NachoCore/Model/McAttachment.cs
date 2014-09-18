@@ -23,6 +23,19 @@ namespace NachoCore.Model
             return att;
         }
 
+        /// <summary>
+        /// Create a new McAttachment. The contents are filled in by passing a FileStream for the McAttachment's file to a delegate.
+        /// </summary>
+        /// <returns>A new McAttachment object that has been added to the database</returns>
+        public static McAttachment InsertFile (int accountId, WriteFileDelegate writer)
+        {
+            var body = new McAttachment () {
+                AccountId = accountId,
+            };
+            body.CompleteInsertFile (writer);
+            return body;
+        }
+
         [Indexed]
         public int EmailMessageId { get; set; }
 
