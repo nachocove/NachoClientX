@@ -459,6 +459,19 @@ namespace NachoCore.Model
             }
         }
 
+        public void UpdateScoreAndNeedUpdate ()
+        {
+            int rc = NcModel.Instance.Db.Execute (
+                         "UPDATE McEmailMessage " +
+                         "SET Score = ?,  NeedUpdate = ? " +
+                         "WHERE Id = ?", Score, NeedUpdate, Id);
+            if (0 < rc) {
+                NcBrain brain = NcBrain.SharedInstance;
+                brain.McEmailAddressCounters.Update.Click ();
+                brain.NotifyEmailMessageUpdates ();
+            }
+        }
+
         private static void TimeVarianceCallBack (int state, Int64 objId)
         {
             McEmailMessage emailMessage = McEmailMessage.QueryById<McEmailMessage> ((int)objId);
