@@ -48,6 +48,12 @@ namespace NachoClient.iOS
             ConfigureCalendarView ();
 
         }
+
+        public override bool HidesBottomBarWhenPushed {
+            get {
+                return this.NavigationController.TopViewController == this;
+            }
+        }
             
         protected void CreateCalendarView ()
         {
