@@ -163,7 +163,7 @@ namespace Test.Common
         [Test]
         public void CalendarCategories ()
         {
-            var c01 = new McCalendarCategory ("test");
+            var c01 = new McCalendarCategory (1, "test");
             c01.ParentId = 5;
             c01.ParentType = McCalendarCategory.CALENDAR;
             c01.Insert ();
@@ -193,10 +193,10 @@ namespace Test.Common
             Assert.AreEqual (c05.ParentId, 5);
             Assert.AreEqual (c05.Name, "changed");
 
-            var c06 = new McCalendarCategory ("second");
+            var c06 = new McCalendarCategory (1, "second");
             c06.ParentId = 5;
             c06.Insert ();
-            var c07 = new McCalendarCategory ("do not see");
+            var c07 = new McCalendarCategory (1, "do not see");
             c07.ParentId = 6;
             c07.Insert ();
 
@@ -440,8 +440,8 @@ namespace Test.Common
             }
             if (type.Equals ("categories")) {
                 List<McCalendarCategory> categories = new List<McCalendarCategory> ();
-                categories.Add (new McCalendarCategory ("red"));
-                categories.Add (new McCalendarCategory ("blue"));
+                categories.Add (new McCalendarCategory (1, "red"));
+                categories.Add (new McCalendarCategory (1, "blue"));
                 c.categories = categories;
             }
             if (type.Equals ("recurs")) {
@@ -528,7 +528,7 @@ namespace Test.Common
             var c = InsertSimpleEvent ("categories");
 
             var categories = c.categories;
-            categories.Add (new McCalendarCategory ("green"));
+            categories.Add (new McCalendarCategory (1, "green"));
             c.categories = categories;
             c.Update ();
             var f = McCalendar.QueryById<McCalendar> (c.Id);

@@ -304,7 +304,7 @@ namespace NachoCore.ActiveSync
         /// <returns>
         /// A list of categories not yet associated with an NcCalendar or NcException. Not null.
         /// </returns>
-        public List<McCalendarCategory> ParseCategories (XNamespace ns, XElement categories)
+        public List<McCalendarCategory> ParseCategories (int accountId, XNamespace ns, XElement categories)
         {
             NcAssert.True (null != categories);
             NcAssert.True (categories.Name.LocalName.Equals (Xml.Calendar.Calendar_Categories));
@@ -313,7 +313,7 @@ namespace NachoCore.ActiveSync
 
             foreach (var category in categories.Elements()) {
                 NcAssert.True (category.Name.LocalName.Equals (Xml.Calendar.Categories.Category));
-                var n = new McCalendarCategory (category.Value);
+                var n = new McCalendarCategory (accountId, category.Value);
                 list.Add (n);
             }
             return list;
@@ -422,7 +422,7 @@ namespace NachoCore.ActiveSync
                         }
                         break;
                     case Xml.Calendar.Exception.Categories:
-                        var categories = ParseCategories (ns, child);
+                        var categories = ParseCategories (accountId, ns, child);
                         if (null == e.categories) {
                             e.categories = categories;
                         } else {
@@ -530,7 +530,7 @@ namespace NachoCore.ActiveSync
                     c.attendees.AddRange (attendees);
                     break;
                 case Xml.Calendar.Calendar_Categories:
-                    var categories = ParseCategories (nsCalendar, child);
+                    var categories = ParseCategories (accountId, nsCalendar, child);
                     c.categories.AddRange (categories);
                     break;
                 case Xml.Calendar.Calendar_Exceptions:
