@@ -136,24 +136,6 @@ namespace Test.Common
             BadDateTime ("2013-11-23T19:02:43.1234Z");
         }
 
-        public void GoodTimeZone (string encodedTimeZone, string targetStandardName, string targetDaylightName)
-        {
-            var t = c.ParseAsTimeZone (encodedTimeZone);
-            Assert.IsNotNull (t);
-            Assert.IsNotNull (t.StandardName);
-            Assert.IsNotNull (t.DaylightName);
-            Assert.IsTrue (t.StandardName.Length > 0);
-            Assert.IsTrue (t.DaylightName.Length > 0);
-            Assert.IsTrue (t.StandardName.Equals (targetStandardName));
-            Assert.IsTrue (t.DaylightName.Equals (targetDaylightName));
-        }
-
-        public void BadTimeZone (string encodedTimeZone)
-        {
-            var t = c.ParseAsTimeZone (encodedTimeZone);
-            Assert.IsNull (t);
-        }
-
         public void GoodExtractStringFromTimeZone (string s)
         {
             byte[] b = new byte[64];
@@ -162,25 +144,6 @@ namespace Test.Common
             System.Buffer.BlockCopy (s.ToCharArray (), 0, b, 0, l);
             var e = c.ExtractStringFromAsTimeZone (b, 0, l);
             Assert.IsTrue (s.Equals (e));
-        }
-
-        [Test]
-        public void TimeZoneParsing ()
-        {
-            string s;
-            s = "LAEAAEUAUwBUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAsAAAABAAIAAAAAAAAAAAAAAEUARABUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAAAACAAIAAAAAAAAAxP///w==";
-            GoodTimeZone (s, "EST", "EDT");
-            s = "4AEAAFAAYQBjAGkAZgBpAGMAIABTAHQAYQBuAGQAYQByAGQAIABUAGkAbQBlAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAsAAAABAAIAAAAAAAAAAAAAAFAAYQBjAGkAZgBpAGMAIABEAGEAeQBsAGkAZwBoAHQAIABUAGkAbQBlAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAAAACAAIAAAAAAAAAxP///w==";
-            GoodTimeZone (s, "Pacific Standard Time", "Pacific Daylight Time");
-            BadTimeZone (null);
-            BadTimeZone ("");
-            BadTimeZone ("A");
-            BadTimeZone ("AAAA");
-            s = "abcdefghijklmnopqrstuvwxyz012345";
-            for (int i = 1; i <= s.Length; i++) {
-                GoodExtractStringFromTimeZone (s.Substring (0, i));
-            }
-            GoodExtractStringFromTimeZone ("");
         }
 
         [Test]
@@ -305,46 +268,6 @@ namespace Test.Common
                 Assert.IsTrue (c.Name.Equals ("Steve") || c.Name.Equals ("Chris"));
             }
 
-        }
-
-        [Test]
-        public void CalendarTimezoneDB ()
-        {
-            McTimeZone t01 = new McTimeZone ();
-            t01.Bias = 10;
-            t01.DaylightBias = 11;
-            t01.StandardBias = 12;
-            t01.DaylightDate = new DateTime (2013, 1, 1, 1, 1, 1, 111);
-            t01.StandardDate = new DateTime (1013, 1, 1, 1, 1, 1, 222);
-            t01.DaylightName = "Daylight Name 10";
-            t01.StandardName = "Standard Name 10";
-            t01.Insert ();
-
-            McTimeZone t02 = new McTimeZone ();
-            t02.Bias = 20;
-            t02.DaylightBias = 21;
-            t02.StandardBias = 22;
-            t02.DaylightDate = new DateTime (2013, 2, 1, 1, 1, 1, 111);
-            t02.StandardDate = new DateTime (2013, 2, 2, 2, 2, 2, 222);
-            t02.DaylightName = "Daylight Name 20";
-            t02.StandardName = "Standard Name 20";
-            t02.Insert ();
-
-            Assert.AreEqual (NcModel.Instance.Db.Table<McTimeZone> ().Count (), 2);
-
-            McTimeZone t03 = NcModel.Instance.Db.Get<McTimeZone> (x => x.Id == 2);
-            Assert.AreEqual (t03.StandardName, "Standard Name 20");
-            Assert.AreEqual (t03.StandardDate, new DateTime (2013, 2, 2, 2, 2, 2, 222));
-
-            t03.DaylightName = "New Daylight Name 20";
-            t03.DaylightDate = new DateTime (2013, 2, 1, 1, 1, 1, 222);
-            t03.Update ();
-
-            Assert.AreEqual (NcModel.Instance.Db.Table<McTimeZone> ().Count (), 2);
-
-            McTimeZone t04 = NcModel.Instance.Db.Get<McTimeZone> (x => x.Id == 2);
-            Assert.AreEqual (t04.DaylightName, "New Daylight Name 20");
-            Assert.AreEqual (t04.DaylightDate, new DateTime (2013, 2, 1, 1, 1, 1, 222));
         }
 
         [Test]

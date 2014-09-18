@@ -238,37 +238,6 @@ namespace NachoCore.ActiveSync
         }
 
         /// <summary>
-        /// Parses a time zone string.
-        /// </summary>
-        /// <returns>The time zone record.</returns>
-        /// <param name="encodedTimeZone">Encoded time zone.</param>
-        // TODO: The bias fields of the timezone
-        public McTimeZone ParseAsTimeZone (string encodedTimeZone)
-        {
-            // Convert the Base64 UUEncoded input into binary output. 
-            byte[] binaryData;
-            try {
-                binaryData = System.Convert.FromBase64String (encodedTimeZone);
-            } catch (System.ArgumentNullException) {
-                Log.Warn (Log.LOG_AS, "Encoded TimeZone string is null.");
-                return null;
-            } catch (System.FormatException) {
-                Log.Warn (Log.LOG_AS, "Encoded TimeZone string length is not 4 or is not an even multiple of 4.");
-                return null;
-            }
-            if (binaryData.Length != (4 + 64 + 16 + 4 + 64 + 16 + 4)) {
-                Log.Warn (Log.LOG_AS, "Decoded TimeZone string length is wrong: " + binaryData.Length.ToString ());
-                return null;
-            }
-            string StandardName = ExtractStringFromAsTimeZone (binaryData, 4, 64);
-            string DaylightName = ExtractStringFromAsTimeZone (binaryData, 4 + 64 + 16 + 4, 64);
-            McTimeZone tz = new McTimeZone ();
-            tz.StandardName = StandardName;
-            tz.DaylightName = DaylightName;
-            return tz;     
-        }
-
-        /// <summary>
         /// Extracts a string field from a TimeZone record.
         /// The value of this field is an array of 32 WCHARs
         /// Any unused WCHARs in the array MUST be set to 0x0000.

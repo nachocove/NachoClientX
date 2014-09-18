@@ -922,9 +922,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McException.cs">
       <Link>NachoCore\Model\McException.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McTimeZone.cs">
-      <Link>NachoCore\Model\McTimeZone.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McAbstrContactAttribute.cs">
       <Link>NachoCore\Model\McAbstrContactAttribute.cs</Link>
     </Compile>
