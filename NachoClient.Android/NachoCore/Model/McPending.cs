@@ -235,7 +235,7 @@ namespace NachoCore.Model
         public void MarkPredBlocked (int predPendingId)
         {
             State = StateEnum.PredBlocked;
-            var dep = new McPendDep (predPendingId, Id);
+            var dep = new McPendDep (AccountId, predPendingId, Id);
             dep.Insert ();
             if (0 == Id) {
                 Insert ();
@@ -680,7 +680,7 @@ namespace NachoCore.Model
                     Priority = Id;
                     base.Update ();
                     foreach (var predId in predIds) {
-                        var pendDep = new McPendDep (predId, Id);
+                        var pendDep = new McPendDep (AccountId, predId, Id);
                         pendDep.Insert ();
                     }
                 });

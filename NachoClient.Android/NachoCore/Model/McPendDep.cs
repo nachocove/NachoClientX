@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace NachoCore.Model
 {
-    public class McPendDep : McAbstrObject
+    public class McPendDep : McAbstrObjectPerAcc
     {
         public int PredId { get; set; }
         public int SuccId { get; set; }
@@ -15,8 +15,9 @@ namespace NachoCore.Model
         {
         }
 
-        public McPendDep (int predId, int succId)
+        public McPendDep (int accountId, int predId, int succId)
         {
+            AccountId = accountId;
             PredId = predId;
             SuccId = succId;
         }

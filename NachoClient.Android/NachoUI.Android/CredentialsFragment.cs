@@ -42,10 +42,6 @@ namespace NachoClient.AndroidClient
                 // You will always need to supply the user's email address.
                 var Account = new McAccount () { EmailAddr = txtUsername };
                 // The account object is the "top", pointing to credential, server, and opaque protocol state.
-                Account.CredId = cred.Id;
-                Account.ServerId = server.Id;
-                Account.ProtocolStateId = protocolState.Id;
-                Account.PolicyId = policy.Id;
                 Account.Insert ();
                 BackEnd.Instance.Start (Account.Id);
                 // Clean up UI
