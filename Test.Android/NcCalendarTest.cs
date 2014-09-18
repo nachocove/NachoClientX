@@ -213,7 +213,7 @@ namespace Test.Common
         [Test]
         public void CalendarAttendee ()
         {
-            var c01 = new McAttendee ("Steve", "rascal2210@hotmail.com");
+            var c01 = new McAttendee (1, "Steve", "rascal2210@hotmail.com");
             c01.ParentId = 5;
             c01.Insert ();
 
@@ -253,10 +253,10 @@ namespace Test.Common
             Assert.AreEqual (c05a.Email, "steves@nachocove.com");
 
 
-            var c06 = new McAttendee ("Chris", "chrisp@nachocove.com");
+            var c06 = new McAttendee (1, "Chris", "chrisp@nachocove.com");
             c06.ParentId = 5;
             c06.Insert ();
-            var c07 = new McAttendee ("Jeff", "jeffe@nachocove.com");
+            var c07 = new McAttendee (1, "Jeff", "jeffe@nachocove.com");
             c07.ParentId = 6;
             c07.Insert ();
 
@@ -434,8 +434,8 @@ namespace Test.Common
 
             if (type.Equals ("attendees")) {
                 List<McAttendee> attendees = new List<McAttendee> ();
-                attendees.Add (new McAttendee ("Bob", "bob@foo.com"));
-                attendees.Add (new McAttendee ("Joe", "joe@foo.com"));
+                attendees.Add (new McAttendee (1, "Bob", "bob@foo.com"));
+                attendees.Add (new McAttendee (1, "Joe", "joe@foo.com"));
                 c.attendees = attendees;
             }
             if (type.Equals ("categories")) {
@@ -486,7 +486,7 @@ namespace Test.Common
             var c = InsertSimpleEvent ("attendees");
 
             var attendees = c.attendees;
-            attendees.Add (new McAttendee ("Harry", "harry@foo.com"));
+            attendees.Add (new McAttendee (1, "Harry", "harry@foo.com"));
             c.attendees = attendees;
             c.Update ();
             var f = McCalendar.QueryById<McCalendar> (c.Id);

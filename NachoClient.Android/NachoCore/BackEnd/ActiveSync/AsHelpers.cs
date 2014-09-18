@@ -263,7 +263,7 @@ namespace NachoCore.ActiveSync
         /// </returns>
         // TODO: Handle missing name & email better
         // TODO: Make sure we don't have extra fields
-        public List<McAttendee> ParseAttendees (XNamespace ns, XElement attendees)
+        public List<McAttendee> ParseAttendees (int accountId, XNamespace ns, XElement attendees)
         {
             NcAssert.True (null != attendees);
             NcAssert.True (attendees.Name.LocalName.Equals (Xml.Calendar.Calendar_Attendees));
@@ -295,7 +295,7 @@ namespace NachoCore.ActiveSync
                     type = typeElement.Value.ToEnum<NcAttendeeType> ();
                 }
 
-                var a = new McAttendee (name, email, type, status);
+                var a = new McAttendee (accountId, name, email, type, status);
                 list.Add (a);
             }
             return list;
@@ -414,7 +414,7 @@ namespace NachoCore.ActiveSync
                     switch (child.Name.LocalName) {
                     // Containers
                     case Xml.Calendar.Exception.Attendees:
-                        var attendees = ParseAttendees (ns, child);
+                        var attendees = ParseAttendees (accountId, ns, child);
                         if (null == e.attendees) {
                             e.attendees = attendees;
                         } else {
@@ -526,7 +526,7 @@ namespace NachoCore.ActiveSync
                 switch (child.Name.LocalName) {
                 // Containers
                 case Xml.Calendar.Calendar_Attendees:
-                    var attendees = ParseAttendees (nsCalendar, child);
+                    var attendees = ParseAttendees (accountId, nsCalendar, child);
                     c.attendees.AddRange (attendees);
                     break;
                 case Xml.Calendar.Calendar_Categories:

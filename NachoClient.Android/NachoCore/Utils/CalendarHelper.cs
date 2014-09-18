@@ -289,7 +289,7 @@ namespace NachoCore.Utils
             return mixed;
         }
 
-        protected static McAttendee CreateAttendee (InternetAddress address, NcAttendeeType attendeeType)
+        protected static McAttendee CreateAttendee (int accountId, InternetAddress address, NcAttendeeType attendeeType)
         {
             var mailboxAddress = address as MailboxAddress;
 
@@ -298,6 +298,7 @@ namespace NachoCore.Utils
             }
 
             var attendee = new McAttendee ();
+            attendee.AccountId = accountId;
             attendee.Name = mailboxAddress.Name;
             attendee.Email = mailboxAddress.Address;
             attendee.AttendeeType = attendeeType;
@@ -305,12 +306,12 @@ namespace NachoCore.Utils
             return attendee;
         }
 
-        protected static List<McAttendee> CreateAttendeeList (string addressLine, NcAttendeeType attendeeType)
+        protected static List<McAttendee> CreateAttendeeList (int accountId, string addressLine, NcAttendeeType attendeeType)
         {
             var addressList = NcEmailAddress.ParseAddressListString (addressLine);
             var attendeeList = new List<McAttendee> ();
             foreach (var address in addressList) {
-                var addendee = CreateAttendee (address, attendeeType);
+                var addendee = CreateAttendee (accountId, address, attendeeType);
                 if (null != addendee) {
                     attendeeList.Add (addendee);
                 }
@@ -325,9 +326,9 @@ namespace NachoCore.Utils
             var dupBody = McBody.InsertDuplicate (message.AccountId, message.BodyId);
             c.BodyId = dupBody.Id;
             c.attendees = new System.Collections.Generic.List<McAttendee> ();
-            c.attendees.AddRange (CreateAttendeeList (message.From, NcAttendeeType.Required));
-            c.attendees.AddRange (CreateAttendeeList (message.To, NcAttendeeType.Required));
-            c.attendees.AddRange (CreateAttendeeList (message.Cc, NcAttendeeType.Optional));
+            c.attendees.AddRange (CreateAttendeeList (message.AccountId, message.From, NcAttendeeType.Required));
+            c.attendees.AddRange (CreateAttendeeList (message.AccountId, message.To, NcAttendeeType.Required));
+            c.attendees.AddRange (CreateAttendeeList (message.AccountId, message.Cc, NcAttendeeType.Optional));
             return c;
         }
 
