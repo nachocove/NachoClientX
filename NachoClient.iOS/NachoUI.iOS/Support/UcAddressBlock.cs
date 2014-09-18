@@ -10,6 +10,37 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
+    /// <summary>
+    /// Address block is a widget that manages email addresses. It allows user
+    /// to edit a list of email address and presents them.
+    /// 
+    /// An address block consists of a top left label (e.g., "To:") and a list
+    /// of address fields (UcAddressField) that it is responsible for layout
+    /// and a button to starting the contact chooser.
+    /// 
+    /// There are 3 types of fields - text, gap, and entry. A text field holds
+    /// the display name or an email address (if the contact is not available)
+    /// of a contact. Gap field presents white space between text fields. It
+    /// also present the caret when in editing mode. Entry field is a text
+    /// field that allows users to enter new addresses at the end of the list.
+    /// 
+    /// A typical layout of these fields are as such:
+    /// 
+    /// Label  [GAP1] [TEXT1] [GAP2] [TEXT2] [GAP3]
+    ///               [TEXT3] [GAP4]
+    ///               [TEXT4] [GAP5] [TEXT5] [ENTRY]
+    /// 
+    /// There is only one entry field at the end. Text and gap fields are
+    /// interleaved. When a user taps on a text field, it finds the closest
+    /// gap field. This means if he taps the left half of TEXT5, the caret
+    /// will activate on GAP5. If he taps on the right half, ENTRY will be
+    /// activated. Users can selet the gap where they want to insert addresses.
+    /// GAP1 is added to allow users to insert an address at the front of the
+    /// list.
+    /// 
+    /// Because GAP1 takes up space, the left margin of the first row is
+    /// more to the left than the rest of the rows.
+    /// </summary>
     public class UcAddressBlock : UIView
     {
         protected int isActive;
@@ -28,10 +59,21 @@ namespace NachoClient.iOS
 
         protected List<UcAddressField> list;
 
-        protected float LINE_HEIGHT = 40;
+        protected float LINE_HEIGHT = 35;
         protected float LEFT_LABEL_INDENT = 15;
         protected float LEFT_ADDRESS_INDENT = 57;
         protected float RIGHT_INDENT = 15;
+
+        protected UcAddressField currentAddressField;
+
+        public enum TagType {
+            TEXT_FIELD_TAG = UcAddressField.TEXT_FIELD,
+            GAP_FIELD_TAG = UcAddressField.GAP_FIELD,
+            ENTRY_FIELD_TAG = UcAddressField.ENTRY_FIELD,
+            TOPLEFT_LABEL_TAG,
+            MORE_LABEL_TAG,
+            CHOOSER_BUTTON_TAG,
+        };
 
         public UcAddressBlock (IUcAddressBlockDelegate owner, string label, float width)
         {
@@ -44,6 +86,7 @@ namespace NachoClient.iOS
 
             this.AutoresizingMask = UIViewAutoresizing.None;
             this.AutosizesSubviews = false;
+            this.currentAddressField = null;
 
             CreateView ();
         }
@@ -69,6 +112,14 @@ namespace NachoClient.iOS
             this.LEFT_ADDRESS_INDENT = width;
         }
 
+        public void SetCurrentAddressField (UcAddressField addressField)
+        {
+            NcAssert.True ((0 <= list.IndexOf (addressField)) ||
+            (addressField == entryTextField) ||
+            (null == addressField));
+            this.currentAddressField = addressField;
+        }
+
         public List<NcEmailAddress> AddressList {
             get {
                 var l = new List<NcEmailAddress> ();
@@ -81,7 +132,7 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void AppendInternal (string text, NcEmailAddress address, int type)
+        protected void InsertInternal (int index, string text, NcEmailAddress address, int type)
         {
             var a = new UcAddressField (type);
             a.UserInteractionEnabled = isEditable;
@@ -91,10 +142,14 @@ namespace NachoClient.iOS
             a.Text = text;
             a.address = address;
             var aSize = a.StringSize (a.Text, a.Font);
+            if (UcAddressField.TEXT_FIELD == type) {
+                // extra space for rounded corners
+                aSize.Width += 14; // FIXME - see if there is a way to derive this value from dimension of the text view
+            }
             a.Frame = new RectangleF (PointF.Empty, aSize);
             a.Delegate = new UcAddressFieldDelegate (this);
             this.AddSubview (a);
-            list.Add (a);
+            list.Insert (index, a);
         }
 
         public void Clear ()
@@ -104,9 +159,18 @@ namespace NachoClient.iOS
 
         public void Append (NcEmailAddress address)
         {
-            if (0 < list.Count) {
-                AppendInternal (", ", null, UcAddressField.COMMA_FIELD);
+            int index;
+            if (isEditable) {
+                NcAssert.True (null != currentAddressField);
+                index = list.IndexOf (currentAddressField);
+                if (-1 == index) {
+                    index = list.Count;
+                }
+            } else {
+                index = list.Count;
             }
+
+            InsertInternal (index, " ", null, UcAddressField.GAP_FIELD);
 
             if (null == address.contact) {
                 string text;
@@ -120,9 +184,10 @@ namespace NachoClient.iOS
                         text = (parsedAddress as MailboxAddress).Address; // fallback to email address
                     }
                 }
-                AppendInternal (text, address, UcAddressField.TEXT_FIELD);
+                InsertInternal (index + 1, text, address, UcAddressField.TEXT_FIELD);
             } else {
-                AppendInternal (address.contact.GetDisplayNameOrEmailAddress(), address, UcAddressField.TEXT_FIELD);
+                InsertInternal (index + 1, address.contact.GetDisplayNameOrEmailAddress (),
+                    address, UcAddressField.TEXT_FIELD);
             }
 
             // Calling layout now will make the animation look
@@ -138,6 +203,7 @@ namespace NachoClient.iOS
             this.BackgroundColor = UIColor.White;
 
             moreLabel = new UILabel ();
+            moreLabel.Tag = (int)TagType.MORE_LABEL_TAG;
             moreLabel.Font = A.Font_AvenirNextRegular12;
             moreLabel.TextColor = A.Color_808080;
 
@@ -148,10 +214,12 @@ namespace NachoClient.iOS
             moreLabel.UserInteractionEnabled = true;
 
             topLeftLabel = new UILabel ();
+            topLeftLabel.Tag = (int)TagType.TOPLEFT_LABEL_TAG;
             topLeftLabel.Font = A.Font_AvenirNextRegular14;
             topLeftLabel.TextColor = A.Color_0B3239;
 
             chooserButton = UIButton.FromType (UIButtonType.ContactAdd);
+            chooserButton.Tag = (int)TagType.CHOOSER_BUTTON_TAG;
             chooserButton.SizeToFit ();
             chooserButton.Frame = new RectangleF (parentWidth - chooserButton.Frame.Width - RIGHT_INDENT, 0, chooserButton.Frame.Width, chooserButton.Frame.Height);
             chooserButton.Hidden = !isEditable;
@@ -186,7 +254,6 @@ namespace NachoClient.iOS
             if (null != owner) {
                 owner.AddressBlockWillBecomeActive (this);
             }
-            entryTextField.selected = true;
             entryTextField.BecomeFirstResponder ();
             ConfigureView ();
         }
@@ -197,15 +264,6 @@ namespace NachoClient.iOS
             var topLeftLabelSize = topLeftLabel.StringSize (topLeftString, topLeftLabel.Font);
             topLeftLabel.Frame = new RectangleF (topLeftLabel.Frame.Location, topLeftLabelSize);
 
-            foreach (var address in list) {
-                if (address.selected) {
-                    if (UcAddressField.TEXT_FIELD == address.type) {
-                        address.BackgroundColor = UIColor.Cyan;
-                    }
-                } else {
-                    address.BackgroundColor = UIColor.White;
-                }
-            }
             if (null != owner) {
                 owner.AddressBlockNeedsLayout (this);
             }
@@ -214,7 +272,7 @@ namespace NachoClient.iOS
         /// Adjusts x & y on the top line of a view
         protected void AdjustXY (UIView view, float X, float Y)
         {
-            view.Center = new PointF (X + (view.Frame.Width / 2), LINE_HEIGHT / 2);
+            view.Center = new PointF (X + (view.Frame.Width / 2), Y + LINE_HEIGHT / 2);
         }
 
         public void Layout ()
@@ -249,7 +307,8 @@ namespace NachoClient.iOS
             xOffset = LEFT_ADDRESS_INDENT;
 
             if (0 < list.Count) {
-                var firstAddress = list [0];
+                NcAssert.True (1 < list.Count); // must have at least 2 since the first one is a gap
+                var firstAddress = list [1];
                 firstAddress.Hidden = false;
                 AdjustXY (firstAddress, xOffset, yOffset);
                 xOffset += firstAddress.Frame.Width;
@@ -257,11 +316,11 @@ namespace NachoClient.iOS
 
             var moreCount = suppliedCount;
             if (moreCount < 0) {
-                moreCount = (list.Count + 1) / 2;  // count of text fields, assuming text+comma.
+                moreCount = list.Count / 2;  // count of text fields, assuming gap+text.
                 moreCount -= 1; // We are showing one address already
             }
 
-            if (1 >= moreCount) {
+            if (1 > moreCount) {
                 moreLabel.Hidden = true;
             } else {
                 moreLabel.Text = String.Format (" +{0} more", moreCount);
@@ -313,6 +372,9 @@ namespace NachoClient.iOS
 
             bool firstLine = true;
             xOffset = LEFT_ADDRESS_INDENT;
+            if (0 < list.Count) {
+                xOffset -= list [0].Frame.Width;
+            }
                                 
             for (int i = 0; i < list.Count; i++) {
                 var address = list [i];
@@ -321,12 +383,12 @@ namespace NachoClient.iOS
                 // If there's a comma, add it into the request
                 if ((i + 1) < list.Count) {
                     var c = list [i + 1];
-                    if (UcAddressField.COMMA_FIELD == c.type) {
+                    if (c.IsGapField ()) {
                         requestedSpace += c.Frame.Width;
                     }
                 }
                 // Force new row, except for commas, ...
-                if (UcAddressField.COMMA_FIELD != address.type) {
+                if (!address.IsGapField ()) {
                     if (requestedSpace >= remainingSpace) {
                         // ..or the line is too long
                         if (firstLine || (LEFT_ADDRESS_INDENT != xOffset)) {
@@ -358,6 +420,31 @@ namespace NachoClient.iOS
             this.Frame = new RectangleF (this.Frame.X, this.Frame.Y, parentWidth, yOffset);
         }
 
+        public UcAddressField AddressFieldSuccessor (UcAddressField addressField)
+        {
+            var index = list.IndexOf (addressField);
+            if (-1 == index) {
+                return null; // address field not in this address block
+            }
+            var lastIndex = list.Count - 1;
+            return (lastIndex == index ? entryTextField : list [index + 1]);
+        }
+
+        public UcAddressField AddressFieldPredecessor (UcAddressField addressField)
+        {
+            if (entryTextField == addressField) {
+                return (0 < list.Count ? list[list.Count - 1]: null);
+            }
+            var index = list.IndexOf (addressField);
+            if (-1 == index) {
+                return null; // address field not in this address block
+            }
+            if (0 == index) {
+                return null; // first field has no predecessor
+            }
+            return list [index - 1];
+        }
+
         public class UcAddressFieldDelegate : UITextFieldDelegate
         {
             UcAddressBlock outer;
@@ -370,20 +457,23 @@ namespace NachoClient.iOS
             public override bool ShouldBeginEditing (UITextField textField)
             {
                 var addressField = textField as UcAddressField;
-                addressField.selected = true;
+                if (addressField.IsTextField ()) {
+                    // Text fields are not editable and tap gesture recognizer will activate
+                    // the gap in front or behind the field.
+                    return false;
+                }
                 if ((0 == outer.isActive) && (null != outer.owner)) {
                     outer.owner.AddressBlockWillBecomeActive (outer);
                 }
                 outer.isActive += 1;
                 outer.ConfigureView ();
+                outer.SetCurrentAddressField (addressField);
 
                 return true;
             }
 
             public override void EditingEnded (UITextField textField)
             {
-                var addressField = textField as UcAddressField;
-                addressField.selected = false;
                 outer.isActive -= 1;
                 if ((0 == outer.isActive) && (null != outer.owner)) {
                     outer.owner.AddressBlockWillBecomeInactive (outer);
@@ -410,7 +500,7 @@ namespace NachoClient.iOS
                         outer.owner.AddressBlockAddContactClicked (outer, replacementString);
                     }
                     break;
-                case UcAddressField.COMMA_FIELD:
+                case UcAddressField.GAP_FIELD:
                     if (null != outer.owner) {
                         outer.owner.AddressBlockAddContactClicked (outer, replacementString);
                     }
@@ -428,61 +518,25 @@ namespace NachoClient.iOS
                 return false;
             }
 
-            protected void Select (UcAddressField address)
-            {
-                address.selected = true;
-                address.BecomeFirstResponder ();
-            }
-
             protected void Remove (UcAddressField address)
             {
+                if (null == address) {
+                    return;
+                }
+                address.Hidden = true;
                 outer.list.Remove (address);
                 address.RemoveFromSuperview ();
             }
 
             protected void ProcessDeleteKey (UcAddressField addressField)
             {
-                addressField.selected = false;
-
-                switch (addressField.type) {
-                case UcAddressField.TEXT_FIELD:
-                    if (1 == outer.list.Count) {
-                        Remove (addressField);
-                        Select (outer.entryTextField);
-                    } else {
-                        var index = outer.list.IndexOf (addressField);
-                        // Removing the last entry in the list?
-                        if (0 != index) {
-                            Remove (outer.list [index]); // Text field
-                            Remove (outer.list [index - 1]); // Leading comma
-                            Select (outer.list [index - 2]); // Select the new end of list
-                        } else { // Removing from middle of the list
-                            Remove (outer.list [index]); // Text field
-                            Remove (outer.list [index]); // Following comma
-                            Select (outer.list [index]); // Select the next item on the list
-                        }
-                    }
-                    break;
-                case UcAddressField.COMMA_FIELD:
-                    var commaIndex = outer.list.IndexOf (addressField);
-                    Select (outer.list [commaIndex - 1]);
-                    break;
-                case UcAddressField.ENTRY_FIELD:
-                    if (0 != outer.list.Count) {
-                        Select (outer.list [outer.list.Count - 1]);
-                    } else {
-                        Select (addressField);
-                    }
-                    break;
-                default:
-                    NcAssert.CaseError ();
-                    break;
-                }
+                NcAssert.True (!addressField.IsTextField ());
+                var predecessor = outer.AddressFieldPredecessor (addressField);
+                Remove (outer.AddressFieldPredecessor (predecessor));
+                Remove (predecessor);
                 outer.ConfigureView ();
             }
         }
-
-
     }
 }
 
