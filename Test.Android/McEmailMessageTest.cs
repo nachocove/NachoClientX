@@ -150,6 +150,41 @@ namespace Test.Common
             NcAssert.Equals (2, result.Count ());
             NcAssert.True (result.All (x => x.AccountId == 1 && x.BodyId == 55));
         }
+
+        private void CheckScoreAndUpdate (int id, double expectedScore, bool expectedNeedUpdate)
+        {
+            McEmailMessage message = McEmailMessage.QueryById<McEmailMessage> (id);
+            Assert.True (null != message);
+
+            Assert.AreEqual(expectedScore, message.Score);
+            Assert.AreEqual (expectedNeedUpdate, message.NeedUpdate);
+        }
+
+        [Test]
+        public void TestUpdateScoreAndNeedUpdate ()
+        {
+            McEmailMessage message = new McEmailMessage () {
+                AccountId = 1,
+            };
+            message.Insert ();
+            NcAssert.True (0 < message.Id);
+
+            Assert.AreEqual (0.0, message.Score);
+            Assert.AreEqual (false, message.NeedUpdate);
+
+            message.Score = 1.0;
+            message.UpdateScoreAndNeedUpdate ();
+            CheckScoreAndUpdate (message.Id, 1.0, false);
+
+            message.NeedUpdate = true;
+            message.UpdateScoreAndNeedUpdate ();
+            CheckScoreAndUpdate (message.Id, 1.0, true);
+
+            message.Score = 0.5;
+            message.NeedUpdate = false;
+            message.UpdateScoreAndNeedUpdate ();
+            CheckScoreAndUpdate (message.Id, 0.5, false);
+        }
     }
 }
 

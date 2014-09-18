@@ -181,7 +181,7 @@ namespace NachoCore.Model
                 foreach (McEmailMessage m in emailMesageList) {
                     NcAssert.True (!m.NeedUpdate);
                     m.NeedUpdate = true;
-                    m.UpdateByBrain ();
+                    m.UpdateScoreAndNeedUpdate ();
                 }
             }
         }

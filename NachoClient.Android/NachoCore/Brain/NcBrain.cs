@@ -177,8 +177,7 @@ namespace NachoCore.Brain
                 Log.Debug (Log.LOG_BRAIN, "[McEmailMessage:{0}] update score -> {1:F6}",
                     emailMessage.Id, emailMessage.Score);
                 emailMessage.NeedUpdate = false;
-                emailMessage.UpdateByBrain ();
-
+                emailMessage.UpdateScoreAndNeedUpdate ();
                 numUpdated++;
             }
             Log.Info (Log.LOG_BRAIN, "{0} email message scores updated", numUpdated);
