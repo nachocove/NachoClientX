@@ -66,7 +66,7 @@ namespace Test.Common
             McEmailMessageDependency dep = new McEmailMessageDependency ();
             dep.EmailAddressId = address.Id;
             dep.EmailMessageId = message.Id;
-            dep.EmailAddressType = "Sender";
+            dep.EmailAddressType = (int)McEmailMessageDependency.AddressType.SENDER;
 
             dep.Insert ();
             NcAssert.True (0 < dep.Id);

@@ -35,31 +35,31 @@ namespace Test.Common
 
             Deps [0] = new McEmailMessageDependency ();
             Deps [0].EmailAddressId = 1;
-            Deps [0].EmailAddressType = sender;
+            Deps [0].EmailAddressType = (int)McEmailMessageDependency.AddressType.SENDER;
             Deps [0].EmailMessageId = 11;
             Deps [0].Insert ();
 
             Deps [1] = new McEmailMessageDependency ();
             Deps [1].EmailAddressId = 1;
-            Deps [1].EmailAddressType = sender;
+            Deps [1].EmailAddressType = (int)McEmailMessageDependency.AddressType.SENDER;
             Deps [1].EmailMessageId = 12;
             Deps [1].Insert ();
 
             Deps [2] = new McEmailMessageDependency ();
             Deps [2].EmailAddressId = 2;
-            Deps [2].EmailAddressType = sender;
+            Deps [2].EmailAddressType = (int)McEmailMessageDependency.AddressType.SENDER;
             Deps [2].EmailMessageId = 11;
             Deps [2].Insert ();
 
             Deps [3] = new McEmailMessageDependency ();
             Deps [3].EmailAddressId = 2;
-            Deps [3].EmailAddressType = sender;
+            Deps [3].EmailAddressType = (int)McEmailMessageDependency.AddressType.SENDER;
             Deps [3].EmailMessageId = 13;
             Deps [3].Insert ();
 
             Deps [4] = new McEmailMessageDependency ();
             Deps [4].EmailAddressId = 2;
-            Deps [4].EmailAddressType = sender;
+            Deps [4].EmailAddressType = (int)McEmailMessageDependency.AddressType.SENDER;
             Deps [4].EmailMessageId = 14;
             Deps [4].Insert ();
         }

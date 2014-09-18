@@ -46,7 +46,7 @@ namespace Test.Common
             Dependency = new McEmailMessageDependency ();
             Dependency.EmailMessageId = Message.Id;
             Dependency.EmailAddressId = Address.Id;
-            Dependency.EmailAddressType = "Sender";
+            Dependency.EmailAddressType = (int)McEmailMessageDependency.AddressType.SENDER;
             Dependency.Insert ();
         }
 
