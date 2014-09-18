@@ -15,11 +15,18 @@ namespace NachoCore.Model
     /// 
     public class McEmailMessageDependency : McAbstrObject
     {
+        public enum AddressType {
+            UNKNOWN = 0,
+            SENDER = 1,
+            TO = 2,
+            CC = 3,
+        };
+
         [Indexed]
         public Int64 EmailAddressId { get; set; }
 
-        // Type of contacts. Currently, support "Sender".
-        public string EmailAddressType { get; set; }
+        // Type of contacts. Currently, support SENDER only.
+        public int EmailAddressType { get; set; }
 
         [Indexed]
         public Int64 EmailMessageId { get; set; }
@@ -28,7 +35,7 @@ namespace NachoCore.Model
         {
             EmailAddressId = 0;
             EmailMessageId = 0;
-            EmailAddressType = "";
+            EmailAddressType = (int)AddressType.UNKNOWN;
         }
 
         // Get all McEmailMessage given a contact id
@@ -51,7 +58,7 @@ namespace NachoCore.Model
 
         private bool ValidType ()
         {
-            return ("Sender" == EmailAddressType);
+            return ((int)AddressType.SENDER == EmailAddressType);
         }
 
         public static List<McEmailMessageDependency> QueryByEmailMessageId (Int64 emailMessagegId)

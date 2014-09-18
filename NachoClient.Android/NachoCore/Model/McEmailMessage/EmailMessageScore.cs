@@ -106,7 +106,7 @@ namespace NachoCore.Model
                     McEmailMessageDependency dep = new McEmailMessageDependency ();
                     dep.EmailMessageId = Id;
                     dep.EmailAddressId = emailAddress.Id;
-                    dep.EmailAddressType = "Sender";
+                    dep.EmailAddressType = (int)McEmailMessageDependency.AddressType.SENDER;
                     dep.InsertByBrain ();
                 } else {
                     Log.Warn (Log.LOG_BRAIN, "[McEmailMessage:{0}] Unknown email address {1}", Id, From);
