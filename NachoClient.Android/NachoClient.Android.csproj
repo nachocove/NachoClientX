@@ -208,7 +208,6 @@
     <Compile Include="NachoCore\Model\McTask.cs" />
     <Compile Include="NachoCore\Model\McRecurrence.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncTaskCommand.cs" />
-    <Compile Include="NachoCore\Utils\TnefEncoding.cs" />
     <Compile Include="NachoCore\Utils\ASWBXML.cs" />
     <Compile Include="NachoCore\Utils\ASWBXMLByteQueue.cs" />
     <Compile Include="NachoCore\Utils\ASWBXMLCodePage.cs" />

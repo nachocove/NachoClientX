@@ -588,9 +588,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncTaskCommand.cs">
       <Link>NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\AsSyncTaskCommand.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\TnefEncoding.cs">
-      <Link>NachoCore\Utils\TnefEncoding.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\ASWBXML.cs">
       <Link>NachoCore\Utils\ASWBXML.cs</Link>
     </Compile>
