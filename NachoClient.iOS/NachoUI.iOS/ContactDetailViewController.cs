@@ -37,6 +37,8 @@ namespace NachoClient.iOS
         protected UITextView notesTextView;
         protected UIButton editNotes;
 
+        protected int selectedSegment = 0;
+
         public ContactDetailViewController (IntPtr handle) : base (handle)
         {
             messageSource = new MessageTableViewSource ();
@@ -84,6 +86,12 @@ namespace NachoClient.iOS
             UpdateVipButton ();
             Util.ConfigureNavBar (true, NavigationController);
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+
+            var SegmentedControl = (UISegmentedControl)View.ViewWithTag (SEGMENTED_CONTROL_TAG);
+            if (null != SegmentedControl) {
+                SegmentedControl.SelectedSegment = selectedSegment;
+                SegmentedControl.SendActionForControlEvents (UIControlEvent.ValueChanged);
+            }
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -96,6 +104,11 @@ namespace NachoClient.iOS
             }
             Util.ConfigureNavBar (false, NavigationController);
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+
+            var SegmentedControl = (UISegmentedControl)View.ViewWithTag (SEGMENTED_CONTROL_TAG);
+            if (null != SegmentedControl) {
+                selectedSegment = SegmentedControl.SelectedSegment;
+            }
         }
 
         public override bool HidesBottomBarWhenPushed {
