@@ -92,7 +92,16 @@ namespace NachoClient.iOS
             }
 
             fillInKnownFields ();
-            handleStatusEnums ();
+            if (LoginHelpers.IsCurrentAccountSet ()) {
+                if (LoginHelpers.HasViewedTutorial (LoginHelpers.GetCurrentAccountId ())) {
+                    handleStatusEnums ();
+                } else {
+                    waitScreen.ShowView ();
+                }
+            } else {
+                handleStatusEnums ();
+            }
+
 
             if (waitScreen.Hidden == true) {
                 NavigationItem.Title = "Account Setup";
@@ -179,7 +188,7 @@ namespace NachoClient.iOS
             contentView.AddSubview (whiteInset);
 
             connectButton = new UIButton (new RectangleF (25, yOffset, View.Frame.Width - 50, 46));
-            connectButton.BackgroundColor = A.Color_NachoBlue;
+            connectButton.BackgroundColor = A.Color_NachoTeal;
             connectButton.TitleLabel.TextAlignment = UITextAlignment.Center;
             connectButton.SetTitle ("Connect", UIControlState.Normal);
             connectButton.TitleLabel.TextColor = UIColor.White;
@@ -201,18 +210,20 @@ namespace NachoClient.iOS
                         if (haveEnteredHost ()) {
                             if (isValidHost ()) {
                                 tryValidateConfig ();
+                                waitScreen.ShowView ();
                                 if(LoginHelpers.HasViewedTutorial(LoginHelpers.GetCurrentAccountId())){
-                                    waitScreen.ShowView ();
+
                                 }else{
-                                    PerformSegue (StartupViewController.NextSegue (), this);
+                                    //PerformSegue (StartupViewController.NextSegue (), this);
                                 }
                             }
                         } else {
                             tryAutoD ();
+                            waitScreen.ShowView ();
                             if(LoginHelpers.HasViewedTutorial(LoginHelpers.GetCurrentAccountId())){
-                                waitScreen.ShowView ();
+                                //waitScreen.ShowView ();
                             }else{
-                                PerformSegue (StartupViewController.NextSegue (), this);
+                                //PerformSegue (StartupViewController.NextSegue (), this);
                             }
                         }
                     }
@@ -230,8 +241,7 @@ namespace NachoClient.iOS
             customerSupportButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
             customerSupportButton.TouchUpInside += (object sender, EventArgs e) => {
                 View.EndEditing (true);
-
-                PerformSegue ("SegueToSupport", this);
+                PerformSegue(StartupViewController.NextSegue(StartupViewController.ManagedViewControllers.AdvancedLoginViewController), this);
             };
             contentView.AddSubview (customerSupportButton);
             yOffset = customerSupportButton.Frame.Bottom;
@@ -435,7 +445,7 @@ namespace NachoClient.iOS
 
                 case BackEndAutoDStateEnum.PostAutoDPostInboxSync:
                     LoginHelpers.SetFirstSyncCompleted (LoginHelpers.GetCurrentAccountId (), true);
-                    PerformSegue (StartupViewController.NextSegue (), this);
+                    PerformSegue(StartupViewController.NextSegue(StartupViewController.ManagedViewControllers.AdvancedLoginViewController), this);
                     return;
 
                 case BackEndAutoDStateEnum.Running:
@@ -561,11 +571,7 @@ namespace NachoClient.iOS
             });
 
             startBe ();
-            if(LoginHelpers.HasViewedTutorial(LoginHelpers.GetCurrentAccountId())){
-                waitScreen.ShowView ();
-            }else{
-                PerformSegue (StartupViewController.NextSegue (), this);
-            }
+            waitScreen.ShowView ();
         }
 
         public void removeServerRecord ()
@@ -728,6 +734,10 @@ namespace NachoClient.iOS
                 waitScreen.SetLoadingText ("Syncing Your Inbox...");
                 theAccount.Server = McServer.QueryById<McServer> (1);
                 serverText.Text = theAccount.Server.Host;
+                LoginHelpers.SetAutoDCompleted (LoginHelpers.GetCurrentAccountId (), true);
+                if(!LoginHelpers.HasViewedTutorial(LoginHelpers.GetCurrentAccountId())){
+                    PerformSegue(StartupViewController.NextSegue(StartupViewController.ManagedViewControllers.AdvancedLoginViewController), this);
+                }
             }
             if (NcResult.SubKindEnum.Error_NetworkUnavailable == s.Status.SubKind) {
                 ConfigureView (LoginStatus.NoNetwork);

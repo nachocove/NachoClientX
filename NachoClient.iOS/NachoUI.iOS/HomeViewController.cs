@@ -98,6 +98,10 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_UI, "Info_EmailMessageSetChanged Status Ind (Tutorial)");
                 LoginHelpers.SetFirstSyncCompleted (accountId, true);
             }
+            if (NcResult.SubKindEnum.Info_AsAutoDComplete == s.Status.SubKind) {
+                Log.Info (Log.LOG_UI, "Auto-D-Completed Status Ind");
+                LoginHelpers.SetAutoDCompleted (LoginHelpers.GetCurrentAccountId (), true);
+            }
         }
 
 
@@ -146,7 +150,7 @@ namespace NachoClient.iOS
             //closeTutorial.BackgroundColor = A.Color_NachoRed; // debug
             closeTutorial.TouchUpInside += (object sender, EventArgs e) => {
                 LoginHelpers.SetHasViewedTutorial (accountId, true);
-                PerformSegue(StartupViewController.NextSegue(), this);
+                PerformSegue(StartupViewController.NextSegue(StartupViewController.ManagedViewControllers.HomeViewController), this);
             };
             containerView.Add (pageDots);
             containerView.Add (closeTutorial);

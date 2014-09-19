@@ -13,6 +13,14 @@ namespace NachoClient.iOS
 {
     public partial class StartupViewController : NcUIViewController
     {
+        public enum ManagedViewControllers
+        {
+            StartupViewController,
+            LaunchViewController,
+            AdvancedLoginViewController,
+            HomeViewController,
+            WaitingScreen,
+        }
 
         public StartupViewController (IntPtr handle) : base (handle)
         {
@@ -24,10 +32,10 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-            PerformSegue (NextSegue (), this);
+            PerformSegue (NextSegue (ManagedViewControllers.StartupViewController), this);
         }
 
-        public static string NextSegue ()
+        public static string NextSegue (ManagedViewControllers callingView)
         {
             bool hasSynced;
             bool hasCreds;
@@ -48,18 +56,45 @@ namespace NachoClient.iOS
                 hasOpenedFromEvent = null;
             }
 
-            if (!hasCreds) {
-                return "SegueToLaunch";
-            } else if (!hasViewedTutorial) {
-                return "SegueToHome";
-            } else if (!hasSynced) {
+            switch (callingView) {
+            case ManagedViewControllers.StartupViewController:
+                if (!hasCreds) {
+                    return "SegueToLaunch";
+                } else if (!hasViewedTutorial) {
+                    return "SegueToHome";
+                } else if (!hasSynced) {
+                    return "SegueToAdvancedLogin";
+                } else if (null != hasOpenedFromEvent) {
+                    return "SegueToEventView";
+                } else {
+                    return "SegueToTabController";
+                }
+            case ManagedViewControllers.LaunchViewController:
                 return "SegueToAdvancedLogin";
-            } else if (null != hasOpenedFromEvent) {
-                return "SegueToEventView";
-            } else {
-                return "SegueToTabController";
+            case ManagedViewControllers.AdvancedLoginViewController:
+                if (hasViewedTutorial) {
+                    return "SegueToTabController";
+                } else {
+                    return "SegueToHome";
+                }
+            case ManagedViewControllers.HomeViewController:
+                if (hasSynced) {
+                    return "SegueToAdvancedLogin";
+                } else {
+                    return "SegueToAdvancedLogin";
+                }
+            case ManagedViewControllers.WaitingScreen:
+                if (hasSynced) {
+                    return "SegueToTabController";
+                } else {
+                    return "SegueToHome";
+                }
+            default:
+                NcAssert.CaseError ("Not a managed view controller");
+                return "";
             }
         }
+
 
         public override void ViewWillAppear (bool animated)
         {
@@ -104,4 +139,3 @@ namespace NachoClient.iOS
 
     }
 }
-    
