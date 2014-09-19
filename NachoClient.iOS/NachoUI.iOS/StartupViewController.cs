@@ -79,7 +79,7 @@ namespace NachoClient.iOS
                 }
             case ManagedViewControllers.HomeViewController:
                 if (hasSynced) {
-                    return "SegueToAdvancedLogin";
+                    return "SegueToTabController";
                 } else {
                     return "SegueToAdvancedLogin";
                 }
