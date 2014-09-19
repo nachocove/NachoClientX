@@ -350,6 +350,7 @@ namespace NachoCore.Model
         {
             var classCode = obj.GetClassCode ();
             NcAssert.True (classCode != ClassCodeEnum.Folder, "Linking folders is not currently supported");
+            NcAssert.True (classCode != ClassCodeEnum.NeverInFolder);
             NcAssert.True (AccountId == obj.AccountId, "Folder's AccountId should match FolderEntry's AccountId");
             var existing = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode 
                 (AccountId, Id, obj.Id, classCode);
@@ -368,6 +369,9 @@ namespace NachoCore.Model
         public static NcResult UnlinkAll (McAbstrItem obj)
         {
             var classCode = obj.GetClassCode ();
+            if (ClassCodeEnum.NeverInFolder == classCode) {
+                return NcResult.OK ();
+            }
             var maps = McMapFolderFolderEntry.QueryByFolderEntryIdClassCode (obj.AccountId, obj.Id, classCode);
             foreach (var map in maps) {
                 map.Delete ();
