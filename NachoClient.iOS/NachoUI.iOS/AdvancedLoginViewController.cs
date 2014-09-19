@@ -230,7 +230,7 @@ namespace NachoClient.iOS
             customerSupportButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
             customerSupportButton.TouchUpInside += (object sender, EventArgs e) => {
                 View.EndEditing (true);
-                PerformSegue(StartupViewController.NextSegue(StartupViewController.ManagedViewControllers.AdvancedLoginViewController), this);
+                PerformSegue(StartupViewController.NextSegue(), this);
             };
             contentView.AddSubview (customerSupportButton);
             yOffset = customerSupportButton.Frame.Bottom;
@@ -434,7 +434,7 @@ namespace NachoClient.iOS
 
                 case BackEndAutoDStateEnum.PostAutoDPostInboxSync:
                     LoginHelpers.SetFirstSyncCompleted (LoginHelpers.GetCurrentAccountId (), true);
-                    PerformSegue(StartupViewController.NextSegue(StartupViewController.ManagedViewControllers.AdvancedLoginViewController), this);
+                    PerformSegue(StartupViewController.NextSegue(), this);
                     return;
 
                 case BackEndAutoDStateEnum.Running:
@@ -725,7 +725,7 @@ namespace NachoClient.iOS
                 serverText.Text = theAccount.Server.Host;
                 LoginHelpers.SetAutoDCompleted (LoginHelpers.GetCurrentAccountId (), true);
                 if(!LoginHelpers.HasViewedTutorial(LoginHelpers.GetCurrentAccountId())){
-                    PerformSegue(StartupViewController.NextSegue(StartupViewController.ManagedViewControllers.AdvancedLoginViewController), this);
+                    PerformSegue(StartupViewController.NextSegue(), this);
                 }
             }
             if (NcResult.SubKindEnum.Error_NetworkUnavailable == s.Status.SubKind) {

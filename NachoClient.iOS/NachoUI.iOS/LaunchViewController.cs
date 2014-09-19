@@ -201,7 +201,7 @@ namespace NachoClient.iOS
 
             submitButton.TouchUpInside += delegate {
                 if (EnterFullConfiguration ()) {
-                    PerformSegue(StartupViewController.NextSegue(StartupViewController.ManagedViewControllers.LaunchViewController), this);
+                    PerformSegue(StartupViewController.NextSegue(), this);
                 }
             };
 

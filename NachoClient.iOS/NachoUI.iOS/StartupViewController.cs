@@ -13,15 +13,6 @@ namespace NachoClient.iOS
 {
     public partial class StartupViewController : NcUIViewController
     {
-        public enum ManagedViewControllers
-        {
-            StartupViewController,
-            LaunchViewController,
-            AdvancedLoginViewController,
-            HomeViewController,
-            WaitingScreen,
-        }
-
         public StartupViewController (IntPtr handle) : base (handle)
         {
         }
@@ -32,14 +23,15 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-            PerformSegue (NextSegue (ManagedViewControllers.StartupViewController), this);
+            PerformSegue (NextSegue (), this);
         }
 
-        public static string NextSegue (ManagedViewControllers callingView)
+        public static string NextSegue ()
         {
             bool hasSynced;
             bool hasCreds;
             bool hasViewedTutorial;
+            bool hasAutoDCompleted; 
             string hasOpenedFromEvent;
             int accountId;
 
@@ -47,51 +39,29 @@ namespace NachoClient.iOS
                 accountId = LoginHelpers.GetCurrentAccountId ();
                 hasSynced = LoginHelpers.HasFirstSyncCompleted (accountId);
                 hasCreds = LoginHelpers.HasProvidedCreds (accountId);
+                hasAutoDCompleted = LoginHelpers.HasAutoDCompleted (accountId);
                 hasViewedTutorial = LoginHelpers.HasViewedTutorial (accountId);
                 hasOpenedFromEvent = McMutables.Get (McAccount.GetDeviceAccount ().Id, "EventNotif", accountId.ToString ());
             } else {
                 hasSynced = false;
                 hasCreds = false;
                 hasViewedTutorial = false;
+                hasAutoDCompleted = false;
                 hasOpenedFromEvent = null;
             }
 
-            switch (callingView) {
-            case ManagedViewControllers.StartupViewController:
-                if (!hasCreds) {
-                    return "SegueToLaunch";
-                } else if (!hasViewedTutorial) {
-                    return "SegueToHome";
-                } else if (!hasSynced) {
-                    return "SegueToAdvancedLogin";
-                } else if (null != hasOpenedFromEvent) {
-                    return "SegueToEventView";
-                } else {
-                    return "SegueToTabController";
-                }
-            case ManagedViewControllers.LaunchViewController:
+            if (!hasCreds) {
+                return "SegueToLaunch";
+            } else if (!hasAutoDCompleted) {
                 return "SegueToAdvancedLogin";
-            case ManagedViewControllers.AdvancedLoginViewController:
-                if (hasViewedTutorial) {
-                    return "SegueToTabController";
-                } else {
-                    return "SegueToHome";
-                }
-            case ManagedViewControllers.HomeViewController:
-                if (hasSynced) {
-                    return "SegueToTabController";
-                } else {
-                    return "SegueToAdvancedLogin";
-                }
-            case ManagedViewControllers.WaitingScreen:
-                if (hasSynced) {
-                    return "SegueToTabController";
-                } else {
-                    return "SegueToHome";
-                }
-            default:
-                NcAssert.CaseError ("Not a managed view controller");
-                return "";
+            } else if (!hasViewedTutorial) {
+                return "SegueToHome";
+            } else if (!hasSynced) {
+                return "SegueToAdvancedLogin";
+            } else if (null != hasOpenedFromEvent) {
+                return "SegueToEventView";
+            } else {
+                return "SegueToTabController";
             }
         }
 

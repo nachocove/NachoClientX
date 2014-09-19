@@ -150,7 +150,7 @@ namespace NachoClient.iOS
             //closeTutorial.BackgroundColor = A.Color_NachoRed; // debug
             closeTutorial.TouchUpInside += (object sender, EventArgs e) => {
                 LoginHelpers.SetHasViewedTutorial (accountId, true);
-                PerformSegue(StartupViewController.NextSegue(StartupViewController.ManagedViewControllers.HomeViewController), this);
+                PerformSegue(StartupViewController.NextSegue(), this);
             };
             containerView.Add (pageDots);
             containerView.Add (closeTutorial);

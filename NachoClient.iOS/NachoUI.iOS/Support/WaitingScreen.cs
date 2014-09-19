@@ -199,7 +199,7 @@ namespace NachoClient.iOS
             if (!LoginHelpers.HasViewedTutorial (LoginHelpers.GetCurrentAccountId ())) {
                 SegueToTutorial = NSTimer.CreateScheduledTimer (WAIT_TIME, delegate {
                     if(!LoginHelpers.HasAutoDCompleted(LoginHelpers.GetCurrentAccountId())){
-                        owner.PerformSegue(StartupViewController.NextSegue(StartupViewController.ManagedViewControllers.WaitingScreen), this);
+                        owner.PerformSegue("SegueToHome", this);
                     }
                 });
             }
@@ -322,7 +322,7 @@ namespace NachoClient.iOS
 //                });
 
             }, ((bool finished) => {
-                owner.PerformSegue(StartupViewController.NextSegue(StartupViewController.ManagedViewControllers.WaitingScreen), this);
+                owner.PerformSegue(StartupViewController.NextSegue(), this);
             }));
         }
     }
