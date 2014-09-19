@@ -102,7 +102,6 @@ namespace NachoClient.iOS
                 handleStatusEnums ();
             }
 
-
             if (waitScreen.Hidden == true) {
                 NavigationItem.Title = "Account Setup";
                 loadingCover.Hidden = true;
@@ -211,20 +210,10 @@ namespace NachoClient.iOS
                             if (isValidHost ()) {
                                 tryValidateConfig ();
                                 waitScreen.ShowView ();
-                                if(LoginHelpers.HasViewedTutorial(LoginHelpers.GetCurrentAccountId())){
-
-                                }else{
-                                    //PerformSegue (StartupViewController.NextSegue (), this);
-                                }
                             }
                         } else {
                             tryAutoD ();
                             waitScreen.ShowView ();
-                            if(LoginHelpers.HasViewedTutorial(LoginHelpers.GetCurrentAccountId())){
-                                //waitScreen.ShowView ();
-                            }else{
-                                //PerformSegue (StartupViewController.NextSegue (), this);
-                            }
                         }
                     }
                 }
