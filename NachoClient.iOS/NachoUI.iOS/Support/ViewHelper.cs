@@ -2,6 +2,7 @@
 //
 using System;
 using System.Drawing;
+using System.Collections.Generic;
 using MonoTouch.UIKit;
 using MonoTouch.Foundation;
 using MonoTouch.CoreGraphics;
@@ -36,8 +37,8 @@ namespace NachoClient.iOS
             }
             msg += String.Format ("{0} [{1}]: (X,Y)=({2}, {3})  (Width, Height)=({4}, {5})",
                 view.GetType ().Name, tagName,
-                view.Frame.X + view.Superview.Frame.X,
-                view.Frame.Y + view.Superview.Frame.Y,
+                view.Frame.X + (null == view.Superview ? 0 : view.Superview.Frame.X),
+                view.Frame.Y + (null == view.Superview ? 0 : view.Superview.Frame.Y),
                 view.Frame.Width, view.Frame.Height);
             Console.WriteLine (msg);
             for (int n = 0; n < view.Subviews.Length; n++) {
@@ -52,6 +53,25 @@ namespace NachoClient.iOS
         public static void DumpViews<T> (UIView view)
         {
             DumpView <T> (view, 0);
+        }
+
+        public static void DumpViewControllerHierarchy (UIViewController vc)
+        {
+            List<string> vcList = new List<string> ();
+            while (null != vc) {
+                vcList.Insert (0, vc.GetType ().Name);
+                vc = vc.ParentViewController;
+            }
+            string output = "\n";
+            int indent = 0;
+            foreach (var vcName in vcList) {
+                for (int n = 0; n < indent; n++) {
+                    output += " ";
+                }
+                output += vcName + "\n";
+                indent += 2;
+            }
+            Console.WriteLine (output);
         }
     }
 
