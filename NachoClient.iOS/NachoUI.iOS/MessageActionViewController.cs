@@ -85,7 +85,7 @@ namespace NachoClient.iOS
             public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
             {
                 var folderSource = (HierarchicalFolderTableSource)tableView.DataSource;
-                var folder = folderSource.getFolder (indexPath);
+                var folder = folderSource.GetFolder (indexPath);
                 owner.FolderSelected (folder);
             }
         }
