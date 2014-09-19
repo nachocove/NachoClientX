@@ -155,6 +155,12 @@ namespace NachoCore.Model
                 return BodyPreview;
             }
         }
+
+        public override ClassCodeEnum GetClassCode ()
+        {
+            // Sub-class needs to override if it is to be folder link-able.
+            return ClassCodeEnum.NeverInFolder;
+        }
     }
 }
 

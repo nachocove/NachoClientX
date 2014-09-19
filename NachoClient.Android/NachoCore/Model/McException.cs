@@ -23,11 +23,6 @@ namespace NachoCore.Model
         /// Start time of the original recurring meeting (Compact DateTime). Exception only.
         public DateTime ExceptionStartTime { get; set; }
 
-        public override ClassCodeEnum GetClassCode ()
-        {
-            return McAbstrFolderEntry.ClassCodeEnum.Exception;
-        }
-
         public static List<McException> QueryForExceptionId (int calendarId, DateTime exceptionStartTime)
         {
             var query = "SELECT * from McException WHERE CalendarId = ? AND ExceptionStartTime = ?";

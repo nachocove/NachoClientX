@@ -13,6 +13,8 @@ namespace NachoCore.Model
     {
         public enum ClassCodeEnum
         {
+            // Never-in-folder created by Nacho for derived classes that aren't in folders.
+            NeverInFolder = 0,
             // Values taken from ActiveSync are < 100.
             Tasks = 1,
             Email = 2,
@@ -21,13 +23,11 @@ namespace NachoCore.Model
             Notes = 5,
             Sms = 6,
             MaxSyncable = 6,
-            // Values created by Nacho are >= 100.
+            // Values created by Nacho are >= 100, and CAN be in folders (just not synced).
             Folder = 100,
             // We are not using generic or journal.
             Journal = 101,
             Generic = 102,
-            Exception = 103,
-            MeetingRequest = 104,
         };
 
         [Indexed]

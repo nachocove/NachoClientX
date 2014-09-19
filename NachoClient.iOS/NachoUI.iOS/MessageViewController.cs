@@ -430,8 +430,11 @@ namespace NachoClient.iOS
         const int HORIZONTAL_SCROLLVIEW_INSET = 4;
         const int MESSAGEVIEW_INSET = 4;
         #else
-        const int VIEW_INSET = 2;
-        const int HORIZONTAL_SCROLLVIEW_INSET = 4;
+        // FIXME - Fix the black band problem and switch back to this.
+        const int VIEW_INSET = 0;
+        const int HORIZONTAL_SCROLLVIEW_INSET = 0;
+        //const int VIEW_INSET = 2;
+        //const int HORIZONTAL_SCROLLVIEW_INSET = 4;
         const int MESSAGEVIEW_INSET = 2;
         #endif
 
@@ -440,6 +443,7 @@ namespace NachoClient.iOS
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
             view = new UIView ();
             scrollView.AddSubview (view);
+
             #if (DEBUG_UI)
             view.BackgroundColor = A.Color_NachoRed;
             scrollView.BackgroundColor = A.Color_NachoTeal;
@@ -674,6 +678,17 @@ namespace NachoClient.iOS
 
         protected void ConfigureView ()
         {
+            if (null != TabBarController) {
+                // FIXME - This is a hack. Need to research the proper solution
+                // I tried HidesBottomBarWhenPushed but it does not work for me.
+                // From googling, some people say it does not work if you have
+                // "custom toolbar" (not 100% sure what that means).
+                ViewFramer.Create (View)
+                    .AdjustHeight (TabBarController.TabBar.Frame.Height);
+                ViewFramer.Create (scrollView)
+                    .AdjustHeight (TabBarController.TabBar.Frame.Height);
+            }
+
             var message = thread.SingleMessageSpecialCase ();
             attachments = McAttachment.QueryByItemId<McEmailMessage> (message.AccountId, message.Id);
 

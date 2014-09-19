@@ -314,7 +314,7 @@ namespace NachoCore.Model
 
         public static List<NcEmailMessageIndex> QueryInteractions (int accountId, McContact contact)
         {
-            var emailWildcard = "%" + contact.GetEmailAddress() + "%";
+            string emailWildcard = "%" + McEmailAddress.QueryById<McEmailAddress> (contact.EmailAddresses.First().EmailAddress).CanonicalEmailAddress + "%";
             McFolder deletedFolder = McFolder.GetDefaultDeletedFolder (accountId);
 
             return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
@@ -331,7 +331,6 @@ namespace NachoCore.Model
                 " e.[From] LIKE ? OR " +
                 " e.[To] Like ? ORDER BY e.DateReceived DESC",
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, deletedFolder.Id, emailWildcard, emailWildcard);
-
         }
 
         public static List<McEmailMessage> QueryActiveMessages (int accountId, int folderId)

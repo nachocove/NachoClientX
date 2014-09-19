@@ -39,9 +39,11 @@ namespace NachoCore
         {
             //FIXME what account id? This method below could result in null.
             var folder = InboxFolder ();
-            var list = McEmailMessage.QueryInteractions (folder.AccountId, contact);
-            if (null == list) {
-                list = new List<NcEmailMessageIndex> ();
+            var list = new List<NcEmailMessageIndex> ();
+            if (null != contact.EmailAddresses) {
+                if (contact.EmailAddresses.Count > 0) {
+                    list = McEmailMessage.QueryInteractions (folder.AccountId, contact);
+                }
             }
             threadList = NcMessageThreads.ThreadByConversation (list);
         }
