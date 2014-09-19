@@ -140,6 +140,9 @@ namespace NachoClient.iOS
 
         protected void CreateEventAttendeeView ()
         {
+            NavigationItem.Title = "Attendees";
+            Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
+
             if (editing) {
                 NavigationItem.RightBarButtonItem = addAttendeeButton;
                 addAttendeeButton.Clicked += (object sender, EventArgs e) => {

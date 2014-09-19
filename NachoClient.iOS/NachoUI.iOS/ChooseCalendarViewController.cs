@@ -58,6 +58,9 @@ namespace NachoClient.iOS
         protected void CreateCalendarView ()
         {
 
+            NavigationItem.Title = "Calendars";
+            Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
+
             AddCalLine (0, LINE_OFFSET, SCREEN_WIDTH, separatorColor);
             int i = 0;
             while (i < Calendars.Count ()) {

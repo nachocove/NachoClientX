@@ -65,6 +65,7 @@ namespace NachoClient.iOS
             base.ViewDidLoad ();
 
             NcAssert.True (itemType != 0, "Item type should be set before transitioning to FilesViewController");
+            Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
 
             // set up the table view source
             FilesSource = new FilesTableSource (this);

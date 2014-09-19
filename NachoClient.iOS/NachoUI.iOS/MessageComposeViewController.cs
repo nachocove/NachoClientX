@@ -375,6 +375,8 @@ namespace NachoClient.iOS
 
         protected void CreateView ()
         {
+            Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
+
             scrollView.BackgroundColor = UIColor.White;
             contentView.BackgroundColor = UIColor.White;
 

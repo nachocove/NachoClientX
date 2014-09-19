@@ -56,8 +56,8 @@ namespace NachoClient.iOS
 
             UILabel accountSettingsLabel = new UILabel (new RectangleF (INSET, yOffset, contentView.Frame.Width, 20));
             accountSettingsLabel.Text = "ACCOUNT SETTINGS";
-            accountSettingsLabel.Font = A.Font_AvenirNextRegular14;
-            accountSettingsLabel.TextColor = A.Color_NachoBlack;
+            accountSettingsLabel.Font = A.Font_AvenirNextRegular12;
+            accountSettingsLabel.TextColor = A.Color_NachoIconGray;
             contentView.AddSubview (accountSettingsLabel);
 
             yOffset = accountSettingsLabel.Frame.Bottom + 5;
