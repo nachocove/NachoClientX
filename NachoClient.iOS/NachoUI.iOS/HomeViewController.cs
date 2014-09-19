@@ -98,6 +98,10 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_UI, "Info_EmailMessageSetChanged Status Ind (Tutorial)");
                 LoginHelpers.SetFirstSyncCompleted (accountId, true);
             }
+            if (NcResult.SubKindEnum.Info_AsAutoDComplete == s.Status.SubKind) {
+                Log.Info (Log.LOG_UI, "Auto-D-Completed Status Ind");
+                LoginHelpers.SetAutoDCompleted (LoginHelpers.GetCurrentAccountId (), true);
+            }
         }
 
 

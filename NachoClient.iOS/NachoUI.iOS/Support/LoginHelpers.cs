@@ -31,6 +31,22 @@ namespace NachoClient.iOS
             return McMutables.GetOrCreateBool(accountId, "hasSyncedFolders", accountId.ToString (), false);
         }
 
+        //Sets the status of the auto-d success bit for given accountId
+        static public void SetAutoDCompleted (int accountId, bool toWhat)
+        {
+            NcAssert.True (GetCurrentAccountId() == accountId);
+            McMutables.SetBool (accountId, "hasAutoDCompleted", accountId.ToString (), toWhat);
+        }
+
+        //Gets the status of the auto-d success bit for given accountId
+        //True if they have succesfully sync'd folders
+        //False if not
+        static public bool HasAutoDCompleted(int accountId)
+        {
+            NcAssert.True (GetCurrentAccountId() == accountId);
+            return McMutables.GetOrCreateBool(accountId, "hasAutoDCompleted", accountId.ToString (), false);
+        }
+
         //Sets the status of the tutorial bit for given accountId
         static public void SetHasViewedTutorial (int accountId, bool toWhat)
         {

@@ -13,7 +13,6 @@ namespace NachoClient.iOS
 {
     public partial class StartupViewController : NcUIViewController
     {
-
         public StartupViewController (IntPtr handle) : base (handle)
         {
         }
@@ -32,6 +31,7 @@ namespace NachoClient.iOS
             bool hasSynced;
             bool hasCreds;
             bool hasViewedTutorial;
+            bool hasAutoDCompleted; 
             string hasOpenedFromEvent;
             int accountId;
 
@@ -39,17 +39,21 @@ namespace NachoClient.iOS
                 accountId = LoginHelpers.GetCurrentAccountId ();
                 hasSynced = LoginHelpers.HasFirstSyncCompleted (accountId);
                 hasCreds = LoginHelpers.HasProvidedCreds (accountId);
+                hasAutoDCompleted = LoginHelpers.HasAutoDCompleted (accountId);
                 hasViewedTutorial = LoginHelpers.HasViewedTutorial (accountId);
                 hasOpenedFromEvent = McMutables.Get (McAccount.GetDeviceAccount ().Id, "EventNotif", accountId.ToString ());
             } else {
                 hasSynced = false;
                 hasCreds = false;
                 hasViewedTutorial = false;
+                hasAutoDCompleted = false;
                 hasOpenedFromEvent = null;
             }
 
             if (!hasCreds) {
                 return "SegueToLaunch";
+            } else if (!hasAutoDCompleted) {
+                return "SegueToAdvancedLogin";
             } else if (!hasViewedTutorial) {
                 return "SegueToHome";
             } else if (!hasSynced) {
@@ -60,6 +64,7 @@ namespace NachoClient.iOS
                 return "SegueToTabController";
             }
         }
+
 
         public override void ViewWillAppear (bool animated)
         {
@@ -104,4 +109,3 @@ namespace NachoClient.iOS
 
     }
 }
-    
