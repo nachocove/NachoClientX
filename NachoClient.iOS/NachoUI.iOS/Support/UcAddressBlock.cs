@@ -160,14 +160,13 @@ namespace NachoClient.iOS
         public void Append (NcEmailAddress address)
         {
             int index;
-            if (isEditable) {
-                NcAssert.True (null != currentAddressField);
+            if (null == currentAddressField) {
+                index = list.Count;
+            } else {
                 index = list.IndexOf (currentAddressField);
                 if (-1 == index) {
                     index = list.Count;
                 }
-            } else {
-                index = list.Count;
             }
 
             InsertInternal (index, " ", null, UcAddressField.GAP_FIELD);
