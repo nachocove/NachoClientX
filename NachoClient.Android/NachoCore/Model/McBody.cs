@@ -31,12 +31,29 @@ namespace NachoCore.Model
             return body;
         }
 
+        /// <summary>
+        /// Create a new McBody with the given string as the contents
+        /// </summary>
+        /// <returns>A new McBody object that has been added to the database</returns>
         public static McBody InsertFile (int accountId, string content)
         {
             var body = new McBody () {
                 AccountId = accountId,
             };
             body.CompleteInsertFile (content);
+            return body;
+        }
+
+        /// <summary>
+        /// Create a new McBody. The contents are filled in by passing a FileStream for the McBody's file to a delegate.
+        /// </summary>
+        /// <returns>A new McBody object that has been added to the database</returns>
+        public static McBody InsertFile (int accountId, WriteFileDelegate writer)
+        {
+            var body = new McBody () {
+                AccountId = accountId,
+            };
+            body.CompleteInsertFile (writer);
             return body;
         }
 

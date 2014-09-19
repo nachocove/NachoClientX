@@ -258,20 +258,14 @@ namespace NachoCore.Model
                 return;
             }
             var originalAttachments = McAttachment.QueryByItemId<McEmailMessage> (AccountId, ReferencedEmailId);
-            var oldBody = McBody.QueryById<McBody> (BodyId);
-            MimeMessage mime = MimeHelpers.LoadMessage (oldBody.GetFilePath ());
+            var body = McBody.QueryById<McBody> (BodyId);
+            MimeMessage mime = MimeHelpers.LoadMessage (body.GetFilePath ());
             MimeHelpers.AddAttachments (mime, originalAttachments);
-            NcModel.Instance.RunInTransaction (() => {
-                var newBody = McBody.InsertSaveStart (AccountId);
-                using (var fileStream = newBody.SaveFileStream ()) {
-                    mime.WriteTo (fileStream);
-                }
-                newBody.UpdateSaveFinish ();
-                BodyId = newBody.Id;
-                WaitingForAttachmentsToDownload = false;
-                this.Update ();
-                oldBody.Delete ();
+            body.UpdateData ((FileStream stream) => {
+                mime.WriteTo (stream);
             });
+            WaitingForAttachmentsToDownload = false;
+            this.Update ();
         }
 
         public void ConvertToRegularSend ()
@@ -286,8 +280,8 @@ namespace NachoCore.Model
                 // Original message no longer exists.  There is nothing we can do.
                 return;
             }
-            var oldBody = McBody.QueryById<McBody> (BodyId);
-            var outgoingMime = MimeHelpers.LoadMessage (oldBody.GetFilePath ());
+            var body = McBody.QueryById<McBody> (BodyId);
+            var outgoingMime = MimeHelpers.LoadMessage (body.GetFilePath ());
             if (!ReferencedBodyIsIncluded) {
                 // Append the body of the original message to the outgoing message.
                 // TODO Be smart about formatting.  Right now everything is forced to plain text.
@@ -300,20 +294,14 @@ namespace NachoCore.Model
                 var originalAttachments = McAttachment.QueryByItemId<McEmailMessage> (AccountId, ReferencedEmailId);
                 MimeHelpers.AddAttachments (outgoingMime, originalAttachments);
             }
-            NcModel.Instance.RunInTransaction (() => {
-                var newBody = McBody.InsertSaveStart (AccountId);
-                using (var fileStream = newBody.SaveFileStream ()) {
-                    outgoingMime.WriteTo (fileStream);
-                }
-                newBody.UpdateSaveFinish ();
-                BodyId = newBody.Id;
-                ReferencedEmailId = 0;
-                ReferencedBodyIsIncluded = false;
-                ReferencedIsForward = false;
-                WaitingForAttachmentsToDownload = false;
-                this.Update ();
-                oldBody.Delete ();
+            body.UpdateData ((FileStream stream) => {
+                outgoingMime.WriteTo (stream);
             });
+            ReferencedEmailId = 0;
+            ReferencedBodyIsIncluded = false;
+            ReferencedIsForward = false;
+            WaitingForAttachmentsToDownload = false;
+            this.Update ();
         }
 
         public void DeleteAttachments ()

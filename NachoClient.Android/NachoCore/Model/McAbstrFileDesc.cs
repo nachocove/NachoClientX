@@ -34,6 +34,11 @@ namespace NachoCore.Model
         [Indexed]
         public string DisplayName { get; set; }
 
+        /// The delegate type that will be used to write the contents of a McAbstrFileDesc.
+        /// The stream passed to the delegate can be used to write directly to the
+        /// McAbstrFileDesc's underlying file.
+        public delegate void WriteFileDelegate (FileStream stream);
+
         public virtual string GetFilePathSegment ()
         {
             // Pseudo-abstract.
@@ -69,11 +74,6 @@ namespace NachoCore.Model
             Complete,
         }
 
-        public FileStream SaveFileStream ()
-        {
-            return File.OpenWrite (GetFilePath ());
-        }
-
         private string DirPath ()
         {
             return Path.Combine (NcModel.Instance.GetFileDirPath (AccountId, GetFilePathSegment ()), Id.ToString ());
@@ -104,6 +104,15 @@ namespace NachoCore.Model
             UpdateSaveFinish ();
         }
 
+        protected void CompleteInsertFile (WriteFileDelegate writer)
+        {
+            Prep ();
+            using (var stream = File.OpenWrite (GetFilePath ())) {
+                writer (stream);
+            }
+            UpdateSaveFinish ();
+        }
+
         protected void CompleteInsertDuplicate (McAbstrFileDesc srcDesc)
         {
             Prep ();
@@ -122,29 +131,27 @@ namespace NachoCore.Model
             // See if we can make a legit LocalFileName. If we can't, leave it null.
             var tmp = NcModel.Instance.TmpPath (AccountId);
             Directory.CreateDirectory (tmp);
-            var justName = displayName.SantizeFileName ();
-            var target = Path.Combine (tmp, justName);
             try {
-                // Test to see if sanitized display name will work as a file name.
-                using (var dummy1 = File.OpenWrite (target)) {
-                    LocalFileName = justName;
-                    Directory.Delete (tmp, true);
-                }
-            } catch {
-                // Try adding appropriate extension to id, and see if that works as a file name.
-                var ext = Path.GetExtension (DisplayName);
-                if (null != ext) {
-                    var idExt = Id.ToString () + ext;
-                    target = Path.Combine (tmp, idExt);
-                    try {
+                var justName = displayName.SantizeFileName ();
+                var target = Path.Combine (tmp, justName);
+                try {
+                    // Test to see if sanitized display name will work as a file name.
+                    using (var dummy1 = File.OpenWrite (target)) {
+                        LocalFileName = justName;
+                    }
+                } catch {
+                    // Try adding appropriate extension to id, and see if that works as a file name.
+                    var ext = Path.GetExtension (DisplayName);
+                    if (null != ext) {
+                        var idExt = Id.ToString () + ext;
+                        target = Path.Combine (tmp, idExt);
                         using (var dummy2 = File.OpenWrite (target)) {
                             LocalFileName = idExt;
-                            Directory.Delete (tmp, true);
                         }
-                    } catch {
-                        Directory.Delete (tmp, true);
                     }
                 }
+            } finally {
+                Directory.Delete (tmp, true);
             }
             // If there is a pre-existing file, move it to where it needs to be.
             if (null != oldPath && File.Exists (oldPath)) {
@@ -198,28 +205,47 @@ namespace NachoCore.Model
             Update ();
         }
 
+        /// Replace the contents of this McAbstrFileDesc with the given string.
         public void UpdateData (string content)
         {
-            File.WriteAllText (GetFilePath (), content);
-            UpdateSaveFinish ();
+            var tmp = NcModel.Instance.TmpPath (AccountId);
+            File.WriteAllText (tmp, content);
+            ReplaceFile (tmp);
         }
 
+        /// Replace the contents of this McAbstrFileDesc with the given bytes.
         public void UpdateData (byte[] content)
         {
-            File.WriteAllBytes (GetFilePath (), content);
-            UpdateSaveFinish ();
+            var tmp = NcModel.Instance.TmpPath (AccountId);
+            File.WriteAllBytes (tmp, content);
+            ReplaceFile (tmp);
         }
 
+        /// Replace the contents of this McAbstrFileDesc with whatever the delegate
+        /// writes to the stream passed to it.
+        public void UpdateData (WriteFileDelegate writer)
+        {
+            var tmp = NcModel.Instance.TmpPath (AccountId);
+            using (var stream = File.OpenWrite (tmp)) {
+                writer (stream);
+            }
+            ReplaceFile (tmp);
+        }
+
+        /// Replace the contents of this McAbstrFileDesc with a copy of the given file.
         public void UpdateFileCopy (string srcPath)
         {
-            File.Copy (srcPath, GetFilePath ());
-            UpdateSaveFinish ();           
+            var tmp = NcModel.Instance.TmpPath (AccountId);
+            File.Copy (srcPath, tmp);
+            ReplaceFile (tmp);
         }
 
+        /// Replace the contents of this McAbstrFileDesc with the given file. The file
+        /// will be moved into the file store area and will no longer exist at the
+        /// given location.
         public void UpdateFileMove (string srcPath)
         {
-            File.Move (srcPath, GetFilePath ());
-            UpdateSaveFinish ();           
+            ReplaceFile (srcPath);
         }
 
         /// Gets the contents as a string.
@@ -230,6 +256,7 @@ namespace NachoCore.Model
         {
             return File.ReadAllText (GetFilePath ());
         }
+
         /// <summary>
         /// Gets the contents as a byte array.
         /// Not callable on Instance.
@@ -262,6 +289,25 @@ namespace NachoCore.Model
             } catch (Exception ex) {
                 Log.Error (Log.LOG_DB, "McAbstrFileDesc: Exception trying to delete file: {0}", ex);
             }
+        }
+
+        private void ReplaceFile (string newFile)
+        {
+            var tmp = NcModel.Instance.TmpPath (AccountId);
+            var filePath = GetFilePath ();
+            if (File.Exists (filePath)) {
+                File.Move (filePath, tmp); // Shouldn't fail, since destination shouldn't exist
+            }
+            File.Move (newFile, filePath); // Shouldn't fail, since we just made sure the destination doesn't exist
+            if (File.Exists (tmp)) {
+                try {
+                    File.Delete (tmp); // This can fail if the file is in use.
+                } catch (Exception ex) {
+                    Log.Error (Log.LOG_DB, "McAbstrFileDesc: Exception trying to delete file: {0}", ex);
+                    // Leave the file there. It will get cleaned up when the temporary files are cleaned up.
+                }
+            }
+            UpdateSaveFinish ();
         }
     }
 }
