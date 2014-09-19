@@ -26,8 +26,6 @@ namespace NachoCore.Model
             // We are not using generic or journal.
             Journal = 101,
             Generic = 102,
-            Exception = 103,
-            MeetingRequest = 104,
         };
 
         [Indexed]
