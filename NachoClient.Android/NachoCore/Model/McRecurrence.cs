@@ -77,7 +77,7 @@ namespace NachoCore.Model
             // Need this for LINQ.
         }
 
-        public McRecurrence (int accountId)
+        public McRecurrence (int accountId) : this ()
         {
             AccountId = accountId;
         }

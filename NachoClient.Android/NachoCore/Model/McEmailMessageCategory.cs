@@ -22,10 +22,8 @@ namespace NachoCore.Model
             Name = null;
         }
 
-        public McEmailMessageCategory (int accountId, string name, int parentId)
+        public McEmailMessageCategory (int accountId, string name, int parentId) : this (accountId, name)
         {
-            AccountId = accountId;
-            Name = name;
             ParentId = parentId;
         }
 

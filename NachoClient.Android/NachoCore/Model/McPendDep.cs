@@ -15,7 +15,7 @@ namespace NachoCore.Model
         {
         }
 
-        public McPendDep (int accountId, int predId, int succId)
+        public McPendDep (int accountId, int predId, int succId) : this ()
         {
             AccountId = accountId;
             PredId = predId;
