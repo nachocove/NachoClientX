@@ -355,9 +355,10 @@ namespace NachoCore.Model
             return l;
         }
 
-        public void AddDateAttribute (string name, string label, DateTime value)
+        public void AddDateAttribute (int accountId, string name, string label, DateTime value)
         {
             var f = new McContactDateAttribute ();
+            f.AccountId = accountId;
             f.Name = name;
             f.Label = label;
             f.Value = value;
@@ -365,9 +366,10 @@ namespace NachoCore.Model
             Dates.Add (f);
         }
 
-        public void AddAddressAttribute (string name, string label, McContactAddressAttribute value)
+        public void AddAddressAttribute (int accountId, string name, string label, McContactAddressAttribute value)
         {
             var f = new McContactAddressAttribute ();
+            f.AccountId = accountId;
             f.Name = name;
             f.Label = label;
             f.Street = value.Street;
@@ -379,9 +381,10 @@ namespace NachoCore.Model
             Addresses.Add (f);
         }
 
-        public void AddEmailAddressAttribute (string name, string label, string value)
+        public void AddEmailAddressAttribute (int accountId, string name, string label, string value)
         {
             var f = new McContactEmailAddressAttribute ();
+            f.AccountId = accountId;
             f.Name = name;
             f.Label = label;
             f.Value = value;
@@ -393,9 +396,10 @@ namespace NachoCore.Model
             EmailAddresses.Add (f);
         }
 
-        protected void AddStringAttribute (ref List<McContactStringAttribute> list, McContactStringType type, string name, string label, string value)
+        protected void AddStringAttribute (ref List<McContactStringAttribute> list, int accountId, McContactStringType type, string name, string label, string value)
         {
             var f = new McContactStringAttribute ();
+            f.AccountId = accountId;
             f.Name = name;
             f.Type = type;
             f.Label = label;
@@ -404,37 +408,37 @@ namespace NachoCore.Model
             list.Add (f);
         }
 
-        public void AddPhoneNumberAttribute (string name, string label, string value)
+        public void AddPhoneNumberAttribute (int accountId, string name, string label, string value)
         {
             ReadAncillaryData ();
-            AddStringAttribute (ref DbPhoneNumbers, McContactStringType.PhoneNumber, name, label, value);
+            AddStringAttribute (ref DbPhoneNumbers, accountId, McContactStringType.PhoneNumber, name, label, value);
         }
 
-        public void AddOrUpdatePhoneNumberAttribute (string name, string label, string value)
+        public void AddOrUpdatePhoneNumberAttribute (int accountId, string name, string label, string value)
         {
             ReadAncillaryData ();
-            AddOrUpdateStringAttribute (ref DbPhoneNumbers, McContactStringType.PhoneNumber, name, label, value);
+            AddOrUpdateStringAttribute (ref DbPhoneNumbers, accountId, McContactStringType.PhoneNumber, name, label, value);
         }
 
-        public void AddIMAddressAttribute (string name, string label, string value)
+        public void AddIMAddressAttribute (int accountId, string name, string label, string value)
         {
             ReadAncillaryData ();
-            AddStringAttribute (ref DbIMAddresses, McContactStringType.IMAddress, name, label, value);
+            AddStringAttribute (ref DbIMAddresses, accountId, McContactStringType.IMAddress, name, label, value);
         }
 
-        public void AddRelationshipAttribute (string name, string label, string value)
+        public void AddRelationshipAttribute (int accountId, string name, string label, string value)
         {
             ReadAncillaryData ();
-            AddStringAttribute (ref DbRelationships, McContactStringType.Relationship, name, label, value);
+            AddStringAttribute (ref DbRelationships, accountId, McContactStringType.Relationship, name, label, value);
         }
 
-        public void AddCategoryAttribute (string name)
+        public void AddCategoryAttribute (int accountId, string name)
         {
             ReadAncillaryData ();
-            AddStringAttribute (ref DbCategories, McContactStringType.Category, name, null, null);
+            AddStringAttribute (ref DbCategories, accountId, McContactStringType.Category, name, null, null);
         }
 
-        protected void AddOrUpdateStringAttribute (ref List<McContactStringAttribute> list, McContactStringType type, string name, string label, string value)
+        protected void AddOrUpdateStringAttribute (ref List<McContactStringAttribute> list, int accountId, McContactStringType type, string name, string label, string value)
         {
             var existing = list.Where (attr => attr.Type.Equals (type) && attr.Name.Equals (name)).SingleOrDefault ();
             if (null != existing) {
@@ -442,6 +446,7 @@ namespace NachoCore.Model
                 existing.Value = value;
             } else {
                 var newbie = new McContactStringAttribute ();
+                newbie.AccountId = accountId;
                 newbie.Name = name;
                 newbie.Type = type;
                 newbie.Label = label;
@@ -451,7 +456,7 @@ namespace NachoCore.Model
             }
         }
 
-        public void AddOrUpdateEmailAddressAttribute (string name, string label, string value)
+        public void AddOrUpdateEmailAddressAttribute (int accountId, string name, string label, string value)
         {
             ReadAncillaryData ();
             var f = EmailAddresses.Where (attr => attr.Name.Equals (name)).SingleOrDefault ();
@@ -460,6 +465,7 @@ namespace NachoCore.Model
                 f.Value = value;
             } else {
                 f = new McContactEmailAddressAttribute ();
+                f.AccountId = accountId;
                 f.Name = name;
                 f.Label = label;
                 f.Value = value;
@@ -609,7 +615,7 @@ namespace NachoCore.Model
                     break;
 
                 case Xml.Gal.EmailAddress:
-                    AddOrUpdateEmailAddressAttribute (Xml.Contacts.Email1Address, null, prop.Value);
+                    AddOrUpdateEmailAddressAttribute (AccountId, Xml.Contacts.Email1Address, null, prop.Value);
                     break;
 
                 case Xml.Gal.FirstName:
@@ -617,7 +623,7 @@ namespace NachoCore.Model
                     break;
 
                 case Xml.Gal.HomePhone:
-                    AddOrUpdatePhoneNumberAttribute (Xml.Contacts.HomePhoneNumber, null, prop.Value);
+                    AddOrUpdatePhoneNumberAttribute (AccountId, Xml.Contacts.HomePhoneNumber, null, prop.Value);
                     break;
 
                 case Xml.Gal.LastName:
@@ -625,7 +631,7 @@ namespace NachoCore.Model
                     break;
 
                 case Xml.Gal.MobilePhone:
-                    AddOrUpdatePhoneNumberAttribute (Xml.Contacts.MobilePhoneNumber, null, prop.Value);
+                    AddOrUpdatePhoneNumberAttribute (AccountId, Xml.Contacts.MobilePhoneNumber, null, prop.Value);
                     break;
                 
                 case Xml.Gal.Office:
@@ -633,7 +639,7 @@ namespace NachoCore.Model
                     break;
 
                 case Xml.Gal.Phone:
-                    AddOrUpdatePhoneNumberAttribute (Xml.Contacts.BusinessPhoneNumber, null, prop.Value);
+                    AddOrUpdatePhoneNumberAttribute (AccountId, Xml.Contacts.BusinessPhoneNumber, null, prop.Value);
                     break;
 
                 case Xml.Gal.Picture:
@@ -1089,7 +1095,7 @@ namespace NachoCore.Model
 
         public static McContact QueryByDeviceUniqueId (string deviceUniqueId)
         {
-            var account = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Device).Single ();
+            var account = McAccount.GetDeviceAccount ();
             return NcModel.Instance.Db.Table<McContact> ().Where (x => 
                 x.DeviceUniqueId == deviceUniqueId &&
             x.AccountId == account.Id

@@ -10,9 +10,9 @@ namespace NachoCore.Model
     /// A calendar entry can have one or more
     /// recurrence records associated with it.
     /// </summary>
-    public class McRecurrence : McAbstrObject
+    public class McRecurrence : McAbstrObjectPerAcc
     {
-        // FIXME - replace XxxId with a join table.
+        // FIXME - replace XxxId with a join (map?) table.
 
         /// Recurrence.  Calendar only.
 
@@ -71,6 +71,16 @@ namespace NachoCore.Model
 
         /// Required for Task.
         public DateTime Start { get; set; }
+
+        public McRecurrence ()
+        {
+            // Need this for LINQ.
+        }
+
+        public McRecurrence (int accountId) : this ()
+        {
+            AccountId = accountId;
+        }
 
         public static McRecurrence QueryByTaskId (int taskId)
         {

@@ -19,7 +19,7 @@ namespace NachoClient.iOS
         static public void SetFirstSyncCompleted (int accountId, bool toWhat)
         {
             NcAssert.True (GetCurrentAccountId() == accountId);
-            McMutables.SetBool ("hasSyncedFolders", accountId.ToString (), toWhat);
+            McMutables.SetBool (accountId, "hasSyncedFolders", accountId.ToString (), toWhat);
         }
 
         //Gets the status of the sync bit for given accountId
@@ -28,14 +28,15 @@ namespace NachoClient.iOS
         static public bool HasFirstSyncCompleted(int accountId)
         {
             NcAssert.True (GetCurrentAccountId() == accountId);
-            return McMutables.GetOrCreateBool("hasSyncedFolders", accountId.ToString (), false);
+            return McMutables.GetOrCreateBool(accountId, "hasSyncedFolders", accountId.ToString (), false);
         }
 
         //Sets the status of the tutorial bit for given accountId
         static public void SetHasViewedTutorial (int accountId, bool toWhat)
         {
             NcAssert.True (GetCurrentAccountId() == accountId);
-            McMutables.SetBool ("hasViewedTutorial", accountId.ToString (), toWhat);
+            // TODO: should this really be per-account or once for all accounts?
+            McMutables.SetBool (accountId, "hasViewedTutorial", accountId.ToString (), toWhat);
         }
 
         //Gets the status of the tutorial bit for given accountId
@@ -44,14 +45,14 @@ namespace NachoClient.iOS
         static public bool HasViewedTutorial(int accountId)
         {
             NcAssert.True (GetCurrentAccountId() == accountId);
-            return McMutables.GetOrCreateBool("hasViewedTutorial", accountId.ToString (), false);
+            return McMutables.GetOrCreateBool(accountId, "hasViewedTutorial", accountId.ToString (), false);
         }
 
         //Sets the status of the creds bit for given accountId
         static public void SetHasProvidedCreds (int accountId, bool toWhat)
         {
             NcAssert.True (GetCurrentAccountId() == accountId);
-            McMutables.SetBool ("hasProvidedCreds", accountId.ToString (), toWhat);
+            McMutables.SetBool (accountId, "hasProvidedCreds", accountId.ToString (), toWhat);
         }
 
         //Gets the status of the creds bit for given accountId
@@ -60,7 +61,7 @@ namespace NachoClient.iOS
         static public bool HasProvidedCreds(int accountId)
         {
             NcAssert.True (GetCurrentAccountId() == accountId);
-            return McMutables.GetOrCreateBool("hasProvidedCreds", accountId.ToString (), false);
+            return McMutables.GetOrCreateBool(accountId, "hasProvidedCreds", accountId.ToString (), false);
         }
 
         static public int GetCurrentAccountId()
@@ -82,5 +83,3 @@ namespace NachoClient.iOS
         }
     }
 }
-
-

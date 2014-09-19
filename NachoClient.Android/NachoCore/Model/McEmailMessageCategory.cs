@@ -5,7 +5,7 @@ using SQLite;
 
 namespace NachoCore.Model
 {
-    public partial class McEmailMessageCategory : McAbstrObject
+    public partial class McEmailMessageCategory : McAbstrObjectPerAcc
     {
         /// Parent Calendar or Exception item index.
         [Indexed]
@@ -22,14 +22,14 @@ namespace NachoCore.Model
             Name = null;
         }
 
-        public McEmailMessageCategory (string name, int parentId)
+        public McEmailMessageCategory (int accountId, string name, int parentId) : this (accountId, name)
         {
-            Name = name;
             ParentId = parentId;
         }
 
-        public McEmailMessageCategory (string name) : this ()
+        public McEmailMessageCategory (int accountId, string name) : this ()
         {
+            AccountId = accountId;
             Name = name;
         }
 

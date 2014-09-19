@@ -238,37 +238,6 @@ namespace NachoCore.ActiveSync
         }
 
         /// <summary>
-        /// Parses a time zone string.
-        /// </summary>
-        /// <returns>The time zone record.</returns>
-        /// <param name="encodedTimeZone">Encoded time zone.</param>
-        // TODO: The bias fields of the timezone
-        public McTimeZone ParseAsTimeZone (string encodedTimeZone)
-        {
-            // Convert the Base64 UUEncoded input into binary output. 
-            byte[] binaryData;
-            try {
-                binaryData = System.Convert.FromBase64String (encodedTimeZone);
-            } catch (System.ArgumentNullException) {
-                Log.Warn (Log.LOG_AS, "Encoded TimeZone string is null.");
-                return null;
-            } catch (System.FormatException) {
-                Log.Warn (Log.LOG_AS, "Encoded TimeZone string length is not 4 or is not an even multiple of 4.");
-                return null;
-            }
-            if (binaryData.Length != (4 + 64 + 16 + 4 + 64 + 16 + 4)) {
-                Log.Warn (Log.LOG_AS, "Decoded TimeZone string length is wrong: " + binaryData.Length.ToString ());
-                return null;
-            }
-            string StandardName = ExtractStringFromAsTimeZone (binaryData, 4, 64);
-            string DaylightName = ExtractStringFromAsTimeZone (binaryData, 4 + 64 + 16 + 4, 64);
-            McTimeZone tz = new McTimeZone ();
-            tz.StandardName = StandardName;
-            tz.DaylightName = DaylightName;
-            return tz;     
-        }
-
-        /// <summary>
         /// Extracts a string field from a TimeZone record.
         /// The value of this field is an array of 32 WCHARs
         /// Any unused WCHARs in the array MUST be set to 0x0000.
@@ -294,7 +263,7 @@ namespace NachoCore.ActiveSync
         /// </returns>
         // TODO: Handle missing name & email better
         // TODO: Make sure we don't have extra fields
-        public List<McAttendee> ParseAttendees (XNamespace ns, XElement attendees)
+        public List<McAttendee> ParseAttendees (int accountId, XNamespace ns, XElement attendees)
         {
             NcAssert.True (null != attendees);
             NcAssert.True (attendees.Name.LocalName.Equals (Xml.Calendar.Calendar_Attendees));
@@ -326,7 +295,7 @@ namespace NachoCore.ActiveSync
                     type = typeElement.Value.ToEnum<NcAttendeeType> ();
                 }
 
-                var a = new McAttendee (name, email, type, status);
+                var a = new McAttendee (accountId, name, email, type, status);
                 list.Add (a);
             }
             return list;
@@ -335,7 +304,7 @@ namespace NachoCore.ActiveSync
         /// <returns>
         /// A list of categories not yet associated with an NcCalendar or NcException. Not null.
         /// </returns>
-        public List<McCalendarCategory> ParseCategories (XNamespace ns, XElement categories)
+        public List<McCalendarCategory> ParseCategories (int accountId, XNamespace ns, XElement categories)
         {
             NcAssert.True (null != categories);
             NcAssert.True (categories.Name.LocalName.Equals (Xml.Calendar.Calendar_Categories));
@@ -344,13 +313,13 @@ namespace NachoCore.ActiveSync
 
             foreach (var category in categories.Elements()) {
                 NcAssert.True (category.Name.LocalName.Equals (Xml.Calendar.Categories.Category));
-                var n = new McCalendarCategory (category.Value);
+                var n = new McCalendarCategory (accountId, category.Value);
                 list.Add (n);
             }
             return list;
         }
 
-        public static List<McEmailMessageCategory> ParseEmailCategories (XNamespace ns, XElement categories)
+        public static List<McEmailMessageCategory> ParseEmailCategories (int accountId, XNamespace ns, XElement categories)
         {
             var list = new List<McEmailMessageCategory> ();
             if (categories.Elements ().Count () != 0) {
@@ -360,7 +329,7 @@ namespace NachoCore.ActiveSync
 
                 foreach (var category in categories.Elements()) {
                     NcAssert.True (category.Name.LocalName.Equals (Xml.Email.Category));
-                    var n = new McEmailMessageCategory (category.Value);
+                    var n = new McEmailMessageCategory (accountId, category.Value);
                     list.Add (n);
                 }
             }
@@ -373,13 +342,12 @@ namespace NachoCore.ActiveSync
         /// <returns>The recurrence record</returns>
         /// <param name="ns">XML namespace to use to fetch elements</param>
         /// <param name="recurrence">Recurrence element</param>
-        public McRecurrence ParseRecurrence (XNamespace ns, XElement recurrence, string LocalName)
+        public McRecurrence ParseRecurrence (int accountId, XNamespace ns, XElement recurrence, string LocalName)
         {
             NcAssert.True (null != recurrence);
             NcAssert.True (recurrence.Name.LocalName.Equals (LocalName));
 
-            var r = new McRecurrence ();
-
+            var r = new McRecurrence (accountId);
             foreach (var child in recurrence.Elements()) {
                 switch (child.Name.LocalName) {
                 // Note: LocalNames and values are the same in the Calendar and Task namespaces.
@@ -445,7 +413,7 @@ namespace NachoCore.ActiveSync
                     switch (child.Name.LocalName) {
                     // Containers
                     case Xml.Calendar.Exception.Attendees:
-                        var attendees = ParseAttendees (ns, child);
+                        var attendees = ParseAttendees (accountId, ns, child);
                         if (null == e.attendees) {
                             e.attendees = attendees;
                         } else {
@@ -453,7 +421,7 @@ namespace NachoCore.ActiveSync
                         }
                         break;
                     case Xml.Calendar.Exception.Categories:
-                        var categories = ParseCategories (ns, child);
+                        var categories = ParseCategories (accountId, ns, child);
                         if (null == e.categories) {
                             e.categories = categories;
                         } else {
@@ -557,11 +525,11 @@ namespace NachoCore.ActiveSync
                 switch (child.Name.LocalName) {
                 // Containers
                 case Xml.Calendar.Calendar_Attendees:
-                    var attendees = ParseAttendees (nsCalendar, child);
+                    var attendees = ParseAttendees (accountId, nsCalendar, child);
                     c.attendees.AddRange (attendees);
                     break;
                 case Xml.Calendar.Calendar_Categories:
-                    var categories = ParseCategories (nsCalendar, child);
+                    var categories = ParseCategories (accountId, nsCalendar, child);
                     c.categories.AddRange (categories);
                     break;
                 case Xml.Calendar.Calendar_Exceptions:
@@ -569,7 +537,7 @@ namespace NachoCore.ActiveSync
                     c.exceptions.AddRange (exceptions);
                     break;
                 case Xml.Calendar.Calendar_Recurrence:
-                    var recurrence = ParseRecurrence (nsCalendar, child, Xml.Calendar.Calendar_Recurrence);
+                    var recurrence = ParseRecurrence (accountId, nsCalendar, child, Xml.Calendar.Calendar_Recurrence);
                     c.recurrences.Add (recurrence);
                     break;
                 case Xml.AirSyncBase.Body:
@@ -852,7 +820,7 @@ namespace NachoCore.ActiveSync
                     emailMessage.ContentClass = child.Value;
                     break;
                 case Xml.Email.Categories:
-                    var categories = AsHelpers.ParseEmailCategories (nsEmail, child);
+                    var categories = AsHelpers.ParseEmailCategories (folder.AccountId, nsEmail, child);
                     if (0 == emailMessage.Categories.Count) {
                         emailMessage.Categories = categories;
                     } else {
@@ -890,7 +858,7 @@ namespace NachoCore.ActiveSync
                             case Xml.Email.Recurrences:
                                 if (meetingRequestPart.HasElements) {
                                     foreach (var recurrencePart in meetingRequestPart.Elements()) {
-                                        var recurrence = ParseRecurrence (nsEmail, recurrencePart, Xml.Email.Recurrence);
+                                        var recurrence = ParseRecurrence (folder.AccountId, nsEmail, recurrencePart, Xml.Email.Recurrence);
                                         e.recurrences.Add (recurrence);
                                     }
                                 }

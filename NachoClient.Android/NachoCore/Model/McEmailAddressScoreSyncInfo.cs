@@ -6,7 +6,7 @@ using NachoCore.Brain;
 
 namespace NachoCore.Model
 {
-    public class McEmailAddressScoreSyncInfo : McAbstrObject 
+    public class McEmailAddressScoreSyncInfo : McAbstrObjectPerAcc
     {
         // Id of the corresponding McEmailAddress
         [Indexed]

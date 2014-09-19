@@ -136,24 +136,6 @@ namespace Test.Common
             BadDateTime ("2013-11-23T19:02:43.1234Z");
         }
 
-        public void GoodTimeZone (string encodedTimeZone, string targetStandardName, string targetDaylightName)
-        {
-            var t = c.ParseAsTimeZone (encodedTimeZone);
-            Assert.IsNotNull (t);
-            Assert.IsNotNull (t.StandardName);
-            Assert.IsNotNull (t.DaylightName);
-            Assert.IsTrue (t.StandardName.Length > 0);
-            Assert.IsTrue (t.DaylightName.Length > 0);
-            Assert.IsTrue (t.StandardName.Equals (targetStandardName));
-            Assert.IsTrue (t.DaylightName.Equals (targetDaylightName));
-        }
-
-        public void BadTimeZone (string encodedTimeZone)
-        {
-            var t = c.ParseAsTimeZone (encodedTimeZone);
-            Assert.IsNull (t);
-        }
-
         public void GoodExtractStringFromTimeZone (string s)
         {
             byte[] b = new byte[64];
@@ -162,25 +144,6 @@ namespace Test.Common
             System.Buffer.BlockCopy (s.ToCharArray (), 0, b, 0, l);
             var e = c.ExtractStringFromAsTimeZone (b, 0, l);
             Assert.IsTrue (s.Equals (e));
-        }
-
-        [Test]
-        public void TimeZoneParsing ()
-        {
-            string s;
-            s = "LAEAAEUAUwBUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAsAAAABAAIAAAAAAAAAAAAAAEUARABUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAAAACAAIAAAAAAAAAxP///w==";
-            GoodTimeZone (s, "EST", "EDT");
-            s = "4AEAAFAAYQBjAGkAZgBpAGMAIABTAHQAYQBuAGQAYQByAGQAIABUAGkAbQBlAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAsAAAABAAIAAAAAAAAAAAAAAFAAYQBjAGkAZgBpAGMAIABEAGEAeQBsAGkAZwBoAHQAIABUAGkAbQBlAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAAAACAAIAAAAAAAAAxP///w==";
-            GoodTimeZone (s, "Pacific Standard Time", "Pacific Daylight Time");
-            BadTimeZone (null);
-            BadTimeZone ("");
-            BadTimeZone ("A");
-            BadTimeZone ("AAAA");
-            s = "abcdefghijklmnopqrstuvwxyz012345";
-            for (int i = 1; i <= s.Length; i++) {
-                GoodExtractStringFromTimeZone (s.Substring (0, i));
-            }
-            GoodExtractStringFromTimeZone ("");
         }
 
         [Test]
@@ -200,7 +163,7 @@ namespace Test.Common
         [Test]
         public void CalendarCategories ()
         {
-            var c01 = new McCalendarCategory ("test");
+            var c01 = new McCalendarCategory (1, "test");
             c01.ParentId = 5;
             c01.ParentType = McCalendarCategory.CALENDAR;
             c01.Insert ();
@@ -230,10 +193,10 @@ namespace Test.Common
             Assert.AreEqual (c05.ParentId, 5);
             Assert.AreEqual (c05.Name, "changed");
 
-            var c06 = new McCalendarCategory ("second");
+            var c06 = new McCalendarCategory (1, "second");
             c06.ParentId = 5;
             c06.Insert ();
-            var c07 = new McCalendarCategory ("do not see");
+            var c07 = new McCalendarCategory (1, "do not see");
             c07.ParentId = 6;
             c07.Insert ();
 
@@ -250,7 +213,7 @@ namespace Test.Common
         [Test]
         public void CalendarAttendee ()
         {
-            var c01 = new McAttendee ("Steve", "rascal2210@hotmail.com");
+            var c01 = new McAttendee (1, "Steve", "rascal2210@hotmail.com");
             c01.ParentId = 5;
             c01.Insert ();
 
@@ -290,10 +253,10 @@ namespace Test.Common
             Assert.AreEqual (c05a.Email, "steves@nachocove.com");
 
 
-            var c06 = new McAttendee ("Chris", "chrisp@nachocove.com");
+            var c06 = new McAttendee (1, "Chris", "chrisp@nachocove.com");
             c06.ParentId = 5;
             c06.Insert ();
-            var c07 = new McAttendee ("Jeff", "jeffe@nachocove.com");
+            var c07 = new McAttendee (1, "Jeff", "jeffe@nachocove.com");
             c07.ParentId = 6;
             c07.Insert ();
 
@@ -305,46 +268,6 @@ namespace Test.Common
                 Assert.IsTrue (c.Name.Equals ("Steve") || c.Name.Equals ("Chris"));
             }
 
-        }
-
-        [Test]
-        public void CalendarTimezoneDB ()
-        {
-            McTimeZone t01 = new McTimeZone ();
-            t01.Bias = 10;
-            t01.DaylightBias = 11;
-            t01.StandardBias = 12;
-            t01.DaylightDate = new DateTime (2013, 1, 1, 1, 1, 1, 111);
-            t01.StandardDate = new DateTime (1013, 1, 1, 1, 1, 1, 222);
-            t01.DaylightName = "Daylight Name 10";
-            t01.StandardName = "Standard Name 10";
-            t01.Insert ();
-
-            McTimeZone t02 = new McTimeZone ();
-            t02.Bias = 20;
-            t02.DaylightBias = 21;
-            t02.StandardBias = 22;
-            t02.DaylightDate = new DateTime (2013, 2, 1, 1, 1, 1, 111);
-            t02.StandardDate = new DateTime (2013, 2, 2, 2, 2, 2, 222);
-            t02.DaylightName = "Daylight Name 20";
-            t02.StandardName = "Standard Name 20";
-            t02.Insert ();
-
-            Assert.AreEqual (NcModel.Instance.Db.Table<McTimeZone> ().Count (), 2);
-
-            McTimeZone t03 = NcModel.Instance.Db.Get<McTimeZone> (x => x.Id == 2);
-            Assert.AreEqual (t03.StandardName, "Standard Name 20");
-            Assert.AreEqual (t03.StandardDate, new DateTime (2013, 2, 2, 2, 2, 2, 222));
-
-            t03.DaylightName = "New Daylight Name 20";
-            t03.DaylightDate = new DateTime (2013, 2, 1, 1, 1, 1, 222);
-            t03.Update ();
-
-            Assert.AreEqual (NcModel.Instance.Db.Table<McTimeZone> ().Count (), 2);
-
-            McTimeZone t04 = NcModel.Instance.Db.Get<McTimeZone> (x => x.Id == 2);
-            Assert.AreEqual (t04.DaylightName, "New Daylight Name 20");
-            Assert.AreEqual (t04.DaylightDate, new DateTime (2013, 2, 1, 1, 1, 1, 222));
         }
 
         [Test]
@@ -511,20 +434,20 @@ namespace Test.Common
 
             if (type.Equals ("attendees")) {
                 List<McAttendee> attendees = new List<McAttendee> ();
-                attendees.Add (new McAttendee ("Bob", "bob@foo.com"));
-                attendees.Add (new McAttendee ("Joe", "joe@foo.com"));
+                attendees.Add (new McAttendee (1, "Bob", "bob@foo.com"));
+                attendees.Add (new McAttendee (1, "Joe", "joe@foo.com"));
                 c.attendees = attendees;
             }
             if (type.Equals ("categories")) {
                 List<McCalendarCategory> categories = new List<McCalendarCategory> ();
-                categories.Add (new McCalendarCategory ("red"));
-                categories.Add (new McCalendarCategory ("blue"));
+                categories.Add (new McCalendarCategory (1, "red"));
+                categories.Add (new McCalendarCategory (1, "blue"));
                 c.categories = categories;
             }
             if (type.Equals ("recurs")) {
                 List<McRecurrence> recurrences = new List<McRecurrence> ();
-                recurrences.Add (new McRecurrence ());
-                recurrences.Add (new McRecurrence ());
+                recurrences.Add (new McRecurrence (1));
+                recurrences.Add (new McRecurrence (1));
                 c.recurrences = recurrences;
             }
             if (type.Equals ("exceptions")) {
@@ -563,7 +486,7 @@ namespace Test.Common
             var c = InsertSimpleEvent ("attendees");
 
             var attendees = c.attendees;
-            attendees.Add (new McAttendee ("Harry", "harry@foo.com"));
+            attendees.Add (new McAttendee (1, "Harry", "harry@foo.com"));
             c.attendees = attendees;
             c.Update ();
             var f = McCalendar.QueryById<McCalendar> (c.Id);
@@ -605,7 +528,7 @@ namespace Test.Common
             var c = InsertSimpleEvent ("categories");
 
             var categories = c.categories;
-            categories.Add (new McCalendarCategory ("green"));
+            categories.Add (new McCalendarCategory (1, "green"));
             c.categories = categories;
             c.Update ();
             var f = McCalendar.QueryById<McCalendar> (c.Id);
@@ -648,7 +571,7 @@ namespace Test.Common
             var c = InsertSimpleEvent ("recurs");
 
             var recurrences = c.recurrences;
-            recurrences.Add (new McRecurrence ());
+            recurrences.Add (new McRecurrence (1));
             c.recurrences = recurrences;
             c.Update ();
             var f = McCalendar.QueryById<McCalendar> (c.Id);

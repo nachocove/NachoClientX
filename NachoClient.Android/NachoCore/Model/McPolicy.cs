@@ -5,7 +5,7 @@ using NachoCore.ActiveSync;
 
 namespace NachoCore.Model
 {
-    public class McPolicy : McAbstrObject
+    public class McPolicy : McAbstrObjectPerAcc
     {
         public enum AllowBluetoothValue : uint
         {
@@ -13,8 +13,8 @@ namespace NachoCore.Model
             Disallow = Min,
             AllowOnlyHandsFree = 1,
             Allow = 2,
-            Max = Allow}
-        ;
+            Max = Allow,
+        };
 
         public uint AllowBluetooth { get; set; }
 

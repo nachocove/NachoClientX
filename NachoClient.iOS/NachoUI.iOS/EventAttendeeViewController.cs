@@ -338,6 +338,7 @@ namespace NachoClient.iOS
                 break;
             case NcEmailAddress.Action.create:
                 var attendee = new McAttendee ();
+                attendee.AccountId = account.Id;
                 attendee.Name = name;
                 attendee.Email = mailboxAddress.Address;
                 attendee.AttendeeType = NcEmailAddress.ToAttendeeType (address.kind);

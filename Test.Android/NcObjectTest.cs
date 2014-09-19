@@ -17,7 +17,7 @@ namespace Test.Common
             int r;
             McServer i = new McServer ();
             Assert.True (i.Id == 0);
-
+            i.AccountId = 1;
             r = i.Insert ();
             Assert.IsTrue (0 < r);
             Assert.True (1 == i.Id);

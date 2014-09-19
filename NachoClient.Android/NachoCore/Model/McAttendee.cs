@@ -13,7 +13,7 @@ namespace NachoCore.Model
     /// Each attendee record refers back to its Calendar record or
     /// exception record.
     /// </summary>
-    public partial class McAttendee : McAbstrObject
+    public partial class McAttendee : McAbstrObjectPerAcc
     {
         /// Parent Calendar or Exception item index.
         [Indexed]
@@ -55,8 +55,9 @@ namespace NachoCore.Model
             AttendeeStatus = NcAttendeeStatus.NotResponded;
         }
 
-        public McAttendee (string name, string email, NcAttendeeType type = NcAttendeeType.Unknown, NcAttendeeStatus status = NcAttendeeStatus.NotResponded)
+        public McAttendee (int accountId, string name, string email, NcAttendeeType type = NcAttendeeType.Unknown, NcAttendeeStatus status = NcAttendeeStatus.NotResponded)
         {
+            AccountId = accountId;
             Id = 0;
             ParentId = 0;
             ParentType = 0;

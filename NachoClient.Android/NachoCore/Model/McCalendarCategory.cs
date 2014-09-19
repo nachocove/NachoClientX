@@ -12,7 +12,7 @@ namespace NachoCore.Model
     /// The category table represents a collection of categories
     /// assigned to a calendar or exception item.
     /// </summary>
-    public partial class McCalendarCategory : McAbstrObject
+    public partial class McCalendarCategory : McAbstrObjectPerAcc
     {
         /// Parent Calendar or Exception item index.
         [Indexed]
@@ -36,8 +36,9 @@ namespace NachoCore.Model
             Name = null;
         }
 
-        public McCalendarCategory (string name) : this ()
+        public McCalendarCategory (int accountId, string name) : this ()
         {
+            AccountId = accountId;
             Name = name;
         }
 

@@ -732,22 +732,20 @@ namespace NachoCore.ActiveSync
         {
             // Hang our records off Account.
             NcModel.Instance.RunInTransaction (() => {
-                bool needUpdate = false;
                 var account = Account;
-                if (0 == account.PolicyId) {
-                    var policy = new McPolicy ();
+                var policy = McPolicy.QueryByAccountId<McPolicy> (account.Id).SingleOrDefault ();
+                if (null == policy) {
+                    policy = new McPolicy () {
+                        AccountId = account.Id,
+                    };
                     policy.Insert ();
-                    account.PolicyId = policy.Id;
-                    needUpdate = true;
                 }
-                if (0 == Account.ProtocolStateId) {
-                    var protocolState = new McProtocolState ();
+                var protocolState = McProtocolState.QueryByAccountId<McProtocolState> (account.Id).SingleOrDefault ();
+                if (null == protocolState) {
+                    protocolState = new McProtocolState () {
+                        AccountId = account.Id,
+                    };
                     protocolState.Insert ();
-                    account.ProtocolStateId = protocolState.Id;
-                    needUpdate = true;
-                }
-                if (needUpdate) {
-                    account.Update();
                 }
             });
 
@@ -832,7 +830,7 @@ namespace NachoCore.ActiveSync
             if (forceAutodiscovery) {
                 Sm.PostEvent ((uint)AsEvt.E.ReDisc, "ASPCURD");
             } else {
-                Server = NcModel.Instance.Db.Table<McServer> ().Single (rec => rec.Id == Account.ServerId);
+                Server = McServer.QueryByAccountId<McServer> (Account.Id).SingleOrDefault ();
                 Sm.PostEvent ((uint)CtlEvt.E.UiSetServConf, "ASPCUSSC");
             }
         }

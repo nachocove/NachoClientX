@@ -11,7 +11,7 @@ using NachoCore.ActiveSync;
 namespace NachoCore.Model
 {
     /// Used to create lists of name/value pairs
-    public class McAbstrContactAttribute : McAbstrObject
+    public class McAbstrContactAttribute : McAbstrObjectPerAcc
     {
         [Indexed]
         public Int64 ContactId { get; set; }

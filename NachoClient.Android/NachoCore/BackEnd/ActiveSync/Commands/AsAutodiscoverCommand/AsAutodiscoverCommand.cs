@@ -523,7 +523,7 @@ namespace NachoCore.ActiveSync
             AutoDSucceeded = true;
             var robot = (StepRobot)Sm.Arg;
             NcAssert.NotNull (robot);
-            ServerCandidate = McServer.Create (robot.SrServerUri);
+            ServerCandidate = McServer.Create (Account.Id, robot.SrServerUri);
             // Must shut down any remaining robots so they don't post events to TL SM.
             KillAllRobots ();
             // Must clear event Q for TL SM of anything a robot may have posted (threads).
@@ -568,7 +568,6 @@ namespace NachoCore.ActiveSync
                 } else {
                     var account = BEContext.Account;
                     ServerCandidate.Insert ();
-                    account.ServerId = ServerCandidate.Id;
                     account.Update ();
                 }
             });

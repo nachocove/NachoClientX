@@ -1,6 +1,7 @@
 ﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Linq;
 using NachoCore.ActiveSync;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -17,22 +18,23 @@ namespace Test.iOS
     {
         public const string TopFolderName = "Top-Level-Folder";
 
-        public static McAccount CreateAccount (int pcsId = 5)
+        public static McAccount CreateAccount ()
         {
             var account = new McAccount () {
                 EmailAddr = "johnd@foo.utopiasystems.net",
-                ServerId = 1,
-                ProtocolStateId = pcsId,
             };
             account.Insert ();
 
             return account;
         }
 
-        public static McProtocolState CreateProtocolState ()
+        public static McProtocolState CreateProtocolState (int accountId)
         {
-            McProtocolState pcs = new McProtocolState ();
-            pcs.Insert ();
+            McProtocolState pcs = new McProtocolState () {
+                AccountId = accountId,
+            };
+            NcAssert.True (null == McProtocolState.QueryByAccountId<McProtocolState> (accountId).SingleOrDefault ());
+            pcs.Insert (); 
 
             return pcs;
         }
@@ -42,8 +44,7 @@ namespace Test.iOS
             // clean static property
             MockOwner.Status = null;
 
-            var pcs = CreateProtocolState ();
-            CreateAccount (pcs.Id);
+            CreateAccount ();
             NcTask.StartService ();
 
             MockOwner mockOwner = new MockOwner ();
@@ -271,7 +272,10 @@ namespace Test.iOS
         public void SetUp ()
         {
             NcModel.Instance.Reset (System.IO.Path.GetTempFileName ());
-           
+            var deviceAccount = new McAccount () {
+                AccountType = McAccount.AccountTypeEnum.Device,
+            };
+            deviceAccount.Insert ();
             // turn off telemetry logging for tests
             LogSettings settings = Log.SharedInstance.Settings;
             settings.Error.DisableTelemetry ();

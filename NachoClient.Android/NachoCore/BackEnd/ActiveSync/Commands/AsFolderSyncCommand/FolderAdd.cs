@@ -2,6 +2,7 @@
 //
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using NachoCore.Model;
 using NachoCore.Utils;
 
@@ -78,7 +79,7 @@ namespace NachoCore.ActiveSync
             protected override void ApplyCommandToModel ()
             {
                 var account = McAccount.QueryById<McAccount> (AccountId);
-                var protocolState = McProtocolState.QueryById<McProtocolState> (account.ProtocolStateId);
+                var protocolState = McProtocolState.QueryByAccountId<McProtocolState> (account.Id).SingleOrDefault ();
                 var folderSyncEpoch = protocolState.AsFolderSyncEpoch;
 
                 var folder = new McFolder () {

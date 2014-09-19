@@ -1,6 +1,8 @@
 //  Copyright (C) 2013 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using NachoCore.ActiveSync;
 using NachoCore.Model;
 using NachoPlatform;
@@ -38,7 +40,7 @@ namespace NachoCore
 
         public bool Wipe (McAccount account, string url, string protoVersion)
         {
-            var cred = McCred.QueryById<McCred> (account.CredId);
+            var cred = McCred.QueryByAccountId<McCred> (account.Id).SingleOrDefault ();
             return Device.Instance.Wipe (cred.Username, cred.Password, url, protoVersion);
         }
     }

@@ -310,7 +310,7 @@ namespace NachoCore
             // Create Device account if not yet there.
             McAccount deviceAccount = null;
             NcModel.Instance.RunInTransaction (() => {
-                deviceAccount = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Device).SingleOrDefault ();
+                deviceAccount = McAccount.GetDeviceAccount ();
                 if (null == deviceAccount) {
                     deviceAccount = new McAccount () {
                         AccountType = McAccount.AccountTypeEnum.Device,
@@ -383,7 +383,7 @@ namespace NachoCore
 
         public void CertAskReq (int accountId, X509Certificate2 certificate)
         {
-            if (McMutables.GetBool ("CERTAPPROVAL", certificate.Thumbprint)) {
+            if (McMutables.GetBool (McAccount.GetDeviceAccount ().Id, "CERTAPPROVAL", certificate.Thumbprint)) {
                 CertAskResp (accountId, true);
                 return;
             }
@@ -406,7 +406,7 @@ namespace NachoCore
         public void CertAskResp (int accountId, bool isOkay)
         {
             if (isOkay) {
-                McMutables.GetOrCreateBool ("CERTAPPROVAL", 
+                McMutables.GetOrCreateBool (McAccount.GetDeviceAccount ().Id, "CERTAPPROVAL", 
                     BackEnd.Instance.ServerCertToBeExamined (accountId).Thumbprint, true);
             }
             BackEnd.Instance.CertAskResp (accountId, isOkay);

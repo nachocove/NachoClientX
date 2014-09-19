@@ -23,32 +23,26 @@ namespace NachoCore
 
         public McCred Cred {
             get {
-                // Note the lack of join :-(.
-                var account = Account;
-                return NcModel.Instance.Db.Table<McCred> ().Where (crd => crd.Id == Account.CredId).SingleOrDefault ();
+                return McCred.QueryByAccountId<McCred> (Account.Id).SingleOrDefault ();
             }
         }
 
         public McServer Server { 
             get {
-                var account = Account;
-                return NcModel.Instance.Db.Table<McServer> ().Where (srv => srv.Id == Account.ServerId).SingleOrDefault ();
+                return McServer.QueryByAccountId<McServer> (Account.Id).SingleOrDefault ();
             }
             set {
                 var update = value;
-                update.Id = Account.ServerId;
                 update.Update ();
             }
         }
 
         public McProtocolState ProtocolState { 
             get {
-                var account = Account;
-                return NcModel.Instance.Db.Table<McProtocolState> ().Where (pcs => pcs.Id == Account.ProtocolStateId).Single ();
+                return McProtocolState.QueryByAccountId<McProtocolState> (Account.Id).SingleOrDefault ();
             }
             set {
                 var update = value;
-                update.Id = Account.ProtocolStateId;
                 update.Update ();
             }
         }

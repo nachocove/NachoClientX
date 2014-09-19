@@ -312,7 +312,6 @@
     <Compile Include="NachoCore\Model\McException.cs" />
     <Compile Include="NachoCore\Model\McAttendee.cs" />
     <Compile Include="NachoCore\Model\McCalendarCategory.cs" />
-    <Compile Include="NachoCore\Model\McTimeZone.cs" />
     <Compile Include="NachoCore\Model\McAbstrContactAttribute.cs" />
     <Compile Include="NachoCore\Model\McContactDateAttribute.cs" />
     <Compile Include="NachoCore\Model\McContactStringAttribute.cs" />

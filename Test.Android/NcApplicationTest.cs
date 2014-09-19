@@ -16,6 +16,7 @@ namespace Test.Common
         {
             NcApplication.Instance.TestOnlyInvokeUseCurrentThread = true;
             var server = new McServer () {
+                AccountId = 1,
                 Host = "example.com"
             };
             server.Insert ();

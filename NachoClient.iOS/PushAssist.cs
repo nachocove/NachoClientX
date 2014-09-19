@@ -116,9 +116,9 @@ namespace NachoClient.iOS
             var response = await Client.GetAsync ("https://nco9.com/client-token");
             if (response.StatusCode == System.Net.HttpStatusCode.OK) {
                 try {
-                    DataContractJsonSerializer ser = new DataContractJsonSerializer (typeof(ClientTokenResponse));
-                    var clientTokenResponse = (ClientTokenResponse)ser.ReadObject (await response.Content.ReadAsStreamAsync ());
-                    McMutables.Set(k_ios, k_clienttoken, clientTokenResponse.Token);
+                    //DataContractJsonSerializer ser = new DataContractJsonSerializer (typeof(ClientTokenResponse));
+                    //var clientTokenResponse = (ClientTokenResponse)ser.ReadObject (await response.Content.ReadAsStreamAsync ());
+                    // McMutables.Set(k_ios, k_clienttoken, clientTokenResponse.Token);
                     Sm.PostEvent ((uint)SmEvt.E.Success, "GOTCLITOK");
                 } catch {
                     Sm.PostEvent ((uint)SmEvt.E.HardFail, "CLITOKEX");
@@ -131,8 +131,8 @@ namespace NachoClient.iOS
         private void DoSess () // will need to make async.
         {
             var requestJson = new StartSessionRequest () {
-                ClientToken = McMutables.Get (k_ios, k_clienttoken),
-                DeviceToken = McMutables.Get (k_ios, k_devicetoken),
+                // ClientToken = McMutables.Get (k_ios, k_clienttoken),
+                // DeviceToken = McMutables.Get (k_ios, k_devicetoken),
                 // FIXME... capture Ping wbxml via event, or ask strategy..?
             };
             MemoryStream jsonStream = new MemoryStream ();
@@ -161,7 +161,7 @@ namespace NachoClient.iOS
         public void ResetDeviceToken ()
         {
             // FIXME - we need to park the SM.
-            McMutables.Delete (k_ios, k_devicetoken);
+            // McMutables.Delete (k_ios, k_devicetoken);
         }
 
         public void DeferPushAssist ()

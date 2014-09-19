@@ -240,7 +240,7 @@ namespace Test.iOS
             public void TestFailureHasRetries ()
             {
                 int retries = 5;
-                McMutables.Set ("HTTPOP", "Retries", (retries).ToString ());
+                McMutables.Set (1, "HTTPOP", "Retries", (retries).ToString ());
                 int expectedRetries = (retries + 1) * 2; // 2x because 2 robots are sending retry StatusInds
 
                 string successXml = CommonMockData.AutodOffice365ResponseXml;
@@ -368,9 +368,9 @@ namespace Test.iOS
 
             private void SetTimeoutConstants ()
             {
-                McMutables.Set ("HTTPOP", "TimeoutSeconds", (TimeoutTime / 1000).ToString ());
-                McMutables.Set ("AUTOD", "CertTimeoutSeconds", (TimeoutTime / 1000).ToString ());
-                McMutables.Set ("DNSOP", "TimeoutSeconds", (TimeoutTime / 1000).ToString ());
+                McMutables.Set (1, "HTTPOP", "TimeoutSeconds", (TimeoutTime / 1000).ToString ());
+                McMutables.Set (1, "AUTOD", "CertTimeoutSeconds", (TimeoutTime / 1000).ToString ());
+                McMutables.Set (1, "DNSOP", "TimeoutSeconds", (TimeoutTime / 1000).ToString ());
             }
 
             [Test]
@@ -501,8 +501,11 @@ namespace Test.iOS
             autodCommand = null;
             mockContext = null;
 
+            mockContext = new MockContext ();
+
             // insert phony server to db (this allows Auto-d 'DoAcceptServerConf' to update the record later)
             var phonyServer = new McServer ();
+            phonyServer.AccountId = mockContext.Account.Id;
             phonyServer.Host = "/Phony-Server";
             phonyServer.Path = "/phonypath";
             phonyServer.Port = 500;
@@ -511,7 +514,6 @@ namespace Test.iOS
 
             NcModel.Instance.Db.Insert (phonyServer);
 
-            mockContext = new MockContext ();
             mockContext.ProtoControl = ProtoOps.CreateProtoControl (mockContext.Account.Id);
 
             // flush the certificate cache so it doesn't interfere with future tests

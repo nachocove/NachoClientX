@@ -63,7 +63,7 @@ namespace Test.Common
 
         public void SetupDependency (McEmailMessage message, McEmailAddress address)
         {
-            McEmailMessageDependency dep = new McEmailMessageDependency ();
+            McEmailMessageDependency dep = new McEmailMessageDependency (message.AccountId);
             dep.EmailAddressId = address.Id;
             dep.EmailMessageId = message.Id;
             dep.EmailAddressType = (int)McEmailMessageDependency.AddressType.SENDER;
