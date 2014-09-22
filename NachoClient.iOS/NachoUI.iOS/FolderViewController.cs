@@ -25,25 +25,12 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-
-            var addButton = new UIBarButtonItem (UIBarButtonSystemItem.Add);
-            addButton.TintColor = A.Color_NachoBlue;
-            NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { addButton };
-
-            // Stylize TableView
+            TableView = new UITableView (View.Bounds, UITableViewStyle.Grouped);
             folders = new HierarchicalFolderTableSource (TableView);
             TableView.DataSource = folders;
-            TableView.SeparatorColor = A.Color_NachoBorderGray;
-            UISearchBar sb = new UISearchBar (new RectangleF (0, 45, TableView.Frame.Width, 45));
-            sb.BarTintColor = A.Color_NachoLightGrayBackground;
-            sb.Placeholder = "Search";
-            NSString x = new NSString ("_searchField");
-            UITextField txtField = (UITextField)sb.ValueForKey (x);
-            txtField.BackgroundColor = UIColor.White;
-            TableView.TableHeaderView = sb;
 
-            // Initially let's hide the search controller
-            TableView.SetContentOffset (new PointF (0.0f, 44.0f), false);
+
+            CreateView ();
 
             // Watch for changes from the back end
             NcApplication.Instance.StatusIndEvent += (object sender, EventArgs e) => {
@@ -63,6 +50,45 @@ namespace NachoClient.iOS
             }
             folders.Refresh ();
             this.TableView.ReloadData ();
+
+            ConfigureView ();
+        }
+
+        protected void CreateView ()
+        {
+            var addButton = new UIBarButtonItem (UIBarButtonSystemItem.Add);
+            addButton.TintColor = A.Color_NachoBlue;
+            NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { addButton };
+
+            UIView folderHeaderView = new UIView (new RectangleF (0, 0, TableView.Frame.Width, 84));
+            folderHeaderView.BackgroundColor = A.Color_NachoBackgroundGray;
+
+            UILabel defaultsLabel = new UILabel (new RectangleF (15, folderHeaderView.Frame.Height - 24, 160, 20));
+            defaultsLabel.Text = "DEFAULT FOLDERS";
+            defaultsLabel.Font = A.Font_AvenirNextRegular12;
+            defaultsLabel.TextColor = A.Color_NachoIconGray;
+            folderHeaderView.Add (defaultsLabel);
+
+            // Stylize TableView
+            TableView.SeparatorColor = A.Color_NachoBorderGray;
+            UISearchBar sb = new UISearchBar (new RectangleF (0, 0, TableView.Frame.Width, 44));
+            sb.BarTintColor = A.Color_NachoLightGrayBackground;
+            sb.TintColor = A.Color_NachoIconGray;
+            sb.Placeholder = "Search Folders";
+            NSString x = new NSString ("_searchField");
+            UITextField txtField = (UITextField)sb.ValueForKey (x);
+            txtField.BackgroundColor = UIColor.White;
+            folderHeaderView.Add (sb);
+            TableView.TableHeaderView = folderHeaderView;
+            TableView.BackgroundColor = A.Color_NachoBackgroundGray;
+
+            // Initially let's hide the search controller
+            //TableView.SetContentOffset (new PointF (0.0f, 44.0f), false);
+        }
+
+        protected void ConfigureView ()
+        {
+
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
@@ -71,7 +97,7 @@ namespace NachoClient.iOS
                 var msgview = (MessageListViewController)segue.DestinationViewController; //our destination
                 var source = TableView.DataSource as HierarchicalFolderTableSource;
                 var rowPath = TableView.IndexPathForSelectedRow;
-                var folder = source.getFolder (rowPath);
+                var folder = source.GetFolder (rowPath);
                 var messageList = new NachoEmailMessages (folder);
                 msgview.SetEmailMessages (messageList);
                 return;

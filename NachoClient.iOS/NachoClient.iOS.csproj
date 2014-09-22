@@ -1136,6 +1136,10 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcMessageIntent.cs">
       <Link>NachoCore\Brain\NcMessageIntent.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\FoldersViewController.cs" />
+    <Compile Include="NachoUI.iOS\FoldersViewController.designer.cs">
+      <DependentUpon>FoldersViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

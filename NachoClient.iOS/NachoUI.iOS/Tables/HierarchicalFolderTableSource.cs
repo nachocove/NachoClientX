@@ -23,8 +23,9 @@ namespace NachoClient.iOS
         public List<FlattenedFolderStruct> flattenedFolderList = new List<FlattenedFolderStruct> ();
         public List<UITableViewCell> FolderCells = new List<UITableViewCell> ();
         public UITableView foldersTable;
+        protected string cellIdentifier = "FolderCell";
 
-        public HierarchicalFolderTableSource(UITableView theTable)
+        public HierarchicalFolderTableSource (UITableView theTable)
         {
             folders = new NachoFolders (NachoFolders.FilterForEmail);
 
@@ -35,13 +36,13 @@ namespace NachoClient.iOS
             //          "folderAction" is the MessageActionViewController version, this is the view accessed when viewing a single message, and they have the ability to file the 
             //          message in a specific directory
             foldersTable = theTable;
-            convertFoldersToMcFolders ();
-            createNestedFolderList ();
-            flattenNestedFolderList (0, nestedFolderList);
+            ConvertFoldersToMcFolders ();
+            CreateNestedFolderList ();
+            FlattenNestedFolderList (0, nestedFolderList);
             CreateCells ();
         }
 
-        public void convertFoldersToMcFolders()
+        public void ConvertFoldersToMcFolders ()
         {
             for (int i = 0; i < folders.Count (); i++) {
                 foldersToMcFolders.Add (folders.GetFolder (i));
@@ -50,10 +51,18 @@ namespace NachoClient.iOS
 
         public override int RowsInSection (UITableView tableview, int section)
         {
-            return foldersToMcFolders.Count;
+            if (0 == section) {
+                return foldersToMcFolders.Count;
+            }
+            return 5;
         }
 
-        public void createNestedFolderList ()
+        public override int NumberOfSections (UITableView tableView)
+        {
+            return 2;
+        }
+
+        public void CreateNestedFolderList ()
         {
             foreach (var folder in foldersToMcFolders) {
 
@@ -61,13 +70,13 @@ namespace NachoClient.iOS
                     int folderID = folder.Id;
                     string fname = folder.DisplayName;
                     List<FolderStruct> subFolders = new List<FolderStruct> ();
-                    subFolders = getSubFolders (folder.Id, folder.AccountId, folder.ServerId, 0);
+                    subFolders = GetSubFolders (folder.Id, folder.AccountId, folder.ServerId, 0);
                     nestedFolderList.Add (new FolderStruct (folderID, subFolders, fname));
                 }
             }
         }
 
-        public List<FolderStruct> getSubFolders (int fID, int accountID, string serverID, int indentLevel)
+        public List<FolderStruct> GetSubFolders (int fID, int accountID, string serverID, int indentLevel)
         {
             indentLevel += 1;
             List<FolderStruct> subFolders = new List<FolderStruct> ();
@@ -75,19 +84,19 @@ namespace NachoClient.iOS
             folds = McFolder.QueryByParentId (accountID, serverID);
 
             foreach (McFolder f in folds) {
-                subFolders.Add (new FolderStruct (f.Id, getSubFolders (f.Id, f.AccountId, f.ServerId, indentLevel), f.DisplayName));
+                subFolders.Add (new FolderStruct (f.Id, GetSubFolders (f.Id, f.AccountId, f.ServerId, indentLevel), f.DisplayName));
             }
             return subFolders;
         }
 
-        public void flattenNestedFolderList (int indentlevel, List<FolderStruct> nestedFoldersList)
+        public void FlattenNestedFolderList (int indentlevel, List<FolderStruct> nestedFoldersList)
         {
             foreach (FolderStruct f in nestedFoldersList) {
 
                 flattenedFolderList.Add (new FlattenedFolderStruct (f.folderName, f.folderID, indentlevel));
 
                 if (f.subFolders.Count != 0) {
-                    flattenNestedFolderList (indentlevel + 1, f.subFolders);
+                    FlattenNestedFolderList (indentlevel + 1, f.subFolders);
                 }
             }
         }
@@ -95,7 +104,9 @@ namespace NachoClient.iOS
         public class FolderStruct
         {
             public int folderID { get; set; }
+
             public string folderName { get; set; }
+
             public List <FolderStruct> subFolders { get; set; }
 
             public FolderStruct ()
@@ -114,7 +125,9 @@ namespace NachoClient.iOS
         public class FlattenedFolderStruct
         {
             public string folderName { get; set; }
+
             public int folderID { get; set; }
+
             public int indentLevel { get; set; }
 
             public FlattenedFolderStruct (string fn, int fid, int il)
@@ -125,14 +138,14 @@ namespace NachoClient.iOS
             }
         }
 
-        public void CreateCells()
+        public void CreateCells ()
         {
             foreach (var theFolder in flattenedFolderList) {
                 CreateCell (theFolder);
             }
         }
 
-        public void CreateCell(FlattenedFolderStruct theFolder)
+        public void CreateCell (FlattenedFolderStruct theFolder)
         {
             UITableViewCell theCell;
             string initialSpacing = "";
@@ -147,21 +160,21 @@ namespace NachoClient.iOS
             }
 
             theCell.SeparatorInset = new UIEdgeInsets (0, 15, 0, 0);
-            theCell.TextLabel.Font = A.Font_AvenirNextRegular14;
+            theCell.TextLabel.Font = A.Font_AvenirNextMedium14;
             theCell.TextLabel.TextColor = A.Color_NachoBlack;
             theCell.BackgroundColor = UIColor.White;
             theCell.ContentMode = UIViewContentMode.Left;
 
             if (isRootFolder) {
                 theCell.ImageView.Image = UIImage.FromBundle ("icn-folder");
-                theCell.TextLabel.Font = A.Font_AvenirNextRegular14;
+                theCell.TextLabel.Font = A.Font_AvenirNextMedium14;
             } else {
                 initialSpacing = "                 " + "".PadRight (theFolder.indentLevel * 5);
                 cellIconSpace = new UIView (new RectangleF (10 * theFolder.indentLevel, 4, 55, 26));
                 UIImageView iconOne = new UIImageView (new RectangleF (cellIconSpace.Frame.X, cellIconSpace.Frame.Y, cellIconSpace.Frame.Width, cellIconSpace.Frame.Height));
                 iconOne.Image = UIImage.FromBundle ("icn-arrow-folder2");
                 cellIconSpace.AddSubview (iconOne);
-                theCell.ContentView.AddSubview(cellIconSpace);
+                theCell.ContentView.AddSubview (cellIconSpace);
             }
 
             theCell.TextLabel.Text = initialSpacing + theFolder.folderName;
@@ -172,10 +185,23 @@ namespace NachoClient.iOS
 
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
         {
-            return FolderCells [indexPath.Row];
+            UITableViewCell cell = tableView.DequeueReusableCell (cellIdentifier);
+            // if there are no cells to reuse, create a new one
+            if (cell == null) {
+                cell = new UITableViewCell (UITableViewCellStyle.Default, cellIdentifier);
+            }
+
+            if (0 == indexPath.Section) {
+                cell = FolderCells [indexPath.Row];
+            } else {
+                cell.BackgroundColor = A.Color_NachoNowBackground;
+            }
+
+            return cell;
+
         }
 
-        public McFolder getFolder (NSIndexPath indexPath)
+        public McFolder GetFolder (NSIndexPath indexPath)
         {
             return folders.GetFolderByFolderID (flattenedFolderList [indexPath.Row].folderID);
         }
