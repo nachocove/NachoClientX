@@ -1135,6 +1135,9 @@
     <Compile Include="NachoUI.iOS\FoldersViewController.designer.cs">
       <DependentUpon>FoldersViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\BodyView.cs" />
+    <Compile Include="NachoUI.iOS\Support\BodyWebView.cs" />
+    <Compile Include="NachoUI.iOS\Support\BodyCalendarView.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

@@ -24,6 +24,55 @@ namespace NachoClient.iOS
             return parentHeight - view.Frame.Y;
         }
 
+        public enum InsetMode {
+            TOPLEFT,
+            BOTTOMRIGHT,
+            BOTH
+        };
+
+        public static RectangleF InnerFrameWithInset (RectangleF outerFrame, float inset,
+            InsetMode xMode, InsetMode yMode)
+        {
+            float x = 0.0f, y = 0.0f;
+            float width = outerFrame.Width;
+            switch (xMode) {
+            case InsetMode.TOPLEFT:
+                x = inset;
+                width -= inset;
+                break;
+            case InsetMode.BOTTOMRIGHT:
+                x = 0;
+                width -= inset;
+                break;
+            case InsetMode.BOTH:
+                x = inset;
+                width -= 2 * inset;
+                break;
+            }
+
+            float height = outerFrame.Height;
+            switch (yMode) {
+            case InsetMode.TOPLEFT:
+                y = inset;
+                width -= inset;
+                break;
+            case InsetMode.BOTTOMRIGHT:
+                y = 0;
+                width -= inset;
+                break;
+            case InsetMode.BOTH:
+                y = inset;
+                width -= 2 * inset;
+                break;
+            }
+            return new RectangleF (x, y, Math.Max (0.0f, width), Math.Max (0.0f, height));
+        }
+
+        public static RectangleF InnerFrameWithInset (RectangleF outerFrame, float inset)
+        {
+            return InnerFrameWithInset (outerFrame, inset, InsetMode.BOTH, InsetMode.BOTH);
+        }
+
         private static void DumpView<T> (UIView view, int indentation)
         {
             string msg = "";
