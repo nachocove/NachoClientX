@@ -86,13 +86,8 @@ namespace NachoClient.iOS
             htmlBusy.Reset ();
             OnRenderStart ();
 
-            int index = html.IndexOf ("<html>", 0) + 6;
-            if (0 <= index) {
-                html = html.Substring (0, index) +
-                    "<meta http-equiv=\"Content-Security-Policy\" content=\"script-src 'none'\">" +
-                    html.Substring (index);
-            }
-
+            // Disable JavaScript
+            html = "<meta http-equiv=\"Content-Security-Policy\" content=\"script-src 'none'\">" + html;
             LoadHtmlString (html, null);
         }
     }

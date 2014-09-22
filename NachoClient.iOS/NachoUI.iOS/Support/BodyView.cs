@@ -1,4 +1,4 @@
-﻿#define DEBUG_UI
+﻿//#define DEBUG_UI
 
 //  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
@@ -85,7 +85,7 @@ namespace NachoClient.iOS
         const int BODYVIEW_INSET = 4;
         #else
         static UIColor SCROLLVIEW_BGCOLOR = UIColor.White;
-        static UIColor MESSAGEVIEW_BGCOLOR = UIColor.Yellow;
+        static UIColor MESSAGEVIEW_BGCOLOR = UIColor.White;
         const int MESSAGEVIEW_INSET = 2;
         const int BODYVIEW_INSET = 0;
         //const int BODYVIEW_INSET = 4;
@@ -96,6 +96,10 @@ namespace NachoClient.iOS
             LOADING, // body is being loaded
             ERROR    // body was being loaded
         }
+
+        public bool HorizontalScrollingEnabled { get; set; }
+
+        public bool VeriticalScrollingEnabled { get; set; }
 
         protected UIView parentView;
         protected UIView messageView;
@@ -112,9 +116,10 @@ namespace NachoClient.iOS
 
         public BodyView (RectangleF initialFrame, UIView parentView)
         {
+            HorizontalScrollingEnabled = true;
+            VeriticalScrollingEnabled = true;
             this.parentView = parentView;
             BackgroundColor = SCROLLVIEW_BGCOLOR;
-            Layer.ZPosition = 1.0f;
             Frame = initialFrame;
             DidZoom += (object sender, EventArgs e) => {
                 Log.Info (Log.LOG_UI, "body view scroll view did zoom");
@@ -139,7 +144,6 @@ namespace NachoClient.iOS
 
             // messageView contains all content views of the body
             messageView = new UIView ();
-            messageView.Layer.ZPosition = 1.0f;
             messageView.BackgroundColor = MESSAGEVIEW_BGCOLOR;
             messageView.Frame = ViewHelper.InnerFrameWithInset(Frame, MESSAGEVIEW_INSET);
             messageView.AddGestureRecognizer (doubleTap);
@@ -365,6 +369,10 @@ namespace NachoClient.iOS
             } else {
                 SetZoomScale (1.0f, true);
             }
+            OnRenderStart ();
+            Layout (Frame.X, Frame.Y, Frame.Width + 2 * BODYVIEW_INSET,
+                Frame.Height + 2 * BODYVIEW_INSET + 2 * MESSAGEVIEW_INSET);
+            OnRenderComplete ();
         }
 
         public void Layout (float X, float Y, float width, float height)
@@ -375,22 +383,23 @@ namespace NachoClient.iOS
                 return true;
             });
 
+            // Update the scroll view with the up-to-date message view size
+            ContentSize = new SizeF (messageView.Frame.Width, messageView.Frame.Height);
+
+            // Adjust for outer boundary for insets
             height -= 2 * BODYVIEW_INSET;
             height -= 2 * MESSAGEVIEW_INSET;
             width -= 2 * BODYVIEW_INSET;
 
-            // Set up messageView
-            float messageWidth = Math.Max (width, messageView.Frame.Width);
-            float messageHeight = Math.Max (width, messageView.Frame.Height);
-            messageView.Frame = new RectangleF (
-                MESSAGEVIEW_INSET,
-                MESSAGEVIEW_INSET,
-                messageWidth,
-                messageHeight
-            );
-            ContentSize = new SizeF (messageWidth, messageHeight);
-
-            Frame = new RectangleF (X, Y, width, height);
+            // Set up scroll view frame based on the configured scrolling options
+            float messageWidth = width, messageHeight = height;
+            if (!HorizontalScrollingEnabled) {
+                messageWidth = Math.Max (width, messageView.Frame.Width);
+            }
+            if (!VeriticalScrollingEnabled) {
+                messageHeight = Math.Max (width, messageView.Frame.Height);
+            }
+            Frame = new RectangleF (X, Y, messageWidth, messageHeight);
         }
     }
 }
