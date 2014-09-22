@@ -12,15 +12,9 @@ namespace NachoClient.iOS
 	[Register ("SettingsViewController")]
 	partial class SettingsViewController
 	{
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem revealButton { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
-			if (revealButton != null) {
-				revealButton.Dispose ();
-				revealButton = null;
-			}
 		}
 	}
 }

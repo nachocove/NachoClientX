@@ -3,7 +3,6 @@
 using System;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
-using SWRevealViewControllerBinding;
 using NachoCore;
 using NachoCore.Utils;
 
@@ -19,19 +18,11 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            // Navigation
-            revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
-            revealButton.Target = this.RevealViewController ();
-
             // Multiple buttons on the right side
+            var addButton = new UIBarButtonItem (UIBarButtonSystemItem.Add);
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { addButton };
 
-            // Multiple buttons on the left side
-            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
-            Util.SetOriginalImageForButton (nachoButton, "Nacho-Cove-Icon");
-            nachoButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("TasksToNachoNow", this);
-            };
+
             // Watch for changes from the back end
             NcApplication.Instance.StatusIndEvent += (object sender, EventArgs e) => {
                 var s = (StatusIndEventArgs)e;

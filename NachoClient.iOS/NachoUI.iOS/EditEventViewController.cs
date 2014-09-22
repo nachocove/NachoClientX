@@ -13,7 +13,6 @@ using MimeKit;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoPlatform;
-using SWRevealViewControllerBinding;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
@@ -383,12 +382,12 @@ namespace NachoClient.iOS
                     alert.CancelButtonIndex = 0;
                     alert.Dismissed += (object alertSender, UIButtonEventArgs alertEvent) => {
                         if (1 == alertEvent.ButtonIndex) {
-                            DismissView (showMenu);
+                            DismissView ();
                         }
                     };
                     alert.Show ();
                 } else {
-                    DismissView (showMenu);
+                    DismissView ();
                 }
             };
 
@@ -397,7 +396,7 @@ namespace NachoClient.iOS
                 ExtractValues ();
                 SyncMeetingRequest ();
                 SendInvites ();
-                DismissView (showMenu);
+                DismissView ();
             };
 
             NavigationItem.LeftBarButtonItem = cancelButton;
@@ -1080,7 +1079,7 @@ namespace NachoClient.iOS
         protected void SelectionChanged (UITextView textView)
         {
             // We want to scroll the caret rect into view
-            var caretRect = textView.GetCaretRectForPosition (textView.SelectedTextRange.end);
+            var caretRect = textView.GetCaretRectForPosition (textView.SelectedTextRange.End);
             caretRect.Size = new SizeF (caretRect.Size.Width, caretRect.Size.Height + textView.TextContainerInset.Bottom);
             // Make sure our textview is big enough to hold the text
             var frame = textView.Frame;
@@ -1104,13 +1103,9 @@ namespace NachoClient.iOS
             scrollView.ScrollRectToVisible (caretRect, true);
         }
 
-        public void DismissView (bool fromMenu)
+        public void DismissView ()
         {
-            if (fromMenu) {
-                this.RevealViewController ().RevealToggle (this);
-            } else {
-                NavigationController.PopViewControllerAnimated (true);
-            }
+            NavigationController.PopViewControllerAnimated (true);
         }
 
         public class TupleList<T1, T2> : List<Tuple<T1, T2>>

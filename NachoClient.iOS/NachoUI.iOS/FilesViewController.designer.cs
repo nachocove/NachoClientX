@@ -14,28 +14,12 @@ namespace NachoClient.iOS
 	{
 		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem actionButton { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem nachoButton { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem revealButton { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
 			if (actionButton != null) {
 				actionButton.Dispose ();
 				actionButton = null;
-			}
-
-			if (revealButton != null) {
-				revealButton.Dispose ();
-				revealButton = null;
-			}
-
-			if (nachoButton != null) {
-				nachoButton.Dispose ();
-				nachoButton = null;
 			}
 		}
 	}

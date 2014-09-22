@@ -7,7 +7,6 @@ using MonoTouch.UIKit;
 using System.Collections.Generic;
 using NachoCore.Utils;
 using NachoCore.Model;
-using SWRevealViewControllerBinding;
 
 
 namespace NachoClient.iOS
@@ -147,9 +146,9 @@ namespace NachoClient.iOS
 
             var openSourceTap = new UITapGestureRecognizer ();
             openSourceTap.AddTarget (() => {
-                legalUrl = NSBundle.MainBundle.GetUrlForResource("LegalInfo", "html", "", "").ToString();
+                legalUrl = NSBundle.MainBundle.PathForResource("LegalInfo", "txt", "", "").ToString();
                 legalTitle = "Legal Information";
-                isUrl = true;
+                isUrl = false;
                 PerformSegue("GeneralSettingsToSettingsLegal", this);
                 View.EndEditing (true);
             });
@@ -212,7 +211,7 @@ namespace NachoClient.iOS
                 if (isUrl) {
                     settingsLegal.SetProperties (legalUrl, legalTitle, true);
                 } else {
-                    settingsLegal.SetProperties ("", legalTitle, false);
+                    settingsLegal.SetProperties (legalUrl, legalTitle, false);
                 }
                 return;
             }

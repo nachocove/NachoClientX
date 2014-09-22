@@ -145,7 +145,7 @@ namespace NachoClient.iOS
         protected void NotesSelectionChanged (UITextView textView)
         {
             // We want to scroll the caret rect into view
-            var caretRect = textView.GetCaretRectForPosition (textView.SelectedTextRange.end);
+            var caretRect = textView.GetCaretRectForPosition (textView.SelectedTextRange.End);
             caretRect.Size = new SizeF (caretRect.Size.Width, caretRect.Size.Height + textView.TextContainerInset.Bottom);
             // Make sure our textview is big enough to hold the text
             var frame = textView.Frame;

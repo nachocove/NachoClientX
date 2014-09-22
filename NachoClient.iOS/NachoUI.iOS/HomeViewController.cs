@@ -6,7 +6,6 @@ using MonoTouch.UIKit;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore;
-using SWRevealViewControllerBinding;
 
 namespace NachoClient.iOS
 {
@@ -31,34 +30,6 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-
-            /*
-            // ideally we get rid of Navcontroller and have a dismiss button in toolbar
-            // that said, for now, leave the NachoNow navigation controller so we can exit
-            // the tutorial.
-
-            UIBarButtonItem dismissButton = new UIBarButtonItem (UIBarButtonSystemItem.Done);
-            dismissButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("HomeToNachoNow", this);
-            };
-            NavigationItem.RightBarButtonItem = dismissButton;
-
-            this.NavigationController.NavigationBar.Translucent = true;
-            this.NavigationController.NavigationBar.BackgroundColor = UIColor.Clear;
-            */
-
-            // Navigation
-            revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
-            revealButton.Target = this.RevealViewController ();
-
-            // Multiple buttons on the left side
-            NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
-            using (var nachoImage = UIImage.FromBundle ("Nacho-Cove-Icon")) {
-                nachoButton.Image = nachoImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
-            }
-            nachoButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("SegueToNachoNow", this);
-            };
 
             // Help & demo pages
             InitializePageViewController ();

@@ -1,0 +1,10 @@
+Each original license file is copied into a subdirectory.
+Each original license is converted to text a file named nc.txt.
+
+The script mktxt.sh has a list of files to cat into LegalInfo.txt.
+
+LegalInfo.txt should be copied to NachoClient.iOS/Resources/LegalInfo.txt
+
+The master list of license is in
+https://docs.google.com/a/nachocove.com/spreadsheet/ccc?key=0An2FxuJu6_xbdFNmbTNxZkVDZUJORVl2ZzJEemJlcmc&usp=sharing
+

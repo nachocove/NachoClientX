@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using MonoTouch.EventKit;
-using SWRevealViewControllerBinding;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;

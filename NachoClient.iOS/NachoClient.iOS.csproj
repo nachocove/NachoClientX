@@ -248,10 +248,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\XElement+AnyNs.cs">
       <Link>NachoCore\Extensions\XElement+AnyNs.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\MainViewController.cs" />
-    <Compile Include="NachoUI.iOS\MainViewController.designer.cs">
-      <DependentUpon>MainViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\ContactsViewController.cs" />
     <Compile Include="NachoUI.iOS\ContactsViewController.designer.cs">
       <DependentUpon>ContactsViewController.cs</DependentUpon>
@@ -296,7 +292,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\NcEnforcer.cs">
       <Link>NachoCore\NcEnforcer.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\EditAccountViewController.cs" />
     <Compile Include="NachoUI.iOS\ContactChooserViewController.cs" />
     <Compile Include="NachoUI.iOS\ContactChooserViewController.designer.cs">
       <DependentUpon>ContactChooserViewController.cs</DependentUpon>
@@ -1591,9 +1586,31 @@
     <BundleResource Include="Resources\Slide3-5%402x.png" />
     <BundleResource Include="Resources\Slide4-2B%402x.png" />
     <BundleResource Include="Resources\Slide4-3%402x.png" />
-    <BundleResource Include="Resources\LegalInfo.html" />
     <BundleResource Include="Resources\nav-backarrow%402x.png" />
     <BundleResource Include="Resources\toolbar-icn-reply-all%402x.png" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-all-non-framework-target-headers.hmap" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\dgph" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\NachoClient.iOS.LinkFileList" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\AppDelegate-496669674D592815.d" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\AppDelegate-496669674D592815.dia" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\AppDelegate-496669674D592815.o" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\CalendarViewController-77759AD71C118BDE.d" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\CalendarViewController-77759AD71C118BDE.dia" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\ContactChooserViewController-B1AEE5DC885AFEF.d" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\ContactChooserViewController-B1AEE5DC885AFEF.dia" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\ContactsViewController-D919933C63DACBD2.d" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\ContactsViewController-D919933C63DACBD2.dia" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\FolderViewController-FF1749E0FB4F2ADF.d" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\FolderViewController-FF1749E0FB4F2ADF.dia" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\HomeViewController-40886F788241B9BB.d" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\HomeViewController-40886F788241B9BB.dia" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\LaunchViewController-440372BD18C2C508.d" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\LaunchViewController-440372BD18C2C508.dia" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\SettingsViewController-CDB58F8C49077FF8.d" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\SettingsViewController-CDB58F8C49077FF8.dia" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphoneos\NachoClient.iOS.build\NachoClient.iOS-all-non-framework-target-headers.hmap" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphoneos\NachoClient.iOS.build\Objects-normal\armv7\NachoClient.iOS.LinkFileList" />
+    <BundleResource Include="Resources\LegalInfo.txt" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
@@ -1603,10 +1620,6 @@
     <ProjectReference Include="..\..\iCarouselBinding\iCarouselBinding\iCarouselBinding\iCarouselBinding.csproj">
       <Project>{E8EDAA21-69C1-4866-9037-28D83F0D4359}</Project>
       <Name>iCarouselBinding</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\SWRevealViewControllerBinding\SWRevealViewControllerBinding\SWRevealViewControllerBinding\SWRevealViewControllerBinding.csproj">
-      <Project>{867AF543-B319-4267-8BBE-4854D99E67F0}</Project>
-      <Name>SWRevealViewControllerBinding</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\MCSwipeTableViewCellBinding\MCSwipeTableViewCellBinding\MCSwipeTableViewCellBinding\MCSwipeTableViewCellBinding.csproj">
       <Project>{E301B932-D165-4A65-8916-3E80C000B6AC}</Project>

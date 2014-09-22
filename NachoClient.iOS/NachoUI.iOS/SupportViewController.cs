@@ -4,7 +4,6 @@ using System;
 
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
-using SWRevealViewControllerBinding;
 using NachoCore.Utils;
 using System.Collections.Generic;
 

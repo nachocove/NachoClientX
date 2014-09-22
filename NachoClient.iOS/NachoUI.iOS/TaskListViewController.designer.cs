@@ -12,31 +12,9 @@ namespace NachoClient.iOS
 	[Register ("TaskListViewController")]
 	partial class TaskListViewController
 	{
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem addButton { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem nachoButton { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem revealButton { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
-			if (addButton != null) {
-				addButton.Dispose ();
-				addButton = null;
-			}
-
-			if (nachoButton != null) {
-				nachoButton.Dispose ();
-				nachoButton = null;
-			}
-
-			if (revealButton != null) {
-				revealButton.Dispose ();
-				revealButton = null;
-			}
 		}
 	}
 }

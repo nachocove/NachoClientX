@@ -12,23 +12,9 @@ namespace NachoClient.iOS
 	[Register ("HomeViewController")]
 	partial class HomeViewController
 	{
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem nachoButton { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem revealButton { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
-			if (revealButton != null) {
-				revealButton.Dispose ();
-				revealButton = null;
-			}
-
-			if (nachoButton != null) {
-				nachoButton.Dispose ();
-				nachoButton = null;
-			}
 		}
 	}
 }

@@ -19,13 +19,7 @@ namespace NachoClient.iOS
 		MonoTouch.UIKit.UIView contentView { get; set; }
 
 		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem nachoButton { get; set; }
-
-		[Outlet]
 		MonoTouch.UIKit.UIButton quckButton { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem revealButton { get; set; }
 
 		[Outlet]
 		MonoTouch.UIKit.UIScrollView scrollView { get; set; }
@@ -53,11 +47,6 @@ namespace NachoClient.iOS
 				quckButton = null;
 			}
 
-			if (revealButton != null) {
-				revealButton.Dispose ();
-				revealButton = null;
-			}
-
 			if (scrollView != null) {
 				scrollView.Dispose ();
 				scrollView = null;
@@ -71,11 +60,6 @@ namespace NachoClient.iOS
 			if (taskButton != null) {
 				taskButton.Dispose ();
 				taskButton = null;
-			}
-
-			if (nachoButton != null) {
-				nachoButton.Dispose ();
-				nachoButton = null;
 			}
 		}
 	}
