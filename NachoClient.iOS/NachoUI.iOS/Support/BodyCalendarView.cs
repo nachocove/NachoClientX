@@ -19,7 +19,7 @@ namespace NachoClient.iOS
 {
     public class BodyCalendarView : UIView
     {
-        const int CALENDAR_PART_TAG = 400;
+        public const int CALENDAR_PART_TAG = 400;
 
         protected BodyView parentView;
         protected bool rendered;

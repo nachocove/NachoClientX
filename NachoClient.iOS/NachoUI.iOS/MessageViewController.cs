@@ -416,12 +416,12 @@ namespace NachoClient.iOS
             SPINNER_TAG = 109,
             USER_LABEL_TAG = 110,
             USER_CHILI_TAG = 111,
-            MESSAGE_PART_TAG = 300,
-            CALENDAR_PART_TAG = 400,
+            MESSAGE_PART_TAG = BodyView.MESSAGE_PART_TAG,
+            CALENDAR_PART_TAG = BodyCalendarView.CALENDAR_PART_TAG,
             ATTACHMENT_VIEW_TAG = 301,
             ATTACHMENT_NAME_TAG = 302,
             ATTACHMENT_STATUS_TAG = 303,
-            DOWNLOAD_TAG = 304,
+            DOWNLOAD_TAG = BodyView.DOWNLOAD_TAG,
         }
 
         #if (DEBUG_UI)
