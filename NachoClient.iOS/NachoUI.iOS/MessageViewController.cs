@@ -600,8 +600,6 @@ namespace NachoClient.iOS
             };
             view.AddSubview (bodyView);
 
-            /// hack alert - do we need this??  bodyView.Layout ();
-
             // Spinner
             var spinner = new UIActivityIndicatorView (UIActivityIndicatorViewStyle.Gray);
             spinner.Center = View.Center;
@@ -813,9 +811,6 @@ namespace NachoClient.iOS
             if (null == message.GetBodyPath ()) {
                 return;
             }
-            McBody body = new McBody ();
-            body.Id = message.BodyId;
-            body.AccountId = message.AccountId;
             bodyView.Configure (message);
 
         }
