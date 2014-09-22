@@ -101,6 +101,8 @@ namespace NachoClient.iOS
 
         public bool VeriticalScrollingEnabled { get; set; }
 
+        public bool AutomaticallyScaleHtmlContent { get; set; }
+
         protected UIView parentView;
         protected UIView messageView;
         protected UITapGestureRecognizer doubleTap;
@@ -118,6 +120,8 @@ namespace NachoClient.iOS
         {
             HorizontalScrollingEnabled = true;
             VeriticalScrollingEnabled = true;
+            AutomaticallyScaleHtmlContent = true;
+
             this.parentView = parentView;
             BackgroundColor = SCROLLVIEW_BGCOLOR;
             Frame = initialFrame;
@@ -347,6 +351,9 @@ namespace NachoClient.iOS
             };
             webView.OnRenderComplete = (float minimumZoomScale) => {
                 MinimumZoomScale = minimumZoomScale;
+                if (AutomaticallyScaleHtmlContent && (minimumZoomScale < 1.0)) {
+                    SetZoomScale (Math.Max(minimumZoomScale, 0.7f), false);
+                }
                 OnRenderComplete ();
             };
             messageView.Add (webView);

@@ -222,11 +222,17 @@ namespace NachoClient.iOS
 
             // Preview label view
             // Size fields will be recalculated after text is known
-            var previewLabelView = new UILabel (new RectangleF (12, 70, viewWidth - 15 - 12, bottomY - 60));
-            previewLabelView.Font = A.Font_AvenirNextRegular14;
-            previewLabelView.TextColor = A.Color_NachoDarkText;
-            previewLabelView.Lines = 0;
+            var previewLabelView = new BodyView (new RectangleF (12, 70, viewWidth - 15 - 12, bottomY - 60), view);
             previewLabelView.Tag = PREVIEW_TAG;
+            previewLabelView.UserInteractionEnabled = false;
+            previewLabelView.OnRenderStart = () => {
+            };
+            previewLabelView.OnRenderComplete = () => {
+            };
+            previewLabelView.OnDownloadStart = () => {
+            };
+            previewLabelView.OnDownloadComplete = (bool success) => {
+            };
             view.AddSubview (previewLabelView);
 
             // Chili image view
@@ -488,26 +494,15 @@ namespace NachoClient.iOS
             }
 
             // Size of preview, depends on reminder view
-            var previewLabelView = view.ViewWithTag (PREVIEW_TAG) as UILabel;
+            var previewLabelView = view.ViewWithTag (PREVIEW_TAG) as BodyView;
 
             var previewLabelViewHeight = view.Frame.Height - 80 - previewLabelAdjustment;
             previewLabelViewHeight -= 44; // toolbar
             previewLabelViewHeight -= 4; // padding
 
-            // Preview label view
-            var previewLabelViewRect = previewLabelView.Frame;
-            previewLabelViewRect.Height = previewLabelViewHeight;
-            previewLabelViewRect.Y = 80 + previewLabelAdjustment;
-            previewLabelView.Frame = previewLabelViewRect;
-            var rawPreview = GetPreview (message);
-            int oldLength;
-            var cookedPreview = rawPreview;
-            do {
-                oldLength = cookedPreview.Length;
-                cookedPreview = cookedPreview.Replace ('\r', '\n');
-                cookedPreview = cookedPreview.Replace ("\n\n", "\n");
-            } while(cookedPreview.Length != oldLength);
-            previewLabelView.AttributedText = new NSAttributedString (cookedPreview);
+            previewLabelView.Configure (message);
+            previewLabelView.Layout (previewLabelView.Frame.X, previewLabelView.Frame.Y,
+                previewLabelView.Frame.Width, previewLabelViewHeight);
 
             // Received label view
             var receivedLabelView = view.ViewWithTag (RECEIVED_DATE_TAG) as UILabel;
