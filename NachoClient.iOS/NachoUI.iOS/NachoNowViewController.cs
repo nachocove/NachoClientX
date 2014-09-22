@@ -24,7 +24,7 @@ namespace NachoClient.iOS
         protected CalendarTableViewSource calendarSource;
         UITapGestureRecognizer carouselTapGestureRecognizer = null;
 
-        protected iCarousel carouselView;
+        public iCarousel carouselView;
         protected UITableView calendarTableView;
 
         public NachoNowViewController (IntPtr handle) : base (handle)
@@ -71,6 +71,7 @@ namespace NachoClient.iOS
             carouselView.Vertical = true;
             carouselView.ContentOffset = new SizeF (0f, 0f);
             carouselView.BackgroundColor = UIColor.Clear;
+            carouselView.IgnorePerpendicularSwipes = true;
             View.AddSubview (carouselView);
 
             carouselTapGestureRecognizer = new UITapGestureRecognizer ();

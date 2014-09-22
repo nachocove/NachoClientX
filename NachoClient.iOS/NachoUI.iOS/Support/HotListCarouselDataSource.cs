@@ -33,6 +33,88 @@ namespace NachoClient.iOS
         static List<UIBarButtonItem> preventBarButtonGC;
         NachoNowViewController owner;
 
+
+        float startingX;
+        float xOffset;
+
+        UIView colorView;
+        UIImageView swipingView;
+
+        double percentageSlide (UIView view)
+        {
+            return (xOffset - startingX) / view.Frame.Width;
+        }
+
+        /// <summary>
+        /// Gesture handler for date dots pan/swipe
+        /// </summary>
+        private void PanHandler (UIView view, UIPanGestureRecognizer obj)
+        {
+            Console.WriteLine ("PanHandler");
+            if (UIGestureRecognizerState.Began == obj.State) {
+                owner.carouselView.ScrollEnabled = false;
+                startingX = obj.TranslationInView (view).X;
+                colorView = new UIView (view.Frame);
+                colorView.BackgroundColor = UIColor.Brown;
+                colorView.Layer.CornerRadius = 5;
+                var Image = Util.captureView (view);
+                swipingView = new UIImageView (Image);
+                view.Superview.AddSubview (colorView);
+                view.Superview.AddSubview (swipingView);
+                return;
+            }
+
+            if (UIGestureRecognizerState.Changed == obj.State) {
+                xOffset = obj.TranslationInView (view).X;
+                var frame = swipingView.Frame;
+                frame.X = xOffset;
+                swipingView.Frame = frame;
+                var percentSlide = percentageSlide (view);
+                Console.WriteLine ("percentSlide = {0}", percentSlide);
+                if (-0.30 > percentSlide) {
+                    colorView.BackgroundColor = new UIColor (232.0f / 255.0f, 61.0f / 255.0f, 14.0f / 255.0f, 1.0f); // red
+                } else if (0 > percentSlide) {
+                    colorView.BackgroundColor = new UIColor (85.0f / 255.0f, 213.0f / 255.0f, 80.0f / 255.0f, 1.0f); // green
+                } else if (0.25 > percentSlide) {
+                    colorView.BackgroundColor = new UIColor (206.0f / 255.0f, 149.0f / 255.0f, 98.0f / 255.0f, 1.0f); // brown
+                } else {
+                    colorView.BackgroundColor = new UIColor (254.0f / 255.0f, 217.0f / 255.0f, 56.0f / 255.0f, 1.0f); // yellow
+                }
+                return;
+            }
+
+            if ((UIGestureRecognizerState.Ended == obj.State) || (UIGestureRecognizerState.Cancelled == obj.State)) {
+                owner.carouselView.ScrollEnabled = true;
+                if (null != colorView) {
+                    colorView.RemoveFromSuperview ();
+                    colorView = null;
+                }
+                if (null != swipingView) {
+                    UIView.Animate (0.1, () => {
+                        var frame = swipingView.Frame;
+                        frame.X = 0;
+                        swipingView.Frame = frame;
+                    }, () => {
+                        swipingView.RemoveFromSuperview ();
+                        swipingView = null;
+                    });
+                }
+                var percentSlide = percentageSlide (view);
+                if (-0.30 > percentSlide) {
+                    onDeleteButtonClicked (view);
+                } else if (-0.05 > percentSlide) {
+                    onArchiveButtonClicked (view);
+                } else if (0.05 > percentSlide) {
+                    // ignore a tiny swipe
+                } else if (0.30 > percentSlide) {
+                    onSaveButtonClicked (view);
+                } else { 
+                    onDeferButtonClicked (view);
+                }
+                return;
+            }
+        }
+
         public HotListCarouselDataSource (NachoNowViewController o)
         {
             owner = o;
@@ -152,7 +234,7 @@ namespace NachoClient.iOS
             float rightMargin = viewWidth - 15;
             float chiliX = rightMargin - 20;
             var chiliImageView = new UIImageView (new RectangleF (chiliX, 8, 20, 20));
-            chiliImageView.Image = UIImage.FromBundle("icn-red-chili-small");
+            chiliImageView.Image = UIImage.FromBundle ("icn-red-chili-small");
             chiliImageView.Tag = USER_CHILI_TAG;
             view.AddSubview (chiliImageView);
 
@@ -170,9 +252,26 @@ namespace NachoClient.iOS
             var replyButton = new UIBarButtonItem ();
             Util.SetOriginalImageForButton (replyButton, "toolbar-icn-reply");
             replyButton.Clicked += (object sender, EventArgs e) => {
-                ReplyActionSheet (view);
+//                ReplyActionSheet (view);
+                onReplyButtonClicked (view, MessageComposeViewController.REPLY_ACTION);
             };
             preventBarButtonGC.Add (replyButton);
+
+            var replyAllButton = new UIBarButtonItem ();
+            Util.SetOriginalImageForButton (replyAllButton, "toolbar-icn-reply-all");
+            replyAllButton.Clicked += (object sender, EventArgs e) => {
+//                ReplyActionSheet (view);
+                onReplyButtonClicked (view, MessageComposeViewController.REPLY_ALL_ACTION);
+            };
+            preventBarButtonGC.Add (replyAllButton);
+
+            var forwardButton = new UIBarButtonItem ();
+            Util.SetOriginalImageForButton (forwardButton, "toolbar-icn-fwd");
+            forwardButton.Clicked += (object sender, EventArgs e) => {
+//                ReplyActionSheet (view);
+                onReplyButtonClicked (view, MessageComposeViewController.FORWARD_ACTION);
+            };
+            preventBarButtonGC.Add (forwardButton);
 
             var chiliButton = new UIBarButtonItem ();
             Util.SetOriginalImageForButton (chiliButton, "icn-nothot-gray");
@@ -219,18 +318,36 @@ namespace NachoClient.iOS
             var toolbar = new UIToolbar (new RectangleF (0, frame.Height - 44, frame.Width, 44));
             toolbar.SetItems (new UIBarButtonItem[] {
                 replyButton,
+                fixedSpace,
+                replyAllButton,
+                fixedSpace,
+                forwardButton,
                 flexibleSpace,
                 chiliButton,
-                flexibleSpace,
-                deferButton,
-                flexibleSpace,
-                archiveButton,
-                flexibleSpace,
-                saveButton,
-                flexibleSpace,
-                deleteButton
+//                flexibleSpace,
+//                deferButton,
+//                flexibleSpace,
+//                archiveButton,
+//                flexibleSpace,
+//                saveButton,
+//                flexibleSpace,
+//                deleteButton
             }, false);
             view.AddSubview (toolbar);
+
+            var gestureRecognizer = new UIPanGestureRecognizer ((UIPanGestureRecognizer obj) => {
+                PanHandler (view, obj);
+            });
+            gestureRecognizer.ShouldRecognizeSimultaneously = delegate {
+                return true;
+            };
+            gestureRecognizer.ShouldBegin = delegate(UIGestureRecognizer obj) {
+                var Recognizer = (UIPanGestureRecognizer)obj;
+                var Velocity = Recognizer.VelocityInView (view);
+                return Math.Abs (Velocity.X) > Math.Abs (Velocity.Y);
+            };
+
+            view.AddGestureRecognizer (gestureRecognizer);
 
             return view;
         }
