@@ -1518,7 +1518,6 @@
     <BundleResource Include="Resources\nav-nachonow-gray%402x.png" />
     <BundleResource Include="Resources\toolbar-icn-flag%402x.png" />
     <BundleResource Include="Resources\toolbar-icn-fwd%402x.png" />
-    <BundleResource Include="Resources\toolbar-icn-reply-all-%402x.png" />
     <BundleResource Include="Resources\toolbar-icn-reply%402x.png" />
     <BundleResource Include="Resources\navbar-icn-menu%402x.png" />
     <BundleResource Include="Resources\icn-attachments%402x.png" />
@@ -1594,6 +1593,7 @@
     <BundleResource Include="Resources\Slide4-3%402x.png" />
     <BundleResource Include="Resources\LegalInfo.html" />
     <BundleResource Include="Resources\nav-backarrow%402x.png" />
+    <BundleResource Include="Resources\toolbar-icn-reply-all%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
