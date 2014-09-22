@@ -60,7 +60,10 @@ namespace NachoClient.iOS
 
         protected void CreateNonUrlView ()
         {
-
+            var textView = new UITextView (View.Frame);
+            View.Add (textView);
+            textView.Text =  System.IO.File.ReadAllText(url);
+            NavigationItem.Title = title;
         }
     }
 }
