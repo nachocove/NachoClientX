@@ -1136,6 +1136,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcMessageIntent.cs">
       <Link>NachoCore\Brain\NcMessageIntent.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\BodyView.cs" />
+    <Compile Include="NachoUI.iOS\Support\BodyWebView.cs" />
+    <Compile Include="NachoUI.iOS\Support\BodyCalendarView.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
