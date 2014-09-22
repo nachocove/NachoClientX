@@ -534,10 +534,10 @@ namespace NachoClient.iOS
             ccView = new UcAddressBlock (this, "Cc:", aBlockWidth);
             ccView.SetCompact (false, -1);
             ccView.SetEditable (false);
-            ccView.SetLineHeight (CCVIEW_LEFT_MARGIN);
+            ccView.SetLineHeight (20);
             ccView.SetAddressIndentation (45);
             ViewFramer.Create (ccView)
-                .X (20)
+                .X (CCVIEW_LEFT_MARGIN)
                 .Y (yOffset)
                 .Width (aBlockWidth)
                 .Height (0);
