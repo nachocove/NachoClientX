@@ -16,12 +16,6 @@ namespace NachoClient.iOS
 		MonoTouch.UIKit.UIView contentView { get; set; }
 
 		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem menuButton { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem nowButton { get; set; }
-
-		[Outlet]
 		MonoTouch.UIKit.UIScrollView scrollView { get; set; }
 		
 		void ReleaseDesignerOutlets ()
@@ -29,16 +23,6 @@ namespace NachoClient.iOS
 			if (contentView != null) {
 				contentView.Dispose ();
 				contentView = null;
-			}
-
-			if (menuButton != null) {
-				menuButton.Dispose ();
-				menuButton = null;
-			}
-
-			if (nowButton != null) {
-				nowButton.Dispose ();
-				nowButton = null;
 			}
 
 			if (scrollView != null) {

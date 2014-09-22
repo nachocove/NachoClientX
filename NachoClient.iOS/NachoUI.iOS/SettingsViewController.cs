@@ -4,7 +4,6 @@ using System;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using MonoTouch.Dialog;
-using SWRevealViewControllerBinding;
 using NachoCore.Utils;
 using NachoCore;
 using NachoCore.Model;
@@ -540,19 +539,12 @@ namespace NachoClient.iOS
 
         public void SelectionChanged (UITextView textView)
         {
-            var caretRect = textView.GetCaretRectForPosition (textView.SelectedTextRange.end);
+            var caretRect = textView.GetCaretRectForPosition (textView.SelectedTextRange.End);
             caretRect.Size = new System.Drawing.SizeF (caretRect.Size.Width, caretRect.Size.Height + textView.TextContainerInset.Bottom);
             var frame = textView.Frame;
             frame.Size = new System.Drawing.SizeF (textView.ContentSize.Width, textView.ContentSize.Height + 40);
             textView.Frame = frame;
             caretRect.Y += textView.Frame.Y;
-        }
-
-        void EditAccount ()
-        {
-            Log.Info (Log.LOG_UI, "Edit account");
-            var editViewController = new EditAccountViewController (null);
-            NavigationController.PushViewController (editViewController, true);
         }
 
         public void LoadSettingsForSelectedAccount (McAccount whatAccount)

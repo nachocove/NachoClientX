@@ -13,7 +13,6 @@ using MimeKit;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoPlatform;
-using SWRevealViewControllerBinding;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
@@ -745,7 +744,7 @@ namespace NachoClient.iOS
             contentView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, bottom);
             scrollView.ContentSize = new SizeF (SCREEN_WIDTH, bottom);
         }
-            
+
         public void AddTextLabel (float xOffset, float yOffset, float width, float height, string text, UIView parentView)
         {
             var textLabel = new UILabel (new RectangleF (xOffset, yOffset, width, height));
@@ -1003,13 +1002,9 @@ namespace NachoClient.iOS
             }
         }
 
-        public void DismissView (bool fromMenu)
+        public void DismissView ()
         {
-            if (fromMenu) {
-                this.RevealViewController ().RevealToggle (this);
-            } else {
-                NavigationController.PopViewControllerAnimated (true);
-            }
+            NavigationController.PopViewControllerAnimated (true);
             View.EndEditing (true);
         }
 
@@ -1409,7 +1404,7 @@ namespace NachoClient.iOS
         {
             NcAssert.CaseError ();
         }
-            
+
         public string GetNoteText ()
         {
             McNote Note;

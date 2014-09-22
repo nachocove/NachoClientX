@@ -11,7 +11,6 @@ using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using MonoTouch.Dialog;
 using Xamarin.Contacts;
-using SWRevealViewControllerBinding;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;

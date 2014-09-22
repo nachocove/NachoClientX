@@ -12,7 +12,6 @@ using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore;
 using MCSwipeTableViewCellBinding;
-using SWRevealViewControllerBinding;
 using NachoCore.Brain;
 
 namespace NachoClient.iOS

@@ -12,7 +12,6 @@ using MimeKit;
 
 using NachoCore.Model;
 using NachoCore.Utils;
-using SWRevealViewControllerBinding;
 using System.Text;
 
 using NachoCore.Brain;
@@ -32,7 +31,6 @@ namespace NachoClient.iOS
         public static readonly string FORWARD_ACTION = "Forward";
 
         public INachoMessageEditorParent owner;
-        public bool showMenu;
         protected McAccount account;
 
         protected McEmailMessage mcMessage = new McEmailMessage ();
@@ -108,18 +106,6 @@ namespace NachoClient.iOS
             base.ViewDidLoad ();
 
             account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
-
-            if (showMenu) {
-                // Navigation
-                revealButton.Action = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
-                revealButton.Target = this.RevealViewController ();
-
-
-                nachoButton.Clicked += (object sender, EventArgs e) => {
-                    PerformSegue ("ComposeToNachoNow", this);
-                };
-                NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] { revealButton, nachoButton };
-            }
 
             quickResponseButton = new UIBarButtonItem ();
 
@@ -713,7 +699,7 @@ namespace NachoClient.iOS
         protected void SelectionChanged (UITextView textView)
         {
             // We want to scroll the caret rect into view
-            var caretRect = textView.GetCaretRectForPosition (textView.SelectedTextRange.end);
+            var caretRect = textView.GetCaretRectForPosition (textView.SelectedTextRange.End);
             caretRect.Size = new SizeF (caretRect.Size.Width, caretRect.Size.Height + textView.TextContainerInset.Bottom);
             // Make sure our textview is big enough to hold the text
             var frame = textView.Frame;

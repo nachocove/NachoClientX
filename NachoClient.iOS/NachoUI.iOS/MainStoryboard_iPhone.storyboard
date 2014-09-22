@@ -1,33 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="5056" systemVersion="13E28" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="DIz-1F-Wd9">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="6245" systemVersion="13F34" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="Ds7-Ad-QXl">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="3733"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="6238"/>
     </dependencies>
     <scenes>
-        <!--Main View Controller-->
-        <scene sceneID="AkA-FI-VSg">
-            <objects>
-                <viewController storyboardIdentifier="MainViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="DIz-1F-Wd9" customClass="MainViewController" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="mLC-dy-Yj7">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
-                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
-                    </view>
-                    <extendedEdge key="edgesForExtendedLayout"/>
-                    <connections>
-                        <segue destination="0Qz-3B-5qw" kind="custom" identifier="sw_front" customClass="SWRevealViewControllerSegue" id="Zzd-GE-nyB"/>
-                    </connections>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="MoL-v9-szX" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-7572" y="-2353"/>
-        </scene>
         <!--Advanced Login View Controller-->
         <scene sceneID="82q-hP-OFu">
             <objects>
                 <viewController storyboardIdentifier="AdvancedLoginViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="tch-Ox-Ppd" customClass="AdvancedLoginViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="QRf-dz-YUv">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -70,14 +52,14 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="sh1-Qf-9vs" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-3221" y="-2353"/>
+            <point key="canvasLocation" x="-2689" y="-2353"/>
         </scene>
-        <!--Calendar View Controller - Calendar-->
+        <!--Calendar-->
         <scene sceneID="lp3-oi-9fg">
             <objects>
                 <viewController storyboardIdentifier="CalendarViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="d8n-da-LP7" customClass="CalendarViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="T2Q-uC-Zpf">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="455"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
                             <view contentMode="scaleToFill" id="OaC-4H-Y1h">
@@ -86,7 +68,7 @@
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                             </view>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="NDf-lZ-rUS">
-                                <rect key="frame" x="0.0" y="78" width="320" height="427"/>
+                                <rect key="frame" x="0.0" y="78" width="320" height="378"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                             </tableView>
@@ -109,7 +91,7 @@
             </objects>
             <point key="canvasLocation" x="-2679" y="-955"/>
         </scene>
-        <!--Files Hierarchy View Controller - Files-->
+        <!--Files-->
         <scene sceneID="Xtx-pM-5iq">
             <objects>
                 <viewController storyboardIdentifier="FilesHierarchyViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="j5A-VG-u0P" customClass="FilesHierarchyViewController" sceneMemberID="viewController">
@@ -145,7 +127,7 @@
             </objects>
             <point key="canvasLocation" x="-4435" y="-285"/>
         </scene>
-        <!--Files View Controller - File Type-->
+        <!--File Type-->
         <scene sceneID="KYr-4w-GFq">
             <objects>
                 <tableViewController storyboardIdentifier="FilesViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="bBy-CW-6ix" customClass="FilesViewController" sceneMemberID="viewController">
@@ -189,7 +171,7 @@
             </objects>
             <point key="canvasLocation" x="-3882" y="445"/>
         </scene>
-        <!--Task List View Controller - Tasks-->
+        <!--Tasks-->
         <scene sceneID="eS4-pd-cWT">
             <objects>
                 <tableViewController storyboardIdentifier="TaskListViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="sao-Pd-u1t" customClass="TaskListViewController" sceneMemberID="viewController">
@@ -231,25 +213,19 @@
                     <navigationItem key="navigationItem" title="Tasks" id="rmf-Wo-gG7"/>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" prompted="NO"/>
                     <connections>
-                        <outlet property="addButton" destination="0te-5F-isn" id="MOF-6C-Gg9"/>
-                        <outlet property="nachoButton" destination="JzF-aF-FAL" id="6D2-N5-LZS"/>
-                        <outlet property="revealButton" destination="U1V-nY-tB6" id="W9q-8Q-GVZ"/>
                         <segue destination="OCr-PO-3nH" kind="push" identifier="TasksToNachoNow" id="P5K-rQ-MrM"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="0ni-R3-Vh5" userLabel="First Responder" sceneMemberID="firstResponder"/>
-                <barButtonItem image="list.png" id="U1V-nY-tB6" userLabel="Bar Button Item - Menu"/>
-                <barButtonItem image="Nacho-Cove-Icon.png" id="JzF-aF-FAL" userLabel="Bar Button Item - Nacho"/>
-                <barButtonItem systemItem="add" id="0te-5F-isn"/>
             </objects>
             <point key="canvasLocation" x="-5418" y="-3850"/>
         </scene>
-        <!--Contacts View Controller - Contacts-->
+        <!--Contacts-->
         <scene sceneID="pLr-jq-dgQ">
             <objects>
                 <tableViewController storyboardIdentifier="ContactsViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="jTc-Vg-SXZ" customClass="ContactsViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="MBn-W2-0u6">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="455"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <searchBar key="tableHeaderView" contentMode="redraw" id="f7d-Bz-vIg">
@@ -309,14 +285,9 @@
                         </connections>
                     </tableView>
                     <extendedEdge key="edgesForExtendedLayout"/>
-                    <navigationItem key="navigationItem" title="Contacts" id="zrg-GA-kfR">
-                        <barButtonItem key="leftBarButtonItem" image="list.png" id="jLa-UU-2VJ"/>
-                        <barButtonItem key="rightBarButtonItem" systemItem="add" id="uyu-bB-1zI"/>
-                    </navigationItem>
+                    <navigationItem key="navigationItem" title="Contacts" id="zrg-GA-kfR"/>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <connections>
-                        <outlet property="addButton" destination="uyu-bB-1zI" id="Ygf-sH-FIu"/>
-                        <outlet property="revealButton" destination="jLa-UU-2VJ" id="dUB-Zb-Sre"/>
                         <outlet property="searchDisplayController" destination="rbr-Tg-MJy" id="gRe-Gf-Fmo"/>
                         <segue destination="MG9-1p-N0l" kind="push" identifier="ContactsToContactDetail" id="fwk-9p-tlV"/>
                         <segue destination="vgr-FH-RtX" kind="push" identifier="ContactsToContactEdit" id="W3H-fb-nEJ"/>
@@ -338,7 +309,7 @@
             </objects>
             <point key="canvasLocation" x="-1099" y="-955"/>
         </scene>
-        <!--General Settings View Controller - Settings-->
+        <!--Settings-->
         <scene sceneID="cES-6I-XY9">
             <objects>
                 <viewController storyboardIdentifier="GeneralSettingsViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="zEe-J0-xNV" customClass="GeneralSettingsViewController" sceneMemberID="viewController">
@@ -390,7 +361,7 @@
             </objects>
             <point key="canvasLocation" x="-773" y="-3981"/>
         </scene>
-        <!--Settings View Controller - Settings-->
+        <!--Settings-->
         <scene sceneID="Jbb-0l-SOs">
             <objects>
                 <tableViewController restorationIdentifier="SettingsViewController" storyboardIdentifier="SettingsViewController" id="n4d-09-jTS" customClass="SettingsViewController" sceneMemberID="viewController">
@@ -432,14 +403,14 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="YtI-ix-b1g" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-775" y="-2467"/>
+            <point key="canvasLocation" x="-243" y="-2467"/>
         </scene>
-        <!--Support View Controller - Support-->
+        <!--Support-->
         <scene sceneID="vbl-v1-uBK">
             <objects>
                 <tableViewController storyboardIdentifier="SupportViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="MRl-Tp-bqC" customClass="SupportViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="3Ax-0N-BUW">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="455"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <prototypes>
@@ -548,25 +519,20 @@
             </objects>
             <point key="canvasLocation" x="-3195" y="-3171"/>
         </scene>
-        <!--Home View Controller - Home-->
+        <!--Home-->
         <scene sceneID="HqZ-cG-lfO">
             <objects>
                 <pageViewController storyboardIdentifier="HomeViewController" autoresizesArchivedViewToFullSize="NO" useStoryboardIdentifierAsRestorationIdentifier="YES" transitionStyle="pageCurl" navigationOrientation="horizontal" spineLocation="min" id="OQ8-xH-iKh" customClass="HomeViewController" sceneMemberID="viewController">
                     <extendedEdge key="edgesForExtendedLayout"/>
-                    <navigationItem key="navigationItem" title="Home" id="CJe-bJ-vOa">
-                        <barButtonItem key="leftBarButtonItem" image="list.png" id="5xM-Np-yHN"/>
-                    </navigationItem>
+                    <navigationItem key="navigationItem" title="Home" id="CJe-bJ-vOa"/>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <connections>
-                        <outlet property="nachoButton" destination="nOm-08-vvV" id="kRl-O8-Agh"/>
-                        <outlet property="revealButton" destination="5xM-Np-yHN" id="4Xf-uv-Ic1"/>
                         <segue destination="OCr-PO-3nH" kind="push" identifier="SegueToNachoNow" id="v5u-iO-UgY"/>
                         <segue destination="tch-Ox-Ppd" kind="push" identifier="SegueToAdvancedLogin" id="od0-Sz-R9p"/>
                         <segue destination="whm-e9-YWX" kind="modal" identifier="SegueToTabController" modalTransitionStyle="crossDissolve" id="4z2-t5-9Cd"/>
                     </connections>
                 </pageViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="1uw-1F-jlg" userLabel="First Responder" sceneMemberID="firstResponder"/>
-                <barButtonItem title="Item" id="nOm-08-vvV" userLabel="Bar Button Item - Nacho"/>
             </objects>
             <point key="canvasLocation" x="-2663" y="-3171"/>
         </scene>
@@ -607,9 +573,9 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="B4U-5i-lJV" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-6061" y="-2361"/>
+            <point key="canvasLocation" x="-5529" y="-2361"/>
         </scene>
-        <!--Folder View Controller - Folder View-->
+        <!--Folder View-->
         <scene sceneID="jpU-Xb-jWm">
             <objects>
                 <tableViewController storyboardIdentifier="FoldersView_Storyboard" title="Folder View" id="UKd-1I-ARy" customClass="FolderViewController" sceneMemberID="viewController">
@@ -663,7 +629,7 @@
             </objects>
             <point key="canvasLocation" x="-2017" y="135"/>
         </scene>
-        <!--Contact Search View Controller - Contacts-->
+        <!--Contacts-->
         <scene sceneID="qZb-fd-BvT">
             <objects>
                 <tableViewController restorationIdentifier="ContactSearchViewController" storyboardIdentifier="ContactSearchViewController" id="HJp-il-GU9" customClass="ContactSearchViewController" sceneMemberID="viewController">
@@ -780,7 +746,7 @@
             </objects>
             <point key="canvasLocation" x="1747" y="875"/>
         </scene>
-        <!--Contact Chooser View Controller - Chooser-->
+        <!--Chooser-->
         <scene sceneID="Ora-ag-cc2">
             <objects>
                 <viewController storyboardIdentifier="ContactChooserViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="Mow-Gy-F9N" customClass="ContactChooserViewController" sceneMemberID="viewController">
@@ -1091,27 +1057,6 @@
                     <date key="minimumDate" timeIntervalSinceReferenceDate="-31582800">
                         <!--2000-01-01 11:00:00 +0000-->
                     </date>
-                    <timeZone key="timeZone" name="America/Los_Angeles">
-                        <data key="data">
-VFppZgAAAAAAAAAAAAAAAAAAAAAAAAAEAAAABAAAAAAAAAC5AAAABAAAABCepkign7sVkKCGKqChmveQ
-y4kaoNIj9HDSYSYQ1v50INiArZDa/tGg28CQENzes6DdqayQ3r6VoN+JjpDgnneg4WlwkOJ+WaDjSVKQ
-5F47oOUpNJDmR1gg5xJREOgnOiDo8jMQ6gccIOrSFRDr5v4g7LH3EO3G4CDukdkQ76/8oPBxuxDxj96g
-8n/BkPNvwKD0X6OQ9U+ioPY/hZD3L4Sg+CiiEPkPZqD6CIQQ+viDIPvoZhD82GUg/chIEP64RyD/qCoQ
-AJgpIAGIDBACeAsgA3EokARhJ6AFUQqQBkEJoAcw7JAHjUOgCRDOkAmtvyAK8LCQC+CvoAzZzRANwJGg
-DrmvEA+priAQmZEQEYmQIBJ5cxATaXIgFFlVEBVJVCAWOTcQFyk2IBgiU5AZCRggGgI1kBryNKAb4heQ
-HNIWoB3B+ZAesfigH6HbkCB2KyAhgb2QIlYNICNq2hAkNe8gJUq8ECYV0SAnKp4QJ/7toCkKgBAp3s+g
-KupiECu+saAs036QLZ6ToC6zYJAvfnWgMJNCkDFnkiAycySQM0d0IDRTBpA1J1YgNjLokDcHOCA4HAUQ
-OOcaIDn75xA6xvwgO9vJEDywGKA9u6sQPo/6oD+bjRBAb9ygQYSpkEJPvqBDZIuQRC+goEVEbZBF89Mg
-Ry2KEEfTtSBJDWwQSbOXIErtThBLnLOgTNZqkE18laBOtkyQT1x3oFCWLpBRPFmgUnYQkFMcO6BUVfKQ
-VPwdoFY11JBW5TogWB7xEFjFHCBZ/tMQWqT+IFvetRBchOAgXb6XEF5kwiBfnnkQYE3eoGGHlZBiLcCg
-Y2d3kGQNoqBlR1mQZe2EoGcnO5BnzWagaQcdkGmtSKBq5v+Qa5ZlIGzQHBBtdkcgbq/+EG9WKSBwj+AQ
-cTYLIHJvwhBzFe0gdE+kEHT/CaB2OMCQdt7roHgYopB4vs2gefiEkHqer6B72GaQfH6RoH24SJB+XnOg
-f5gqkAABAAECAwEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEA
-AQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEA
-AQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEA
-AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
-</data>
-                    </timeZone>
                 </datePicker>
                 <datePicker contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" datePickerMode="dateAndTime" minuteInterval="5" id="q3F-d5-e0A" userLabel="endDatePicker">
                     <rect key="frame" x="0.0" y="0.0" width="320" height="216"/>
@@ -1122,27 +1067,6 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
                     <date key="minimumDate" timeIntervalSinceReferenceDate="-31582800">
                         <!--2000-01-01 11:00:00 +0000-->
                     </date>
-                    <timeZone key="timeZone" name="America/Los_Angeles">
-                        <data key="data">
-VFppZgAAAAAAAAAAAAAAAAAAAAAAAAAEAAAABAAAAAAAAAC5AAAABAAAABCepkign7sVkKCGKqChmveQ
-y4kaoNIj9HDSYSYQ1v50INiArZDa/tGg28CQENzes6DdqayQ3r6VoN+JjpDgnneg4WlwkOJ+WaDjSVKQ
-5F47oOUpNJDmR1gg5xJREOgnOiDo8jMQ6gccIOrSFRDr5v4g7LH3EO3G4CDukdkQ76/8oPBxuxDxj96g
-8n/BkPNvwKD0X6OQ9U+ioPY/hZD3L4Sg+CiiEPkPZqD6CIQQ+viDIPvoZhD82GUg/chIEP64RyD/qCoQ
-AJgpIAGIDBACeAsgA3EokARhJ6AFUQqQBkEJoAcw7JAHjUOgCRDOkAmtvyAK8LCQC+CvoAzZzRANwJGg
-DrmvEA+priAQmZEQEYmQIBJ5cxATaXIgFFlVEBVJVCAWOTcQFyk2IBgiU5AZCRggGgI1kBryNKAb4heQ
-HNIWoB3B+ZAesfigH6HbkCB2KyAhgb2QIlYNICNq2hAkNe8gJUq8ECYV0SAnKp4QJ/7toCkKgBAp3s+g
-KupiECu+saAs036QLZ6ToC6zYJAvfnWgMJNCkDFnkiAycySQM0d0IDRTBpA1J1YgNjLokDcHOCA4HAUQ
-OOcaIDn75xA6xvwgO9vJEDywGKA9u6sQPo/6oD+bjRBAb9ygQYSpkEJPvqBDZIuQRC+goEVEbZBF89Mg
-Ry2KEEfTtSBJDWwQSbOXIErtThBLnLOgTNZqkE18laBOtkyQT1x3oFCWLpBRPFmgUnYQkFMcO6BUVfKQ
-VPwdoFY11JBW5TogWB7xEFjFHCBZ/tMQWqT+IFvetRBchOAgXb6XEF5kwiBfnnkQYE3eoGGHlZBiLcCg
-Y2d3kGQNoqBlR1mQZe2EoGcnO5BnzWagaQcdkGmtSKBq5v+Qa5ZlIGzQHBBtdkcgbq/+EG9WKSBwj+AQ
-cTYLIHJvwhBzFe0gdE+kEHT/CaB2OMCQdt7roHgYopB4vs2gefiEkHqer6B72GaQfH6RoH24SJB+XnOg
-f5gqkAABAAECAwEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEA
-AQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEA
-AQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEA
-AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
-</data>
-                    </timeZone>
                 </datePicker>
                 <barButtonItem image="navbar-icn-close.png" id="oR4-zY-1Lz" userLabel="Bar Button Item - cancelButton"/>
                 <barButtonItem image="navbar-icn-inbox.png" id="Vun-h8-uHa" userLabel="Bar Button Item - nachoNowButton"/>
@@ -1194,15 +1118,15 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
             <objects>
                 <viewController storyboardIdentifier="ChooseCalendarViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="cXD-rq-iSl" userLabel="Choose Calendar View Controller" customClass="ChooseCalendarViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="eJB-Pb-Y39">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="2Bb-OE-BsP">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="ucq-Ja-oju" userLabel="Content View">
-                                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                                     </view>
@@ -1219,7 +1143,7 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="QU2-pC-E3Z" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1013" y="-2150"/>
+            <point key="canvasLocation" x="1545" y="-2150"/>
         </scene>
         <!--Edit Event View Controller-->
         <scene sceneID="ndR-FK-UVf">
@@ -1267,27 +1191,6 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
                     <date key="date" timeIntervalSinceReferenceDate="428449669.92554599">
                         <!--2014-07-30 21:47:49 +0000-->
                     </date>
-                    <timeZone key="timeZone" name="America/Los_Angeles">
-                        <data key="data">
-VFppZgAAAAAAAAAAAAAAAAAAAAAAAAAEAAAABAAAAAAAAAC5AAAABAAAABCepkign7sVkKCGKqChmveQ
-y4kaoNIj9HDSYSYQ1v50INiArZDa/tGg28CQENzes6DdqayQ3r6VoN+JjpDgnneg4WlwkOJ+WaDjSVKQ
-5F47oOUpNJDmR1gg5xJREOgnOiDo8jMQ6gccIOrSFRDr5v4g7LH3EO3G4CDukdkQ76/8oPBxuxDxj96g
-8n/BkPNvwKD0X6OQ9U+ioPY/hZD3L4Sg+CiiEPkPZqD6CIQQ+viDIPvoZhD82GUg/chIEP64RyD/qCoQ
-AJgpIAGIDBACeAsgA3EokARhJ6AFUQqQBkEJoAcw7JAHjUOgCRDOkAmtvyAK8LCQC+CvoAzZzRANwJGg
-DrmvEA+priAQmZEQEYmQIBJ5cxATaXIgFFlVEBVJVCAWOTcQFyk2IBgiU5AZCRggGgI1kBryNKAb4heQ
-HNIWoB3B+ZAesfigH6HbkCB2KyAhgb2QIlYNICNq2hAkNe8gJUq8ECYV0SAnKp4QJ/7toCkKgBAp3s+g
-KupiECu+saAs036QLZ6ToC6zYJAvfnWgMJNCkDFnkiAycySQM0d0IDRTBpA1J1YgNjLokDcHOCA4HAUQ
-OOcaIDn75xA6xvwgO9vJEDywGKA9u6sQPo/6oD+bjRBAb9ygQYSpkEJPvqBDZIuQRC+goEVEbZBF89Mg
-Ry2KEEfTtSBJDWwQSbOXIErtThBLnLOgTNZqkE18laBOtkyQT1x3oFCWLpBRPFmgUnYQkFMcO6BUVfKQ
-VPwdoFY11JBW5TogWB7xEFjFHCBZ/tMQWqT+IFvetRBchOAgXb6XEF5kwiBfnnkQYE3eoGGHlZBiLcCg
-Y2d3kGQNoqBlR1mQZe2EoGcnO5BnzWagaQcdkGmtSKBq5v+Qa5ZlIGzQHBBtdkcgbq/+EG9WKSBwj+AQ
-cTYLIHJvwhBzFe0gdE+kEHT/CaB2OMCQdt7roHgYopB4vs2gefiEkHqer6B72GaQfH6RoH24SJB+XnOg
-f5gqkAABAAECAwEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEA
-AQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEA
-AQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEA
-AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
-</data>
-                    </timeZone>
                 </datePicker>
                 <datePicker contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" datePickerMode="dateAndTime" minuteInterval="1" id="g6j-ou-jtx" userLabel="endDatePicker">
                     <rect key="frame" x="0.0" y="0.0" width="320" height="216"/>
@@ -1295,27 +1198,6 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
                     <date key="date" timeIntervalSinceReferenceDate="428449667.42975497">
                         <!--2014-07-30 21:47:47 +0000-->
                     </date>
-                    <timeZone key="timeZone" name="America/Los_Angeles">
-                        <data key="data">
-VFppZgAAAAAAAAAAAAAAAAAAAAAAAAAEAAAABAAAAAAAAAC5AAAABAAAABCepkign7sVkKCGKqChmveQ
-y4kaoNIj9HDSYSYQ1v50INiArZDa/tGg28CQENzes6DdqayQ3r6VoN+JjpDgnneg4WlwkOJ+WaDjSVKQ
-5F47oOUpNJDmR1gg5xJREOgnOiDo8jMQ6gccIOrSFRDr5v4g7LH3EO3G4CDukdkQ76/8oPBxuxDxj96g
-8n/BkPNvwKD0X6OQ9U+ioPY/hZD3L4Sg+CiiEPkPZqD6CIQQ+viDIPvoZhD82GUg/chIEP64RyD/qCoQ
-AJgpIAGIDBACeAsgA3EokARhJ6AFUQqQBkEJoAcw7JAHjUOgCRDOkAmtvyAK8LCQC+CvoAzZzRANwJGg
-DrmvEA+priAQmZEQEYmQIBJ5cxATaXIgFFlVEBVJVCAWOTcQFyk2IBgiU5AZCRggGgI1kBryNKAb4heQ
-HNIWoB3B+ZAesfigH6HbkCB2KyAhgb2QIlYNICNq2hAkNe8gJUq8ECYV0SAnKp4QJ/7toCkKgBAp3s+g
-KupiECu+saAs036QLZ6ToC6zYJAvfnWgMJNCkDFnkiAycySQM0d0IDRTBpA1J1YgNjLokDcHOCA4HAUQ
-OOcaIDn75xA6xvwgO9vJEDywGKA9u6sQPo/6oD+bjRBAb9ygQYSpkEJPvqBDZIuQRC+goEVEbZBF89Mg
-Ry2KEEfTtSBJDWwQSbOXIErtThBLnLOgTNZqkE18laBOtkyQT1x3oFCWLpBRPFmgUnYQkFMcO6BUVfKQ
-VPwdoFY11JBW5TogWB7xEFjFHCBZ/tMQWqT+IFvetRBchOAgXb6XEF5kwiBfnnkQYE3eoGGHlZBiLcCg
-Y2d3kGQNoqBlR1mQZe2EoGcnO5BnzWagaQcdkGmtSKBq5v+Qa5ZlIGzQHBBtdkcgbq/+EG9WKSBwj+AQ
-cTYLIHJvwhBzFe0gdE+kEHT/CaB2OMCQdt7roHgYopB4vs2gefiEkHqer6B72GaQfH6RoH24SJB+XnOg
-f5gqkAABAAECAwEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEA
-AQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEA
-AQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEA
-AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
-</data>
-                    </timeZone>
                 </datePicker>
                 <barButtonItem image="navbar-icn-close.png" id="Dag-wd-pkU" userLabel="Bar Button Item - cancelButton"/>
                 <barButtonItem systemItem="done" id="eZZ-1I-eST" userLabel="Bar Button Item - doneButton"/>
@@ -1327,15 +1209,15 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
             <objects>
                 <viewController storyboardIdentifier="AlertChooserViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="p7r-P8-BKK" customClass="AlertChooserViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="87C-EB-0MK">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="Utd-6b-paG">
-                                <rect key="frame" x="-1" y="0.0" width="320" height="568"/>
+                                <rect key="frame" x="-1" y="0.0" width="320" height="504"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="Qls-U5-Qsb" userLabel="Content View">
-                                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                                     </view>
@@ -1385,7 +1267,7 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="kiK-9g-6gb" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1013" y="-2883"/>
+            <point key="canvasLocation" x="1545" y="-2883"/>
         </scene>
         <!--Nacho Tab Bar Controller-->
         <scene sceneID="4Iv-Sw-nIy">
@@ -1443,7 +1325,7 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
             </objects>
             <point key="canvasLocation" x="-4969" y="439"/>
         </scene>
-        <!--Message Compose View Controller - Compose-->
+        <!--Compose-->
         <scene sceneID="8Ab-xz-sT2">
             <objects>
                 <viewController storyboardIdentifier="MessageComposeViewController" title="Compose" useStoryboardIdentifierAsRestorationIdentifier="YES" id="tAw-fh-hJX" customClass="MessageComposeViewController" sceneMemberID="viewController">
@@ -1565,27 +1447,6 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
                                 <date key="date" timeIntervalSinceReferenceDate="413187510.73113">
                                     <!--2014-02-04 06:18:30 +0000-->
                                 </date>
-                                <timeZone key="timeZone" name="America/Los_Angeles">
-                                    <data key="data">
-VFppZgAAAAAAAAAAAAAAAAAAAAAAAAAEAAAABAAAAAAAAAC5AAAABAAAABCepkign7sVkKCGKqChmveQ
-y4kaoNIj9HDSYSYQ1v50INiArZDa/tGg28CQENzes6DdqayQ3r6VoN+JjpDgnneg4WlwkOJ+WaDjSVKQ
-5F47oOUpNJDmR1gg5xJREOgnOiDo8jMQ6gccIOrSFRDr5v4g7LH3EO3G4CDukdkQ76/8oPBxuxDxj96g
-8n/BkPNvwKD0X6OQ9U+ioPY/hZD3L4Sg+CiiEPkPZqD6CIQQ+viDIPvoZhD82GUg/chIEP64RyD/qCoQ
-AJgpIAGIDBACeAsgA3EokARhJ6AFUQqQBkEJoAcw7JAHjUOgCRDOkAmtvyAK8LCQC+CvoAzZzRANwJGg
-DrmvEA+priAQmZEQEYmQIBJ5cxATaXIgFFlVEBVJVCAWOTcQFyk2IBgiU5AZCRggGgI1kBryNKAb4heQ
-HNIWoB3B+ZAesfigH6HbkCB2KyAhgb2QIlYNICNq2hAkNe8gJUq8ECYV0SAnKp4QJ/7toCkKgBAp3s+g
-KupiECu+saAs036QLZ6ToC6zYJAvfnWgMJNCkDFnkiAycySQM0d0IDRTBpA1J1YgNjLokDcHOCA4HAUQ
-OOcaIDn75xA6xvwgO9vJEDywGKA9u6sQPo/6oD+bjRBAb9ygQYSpkEJPvqBDZIuQRC+goEVEbZBF89Mg
-Ry2KEEfTtSBJDWwQSbOXIErtThBLnLOgTNZqkE18laBOtkyQT1x3oFCWLpBRPFmgUnYQkFMcO6BUVfKQ
-VPwdoFY11JBW5TogWB7xEFjFHCBZ/tMQWqT+IFvetRBchOAgXb6XEF5kwiBfnnkQYE3eoGGHlZBiLcCg
-Y2d3kGQNoqBlR1mQZe2EoGcnO5BnzWagaQcdkGmtSKBq5v+Qa5ZlIGzQHBBtdkcgbq/+EG9WKSBwj+AQ
-cTYLIHJvwhBzFe0gdE+kEHT/CaB2OMCQdt7roHgYopB4vs2gefiEkHqer6B72GaQfH6RoH24SJB+XnOg
-f5gqkAABAAECAwEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEA
-AQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEA
-AQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEA
-AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
-</data>
-                                </timeZone>
                             </datePicker>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" id="dKH-yM-es9">
                                 <rect key="frame" x="190" y="295" width="110" height="30"/>
@@ -1617,7 +1478,7 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
             </objects>
             <point key="canvasLocation" x="-493" y="860"/>
         </scene>
-        <!--Contact Detail View Controller - Contact Detail-->
+        <!--Contact Detail-->
         <scene sceneID="Faz-15-tSR">
             <objects>
                 <viewController storyboardIdentifier="ContactDetailViewController" title="Contact Detail" useStoryboardIdentifierAsRestorationIdentifier="YES" id="MG9-1p-N0l" customClass="ContactDetailViewController" sceneMemberID="viewController">
@@ -1657,27 +1518,7 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
             </objects>
             <point key="canvasLocation" x="3" y="860"/>
         </scene>
-        <!--Navigation Controller-->
-        <scene sceneID="qtI-DM-OKG">
-            <objects>
-                <navigationController storyboardIdentifier="HomeNavigationController" automaticallyAdjustsScrollViewInsets="NO" id="0Qz-3B-5qw" sceneMemberID="viewController">
-                    <extendedEdge key="edgesForExtendedLayout"/>
-                    <toolbarItems/>
-                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
-                    <navigationBar key="navigationBar" contentMode="scaleToFill" translucent="NO" id="3hW-Ow-lb9">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
-                        <autoresizingMask key="autoresizingMask"/>
-                    </navigationBar>
-                    <nil name="viewControllers"/>
-                    <connections>
-                        <segue destination="WSh-aW-ysu" kind="relationship" relationship="rootViewController" id="6HM-Xq-2nU"/>
-                    </connections>
-                </navigationController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="bo4-Q4-hrA" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-7045" y="-2353"/>
-        </scene>
-        <!--Startup View Controller - Startup-->
+        <!--Startup-->
         <scene sceneID="Zmz-eo-l65">
             <objects>
                 <viewController storyboardIdentifier="StartupViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="WSh-aW-ysu" customClass="StartupViewController" sceneMemberID="viewController">
@@ -1700,9 +1541,9 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="0IS-Oz-vYd" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-6573" y="-2361"/>
+            <point key="canvasLocation" x="-6041" y="-2361"/>
         </scene>
-        <!--Table View Controller - Root View Controller-->
+        <!--Root View Controller-->
         <scene sceneID="tuN-DN-Xsa">
             <objects>
                 <tableViewController id="YAg-TW-cSx" sceneMemberID="viewController">
@@ -1814,7 +1655,7 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
             </objects>
             <point key="canvasLocation" x="-1301" y="-3981"/>
         </scene>
-        <!--Navigation Controller - Now-->
+        <!--Now-->
         <scene sceneID="qLp-hn-IDj">
             <objects>
                 <navigationController automaticallyAdjustsScrollViewInsets="NO" id="OCr-PO-3nH" sceneMemberID="viewController">
@@ -1833,9 +1674,9 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
                 </navigationController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="2yD-9I-rr3" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-3747" y="-2353"/>
+            <point key="canvasLocation" x="-3215" y="-2353"/>
         </scene>
-        <!--Navigation Controller - Contacts-->
+        <!--Contacts-->
         <scene sceneID="7Oi-Mm-PAH">
             <objects>
                 <navigationController automaticallyAdjustsScrollViewInsets="NO" id="Ncm-tW-u3E" sceneMemberID="viewController">
@@ -1855,7 +1696,7 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
             </objects>
             <point key="canvasLocation" x="-1625" y="-955"/>
         </scene>
-        <!--Navigation Controller - Calendar-->
+        <!--Calendar-->
         <scene sceneID="XZB-Fv-sWg">
             <objects>
                 <navigationController automaticallyAdjustsScrollViewInsets="NO" id="xfD-Vu-nBF" sceneMemberID="viewController">
@@ -1910,7 +1751,7 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
             </objects>
             <point key="canvasLocation" x="-4479" y="1203"/>
         </scene>
-        <!--Navigation Controller - Hot List-->
+        <!--Hot List-->
         <scene sceneID="Wq2-wD-IPP">
             <objects>
                 <navigationController automaticallyAdjustsScrollViewInsets="NO" id="sL0-ex-8A8" sceneMemberID="viewController">
@@ -1965,7 +1806,7 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
             </objects>
             <point key="canvasLocation" x="-4479" y="1919"/>
         </scene>
-        <!--Navigation Controller - Deferred-->
+        <!--Deferred-->
         <scene sceneID="Cee-CK-UDv">
             <objects>
                 <navigationController automaticallyAdjustsScrollViewInsets="NO" id="Dc9-zu-AZQ" sceneMemberID="viewController">
@@ -2020,7 +1861,7 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
             </objects>
             <point key="canvasLocation" x="-4479" y="2687"/>
         </scene>
-        <!--Navigation Controller - Inbox-->
+        <!--Inbox-->
         <scene sceneID="o88-zD-oYi">
             <objects>
                 <navigationController automaticallyAdjustsScrollViewInsets="NO" id="bzq-xt-DVh" sceneMemberID="viewController">
@@ -2039,7 +1880,7 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
             </objects>
             <point key="canvasLocation" x="-4969" y="2687"/>
         </scene>
-        <!--Navigation Controller - Folders-->
+        <!--Folders-->
         <scene sceneID="ObW-V6-9oJ">
             <objects>
                 <navigationController automaticallyAdjustsScrollViewInsets="NO" id="v0a-Zq-Chs" sceneMemberID="viewController">
@@ -2058,53 +1899,69 @@ AQABAAEAAQAB//+dkAEA//+PgAAE//+dkAEI//+dkAEMUERUAFBTVABQV1QAUFBUAAAAAAEAAAABA
             </objects>
             <point key="canvasLocation" x="-2543" y="135"/>
         </scene>
+        <!--Navigation Controller-->
+        <scene sceneID="LgU-ss-QPC">
+            <objects>
+                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="Ds7-Ad-QXl" sceneMemberID="viewController">
+                    <toolbarItems/>
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="XUL-Lr-0kk">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </navigationBar>
+                    <nil name="viewControllers"/>
+                    <connections>
+                        <segue destination="WSh-aW-ysu" kind="relationship" relationship="rootViewController" id="KYa-c0-clF"/>
+                    </connections>
+                </navigationController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="l4e-gD-I0c" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-6573" y="-2361"/>
+        </scene>
     </scenes>
     <resources>
-        <image name="Nacho-Cove-Icon.png" width="24" height="24"/>
         <image name="icn-archive.png" width="24" height="24"/>
         <image name="icn-attach-files.png" width="16" height="16"/>
         <image name="icn-quick-message.png" width="24" height="24"/>
         <image name="icn-send.png" width="24" height="24"/>
-        <image name="list.png" width="20" height="18"/>
         <image name="navbar-icn-close.png" width="17" height="17"/>
         <image name="navbar-icn-defer.png" width="20" height="24"/>
         <image name="navbar-icn-inbox.png" width="24" height="24"/>
         <image name="toolbar-icn-delete.png" width="19" height="21"/>
         <image name="toolbar-icn-fwd.png" width="24" height="24"/>
         <image name="toolbar-icn-move.png" width="24" height="20"/>
-        <image name="toolbar-icn-reply-all.png" width="24" height="16"/>
+        <image name="toolbar-icn-reply-all.png" width="24" height="24"/>
         <image name="toolbar-icn-reply.png" width="24" height="24"/>
     </resources>
-    <color key="tintColor" red="0.45098039215686275" green="1" blue="0.95294117647058818" alpha="1" colorSpace="deviceRGB"/>
     <simulatedMetricsContainer key="defaultSimulatedMetrics">
         <simulatedStatusBarMetrics key="statusBar"/>
         <simulatedOrientationMetrics key="orientation"/>
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="tzJ-j2-YOi"/>
+        <segue reference="QbR-l1-NT5"/>
+        <segue reference="v5u-iO-UgY"/>
         <segue reference="od0-Sz-R9p"/>
         <segue reference="4z2-t5-9Cd"/>
-        <segue reference="HwV-au-Wta"/>
-        <segue reference="vXz-gG-vL2"/>
-        <segue reference="XQg-JR-vxA"/>
         <segue reference="NoB-Ny-Mf5"/>
         <segue reference="Eb2-K0-nI3"/>
-        <segue reference="e7N-39-HB4"/>
-        <segue reference="K16-Rc-eqt"/>
-        <segue reference="1Ii-My-0CB"/>
-        <segue reference="Jfg-Bb-rS2"/>
-        <segue reference="i6d-Pz-anv"/>
-        <segue reference="w67-dy-XSq"/>
-        <segue reference="m2D-2n-RiV"/>
-        <segue reference="7sK-rg-HQL"/>
-        <segue reference="peA-r2-tjq"/>
-        <segue reference="xrp-ey-B0j"/>
-        <segue reference="B5b-jg-ZNg"/>
-        <segue reference="Kmd-x6-iCJ"/>
+        <segue reference="XQg-JR-vxA"/>
         <segue reference="W3H-fb-nEJ"/>
         <segue reference="fwk-9p-tlV"/>
-        <segue reference="alQ-9Z-W4y"/>
+        <segue reference="zDw-Tx-fTt"/>
+        <segue reference="AiM-59-h7m"/>
+        <segue reference="k2t-Pj-AhS"/>
+        <segue reference="HCr-Oa-UHV"/>
+        <segue reference="RR1-bJ-URL"/>
+        <segue reference="JTo-qU-j7O"/>
+        <segue reference="11B-OX-HZh"/>
+        <segue reference="Tfk-Mt-BlS"/>
+        <segue reference="tdu-G2-PEp"/>
+        <segue reference="xrp-ey-B0j"/>
         <segue reference="559-W6-vfH"/>
+        <segue reference="Afu-47-Kju"/>
+        <segue reference="c79-xS-Npa"/>
+        <segue reference="hxO-14-opZ"/>
+        <segue reference="vUs-ft-xdy"/>
     </inferredMetricsTieBreakers>
+    <color key="tintColor" red="0.45098039215686275" green="1" blue="0.95294117647058818" alpha="1" colorSpace="deviceRGB"/>
 </document>

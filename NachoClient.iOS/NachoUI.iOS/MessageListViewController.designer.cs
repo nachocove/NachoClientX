@@ -22,12 +22,6 @@ namespace NachoClient.iOS
 		MonoTouch.UIKit.UIBarButtonItem deleteButton { get; set; }
 
 		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem nachoButton { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem revealButton { get; set; }
-
-		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem saveButton { get; set; }
 
 		[Outlet]
@@ -35,24 +29,14 @@ namespace NachoClient.iOS
 		
 		void ReleaseDesignerOutlets ()
 		{
+			if (cancelButton != null) {
+				cancelButton.Dispose ();
+				cancelButton = null;
+			}
+
 			if (composeButton != null) {
 				composeButton.Dispose ();
 				composeButton = null;
-			}
-
-			if (nachoButton != null) {
-				nachoButton.Dispose ();
-				nachoButton = null;
-			}
-
-			if (revealButton != null) {
-				revealButton.Dispose ();
-				revealButton = null;
-			}
-
-			if (searchButton != null) {
-				searchButton.Dispose ();
-				searchButton = null;
 			}
 
 			if (deleteButton != null) {
@@ -65,9 +49,9 @@ namespace NachoClient.iOS
 				saveButton = null;
 			}
 
-			if (cancelButton != null) {
-				cancelButton.Dispose ();
-				cancelButton = null;
+			if (searchButton != null) {
+				searchButton.Dispose ();
+				searchButton = null;
 			}
 		}
 	}

@@ -3,7 +3,6 @@
 using System;
 using MonoTouch.UIKit;
 using MonoTouch.Foundation;
-using SWRevealViewControllerBinding;
 
 namespace NachoClient.iOS
 {
@@ -473,16 +472,6 @@ namespace NachoClient.iOS
                     _Color_NachoLightText = Color_999999;
                 }
                 return _Color_NachoLightText;
-            }
-        }
-
-        public static UIBarButtonItem RevealButton (UIViewController vc)
-        {
-            var selector = new MonoTouch.ObjCRuntime.Selector ("revealToggle:");
-            var target = vc.RevealViewController ();
-            using (var rawImage = UIImage.FromBundle ("navbar-icn-menu")) {
-                var image = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
-                return new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, target, selector);
             }
         }
 

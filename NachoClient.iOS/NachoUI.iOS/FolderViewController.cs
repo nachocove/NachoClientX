@@ -6,7 +6,6 @@ using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using MonoTouch.UIKit;
-using SWRevealViewControllerBinding;
 using System.Drawing;
 
 namespace NachoClient.iOS
