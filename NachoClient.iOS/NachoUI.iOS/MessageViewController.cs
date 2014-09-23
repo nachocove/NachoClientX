@@ -557,7 +557,7 @@ namespace NachoClient.iOS
             view.AddSubview (reminderLabelView);
 
             // Chili image view
-            var chiliImageView = new UIImageView (new RectangleF (View.Frame.Width - 20 - 15, 18, 20, 20));
+            var chiliImageView = new UIImageView (new RectangleF (View.Frame.Width - 20 - 15, 14, 20, 20));
             chiliImageView.Image = UIImage.FromBundle("icn-red-chili-small");
             chiliImageView.Tag = (int)TagType.USER_CHILI_TAG;
             view.AddSubview (chiliImageView);
