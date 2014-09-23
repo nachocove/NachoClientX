@@ -1,0 +1,1 @@
+This is a wide plain text message that should wrap even on the bigger iPad. This is a wide plain text message that should wrap even on the bigger tablet.
