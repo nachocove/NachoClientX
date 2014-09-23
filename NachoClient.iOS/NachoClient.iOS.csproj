@@ -1147,59 +1147,10 @@
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Xamarin.ObjcBinding.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.MonoTouch.CSharp.targets" />
   <ItemGroup>
-    <BundleResource Include="..\NachoClient.Android\Assets\xsd\request\Ping.xsd">
-      <Link>Resources\xsd\request\Ping.xsd</Link>
-    </BundleResource>
-    <BundleResource Include="..\NachoClient.Android\Assets\xsd\response\Ping.xsd">
-      <Link>Resources\xsd\response\Ping.xsd</Link>
-    </BundleResource>
-    <BundleResource Include="..\NachoClient.Android\Assets\xsd\common\airsyncbase.xsd">
-      <Link>Resources\xsd\common\airsyncbase.xsd</Link>
-    </BundleResource>
-    <BundleResource Include="..\NachoClient.Android\Assets\xsd\common\calendar.xsd">
-      <Link>Resources\xsd\common\calendar.xsd</Link>
-    </BundleResource>
-    <BundleResource Include="..\NachoClient.Android\Assets\xsd\common\contacts.xsd">
-      <Link>Resources\xsd\common\contacts.xsd</Link>
-    </BundleResource>
-    <BundleResource Include="..\NachoClient.Android\Assets\xsd\common\contacts2.xsd">
-      <Link>Resources\xsd\common\contacts2.xsd</Link>
-    </BundleResource>
-    <BundleResource Include="..\NachoClient.Android\Assets\xsd\common\documentlibrary.xsd">
-      <Link>Resources\xsd\common\documentlibrary.xsd</Link>
-    </BundleResource>
-    <BundleResource Include="..\NachoClient.Android\Assets\xsd\common\email.xsd">
-      <Link>Resources\xsd\common\email.xsd</Link>
-    </BundleResource>
-    <BundleResource Include="..\NachoClient.Android\Assets\xsd\common\email2.xsd">
-      <Link>Resources\xsd\common\email2.xsd</Link>
-    </BundleResource>
-    <BundleResource Include="..\NachoClient.Android\Assets\xsd\common\itemoperations.xsd">
-      <Link>Resources\xsd\common\itemoperations.xsd</Link>
-    </BundleResource>
-    <BundleResource Include="..\NachoClient.Android\Assets\xsd\common\provision.xsd">
-      <Link>Resources\xsd\common\provision.xsd</Link>
-    </BundleResource>
-    <BundleResource Include="..\NachoClient.Android\Assets\xsd\common\rightsmanagement.xsd">
-      <Link>Resources\xsd\common\rightsmanagement.xsd</Link>
-    </BundleResource>
-    <BundleResource Include="..\NachoClient.Android\Assets\xsd\common\tasks.xsd">
-      <Link>Resources\xsd\common\tasks.xsd</Link>
-    </BundleResource>
     <BundleResource Include="Resources\Icon.png" />
     <BundleResource Include="Resources\Icon%402x.png" />
     <BundleResource Include="Resources\Menu%402x.png" />
     <BundleResource Include="Resources\Menu.png" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-all-target-headers.hmap" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-generated-files.hmap" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-own-target-headers.hmap" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-project-headers.hmap" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS.hmap" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphoneos\NachoClient.iOS.build\NachoClient.iOS-all-target-headers.hmap" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphoneos\NachoClient.iOS.build\NachoClient.iOS-generated-files.hmap" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphoneos\NachoClient.iOS.build\NachoClient.iOS-own-target-headers.hmap" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphoneos\NachoClient.iOS.build\NachoClient.iOS-project-headers.hmap" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphoneos\NachoClient.iOS.build\NachoClient.iOS.hmap" />
     <BundleResource Include="Resources\check.png" />
     <BundleResource Include="Resources\check%402x.png" />
     <BundleResource Include="Resources\clock.png" />
@@ -1591,26 +1542,6 @@
     <BundleResource Include="Resources\Slide4-3%402x.png" />
     <BundleResource Include="Resources\nav-backarrow%402x.png" />
     <BundleResource Include="Resources\toolbar-icn-reply-all%402x.png" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-all-non-framework-target-headers.hmap" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\dgph" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\AppDelegate-496669674D592815.d" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\AppDelegate-496669674D592815.dia" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\AppDelegate-496669674D592815.o" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\CalendarViewController-77759AD71C118BDE.d" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\CalendarViewController-77759AD71C118BDE.dia" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\ContactChooserViewController-B1AEE5DC885AFEF.d" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\ContactChooserViewController-B1AEE5DC885AFEF.dia" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\ContactsViewController-D919933C63DACBD2.d" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\ContactsViewController-D919933C63DACBD2.dia" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\FolderViewController-FF1749E0FB4F2ADF.d" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\FolderViewController-FF1749E0FB4F2ADF.dia" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\HomeViewController-40886F788241B9BB.d" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\HomeViewController-40886F788241B9BB.dia" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\LaunchViewController-440372BD18C2C508.d" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\LaunchViewController-440372BD18C2C508.dia" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\SettingsViewController-CDB58F8C49077FF8.d" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\SettingsViewController-CDB58F8C49077FF8.dia" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphoneos\NachoClient.iOS.build\NachoClient.iOS-all-non-framework-target-headers.hmap" />
     <BundleResource Include="Resources\LegalInfo.txt" />
   </ItemGroup>
   <ItemGroup>
