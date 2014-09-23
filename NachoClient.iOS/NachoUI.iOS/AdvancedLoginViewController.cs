@@ -787,7 +787,9 @@ namespace NachoClient.iOS
             certificateView.ConfigureView ();
             Log.Info (Log.LOG_UI, "Display certificate alert to user");
             certificateView.ShowView ();
-            waitScreen.SegueToTutorial.Invalidate ();
+            if (null != waitScreen.SegueToTutorial) {
+                waitScreen.SegueToTutorial.Invalidate ();
+            }
         }
 
         public void acceptCertificate ()
