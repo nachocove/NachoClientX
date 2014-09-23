@@ -8,6 +8,7 @@ import email.mime.text
 import email.mime.multipart
 from email import encoders
 import os
+import os.path
 
 
 class EmailAccount:
@@ -54,6 +55,7 @@ class EmailServer:
 class Email:
     def __init__(self):
         self.subject = ''
+        self.text = None
         self.plain = None
         self.html = None
         self.from_address = None
@@ -67,6 +69,11 @@ class Email:
     def send(self, server):
         plain = None
         html = None
+        if self.text is not None:
+            # This is not MIME-encoded plain text. It is just unencoded text. Note that no
+            # attachment or other part will be sent.
+            server.send(self.from_address, self.to_addresses_str(), '\n' + self.text)
+            return
         if self.plain is not None:
             plain = email.mime.text.MIMEText(self.plain, 'plain')
         if self.html is not None:
@@ -108,6 +115,21 @@ class Email:
         server.send(self.from_address, self.to_addresses_str(), email_.as_string())
 
 
+class RcFile:
+    SECTION = 'Config'
+
+    def __init__(self, path):
+        self.config = ConfigParser.ConfigParser()
+        self.config.read(path)
+
+    def get(self, key, default_value=None):
+        if not self.config.has_section(RcFile.SECTION):
+            return default_value
+        if not self.config.has_option(RcFile.SECTION, key):
+            return default_value
+        return self.config.get(RcFile.SECTION, key)
+
+
 def error(msg):
     print 'ERROR: ' + msg
     exit(1)
@@ -119,17 +141,25 @@ def main():
     parser.add_argument('--attachment', '-a', help='Email attachments', action='append', default=[])
     parser.add_argument('--from', '-f', dest='from_', help='From address')
     parser.add_argument('--html', '-H', help='HTML file')
-    parser.add_argument('--password', '-p', help='Email account password')
+    parser.add_argument('--password', '-P', help='Email account password')
     parser.add_argument('--server', '-S', help='Email server configuration file')
     parser.add_argument('--subject', '-s', help='Email subject')
     parser.add_argument('--username', '-u', help='Email account username')
     parser.add_argument('--to', '-T', help='Email recipient', action='append', default=[])
-    parser.add_argument('--text', '-t', help='Text file')
+    parser.add_argument('--text', '-t', help='Text file to be non-MIME encoded as text')
+    parser.add_argument('--plain-text', '-p', help='Text file to be MIME encoded as plain-text')
 
     options = parser.parse_args()
+
+    rcfile = RcFile(os.path.expanduser('~/.email_util_rc'))
+
     # Set up the server
     if not options.server:
-        error('No server configuration')
+        server_config = rcfile.get('server_config')
+        if server_config is None:
+            error('No server configuration')
+        else:
+            options.server = server_config
     elif not os.path.exists(options.server):
         error('Cannot file server configuration file %s' % options.server)
 
@@ -142,7 +172,11 @@ def main():
     elif options.username:
         account = EmailAccount(username=options.username)
     else:
-        error('No account configuration or username')
+        username = rcfile.get('username')
+        if not username:
+            error('No account configuration or username')
+        else:
+            account = EmailAccount(username=username)
 
     # Make sure the text / HTML / attachment files are there
     for attachment in options.attachment:
@@ -151,16 +185,19 @@ def main():
 
     # Create the email object
     email_ = Email()
+
+    def try_read(path, err_mesg):
+        if not os.path.exists(path):
+            error(err_mesg % path)
+        with open(path, 'r') as f:
+            return f.read()
+
     if options.text:
-        if not os.path.exists(options.text):
-            error('Cannot find text file %s' % options.text)
-        with open(options.text, 'r') as f:
-            email_.plain = f.read()
+        email_.text = try_read(options.text, 'Cannot find text file %s')
+    if options.plain_text:
+        email_.plain = try_read(options.plain_text, 'Cannot find plain text file %s')
     if options.html:
-        if not os.path.exists(options.html):
-            error('Cannot find HTML file %s' % options.html)
-        with open(options.html, 'r') as f:
-            email_.html = f.read()
+        email_.html = try_read(options.html, 'Cannot find HTML file %s')
     email_.subject = options.subject
     if options.from_ is None:
         email_.from_address = account.username

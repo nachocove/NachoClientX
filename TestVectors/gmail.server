@@ -1,0 +1,5 @@
+[Server]
+host = smtp.gmail.com
+port = 587
+start_tls = True
+tls = False
