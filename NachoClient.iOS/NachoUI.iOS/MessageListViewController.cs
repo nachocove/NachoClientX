@@ -353,9 +353,7 @@ namespace NachoClient.iOS
         public void DismissChildMessageEditor (INachoMessageEditor vc)
         {
             vc.SetOwner (null);
-            vc.DismissMessageEditor (false, new NSAction (delegate {
-                this.DismissViewController (true, null);
-            }));
+            vc.DismissMessageEditor (false, null);
         }
 
         /// <summary>
