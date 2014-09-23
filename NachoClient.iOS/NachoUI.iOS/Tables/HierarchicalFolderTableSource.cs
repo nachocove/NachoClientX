@@ -51,15 +51,7 @@ namespace NachoClient.iOS
 
         public override int RowsInSection (UITableView tableview, int section)
         {
-            if (0 == section) {
-                return foldersToMcFolders.Count;
-            }
-            return 5;
-        }
-
-        public override int NumberOfSections (UITableView tableView)
-        {
-            return 2;
+            return foldersToMcFolders.Count;
         }
 
         public void CreateNestedFolderList ()

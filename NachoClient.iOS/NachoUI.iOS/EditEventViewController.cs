@@ -948,8 +948,6 @@ namespace NachoClient.iOS
 
         protected void ConfigureEditEventView ()
         {
-
-
             if (action == CalendarItemEditorAction.create) {
                 NavigationItem.Title = "New Event";
                 deleteButton.Hidden = true;
