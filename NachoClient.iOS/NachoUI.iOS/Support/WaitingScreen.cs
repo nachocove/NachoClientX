@@ -42,7 +42,7 @@ namespace NachoClient.iOS
         protected PointF topHalfSpinnerCenter;
         protected PointF bottomHalfSpinnerCenter;
 
-        protected NSTimer SegueToTutorial;
+        public NSTimer SegueToTutorial;
         protected const int WAIT_TIME = 12;
 
         public WaitingScreen ()
@@ -194,7 +194,7 @@ namespace NachoClient.iOS
             }));
         }
 
-        public void ShowView ()
+        public void InitializeAutomaticSegueTimer ()
         {
             if (!LoginHelpers.HasViewedTutorial (LoginHelpers.GetCurrentAccountId ())) {
                 SegueToTutorial = NSTimer.CreateScheduledTimer (WAIT_TIME, delegate {
@@ -203,7 +203,11 @@ namespace NachoClient.iOS
                     }
                 });
             }
+        }
 
+        public void ShowView ()
+        {
+            InitializeAutomaticSegueTimer ();
             this.Hidden = false;
             owner.NavigationItem.Title = "";
             Util.ConfigureNavBar (true, owner.NavigationController);

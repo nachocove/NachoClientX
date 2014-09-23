@@ -70,7 +70,7 @@ namespace NachoClient.iOS
                 LoginHelpers.SetFirstSyncCompleted (accountId, true);
             }
             if (NcResult.SubKindEnum.Info_AsAutoDComplete == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "Auto-D-Completed Status Ind");
+                Log.Info (Log.LOG_UI, "Info_AsAutoDComplete Status Ind (Tutorial)");
                 LoginHelpers.SetAutoDCompleted (LoginHelpers.GetCurrentAccountId (), true);
             }
         }
