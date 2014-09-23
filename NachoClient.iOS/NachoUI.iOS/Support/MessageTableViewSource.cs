@@ -289,20 +289,16 @@ namespace NachoClient.iOS
 
                 var cellWidth = tableView.Frame.Width;
 
+                // Create subview for a larger touch target for multi-select
+                var imageViews = new UIView (new RectangleF (0, 0, 60, 70));
+                cell.ContentView.AddSubview (imageViews);
+
                 // User image view
                 var userImageView = new UIImageView (new RectangleF (15, 15, 40, 40));
                 userImageView.Layer.CornerRadius = 20;
                 userImageView.Layer.MasksToBounds = true;
                 userImageView.Tag = USER_IMAGE_TAG;
-                cell.ContentView.AddSubview (userImageView);
-
-                // Set up multi-select on user image
-                var userImageTap = new UITapGestureRecognizer ();
-                userImageTap.NumberOfTapsRequired = 1;
-                userImageTap.AddTarget (this, new MonoTouch.ObjCRuntime.Selector ("MultiSelectTapSelector:"));
-                userImageTap.CancelsTouchesInView = false;
-                userImageView.AddGestureRecognizer (userImageTap);
-                userImageView.UserInteractionEnabled = true;
+                imageViews.AddSubview (userImageView);
 
                 // User userLabelView view, if no image
                 var userLabelView = new UILabel (new RectangleF (15, 15, 40, 40));
@@ -313,16 +309,20 @@ namespace NachoClient.iOS
                 userLabelView.Layer.CornerRadius = 20;
                 userLabelView.Layer.MasksToBounds = true;
                 userLabelView.Tag = USER_LABEL_TAG;
-                cell.ContentView.AddSubview (userLabelView);
+                imageViews.AddSubview (userLabelView);
 
-                // Set up multi-select on user label
-                var userLabelTap = new UITapGestureRecognizer ();
-                userLabelTap.NumberOfTapsRequired = 1;
-                userLabelTap.AddTarget (this, new MonoTouch.ObjCRuntime.Selector ("MultiSelectTapSelector:"));
-                userLabelTap.CancelsTouchesInView = false;
-                userLabelView.AddGestureRecognizer (userLabelTap);
-                userLabelView.UserInteractionEnabled = true;
+                // Multi-select checkmark overlay
+                // Images are already cropped & transparent
+                var userCheckmarkView = new UIImageView (new RectangleF (9, 45, 20, 20));
+                userCheckmarkView.Tag = USER_CHECKMARK_TAG;
+                imageViews.AddSubview (userCheckmarkView);
 
+                // Set up multi-select on checkmark
+                var multiSelectTap = new UITapGestureRecognizer ();
+                multiSelectTap.NumberOfTapsRequired = 1;
+                multiSelectTap.AddTarget (this, new MonoTouch.ObjCRuntime.Selector ("MultiSelectTapSelector:"));
+                multiSelectTap.CancelsTouchesInView = true; // prevents the row from being selected
+                imageViews.AddGestureRecognizer (multiSelectTap);
 
                 // User chili view
                 var chiliY = 72;
@@ -330,21 +330,6 @@ namespace NachoClient.iOS
                 userChiliView.Image = UIImage.FromBundle ("icn-red-chili-small");
                 userChiliView.Tag = USER_CHILI_TAG;
                 cell.ContentView.AddSubview (userChiliView);
-
-                // Multi-select checkmark overlay
-                // Images are already cropped & transparent
-                // TODO: Confirm 'y' of 38
-                var userCheckmarkView = new UIImageView (new RectangleF (9, 45, 20, 20));
-                userCheckmarkView.Tag = USER_CHECKMARK_TAG;
-                cell.ContentView.AddSubview (userCheckmarkView);
-
-                // Set up multi-select on checkmark
-                var userCheckmarkTap = new UITapGestureRecognizer ();
-                userCheckmarkTap.NumberOfTapsRequired = 1;
-                userCheckmarkTap.AddTarget (this, new MonoTouch.ObjCRuntime.Selector ("MultiSelectTapSelector:"));
-                userCheckmarkTap.CancelsTouchesInView = false;
-                userCheckmarkView.AddGestureRecognizer (userCheckmarkTap);
-                userCheckmarkView.UserInteractionEnabled = true;
 
                 // From label view
                 // Font will vary bold or regular, depending on isRead.
