@@ -1531,7 +1531,7 @@
                     <navigationItem key="navigationItem" title="Startup" id="kho-Lu-JgG"/>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <connections>
-                        <segue destination="6rF-Ad-StO" kind="push" identifier="SegueToLaunch" id="A0a-NV-skH"/>
+                        <segue destination="6rF-Ad-StO" kind="custom" identifier="SegueToLaunch" customClass="FadeCustomSegue" id="A0a-NV-skH"/>
                         <segue destination="OQ8-xH-iKh" kind="push" identifier="SegueToHome" id="g4G-tD-G9H"/>
                         <segue destination="OCr-PO-3nH" kind="push" identifier="SegueToNachoNow" id="emO-35-rbd"/>
                         <segue destination="tch-Ox-Ppd" kind="push" identifier="SegueToAdvancedLogin" id="iqA-wd-xqD"/>
