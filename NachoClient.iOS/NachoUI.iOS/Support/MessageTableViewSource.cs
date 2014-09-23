@@ -558,7 +558,6 @@ namespace NachoClient.iOS
             var attachmentImageRect = attachmentImageView.Frame;
             attachmentImageRect.X = receivedLabelRect.X - 10 - 16;
             attachmentImageView.Frame = attachmentImageRect;
-            attachmentImageView.Hidden = false;
 
             // From label view
             var fromLabelView = cell.ContentView.ViewWithTag (FROM_TAG) as UILabel;
