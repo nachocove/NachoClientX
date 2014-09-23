@@ -125,6 +125,9 @@ namespace NachoClient.iOS
                 return COMPACT_ROW_HEIGHT;
             }
             var messageThread = messageThreads.GetEmailThread (indexPath.Row);
+            if (null == messageThread) {
+                return COMPACT_ROW_HEIGHT;
+            }
             var message = messageThread.SingleMessageSpecialCase ();
             messageCache [indexPath.Row] = message;
             return HeightForMessage (message);
@@ -144,6 +147,9 @@ namespace NachoClient.iOS
                 return;
             }
             var messageThread = messageThreads.GetEmailThread (indexPath.Row);
+            if (null == messageThread) {
+                return;
+            }
             owner.MessageThreadSelected (messageThread);
             DumpInfo (messageThread);
         }
@@ -443,6 +449,12 @@ namespace NachoClient.iOS
             return null;
         }
 
+        protected void ConfigureAsUnavailable(UITableViewCell cell)
+        {
+            cell.ContentView.Hidden = true;
+            cell.TextLabel.Text = "Information Unavailble";
+        }
+
         /// <summary>
         /// Populate message cells with data, adjust sizes and visibility
         /// </summary>
@@ -453,6 +465,14 @@ namespace NachoClient.iOS
 
             McEmailMessage message;
             var messageThread = messageThreads.GetEmailThread (messageThreadIndex);
+
+            if (null == messageThread) {
+                ConfigureAsUnavailable (cell);
+                return;
+            }
+
+            cell.TextLabel.Text = "";
+            cell.ContentView.Hidden = false;
 
             if (messageCache.TryGetValue (messageThreadIndex, out message)) {
                 messageCache.Remove (messageThreadIndex);
@@ -552,7 +572,7 @@ namespace NachoClient.iOS
         void ConfigureSwipes (MCSwipeTableViewCell cell, McEmailMessageThread messageThread)
         {
             cell.FirstTrigger = 0.10f;
-            cell.SecondTrigger = 0.70f;
+            cell.SecondTrigger = 0.50f;
 
             UIView checkView = null;
             UIColor greenColor = null;
@@ -649,12 +669,14 @@ namespace NachoClient.iOS
 
         public void MoveThisMessage (McEmailMessageThread messageThread, McFolder folder)
         {
+            NcAssert.NotNull (messageThread);
             var message = messageThread.SingleMessageSpecialCase ();
             NcEmailArchiver.Move (message, folder);
         }
 
         public void DeleteThisMessage (McEmailMessageThread messageThread)
         {
+            NcAssert.NotNull (messageThread);
             Log.Debug (Log.LOG_UI, "DeleteThisMessage");
             var message = messageThread.SingleMessageSpecialCase ();
             NcEmailArchiver.Delete (message);
@@ -662,6 +684,7 @@ namespace NachoClient.iOS
 
         public void ArchiveThisMessage (McEmailMessageThread messageThread)
         {
+            NcAssert.NotNull (messageThread);
             ArchiveCaptureMessage.Start ();
             var message = messageThread.SingleMessageSpecialCase ();
             NcEmailArchiver.Archive (message);
@@ -751,11 +774,17 @@ namespace NachoClient.iOS
 
         protected void ShowPriorityChooser (McEmailMessageThread messageThread)
         {
+            if (null == messageThread) {
+                return;
+            }
             owner.PerformSegueForDelegate ("NachoNowToMessagePriority", new SegueHolder (messageThread));
         }
 
         protected void ShowFileChooser (McEmailMessageThread messageThread)
         {
+            if (null == messageThread) {
+                return;
+            }
             owner.PerformSegueForDelegate ("NachoNowToMessageAction", new SegueHolder (messageThread));
         }
 
@@ -778,6 +807,9 @@ namespace NachoClient.iOS
 
         protected void DumpInfo (McEmailMessageThread messageThread)
         {
+            if (null == messageThread) {
+                return;
+            }
             var message = messageThread.SingleMessageSpecialCase ();
             Log.Debug (Log.LOG_UI, "message Id={0} bodyId={1} Score={2}", message.Id, message.BodyId, message.Score);
         }

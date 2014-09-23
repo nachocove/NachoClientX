@@ -1593,7 +1593,6 @@
     <BundleResource Include="Resources\toolbar-icn-reply-all%402x.png" />
     <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-all-non-framework-target-headers.hmap" />
     <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\dgph" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\NachoClient.iOS.LinkFileList" />
     <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\AppDelegate-496669674D592815.d" />
     <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\AppDelegate-496669674D592815.dia" />
     <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\AppDelegate-496669674D592815.o" />
@@ -1612,7 +1611,6 @@
     <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\SettingsViewController-CDB58F8C49077FF8.d" />
     <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\SettingsViewController-CDB58F8C49077FF8.dia" />
     <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphoneos\NachoClient.iOS.build\NachoClient.iOS-all-non-framework-target-headers.hmap" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphoneos\NachoClient.iOS.build\Objects-normal\armv7\NachoClient.iOS.LinkFileList" />
     <BundleResource Include="Resources\LegalInfo.txt" />
   </ItemGroup>
   <ItemGroup>

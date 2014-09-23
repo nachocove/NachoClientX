@@ -551,7 +551,6 @@ namespace NachoCore.Model
         public McEmailMessage SingleMessageSpecialCase ()
         {
             var message = GetEmailMessage (0);
-            NcAssert.NotNull (message);
             return message;
         }
 
