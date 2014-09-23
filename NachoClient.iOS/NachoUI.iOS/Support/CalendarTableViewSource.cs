@@ -575,7 +575,7 @@ namespace NachoClient.iOS
             int section;
             if (calendar.FindEventNearestTo (date, out item, out section)) {
                 var p = NSIndexPath.FromItemSection (item, section);
-                tableView.ScrollToRow (p, UITableViewScrollPosition.Top, true);
+                tableView.ScrollToRow (p, UITableViewScrollPosition.Top, false);
             }
         }
 
