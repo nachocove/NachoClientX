@@ -361,6 +361,9 @@ namespace NachoClient.iOS
         {
             var messageThreadIndex = view.Tag;
             var messageThread = owner.priorityInbox.GetEmailThread (messageThreadIndex);
+            if (null == messageThread) {
+                return;
+            }
             owner.PerformSegueForDelegate ("NachoNowToCompose", new SegueHolder (action, messageThread));
         }
 
@@ -368,6 +371,9 @@ namespace NachoClient.iOS
         {
             var messageThreadIndex = view.Tag;
             var messageThread = owner.priorityInbox.GetEmailThread (messageThreadIndex);
+            if (null == messageThread) {
+                return;
+            }
             var message = messageThread.SingleMessageSpecialCase ();
             message.ToggleHotOrNot ();
             owner.priorityInbox.Refresh ();
@@ -378,6 +384,9 @@ namespace NachoClient.iOS
         {
             var messageThreadIndex = view.Tag;
             var messageThread = owner.priorityInbox.GetEmailThread (messageThreadIndex);
+            if (null == messageThread) {
+                return;
+            }
             owner.PerformSegueForDelegate ("NachoNowToMessagePriority", new SegueHolder (messageThread));
         }
 
@@ -385,6 +394,9 @@ namespace NachoClient.iOS
         {
             var messageThreadIndex = view.Tag;
             var messageThread = owner.priorityInbox.GetEmailThread (messageThreadIndex);
+            if (null == messageThread) {
+                return;
+            }
             owner.PerformSegueForDelegate ("NachoNowToMessageAction", new SegueHolder (messageThread));
         }
 
@@ -392,6 +404,9 @@ namespace NachoClient.iOS
         {
             var messageThreadIndex = view.Tag;
             var messageThread = owner.priorityInbox.GetEmailThread (messageThreadIndex);
+            if (null == messageThread) {
+                return;
+            }
             var message = messageThread.SingleMessageSpecialCase ();
             NcEmailArchiver.Archive (message);
         }
@@ -400,6 +415,9 @@ namespace NachoClient.iOS
         {
             var messageThreadIndex = view.Tag;
             var messageThread = owner.priorityInbox.GetEmailThread (messageThreadIndex);
+            if (null == messageThread) {
+                return;
+            }
             var message = messageThread.SingleMessageSpecialCase ();
             NcEmailArchiver.Delete (message);
         }
@@ -477,6 +495,7 @@ namespace NachoClient.iOS
             if (String.IsNullOrEmpty (message.Subject)) {
                 subjectLabelView.TextColor = A.Color_9B9B9B;
             }
+            subjectLabelView.Hidden = false;
 
             float previewLabelAdjustment = 0;
 
@@ -495,6 +514,7 @@ namespace NachoClient.iOS
 
             // Size of preview, depends on reminder view
             var previewLabelView = view.ViewWithTag (PREVIEW_TAG) as BodyView;
+            previewLabelView.Hidden = false;
 
             var previewLabelViewHeight = view.Frame.Height - 80 - previewLabelAdjustment;
             previewLabelViewHeight -= 44; // toolbar
@@ -508,8 +528,11 @@ namespace NachoClient.iOS
             var receivedLabelView = view.ViewWithTag (RECEIVED_DATE_TAG) as UILabel;
             receivedLabelView.Text = Pretty.FullDateTimeString (message.DateReceived);
             receivedLabelView.SizeToFit ();
+            receivedLabelView.Hidden = false;
 
             // Chili image view - nothing to do. It is also shown
+            var chiliImageView = view.ViewWithTag (USER_CHILI_TAG) as UIImageView;
+            chiliImageView.Hidden = false;
 
             // Attachment image view
             var attachmentImageView = view.ViewWithTag (ATTACHMENT_TAG) as UIImageView;
@@ -525,6 +548,7 @@ namespace NachoClient.iOS
             fromLabelView.Frame = fromLabelRect;
             fromLabelView.Text = Pretty.SenderString (message.From);
             fromLabelView.Font = (message.IsRead ? A.Font_AvenirNextDemiBold17 : A.Font_AvenirNextRegular17);
+            fromLabelView.Hidden = false;
         }
 
         public override uint NumberOfPlaceholdersInCarousel (iCarousel carousel)
@@ -608,6 +632,9 @@ namespace NachoClient.iOS
                 return;
             }
             var messageThread = owner.priorityInbox.GetEmailThread (index);
+            if (null == messageThread) {
+                return;
+            }
             owner.PerformSegue ("NachoNowToMessageView", new SegueHolder (messageThread));
         }
 

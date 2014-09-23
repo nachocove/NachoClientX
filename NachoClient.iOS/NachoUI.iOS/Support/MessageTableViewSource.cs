@@ -451,8 +451,11 @@ namespace NachoClient.iOS
 
         protected void ConfigureAsUnavailable(UITableViewCell cell)
         {
-            cell.ContentView.Hidden = true;
-            cell.TextLabel.Text = "Information Unavailble";
+            foreach (var view in cell.ContentView.Subviews) {
+                view.Hidden = true;
+            }
+            cell.TextLabel.Hidden = false;
+            cell.TextLabel.Text = "Information temporarily unavailable";
         }
 
         /// <summary>
@@ -515,6 +518,7 @@ namespace NachoClient.iOS
             // Subject label view
             var subjectLabelView = cell.ContentView.ViewWithTag (SUBJECT_TAG) as UILabel;
             subjectLabelView.Text = Pretty.SubjectString (message.Subject);
+            subjectLabelView.Hidden = false;
 
             // Preview label view
             var previewLabelView = cell.ContentView.ViewWithTag (PREVIEW_TAG) as UILabel;
@@ -546,6 +550,7 @@ namespace NachoClient.iOS
             receivedLabelRect.X = cellWidth - 15 - receivedLabelRect.Width;
             receivedLabelRect.Height = 20;
             receivedLabelView.Frame = receivedLabelRect;
+            receivedLabelView.Hidden = false;
 
             // Attachment image view
             var attachmentImageView = cell.ContentView.ViewWithTag (ATTACHMENT_TAG) as UIImageView;
@@ -553,6 +558,7 @@ namespace NachoClient.iOS
             var attachmentImageRect = attachmentImageView.Frame;
             attachmentImageRect.X = receivedLabelRect.X - 10 - 16;
             attachmentImageView.Frame = attachmentImageRect;
+            attachmentImageView.Hidden = false;
 
             // From label view
             var fromLabelView = cell.ContentView.ViewWithTag (FROM_TAG) as UILabel;
@@ -561,6 +567,7 @@ namespace NachoClient.iOS
             fromLabelView.Frame = fromLabelRect;
             fromLabelView.Text = Pretty.SenderString (message.From);
             fromLabelView.Font = (message.IsRead ? A.Font_AvenirNextRegular17 : A.Font_AvenirNextDemiBold17);
+            fromLabelView.Hidden = false;
 
             ConfigureSwipes (cell as MCSwipeTableViewCell, messageThread);
             ConfigureMultiSelectSwipe (cell as MCSwipeTableViewCell);
