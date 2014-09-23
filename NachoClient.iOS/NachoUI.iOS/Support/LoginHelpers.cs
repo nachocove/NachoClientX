@@ -11,6 +11,7 @@ namespace NachoClient.iOS
 {
     public class LoginHelpers
     {
+        protected const string MODULE = "ClientConfigurationBits";
         public LoginHelpers ()
         {
         }
@@ -19,7 +20,7 @@ namespace NachoClient.iOS
         static public void SetFirstSyncCompleted (int accountId, bool toWhat)
         {
             NcAssert.True (GetCurrentAccountId() == accountId);
-            McMutables.SetBool (accountId, "hasSyncedFolders", accountId.ToString (), toWhat);
+            McMutables.SetBool (accountId, MODULE, "hasSyncedFolders", toWhat);
         }
 
         //Gets the status of the sync bit for given accountId
@@ -28,23 +29,7 @@ namespace NachoClient.iOS
         static public bool HasFirstSyncCompleted(int accountId)
         {
             NcAssert.True (GetCurrentAccountId() == accountId);
-            return McMutables.GetOrCreateBool(accountId, "hasSyncedFolders", accountId.ToString (), false);
-        }
-
-        //Sets the status of the auto-d success bit for given accountId
-        static public void SetAutoDCompleted (int accountId, bool toWhat)
-        {
-            NcAssert.True (GetCurrentAccountId() == accountId);
-            McMutables.SetBool (accountId, "hasAutoDCompleted", accountId.ToString (), toWhat);
-        }
-
-        //Gets the status of the auto-d success bit for given accountId
-        //True if they have succesfully sync'd folders
-        //False if not
-        static public bool HasAutoDCompleted(int accountId)
-        {
-            NcAssert.True (GetCurrentAccountId() == accountId);
-            return McMutables.GetOrCreateBool(accountId, "hasAutoDCompleted", accountId.ToString (), false);
+            return McMutables.GetOrCreateBool(accountId, MODULE, "hasSyncedFolders", false);
         }
 
         //Sets the status of the tutorial bit for given accountId
@@ -52,7 +37,7 @@ namespace NachoClient.iOS
         {
             NcAssert.True (GetCurrentAccountId() == accountId);
             // TODO: should this really be per-account or once for all accounts?
-            McMutables.SetBool (accountId, "hasViewedTutorial", accountId.ToString (), toWhat);
+            McMutables.SetBool (accountId, MODULE, "hasViewedTutorial", toWhat);
         }
 
         //Gets the status of the tutorial bit for given accountId
@@ -61,14 +46,30 @@ namespace NachoClient.iOS
         static public bool HasViewedTutorial(int accountId)
         {
             NcAssert.True (GetCurrentAccountId() == accountId);
-            return McMutables.GetOrCreateBool(accountId, "hasViewedTutorial", accountId.ToString (), false);
+            return McMutables.GetOrCreateBool(accountId, MODULE, "hasViewedTutorial", false);
+        }
+
+        //Sets the status of the auto-d success bit for given accountId
+        static public void SetAutoDCompleted (int accountId, bool toWhat)
+        {
+            NcAssert.True (GetCurrentAccountId() == accountId);
+            McMutables.SetBool (accountId, MODULE, "hasAutoDCompleted", toWhat);
+        }
+
+        //Gets the status of the auto-d success bit for given accountId
+        //True if they have succesfully sync'd folders
+        //False if not
+        static public bool HasAutoDCompleted(int accountId)
+        {
+            NcAssert.True (GetCurrentAccountId() == accountId);
+            return McMutables.GetOrCreateBool(accountId, MODULE, "hasAutoDCompleted", false);
         }
 
         //Sets the status of the creds bit for given accountId
         static public void SetHasProvidedCreds (int accountId, bool toWhat)
         {
             NcAssert.True (GetCurrentAccountId() == accountId);
-            McMutables.SetBool (accountId, "hasProvidedCreds", accountId.ToString (), toWhat);
+            McMutables.SetBool (accountId, MODULE, "hasProvidedCreds", toWhat);
         }
 
         //Gets the status of the creds bit for given accountId
@@ -77,7 +78,7 @@ namespace NachoClient.iOS
         static public bool HasProvidedCreds(int accountId)
         {
             NcAssert.True (GetCurrentAccountId() == accountId);
-            return McMutables.GetOrCreateBool(accountId, "hasProvidedCreds", accountId.ToString (), false);
+            return McMutables.GetOrCreateBool(accountId, MODULE, "hasProvidedCreds", false);
         }
 
         static public int GetCurrentAccountId()

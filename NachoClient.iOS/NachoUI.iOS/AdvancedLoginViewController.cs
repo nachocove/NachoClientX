@@ -37,7 +37,6 @@ namespace NachoClient.iOS
 
         UIButton connectButton;
         AccountSettings theAccount;
-        McServer serverToValidate;
         AppDelegate appDelegate;
         CertificateView certificateView;
         UIView contentView;
@@ -230,7 +229,7 @@ namespace NachoClient.iOS
             customerSupportButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
             customerSupportButton.TouchUpInside += (object sender, EventArgs e) => {
                 View.EndEditing (true);
-                PerformSegue(StartupViewController.NextSegue(), this);
+                PerformSegue("SegueToSupport", this);
             };
             contentView.AddSubview (customerSupportButton);
             yOffset = customerSupportButton.Frame.Bottom;
@@ -427,12 +426,15 @@ namespace NachoClient.iOS
                     return;
 
                 case BackEndAutoDStateEnum.PostAutoDPreInboxSync:
+                    Log.Info (Log.LOG_UI, "PostAutoDPreInboxSync Auto-D-State-Enum On Page Load");
+                    LoginHelpers.SetAutoDCompleted (LoginHelpers.GetCurrentAccountId (), true);
                     errorMessage.Text = "Waiting for Inbox-Sync.";
                     waitScreen.SetLoadingText ("Syncing Your Inbox...");
                     waitScreen.ShowView ();
                     return;
 
                 case BackEndAutoDStateEnum.PostAutoDPostInboxSync:
+                    Log.Info (Log.LOG_UI, "PostAutoDPostInboxSync Auto-D-State-Enum On Page Load");
                     LoginHelpers.SetFirstSyncCompleted (LoginHelpers.GetCurrentAccountId (), true);
                     PerformSegue(StartupViewController.NextSegue(), this);
                     return;
@@ -583,10 +585,18 @@ namespace NachoClient.iOS
 
         public void tryValidateConfig ()
         {
+            McServer mailServer = McServer.QueryByAccountId<McServer> (LoginHelpers.GetCurrentAccountId ()).FirstOrDefault ();
+            if (null != mailServer) {
+                mailServer.Host = serverText.Text.Trim ();
+                mailServer.Update ();
+            } else {
+                mailServer = new McServer ();
+                mailServer.Host = serverText.Text.Trim ();
+                mailServer.AccountId = LoginHelpers.GetCurrentAccountId ();
+                mailServer.Insert ();
+            }
             setUsersSettings ();
-            serverToValidate = new McServer ();
-            serverToValidate.Host = serverText.Text;
-            BackEnd.Instance.ValidateConfig (LoginHelpers.GetCurrentAccountId (), serverToValidate, theAccount.Credentials);
+            BackEnd.Instance.ValidateConfig (LoginHelpers.GetCurrentAccountId (), mailServer, theAccount.Credentials);
         }
 
         public void setTextToRed (UITextField[] whichFields)
@@ -645,7 +655,7 @@ namespace NachoClient.iOS
 
         public bool isValidHost ()
         {
-            UriHostNameType hostnameURI = Uri.CheckHostName (serverText.Text);
+            UriHostNameType hostnameURI = Uri.CheckHostName (serverText.Text.Trim());
             if (hostnameURI == UriHostNameType.Dns || hostnameURI == UriHostNameType.IPv4 || hostnameURI == UriHostNameType.IPv6) {
                 return true;
             } else {
@@ -719,9 +729,9 @@ namespace NachoClient.iOS
                 }
             }
             if (NcResult.SubKindEnum.Info_AsAutoDComplete == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "Auto-D-Completed Status Ind");
+                Log.Info (Log.LOG_UI, "Auto-D-Completed Status Ind (Advanced View)");
                 waitScreen.SetLoadingText ("Syncing Your Inbox...");
-                theAccount.Server = McServer.QueryById<McServer> (1);
+                theAccount.Server = McServer.QueryByAccountId<McServer> (LoginHelpers.GetCurrentAccountId()).FirstOrDefault();
                 serverText.Text = theAccount.Server.Host;
                 LoginHelpers.SetAutoDCompleted (LoginHelpers.GetCurrentAccountId (), true);
                 if(!LoginHelpers.HasViewedTutorial(LoginHelpers.GetCurrentAccountId())){
@@ -734,18 +744,8 @@ namespace NachoClient.iOS
                 stopBeIfRunning ();
             }
             if (NcResult.SubKindEnum.Info_ValidateConfigSucceeded == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "Validate Config Successful Status Ind");
-
+                Log.Info (Log.LOG_UI, "Validate Config Successful Status Ind (Advanced View)");
                 ConfigureView (LoginStatus.ValidateSuccessful);
-
-                var account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
-                var existingServer = McServer.QueryByAccountId<McServer> (account.Id).SingleOrDefault ();
-                if ( null == existingServer) {
-                    serverToValidate.Insert ();
-                } else {
-                    serverToValidate.Id = existingServer.Id;
-                    serverToValidate.Update ();
-                }
                 loadSettingsForAccount ();
                 startBe ();
             }
@@ -762,13 +762,13 @@ namespace NachoClient.iOS
                 waitScreen.DismissView ();
             }
             if (NcResult.SubKindEnum.Error_ServerConfReqCallback == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "ServerConfReq Status Ind");
+                Log.Info (Log.LOG_UI, "ServerConfReq Status Ind (Adv. View)");
                 ConfigureView (LoginStatus.ServerConf);
                 waitScreen.DismissView ();
                 stopBeIfRunning ();
             }
             if (NcResult.SubKindEnum.Info_CredReqCallback == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "CredReqCallback Status Ind");
+                Log.Info (Log.LOG_UI, "CredReqCallback Status Ind (Adv. View)");
                 ConfigureView (LoginStatus.BadCredentials);
                 waitScreen.DismissView ();
                 stopBeIfRunning ();
@@ -787,11 +787,13 @@ namespace NachoClient.iOS
             certificateView.ConfigureView ();
             Log.Info (Log.LOG_UI, "Display certificate alert to user");
             certificateView.ShowView ();
+            waitScreen.SegueToTutorial.Invalidate ();
         }
 
         public void acceptCertificate ()
         {
             NcApplication.Instance.CertAskResp (LoginHelpers.GetCurrentAccountId (), true);
+            waitScreen.InitializeAutomaticSegueTimer ();
         }
 
         public class AccountSettings
