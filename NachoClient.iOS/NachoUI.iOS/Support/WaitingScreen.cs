@@ -42,7 +42,7 @@ namespace NachoClient.iOS
         protected PointF topHalfSpinnerCenter;
         protected PointF bottomHalfSpinnerCenter;
 
-        public NSTimer SegueToTutorial;
+        protected NSTimer SegueToTutorial;
         protected const int WAIT_TIME = 12;
 
         public WaitingScreen ()
@@ -205,6 +205,13 @@ namespace NachoClient.iOS
             }
         }
 
+        public void InvalidateAutomaticSegueTimer ()
+        {
+            if (null != SegueToTutorial) {
+                SegueToTutorial.Invalidate ();
+            }
+        }
+
         public void ShowView ()
         {
             InitializeAutomaticSegueTimer ();
@@ -218,10 +225,7 @@ namespace NachoClient.iOS
 
         public void DismissView ()
         {
-            if (null != SegueToTutorial) {
-                SegueToTutorial.Invalidate ();
-            }
-
+            InvalidateAutomaticSegueTimer ();
             quitLoadingAnimation = true;
             bottomHalfSpinner.Layer.RemoveAllAnimations ();
             topHalfSpinner.Layer.RemoveAllAnimations ();
