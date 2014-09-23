@@ -15,6 +15,7 @@ using NachoCore;
 using NachoCore.Utils;
 using NachoCore.Model;
 using NachoCore.ActiveSync;
+using NachoPlatform;
 
 namespace NachoClient.iOS
 {
@@ -59,7 +60,9 @@ namespace NachoClient.iOS
                 //NcAssert.True (1 < count);
                 count -= 1;
                 if (0 == count) {
-                    DecrementToZero ();
+                    InvokeOnUIThread.Instance.Invoke (() => {
+                        DecrementToZero ();
+                    });
                 }
             }
         }
