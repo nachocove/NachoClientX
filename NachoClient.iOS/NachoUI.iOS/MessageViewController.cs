@@ -70,6 +70,14 @@ namespace NachoClient.iOS
         {
         }
 
+        public override void ViewWillLayoutSubviews ()
+        {
+            base.ViewWillLayoutSubviews ();
+            if (null != TabBarController) {
+                ViewFramer.Create (View).AdjustHeight (TabBarController.TabBar.Frame.Height);
+            }
+        }
+
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
@@ -646,17 +654,6 @@ namespace NachoClient.iOS
 
         protected void ConfigureView ()
         {
-            if (null != TabBarController) {
-                // FIXME - This is a hack. Need to research the proper solution
-                // I tried HidesBottomBarWhenPushed but it does not work for me.
-                // From googling, some people say it does not work if you have
-                // "custom toolbar" (not 100% sure what that means).
-                ViewFramer.Create (View)
-                    .AdjustHeight (TabBarController.TabBar.Frame.Height);
-                ViewFramer.Create (scrollView)
-                    .AdjustHeight (TabBarController.TabBar.Frame.Height);
-            }
-
             var message = thread.SingleMessageSpecialCase ();
             attachments = McAttachment.QueryByItemId<McEmailMessage> (message.AccountId, message.Id);
 
