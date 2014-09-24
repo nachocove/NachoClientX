@@ -777,7 +777,8 @@ namespace NachoCore.ActiveSync
         // The list MUST be a subset of the OBJECTs in the PendingList.
         private void ProcessImplicitResponses (IEnumerable<McPending> fromPendingList)
         {
-            foreach (var pending in fromPendingList) {
+            var cachedFromPendingList = fromPendingList.ToList ();
+            foreach (var pending in cachedFromPendingList) {
                 // For Adds we need to add to McPath, and for Deletes we need to delete from McPath.
                 if (IsSyncAddCommand (pending.Operation)) {
                     Log.Error (Log.LOG_AS, "ProcessImplicitResponses: Add command did not receive response.");
