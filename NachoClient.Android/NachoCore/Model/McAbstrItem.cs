@@ -161,6 +161,11 @@ namespace NachoCore.Model
             // Sub-class needs to override if it is to be folder link-able.
             return ClassCodeEnum.NeverInFolder;
         }
+
+        public bool IsDownloaded ()
+        {
+            return (BodyStateEnum.Whole_0 == BodyState);
+        }
     }
 }
 

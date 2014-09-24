@@ -54,7 +54,6 @@ namespace NachoClient.iOS
         protected int LINE_OFFSET = 30;
         protected int CELL_HEIGHT = 44;
 
-        protected bool errorLoadingBody;
         protected bool expandedHeader = false;
         protected bool firstConfig = true;
         protected float expandedSeparatorYOffset;
@@ -184,20 +183,6 @@ namespace NachoClient.iOS
             if ((NcResult.SubKindEnum.Info_AttDownloadUpdate == s.Status.SubKind) || (NcResult.SubKindEnum.Error_AttDownloadFailed == s.Status.SubKind)) {
                 FetchAttachments ();
                 ConfigureAttachments ();
-                return;
-            }
-            if (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded == s.Status.SubKind) {
-                Log.Info (Log.LOG_EMAIL, "EmailMessageBodyDownloadSucceeded");
-                errorLoadingBody = false;
-                StopSpinner ();
-                ConfigureView ();
-                return;
-            }
-            if (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed == s.Status.SubKind) {
-                Log.Info (Log.LOG_EMAIL, "EmailMessageBodyDownloadFailed");
-                errorLoadingBody = true;
-                StopSpinner ();
-                ConfigureView ();
                 return;
             }
         }
@@ -389,6 +374,9 @@ namespace NachoClient.iOS
         void MarkAsRead ()
         {
             var message = thread.SingleMessageSpecialCase ();
+            if (!message.IsDownloaded ()) {
+                return;
+            }
             if (false == message.IsRead) {
                 BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id);
             }
@@ -605,6 +593,8 @@ namespace NachoClient.iOS
             bodyView.OnDownloadStart = StartSpinner;
             bodyView.OnDownloadComplete = (bool succeed) => {
                 StopSpinner ();
+                ConfigureView ();
+                MarkAsRead();
             };
             view.AddSubview (bodyView);
 
@@ -805,9 +795,6 @@ namespace NachoClient.iOS
 
         protected void RenderBody (McEmailMessage message)
         {
-            if (null == message.GetBodyPath ()) {
-                return;
-            }
             bodyView.Configure (message);
 
         }
@@ -875,18 +862,6 @@ namespace NachoClient.iOS
             expandedHeader = !expandedHeader;
 
             LayoutView (true);
-        }
-
-        [MonoTouch.Foundation.Export ("DownloadMessage:")]
-        public void OnDownloadMessage (UIGestureRecognizer sender)
-        {
-            var spinner = View.ViewWithTag ((int)TagType.SPINNER_TAG) as UIActivityIndicatorView;
-            if (spinner.IsAnimating) {
-                // A download is already in progress... Wait for it to either complete or time out
-                return;
-            }
-            errorLoadingBody = false;
-            ConfigureView (); // this will call RenderBody() which will trigger the download
         }
 
         protected void onAttachmentSelected (UITapGestureRecognizer obj)

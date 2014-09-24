@@ -113,6 +113,8 @@ namespace NachoClient.iOS
         protected UIActivityIndicatorView spinner;
         protected BodyWebView webView;
 
+        protected McAbstrItem abstrItem;
+
         // Various delegates for notification
         public RenderStart OnRenderStart;
         public RenderComplete OnRenderComplete;
@@ -161,10 +163,16 @@ namespace NachoClient.iOS
 
             // webView holds all HTML content
             webView = new BodyWebView (this);
+
+            // FIXME - Move this to ViewWillAppear()
+            // Listen to callback
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 
         public void Configure (McAbstrItem item)
         {
+            abstrItem = item;
+
             // TODO: Revisit
             for (int i = messageView.Subviews.Length - 1; i >= 0; i--) {
                 messageView.Subviews [i].RemoveFromSuperview ();
@@ -176,16 +184,19 @@ namespace NachoClient.iOS
                 RenderTextString (item.GetBodyPreviewOrEmpty ());
                 return;
             }
-            if (McAbstrItem.BodyStateEnum.Whole_0 != item.BodyState) {
+            if (!item.IsDownloaded ()) {
                 Log.Info (Log.LOG_UI, "Starting download of whole message body");
                 OnDownloadStart ();
-                switch (item.GetType().Name) {
-                case "McEmailMessage":
-                    BackEnd.Instance.DnldEmailBodyCmd (item.AccountId, item.Id);
-                    break;
-                default:
-                    var msg = String.Format ("unhandle abstract item type {0}", item.GetType ().Name);
-                    throw new NcAssert.NachoDefaultCaseFailure (msg);
+                if (LoadState.LOADING != loadState) {
+                    loadState = LoadState.LOADING;
+                    switch (item.GetType ().Name) {
+                    case "McEmailMessage":
+                        BackEnd.Instance.DnldEmailBodyCmd (item.AccountId, item.Id);
+                        break;
+                    default:
+                        var msg = String.Format ("unhandle abstract item type {0}", item.GetType ().Name);
+                        throw new NcAssert.NachoDefaultCaseFailure (msg);
+                    }
                 }
                 return;
             }
@@ -422,6 +433,27 @@ namespace NachoClient.iOS
                 messageHeight = Math.Max (width, messageView.Frame.Height * ZoomScale);
             }
             Frame = new RectangleF (X, Y, messageWidth, messageHeight);
+        }
+
+        public void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+            if (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded == s.Status.SubKind) {
+                Log.Info (Log.LOG_EMAIL, "EmailMessageBodyDownloadSucceeded");
+                loadState = LoadState.IDLE;
+                OnDownloadComplete (true);
+            }
+            if (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed == s.Status.SubKind) {
+                Log.Info (Log.LOG_EMAIL, "EmailMessageBodyDownloadFailed");
+                loadState = LoadState.ERROR;
+                OnDownloadComplete (false);
+            }
+        }
+
+        [MonoTouch.Foundation.Export ("DownloadMessage:")]
+        public void OnDownloadMessage (UIGestureRecognizer sender)
+        {
+            BackEnd.Instance.DnldEmailBodyCmd (abstrItem.AccountId, abstrItem.Id);
         }
     }
 }
