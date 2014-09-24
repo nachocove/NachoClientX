@@ -570,7 +570,7 @@ namespace NachoCore.ActiveSync
         {
             var remaining = KBaseFetchSize;
             var fetchBodies = new List<FetchKit.FetchBody> ();
-            var emails = McEmailMessage.QueryNeedsFetch (accountId, remaining, 0.7).ToList ();
+            var emails = McEmailMessage.QueryNeedsFetch (accountId, remaining, McEmailMessage.minHotScore).ToList ();
             foreach (var email in emails) {
                 // TODO: all this can be one SQL JOIN.
                 var folders = McFolder.QueryByFolderEntryId<McEmailMessage> (accountId, email.Id);
