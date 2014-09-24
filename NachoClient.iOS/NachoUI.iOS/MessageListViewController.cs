@@ -321,11 +321,11 @@ namespace NachoClient.iOS
             if (segue.Identifier == "NachoNowToEditEvent") {
                 var vc = (EditEventViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
-                var c = holder.value as McCalendar;
-                if (null == c) {
+                var e = holder.value as McEvent;
+                if (null == e) { 
                     vc.SetCalendarItem (null, CalendarItemEditorAction.create);
                 } else {
-                    vc.SetCalendarItem (c, CalendarItemEditorAction.create);
+                    vc.SetCalendarItem (e, CalendarItemEditorAction.create);
                 }
                 vc.SetOwner (this);
                 return;

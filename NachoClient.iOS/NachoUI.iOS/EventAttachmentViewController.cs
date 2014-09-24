@@ -21,7 +21,7 @@ namespace NachoClient.iOS
 
         protected AttachmentTableViewSource attachmentSource;
         protected McAccount account;
-        protected McCalendar c;
+        protected McAbstrCalendarRoot c;
         protected bool editing;
         protected INachoAttachmentListChooserDelegate owner;
         List<McAttachment> AttachmentsList = new List<McAttachment> ();
@@ -36,7 +36,7 @@ namespace NachoClient.iOS
 
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
 
-        public void SetOwner (INachoAttachmentListChooserDelegate owner, List<McAttachment> attachments, McCalendar c, bool editing)
+        public void SetOwner (INachoAttachmentListChooserDelegate owner, List<McAttachment> attachments, McAbstrCalendarRoot c, bool editing)
         {
             this.owner = owner;
             this.AttachmentsList = attachments;

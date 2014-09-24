@@ -17,7 +17,7 @@ namespace NachoClient.iOS
 
         protected AttendeeTableViewSource attendeeSource;
         protected McAccount account;
-        protected McCalendar c;
+        protected McAbstrCalendarRoot c;
         protected bool editing;
         protected INachoAttendeeListChooserDelegate owner;
         protected UISegmentedControl segmentedControl;
@@ -34,7 +34,7 @@ namespace NachoClient.iOS
         {
         }
 
-        public void SetOwner (INachoAttendeeListChooserDelegate owner, List<McAttendee> attendees, McCalendar c, bool editing)
+        public void SetOwner (INachoAttendeeListChooserDelegate owner, List<McAttendee> attendees, McAbstrCalendarRoot c, bool editing)
         {
             this.owner = owner;
             this.AttendeeList = attendees;

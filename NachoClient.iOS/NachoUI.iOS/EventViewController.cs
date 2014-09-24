@@ -29,8 +29,8 @@ namespace NachoClient.iOS
         protected INachoCalendarItemEditorParent owner;
         protected CalendarItemEditorAction action;
         protected McEvent e;
-        protected McCalendar item;
-        protected McCalendar c;
+        protected McCalendar root;
+        protected McAbstrCalendarRoot c;
         protected McFolder folder;
         protected McAccount account;
         protected NachoFolders calendars;
@@ -142,24 +142,9 @@ namespace NachoClient.iOS
             var g = new UITapGestureRecognizer (() => View.EndEditing (true));
             contentView.AddGestureRecognizer (g);
 
-            account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
             calendars = new NachoFolders (NachoFolders.FilterForCalendars);
 
-            switch (action) {
-            case CalendarItemEditorAction.view:
-                item = McCalendar.QueryById<McCalendar> (item.Id);
-                c = item;
-                if (0 != c.recurrences.Count) {
-                    isRecurring = true;
-                }
-                CreateEventView ();
-                ConfigureRsvpBar ();
-                break;
-            default:
-                NcAssert.CaseError ();
-                break;
-            }
-
+            CreateEventView ();
         }
 
         public void SetEventPresetFields (List<McAttendee> attendees)
@@ -172,11 +157,6 @@ namespace NachoClient.iOS
         {
             this.e = e;
             this.action = action;
-            if (null == e) {
-                this.item = null;
-            } else {
-                this.item = McCalendar.QueryById<McCalendar> (e.CalendarId);
-            }
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -308,8 +288,8 @@ namespace NachoClient.iOS
 
             if (segue.Identifier.Equals ("EventToEditEvent")) {
                 var dc = (EditEventViewController)segue.DestinationViewController;
-                dc.SetCalendarItem (item, CalendarItemEditorAction.edit);
-                dc.ViewDisappearing += (object s, EventArgs e) => {
+                dc.SetCalendarItem (e, CalendarItemEditorAction.edit);
+                dc.ViewDisappearing += (object s, EventArgs eventArgs) => {
                     displayEvent = true;
                 };
                 return;
@@ -319,18 +299,11 @@ namespace NachoClient.iOS
             NcAssert.CaseError ();
         }
 
-
         protected void CreateEventView ()
         {
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
             scrollView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, View.Frame.Height - 54);
 
-            if (account.EmailAddr == c.OrganizerEmail && account.Id == c.AccountId) {
-                NavigationItem.RightBarButtonItem = editButton;
-                editButton.Clicked += (object sender, EventArgs e) => {
-                    PerformSegue ("EventToEditEvent", this);
-                };
-            }
             NavigationItem.Title = "Event Details";
             NavigationController.NavigationBar.Translucent = false;
 
@@ -409,7 +382,6 @@ namespace NachoClient.iOS
             });
             eventAttendeeView.AddGestureRecognizer (attendeeTap);
             contentView.Add (eventAttendeeView);
-            CreateAttendeesButtons (eventAttendeeView);
 
             //////////////////////
             /// Bottom three cells
@@ -527,9 +499,27 @@ namespace NachoClient.iOS
 
         protected void ConfigureEventView ()
         {
+            NcAssert.NotNull (e);
 
-            item = McCalendar.QueryById<McCalendar> (item.Id);
-            c = item;
+            account = McAccount.QueryById<McAccount> (e.AccountId);
+
+            root = McCalendar.QueryById<McCalendar> (e.CalendarId);
+            if (0 != root.recurrences.Count) {
+                isRecurring = true;
+            }
+
+            if (0 == e.ExceptionId) {
+                c = root;
+            } else {
+                c = McException.QueryById<McException> (e.ExceptionId);
+            }
+
+            if (account.EmailAddr == root.OrganizerEmail && account.Id == c.AccountId) {
+                NavigationItem.RightBarButtonItem = editButton;
+                editButton.Clicked += (object sender, EventArgs eventArgs) => {
+                    PerformSegue ("EventToEditEvent", this);
+                };
+            }
            
             contentView.BackgroundColor = UIColor.White;
 
@@ -560,26 +550,26 @@ namespace NachoClient.iOS
 
             //when view
             var whenLabelView = View.ViewWithTag (EVENT_WHEN_DETAIL_LABEL_TAG) as UILabel;
-            whenLabelView.Text = Pretty.ExtendedDateString (c.StartTime);
+            whenLabelView.Text = Pretty.ExtendedDateString (e.StartTime);
 
             var durationLabelView = View.ViewWithTag (500) as UILabel;
             if (!c.AllDayEvent) {
-                if (c.StartTime.DayOfYear == c.EndTime.DayOfYear) {
-                    durationLabelView.Text = "from " + Pretty.FullTimeString (c.StartTime) + " until " + Pretty.FullTimeString (c.EndTime);
+                if (e.StartTime.DayOfYear == e.EndTime.DayOfYear) {
+                    durationLabelView.Text = "from " + Pretty.FullTimeString (e.StartTime) + " until " + Pretty.FullTimeString (e.EndTime);
                 } else {
-                    durationLabelView.Text = "from " + Pretty.FullTimeString (c.StartTime) + " until " + Pretty.FullDateTimeString (c.EndTime);
+                    durationLabelView.Text = "from " + Pretty.FullTimeString (e.StartTime) + " until " + Pretty.FullDateTimeString (e.EndTime);
                 }
             } else {
-                if (c.StartTime.DayOfYear == c.EndTime.DayOfYear) {
+                if (e.StartTime.DayOfYear == e.EndTime.DayOfYear) {
                     durationLabelView.Text = "all day event";
                 } else {
-                    durationLabelView.Text = "from " + Pretty.FullDateString (c.StartTime) + " until " + Pretty.FullDateString (c.EndTime);
+                    durationLabelView.Text = "from " + Pretty.FullDateString (e.StartTime) + " until " + Pretty.FullDateString (e.EndTime);
                 }
             }
 
             var recurrenceLabelView = View.ViewWithTag (600) as UILabel;
             if (isRecurring) {
-                recurrenceLabelView.Text = MakeRecurrenceString (c.recurrences);
+                recurrenceLabelView.Text = MakeRecurrenceString (root.recurrences);
                 recurrenceLabelView.Lines = 0;
                 recurrenceLabelView.LineBreakMode = UILineBreakMode.WordWrap;
                 recurrenceLabelView.SizeToFit ();
@@ -598,7 +588,7 @@ namespace NachoClient.iOS
             alertDetailLabelView.Frame = new RectangleF (SCREEN_WIDTH - alertDetailLabelView.Frame.Width - 34, 12.438f, alertDetailLabelView.Frame.Width, TEXT_LINE_HEIGHT);
 
             // Attendee image view
-            CreateAttendeesButtons (eventAttendeeView);
+            ConfigureAttendeesButtons (eventAttendeeView);
             if (5 < c.attendees.Count ()) {
                 int i = 0;
                 while (i < 4) {
@@ -654,6 +644,8 @@ namespace NachoClient.iOS
                 attachmentView.Hidden = false;
                 line2.Hidden = false;
             }
+                
+            ConfigureRsvpBar ();
 
             LayoutView ();
         }
@@ -832,7 +824,7 @@ namespace NachoClient.iOS
             return Util.ColorForUser (colorIndex);
         }
 
-        public void CreateAttendeesButtons (UIView parentView)
+        public void ConfigureAttendeesButtons (UIView parentView)
         {
             ClearView (parentView);
             int counter = 0;
@@ -926,7 +918,7 @@ namespace NachoClient.iOS
 
         public void ConfigureRsvpBar ()
         {
-            if (account.EmailAddr == c.OrganizerEmail) {
+            if (account.EmailAddr == root.OrganizerEmail) {
                 messageLabel.Hidden = false;
                 messageLabel.Text = "You are the organizer";
                 messageLabel.Frame = new RectangleF (25 + 24 + 10, 15, 150, 24);

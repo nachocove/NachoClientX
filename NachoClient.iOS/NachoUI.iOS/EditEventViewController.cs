@@ -195,9 +195,13 @@ namespace NachoClient.iOS
             }
         }
 
-        public void SetCalendarItem (McCalendar item, CalendarItemEditorAction action)
+        public void SetCalendarItem (McEvent e, CalendarItemEditorAction action)
         {
-            this.item = item;
+            if (null == e) {
+                this.item = null;
+            } else {
+                this.item = McCalendar.QueryById<McCalendar> (e.CalendarId);
+            }
             this.action = action;
         }
 
