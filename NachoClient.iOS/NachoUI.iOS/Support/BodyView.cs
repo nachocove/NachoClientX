@@ -136,9 +136,12 @@ namespace NachoClient.iOS
             ViewForZoomingInScrollView = delegate {
                 return messageView;
             };
+            ZoomingStarted += delegate(object sender, UIScrollViewZoomingEventArgs e) {
+                OnRenderStart ();
+            };
             ZoomingEnded += delegate(object sender, ZoomingEndedEventArgs e) {
-                Log.Debug (Log.LOG_UI, "horizontal scrollview zoomed (AtScale={0})", e.AtScale);
-                // Add callback for layout views
+                Log.Debug (Log.LOG_UI, "body view scrollview zoomed (AtScale={0})", e.AtScale);
+                OnRenderComplete ();
             };
 
             // doubleTap handles zoom in and out
@@ -355,7 +358,7 @@ namespace NachoClient.iOS
             webView.OnRenderComplete = (float minimumZoomScale) => {
                 MinimumZoomScale = minimumZoomScale;
                 if (AutomaticallyScaleHtmlContent && (minimumZoomScale < 1.0)) {
-                    SetZoomScale (Math.Max(minimumZoomScale, 0.7f), false);
+                    SetZoomScale (ZoomOutScale (), false);
                 }
                 OnRenderComplete ();
             };
@@ -371,18 +374,27 @@ namespace NachoClient.iOS
             messageView.AddSubview (calView);
         }
 
+        float ZoomOutScale ()
+        {
+            // Minimum zoom scale should scale the content to just a bit narrower
+            // than the bounding frame. However, scaling to this value often results
+            // in unreadable content. So, we lower bound the zoom out scale to 0.7.
+            return Math.Max (0.7f, MinimumZoomScale);
+        }
+
+        float ZoomInScale ()
+        {
+            return 2.0f * ZoomOutScale ();
+        }
+
         [MonoTouch.Foundation.Export ("DoubleTapSelector:")]
         public void OnDoubleTap (UIGestureRecognizer sender)
         {
-            if (ZoomScale == 1.0f) {
-                SetZoomScale (2.0f, true);
+            if (ZoomScale == ZoomOutScale ()) {
+                SetZoomScale (ZoomInScale (), true);
             } else {
-                SetZoomScale (1.0f, true);
+                SetZoomScale (ZoomOutScale (), true);
             }
-            OnRenderStart ();
-            Layout (Frame.X, Frame.Y, Frame.Width + 2 * BODYVIEW_INSET,
-                Frame.Height + 2 * BODYVIEW_INSET + 2 * MESSAGEVIEW_INSET);
-            OnRenderComplete ();
         }
 
         public void Layout (float X, float Y, float width, float height)
@@ -404,10 +416,10 @@ namespace NachoClient.iOS
             // Set up scroll view frame based on the configured scrolling options
             float messageWidth = width, messageHeight = height;
             if (!HorizontalScrollingEnabled) {
-                messageWidth = Math.Max (width, messageView.Frame.Width);
+                messageWidth = Math.Max (width, messageView.Frame.Width * ZoomScale);
             }
             if (!VeriticalScrollingEnabled) {
-                messageHeight = Math.Max (width, messageView.Frame.Height);
+                messageHeight = Math.Max (width, messageView.Frame.Height * ZoomScale);
             }
             Frame = new RectangleF (X, Y, messageWidth, messageHeight);
         }
