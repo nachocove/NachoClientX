@@ -72,7 +72,11 @@ class Email:
         if self.text is not None:
             # This is not MIME-encoded plain text. It is just unencoded text. Note that no
             # attachment or other part will be sent.
-            server.send(self.from_address, self.to_addresses_str(), '\n' + self.text)
+            if not self.subject:
+                subject_line = '\n'
+            else:
+                subject_line = 'Subject: ' + self.subject + '\n\n'
+            server.send(self.from_address, self.to_addresses_str(), subject_line + self.text)
             return
         if self.plain is not None:
             plain = email.mime.text.MIMEText(self.plain, 'plain')
