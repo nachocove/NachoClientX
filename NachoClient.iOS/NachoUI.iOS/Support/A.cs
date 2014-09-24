@@ -474,18 +474,6 @@ namespace NachoClient.iOS
                 return _Color_NachoLightText;
             }
         }
-
-        public static UIBarButtonItem NachoNowButton (UIViewController vc)
-        {
-            using (var rawImage = UIImage.FromBundle ("nav-nachonow")) {
-                var image = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
-                var button = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
-                button.Clicked += (object sender, EventArgs e) => {
-                    vc.PerformSegue ("SegueToNachoNow", new SegueHolder (null));
-                };
-                return button;
-            }
-        }
             
     }
 }
