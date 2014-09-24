@@ -101,6 +101,14 @@ namespace NachoClient.iOS
             PresetAttachment = attachment;
         }
 
+        public override void ViewWillLayoutSubviews ()
+        {
+            base.ViewWillLayoutSubviews ();
+            if (null != TabBarController) {
+                ViewFramer.Create (View).AdjustHeight (TabBarController.TabBar.Frame.Height);
+            }
+        }
+
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
