@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using NachoCore.Wbxml;
+using NachoCore.Model;
 
 namespace NachoCore.Utils
 {
@@ -16,12 +17,12 @@ namespace NachoCore.Utils
             return encoder.GetBytes ();
         }
 
-        public static Stream ToWbxmlStream (this XDocument doc, bool isLarge, CancellationToken cToken)
+        public static Stream ToWbxmlStream (this XDocument doc, int accountId, bool isLarge, CancellationToken cToken)
         {
             ASWBXML encoder = new ASWBXML (cToken);
             encoder.XmlDoc = doc;
             if (isLarge) {
-                var tmp = Path.GetTempFileName ();
+                var tmp = NcModel.Instance.TmpPath (accountId);
                 var fileStream = new FileStream (tmp, FileMode.Create);
                 var writer = new BinaryWriter (fileStream);
                 encoder.EmitToStream (writer);
