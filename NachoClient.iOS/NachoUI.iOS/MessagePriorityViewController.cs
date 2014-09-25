@@ -28,6 +28,12 @@ namespace NachoClient.iOS
         {
         }
 
+        public override void ViewDidLoad ()
+        {
+            base.ViewDidLoad ();
+            CreateView ();
+        }
+
         public void CreateView ()
         {
             float frameHeight = 420; //view size isn't relative to screen size (it's fixed)
@@ -128,12 +134,6 @@ namespace NachoClient.iOS
             DismissViewController (animated, action);
         }
 
-        public override void ViewDidLoad ()
-        {
-            base.ViewDidLoad ();
-            CreateView ();
-        }
-
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             var blurry = segue.DestinationViewController as BlurryViewController;
@@ -153,8 +153,6 @@ namespace NachoClient.iOS
                 // TODO -- Confirm that the user wants to go back in time.
                 return;
             } 
-
-            //                NcMessageDeferral.DeferThread (thread, MessageDeferralType.Custom, chosenDateTime);
 
             DateSelected (MessageDeferralType.Custom, chosenDateTime);
 

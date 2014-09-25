@@ -199,11 +199,6 @@ namespace NachoClient.iOS
                 ShowQuickResponses ();
             };
 
-//            priorityButton.TouchUpInside += (object sender, EventArgs e) => {
-//                View.EndEditing (true);
-//                ShowMessageIntents ();
-//            };
-
             var intentTap = new UITapGestureRecognizer ();
             intentTap.AddTarget (() => {
                 View.EndEditing (true);
