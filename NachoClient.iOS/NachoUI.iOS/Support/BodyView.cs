@@ -76,10 +76,12 @@ namespace NachoClient.iOS
         public delegate void RenderStart ();
         public delegate void RenderComplete ();
         public delegate void DownloadStart ();
-        public delegate void DownloadComplete (bool succeed);
 
-        public const int MESSAGE_PART_TAG = 300;
-        public const int DOWNLOAD_TAG = 304;
+        public enum TagType {
+            MESSAGE_PART_TAG = 300,
+            DOWNLOAD_TAG = 304,
+            SPINNER_TAG = 600
+        };
 
         #if (DEBUG_UI)
         static UIColor SCROLLVIEW_BGCOLOR = A.Color_NachoGreen;
@@ -106,6 +108,9 @@ namespace NachoClient.iOS
 
         public bool AutomaticallyScaleHtmlContent { get; set; }
 
+        // If false, center on view frame
+        public bool SpinnerCenteredOnParentFrame { get; set; }
+
         protected UIView parentView;
         protected UIView messageView;
         protected UITapGestureRecognizer doubleTap;
@@ -119,7 +124,6 @@ namespace NachoClient.iOS
         public RenderStart OnRenderStart;
         public RenderComplete OnRenderComplete;
         public DownloadStart OnDownloadStart;
-        public DownloadComplete OnDownloadComplete;
 
         public BodyView (RectangleF initialFrame, UIView parentView)
         {
@@ -161,44 +165,54 @@ namespace NachoClient.iOS
             messageView.AddGestureRecognizer (doubleTap);
             AddSubview (messageView);
 
+            // spinner indicates download activity
+            spinner = new UIActivityIndicatorView (UIActivityIndicatorViewStyle.Gray);
+            spinner.HidesWhenStopped = true;
+            spinner.Tag = (int)TagType.SPINNER_TAG;
+            AddSubview (spinner);
+
             // webView holds all HTML content
             webView = new BodyWebView (this);
-
-            // FIXME - Move this to ViewWillAppear()
-            // Listen to callback
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 
         public void Configure (McAbstrItem item)
         {
             abstrItem = item;
 
+            PointF center = !SpinnerCenteredOnParentFrame ? Center : Superview.Center;
+            center.X -= Frame.X;
+            center.Y -= Frame.Y;
+            spinner.Center = center;
+
             // TODO: Revisit
             for (int i = messageView.Subviews.Length - 1; i >= 0; i--) {
                 messageView.Subviews [i].RemoveFromSuperview ();
             }
 
-            if (LoadState.ERROR == loadState) {
-                Log.Info (Log.LOG_UI, "Previous download resulted in error");
-                RenderPartialDownloadMessage ("[ Message preview only. Tap here to download ]");
-                RenderTextString (item.GetBodyPreviewOrEmpty ());
-                return;
-            }
-            if (!item.IsDownloaded ()) {
-                Log.Info (Log.LOG_UI, "Starting download of whole message body");
-                OnDownloadStart ();
-                if (LoadState.LOADING != loadState) {
-                    loadState = LoadState.LOADING;
-                    switch (item.GetType ().Name) {
-                    case "McEmailMessage":
-                        BackEnd.Instance.DnldEmailBodyCmd (item.AccountId, item.Id);
-                        break;
-                    default:
-                        var msg = String.Format ("unhandle abstract item type {0}", item.GetType ().Name);
-                        throw new NcAssert.NachoDefaultCaseFailure (msg);
-                    }
+            if (item.IsDownloaded ()) {
+                loadState = LoadState.IDLE;
+            } else {
+                if (LoadState.ERROR == loadState) {
+                    Log.Info (Log.LOG_UI, "Previous download resulted in error");
+                    RenderPartialDownloadMessage ("[ Message preview only. Tap here to download ]");
+                    RenderTextString (item.GetBodyPreviewOrEmpty ());
+                    return;
                 }
-                return;
+                if (!item.IsDownloaded ()) {
+                    Log.Info (Log.LOG_UI, "Starting download of whole message body");
+                    if (LoadState.LOADING != loadState) {
+                        switch (item.GetType ().Name) {
+                        case "McEmailMessage":
+                            BackEnd.Instance.DnldEmailBodyCmd (item.AccountId, item.Id);
+                            break;
+                        default:
+                            var msg = String.Format ("unhandle abstract item type {0}", item.GetType ().Name);
+                            throw new NcAssert.NachoDefaultCaseFailure (msg);
+                        }
+                    }
+                    IndicateDownloadStarted ();
+                    return;
+                }
             }
 
             var bodyPath = item.GetBodyPath ();
@@ -285,7 +299,7 @@ namespace NachoClient.iOS
             label.AttributedText = attributedString;
             label.SizeToFit ();
             ViewFramer.Create (label).AdjustHeight (30.0f);
-            label.Tag = MESSAGE_PART_TAG;
+            label.Tag = (int)TagType.MESSAGE_PART_TAG;
             messageView.AddSubview (label);
             return label;
         }
@@ -317,7 +331,7 @@ namespace NachoClient.iOS
             var frame = label.Frame;
             frame.Height = frame.Height + 30;
             label.Frame = frame;
-            label.Tag = DOWNLOAD_TAG;
+            label.Tag = (int)TagType.DOWNLOAD_TAG;
             label.UserInteractionEnabled = true;
 
             // Detect tap of the partially download mesasge label
@@ -350,7 +364,7 @@ namespace NachoClient.iOS
             image = image.Scale (new SizeF (width, height));
 
             var iv = new UIImageView (image);
-            iv.Tag = MESSAGE_PART_TAG;
+            iv.Tag = (int)TagType.MESSAGE_PART_TAG;
             messageView.AddSubview (iv);
         }
 
@@ -435,25 +449,32 @@ namespace NachoClient.iOS
             Frame = new RectangleF (X, Y, messageWidth, messageHeight);
         }
 
-        public void StatusIndicatorCallback (object sender, EventArgs e)
-        {
-            var s = (StatusIndEventArgs)e;
-            if (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded == s.Status.SubKind) {
-                Log.Info (Log.LOG_EMAIL, "EmailMessageBodyDownloadSucceeded");
-                loadState = LoadState.IDLE;
-                OnDownloadComplete (true);
-            }
-            if (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed == s.Status.SubKind) {
-                Log.Info (Log.LOG_EMAIL, "EmailMessageBodyDownloadFailed");
-                loadState = LoadState.ERROR;
-                OnDownloadComplete (false);
-            }
-        }
-
         [MonoTouch.Foundation.Export ("DownloadMessage:")]
         public void OnDownloadMessage (UIGestureRecognizer sender)
         {
+            IndicateDownloadStarted ();
             BackEnd.Instance.DnldEmailBodyCmd (abstrItem.AccountId, abstrItem.Id);
+        }
+
+        protected void IndicateDownloadStarted ()
+        {
+            loadState = LoadState.LOADING;
+            spinner.StartAnimating ();
+            OnDownloadStart ();
+        }
+
+        public void DownloadComplete (bool succeed)
+        {
+            loadState = succeed ? LoadState.IDLE : LoadState.ERROR;
+            spinner.StopAnimating ();
+        }
+
+        public bool IsDownloadComplete ()
+        {
+            if (LoadState.LOADING != loadState) {
+                return false;
+            }
+            return abstrItem.IsDownloaded ();
         }
     }
 }
