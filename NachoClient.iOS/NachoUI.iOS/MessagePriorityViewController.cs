@@ -46,6 +46,13 @@ namespace NachoClient.iOS
             priorityView.ClipsToBounds = true;
             priorityView.BackgroundColor = UIColor.White;
 
+            UILabel viewTitle = new UILabel (new RectangleF (priorityView.Frame.Width / 2 - 75, 20, 150, 20));
+            viewTitle.Text = "Select a Date";
+            viewTitle.Font = A.Font_AvenirNextDemiBold17;
+            viewTitle.TextColor = A.Color_NachoBlack;
+            viewTitle.TextAlignment = UITextAlignment.Center;
+            priorityView.Add (viewTitle);
+
             var buttonInfoList = new List<ButtonInfo> (new ButtonInfo[] {
                 new ButtonInfo ("Later Today", "cup-48", () => DateSelected(MessageDeferralType.Later, DateTime.MinValue)),
                 new ButtonInfo ("Tonight", "navbar-icn-defer", () => DateSelected(MessageDeferralType.Tonight, DateTime.MinValue)),
@@ -111,7 +118,7 @@ namespace NachoClient.iOS
             dismissLabel.Font = A.Font_AvenirNextRegular12;
             dismissLabel.TextAlignment = UITextAlignment.Center;
             dismissLabel.SizeToFit ();
-            dismissLabel.Center = new PointF (320 / 2, priorityView.Frame.Height - dismissLabel.Frame.Height);
+            dismissLabel.Frame = new RectangleF (priorityView.Frame.Width / 2 - 50, priorityView.Frame.Height - 30, 100, 20);
             priorityView.AddSubview (dismissLabel);
 
             var tap = new UITapGestureRecognizer ((UITapGestureRecognizer obj) => {
