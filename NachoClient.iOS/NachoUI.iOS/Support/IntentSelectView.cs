@@ -89,8 +89,7 @@ namespace NachoClient.iOS
                 intentButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
                 intentButton.TouchUpInside += (object sender, EventArgs e) => {
                     SetMessageIntent(intent);
-                    owner.intentDateTypeEnum = MessageDeferralType.None;
-                    owner.PopulateMessageFromSelectedIntent ();
+                    owner.PopulateMessageFromSelectedIntent (MessageDeferralType.None);
                     this.DismissView ();
                 };
 

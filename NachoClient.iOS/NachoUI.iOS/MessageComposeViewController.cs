@@ -30,8 +30,6 @@ namespace NachoClient.iOS
         public static readonly string REPLY_ALL_ACTION = "ReplyAll";
         public static readonly string FORWARD_ACTION = "Forward";
 
-        public MessageDeferralType intentDateTypeEnum = MessageDeferralType.None;
-        public NcMessageIntent.Intent theIntent;
         public INachoMessageEditorParent owner;
 
         protected McAccount account;
@@ -279,7 +277,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public void PopulateMessageFromSelectedIntent ()
+        public void PopulateMessageFromSelectedIntent (MessageDeferralType intentDateTypeEnum)
         {
             intentTextView.Text = mcMessage.Intent;
 
@@ -1087,7 +1085,6 @@ namespace NachoClient.iOS
 
         public void DateSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime customDate)
         {
-            intentDateTypeEnum = request;
             DateTime selectedDate;
 
             switch (request) {
@@ -1112,7 +1109,7 @@ namespace NachoClient.iOS
             }
 
             messageIntent.SetMessageIntentDate(ref mcMessage, selectedDate);
-            PopulateMessageFromSelectedIntent ();
+            PopulateMessageFromSelectedIntent (request);
 
             IntentSelectView selectIntentView = (IntentSelectView)View.ViewWithTag (101);
             selectIntentView.DismissView ();

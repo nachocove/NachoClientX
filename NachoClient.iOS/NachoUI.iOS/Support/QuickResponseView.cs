@@ -87,7 +87,7 @@ namespace NachoClient.iOS
                         }
                         owner.messageIntent.SetType(response.intent);
                         owner.messageIntent.SetMessageIntent(ref emailMessage);
-                        owner.PopulateMessageFromSelectedIntent();
+                        owner.PopulateMessageFromSelectedIntent(MessageDeferralType.None);
                     }
                     owner.PopulateMessageFromQR (ncQuick.whatType);
                     this.DismissView ();
