@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using MonoTouch.Dialog;
-using Xamarin.Contacts;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
