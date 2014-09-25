@@ -1111,9 +1111,12 @@ namespace NachoClient.iOS
             messageIntent.SetMessageIntentDate(ref mcMessage, selectedDate);
             PopulateMessageFromSelectedIntent (request);
 
+            //Dismiss view once a date has been selected. If the user dismiss the priority choosing window
+            //w/out selecting a date, the intent selection view will still be visible. 
             IntentSelectView selectIntentView = (IntentSelectView)View.ViewWithTag (101);
             selectIntentView.DismissView ();
         }
+
         public void DismissChildDateController (INachoDateController vc)
         {
             vc.SetOwner (null);
