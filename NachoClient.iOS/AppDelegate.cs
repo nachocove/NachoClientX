@@ -208,6 +208,9 @@ namespace NachoClient.iOS
             NcApplication.Instance.StartClass2Services ();
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartClass2Services complete");
 
+            NcApplication.Instance.StartClass3Services ();
+            Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartClass3Services complete");
+
             application.SetStatusBarStyle (UIStatusBarStyle.LightContent, true);
             Account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
 
@@ -299,8 +302,6 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_LIFECYCLE, "OnActivated: Called");
             BadgeNotifClear ();
-            NcApplication.Instance.StartClass3Services ();
-            Log.Info (Log.LOG_LIFECYCLE, "OnActivated: StartClass3Services complete");
 
             NcApplication.Instance.StartClass4Services ();
             Log.Info (Log.LOG_LIFECYCLE, "OnActivated: StartClass4Services complete");
@@ -330,8 +331,6 @@ namespace NachoClient.iOS
             NcApplication.Instance.StopClass4Services ();
             Log.Info (Log.LOG_LIFECYCLE, "OnResignActivation: StopClass4Services complete");
 
-            NcApplication.Instance.StopClass3Services ();
-            Log.Info (Log.LOG_LIFECYCLE, "OnResignActivation: StopClass3Services complete");
             Log.Info (Log.LOG_LIFECYCLE, "OnResignActivation: Exit");
         }
 
@@ -342,6 +341,9 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: Stale");
                 return;
             }
+
+            NcApplication.Instance.StopClass3Services ();
+            Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: StopClass3Services complete");
             NcApplication.Instance.StopClass2Services ();
             Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: StopClass2Services complete");
             NcApplication.Instance.StopClass1Services ();

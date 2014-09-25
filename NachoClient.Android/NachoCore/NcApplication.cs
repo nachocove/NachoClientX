@@ -216,26 +216,23 @@ namespace NachoCore
         public void StartClass3Services ()
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass3Services called.");
-            _ExecutionContext = ExecutionContextEnum.Foreground;
             BackEnd.Instance.Owner = this;
             BackEnd.Instance.EstablishService ();
+            BackEnd.Instance.Start ();
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass3Services exited.");
         }
 
         public void StopClass3Services ()
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass3Services called.");
-            _ExecutionContext = ExecutionContextEnum.Background;
-            // Empty so far. 
-            // No harm in leaving inactive BackEnd data structures intact.
+            BackEnd.Instance.Stop ();
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass3Services exited.");
-
         }
 
         // ALL CLASS-4 STARTS ARE DEFERRED BASED ON TIME.
         public void StartClass4Services ()
         {
-            BackEnd.Instance.Start ();
+            _ExecutionContext = ExecutionContextEnum.Foreground;
             MonitorStart (); // Has a deferred timer start inside.
             Log.Info (Log.LOG_LIFECYCLE, "{0} (build {1}) built at {2} by {3}",
                 BuildInfo.Version, BuildInfo.BuildNumber, BuildInfo.Time, BuildInfo.User);
@@ -264,7 +261,7 @@ namespace NachoCore
         public void StopClass4Services ()
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass4Services called.");
-            BackEnd.Instance.Stop ();
+            _ExecutionContext = ExecutionContextEnum.Background;
             MonitorStop ();
             if (Class4EarlyShowTimer.DisposeAndCheckHasFired ()) {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4EarlyShowTimer.DisposeAndCheckHasFired.");
