@@ -36,8 +36,28 @@ namespace NachoCore.Model
             return body;
         }
 
+        /// <summary>
+        /// The ID of the item that owns this attachment.
+        /// </summary>
         [Indexed]
-        public int EmailMessageId { get; set; }
+        public int ItemId { get; set; }
+
+        /// <summary>
+        /// The type of the item that owns this attachment.
+        /// </summary>
+        public McAbstrFolderEntry.ClassCodeEnum ClassCode
+        {
+            get {
+                return _classCode;
+            }
+            set {
+                NcAssert.True (McAbstrFolderEntry.ClassCodeEnum.Email == value ||
+                    McAbstrFolderEntry.ClassCodeEnum.Calendar == value,
+                    "Only e-mail messages and calendar items can own attachments.");
+                _classCode = value;
+            }
+        }
+        private McAbstrFolderEntry.ClassCodeEnum _classCode = McAbstrFolderEntry.ClassCodeEnum.NeverInFolder;
 
         [Indexed]
         public string FileReference { get; set; }
@@ -56,21 +76,33 @@ namespace NachoCore.Model
 
         public string ContentType { get; set; }
 
-        public static List<McAttachment> QueryByItemId<T> (int accountId, int itemId)
+        public static List<McAttachment> QueryByItemId (int accountId, int itemId, McAbstrFolderEntry.ClassCodeEnum classCode)
         {
-            // ActiveSync only supports email attachments.
-            NcAssert.True (typeof(T) == typeof(McEmailMessage));
-            return NcModel.Instance.Db.Query<McAttachment> ("SELECT a.* FROM McAttachment AS a WHERE " +
-            " a.AccountId = ? AND " +
-            " a.EmailMessageId = ? ",
-                accountId, itemId);
+            if (McAbstrFolderEntry.ClassCodeEnum.Email == classCode || McAbstrFolderEntry.ClassCodeEnum.Contact == classCode) {
+                // Only e-mail messages and calendar items can own attachments.
+                // TODO We think that exceptions can own attachments, but that hasn't been confirmed.
+                return NcModel.Instance.Db.Query<McAttachment> (
+                    "SELECT a.* FROM McAttachment AS a WHERE " +
+                    " a.AccountId = ? AND " +
+                    " a.ItemId = ? AND " +
+                    " a.ClassCode = ?",
+                    accountId, itemId, (int)classCode);
+            } else {
+                // For other kinds of items, don't even bother looking in the database.
+                return new List<McAttachment> ();
+            }
+        }
+
+        public static List<McAttachment> QueryByItemId (McAbstrFolderEntry item)
+        {
+            return QueryByItemId (item.AccountId, item.Id, item.GetClassCode ());
         }
 
         public static IEnumerable<McAttachment> QueryNeedsFetch (int accountId, int limit, double minScore, int maxSize)
         {
             return NcModel.Instance.Db.Query<McAttachment> (
                 "SELECT a.* FROM McAttachment AS a " +
-                " JOIN McEmailMessage AS e ON e.Id = a.EmailMessageId " +
+                " JOIN McEmailMessage AS e ON e.Id = a.ItemId " +
                 " WHERE " +
                 " a.AccountId = ? AND " +
                 " e.AccountId = ? AND " +

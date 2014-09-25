@@ -200,7 +200,7 @@ namespace NachoClient.iOS
         protected void FetchAttachments ()
         {
             var message = thread.SingleMessageSpecialCase ();
-            attachments = McAttachment.QueryByItemId<McEmailMessage> (message.AccountId, message.Id);
+            attachments = McAttachment.QueryByItemId (message);
         }
 
         protected void ReplyActionSheet ()
@@ -652,7 +652,7 @@ namespace NachoClient.iOS
         protected void ConfigureView ()
         {
             var message = thread.SingleMessageSpecialCase ();
-            attachments = McAttachment.QueryByItemId<McEmailMessage> (message.AccountId, message.Id);
+            attachments = McAttachment.QueryByItemId (message);
 
             // User image view
             var userImageView = view.ViewWithTag ((int)TagType.USER_IMAGE_TAG) as UIImageView;
