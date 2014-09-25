@@ -83,9 +83,9 @@ namespace NachoClient.iOS
                     ncQuick.CreateQuickResponse (response, ref emailMessage);
                     if(null != response.intent){
                         if(null == owner.messageIntent){
-                            owner.messageIntent = new NcMessageIntent(ncQuick.whatType);
+                            owner.messageIntent = new NcMessageIntent();
                         }
-                        owner.messageIntent.EmbedIntentIntoMessage(response.intent, ref emailMessage);
+                        owner.messageIntent.SetMessageIntent(ref emailMessage);
                         owner.PopulateMessageFromSelectedIntent();
                     }
                     owner.PopulateMessageFromQR (ncQuick.whatType);

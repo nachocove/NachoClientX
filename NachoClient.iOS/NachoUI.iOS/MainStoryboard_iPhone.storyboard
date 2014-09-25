@@ -30,7 +30,7 @@
             <objects>
                 <viewController storyboardIdentifier="NachoNowViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="ygr-ff-C2f" customClass="NachoNowViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="BSK-Fb-RSa">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -96,15 +96,15 @@
             <objects>
                 <viewController storyboardIdentifier="FilesHierarchyViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="j5A-VG-u0P" customClass="FilesHierarchyViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="TVD-m5-4u5">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="jnW-WZ-zcs">
-                                <rect key="frame" x="-1" y="0.0" width="320" height="504"/>
+                                <rect key="frame" x="-1" y="0.0" width="320" height="460"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="LNu-UJ-Y6e" userLabel="Content View">
-                                        <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="320" height="460"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                                     </view>
@@ -132,7 +132,7 @@
             <objects>
                 <tableViewController storyboardIdentifier="FilesViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="bBy-CW-6ix" customClass="FilesViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="oA2-OL-dXa">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <searchBar key="tableHeaderView" contentMode="redraw" id="vTn-fI-R0o">
@@ -1359,6 +1359,7 @@
                         <segue destination="Mow-Gy-F9N" kind="custom" identifier="ComposeToContactChooser" customClass="FadeCustomSegue" id="xrp-ey-B0j"/>
                         <segue destination="OCr-PO-3nH" kind="push" identifier="ComposeToNachoNow" id="tkk-6o-6oa"/>
                         <segue destination="j5A-VG-u0P" kind="push" identifier="ComposeToFiles" id="kd2-jR-F9u"/>
+                        <segue destination="MCC-ND-pIu" kind="modal" identifier="SegueToMessagePriority" modalTransitionStyle="crossDissolve" id="DDa-hb-SgY"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="K96-0O-l77" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1935,29 +1936,29 @@
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="jZp-Tj-sBa"/>
+        <segue reference="xrp-ey-B0j"/>
+        <segue reference="K16-Rc-eqt"/>
         <segue reference="4z2-t5-9Cd"/>
         <segue reference="QbR-l1-NT5"/>
         <segue reference="od0-Sz-R9p"/>
-        <segue reference="v5u-iO-UgY"/>
         <segue reference="NoB-Ny-Mf5"/>
-        <segue reference="XQg-JR-vxA"/>
         <segue reference="Eb2-K0-nI3"/>
+        <segue reference="XQg-JR-vxA"/>
         <segue reference="fwk-9p-tlV"/>
         <segue reference="W3H-fb-nEJ"/>
+        <segue reference="jZp-Tj-sBa"/>
         <segue reference="Zm9-al-nRG"/>
         <segue reference="zDw-Tx-fTt"/>
         <segue reference="Tfk-Mt-BlS"/>
-        <segue reference="HCr-Oa-UHV"/>
         <segue reference="tdu-G2-PEp"/>
-        <segue reference="11B-OX-HZh"/>
+        <segue reference="HCr-Oa-UHV"/>
         <segue reference="RR1-bJ-URL"/>
         <segue reference="JTo-qU-j7O"/>
         <segue reference="e7N-39-HB4"/>
-        <segue reference="K16-Rc-eqt"/>
-        <segue reference="xrp-ey-B0j"/>
-        <segue reference="NFD-Zl-Isi"/>
-        <segue reference="vUs-ft-xdy"/>
+        <segue reference="tkk-6o-6oa"/>
+        <segue reference="DDa-hb-SgY"/>
+        <segue reference="kd2-jR-F9u"/>
+        <segue reference="B5b-jg-ZNg"/>
         <segue reference="559-W6-vfH"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.45098039215686275" green="1" blue="0.95294117647058818" alpha="1" colorSpace="deviceRGB"/>

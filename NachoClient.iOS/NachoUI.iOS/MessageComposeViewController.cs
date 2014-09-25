@@ -18,7 +18,7 @@ using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
-    public partial class MessageComposeViewController : UIViewController, IUcAddressBlockDelegate, IUcAttachmentBlockDelegate, INachoContactChooserDelegate, INachoFileChooserParent
+    public partial class MessageComposeViewController : UIViewController, IUcAddressBlockDelegate, IUcAttachmentBlockDelegate, INachoContactChooserDelegate, INachoFileChooserParent, INachoDateControllerParent
     {
         // The reason for sending this message
         protected enum Action {
@@ -30,7 +30,10 @@ namespace NachoClient.iOS
         public static readonly string REPLY_ALL_ACTION = "ReplyAll";
         public static readonly string FORWARD_ACTION = "Forward";
 
+        public MessageDeferralType intentDateTypeEnum = MessageDeferralType.None;
+        public NcMessageIntent.Intent theIntent;
         public INachoMessageEditorParent owner;
+
         protected McAccount account;
 
         protected McEmailMessage mcMessage = new McEmailMessage ();
@@ -49,6 +52,8 @@ namespace NachoClient.iOS
 
         UILabel subjectLabel;
         UITextField subjectField;
+        UILabel intentLabel;
+        UITextView intentTextView;
         UIButton priorityButton;
 
         UITextView bodyTextView;
@@ -57,6 +62,7 @@ namespace NachoClient.iOS
         UIView ccViewHR;
         UIView bccViewHR;
         UIView subjectLabelHR;
+        UIView intentLabelHR;
         UIView attachmentViewHR;
 
         UIToolbar keyboardToolbar;
@@ -193,10 +199,17 @@ namespace NachoClient.iOS
                 ShowQuickResponses ();
             };
 
-            priorityButton.TouchUpInside += (object sender, EventArgs e) => {
+//            priorityButton.TouchUpInside += (object sender, EventArgs e) => {
+//                View.EndEditing (true);
+//                ShowMessageIntents ();
+//            };
+
+            var intentTap = new UITapGestureRecognizer ();
+            intentTap.AddTarget (() => {
                 View.EndEditing (true);
                 ShowMessageIntents ();
-            };
+            });
+            intentTextView.AddGestureRecognizer (intentTap);
         }
 
         protected void ShowQuickResponses()
@@ -239,15 +252,7 @@ namespace NachoClient.iOS
             } else {
                 if (null == messageIntent) {
                     mcMessage.Subject = subjectField.Text;
-                    var messageType = new NcQuickResponse.QRTypeEnum ();
-                    if (IsReplyAction ()) {
-                        messageType = NcQuickResponse.QRTypeEnum.Reply;
-                    } else if (IsForwardAction ()) {
-                        messageType = NcQuickResponse.QRTypeEnum.Forward;
-                    } else {
-                        messageType = NcQuickResponse.QRTypeEnum.Compose;
-                    }
-                    messageIntent = new NcMessageIntent (messageType);
+                    messageIntent = new NcMessageIntent ();
                 }
                 selectIntentView = new IntentSelectView (ref messageIntent, ref mcMessage);
                 selectIntentView.SetOwner (this);
@@ -281,7 +286,35 @@ namespace NachoClient.iOS
 
         public void PopulateMessageFromSelectedIntent ()
         {
-            subjectField.Text = mcMessage.Subject;
+            intentTextView.Text = mcMessage.Intent;
+
+            if (MessageDeferralType.None != intentDateTypeEnum) {
+                switch (intentDateTypeEnum) {
+                case MessageDeferralType.Later:
+                    intentTextView.Text += " By Today";
+                    break;
+                case MessageDeferralType.Tonight:
+                    intentTextView.Text += " By Tonight";
+                    break;
+                case MessageDeferralType.Tomorrow:
+                    intentTextView.Text += " By Tomorrow";
+                    break;
+                case MessageDeferralType.NextWeek:
+                    intentTextView.Text += " By Next Week";
+                    break;
+                case MessageDeferralType.NextMonth:
+                    intentTextView.Text += " By Next Month";
+                    break;
+                case MessageDeferralType.Custom:
+                    intentTextView.Text += " By " + mcMessage.IntentDate.ToShortDateString ();
+                    break;
+                default:
+                    NcAssert.CaseError ("Not a recognzized deferral type.");
+                    break;
+                } 
+            } else{
+                intentTextView.Text = mcMessage.Intent;
+            }
         }
 
         public override UIView InputAccessoryView {
@@ -345,6 +378,11 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("ComposeToNachoNow")) {
                 return;
             }
+            if (segue.Identifier == "SegueToMessagePriority") {
+                var vc = (MessagePriorityViewController)segue.DestinationViewController;
+                vc.SetOwner (this);
+                return;
+            }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }
@@ -390,6 +428,9 @@ namespace NachoClient.iOS
             subjectLabelHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 1));
             subjectLabelHR.BackgroundColor = A.Color_NachoNowBackground;
 
+            intentLabelHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 1));
+            intentLabelHR.BackgroundColor = A.Color_NachoNowBackground;
+
             attachmentViewHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 1));
             attachmentViewHR.BackgroundColor = A.Color_NachoNowBackground;
 
@@ -407,6 +448,20 @@ namespace NachoClient.iOS
                 subjectField.Text += PresetSubject;
             }
             subjectField.SizeToFit ();
+
+            intentLabel = new UILabel ();
+            intentLabel.Text = "Msg. Intent:";
+            intentLabel.Font = A.Font_AvenirNextRegular14;
+            intentLabel.TextColor = A.Color_0B3239;
+            intentLabel.SizeToFit ();
+
+            intentTextView = new UITextView ();
+            intentTextView.Font = A.Font_AvenirNextRegular14;
+            intentTextView.TextColor = A.Color_808080;
+            intentTextView.Text = "NONE";
+            intentTextView.Editable = false;
+            intentTextView.ScrollEnabled = false;
+            intentTextView.SizeToFit ();
 
             priorityButton = UIButton.FromType (UIButtonType.ContactAdd);
 
@@ -442,6 +497,9 @@ namespace NachoClient.iOS
                 subjectLabelHR,
                 subjectField,
                 priorityButton,
+                intentLabel,
+                intentLabelHR,
+                intentTextView,
                 attachmentView,
                 attachmentViewHR,
                 bodyTextView
@@ -622,6 +680,16 @@ namespace NachoClient.iOS
 
                 AdjustY (subjectLabelHR, yOffset);
                 yOffset += subjectLabelHR.Frame.Height;
+
+                CenterY (intentLabel, LEFT_INDENT, yOffset, intentLabel.Frame.Width, LINE_HEIGHT);
+
+                var intentFieldStart = intentLabel.Frame.X + intentLabel.Frame.Width;
+                var intentFieldWidth = View.Frame.Width;
+                CenterY(intentTextView, intentFieldStart, yOffset, intentFieldWidth, LINE_HEIGHT);
+                yOffset += LINE_HEIGHT;
+
+                AdjustY (intentLabelHR, yOffset);
+                yOffset += intentLabelHR.Frame.Height;
 
                 if (!attachmentView.Hidden) {
                     AdjustY (attachmentView, yOffset);
@@ -860,8 +928,10 @@ namespace NachoClient.iOS
             }
                 
             mimeMessage.Body = body.ToMessageBody ();
-
             var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
+            mcMessage.Intent = this.mcMessage.Intent;
+            mcMessage.IntentDate = this.mcMessage.IntentDate;
+            mcMessage.Update ();
             if (IsForwardOrReplyAction ()) {
                 mcMessage.ReferencedEmailId = referencedMessage.Id;
                 mcMessage.ReferencedBodyIsIncluded = originalEmailIsEmbedded;
@@ -1018,6 +1088,44 @@ namespace NachoClient.iOS
             }
 
             NcAssert.CaseError ();
+        }
+
+        public void DateSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime customDate)
+        {
+            intentDateTypeEnum = request;
+            DateTime selectedDate;
+
+            switch (request) {
+            case MessageDeferralType.Custom:
+                selectedDate = customDate;
+                break;
+            case MessageDeferralType.Later:
+                selectedDate = DateTime.Today;
+                break;
+            case MessageDeferralType.Tonight:
+                selectedDate = DateTime.Today.AddHours(23);
+                break;
+            case MessageDeferralType.Tomorrow:
+                selectedDate = DateTime.Today.AddDays (1);
+                break;
+            case MessageDeferralType.NextWeek:
+                selectedDate = DateTime.Today.AddDays (8 - (int)DateTime.Today.DayOfWeek);
+                break;
+            case MessageDeferralType.NextMonth:
+                selectedDate = new DateTime (DateTime.Today.AddMonths (1).Year, DateTime.Today.AddMonths (1).Month, 1);
+                break;
+            }
+
+            messageIntent.SetMessageIntentDate(ref mcMessage, selectedDate);
+            PopulateMessageFromSelectedIntent ();
+
+            IntentSelectView selectIntentView = (IntentSelectView)View.ViewWithTag (101);
+            selectIntentView.DismissView ();
+        }
+        public void DismissChildDateController (INachoDateController vc)
+        {
+            vc.SetOwner (null);
+            vc.DimissDateController (false, null);
         }
 
         /// <summary>

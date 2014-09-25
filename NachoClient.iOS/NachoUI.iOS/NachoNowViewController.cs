@@ -16,7 +16,7 @@ using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
-    public partial class NachoNowViewController : NcUIViewController, INachoMessageEditorParent, INachoFolderChooserParent, INachoCalendarItemEditorParent, ICalendarTableViewSourceDelegate
+    public partial class NachoNowViewController : NcUIViewController, INachoMessageEditorParent, INachoFolderChooserParent, INachoCalendarItemEditorParent, ICalendarTableViewSourceDelegate, INachoDateControllerParent
     {
         public bool wrap = false;
         public INachoEmailMessages priorityInbox;
@@ -288,6 +288,21 @@ namespace NachoClient.iOS
         {
             vc.SetOwner (null);
             vc.DismissMessageEditor (false, null);
+        }
+
+        public void DateSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime customDate)
+        {
+            if (MessageDeferralType.Custom != request) {
+                NcMessageDeferral.DeferThread (thread, request);
+            } else {
+                NcMessageDeferral.DeferThread (thread, request, customDate);
+            }
+        }
+
+        public void DismissChildDateController (INachoDateController vc)
+        {
+            vc.SetOwner (null);
+            vc.DimissDateController (false, null);
         }
 
         /// <summary>

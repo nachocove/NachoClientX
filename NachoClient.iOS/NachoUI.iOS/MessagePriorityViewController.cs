@@ -12,31 +12,117 @@ using System.Drawing;
 
 namespace NachoClient.iOS
 {
-    public partial class MessagePriorityViewController : BlurryViewController, INachoMessageEditor, INcDatePickerDelegate
+    public partial class MessagePriorityViewController : BlurryViewController, INcDatePickerDelegate, INachoDateController
     {
         public McEmailMessageThread thread;
-        protected INachoMessageEditorParent owner;
+        protected INachoDateControllerParent owner;
 
+        const float BUTTON_SIZE = 60;
+        const float BUTTON_LABEL_HEIGHT = 20;
+        const float BUTTON_PADDING_HEIGHT = 25;
+        const float BUTTON_PADDING_WIDTH = 20;
 
-        public enum DatePickerActionType
-        {
-            None,
-            Defer,
-            Deadline,
-        };
-
-        DatePickerActionType datePickerAction = DatePickerActionType.None;
+        private List<UIButton> ActionButtons = new List<UIButton> ();
 
         public MessagePriorityViewController (IntPtr handle) : base (handle)
         {
         }
 
-        public void SetOwner (INachoMessageEditorParent o)
+        public void CreateView ()
+        {
+            float frameHeight = 420; //view size isn't relative to screen size (it's fixed)
+            float frameWidth = View.Frame.Width - 40;   //20 px indent l/r sides
+            float windowX = (View.Frame.Width - frameWidth) / 2;
+            float windowY = (View.Frame.Height - frameHeight) / 2;
+
+            UIView priorityView = new UIView (new RectangleF (windowX, windowY, frameWidth, frameHeight));
+            priorityView.Layer.CornerRadius = 15.0f;
+            priorityView.ClipsToBounds = true;
+            priorityView.BackgroundColor = UIColor.White;
+
+            var buttonInfoList = new List<ButtonInfo> (new ButtonInfo[] {
+                new ButtonInfo ("Later Today", "cup-48", () => DateSelected(MessageDeferralType.Later, new DateTime())),
+                new ButtonInfo ("Tonight", "navbar-icn-defer", () => DateSelected(MessageDeferralType.Tonight, new DateTime())),
+                new ButtonInfo ("Tomorrow", "navbar-icn-defer", () => DateSelected(MessageDeferralType.Tomorrow, new DateTime())),
+                new ButtonInfo (null, null, null),
+                new ButtonInfo ("Next Week", "navbar-icn-defer", () => DateSelected(MessageDeferralType.NextWeek, new DateTime())),
+                new ButtonInfo ("Next Month", "navbar-icn-defer", () => DateSelected(MessageDeferralType.NextMonth, new DateTime())),
+                new ButtonInfo ("Pick Date", "navbar-icn-defer", () =>  PerformSegue ("MessagePriorityToDatePicker", this)),
+                new ButtonInfo (null, null, null),
+                null,
+                null,
+                new ButtonInfo ("None", "navbar-icn-defer", () => DateSelected(MessageDeferralType.None, new DateTime())),
+            });
+
+
+            var center = priorityView.Center;
+            center.X = (priorityView.Frame.Width / 2);
+            center.Y = center.Y;
+
+            var xOffset = center.X - BUTTON_SIZE - BUTTON_PADDING_WIDTH;
+            var yOffset = center.Y - (1.5F * BUTTON_PADDING_HEIGHT) - (2F * (BUTTON_SIZE + BUTTON_LABEL_HEIGHT)) + (0.5F * BUTTON_SIZE);
+
+            foreach (var buttonInfo in buttonInfoList) {
+                if (null == buttonInfo) {
+                    xOffset += BUTTON_SIZE + BUTTON_PADDING_WIDTH;
+                    continue;
+                }
+                if (null == buttonInfo.buttonLabel) {
+                    xOffset = center.X - BUTTON_SIZE - BUTTON_PADDING_WIDTH;
+                    yOffset += BUTTON_SIZE + BUTTON_LABEL_HEIGHT + BUTTON_PADDING_HEIGHT;
+                    continue;
+                }
+
+                var buttonRect = UIButton.FromType (UIButtonType.RoundedRect);
+                buttonRect.Layer.CornerRadius = BUTTON_SIZE / 2;
+                buttonRect.Layer.MasksToBounds = true;
+                buttonRect.Layer.BorderColor = A.Color_NachoGreen.CGColor;
+                buttonRect.Layer.BorderWidth = 1.0f;                  
+                buttonRect.Frame = new RectangleF (0, 0, BUTTON_SIZE, BUTTON_SIZE);
+                buttonRect.Center = new PointF (xOffset, yOffset);
+                buttonRect.SetImage (UIImage.FromBundle (buttonInfo.buttonIcon), UIControlState.Normal);
+                buttonRect.TouchUpInside += (object sender, EventArgs e) => {
+                    buttonInfo.buttonAction ();
+                };
+                ActionButtons.Add (buttonRect);
+                priorityView.Add (buttonRect);
+
+                var label = new UILabel ();
+                label.TextColor = A.Color_NachoBlack;
+                label.Text = buttonInfo.buttonLabel;
+                label.Font = A.Font_AvenirNextMedium14;
+                label.TextAlignment = UITextAlignment.Center;
+                label.SizeToFit ();
+                label.Center = new PointF (xOffset, 5 + yOffset + ((BUTTON_SIZE + BUTTON_LABEL_HEIGHT) / 2));
+                priorityView.Add (label);
+
+                xOffset += BUTTON_SIZE + BUTTON_PADDING_WIDTH;
+            }
+
+            var dismissLabel = new UILabel ();
+            dismissLabel.Text = "Dismiss";
+            dismissLabel.TextColor = A.Color_NachoBlack;
+            dismissLabel.Font = A.Font_AvenirNextRegular12;
+            dismissLabel.TextAlignment = UITextAlignment.Center;
+            dismissLabel.SizeToFit ();
+            dismissLabel.Center = new PointF (320 / 2, priorityView.Frame.Height - dismissLabel.Frame.Height);
+            priorityView.AddSubview (dismissLabel);
+
+            var tap = new UITapGestureRecognizer ((UITapGestureRecognizer obj) => {
+                DismissViewController (true, null);
+            });
+            dismissLabel.AddGestureRecognizer (tap);
+            dismissLabel.UserInteractionEnabled = true;
+
+            View.AddSubview (priorityView);
+        }
+
+        public void SetOwner (INachoDateControllerParent o)
         {
             owner = o;
         }
 
-        public void DismissMessageEditor (bool animated, NSAction action)
+        public void DimissDateController (bool animated, NSAction action)
         {
             owner = null;
             DismissViewController (animated, action);
@@ -44,23 +130,8 @@ namespace NachoClient.iOS
 
         public override void ViewDidLoad ()
         {
-            INachoMessageEditorParent own = owner;
             base.ViewDidLoad ();
-            owner = own;
-
-            float frameHeight = 420; //view size isn't relative to screen size (it's fixed)
-            float frameWidth = View.Frame.Width - 40;   //20 px indent l/r sides
-            float windowX = (View.Frame.Width - frameWidth) / 2;
-            float windowY = (View.Frame.Height - frameHeight) / 2;
-
-            PriorityView priorityView = new PriorityView (new RectangleF (windowX, windowY, frameWidth, frameHeight));
-            priorityView.Layer.CornerRadius = 15.0f;
-            priorityView.ClipsToBounds = true;
-            priorityView.BackgroundColor = UIColor.White;
-
-            priorityView.InitButtonManager (this);
-
-            View.AddSubview (priorityView);
+            CreateView ();
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
@@ -82,84 +153,41 @@ namespace NachoClient.iOS
                 // TODO -- Confirm that the user wants to go back in time.
                 return;
             } 
-            switch (datePickerAction) {
-            case DatePickerActionType.Defer:
-                NcMessageDeferral.DeferThread (thread, MessageDeferralType.Custom, chosenDateTime);
-                break;
-            case DatePickerActionType.Deadline:
-                NcMessageDeferral.SetDueDate (thread, chosenDateTime);
-                break;
-            }
+
+            //                NcMessageDeferral.DeferThread (thread, MessageDeferralType.Custom, chosenDateTime);
+
+            DateSelected (MessageDeferralType.Custom, chosenDateTime);
+
             vc.owner = null;
             vc.DismissViewController (false, new NSAction (delegate {
-                owner.DismissChildMessageEditor (this);
+                owner.DismissChildDateController (this);
             }));
         }
 
-        public void DelayRequest (string request)
+        public void DateSelected (MessageDeferralType dateType, DateTime customDate)
         {
-            DateTime now = DateTime.Now;
-
-            switch (request) {
-            case "Later":
-                NcMessageDeferral.DeferThread (thread, MessageDeferralType.Later);
-                owner.DismissChildMessageEditor (this);
-                return;
-            case "Tonight":
-                NcMessageDeferral.DeferThread (thread, MessageDeferralType.Tonight);
-                owner.DismissChildMessageEditor (this);
-                return;
-            case "Tomorrow":
-                NcMessageDeferral.DeferThread (thread, MessageDeferralType.Tomorrow);
-                owner.DismissChildMessageEditor (this);
-                return;
-            case "NextWeek":
-                NcMessageDeferral.DeferThread (thread, MessageDeferralType.NextWeek);
-                owner.DismissChildMessageEditor (this);
-                return;
-            case "MonthEnd":
-                NcMessageDeferral.DeferThread (thread, MessageDeferralType.MonthEnd);
-                owner.DismissChildMessageEditor (this);
-                return;
-            case "NextMonth":
-                NcMessageDeferral.DeferThread (thread, MessageDeferralType.NextMonth);
-                owner.DismissChildMessageEditor (this);
-                return;
-            case "Forever":
-                NcMessageDeferral.DeferThread (thread, MessageDeferralType.Forever);
-                owner.DismissChildMessageEditor (this);
-                return;
-            case "Custom":
-                datePickerAction = DatePickerActionType.Defer;
-                PerformSegue ("MessagePriorityToDatePicker", this);
-                break;
-            case "None":
-                NcMessageDeferral.UndeferThread (thread);
-                owner.DismissChildMessageEditor (this);
-                return;
-            default:
-                NcAssert.CaseError ();
-                return;
+            if (MessageDeferralType.Custom != dateType) {
+                owner.DateSelected (dateType, thread, customDate);
+                owner.DismissChildDateController (this);
+            } else {
+                owner.DateSelected (dateType, thread, customDate);
             }
         }
 
-        public void CreateMeeting ()
+        protected class ButtonInfo
         {
-            owner.CreateMeetingEmailForMessage (this, thread);
-        }
+            public string buttonLabel { get; set; }
 
-        public void AddChili ()
-        {
-            var message = thread.SingleMessageSpecialCase ();
-            message.UserAction = 1;
-            message.Update ();
-            owner.DismissChildMessageEditor (this);
-        }
+            public string buttonIcon { get; set; }
 
-        public void CreateDeadline ()
-        {
-            datePickerAction = DatePickerActionType.Deadline;
-            PerformSegue ("MessagePriorityToDatePicker", this);
+            public Action buttonAction { get; set; }
+
+            public ButtonInfo (string bl, string bi, Action ba)
+            {
+                buttonLabel = bl;
+                buttonIcon = bi;
+                buttonAction = ba;
+            }
         }
     }
 }

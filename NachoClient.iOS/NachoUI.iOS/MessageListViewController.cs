@@ -16,7 +16,7 @@ using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
-    public partial class MessageListViewController : NcUITableViewController, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoMessageEditorParent, INachoCalendarItemEditorParent, INachoFolderChooserParent, IMessageTableViewSourceDelegate
+    public partial class MessageListViewController : NcUITableViewController, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoMessageEditorParent, INachoCalendarItemEditorParent, INachoFolderChooserParent, IMessageTableViewSourceDelegate, INachoDateControllerParent
     {
         MessageTableViewSource messageSource;
         // iOS Bug Workaround
@@ -354,6 +354,21 @@ namespace NachoClient.iOS
         {
             vc.SetOwner (null);
             vc.DismissMessageEditor (false, null);
+        }
+
+        public void DateSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime customDate)
+        {
+            if (MessageDeferralType.Custom != request) {
+                NcMessageDeferral.DeferThread (thread, request);
+            } else {
+                NcMessageDeferral.DeferThread (thread, request, customDate);
+            }
+        }
+
+        public void DismissChildDateController (INachoDateController vc)
+        {
+            vc.SetOwner (null);
+            vc.DimissDateController (false, null);
         }
 
         /// <summary>

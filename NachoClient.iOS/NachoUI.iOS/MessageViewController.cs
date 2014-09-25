@@ -26,7 +26,7 @@ using MonoTouch.Dialog;
 namespace NachoClient.iOS
 {
     public partial class MessageViewController : NcUIViewController, INachoMessageEditorParent,
-        INachoFolderChooserParent, INachoCalendarItemEditorParent, INcDatePickerDelegate, IUcAddressBlockDelegate
+        INachoFolderChooserParent, INachoCalendarItemEditorParent, INcDatePickerDelegate, IUcAddressBlockDelegate, INachoDateControllerParent
     {
         const int TOVIEW_LEFT_MARGIN = 20;
         const int CCVIEW_LEFT_MARGIN = 20;
@@ -150,6 +150,8 @@ namespace NachoClient.iOS
 
             MarkAsRead ();
         }
+
+
 
         public override void ViewWillAppear (bool animated)
         {
@@ -317,6 +319,23 @@ namespace NachoClient.iOS
             vc.SetOwner (null);
             vc.DismissMessageEditor (false, new NSAction (delegate {
                 NavigationController.PopViewControllerAnimated (true);
+            }));
+        }
+
+        public void DateSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime customDate)
+        {
+            if (MessageDeferralType.Custom != request) {
+                NcMessageDeferral.DeferThread (thread, request);
+            } else {
+                NcMessageDeferral.DeferThread (thread, request, customDate);
+            }
+        }
+
+        public void DismissChildDateController (INachoDateController vc)
+        {
+            vc.SetOwner (null);
+            vc.DimissDateController (false, new NSAction (delegate {
+                this.DismissViewController (true, null);
             }));
         }
 

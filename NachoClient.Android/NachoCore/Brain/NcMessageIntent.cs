@@ -5,80 +5,72 @@ using System.Collections.Generic;
 using NachoCore.Model;
 using NachoCore.Utils;
 
+
 namespace NachoCore.Brain
 {
     public class NcMessageIntent
     {
-        public const string MANDATORY = "MANDATORY";
-        public const string READ = "READ";
-        public const string RESPOND = "RESPOND";
-        public const string CALL = "CALL"; 
+        public const string NONE = "NONE";
         public const string FYI = "FYI";
-        public const string DISCRETIONARY = "DISCRETIONARY";
-        public const string ACKNOWLEDGED = "ACKNOWLEDGED";
-        public const string MEETING = "MEETING";
+        public const string PLEASE_READ = "Please Read";
+        public const string RESPONSE_REQUIRED = "Response Required";
+        public const string URGENT = "Urgent";
 
-
-        protected List<string> ForwardIntentsList = new List<string> () {
-            MANDATORY,
-            READ,
-            RESPOND,
-            CALL,
-        };
-
-        protected List<string> ComposeIntentsList = new List<string> () {
+        public enum IntentTypeEnum {
+            None,
             FYI,
-            MANDATORY,
-            READ,
-            RESPOND,
-            CALL,
-        };
-
-        protected List<string> ReplyIntentsList = new List<string> () {
-            DISCRETIONARY,
-            ACKNOWLEDGED,
-            MANDATORY,
-            READ,
-            RESPOND,
-            MEETING,
-            CALL,
-        };
-
-        public NcQuickResponse.QRTypeEnum messageType { get; private set; }
-        public string intentValue {get;set;}
-
-        public NcMessageIntent (NcQuickResponse.QRTypeEnum whatType)
-        {
-            this.messageType = whatType;
+            PleaseRead,
+            ResponseRequired,
+            Urgent,
         }
 
-        public List<string> GetIntentList ()
+        protected List<Intent> IntentsList= new List<Intent> () {
+            new Intent(IntentTypeEnum.None, NONE),
+            new Intent(IntentTypeEnum.FYI, FYI),
+            new Intent(IntentTypeEnum.PleaseRead, PLEASE_READ),
+            new Intent(IntentTypeEnum.ResponseRequired, RESPONSE_REQUIRED),
+            new Intent(IntentTypeEnum.Urgent, URGENT),
+        };
+
+        public Intent intentType { get; private set; }
+
+        public NcMessageIntent ()
         {
-            switch (messageType) {
-            case NcQuickResponse.QRTypeEnum.Compose:
-                return ComposeIntentsList;
-            case NcQuickResponse.QRTypeEnum.Reply:
-                return ReplyIntentsList;
-            case NcQuickResponse.QRTypeEnum.Forward:
-                return ForwardIntentsList;
-            default:
-                return null;
+            intentType = new Intent (IntentTypeEnum.None, NONE);
+        }
+
+        public List<Intent> GetIntentList ()
+        {
+            return IntentsList;
+        }
+
+        public void SetType (Intent intent)
+        {
+            intentType = intent;
+        }
+
+        public void SetMessageIntent (ref McEmailMessage emailMessage)
+        {
+            emailMessage.Intent = intentType.value;
+        }
+
+        public void SetMessageIntentDate (ref McEmailMessage emailMessage, DateTime selectedDate)
+        {
+            emailMessage.IntentDate = selectedDate;
+        }
+
+        public class Intent
+        {
+            public string value;
+            public IntentTypeEnum type;
+
+            public Intent (IntentTypeEnum type, string value)
+            {
+                this.value = value;
+                this.type = type;
             }
         }
 
-        public void EmbedIntentIntoMessage (string intent, ref McEmailMessage emailMessage)
-        {
-            if (null != intentValue) {
-                if (emailMessage.Subject.Contains (intentValue)) {
-                    emailMessage.Subject = emailMessage.Subject.Replace (intentValue, intent);
-                } else {
-                    emailMessage.Subject = intent + " - " + emailMessage.Subject;
-                }
-            } else {
-                emailMessage.Subject = intent + " - " + emailMessage.Subject;
-            }
-            this.intentValue = intent;
-        }
 
     }
 }
