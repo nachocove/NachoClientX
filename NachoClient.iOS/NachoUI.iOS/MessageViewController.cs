@@ -345,7 +345,7 @@ namespace NachoClient.iOS
         {
             vc.SetOwner (null);
             vc.DimissDateController (false, new NSAction (delegate {
-                this.DismissViewController (true, null);
+                NavigationController.PopViewControllerAnimated (true);
             }));
         }
 
