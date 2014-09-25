@@ -24,19 +24,25 @@ namespace NachoCore.Brain
             Urgent,
         }
 
-        protected List<Intent> IntentsList= new List<Intent> () {
-            new Intent(IntentTypeEnum.None, NONE),
-            new Intent(IntentTypeEnum.FYI, FYI),
-            new Intent(IntentTypeEnum.PleaseRead, PLEASE_READ),
-            new Intent(IntentTypeEnum.ResponseRequired, RESPONSE_REQUIRED),
-            new Intent(IntentTypeEnum.Urgent, URGENT),
+        public static Intent NONE_INTENT = new Intent(IntentTypeEnum.None, NONE);
+        public static Intent FYI_INTENT = new Intent (IntentTypeEnum.FYI, FYI);
+        public static Intent PLEASE_READ_INTENT = new Intent (IntentTypeEnum.PleaseRead, PLEASE_READ);
+        public static Intent RESPONSE_REQUIRED_INTENT = new Intent(IntentTypeEnum.ResponseRequired, RESPONSE_REQUIRED);
+        public static Intent URGENT_INTENT = new Intent(IntentTypeEnum.Urgent, URGENT);
+
+        protected List<Intent> IntentsList = new List<Intent> () {
+            NONE_INTENT,
+            FYI_INTENT,
+            PLEASE_READ_INTENT,
+            RESPONSE_REQUIRED_INTENT,
+            URGENT_INTENT,
         };
 
         public Intent intentType { get; private set; }
 
         public NcMessageIntent ()
         {
-            intentType = new Intent (IntentTypeEnum.None, NONE);
+            intentType = NONE_INTENT;
         }
 
         public List<Intent> GetIntentList ()
@@ -70,7 +76,5 @@ namespace NachoCore.Brain
                 this.type = type;
             }
         }
-
-
     }
 }

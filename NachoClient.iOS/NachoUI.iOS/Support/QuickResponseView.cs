@@ -85,6 +85,7 @@ namespace NachoClient.iOS
                         if(null == owner.messageIntent){
                             owner.messageIntent = new NcMessageIntent();
                         }
+                        owner.messageIntent.SetType(response.intent);
                         owner.messageIntent.SetMessageIntent(ref emailMessage);
                         owner.PopulateMessageFromSelectedIntent();
                     }

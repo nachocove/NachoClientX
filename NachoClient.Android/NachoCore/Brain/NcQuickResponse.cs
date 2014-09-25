@@ -13,23 +13,23 @@ namespace NachoCore.Brain
             new QuickResponse ("Hey!", "Hey, haven't seen you in a while..."),
             new QuickResponse ("Catch up?", "You want to catch up over coffee soon?"),
             new QuickResponse ("How are you?", "How are you doing?"),
-            new QuickResponse ("Call me.", "Hey, Can you call me asap?", NcMessageIntent.RESPONSE_REQUIRED),
-            new QuickResponse ("Expense reports", "Can you approve my expense report?", NcMessageIntent.RESPONSE_REQUIRED),
+            new QuickResponse ("Call me.", "Hey, Can you call me asap?", NcMessageIntent.RESPONSE_REQUIRED_INTENT),
+            new QuickResponse ("Expense reports", "Can you approve my expense report?", NcMessageIntent.RESPONSE_REQUIRED_INTENT),
         };
 
         protected List <QuickResponse> QuickReplyList = new List<QuickResponse> () {
             new QuickResponse (null, "Nice job!"),
             new QuickResponse (null, "Thanks."),
             new QuickResponse (null, "Approved."),
-            new QuickResponse (null, "Please call me to discuss.", NcMessageIntent.RESPONSE_REQUIRED),
+            new QuickResponse (null, "Please call me to discuss.", NcMessageIntent.RESPONSE_REQUIRED_INTENT),
             new QuickResponse (null, "Ok."),
             new QuickResponse (null, "Not at this time."),
         };
 
         protected List <QuickResponse> QuickForwardList = new List<QuickResponse> () {
             new QuickResponse (null, "FYI"),
-            new QuickResponse (null, "Please Read and Respond by ... ", NcMessageIntent.PLEASE_READ),
-            new QuickResponse (null, "Please call me ASAP to discuss.", NcMessageIntent.RESPONSE_REQUIRED),
+            new QuickResponse (null, "Please Read and Respond by ... ", NcMessageIntent.PLEASE_READ_INTENT),
+            new QuickResponse (null, "Please call me ASAP to discuss.", NcMessageIntent.RESPONSE_REQUIRED_INTENT),
         };
 
         public enum QRTypeEnum
@@ -79,15 +79,19 @@ namespace NachoCore.Brain
             default:
                 break;
             }
+
+            if (null != selectedResponse.intent) {
+                emailMessage.Intent = selectedResponse.intent.value;
+            }
         }
 
         public class QuickResponse
         {
             public string subject;
             public string body;
-            public string intent;
+            public NcMessageIntent.Intent intent;
 
-            public QuickResponse (string subject, string body, string intent = null)
+            public QuickResponse (string subject, string body, NcMessageIntent.Intent intent = null)
             {
                 this.subject = subject;
                 this.body = body;
