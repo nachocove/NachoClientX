@@ -34,7 +34,6 @@ namespace NachoClient.iOS
         protected NachoFolders calendars;
         protected string TempPhone = "";
         protected int calendarIndex = 0;
-        List<McAttachment> attachments = new List<McAttachment> ();
 
         protected UIView EventInfoView;
 
@@ -363,7 +362,7 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("EditEventToAttachment")) {
                 var dc = (EventAttachmentViewController)segue.DestinationViewController;
                 ExtractValues ();
-                dc.SetOwner (this, attachments, c, true);
+                dc.SetOwner (this, c.attachments, c, true);
                 return;
             }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
@@ -736,7 +735,7 @@ namespace NachoClient.iOS
             Util.AddArrowAccessory (SCREEN_WIDTH - 23, CELL_HEIGHT / 2 - 6, 12, attachmentsView);
 
             UILabel attachmentsDetailLabel = new UILabel ();
-            attachmentsDetailLabel.Text = "(" + attachments.Count + ")";
+            attachmentsDetailLabel.Text = "(" + c.attachments.Count + ")";
             attachmentsDetailLabel.Tag = ATTACHMENTS_DETAIL_TAG;
             attachmentsDetailLabel.SizeToFit ();
             attachmentsDetailLabel.TextAlignment = UITextAlignment.Right;
@@ -998,7 +997,7 @@ namespace NachoClient.iOS
 
             //attachments view
             var attachmentDetailLabelView = contentView.ViewWithTag (ATTACHMENTS_DETAIL_TAG) as UILabel;
-            attachmentDetailLabelView.Text = "(" + attachments.Count () + ")";
+            attachmentDetailLabelView.Text = "(" + c.attachments.Count + ")";
 
             //people view
             var peopleDetailLabelView = contentView.ViewWithTag (PEOPLE_DETAIL_TAG) as UILabel;
@@ -1265,7 +1264,7 @@ namespace NachoClient.iOS
         {
             //var tzid = RadioElementWithData.SelectedData (timezoneEntryElement);
             var iCalPart = CalendarHelper.iCalToMimePart (account, c, "Local");
-            var mimeBody = CalendarHelper.CreateMime (c.Description, iCalPart, attachments);
+            var mimeBody = CalendarHelper.CreateMime (c.Description, iCalPart, c.attachments);
 
             CalendarHelper.SendInvites (account, c, null, mimeBody);
         }
@@ -1282,7 +1281,7 @@ namespace NachoClient.iOS
 
         public void UpdateAttachmentList (List<McAttachment> attachments)
         {
-            this.attachments = attachments;
+            c.attachments = attachments;
         }
 
         public void DismissINachoAttachmentListChooser (INachoAttachmentListChooser vc)

@@ -257,7 +257,7 @@ namespace NachoCore.Model
                 // Attachments, if any, are already taken care of.
                 return;
             }
-            var originalAttachments = McAttachment.QueryByItemId<McEmailMessage> (AccountId, ReferencedEmailId);
+            var originalAttachments = McAttachment.QueryByItemId (AccountId, ReferencedEmailId, this.GetClassCode ());
             var body = McBody.QueryById<McBody> (BodyId);
             MimeMessage mime = MimeHelpers.LoadMessage (body.GetFilePath ());
             MimeHelpers.AddAttachments (mime, originalAttachments);
@@ -291,7 +291,7 @@ namespace NachoCore.Model
             }
             if (ReferencedIsForward && (!ReferencedBodyIsIncluded || WaitingForAttachmentsToDownload)) {
                 // Add all the attachments from the original message.
-                var originalAttachments = McAttachment.QueryByItemId<McEmailMessage> (AccountId, ReferencedEmailId);
+                var originalAttachments = McAttachment.QueryByItemId (originalMessage);
                 MimeHelpers.AddAttachments (outgoingMime, originalAttachments);
             }
             body.UpdateData ((FileStream stream) => {
@@ -306,7 +306,7 @@ namespace NachoCore.Model
 
         public void DeleteAttachments ()
         {
-            var atts = McAttachment.QueryByItemId<McEmailMessage> (AccountId, Id);
+            var atts = McAttachment.QueryByItemId (this);
             foreach (var toNix in atts) {
                 toNix.Delete ();
             }

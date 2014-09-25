@@ -26,7 +26,8 @@ namespace Test.iOS
             };
             keeper1.Insert ();
             var keeper1att = new McAttachment () {
-                EmailMessageId = keeper1.Id,
+                ItemId = keeper1.Id,
+                ClassCode = keeper1.GetClassCode (),
                 AccountId = keeper1.AccountId,
                 FilePresenceFraction = 0,
                 FileSize = 50001,
@@ -44,7 +45,8 @@ namespace Test.iOS
             };
             keeper2.Insert ();
             var keeper2att = new McAttachment () {
-                EmailMessageId = keeper2.Id,
+                ItemId = keeper2.Id,
+                ClassCode = keeper2.GetClassCode (),
                 AccountId = keeper2.AccountId,
                 FilePresenceFraction = 0,
                 FileSize = 50002,
@@ -62,7 +64,8 @@ namespace Test.iOS
             };
             fallOff.Insert ();
             var fallOffatt = new McAttachment () {
-                EmailMessageId = fallOff.Id,
+                ItemId = fallOff.Id,
+                ClassCode = fallOff.GetClassCode (),
                 AccountId = fallOff.AccountId,
                 FilePresenceFraction = 0,
                 FileSize = 50000,
@@ -80,7 +83,8 @@ namespace Test.iOS
             };
             trash.Insert ();
             var trashatt = new McAttachment () {
-                EmailMessageId = trash.Id,
+                ItemId = trash.Id,
+                ClassCode = trash.GetClassCode (),
                 AccountId = trash.AccountId,
                 FilePresenceFraction = 0,
                 FileSize = 50000,
@@ -98,7 +102,8 @@ namespace Test.iOS
             };
             trash.Insert ();
             trashatt = new McAttachment () {
-                EmailMessageId = trash.Id,
+                ItemId = trash.Id,
+                ClassCode = trash.GetClassCode (),
                 AccountId = trash.AccountId,
                 FileSize = 50000,
                 FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
@@ -115,7 +120,8 @@ namespace Test.iOS
             };
             trash.Insert ();
             trashatt = new McAttachment () {
-                EmailMessageId = trash.Id,
+                ItemId = trash.Id,
+                ClassCode = trash.GetClassCode (),
                 AccountId = trash.AccountId,
                 FileSize = 50000,
                 FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
@@ -132,7 +138,8 @@ namespace Test.iOS
             };
             trash.Insert ();
             trashatt = new McAttachment () {
-                EmailMessageId = trash.Id,
+                ItemId = trash.Id,
+                ClassCode = trash.GetClassCode (),
                 AccountId = trash.AccountId,
                 FileSize = 50000,
                 FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
@@ -149,7 +156,8 @@ namespace Test.iOS
             };
             trash.Insert ();
             trashatt = new McAttachment () {
-                EmailMessageId = trash.Id,
+                ItemId = trash.Id,
+                ClassCode = trash.GetClassCode (),
                 AccountId = trash.AccountId,
                 FileSize = 500000,
                 FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
@@ -166,7 +174,8 @@ namespace Test.iOS
             };
             trash.Insert ();
             trashatt = new McAttachment () {
-                EmailMessageId = trash.Id,
+                ItemId = trash.Id,
+                ClassCode = trash.GetClassCode (),
                 AccountId = trash.AccountId,
                 FileSize = 50000,
                 FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,

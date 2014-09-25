@@ -939,7 +939,8 @@ namespace NachoCore.ActiveSync
                         // Create & save the attachment record.
                         var attachment = new McAttachment {
                             AccountId = msg.AccountId,
-                            EmailMessageId = msg.Id,
+                            ItemId = msg.Id,
+                            ClassCode = msg.GetClassCode (),
                             FileSize = long.Parse (xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.EstimatedDataSize).Value),
                             FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
                             FileReference = xmlAttachment.Element (m_baseNs + Xml.AirSyncBase.FileReference).Value,
