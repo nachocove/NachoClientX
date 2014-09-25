@@ -913,7 +913,7 @@ namespace NachoClient.iOS
                 // to be done explicitly.  If all of the necessary attachments are available, go ahead and
                 // add them to the message now.  If any of the attachments need to be downloaded, then
                 // wait until later to add them.
-                var originalAttachments = McAttachment.QueryByItemId<McEmailMessage> (account.Id, referencedMessage.Id);
+                var originalAttachments = McAttachment.QueryByItemId (referencedMessage);
                 foreach (var attachment in originalAttachments) {
                     if (McAbstrFileDesc.FilePresenceEnum.Complete != attachment.FilePresence) {
                         attachmentNeedsDownloading = true;

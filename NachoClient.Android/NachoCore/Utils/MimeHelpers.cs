@@ -122,7 +122,12 @@ namespace NachoCore.Utils
                 return FindTextPart (mimeMessage.Body);
             }
             if (entity is TextPart && entity.ContentType.Matches ("text", "plain")) {
-                return entity as TextPart;
+                TextPart textPart = entity as TextPart;
+                if (null != textPart && null != textPart.ContentObject) {
+                    return textPart;
+                } else {
+                    return null;
+                }
             }
             if (entity is Multipart) {
                 foreach (var subpart in entity as Multipart) {
@@ -471,7 +476,8 @@ namespace NachoCore.Utils
         }
 
         /// <summary>
-        /// Find all the attachments in the given MIME message.
+        /// Find all the attachments in the given MIME message, including those
+        /// nested inside a TNEF part.
         /// </summary>
         /// <param name="message">The MIME message to be searched.</param>
         public static List<MimeEntity> AllAttachments (MimeMessage message)
@@ -483,7 +489,7 @@ namespace NachoCore.Utils
 
         private static void FindAttachments (MimeEntity entity, List<MimeEntity> result)
         {
-            if (entity.ContentDisposition.IsAttachment) {
+            if (null != entity.ContentDisposition && entity.ContentDisposition.IsAttachment) {
                 result.Add (entity);
             } else if (entity is MimeKit.Tnef.TnefPart) {
                 // Pull apart the TNEF part and see what is inside.
@@ -511,7 +517,16 @@ namespace NachoCore.Utils
                     mimeAttachments.Add (attachment.GetFilePath ());
                 }
             }
+            AddAttachments (message, mimeAttachments);
+        }
 
+        /// <summary>
+        /// Add the attachments to the MIME message.
+        /// </summary>
+        /// <param name="message">The MIME message to which the attachments should be added.</param>
+        /// <param name="attachments">The list of attachments to be added to the message.</param>
+        public static void AddAttachments (MimeMessage message, AttachmentCollection attachments)
+        {
             Multipart attachmentsParent = null; // Where to put the attachments
             MimeEntity existingBody = message.Body;
             if (existingBody.ContentType.Matches ("multipart", "mixed")) {
@@ -525,8 +540,41 @@ namespace NachoCore.Utils
             }
 
             // Ttransfer the attachment entities to their new home.
-            foreach (MimeEntity mimeAttachment in mimeAttachments) {
+            foreach (MimeEntity mimeAttachment in attachments) {
                 attachmentsParent.Add (mimeAttachment);
+            }
+        }
+
+        /// <summary>
+        /// Remove all of the specified MIME entities from the MIME message.
+        /// Multipart sections that are no longer needed are not removed.
+        /// TNEF parts are ignored and are not modified.
+        /// </summary>
+        public static void RemoveEntities (MimeMessage message, List<MimeEntity> entities)
+        {
+            if (entities.Contains (message.Body)) {
+                message.Body = null;
+                return;
+            }
+            RemoveEntities (message.Body, entities);
+        }
+
+        private static void RemoveEntities (MimeEntity parentEntity, List<MimeEntity> entities)
+        {
+            Multipart parent = parentEntity as Multipart;
+            if (null != parent) {
+                var toBeRemoved = new List<MimeEntity> ();
+                foreach (var subpart in parent) {
+                    if (entities.Contains (subpart)) {
+                        toBeRemoved.Add (subpart);
+                    }
+                }
+                foreach (var entity in toBeRemoved) {
+                    parent.Remove (entity);
+                }
+                foreach (var subpart in parent) {
+                    RemoveEntities (subpart, entities);
+                }
             }
         }
     }

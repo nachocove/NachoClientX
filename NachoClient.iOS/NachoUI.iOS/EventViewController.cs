@@ -629,16 +629,15 @@ namespace NachoClient.iOS
                 }
             }
 
-            //TODO 
             //get attachments out of an event
-            attachmentCount = 0;  //set to zero until we get the real count of attachments
+            attachmentCount = c.attachments.Count;
             var attachmentView = contentView.ViewWithTag (800) as UIView;
             if (0 == attachmentCount) {
                 attachmentView.Hidden = true;
                 line2.Hidden = true;
             } else {
                 var attachmentDetailLabelView = contentView.ViewWithTag (EVENT_ATTACHMENT_DETAIL_TAG) as UILabel;
-                //attachmentDetailLabelView.Text = "(" + c.attachments.Count() +  ")";
+                attachmentDetailLabelView.Text = "(" + attachmentCount +  ")";
                 attachmentDetailLabelView.SizeToFit ();
                 attachmentDetailLabelView.Frame = new RectangleF (SCREEN_WIDTH - attachmentDetailLabelView.Frame.Width - 34, 12.438f, attachmentDetailLabelView.Frame.Width, TEXT_LINE_HEIGHT);
                 attachmentView.Hidden = false;

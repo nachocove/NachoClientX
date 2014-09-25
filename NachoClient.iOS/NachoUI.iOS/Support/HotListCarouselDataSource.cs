@@ -21,7 +21,7 @@ namespace NachoClient.iOS
         protected const int USER_IMAGE_TAG = 101;
         protected const int FROM_TAG = 102;
         protected const int SUBJECT_TAG = 103;
-        protected const int PREVIEW_TAG = 104;
+        public const int PREVIEW_TAG = 104;
         protected const int REMINDER_ICON_TAG = 105;
         protected const int REMINDER_TEXT_TAG = 106;
         protected const int ATTACHMENT_TAG = 107;
@@ -230,8 +230,6 @@ namespace NachoClient.iOS
             previewLabelView.OnRenderComplete = () => {
             };
             previewLabelView.OnDownloadStart = () => {
-            };
-            previewLabelView.OnDownloadComplete = (bool success) => {
             };
             view.AddSubview (previewLabelView);
 

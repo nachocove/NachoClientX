@@ -56,7 +56,7 @@ namespace NachoClient.iOS
             ScrollView.MultipleTouchEnabled = false;
             ContentMode = UIViewContentMode.ScaleAspectFit;
             BackgroundColor = UIColor.White;
-            Tag = BodyView.MESSAGE_PART_TAG;
+            Tag = (int)BodyView.TagType.MESSAGE_PART_TAG;
 
             LoadStarted += (object sender, EventArgs e) => {
                 htmlBusy.Increment ();

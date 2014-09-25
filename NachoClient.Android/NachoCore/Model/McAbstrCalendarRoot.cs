@@ -107,6 +107,9 @@ namespace NachoCore.Model
                     McBody body = McBody.QueryById<McBody> (BodyId);
                     if (McBody.MIME == BodyType) {
                         cachedDescription = MimeHelpers.ExtractTextPart (body);
+                        if (null == cachedDescription) {
+                            cachedDescription = "";
+                        }
                     } else {
                         cachedDescription = body.GetContentsString ();
                     }
@@ -138,19 +141,12 @@ namespace NachoCore.Model
                 BodyId = body.Id;
                 BodyType = McBody.PlainText;
             } else {
-                // Existing body.  Preserve the parts of it that we aren't changing.
+                // Existing body.  We can't replace just the description, leaving
+                // the attachments untouched.  So replace the entire body, which will
+                // unfortunately destroy the attachments.
                 var body = McBody.QueryById<McBody> (BodyId);
-                if (McBody.MIME == BodyType) {
-                    MimeMessage message = MimeHelpers.LoadMessage (body.GetFilePath ());
-                    MimeHelpers.SetPlainText (message, cachedDescription);
-                    body.UpdateData ((FileStream stream) => {
-                        message.WriteTo (stream);
-                    });
-                } else {
-                    // Plain text.  Replace the entire contents of the body.
-                    body.UpdateData (cachedDescription);
-                    BodyType = McBody.PlainText;
-                }
+                body.UpdateData (cachedDescription);
+                BodyType = McBody.PlainText;
             }
             descriptionWasChanged = false;
             cachedDescription = null;
@@ -161,6 +157,160 @@ namespace NachoCore.Model
             DbAttendees = new List<McAttendee> ();
             DbCategories = new List<McCalendarCategory> ();
             HasReadAncillaryData = false;
+        }
+
+        [Ignore]
+        public List<McAttachment> attachments {
+            get {
+                if (null == cachedAttachments) {
+                    // Retrieve all the attachments that are stored in the database.
+                    // This includes both attachments that were created locally (with ContentId == null)
+                    // and ones that came from the server in a previous synch (with ContentId != null)
+                    var dbAttachments = McAttachment.QueryByItemId (this);
+                    // Retrieve all the attachments that are in the body of event.
+                    var bodyAttachments = MimeHelpers.AllAttachments (MimeHelpers.LoadMessage (McBody.GetFilePath (BodyId)));
+                    // The majority of the time, there will be no attachments. Optimize this case.
+                    if (0 == dbAttachments.Count && 0 == bodyAttachments.Count) {
+                        cachedAttachments = new List<McAttachment> ();
+                    } else {
+                        // Synchronize the two lists.  Local attachments are left alone.
+                        // Server attachments are paired up, with attachments from the event body
+                        // taking precedence.
+                        // The matching algorithm is O(n^2), but the number of attachments is normally
+                        // small enough that this shouldn't be a problem.
+                        var synchedAttachments = new List<McAttachment> (bodyAttachments.Count);
+                        foreach (var bodyAttachment in bodyAttachments) {
+                            NcAssert.True (bodyAttachment is MimePart && null != bodyAttachment.ContentDisposition,
+                                "MimeHelpers.AllAttachments() returned something that doesn't look like an attachment.");
+                            bool foundMatch = false;
+                            for (int i = 0; !foundMatch && i < dbAttachments.Count; ++i) {
+                                // If the attachment from the MIME body has a ContentId, match on that, since it is
+                                // supposed to be a unique identifier.  If the ContentId field is missing, match on
+                                // the file name and hope there aren't any duplicates.
+                                if (null != bodyAttachment.ContentId ?
+                                        string.Equals (bodyAttachment.ContentId, dbAttachments [i].ContentId) :
+                                        string.Equals (bodyAttachment.ContentDisposition.FileName, dbAttachments [i].DisplayName)) {
+                                    synchedAttachments.Add (dbAttachments [i]);
+                                    dbAttachments.RemoveAt (i);
+                                    foundMatch = true;
+                                }
+                            }
+                            if (!foundMatch) {
+                                var newAttachment = new McAttachment () {
+                                    AccountId = this.AccountId,
+                                    ItemId = this.Id,
+                                    ClassCode = this.GetClassCode (),
+                                    ContentId = bodyAttachment.ContentId ?? "faked@content.id",
+                                    ContentType = bodyAttachment.ContentType.ToString (),
+                                    IsInline = !bodyAttachment.ContentDisposition.IsAttachment,
+                                };
+                                newAttachment.Insert ();
+                                newAttachment.SetDisplayName (bodyAttachment.ContentDisposition.FileName);
+                                newAttachment.UpdateData ((FileStream stream) => {
+                                    (bodyAttachment as MimePart).ContentObject.DecodeTo (stream);
+                                });
+                                synchedAttachments.Add (newAttachment);
+                            }
+                        }
+                        // Anything left in dbAttachments that has a ContentId originally came from
+                        // the server, but is no longer part of the event.  Delete it.
+                        foreach (var unmatchedAttachment in dbAttachments) {
+                            if (null == unmatchedAttachment.ContentId) {
+                                synchedAttachments.Add (unmatchedAttachment);
+                            } else {
+                                unmatchedAttachment.Delete ();
+                            }
+                        }
+                        cachedAttachments = synchedAttachments;
+                    }
+                }
+                return cachedAttachments;
+            }
+            set {
+                NcAssert.True (null != value);
+                attachmentsMightHaveChanged = true;
+                cachedAttachments = value;
+            }
+        }
+
+        private List<McAttachment> cachedAttachments = null;
+        private bool attachmentsMightHaveChanged = false;
+
+        private void UpdateAttachments ()
+        {
+            if (!attachmentsMightHaveChanged) {
+                return;
+            }
+            // Make sure all the attachments are owned by this event. Identify the ones that were
+            // created locally rather than coming from the server.
+            var localAttachments = new List<McAttachment> (cachedAttachments.Count);
+            foreach (var attachment in cachedAttachments) {
+                if (attachment.AccountId != this.AccountId ||
+                        (0 != attachment.ItemId && attachment.ItemId != this.Id) ||
+                        (0 != (int)attachment.ClassCode && attachment.ClassCode != this.GetClassCode ())) {
+                    // The attachment is owed by something else.  Make a copy.
+                    var copy = new McAttachment () {
+                        AccountId = this.AccountId,
+                        ItemId = this.Id,
+                        ClassCode = this.GetClassCode (),
+                        ContentId = null, // This is a local copy, so it shouldn't have a ContentId
+                        ContentType = attachment.ContentType,
+                    };
+                    copy.SetDisplayName (attachment.DisplayName);
+                    copy.Insert ();
+                    copy.UpdateFileCopy (attachment.GetFilePath ());
+                    localAttachments.Add (copy);
+                } else if (0 == attachment.ItemId) {
+                    // The attachment is not owned by anything yet.
+                    attachment.ItemId = this.Id;
+                    attachment.ClassCode = this.GetClassCode ();
+                    attachment.Update ();
+                    localAttachments.Add (attachment);
+                } else {
+                    NcAssert.True (attachment.ItemId == this.Id && attachment.ClassCode == this.GetClassCode ());
+                    if (null == attachment.ContentId) {
+                        localAttachments.Add (attachment);
+                    }
+                }
+            }
+
+            // Retrieve all the attachments in the database that are owned by this event.
+            // Separate out the ones that came from the server.  Delete from the database
+            // any locally created ones that the user removed from the event.
+            var serverAttachments = new List<McAttachment> ();
+            var dbAttachments = McAttachment.QueryByItemId (this);
+            foreach (var dbAttachment in dbAttachments) {
+                if (null == dbAttachment.ContentId) {
+                    // Locally created.  See if it is still needed.
+                    bool foundMatch = false;
+                    foreach (var attachment in localAttachments) {
+                        if (dbAttachment.Id == attachment.Id) {
+                            foundMatch = true;
+                            break;
+                        }
+                    }
+                    if (!foundMatch) {
+                        dbAttachment.Delete ();
+                    }
+                } else {
+                    serverAttachments.Add (dbAttachment);
+                }
+            }
+            // Merge the local and server attachments together.
+            localAttachments.AddRange (serverAttachments);
+            cachedAttachments = localAttachments;
+            attachmentsMightHaveChanged = false;
+        }
+
+        /// Delete from the database any attachments owned by this event.
+        private void DeleteAttachments ()
+        {
+            if (0 != this.Id) {
+                var attachments = McAttachment.QueryByItemId (this);
+                foreach (var attachment in attachments) {
+                    attachment.Delete ();
+                }
+            }
         }
 
         [Ignore]
@@ -233,6 +383,7 @@ namespace NachoCore.Model
                 c.SetParent (this);
                 c.Insert ();
             }
+            UpdateAttachments ();
             return NcResult.OK ();
         }
 
@@ -248,6 +399,7 @@ namespace NachoCore.Model
             NcAssert.True (NcModel.Instance.IsInTransaction ());
             base.DeleteAncillary ();
             DeleteAncillaryDataFromDB (NcModel.Instance.Db);
+            DeleteAttachments ();
         }
 
         private NcResult DeleteAncillaryDataFromDB (SQLiteConnection db)

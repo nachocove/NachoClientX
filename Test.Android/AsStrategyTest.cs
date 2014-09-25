@@ -647,7 +647,8 @@ namespace Test.iOS
                 };
                 email.Insert ();
                 var att = new McAttachment () {
-                    EmailMessageId = email.Id,
+                    ItemId = email.Id,
+                    ClassCode = email.GetClassCode (),
                     AccountId = email.AccountId,
                     FilePresenceFraction = 0,
                     FileSize = 50000,
@@ -665,7 +666,7 @@ namespace Test.iOS
         {
             foreach (var att in Fetch_Atts) {
                 if (null != Fetch_Emails) {
-                    var email = Fetch_Emails.SingleOrDefault (x => x.Id == att.EmailMessageId);
+                    var email = Fetch_Emails.SingleOrDefault (x => x.Id == att.ItemId);
                     if (null != email) {
                         Fetch_Folder.Unlink (email);
                         email.Delete ();
