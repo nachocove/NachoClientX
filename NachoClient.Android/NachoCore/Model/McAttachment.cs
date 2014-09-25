@@ -51,8 +51,13 @@ namespace NachoCore.Model
                 return _classCode;
             }
             set {
+                // Only e-mail messages and calendar items can own attachments.
+                // But an attachment will have a class code of NeverInFolder by
+                // default, and the database code might try to set that value
+                // when loading an unowned attachment.
                 NcAssert.True (McAbstrFolderEntry.ClassCodeEnum.Email == value ||
-                    McAbstrFolderEntry.ClassCodeEnum.Calendar == value,
+                    McAbstrFolderEntry.ClassCodeEnum.Calendar == value ||
+                    McAbstrFolderEntry.ClassCodeEnum.NeverInFolder == value,
                     "Only e-mail messages and calendar items can own attachments.");
                 _classCode = value;
             }
@@ -78,7 +83,7 @@ namespace NachoCore.Model
 
         public static List<McAttachment> QueryByItemId (int accountId, int itemId, McAbstrFolderEntry.ClassCodeEnum classCode)
         {
-            if (McAbstrFolderEntry.ClassCodeEnum.Email == classCode || McAbstrFolderEntry.ClassCodeEnum.Contact == classCode) {
+            if (McAbstrFolderEntry.ClassCodeEnum.Email == classCode || McAbstrFolderEntry.ClassCodeEnum.Calendar == classCode) {
                 // Only e-mail messages and calendar items can own attachments.
                 // TODO We think that exceptions can own attachments, but that hasn't been confirmed.
                 return NcModel.Instance.Db.Query<McAttachment> (
