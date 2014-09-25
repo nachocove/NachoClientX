@@ -624,6 +624,9 @@
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
                     <navigationItem key="navigationItem" id="568-nK-YHB"/>
+                    <connections>
+                        <segue destination="kq1-eO-X0p" kind="push" identifier="FoldersToMessageList" id="szv-KC-TId"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="r4s-hq-KID" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
@@ -1935,30 +1938,30 @@
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="jZp-Tj-sBa"/>
-        <segue reference="4z2-t5-9Cd"/>
         <segue reference="QbR-l1-NT5"/>
-        <segue reference="od0-Sz-R9p"/>
         <segue reference="v5u-iO-UgY"/>
-        <segue reference="NoB-Ny-Mf5"/>
+        <segue reference="4z2-t5-9Cd"/>
+        <segue reference="od0-Sz-R9p"/>
         <segue reference="XQg-JR-vxA"/>
         <segue reference="Eb2-K0-nI3"/>
-        <segue reference="fwk-9p-tlV"/>
-        <segue reference="W3H-fb-nEJ"/>
-        <segue reference="Zm9-al-nRG"/>
+        <segue reference="NoB-Ny-Mf5"/>
+        <segue reference="szv-KC-TId"/>
+        <segue reference="NFD-Zl-Isi"/>
+        <segue reference="jZp-Tj-sBa"/>
+        <segue reference="vUs-ft-xdy"/>
         <segue reference="zDw-Tx-fTt"/>
         <segue reference="Tfk-Mt-BlS"/>
+        <segue reference="11B-OX-HZh"/>
         <segue reference="HCr-Oa-UHV"/>
         <segue reference="tdu-G2-PEp"/>
-        <segue reference="11B-OX-HZh"/>
         <segue reference="RR1-bJ-URL"/>
         <segue reference="JTo-qU-j7O"/>
-        <segue reference="e7N-39-HB4"/>
+        <segue reference="Zm9-al-nRG"/>
         <segue reference="K16-Rc-eqt"/>
+        <segue reference="e7N-39-HB4"/>
         <segue reference="xrp-ey-B0j"/>
-        <segue reference="NFD-Zl-Isi"/>
-        <segue reference="vUs-ft-xdy"/>
-        <segue reference="559-W6-vfH"/>
+        <segue reference="fwk-9p-tlV"/>
+        <segue reference="W3H-fb-nEJ"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.45098039215686275" green="1" blue="0.95294117647058818" alpha="1" colorSpace="deviceRGB"/>
 </document>

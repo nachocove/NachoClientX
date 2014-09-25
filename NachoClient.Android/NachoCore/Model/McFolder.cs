@@ -35,6 +35,9 @@ namespace NachoCore.Model
         [Indexed]
         public string DisplayName { get; set; }
 
+        [Indexed]
+        public DateTime LastAccessed { get; set; }
+
         public int DisplayColor { get; set; }
 
         public Xml.FolderHierarchy.TypeCode Type { get; set; }
@@ -211,6 +214,13 @@ namespace NachoCore.Model
                           " f.IsAwaitingDelete = 0 AND " +
                           " f.ParentId = ? ",
                               accountId, parentId);
+            return folders.ToList ();
+        }
+
+        public static List<McFolder> QueryByMostRecentlyAccessedFolders (int accountId)
+        {
+            var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
+                " f.AccountId = ? ORDER BY f.LastAccessed", accountId);
             return folders.ToList ();
         }
 

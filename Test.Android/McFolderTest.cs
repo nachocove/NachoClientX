@@ -240,6 +240,36 @@ namespace Test.iOS
         }
 
         [TestFixture]
+        public class QueryByMostRecentlyAccessedFolders : BaseMcFolderTest
+        {
+            [Test]
+            public void ShouldReturnOrderedListOfMostRecentlyAccessedFolders ()
+            {
+                int accountId = 1;
+
+                McFolder folder1 = FolderOps.CreateFolder (accountId);
+                McFolder folder2 = FolderOps.CreateFolder (accountId);
+                McFolder folder3 = FolderOps.CreateFolder (accountId);
+                DateTime now1 = DateTime.UtcNow;
+                DateTime now2 = DateTime.UtcNow.AddHours(-2);
+                DateTime now3 = DateTime.UtcNow.AddDays(-3);
+
+                folder1.LastAccessed = now1;
+                folder2.LastAccessed = now2;
+                folder3.LastAccessed = now3;
+
+                folder1.Update ();
+                folder2.Update ();
+                folder3.Update ();
+
+                List<McFolder> recentlyAccessed = McFolder.QueryByMostRecentlyAccessedFolders (accountId);
+                FoldersAreEqual (folder3, recentlyAccessed[0], "folder3 should be the first folder in the list");
+                FoldersAreEqual (folder2, recentlyAccessed[1], "folder2 should be the second folder in the list");
+                FoldersAreEqual (folder1, recentlyAccessed[2], "folder1 should be the last folder in the list");
+            }
+        }
+
+        [TestFixture]
         public class TestQueryByFolderEntryId : BaseMcFolderTest
         {
             [Test]

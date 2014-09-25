@@ -1543,6 +1543,17 @@
     <BundleResource Include="Resources\nav-backarrow%402x.png" />
     <BundleResource Include="Resources\toolbar-icn-reply-all%402x.png" />
     <BundleResource Include="Resources\LegalInfo.txt" />
+    <BundleResource Include="Resources\gen-readmore-active%402x.png" />
+    <BundleResource Include="Resources\gen-readmore%402x.png" />
+    <BundleResource Include="Resources\nav-calendar-active%402x.png" />
+    <BundleResource Include="Resources\nav-calendar%402x.png" />
+    <BundleResource Include="Resources\nav-contacts-active%402x.png" />
+    <BundleResource Include="Resources\nav-contacts%402x.png" />
+    <BundleResource Include="Resources\nav-folder-active%402x.png" />
+    <BundleResource Include="Resources\nav-folder%402x.png" />
+    <BundleResource Include="Resources\nav-more-active%402x.png" />
+    <BundleResource Include="Resources\nav-more%402x.png" />
+    <BundleResource Include="Resources\nav-nachonow-active%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
