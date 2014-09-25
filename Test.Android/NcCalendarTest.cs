@@ -292,12 +292,13 @@ namespace Test.Common
             attachment3.Insert ();
             attachment3.UpdateData ("attachment #3");
 
-            Assert.AreNotEqual (0, attachment1.Id, "attachment1 was not added to the database");
-            Assert.AreNotEqual (0, attachment2.Id, "attachment2 was not added to the database");
-            Assert.AreNotEqual (0, attachment3.Id, "attachment3 was not added to the database");
-            Assert.AreEqual (0, attachment1.ItemId, "attachment1 is already owned by something");
-            Assert.AreEqual (0, attachment2.ItemId, "attachment2 is already owned by something");
-            Assert.AreEqual (0, attachment3.ItemId, "attachment3 is already owned by something");
+            foreach (int id in new int[] { attachment1.Id, attachment2.Id, attachment3.Id }) {
+                Assert.AreNotEqual (0, id, "Attachment was not given an ID when it was added to the database.");
+                var dbAttachment = McAttachment.QueryById<McAttachment> (id);
+                Assert.IsNotNull (dbAttachment, "The attachment could not be looked up in the database.");
+                Assert.AreEqual (dbAttachment.Id, id, "The wrong attachment was retrieved from the database.");
+                Assert.AreEqual (0, dbAttachment.ItemId, "Attachment is already owned by something.");
+            }
 
             // Assign two of the attachments to the calendar event.
             List<McAttachment> attachments = new List<McAttachment> ();
