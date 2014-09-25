@@ -167,7 +167,6 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
-            StopSpinner ();
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 
@@ -184,6 +183,17 @@ namespace NachoClient.iOS
                 FetchAttachments ();
                 ConfigureAttachments ();
                 return;
+            }
+            if (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded == s.Status.SubKind) {
+                Log.Info (Log.LOG_EMAIL, "EmailMessageBodyDownloadSucceeded");
+                bodyView.DownloadComplete (true);
+                ConfigureView ();
+                MarkAsRead();
+            }
+            if (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed == s.Status.SubKind) {
+                Log.Info (Log.LOG_EMAIL, "EmailMessageBodyDownloadFailed");
+                bodyView.DownloadComplete (false);
+                ConfigureView ();
             }
         }
 
@@ -409,15 +419,15 @@ namespace NachoClient.iOS
             ATTACHMENT_ICON_TAG = 106,
             RECEIVED_DATE_TAG = 107,
             SEPARATOR_TAG = 108,
-            SPINNER_TAG = 109,
+            SPINNER_TAG = BodyView.TagType.SPINNER_TAG,
             USER_LABEL_TAG = 110,
             USER_CHILI_TAG = 111,
-            MESSAGE_PART_TAG = BodyView.MESSAGE_PART_TAG,
+            MESSAGE_PART_TAG = BodyView.TagType.MESSAGE_PART_TAG,
             CALENDAR_PART_TAG = BodyCalendarView.CALENDAR_PART_TAG,
             ATTACHMENT_VIEW_TAG = 301,
             ATTACHMENT_NAME_TAG = 302,
             ATTACHMENT_STATUS_TAG = 303,
-            DOWNLOAD_TAG = BodyView.DOWNLOAD_TAG,
+            DOWNLOAD_TAG = BodyView.TagType.DOWNLOAD_TAG,
         }
 
         #if (DEBUG_UI)
@@ -584,17 +594,14 @@ namespace NachoClient.iOS
                            yOffset,
                            View.Frame.Width - 2 * VIEW_INSET, 0), view);
             bodyView.VeriticalScrollingEnabled = false;
+            bodyView.SpinnerCenteredOnParentFrame = true;
             bodyView.OnRenderStart = () => {
                 deferLayout.Increment ();
             };
             bodyView.OnRenderComplete = () => {
                 deferLayout.Decrement ();
             };
-            bodyView.OnDownloadStart = StartSpinner;
-            bodyView.OnDownloadComplete = (bool succeed) => {
-                StopSpinner ();
-                ConfigureView ();
-                MarkAsRead();
+            bodyView.OnDownloadStart = () => {
             };
             view.AddSubview (bodyView);
 
@@ -880,20 +887,6 @@ namespace NachoClient.iOS
         {
             scrollView.ScrollRectToVisible (attachmentListView.Frame, true);
         }
-
-        protected void StartSpinner ()
-        {
-            var spinner = View.ViewWithTag ((int)TagType.SPINNER_TAG) as UIActivityIndicatorView;
-            spinner.StartAnimating ();
-        }
-
-        protected void StopSpinner ()
-        {
-            var spinner = View.ViewWithTag ((int)TagType.SPINNER_TAG) as UIActivityIndicatorView;
-            spinner.StopAnimating ();
-        }
-
-
 
         protected void LayoutAttachmentListView ()
         {

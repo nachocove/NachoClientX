@@ -206,6 +206,24 @@ namespace NachoClient.iOS
                 priorityInbox.Refresh ();
                 carouselView.ReloadData ();
             }
+            if (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded == s.Status.SubKind) {
+                ProcessDownloadComplete (true);
+            }
+            if (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed == s.Status.SubKind) {
+                ProcessDownloadComplete (false);
+            }
+        }
+
+        private void ProcessDownloadComplete (bool succeed)
+        {
+            var bodyView = carouselView.CurrentItemView.ViewWithTag (HotListCarouselDataSource.PREVIEW_TAG) as BodyView;
+            // To avoid unnecessary reload, we only reload if the current item was downloading
+            // and the body is now completely downloaded.
+            if (!bodyView.IsDownloadComplete ()) {
+                return;
+            }
+            bodyView.DownloadComplete (succeed);
+            carouselView.ReloadItemAtIndex (carouselView.CurrentItemIndex, true);
         }
 
         /// <summary>
