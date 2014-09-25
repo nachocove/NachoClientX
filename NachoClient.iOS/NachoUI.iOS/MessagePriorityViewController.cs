@@ -47,17 +47,17 @@ namespace NachoClient.iOS
             priorityView.BackgroundColor = UIColor.White;
 
             var buttonInfoList = new List<ButtonInfo> (new ButtonInfo[] {
-                new ButtonInfo ("Later Today", "cup-48", () => DateSelected(MessageDeferralType.Later, new DateTime())),
-                new ButtonInfo ("Tonight", "navbar-icn-defer", () => DateSelected(MessageDeferralType.Tonight, new DateTime())),
-                new ButtonInfo ("Tomorrow", "navbar-icn-defer", () => DateSelected(MessageDeferralType.Tomorrow, new DateTime())),
+                new ButtonInfo ("Later Today", "cup-48", () => DateSelected(MessageDeferralType.Later, DateTime.MinValue)),
+                new ButtonInfo ("Tonight", "navbar-icn-defer", () => DateSelected(MessageDeferralType.Tonight, DateTime.MinValue)),
+                new ButtonInfo ("Tomorrow", "navbar-icn-defer", () => DateSelected(MessageDeferralType.Tomorrow, DateTime.MinValue)),
                 new ButtonInfo (null, null, null),
-                new ButtonInfo ("Next Week", "navbar-icn-defer", () => DateSelected(MessageDeferralType.NextWeek, new DateTime())),
-                new ButtonInfo ("Next Month", "navbar-icn-defer", () => DateSelected(MessageDeferralType.NextMonth, new DateTime())),
+                new ButtonInfo ("Next Week", "navbar-icn-defer", () => DateSelected(MessageDeferralType.NextWeek, DateTime.MinValue)),
+                new ButtonInfo ("Next Month", "navbar-icn-defer", () => DateSelected(MessageDeferralType.NextMonth, DateTime.MinValue)),
                 new ButtonInfo ("Pick Date", "navbar-icn-defer", () =>  PerformSegue ("MessagePriorityToDatePicker", this)),
                 new ButtonInfo (null, null, null),
                 null,
                 null,
-                new ButtonInfo ("None", "navbar-icn-defer", () => DateSelected(MessageDeferralType.None, new DateTime())),
+                new ButtonInfo ("None", "navbar-icn-defer", () => DateSelected(MessageDeferralType.None, DateTime.MinValue)),
             });
 
 
