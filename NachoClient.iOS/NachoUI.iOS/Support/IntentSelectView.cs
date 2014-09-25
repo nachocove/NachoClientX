@@ -88,8 +88,7 @@ namespace NachoClient.iOS
                 intentButton.Font = A.Font_AvenirNextRegular14;
                 intentButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
                 intentButton.TouchUpInside += (object sender, EventArgs e) => {
-                    messageIntent.SetType(intent);
-                    messageIntent.SetMessageIntent (ref emailMessage);
+                    SetMessageIntent(intent);
                     owner.intentDateTypeEnum = MessageDeferralType.None;
                     owner.PopulateMessageFromSelectedIntent ();
                     this.DismissView ();
@@ -102,8 +101,7 @@ namespace NachoClient.iOS
                     UIButton dueDateButton = new UIButton (new RectangleF (viewBody.Frame.Width - 40, yOffset + 6f, 25, 25));
                     dueDateButton.SetImage (UIImage.FromBundle ("icn-defer"), UIControlState.Normal);
                     dueDateButton.TouchUpInside += (object sender, EventArgs e) => {
-                        messageIntent.SetType(intent);
-                        messageIntent.SetMessageIntent (ref emailMessage);
+                        SetMessageIntent(intent);
                         owner.PerformSegue ("SegueToMessagePriority", owner);
                     };
                     viewBody.Add (dueDateButton);
@@ -122,6 +120,11 @@ namespace NachoClient.iOS
             this.Hidden = true;
         }
 
+        protected void SetMessageIntent (NcMessageIntent.Intent intent)
+        {
+            messageIntent.SetType(intent);
+            messageIntent.SetMessageIntent (ref emailMessage);
+        }
         public void ShowView ()
         {
             if (this.Hidden) {
