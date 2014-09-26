@@ -63,7 +63,7 @@ namespace NachoCore.Model
         public bool ResponseRequestedIsSet { get; set; }
 
         /// None, Organizer, Tentative, ...
-        public NcResponseType ResponseType;
+        public NcResponseType ResponseType { get; set; }
 
         public bool ResponseTypeIsSet { get; set; }
 
