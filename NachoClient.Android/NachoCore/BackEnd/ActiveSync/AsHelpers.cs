@@ -122,9 +122,6 @@ namespace NachoCore.ActiveSync
             if (cal.BusyStatusIsSet) {
                 xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.BusyStatus, (uint)cal.BusyStatus));
             }
-            if (cal.ResponseTypeIsSet) {
-                xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.ResponseType, (uint)cal.ResponseType));
-            }
             if (cal.MeetingStatusIsSet) {
                 xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.MeetingStatus, (uint)cal.MeetingStatus));
             }
@@ -155,9 +152,6 @@ namespace NachoCore.ActiveSync
                     xmlAttendee.Add (new XElement (CalendarNs + Xml.Calendar.Name, attendee.Name));
                     if (attendee.AttendeeTypeIsSet) {
                         xmlAttendee.Add (new XElement (CalendarNs + Xml.Calendar.AttendeeType, (uint)attendee.AttendeeType));
-                    }
-                    if (attendee.AttendeeStatusIsSet) {
-                        xmlAttendee.Add (new XElement (CalendarNs + Xml.Calendar.AttendeeStatus, (uint)attendee.AttendeeStatus));
                     }
                     xmlAttendees.Add (xmlAttendee);
                 }
