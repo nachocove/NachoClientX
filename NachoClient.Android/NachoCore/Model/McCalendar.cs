@@ -11,7 +11,7 @@ namespace NachoCore.Model
     public partial class McCalendar : McAbstrCalendarRoot
     {
         /// Implicit [Ignore]
-        private List<McException> DbExceptions;
+        public List<McException> exceptions;
         /// Implicit [Ignore]
         private List<McRecurrence> DbRecurrences;
 
@@ -52,20 +52,7 @@ namespace NachoCore.Model
         public McCalendar () : base ()
         {
             HasReadAncillaryData = false;
-            DbExceptions = new List<McException> ();
             DbRecurrences = new List<McRecurrence> ();
-        }
-
-        [Ignore]
-        public List<McException> exceptions {
-            get {
-                ReadAncillaryData ();
-                return DbExceptions;
-            }
-            set {
-                ReadAncillaryData ();
-                DbExceptions = value;
-            }
         }
 
         [Ignore]
@@ -90,12 +77,6 @@ namespace NachoCore.Model
 
         private NcResult InsertAncillaryData ()
         {
-            foreach (var e in exceptions) {
-                e.Id = 0;
-                e.AccountId = this.AccountId; // McAbstrObjectPerAcc requires AccountId
-                e.CalendarId = this.Id;
-                e.Insert ();
-            }
             foreach (var r in recurrences) {
                 r.Id = 0;
                 r.CalendarId = this.Id;
@@ -128,7 +109,6 @@ namespace NachoCore.Model
                 HasReadAncillaryData = true;
                 return NcResult.OK ();
             }
-            DbExceptions = NcModel.Instance.Db.Table<McException> ().Where (x => x.CalendarId == Id).ToList ();
             DbRecurrences = NcModel.Instance.Db.Table<McRecurrence> ().Where (x => x.CalendarId == Id).ToList ();
             HasReadAncillaryData = true;
             return NcResult.OK ();
@@ -143,11 +123,6 @@ namespace NachoCore.Model
 
         private NcResult DeleteAncillaryDataFromDB (SQLiteConnection db)
         {
-            NcAssert.True (0 != Id);
-            var exceptions = db.Table<McException> ().Where (x => x.CalendarId == Id).ToList ();
-            foreach (var e in exceptions) {
-                e.Delete ();
-            }
             var recurrences = db.Table<McRecurrence> ().Where (x => x.CalendarId == Id).ToList ();
             foreach (var r in recurrences) {
                 r.Delete ();
@@ -176,6 +151,11 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Table<McCalendar> ().Where (x => x.RecurrencesGeneratedUntil < generateUntil).ToList ();
         }
 
+        public List<McException> QueryRelatedExceptions()
+        {
+            return NcModel.Instance.Db.Table<McException> ().Where (x => x.CalendarId == Id).ToList ();
+        }
+
         public void DeleteRelatedEvents ()
         {
             var list = NcModel.Instance.Db.Table<McEvent> ().Where (x => x.CalendarId == Id).ToList ();
@@ -184,8 +164,28 @@ namespace NachoCore.Model
             }
         }
 
+        public void DeleteRelatedExceptions()
+        {
+            var list = NcModel.Instance.Db.Table<McException> ().Where (x => x.CalendarId == Id).ToList ();
+            foreach (var e in list) {
+                e.Delete ();
+            }
+        }
+
+        public void SaveExceptions(List<McException> list)
+        {
+            if (null == list) {
+                return;
+            }
+            foreach (var e in list) {
+                e.CalendarId = Id;
+                e.Insert ();
+            }
+        }
+
         public override int Delete ()
         {
+            DeleteRelatedExceptions ();
             DeleteRelatedEvents ();
             return base.Delete ();
         }
