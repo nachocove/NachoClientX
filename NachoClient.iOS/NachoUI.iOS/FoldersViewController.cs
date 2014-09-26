@@ -669,7 +669,7 @@ namespace NachoClient.iOS
             owner.FolderSelected (this, folder, cookie);
         }
 
-        public void SetState (bool modal)
+        public void SetModal (bool modal)
         {
             this.modal = modal;
         }

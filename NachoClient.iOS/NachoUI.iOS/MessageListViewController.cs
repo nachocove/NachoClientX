@@ -314,7 +314,7 @@ namespace NachoClient.iOS
             }
             if (segue.Identifier == "MessageListToFolders") {
                 var vc = (FoldersViewController)segue.DestinationViewController;
-                vc.SetState (true);
+                vc.SetModal (true);
                 var h = sender as SegueHolder;
                 vc.SetOwner (this, h);
                 return;

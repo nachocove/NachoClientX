@@ -279,7 +279,7 @@ namespace NachoClient.iOS
             }
             if (segue.Identifier == "MessageViewToFolders") {
                 var vc = (FoldersViewController)segue.DestinationViewController;
-                vc.SetState (true);
+                vc.SetModal (true);
                 vc.SetOwner (this, thread);
                 return;
             }
