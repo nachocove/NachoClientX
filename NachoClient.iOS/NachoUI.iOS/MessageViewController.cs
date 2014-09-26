@@ -123,7 +123,7 @@ namespace NachoClient.iOS
                 PerformSegue ("MessageViewToMessagePriority", this);
             };
             saveButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("MessageViewToMessageAction", this);
+                PerformSegue ("MessageViewToFolders", this);
             };
             replyButton.Clicked += (object sender, EventArgs e) => {
                 ReplyActionSheet ();
@@ -277,8 +277,9 @@ namespace NachoClient.iOS
                 vc.SetOwner (this);
                 return;
             }
-            if (segue.Identifier == "MessageViewToMessageAction") {
-                var vc = (MessageActionViewController)segue.DestinationViewController;
+            if (segue.Identifier == "MessageViewToFolders") {
+                var vc = (FoldersViewController)segue.DestinationViewController;
+                vc.SetModal (true);
                 vc.SetOwner (this, thread);
                 return;
             }
@@ -317,6 +318,9 @@ namespace NachoClient.iOS
                 vc.SetOwner (this);
                 return;
             }
+
+            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
+            NcAssert.CaseError ();
         }
 
         /// <summary>
