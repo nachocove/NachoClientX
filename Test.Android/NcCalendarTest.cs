@@ -271,6 +271,70 @@ namespace Test.Common
         }
 
         [Test]
+        public void CaledarAttachments ()
+        {
+            McCalendar cal = InsertSimpleEvent("");
+
+            // Create three unowned attachments.
+            McAttachment attachment1 = new McAttachment () {
+                AccountId = cal.AccountId,
+            };
+            attachment1.Insert ();
+            attachment1.UpdateData ("attachment #1");
+            McAttachment attachment2 = new McAttachment () {
+                AccountId = cal.AccountId,
+            };
+            attachment2.Insert ();
+            attachment2.UpdateData ("attachment #2");
+            McAttachment attachment3 = new McAttachment () {
+                AccountId = cal.AccountId,
+            };
+            attachment3.Insert ();
+            attachment3.UpdateData ("attachment #3");
+
+            foreach (int id in new int[] { attachment1.Id, attachment2.Id, attachment3.Id }) {
+                Assert.AreNotEqual (0, id, "Attachment was not given an ID when it was added to the database.");
+                var dbAttachment = McAttachment.QueryById<McAttachment> (id);
+                Assert.IsNotNull (dbAttachment, "The attachment could not be looked up in the database.");
+                Assert.AreEqual (dbAttachment.Id, id, "The wrong attachment was retrieved from the database.");
+                Assert.AreEqual (0, dbAttachment.ItemId, "Attachment is already owned by something.");
+            }
+
+            // Assign two of the attachments to the calendar event.
+            List<McAttachment> attachments = new List<McAttachment> ();
+            attachments.Add (attachment1);
+            attachments.Add (attachment2);
+            cal.attachments = attachments;
+
+            // Since the event hasn't been saved, the attachments should still be unowned,
+            // but they should be findable though the event.
+            attachments = McAttachment.QueryByItemId (cal);
+            Assert.AreEqual (0, attachments.Count, "attachments are assigned to the event before they should be");
+            attachments = cal.attachments;
+            Assert.AreEqual (2, attachments.Count, "The event is not reporting the correct number of attachments.");
+
+            // Update the event, which should update the attachments to be owned by event.
+            cal.Update ();
+            attachments = McAttachment.QueryByItemId (cal);
+            Assert.AreEqual (2, attachments.Count, "The attachments were not changed to be owned by the event.");
+            foreach (var attachment in attachments) {
+                Assert.AreEqual (attachment.ItemId, cal.Id, "Attachment is owned by the wrong item.");
+                Assert.AreEqual (attachment.ClassCode, cal.GetClassCode (), "Attachment is owned by the wrong type of item.");
+            }
+
+            // Deleting the event should also delete its attachments.
+            cal.Delete ();
+            McAttachment att = McAttachment.QueryById<McAttachment> (attachment1.Id);
+            Assert.IsNull (att, "Attachment was not deleted from the database when its event was deleted.");
+            att = McAttachment.QueryById<McAttachment> (attachment2.Id);
+            Assert.IsNull (att, "Attachment was not deleted from the database when its event was deleted.");
+            // But the third attachment should still be there.
+            att = McAttachment.QueryById<McAttachment> (attachment3.Id);
+            Assert.IsNotNull (att, "The unrelated attachment3 has disappeared from the database.");
+            att.Delete (); // Clean up attachment3.
+        }
+
+        [Test]
         public void ParseInteger ()
         {
             // String int to boolean

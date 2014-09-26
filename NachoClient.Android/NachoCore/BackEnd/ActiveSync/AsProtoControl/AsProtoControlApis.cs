@@ -165,7 +165,7 @@ namespace NachoCore.ActiveSync
                                                 int folderId, bool originalEmailIsEmbedded)
         {
             if (originalEmailIsEmbedded) {
-                var attachments = McAttachment.QueryByItemId<McEmailMessage> (AccountId, forwardedEmailMessageId);
+                var attachments = McAttachment.QueryByItemId (AccountId, forwardedEmailMessageId, McAbstrFolderEntry.ClassCodeEnum.Email);
                 foreach (var attach in attachments) {
                     if (McAbstrFileDesc.FilePresenceEnum.None == attach.FilePresence) {
                         var token = DnldAttCmd (attach.Id);
@@ -423,7 +423,7 @@ namespace NachoCore.ActiveSync
             if (McAbstrFileDesc.FilePresenceEnum.None != att.FilePresence) {
                 return null;
             }
-            var emailMessage = McAbstrObject.QueryById<McEmailMessage> (att.EmailMessageId);
+            var emailMessage = McAbstrObject.QueryById<McEmailMessage> (att.ItemId);
             if (null == emailMessage) {
                 return null;
             }

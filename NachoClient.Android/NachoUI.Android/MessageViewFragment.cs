@@ -68,7 +68,7 @@ namespace NachoClient.AndroidClient
                 }
             }
 
-            var attachments = NcModel.Instance.Db.Table<McAttachment> ().Where (a => a.EmailMessageId == message.Id).ToList ();
+            var attachments = NcModel.Instance.Db.Table<McAttachment> ().Where (a => a.ItemId == message.Id && a.ClassCode == message.GetClassCode ()).ToList ();
 
             if (0 < attachments.Count) {
                 foreach (var a in attachments) {

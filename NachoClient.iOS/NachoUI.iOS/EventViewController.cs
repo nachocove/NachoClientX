@@ -497,21 +497,45 @@ namespace NachoClient.iOS
 
         }
 
+        protected void ShowNothing()
+        {
+            Util.HideViewHierarchy (View);
+            var titleLabelView = View.ViewWithTag (EVENT_TITLE_LABEL_TAG) as UILabel;
+            titleLabelView.Hidden = false;
+            contentView.Hidden = false;
+            scrollView.Hidden = false;
+            View.Hidden = false;
+            titleLabelView.Text = "Information is unavailable";
+            titleLabelView.Lines = 0;
+            titleLabelView.LineBreakMode = UILineBreakMode.WordWrap;
+            titleLabelView.SizeToFit ();
+        }
+
         protected void ConfigureEventView ()
         {
             NcAssert.NotNull (e);
 
             account = McAccount.QueryById<McAccount> (e.AccountId);
-
+            if (null == account) {
+                ShowNothing ();
+                return;
+            }
             root = McCalendar.QueryById<McCalendar> (e.CalendarId);
+            if(null == root) {
+                ShowNothing ();
+                return;
+            }
             if (0 != root.recurrences.Count) {
                 isRecurring = true;
             }
-
             if (0 == e.ExceptionId) {
                 c = root;
             } else {
                 c = McException.QueryById<McException> (e.ExceptionId);
+            }
+            if (null == c) {
+                ShowNothing ();
+                return;
             }
 
             if (account.EmailAddr == root.OrganizerEmail && account.Id == c.AccountId) {
@@ -629,16 +653,15 @@ namespace NachoClient.iOS
                 }
             }
 
-            //TODO 
             //get attachments out of an event
-            attachmentCount = 0;  //set to zero until we get the real count of attachments
+            attachmentCount = c.attachments.Count;
             var attachmentView = contentView.ViewWithTag (800) as UIView;
             if (0 == attachmentCount) {
                 attachmentView.Hidden = true;
                 line2.Hidden = true;
             } else {
                 var attachmentDetailLabelView = contentView.ViewWithTag (EVENT_ATTACHMENT_DETAIL_TAG) as UILabel;
-                //attachmentDetailLabelView.Text = "(" + c.attachments.Count() +  ")";
+                attachmentDetailLabelView.Text = "(" + attachmentCount +  ")";
                 attachmentDetailLabelView.SizeToFit ();
                 attachmentDetailLabelView.Frame = new RectangleF (SCREEN_WIDTH - attachmentDetailLabelView.Frame.Width - 34, 12.438f, attachmentDetailLabelView.Frame.Width, TEXT_LINE_HEIGHT);
                 attachmentView.Hidden = false;

@@ -21,7 +21,7 @@ namespace NachoCore.ActiveSync
         {
             var meetingResp = new XElement (m_ns + Xml.MeetingResp.MeetingResponse,
                                   new XElement (m_ns + Xml.MeetingResp.Request,
-                                      new XElement (m_ns + Xml.MeetingResp.UserResponse, PendingSingle.CalResponse),
+                                      new XElement (m_ns + Xml.MeetingResp.UserResponse, (uint)PendingSingle.CalResponse),
                                       new XElement (m_ns + Xml.MeetingResp.CollectionId, PendingSingle.ParentId),
                                       new XElement (m_ns + Xml.MeetingResp.RequestId, PendingSingle.ServerId)));
             var doc = AsCommand.ToEmptyXDocument ();

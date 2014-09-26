@@ -73,7 +73,7 @@ namespace NachoClient.iOS
             }
         }
 
-        protected float HeightForCalendarEvent (McCalendar c)
+        protected float HeightForCalendarEvent (McAbstrCalendarRoot c)
         {
             if (compactMode) {
                 return 69.0f;
@@ -81,18 +81,12 @@ namespace NachoClient.iOS
             return 87.0f;
         }
 
-        protected McCalendar GetCalendarItem(int day, int item)
-        {
-            var e = calendar.GetEvent (day, item);
-            return McCalendar.QueryById<McCalendar> (e.CalendarId);
-        }
-
         public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
         {
             if (NoCalendarEvents ()) {
                 return 44.0f;
             }
-            var c = GetCalendarItem (indexPath.Section, indexPath.Row);
+            var c = calendar.GetEventDetail (indexPath.Section, indexPath.Row);
             if (null == c) {
                 return 44.0f;
             }
@@ -257,7 +251,8 @@ namespace NachoClient.iOS
         /// </summary>
         protected void ConfigureCalendarCell (UITableViewCell cell, NSIndexPath indexPath)
         {
-            var c = GetCalendarItem (indexPath.Section, indexPath.Row);
+            var e = calendar.GetEvent (indexPath.Section, indexPath.Row);
+            var c = calendar.GetEventDetail (indexPath.Section, indexPath.Row);
 
             if (null == c) {
                 foreach (var v in cell.ContentView.Subviews) {
@@ -308,8 +303,8 @@ namespace NachoClient.iOS
             if (c.AllDayEvent) {
                 durationString = "ALL DAY";
             } else {
-                var start = Pretty.ShortTimeString (c.StartTime);
-                var duration = Pretty.CompactDuration (c);
+                var start = Pretty.ShortTimeString (e.StartTime);
+                var duration = Pretty.CompactDuration (e.StartTime, e.EndTime);
                 durationString = String.Join (" - ", new string[] { start, duration });
             }
 
