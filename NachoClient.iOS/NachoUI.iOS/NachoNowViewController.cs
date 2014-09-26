@@ -71,6 +71,8 @@ namespace NachoClient.iOS
             carouselView.ContentOffset = new SizeF (0f, 0f);
             carouselView.BackgroundColor = UIColor.Clear;
             carouselView.IgnorePerpendicularSwipes = true;
+            carouselView.StopAtItemBoundary = false;
+            carouselView.ScrollToItemBoundary = false;
             View.AddSubview (carouselView);
 
             carouselTapGestureRecognizer = new UITapGestureRecognizer ();
