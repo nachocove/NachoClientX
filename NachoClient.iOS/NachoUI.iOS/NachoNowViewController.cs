@@ -181,9 +181,10 @@ namespace NachoClient.iOS
                 vc.SetOwner (this);
                 return;
             }
-            if (segue.Identifier == "NachoNowToMessageAction") {
-                var vc = (MessageActionViewController)segue.DestinationViewController;
+            if (segue.Identifier == "NachoNowToFolders") {
+                var vc = (FoldersViewController)segue.DestinationViewController;
                 var h = sender as SegueHolder;
+                vc.SetState (true);
                 vc.SetOwner (this, h);
                 return;
             }

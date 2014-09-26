@@ -11,11 +11,12 @@ using System.Linq;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoCore.ActiveSync;
 
 
 namespace NachoClient.iOS
 {
-    public partial class FoldersViewController : UIViewController
+    public partial class FoldersViewController : UIViewController, INachoFolderChooser
     {
         public FoldersViewController (IntPtr handle) : base (handle)
         {
@@ -39,6 +40,16 @@ namespace NachoClient.iOS
             account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
             CreateView ();
             ConfigureFolders ();
+
+            NcApplication.Instance.StatusIndEvent += (object sender, EventArgs e) => {
+                var s = (StatusIndEventArgs)e;
+                if (NcResult.SubKindEnum.Info_FolderSetChanged == s.Status.SubKind) {
+                    CreateView ();
+                    ConfigureFolders ();
+                    ConfigureView ();
+                }
+            };
+            McMutables.Set (McAccount.GetDeviceAccount ().Id, "FoldersDefaultsSelectedButtons", "DefaultsSelectedButtons", "");
         }
 
         public override void ViewWillAppear (bool animated)
@@ -87,12 +98,30 @@ namespace NachoClient.iOS
             NcAssert.CaseError ();
         }
 
+        UINavigationBar navbar = new UINavigationBar ();
+
         protected void CreateView ()
         {
+            float yOffset = 20f;
+            if (modal) {
+                navbar.Frame = new RectangleF (0, 0, View.Frame.Width, 64);
+                View.Add (navbar);
+                navbar.BackgroundColor = A.Color_NachoGreen;
+                navbar.Translucent = false;
+                UINavigationItem title = new UINavigationItem ("Move To");
+                navbar.SetItems (new UINavigationItem[]{ title }, false);
+                UIBarButtonItem cancelButton = new UIBarButtonItem ();
+                Util.SetOriginalImageForButton (cancelButton, "icn-close");
+
+                navbar.TopItem.LeftBarButtonItem = cancelButton;
+                cancelButton.Clicked += (object sender, EventArgs e) => {
+                    DismissViewController (true, null);
+                };
+                yOffset += navbar.Frame.Height;
+                scrollView = new UIScrollView (new RectangleF (0, yOffset, View.Frame.Width, View.Frame.Height));
+            }
             NavigationItem.Title = "Folders";
             scrollView = new UIScrollView (new RectangleF (0, 0, View.Frame.Width, View.Frame.Height));
-
-            float yOffset = 20f;
 
             float marginPadding = 15f;
 
@@ -128,14 +157,12 @@ namespace NachoClient.iOS
             yourFoldersLabel.Text = "Your Folders";
             yourFoldersLabel.Font = A.Font_AvenirNextDemiBold17;
             yourFoldersLabel.TextColor = A.Color_NachoGreen;
-            yourFoldersLabel.Hidden = true;
             yOffset += yourFoldersLabel.Frame.Height;
 
             yOffset += 5;
             yourFoldersView = new UIView (new RectangleF (marginPadding / 2, yOffset, View.Frame.Width - marginPadding, 44));
             yourFoldersView.Layer.CornerRadius = 4;
             yourFoldersView.BackgroundColor = UIColor.White;
-            yourFoldersView.Hidden = true;
             yOffset += yourFoldersView.Frame.Height;
 
             yOffset += 20;
@@ -149,6 +176,9 @@ namespace NachoClient.iOS
             scrollView.BackgroundColor = A.Color_NachoBackgroundGray;
             scrollView.ContentSize = new SizeF (View.Frame.Width, yOffset);
             View.Add (scrollView);
+            if (modal) {
+                View.BringSubviewToFront (navbar);
+            }
         }
 
         protected void ConfigureView ()
@@ -161,56 +191,44 @@ namespace NachoClient.iOS
             } 
             var index = 0;
             foreach (var folder in recentFolderList) {
-                CreateFolderCell (0, recentView, index, index, folder.DisplayName, false, false, 2000 + index);
+                CreateRecentFolderCell (folder, index);
                 index++;
             }
             recentView.Frame = new RectangleF (recentView.Frame.X, recentView.Frame.Y, recentView.Frame.Width, 3 * 44);
 
             index = 0;
-            foreach (var f in flattenedFolderList) {
-                var isRootFolder = true;
-                if (f.indentLevel == 0) {
-                    rootFolderCount++;
-                    isRootFolder = false;
-                }
-                CreateFolderCell (f.indentLevel, defaultsView, rootFolderCount - 1, index, f.folderName, HasSubFolders (index), isRootFolder, 2000 + index);
+            foreach (var f in nestedFolderList) {
+                CreateFolderCell (0, defaultsView, HasSubFolders (f), false, f);
                 index++;
             }
-
-            yourFoldersLabel.Hidden = true;
-            yourFoldersView.Hidden = true;
 
             index = 0;
-            foreach (var f in flattenedFolderList) {
-                var isRootFolder = true;
-                if (f.indentLevel == 0) {
-                    rootFolderCount++;
-                    isRootFolder = false;
-                }
-                CreateFolderCell (f.indentLevel, yourFoldersView, rootFolderCount - 1, index, f.folderName, HasSubFolders (index), isRootFolder, 2000 + index);
+            foreach (var f in yourFolderList) {
+                CreateFolderCell (0, yourFoldersView, HasSubFolders (f), false, f);
                 index++;
             }
-            if (isFirstConfigure) {
-                UpdateVisibleCellsList (defaultsView, "DefaultFolders", flattenedFolderList.Count);
-                isFirstConfigure = false;
-            }
+                
             LayoutView ();
         }
 
         protected void LayoutView ()
         {
-            var visibleDefaultFoldersCells = McMutables.GetOrCreate (McAccount.GetDeviceAccount ().Id, "DefaultFolders", "VisibleDefaultFolders", null);
-            string[] tags = null;
-            if (null != visibleDefaultFoldersCells) {
-                tags = visibleDefaultFoldersCells.Split (',');
-            }
-            var selectedDefaultButtons = McMutables.GetOrCreate (McAccount.GetDeviceAccount ().Id, "SelectedButtons", "FoldersSelectedButtons", null);
+            var selectedDefaultButtons = McMutables.GetOrCreate (McAccount.GetDeviceAccount ().Id, "FoldersDefaultsSelectedButtons", "DefaultsSelectedButtons", null);
+            var selectedYourFoldersButtons = McMutables.GetOrCreate (McAccount.GetDeviceAccount ().Id, "FoldersYourFoldersSelectedButtons", "YourFoldersSelectedButtons", null);
             if (null != selectedDefaultButtons) {
-                string[] selectedButtons = selectedDefaultButtons.Split (',');
-                UpdateVisibleCells (defaultsView, flattenedFolderList, selectedButtons);
+                List<string> selectedButtons = selectedDefaultButtons.Split (':').ToList ();
+                UpdateVisibleCells (defaultsView, nestedFolderList, selectedButtons);
             } else { 
-                UpdateVisibleCells (defaultsView, flattenedFolderList, null);
+                UpdateVisibleCells (defaultsView, nestedFolderList, null);
             }
+            if (null != selectedYourFoldersButtons) {
+                List<string> selectedButtons = selectedYourFoldersButtons.Split (':').ToList ();
+                UpdateVisibleCells (yourFoldersView, yourFolderList, selectedButtons);
+            } else { 
+                UpdateVisibleCells (yourFoldersView, yourFolderList, null);
+            }
+
+            defaultCellsOffset = 0;
 
             var yOffset = 0f;
             if (hasRecents) {
@@ -220,86 +238,73 @@ namespace NachoClient.iOS
             yOffset += 24;
             defaultsLabel.Frame = new RectangleF (20, yOffset, 160, 20);
             yOffset += 35;
-            var rootFolderIndex = 0;
-            for (int i = 0; i < flattenedFolderList.Count; i++) {
-                var cell = defaultsView.ViewWithTag (2000 + i) as UIView;
-                if (tags.Contains (cell.Tag.ToString ())) {
-                    cell.Frame = new RectangleF (cell.Frame.X, 44 * rootFolderIndex, cell.Frame.Width, 44);
-                    if (cell.Tag.ToString () == tags.Last ()) {
-                        cell.ViewWithTag (4000 + i).Hidden = true;
-                    } else {
-                        cell.ViewWithTag (4000 + i).Hidden = false;
-                    }
-                    rootFolderIndex++;
-                } else {
-                    MatchParentY (cell, i, defaultsView);
-                }
-            }
-            var folderListHeight = rootFolderIndex * 44;
+            LayoutCells (defaultsView, nestedFolderList);
+
+            var folderListHeight = defaultCellsOffset * 44;
             defaultsView.Frame = new RectangleF (defaultsView.Frame.X, yOffset, defaultsView.Frame.Width, folderListHeight);
             yOffset += folderListHeight;
 
-            //            yOffset += 20;
-            //            yourFoldersLabel.Frame = new RectangleF (20, yOffset, 160, 20);
-            //            yOffset += 25;
-            //            rootFolderIndex = 0;
-            //            for (int i = 0; i < flattenedFolderList.Count; i++) {
-            //                var cell = yourFoldersView.ViewWithTag (2000 + i) as UIView;
-            //                if (!cell.Hidden) {
-            //                    cell.Frame = new RectangleF (cell.Frame.X, 44 * rootFolderIndex, cell.Frame.Width, 44);
-            //                    if (isLastVisibleCell (i, flattenedFolderList.Count, yourFoldersView)) {
-            //                        if (!isLastCell (i, flattenedFolderList.Count)) {
-            //                            cell.ViewWithTag (4000 + i).Hidden = true;
-            //                        }
-            //                    } else {
-            //                        if (!isLastCell (i, flattenedFolderList.Count)) {
-            //                            cell.ViewWithTag (4000 + i).Hidden = false;
-            //                        }
-            //                    }
-            //                    rootFolderIndex++;
-            //                } else {
-            //                    MatchParentY (cell, i, yourFoldersView);
-            //                }
-            //            }
-            //            folderListHeight = rootFolderIndex * 44;
-            //            yourFoldersView.Frame = new RectangleF (yourFoldersView.Frame.X, yOffset, yourFoldersView.Frame.Width, folderListHeight);
-            //            yOffset += folderListHeight;
+            defaultCellsOffset = 0;
 
+            yOffset += 24;
+            yourFoldersLabel.Frame = new RectangleF (20, yOffset, 160, 20);
+            yOffset += 35;
+            LayoutCells (yourFoldersView, yourFolderList);
+
+            folderListHeight = defaultCellsOffset * 44;
+            yourFoldersView.Frame = new RectangleF (yourFoldersView.Frame.X, yOffset, yourFoldersView.Frame.Width, folderListHeight);
+            yOffset += folderListHeight;
+           
             yOffset += 45 + 64;
             scrollView.ContentSize = new SizeF (View.Frame.Width, yOffset);
 
         }
 
-        public void MatchParentY (UIView cell, int index, UIView parentView)
+        protected int defaultCellsOffset = 0;
+
+        public void LayoutCells (UIView parentView, List<FolderStruct> folders)
         {
-            int rootIndex = index;
-            while (index >= 0) {
-                if (flattenedFolderList [rootIndex].indentLevel > flattenedFolderList [index].indentLevel) {
-                    cell.Frame = new RectangleF (cell.Frame.X, parentView.ViewWithTag (index + 2000).Frame.Y, cell.Frame.Width, cell.Frame.Height); 
-                    cell.Hidden = true;
-                    return;
+            foreach (var f in folders) {
+                var cell = parentView.ViewWithTag (f.folderID + 10000) as UIView;
+                if (false == cell.Hidden) {
+                    cell.Frame = new RectangleF (cell.Frame.X, 44 * defaultCellsOffset, cell.Frame.Width, 44);
+                    defaultCellsOffset++;
+                    if (HasSubFolders (f)) {
+                        LayoutCells (parentView, f.subFolders);
+                    }
+                } else if (true == cell.Hidden) {
+                    MatchParentY (f, parentView);
                 }
-                index--;
             }
         }
 
-        protected void CreateFolderCell (int subLevel, UIView parentView, int relativeIndex, int index, string title, bool subFolders, bool isHidden, int tag)
+        public void MatchParentY (FolderStruct folder, UIView parentView)
         {
-            var indentation = subLevel * 10;
-            UIView cell = new UIView (new RectangleF (5 + indentation, 44 * relativeIndex, parentView.Frame.Width - 10 - indentation, 44));
+            var parentFolder = GetParentFolder (folder);
+            var parentCell = parentView.ViewWithTag (parentFolder.Id + 10000) as UIView;
+            var cell = parentView.ViewWithTag (folder.folderID + 10000) as UIView;
+            cell.Frame = new RectangleF (cell.Frame.X, parentCell.Frame.Y, cell.Frame.Width, 44);
+        }
+
+        protected void CreateRecentFolderCell (McFolder folder, int index)
+        {
+            UIView cell = new UIView (new RectangleF (5, 44 * index, recentView.Frame.Width - 10, 44));
             cell.BackgroundColor = UIColor.White;
             var cellTap = new UITapGestureRecognizer ();
             cellTap.AddTarget (() => {
-                var folder = GetFolder (index, parentView);
                 folder.LastAccessed = DateTime.UtcNow;
                 folder.Update ();
                 UpdateLastAccessed ();
-                PerformSegue ("FoldersToMessageList", new SegueHolder (folder));
+                if (modal) {
+                    FolderSelected(folder);
+                } else {
+                    PerformSegue ("FoldersToMessageList", new SegueHolder (folder));
+                }
             });
             cell.AddGestureRecognizer (cellTap);
 
             UILabel label = new UILabel (new RectangleF (52, 0, cell.Frame.Width - 52, 44));
-            label.Text = title;
+            label.Text = folder.DisplayName;
             label.Font = A.Font_AvenirNextMedium14;
             label.TextColor = A.Color_NachoGreen;
             cell.Add (label);
@@ -308,34 +313,66 @@ namespace NachoClient.iOS
             imageView.Image = UIImage.FromBundle ("nav-folder");
             cell.Add (imageView);
 
-            var count = 0;
-            if (recentView == parentView) {
-                count = recentFolderList.Count;
-            } else if (defaultsView == parentView) {
-                count = flattenedFolderList.Count;
-            } else {
-                count = 0;
-            }
-
-            if (!((parentView == recentView) && (isLastCell(index, count)))) {
+            if (folder != recentFolderList.Last()) {
                 var line = Util.AddHorizontalLineView (52, 43, cell.Frame.Width - 47, A.Color_NachoBorderGray);
-                line.Tag = tag + 2000;
+                line.Tag = folder.Id;
                 cell.Add (line);
             }
 
+            recentView.Add (cell);
+        }
+
+
+        protected void CreateFolderCell (int subLevel, UIView parentView, bool subFolders, bool isHidden, FolderStruct folder)
+        {
+            var tag = folder.folderID + 10000;
+
+            var indentation = subLevel * 10;
+            UIView cell = new UIView (new RectangleF (5 + indentation, 0, parentView.Frame.Width - 10 - indentation, 44));
+            cell.BackgroundColor = UIColor.White;
+            var cellTap = new UITapGestureRecognizer ();
+            cellTap.AddTarget (() => {
+                var McFolderFolder = GetFolder (folder);
+                McFolderFolder.LastAccessed = DateTime.UtcNow;
+                McFolderFolder.Update ();
+                UpdateLastAccessed ();
+                if (modal) {
+                    FolderSelected(McFolderFolder);
+                } else {
+                    PerformSegue ("FoldersToMessageList", new SegueHolder (McFolderFolder));
+                }
+            });
+            cell.AddGestureRecognizer (cellTap);
+
+            UILabel label = new UILabel (new RectangleF (52, 0, cell.Frame.Width - 52, 44));
+            label.Text = folder.folderName;
+            label.Font = A.Font_AvenirNextMedium14;
+            label.TextColor = A.Color_NachoGreen;
+            cell.Add (label);
+
+            UIImageView imageView = new UIImageView (new RectangleF (13, cell.Frame.Height / 2 - 14, 24, 24));
+            imageView.Image = UIImage.FromBundle ("nav-folder");
+            cell.Add (imageView);
+
+            var line = Util.AddHorizontalLineView (52, 43, cell.Frame.Width - 47, A.Color_NachoBorderGray);
+            line.Tag = tag + 20000;
+            cell.Add (line);
+
             if (subFolders) {
+                CreateNestedCells (folder, subLevel, parentView);
+
                 UIImageView buttonImageView = new UIImageView (new RectangleF (cell.Frame.Width - 31, cell.Frame.Height / 2 - 10, 18, 18));
                 buttonImageView.Image = UIImage.FromBundle ("gen-readmore");
-                buttonImageView.Tag = tag + 3000;
+                buttonImageView.Tag = tag + 30000;
                 cell.Add (buttonImageView);
 
                 UIButton expandButton = new UIButton (UIButtonType.RoundedRect);
                 expandButton.Frame = new RectangleF (cell.Frame.Width - 40, cell.Frame.Height / 2 - 18, 36, 36);
                 expandButton.TintColor = UIColor.Clear;
-                expandButton.Tag = tag + 1000;
+                expandButton.Tag = tag + 10000;
                 expandButton.TouchUpInside += (sender, e) => {
                     parentView.BringSubviewToFront (cell);
-                    ToggleExpandableCell (index, parentView);
+                    ToggleHiddenCells (folder, parentView);
                 };
                 cell.Add (expandButton);
             }
@@ -344,25 +381,23 @@ namespace NachoClient.iOS
             parentView.Add (cell);
         }
 
-        public void ToggleExpandableCell (int index, UIView parentView)
+        public void ToggleHiddenCells (FolderStruct folder, UIView parentView)
         {
-            var expandButton = parentView.ViewWithTag (3000 + index) as UIButton;
-            int count = CountOfNextLevelSubFolders (index);
-            int rootIndex = index;
-            index++;
+            var expandButton = parentView.ViewWithTag (20000 + folder.folderID) as UIButton;
+            int count = folder.subFolders.Count;
             if (!expandButton.Selected) {
-                for (int i = 0; i < count; i++) {
-                    var cell = parentView.ViewWithTag (2000 + index) as UIView;
-                    if (flattenedFolderList [index].indentLevel == flattenedFolderList [rootIndex].indentLevel + 1) {
-                        cell.Hidden = false;
-                    }
-                    index++;
+                foreach (var subFolder in folder.subFolders) {
+                    var cell = parentView.ViewWithTag (subFolder.folderID + 10000) as UIView;
+                    cell.Hidden = false;
                 }
                 expandButton.Selected = true;
-                var buttonImage = parentView.ViewWithTag (5000 + rootIndex) as UIImageView;
+                var buttonImage = parentView.ViewWithTag (40000 + folder.folderID) as UIImageView;
                 buttonImage.Image = UIImage.FromBundle ("gen-readmore-active");
-                UpdateVisibleCellsList (parentView, "DefaultFolders", flattenedFolderList.Count);
-                UpdateSelectedButtonsList (parentView, "SelectedButtons", flattenedFolderList.Count);
+                if (defaultsView == parentView) {
+                    UpdateSelectedButtonsList (20000 + folder.folderID, true, "DefaultsSelectedButtons");
+                } else {
+                    UpdateSelectedButtonsList (20000 + folder.folderID, true, "YourFoldersSelectedButtons");
+                }
                 UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
                     () => {
                         LayoutView ();
@@ -372,16 +407,15 @@ namespace NachoClient.iOS
                 );
                 return;
             } else {
-                for (int i = 0; i < count; i++) {
-                    var cell = parentView.ViewWithTag (2000 + index) as UIView;
-                    cell.Hidden = true;
-                    index++;
-                }
+                HideAllSubFolders (folder, parentView);
                 expandButton.Selected = false;
-                var buttonImage = parentView.ViewWithTag (5000 + rootIndex) as UIImageView;
+                var buttonImage = parentView.ViewWithTag (40000 + folder.folderID) as UIImageView;
                 buttonImage.Image = UIImage.FromBundle ("gen-readmore");
-                UpdateVisibleCellsList (parentView, "DefaultFolders", flattenedFolderList.Count);
-                UpdateSelectedButtonsList (parentView, "SelectedButtons", flattenedFolderList.Count);
+                if (defaultsView == parentView) {
+                    UpdateSelectedButtonsList (20000 + folder.folderID, false, "DefaultsSelectedButtons");
+                } else {
+                    UpdateSelectedButtonsList (20000 + folder.folderID, false, "YourFoldersSelectedButtons");
+                }
                 UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
                     () => {
                         LayoutView ();
@@ -393,84 +427,105 @@ namespace NachoClient.iOS
             }
         }
 
-        public void UpdateVisibleCellsList (UIView parentView, string stringName, int listCount)
+        public void HideAllSubFolders (FolderStruct folder, UIView parentView)
         {
-            string visibleCellsString = "";
-            for (var i = 0; i < listCount; i++) {
-                var cell = parentView.ViewWithTag (2000 + i) as UIView;
-                if (false == cell.Hidden) {
-                    if ("" == visibleCellsString) {
-                        visibleCellsString = (2000 + i).ToString ();
-                    } else {
-                        visibleCellsString += "," + (2000 + i).ToString ();
-                    }
+            foreach (var subFolder in folder.subFolders) {
+                var cell = parentView.ViewWithTag (subFolder.folderID + 10000) as UIView;
+                cell.Hidden = true;
+                if (HasSubFolders (subFolder)) {
+                    HideAllSubFolders (subFolder, parentView);
                 }
             }
-            McMutables.Set (McAccount.GetDeviceAccount ().Id, stringName, "Visible" + stringName, visibleCellsString);
         }
 
-        public void UpdateSelectedButtonsList (UIView parentView, string stringName, int listCount)
+        public void CreateNestedCells (FolderStruct folder, int subLevel, UIView parentView)
         {
-            string selectedButtonsString = "";
-            for (var i = 0; i < listCount; i++) {
-                var button = parentView.ViewWithTag (3000 + i) as UIButton;
-                if (null != button && true == button.Selected) {
-                    if ("" == selectedButtonsString) {
-                        selectedButtonsString = (3000 + i).ToString ();
-                    } else {
-                        selectedButtonsString += "," + (3000 + i).ToString ();
-                    }
-                }
+            var subFolders = folder.subFolders;
+            int i = 0;
+            foreach (var f in subFolders) {
+                CreateFolderCell (subLevel + 1, parentView, HasSubFolders (f), true, f);
+                i++;
             }
-            McMutables.Set (McAccount.GetDeviceAccount ().Id, stringName, "Folders" + stringName, selectedButtonsString);
         }
 
-        public void UpdateVisibleCells (UIView parentView, List<FlattenedFolderStruct> sf, string[] selectedButtons)
+        string selectedButtonsString = "";
+
+        public void UpdateSelectedButtonsList (int tag, bool add, string stringName)
         {
-            var cellIndex = 0;
-            foreach (var cell in parentView.Subviews) {
-                if (0 == sf [cellIndex].indentLevel) {
-                    cell.Hidden = false;
+            if (add) {
+                if ("" == selectedButtonsString) {
+                    selectedButtonsString = ":" + tag.ToString ();
+                } else {
+                    selectedButtonsString += ":" + tag.ToString ();
                 }
-                cellIndex++;
+            } else {
+                var stringToRemove = ":" + tag.ToString ();
+                selectedButtonsString = selectedButtonsString.Replace (stringToRemove, "");
             }
+
+            McMutables.Set (McAccount.GetDeviceAccount ().Id, "Folders" + stringName, stringName, selectedButtonsString);
+        }
+
+        public void UpdateVisibleCells (UIView parentView, List<FolderStruct> folders, List<string> selectedButtons)
+        {
             if (null != selectedButtons) {
                 foreach (var tag in selectedButtons) {
                     if ("" != tag) {
                         int numTag = Convert.ToInt32 (tag);
+                        int folderID = numTag - 20000;
                         var button = parentView.ViewWithTag (numTag) as UIButton;
-                        button.Selected = true;
-                        var buttonImage = parentView.ViewWithTag (numTag + 2000) as UIImageView;
-                        buttonImage.Image = UIImage.FromBundle ("gen-readmore-active");
-                        var index = numTag % 1000;
-                        int count = CountOfNextLevelSubFolders (index);
-                        int rootIndex = index;
-                        index++;
-                        for (int i = 0; i < count; i++) {
-                            var cell = parentView.ViewWithTag (2000 + index) as UIView;
-                            if (sf [index].indentLevel == sf [rootIndex].indentLevel + 1) {
+                        if (null != button) {
+                            button.Selected = true;
+                            var buttonImage = parentView.ViewWithTag (numTag + 20000) as UIImageView;
+                            buttonImage.Image = UIImage.FromBundle ("gen-readmore-active");
+                            var folder = GetFolderStructById (folderID, folders);
+                            foreach (var subFolder in folder.subFolders) {
+                                var cell = parentView.ViewWithTag (subFolder.folderID + 10000) as UIView;
                                 cell.Hidden = false;
                             }
-                            index++;
-                        }  
+                        }
+                    }
+                }
+            } else {
+                foreach (var folder in folders) {
+                    var cell = parentView.ViewWithTag (folder.folderID + 10000);
+                    cell.Hidden = false;
+//                    if (folder == folders.Last()) {
+//                        cell.ViewWithTag (folder.folderID + 20000).Hidden = true;
+//                    } else {
+//                        cell.ViewWithTag (folder.folderID + 20000).Hidden = false;
+//                    }
+                }
+            }
+        }
+
+        public FolderStruct GetFolderStructById (int Id, List<FolderStruct> folders)
+        {
+            foreach (var folder in folders) {
+                if (Id == folder.folderID) {
+                    return folder;
+                }
+                if (HasSubFolders (folder)) {
+                    var child = GetFolderStructById (Id, folder.subFolders);
+                    if (null != child) {
+                        return child;
                     }
                 }
             }
+            return null;
         }
 
         NachoFolders Folders;
         public List<McFolder> foldersToMcFolders = new List<McFolder> ();
         public List<FolderStruct> nestedFolderList = new List<FolderStruct> ();
-        public List<FlattenedFolderStruct> flattenedFolderList = new List<FlattenedFolderStruct> ();
+        public List<FolderStruct> yourFolderList = new List<FolderStruct> ();
         public List<McFolder> recentFolderList = new List<McFolder> ();
-        public List<UITableViewCell> FolderCells = new List<UITableViewCell> ();
 
         public void ConfigureFolders ()
         {
             Folders = new NachoFolders (NachoFolders.FilterForEmail);
             ConvertFoldersToMcFolders ();
             CreateNestedFolderList ();
-            FlattenNestedFolderList (0, nestedFolderList);
         }
 
         public void ConvertFoldersToMcFolders ()
@@ -486,11 +541,43 @@ namespace NachoClient.iOS
                 if (Int32.Parse (folder.ParentId) == 0) {
                     int folderID = folder.Id;
                     string fname = folder.DisplayName;
+                    Xml.FolderHierarchy.TypeCode ftype = folder.Type;
                     List<FolderStruct> subFolders = new List<FolderStruct> ();
                     subFolders = GetSubFolders (folder.Id, folder.AccountId, folder.ServerId, 0);
-                    nestedFolderList.Add (new FolderStruct (folderID, subFolders, fname));
+
+                    if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12 == folder.Type || NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1 == folder.Type) {
+                        yourFolderList.Add (new FolderStruct (folderID, subFolders, fname, ftype, 10000));
+                    } else {
+                        nestedFolderList.Add (new FolderStruct (folderID, subFolders, fname, ftype, 10000));
+                    }
                 }
             }
+
+            SortDetaultsFoldersList ();
+
+        }
+
+        public void SortDetaultsFoldersList ()
+        {
+            List<FolderStruct> sortedNestedFolderList = new List<FolderStruct> ();
+            foreach (var folder in nestedFolderList) {
+                if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == folder.type) {
+                    folder.orderNumber = 1;
+                }
+                if (Xml.FolderHierarchy.TypeCode.DefaultDrafts_3 == folder.type) {
+                    folder.orderNumber = 2;
+                }
+                if (Xml.FolderHierarchy.TypeCode.DefaultDeleted_4 == folder.type) {
+                    folder.orderNumber = 3;
+                }
+                if (Xml.FolderHierarchy.TypeCode.DefaultSent_5 == folder.type) {
+                    folder.orderNumber = 4;
+                }
+                if (Xml.FolderHierarchy.TypeCode.DefaultOutbox_6 == folder.type) {
+                    folder.orderNumber = 5;
+                }
+            }
+            nestedFolderList = nestedFolderList.OrderBy (x => x.orderNumber).ToList ();
         }
 
         public List<FolderStruct> GetSubFolders (int fID, int accountID, string serverID, int indentLevel)
@@ -501,62 +588,14 @@ namespace NachoClient.iOS
             folds = McFolder.QueryByParentId (accountID, serverID);
 
             foreach (McFolder f in folds) {
-                subFolders.Add (new FolderStruct (f.Id, GetSubFolders (f.Id, f.AccountId, f.ServerId, indentLevel), f.DisplayName));
+                subFolders.Add (new FolderStruct (f.Id, GetSubFolders (f.Id, f.AccountId, f.ServerId, indentLevel), f.DisplayName, f.Type, 10000));
             }
             return subFolders;
         }
 
-        public void FlattenNestedFolderList (int indentlevel, List<FolderStruct> nestedFoldersList)
+        public bool HasSubFolders (FolderStruct folder)
         {
-            foreach (FolderStruct f in nestedFoldersList) {
-
-                flattenedFolderList.Add (new FlattenedFolderStruct (f.folderName, f.folderID, indentlevel));
-
-                if (f.subFolders.Count != 0) {
-                    FlattenNestedFolderList (indentlevel + 1, f.subFolders);
-                }
-            }
-        }
-
-        public bool HasSubFolders (int index)
-        {
-            if (isLastCell (index, flattenedFolderList.Count)) {
-                return false;
-            }
-            if (flattenedFolderList [index + 1].indentLevel > flattenedFolderList [index].indentLevel) {
-                return true;
-            }
-            return false;
-
-        }
-
-        public int CountOfNextLevelSubFolders (int index)
-        {
-            if (isLastCell (index, flattenedFolderList.Count)) {
-                return 0;
-            }
-            var rootFolderindex = index;
-            int count = 0;
-            if (HasSubFolders (index)) {
-                if (isLastCell (index + 1, flattenedFolderList.Count)) {
-                    return 1;
-                }
-                index++;
-            }
-            while (flattenedFolderList [rootFolderindex].indentLevel != flattenedFolderList [index].indentLevel) {
-                count++;
-                index++;
-                if (isLastCell (index, flattenedFolderList.Count) && flattenedFolderList [rootFolderindex].indentLevel != flattenedFolderList [index].indentLevel) {
-                    count++;
-                    return count;
-                }
-            }
-            return count;
-        }
-
-        public bool isLastCell (int index, int folderCount)
-        {
-            if (index == folderCount - 1) {
+            if (0 != folder.subFolders.Count) {
                 return true;
             }
             return false;
@@ -570,42 +609,34 @@ namespace NachoClient.iOS
 
             public List <FolderStruct> subFolders { get; set; }
 
+            public Xml.FolderHierarchy.TypeCode type { get; set; }
+
+            public int orderNumber { get; set; }
+
             public FolderStruct ()
             {
 
             }
 
-            public FolderStruct (int fid, List<FolderStruct> sf, string fn)
+            public FolderStruct (int fid, List<FolderStruct> sf, string fn, Xml.FolderHierarchy.TypeCode t, int on)
             {
                 folderID = fid;
                 subFolders = sf;
                 folderName = fn;
+                type = t;
+                orderNumber = on;
             }
         }
 
-        public class FlattenedFolderStruct
+        public McFolder GetFolder (FolderStruct folder)
         {
-            public string folderName { get; set; }
-
-            public int folderID { get; set; }
-
-            public int indentLevel { get; set; }
-
-            public FlattenedFolderStruct (string fn, int fid, int il)
-            {
-                folderName = fn;
-                folderID = fid;
-                indentLevel = il;
-            }
+            return Folders.GetFolderByFolderID (folder.folderID);
         }
 
-        public McFolder GetFolder (int index, UIView parentView)
+        public McFolder GetParentFolder (FolderStruct folder)
         {
-            if (recentView == parentView) {
-                return recentFolderList [index];
-            } else {
-                return Folders.GetFolderByFolderID (flattenedFolderList [index].folderID);
-            }
+            var McFolderFolder = GetFolder (folder);
+            return McFolder.ServerEndQueryByServerId (account.Id, McFolderFolder.ParentId);
         }
 
         public void UpdateLastAccessed ()
@@ -613,6 +644,33 @@ namespace NachoClient.iOS
             var list = McFolder.QueryByMostRecentlyAccessedFolders (account.Id);
             list.Reverse ();
             recentFolderList = list.Take (3).ToList ();
+        }
+
+        protected object cookie;
+        protected bool modal;
+        protected INachoFolderChooserParent owner;
+
+        public void SetOwner (INachoFolderChooserParent owner, object cookie)
+        {
+            this.owner = owner;
+            this.cookie = cookie;
+        }
+
+        public void DismissFolderChooser (bool animated, NSAction action)
+        {
+            owner = null;
+            cookie = null;
+            DismissViewController (animated, action);
+        }
+
+        public void FolderSelected (McFolder folder)
+        {
+            owner.FolderSelected (this, folder, cookie);
+        }
+
+        public void SetState (bool modal)
+        {
+            this.modal = modal;
         }
     }
 }

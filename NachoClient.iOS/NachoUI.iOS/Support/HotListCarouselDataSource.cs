@@ -395,7 +395,7 @@ namespace NachoClient.iOS
             if (null == messageThread) {
                 return;
             }
-            owner.PerformSegueForDelegate ("NachoNowToMessageAction", new SegueHolder (messageThread));
+            owner.PerformSegueForDelegate ("NachoNowToFolders", new SegueHolder (messageThread));
         }
 
         void onArchiveButtonClicked (UIView view)
