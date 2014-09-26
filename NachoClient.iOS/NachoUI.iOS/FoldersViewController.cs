@@ -296,7 +296,7 @@ namespace NachoClient.iOS
                 folder.Update ();
                 UpdateLastAccessed ();
                 if (modal) {
-                    FolderSelected(folder);
+                    FolderSelected (folder);
                 } else {
                     PerformSegue ("FoldersToMessageList", new SegueHolder (folder));
                 }
@@ -313,7 +313,7 @@ namespace NachoClient.iOS
             imageView.Image = UIImage.FromBundle ("nav-folder");
             cell.Add (imageView);
 
-            if (folder != recentFolderList.Last()) {
+            if (folder != recentFolderList.Last ()) {
                 var line = Util.AddHorizontalLineView (52, 43, cell.Frame.Width - 47, A.Color_NachoBorderGray);
                 line.Tag = folder.Id;
                 cell.Add (line);
@@ -337,7 +337,7 @@ namespace NachoClient.iOS
                 McFolderFolder.Update ();
                 UpdateLastAccessed ();
                 if (modal) {
-                    FolderSelected(McFolderFolder);
+                    FolderSelected (McFolderFolder);
                 } else {
                     PerformSegue ("FoldersToMessageList", new SegueHolder (McFolderFolder));
                 }
@@ -552,29 +552,30 @@ namespace NachoClient.iOS
                     }
                 }
             }
-
             SortDetaultsFoldersList ();
-
         }
-
+            
         public void SortDetaultsFoldersList ()
         {
-            List<FolderStruct> sortedNestedFolderList = new List<FolderStruct> ();
             foreach (var folder in nestedFolderList) {
-                if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == folder.type) {
+                switch (folder.type) {
+                case Xml.FolderHierarchy.TypeCode.DefaultInbox_2: 
                     folder.orderNumber = 1;
-                }
-                if (Xml.FolderHierarchy.TypeCode.DefaultDrafts_3 == folder.type) {
+                    break;
+                case Xml.FolderHierarchy.TypeCode.DefaultDrafts_3:
                     folder.orderNumber = 2;
-                }
-                if (Xml.FolderHierarchy.TypeCode.DefaultDeleted_4 == folder.type) {
+                    break;
+                case Xml.FolderHierarchy.TypeCode.DefaultDeleted_4:
                     folder.orderNumber = 3;
-                }
-                if (Xml.FolderHierarchy.TypeCode.DefaultSent_5 == folder.type) {
+                    break;
+                case Xml.FolderHierarchy.TypeCode.DefaultSent_5:
                     folder.orderNumber = 4;
-                }
-                if (Xml.FolderHierarchy.TypeCode.DefaultOutbox_6 == folder.type) {
+                    break;
+                case Xml.FolderHierarchy.TypeCode.DefaultOutbox_6:
                     folder.orderNumber = 5;
+                    break;
+                default:
+                    break;
                 }
             }
             nestedFolderList = nestedFolderList.OrderBy (x => x.orderNumber).ToList ();
