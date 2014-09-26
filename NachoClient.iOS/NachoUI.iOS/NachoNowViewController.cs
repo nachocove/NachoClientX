@@ -195,16 +195,18 @@ namespace NachoClient.iOS
         {
             var s = (StatusIndEventArgs)e;
             if (NcResult.SubKindEnum.Info_EmailMessageSetChanged == s.Status.SubKind) {
-                priorityInbox.Refresh ();
-                carouselView.ReloadData ();
+                if (priorityInbox.Refresh ()) {
+                    carouselView.ReloadData ();
+                }
             }
             if (NcResult.SubKindEnum.Info_CalendarSetChanged == s.Status.SubKind) {
                 calendarSource.Refresh ();
                 calendarTableView.ReloadData ();
             }
             if (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated == s.Status.SubKind) {
-                priorityInbox.Refresh ();
-                carouselView.ReloadData ();
+                if (priorityInbox.Refresh ()) {
+                    carouselView.ReloadData ();
+                }
             }
             if (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded == s.Status.SubKind) {
                 ProcessDownloadComplete (true);

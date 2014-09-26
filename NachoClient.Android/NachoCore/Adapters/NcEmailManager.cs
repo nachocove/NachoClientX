@@ -60,8 +60,9 @@ namespace NachoCore
                 return 0;
             }
 
-            public void Refresh ()
+            public bool Refresh ()
             {
+                return false;
             }
 
             public McEmailMessageThread GetEmailThread (int i)

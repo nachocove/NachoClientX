@@ -300,6 +300,18 @@ namespace NachoClient.iOS
             label.SizeToFit ();
             ViewFramer.Create (label).AdjustHeight (30.0f);
             label.Tag = (int)TagType.MESSAGE_PART_TAG;
+            // We are using double tap for zoom toggling. So, we want to disable 
+            // double tap to select action. A long tap can still select text.
+            foreach (var gc in label.GestureRecognizers) {
+                var tapGc = gc as UITapGestureRecognizer;
+                if (null == tapGc) {
+                    continue;
+                }
+                if ((1 == tapGc.NumberOfTouchesRequired) && (2 == tapGc.NumberOfTapsRequired)) {
+                    tapGc.Delegate = new BodyViewTextTapBlocker ();
+                }
+            }
+
             messageView.AddSubview (label);
             return label;
         }
@@ -485,6 +497,23 @@ namespace NachoClient.iOS
                 throw new NcAssert.NachoDefaultCaseFailure (String.Format("Unhandled class type {0}", className));
             }
             return newAbstrItem.IsDownloaded ();
+        }
+    }
+
+    public class BodyViewTextTapBlocker : UIGestureRecognizerDelegate
+    {
+        public BodyViewTextTapBlocker ()
+        {
+        }
+
+        public override bool ShouldReceiveTouch (UIGestureRecognizer recognizer, UITouch touch)
+        {
+            return false;
+        }
+
+        public override bool ShouldBegin (UIGestureRecognizer recognizer)
+        {
+            return false;
         }
     }
 }
