@@ -14,7 +14,7 @@ namespace NachoClient.iOS
 
     public interface INachoDateControllerParent
     {
-        void DateSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime customDate);
+        void DateSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate);
         void DismissChildDateController (INachoDateController vc);
     }
 }

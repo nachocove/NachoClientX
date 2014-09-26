@@ -12,9 +12,9 @@ namespace NachoCore.Brain
     {
         public const string NONE = "NONE";
         public const string FYI = "FYI";
-        public const string PLEASE_READ = "Please Read";
-        public const string RESPONSE_REQUIRED = "Response Required";
-        public const string URGENT = "Urgent";
+        public const string PLEASE_READ = "PLEASE READ";
+        public const string RESPONSE_REQUIRED = "RESPONSE REQUIRED";
+        public const string URGENT = "URGENT";
 
         public enum IntentTypeEnum {
             None,
@@ -24,11 +24,11 @@ namespace NachoCore.Brain
             Urgent,
         }
 
-        public static Intent NONE_INTENT = new Intent(IntentTypeEnum.None, NONE);
-        public static Intent FYI_INTENT = new Intent (IntentTypeEnum.FYI, FYI);
-        public static Intent PLEASE_READ_INTENT = new Intent (IntentTypeEnum.PleaseRead, PLEASE_READ);
-        public static Intent RESPONSE_REQUIRED_INTENT = new Intent(IntentTypeEnum.ResponseRequired, RESPONSE_REQUIRED);
-        public static Intent URGENT_INTENT = new Intent(IntentTypeEnum.Urgent, URGENT);
+        public static Intent NONE_INTENT = new Intent(IntentTypeEnum.None, NONE, false);
+        public static Intent FYI_INTENT = new Intent (IntentTypeEnum.FYI, FYI, false);
+        public static Intent PLEASE_READ_INTENT = new Intent (IntentTypeEnum.PleaseRead, PLEASE_READ, true);
+        public static Intent RESPONSE_REQUIRED_INTENT = new Intent(IntentTypeEnum.ResponseRequired, RESPONSE_REQUIRED, true);
+        public static Intent URGENT_INTENT = new Intent(IntentTypeEnum.Urgent, URGENT, true);
 
         protected List<Intent> IntentsList = new List<Intent> () {
             NONE_INTENT,
@@ -65,15 +65,49 @@ namespace NachoCore.Brain
             emailMessage.IntentDate = selectedDate;
         }
 
+        public static string GetIntentString (MessageDeferralType intentDateTypeEnum, McEmailMessage mcMessage)
+        {
+            string intentString = mcMessage.Intent;
+
+            if (MessageDeferralType.None != intentDateTypeEnum) {
+                switch (intentDateTypeEnum) {
+                case MessageDeferralType.Later:
+                    intentString += " By Today";
+                    break;
+                case MessageDeferralType.Tonight:
+                    intentString += " By Tonight";
+                    break;
+                case MessageDeferralType.Tomorrow:
+                    intentString += " By Tomorrow";
+                    break;
+                case MessageDeferralType.NextWeek:
+                    intentString += " By Next Week";
+                    break;
+                case MessageDeferralType.NextMonth:
+                    intentString += " By Next Month";
+                    break;
+                case MessageDeferralType.Custom:
+                    intentString += " By " + mcMessage.IntentDate.ToShortDateString ();
+                    break;
+                default:
+                    NcAssert.CaseError ("Not a recognzized deferral type.");
+                    break;
+                } 
+            }
+            return intentString;
+        }
+
         public class Intent
         {
-            public string value;
-            public IntentTypeEnum type;
+            public IntentTypeEnum type { get; private set; }
+            public string value { get; private set; }
+            public bool dueDateAllowed {get; private set;}
 
-            public Intent (IntentTypeEnum type, string value)
+            public Intent (IntentTypeEnum type, string value, bool dueDateAllowed)
             {
-                this.value = value;
                 this.type = type;
+                this.value = value;
+                this.dueDateAllowed = dueDateAllowed;
             }
         }
     }

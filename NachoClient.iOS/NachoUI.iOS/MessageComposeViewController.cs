@@ -82,6 +82,8 @@ namespace NachoClient.iOS
 
         UIBarButtonItem quickResponseButton;
         public NcMessageIntent messageIntent;
+        protected MessageDeferralType intentDateType;
+        UIImageView intentArrowAccessory;
 
         public MessageComposeViewController (IntPtr handle) : base (handle)
         {
@@ -279,35 +281,13 @@ namespace NachoClient.iOS
 
         public void PopulateMessageFromSelectedIntent (MessageDeferralType intentDateTypeEnum)
         {
-            intentTextView.Text = mcMessage.Intent;
-
-            if (MessageDeferralType.None != intentDateTypeEnum) {
-                switch (intentDateTypeEnum) {
-                case MessageDeferralType.Later:
-                    intentTextView.Text += " By Today";
-                    break;
-                case MessageDeferralType.Tonight:
-                    intentTextView.Text += " By Tonight";
-                    break;
-                case MessageDeferralType.Tomorrow:
-                    intentTextView.Text += " By Tomorrow";
-                    break;
-                case MessageDeferralType.NextWeek:
-                    intentTextView.Text += " By Next Week";
-                    break;
-                case MessageDeferralType.NextMonth:
-                    intentTextView.Text += " By Next Month";
-                    break;
-                case MessageDeferralType.Custom:
-                    intentTextView.Text += " By " + mcMessage.IntentDate.ToShortDateString ();
-                    break;
-                default:
-                    NcAssert.CaseError ("Not a recognzized deferral type.");
-                    break;
-                } 
-            } else{
-                intentTextView.Text = mcMessage.Intent;
+            intentDateType = intentDateTypeEnum;
+            string intentString = NcMessageIntent.GetIntentString (intentDateTypeEnum, mcMessage);;
+            if (intentString.Length > 27) {
+                intentString = intentString.Remove (27);
+                intentString += "...";
             }
+            intentTextView.Text = intentString;
         }
 
         public override UIView InputAccessoryView {
@@ -443,7 +423,7 @@ namespace NachoClient.iOS
             subjectField.SizeToFit ();
 
             intentLabel = new UILabel ();
-            intentLabel.Text = "Msg. Intent:";
+            intentLabel.Text = "Intent:";
             intentLabel.Font = A.Font_AvenirNextRegular14;
             intentLabel.TextColor = A.Color_0B3239;
             intentLabel.SizeToFit ();
@@ -455,6 +435,9 @@ namespace NachoClient.iOS
             intentTextView.Editable = false;
             intentTextView.ScrollEnabled = false;
             intentTextView.SizeToFit ();
+
+            intentArrowAccessory = new UIImageView (new RectangleF (0, 0, 12, 12));
+            intentArrowAccessory.Image = UIImage.FromBundle ("icn-rightarrow");
 
             priorityButton = UIButton.FromType (UIButtonType.ContactAdd);
 
@@ -493,6 +476,7 @@ namespace NachoClient.iOS
                 intentLabel,
                 intentLabelHR,
                 intentTextView,
+                intentArrowAccessory,
                 attachmentView,
                 attachmentViewHR,
                 bodyTextView
@@ -677,8 +661,13 @@ namespace NachoClient.iOS
                 CenterY (intentLabel, LEFT_INDENT, yOffset, intentLabel.Frame.Width, LINE_HEIGHT);
 
                 var intentFieldStart = intentLabel.Frame.X + intentLabel.Frame.Width;
-                var intentFieldWidth = View.Frame.Width;
+
+                intentArrowAccessory.Frame = new RectangleF(View.Frame.Width - 33, yOffset + LINE_HEIGHT / 2 - 6, intentArrowAccessory.Frame.Width, intentArrowAccessory.Frame.Height);
+
+                var intentFieldWidth = View.Frame.Width - 37;
                 CenterY(intentTextView, intentFieldStart, yOffset, intentFieldWidth, LINE_HEIGHT);
+                intentTextView.Frame = new RectangleF(intentTextView.Frame.X, intentTextView.Frame.Y, intentFieldWidth - intentFieldStart + 10, intentTextView.Frame.Height);
+
                 yOffset += LINE_HEIGHT;
 
                 AdjustY (intentLabelHR, yOffset);
@@ -878,6 +867,14 @@ namespace NachoClient.iOS
                 }
             }
             mimeMessage.Subject = Pretty.SubjectString (subjectField.Text);
+
+            if (null != mcMessage.Intent) {
+                if (messageIntent.intentType.type != NcMessageIntent.IntentTypeEnum.None) {
+                    mimeMessage.Subject = NcMessageIntent.GetIntentString (intentDateType, mcMessage) + " - " + mimeMessage.Subject;
+                }
+            }
+
+
             mimeMessage.Date = System.DateTime.UtcNow;
 
             // TODO Check whether or not the back end supports SmartReply and SmartForward
@@ -921,16 +918,16 @@ namespace NachoClient.iOS
             }
                 
             mimeMessage.Body = body.ToMessageBody ();
-            var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
-            mcMessage.Intent = this.mcMessage.Intent;
-            mcMessage.IntentDate = this.mcMessage.IntentDate;
-            mcMessage.Update ();
+            var messageToSend = MimeHelpers.AddToDb (account.Id, mimeMessage);
+            messageToSend.Intent = this.mcMessage.Intent;
+            messageToSend.IntentDate = this.mcMessage.IntentDate;
+            messageToSend.Update ();
             if (IsForwardOrReplyAction ()) {
-                mcMessage.ReferencedEmailId = referencedMessage.Id;
-                mcMessage.ReferencedBodyIsIncluded = originalEmailIsEmbedded;
-                mcMessage.ReferencedIsForward = IsForwardAction ();
-                mcMessage.WaitingForAttachmentsToDownload = attachmentNeedsDownloading;
-                mcMessage.Update ();
+                messageToSend.ReferencedEmailId = referencedMessage.Id;
+                messageToSend.ReferencedBodyIsIncluded = originalEmailIsEmbedded;
+                messageToSend.ReferencedIsForward = IsForwardAction ();
+                messageToSend.WaitingForAttachmentsToDownload = attachmentNeedsDownloading;
+                messageToSend.Update ();
             }
 
             bool messageSent = false;
@@ -945,21 +942,21 @@ namespace NachoClient.iOS
                     }
                     int folderId = folders [0].Id;
                     if (IsForwardAction ()) {
-                        NachoCore.BackEnd.Instance.ForwardEmailCmd (mcMessage.AccountId, mcMessage.Id, referencedMessage.Id, folderId, originalEmailIsEmbedded);
+                        NachoCore.BackEnd.Instance.ForwardEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, originalEmailIsEmbedded);
                     } else {
-                        NachoCore.BackEnd.Instance.ReplyEmailCmd (mcMessage.AccountId, mcMessage.Id, referencedMessage.Id, folderId, originalEmailIsEmbedded);
+                        NachoCore.BackEnd.Instance.ReplyEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, originalEmailIsEmbedded);
                     }
                     messageSent = true;
                 }
             }
             if (!messageSent) {
                 // A new outgoing message.  Or a forward/reply that has problems.
-                NachoCore.BackEnd.Instance.SendEmailCmd (mcMessage.AccountId, mcMessage.Id);
+                NachoCore.BackEnd.Instance.SendEmailCmd (messageToSend.AccountId, messageToSend.Id);
                 // TODO: Subtle ugliness. Id is passed to BE, ref-count is ++ in the DB.
                 // The object here still has ref-count of 0, so interlock is lost, and delete really happens in the DB.
                 // BE goes to reference the object later on, and it is missing.
-                mcMessage = McEmailMessage.QueryById<McEmailMessage> (mcMessage.Id);
-                mcMessage.Delete ();
+                messageToSend = McEmailMessage.QueryById<McEmailMessage> (messageToSend.Id);
+                messageToSend.Delete ();
             }
         }
 
@@ -1083,31 +1080,8 @@ namespace NachoClient.iOS
             NcAssert.CaseError ();
         }
 
-        public void DateSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime customDate)
+        public void DateSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
         {
-            DateTime selectedDate;
-
-            switch (request) {
-            case MessageDeferralType.Custom:
-                selectedDate = customDate;
-                break;
-            case MessageDeferralType.Later:
-                selectedDate = DateTime.Today;
-                break;
-            case MessageDeferralType.Tonight:
-                selectedDate = DateTime.Today.AddHours(23);
-                break;
-            case MessageDeferralType.Tomorrow:
-                selectedDate = DateTime.Today.AddDays (1);
-                break;
-            case MessageDeferralType.NextWeek:
-                selectedDate = DateTime.Today.AddDays (8 - (int)DateTime.Today.DayOfWeek);
-                break;
-            case MessageDeferralType.NextMonth:
-                selectedDate = new DateTime (DateTime.Today.AddMonths (1).Year, DateTime.Today.AddMonths (1).Month, 1);
-                break;
-            }
-
             messageIntent.SetMessageIntentDate(ref mcMessage, selectedDate);
             PopulateMessageFromSelectedIntent (request);
 

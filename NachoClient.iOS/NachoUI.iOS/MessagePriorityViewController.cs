@@ -169,13 +169,32 @@ namespace NachoClient.iOS
             }));
         }
 
-        public void DateSelected (MessageDeferralType dateType, DateTime customDate)
+        public void DateSelected (MessageDeferralType dateType, DateTime selectedDate)
         {
             if (MessageDeferralType.Custom != dateType) {
-                owner.DateSelected (dateType, thread, customDate);
+                owner.DateSelected (dateType, thread, selectedDate);
                 owner.DismissChildDateController (this);
             } else {
-                owner.DateSelected (dateType, thread, customDate);
+                switch (dateType) {
+                case MessageDeferralType.Later:
+                    selectedDate = DateTime.Today;
+                    break;
+                case MessageDeferralType.Tonight:
+                    selectedDate = DateTime.Today.AddHours(23);
+                    break;
+                case MessageDeferralType.Tomorrow:
+                    selectedDate = DateTime.Today.AddDays (1);
+                    break;
+                case MessageDeferralType.NextWeek:
+                    selectedDate = DateTime.Today.AddDays (8 - (int)DateTime.Today.DayOfWeek);
+                    break;
+                case MessageDeferralType.NextMonth:
+                    selectedDate = new DateTime (DateTime.Today.AddMonths (1).Year, DateTime.Today.AddMonths (1).Month, 1);
+                    break;
+                default:
+                    break;
+                }
+                owner.DateSelected (dateType, thread, selectedDate);
             }
         }
 

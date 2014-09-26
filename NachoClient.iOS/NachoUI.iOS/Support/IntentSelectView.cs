@@ -93,10 +93,7 @@ namespace NachoClient.iOS
                     this.DismissView ();
                 };
 
-                if (intent.type == NcMessageIntent.IntentTypeEnum.PleaseRead ||
-                    intent.type == NcMessageIntent.IntentTypeEnum.ResponseRequired ||
-                    intent.type == NcMessageIntent.IntentTypeEnum.Urgent) {
-                
+                if (intent.dueDateAllowed) {
                     UIButton dueDateButton = new UIButton (new RectangleF (viewBody.Frame.Width - 40, yOffset + 6f, 25, 25));
                     dueDateButton.SetImage (UIImage.FromBundle ("icn-defer"), UIControlState.Normal);
                     dueDateButton.TouchUpInside += (object sender, EventArgs e) => {

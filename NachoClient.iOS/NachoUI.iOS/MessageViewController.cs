@@ -332,12 +332,12 @@ namespace NachoClient.iOS
             }));
         }
 
-        public void DateSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime customDate)
+        public void DateSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
         {
             if (MessageDeferralType.Custom != request) {
                 NcMessageDeferral.DeferThread (thread, request);
             } else {
-                NcMessageDeferral.DeferThread (thread, request, customDate);
+                NcMessageDeferral.DeferThread (thread, request, selectedDate);
             }
         }
 

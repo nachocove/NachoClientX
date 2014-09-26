@@ -76,6 +76,7 @@ namespace NachoCore.Model
         /// Subject of the message (optional)
         public string Subject { set; get; }
 
+        // Intent of the message (optional)
         public string Intent { set; get; }
 
         public DateTime IntentDate { set; get; }
