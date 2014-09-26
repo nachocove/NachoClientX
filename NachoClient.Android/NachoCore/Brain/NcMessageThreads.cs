@@ -24,6 +24,22 @@ namespace NachoCore.Brain
             }
             return conversationList;
         }
+
+        public static bool AreDifferent (List<McEmailMessageThread> oldList, List<NcEmailMessageIndex> newList)
+        {
+            if (null == oldList) {
+                return (null != newList);
+            }
+            if (oldList.Count != newList.Count) {
+                return true;
+            }
+            for (int n = 0; n < oldList.Count; n++) {
+                if (oldList [n].GetEmailMessage (0).Id != newList [n].Id) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 }
 //        var map = new Dictionary <string, List<McEmailMessage>>();

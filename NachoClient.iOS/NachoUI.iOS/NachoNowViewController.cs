@@ -195,16 +195,18 @@ namespace NachoClient.iOS
         {
             var s = (StatusIndEventArgs)e;
             if (NcResult.SubKindEnum.Info_EmailMessageSetChanged == s.Status.SubKind) {
-                priorityInbox.Refresh ();
-                carouselView.ReloadData ();
+                if (priorityInbox.Refresh ()) {
+                    carouselView.ReloadData ();
+                }
             }
             if (NcResult.SubKindEnum.Info_CalendarSetChanged == s.Status.SubKind) {
                 calendarSource.Refresh ();
                 calendarTableView.ReloadData ();
             }
             if (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated == s.Status.SubKind) {
-                priorityInbox.Refresh ();
-                carouselView.ReloadData ();
+                if (priorityInbox.Refresh ()) {
+                    carouselView.ReloadData ();
+                }
             }
             if (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded == s.Status.SubKind) {
                 ProcessDownloadComplete (true);
@@ -219,7 +221,7 @@ namespace NachoClient.iOS
             var bodyView = carouselView.CurrentItemView.ViewWithTag (HotListCarouselDataSource.PREVIEW_TAG) as BodyView;
             // To avoid unnecessary reload, we only reload if the current item was downloading
             // and the body is now completely downloaded.
-            if (!bodyView.IsDownloadComplete ()) {
+            if (!bodyView.WasDownloadStartedAndNowComplete ()) {
                 return;
             }
             bodyView.DownloadComplete (succeed);

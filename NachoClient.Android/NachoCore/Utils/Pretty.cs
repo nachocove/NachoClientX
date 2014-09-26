@@ -29,12 +29,12 @@ namespace NachoCore.Utils
         /// Calendar event duration, 0h0m style.
         /// Returns empty string for an appointment.
         /// </summary>
-        static public string CompactDuration (McCalendar c)
+        static public string CompactDuration (DateTime StartTime, DateTime EndTime)
         {
-            if (c.StartTime == c.EndTime) {
+            if (StartTime == EndTime) {
                 return "";
             }
-            TimeSpan s = c.EndTime - c.StartTime;
+            TimeSpan s = EndTime - StartTime;
             if (s.TotalMinutes < 60) {
                 return String.Format ("{0}m", s.Minutes);
             }

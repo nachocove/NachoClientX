@@ -10,7 +10,10 @@ namespace NachoCore
     {
         int Count ();
 
-        void Refresh ();
+        /// <summary>
+        /// Refresh the email message list. Return true if there is changes; false otherrwise.
+        /// </summary>
+        bool Refresh ();
 
         McEmailMessageThread GetEmailThread (int i);
 

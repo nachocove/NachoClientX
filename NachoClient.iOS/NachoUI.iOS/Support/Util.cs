@@ -784,6 +784,14 @@ namespace NachoClient
             ni.SetLeftBarButtonItem (backButton, true);
         }
 
+        public static void HideViewHierarchy(UIView view)
+        {
+            view.Hidden = true;
+            foreach (var v in view.Subviews) {
+                HideViewHierarchy (v);
+            }
+        }
+
         #endregion
     }
 }

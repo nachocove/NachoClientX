@@ -18,13 +18,17 @@ namespace NachoCore
             Refresh ();
         }
 
-        public void Refresh ()
+        public bool Refresh ()
         {
             var list = McEmailMessage.QueryDeferredMessageItemsAllAccounts ();
             if (null == list) {
                 list = new List<NcEmailMessageIndex> ();
             }
+            if (!NcMessageThreads.AreDifferent (threadList, list)) {
+                return false;
+            }
             threadList = NcMessageThreads.ThreadByConversation (list);
+            return true;
         }
 
         public int Count ()
