@@ -469,12 +469,22 @@ namespace NachoClient.iOS
             spinner.StopAnimating ();
         }
 
-        public bool IsDownloadComplete ()
+        public bool WasDownloadStartedAndNowComplete ()
         {
             if (LoadState.LOADING != loadState) {
                 return false;
             }
-            return abstrItem.IsDownloaded ();
+            // Read the item again to get the new body state
+            McAbstrItem newAbstrItem;
+            string className = abstrItem.GetType ().Name;
+            switch (className) {
+            case "McEmailMessage":
+                newAbstrItem = (McAbstrItem)McEmailMessage.QueryById<McEmailMessage> (abstrItem.Id);
+                break;
+            default:
+                throw new NcAssert.NachoDefaultCaseFailure (String.Format("Unhandled class type {0}", className));
+            }
+            return newAbstrItem.IsDownloaded ();
         }
     }
 }
