@@ -35,12 +35,16 @@ namespace NachoCore
             return null;
         }
 
-        public void Refresh ()
+        public bool Refresh ()
         {
             //FIXME what account id? This method below could result in null.
             var folder = InboxFolder ();
             var list = McEmailMessage.QueryInteractions (folder.AccountId, contact);
+            if (!NcMessageThreads.AreDifferent (threadList, list)) {
+                return false;
+            }
             threadList = NcMessageThreads.ThreadByConversation (list);
+            return true;
         }
 
         public int Count ()
