@@ -26,6 +26,8 @@ namespace NachoCore
 
         McEvent GetEvent (int day, int item);
 
+        McAbstrCalendarRoot GetEventDetail (int day, int item);
+
         int ExtendEventMap (DateTime untilDate);
 
         bool FindEventNearestTo (DateTime date, out int item, out int section);

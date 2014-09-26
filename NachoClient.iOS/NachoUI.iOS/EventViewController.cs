@@ -497,21 +497,45 @@ namespace NachoClient.iOS
 
         }
 
+        protected void ShowNothing()
+        {
+            Util.HideViewHierarchy (View);
+            var titleLabelView = View.ViewWithTag (EVENT_TITLE_LABEL_TAG) as UILabel;
+            titleLabelView.Hidden = false;
+            contentView.Hidden = false;
+            scrollView.Hidden = false;
+            View.Hidden = false;
+            titleLabelView.Text = "Information is unavailable";
+            titleLabelView.Lines = 0;
+            titleLabelView.LineBreakMode = UILineBreakMode.WordWrap;
+            titleLabelView.SizeToFit ();
+        }
+
         protected void ConfigureEventView ()
         {
             NcAssert.NotNull (e);
 
             account = McAccount.QueryById<McAccount> (e.AccountId);
-
+            if (null == account) {
+                ShowNothing ();
+                return;
+            }
             root = McCalendar.QueryById<McCalendar> (e.CalendarId);
+            if(null == root) {
+                ShowNothing ();
+                return;
+            }
             if (0 != root.recurrences.Count) {
                 isRecurring = true;
             }
-
             if (0 == e.ExceptionId) {
                 c = root;
             } else {
                 c = McException.QueryById<McException> (e.ExceptionId);
+            }
+            if (null == c) {
+                ShowNothing ();
+                return;
             }
 
             if (account.EmailAddr == root.OrganizerEmail && account.Id == c.AccountId) {
