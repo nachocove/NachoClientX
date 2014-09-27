@@ -348,7 +348,7 @@ namespace NachoClient.iOS
                 lineView.Frame = new RectangleF (34, 0, 1, HeightForCalendarEvent (c));
             }
 
-            ConfigureSwipes (cell as MCSwipeTableViewCell, c.Id);
+            ConfigureSwipes (cell as MCSwipeTableViewCell, e.Id);
         }
 
         UIView ViewWithLabel (string text, string side)
@@ -372,7 +372,7 @@ namespace NachoClient.iOS
         /// <summary>
         /// Configures the swipes.
         /// </summary>
-        void ConfigureSwipes (MCSwipeTableViewCell cell, int calendarIndex)
+        void ConfigureSwipes (MCSwipeTableViewCell cell, int eventId)
         {
             cell.FirstTrigger = 0.20f;
             cell.SecondTrigger = 0.50f;
@@ -400,7 +400,7 @@ namespace NachoClient.iOS
                 runningLateView = ViewWithImageName ("contact-quickemail-white");
                 yellowColor = new UIColor (A.Color_NachoYellow.CGColor);
                 cell.SetSwipeGestureWithView (runningLateView, yellowColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State3, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                    RunningLate (calendarIndex);
+                    RunningLate (eventId);
                 });
                 listView = ViewWithImageName ("cal-openmaptomeeting-white");
                 brownColor = new UIColor (206.0f / 255.0f, 149.0f / 255.0f, 98.0f / 255.0f, 1.0f);
@@ -448,9 +448,9 @@ namespace NachoClient.iOS
 
         }
 
-        public void RunningLate (int calendarIndex)
+        public void RunningLate (int eventId)
         {
-            owner.SendRunningLateMessage (calendarIndex);
+            owner.SendRunningLateMessage (eventId);
         }
 
 
