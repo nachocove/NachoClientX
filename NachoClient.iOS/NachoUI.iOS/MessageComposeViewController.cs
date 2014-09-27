@@ -51,7 +51,7 @@ namespace NachoClient.iOS
         UILabel subjectLabel;
         UITextField subjectField;
         UILabel intentLabel;
-        UITextView intentTextView;
+        UITextField intentField;
         UIButton priorityButton;
 
         UITextView bodyTextView;
@@ -198,13 +198,6 @@ namespace NachoClient.iOS
                 }
                 ShowQuickResponses ();
             };
-
-            var intentTap = new UITapGestureRecognizer ();
-            intentTap.AddTarget (() => {
-                View.EndEditing (true);
-                ShowMessageIntents ();
-            });
-            intentTextView.AddGestureRecognizer (intentTap);
         }
 
         protected void ShowQuickResponses()
@@ -282,12 +275,7 @@ namespace NachoClient.iOS
         public void PopulateMessageFromSelectedIntent (MessageDeferralType intentDateTypeEnum)
         {
             intentDateType = intentDateTypeEnum;
-            string intentString = NcMessageIntent.GetIntentString (intentDateTypeEnum, mcMessage);;
-            if (intentString.Length > 27) {
-                intentString = intentString.Remove (27);
-                intentString += "...";
-            }
-            intentTextView.Text = intentString;
+            intentField.Text = NcMessageIntent.GetIntentString (intentDateTypeEnum, mcMessage);
         }
 
         public override UIView InputAccessoryView {
@@ -428,13 +416,18 @@ namespace NachoClient.iOS
             intentLabel.TextColor = A.Color_0B3239;
             intentLabel.SizeToFit ();
 
-            intentTextView = new UITextView ();
-            intentTextView.Font = A.Font_AvenirNextRegular14;
-            intentTextView.TextColor = A.Color_808080;
-            intentTextView.Text = "NONE";
-            intentTextView.Editable = false;
-            intentTextView.ScrollEnabled = false;
-            intentTextView.SizeToFit ();
+            intentField = new UITextField ();
+            intentField.Font = A.Font_AvenirNextRegular14;
+            intentField.TextColor = A.Color_808080;
+            intentField.Placeholder = "NONE";
+            intentField.ShouldBeginEditing += ((textField) => {
+                textField.ResignFirstResponder();
+                View.EndEditing (true);
+                ShowMessageIntents ();
+                return true;
+            });
+
+            intentField.SizeToFit ();
 
             intentArrowAccessory = new UIImageView (new RectangleF (0, 0, 12, 12));
             intentArrowAccessory.Image = UIImage.FromBundle ("icn-rightarrow");
@@ -475,7 +468,7 @@ namespace NachoClient.iOS
                 priorityButton,
                 intentLabel,
                 intentLabelHR,
-                intentTextView,
+                intentField,
                 intentArrowAccessory,
                 attachmentView,
                 attachmentViewHR,
@@ -665,8 +658,8 @@ namespace NachoClient.iOS
                 intentArrowAccessory.Frame = new RectangleF(View.Frame.Width - 33, yOffset + LINE_HEIGHT / 2 - 6, intentArrowAccessory.Frame.Width, intentArrowAccessory.Frame.Height);
 
                 var intentFieldWidth = View.Frame.Width - 37;
-                CenterY(intentTextView, intentFieldStart, yOffset, intentFieldWidth, LINE_HEIGHT);
-                intentTextView.Frame = new RectangleF(intentTextView.Frame.X, intentTextView.Frame.Y, intentFieldWidth - intentFieldStart + 10, intentTextView.Frame.Height);
+                CenterY(intentField, intentFieldStart, yOffset, intentFieldWidth, LINE_HEIGHT);
+                intentField.Frame = new RectangleF(intentField.Frame.X + 4, intentField.Frame.Y, intentFieldWidth - intentFieldStart + 5, intentField.Frame.Height);
 
                 yOffset += LINE_HEIGHT;
 
