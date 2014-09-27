@@ -21,27 +21,49 @@ namespace NachoClient.iOS
     {
         public const int CALENDAR_PART_TAG = 400;
 
+        public enum TagType
+        {
+            CALENDAR_PART_TAG = 400,
+            CALENDAR_MONTH_TAG = 401,
+            CALENDAR_DATE_TAG = 402,
+            CALENDAR_TITLE_TAG = 403,
+            CALENDAR_DURATION_TAG = 404,
+            CALENDAR_LOCATION_TAG = 405,
+            CALENDAR_LINE_TAG = 406
+        }
+
         protected BodyView parentView;
         protected bool rendered;
 
-        public BodyCalendarView (BodyView parentView) : base ()
+        public BodyCalendarView (BodyView parentView) : base (parentView.Frame)
         {
             this.parentView = parentView;
+            ViewFramer.Create (this).Height (1);
+            Tag = CALENDAR_PART_TAG;
         }
 
         public void Configure (MimePart part)
         {
+            // Decode iCal
             var textPart = part as TextPart;
             var decodedText = GetText (textPart);
             var stringReader = new StringReader (decodedText);
             IICalendar iCal = iCalendar.LoadFromStream (stringReader) [0];
             var evt = iCal.Events.First () as DDay.iCal.Event;
             NachoCore.Utils.CalendarHelper.ExtrapolateTimes (ref evt);
+
+            // Render the event description
             if (null != evt.Description) {
                 parentView.RenderTextString (evt.Description);
             }
+
+            // Display the event with an accept bar
             MakeStyledCalendarInvite (evt);
+
             rendered = true;
+
+            // Layout all the subviews
+            ViewFramer.Create (this).Height (150);
         }
 
         /// Gets the decoded text content.
@@ -60,10 +82,8 @@ namespace NachoClient.iOS
             string location = evt.Location;
             float viewWidth = parentView.Frame.Width;
 
-            UIView calendarEventView = new UIView (new RectangleF (0, 0, viewWidth, 140));
-            calendarEventView.Tag = CALENDAR_PART_TAG;
-
             UILabel monthLabel = new UILabel (new RectangleF (19, 23, 36, 20));
+            monthLabel.Tag = (int)TagType.CALENDAR_MONTH_TAG;
             monthLabel.Font = A.Font_AvenirNextRegular12;
             monthLabel.TextColor = A.Color_NachoBlack;
             monthLabel.TextAlignment = UITextAlignment.Center;
@@ -74,12 +94,14 @@ namespace NachoClient.iOS
             dateImage.Image = NachoClient.Util.DrawCalDot (A.Color_FEBA32, size);
 
             UILabel dateLabel = new UILabel (new RectangleF (19, 43, 36, 36));
+            dateLabel.Tag = (int)TagType.CALENDAR_DATE_TAG;
             dateLabel.Font = A.Font_AvenirNextDemiBold17;
             dateLabel.TextColor = UIColor.White;
             dateLabel.TextAlignment = UITextAlignment.Center;
             dateLabel.Text = start.ToString ("%d");
 
             UILabel titleLabel = new UILabel (new RectangleF (74, 27, viewWidth - 89, 20));
+            titleLabel.Tag = (int)TagType.CALENDAR_TITLE_TAG;
             titleLabel.Font = A.Font_AvenirNextDemiBold14;
             titleLabel.TextColor = A.Color_NachoBlack;
             titleLabel.TextAlignment = UITextAlignment.Left;
@@ -87,6 +109,7 @@ namespace NachoClient.iOS
             titleLabel.SizeToFit ();
 
             UILabel durationLabel = new UILabel (new RectangleF (74, 47, viewWidth - 89, 20));
+            durationLabel.Tag = (int)TagType.CALENDAR_DURATION_TAG;
             durationLabel.Font = A.Font_AvenirNextRegular12;
             durationLabel.TextColor = A.Color_NachoBlack;
             durationLabel.TextAlignment = UITextAlignment.Left;
@@ -107,27 +130,30 @@ namespace NachoClient.iOS
             durationLabel.SizeToFit ();
 
             UILabel locationLabel = new UILabel (new RectangleF (74, 65, viewWidth - 89, 20));
+            locationLabel.Tag = (int)TagType.CALENDAR_LOCATION_TAG;
             locationLabel.Font = A.Font_AvenirNextRegular12;
             locationLabel.TextColor = A.Color_NachoBlack;
             locationLabel.TextAlignment = UITextAlignment.Left;
             locationLabel.Text = location;
             locationLabel.SizeToFit ();
 
-            calendarEventView.Add (monthLabel);
-            calendarEventView.Add (dateImage);
-            calendarEventView.Add (dateLabel);
-            calendarEventView.Add (titleLabel);
-            calendarEventView.Add (durationLabel);
-            calendarEventView.Add (locationLabel);
+            AddSubview (monthLabel);
+            AddSubview (dateImage);
+            AddSubview (dateLabel);
+            AddSubview (titleLabel);
+            AddSubview (durationLabel);
+            AddSubview (locationLabel);
 
-            MakeResponseBar (UID, calendarEventView);
+            MakeResponseBar (UID);
 
-            Util.AddHorizontalLine (0, 20, viewWidth, A.Color_NachoBorderGray, calendarEventView);
-            Util.AddHorizontalLine (0, 86, viewWidth, A.Color_NachoBorderGray, calendarEventView);
-            Util.AddHorizontalLine (0, 140, viewWidth, A.Color_NachoBorderGray, calendarEventView);
-            Util.AddVerticalLine (65, 20, 66, A.Color_NachoBorderGray, calendarEventView);
-
-            parentView.AddSubview (calendarEventView);
+            Util.AddHorizontalLine (0, 20, viewWidth, A.Color_NachoBorderGray, this).Tag =
+                (int)TagType.CALENDAR_LINE_TAG;
+            Util.AddHorizontalLine (0, 86, viewWidth, A.Color_NachoBorderGray, this).Tag =
+                (int)TagType.CALENDAR_LINE_TAG;
+            Util.AddHorizontalLine (0, 140, viewWidth, A.Color_NachoBorderGray, this).Tag =
+                (int)TagType.CALENDAR_LINE_TAG;
+            Util.AddVerticalLine (65, 20, 66, A.Color_NachoBorderGray, this).Tag =
+                (int)TagType.CALENDAR_LINE_TAG;
         }
 
         UILabel eventDoesNotExistLabel;
@@ -143,9 +169,9 @@ namespace NachoClient.iOS
         UILabel messageLabel;
         UIButton changeResponseButton;
 
-        public void MakeResponseBar (string UID, UIView parentView)
+        public void MakeResponseBar (string UID)
         {
-            float viewWidth = parentView.Frame.Width;
+            float viewWidth = Frame.Width;
             UIView responseView = new UIView (new RectangleF (0, 86, viewWidth, 54));
             responseView.BackgroundColor = UIColor.Clear;
 
@@ -271,7 +297,7 @@ namespace NachoClient.iOS
                 declineLabel.Hidden = true;
             }
 
-            parentView.Add (responseView);
+            Add (responseView);
         }
 
         protected void ToggleButtons (NcResponseType r)
@@ -375,7 +401,7 @@ namespace NachoClient.iOS
 
         protected void RestoreButtons ()
         {
-            float viewWidth = parentView.Frame.Width;
+            float viewWidth = Frame.Width;
 
             acceptButton.Selected = false;
             tentativeButton.Selected = false;

@@ -847,11 +847,6 @@ namespace NachoClient.iOS
             attachmentListView.RemoveFromSuperview ();
             view.AddSubview (attachmentListView);
 
-            if (null != view.ViewWithTag ((int)TagType.CALENDAR_PART_TAG)) {
-                view.InsertSubview (view.ViewWithTag ((int)TagType.CALENDAR_PART_TAG), 0);
-                view.ViewWithTag ((int)TagType.CALENDAR_PART_TAG).Tag = (int)TagType.MESSAGE_PART_TAG;
-            }
-
             LayoutScrollViews ();
 
             #if (DEBUG_UI)
