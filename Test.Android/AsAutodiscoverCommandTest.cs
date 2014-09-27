@@ -241,7 +241,7 @@ namespace Test.iOS
             {
                 int retries = 5;
                 McMutables.Set (1, "HTTPOP", "Retries", (retries).ToString ());
-                int expectedRetries = (retries + 1) * 2; // 2x because 2 robots are sending retry StatusInds
+                int expectedRetries = (retries + 1) + 2; // n for step function plus 2 for the test re-try.
 
                 string successXml = CommonMockData.AutodOffice365ResponseXml;
                 string failureXml = CommonMockData.AutodPhonyErrorResponse;

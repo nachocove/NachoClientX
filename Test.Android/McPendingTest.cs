@@ -125,7 +125,7 @@ namespace Test.iOS
                 }
 
                 for (int i = 1; i < groupA.Length; ++i) {
-                    groupA [i - 1].UnblockSuccessors (); // unblock successors for groupA
+                    groupA [i - 1].UnblockSuccessors (StateEnum.Eligible); // unblock successors for groupA
                     var item = McPending.QueryById<McPending> (groupA [i].Id);
                     Assert.AreEqual (StateEnum.Eligible, item.State, "Unblocked group A successors should have Eligible state");
                 }
@@ -144,7 +144,7 @@ namespace Test.iOS
                 }
 
                 for (int i = 1; i < groupB.Length; ++i) {
-                    groupB [i - 1].UnblockSuccessors (); // unblock successors for groupB
+                    groupB [i - 1].UnblockSuccessors (StateEnum.Eligible); // unblock successors for groupB
                     var item = McPending.QueryById<McPending> (groupB [i].Id);
                     Assert.AreEqual (StateEnum.Eligible, item.State, "Unblocked group B successors should have Eligible state");
                 }
@@ -173,7 +173,7 @@ namespace Test.iOS
                 var successor = CreatePending (serverId: "Successor", operation: Operations.FolderDelete); // delete always blocks
 
                 // UnblockSuccessors() on the 1st predecessor.
-                pending1.UnblockSuccessors ();
+                pending1.UnblockSuccessors (StateEnum.Eligible);
 
                 // Verify that the successor is still blocked.
                 var retrieved = McPending.QueryById<McPending> (successor.Id);
@@ -184,7 +184,7 @@ namespace Test.iOS
                 Assert.AreEqual (1, pendDeps.Count (), "Should only have one remaining McPendDep");
 
                 // UnblockSuccessors() on the 2nd predecessor.
-                pending2.UnblockSuccessors ();
+                pending2.UnblockSuccessors (StateEnum.Eligible);
 
                 // Verify that the successor is now marked Eligible.
                 retrieved = McPending.QueryById<McPending> (successor.Id);
