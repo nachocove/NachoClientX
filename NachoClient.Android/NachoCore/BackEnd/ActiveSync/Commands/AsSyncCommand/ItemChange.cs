@@ -72,6 +72,9 @@ namespace NachoCore.ActiveSync
                 case McPending.Operations.EmailMarkFlagDone:
                 case McPending.Operations.EmailMarkRead:
                 case McPending.Operations.EmailSetFlag:
+                    // TODO: Ex: server Change sets is-read flag, we could delete a EmailMarkRead pending.
+                    // Should be harmless. Note that in the set-flag cases, the client can win (rather than the
+                    // server) with the current implementation.
                     cancelCommand = false;
                     action = McPending.DbActionEnum.DoNothing;
                     return null;
