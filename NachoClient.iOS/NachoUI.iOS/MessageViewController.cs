@@ -613,9 +613,9 @@ namespace NachoClient.iOS
 
             // Horizontal scroll bar - All message parts go inside here.
             bodyView = new BodyView (new RectangleF (
-                           VIEW_INSET, 
-                           yOffset,
-                           View.Frame.Width - 2 * VIEW_INSET, 0), view);
+                VIEW_INSET, 
+                yOffset,
+                View.Frame.Width - 2 * VIEW_INSET, View.Frame.Height), view);
             bodyView.VeriticalScrollingEnabled = false;
             bodyView.SpinnerCenteredOnParentFrame = true;
             bodyView.OnRenderStart = () => {
