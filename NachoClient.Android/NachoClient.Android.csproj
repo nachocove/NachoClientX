@@ -350,6 +350,7 @@
     <Compile Include="NachoCore\Model\McAbstrFileDesc.cs" />
     <Compile Include="NachoCore\Brain\NcQuickResponse.cs" />
     <Compile Include="NachoCore\Brain\NcMessageIntent.cs" />
+    <Compile Include="NachoPlatform.Android\KeychainAndroid.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
