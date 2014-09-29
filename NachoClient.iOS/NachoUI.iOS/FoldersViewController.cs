@@ -45,6 +45,7 @@ namespace NachoClient.iOS
                 if (NcResult.SubKindEnum.Info_FolderSetChanged == s.Status.SubKind) {
                     ClearLists ();
                     ConfigureFolders ();
+                    ClearViews ();
                     ConfigureView ();
                 }
             };
@@ -67,13 +68,7 @@ namespace NachoClient.iOS
         public override void ViewDidDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
-            foreach (var v in defaultsView.Subviews) {
-                v.RemoveFromSuperview ();
-            }
-
-            foreach (var v in yourFoldersView.Subviews) {
-                v.RemoveFromSuperview ();
-            }
+            ClearViews ();
         }
 
         public override bool HidesBottomBarWhenPushed {
@@ -225,6 +220,8 @@ namespace NachoClient.iOS
             } else { 
                 UpdateVisibleCells (yourFoldersView, yourFolderList, null);
             }
+            HideLastLine (defaultsView);
+            HideLastLine (yourFoldersView);
 
             defaultCellsOffset = 0;
 
@@ -320,6 +317,15 @@ namespace NachoClient.iOS
             recentView.Add (cell);
         }
 
+        public void ClearViews ()
+        {
+            foreach (var v in defaultsView.Subviews) {
+                v.RemoveFromSuperview ();
+            }
+            foreach (var v in yourFoldersView.Subviews) {
+                v.RemoveFromSuperview ();
+            }
+        }
 
         protected void CreateFolderCell (int subLevel, UIView parentView, bool subFolders, bool isHidden, FolderStruct folder)
         {
@@ -425,6 +431,32 @@ namespace NachoClient.iOS
             }
         }
 
+        public void HideLastLine (UIView parentView)
+        {
+            FolderStruct lastFolder;
+            if (parentView == defaultsView) {
+                lastFolder = nestedFolderList.Last ();
+            } else {
+                lastFolder = yourFolderList.Last ();
+            }
+            var LastCell = GetLastCell (lastFolder, parentView);
+            LastCell.ViewWithTag (LastCell.Tag + 20000).Hidden = true;
+        }
+
+        public UIView GetLastCell (FolderStruct folder, UIView parentView)
+        {
+            var cell = parentView.ViewWithTag (folder.folderID + 10000);
+            if (null != cell && false == cell.Hidden) {
+                if (HasSubFolders (folder)) {
+                    if (true == (cell.ViewWithTag (cell.Tag + 10000) as UIButton).Selected) {
+                        return GetLastCell (folder.subFolders.Last (), parentView);
+                    }
+                }
+                return cell;
+            }
+            return null;
+        }
+
         public void HideAllSubFolders (FolderStruct folder, UIView parentView)
         {
             foreach (var subFolder in folder.subFolders) {
@@ -488,11 +520,6 @@ namespace NachoClient.iOS
                 foreach (var folder in folders) {
                     var cell = parentView.ViewWithTag (folder.folderID + 10000);
                     cell.Hidden = false;
-//                    if (folder == folders.Last()) {
-//                        cell.ViewWithTag (folder.folderID + 20000).Hidden = true;
-//                    } else {
-//                        cell.ViewWithTag (folder.folderID + 20000).Hidden = false;
-//                    }
                 }
             }
         }
