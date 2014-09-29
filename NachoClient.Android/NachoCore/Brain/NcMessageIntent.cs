@@ -16,19 +16,11 @@ namespace NachoCore.Brain
         public const string RESPONSE_REQUIRED = "RESPONSE REQUIRED";
         public const string URGENT = "URGENT";
 
-        public enum IntentTypeEnum {
-            None = 0,
-            FYI = 1,
-            PleaseRead = 2,
-            ResponseRequired = 3,
-            Urgent = 4,
-        }
-
-        public static Intent NONE_INTENT = new Intent(IntentTypeEnum.None, NONE, false);
-        public static Intent FYI_INTENT = new Intent (IntentTypeEnum.FYI, FYI, false);
-        public static Intent PLEASE_READ_INTENT = new Intent (IntentTypeEnum.PleaseRead, PLEASE_READ, true);
-        public static Intent RESPONSE_REQUIRED_INTENT = new Intent(IntentTypeEnum.ResponseRequired, RESPONSE_REQUIRED, true);
-        public static Intent URGENT_INTENT = new Intent(IntentTypeEnum.Urgent, URGENT, true);
+        public static Intent NONE_INTENT = new Intent(McEmailMessage.IntentType.None, NONE, false);
+        public static Intent FYI_INTENT = new Intent (McEmailMessage.IntentType.FYI, FYI, false);
+        public static Intent PLEASE_READ_INTENT = new Intent (McEmailMessage.IntentType.PleaseRead, PLEASE_READ, true);
+        public static Intent RESPONSE_REQUIRED_INTENT = new Intent(McEmailMessage.IntentType.ResponseRequired, RESPONSE_REQUIRED, true);
+        public static Intent URGENT_INTENT = new Intent(McEmailMessage.IntentType.Urgent, URGENT, true);
 
         protected List<Intent> IntentsList = new List<Intent> () {
             NONE_INTENT,
@@ -65,18 +57,18 @@ namespace NachoCore.Brain
             emailMessage.IntentDate = selectedDate;
         }
 
-        public static string IntentEnumToString (IntentTypeEnum type)
+        public static string IntentEnumToString (McEmailMessage.IntentType type)
         {
             switch (type) {
-            case IntentTypeEnum.None:
+            case McEmailMessage.IntentType.None:
                 return "NONE";
-            case IntentTypeEnum.FYI:
+            case McEmailMessage.IntentType.FYI:
                 return "FYI";
-            case IntentTypeEnum.PleaseRead:
+            case McEmailMessage.IntentType.PleaseRead:
                 return "PLEASE READ";
-            case IntentTypeEnum.ResponseRequired:
+            case McEmailMessage.IntentType.ResponseRequired:
                 return "RESPONSE REQUIRED";
-            case IntentTypeEnum.Urgent:
+            case McEmailMessage.IntentType.Urgent:
                 return "URGENT";
             default:
                 NcAssert.CaseError ("Type not recognized");
@@ -85,7 +77,7 @@ namespace NachoCore.Brain
         }
         public static string GetIntentString (MessageDeferralType intentDateTypeEnum, McEmailMessage mcMessage)
         {
-            string intentString = IntentEnumToString((IntentTypeEnum)mcMessage.Intent);
+            string intentString = IntentEnumToString((McEmailMessage.IntentType)mcMessage.Intent);
 
             if (MessageDeferralType.None != intentDateTypeEnum) {
                 switch (intentDateTypeEnum) {
@@ -117,11 +109,11 @@ namespace NachoCore.Brain
 
         public class Intent
         {
-            public IntentTypeEnum type { get; private set; }
+            public McEmailMessage.IntentType type { get; private set; }
             public string value { get; private set; }
             public bool dueDateAllowed {get; private set;}
 
-            public Intent (IntentTypeEnum type, string value, bool dueDateAllowed)
+            public Intent (McEmailMessage.IntentType type, string value, bool dueDateAllowed)
             {
                 this.type = type;
                 this.value = value;

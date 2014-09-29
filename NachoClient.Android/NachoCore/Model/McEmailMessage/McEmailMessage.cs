@@ -76,7 +76,15 @@ namespace NachoCore.Model
         /// Subject of the message (optional)
         public string Subject { set; get; }
 
-        // Intent of the message (optional)
+        public enum IntentType {
+            None = 0,
+            FYI = 1,
+            PleaseRead = 2,
+            ResponseRequired = 3,
+            Urgent = 4,
+        }
+
+        // Intent of the message (default None (0))
         public int Intent { set; get; }
 
         // Due date of selected intent (optional)
