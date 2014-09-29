@@ -215,9 +215,9 @@ namespace NachoCore.Utils
             } else {
                 NcAssert.True (false);
             }
-            PFObject anEvent = PFObject.ObjectWithClassName ("Events", dict.GetDictionary ());
-            anEvent.ACL = DefaultAcl;
-            anEvent.Save ();
+//            PFObject anEvent = PFObject.ObjectWithClassName ("Events", dict.GetDictionary ());
+//            anEvent.ACL = DefaultAcl;
+//            anEvent.Save ();
         }
     }
 }
