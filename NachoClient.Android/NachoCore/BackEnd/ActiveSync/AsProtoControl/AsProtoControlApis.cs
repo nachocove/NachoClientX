@@ -81,42 +81,52 @@ namespace NachoCore.ActiveSync
 
         public override string SendEmailCmd (int emailMessageId, int calId)
         {
-            var cal = McAbstrObject.QueryById<McCalendar> (calId);
-            var emailMessage = McAbstrObject.QueryById<McEmailMessage> (emailMessageId);
-            if (null == cal || null == emailMessage) {
-                return null;
-            }
-
-            var pendingCalCre = NcModel.Instance.Db.Table<McPending> ().LastOrDefault (x => calId == x.ItemId);
-            var pendingCalCreId = (null == pendingCalCre) ? 0 : pendingCalCre.Id;
-
-            var pending = new McPending (Account.Id, emailMessage) {
-                Operation = McPending.Operations.EmailSend,
-            };
-            pending.Insert ();
-
-            // 0 means pending has already been completed & deleted.
-            if (0 != pendingCalCreId) {
-                switch (pendingCalCre.State) {
-                case McPending.StateEnum.Deferred:
-                case McPending.StateEnum.Dispatched:
-                case McPending.StateEnum.Eligible:
-                case McPending.StateEnum.PredBlocked:
-                case McPending.StateEnum.UserBlocked:
-                    pending.MarkPredBlocked (pendingCalCreId);
-                    break;
-
-                case McPending.StateEnum.Failed:
-                    return null;
-
-                case McPending.StateEnum.Deleted:
-                    // On server already.
-                    break;
-
-                default:
-                    NcAssert.True (false);
-                    break;
+            McPending pending = null;
+            bool failure = false;
+            NcModel.Instance.RunInTransaction (() => {
+                var cal = McAbstrObject.QueryById<McCalendar> (calId);
+                var emailMessage = McAbstrObject.QueryById<McEmailMessage> (emailMessageId);
+                if (null == cal || null == emailMessage) {
+                    failure = true;
+                    return;
                 }
+
+                var pendingCalCre = NcModel.Instance.Db.Table<McPending> ().LastOrDefault (x => calId == x.ItemId);
+                var pendingCalCreId = (null == pendingCalCre) ? 0 : pendingCalCre.Id;
+
+                pending = new McPending (Account.Id, emailMessage) {
+                    Operation = McPending.Operations.EmailSend,
+                };
+                pending.Insert ();
+
+                // 0 means pending has already been completed & deleted.
+                if (0 != pendingCalCreId) {
+                    switch (pendingCalCre.State) {
+                    case McPending.StateEnum.Deferred:
+                    case McPending.StateEnum.Dispatched:
+                    case McPending.StateEnum.Eligible:
+                    case McPending.StateEnum.PredBlocked:
+                    case McPending.StateEnum.UserBlocked:
+                        pending.MarkPredBlocked (pendingCalCreId);
+                        break;
+
+                    case McPending.StateEnum.Failed:
+                        failure = true;
+                        return;
+
+                    case McPending.StateEnum.Deleted:
+                        // On server already.
+                        break;
+
+                    default:
+                        NcAssert.True (false);
+                        break;
+                    }
+                }
+            });
+
+            if (failure) {
+                return null;
             }
 
             NcTask.Run (delegate {
