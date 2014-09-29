@@ -84,7 +84,7 @@ namespace NachoClient.iOS
             saveSelectedButton.TintColor = A.Color_NachoBlue;
             saveSelectedButton.Clicked += (object sender, EventArgs e) => {
                 var h = new SegueHolder (TableView);
-                PerformSegue ("NachoNowToMessageAction", h);
+                PerformSegue ("MessageListToFolders", h);
             };
 
             // Initially let's hide the search controller
