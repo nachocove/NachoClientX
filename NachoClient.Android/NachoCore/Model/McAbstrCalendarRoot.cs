@@ -63,7 +63,7 @@ namespace NachoCore.Model
         public bool ResponseRequestedIsSet { get; set; }
 
         /// None, Organizer, Tentative, ...
-        public NcResponseType ResponseType;
+        public NcResponseType ResponseType { get; set; }
 
         public bool ResponseTypeIsSet { get; set; }
 
@@ -437,47 +437,47 @@ namespace NachoCore.Model
 
     public enum NcMeetingStatus
     {
-        Appointment = 0,
         /// No attendees
-        Meeting = 1,
+        Appointment = 0,
         /// The user is the meeting organizer
-        ForwardedMeeting = 3,
+        Meeting = 1,
         /// The meeting was recieved from someone else
-        MeetingCancelled = 5,
+        ForwardedMeeting = 3,
         /// The user is the cancelled meeting's organizer
-        ForwardedMeetingCancelled = 7,
+        MeetingCancelled = 5,
         /// The cancelled meeting was recieved from someone else
+        ForwardedMeetingCancelled = 7,
     }
     // Similar to NcResponseType
     public enum NcAttendeeStatus
     {
-        ResponseUnknown = 0,
         /// The user's response is unknown
-        Tentative = 2,
+        ResponseUnknown = 0,
         /// The user is unsure about attending
-        Accept = 3,
+        Tentative = 2,
         /// The user has accepted the meeting
-        Decline = 4,
+        Accept = 3,
         /// The user has decloned the meeting
-        NotResponded = 5,
+        Decline = 4,
         /// The user has not responded
+        NotResponded = 5,
     }
 
     /// Similar to NcAttendeeStatus
     public enum NcResponseType
     {
+        /// The user's response to the meeting has not yet been received.
         None = 0,
-        /// The user's response has not been received
+        /// The current user is the organizer of the meeting and, therefore, no reply is required.
         Organizer = 1,
-        /// The  user is the organizer; no reply is required
+        /// TThe user is unsure whether he or she will attend.
         Tentative = 2,
-        /// The user is unsure about attending
+        /// The user has accepted the meeting request.
         Accepted = 3,
-        /// The user has accepted the meeting
+        /// The user has declined the meeting request.
         Declined = 4,
-        /// The user has declined the meeting
+        /// The user has not yet responded to the meeting request.
         NotResponded = 5,
-        /// The user has not responded
     }
 
     public enum NcAttendeeType

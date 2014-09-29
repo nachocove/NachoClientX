@@ -71,6 +71,8 @@ namespace NachoClient.iOS
             carouselView.ContentOffset = new SizeF (0f, 0f);
             carouselView.BackgroundColor = UIColor.Clear;
             carouselView.IgnorePerpendicularSwipes = true;
+            carouselView.StopAtItemBoundary = false;
+            carouselView.ScrollToItemBoundary = false;
             View.AddSubview (carouselView);
 
             carouselTapGestureRecognizer = new UITapGestureRecognizer ();
@@ -181,9 +183,10 @@ namespace NachoClient.iOS
                 vc.SetOwner (this);
                 return;
             }
-            if (segue.Identifier == "NachoNowToMessageAction") {
-                var vc = (MessageActionViewController)segue.DestinationViewController;
+            if (segue.Identifier == "NachoNowToFolders") {
+                var vc = (FoldersViewController)segue.DestinationViewController;
                 var h = sender as SegueHolder;
+                vc.SetModal (true);
                 vc.SetOwner (this, h);
                 return;
             }
@@ -195,16 +198,18 @@ namespace NachoClient.iOS
         {
             var s = (StatusIndEventArgs)e;
             if (NcResult.SubKindEnum.Info_EmailMessageSetChanged == s.Status.SubKind) {
-                priorityInbox.Refresh ();
-                carouselView.ReloadData ();
+                if (priorityInbox.Refresh ()) {
+                    carouselView.ReloadData ();
+                }
             }
             if (NcResult.SubKindEnum.Info_CalendarSetChanged == s.Status.SubKind) {
                 calendarSource.Refresh ();
                 calendarTableView.ReloadData ();
             }
             if (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated == s.Status.SubKind) {
-                priorityInbox.Refresh ();
-                carouselView.ReloadData ();
+                if (priorityInbox.Refresh ()) {
+                    carouselView.ReloadData ();
+                }
             }
             if (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded == s.Status.SubKind) {
                 ProcessDownloadComplete (true);
@@ -219,7 +224,7 @@ namespace NachoClient.iOS
             var bodyView = carouselView.CurrentItemView.ViewWithTag (HotListCarouselDataSource.PREVIEW_TAG) as BodyView;
             // To avoid unnecessary reload, we only reload if the current item was downloading
             // and the body is now completely downloaded.
-            if (!bodyView.IsDownloadComplete ()) {
+            if (!bodyView.WasDownloadStartedAndNowComplete ()) {
                 return;
             }
             bodyView.DownloadComplete (succeed);

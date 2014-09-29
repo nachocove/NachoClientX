@@ -86,8 +86,10 @@ namespace NachoClient.iOS
             htmlBusy.Reset ();
             OnRenderStart ();
 
-            // Disable JavaScript
-            html = "<meta http-equiv=\"Content-Security-Policy\" content=\"script-src 'none'\">" + html;
+            // Some CSS / CSP have to be added before render in order to be effective.
+            string disable_js = "<meta http-equiv=\"Content-Security-Policy\" content=\"script-src 'none'\">";
+            string wrap_pre = "<style>pre { white-space: pre-wrap;}</style>";
+            html = disable_js + wrap_pre + html;
             LoadHtmlString (html, null);
         }
     }

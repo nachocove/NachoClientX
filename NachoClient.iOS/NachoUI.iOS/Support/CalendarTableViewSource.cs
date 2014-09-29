@@ -73,7 +73,7 @@ namespace NachoClient.iOS
             }
         }
 
-        protected float HeightForCalendarEvent (McCalendar c)
+        protected float HeightForCalendarEvent (McAbstrCalendarRoot c)
         {
             if (compactMode) {
                 return 69.0f;
@@ -81,18 +81,12 @@ namespace NachoClient.iOS
             return 87.0f;
         }
 
-        protected McCalendar GetCalendarItem(int day, int item)
-        {
-            var e = calendar.GetEvent (day, item);
-            return McCalendar.QueryById<McCalendar> (e.CalendarId);
-        }
-
         public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
         {
             if (NoCalendarEvents ()) {
                 return 44.0f;
             }
-            var c = GetCalendarItem (indexPath.Section, indexPath.Row);
+            var c = calendar.GetEventDetail (indexPath.Section, indexPath.Row);
             if (null == c) {
                 return 44.0f;
             }
@@ -257,7 +251,8 @@ namespace NachoClient.iOS
         /// </summary>
         protected void ConfigureCalendarCell (UITableViewCell cell, NSIndexPath indexPath)
         {
-            var c = GetCalendarItem (indexPath.Section, indexPath.Row);
+            var e = calendar.GetEvent (indexPath.Section, indexPath.Row);
+            var c = calendar.GetEventDetail (indexPath.Section, indexPath.Row);
 
             if (null == c) {
                 foreach (var v in cell.ContentView.Subviews) {
@@ -308,8 +303,8 @@ namespace NachoClient.iOS
             if (c.AllDayEvent) {
                 durationString = "ALL DAY";
             } else {
-                var start = Pretty.ShortTimeString (c.StartTime);
-                var duration = Pretty.CompactDuration (c);
+                var start = Pretty.ShortTimeString (e.StartTime);
+                var duration = Pretty.CompactDuration (e.StartTime, e.EndTime);
                 durationString = String.Join (" - ", new string[] { start, duration });
             }
 
@@ -353,7 +348,7 @@ namespace NachoClient.iOS
                 lineView.Frame = new RectangleF (34, 0, 1, HeightForCalendarEvent (c));
             }
 
-            ConfigureSwipes (cell as MCSwipeTableViewCell, c.Id);
+            ConfigureSwipes (cell as MCSwipeTableViewCell, e.Id);
         }
 
         UIView ViewWithLabel (string text, string side)
@@ -377,7 +372,7 @@ namespace NachoClient.iOS
         /// <summary>
         /// Configures the swipes.
         /// </summary>
-        void ConfigureSwipes (MCSwipeTableViewCell cell, int calendarIndex)
+        void ConfigureSwipes (MCSwipeTableViewCell cell, int eventId)
         {
             cell.FirstTrigger = 0.20f;
             cell.SecondTrigger = 0.50f;
@@ -405,7 +400,7 @@ namespace NachoClient.iOS
                 runningLateView = ViewWithImageName ("contact-quickemail-white");
                 yellowColor = new UIColor (A.Color_NachoYellow.CGColor);
                 cell.SetSwipeGestureWithView (runningLateView, yellowColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State3, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                    RunningLate (calendarIndex);
+                    RunningLate (eventId);
                 });
                 listView = ViewWithImageName ("cal-openmaptomeeting-white");
                 brownColor = new UIColor (206.0f / 255.0f, 149.0f / 255.0f, 98.0f / 255.0f, 1.0f);
@@ -453,9 +448,9 @@ namespace NachoClient.iOS
 
         }
 
-        public void RunningLate (int calendarIndex)
+        public void RunningLate (int eventId)
         {
-            owner.SendRunningLateMessage (calendarIndex);
+            owner.SendRunningLateMessage (eventId);
         }
 
 

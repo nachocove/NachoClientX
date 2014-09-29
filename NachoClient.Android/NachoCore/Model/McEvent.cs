@@ -31,6 +31,7 @@ namespace NachoCore.Model
             e.StartTime = startTime;
             e.EndTime = endTime;
             e.CalendarId = calendarId;
+            e.ExceptionId = exceptionId;
             e.Insert ();
             NachoCore.Utils.Log.Info (Utils.Log.LOG_DB, "McEvent create: {0} {1}", startTime, calendarId);
             if (0 != exceptionId) {

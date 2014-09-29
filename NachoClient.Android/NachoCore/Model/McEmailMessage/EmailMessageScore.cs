@@ -467,7 +467,7 @@ namespace NachoCore.Model
                          "WHERE Id = ?", Score, NeedUpdate, Id);
             if (0 < rc) {
                 NcBrain brain = NcBrain.SharedInstance;
-                brain.McEmailAddressCounters.Update.Click ();
+                brain.McEmailMessageCounters.Update.Click ();
                 brain.NotifyEmailMessageUpdates ();
             }
         }

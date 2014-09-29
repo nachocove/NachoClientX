@@ -888,9 +888,16 @@ namespace NachoClient.iOS
         }
 
         // ICalendarTableViewSourceDelegate
-        public void SendRunningLateMessage (int calendarIndex)
+        public void SendRunningLateMessage (int eventId)
         {
-            McCalendar c = McCalendar.QueryById<McCalendar> (calendarIndex);
+            var e = McEvent.QueryById<McEvent> (eventId);
+            if (null == e) {
+                return;  // may be deleted
+            }
+            var c = McCalendar.QueryById<McCalendar> (e.CalendarId);
+            if (null == c) {
+                return; // may be deleted
+            }
             PerformSegue ("CalendarToEmailCompose", new SegueHolder (c));
         }
 

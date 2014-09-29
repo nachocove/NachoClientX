@@ -144,6 +144,19 @@ namespace NachoCore
             return GetEvent (listOfEventsOnADay [day] [item]);
         }
 
+        public McAbstrCalendarRoot GetEventDetail(int day, int item)
+        {
+            var e = GetEvent (day, item);
+            if (null == e) {
+                return null;
+            }
+            if(0 == e.ExceptionId) {
+                return McCalendar.QueryById<McCalendar> (e.CalendarId);
+            } else {
+                return McException.QueryById<McException> (e.ExceptionId);
+            }
+        }
+
         public McEvent GetEvent (int i)
         {
             var e = list.ElementAt (i);

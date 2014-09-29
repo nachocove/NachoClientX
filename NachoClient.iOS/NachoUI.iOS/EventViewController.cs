@@ -497,21 +497,45 @@ namespace NachoClient.iOS
 
         }
 
+        protected void ShowNothing()
+        {
+            Util.HideViewHierarchy (View);
+            var titleLabelView = View.ViewWithTag (EVENT_TITLE_LABEL_TAG) as UILabel;
+            titleLabelView.Hidden = false;
+            contentView.Hidden = false;
+            scrollView.Hidden = false;
+            View.Hidden = false;
+            titleLabelView.Text = "Information is unavailable";
+            titleLabelView.Lines = 0;
+            titleLabelView.LineBreakMode = UILineBreakMode.WordWrap;
+            titleLabelView.SizeToFit ();
+        }
+
         protected void ConfigureEventView ()
         {
             NcAssert.NotNull (e);
 
             account = McAccount.QueryById<McAccount> (e.AccountId);
-
+            if (null == account) {
+                ShowNothing ();
+                return;
+            }
             root = McCalendar.QueryById<McCalendar> (e.CalendarId);
+            if(null == root) {
+                ShowNothing ();
+                return;
+            }
             if (0 != root.recurrences.Count) {
                 isRecurring = true;
             }
-
             if (0 == e.ExceptionId) {
                 c = root;
             } else {
                 c = McException.QueryById<McException> (e.ExceptionId);
+            }
+            if (null == c) {
+                ShowNothing ();
+                return;
             }
 
             if (account.EmailAddr == root.OrganizerEmail && account.Id == c.AccountId) {
@@ -589,44 +613,39 @@ namespace NachoClient.iOS
 
             // Attendee image view
             ConfigureAttendeesButtons (eventAttendeeView);
-            if (5 < c.attendees.Count ()) {
-                int i = 0;
-                while (i < 4) {
-                    var attendeeButtonView = View.ViewWithTag (EVENT_ATTENDEE_TAG + i) as UIButton;
-                    attendeeButtonView.SetTitle (Util.NameToLetters (c.attendees.ElementAt (i).DisplayName), UIControlState.Normal);
-                       
-                    var circleColor = GetCircleColorForEmail (c.attendees.ElementAt (i).Email);
-                    attendeeButtonView.Layer.BackgroundColor = circleColor.CGColor;
+            int i = 0;
+            foreach (var attendee in c.attendees) {
+                var attendeeButtonView = View.ViewWithTag (EVENT_ATTENDEE_TAG + i) as UIButton;
+                attendeeButtonView.SetTitle (Util.NameToLetters (attendee.DisplayName), UIControlState.Normal);
 
-                    var attendeeLabelView = View.ViewWithTag (EVENT_ATTENDEE_LABEL_TAG + i) as UILabel;
-                    attendeeLabelView.Text = Util.GetFirstName (c.attendees.ElementAt (i).DisplayName);
+                var circleColor = GetCircleColorForEmail (attendee.Email);
+                attendeeButtonView.Layer.BackgroundColor = circleColor.CGColor;
 
-                    var attendeeResponseImageView = View.ViewWithTag (EVENT_ATTENDEE_LABEL_TAG + i + 100) as UIImageView;
-                    if (null != GetImageForAttendeeResponse (c.attendees.ElementAt (i))) {
-                        attendeeResponseImageView.Image = GetImageForAttendeeResponse (c.attendees.ElementAt (i));
-                    }
-                    i++;
+                var attendeeLabelView = View.ViewWithTag (EVENT_ATTENDEE_LABEL_TAG + i) as UILabel;
+                attendeeLabelView.Text = Util.GetFirstName (attendee.DisplayName);
+
+                UIImage image;
+                if (attendee.Email == account.EmailAddr) {
+                    // The current user's status is not in the attendee field, but in the ResponseType field of the event.
+                    image = GetImageForAttendeeResponse (c.ResponseType);
+                } else {
+                    image = GetImageForAttendeeResponse (attendee.AttendeeStatus);
                 }
+                if (null != image) {
+                    var attendeeResponseImageView = View.ViewWithTag (EVENT_ATTENDEE_LABEL_TAG + i + 100) as UIImageView;
+                    attendeeResponseImageView.Image = image;
+                }
+
+                ++i;
+                if (4 <= i) {
+                    // There is only room to display four attendees.
+                    break;
+                }
+            }
+            if (4 < c.attendees.Count) {
+                // Tell the user that there are more attendees that aren't being shown.
                 var attendeeDetailButtonView = View.ViewWithTag (EVENT_ATTENDEE_DETAIL_TAG) as UIButton;
-                attendeeDetailButtonView.SetTitle ("+" + (c.attendees.Count () - 4), UIControlState.Normal);
-            } else {
-                int i = 0;
-                while (i < c.attendees.Count ()) {
-                    var attendeeButtonView = View.ViewWithTag (EVENT_ATTENDEE_TAG + i) as UIButton;
-                    attendeeButtonView.SetTitle (Util.NameToLetters (c.attendees.ElementAt (i).DisplayName), UIControlState.Normal);
-
-                    var circleColor = GetCircleColorForEmail (c.attendees.ElementAt (i).Email);
-                    attendeeButtonView.Layer.BackgroundColor = circleColor.CGColor;
-
-                    var attendeeLabelView = View.ViewWithTag (EVENT_ATTENDEE_LABEL_TAG + i) as UILabel;
-                    attendeeLabelView.Text = Util.GetFirstName (c.attendees.ElementAt (i).DisplayName);
-
-                    var attendeeResponseImageView = View.ViewWithTag (EVENT_ATTENDEE_LABEL_TAG + i + 100) as UIImageView;
-                    if (null != GetImageForAttendeeResponse (c.attendees.ElementAt (i))) {
-                        attendeeResponseImageView.Image = GetImageForAttendeeResponse (c.attendees.ElementAt (i));
-                    }
-                    i++;
-                }
+                attendeeDetailButtonView.SetTitle ("+" + (c.attendees.Count - 4), UIControlState.Normal);
             }
 
             //get attachments out of an event
@@ -897,27 +916,43 @@ namespace NachoClient.iOS
             }
         }
 
-        public UIImage GetImageForAttendeeResponse (McAttendee attendee)
+        /// <summary>
+        /// Return the appropriate icon for the given attendee status.
+        /// </summary>
+        public UIImage GetImageForAttendeeResponse (NcAttendeeStatus status)
         {
-            var reponseImage = new UIImage ();
-            if (attendee.AttendeeStatus == NcAttendeeStatus.Accept) {
-                reponseImage = UIImage.FromBundle ("btn-mtng-accept-pressed");
-                return reponseImage;
+            switch (status) {
+            case NcAttendeeStatus.Accept:
+                return UIImage.FromBundle ("btn-mtng-accept-pressed");
+            case NcAttendeeStatus.Tentative:
+                return UIImage.FromBundle ("btn-mtng-tenative-pressed");
+            case NcAttendeeStatus.Decline:
+                return UIImage.FromBundle ("btn-mtng-decline-pressed");
+            default:
+                return null;
             }
-            if (attendee.AttendeeStatus == NcAttendeeStatus.Tentative) {
-                reponseImage = UIImage.FromBundle ("btn-mtng-tenative-pressed");
-                return reponseImage;
+        }
+
+        /// <summary>
+        /// Return the appropriate icon for the given response type.
+        /// </summary>
+        public UIImage GetImageForAttendeeResponse (NcResponseType status)
+        {
+            switch (status) {
+            case NcResponseType.Accepted:
+                return GetImageForAttendeeResponse (NcAttendeeStatus.Accept);
+            case NcResponseType.Tentative:
+                return GetImageForAttendeeResponse (NcAttendeeStatus.Tentative);
+            case NcResponseType.Declined:
+                return GetImageForAttendeeResponse (NcAttendeeStatus.Decline);
+            default:
+                return null;
             }
-            if (attendee.AttendeeStatus == NcAttendeeStatus.Decline) {
-                reponseImage = UIImage.FromBundle ("btn-mtng-decline-pressed");
-                return reponseImage;
-            }
-            return null;
         }
 
         public void ConfigureRsvpBar ()
         {
-            if (account.EmailAddr == root.OrganizerEmail) {
+            if (account.EmailAddr == root.OrganizerEmail || (c.ResponseTypeIsSet && NcResponseType.Organizer == c.ResponseType)) {
                 messageLabel.Hidden = false;
                 messageLabel.Text = "You are the organizer";
                 messageLabel.Frame = new RectangleF (25 + 24 + 10, 15, 150, 24);
@@ -930,58 +965,52 @@ namespace NachoClient.iOS
                 tentativeLabel.Hidden = true;
                 declineButton.Hidden = true;
                 declineLabel.Hidden = true;
-            }
 
-            foreach (var a in c.attendees) {
-                if (account.EmailAddr == a.Email) {
-                    if (a.AttendeeStatus == NcAttendeeStatus.Accept) {
-                        acceptButton.Selected = true;
-                        messageLabel.Text = "You are going";
-                        messageLabel.Hidden = false;
-                        changeResponseButton.Hidden = false;
+            } else if (c.ResponseTypeIsSet) {
 
-                        acceptButton.Frame = new RectangleF (25, 15, 24, 24);
+                switch (c.ResponseType) {
 
-                        acceptLabel.Hidden = true;
-                        tentativeButton.Hidden = true;
-                        declineButton.Hidden = true;
-                        tentativeLabel.Hidden = true;
-                        declineLabel.Hidden = true;
-                        acceptButton.UserInteractionEnabled = false;
-                    } 
-                    if (a.AttendeeStatus == NcAttendeeStatus.Tentative) {
-                        tentativeButton.Selected = true;
-                        messageLabel.Text = "Tentative";
-                        messageLabel.Hidden = false;
-                        changeResponseButton.Hidden = false;
+                case NcResponseType.Accepted:
+                    acceptButton.Selected = true;
+                    messageLabel.Text = "You are going";
+                    messageLabel.Hidden = false;
+                    changeResponseButton.Hidden = false;
+                    acceptButton.Frame = new RectangleF (25, 15, 24, 24);
+                    acceptLabel.Hidden = true;
+                    tentativeButton.Hidden = true;
+                    declineButton.Hidden = true;
+                    tentativeLabel.Hidden = true;
+                    declineLabel.Hidden = true;
+                    acceptButton.UserInteractionEnabled = false;
+                    break;
 
-                        tentativeButton.Frame = new RectangleF (25, 15, 24, 24);
+                case NcResponseType.Tentative:
+                    tentativeButton.Selected = true;
+                    messageLabel.Text = "Tentative";
+                    messageLabel.Hidden = false;
+                    changeResponseButton.Hidden = false;
+                    tentativeButton.Frame = new RectangleF (25, 15, 24, 24);
+                    acceptButton.Hidden = true;
+                    acceptLabel.Hidden = true;
+                    tentativeLabel.Hidden = true;
+                    declineButton.Hidden = true;
+                    declineLabel.Hidden = true;
+                    tentativeButton.UserInteractionEnabled = false;
+                    break;
 
-                        acceptButton.Hidden = true;
-                        acceptLabel.Hidden = true;
-                        tentativeLabel.Hidden = true;
-                        declineButton.Hidden = true;
-                        declineLabel.Hidden = true;
-                        tentativeButton.UserInteractionEnabled = false;
-
-                    }
-                    if (a.AttendeeStatus == NcAttendeeStatus.Decline) {
-                        declineButton.Selected = true;
-                        messageLabel.Text = "You are not going to this meeting";
-                        messageLabel.Hidden = false;
-                        changeResponseButton.Hidden = false;
-
-                        declineButton.Frame = new RectangleF (25, 15, 24, 24);
-
-                        acceptButton.Hidden = true;
-                        acceptLabel.Hidden = true;
-                        tentativeButton.Hidden = true;
-                        tentativeLabel.Hidden = true;
-                        declineLabel.Hidden = true;
-                        declineButton.UserInteractionEnabled = false;
-
-                    }
-                    return; 
+                case NcResponseType.Declined:
+                    declineButton.Selected = true;
+                    messageLabel.Text = "You are not going to this meeting";
+                    messageLabel.Hidden = false;
+                    changeResponseButton.Hidden = false;
+                    declineButton.Frame = new RectangleF (25, 15, 24, 24);
+                    acceptButton.Hidden = true;
+                    acceptLabel.Hidden = true;
+                    tentativeButton.Hidden = true;
+                    tentativeLabel.Hidden = true;
+                    declineLabel.Hidden = true;
+                    declineButton.UserInteractionEnabled = false;
+                    break;
                 }
             }
         }

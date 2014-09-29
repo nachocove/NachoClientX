@@ -243,7 +243,7 @@ namespace NachoClient.iOS
 
             // Attachment image view
             // Attachment 'x' will be adjusted to be left of chili field
-            var attachmentImageView = new UIImageView (new RectangleF (chiliX - 10 - 16, 10, 16, 16));
+            var attachmentImageView = new UIImageView (new RectangleF (chiliX - 10 - 16, 52, 16, 16));
             attachmentImageView.Image = UIImage.FromBundle ("inbox-icn-attachment");
             attachmentImageView.Tag = ATTACHMENT_TAG;
             view.AddSubview (attachmentImageView);
@@ -326,15 +326,15 @@ namespace NachoClient.iOS
                 fixedSpace,
                 forwardButton,
                 flexibleSpace,
-                chiliButton,
+//                chiliButton,
 //                flexibleSpace,
 //                deferButton,
-//                flexibleSpace,
-//                archiveButton,
+                flexibleSpace,
+                archiveButton,
 //                flexibleSpace,
 //                saveButton,
-//                flexibleSpace,
-//                deleteButton
+                fixedSpace,
+                deleteButton
             }, false);
             view.AddSubview (toolbar);
 
@@ -395,7 +395,7 @@ namespace NachoClient.iOS
             if (null == messageThread) {
                 return;
             }
-            owner.PerformSegueForDelegate ("NachoNowToMessageAction", new SegueHolder (messageThread));
+            owner.PerformSegueForDelegate ("NachoNowToFolders", new SegueHolder (messageThread));
         }
 
         void onArchiveButtonClicked (UIView view)
@@ -528,21 +528,21 @@ namespace NachoClient.iOS
             receivedLabelView.SizeToFit ();
             receivedLabelView.Hidden = false;
 
-            // Chili image view - nothing to do. It is also shown
-            var chiliImageView = view.ViewWithTag (USER_CHILI_TAG) as UIImageView;
-            chiliImageView.Hidden = false;
-
             // Attachment image view
             var attachmentImageView = view.ViewWithTag (ATTACHMENT_TAG) as UIImageView;
             attachmentImageView.Hidden = !message.cachedHasAttachments;
             var attachmentImageRect = attachmentImageView.Frame;
-            attachmentImageRect.X = viewWidth - 15 - 20 - 10 - 16;
+            attachmentImageRect.X = receivedLabelView.Frame.Right + 10;;
             attachmentImageView.Frame = attachmentImageRect;
+
+            // Chili image view - nothing to do. It is also shown
+            var chiliImageView = view.ViewWithTag (USER_CHILI_TAG) as UIImageView;
+            chiliImageView.Hidden = false;
 
             // From label view
             var fromLabelView = view.ViewWithTag (FROM_TAG) as UILabel;
             var fromLabelRect = fromLabelView.Frame;
-            fromLabelRect.Width = attachmentImageRect.X - 65;
+            fromLabelRect.Width = attachmentImageRect.X - chiliImageView.Frame.Width - 10;
             fromLabelView.Frame = fromLabelRect;
             fromLabelView.Text = Pretty.SenderString (message.From);
             fromLabelView.Font = (message.IsRead ? A.Font_AvenirNextDemiBold17 : A.Font_AvenirNextRegular17);

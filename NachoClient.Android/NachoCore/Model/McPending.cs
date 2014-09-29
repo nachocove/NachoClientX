@@ -414,7 +414,7 @@ namespace NachoCore.Model
             Update ();
             Log.Info (Log.LOG_SYNC, "Pending:ResolveAsSuccess:{0}", Id);
             // TODO: Find a clean way to send UpdateQ event to TL SM.
-            UnblockSuccessors ();
+            UnblockSuccessors (StateEnum.Eligible);
             // Why update and then delete? I think we may want to defer deletion at some point.
             // If we do, then these are a good "log" of what has been done. So keep the records 
             // accurate.
@@ -422,10 +422,12 @@ namespace NachoCore.Model
             Delete ();
         }
 
-        public void ResolveAsCancelled (bool onlyDeferred)
+        public void ResolveAsCancelled (bool onlyDispatched)
         {
-            NcAssert.True (StateEnum.Dispatched == State || !onlyDeferred);
+            NcAssert.True (StateEnum.Dispatched == State || !onlyDispatched);
             State = StateEnum.Deleted;
+            // TODO: Status-ind for successors as well.
+            UnblockSuccessors (StateEnum.Deleted);
             Log.Info (Log.LOG_SYNC, "Pending:ResolveAsCancelled:{0}", Id);
             Delete ();
         }
@@ -446,6 +448,8 @@ namespace NachoCore.Model
             control.StatusInd (result, new [] { Token });
             State = StateEnum.Failed;
             Update ();
+            // TODO: Status-ind for successors as well.
+            UnblockSuccessors (StateEnum.Failed);
             Log.Info (Log.LOG_SYNC, "Pending:ResolveAsHardFail:{0}", Id);
         }
 
@@ -515,16 +519,20 @@ namespace NachoCore.Model
         }
 
         // PUBLIC FOR TEST USE ONLY. OTHERWISE CONSIDER IT PRIVATE.
-        public bool UnblockSuccessors ()
+        public bool UnblockSuccessors (StateEnum toState)
         {
             var successors = QuerySuccessors (AccountId, Id);
             McPendDep.DeleteAllSucc (Id);
             foreach (var succ in successors) {
                 var remaining = McPendDep.QueryBySuccId (succ.Id);
                 if (0 == remaining.Count ()) {
-                    succ.State = StateEnum.Eligible;
+                    succ.State = toState;
                     succ.Update ();
-                    Log.Info (Log.LOG_SYNC, "Pending:UnblockSuccessors:{0}=>{1}", Id, succ.Id);
+                    Log.Info (Log.LOG_SYNC, "Pending:UnblockSuccessors:{0}=>{1} now {2}", Id, succ.Id, toState.ToString ());
+                    if (StateEnum.Deleted == toState) {
+                        // TODO: we need to status-ind for successor.
+                        succ.Delete ();
+                    }
                 }
             }
             return (0 != successors.Count);
@@ -718,6 +726,7 @@ namespace NachoCore.Model
             McAbstrItem item = null;
             try {
                 NcModel.Instance.RunInTransaction (() => {
+                    // Deal with referenced McItem ref count if needed.
                     if (0 != ItemId) {
                         switch (Operation) {
                         case Operations.EmailSend:
@@ -753,6 +762,14 @@ namespace NachoCore.Model
                         Log.Info (Log.LOG_SYNC, "Item {0}: PendingRefCount-: {1}", item.Id, item.PendingRefCount);
                         if (0 == item.PendingRefCount && item.IsAwaitingDelete) {
                             item.Delete ();
+                        }
+                        // Deal with any dependent McPending (if there are any, it is an error).
+                        var successors = QuerySuccessors (AccountId, Id);
+                        if (0 != successors.Count) {
+                            Log.Error (Log.LOG_SYNC, "{0} successors found in McPending.Delete.", successors.Count);
+                            foreach (var succ in successors) {
+                                succ.Delete();
+                            }
                         }
                     }
                     base.Delete ();

@@ -507,6 +507,8 @@ namespace NachoCore.ActiveSync
             OptCmd = new AsOptionsCommand (this) {
                 HttpClientType = HttpClientType,
                 DontReportCommResult = true,
+                Timeout = new TimeSpan (0, 0, 15),
+                MaxRetries = 1,
             };
             OptCmd.Execute (Sm);
         }

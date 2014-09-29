@@ -776,7 +776,7 @@ namespace NachoClient.iOS
             if (null == messageThread) {
                 return;
             }
-            owner.PerformSegueForDelegate ("NachoNowToMessageAction", new SegueHolder (messageThread));
+            owner.PerformSegueForDelegate ("MessageListToFolders", new SegueHolder (messageThread));
         }
 
         public override void DraggingStarted (UIScrollView scrollView)
