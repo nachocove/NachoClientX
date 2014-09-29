@@ -277,7 +277,7 @@ namespace NachoClient.iOS
 
         public void MatchParentY (FolderStruct folder, UIView parentView)
         {
-            var parentFolder = GetParentFolder (folder);
+            var parentFolder = GetParentFolder (GetFolder (folder));
             var parentCell = parentView.ViewWithTag (parentFolder.Id + 10000) as UIView;
             var cell = parentView.ViewWithTag (folder.folderID + 10000) as UIView;
             cell.Frame = new RectangleF (cell.Frame.X, parentCell.Frame.Y, cell.Frame.Width, 44);
@@ -511,9 +511,11 @@ namespace NachoClient.iOS
                             var buttonImage = parentView.ViewWithTag (numTag + 20000) as UIImageView;
                             buttonImage.Image = UIImage.FromBundle ("gen-readmore-active");
                             var folder = GetFolderStructById (folderID, folders);
-                            foreach (var subFolder in folder.subFolders) {
-                                var cell = parentView.ViewWithTag (subFolder.folderID + 10000) as UIView;
-                                cell.Hidden = false;
+                            if (IsParentCellButtonSelected (GetFolder (folder), selectedButtons)) {
+                                foreach (var subFolder in folder.subFolders) {
+                                    var cell = parentView.ViewWithTag (subFolder.folderID + 10000) as UIView;
+                                    cell.Hidden = false;
+                                }
                             }
                         }
                     }
@@ -524,6 +526,15 @@ namespace NachoClient.iOS
                     cell.Hidden = false;
                 }
             }
+        }
+
+        public bool IsParentCellButtonSelected (McFolder folder, List<string> selectedButtons)
+        {
+            var parentFolder = GetParentFolder (folder);
+            if (null != parentFolder) {
+                return ((IsParentCellButtonSelected (parentFolder, selectedButtons)) && (selectedButtons.Contains ((parentFolder.Id + 20000).ToString ())));
+            }
+            return true;
         }
 
         public FolderStruct GetFolderStructById (int Id, List<FolderStruct> folders)
@@ -668,10 +679,9 @@ namespace NachoClient.iOS
             return Folders.GetFolderByFolderID (folder.folderID);
         }
 
-        public McFolder GetParentFolder (FolderStruct folder)
+        public McFolder GetParentFolder (McFolder folder)
         {
-            var McFolderFolder = GetFolder (folder);
-            return McFolder.ServerEndQueryByServerId (account.Id, McFolderFolder.ParentId);
+            return McFolder.ServerEndQueryByServerId (account.Id, folder.ParentId);
         }
 
         public void UpdateLastAccessed ()
