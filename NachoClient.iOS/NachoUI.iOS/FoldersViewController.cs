@@ -24,7 +24,6 @@ namespace NachoClient.iOS
 
         protected McAccount account;
         protected bool hasRecents = false;
-        protected bool isFirstConfigure = true;
         protected UILabel recentLabel;
         protected UILabel defaultsLabel;
         protected UILabel yourFoldersLabel;
@@ -44,12 +43,11 @@ namespace NachoClient.iOS
             NcApplication.Instance.StatusIndEvent += (object sender, EventArgs e) => {
                 var s = (StatusIndEventArgs)e;
                 if (NcResult.SubKindEnum.Info_FolderSetChanged == s.Status.SubKind) {
-                    CreateView ();
+                    ClearLists ();
                     ConfigureFolders ();
                     ConfigureView ();
                 }
             };
-            McMutables.Set (McAccount.GetDeviceAccount ().Id, "FoldersDefaultsSelectedButtons", "DefaultsSelectedButtons", "");
         }
 
         public override void ViewWillAppear (bool animated)
@@ -521,6 +519,13 @@ namespace NachoClient.iOS
         public List<FolderStruct> yourFolderList = new List<FolderStruct> ();
         public List<McFolder> recentFolderList = new List<McFolder> ();
 
+        public void ClearLists ()
+        {
+            foldersToMcFolders.Clear ();
+            nestedFolderList.Clear ();
+            yourFolderList.Clear ();
+        }
+
         public void ConfigureFolders ()
         {
             Folders = new NachoFolders (NachoFolders.FilterForEmail);
@@ -554,7 +559,7 @@ namespace NachoClient.iOS
             }
             SortDetaultsFoldersList ();
         }
-            
+
         public void SortDetaultsFoldersList ()
         {
             foreach (var folder in nestedFolderList) {
@@ -673,5 +678,6 @@ namespace NachoClient.iOS
         {
             this.modal = modal;
         }
+            
     }
 }
