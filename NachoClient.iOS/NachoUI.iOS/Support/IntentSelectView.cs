@@ -27,11 +27,8 @@ namespace NachoClient.iOS
             Forward,
         }
 
-        public MessageType messageType { get; private set; }
-
         NcMessageIntent messageIntent;
         McEmailMessage emailMessage;
-
 
         public IntentSelectView (ref NcMessageIntent messageIntent, ref McEmailMessage emailMessage)
         {
@@ -84,21 +81,32 @@ namespace NachoClient.iOS
             int curItem = 0;
             foreach (var intent in messageIntent.GetIntentList ()) {
                 curItem++;
-                UIButton intentButton = new UIButton (new RectangleF (20, yOffset, viewBody.Frame.Width - 20, 40));
+                UIButton intentButton = new UIButton (new RectangleF (20, yOffset, viewBody.Frame.Width - 60, 40));
                 intentButton.BackgroundColor = UIColor.White;
-                intentButton.SetTitle (intent, UIControlState.Normal);
+                intentButton.SetTitle (intent.value, UIControlState.Normal);
                 intentButton.SetTitleColor (A.Color_NachoTextGray, UIControlState.Normal);
                 intentButton.Font = A.Font_AvenirNextRegular14;
                 intentButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
                 intentButton.TouchUpInside += (object sender, EventArgs e) => {
-                    messageIntent.EmbedIntentIntoMessage (intent, ref emailMessage);
-                    owner.PopulateMessageFromSelectedIntent ();
+                    SetMessageIntent(intent);
+                    owner.PopulateMessageFromSelectedIntent (MessageDeferralType.None);
+                    owner.View.EndEditing (true);
                     this.DismissView ();
                 };
 
+                if (intent.dueDateAllowed) {
+                    UIButton dueDateButton = new UIButton (new RectangleF (viewBody.Frame.Width - 40, yOffset + 6f, 25, 25));
+                    dueDateButton.SetImage (UIImage.FromBundle ("icn-defer"), UIControlState.Normal);
+                    dueDateButton.TouchUpInside += (object sender, EventArgs e) => {
+                        SetMessageIntent(intent);
+                        owner.PerformSegue ("SegueToMessagePriority", owner);
+                    };
+                    viewBody.Add (dueDateButton);
+                }
+
                 viewBody.Add (intentButton);
                 if (curItem < messageIntent.GetIntentList ().Count) {
-                    Util.AddHorizontalLine (20, intentButton.Frame.Bottom, intentButton.Frame.Width, A.Color_NachoLightBorderGray, viewBody);
+                    Util.AddHorizontalLine (20, intentButton.Frame.Bottom, viewBody.Frame.Width - 20, A.Color_NachoLightBorderGray, viewBody);
                 }
 
                 yOffset = intentButton.Frame.Bottom + 1;
@@ -109,15 +117,23 @@ namespace NachoClient.iOS
             this.Hidden = true;
         }
 
+        protected void SetMessageIntent (NcMessageIntent.Intent intent)
+        {
+            messageIntent.SetType(intent);
+            messageIntent.SetMessageIntent (ref emailMessage);
+        }
         public void ShowView ()
         {
-            this.Hidden = false;
+            if (this.Hidden) {
+                this.Hidden = false;
+            }
         }
 
         public void DismissView ()
         {
-            this.Hidden = true;
+            if (!this.Hidden) {
+                this.Hidden = true;
+            }
         }
-
     }
 }

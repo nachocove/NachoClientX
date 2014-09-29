@@ -5,80 +5,120 @@ using System.Collections.Generic;
 using NachoCore.Model;
 using NachoCore.Utils;
 
+
 namespace NachoCore.Brain
 {
     public class NcMessageIntent
     {
-        public const string MANDATORY = "MANDATORY";
-        public const string READ = "READ";
-        public const string RESPOND = "RESPOND";
-        public const string CALL = "CALL"; 
+        public const string NONE = "NONE";
         public const string FYI = "FYI";
-        public const string DISCRETIONARY = "DISCRETIONARY";
-        public const string ACKNOWLEDGED = "ACKNOWLEDGED";
-        public const string MEETING = "MEETING";
+        public const string PLEASE_READ = "PLEASE READ";
+        public const string RESPONSE_REQUIRED = "RESPONSE REQUIRED";
+        public const string URGENT = "URGENT";
 
+        public static Intent NONE_INTENT = new Intent(McEmailMessage.IntentType.None, NONE, false);
+        public static Intent FYI_INTENT = new Intent (McEmailMessage.IntentType.FYI, FYI, false);
+        public static Intent PLEASE_READ_INTENT = new Intent (McEmailMessage.IntentType.PleaseRead, PLEASE_READ, true);
+        public static Intent RESPONSE_REQUIRED_INTENT = new Intent(McEmailMessage.IntentType.ResponseRequired, RESPONSE_REQUIRED, true);
+        public static Intent URGENT_INTENT = new Intent(McEmailMessage.IntentType.Urgent, URGENT, true);
 
-        protected List<string> ForwardIntentsList = new List<string> () {
-            MANDATORY,
-            READ,
-            RESPOND,
-            CALL,
+        protected List<Intent> IntentsList = new List<Intent> () {
+            NONE_INTENT,
+            FYI_INTENT,
+            PLEASE_READ_INTENT,
+            RESPONSE_REQUIRED_INTENT,
+            URGENT_INTENT,
         };
 
-        protected List<string> ComposeIntentsList = new List<string> () {
-            FYI,
-            MANDATORY,
-            READ,
-            RESPOND,
-            CALL,
-        };
+        public Intent intentType { get; private set; }
 
-        protected List<string> ReplyIntentsList = new List<string> () {
-            DISCRETIONARY,
-            ACKNOWLEDGED,
-            MANDATORY,
-            READ,
-            RESPOND,
-            MEETING,
-            CALL,
-        };
-
-        public NcQuickResponse.QRTypeEnum messageType { get; private set; }
-        public string intentValue {get;set;}
-
-        public NcMessageIntent (NcQuickResponse.QRTypeEnum whatType)
+        public NcMessageIntent ()
         {
-            this.messageType = whatType;
+            intentType = NONE_INTENT;
         }
 
-        public List<string> GetIntentList ()
+        public List<Intent> GetIntentList ()
         {
-            switch (messageType) {
-            case NcQuickResponse.QRTypeEnum.Compose:
-                return ComposeIntentsList;
-            case NcQuickResponse.QRTypeEnum.Reply:
-                return ReplyIntentsList;
-            case NcQuickResponse.QRTypeEnum.Forward:
-                return ForwardIntentsList;
+            return IntentsList;
+        }
+
+        public void SetType (Intent intent)
+        {
+            intentType = intent;
+        }
+
+        public void SetMessageIntent (ref McEmailMessage emailMessage)
+        {
+            emailMessage.Intent = (int)intentType.type;
+        }
+
+        public void SetMessageIntentDate (ref McEmailMessage emailMessage, DateTime selectedDate)
+        {
+            emailMessage.IntentDate = selectedDate;
+        }
+
+        public static string IntentEnumToString (McEmailMessage.IntentType type)
+        {
+            switch (type) {
+            case McEmailMessage.IntentType.None:
+                return "NONE";
+            case McEmailMessage.IntentType.FYI:
+                return "FYI";
+            case McEmailMessage.IntentType.PleaseRead:
+                return "PLEASE READ";
+            case McEmailMessage.IntentType.ResponseRequired:
+                return "RESPONSE REQUIRED";
+            case McEmailMessage.IntentType.Urgent:
+                return "URGENT";
             default:
+                NcAssert.CaseError ("Type not recognized");
                 return null;
             }
         }
-
-        public void EmbedIntentIntoMessage (string intent, ref McEmailMessage emailMessage)
+        public static string GetIntentString (MessageDeferralType intentDateTypeEnum, McEmailMessage mcMessage)
         {
-            if (null != intentValue) {
-                if (emailMessage.Subject.Contains (intentValue)) {
-                    emailMessage.Subject = emailMessage.Subject.Replace (intentValue, intent);
-                } else {
-                    emailMessage.Subject = intent + " - " + emailMessage.Subject;
-                }
-            } else {
-                emailMessage.Subject = intent + " - " + emailMessage.Subject;
+            string intentString = IntentEnumToString((McEmailMessage.IntentType)mcMessage.Intent);
+
+            if (MessageDeferralType.None != intentDateTypeEnum) {
+                switch (intentDateTypeEnum) {
+                case MessageDeferralType.Later:
+                    intentString += " By Today";
+                    break;
+                case MessageDeferralType.Tonight:
+                    intentString += " By Tonight";
+                    break;
+                case MessageDeferralType.Tomorrow:
+                    intentString += " By Tomorrow";
+                    break;
+                case MessageDeferralType.NextWeek:
+                    intentString += " By Next Week";
+                    break;
+                case MessageDeferralType.NextMonth:
+                    intentString += " By Next Month";
+                    break;
+                case MessageDeferralType.Custom:
+                    intentString += " By " + mcMessage.IntentDate.ToShortDateString ();
+                    break;
+                default:
+                    NcAssert.CaseError ("Not a recognzized deferral type.");
+                    break;
+                } 
             }
-            this.intentValue = intent;
+            return intentString;
         }
 
+        public class Intent
+        {
+            public McEmailMessage.IntentType type { get; private set; }
+            public string value { get; private set; }
+            public bool dueDateAllowed {get; private set;}
+
+            public Intent (McEmailMessage.IntentType type, string value, bool dueDateAllowed)
+            {
+                this.type = type;
+                this.value = value;
+                this.dueDateAllowed = dueDateAllowed;
+            }
+        }
     }
 }

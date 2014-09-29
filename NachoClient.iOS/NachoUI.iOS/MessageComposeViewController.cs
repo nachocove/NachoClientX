@@ -18,7 +18,7 @@ using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
-    public partial class MessageComposeViewController : UIViewController, IUcAddressBlockDelegate, IUcAttachmentBlockDelegate, INachoContactChooserDelegate, INachoFileChooserParent
+    public partial class MessageComposeViewController : UIViewController, IUcAddressBlockDelegate, IUcAttachmentBlockDelegate, INachoContactChooserDelegate, INachoFileChooserParent, INachoDateControllerParent
     {
         // The reason for sending this message
         protected enum Action {
@@ -31,6 +31,7 @@ namespace NachoClient.iOS
         public static readonly string FORWARD_ACTION = "Forward";
 
         public INachoMessageEditorParent owner;
+
         protected McAccount account;
 
         protected McEmailMessage mcMessage = new McEmailMessage ();
@@ -49,6 +50,8 @@ namespace NachoClient.iOS
 
         UILabel subjectLabel;
         UITextField subjectField;
+        UILabel intentLabel;
+        UITextField intentField;
         UIButton priorityButton;
 
         UITextView bodyTextView;
@@ -57,6 +60,7 @@ namespace NachoClient.iOS
         UIView ccViewHR;
         UIView bccViewHR;
         UIView subjectLabelHR;
+        UIView intentLabelHR;
         UIView attachmentViewHR;
 
         UIToolbar keyboardToolbar;
@@ -78,6 +82,8 @@ namespace NachoClient.iOS
 
         UIBarButtonItem quickResponseButton;
         public NcMessageIntent messageIntent;
+        protected MessageDeferralType intentDateType;
+        UIImageView intentArrowAccessory;
 
         public MessageComposeViewController (IntPtr handle) : base (handle)
         {
@@ -192,11 +198,6 @@ namespace NachoClient.iOS
                 }
                 ShowQuickResponses ();
             };
-
-            priorityButton.TouchUpInside += (object sender, EventArgs e) => {
-                View.EndEditing (true);
-                ShowMessageIntents ();
-            };
         }
 
         protected void ShowQuickResponses()
@@ -239,15 +240,7 @@ namespace NachoClient.iOS
             } else {
                 if (null == messageIntent) {
                     mcMessage.Subject = subjectField.Text;
-                    var messageType = new NcQuickResponse.QRTypeEnum ();
-                    if (IsReplyAction ()) {
-                        messageType = NcQuickResponse.QRTypeEnum.Reply;
-                    } else if (IsForwardAction ()) {
-                        messageType = NcQuickResponse.QRTypeEnum.Forward;
-                    } else {
-                        messageType = NcQuickResponse.QRTypeEnum.Compose;
-                    }
-                    messageIntent = new NcMessageIntent (messageType);
+                    messageIntent = new NcMessageIntent ();
                 }
                 selectIntentView = new IntentSelectView (ref messageIntent, ref mcMessage);
                 selectIntentView.SetOwner (this);
@@ -279,9 +272,10 @@ namespace NachoClient.iOS
             }
         }
 
-        public void PopulateMessageFromSelectedIntent ()
+        public void PopulateMessageFromSelectedIntent (MessageDeferralType intentDateTypeEnum)
         {
-            subjectField.Text = mcMessage.Subject;
+            intentDateType = intentDateTypeEnum;
+            intentField.Text = NcMessageIntent.GetIntentString (intentDateTypeEnum, mcMessage);
         }
 
         public override UIView InputAccessoryView {
@@ -345,6 +339,11 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("ComposeToNachoNow")) {
                 return;
             }
+            if (segue.Identifier == "SegueToMessagePriority") {
+                var vc = (MessagePriorityViewController)segue.DestinationViewController;
+                vc.SetOwner (this);
+                return;
+            }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }
@@ -390,6 +389,9 @@ namespace NachoClient.iOS
             subjectLabelHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 1));
             subjectLabelHR.BackgroundColor = A.Color_NachoNowBackground;
 
+            intentLabelHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 1));
+            intentLabelHR.BackgroundColor = A.Color_NachoNowBackground;
+
             attachmentViewHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 1));
             attachmentViewHR.BackgroundColor = A.Color_NachoNowBackground;
 
@@ -407,6 +409,28 @@ namespace NachoClient.iOS
                 subjectField.Text += PresetSubject;
             }
             subjectField.SizeToFit ();
+
+            intentLabel = new UILabel ();
+            intentLabel.Text = "Intent:";
+            intentLabel.Font = A.Font_AvenirNextRegular14;
+            intentLabel.TextColor = A.Color_0B3239;
+            intentLabel.SizeToFit ();
+
+            intentField = new UITextField ();
+            intentField.Font = A.Font_AvenirNextRegular14;
+            intentField.TextColor = A.Color_808080;
+            intentField.Placeholder = "NONE";
+            intentField.ShouldBeginEditing += ((textField) => {
+                textField.ResignFirstResponder();
+                View.EndEditing (true);
+                ShowMessageIntents ();
+                return true;
+            });
+
+            intentField.SizeToFit ();
+
+            intentArrowAccessory = new UIImageView (new RectangleF (0, 0, 12, 12));
+            intentArrowAccessory.Image = UIImage.FromBundle ("icn-rightarrow");
 
             priorityButton = UIButton.FromType (UIButtonType.ContactAdd);
 
@@ -442,6 +466,10 @@ namespace NachoClient.iOS
                 subjectLabelHR,
                 subjectField,
                 priorityButton,
+                intentLabel,
+                intentLabelHR,
+                intentField,
+                intentArrowAccessory,
                 attachmentView,
                 attachmentViewHR,
                 bodyTextView
@@ -622,6 +650,21 @@ namespace NachoClient.iOS
 
                 AdjustY (subjectLabelHR, yOffset);
                 yOffset += subjectLabelHR.Frame.Height;
+
+                CenterY (intentLabel, LEFT_INDENT, yOffset, intentLabel.Frame.Width, LINE_HEIGHT);
+
+                var intentFieldStart = intentLabel.Frame.X + intentLabel.Frame.Width;
+
+                intentArrowAccessory.Frame = new RectangleF(View.Frame.Width - 33, yOffset + LINE_HEIGHT / 2 - 6, intentArrowAccessory.Frame.Width, intentArrowAccessory.Frame.Height);
+
+                var intentFieldWidth = View.Frame.Width - 37;
+                CenterY(intentField, intentFieldStart, yOffset, intentFieldWidth, LINE_HEIGHT);
+                intentField.Frame = new RectangleF(intentField.Frame.X + 4, intentField.Frame.Y, intentFieldWidth - intentFieldStart + 5, intentField.Frame.Height);
+
+                yOffset += LINE_HEIGHT;
+
+                AdjustY (intentLabelHR, yOffset);
+                yOffset += intentLabelHR.Frame.Height;
 
                 if (!attachmentView.Hidden) {
                     AdjustY (attachmentView, yOffset);
@@ -817,6 +860,15 @@ namespace NachoClient.iOS
                 }
             }
             mimeMessage.Subject = Pretty.SubjectString (subjectField.Text);
+
+            if (McEmailMessage.IntentType.None != (McEmailMessage.IntentType)mcMessage.Intent) {
+                if(String.IsNullOrEmpty(mimeMessage.Subject)){
+                    mimeMessage.Subject = NcMessageIntent.GetIntentString (intentDateType, mcMessage);
+                } else {
+                    mimeMessage.Subject = NcMessageIntent.GetIntentString (intentDateType, mcMessage)+ " - " + mimeMessage.Subject;
+                }
+            }
+
             mimeMessage.Date = System.DateTime.UtcNow;
 
             // TODO Check whether or not the back end supports SmartReply and SmartForward
@@ -860,14 +912,16 @@ namespace NachoClient.iOS
             }
                 
             mimeMessage.Body = body.ToMessageBody ();
-
-            var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
+            var messageToSend = MimeHelpers.AddToDb (account.Id, mimeMessage);
+            messageToSend.Intent = this.mcMessage.Intent;
+            messageToSend.IntentDate = this.mcMessage.IntentDate;
+            messageToSend.Update ();
             if (IsForwardOrReplyAction ()) {
-                mcMessage.ReferencedEmailId = referencedMessage.Id;
-                mcMessage.ReferencedBodyIsIncluded = originalEmailIsEmbedded;
-                mcMessage.ReferencedIsForward = IsForwardAction ();
-                mcMessage.WaitingForAttachmentsToDownload = attachmentNeedsDownloading;
-                mcMessage.Update ();
+                messageToSend.ReferencedEmailId = referencedMessage.Id;
+                messageToSend.ReferencedBodyIsIncluded = originalEmailIsEmbedded;
+                messageToSend.ReferencedIsForward = IsForwardAction ();
+                messageToSend.WaitingForAttachmentsToDownload = attachmentNeedsDownloading;
+                messageToSend.Update ();
             }
 
             bool messageSent = false;
@@ -882,21 +936,21 @@ namespace NachoClient.iOS
                     }
                     int folderId = folders [0].Id;
                     if (IsForwardAction ()) {
-                        NachoCore.BackEnd.Instance.ForwardEmailCmd (mcMessage.AccountId, mcMessage.Id, referencedMessage.Id, folderId, originalEmailIsEmbedded);
+                        NachoCore.BackEnd.Instance.ForwardEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, originalEmailIsEmbedded);
                     } else {
-                        NachoCore.BackEnd.Instance.ReplyEmailCmd (mcMessage.AccountId, mcMessage.Id, referencedMessage.Id, folderId, originalEmailIsEmbedded);
+                        NachoCore.BackEnd.Instance.ReplyEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, originalEmailIsEmbedded);
                     }
                     messageSent = true;
                 }
             }
             if (!messageSent) {
                 // A new outgoing message.  Or a forward/reply that has problems.
-                NachoCore.BackEnd.Instance.SendEmailCmd (mcMessage.AccountId, mcMessage.Id);
+                NachoCore.BackEnd.Instance.SendEmailCmd (messageToSend.AccountId, messageToSend.Id);
                 // TODO: Subtle ugliness. Id is passed to BE, ref-count is ++ in the DB.
                 // The object here still has ref-count of 0, so interlock is lost, and delete really happens in the DB.
                 // BE goes to reference the object later on, and it is missing.
-                mcMessage = McEmailMessage.QueryById<McEmailMessage> (mcMessage.Id);
-                mcMessage.Delete ();
+                messageToSend = McEmailMessage.QueryById<McEmailMessage> (messageToSend.Id);
+                messageToSend.Delete ();
             }
         }
 
@@ -1018,6 +1072,23 @@ namespace NachoClient.iOS
             }
 
             NcAssert.CaseError ();
+        }
+
+        public void DateSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
+        {
+            messageIntent.SetMessageIntentDate(ref mcMessage, selectedDate);
+            PopulateMessageFromSelectedIntent (request);
+
+            //Dismiss view once a date has been selected. If the user dismiss the priority choosing window
+            //w/out selecting a date, the intent selection view will still be visible. 
+            IntentSelectView selectIntentView = (IntentSelectView)View.ViewWithTag (101);
+            selectIntentView.DismissView ();
+        }
+
+        public void DismissChildDateController (INachoDateController vc)
+        {
+            vc.SetOwner (null);
+            vc.DimissDateController (false, null);
         }
 
         /// <summary>

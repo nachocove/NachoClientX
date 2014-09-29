@@ -17,7 +17,7 @@ using System.Text.RegularExpressions;
 
 namespace NachoClient.iOS
 {
-    public partial class ContactDetailViewController : NcUIViewController, IMessageTableViewSourceDelegate, INachoMessageEditorParent, INachoCalendarItemEditorParent, INachoFolderChooserParent, INachoNotesControllerParent
+    public partial class ContactDetailViewController : NcUIViewController, IMessageTableViewSourceDelegate, INachoMessageEditorParent, INachoCalendarItemEditorParent, INachoFolderChooserParent, INachoNotesControllerParent, INachoDateControllerParent
     {
         public McContact contact;
 
@@ -737,6 +737,23 @@ namespace NachoClient.iOS
             messageSource.RefreshEmailMessages ();
             InteractionsTable.ReloadData ();
             NachoClient.Util.RegularPriority ();
+        }
+
+        public void DateSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
+        {
+            if (MessageDeferralType.Custom != request) {
+                NcMessageDeferral.DeferThread (thread, request);
+            } else {
+                NcMessageDeferral.DeferThread (thread, request, selectedDate);
+            }
+        }
+
+        public void DismissChildDateController (INachoDateController vc)
+        {
+            vc.SetOwner (null);
+            vc.DimissDateController (false, new NSAction (delegate {
+                this.DismissViewController (true, null);
+            }));
         }
 
         public void DismissChildMessageEditor (INachoMessageEditor vc)
