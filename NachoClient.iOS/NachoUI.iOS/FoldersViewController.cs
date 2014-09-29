@@ -220,8 +220,6 @@ namespace NachoClient.iOS
             } else { 
                 UpdateVisibleCells (yourFoldersView, yourFolderList, null);
             }
-            HideLastLine (defaultsView);
-            HideLastLine (yourFoldersView);
 
             defaultCellsOffset = 0;
 
@@ -253,6 +251,9 @@ namespace NachoClient.iOS
             yOffset += 45 + 64;
             scrollView.ContentSize = new SizeF (View.Frame.Width, yOffset);
 
+            HideLastLine (defaultsView);
+            HideLastLine (yourFoldersView);
+
         }
 
         protected int defaultCellsOffset = 0;
@@ -263,6 +264,7 @@ namespace NachoClient.iOS
                 var cell = parentView.ViewWithTag (f.folderID + 10000) as UIView;
                 if (false == cell.Hidden) {
                     cell.Frame = new RectangleF (cell.Frame.X, 44 * defaultCellsOffset, cell.Frame.Width, 44);
+                    cell.ViewWithTag (cell.Tag + 20000).Hidden = false;
                     defaultCellsOffset++;
                     if (HasSubFolders (f)) {
                         LayoutCells (parentView, f.subFolders);
