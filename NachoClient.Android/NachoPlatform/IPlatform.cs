@@ -128,4 +128,8 @@ namespace NachoPlatform
 
         bool PowerStateIsPlugged ();
     }
+
+    public interface IPlatformKeychain
+    {
+    }
 }

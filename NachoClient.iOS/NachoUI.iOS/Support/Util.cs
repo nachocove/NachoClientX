@@ -685,18 +685,20 @@ namespace NachoClient
             return lineUIView;
         }
 
-        public static void AddHorizontalLine (float offset, float yVal, float width, UIColor color, UIView parentView)
+        public static UIView AddHorizontalLine (float offset, float yVal, float width, UIColor color, UIView parentView)
         {
             var lineUIView = new UIView (new RectangleF (offset, yVal, width, .5f));
             lineUIView.BackgroundColor = color;
             parentView.Add (lineUIView);
+            return lineUIView;
         }
 
-        public static void AddVerticalLine (float offset, float yVal, float height, UIColor color, UIView parentView)
+        public static UIView AddVerticalLine (float offset, float yVal, float height, UIColor color, UIView parentView)
         {
             var lineUIView = new UIView (new RectangleF (offset, yVal, .5f, height));
             lineUIView.BackgroundColor = color;
             parentView.Add (lineUIView);
+            return lineUIView;
         }
 
         public static void ConfigureNavBar (bool isTransparent, UINavigationController nc)

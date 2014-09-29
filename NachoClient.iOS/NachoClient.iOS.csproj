@@ -1134,6 +1134,7 @@
     <Compile Include="NachoUI.iOS\Support\BodyView.cs" />
     <Compile Include="NachoUI.iOS\Support\BodyWebView.cs" />
     <Compile Include="NachoUI.iOS\Support\BodyCalendarView.cs" />
+    <Compile Include="NachoPlatform.iOS\KeychainiOS.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoDateController.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -408,6 +408,7 @@ namespace NachoClient.iOS
         public void RenderCalendar (MimePart part)
         {
             var calView = new BodyCalendarView (this);
+            calView.Configure (part);
             messageView.AddSubview (calView);
         }
 
