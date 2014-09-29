@@ -861,12 +861,9 @@ namespace NachoClient.iOS
             }
             mimeMessage.Subject = Pretty.SubjectString (subjectField.Text);
 
-            if (null != mcMessage.Intent) {
-                if (messageIntent.intentType.type != NcMessageIntent.IntentTypeEnum.None) {
-                    mimeMessage.Subject = NcMessageIntent.GetIntentString (intentDateType, mcMessage) + " - " + mimeMessage.Subject;
-                }
+            if (NcMessageIntent.IntentTypeEnum.None != (NcMessageIntent.IntentTypeEnum)mcMessage.Intent) {
+                mimeMessage.Subject = NcMessageIntent.GetIntentString (intentDateType, mcMessage) + " - " + mimeMessage.Subject;
             }
-
 
             mimeMessage.Date = System.DateTime.UtcNow;
 

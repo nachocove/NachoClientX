@@ -171,7 +171,7 @@ namespace NachoClient.iOS
 
         public void DateSelected (MessageDeferralType dateType, DateTime selectedDate)
         {
-            if (MessageDeferralType.Custom != dateType) {
+            if (MessageDeferralType.Custom == dateType) {
                 owner.DateSelected (dateType, thread, selectedDate);
                 owner.DismissChildDateController (this);
             } else {
@@ -195,6 +195,7 @@ namespace NachoClient.iOS
                     break;
                 }
                 owner.DateSelected (dateType, thread, selectedDate);
+                owner.DismissChildDateController (this);
             }
         }
 

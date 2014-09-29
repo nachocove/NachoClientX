@@ -77,8 +77,9 @@ namespace NachoCore.Model
         public string Subject { set; get; }
 
         // Intent of the message (optional)
-        public string Intent { set; get; }
+        public int Intent { set; get; }
 
+        // Due date of selected intent (optional)
         public DateTime IntentDate { set; get; }
 
         /// Email addresses for replies, semi-colon separated (optional)

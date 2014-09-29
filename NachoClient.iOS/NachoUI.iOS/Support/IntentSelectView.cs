@@ -90,6 +90,7 @@ namespace NachoClient.iOS
                 intentButton.TouchUpInside += (object sender, EventArgs e) => {
                     SetMessageIntent(intent);
                     owner.PopulateMessageFromSelectedIntent (MessageDeferralType.None);
+                    owner.View.EndEditing (true);
                     this.DismissView ();
                 };
 

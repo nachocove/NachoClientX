@@ -81,7 +81,7 @@ namespace NachoCore.Brain
             }
 
             if (null != selectedResponse.intent) {
-                emailMessage.Intent = selectedResponse.intent.value;
+                emailMessage.Intent = (int)selectedResponse.intent.type;
             }
         }
 
