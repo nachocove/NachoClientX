@@ -304,6 +304,11 @@ namespace NachoClient.iOS
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
+            var blurry = segue.DestinationViewController as BlurryViewController;
+            if (null != blurry) {
+                blurry.CaptureView (this.View);
+            }
+
             if (segue.Identifier.Equals ("ComposeToContactChooser")) {
                 var dc = (INachoContactChooser)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
@@ -333,7 +338,6 @@ namespace NachoClient.iOS
                     mcMessage.Subject = subjectField.Text;
                     messageIntent = new NcMessageIntent ();
                 }
-
 
                 return;
             }

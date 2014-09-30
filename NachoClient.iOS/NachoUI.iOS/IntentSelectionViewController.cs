@@ -51,6 +51,7 @@ namespace NachoClient.iOS
             UIView viewBody = new UIView ();
             viewBody.Layer.CornerRadius = 8f;
             viewBody.Frame = new RectangleF (15, (View.Frame.Height - viewHeight) / 2.0f - 20, View.Frame.Width - 30, viewHeight);
+            viewBody.ClipsToBounds = true;
             viewBody.BackgroundColor = UIColor.White;
 
             yOffset = 14;
