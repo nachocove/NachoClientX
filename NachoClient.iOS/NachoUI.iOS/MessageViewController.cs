@@ -963,14 +963,15 @@ namespace NachoClient.iOS
             // However, if messageView height is larger than this value, we must
             // increase the height to prevent vertical scroll bar from showing up.
             float height = View.Frame.Height;
-            height -= 2 * VIEW_INSET;
+            height -= 2 * BodyView.BODYVIEW_INSET;
             var separator = view.ViewWithTag ((int)TagType.SEPARATOR_TAG);
             height -= separator.Frame.Bottom;
             if (null != attachmentListView) {
                 height -= attachmentListView.Frame.Height;
             }
 
-            bodyView.Layout (VIEW_INSET, separatorYOffset + 1, view.Frame.Width - 2 * VIEW_INSET, height);
+            bodyView.Layout (VIEW_INSET, separatorYOffset + 1,
+                view.Frame.Width - 2 * BodyView.BODYVIEW_INSET, height);
         }
 
         protected void LayoutScrollViews ()
