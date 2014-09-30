@@ -57,9 +57,8 @@ namespace NachoClient.iOS
             NcCapture.AddKind (ReloadCaptureName);
             ReloadCapture = NcCapture.Create (ReloadCaptureName);
 
-            composeMailButton = new UIBarButtonItem (UIBarButtonSystemItem.Compose);
-            composeMailButton.TintColor = A.Color_NachoBlue;
-
+            composeMailButton = new UIBarButtonItem ();
+            Util.SetOriginalImageForButton (composeMailButton, "contact-newemail");
             composeMailButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("MessageListToCompose", this);
             };
