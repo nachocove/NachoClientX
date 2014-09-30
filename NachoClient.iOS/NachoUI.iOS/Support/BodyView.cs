@@ -191,6 +191,7 @@ namespace NachoClient.iOS
 
             if (item.IsDownloaded ()) {
                 loadState = LoadState.IDLE;
+                spinner.StopAnimating ();
             } else {
                 if (LoadState.ERROR == loadState) {
                     Log.Info (Log.LOG_UI, "Previous download resulted in error");
