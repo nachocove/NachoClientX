@@ -438,7 +438,7 @@ namespace NachoClient.iOS
 
             bodyTextView = new UITextView ();
             bodyTextView.Font = A.Font_AvenirNextRegular14;
-            bodyTextView.TextColor = A.Color_808080;
+            bodyTextView.TextColor = A.Color_NachoDarkText;
             bodyTextView.BackgroundColor = UIColor.White;
             bodyTextView.ContentInset = new UIEdgeInsets (0, 15, 0, -15);
             if (EmailTemplate != null) {
