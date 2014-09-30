@@ -77,8 +77,8 @@ namespace NachoClient.iOS
             string UID = evt.UID;
             string subject = evt.Summary;
             bool isAllDay = evt.IsAllDay;
-            DateTime start = evt.Start.Value;
-            DateTime end = evt.End.Value;
+            DateTime start = evt.Start.UTC;
+            DateTime end = evt.End.UTC;
             string location = evt.Location;
             float viewWidth = parentView.Frame.Width;
 
