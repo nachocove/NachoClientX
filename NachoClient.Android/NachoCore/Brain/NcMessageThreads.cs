@@ -34,7 +34,11 @@ namespace NachoCore.Brain
                 return true;
             }
             for (int n = 0; n < oldList.Count; n++) {
-                if (oldList [n].GetEmailMessage (0).Id != newList [n].Id) {
+                var message = oldList [n].GetEmailMessage (0);
+                if (null == message) {
+                    return false;
+                }
+                if (message.Id != newList [n].Id) {
                     return true;
                 }
             }

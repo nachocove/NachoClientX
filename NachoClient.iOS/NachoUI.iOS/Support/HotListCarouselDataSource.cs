@@ -444,6 +444,16 @@ namespace NachoClient.iOS
             return preview;
         }
 
+        protected void HandleUnavailableMessage (UIView view)
+        {
+            foreach (var s in view.Subviews) {
+                s.Hidden = true;
+            }
+            var slv = view.ViewWithTag (SUBJECT_TAG) as UILabel;
+            slv.Text = "This message is unavailable";
+            slv.Hidden = false;
+        }
+
         /// <summary>
         /// Populate message cells with data, adjust sizes and visibility
         /// </summary>
@@ -454,16 +464,16 @@ namespace NachoClient.iOS
             var messageThread = owner.priorityInbox.GetEmailThread (messageThreadIndex);
 
             if (null == messageThread) {
-                foreach (var s in view.Subviews) {
-                    s.Hidden = true;
-                }
-                var slv = view.ViewWithTag (SUBJECT_TAG) as UILabel;
-                slv.Text = "This message is unavailable.";
-                slv.Hidden = false;
+                HandleUnavailableMessage (view);
                 return;
             }
 
             var message = messageThread.SingleMessageSpecialCase ();
+            if (null == message) {
+                HandleUnavailableMessage (view);
+                return;
+            }
+
 
             var viewWidth = view.Frame.Width;
 
