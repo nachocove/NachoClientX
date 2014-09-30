@@ -51,7 +51,7 @@ namespace NachoClient.iOS
         UILabel subjectLabel;
         UITextField subjectField;
         UILabel intentLabel;
-        UITextField intentField;
+        UILabel intentDisplayLabel;
         UIButton priorityButton;
 
         UITextView bodyTextView;
@@ -275,7 +275,7 @@ namespace NachoClient.iOS
         public void PopulateMessageFromSelectedIntent (MessageDeferralType intentDateTypeEnum)
         {
             intentDateType = intentDateTypeEnum;
-            intentField.Text = NcMessageIntent.GetIntentString (intentDateTypeEnum, mcMessage);
+            intentDisplayLabel.Text = NcMessageIntent.GetIntentString (intentDateTypeEnum, mcMessage);
         }
 
         public override UIView InputAccessoryView {
@@ -416,18 +416,18 @@ namespace NachoClient.iOS
             intentLabel.TextColor = A.Color_0B3239;
             intentLabel.SizeToFit ();
 
-            intentField = new UITextField ();
-            intentField.Font = A.Font_AvenirNextRegular14;
-            intentField.TextColor = A.Color_808080;
-            intentField.Placeholder = "NONE";
-            intentField.ShouldBeginEditing += ((textField) => {
-                textField.ResignFirstResponder();
+            intentDisplayLabel = new UILabel ();
+            intentDisplayLabel.Font = A.Font_AvenirNextRegular14;
+            intentDisplayLabel.TextColor = A.Color_808080;
+            intentDisplayLabel.Text = "NONE";
+            intentDisplayLabel.SizeToFit ();
+
+            UITapGestureRecognizer intentTap = new UITapGestureRecognizer (() => {
                 View.EndEditing (true);
                 ShowMessageIntents ();
-                return true;
             });
-
-            intentField.SizeToFit ();
+            intentDisplayLabel.AddGestureRecognizer (intentTap);
+            intentDisplayLabel.UserInteractionEnabled = true;
 
             intentArrowAccessory = new UIImageView (new RectangleF (0, 0, 12, 12));
             intentArrowAccessory.Image = UIImage.FromBundle ("icn-rightarrow");
@@ -468,7 +468,7 @@ namespace NachoClient.iOS
                 priorityButton,
                 intentLabel,
                 intentLabelHR,
-                intentField,
+                intentDisplayLabel,
                 intentArrowAccessory,
                 attachmentView,
                 attachmentViewHR,
@@ -658,8 +658,8 @@ namespace NachoClient.iOS
                 intentArrowAccessory.Frame = new RectangleF(View.Frame.Width - 33, yOffset + LINE_HEIGHT / 2 - 6, intentArrowAccessory.Frame.Width, intentArrowAccessory.Frame.Height);
 
                 var intentFieldWidth = View.Frame.Width - 37;
-                CenterY(intentField, intentFieldStart, yOffset, intentFieldWidth, LINE_HEIGHT);
-                intentField.Frame = new RectangleF(intentField.Frame.X + 4, intentField.Frame.Y, intentFieldWidth - intentFieldStart + 5, intentField.Frame.Height);
+                CenterY(intentDisplayLabel, intentFieldStart, yOffset, intentFieldWidth, LINE_HEIGHT);
+                intentDisplayLabel.Frame = new RectangleF(intentDisplayLabel.Frame.X + 4, intentDisplayLabel.Frame.Y, intentFieldWidth - intentFieldStart + 2, intentDisplayLabel.Frame.Height);
 
                 yOffset += LINE_HEIGHT;
 
