@@ -67,6 +67,7 @@ namespace NachoPlatform
             } else {
                 var insert = CreateQuery (handle);
                 insert.ValueData = NSData.FromString (password);
+                insert.Accessible = SecAccessible.AfterFirstUnlockThisDeviceOnly;
                 res = SecKeyChain.Add (insert);
                 if (SecStatusCode.Success != res) {
                     Log.Error (Log.LOG_SYS, "SetPassword: SecKeyChain.Add returned {0}", res.ToString ());
