@@ -129,95 +129,101 @@ namespace NachoCore.Utils
 
         public void SendEvent (TelemetryEvent tEvent)
         {
-            NSMutableDictionaryEx dict = new NSMutableDictionaryEx ();
+            // I think we are running in this problem:
+            // http://forums.xamarin.com/discussion/6404/memory-leaks-and-nsautoreleasepool
+            // Wrapping this around auto release pool does seem to help to reduce leak.
+            using (NSAutoreleasePool autoreleasePool = new NSAutoreleasePool ()) {
+                NSMutableDictionaryEx dict = new NSMutableDictionaryEx ();
 
-            dict.AddString ("client", CurrentUser.Username);
-            dict.AddDate ("timestamp", tEvent.Timestamp);
-            dict.AddString ("os_type", Device.Instance.OsType ());
-            dict.AddString ("os_version", Device.Instance.OsVersion ());
-            dict.AddString ("device_model", Device.Instance.Model ());
-            dict.AddString ("build_version", BuildInfo.Version);
+                dict.AddString ("client", CurrentUser.Username);
+                dict.AddDate ("timestamp", tEvent.Timestamp);
+                dict.AddString ("os_type", Device.Instance.OsType ());
+                dict.AddString ("os_version", Device.Instance.OsVersion ());
+                dict.AddString ("device_model", Device.Instance.Model ());
+                dict.AddString ("build_version", BuildInfo.Version);
 
-            if (tEvent.IsLogEvent ()) {
-                switch (tEvent.Type) {
-                case TelemetryEventType.ERROR:
-                    dict.AddString ("event_type", "ERROR");
-                    break;
-                case TelemetryEventType.WARN:
-                    dict.AddString ("event_type", "WARN");
-                    break;
-                case TelemetryEventType.INFO:
-                    dict.AddString ("event_type", "INFO");
-                    break;
-                case TelemetryEventType.DEBUG:
-                    dict.AddString ("event_type", "DEBUG");
-                    break;
-                default:
+                if (tEvent.IsLogEvent ()) {
+                    switch (tEvent.Type) {
+                    case TelemetryEventType.ERROR:
+                        dict.AddString ("event_type", "ERROR");
+                        break;
+                    case TelemetryEventType.WARN:
+                        dict.AddString ("event_type", "WARN");
+                        break;
+                    case TelemetryEventType.INFO:
+                        dict.AddString ("event_type", "INFO");
+                        break;
+                    case TelemetryEventType.DEBUG:
+                        dict.AddString ("event_type", "DEBUG");
+                        break;
+                    default:
+                        NcAssert.True (false);
+                        break;
+                    }
+                    dict.AddString ("message", tEvent.Message);
+                } else if (tEvent.IsWbxmlEvent ()) {
+                    switch (tEvent.Type) {
+                    case TelemetryEventType.WBXML_REQUEST:
+                        dict.AddString ("event_type", "WBXML_REQUEST");
+                        break;
+                    case TelemetryEventType.WBXML_RESPONSE:
+                        dict.AddString ("event_type", "WBXML_RESPONSE");
+                        break;
+                    default:
+                        NcAssert.True (false);
+                        break;
+                    }
+                    dict.AddData ("wbxml", tEvent.Wbxml);
+                } else if (tEvent.IsCounterEvent ()) {
+                    dict.AddString ("event_type", "COUNTER");
+                    dict.AddString ("counter_name", tEvent.CounterName);
+                    dict.AddInteger ("count", tEvent.Count);
+                    dict.AddDate ("counter_start", tEvent.CounterStart);
+                    dict.AddDate ("counter_end", tEvent.CounterEnd);
+                } else if (tEvent.IsCaptureEvent ()) {
+                    dict.AddString ("event_type", "CAPTURE");
+                    dict.AddString ("capture_name", tEvent.CaptureName);
+                    dict.AddInteger ("count", tEvent.Count);
+                    dict.AddInteger ("average", tEvent.Average);
+                    dict.AddInteger ("min", tEvent.Min);
+                    dict.AddInteger ("max", tEvent.Max);
+                    dict.AddInteger ("stddev", tEvent.StdDev);
+                } else if (tEvent.IsUiEvent ()) {
+                    dict.AddString ("event_type", "UI");
+                    dict.AddString ("ui_type", tEvent.UiType);
+                    if (null == tEvent.UiObject) {
+                        dict.AddString ("ui_object", "(unknown)");
+                    } else { 
+                        dict.AddString ("ui_object", tEvent.UiObject);
+                    }
+                    switch (tEvent.UiType) {
+                    case TelemetryEvent.UIDATEPICKER:
+                        dict.AddString ("ui_string", tEvent.UiString);
+                        break;
+                    case TelemetryEvent.UIPAGECONTROL:
+                        dict.AddInteger ("ui_integer", (int)tEvent.UiLong);
+                        break;
+                    case TelemetryEvent.UISEGMENTEDCONTROL:
+                        dict.AddInteger ("ui_integer", (int)tEvent.UiLong);
+                        break;
+                    case TelemetryEvent.UISWITCH:
+                        dict.AddString ("ui_string", tEvent.UiString);
+                        break;
+                    case TelemetryEvent.UIVIEWCONTROLER:
+                        dict.AddString ("ui_string", tEvent.UiString);
+                        break;
+                    }
+                } else if (tEvent.IsSupportEvent ()) {
+                    dict.AddString ("event_type", "SUPPORT");
+                    dict.AddString ("support", tEvent.Support);
+                } else {
                     NcAssert.True (false);
-                    break;
                 }
-                dict.AddString ("message", tEvent.Message);
-            } else if (tEvent.IsWbxmlEvent ()) {
-                switch (tEvent.Type) {
-                case TelemetryEventType.WBXML_REQUEST:
-                    dict.AddString ("event_type", "WBXML_REQUEST");
-                    break;
-                case TelemetryEventType.WBXML_RESPONSE:
-                    dict.AddString ("event_type", "WBXML_RESPONSE");
-                    break;
-                default:
-                    NcAssert.True (false);
-                    break;
-                }
-                dict.AddData ("wbxml", tEvent.Wbxml);
-            } else if (tEvent.IsCounterEvent ()) {
-                dict.AddString ("event_type", "COUNTER");
-                dict.AddString ("counter_name", tEvent.CounterName);
-                dict.AddInteger ("count", tEvent.Count);
-                dict.AddDate ("counter_start", tEvent.CounterStart);
-                dict.AddDate ("counter_end", tEvent.CounterEnd);
-            } else if (tEvent.IsCaptureEvent ()) {
-                dict.AddString ("event_type", "CAPTURE");
-                dict.AddString ("capture_name", tEvent.CaptureName);
-                dict.AddInteger ("count", tEvent.Count);
-                dict.AddInteger ("average", tEvent.Average);
-                dict.AddInteger ("min", tEvent.Min);
-                dict.AddInteger ("max", tEvent.Max);
-                dict.AddInteger ("stddev", tEvent.StdDev);
-            } else if (tEvent.IsUiEvent ()) {
-                dict.AddString ("event_type", "UI");
-                dict.AddString ("ui_type", tEvent.UiType);
-                if (null == tEvent.UiObject) {
-                    dict.AddString ("ui_object", "(unknown)");
-                } else { 
-                    dict.AddString ("ui_object", tEvent.UiObject);
-                }
-                switch (tEvent.UiType) {
-                case TelemetryEvent.UIDATEPICKER:
-                    dict.AddString ("ui_string", tEvent.UiString);
-                    break;
-                case TelemetryEvent.UIPAGECONTROL:
-                    dict.AddInteger ("ui_integer", (int)tEvent.UiLong);
-                    break;
-                case TelemetryEvent.UISEGMENTEDCONTROL:
-                    dict.AddInteger ("ui_integer", (int)tEvent.UiLong);
-                    break;
-                case TelemetryEvent.UISWITCH:
-                    dict.AddString ("ui_string", tEvent.UiString);
-                    break;
-                case TelemetryEvent.UIVIEWCONTROLER:
-                    dict.AddString ("ui_string", tEvent.UiString);
-                    break;
-                }
-            } else if (tEvent.IsSupportEvent ()) {
-                dict.AddString ("event_type", "SUPPORT");
-                dict.AddString ("support", tEvent.Support);
-            } else {
-                NcAssert.True (false);
+                PFObject anEvent = PFObject.ObjectWithClassName ("Events", dict.GetDictionary ());
+                anEvent.ACL = DefaultAcl;
+                anEvent.Save ();
+                anEvent.Dispose ();
             }
-//            PFObject anEvent = PFObject.ObjectWithClassName ("Events", dict.GetDictionary ());
-//            anEvent.ACL = DefaultAcl;
-//            anEvent.Save ();
         }
     }
 }
