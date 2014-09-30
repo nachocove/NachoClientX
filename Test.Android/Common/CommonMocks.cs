@@ -164,7 +164,6 @@ namespace Test.iOS
             Cred = new McCred () {
                 AccountId = Account.Id,
                 Username = "dummy",
-                Password = "password",
             };
         }
     }

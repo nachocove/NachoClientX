@@ -142,8 +142,7 @@ namespace NachoClient.iOS
                     McAccount UsersAccount = McAccount.QueryById<McAccount>(LoginHelpers.GetCurrentAccountId());
                     McCred UsersCredentials = McCred.QueryByAccountId<McCred>(UsersAccount.Id).SingleOrDefault ();
                     UsersCredentials.Username = emailField.Text;
-                    UsersCredentials.Password = passwordField.Text;
-                    UsersCredentials.Update();
+                    UsersCredentials.UpdatePassword (passwordField.Text);
                     BackEnd.Instance.CredResp(UsersAccount.Id);
                     View.EndEditing(true);
                     DismissViewController(true, null);
@@ -201,7 +200,7 @@ namespace NachoClient.iOS
             if (LoginHelpers.IsCurrentAccountSet ()) {
                 McAccount Account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
                 McCred Cred = McCred.QueryByAccountId<McCred> (Account.Id).SingleOrDefault ();
-                return Cred.Password;
+                return Cred.GetPassword ();
             } else {
                 return "";
             }

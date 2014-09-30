@@ -41,7 +41,10 @@ namespace NachoCore
         public bool Wipe (McAccount account, string url, string protoVersion)
         {
             var cred = McCred.QueryByAccountId<McCred> (account.Id).SingleOrDefault ();
-            return Device.Instance.Wipe (cred.Username, cred.Password, url, protoVersion);
+            if (Keychain.Instance.HasKeychain ()) {
+                Keychain.Instance.SetPassword (cred.Id, string.Empty);
+            }
+            return Device.Instance.Wipe (cred.Username, cred.GetPassword (), url, protoVersion);
         }
     }
 }

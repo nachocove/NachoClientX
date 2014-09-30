@@ -385,7 +385,7 @@ namespace NachoCore.ActiveSync
             };
             if (ServerUri.IsHttps ()) {
                 // Never send password over unencrypted channel.
-                handler.Credentials = new NetworkCredential (BEContext.Cred.Username, BEContext.Cred.Password);
+                handler.Credentials = new NetworkCredential (BEContext.Cred.Username, BEContext.Cred.GetPassword ());
             }
             Client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler);
             Client.Timeout = this.Timeout;
