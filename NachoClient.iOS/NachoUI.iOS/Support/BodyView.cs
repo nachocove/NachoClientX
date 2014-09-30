@@ -1,4 +1,4 @@
-﻿//#define DEBUG_UI
+﻿#define DEBUG_UI
 
 //  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
@@ -86,14 +86,13 @@ namespace NachoClient.iOS
         #if (DEBUG_UI)
         static UIColor SCROLLVIEW_BGCOLOR = A.Color_NachoGreen;
         static UIColor MESSAGEVIEW_BGCOLOR = A.Color_NachoYellow;
-        const int MESSAGEVIEW_INSET = 4;
-        const int BODYVIEW_INSET = 4;
+        public const int MESSAGEVIEW_INSET = 4;
+        public const int BODYVIEW_INSET = 4;
         #else
         static UIColor SCROLLVIEW_BGCOLOR = UIColor.White;
         static UIColor MESSAGEVIEW_BGCOLOR = UIColor.White;
-        const int MESSAGEVIEW_INSET = 2;
-        const int BODYVIEW_INSET = 0;
-        //const int BODYVIEW_INSET = 4;
+        public const int MESSAGEVIEW_INSET = 1;
+        public const int BODYVIEW_INSET = 1;
         #endif
 
         protected enum LoadState {
@@ -299,7 +298,6 @@ namespace NachoClient.iOS
             label.Font = A.Font_AvenirNextRegular17;
             label.AttributedText = attributedString;
             label.SizeToFit ();
-            ViewFramer.Create (label).AdjustHeight (30.0f);
             label.Tag = (int)TagType.MESSAGE_PART_TAG;
             // We are using double tap for zoom toggling. So, we want to disable 
             // double tap to select action. A long tap can still select text.
@@ -444,23 +442,37 @@ namespace NachoClient.iOS
                 return true;
             });
 
-            // Update the scroll view with the up-to-date message view size
-            ContentSize = new SizeF (messageView.Frame.Width, messageView.Frame.Height);
+            // Decide the message view size based on the bounding frame and
+            // configured scrolling options. If the required size (from
+            // messageCursor) is smaller than the bounding frame, use the bounding
+            // frame. If scrolling is enabled for a given direction, it is fixed
+            // to the dimension of the bounding frame. Otherwise, it is the size
+            // of the message view but at least as big as the bounding frame dimemsion.
 
+            ContentSize = new SizeF (messageView.Frame.Width, messageView.Frame.Height);
             // Adjust for outer boundary for insets
-            height -= 2 * BODYVIEW_INSET;
             height -= 2 * MESSAGEVIEW_INSET;
-            width -= 2 * BODYVIEW_INSET;
+            width -= 2 * MESSAGEVIEW_INSET;
 
             // Set up scroll view frame based on the configured scrolling options
             float messageWidth = width, messageHeight = height;
             if (!HorizontalScrollingEnabled) {
-                messageWidth = Math.Max (width, messageView.Frame.Width * ZoomScale);
+                messageWidth = Math.Max (width, messageView.Frame.Width) * ZoomScale;
             }
             if (!VeriticalScrollingEnabled) {
-                messageHeight = Math.Max (width, messageView.Frame.Height * ZoomScale);
+                messageHeight = Math.Max (height, messageView.Frame.Height) * ZoomScale;
             }
-            Frame = new RectangleF (X, Y, messageWidth, messageHeight);
+            messageWidth = Math.Max (width, messageWidth);
+            messageHeight = Math.Max (height, messageHeight);
+
+            ViewFramer.Create (messageView)
+                .Width (messageWidth)
+                .Height (messageHeight);
+            ViewFramer.Create (this)
+                .X(X)
+                .Y(Y)
+                .Width (messageWidth + 2 * MESSAGEVIEW_INSET)
+                .Height (messageHeight + 2 * MESSAGEVIEW_INSET);
         }
 
         [MonoTouch.Foundation.Export ("DownloadMessage:")]
