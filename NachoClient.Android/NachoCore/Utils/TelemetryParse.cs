@@ -111,7 +111,7 @@ namespace NachoCore.Utils
             CurrentUser.IncrementKey ("RunCount");
             CurrentUser.Save ();
 
-            DefaultAcl = PFACL.ACL ();
+            DefaultAcl = PFACL.CreateACL ();
             DefaultAcl.SetReadAccessForRoleWithName (true, "Ops");
         }
 
