@@ -223,7 +223,13 @@ namespace NachoClient.iOS
 
         private void ProcessDownloadComplete (bool succeed)
         {
-            var bodyView = carouselView.CurrentItemView.ViewWithTag (HotListCarouselDataSource.PREVIEW_TAG) as BodyView;
+            var currentView = carouselView.CurrentItemView;
+            if (null == currentView) {
+                return;
+            }
+            var bodyView = currentView.ViewWithTag (HotListCarouselDataSource.PREVIEW_TAG) as BodyView;
+            NcAssert.True (null != bodyView);
+
             // To avoid unnecessary reload, we only reload if the current item was downloading
             // and the body is now completely downloaded.
             if (!bodyView.WasDownloadStartedAndNowComplete ()) {
