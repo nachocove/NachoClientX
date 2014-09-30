@@ -1136,6 +1136,11 @@
     <Compile Include="NachoUI.iOS\Support\BodyCalendarView.cs" />
     <Compile Include="NachoPlatform.iOS\KeychainiOS.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoDateController.cs" />
+    <Compile Include="NachoUI.iOS\IntentSelectionViewController.cs" />
+    <Compile Include="NachoUI.iOS\IntentSelectionViewController.designer.cs">
+      <DependentUpon>IntentSelectionViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Interfaces\INachoIntentChooser.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
