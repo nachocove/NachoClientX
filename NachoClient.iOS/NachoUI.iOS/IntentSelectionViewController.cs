@@ -10,17 +10,17 @@ using System.Drawing;
 namespace NachoClient.iOS
 {
     public partial class IntentSelectionViewController : BlurryViewController, INachoIntentChooser
-	{
+    {
         protected NcMessageIntent messageIntent;
         protected float yOffset;
 
         INachoIntentChooserParent owner;
         INachoDateControllerParent dateOwner;
 
-		public IntentSelectionViewController (IntPtr handle) : base (handle)
-		{
+        public IntentSelectionViewController (IntPtr handle) : base (handle)
+        {
 
-		}
+        }
 
         public void SetOwner (INachoIntentChooserParent owner)
         {
@@ -34,7 +34,7 @@ namespace NachoClient.iOS
 
         public void DismissIntentChooser (bool animated, NSAction action)
         {
-            DismissViewController(false, null);
+            DismissViewController (false, null);
         }
 
         public override void ViewDidLoad ()
@@ -65,7 +65,7 @@ namespace NachoClient.iOS
             UIButton dismissView = new UIButton (new RectangleF (20, yOffset + 2, 20, 20));
             dismissView.SetImage (UIImage.FromBundle ("icn-close"), UIControlState.Normal);
             dismissView.TouchUpInside += (object sender, EventArgs e) => {
-                DismissViewController(false, null);
+                DismissViewController (false, null);
             };
             viewBody.Add (dismissView);
 
@@ -83,15 +83,15 @@ namespace NachoClient.iOS
                 intentButton.Font = A.Font_AvenirNextRegular14;
                 intentButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
                 intentButton.TouchUpInside += (object sender, EventArgs e) => {
-                    owner.SelectIntent(intent);
-                    DismissViewController(false, null);
+                    owner.SelectIntent (intent);
+                    DismissViewController (false, null);
                 };
 
                 if (intent.dueDateAllowed) {
                     UIButton dueDateButton = new UIButton (new RectangleF (viewBody.Frame.Width - 40, yOffset + 6f, 25, 25));
                     dueDateButton.SetImage (UIImage.FromBundle ("icn-defer"), UIControlState.Normal);
                     dueDateButton.TouchUpInside += (object sender, EventArgs e) => {
-                        owner.SelectIntent(intent);
+                        owner.SelectIntent (intent);
                         PerformSegue ("SegueToMessagePriority", this);
                     };
                     viewBody.Add (dueDateButton);
@@ -122,5 +122,5 @@ namespace NachoClient.iOS
                 return;
             }
         }
-	}
+    }
 }
