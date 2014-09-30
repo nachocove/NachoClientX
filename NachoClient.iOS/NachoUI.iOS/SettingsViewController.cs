@@ -153,7 +153,7 @@ namespace NachoClient.iOS
                     theAccount.Update ();
 
                     theCred.Username = Account.UserName;
-                    theCred.Password = Account.Password;
+                    theCred.SetTestPassword (Account.Password);
                     theAccount.EmailAddr = Account.EmailAddress;
                     theServer.Host = Account.MailServer;
 
@@ -253,11 +253,10 @@ namespace NachoClient.iOS
             McServer theServer = McServer.QueryById<McServer> (Account.ServerId);
 
             theCred.Username = Account.UserName;
-            theCred.Password = Account.Password;
+            theCred.UpdatePassword (Account.Password);
             theAccount.EmailAddr = Account.EmailAddress;
             theServer.Host = Account.MailServer;
 
-            theCred.Update ();
             theAccount.Update ();
             theServer.Update ();
 
@@ -349,7 +348,6 @@ namespace NachoClient.iOS
             var s = (StatusIndEventArgs)e;
 
             if (NcResult.SubKindEnum.Info_ValidateConfigSucceeded == s.Status.SubKind) {
-                UpdateAccountCredentials ();
                 StopSpinner ();
                 dismissStatusView ();
                 configureStatusViewFor (statusType.Success);
@@ -394,18 +392,6 @@ namespace NachoClient.iOS
                 userNameText.TextColor = userNameAndPasswordTextColor; 
                 return;
             }
-        }
-
-        public void UpdateAccountCredentials ()
-        {
-            McAccount theAccount = McAccount.QueryById<McAccount> (Account.AccountId);
-            McCred theCred = McCred.QueryById<McCred> (Account.McCredId);
-            McServer theServer = McServer.QueryById<McServer> (Account.ServerId);
-
-            theCred.Username = Account.UserName;
-            theCred.Password = Account.Password;
-            theAccount.EmailAddr = Account.EmailAddress;
-            theServer.Host = Account.MailServer;
         }
 
         public Section AddAccountSettings ()
@@ -586,7 +572,7 @@ namespace NachoClient.iOS
 
             Account.AccountName = whatAccount.DisplayName == null ? "Exchange" : whatAccount.DisplayName;
             Account.UserName = userCredentials == null ? "" : userCredentials.Username;
-            Account.Password = userCredentials == null ? "" : userCredentials.Password;
+            Account.Password = userCredentials == null ? "" : userCredentials.GetPassword ();
             Account.EmailAddress = whatAccount.EmailAddr;
             Account.MailServer = userMailServer == null ? "" : userMailServer.Host;
             Account.EmailSignature = whatAccount.Signature == null ? "Sent from Nacho Mail" : whatAccount.Signature;
