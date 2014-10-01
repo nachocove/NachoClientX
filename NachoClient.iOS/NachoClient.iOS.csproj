@@ -1140,6 +1140,10 @@
       <DependentUpon>IntentSelectionViewController.cs</DependentUpon>
     </Compile>
     <Compile Include="NachoUI.iOS\Interfaces\INachoIntentChooser.cs" />
+    <Compile Include="NachoUI.iOS\ContactListViewController.cs" />
+    <Compile Include="NachoUI.iOS\ContactListViewController.designer.cs">
+      <DependentUpon>ContactListViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
