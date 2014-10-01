@@ -18,7 +18,7 @@ using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
-    public partial class MessageComposeViewController : UIViewController, IUcAddressBlockDelegate, IUcAttachmentBlockDelegate, INachoContactChooserDelegate, INachoFileChooserParent, INachoDateControllerParent
+    public partial class MessageComposeViewController : UIViewController, IUcAddressBlockDelegate, IUcAttachmentBlockDelegate, INachoContactChooserDelegate, INachoFileChooserParent, INachoDateControllerParent, INachoIntentChooserParent
     {
         // The reason for sending this message
         protected enum Action {
@@ -231,26 +231,6 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void ShowMessageIntents()
-        {
-            IntentSelectView selectIntentView = (IntentSelectView)View.ViewWithTag (101);
-
-            if (null != selectIntentView) {
-                if (selectIntentView.Hidden) {
-                    selectIntentView.ShowView ();
-                }
-            } else {
-                if (null == messageIntent) {
-                    mcMessage.Subject = subjectField.Text;
-                    messageIntent = new NcMessageIntent ();
-                }
-                selectIntentView = new IntentSelectView (ref messageIntent, ref mcMessage);
-                selectIntentView.SetOwner (this);
-                selectIntentView.CreateView ();
-                selectIntentView.ShowView ();
-            }
-        }
-
         public void PopulateMessageFromQR(NcQuickResponse.QRTypeEnum whichType)
         {
             switch (whichType) {
@@ -326,6 +306,11 @@ namespace NachoClient.iOS
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
+            var blurry = segue.DestinationViewController as BlurryViewController;
+            if (null != blurry) {
+                blurry.CaptureView (this.View);
+            }
+
             if (segue.Identifier.Equals ("ComposeToContactChooser")) {
                 var dc = (INachoContactChooser)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
@@ -346,8 +331,27 @@ namespace NachoClient.iOS
                 vc.SetOwner (this);
                 return;
             }
+            if (segue.Identifier == "SegueToIntentSelection") {
+                var vc = (IntentSelectionViewController)segue.DestinationViewController;
+                vc.SetOwner (this);
+                vc.SetDateControllerOwner (this);
+
+                if (null == messageIntent) {
+                    mcMessage.Subject = subjectField.Text;
+                    messageIntent = new NcMessageIntent ();
+                }
+
+                return;
+            }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
+        }
+
+        public void SelectIntent (NcMessageIntent.Intent intent)
+        {
+            messageIntent.SetType(intent);
+            messageIntent.SetMessageIntent (ref mcMessage);
+            PopulateMessageFromSelectedIntent (MessageDeferralType.None);
         }
 
         /// IUcAttachmentBlock delegate
@@ -426,7 +430,7 @@ namespace NachoClient.iOS
 
             UITapGestureRecognizer intentTap = new UITapGestureRecognizer (() => {
                 View.EndEditing (true);
-                ShowMessageIntents ();
+                PerformSegue("SegueToIntentSelection", this);
             });
             intentDisplayLabel.AddGestureRecognizer (intentTap);
             intentDisplayLabel.UserInteractionEnabled = true;
@@ -1080,11 +1084,6 @@ namespace NachoClient.iOS
         {
             messageIntent.SetMessageIntentDate(ref mcMessage, selectedDate);
             PopulateMessageFromSelectedIntent (request);
-
-            //Dismiss view once a date has been selected. If the user dismiss the priority choosing window
-            //w/out selecting a date, the intent selection view will still be visible. 
-            IntentSelectView selectIntentView = (IntentSelectView)View.ViewWithTag (101);
-            selectIntentView.DismissView ();
         }
 
         public void DismissChildDateController (INachoDateController vc)

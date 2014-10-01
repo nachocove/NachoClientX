@@ -1366,6 +1366,7 @@
                         <segue destination="OCr-PO-3nH" kind="push" identifier="ComposeToNachoNow" id="tkk-6o-6oa"/>
                         <segue destination="j5A-VG-u0P" kind="push" identifier="ComposeToFiles" id="kd2-jR-F9u"/>
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="SegueToMessagePriority" modalTransitionStyle="crossDissolve" id="DDa-hb-SgY"/>
+                        <segue destination="ErX-HX-Xxl" kind="modal" identifier="SegueToIntentSelection" modalPresentationStyle="fullScreen" modalTransitionStyle="crossDissolve" id="5qs-bm-OYT"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="K96-0O-l77" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1395,7 +1396,25 @@
                 </button>
                 <barButtonItem image="icn-send.png" id="7vA-of-pNi" userLabel="Bar Button Item - sendButton"/>
             </objects>
-            <point key="canvasLocation" x="-2477" y="2337"/>
+            <point key="canvasLocation" x="-2425" y="2417"/>
+        </scene>
+        <!--Intent Selection View Controller-->
+        <scene sceneID="mbi-5g-bbR">
+            <objects>
+                <viewController storyboardIdentifier="IntentSelectionViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="ErX-HX-Xxl" customClass="IntentSelectionViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="daV-V3-z61">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                    </view>
+                    <extendedEdge key="edgesForExtendedLayout"/>
+                    <connections>
+                        <segue destination="MCC-ND-pIu" kind="modal" identifier="SegueToMessagePriority" modalPresentationStyle="fullScreen" modalTransitionStyle="crossDissolve" id="eUJ-3D-Pjk"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="q3l-8c-9gn" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-1949" y="3122"/>
         </scene>
         <!--Calendar Settings View Controller-->
         <scene sceneID="4Ji-RJ-mnY">
@@ -1945,31 +1964,31 @@
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="Eb2-K0-nI3"/>
         <segue reference="4z2-t5-9Cd"/>
         <segue reference="QbR-l1-NT5"/>
         <segue reference="od0-Sz-R9p"/>
-        <segue reference="ZzH-qS-KOm"/>
+        <segue reference="Eb2-K0-nI3"/>
+        <segue reference="alQ-9Z-W4y"/>
         <segue reference="fwk-9p-tlV"/>
         <segue reference="FHc-YP-jWH"/>
-        <segue reference="gkM-dU-I3K"/>
-        <segue reference="rew-s7-VAQ"/>
+        <segue reference="tkk-6o-6oa"/>
+        <segue reference="r1y-34-GvV"/>
+        <segue reference="kd2-jR-F9u"/>
+        <segue reference="xrp-ey-B0j"/>
+        <segue reference="eUJ-3D-Pjk"/>
+        <segue reference="B5b-jg-ZNg"/>
         <segue reference="Q8y-4K-BAb"/>
+        <segue reference="rew-s7-VAQ"/>
         <segue reference="Kmd-x6-iCJ"/>
         <segue reference="Bq3-C6-QI6"/>
-        <segue reference="6J3-c2-bz5"/>
         <segue reference="mLY-u0-R5O"/>
-        <segue reference="r1y-34-GvV"/>
-        <segue reference="alQ-9Z-W4y"/>
-        <segue reference="UJb-nL-M4Z"/>
+        <segue reference="6J3-c2-bz5"/>
+        <segue reference="ZzH-qS-KOm"/>
         <segue reference="kYM-OY-NE0"/>
-        <segue reference="xrp-ey-B0j"/>
-        <segue reference="kd2-jR-F9u"/>
-        <segue reference="B5b-jg-ZNg"/>
-        <segue reference="w67-dy-XSq"/>
         <segue reference="7sK-rg-HQL"/>
         <segue reference="peA-r2-tjq"/>
         <segue reference="m2D-2n-RiV"/>
+        <segue reference="w67-dy-XSq"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.45098039215686275" green="1" blue="0.95294117647058818" alpha="1" colorSpace="deviceRGB"/>
 </document>

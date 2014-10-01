@@ -1123,7 +1123,6 @@
     <Compile Include="NachoUI.iOS\InboxViewController.designer.cs">
       <DependentUpon>InboxViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="NachoUI.iOS\Support\IntentSelectView.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcMessageIntent.cs">
       <Link>NachoCore\Brain\NcMessageIntent.cs</Link>
     </Compile>
@@ -1136,6 +1135,11 @@
     <Compile Include="NachoUI.iOS\Support\BodyCalendarView.cs" />
     <Compile Include="NachoPlatform.iOS\KeychainiOS.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoDateController.cs" />
+    <Compile Include="NachoUI.iOS\IntentSelectionViewController.cs" />
+    <Compile Include="NachoUI.iOS\IntentSelectionViewController.designer.cs">
+      <DependentUpon>IntentSelectionViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Interfaces\INachoIntentChooser.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

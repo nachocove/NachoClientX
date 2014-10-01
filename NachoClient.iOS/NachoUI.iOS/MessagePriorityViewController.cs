@@ -16,6 +16,7 @@ namespace NachoClient.iOS
     {
         public McEmailMessageThread thread;
         protected INachoDateControllerParent owner;
+        protected IntentSelectionViewController intentSelector;
 
         const float BUTTON_SIZE = 60;
         const float BUTTON_LABEL_HEIGHT = 20;
@@ -32,6 +33,11 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
             CreateView ();
+        }
+
+        public void SetIntentSelector (IntentSelectionViewController selector)
+        {
+            this.intentSelector = selector;
         }
 
         public void CreateView ()
@@ -166,6 +172,9 @@ namespace NachoClient.iOS
             vc.owner = null;
             vc.DismissViewController (false, new NSAction (delegate {
                 owner.DismissChildDateController (this);
+                if (null != intentSelector) {
+                    intentSelector.DismissIntentChooser (false, null);
+                }
             }));
         }
 
@@ -173,7 +182,6 @@ namespace NachoClient.iOS
         {
             if (MessageDeferralType.Custom == dateType) {
                 owner.DateSelected (dateType, thread, selectedDate);
-                owner.DismissChildDateController (this);
             } else {
                 switch (dateType) {
                 case MessageDeferralType.Later:
@@ -196,6 +204,10 @@ namespace NachoClient.iOS
                 }
                 owner.DateSelected (dateType, thread, selectedDate);
                 owner.DismissChildDateController (this);
+
+                if (null != intentSelector) {
+                    intentSelector.DismissIntentChooser (false, null);
+                }
             }
         }
 
