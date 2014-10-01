@@ -460,9 +460,7 @@ namespace NachoClient.iOS
         #if (DEBUG_UI)
         const int VIEW_INSET = 4;
         #else
-        // FIXME - Fix the black band problem and switch back to this.
-        const int VIEW_INSET = 0;
-        //const int VIEW_INSET = 2;
+        const int VIEW_INSET = 2;
         #endif
 
         protected void CreateView ()
@@ -934,11 +932,12 @@ namespace NachoClient.iOS
         {
             // Just need to set view (inside scrollView) with a small inset
             float width = scrollView.Frame.Width - 2 * VIEW_INSET;
-            float height = scrollView.Frame.Height; // default (smallest) value
-            if (height < bodyView.Frame.Height) {
-                height = bodyView.Frame.Height;
-            }
+            float height;
+
+            height = separatorYOffset;
+            height += bodyView.Frame.Height * bodyView.ZoomScale;
             height += 2 * VIEW_INSET;
+            height = Math.Max (height, scrollView.Frame.Height);
             view.Frame = new RectangleF (VIEW_INSET, VIEW_INSET, width, height);
 
             scrollView.ContentSize = new SizeF(
