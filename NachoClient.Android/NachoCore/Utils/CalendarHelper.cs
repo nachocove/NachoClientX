@@ -1011,12 +1011,12 @@ namespace NachoCore.Utils
             var exceptions = McException.QueryForExceptionId (c.Id, startTime);
 
             if ((null == exceptions) || (0 == exceptions.Count)) {
-                var e = McEvent.Create (c.AccountId, startTime, endTime, c.Id, 0);
-                ScheduleNotification (e, c.Reminder);
+                McEvent.Create (c.AccountId, startTime, endTime, (int)c.Reminder, 
+                    Pretty.FormatAlert (c.Reminder), c.Id, 0);
             } else {
                 foreach (var exception in exceptions) {
-                    var e = McEvent.Create (c.AccountId, exception.StartTime, exception.EndTime, c.Id, exception.Id);
-                    ScheduleNotification (e, exception.Reminder);
+                    McEvent.Create (c.AccountId, exception.StartTime, exception.EndTime, (int)exception.Reminder, 
+                        Pretty.FormatAlert (exception.Reminder), c.Id, exception.Id);
                 }
             }
         }
@@ -1028,23 +1028,6 @@ namespace NachoCore.Utils
             c.Update ();
             NcEventManager.Instance.ExpandRecurrences ();
         }
-
-        /// Note that McEvent Ids are not immutable; they change often as the
-        /// calendar event changes. Thus we push the immutable calendar ID into
-        /// the notification. The 'calendar view' event will show the proper view.
-        protected static void ScheduleNotification (McEvent e, uint reminder)
-        {
-            if (0 == reminder) {
-                return;
-            }
-            var notifier = NachoPlatform.Notif.Instance;
-            notifier.CancelNotif (e.Id);
-            var notificationTime = e.StartTime.AddMinutes (-reminder);
-            if (DateTime.UtcNow < notificationTime) {
-                notifier.ScheduleNotif (e.Id, e.StartTime.AddMinutes (-reminder), Pretty.FormatAlert (reminder));
-            }
-        }
-
     }
 }
 

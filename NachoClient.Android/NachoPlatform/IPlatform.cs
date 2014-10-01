@@ -81,6 +81,8 @@ namespace NachoPlatform
 
     public interface IPlatformNotif
     {
+        int MaxScheduledCount { get; }
+        int ScheduledCount { get; }
         void ScheduleNotif (int handle, DateTime when, string message);
         void CancelNotif (int handle);
         void CancelNotif (List<int> handles);
