@@ -119,6 +119,15 @@ namespace NachoClient.iOS
 
         protected McAbstrItem abstrItem;
 
+        public new float MinimumZoomScale {
+            get {
+                return base.MinimumZoomScale;
+            }
+            set {
+                base.MinimumZoomScale = Math.Min (base.MinimumZoomScale, value);
+            }
+        }
+
         // Various delegates for notification
         public RenderStart OnRenderStart;
         public RenderComplete OnRenderComplete;
@@ -136,7 +145,7 @@ namespace NachoClient.iOS
             DidZoom += (object sender, EventArgs e) => {
                 Log.Info (Log.LOG_UI, "body view scroll view did zoom");
             };
-            MinimumZoomScale = 0.5f;
+            MinimumZoomScale = 1.0f;
             MaximumZoomScale = 4.0f;
             ViewForZoomingInScrollView = delegate {
                 return messageView;
