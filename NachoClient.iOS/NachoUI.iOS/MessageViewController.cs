@@ -939,7 +939,6 @@ namespace NachoClient.iOS
                 height = bodyView.Frame.Height;
             }
             height += 2 * VIEW_INSET;
-            height += attachmentListView.Frame.Height;
             view.Frame = new RectangleF (VIEW_INSET, VIEW_INSET, width, height);
 
             scrollView.ContentSize = new SizeF(
