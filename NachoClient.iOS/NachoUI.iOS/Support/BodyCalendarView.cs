@@ -14,6 +14,7 @@ using DDay.iCal.Serialization.iCalendar;
 using NachoCore;
 using NachoCore.Utils;
 using NachoCore.Model;
+using System.Collections.Generic;
 
 namespace NachoClient.iOS
 {
@@ -266,9 +267,8 @@ namespace NachoClient.iOS
             };
             responseView.Add (changeResponseButton);
 
-            McCalendar calendarItem;
-            if (null != McCalendar.QueryByUID (UID)) {
-                calendarItem = McCalendar.QueryByUID (UID);
+            McCalendar calendarItem = McCalendar.QueryByUID (UID);
+            if (null != calendarItem) {
 
                 acceptButton.TouchUpInside += (object sender, EventArgs e) => {
                     ToggleButtons (NcResponseType.Accepted);
@@ -287,6 +287,68 @@ namespace NachoClient.iOS
                     declineButton.Selected = true;
                     UpdateMeetingStatus (calendarItem, NcResponseType.Declined);
                 };
+
+                if (calendarItem.ResponseTypeIsSet && NcResponseType.Organizer == calendarItem.ResponseType) {
+                    // The organizer doesn't normally get an meeting request.
+                    // I'm not sure if this will ever happen.
+                    messageLabel.Hidden = false;
+                    messageLabel.Text = "You are the organizer";
+                    acceptButton.Hidden = false;
+                    acceptButton.UserInteractionEnabled = false;
+                    acceptButton.Selected = true;
+                    acceptLabel.Hidden = true;
+                    tentativeButton.Hidden = true;
+                    tentativeLabel.Hidden = true;
+                    declineButton.Hidden = true;
+                    declineLabel.Hidden = true;
+
+                } else if (calendarItem.ResponseTypeIsSet) {
+
+                    switch (calendarItem.ResponseType) {
+
+                    case NcResponseType.Accepted:
+                        acceptButton.Selected = true;
+                        acceptButton.Frame = new RectangleF (25, 15, 24, 24);
+                        messageLabel.Text = "You are going";
+                        messageLabel.Hidden = false;
+                        changeResponseButton.Hidden = false;
+                        acceptLabel.Hidden = true;
+                        tentativeButton.Hidden = true;
+                        declineButton.Hidden = true;
+                        tentativeLabel.Hidden = true;
+                        declineLabel.Hidden = true;
+                        acceptButton.UserInteractionEnabled = false;
+                        break;
+
+                    case NcResponseType.Tentative:
+                        tentativeButton.Selected = true;
+                        tentativeButton.Frame = new RectangleF (25, 15, 24, 24);
+                        messageLabel.Text = "Tentative";
+                        messageLabel.Hidden = false;
+                        changeResponseButton.Hidden = false;
+                        acceptButton.Hidden = true;
+                        acceptLabel.Hidden = true;
+                        tentativeLabel.Hidden = true;
+                        declineButton.Hidden = true;
+                        declineLabel.Hidden = true;
+                        tentativeButton.UserInteractionEnabled = false;
+                        break;
+
+                    case NcResponseType.Declined:
+                        declineButton.Selected = true;
+                        declineButton.Frame = new RectangleF (25, 15, 24, 24);
+                        messageLabel.Text = "You are not going to this meeting";
+                        messageLabel.Hidden = false;
+                        changeResponseButton.Hidden = false;
+                        acceptButton.Hidden = true;
+                        acceptLabel.Hidden = true;
+                        tentativeButton.Hidden = true;
+                        tentativeLabel.Hidden = true;
+                        declineLabel.Hidden = true;
+                        declineButton.UserInteractionEnabled = false;
+                        break;
+                    }
+                }
             } else {
                 eventDoesNotExistLabel.Hidden = false;
                 acceptButton.Hidden = true;
@@ -446,6 +508,15 @@ namespace NachoClient.iOS
         void UpdateMeetingStatus (McCalendar c, NcResponseType status)
         {
             BackEnd.Instance.RespondCalCmd (c.AccountId, c.Id, status);
+
+            if (c.ResponseRequestedIsSet && c.ResponseRequested) {
+                // Send an e-mail message to the organizer with the response.
+                McAccount account = McAccount.QueryById<McAccount> (c.AccountId);
+                var iCalPart = CalendarHelper.iCalResponseToMimePart (account, (McCalendar)c, status);
+                // TODO Give the user a chance to enter some text. For now, the message body is empty.
+                var mimeBody = CalendarHelper.CreateMime ("", iCalPart, new List<McAttachment> ());
+                CalendarHelper.SendMeetingResponse (account, (McCalendar)c, mimeBody, status);
+            }
         }
     }
 }
