@@ -49,9 +49,9 @@ namespace NachoCore.Utils
             return t;
         }
 
-        public static IICalendar iCalendarFromMcCalendarWithResponse (McAccount account, McCalendar c, string tzid, NcResponseType response)
+        public static IICalendar iCalendarFromMcCalendarWithResponse (McAccount account, McCalendar c, NcResponseType response)
         {
-            var iCal = iCalendarFromMcCalendarCommon (account, c, tzid);
+            var iCal = iCalendarFromMcCalendarCommon (c);
             iCal.Method = DDay.iCal.CalendarMethods.Reply;
             var vEvent = iCal.Events [0];
             var iAttendee = new Attendee ("MAILTO:" + account.EmailAddr);
@@ -64,9 +64,9 @@ namespace NachoCore.Utils
             return iCal;
         }
 
-        public static IICalendar iCalendarFromMcCalendar (McAccount account, McCalendar c, string tzid)
+        public static IICalendar iCalendarFromMcCalendar (McAccount account, McCalendar c)
         {
-            var iCal = iCalendarFromMcCalendarCommon (account, c, tzid);
+            var iCal = iCalendarFromMcCalendarCommon (c);
             iCal.Method = DDay.iCal.CalendarMethods.Request;
 
             var evt = iCal.Events [0];
@@ -107,12 +107,12 @@ namespace NachoCore.Utils
         /// <summary>
         /// The parts of iCalendar that are common to both meeting requests and meeting responses.
         /// </summary>
-        private static IICalendar iCalendarFromMcCalendarCommon (McAccount account, McCalendar c, string tzid)
+        private static IICalendar iCalendarFromMcCalendarCommon (McCalendar c)
         {
             var iCal = new iCalendar ();
             iCal.ProductID = "Nacho Mail";
 
-            var tzi = TimeZoneInfo.FindSystemTimeZoneById (tzid);
+            var tzi = TimeZoneInfo.Local;
             var timezone = FromSystemTimeZone (tzi, c.StartTime.AddYears (-1), false);
             var localTimeZone = iCal.AddTimeZone (timezone);
             if (null != tzi.StandardName) {
@@ -307,23 +307,8 @@ namespace NachoCore.Utils
             var mimeMessage = new MimeMessage ();
             mimeMessage.From.Add (new MailboxAddress (Pretty.DisplayNameForAccount (account), account.EmailAddr));
             mimeMessage.To.Add (new MailboxAddress (c.OrganizerName, c.OrganizerEmail));
-            string responseString;
-            switch (response) {
-            case NcResponseType.Accepted:
-                responseString = "Accepted";
-                break;
-            case NcResponseType.Tentative:
-                responseString = "Tentative";
-                break;
-            case NcResponseType.Declined:
-                responseString = "Declined";
-                break;
-            default:
-                responseString = "Unknown";
-                break;
-            }
-            mimeMessage.Subject = Pretty.SubjectString (responseString + ": " + c.Subject);
-            mimeMessage.Date = System.DateTime.UtcNow;
+            mimeMessage.Subject = Pretty.SubjectString (ResponseSubjectPrefix (response) + ": " + c.Subject);
+            mimeMessage.Date = DateTime.UtcNow;
             mimeMessage.Body = mimeBody;
             var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
             BackEnd.Instance.SendEmailCmd (mcMessage.AccountId, mcMessage.Id, c.Id);
@@ -334,20 +319,20 @@ namespace NachoCore.Utils
         /// <summary>
         /// Create a text/calendar MIME part with a meeting request for the given event.
         /// </summary>
-        public static TextPart iCalToMimePart (McAccount account, McCalendar c, string tzid)
+        public static TextPart iCalToMimePart (McAccount account, McCalendar c)
         {
             return iCalToMimePartCommon (
-                CalendarHelper.iCalendarFromMcCalendar (account, c, tzid),
+                CalendarHelper.iCalendarFromMcCalendar (account, c),
                 DDay.iCal.CalendarMethods.Request);
         }
 
         /// <summary>
         /// Create a text/calendar MIME part with a meeting response for the given event.
         /// </summary>
-        public static TextPart iCalResponseToMimePart (McAccount account, McCalendar c, string tzid, NcResponseType response)
+        public static TextPart iCalResponseToMimePart (McAccount account, McCalendar c, NcResponseType response)
         {
             return iCalToMimePartCommon (
-                CalendarHelper.iCalendarFromMcCalendarWithResponse (account, c, tzid, response),
+                CalendarHelper.iCalendarFromMcCalendarWithResponse (account, c, response),
                 DDay.iCal.CalendarMethods.Reply);
         }
 

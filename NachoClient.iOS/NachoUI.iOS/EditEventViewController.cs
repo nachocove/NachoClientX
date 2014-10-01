@@ -1263,7 +1263,7 @@ namespace NachoClient.iOS
         protected void SendInvites ()
         {
             //var tzid = RadioElementWithData.SelectedData (timezoneEntryElement);
-            var iCalPart = CalendarHelper.iCalToMimePart (account, c, "Local");
+            var iCalPart = CalendarHelper.iCalToMimePart (account, c);
             var mimeBody = CalendarHelper.CreateMime (c.Description, iCalPart, c.attachments);
 
             CalendarHelper.SendInvites (account, c, null, mimeBody);
