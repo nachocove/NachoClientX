@@ -6,6 +6,7 @@ using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using NachoCore.Brain;
 using System.Drawing;
+using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
@@ -121,6 +122,8 @@ namespace NachoClient.iOS
                 vc.SetOwner (dateOwner);
                 vc.SetIntentSelector (this);
                 return;
+            } else {
+                NcAssert.CaseError ("Not prepared for segue: " + segue.Identifier);
             }
         }
     }
