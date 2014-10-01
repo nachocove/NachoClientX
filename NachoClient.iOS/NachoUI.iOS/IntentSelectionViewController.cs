@@ -122,9 +122,9 @@ namespace NachoClient.iOS
                 vc.SetOwner (dateOwner);
                 vc.SetIntentSelector (this);
                 return;
-            } else {
-                NcAssert.CaseError ("Not prepared for segue: " + segue.Identifier);
             }
+
+            NcAssert.CaseError ("Not prepared for segue: " + segue.Identifier);
         }
     }
 }
