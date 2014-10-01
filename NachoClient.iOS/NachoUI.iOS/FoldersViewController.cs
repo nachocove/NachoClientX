@@ -73,7 +73,10 @@ namespace NachoClient.iOS
 
         public override bool HidesBottomBarWhenPushed {
             get {
-                return this.NavigationController.TopViewController == this;
+                if (modal) {
+                    return this.NavigationController.TopViewController == this;
+                } 
+                return false;
             }
         }
 
@@ -96,6 +99,8 @@ namespace NachoClient.iOS
         protected void CreateView ()
         {
             float yOffset = 20f;
+            scrollView = new UIScrollView (new RectangleF (0, 0, View.Frame.Width, View.Frame.Height));
+
             if (modal) {
                 navbar.Frame = new RectangleF (0, 0, View.Frame.Width, 64);
                 View.Add (navbar);
@@ -112,9 +117,9 @@ namespace NachoClient.iOS
                 };
                 yOffset += navbar.Frame.Height;
                 scrollView = new UIScrollView (new RectangleF (0, yOffset, View.Frame.Width, View.Frame.Height));
+            } else {
+                NavigationItem.Title = "Folders";
             }
-            NavigationItem.Title = "Folders";
-            scrollView = new UIScrollView (new RectangleF (0, 0, View.Frame.Width, View.Frame.Height));
 
             float marginPadding = 15f;
 
@@ -206,6 +211,7 @@ namespace NachoClient.iOS
 
         protected void LayoutView ()
         {
+            var yOffset = 0f;
             var selectedDefaultButtons = McMutables.GetOrCreate (McAccount.GetDeviceAccount ().Id, "FoldersDefaultsSelectedButtons", "DefaultsSelectedButtons", null);
             var selectedYourFoldersButtons = McMutables.GetOrCreate (McAccount.GetDeviceAccount ().Id, "FoldersYourFoldersSelectedButtons", "YourFoldersSelectedButtons", null);
             if (null != selectedDefaultButtons) {
@@ -223,7 +229,7 @@ namespace NachoClient.iOS
 
             defaultCellsOffset = 0;
 
-            var yOffset = 0f;
+
             if (hasRecents) {
                 yOffset += recentView.Frame.Bottom;
             }
@@ -248,7 +254,10 @@ namespace NachoClient.iOS
             yourFoldersView.Frame = new RectangleF (yourFoldersView.Frame.X, yOffset, yourFoldersView.Frame.Width, folderListHeight);
             yOffset += folderListHeight;
            
-            yOffset += 45 + 64;
+            if (!modal) {
+                yOffset += 64 + 24;
+            }
+            yOffset += 45;
             scrollView.ContentSize = new SizeF (View.Frame.Width, yOffset);
 
             HideLastLine (defaultsView);
@@ -303,11 +312,11 @@ namespace NachoClient.iOS
             UILabel label = new UILabel (new RectangleF (52, 0, cell.Frame.Width - 52, 44));
             label.Text = folder.DisplayName;
             label.Font = A.Font_AvenirNextMedium14;
-            label.TextColor = A.Color_NachoGreen;
+            label.TextColor = A.Color_NachoDarkText;
             cell.Add (label);
 
             UIImageView imageView = new UIImageView (new RectangleF (13, cell.Frame.Height / 2 - 14, 24, 24));
-            imageView.Image = UIImage.FromBundle ("nav-folder");
+            imageView.Image = UIImage.FromBundle ("folder-folder");
             cell.Add (imageView);
 
             if (folder != recentFolderList.Last ()) {
@@ -353,11 +362,11 @@ namespace NachoClient.iOS
             UILabel label = new UILabel (new RectangleF (52, 0, cell.Frame.Width - 52, 44));
             label.Text = folder.folderName;
             label.Font = A.Font_AvenirNextMedium14;
-            label.TextColor = A.Color_NachoGreen;
+            label.TextColor = A.Color_NachoDarkText;
             cell.Add (label);
 
             UIImageView imageView = new UIImageView (new RectangleF (13, cell.Frame.Height / 2 - 14, 24, 24));
-            imageView.Image = UIImage.FromBundle ("nav-folder");
+            imageView.Image = UIImage.FromBundle ("folder-folder");
             cell.Add (imageView);
 
             var line = Util.AddHorizontalLineView (52, 43, cell.Frame.Width - 47, A.Color_NachoBorderGray);
