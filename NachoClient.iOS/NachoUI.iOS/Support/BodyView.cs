@@ -103,7 +103,7 @@ namespace NachoClient.iOS
 
         public bool HorizontalScrollingEnabled { get; set; }
 
-        public bool VeriticalScrollingEnabled { get; set; }
+        public bool VerticalScrollingEnabled { get; set; }
 
         public bool AutomaticallyScaleHtmlContent { get; set; }
 
@@ -127,7 +127,7 @@ namespace NachoClient.iOS
         public BodyView (RectangleF initialFrame, UIView parentView)
         {
             HorizontalScrollingEnabled = true;
-            VeriticalScrollingEnabled = true;
+            VerticalScrollingEnabled = true;
             AutomaticallyScaleHtmlContent = true;
 
             this.parentView = parentView;
@@ -464,7 +464,7 @@ namespace NachoClient.iOS
 
             // Set up scroll view frame based on the configured scrolling options
             float scrollWidth = (HorizontalScrollingEnabled ? width : messageWidth) + 2 * MESSAGEVIEW_INSET;
-            float scrollHeight = (VeriticalScrollingEnabled ? height : messageHeight) + 2 * MESSAGEVIEW_INSET;
+            float scrollHeight = (VerticalScrollingEnabled ? height : messageHeight) + 2 * MESSAGEVIEW_INSET;
 
             ViewFramer.Create (this)
                 .X(X)
