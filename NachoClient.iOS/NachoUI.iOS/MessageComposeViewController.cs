@@ -77,6 +77,8 @@ namespace NachoClient.iOS
         protected float LINE_HEIGHT = 40;
         protected float LEFT_INDENT = 15;
         protected float RIGHT_INDENT = 15;
+        protected float BODY_LEFT_MARGIN = 10;
+        protected float BODY_RIGHT_MARGIN = 10;
 
         protected NcQuickResponse.QRTypeEnum QRType = NcQuickResponse.QRTypeEnum.None;
 
@@ -440,7 +442,6 @@ namespace NachoClient.iOS
             bodyTextView.Font = A.Font_AvenirNextRegular14;
             bodyTextView.TextColor = A.Color_NachoDarkText;
             bodyTextView.BackgroundColor = UIColor.White;
-            bodyTextView.ContentInset = new UIEdgeInsets (0, 15, 0, -15);
             if (EmailTemplate != null) {
                 bodyTextView.InsertText (EmailTemplate);
             }
@@ -674,7 +675,8 @@ namespace NachoClient.iOS
                 }
 
                 var bodyTextViewHeight = View.Frame.Height - keyboardHeight;
-                bodyTextView.Frame = new RectangleF (0, yOffset, View.Frame.Width, bodyTextViewHeight);
+                bodyTextView.Frame = new RectangleF (BODY_LEFT_MARGIN, yOffset,
+                    View.Frame.Width - BODY_LEFT_MARGIN - BODY_RIGHT_MARGIN, bodyTextViewHeight);
                 yOffset += bodyTextViewHeight;
                 bodyTextView.ScrollEnabled = true;
 
