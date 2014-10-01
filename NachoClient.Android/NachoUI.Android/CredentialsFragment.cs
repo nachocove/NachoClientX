@@ -29,8 +29,9 @@ namespace NachoClient.AndroidClient
                 var txtUsername = rootView.FindViewById<TextView> (Resource.Id.user_email).Text;
                 var txtPassword = rootView.FindViewById<TextView> (Resource.Id.user_password).Text;
 
-                var cred = new McCred () { Username = txtUsername, Password = txtPassword };
+                var cred = new McCred () { Username = txtUsername };
                 cred.Insert ();
+                cred.UpdatePassword (txtPassword);
                 // Once autodiscover is viable, you will only need to supply this server info IFF you get a callback.
 				var server = new McServer () { Host = txtServer };
                 server.Insert ();

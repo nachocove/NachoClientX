@@ -487,7 +487,7 @@ namespace NachoClient.iOS
                     if (theAccount.Credentials.Username != theAccount.Account.EmailAddr) {
                         usernameText.Text = theAccount.Credentials.Username;
                     }
-                    passwordText.Text = theAccount.Credentials.Password;
+                    passwordText.Text = theAccount.Credentials.GetPassword ();
                     if (null != theAccount.Server) {
                         serverText.Text = theAccount.Server.Host;
                     }
@@ -517,8 +517,7 @@ namespace NachoClient.iOS
                 theAccount.Credentials.Username = emailText.Text;
             }
 
-            theAccount.Credentials.Password = passwordText.Text;
-            theAccount.Credentials.Update ();
+            theAccount.Credentials.UpdatePassword (passwordText.Text);
             theAccount.Account.EmailAddr = emailText.Text;
             theAccount.Account.Update ();
         }
@@ -542,9 +541,9 @@ namespace NachoClient.iOS
                 var cred = new McCred () { 
                     AccountId = appDelegate.Account.Id,
                     Username = credUserName, 
-                    Password = passwordText.Text,
                 };
                 cred.Insert ();
+                cred.UpdatePassword (passwordText.Text);
                 theAccount.Credentials = cred;
                 int serverId = 0;
                 if (haveEnteredHost ()) {

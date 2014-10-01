@@ -564,6 +564,7 @@ namespace NachoCore.ActiveSync
                     break;
                 case Xml.Calendar.ResponseRequested:
                     c.ResponseRequested = child.Value.ToBoolean ();
+                    c.ResponseRequestedIsSet = true;
                     break;
                 case Xml.Calendar.ResponseType:
                     c.ResponseType = child.Value.ParseInteger<NcResponseType> ();
@@ -848,6 +849,7 @@ namespace NachoCore.ActiveSync
                                 break;
                             case Xml.Email.ResponseRequested:
                                 e.ResponseRequested = meetingRequestPart.Value.ToBoolean ();
+                                e.ResponseRequestedIsSet = true;
                                 break;
                             case Xml.Email.Recurrences:
                                 if (meetingRequestPart.HasElements) {

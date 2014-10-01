@@ -312,9 +312,9 @@ namespace NachoClient.iOS
                 var cred = new McCred () { 
                     AccountId = appDelegate.Account.Id,
                     Username = email,
-                    Password = password,
                 };
                 cred.Insert ();
+                cred.UpdatePassword (password);
                 Telemetry.RecordAccountEmailAddress (appDelegate.Account);
                 // Maintain the state of our progress
                 LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, true);

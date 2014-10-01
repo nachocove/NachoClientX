@@ -54,15 +54,15 @@ namespace NachoClient.iOS
             switch (yMode) {
             case InsetMode.TOPLEFT:
                 y = inset;
-                width -= inset;
+                height -= inset;
                 break;
             case InsetMode.BOTTOMRIGHT:
                 y = 0;
-                width -= inset;
+                height -= inset;
                 break;
             case InsetMode.BOTH:
                 y = inset;
-                width -= 2 * inset;
+                height -= 2 * inset;
                 break;
             }
             return new RectangleF (x, y, Math.Max (0.0f, width), Math.Max (0.0f, height));
