@@ -619,6 +619,7 @@ namespace NachoClient.iOS
                 yOffset,
                 view.Frame.Width - 2 * BodyView.BODYVIEW_INSET,
                 view.Frame.Height - BodyView.BODYVIEW_INSET), view);
+            bodyView.LeftMargin = 15;
             bodyView.VerticalScrollingEnabled = false;
             bodyView.SpinnerCenteredOnParentFrame = true;
             bodyView.OnRenderStart = () => {
