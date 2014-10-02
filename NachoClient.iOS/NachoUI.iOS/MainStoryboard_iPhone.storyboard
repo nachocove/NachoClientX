@@ -90,7 +90,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="k65-2v-IXe" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-2679" y="-955"/>
+            <point key="canvasLocation" x="-2147" y="-955"/>
         </scene>
         <!--Files-->
         <scene sceneID="Xtx-pM-5iq">
@@ -126,7 +126,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Xeg-mf-gAf" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-4435" y="-285"/>
+            <point key="canvasLocation" x="-3903" y="-285"/>
         </scene>
         <!--File Type-->
         <scene sceneID="KYr-4w-GFq">
@@ -308,7 +308,7 @@
                     </connections>
                 </searchDisplayController>
             </objects>
-            <point key="canvasLocation" x="-1099" y="-955"/>
+            <point key="canvasLocation" x="-567" y="-955"/>
         </scene>
         <!--Settings-->
         <scene sceneID="cES-6I-XY9">
@@ -613,7 +613,7 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="61c-Dw-Qpc" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-3203" y="32"/>
+            <point key="canvasLocation" x="-2671" y="32"/>
         </scene>
         <!--Folders View Controller-->
         <scene sceneID="DPk-Fz-GfI">
@@ -775,7 +775,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="1Iy-0a-PtC" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1004" y="73"/>
+            <point key="canvasLocation" x="1536" y="73"/>
         </scene>
         <!--Contact Edit View Controller-->
         <scene sceneID="0AJ-Oh-Ge6">
@@ -1316,11 +1316,31 @@
                         <segue destination="Dc9-zu-AZQ" kind="relationship" relationship="viewControllers" id="5QG-Sn-Ioi"/>
                         <segue destination="v0a-Zq-Chs" kind="relationship" relationship="viewControllers" id="haI-Fc-A7q"/>
                         <segue destination="6eL-L8-wSP" kind="relationship" relationship="viewControllers" id="JPQ-8c-IKZ"/>
+                        <segue destination="7Pg-MI-IyO" kind="relationship" relationship="viewControllers" id="LSS-z4-moj"/>
                     </connections>
                 </tabBarController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="o80-D6-q8C" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-7045" y="-603"/>
+        </scene>
+        <!--Attachments View Controller-->
+        <scene sceneID="B4K-fp-7ti">
+            <objects>
+                <viewController storyboardIdentifier="AttachmentsViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="1pE-rh-uML" customClass="AttachmentsViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="NnH-6w-Eb2">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                    </view>
+                    <navigationItem key="navigationItem" id="lw1-fW-wNn"/>
+                    <connections>
+                        <segue destination="tAw-fh-hJX" kind="push" identifier="AttachmentsToCompose" id="p7w-hx-Y70"/>
+                        <segue destination="qAG-NA-NKz" kind="push" identifier="AttachmentsToNotes" id="KnL-e9-HQR"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="PMN-Ra-w2D" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-5175" y="-450"/>
         </scene>
         <!--Event Attachment View Controller-->
         <scene sceneID="ZMa-bI-tY1">
@@ -1343,7 +1363,7 @@
                     <connections>
                         <outlet property="EventAttachmentsTableView" destination="fhu-bP-xWZ" id="jdL-IM-bML"/>
                         <outlet property="addAttachmentButton" destination="N2c-Hs-Cv9" id="QHy-9U-koS"/>
-                        <segue destination="j5A-VG-u0P" kind="push" identifier="EventAttachmentToFiles" id="LTs-mH-KqM"/>
+                        <segue destination="1pE-rh-uML" kind="modal" identifier="EventAttachmentToFiles" id="GKm-A3-njZ"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="2A8-Nn-b9g" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1386,9 +1406,9 @@
                         <outlet property="taskButton" destination="WmS-2K-Dgt" id="eXM-YJ-TnQ"/>
                         <segue destination="Mow-Gy-F9N" kind="custom" identifier="ComposeToContactChooser" customClass="FadeCustomSegue" id="xrp-ey-B0j"/>
                         <segue destination="OCr-PO-3nH" kind="push" identifier="ComposeToNachoNow" id="tkk-6o-6oa"/>
-                        <segue destination="j5A-VG-u0P" kind="push" identifier="ComposeToFiles" id="kd2-jR-F9u"/>
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="SegueToMessagePriority" modalTransitionStyle="crossDissolve" id="DDa-hb-SgY"/>
                         <segue destination="ErX-HX-Xxl" kind="modal" identifier="SegueToIntentSelection" modalPresentationStyle="fullScreen" modalTransitionStyle="crossDissolve" id="5qs-bm-OYT"/>
+                        <segue destination="1pE-rh-uML" kind="modal" identifier="ComposeToFiles" id="84g-IQ-Iaw"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="K96-0O-l77" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1616,7 +1636,7 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="1hO-fB-YFd" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="2155" y="84"/>
+            <point key="canvasLocation" x="2687" y="84"/>
         </scene>
         <!--Event Attendee View Controller-->
         <scene sceneID="odK-NZ-B9r">
@@ -1645,7 +1665,7 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="wXN-oz-Khv" userLabel="First Responder" sceneMemberID="firstResponder"/>
                 <barButtonItem systemItem="add" id="4z6-Fd-6ku" userLabel="Bar Button Item - Add"/>
             </objects>
-            <point key="canvasLocation" x="1539" y="-939"/>
+            <point key="canvasLocation" x="2071" y="-939"/>
         </scene>
         <!--Navigation Controller-->
         <scene sceneID="gDa-f1-whh">
@@ -1660,7 +1680,7 @@
                 </navigationController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="sxX-aT-beH" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1620" y="84"/>
+            <point key="canvasLocation" x="2152" y="84"/>
         </scene>
         <!--Navigation Controller-->
         <scene sceneID="qgS-M8-2Bx">
@@ -1740,7 +1760,7 @@
                 </navigationController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="cIg-k6-fgL" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-1625" y="-955"/>
+            <point key="canvasLocation" x="-1093" y="-955"/>
         </scene>
         <!--Calendar-->
         <scene sceneID="XZB-Fv-sWg">
@@ -1759,7 +1779,7 @@
                 </navigationController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="FdC-Dq-yUj" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-3195" y="-955"/>
+            <point key="canvasLocation" x="-2663" y="-955"/>
         </scene>
         <!--Hot List View Controller-->
         <scene sceneID="R89-bm-KgW">
@@ -1984,6 +2004,25 @@
             </objects>
             <point key="canvasLocation" x="1213" y="1613"/>
         </scene>
+        <!--Files-->
+        <scene sceneID="sGB-tl-fXz">
+            <objects>
+                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="7Pg-MI-IyO" sceneMemberID="viewController">
+                    <tabBarItem key="tabBarItem" title="Files" id="xdD-kd-2aA"/>
+                    <toolbarItems/>
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="sK7-fn-J0X">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </navigationBar>
+                    <nil name="viewControllers"/>
+                    <connections>
+                        <segue destination="1pE-rh-uML" kind="relationship" relationship="rootViewController" id="kqa-TN-ijZ"/>
+                    </connections>
+                </navigationController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="JVu-Vy-TR5" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-5707" y="-450"/>
+        </scene>
     </scenes>
     <resources>
         <image name="icn-archive.png" width="24" height="24"/>
@@ -2004,32 +2043,33 @@
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="m2D-2n-RiV"/>
-        <segue reference="kYM-OY-NE0"/>
-        <segue reference="Aba-pv-mzB"/>
-        <segue reference="JPQ-8c-IKZ"/>
+        <segue reference="vXz-gG-vL2"/>
         <segue reference="4z2-t5-9Cd"/>
         <segue reference="QbR-l1-NT5"/>
         <segue reference="od0-Sz-R9p"/>
-        <segue reference="HwV-au-Wta"/>
         <segue reference="NoB-Ny-Mf5"/>
-        <segue reference="Eb2-K0-nI3"/>
+        <segue reference="JPQ-8c-IKZ"/>
         <segue reference="XQg-JR-vxA"/>
-        <segue reference="vXz-gG-vL2"/>
-        <segue reference="Kmd-x6-iCJ"/>
-        <segue reference="rew-s7-VAQ"/>
-        <segue reference="Q8y-4K-BAb"/>
-        <segue reference="T7S-YG-5o8"/>
+        <segue reference="HwV-au-Wta"/>
+        <segue reference="Eb2-K0-nI3"/>
+        <segue reference="Aba-pv-mzB"/>
+        <segue reference="kYM-OY-NE0"/>
+        <segue reference="6J3-c2-bz5"/>
+        <segue reference="mLY-u0-R5O"/>
+        <segue reference="ZzH-qS-KOm"/>
+        <segue reference="peA-r2-tjq"/>
+        <segue reference="w67-dy-XSq"/>
+        <segue reference="7sK-rg-HQL"/>
+        <segue reference="m2D-2n-RiV"/>
+        <segue reference="GKm-A3-njZ"/>
+        <segue reference="p7w-hx-Y70"/>
+        <segue reference="KnL-e9-HQR"/>
         <segue reference="xrp-ey-B0j"/>
         <segue reference="eUJ-3D-Pjk"/>
         <segue reference="B5b-jg-ZNg"/>
-        <segue reference="alQ-9Z-W4y"/>
-        <segue reference="ZzH-qS-KOm"/>
-        <segue reference="mLY-u0-R5O"/>
-        <segue reference="6J3-c2-bz5"/>
-        <segue reference="7sK-rg-HQL"/>
-        <segue reference="peA-r2-tjq"/>
-        <segue reference="w67-dy-XSq"/>
+        <segue reference="Kmd-x6-iCJ"/>
+        <segue reference="Q8y-4K-BAb"/>
+        <segue reference="rew-s7-VAQ"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.45098039215686275" green="1" blue="0.95294117647058818" alpha="1" colorSpace="deviceRGB"/>
 </document>

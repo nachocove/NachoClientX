@@ -319,8 +319,9 @@ namespace NachoClient.iOS
                 return;
             }
             if (segue.Identifier.Equals ("ComposeToFiles")) {
-                var dc = (FilesHierarchyViewController)segue.DestinationViewController;
+                var dc = (AttachmentsViewController)segue.DestinationViewController;
                 dc.SetOwner (this);
+                dc.SetModal (true);
                 return;
             }
             if (segue.Identifier.Equals ("ComposeToNachoNow")) {
