@@ -110,7 +110,7 @@ namespace NachoClient.iOS
         // If false, center on view frame
         public bool SpinnerCenteredOnParentFrame { get; set; }
 
-        public float LeftMargin { get; set; }
+        private float leftMargin;
 
         protected UIView parentView;
         protected UIView messageView;
@@ -136,11 +136,16 @@ namespace NachoClient.iOS
         public DownloadStart OnDownloadStart;
 
         public BodyView (RectangleF initialFrame, UIView parentView)
+            : this(initialFrame, parentView, 15, 0)
+        {
+        }
+
+        public BodyView (RectangleF initialFrame, UIView parentView, float leftMargin, float htmlLeftMargin)
         {
             HorizontalScrollingEnabled = true;
             VerticalScrollingEnabled = true;
             AutomaticallyScaleHtmlContent = true;
-            LeftMargin = 15.0f;
+            this.leftMargin = leftMargin;
 
             this.parentView = parentView;
             BackgroundColor = SCROLLVIEW_BGCOLOR;
@@ -154,11 +159,15 @@ namespace NachoClient.iOS
                 return messageView;
             };
             ZoomingStarted += delegate(object sender, UIScrollViewZoomingEventArgs e) {
-                OnRenderStart ();
+                if (null != OnRenderStart) {
+                    OnRenderStart ();
+                }
             };
             ZoomingEnded += delegate(object sender, ZoomingEndedEventArgs e) {
                 Log.Debug (Log.LOG_UI, "body view scrollview zoomed (AtScale={0})", e.AtScale);
-                OnRenderComplete ();
+                if (null != OnRenderComplete) {
+                    OnRenderComplete ();
+                }
             };
 
             // doubleTap handles zoom in and out
@@ -183,7 +192,7 @@ namespace NachoClient.iOS
             AddSubview (spinner);
 
             // webView holds all HTML content
-            webView = new BodyWebView (this);
+            webView = new BodyWebView (this, htmlLeftMargin);
         }
 
         public void Configure (McAbstrItem item)
@@ -312,7 +321,7 @@ namespace NachoClient.iOS
 
         UITextView RenderAttributedString (NSAttributedString attributedString)
         {
-            var label = new UITextView (new RectangleF (LeftMargin, 0.0f, 290.0f, 1.0f));
+            var label = new UITextView (new RectangleF (leftMargin, 0.0f, 290.0f, 1.0f));
             label.Editable = false;
             #if (DEBUG_UI)
             label.BackgroundColor = A.Color_NachoBlue;
@@ -354,7 +363,7 @@ namespace NachoClient.iOS
         void RenderPartialDownloadMessage (string message)
         {
             var attributedString = new NSAttributedString (message);
-            var label = new UILabel (new RectangleF (LeftMargin, 0.0f, 290.0f, 1.0f));
+            var label = new UILabel (new RectangleF (leftMargin, 0.0f, 290.0f, 1.0f));
             label.Lines = 0;
             label.Font = A.Font_AvenirNextDemiBold14;
             label.LineBreakMode = UILineBreakMode.WordWrap;
@@ -411,14 +420,18 @@ namespace NachoClient.iOS
         void RenderHtmlString (string html)
         {
             webView.OnRenderStart = () => {
-                OnRenderStart ();
+                if (null != OnRenderStart) {
+                    OnRenderStart ();
+                }
             };
             webView.OnRenderComplete = (float minimumZoomScale) => {
                 MinimumZoomScale = minimumZoomScale;
                 if (AutomaticallyScaleHtmlContent && (minimumZoomScale < 1.0)) {
                     SetZoomScale (ZoomOutScale (), false);
                 }
-                OnRenderComplete ();
+                if (null != OnRenderComplete) {
+                    OnRenderComplete ();
+                }
             };
             messageView.Add (webView);
             webView.LoadHtmlString (html);
@@ -506,7 +519,9 @@ namespace NachoClient.iOS
         {
             loadState = LoadState.LOADING;
             spinner.StartAnimating ();
-            OnDownloadStart ();
+            if (null != OnDownloadStart) {
+                OnDownloadStart ();
+            }
         }
 
         public void DownloadComplete (bool succeed)

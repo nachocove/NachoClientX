@@ -618,8 +618,8 @@ namespace NachoClient.iOS
                 BodyView.BODYVIEW_INSET,
                 yOffset,
                 view.Frame.Width - 2 * BodyView.BODYVIEW_INSET,
-                view.Frame.Height - BodyView.BODYVIEW_INSET), view);
-            bodyView.LeftMargin = 15;
+                view.Frame.Height - BodyView.BODYVIEW_INSET),
+                view);
             bodyView.VerticalScrollingEnabled = false;
             bodyView.SpinnerCenteredOnParentFrame = true;
             bodyView.OnRenderStart = () => {
@@ -627,8 +627,6 @@ namespace NachoClient.iOS
             };
             bodyView.OnRenderComplete = () => {
                 deferLayout.Decrement ();
-            };
-            bodyView.OnDownloadStart = () => {
             };
             view.AddSubview (bodyView);
 

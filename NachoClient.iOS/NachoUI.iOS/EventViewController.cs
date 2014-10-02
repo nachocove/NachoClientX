@@ -62,6 +62,8 @@ namespace NachoClient.iOS
         UILabel messageLabel;
         UIButton changeResponseButton;
 
+        RecursionCounter deferLayout;
+
         UIColor separatorColor = A.Color_NachoBorderGray;
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
         protected int LINE_OFFSET = 30;
@@ -335,13 +337,16 @@ namespace NachoClient.iOS
             //desciption label
             descriptionView = new BodyView (
                 new RectangleF (0, yOffset, SCREEN_WIDTH - 2 * BodyView.BODYVIEW_INSET, 10),
-                contentView);
+                contentView, 20, 20);
             descriptionView.Tag = EVENT_DESCRIPTION_LABEL_TAG;
-            // I'm not sure why 20 is the correct value for the left margin. But it causes the
-            // description to line up with the title.
-            descriptionView.LeftMargin = 20;
             descriptionView.HorizontalScrollingEnabled = true;
             descriptionView.VerticalScrollingEnabled = false;
+            descriptionView.OnRenderStart = () => {
+                deferLayout.Increment ();
+            };
+            descriptionView.OnRenderComplete = () => {
+                deferLayout.Decrement ();
+            };
             contentView.Add (descriptionView);
 
             yOffset += 10 + 20;
@@ -565,9 +570,6 @@ namespace NachoClient.iOS
             titleLabelView.LineBreakMode = UILineBreakMode.WordWrap;
             titleLabelView.SizeToFit ();
 
-            //description view
-            descriptionView.Configure (c);
-
             //location view
             var locationLabelView = View.ViewWithTag (EVENT_LOCATION_DETAIL_LABEL_TAG) as UILabel;
             if (null != c.Location & "" != c.Location) {
@@ -669,10 +671,17 @@ namespace NachoClient.iOS
                 attachmentView.Hidden = false;
                 line2.Hidden = false;
             }
-                
+
+            deferLayout = new RecursionCounter (() => {
+                LayoutView ();
+            });
+            deferLayout.Increment ();
+
+            descriptionView.Configure (c);
+
             ConfigureRsvpBar ();
 
-            LayoutView ();
+            deferLayout.Decrement ();
         }
 
         public void LayoutView ()
