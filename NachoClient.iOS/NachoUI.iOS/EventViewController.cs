@@ -598,7 +598,7 @@ namespace NachoClient.iOS
                 }
             }
 
-            var recurrenceLabelView = View.ViewWithTag (600) as UILabel;
+            var recurrenceLabelView = View.ViewWithTag (601) as UILabel;
             if (isRecurring) {
                 recurrenceLabelView.Text = MakeRecurrenceString (root.recurrences);
                 recurrenceLabelView.Lines = 0;
