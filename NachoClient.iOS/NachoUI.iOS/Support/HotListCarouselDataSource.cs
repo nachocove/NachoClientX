@@ -664,6 +664,12 @@ namespace NachoClient.iOS
                     return 0.0f;
                 }
                 return value;
+            case iCarouselOption.VisibleItems:
+                // We pre-render 16 items. The assumption is that one swipe cannot
+                // change more than 16 items. When the user lifts the finger off
+                // the screen and get ready for another swipe, it will have a couple
+                // seconds to pre-render another set of items.
+                return 16.0f;
             default:
                 return value;
             }
