@@ -84,7 +84,7 @@
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <CodesignProvision>092e4558-294a-451d-bd26-d96e0f3ae748</CodesignProvision>
-    <CodesignProvision>6bae56aa-3715-4d05-84ad-8dfb2cc73d20</CodesignProvision>
+    <CodesignProvision>6501df99-d884-45d6-a97f-465f9f227cbf</CodesignProvision>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
     <Optimize>true</Optimize>
@@ -1597,6 +1597,10 @@
     <ProjectReference Include="..\..\NachoUIMonitorBinding\NachoUIMonitor.iOS\NachoUIMonitor.iOS.csproj">
       <Project>{B516077B-652E-4AC9-B728-AB64B65044F4}</Project>
       <Name>NachoUIMonitor.iOS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\SwipeViewBinding\SwipeViewBinding\SwipeViewBinding\SwipeViewBinding.csproj">
+      <Project>{6239F5E9-9EA2-4B50-8CCE-241ED8E1F0B7}</Project>
+      <Name>SwipeViewBinding</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

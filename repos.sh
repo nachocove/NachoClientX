@@ -9,6 +9,8 @@ Reachability
 registered-domain-libs
 iCarousel
 iCarouselBinding
+SwipeView
+SwipeViewBinding
 UIImageEffects
 SWRevealViewController
 SWRevealViewControllerBinding

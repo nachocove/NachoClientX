@@ -4,6 +4,7 @@ all:
 	make -C ../Parse
 	make -C ../Crashlytics
 	make -C ../iCarouselBinding
+	make -C ../SwipeViewBinding
 	make -C ../UIImageEffects
 	make -C ../SWRevealViewControllerBinding
 	make -C ../MCSwipeTableViewCellBinding
@@ -21,6 +22,7 @@ clean:
 	make -C ../Parse
 	make -C ../Crashlytics clean
 	make -C ../iCarouselBinding clean
+	make -C ../SwipeViewBinding clean
 	make -C ../UIImageEffects clean
 	make -C ../SWRevealViewControllerBinding clean
 	make -C ../MCSwipeTableViewCellBinding clean
