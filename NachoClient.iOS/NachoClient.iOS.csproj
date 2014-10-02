@@ -84,7 +84,7 @@
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <CodesignProvision>092e4558-294a-451d-bd26-d96e0f3ae748</CodesignProvision>
-    <CodesignProvision>6501df99-d884-45d6-a97f-465f9f227cbf</CodesignProvision>
+    <CodesignProvision>6bae56aa-3715-4d05-84ad-8dfb2cc73d20</CodesignProvision>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
     <Optimize>true</Optimize>
@@ -1135,6 +1135,10 @@
     <Compile Include="NachoUI.iOS\Support\BodyCalendarView.cs" />
     <Compile Include="NachoPlatform.iOS\KeychainiOS.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoDateController.cs" />
+    <Compile Include="NachoUI.iOS\AttachmentsViewController.cs" />
+    <Compile Include="NachoUI.iOS\AttachmentsViewController.designer.cs">
+      <DependentUpon>AttachmentsViewController.cs</DependentUpon>
+    </Compile>
     <Compile Include="NachoUI.iOS\IntentSelectionViewController.cs" />
     <Compile Include="NachoUI.iOS\IntentSelectionViewController.designer.cs">
       <DependentUpon>IntentSelectionViewController.cs</DependentUpon>

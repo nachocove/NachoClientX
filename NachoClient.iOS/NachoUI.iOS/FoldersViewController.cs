@@ -70,16 +70,7 @@ namespace NachoClient.iOS
             base.ViewWillDisappear (animated);
             ClearViews ();
         }
-
-        public override bool HidesBottomBarWhenPushed {
-            get {
-                if (modal) {
-                    return this.NavigationController.TopViewController == this;
-                } 
-                return false;
-            }
-        }
-
+            
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             if (segue.Identifier == "FoldersToMessageList") {
@@ -116,7 +107,6 @@ namespace NachoClient.iOS
                     DismissViewController (true, null);
                 };
                 yOffset += navbar.Frame.Height;
-                scrollView = new UIScrollView (new RectangleF (0, yOffset, View.Frame.Width, View.Frame.Height));
             } else {
                 NavigationItem.Title = "Folders";
             }
@@ -228,7 +218,6 @@ namespace NachoClient.iOS
             }
 
             defaultCellsOffset = 0;
-
 
             if (hasRecents) {
                 yOffset += recentView.Frame.Bottom;
