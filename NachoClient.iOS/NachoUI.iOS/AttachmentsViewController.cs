@@ -896,7 +896,7 @@ namespace NachoClient.iOS
 
         public void PerformSegueForDelegate (string identifier, NSObject sender)
         {
-            PerformSegue (identifier, sender);
+            NcAssert.CaseError ();
         }
     }
 }
