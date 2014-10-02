@@ -251,91 +251,31 @@ namespace NachoClient.iOS
             if (null == preventBarButtonGC) {
                 preventBarButtonGC = new List<UIBarButtonItem> ();
             }
-
-            var replyButton = new UIBarButtonItem ();
-            Util.SetOriginalImageForButton (replyButton, "toolbar-icn-reply");
-            replyButton.Clicked += (object sender, EventArgs e) => {
-//                ReplyActionSheet (view);
-                onReplyButtonClicked (view, MessageComposeViewController.REPLY_ACTION);
+                
+            var toolbar = new MessageToolbar (new RectangleF (0, frame.Height - 44, frame.Width, 44));
+            toolbar.OnClick = (object sender, EventArgs e) => {
+                var toolbarEventArgs = e as MessageToolbarEventArgs;
+                switch (toolbarEventArgs.Action) {
+                case MessageToolbar.ActionType.REPLY:
+                    onReplyButtonClicked (view, MessageComposeViewController.REPLY_ACTION);
+                    break;
+                case MessageToolbar.ActionType.REPLY_ALL:
+                    onReplyButtonClicked (view, MessageComposeViewController.REPLY_ALL_ACTION);
+                    break;
+                case MessageToolbar.ActionType.FORWARD:
+                    onReplyButtonClicked (view, MessageComposeViewController.FORWARD_ACTION);
+                    break;
+                case MessageToolbar.ActionType.ARCHIVE:
+                    onArchiveButtonClicked (view);
+                    break;
+                case MessageToolbar.ActionType.DELETE:
+                    onDeleteButtonClicked (view);
+                    break;
+                default:
+                    throw new NcAssert.NachoDefaultCaseFailure (String.Format ("unknown toolbar action {0}",
+                        (int)toolbarEventArgs.Action));
+                }
             };
-            preventBarButtonGC.Add (replyButton);
-
-            var replyAllButton = new UIBarButtonItem ();
-            Util.SetOriginalImageForButton (replyAllButton, "toolbar-icn-reply-all");
-            replyAllButton.Clicked += (object sender, EventArgs e) => {
-//                ReplyActionSheet (view);
-                onReplyButtonClicked (view, MessageComposeViewController.REPLY_ALL_ACTION);
-            };
-            preventBarButtonGC.Add (replyAllButton);
-
-            var forwardButton = new UIBarButtonItem ();
-            Util.SetOriginalImageForButton (forwardButton, "toolbar-icn-fwd");
-            forwardButton.Clicked += (object sender, EventArgs e) => {
-//                ReplyActionSheet (view);
-                onReplyButtonClicked (view, MessageComposeViewController.FORWARD_ACTION);
-            };
-            preventBarButtonGC.Add (forwardButton);
-
-            var chiliButton = new UIBarButtonItem ();
-            Util.SetOriginalImageForButton (chiliButton, "icn-nothot-gray");
-            chiliButton.Clicked += (object sender, EventArgs e) => {
-                onChiliButtonClicked (view);
-            };
-            preventBarButtonGC.Add (chiliButton);
-
-            var deferButton = new UIBarButtonItem ();
-            Util.SetOriginalImageForButton (deferButton, "email-defer-gray");
-            deferButton.Clicked += (object sender, EventArgs e) => {
-                onDeferButtonClicked (view);
-            };
-            preventBarButtonGC.Add (deferButton);
-
-            var saveButton = new UIBarButtonItem ();
-            Util.SetOriginalImageForButton (saveButton, "email-fileinfolder-gray");
-            saveButton.Clicked += (object sender, EventArgs e) => {
-                onSaveButtonClicked (view);
-            };
-            preventBarButtonGC.Add (saveButton);
-
-            var archiveButton = new UIBarButtonItem ();
-            Util.SetOriginalImageForButton (archiveButton, "email-archive-gray");
-            archiveButton.Clicked += (object sender, EventArgs e) => {
-                onArchiveButtonClicked (view);
-            };
-            preventBarButtonGC.Add (saveButton);
-
-            var flexibleSpace = new UIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace);
-            preventBarButtonGC.Add (flexibleSpace);
-
-            var fixedSpace = new UIBarButtonItem (UIBarButtonSystemItem.FixedSpace);
-            fixedSpace.Width = 25;
-            preventBarButtonGC.Add (fixedSpace);
-
-            var deleteButton = new UIBarButtonItem ();
-            Util.SetOriginalImageForButton (deleteButton, "email-delete-gray");
-            deleteButton.Clicked += (object sender, EventArgs e) => {
-                onDeleteButtonClicked (view);
-            };
-            preventBarButtonGC.Add (deleteButton);
-
-            var toolbar = new UIToolbar (new RectangleF (0, frame.Height - 44, frame.Width, 44));
-            toolbar.SetItems (new UIBarButtonItem[] {
-                replyButton,
-                fixedSpace,
-                replyAllButton,
-                fixedSpace,
-                forwardButton,
-                flexibleSpace,
-//                chiliButton,
-//                flexibleSpace,
-//                deferButton,
-                flexibleSpace,
-                archiveButton,
-//                flexibleSpace,
-//                saveButton,
-                fixedSpace,
-                deleteButton
-            }, false);
             view.AddSubview (toolbar);
 
             var gestureRecognizer = new UIPanGestureRecognizer ((UIPanGestureRecognizer obj) => {
