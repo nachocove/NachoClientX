@@ -84,7 +84,7 @@
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
     <CodesignProvision>092e4558-294a-451d-bd26-d96e0f3ae748</CodesignProvision>
-    <CodesignProvision>0CA50AF9-55BB-4200-9716-9076C209FF40</CodesignProvision>
+    <CodesignProvision>6bae56aa-3715-4d05-84ad-8dfb2cc73d20</CodesignProvision>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
     <Optimize>true</Optimize>
