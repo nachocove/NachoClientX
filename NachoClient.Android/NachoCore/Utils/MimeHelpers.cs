@@ -442,12 +442,17 @@ namespace NachoCore.Utils
                 return;
             }
 
-            if (entity.ContentType.Matches ("image", "*")) {
-                list.Add (part);
+            if (part is MimeKit.Tnef.TnefPart) {
+                // Convert the TNEF stuff into a MIME message, and look through that.
+                MimeMessage tnef = (part as MimeKit.Tnef.TnefPart).ConvertToMessage ();
+                if (null != tnef.Body) {
+                    FixTnefMessage (tnef);
+                    MimeDisplayList (tnef, ref list);
+                }
                 return;
             }
 
-            if (part.ContentType.Matches ("application", "ms-tnef")) {
+            if (entity.ContentType.Matches ("image", "*")) {
                 list.Add (part);
                 return;
             }
@@ -473,6 +478,45 @@ namespace NachoCore.Utils
             var e = multipart.Last ();
             MimeEntityDisplayList (e, ref list);
 
+        }
+
+        private static void FixTnefMessage (MimeMessage tnefMessage)
+        {
+            // If the TNEF part contains text in multiple formats, MimeKit will create a multipart/mixed
+            // instead of a multipart/alternative.  Fix that.
+            if (null == tnefMessage.Body || !tnefMessage.Body.ContentType.Matches ("multipart", "mixed")) {
+                return;
+            }
+            bool allText = true;
+            int textCount = 0;
+            foreach (var part in tnefMessage.Body as Multipart) {
+                if (part is TextPart) {
+                    ++textCount;
+                } else {
+                    allText = false;
+                }
+            }
+            if (1 < textCount) {
+                if (allText) {
+                    // There are at least two text parts, and there are only text parts.
+                    // Replace the multipart/mixed with multipart/alternative.
+                    tnefMessage.Body.ContentType.MediaSubtype = "alternative";
+                } else {
+                    // There are at least two text parts, but there are other things as well.
+                    // Create a new multipart/alternative and move the text parts to that.
+                    var alternative = new Multipart ("alternative");
+                    var mixed = tnefMessage.Body as Multipart;
+                    foreach (var part in mixed) {
+                        if (part is TextPart) {
+                            alternative.Add (part);
+                        }
+                    }
+                    foreach (var part in alternative) {
+                        mixed.Remove (part);
+                    }
+                    mixed.Add (alternative);
+                }
+            }
         }
 
         /// <summary>

@@ -110,6 +110,8 @@ namespace NachoClient.iOS
         // If false, center on view frame
         public bool SpinnerCenteredOnParentFrame { get; set; }
 
+        public float LeftMargin { get; set; }
+
         protected UIView parentView;
         protected UIView messageView;
         protected UITapGestureRecognizer doubleTap;
@@ -138,6 +140,7 @@ namespace NachoClient.iOS
             HorizontalScrollingEnabled = true;
             VerticalScrollingEnabled = true;
             AutomaticallyScaleHtmlContent = true;
+            LeftMargin = 15.0f;
 
             this.parentView = parentView;
             BackgroundColor = SCROLLVIEW_BGCOLOR;
@@ -268,8 +271,7 @@ namespace NachoClient.iOS
 
         protected void RenderDisplayList (List<MimeEntity> list)
         {
-            for (var i = 0; i < list.Count; i++) {
-                var entity = list [i];
+            foreach (var entity in list) {
                 var part = (MimePart)entity;
                 if (part.ContentType.Matches ("text", "html")) {
                     RenderHtml (part);
@@ -277,6 +279,10 @@ namespace NachoClient.iOS
                 }
                 if (part.ContentType.Matches ("text", "calendar")) {
                     RenderCalendar (part);
+                    continue;
+                }
+                if (part.ContentType.Matches ("text", "rtf")) {
+                    RenderRtf (part);
                     continue;
                 }
                 if (part.ContentType.Matches ("text", "*")) {
@@ -297,9 +303,16 @@ namespace NachoClient.iOS
             RenderTextString (text);
         }
 
+        void RenderRtf (MimePart part)
+        {
+            var textPart = part as TextPart;
+            var text = textPart.Text;
+            RenderRtfString (text);
+        }
+
         UITextView RenderAttributedString (NSAttributedString attributedString)
         {
-            var label = new UITextView (new RectangleF (15.0f, 0.0f, 290.0f, 1.0f));
+            var label = new UITextView (new RectangleF (LeftMargin, 0.0f, 290.0f, 1.0f));
             label.Editable = false;
             #if (DEBUG_UI)
             label.BackgroundColor = A.Color_NachoBlue;
@@ -341,7 +354,7 @@ namespace NachoClient.iOS
         void RenderPartialDownloadMessage (string message)
         {
             var attributedString = new NSAttributedString (message);
-            var label = new UILabel (new RectangleF (15.0f, 0.0f, 290.0f, 1.0f));
+            var label = new UILabel (new RectangleF (LeftMargin, 0.0f, 290.0f, 1.0f));
             label.Lines = 0;
             label.Font = A.Font_AvenirNextDemiBold14;
             label.LineBreakMode = UILineBreakMode.WordWrap;

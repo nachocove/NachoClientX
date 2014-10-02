@@ -47,6 +47,8 @@ namespace NachoClient.iOS
         protected UIImageView MapImage;
         protected MKMapView map;
 
+        BodyView descriptionView;
+
         UIView eventAttendeeView;
 
         UIView eventAlertsView;
@@ -102,7 +104,7 @@ namespace NachoClient.iOS
         const int EVENT_LOCATION_DETAIL_LABEL_TAG = 103;
         const int EVENT_WHEN_DETAIL_LABEL_TAG = 104;
         const int EVENT_WHEN_DURATION_TAG = 500;
-        const int EVENT_WHEN_RECURRENCE_TAG = 600;
+        const int EVENT_WHEN_RECURRENCE_TAG = 601;
         const int EVENT_PHONE_DETAIL_BUTTON_TAG = 105;
         const int EVENT_ATTENDEE_TAG = 106;
         const int EVENT_ATTENDEE_DETAIL_TAG = 110;
@@ -113,7 +115,7 @@ namespace NachoClient.iOS
         const int EVENT_LOCATION_TITLE_TAG = 301;
         const int EVENT_WHEN_TITLE_TAG = 302;
         const int EVENT_PHONE_TITLE_TAG = 303;
-        const int EVENT_ATTENDEE_TITLE_TAG = 304;
+        const int EVENT_ATTENDEE_TITLE_TAG = 308;
         const int EVENT_ALERT_TITLE_TAG = 305;
         const int EVENT_ATTACHMENT_TITLE_TAG = 306;
         const int EVENT_NOTE_TITLE_TAG = 307;
@@ -331,9 +333,18 @@ namespace NachoClient.iOS
             yOffset += 30;
 
             //desciption label
-            AddDetailTextLabel (25, yOffset, SCREEN_WIDTH - 50, 20, EVENT_DESCRIPTION_LABEL_TAG, contentView);
+            descriptionView = new BodyView (
+                new RectangleF (0, yOffset, SCREEN_WIDTH - 2 * BodyView.BODYVIEW_INSET, 10),
+                contentView);
+            descriptionView.Tag = EVENT_DESCRIPTION_LABEL_TAG;
+            // I'm not sure why 20 is the correct value for the left margin. But it causes the
+            // description to line up with the title.
+            descriptionView.LeftMargin = 20;
+            descriptionView.HorizontalScrollingEnabled = true;
+            descriptionView.VerticalScrollingEnabled = false;
+            contentView.Add (descriptionView);
 
-            yOffset += 20 + 20;
+            yOffset += 10 + 20;
 
             //location label, image and detail
             AddTextLabelWithImageView (45, yOffset, "Location", UIImage.FromBundle ("icn-mtng-location"), EVENT_LOCATION_TITLE_TAG, contentView);
@@ -555,11 +566,7 @@ namespace NachoClient.iOS
             titleLabelView.SizeToFit ();
 
             //description view
-            var descriptionLabelView = View.ViewWithTag (EVENT_DESCRIPTION_LABEL_TAG) as UILabel;
-            descriptionLabelView.Text = c.Description;
-            descriptionLabelView.Lines = 0;
-            descriptionLabelView.LineBreakMode = UILineBreakMode.WordWrap;
-            descriptionLabelView.SizeToFit ();
+            descriptionView.Configure (c);
 
             //location view
             var locationLabelView = View.ViewWithTag (EVENT_LOCATION_DETAIL_LABEL_TAG) as UILabel;
@@ -676,11 +683,10 @@ namespace NachoClient.iOS
             yOffset += tl.Frame.Height;
 
             yOffset += 5;
-            var dl = View.ViewWithTag (EVENT_DESCRIPTION_LABEL_TAG) as UILabel;
-            dl.Frame = new RectangleF (25, yOffset, SCREEN_WIDTH - 50, dl.Frame.Height);
-            yOffset += dl.Frame.Height;
+            descriptionView.Layout (0, yOffset, SCREEN_WIDTH - 2 * BodyView.BODYVIEW_INSET, 10);
+            yOffset += descriptionView.Frame.Height;
 
-            yOffset += 20;
+            yOffset += 10;
             var lt = View.ViewWithTag (EVENT_LOCATION_TITLE_TAG) as UIView;
             lt.Frame = new RectangleF (23, yOffset, SCREEN_WIDTH - 50, lt.Frame.Height);
             yOffset += lt.Frame.Height;
