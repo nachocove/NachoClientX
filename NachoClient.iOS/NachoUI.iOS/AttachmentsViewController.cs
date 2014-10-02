@@ -16,7 +16,7 @@ using MonoTouch.CoreAnimation;
 
 namespace NachoClient.iOS
 {
-    public partial class AttachmentsViewController : UIViewController, INachoFileChooser, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoNotesControllerParent
+    public partial class AttachmentsViewController : UIViewController, INachoFileChooser, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoNotesControllerParent, IAttachmentTableViewSourceDelegate
     {
         public AttachmentsViewController (IntPtr handle) : base (handle)
         {
@@ -24,7 +24,7 @@ namespace NachoClient.iOS
 
         INachoFileChooserParent Owner;
         FilesTableSource FilesSource;
-        //SearchDelegate searchDelegate;
+
         string Token;
 
         protected McNote selectedNote;
@@ -143,25 +143,26 @@ namespace NachoClient.iOS
             } else {
                 tableView = new UITableView (new RectangleF (0, yOffset, View.Frame.Width, View.Frame.Height - yOffset - 49 - 64));
             }
+
+            InitializeSearchDisplayController ();
+            FilesSource = new FilesTableSource (this);
+            FilesSource.SetOwner (this, SearchDisplayController);
+
             View.Add (tableView);
             // set up the table view source
-            FilesSource = new FilesTableSource (this);
+
             tableView.Source = FilesSource;
+            SearchDisplayController.SearchResultsTableView.Source = FilesSource;
 
             UIBarButtonItem searchButton = new UIBarButtonItem (UIBarButtonSystemItem.Search);
             searchButton.TintColor = A.Color_NachoBlue;
             NavigationItem.LeftBarButtonItem = searchButton;
-
-            // set up the search bar
-            //            searchDelegate = new SearchDelegate (FilesSource);
-            //            SearchDisplayController.Delegate = searchDelegate;
-            //            SearchDisplayController.SearchResultsSource = FilesSource;
-            //            SearchDisplayController.SearchBar.SearchButtonClicked += (s, e) => {
-            //                SearchDisplayController.SearchBar.ResignFirstResponder ();
-            //            };
+            searchButton.Clicked += (object sender, EventArgs e) => {
+                SearchDisplayController.SearchBar.BecomeFirstResponder ();
+            };
 
             // Initially let's hide the search controller
-            //tableView.SetContentOffset (new PointF (0.0f, 44.0f), false);
+            tableView.SetContentOffset (new PointF (0.0f, 44.0f), false);
 
             EmptyListLabel = new UILabel (new RectangleF (0, 80, UIScreen.MainScreen.Bounds.Width, 20));
             EmptyListLabel.TextAlignment = UITextAlignment.Center;
@@ -221,6 +222,16 @@ namespace NachoClient.iOS
                 dc.SetOwner (this);
                 return;
             }
+        }
+
+        protected void InitializeSearchDisplayController ()
+        {
+            var sb = new UISearchBar ();
+
+            // creating the controller set up its pointers
+            new UISearchDisplayController (sb, this);
+
+            tableView.TableHeaderView = sb;
         }
 
         public string GetNoteText ()
@@ -408,7 +419,7 @@ namespace NachoClient.iOS
             });
         }
 
-        protected class FilesTableSource : UITableViewSource
+        public class FilesTableSource : UITableViewSource
         {
             // cell Id's
             const string FileCell = "FileCell";
@@ -417,6 +428,8 @@ namespace NachoClient.iOS
             protected List<NcFileIndex> searchResults;
 
             AttachmentsViewController vc;
+            UISearchDisplayController SearchDisplayController;
+            public IAttachmentTableViewSourceDelegate owner;
 
             // icon id's
             string DownloadIcon = "downloadicon.png";
@@ -442,13 +455,21 @@ namespace NachoClient.iOS
                 SearchResults = new List<NcFileIndex> ();
             }
 
+            public void SetOwner (IAttachmentTableViewSourceDelegate owner, UISearchDisplayController SearchDisplayController)
+            {
+                this.owner = owner;
+                this.SearchDisplayController = SearchDisplayController;
+
+                SearchDisplayController.Delegate = new SearchDisplayDelegate (this);
+            }
+
             public override int RowsInSection (UITableView tableview, int section)
             {
-//                if (tableview == vc.SearchDisplayController.SearchResultsTableView) {
-//                    return SearchResults.Count;
-//                } else {
-                return Items.Count;
-//                }
+                if (tableview == vc.SearchDisplayController.SearchResultsTableView) {
+                    return SearchResults.Count;
+                } else {
+                    return Items.Count;
+                }
             }
 
             public override int NumberOfSections (UITableView tableView)
@@ -473,11 +494,11 @@ namespace NachoClient.iOS
                 NcFileIndex item;
 
                 // determine if table is for search results or all attachments
-//                if (tableView == vc.SearchDisplayController.SearchResultsTableView) {
-//                    item = SearchResults [indexPath.Row];
-//                } else {
-                item = Items [indexPath.Row];
-//                }
+                if (tableView == vc.SearchDisplayController.SearchResultsTableView) {
+                    item = SearchResults [indexPath.Row];
+                } else {
+                    item = Items [indexPath.Row];
+                }
 
                 cell.TextLabel.Text = item.DisplayName;
 
@@ -778,25 +799,75 @@ namespace NachoClient.iOS
 
 
             }
+
+            public void SetSearchResults (List<NcFileIndex> searchResults)
+            {
+                this.searchResults = searchResults;
+            }
+
+            public bool UpdateSearchResults (int forSearchOption, string forSearchString)
+            {
+                new System.Threading.Thread (new System.Threading.ThreadStart (() => {
+                    NachoClient.Util.HighPriority ();
+                    var results = SearchByString (forSearchString);
+                    NachoClient.Util.RegularPriority ();
+                    InvokeOnMainThread (() => {
+                        var searchResults = results;
+                        SetSearchResults (searchResults);
+                        UpdateSearchResultsCallback ();
+                    });
+                })).Start ();
+
+                return false;
+            }
+
+            public List<NcFileIndex> SearchByString (string searchString)
+            {
+                List<NcFileIndex> results = new List<NcFileIndex> ();
+                foreach (var item in items) {
+                    if ((item.DisplayName.ToLower ()).Contains (searchString.ToLower ())) {
+                        results.Add (item);
+                    }
+                }
+                return results;
+            }
+
+            public void UpdateSearchResultsCallback ()
+            {
+                // Totally a dummy routines that exists to remind us how to trigger 
+                // the update after updating the searchResult list of attachments.
+                if (null != SearchDisplayController.SearchResultsTableView) {
+                    NachoClient.Util.HighPriority ();
+                    SearchDisplayController.SearchResultsTableView.ReloadData ();
+                    NachoClient.Util.RegularPriority ();
+                }
+            }
         }
 
-        protected class SearchDelegate : UISearchDisplayDelegate
+        public class SearchDisplayDelegate : UISearchDisplayDelegate
         {
-            FilesTableSource filesSource;
-            public string searchString;
+            FilesTableSource owner;
 
-            public SearchDelegate (FilesTableSource filesSource)
+            private SearchDisplayDelegate ()
             {
-                this.filesSource = filesSource;
-                this.searchString = null;
+            }
+
+            public SearchDisplayDelegate (FilesTableSource owner)
+            {
+                this.owner = owner;
+            }
+
+            public override bool ShouldReloadForSearchScope (UISearchDisplayController controller, int forSearchOption)
+            {
+                // TODO: Trigger asynch search & return false
+                string searchString = controller.SearchBar.Text;
+                return owner.UpdateSearchResults (forSearchOption, searchString);
             }
 
             public override bool ShouldReloadForSearchString (UISearchDisplayController controller, string forSearchString)
             {
-                filesSource.SearchResults = filesSource.Items.Where (w => w.DisplayName.Contains (forSearchString)).ToList ();
-                searchString = forSearchString;
-                controller.SearchResultsTableView.ReloadData ();
-                return true;
+                int searchOption = controller.SearchBar.SelectedScopeButtonIndex;
+                return owner.UpdateSearchResults (searchOption, forSearchString);
             }
         }
 
@@ -816,6 +887,16 @@ namespace NachoClient.iOS
         public void SetModal (bool modal)
         {
             this.modal = modal;
+        }
+
+        public void RemoveAttachment (McAttachment attachment)
+        {
+            NcAssert.CaseError ();
+        }
+
+        public void PerformSegueForDelegate (string identifier, NSObject sender)
+        {
+            PerformSegue (identifier, sender);
         }
     }
 }
