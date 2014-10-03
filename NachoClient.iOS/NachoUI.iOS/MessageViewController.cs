@@ -39,7 +39,7 @@ namespace NachoClient.iOS
         // A container view inside horizontalScrollView. All message part views go inside this
         // view. Horizontal scroll view scrolls and zoom this view to move and scale all subviews
         // in unison. Header and attachment subviews are left unzoomed.
-        protected UIView attachmentListView;
+        protected AttachmentListView attachmentListView;
         protected List<McAttachment> attachments;
         protected UcAddressBlock toView;
         protected UcAddressBlock ccView;
@@ -59,9 +59,26 @@ namespace NachoClient.iOS
         protected float expandedSeparatorYOffset;
         protected float compactSeparatorYOffset;
 
-        protected float separatorYOffset {
+        protected float separator1YOffset {
             get {
                 return (expandedHeader ? expandedSeparatorYOffset : compactSeparatorYOffset);
+            }
+        }
+
+        protected float separator2YOffset {
+            get {
+                float yOffset = separator1YOffset;
+                if (HasAttachments) {
+                    yOffset += attachmentListView.Frame.Height;
+                    yOffset += 1.0f; // for separator 1
+                }
+                return yOffset;
+            }
+        }
+
+        protected bool HasAttachments {
+            get {
+                return (0 < attachments.Count);
             }
         }
 
@@ -445,7 +462,8 @@ namespace NachoClient.iOS
             REMINDER_ICON_TAG = 105,
             ATTACHMENT_ICON_TAG = 106,
             RECEIVED_DATE_TAG = 107,
-            SEPARATOR_TAG = 108,
+            SEPARATOR1_TAG = 108,
+            SEPARATOR2_TAG = 112,
             SPINNER_TAG = BodyView.TagType.SPINNER_TAG,
             USER_LABEL_TAG = 110,
             USER_CHILI_TAG = 111,
@@ -459,8 +477,10 @@ namespace NachoClient.iOS
 
         #if (DEBUG_UI)
         const int VIEW_INSET = 4;
+        const int ATTACHMENTVIEW_INSET = 10;
         #else
         const int VIEW_INSET = 2;
+        const int ATTACHMENTVIEW_INSET = 15;
         #endif
 
         protected void CreateView ()
@@ -593,25 +613,36 @@ namespace NachoClient.iOS
             chiliImageView.Tag = (int)TagType.USER_CHILI_TAG;
             view.AddSubview (chiliImageView);
 
-            // Attachment image view
-            // Attachment 'x' will be adjusted to be left of hot image field
-            var attachmentImageView = new UIImageView (new RectangleF (200, 18, 16, 16));
-            attachmentImageView.Image = UIImage.FromBundle ("inbox-icn-attachment");
-            attachmentImageView.Tag = (int)TagType.ATTACHMENT_ICON_TAG;
-            view.AddSubview (attachmentImageView);
+            // Separator 1
+            var separator1View = new UIView (new RectangleF (0, yOffset, 320, 1));
+            separator1View.BackgroundColor = A.Color_NachoBorderGray;
+            separator1View.Tag = (int)TagType.SEPARATOR1_TAG;
+            view.AddSubview (separator1View);
 
-            var tapAttachmentIconGestureRecognizer = new UITapGestureRecognizer ((UITapGestureRecognizer obj) => {
-                onAttachmentIconSelected (obj);
-            });
-            tapAttachmentIconGestureRecognizer.Enabled = true;
-            attachmentImageView.UserInteractionEnabled = true;
-            attachmentImageView.AddGestureRecognizer (tapAttachmentIconGestureRecognizer);
+            // Attachments
+            attachmentListView =
+                new AttachmentListView (new RectangleF (ATTACHMENTVIEW_INSET, yOffset + 1.0f,
+                    view.Frame.Width - ATTACHMENTVIEW_INSET, 30.0f));
+            attachmentListView.OnAttachmentSelected = onAttachmentSelected;
+            attachmentListView.OnStateChanged = (bool IsExpanded) => {
+                LayoutView ();
+            };
+            attachmentListView.Tag = (int)TagType.ATTACHMENT_VIEW_TAG;
+            if (HasAttachments) {
+                attachmentListView.Hidden = false;
+                yOffset += attachmentListView.Frame.Height;
+            } else {
+                attachmentListView.Hidden = true;
+            }
+            view.AddSubview (attachmentListView);
 
-            // Separator
-            var separatorView = new UIView (new RectangleF (0, yOffset, 320, 1));
-            separatorView.BackgroundColor = A.Color_NachoBorderGray;
-            separatorView.Tag = (int)TagType.SEPARATOR_TAG;
-            view.AddSubview (separatorView);
+            // Separator 2
+            var separator2View = new UIView (new RectangleF (0, yOffset, 320, 1));
+            separator2View.BackgroundColor = A.Color_NachoBorderGray;
+            separator2View.Tag = (int)TagType.SEPARATOR2_TAG;
+            view.AddSubview (separator2View);
+
+            yOffset += 1;
 
             // Horizontal scroll bar - All message parts go inside here.
             bodyView = new BodyView (new RectangleF (
@@ -637,42 +668,6 @@ namespace NachoClient.iOS
             spinner.HidesWhenStopped = true;
             spinner.Tag = (int)TagType.SPINNER_TAG;
             view.AddSubview (spinner);
-
-            // Attachments
-            attachmentListView = new UIView ();
-            attachmentListView.Tag = (int)TagType.ATTACHMENT_VIEW_TAG;
-
-            for (int i = 0; i < attachments.Count; i++) {
-                var attachmentView = new UIView (new RectangleF (0, i * 61, View.Frame.Width, 61));
-                attachmentView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
-                attachmentView.Layer.BorderWidth = 1;
-                attachmentView.Tag = i;
-                attachmentListView.AddSubview (attachmentView);
-
-                var icon = new UIImageView (new RectangleF (15, 22, 16, 16));
-                icon.Image = UIImage.FromBundle ("icn-attach-files");
-                attachmentView.AddSubview (icon);
-
-                var name = new UILabel (new RectangleF (49, 10, View.Frame.Width, 20));
-                name.Font = A.Font_AvenirNextMedium14;
-                name.TextColor = A.Color_808080;
-                name.Tag = (int)TagType.ATTACHMENT_NAME_TAG;
-                attachmentView.AddSubview (name);
-
-                var status = new UILabel (new RectangleF (49, 30, View.Frame.Width, 20));
-                status.Font = A.Font_AvenirNextMedium14;
-                status.TextColor = A.Color_808080;
-                status.Tag = (int)TagType.ATTACHMENT_STATUS_TAG;
-                attachmentView.AddSubview (status);
-
-                // Tap the calendar thumb to hid the calendar again
-                var tapGestureRecognizer = new UITapGestureRecognizer ((UITapGestureRecognizer obj) => {
-                    onAttachmentSelected (obj);
-                });
-                tapGestureRecognizer.Enabled = true;
-                attachmentView.AddGestureRecognizer (tapGestureRecognizer);
-            }
-            attachmentListView.Frame = new RectangleF (0, 0, View.Frame.Width, 61 * attachments.Count);
         }
 
         protected void ConfigureView ()
@@ -752,7 +747,7 @@ namespace NachoClient.iOS
 
                 expandedSeparatorYOffset = cursor.TotalHeight;
 
-                var separatorView = View.ViewWithTag ((int)TagType.SEPARATOR_TAG);
+                var separatorView = View.ViewWithTag ((int)TagType.SEPARATOR1_TAG);
                 separatorView.Frame = new RectangleF (0, compactSeparatorYOffset, View.Frame.Width, 1);
                 firstConfig = false;
             }
@@ -768,17 +763,10 @@ namespace NachoClient.iOS
                 X = View.Frame.Width;
             }
 
-            // Attachment image view
-            var attachmentImageView = View.ViewWithTag ((int)TagType.ATTACHMENT_ICON_TAG) as UIImageView;
-            attachmentImageView.Hidden = (0 == attachments.Count);
-            var attachmentImageRect = attachmentImageView.Frame;
-            attachmentImageRect.X = X - 10 - 16;
-            attachmentImageView.Frame = attachmentImageRect;
-
             // From label view
             var fromLabelView = View.ViewWithTag ((int)TagType.FROM_TAG) as UILabel;
             var fromLabelRect = fromLabelView.Frame;
-            fromLabelRect.Width = attachmentImageRect.X - 65;
+            fromLabelRect.Width = X - 10 - 16 - 65;
             fromLabelView.Frame = fromLabelRect;
             fromLabelView.Text = Pretty.SenderString (message.From);
             fromLabelView.Font = (message.IsRead ? A.Font_AvenirNextDemiBold17 : A.Font_AvenirNextRegular17);
@@ -834,22 +822,12 @@ namespace NachoClient.iOS
 
         protected void ConfigureAttachments ()
         {
+            attachmentListView.Reset ();
             for (int i = 0; i < attachments.Count; i++) {
-                var attachment = attachments [i];
-                var attachmentView = attachmentListView.ViewWithTag (i);
-                var name = attachmentView.ViewWithTag ((int)TagType.ATTACHMENT_NAME_TAG) as UILabel;
-                name.Text = attachment.DisplayName;
-                var status = attachmentView.ViewWithTag ((int)TagType.ATTACHMENT_STATUS_TAG) as UILabel;
-                if (attachment.IsInline) {
-                    status.Text = "Is an inline attachment.";
-                } else if (McAbstrFileDesc.FilePresenceEnum.Complete == attachment.FilePresence) {
-                    status.Text = "Attachment is downloaded.";
-                } else if (McAbstrFileDesc.FilePresenceEnum.Partial == attachment.FilePresence) {
-                    status.Text = "Attachment is downloading.";
-                } else {
-                    status.Text = "Touch to download attachment.";
+                if (0 < i) {
+                    attachmentListView.LastAttachmentView ().ShowSeparator ();
                 }
-                attachmentView.SetNeedsDisplay ();
+                attachmentListView.AddAttachment (attachments [i]);
             }
         }
 
@@ -864,10 +842,10 @@ namespace NachoClient.iOS
 
         protected void LayoutView ()
         {
-            var separatorView = view.ViewWithTag ((int)TagType.SEPARATOR_TAG);
-            ViewFramer.Create (separatorView).Y (separatorYOffset);
-            attachmentListView.RemoveFromSuperview ();
-            view.AddSubview (attachmentListView);
+            var separator1View = view.ViewWithTag ((int)TagType.SEPARATOR1_TAG);
+            ViewFramer.Create (separator1View).Y (separator1YOffset);
+            var separator2View = view.ViewWithTag ((int)TagType.SEPARATOR2_TAG);
+            ViewFramer.Create (separator2View).Y (separator2YOffset);
 
             LayoutScrollViews ();
 
@@ -882,7 +860,7 @@ namespace NachoClient.iOS
         {
             // Make sure the touch is in the header area
             PointF touch = sender.LocationInView (view);
-            if (touch.Y > separatorYOffset) {
+            if (touch.Y > separator1YOffset) {
                 return;
             }
 
@@ -892,11 +870,8 @@ namespace NachoClient.iOS
             LayoutView (true);
         }
 
-        protected void onAttachmentSelected (UITapGestureRecognizer obj)
+        protected void onAttachmentSelected (McAttachment attachment)
         {
-            var attachmentView = obj.View;
-            var attachment = attachments [attachmentView.Tag];
-
             if (McAbstrFileDesc.FilePresenceEnum.Complete == attachment.FilePresence) {
                 PlatformHelpers.DisplayAttachment (this, attachment);
             } else {
@@ -904,28 +879,10 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void onAttachmentIconSelected (UITapGestureRecognizer obj)
-        {
-            scrollView.ScrollRectToVisible (attachmentListView.Frame, true);
-        }
-
         protected void LayoutAttachmentListView ()
         {
-            var cursor = new VerticalLayoutCursor (view);
-            cursor.AddSpace (bodyView.Frame.Bottom);
-            cursor.AddSpace (VIEW_INSET);
-            if (0 == attachments.Count) {
-                attachmentListView.Hidden = true;
-            } else {
-                cursor.LayoutView (attachmentListView);
-            }
-            cursor.AddSpace (VIEW_INSET);
-            view.Frame = new RectangleF (
-                VIEW_INSET,
-                VIEW_INSET,
-                view.Frame.Width,
-                cursor.TotalHeight
-            );
+            ViewFramer.Create (attachmentListView).Y (separator1YOffset + 1.0f);
+            attachmentListView.Hidden = !HasAttachments;
         }
 
         protected void LayoutVerticalScrollView ()
@@ -934,7 +891,7 @@ namespace NachoClient.iOS
             float width = scrollView.Frame.Width - 2 * VIEW_INSET;
             float height;
 
-            height = separatorYOffset;
+            height = separator1YOffset;
             height += bodyView.Frame.Height * bodyView.ZoomScale;
             height += 2 * VIEW_INSET;
             height = Math.Max (height, scrollView.Frame.Height);
@@ -962,20 +919,20 @@ namespace NachoClient.iOS
             // increase the height to prevent vertical scroll bar from showing up.
             float height = View.Frame.Height;
             height -= 2 * BodyView.BODYVIEW_INSET;
-            var separator = view.ViewWithTag ((int)TagType.SEPARATOR_TAG);
+            var separator = view.ViewWithTag ((int)TagType.SEPARATOR1_TAG);
             height -= separator.Frame.Bottom;
             if (null != attachmentListView) {
                 height -= attachmentListView.Frame.Height;
             }
 
-            bodyView.Layout (VIEW_INSET, separatorYOffset + 1,
+            bodyView.Layout (VIEW_INSET, separator2YOffset + 1,
                 view.Frame.Width - 2 * BodyView.BODYVIEW_INSET, height);
         }
 
         protected void LayoutScrollViews ()
         {
-            LayoutBodyView ();
             LayoutAttachmentListView ();    // layout attachmentListView & view
+            LayoutBodyView ();
             LayoutVerticalScrollView ();    // layout scrollView
         }
 
