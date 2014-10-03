@@ -1144,6 +1144,11 @@
     <Compile Include="NachoUI.iOS\ContactListViewController.designer.cs">
       <DependentUpon>ContactListViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\ExpandButton.cs" />
+    <Compile Include="NachoUI.iOS\Support\ExpandableView.cs" />
+    <Compile Include="NachoUI.iOS\Support\MessageToolbar.cs" />
+    <Compile Include="NachoUI.iOS\Support\AttachmentView.cs" />
+    <Compile Include="NachoUI.iOS\Support\AttachmentListView.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
