@@ -63,9 +63,10 @@ namespace NachoCore
         {
             // TODO: Make this a query
             list = new List<McFolder> ();
+            var account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
             var temp = NcModel.Instance.Db.Table<McFolder> ().OrderBy (f => f.DisplayName).ToList ();
             foreach (var l in temp) {
-                if (!l.IsHidden) {
+                if (!l.IsHidden && l.AccountId == account.Id && l.IsClientOwned == false) {
                     // TODO: Need a matching enumeration
                     var match = (Xml.FolderHierarchy.TypeCode)l.Type;
                     if (Array.IndexOf (types, match) >= 0) {

@@ -104,9 +104,9 @@ namespace NachoClient.iOS
 
             segmentedControl = new UISegmentedControl ();
             segmentedControl.Frame = new RectangleF (6, 5, View.Frame.Width - 12, 30);
-            segmentedControl.InsertSegment ("By Contact", 0, false);
+            segmentedControl.InsertSegment ("By Name", 0, false);
             segmentedControl.InsertSegment ("By Date", 1, false);
-            segmentedControl.InsertSegment ("By Name", 2, false);
+            segmentedControl.InsertSegment ("By Contact", 2, false);
             segmentedControl.SelectedSegment = 0;
             segmentedControl.SelectedSegment = 0;
             segmentedControl.TintColor = A.Color_NachoGreen;
@@ -117,19 +117,7 @@ namespace NachoClient.iOS
             segmentedControl.SetTitleTextAttributes (segmentedControlTextAttributes, UIControlState.Normal);
 
             segmentedControl.ValueChanged += (sender, e) => {
-                var selectedSegmentId = (sender as UISegmentedControl).SelectedSegment;
-                switch (selectedSegmentId) {
-                case 0:
-
-                    break;
-                case 1:
-                    break;
-                case 2:
-                    break;
-                default:
-                    NcAssert.CaseError ();
-                    break;
-                }
+                RefreshTableSource();
             };
 
             yOffset += segmentedControlView.Frame.Height;
@@ -256,17 +244,40 @@ namespace NachoClient.iOS
 
             NavigationItem.Title = "Files";
             FilesSource.Items = (NcModel.Instance.Db.Query<NcFileIndex> (
-                "SELECT table1.Id, table1.DisplayName, table1.FileType " +
-                "FROM( SELECT Id, DisplayName, 0 AS FileType FROM McAttachment " +
-                "UNION SELECT Id, DisplayName, 1 AS FileType FROM McNote " +
-                "UNION SELECT Id, DisplayName, 2 AS FileType FROM McDocument) " +
-                "table1 ORDER BY LOWER(table1.DisplayName)"
+                "SELECT t1.Id, t1.DisplayName, t1.CreatedAt, t1.FileType " +
+                "FROM( SELECT Id, DisplayName, CreatedAt, 0 AS FileType FROM McAttachment " +
+                "UNION SELECT Id, DisplayName, CreatedAt, 1 AS FileType FROM McNote " +
+                "UNION SELECT Id, DisplayName, CreatedAt, 2 AS FileType FROM McDocument) t1 ORDER BY LOWER(t1.DisplayName) + 0," +
+                "LOWER(t1.DisplayName)"
             ));
 
-//            SearchDisplayController.SearchResultsTableView.ReloadData ();
-//            if (searchDelegate != null && searchDelegate.searchString != null) {
-//                searchDelegate.ShouldReloadForSearchString (SearchDisplayController, searchDelegate.searchString);
-//            }
+            foreach (var item in FilesSource.Items) {
+                if (0 == item.FileType) {
+                    var attachment = McAttachment.QueryById<McAttachment> (item.Id);
+                    switch(attachment.ClassCode){
+                    case McAbstrFolderEntry.ClassCodeEnum.Email:
+                        var email = McEmailMessage.QueryById<McEmailMessage> (attachment.ItemId);
+                        item.CreatedAt = email.DateReceived;
+                        break;
+                    case McAbstrFolderEntry.ClassCodeEnum.Calendar:
+                        var calendar = McCalendar.QueryById<McCalendar> (attachment.ItemId);
+                        item.CreatedAt = calendar.CreatedAt;
+                        break;
+                    }
+                }
+            }
+
+            switch (segmentedControl.SelectedSegment) {
+            case 0:
+                break;
+            case 1:
+                FilesSource.Items.Sort((f1, f2) => DateTime.Compare(f1.CreatedAt, f2.CreatedAt));
+                FilesSource.Items.Reverse();
+                break;
+            case 2:
+                break;
+            }
+
             tableView.ReloadData ();
             ConfigureFilesView ();
         }
@@ -479,7 +490,7 @@ namespace NachoClient.iOS
 
             public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
             {
-                return 50.0f;
+                return 90.0f;
             }
 
             public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
@@ -500,11 +511,9 @@ namespace NachoClient.iOS
                     item = Items [indexPath.Row];
                 }
 
-                cell.TextLabel.Text = item.DisplayName;
-
                 switch (item.FileType) {
                 case 0:
-                    cell = FormatAttachmentCell (cell, McAttachment.QueryById<McAttachment> (item.Id));
+                    cell = FormatAttachmentCell (cell, McAttachment.QueryById<McAttachment> (item.Id), item);
                     ConfigureSwipes (cell as MCSwipeTableViewCell, item);
                     break;
                 case 1:
@@ -515,29 +524,31 @@ namespace NachoClient.iOS
                     ConfigureSwipes (cell as MCSwipeTableViewCell, item);
                     break;
                 }
-
-                // styling
-                cell.TextLabel.TextColor = A.Color_NachoBlack;
-                cell.TextLabel.Font = A.Font_AvenirNextRegular14;
-                cell.DetailTextLabel.TextColor = UIColor.LightGray;
-                cell.DetailTextLabel.Font = A.Font_AvenirNextRegular14;
-
+                  
                 return cell;
             }
 
-            private UITableViewCell FormatAttachmentCell (UITableViewCell cell, McAttachment attachment)
+
+            protected int DATE_LABEL_TAG = 200;
+            protected int TEXT_LABEL_TAG = 300;
+            protected int DETAIL_TEXT_LABEL_TAG = 400;
+
+            private UITableViewCell FormatAttachmentCell (UITableViewCell cell, McAttachment attachment, NcFileIndex item)
             {
                 // sanitize file name so that /'s in display name don't cause formatting issues in the cells
                 string displayName = attachment.DisplayName.SantizeFileName ();
-                cell.TextLabel.Text = Path.GetFileNameWithoutExtension (displayName);
+                CellLabel (cell, TEXT_LABEL_TAG, A.Color_NachoDarkText, A.Font_AvenirNextDemiBold14, 26, Path.GetFileNameWithoutExtension (displayName));
 
-                cell.DetailTextLabel.Text = "";
+                var detailText = "";
                 if (attachment.IsInline) {
-                    cell.DetailTextLabel.Text += "Inline ";
+                    detailText += "Inline ";
                 }
                 string extension = Path.GetExtension (attachment.DisplayName).ToUpper ();
-                cell.DetailTextLabel.Text += extension.Length > 1 ? extension.Substring (1) + " " : "Unrecognized "; // get rid of period and format
-                cell.DetailTextLabel.Text += "file";
+                detailText += extension.Length > 1 ? extension.Substring (1) + " " : "Unrecognized "; // get rid of period and format
+                detailText += "file";
+                CellLabel (cell, DETAIL_TEXT_LABEL_TAG, A.Color_NachoTextGray, A.Font_AvenirNextRegular14, 26 + 19.5f, detailText);
+
+                CellDateLabel (cell, item.CreatedAt);
 
                 if (McAbstrFileDesc.FilePresenceEnum.Complete == attachment.FilePresence || attachment.IsInline) {
                     cell.ImageView.Image = UIImage.FromFile (DownloadCompleteIcon);
@@ -551,26 +562,55 @@ namespace NachoClient.iOS
 
             private UITableViewCell FormatNoteCell (UITableViewCell cell, McNote note)
             {
-                cell.DetailTextLabel.Text = note.noteContent;
+                CellLabel (cell, TEXT_LABEL_TAG, A.Color_NachoDarkText, A.Font_AvenirNextDemiBold14, 26, note.DisplayName);
+                CellLabel (cell, DETAIL_TEXT_LABEL_TAG, A.Color_NachoTextGray, A.Font_AvenirNextRegular14, 26 + 19.5f, note.noteContent);
+                CellDateLabel (cell, note.CreatedAt);
                 cell.ImageView.Image = UIImage.FromFile (DownloadCompleteIcon);
                 return cell;
             }
 
             private UITableViewCell FormatDocumentCell (UITableViewCell cell, McDocument document)
             {
-                cell.DetailTextLabel.Text = document.SourceApplication;
+                CellLabel (cell, TEXT_LABEL_TAG, A.Color_NachoDarkText, A.Font_AvenirNextDemiBold14, 26, document.DisplayName);
+                CellLabel (cell, DETAIL_TEXT_LABEL_TAG, A.Color_NachoTextGray, A.Font_AvenirNextRegular14, 26 + 19.5f, document.SourceApplication);
+                CellDateLabel (cell, document.CreatedAt);
                 cell.ImageView.Image = UIImage.FromFile (DownloadCompleteIcon);
                 return cell;
+            }
+
+            public void CellLabel (UITableViewCell cell, int tag, UIColor textColor, UIFont font, float Y, string text)
+            {
+                if (null != cell.ViewWithTag (tag)) {
+                    cell.ViewWithTag (tag).RemoveFromSuperview ();
+                }
+                UILabel label = new UILabel (); 
+                label.Tag = tag;
+                label.Font = font;
+                label.TextColor = textColor;
+                label.Text = text;
+                label.Frame = new RectangleF (54, Y, cell.Frame.Width - 54 - 54, 19.5f);
+                cell.Add (label);
+            }
+
+            public void CellDateLabel (UITableViewCell cell, DateTime date)
+            {
+                if (null != cell.ViewWithTag (DATE_LABEL_TAG)) {
+                    cell.ViewWithTag (DATE_LABEL_TAG).RemoveFromSuperview ();
+                }
+                UILabel dateLabel = new UILabel (); 
+                dateLabel.Tag = DATE_LABEL_TAG;
+                dateLabel.Font = A.Font_AvenirNextRegular12;
+                dateLabel.TextColor = A.Color_NachoTextGray;
+                dateLabel.Text = Pretty.CompactDateString (date);
+                dateLabel.SizeToFit ();
+                dateLabel.Frame = new RectangleF (cell.Frame.Width - dateLabel.Frame.Width - 10, 8, dateLabel.Frame.Width, dateLabel.Frame.Height);
+                cell.Add (dateLabel);
             }
 
             public override void RowSelected (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
             {
                 NcFileIndex item;
-//                if (tableView == vc.SearchDisplayController.SearchResultsTableView) {
-//                    item = SearchResults [indexPath.Row];
-//                } else {
                 item = Items [indexPath.Row];
-//                }
 
                 switch (item.FileType) {
                 case 0:
@@ -879,7 +919,7 @@ namespace NachoClient.iOS
 
             public int FileType { set; get; }
 
-            public DateTime LastModified { set; get; }
+            public DateTime CreatedAt { set; get; }
         }
 
         protected bool modal;
