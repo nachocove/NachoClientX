@@ -1146,6 +1146,10 @@
     </Compile>
     <Compile Include="NachoUI.iOS\Support\MessageToolbar.cs" />
     <Compile Include="NachoUI.iOS\Support\UIBlockMenu.cs" />
+    <Compile Include="NachoUI.iOS\Support\ExpandButton.cs" />
+    <Compile Include="NachoUI.iOS\Support\ExpandableView.cs" />
+    <Compile Include="NachoUI.iOS\Support\AttachmentView.cs" />
+    <Compile Include="NachoUI.iOS\Support\AttachmentListView.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
