@@ -330,6 +330,10 @@ namespace NachoClient.iOS
             label.AttributedText = attributedString;
             label.SizeToFit ();
             label.Tag = (int)TagType.MESSAGE_PART_TAG;
+            // We don't need this view to scroll. This would result in a triple nesting of
+            // UIScrollView, which iOS doesn't handle well.  It handles two nested UIScrollViews,
+            // but seems to have problems with three.
+            label.ScrollEnabled = false;
             // We are using double tap for zoom toggling. So, we want to disable 
             // double tap to select action. A long tap can still select text.
             foreach (var gc in label.GestureRecognizers) {
