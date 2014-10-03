@@ -9,6 +9,7 @@
 */*/bin/*
 */*/obj/*
 **/*.hmap
+**/*.LinkFileList
 **/*.a
 **/*.so
 native.iOS/src/tld-canon.h
