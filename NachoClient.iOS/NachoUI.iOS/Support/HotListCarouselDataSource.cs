@@ -224,14 +224,7 @@ namespace NachoClient.iOS
             // Size fields will be recalculated after text is known
             var previewLabelView = new BodyView (new RectangleF (12, 70, viewWidth - 15 - 12, bottomY - 60), view);
             previewLabelView.Tag = PREVIEW_TAG;
-            previewLabelView.LeftMargin = 15;
             previewLabelView.UserInteractionEnabled = false;
-            previewLabelView.OnRenderStart = () => {
-            };
-            previewLabelView.OnRenderComplete = () => {
-            };
-            previewLabelView.OnDownloadStart = () => {
-            };
             view.AddSubview (previewLabelView);
 
             // Chili image view

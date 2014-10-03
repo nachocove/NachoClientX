@@ -29,10 +29,10 @@ namespace NachoClient.iOS
         public RenderComplete OnRenderComplete;
         protected UIView parentView;
 
-        public BodyWebView (UIView parentView) : base (parentView.Frame)
+        public BodyWebView (UIView parentView, float leftMargin) : base (parentView.Frame)
         {
             this.parentView = parentView;
-            ViewFramer.Create (this).Height (1);
+            ViewFramer.Create (this).X (leftMargin).Height (1);
             htmlBusy = new RecursionCounter (() => {
                 EvaluateJavascript (magic);
                 ViewFramer.Create (this)
