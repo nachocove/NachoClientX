@@ -120,6 +120,10 @@ namespace NachoClient.iOS
         const int EVENT_ATTACHMENT_TITLE_TAG = 306;
         const int EVENT_NOTE_TITLE_TAG = 307;
 
+        const int EVENT_ALERTS_VIEW_TAG = 700;
+        const int EVENT_ATTACHMENTS_VIEW_TAG = 800;
+        const int EVENT_NOTES_VIEW_TAG = 900;
+
         protected static TupleList<uint, string> minList = new TupleList<uint, string> {
             { 0, "None" },
             { 1, "At time of event" },
@@ -404,7 +408,7 @@ namespace NachoClient.iOS
 
             //alerts 
             eventAlertsView = new UIView (new RectangleF (0, yOffset, SCREEN_WIDTH, CELL_HEIGHT));
-            eventAlertsView.Tag = 700;
+            eventAlertsView.Tag = EVENT_ALERTS_VIEW_TAG;
             eventAlertsView.BackgroundColor = UIColor.White;
 
             Util.AddArrowAccessory (SCREEN_WIDTH - 23, CELL_HEIGHT / 2 - 6, 12, eventAlertsView);
@@ -432,7 +436,7 @@ namespace NachoClient.iOS
 
             //attachments
             eventAttachmentsView = new UIView (new RectangleF (0, yOffset, SCREEN_WIDTH, CELL_HEIGHT));
-            eventAttachmentsView.Tag = 800;
+            eventAttachmentsView.Tag = EVENT_ATTACHMENTS_VIEW_TAG;
             eventAttachmentsView.BackgroundColor = UIColor.White;
 
             Util.AddArrowAccessory (SCREEN_WIDTH - 23, CELL_HEIGHT / 2 - 6, 12, eventAttachmentsView);
@@ -460,7 +464,7 @@ namespace NachoClient.iOS
 
             //notes
             eventNotesView = new UIView (new RectangleF (0, yOffset, SCREEN_WIDTH, CELL_HEIGHT));
-            eventNotesView.Tag = 900;
+            eventNotesView.Tag = EVENT_NOTES_VIEW_TAG;
             eventNotesView.BackgroundColor = UIColor.White;
 
             Util.AddArrowAccessory (SCREEN_WIDTH - 23, CELL_HEIGHT / 2 - 6, 12, eventNotesView);
@@ -583,7 +587,7 @@ namespace NachoClient.iOS
             var whenLabelView = View.ViewWithTag (EVENT_WHEN_DETAIL_LABEL_TAG) as UILabel;
             whenLabelView.Text = Pretty.ExtendedDateString (e.StartTime);
 
-            var durationLabelView = View.ViewWithTag (500) as UILabel;
+            var durationLabelView = View.ViewWithTag (EVENT_WHEN_DURATION_TAG) as UILabel;
             if (!c.AllDayEvent) {
                 if (e.StartTime.DayOfYear == e.EndTime.DayOfYear) {
                     durationLabelView.Text = "from " + Pretty.FullTimeString (e.StartTime) + " until " + Pretty.FullTimeString (e.EndTime);
@@ -598,7 +602,7 @@ namespace NachoClient.iOS
                 }
             }
 
-            var recurrenceLabelView = View.ViewWithTag (600) as UILabel;
+            var recurrenceLabelView = View.ViewWithTag (EVENT_WHEN_RECURRENCE_TAG) as UILabel;
             if (isRecurring) {
                 recurrenceLabelView.Text = MakeRecurrenceString (root.recurrences);
                 recurrenceLabelView.Lines = 0;
@@ -657,7 +661,7 @@ namespace NachoClient.iOS
 
             //get attachments out of an event
             attachmentCount = c.attachments.Count;
-            var attachmentView = contentView.ViewWithTag (800) as UIView;
+            var attachmentView = contentView.ViewWithTag (EVENT_ATTACHMENTS_VIEW_TAG) as UIView;
             if (0 == attachmentCount) {
                 attachmentView.Hidden = true;
                 line2.Hidden = true;
@@ -737,19 +741,19 @@ namespace NachoClient.iOS
             yOffset += av.Frame.Height;
 
             yOffset += 20;
-            var alv = View.ViewWithTag (700) as UIView;
+            var alv = View.ViewWithTag (EVENT_ALERTS_VIEW_TAG) as UIView;
             alv.Frame = new RectangleF (0, yOffset, alv.Frame.Width, alv.Frame.Height);
             line1.Frame = new RectangleF (23f, yOffset, line1.Frame.Width, line1.Frame.Height);
             yOffset += alv.Frame.Height;
 
             if (0 != attachmentCount) {
-                var atv = View.ViewWithTag (800) as UIView;
+                var atv = View.ViewWithTag (EVENT_ATTACHMENTS_VIEW_TAG) as UIView;
                 atv.Frame = new RectangleF (0, yOffset, atv.Frame.Width, atv.Frame.Height);
                 line2.Frame = new RectangleF (23f, yOffset, line1.Frame.Width, line1.Frame.Height);
                 yOffset += atv.Frame.Height;
             }
 
-            var nv = View.ViewWithTag (900) as UIView;
+            var nv = View.ViewWithTag (EVENT_NOTES_VIEW_TAG) as UIView;
             nv.Frame = new RectangleF (0, yOffset, nv.Frame.Width, nv.Frame.Height);
             line3.Frame = new RectangleF (23f, yOffset, line1.Frame.Width, line1.Frame.Height);
             yOffset += nv.Frame.Height;
