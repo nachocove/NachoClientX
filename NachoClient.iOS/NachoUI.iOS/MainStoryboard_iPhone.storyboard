@@ -40,7 +40,6 @@
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <connections>
                         <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="ja3-Zu-g6R"/>
-                        <segue destination="Ncm-tW-u3E" kind="push" identifier="NachoNowToContacts" id="FHc-YP-jWH"/>
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="NachoNowToMessagePriority" id="RaB-9o-azo"/>
                         <segue destination="wY7-Wf-QPv" kind="modal" identifier="NachoNowToMessageAction" id="Q8y-4K-BAb"/>
                         <segue destination="tAw-fh-hJX" kind="push" identifier="NachoNowToCompose" id="Zli-hF-qvP"/>
@@ -220,95 +219,6 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="0ni-R3-Vh5" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-5418" y="-3850"/>
-        </scene>
-        <!--Contacts-->
-        <scene sceneID="pLr-jq-dgQ">
-            <objects>
-                <tableViewController storyboardIdentifier="ContactsViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="jTc-Vg-SXZ" customClass="ContactsViewController" sceneMemberID="viewController">
-                    <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="MBn-W2-0u6">
-                        <rect key="frame" x="0.0" y="64" width="320" height="455"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                        <searchBar key="tableHeaderView" contentMode="redraw" id="f7d-Bz-vIg">
-                            <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
-                            <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
-                            <textInputTraits key="textInputTraits"/>
-                            <connections>
-                                <outlet property="delegate" destination="jTc-Vg-SXZ" id="afv-Q4-UfU"/>
-                            </connections>
-                        </searchBar>
-                        <prototypes>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="Basic" textLabel="NPa-kF-K0g" style="IBUITableViewCellStyleDefault" id="gId-5f-LQ5">
-                                <rect key="frame" x="0.0" y="66" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="gId-5f-LQ5" id="od2-tq-702">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                    <subviews>
-                                        <label opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="left" text="Title" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="NPa-kF-K0g">
-                                            <rect key="frame" x="15" y="0.0" width="290" height="43"/>
-                                            <autoresizingMask key="autoresizingMask"/>
-                                            <fontDescription key="fontDescription" type="system" pointSize="18"/>
-                                            <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
-                                            <nil key="highlightedColor"/>
-                                        </label>
-                                    </subviews>
-                                </tableViewCellContentView>
-                            </tableViewCell>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="Subtitle" textLabel="iBo-AG-Ymi" detailTextLabel="qgA-tf-48k" style="IBUITableViewCellStyleSubtitle" id="qe1-mg-n3P">
-                                <rect key="frame" x="0.0" y="110" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="qe1-mg-n3P" id="jTj-G4-j6a">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                    <subviews>
-                                        <label opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="left" text="Title" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="iBo-AG-Ymi">
-                                            <rect key="frame" x="15" y="3" width="34" height="22"/>
-                                            <autoresizingMask key="autoresizingMask"/>
-                                            <fontDescription key="fontDescription" type="system" pointSize="18"/>
-                                            <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
-                                            <nil key="highlightedColor"/>
-                                        </label>
-                                        <label opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="left" text="Subtitle" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="qgA-tf-48k">
-                                            <rect key="frame" x="15" y="25" width="43" height="15"/>
-                                            <autoresizingMask key="autoresizingMask"/>
-                                            <fontDescription key="fontDescription" type="system" pointSize="12"/>
-                                            <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
-                                            <nil key="highlightedColor"/>
-                                        </label>
-                                    </subviews>
-                                </tableViewCellContentView>
-                            </tableViewCell>
-                        </prototypes>
-                        <connections>
-                            <outlet property="dataSource" destination="jTc-Vg-SXZ" id="bqA-Ty-T73"/>
-                            <outlet property="delegate" destination="jTc-Vg-SXZ" id="MWL-O5-QFz"/>
-                        </connections>
-                    </tableView>
-                    <extendedEdge key="edgesForExtendedLayout"/>
-                    <navigationItem key="navigationItem" title="Contacts" id="zrg-GA-kfR"/>
-                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
-                    <connections>
-                        <outlet property="searchDisplayController" destination="rbr-Tg-MJy" id="gRe-Gf-Fmo"/>
-                        <segue destination="MG9-1p-N0l" kind="push" identifier="ContactsToContactDetail" id="fwk-9p-tlV"/>
-                        <segue destination="vgr-FH-RtX" kind="push" identifier="ContactsToContactEdit" id="W3H-fb-nEJ"/>
-                        <segue destination="OCr-PO-3nH" kind="push" identifier="SegueToNachoNow" id="hFF-MQ-SOq"/>
-                        <segue destination="tAw-fh-hJX" kind="push" identifier="ContactsToMessageCompose" id="Wvd-xL-8Ik"/>
-                        <segue destination="tAw-fh-hJX" kind="push" identifier="ContactsToQuickMessageCompose" id="T7S-YG-5o8"/>
-                    </connections>
-                </tableViewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="jgG-ds-vYF" userLabel="First Responder" sceneMemberID="firstResponder"/>
-                <searchDisplayController id="rbr-Tg-MJy">
-                    <connections>
-                        <outlet property="delegate" destination="jTc-Vg-SXZ" id="pwu-1x-7uN"/>
-                        <outlet property="searchBar" destination="f7d-Bz-vIg" id="T3j-SA-1oE"/>
-                        <outlet property="searchContentsController" destination="jTc-Vg-SXZ" id="Da1-Rx-Nx0"/>
-                        <outlet property="searchResultsDataSource" destination="jTc-Vg-SXZ" id="POK-08-Xvw"/>
-                        <outlet property="searchResultsDelegate" destination="jTc-Vg-SXZ" id="l09-nH-VUH"/>
-                    </connections>
-                </searchDisplayController>
-            </objects>
-            <point key="canvasLocation" x="-567" y="-955"/>
         </scene>
         <!--Settings-->
         <scene sceneID="cES-6I-XY9">
@@ -863,21 +773,23 @@
             </objects>
             <point key="canvasLocation" x="567" y="1596"/>
         </scene>
-        <!--Neo Con-->
+        <!--Contact List View-->
         <scene sceneID="V3D-7x-Btg">
             <objects>
-                <viewController storyboardIdentifier="ContactListViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="6eL-L8-wSP" customClass="ContactListViewController" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="ContactListViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="6eL-L8-wSP" userLabel="Contact List View" customClass="ContactListViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="Crs-zQ-Lhr">
                         <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                     </view>
-                    <tabBarItem key="tabBarItem" title="Neo Con" id="65y-al-i3Y"/>
                     <navigationItem key="navigationItem" id="SdG-99-Ifp"/>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <simulatedTabBarMetrics key="simulatedBottomBarMetrics"/>
                     <connections>
-                        <segue destination="MG9-1p-N0l" kind="push" id="Aba-pv-mzB"/>
+                        <segue destination="MG9-1p-N0l" kind="push" identifier="ContactsToContactDetail" id="Aba-pv-mzB"/>
+                        <segue destination="vgr-FH-RtX" kind="push" identifier="ContactsToContactEdit" id="TEI-cG-N0R"/>
+                        <segue destination="tAw-fh-hJX" kind="push" identifier="ContactsToQuickMessageCompose" id="RKu-FY-1IX"/>
+                        <segue destination="tAw-fh-hJX" kind="push" identifier="ContactsToMessageCompose" id="M29-IF-JzO"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="pD4-ER-Ao1" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1306,16 +1218,15 @@
                     </tabBar>
                     <connections>
                         <segue destination="OCr-PO-3nH" kind="relationship" relationship="viewControllers" id="HwV-au-Wta"/>
-                        <segue destination="bzq-xt-DVh" kind="relationship" relationship="viewControllers" id="b7c-1Z-ljK"/>
                         <segue destination="xfD-Vu-nBF" kind="relationship" relationship="viewControllers" id="XQg-JR-vxA"/>
-                        <segue destination="Ncm-tW-u3E" kind="relationship" relationship="viewControllers" id="NoB-Ny-Mf5"/>
                         <segue destination="j5A-VG-u0P" kind="relationship" relationship="viewControllers" id="vXz-gG-vL2"/>
+                        <segue destination="PGe-ip-eZd" kind="relationship" relationship="viewControllers" id="aB0-7O-hbe"/>
+                        <segue destination="bzq-xt-DVh" kind="relationship" relationship="viewControllers" id="b7c-1Z-ljK"/>
                         <segue destination="zEe-J0-xNV" kind="relationship" relationship="viewControllers" id="CgA-hJ-TPb"/>
                         <segue destination="MRl-Tp-bqC" kind="relationship" relationship="viewControllers" id="Eb2-K0-nI3"/>
                         <segue destination="sL0-ex-8A8" kind="relationship" relationship="viewControllers" id="DQk-BA-wYt"/>
                         <segue destination="Dc9-zu-AZQ" kind="relationship" relationship="viewControllers" id="5QG-Sn-Ioi"/>
                         <segue destination="v0a-Zq-Chs" kind="relationship" relationship="viewControllers" id="haI-Fc-A7q"/>
-                        <segue destination="6eL-L8-wSP" kind="relationship" relationship="viewControllers" id="JPQ-8c-IKZ"/>
                         <segue destination="7Pg-MI-IyO" kind="relationship" relationship="viewControllers" id="LSS-z4-moj"/>
                     </connections>
                 </tabBarController>
@@ -1742,26 +1653,6 @@
             </objects>
             <point key="canvasLocation" x="-3215" y="-2353"/>
         </scene>
-        <!--Contacts-->
-        <scene sceneID="7Oi-Mm-PAH">
-            <objects>
-                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="Ncm-tW-u3E" sceneMemberID="viewController">
-                    <tabBarItem key="tabBarItem" title="Contacts" id="DFk-tr-tn8"/>
-                    <toolbarItems/>
-                    <navigationItem key="navigationItem" id="QKz-KS-ddZ"/>
-                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="qqN-c0-wId">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
-                        <autoresizingMask key="autoresizingMask"/>
-                    </navigationBar>
-                    <nil name="viewControllers"/>
-                    <connections>
-                        <segue destination="jTc-Vg-SXZ" kind="relationship" relationship="rootViewController" id="Nhg-Vl-Ons"/>
-                    </connections>
-                </navigationController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="cIg-k6-fgL" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-1093" y="-955"/>
-        </scene>
         <!--Calendar-->
         <scene sceneID="XZB-Fv-sWg">
             <objects>
@@ -1986,10 +1877,11 @@
             </objects>
             <point key="canvasLocation" x="-6573" y="-2361"/>
         </scene>
-        <!--Navigation Controller-->
+        <!--Contact List Navigation Controller-->
         <scene sceneID="QcR-uY-vH7">
             <objects>
-                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="PGe-ip-eZd" sceneMemberID="viewController">
+                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="PGe-ip-eZd" userLabel="Contact List Navigation Controller" sceneMemberID="viewController">
+                    <tabBarItem key="tabBarItem" title="Contacts" id="R8b-91-FPT"/>
                     <toolbarItems/>
                     <navigationBar key="navigationBar" contentMode="scaleToFill" id="bw6-pw-tl2">
                         <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
@@ -2004,10 +1896,10 @@
             </objects>
             <point key="canvasLocation" x="1213" y="1613"/>
         </scene>
-        <!--Files-->
+        <!--Files Navigation Controller-->
         <scene sceneID="sGB-tl-fXz">
             <objects>
-                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="7Pg-MI-IyO" sceneMemberID="viewController">
+                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="7Pg-MI-IyO" userLabel="Files Navigation Controller" sceneMemberID="viewController">
                     <tabBarItem key="tabBarItem" title="Files" id="xdD-kd-2aA"/>
                     <toolbarItems/>
                     <navigationBar key="navigationBar" contentMode="scaleToFill" id="sK7-fn-J0X">
@@ -2043,33 +1935,31 @@
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="vXz-gG-vL2"/>
-        <segue reference="4z2-t5-9Cd"/>
         <segue reference="QbR-l1-NT5"/>
         <segue reference="od0-Sz-R9p"/>
-        <segue reference="NoB-Ny-Mf5"/>
-        <segue reference="JPQ-8c-IKZ"/>
-        <segue reference="XQg-JR-vxA"/>
+        <segue reference="4z2-t5-9Cd"/>
         <segue reference="HwV-au-Wta"/>
+        <segue reference="vXz-gG-vL2"/>
+        <segue reference="XQg-JR-vxA"/>
         <segue reference="Eb2-K0-nI3"/>
+        <segue reference="Q8y-4K-BAb"/>
+        <segue reference="Kmd-x6-iCJ"/>
+        <segue reference="kqa-TN-ijZ"/>
+        <segue reference="KnL-e9-HQR"/>
+        <segue reference="tQS-oL-XNh"/>
+        <segue reference="eUJ-3D-Pjk"/>
+        <segue reference="M29-IF-JzO"/>
+        <segue reference="TEI-cG-N0R"/>
         <segue reference="Aba-pv-mzB"/>
-        <segue reference="kYM-OY-NE0"/>
         <segue reference="6J3-c2-bz5"/>
-        <segue reference="mLY-u0-R5O"/>
-        <segue reference="ZzH-qS-KOm"/>
-        <segue reference="peA-r2-tjq"/>
+        <segue reference="kYM-OY-NE0"/>
         <segue reference="w67-dy-XSq"/>
         <segue reference="7sK-rg-HQL"/>
         <segue reference="m2D-2n-RiV"/>
-        <segue reference="GKm-A3-njZ"/>
-        <segue reference="p7w-hx-Y70"/>
-        <segue reference="KnL-e9-HQR"/>
+        <segue reference="peA-r2-tjq"/>
         <segue reference="xrp-ey-B0j"/>
-        <segue reference="eUJ-3D-Pjk"/>
         <segue reference="B5b-jg-ZNg"/>
-        <segue reference="Kmd-x6-iCJ"/>
-        <segue reference="Q8y-4K-BAb"/>
-        <segue reference="rew-s7-VAQ"/>
+        <segue reference="559-W6-vfH"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.45098039215686275" green="1" blue="0.95294117647058818" alpha="1" colorSpace="deviceRGB"/>
 </document>

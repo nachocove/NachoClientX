@@ -245,10 +245,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Extensions\XElement+AnyNs.cs">
       <Link>NachoCore\Extensions\XElement+AnyNs.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\ContactsViewController.cs" />
-    <Compile Include="NachoUI.iOS\ContactsViewController.designer.cs">
-      <DependentUpon>ContactsViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\CalendarViewController.cs" />
     <Compile Include="NachoUI.iOS\CalendarViewController.designer.cs">
       <DependentUpon>CalendarViewController.cs</DependentUpon>

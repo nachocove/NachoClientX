@@ -16,27 +16,19 @@ namespace NachoClient.iOS
 {
     public class ContactsTableViewSource : UITableViewSource
     {
+        bool multipleSections;
+        int[] sectionStart;
+        int[] sectionLength;
+
+        List<NcContactIndex> recent;
         List<NcContactIndex> contacts;
         List<McContactEmailAddressAttribute> searchResults = null;
-        public IContactsTableViewSourceDelegate owner;
+        IContactsTableViewSourceDelegate owner;
 
         UISearchDisplayController SearchDisplayController;
 
         protected const string UICellReuseIdentifier = "UICell";
         protected const string ContactCellReuseIdentifier = "ContactCell";
-
-        enum WhichItems
-        {
-            None,
-            Email,
-            Name,
-            Phone,
-            EmailAndName,
-            EmailAndPhone,
-            NameAndPhone,
-            EmailNameAndPhone}
-
-        ;
 
         public ContactsTableViewSource ()
         {
@@ -47,13 +39,60 @@ namespace NachoClient.iOS
         {
             this.owner = owner;
             this.SearchDisplayController = SearchDisplayController;
-
             SearchDisplayController.Delegate = new SearchDisplayDelegate (this);
         }
 
-        public void SetContacts (List<NcContactIndex> contacts)
+        protected void FindRange (char uppercaseTarget, out int index, out int count)
         {
+            int hit = -1;
+
+            for (int i = 0; i < contacts.Count; i++) {
+                var c = contacts [i];
+                if (uppercaseTarget <= c.FirstLetter [0]) {
+                    hit = i;
+                    break;
+                }
+            }
+            index = hit;
+            count = 0;
+            while ((hit < contacts.Count) && (uppercaseTarget == contacts [hit].FirstLetter[0])) {
+                count = count + 1;
+                hit = hit + 1;
+            }
+        }
+
+        public void SetContacts (List<NcContactIndex> recent, List<NcContactIndex> contacts, bool multipleSections)
+        {
+            this.recent = recent;
             this.contacts = contacts;
+            this.multipleSections = multipleSections;
+
+            foreach (var c in contacts) {
+                if (String.IsNullOrEmpty (c.FirstLetter)) {
+                    c.FirstLetter = " ";
+                } else {
+                    c.FirstLetter = c.FirstLetter.ToUpper ();
+                }
+            }
+
+            sectionStart = new int[27];
+            sectionLength = new int[27];
+
+            int index;
+            int count;
+            FindRange ('A', out index, out count);
+
+            sectionStart [26] = 0;
+            sectionLength [26] = index;
+
+            sectionStart [0] = index;
+            sectionLength [0] = count;
+
+            for (int i = 1; i < 26; i++) {
+                FindRange ((char)(((int)'A') + i), out index, out count);
+                sectionStart [i] = index;
+                sectionLength [i] = count;
+            }
         }
 
         public void SetSearchResults (List<McContactEmailAddressAttribute> searchResults)
@@ -66,7 +105,8 @@ namespace NachoClient.iOS
             if (SearchDisplayController.SearchResultsTableView == tableView) {
                 return ((null == searchResults) || (0 == searchResults.Count));
             }
-            return ((null == contacts) || (0 == contacts.Count));        
+            int n = (null == recent ? 0 : recent.Count) + (null == contacts ? 0 : contacts.Count);
+            return (0 == n);
         }
 
         /// <summary>
@@ -74,7 +114,54 @@ namespace NachoClient.iOS
         /// </summary>
         public override int NumberOfSections (UITableView tableView)
         {
-            return 1;
+            if (SearchDisplayController.SearchResultsTableView == tableView) {
+                return 1;
+            }
+            return ((null == recent) ? 0 : 1) + (multipleSections ? 27 : 1);
+        }
+
+        public override float GetHeightForHeader (UITableView tableView, int section)
+        {
+            if (SearchDisplayController.SearchResultsTableView == tableView) {
+                return 0;
+            }
+            if (multipleSections || (null != recent)) {
+                return 32;
+            } else {
+                return 0;
+            }
+        }
+
+        public override UIView GetViewForHeader (UITableView tableView, int section)
+        {
+            if (!multipleSections && (null == recent)) {
+                return new UIView (new RectangleF (0, 0, 0, 0));
+            }
+            if (SearchDisplayController.SearchResultsTableView == tableView) {
+                return new UIView (new RectangleF (0, 0, 0, 0));
+            }
+            var view = new UIView (new RectangleF (0, 0, tableView.Frame.Width, 32));
+            var label = new UILabel ();
+            label.Font = A.Font_AvenirNextRegular24;
+            label.Text = TitleForHeader (tableView, section);
+            label.SizeToFit ();
+            label.Center = new PointF (15 + (label.Frame.Width / 2), 16);
+            view.AddSubview (label);
+            return view;
+        }
+
+        public override string TitleForHeader (UITableView tableView, int section)
+        {
+            String header = "ABCDEFGHIJKLMNOPQRSTUVWXYZ#";
+
+            var n = section;
+            if (null != recent) {
+                if (0 == section) {
+                    return "Recent";
+                }
+                n = n - 1;
+            }
+            return header.Substring (n, 1);
         }
 
         /// <summary>
@@ -82,40 +169,54 @@ namespace NachoClient.iOS
         /// </summary>
         public override int RowsInSection (UITableView tableview, int section)
         {
+            int rows;
+
             if (SearchDisplayController.SearchResultsTableView == tableview) {
-                return ((null == searchResults) ? 0 : searchResults.Count);
+                rows = ((null == searchResults) ? 0 : searchResults.Count);
+            } else if ((null != recent) && (0 == section)) {
+                rows = recent.Count;
+            } else if (multipleSections) {
+                var index = section - ((null == recent) ? 0 : 1);
+                rows = sectionLength [index];
+            } else {
+                rows = ((null == contacts) ? 0 : contacts.Count);
             }
-            return ((null == contacts) ? 0 : contacts.Count);
+            Console.WriteLine ("RowsInSection {0} = {1}", section, rows);
+            return rows;
         }
 
-        public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
+        protected McContact ContactFromIndexPath (UITableView tableView, NSIndexPath indexPath)
         {
             McContact contact;
 
             if (SearchDisplayController.SearchResultsTableView == tableView) {
                 var contactEmailAttribute = searchResults [indexPath.Row];
-                contact = McContact.QueryById<McContact> ((int)contactEmailAttribute.ContactId);
+                contact = contactEmailAttribute.GetContact ();
+            } else if ((null != recent) && (0 == indexPath.Section)) {
+                contact = recent [indexPath.Row].GetContact ();
+            } else if (multipleSections) {
+                var section = indexPath.Section - ((null == recent) ? 0 : 1);
+                var index = indexPath.Row + sectionStart [section];
+                contact = contacts [index].GetContact ();
             } else {
                 contact = contacts [indexPath.Row].GetContact ();
             }
+            return contact;
+        }
+
+        public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
+        {
+            McContact contact = ContactFromIndexPath (tableView, indexPath);
             owner.ContactSelectedCallback (contact);
             DumpInfo (contact);
         }
 
         public override void AccessoryButtonTapped (UITableView tableView, NSIndexPath indexPath)
         {
-            McContact contact;
-
-            if (SearchDisplayController.SearchResultsTableView == tableView) {
-                var contactEmailAttribute = searchResults [indexPath.Row];
-                contact = McContact.QueryById<McContact> ((int)contactEmailAttribute.ContactId);
-            } else {
-                contact = contacts [indexPath.Row].GetContact ();
-            }
+            McContact contact = ContactFromIndexPath (tableView, indexPath);
             owner.ContactSelectedCallback (contact);
         }
 
- 
         /// <summary>
         /// Configures the swipes.
         /// </summary>
@@ -238,25 +339,23 @@ namespace NachoClient.iOS
 
         public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
         {
-            return 69;
+            return 80;
         }
 
-        protected const int USER_NAME_TAG = 333;
+        protected const int TITLE_LABEL_TAG = 333;
         protected const int USER_LABEL_TAG = 334;
-        protected const int USER_EMAIL_TAG = 335;
-        protected const int USER_PHONE_TAG = 336;
+        protected const int SUBTITLE1_LABEL_TAG = 335;
+        protected const int SUBTITLE2_LABEL_TAG = 336;
 
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
         {
-            McContact contact;
-            if (SearchDisplayController.SearchResultsTableView == tableView) {
-                contact = searchResults.ElementAt (indexPath.Row).GetContact ();
-            } else {
-                contact = contacts [indexPath.Row].GetContact ();
-            }
-
+            McContact contact = ContactFromIndexPath (tableView, indexPath);
             var cell = CreateCell (contact);
             ConfigureCell (cell, contact);
+
+            cell.Layer.CornerRadius = 15;
+            cell.Layer.MasksToBounds = true;
+            cell.SelectionStyle = UITableViewCellSelectionStyle.None;
 
             return cell;
         }
@@ -266,205 +365,116 @@ namespace NachoClient.iOS
             var cell = new MCSwipeTableViewCell (UITableViewCellStyle.Subtitle, ContactCellReuseIdentifier);
             NcAssert.True (null != cell);
 
-            if (null == cell.ViewWithTag (USER_NAME_TAG)) {
-                var userNameView = new UILabel (new RectangleF (65, 17, 320 - 15 - 65, 20));
-                userNameView.LineBreakMode = UILineBreakMode.TailTruncation;
-                userNameView.Tag = USER_NAME_TAG;
-                cell.ContentView.AddSubview (userNameView);
-                var userEmailView = new UILabel (new RectangleF (65, 35, 320 - 15 - 65, 20));
-                userEmailView.LineBreakMode = UILineBreakMode.TailTruncation;
-                userEmailView.Tag = USER_EMAIL_TAG;
-                cell.ContentView.AddSubview (userEmailView);
-                var userPhoneView = new UILabel (new RectangleF (65, 56, 320 - 15 - 65, 14));
-                userPhoneView.LineBreakMode = UILineBreakMode.TailTruncation;
-                userPhoneView.Tag = USER_PHONE_TAG;
-                cell.ContentView.AddSubview (userPhoneView);
+            NcAssert.True (null == cell.ViewWithTag (TITLE_LABEL_TAG));
 
-                // User userLabelView view, if no image
-                if (0 == contact.PortraitId) {
-                    var userLabelView = new UILabel (new RectangleF (15, 15, 40, 40));
-                    userLabelView.Font = A.Font_AvenirNextRegular24;
-                    userLabelView.TextColor = UIColor.White;
-                    userLabelView.TextAlignment = UITextAlignment.Center;
-                    userLabelView.LineBreakMode = UILineBreakMode.Clip;
-                    userLabelView.Layer.CornerRadius = 20;
-                    userLabelView.Layer.MasksToBounds = true;
-                    userLabelView.Tag = USER_LABEL_TAG;
-                    cell.ContentView.AddSubview (userLabelView);
-                } else {
-                    var userImageView = new UIImageView (new RectangleF (15, 15, 40, 40));
-                    userImageView.Layer.CornerRadius = 20;
-                    userImageView.Layer.MasksToBounds = true;
-                    userImageView.Tag = USER_LABEL_TAG;
-                    cell.ContentView.AddSubview (userImageView);
-                }
+            var titleLabel = new UILabel (new RectangleF (65, 10, 320 - 15 - 65, 20));
+            titleLabel.Font = A.Font_AvenirNextDemiBold17;
+            titleLabel.LineBreakMode = UILineBreakMode.TailTruncation;
+            titleLabel.Tag = TITLE_LABEL_TAG;
+            cell.ContentView.AddSubview (titleLabel);
+
+            var subtitle1Label = new UILabel (new RectangleF (65, 35, 320 - 15 - 65, 20));
+            subtitle1Label.LineBreakMode = UILineBreakMode.TailTruncation;
+            subtitle1Label.Font = A.Font_AvenirNextRegular14;
+            subtitle1Label.Tag = SUBTITLE1_LABEL_TAG;
+            cell.ContentView.AddSubview (subtitle1Label);
+
+            var subtitle2Label = new UILabel (new RectangleF (65, 55, 320 - 15 - 65, 20));
+            subtitle2Label.LineBreakMode = UILineBreakMode.TailTruncation;
+            subtitle2Label.Font = A.Font_AvenirNextRegular14;
+            subtitle2Label.Tag = SUBTITLE2_LABEL_TAG;
+            cell.ContentView.AddSubview (subtitle2Label);
+
+            // User userLabelView view, if no image
+            if (0 == contact.PortraitId) {
+                var userLabelView = new UILabel (new RectangleF (15, 10, 40, 40));
+                userLabelView.Font = A.Font_AvenirNextRegular24;
+                userLabelView.TextColor = UIColor.White;
+                userLabelView.TextAlignment = UITextAlignment.Center;
+                userLabelView.LineBreakMode = UILineBreakMode.Clip;
+                userLabelView.Layer.CornerRadius = 20;
+                userLabelView.Layer.MasksToBounds = true;
+                userLabelView.Tag = USER_LABEL_TAG;
+                cell.ContentView.AddSubview (userLabelView);
+            } else {
+                var userImageView = new UIImageView (new RectangleF (15, 10, 40, 40));
+                userImageView.Layer.CornerRadius = 20;
+                userImageView.Layer.MasksToBounds = true;
+                userImageView.Tag = USER_LABEL_TAG;
+                cell.ContentView.AddSubview (userImageView);
             }
             return cell;
         }
 
         public void ConfigureCell (MCSwipeTableViewCell cell, McContact contact)
         {
+            var titleLabel = cell.ViewWithTag (TITLE_LABEL_TAG) as UILabel;
+            var subtitle1Label = cell.ViewWithTag (SUBTITLE1_LABEL_TAG) as UILabel;
+            var subtitle2Label = cell.ViewWithTag (SUBTITLE2_LABEL_TAG) as UILabel;
+            var labelView = cell.ViewWithTag (USER_LABEL_TAG) as UILabel;
 
-            if (null != contact) {
-                var displayName = contact.GetDisplayName ();
-                var displayEmailAddress = contact.GetEmailAddress ();
-                var displayPhoneNumber = contact.GetPhoneNumber ();
-
-                WhichItems theItems;
-
-                bool hasEmail = false;
-                bool hasName = false;
-                bool hasPhone = false;
-
-                if (!String.IsNullOrEmpty (displayName)) {
-                    hasName = true;
-                }
-                if (!String.IsNullOrEmpty (displayEmailAddress)) {
-                    hasEmail = true;
-                }
-                if (!String.IsNullOrEmpty (displayPhoneNumber)) {
-                    hasPhone = true;
-                }
-
-                if (!hasName && !hasPhone && !hasEmail) {
-                    theItems = WhichItems.None;
-                } else if (hasName && hasEmail && hasPhone) {
-                    theItems = WhichItems.EmailNameAndPhone;
-                } else if (hasName && hasEmail) {
-                    theItems = WhichItems.EmailAndName;
-                } else if (hasName && hasPhone) {
-                    theItems = WhichItems.NameAndPhone;
-                } else if (hasEmail && hasPhone) {
-                    theItems = WhichItems.EmailAndPhone;
-                } else if (hasEmail) {
-                    theItems = WhichItems.Email;
-                } else if (hasName) {
-                    theItems = WhichItems.Name;
-                } else {
-                    theItems = WhichItems.Phone;
-                }
-
-                int colorIndex = 1;
-
-                if (!String.IsNullOrEmpty (displayEmailAddress)) {
-                    McEmailAddress emailAddress;
-                    if (McEmailAddress.Get (contact.AccountId, displayEmailAddress, out emailAddress)) {
-                        displayEmailAddress = emailAddress.CanonicalEmailAddress;
-                        colorIndex = emailAddress.ColorIndex;
-                    }
-                }
-
-                if (1 == colorIndex) {
-                    colorIndex = Util.PickRandomColorForUser ();
-                }
-
-                ConfigureSwipes (cell, contact.Id);
-
-                cell.TextLabel.Text = null;
-                cell.DetailTextLabel.Text = null;
-
-                var TitleLabel = cell.ViewWithTag (USER_NAME_TAG) as UILabel;
-                var SubTitleLabelOne = cell.ViewWithTag (USER_EMAIL_TAG) as UILabel;
-                var SubTitleLabelTwo = cell.ViewWithTag (USER_PHONE_TAG) as UILabel;
-                var labelView = cell.ViewWithTag (USER_LABEL_TAG) as UILabel;
-                if (null == labelView) {
-                    var imageView = cell.ViewWithTag (USER_LABEL_TAG) as UIImageView;
-                    NcAssert.True (null != imageView);
-                    using (UIImage image = Util.ImageOfContact (contact)) {
-                        if (null != image) {
-                            imageView.Image = image;
-                        }
-                    }
-                }
-
-                switch (theItems) {
-                case WhichItems.None:
-                    TitleLabel.Text = "Contact has no name, email address, or phone";
-                    TitleLabel.TextColor = UIColor.LightGray;
-                    TitleLabel.Font = A.Font_AvenirNextRegular14;
-                    labelView.Hidden = true;
-                    return;
-                case WhichItems.Name:
-                    TitleLabel.Text = displayName;
-                    SubTitleLabelOne.Text = "Contact has no email address";
-                    TitleLabel.TextColor = A.Color_0B3239;
-                    TitleLabel.Font = A.Font_AvenirNextDemiBold17;
-                    SubTitleLabelOne.TextColor = UIColor.LightGray;
-                    SubTitleLabelOne.Font = A.Font_AvenirNextRegular12;
-                    ConfigureLabelView (labelView, displayName, colorIndex);
-                    return;
-                case WhichItems.Email:
-                    TitleLabel.Text = displayEmailAddress;
-                    TitleLabel.TextColor = A.Color_0B3239;
-                    TitleLabel.Font = A.Font_AvenirNextDemiBold17;
-                    TitleLabel.Frame = new RectangleF (65, (69 / 2) - 10, 320 - 15 - 65, 20);
-                    ConfigureLabelView (labelView, displayEmailAddress, colorIndex);
-                    return;
-                case WhichItems.Phone:
-                    TitleLabel.Text = displayPhoneNumber;
-                    SubTitleLabelOne.Text = "Contact has no email address";
-                    TitleLabel.TextColor = A.Color_0B3239;
-                    TitleLabel.Font = A.Font_AvenirNextDemiBold17;
-                    SubTitleLabelOne.TextColor = UIColor.LightGray;
-                    SubTitleLabelOne.Font = A.Font_AvenirNextRegular12;
-                    ConfigureLabelView (labelView, displayPhoneNumber, colorIndex);
-                    return;
-                case WhichItems.EmailAndName:
-                    TitleLabel.Text = displayName;
-                    SubTitleLabelOne.Text = displayEmailAddress;
-                    TitleLabel.TextColor = A.Color_0B3239;
-                    TitleLabel.Font = A.Font_AvenirNextDemiBold17;
-                    SubTitleLabelOne.TextColor = A.Color_0B3239;
-                    SubTitleLabelOne.Font = A.Font_AvenirNextRegular14;
-                    ConfigureLabelView (labelView, displayName, colorIndex);
-                    return;
-                case WhichItems.EmailAndPhone:
-                    TitleLabel.Text = displayEmailAddress;
-                    SubTitleLabelOne.Text = displayPhoneNumber;
-                    TitleLabel.TextColor = A.Color_0B3239;
-                    TitleLabel.Font = A.Font_AvenirNextDemiBold17;
-                    SubTitleLabelOne.TextColor = A.Color_0B3239;
-                    SubTitleLabelOne.Font = A.Font_AvenirNextRegular14;
-                    ConfigureLabelView (labelView, displayEmailAddress, colorIndex);
-                    return;
-                case WhichItems.NameAndPhone:
-                    TitleLabel.Text = displayName;
-                    SubTitleLabelOne.Text = displayPhoneNumber;
-                    TitleLabel.TextColor = A.Color_0B3239;
-                    TitleLabel.Font = A.Font_AvenirNextDemiBold17;
-                    SubTitleLabelOne.TextColor = A.Color_0B3239;
-                    SubTitleLabelOne.Font = A.Font_AvenirNextRegular14;
-                    ConfigureLabelView (labelView, displayName, colorIndex);
-                    return;
-                case WhichItems.EmailNameAndPhone:
-                    TitleLabel.Text = displayName;
-                    SubTitleLabelOne.Text = displayEmailAddress;
-                    SubTitleLabelTwo.Text = displayPhoneNumber;
-                    TitleLabel.Frame = new RectangleF (TitleLabel.Frame.X, TitleLabel.Frame.Y - 10, TitleLabel.Frame.Width, TitleLabel.Frame.Height);
-                    TitleLabel.TextColor = A.Color_0B3239;
-                    TitleLabel.Font = A.Font_AvenirNextDemiBold17;
-                    SubTitleLabelOne.TextColor = A.Color_0B3239;
-                    SubTitleLabelOne.Font = A.Font_AvenirNextRegular12;
-                    SubTitleLabelOne.Frame = new RectangleF (SubTitleLabelOne.Frame.X, SubTitleLabelOne.Frame.Y - 10, SubTitleLabelOne.Frame.Width, SubTitleLabelOne.Frame.Height);
-                    SubTitleLabelTwo.TextColor = A.Color_0B3239;
-                    SubTitleLabelTwo.Font = A.Font_AvenirNextRegular12;
-                    SubTitleLabelTwo.Frame = new RectangleF (SubTitleLabelTwo.Frame.X, SubTitleLabelTwo.Frame.Y - 10, SubTitleLabelTwo.Frame.Width, SubTitleLabelTwo.Frame.Height);
-                    ConfigureLabelView (labelView, displayName, colorIndex);
-                    return;
-                default:
-                    NcAssert.CaseError ("Unhandled Case");
-                    return;
-                }
-            } else {
-                var TitleLabel = cell.ViewWithTag (USER_NAME_TAG) as UILabel;
-                var labelView = cell.ViewWithTag (USER_LABEL_TAG) as UILabel;
-
-                TitleLabel.Text = "This contact is unavailable";
-                TitleLabel.TextColor = UIColor.LightGray;
-                TitleLabel.Font = A.Font_AvenirNextRegular14;
+            if (null == contact) {
+                titleLabel.Text = "This contact is unavailable";
+                titleLabel.TextColor = UIColor.LightGray;
+                titleLabel.Font = A.Font_AvenirNextRegular14;
                 labelView.Hidden = true;
                 return;
             }
+
+            var displayTitle = contact.GetDisplayName ();
+            var displayTitleColor = A.Color_NachoDarkText;
+
+            var displaySubtitle1 = contact.GetEmailAddress ();
+            var displaySubtitle1Color = A.Color_NachoDarkText;
+
+            var displaySubtitle2 = contact.GetPhoneNumber ();
+            var displaySubtitle2Color = A.Color_NachoDarkText;
+
+            int colorIndex = 1;
+            if (!String.IsNullOrEmpty (displaySubtitle1)) {
+                McEmailAddress emailAddress;
+                if (McEmailAddress.Get (contact.AccountId, displaySubtitle1, out emailAddress)) {
+                    displaySubtitle1 = emailAddress.CanonicalEmailAddress;
+                    colorIndex = emailAddress.ColorIndex;
+                }
+            }
+            if (1 == colorIndex) {
+                colorIndex = Util.PickRandomColorForUser ();
+            }
+
+            if (String.IsNullOrEmpty (displayTitle) && !String.IsNullOrEmpty (displaySubtitle1)) {
+                displayTitle = displaySubtitle1;
+                displaySubtitle1 = "No name for this contact";
+                displaySubtitle1Color = A.Color_NachoTextGray;
+            }
+
+            if (String.IsNullOrEmpty (displayTitle)) {
+                displayTitle = "No name for this contact";
+                displayTitleColor = A.Color_NachoTextGray;
+            }
+                
+            if (String.IsNullOrEmpty (displaySubtitle1)) {
+                displaySubtitle1 = "No email address for this contact";
+                displaySubtitle1Color = A.Color_NachoLightText;
+            }
+
+            if (String.IsNullOrEmpty (displaySubtitle2)) {
+                displaySubtitle2 = "No phone number for this contact";
+                displaySubtitle2Color = A.Color_NachoLightText;
+            }
+
+            titleLabel.Text = displayTitle;
+            titleLabel.TextColor = displayTitleColor;
+
+            subtitle1Label.Text = displaySubtitle1;
+            subtitle1Label.TextColor = displaySubtitle1Color;
+
+            subtitle2Label.Text = displaySubtitle2;
+            subtitle2Label.TextColor = displaySubtitle2Color;
+
+            ConfigureLabelView (labelView, displayTitle, colorIndex);
+
+            ConfigureSwipes (cell, contact.Id);
         }
 
         protected void ConfigureLabelView (UILabel labelView, string labelText, int colorIndex)
@@ -477,6 +487,24 @@ namespace NachoClient.iOS
             labelView.Hidden = false;
             labelView.Text = Util.NameToLetters (labelText);
             labelView.BackgroundColor = Util.ColorForUser (colorIndex);
+        }
+
+        public void ScrollToSection (UITableView tableView, char c)
+        {
+            int i;
+
+            if ('#' == c) {
+                i = 26;
+            } else {
+                i = ((int)c) - ((int)'A');
+            }
+            if (null != recent) {
+                i += 1;
+            }
+            if (0 <= i) {
+                var p = NSIndexPath.FromItemSection (NSRange.NotFound, i);
+                tableView.ScrollToRow (p, UITableViewScrollPosition.Top, true);
+            }
         }
 
         public override void DraggingStarted (UIScrollView scrollView)

@@ -84,7 +84,7 @@ namespace NachoClient.iOS
         {
             NachoClient.Util.HighPriority ();
             var contacts = McContact.AllContactsSortedByName ();
-            contactTableViewSource.SetContacts (contacts);
+            contactTableViewSource.SetContacts (null, contacts, false);
             TableView.ReloadData ();
             NachoClient.Util.RegularPriority ();
         }

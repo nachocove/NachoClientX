@@ -13,6 +13,8 @@ namespace NachoCore.Model
     {
         public int Id { set; get; }
 
+        public string FirstLetter { set; get; }
+
         public McContact GetContact ()
         {
             return NcModel.Instance.Db.Get<McContact> (Id);
@@ -943,7 +945,7 @@ namespace NachoCore.Model
         public static List<NcContactIndex> QueryAllContactItems ()
         {
             return NcModel.Instance.Db.Query<NcContactIndex> (
-                "SELECT c.Id as Id FROM McContact AS c " +
+                "SELECT c.Id as Id, substr(c.FirstName, 0, 1) as FirstLetter FROM McContact AS c " +
                 " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
                 " WHERE " +
                 " c.AccountId = ? AND " +
@@ -957,7 +959,7 @@ namespace NachoCore.Model
         public static List<NcContactIndex> QueryAllContactItems (int accountId)
         {
             return NcModel.Instance.Db.Query<NcContactIndex> (
-                "SELECT c.Id as Id FROM McContact AS c " +
+                "SELECT c.Id as Id, substr(c.FirstName, 0, 1) as FirstLetter FROM McContact AS c " +
                 " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
                 " WHERE " +
                 " c.IsAwaitingDelete = 0 AND " +
@@ -969,7 +971,7 @@ namespace NachoCore.Model
         public static List<NcContactIndex> QueryContactItems (int accountId, int folderId)
         {
             return NcModel.Instance.Db.Query<NcContactIndex> (
-                "SELECT c.Id as Id FROM McContact AS c " +
+                "SELECT c.Id as Id, substr(c.FirstName, 0, 1) as FirstLetter FROM McContact AS c " +
                 " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
                 " WHERE " +
                 " c.AccountId = ? AND " +
@@ -1060,7 +1062,7 @@ namespace NachoCore.Model
         public static List<NcContactIndex> AllContactsSortedByName (int accountId)
         {
             return NcModel.Instance.Db.Query<NcContactIndex> (
-                "SELECT DISTINCT Id FROM ( " +
+                "SELECT DISTINCT Id, substr(SORT_ORDER, 0, 1) as FirstLetter FROM ( " +
                 "SELECT c.Id, coalesce(c.FirstName,c.LastName,ltrim(s.Value,'\"')) AS SORT_ORDER " +
                 "FROM McContactEmailAddressAttribute AS s " +
                 "JOIN McContact AS c ON s.ContactId = c.Id " +
@@ -1079,7 +1081,7 @@ namespace NachoCore.Model
         public static List<NcContactIndex> AllContactsSortedByName ()
         {
             return NcModel.Instance.Db.Query<NcContactIndex> (
-                "SELECT DISTINCT Id FROM ( " +
+                "SELECT DISTINCT Id, substr(SORT_ORDER, 0, 1) as FirstLetter FROM ( " +
                 "SELECT c.Id, coalesce(c.FirstName,c.LastName,ltrim(s.Value,'\"')) AS SORT_ORDER " +
                 "FROM McContactEmailAddressAttribute AS s " +
                 "JOIN McContact AS c ON s.ContactId = c.Id " +
@@ -1091,6 +1093,27 @@ namespace NachoCore.Model
                 ")",
                 (int)McAbstrFolderEntry.ClassCodeEnum.Contact
             );
+        }
+
+        public static List<NcContactIndex> RicContactsSortedByRank (int accountId)
+        {
+            // Get the RIC folder
+            McFolder ricFolder = McFolder.GetRicContactFolder (accountId);
+            if (null == ricFolder) {
+                return null;
+            }
+
+            // Order by descending weighted rank so that the first entry has the max rank.
+            return NcModel.Instance.Db.Query<NcContactIndex> (
+                "SELECT c.Id as Id, \" \" FROM McContact AS c " +
+                " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
+                " WHERE " +
+                " c.AccountId = ? AND " +
+                " m.AccountId = ? AND " +
+                " m.ClassCode = ? AND " +
+                " m.FolderId = ? " +
+                " ORDER BY c.WeightedRank DESC",
+                accountId, accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Contact, ricFolder.Id);
         }
 
         public static McContact QueryByDeviceUniqueId (string deviceUniqueId)

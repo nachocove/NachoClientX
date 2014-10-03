@@ -19,12 +19,17 @@ namespace NachoClient.iOS
     public partial class ContactListViewController : NcUIViewController, IContactsTableViewSourceDelegate
     {
         SwipeView swipeView;
+        LettersSwipeViewDataSource swipeViewDateSource;
         UITableView TableView;
 
         ContactsTableViewSource contactTableViewSource;
 
         public ContactListViewController (IntPtr handle) : base (handle)
         {
+            // iOS 8 bug sez stack overflow
+            //  var a = UILabel.AppearanceWhenContainedIn (typeof(UITableViewHeaderFooterView), typeof(ContactListViewController));
+            // a.Font = A.Font_AvenirNextMedium24;
+            // a.TextColor = A.Color_NachoDarkText;
         }
 
         public override void ViewDidLoad ()
@@ -32,15 +37,22 @@ namespace NachoClient.iOS
             base.ViewDidLoad ();
 
             swipeView = new SwipeView ();
-            swipeView.Frame = new RectangleF (15, 0, View.Frame.Width - 30, 56);
+            swipeView.Frame = new RectangleF (15, 0, View.Frame.Width - 30, 55);
             swipeView.BackgroundColor = UIColor.White;
 
             View.AddSubview (swipeView);
-            swipeView.DataSource = new LettersSwipeViewDataSource ();
+            swipeViewDateSource = new LettersSwipeViewDataSource (this);
+            swipeView.DataSource = swipeViewDateSource;
+            swipeView.Delegate = new LettersSwipeViewDelegate (this);
 
-            TableView = new UITableView ();
-            TableView.SeparatorColor = A.Color_NachoBorderGray;
-            TableView.Frame = new RectangleF (0, 56, View.Frame.Width, View.Frame.Height - 56);
+            var lineView = new UIView (new RectangleF (0, 55, View.Frame.Width, 1));
+            lineView.BackgroundColor = A.Color_NachoBorderGray;
+            View.AddSubview (lineView);
+
+            TableView = new UITableView (new RectangleF (0, 56, View.Frame.Width, View.Frame.Height - 56), UITableViewStyle.Grouped);
+            TableView.SeparatorColor = A.Color_NachoLightBorderGray;
+            TableView.BackgroundColor = A.Color_NachoLightBorderGray;
+            TableView.TableFooterView = new UIView (new RectangleF (0, 0, TableView.Frame.Width, 100));
             View.AddSubview (TableView);
 
             InitializeSearchDisplayController ();
@@ -52,6 +64,8 @@ namespace NachoClient.iOS
             TableView.Source = contactTableViewSource;
 
             SearchDisplayController.SearchResultsTableView.Source = contactTableViewSource;
+            SearchDisplayController.SearchResultsTableView.SeparatorColor = A.Color_NachoLightBorderGray;
+            SearchDisplayController.SearchResultsTableView.BackgroundColor = A.Color_NachoLightBorderGray;
 
             var searchButton = new UIBarButtonItem (UIBarButtonSystemItem.Search);
             searchButton.TintColor = A.Color_NachoBlue;
@@ -93,6 +107,12 @@ namespace NachoClient.iOS
             LoadContacts ();
         }
 
+        public override void ViewDidAppear (bool animated)
+        {
+            base.ViewDidAppear (animated);
+            swipeViewDateSource.SelectButton (0);
+        }
+
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
@@ -109,14 +129,41 @@ namespace NachoClient.iOS
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            base.PrepareForSegue (segue, sender);
+            if (segue.Identifier.Equals ("ContactsToContactDetail")) {
+                var h = sender as SegueHolder;
+                var c = (McContact)h.value;
+                ContactDetailViewController destinationController = (ContactDetailViewController)segue.DestinationViewController;
+                destinationController.contact = c;
+                return;
+            }
+            if (segue.Identifier.Equals ("ContactsToContactEdit")) {
+                return;
+            }
+            if (segue.Identifier.Equals ("SegueToNachoNow")) {
+                return;
+            }
+            if (segue.Identifier.Equals ("ContactsToQuickMessageCompose")) {
+                var h = sender as SegueHolder;
+                MessageComposeViewController mcvc = (MessageComposeViewController)segue.DestinationViewController;
+                mcvc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, (string)h.value));
+                return;
+            }
+            if (segue.Identifier.Equals ("ContactsToMessageCompose")) {
+                var h = sender as SegueHolder;
+                MessageComposeViewController mcvc = (MessageComposeViewController)segue.DestinationViewController;
+                mcvc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, (string)h.value));
+                return;
+            }
+            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
+            NcAssert.CaseError ();
         }
 
         protected void LoadContacts ()
         {
             NachoClient.Util.HighPriority ();
+            var recents = McContact.RicContactsSortedByRank (2);
             var contacts = McContact.AllContactsSortedByName ();
-            contactTableViewSource.SetContacts (contacts);
+            contactTableViewSource.SetContacts (recents, contacts, true);
             TableView.ReloadData ();
             NachoClient.Util.RegularPriority ();
         }
@@ -130,19 +177,87 @@ namespace NachoClient.iOS
         /// IContactsTableViewSourceDelegate
         public void ContactSelectedCallback (McContact contact)
         {
-            // PerformSegue ("ContactsToContactDetail", new SegueHolder (contact));
+            PerformSegue ("ContactsToContactDetail", new SegueHolder (contact));
+        }
+
+        public void SelectSection (char c)
+        {
+            contactTableViewSource.ScrollToSection (TableView, c);
+        }
+
+        public class LettersSwipeViewDelegate : SwipeViewDelegate
+        {
+            ContactListViewController owner;
+
+            public LettersSwipeViewDelegate (ContactListViewController owner) : base ()
+            {
+                this.owner = owner;
+            }
+
+            public override void DidSelectItemAtIndex (SwipeView swipeView, int index)
+            {
+                if (null != owner) {
+                    owner.SelectSection ((char)(((int)'A') + index));
+                }
+            }
         }
 
         public class LettersSwipeViewDataSource : SwipeViewDataSource
         {
-            static List<UIButton> preventGC = new List<UIButton> ();
+            UIView[] viewList;
+
+            ContactListViewController owner;
+
+            public LettersSwipeViewDataSource (ContactListViewController owner) : base ()
+            {
+                this.owner = owner;
+                viewList = new UIView[27];
+                viewList [26] = CreateView ('#');
+                for (int i = 0; i < 26; i++) {
+                    viewList [i] = CreateView ((char)(((int)'A') + i));
+                }
+            }
 
             public override UIView ViewForItemAtIndex (SwipeView swipeView, int index, UIView view)
             {
-                var c = (26 == index) ? '#' : (char)(((int)'A') + index);
+                return viewList [index];
+            }
+
+            protected void SelectButton (UIButton button)
+            {
+                foreach (var v in viewList) {
+                    var b = (UIButton)v.Subviews [0];
+                    if (b.Selected) {
+                        b.Selected = false;
+                        b.BackgroundColor = A.Color_NachoLightGrayBackground;
+                    }
+                }
+                button.Selected = true;
+                button.BackgroundColor = A.Color_FEBA32;
+            }
+
+            public void SelectButton (int section)
+            {
+                if (0 == section) {
+                    return;
+                }
+                var n = section - 1;
+                var view = viewList [n];
+                var button = (UIButton)view.Subviews [0];
+                SelectButton (button);
+            }
+
+            public override int NumberOfItemsInSwipeView (SwipeView swipeView)
+            {
+                return 27;
+            }
+
+            protected UIView CreateView (char c)
+            {
+                var view = new UIView (new RectangleF (0, 0, 50, 50));
                 var title = new String (c, 1);
                 var button = UIButton.FromType (UIButtonType.RoundedRect);
-                button.Frame = new RectangleF (0, 0, 36, 36);
+                button.Frame = new RectangleF (7, 7, 36, 36);
                 button.Layer.CornerRadius = 18;
                 button.Layer.MasksToBounds = true;
                 button.TintColor = UIColor.Clear;
@@ -153,24 +268,15 @@ namespace NachoClient.iOS
                 button.SetTitleColor (UIColor.White, UIControlState.Selected);
                 button.SetTitleColor (UIColor.White, UIControlState.Disabled);
                 button.Font = A.Font_AvenirNextDemiBold17;
-                preventGC.Add (button);
                 button.TouchUpInside += (object sender, EventArgs e) => {
-                    var b = (UIButton)sender;
-                    foreach (var v in preventGC) {
-                        if (v.Selected) {
-                            v.Selected = false;
-                            v.BackgroundColor = A.Color_NachoLightGrayBackground;
-                        }
+                    SelectButton ((UIButton)sender);
+                    if (null != owner) {
+                        owner.SelectSection (c);
                     }
-                    b.Selected = true;
-                    b.BackgroundColor = A.Color_FEBA32;
                 };
-                return button;
-            }
-
-            public override int NumberOfItemsInSwipeView (SwipeView swipeView)
-            {
-                return 27;
+                button.UserInteractionEnabled = false;
+                view.AddSubview (button);
+                return view;
             }
 
         }
