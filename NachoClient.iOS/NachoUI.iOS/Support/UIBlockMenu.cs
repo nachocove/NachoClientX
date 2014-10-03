@@ -6,9 +6,7 @@ using System.Drawing;
 using System.Collections.Generic;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
-using UIImageEffectsBinding;
-using MonoTouch.CoreGraphics;
-using MonoTouch.CoreAnimation;
+using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
@@ -148,6 +146,7 @@ namespace NachoClient.iOS
 
             UIButton blockButton = new UIButton (new RectangleF (0, 0, ViewWidth / 3 - 2, ROW_HEIGHT - 2));
 
+            NcAssert.NotNull (UIImage.FromBundle (viewBlock.blockImage), "This image is not a resource: " + viewBlock.blockImage);
             UIImageView blockIconImageView = new UIImageView (UIImage.FromBundle(viewBlock.blockImage));
             blockIconImageView.SizeToFit ();
             blockIconImageView.Frame = new RectangleF (blockButton.Frame.Width / 2 - blockIconImageView.Frame.Width / 2, yOffset, blockIconImageView.Frame.Width, blockIconImageView.Frame.Height);
