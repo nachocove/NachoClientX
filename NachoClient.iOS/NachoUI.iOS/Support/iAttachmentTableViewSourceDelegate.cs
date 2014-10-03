@@ -8,7 +8,6 @@ namespace NachoClient.iOS
 {
     public interface IAttachmentTableViewSourceDelegate
     {
-        void ContactSelectedCallback(McContact contact);
         void PerformSegueForDelegate (string identifier, NSObject sender);
         void RemoveAttachment(McAttachment attachment);
     }
