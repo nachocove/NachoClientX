@@ -1149,6 +1149,7 @@
       <DependentUpon>ContactListViewController.cs</DependentUpon>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\MessageToolbar.cs" />
+    <Compile Include="NachoUI.iOS\Support\UIBlockMenu.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
