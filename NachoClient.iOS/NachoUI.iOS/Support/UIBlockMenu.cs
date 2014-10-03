@@ -18,14 +18,13 @@ namespace NachoClient.iOS
         protected float ViewWidth; 
 
         protected const int ROW_HEIGHT = 100;
-        protected const int SEPERATOR_LENGTH = 64;
+        protected const int SEPARATOR_LENGTH = 64;
         protected const int Y_PADDING = 20;
-        //protected int NUM_ROWS = 1;
         protected float BLOCK_WIDTH;
 
         protected List<Block> TheBlocks;
         protected List<UIButton> TheBlockButtons = new List<UIButton> ();
-        protected List<RectangleF> FrameGrid;
+        protected List<RectangleF> FrameGrid = new List<RectangleF> ();
 
         public UIBlockMenu (List<Block> TheBlocks, float width)
         {
@@ -41,7 +40,6 @@ namespace NachoClient.iOS
 
         protected void InitFrameGrid ()
         {
-            FrameGrid = new List<RectangleF> ();
             float blockXVal = 0;
             float blockYVal = 0;
 
@@ -91,36 +89,27 @@ namespace NachoClient.iOS
         {
             switch (TheBlocks.Count) {
             case 2:
-                Util.AddVerticalLine (BLOCK_WIDTH, Y_PADDING, SEPERATOR_LENGTH, UIColor.LightGray, this);
+                Util.AddVerticalLine (BLOCK_WIDTH, Y_PADDING, SEPARATOR_LENGTH, UIColor.LightGray, this);
                 break;
             case 3:
-                Util.AddVerticalLine (BLOCK_WIDTH, Y_PADDING, SEPERATOR_LENGTH, UIColor.LightGray, this);
-                Util.AddVerticalLine (BLOCK_WIDTH * 2, Y_PADDING, SEPERATOR_LENGTH, UIColor.LightGray, this);
+                Util.AddVerticalLine (BLOCK_WIDTH, Y_PADDING, SEPARATOR_LENGTH, UIColor.LightGray, this);
+                Util.AddVerticalLine (BLOCK_WIDTH * 2, Y_PADDING, SEPARATOR_LENGTH, UIColor.LightGray, this);
                 break;
             case 4:
-                Util.AddVerticalLine (BLOCK_WIDTH, Y_PADDING, SEPERATOR_LENGTH, UIColor.LightGray, this);
-                Util.AddVerticalLine (BLOCK_WIDTH, Y_PADDING + ROW_HEIGHT, SEPERATOR_LENGTH, UIColor.LightGray, this);
-                Util.AddHorizontalLine (Y_PADDING, ROW_HEIGHT, SEPERATOR_LENGTH, UIColor.LightGray, this);
-                Util.AddHorizontalLine (Y_PADDING + BLOCK_WIDTH, ROW_HEIGHT, SEPERATOR_LENGTH, UIColor.LightGray, this);
+                Util.AddVerticalLine (BLOCK_WIDTH, Y_PADDING, SEPARATOR_LENGTH, UIColor.LightGray, this);
+                Util.AddVerticalLine (BLOCK_WIDTH, Y_PADDING + ROW_HEIGHT, SEPARATOR_LENGTH, UIColor.LightGray, this);
+                Util.AddHorizontalLine (Y_PADDING, ROW_HEIGHT, SEPARATOR_LENGTH, UIColor.LightGray, this);
+                Util.AddHorizontalLine (Y_PADDING + BLOCK_WIDTH, ROW_HEIGHT, SEPARATOR_LENGTH, UIColor.LightGray, this);
                 break;
             case 5:
-                Util.AddVerticalLine (BLOCK_WIDTH, Y_PADDING, SEPERATOR_LENGTH, UIColor.LightGray, this);
-                Util.AddVerticalLine (BLOCK_WIDTH, Y_PADDING + ROW_HEIGHT, SEPERATOR_LENGTH, UIColor.LightGray, this);
-                Util.AddVerticalLine (BLOCK_WIDTH * 2, Y_PADDING, SEPERATOR_LENGTH, UIColor.LightGray, this);
-                Util.AddVerticalLine (BLOCK_WIDTH * 2, Y_PADDING + ROW_HEIGHT, SEPERATOR_LENGTH, UIColor.LightGray, this);
-                Util.AddHorizontalLine (Y_PADDING, ROW_HEIGHT, SEPERATOR_LENGTH, UIColor.LightGray, this);
-                Util.AddHorizontalLine (Y_PADDING + BLOCK_WIDTH, ROW_HEIGHT, SEPERATOR_LENGTH, UIColor.LightGray, this);
-                Util.AddHorizontalLine (Y_PADDING + BLOCK_WIDTH * 2, ROW_HEIGHT, SEPERATOR_LENGTH, UIColor.LightGray, this);
-
-                break;
             case 6:
-                Util.AddVerticalLine (BLOCK_WIDTH, Y_PADDING, SEPERATOR_LENGTH, UIColor.LightGray, this);
-                Util.AddVerticalLine (BLOCK_WIDTH, Y_PADDING + ROW_HEIGHT, SEPERATOR_LENGTH, UIColor.LightGray, this);
-                Util.AddVerticalLine (BLOCK_WIDTH * 2, Y_PADDING, SEPERATOR_LENGTH, UIColor.LightGray, this);
-                Util.AddVerticalLine (BLOCK_WIDTH * 2, Y_PADDING + ROW_HEIGHT, SEPERATOR_LENGTH, UIColor.LightGray, this);
-                Util.AddHorizontalLine (Y_PADDING, ROW_HEIGHT, SEPERATOR_LENGTH, UIColor.LightGray, this);
-                Util.AddHorizontalLine (Y_PADDING + BLOCK_WIDTH, ROW_HEIGHT, SEPERATOR_LENGTH, UIColor.LightGray, this);
-                Util.AddHorizontalLine (Y_PADDING + BLOCK_WIDTH * 2, ROW_HEIGHT, SEPERATOR_LENGTH, UIColor.LightGray, this);
+                Util.AddVerticalLine (BLOCK_WIDTH, Y_PADDING, SEPARATOR_LENGTH, UIColor.LightGray, this);
+                Util.AddVerticalLine (BLOCK_WIDTH, Y_PADDING + ROW_HEIGHT, SEPARATOR_LENGTH, UIColor.LightGray, this);
+                Util.AddVerticalLine (BLOCK_WIDTH * 2, Y_PADDING, SEPARATOR_LENGTH, UIColor.LightGray, this);
+                Util.AddVerticalLine (BLOCK_WIDTH * 2, Y_PADDING + ROW_HEIGHT, SEPARATOR_LENGTH, UIColor.LightGray, this);
+                Util.AddHorizontalLine (Y_PADDING, ROW_HEIGHT, SEPARATOR_LENGTH, UIColor.LightGray, this);
+                Util.AddHorizontalLine (Y_PADDING + BLOCK_WIDTH, ROW_HEIGHT, SEPARATOR_LENGTH, UIColor.LightGray, this);
+                Util.AddHorizontalLine (Y_PADDING + BLOCK_WIDTH * 2, ROW_HEIGHT, SEPARATOR_LENGTH, UIColor.LightGray, this);
                 break;
             } 
         }
@@ -155,6 +144,7 @@ namespace NachoClient.iOS
         protected UIButton BlockButton (Block viewBlock)
         {
             float yOffset = 20;
+            float approximateWidth = viewBlock.blockLabel.Length * 5;
 
             UIButton blockButton = new UIButton (new RectangleF (0, 0, ViewWidth / 3 - 2, ROW_HEIGHT - 2));
 
@@ -165,13 +155,11 @@ namespace NachoClient.iOS
             
             yOffset = blockIconImageView.Frame.Bottom + 5;
 
-            float approximateWidth = viewBlock.blockString.Length * 5;
-            
             UILabel iconLabel = new UILabel (new RectangleF (blockButton.Frame.Width / 2 - approximateWidth / 2 , yOffset, approximateWidth, 40));
             iconLabel.Font = A.Font_AvenirNextMedium12;
             iconLabel.LineBreakMode = UILineBreakMode.WordWrap;
             iconLabel.Lines = 2;
-            iconLabel.Text = viewBlock.blockString;
+            iconLabel.Text = viewBlock.blockLabel;
             iconLabel.TextColor = UIColor.White;
             iconLabel.TextAlignment = UITextAlignment.Center;
             blockButton.AddSubview (iconLabel);
@@ -188,13 +176,13 @@ namespace NachoClient.iOS
         public class Block
         {
             public string blockImage;
-            public string blockString;
+            public string blockLabel;
             public Action blockAction;
 
-            public Block (string blockImage, string blockString, Action blockAction)
+            public Block (string blockImage, string blockLabel, Action blockAction)
             {
                 this.blockImage = blockImage;
-                this.blockString = blockString;
+                this.blockLabel =  blockLabel;
                 this.blockAction = blockAction;
             }
         }
