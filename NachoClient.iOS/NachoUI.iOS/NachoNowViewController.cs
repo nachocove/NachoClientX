@@ -223,20 +223,24 @@ namespace NachoClient.iOS
 
         private void ProcessDownloadComplete (bool succeed)
         {
-            var currentView = carouselView.CurrentItemView;
-            if (null == currentView) {
-                return;
-            }
-            var bodyView = currentView.ViewWithTag (HotListCarouselDataSource.PREVIEW_TAG) as BodyView;
-            NcAssert.True (null != bodyView);
+            var visibleIndices = carouselView.IndexesForVisibleItems;
+            foreach (NSNumber nsIndex in visibleIndices) {
+                int index = nsIndex.IntValue;
+                var currentView = carouselView.ItemViewAtIndex (index);
+                if (null == currentView) {
+                    continue;
+                }
+                var bodyView = currentView.ViewWithTag (HotListCarouselDataSource.PREVIEW_TAG) as BodyView;
+                NcAssert.True (null != bodyView);
 
-            // To avoid unnecessary reload, we only reload if the current item was downloading
-            // and the body is now completely downloaded.
-            if (!bodyView.WasDownloadStartedAndNowComplete ()) {
-                return;
+                // To avoid unnecessary reload, we only reload if the current item was downloading
+                // and the body is now completely downloaded.
+                if (!bodyView.WasDownloadStartedAndNowComplete ()) {
+                    continue;
+                }
+                bodyView.DownloadComplete (succeed);
+                carouselView.ReloadItemAtIndex (carouselView.CurrentItemIndex, true);
             }
-            bodyView.DownloadComplete (succeed);
-            carouselView.ReloadItemAtIndex (carouselView.CurrentItemIndex, true);
         }
 
         /// <summary>
