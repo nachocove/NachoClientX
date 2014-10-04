@@ -117,7 +117,7 @@ namespace NachoClient.iOS
             segmentedControl.SetTitleTextAttributes (segmentedControlTextAttributes, UIControlState.Normal);
 
             segmentedControl.ValueChanged += (sender, e) => {
-                RefreshTableSource();
+                RefreshTableSource ();
             };
 
             yOffset += segmentedControlView.Frame.Height;
@@ -243,18 +243,12 @@ namespace NachoClient.iOS
             FilesSource.Items = new List<NcFileIndex> ();
 
             NavigationItem.Title = "Files";
-            FilesSource.Items = (NcModel.Instance.Db.Query<NcFileIndex> (
-                "SELECT t1.Id, t1.DisplayName, t1.CreatedAt, t1.FileType " +
-                "FROM( SELECT Id, DisplayName, CreatedAt, 0 AS FileType FROM McAttachment " +
-                "UNION SELECT Id, DisplayName, CreatedAt, 1 AS FileType FROM McNote " +
-                "UNION SELECT Id, DisplayName, CreatedAt, 2 AS FileType FROM McDocument) t1 ORDER BY LOWER(t1.DisplayName) + 0," +
-                "LOWER(t1.DisplayName)"
-            ));
+            FilesSource.Items = McAbstrFileDesc.GetAllFiles();
 
             foreach (var item in FilesSource.Items) {
                 if (0 == item.FileType) {
                     var attachment = McAttachment.QueryById<McAttachment> (item.Id);
-                    switch(attachment.ClassCode){
+                    switch (attachment.ClassCode) {
                     case McAbstrFolderEntry.ClassCodeEnum.Email:
                         var email = McEmailMessage.QueryById<McEmailMessage> (attachment.ItemId);
                         item.CreatedAt = email.DateReceived;
@@ -271,8 +265,8 @@ namespace NachoClient.iOS
             case 0:
                 break;
             case 1:
-                FilesSource.Items.Sort((f1, f2) => DateTime.Compare(f1.CreatedAt, f2.CreatedAt));
-                FilesSource.Items.Reverse();
+                FilesSource.Items.Sort ((f1, f2) => DateTime.Compare (f1.CreatedAt, f2.CreatedAt));
+                FilesSource.Items.Reverse ();
                 break;
             case 2:
                 break;
@@ -490,7 +484,7 @@ namespace NachoClient.iOS
 
             public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
             {
-                return 90.0f;
+                return 60.0f;
             }
 
             public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
@@ -529,15 +523,16 @@ namespace NachoClient.iOS
             }
 
 
-            protected int DATE_LABEL_TAG = 200;
-            protected int TEXT_LABEL_TAG = 300;
-            protected int DETAIL_TEXT_LABEL_TAG = 400;
+            protected static int DATE_LABEL_TAG = 200;
+            protected static int TEXT_LABEL_TAG = 300;
+            protected static int DETAIL_TEXT_LABEL_TAG = 400;
+            protected static int DOWNLOAD_IMAGEVIEW_TAG = 500;
 
             private UITableViewCell FormatAttachmentCell (UITableViewCell cell, McAttachment attachment, NcFileIndex item)
             {
                 // sanitize file name so that /'s in display name don't cause formatting issues in the cells
                 string displayName = attachment.DisplayName.SantizeFileName ();
-                CellLabel (cell, TEXT_LABEL_TAG, A.Color_NachoDarkText, A.Font_AvenirNextDemiBold14, 26, Path.GetFileNameWithoutExtension (displayName));
+                CellLabel (cell, Path.GetFileNameWithoutExtension (displayName));
 
                 var detailText = "";
                 if (attachment.IsInline) {
@@ -546,65 +541,88 @@ namespace NachoClient.iOS
                 string extension = Path.GetExtension (attachment.DisplayName).ToUpper ();
                 detailText += extension.Length > 1 ? extension.Substring (1) + " " : "Unrecognized "; // get rid of period and format
                 detailText += "file";
-                CellLabel (cell, DETAIL_TEXT_LABEL_TAG, A.Color_NachoTextGray, A.Font_AvenirNextRegular14, 26 + 19.5f, detailText);
+                CellDetailLabel (cell, detailText, item.CreatedAt, attachment.FileSize);
+                CellDownloadAnimationView (cell);
 
-                CellDateLabel (cell, item.CreatedAt);
-
+                var iv = cell.ViewWithTag (DOWNLOAD_IMAGEVIEW_TAG) as UIImageView;
                 if (McAbstrFileDesc.FilePresenceEnum.Complete == attachment.FilePresence || attachment.IsInline) {
-                    cell.ImageView.Image = UIImage.FromFile (DownloadCompleteIcon);
+                    iv.Image = UIImage.FromFile (DownloadCompleteIcon);
                 } else if (McAbstrFileDesc.FilePresenceEnum.Partial == attachment.FilePresence) {
                     vc.AttachmentAction (attachment.Id, cell);
                 } else {
-                    cell.ImageView.Image = UIImage.FromFile (DownloadIcon);
+                    iv.Image = UIImage.FromFile (DownloadIcon);
                 }
+
+                if (detailText.Contains ("JPG") || detailText.Contains ("JPEG")
+                    || detailText.Contains ("TIFF") || detailText.Contains ("PNG")
+                    || detailText.Contains ("GIF") || detailText.Contains ("RAW")) {
+                    cell.ImageView.Image = UIImage.FromBundle ("email-att-photos");
+                } else {
+                    cell.ImageView.Image = UIImage.FromBundle ("email-att-files");
+                }
+
                 return cell;
             }
 
             private UITableViewCell FormatNoteCell (UITableViewCell cell, McNote note)
             {
-                CellLabel (cell, TEXT_LABEL_TAG, A.Color_NachoDarkText, A.Font_AvenirNextDemiBold14, 26, note.DisplayName);
-                CellLabel (cell, DETAIL_TEXT_LABEL_TAG, A.Color_NachoTextGray, A.Font_AvenirNextRegular14, 26 + 19.5f, note.noteContent);
-                CellDateLabel (cell, note.CreatedAt);
-                cell.ImageView.Image = UIImage.FromFile (DownloadCompleteIcon);
+                CellLabel (cell, note.DisplayName);
+                CellDetailLabel (cell, "Note", note.CreatedAt, 0);
+                CellDownloadAnimationView (cell);
+
+                var iv = cell.ViewWithTag (DOWNLOAD_IMAGEVIEW_TAG) as UIImageView;
+                iv.Image = UIImage.FromFile (DownloadCompleteIcon);
                 return cell;
             }
 
             private UITableViewCell FormatDocumentCell (UITableViewCell cell, McDocument document)
             {
-                CellLabel (cell, TEXT_LABEL_TAG, A.Color_NachoDarkText, A.Font_AvenirNextDemiBold14, 26, document.DisplayName);
-                CellLabel (cell, DETAIL_TEXT_LABEL_TAG, A.Color_NachoTextGray, A.Font_AvenirNextRegular14, 26 + 19.5f, document.SourceApplication);
-                CellDateLabel (cell, document.CreatedAt);
+                CellLabel (cell, document.DisplayName);
+                CellDetailLabel (cell, document.SourceApplication, document.CreatedAt, document.FileSize);
                 cell.ImageView.Image = UIImage.FromFile (DownloadCompleteIcon);
                 return cell;
             }
 
-            public void CellLabel (UITableViewCell cell, int tag, UIColor textColor, UIFont font, float Y, string text)
+            public void CellLabel (UITableViewCell cell, string text)
             {
-                if (null != cell.ViewWithTag (tag)) {
-                    cell.ViewWithTag (tag).RemoveFromSuperview ();
+                if (null != cell.ViewWithTag (TEXT_LABEL_TAG)) {
+                    cell.ViewWithTag (TEXT_LABEL_TAG).RemoveFromSuperview ();
                 }
                 UILabel label = new UILabel (); 
-                label.Tag = tag;
-                label.Font = font;
-                label.TextColor = textColor;
+                label.Tag = TEXT_LABEL_TAG;
+                label.Font = A.Font_AvenirNextDemiBold14;
+                label.TextColor = A.Color_NachoDarkText;
                 label.Text = text;
-                label.Frame = new RectangleF (54, Y, cell.Frame.Width - 54 - 54, 19.5f);
+                label.Frame = new RectangleF (54, 11, cell.Frame.Width - 54 - 54, 19.5f);
                 cell.Add (label);
             }
 
-            public void CellDateLabel (UITableViewCell cell, DateTime date)
+            public void CellDetailLabel (UITableViewCell cell, string fileType, DateTime date, long fileSize)
             {
-                if (null != cell.ViewWithTag (DATE_LABEL_TAG)) {
-                    cell.ViewWithTag (DATE_LABEL_TAG).RemoveFromSuperview ();
+                if (null != cell.ViewWithTag (DETAIL_TEXT_LABEL_TAG)) {
+                    cell.ViewWithTag (DETAIL_TEXT_LABEL_TAG).RemoveFromSuperview ();
                 }
-                UILabel dateLabel = new UILabel (); 
-                dateLabel.Tag = DATE_LABEL_TAG;
-                dateLabel.Font = A.Font_AvenirNextRegular12;
-                dateLabel.TextColor = A.Color_NachoTextGray;
-                dateLabel.Text = Pretty.CompactDateString (date);
-                dateLabel.SizeToFit ();
-                dateLabel.Frame = new RectangleF (cell.Frame.Width - dateLabel.Frame.Width - 10, 8, dateLabel.Frame.Width, dateLabel.Frame.Height);
-                cell.Add (dateLabel);
+                UILabel label = new UILabel (); 
+                label.Tag = DETAIL_TEXT_LABEL_TAG;
+                label.Font = A.Font_AvenirNextRegular14;
+                label.TextColor = A.Color_NachoTextGray;
+                if (0 != fileSize) {
+                    label.Text = Pretty.CompactDateString (date) + " - " + fileType + " - " + Pretty.PrettyFileSize (fileSize);
+                } else {
+                    label.Text = Pretty.CompactDateString (date) + " - " + fileType;
+                }
+                label.Frame = new RectangleF (54, 11 + 19.5f, cell.Frame.Width - 54 - 54, 19.5f);
+                cell.Add (label);
+            }
+
+            public void CellDownloadAnimationView (UITableViewCell cell)
+            {
+                if (null != cell.ViewWithTag (DOWNLOAD_IMAGEVIEW_TAG)) {
+                    cell.ViewWithTag (DOWNLOAD_IMAGEVIEW_TAG).RemoveFromSuperview ();
+                }
+                UIImageView dowloadImageView = new UIImageView (new RectangleF (cell.Frame.Width - 24 - 15, 18, 24, 24)); 
+                dowloadImageView.Tag = DOWNLOAD_IMAGEVIEW_TAG;
+                cell.Add (dowloadImageView);
             }
 
             public override void RowSelected (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
@@ -739,11 +757,12 @@ namespace NachoClient.iOS
             // Do arrow with line animation followed by repeating arrow-only animations
             public void StartDownloadingAnimation (UITableViewCell cell)
             {
-                cell.ImageView.Image = UIImage.FromFile (DownloadCircle);
+                var iv = cell.ViewWithTag (DOWNLOAD_IMAGEVIEW_TAG) as UIImageView;
+                iv.Image = UIImage.FromFile (DownloadCircle);
                 UIImageView line = new UIImageView (UIImage.FromBundle (DownloadLine));
                 UIImageView arrow = new UIImageView (UIImage.FromBundle (DownloadArrow));
-                cell.ImageView.AddSubview (line);
-                cell.ImageView.AddSubview (arrow);
+                iv.AddSubview (line);
+                iv.AddSubview (arrow);
 
                 PointF center = line.Center;
                 UIView.Animate (
@@ -751,8 +770,8 @@ namespace NachoClient.iOS
                     delay: 0, 
                     options: UIViewAnimationOptions.CurveEaseIn,
                     animation: () => {
-                        line.Center = new PointF (center.X, cell.ImageView.Image.Size.Height * 3 / 4);
-                        arrow.Center = new PointF (center.X, cell.ImageView.Image.Size.Height * 3 / 4);
+                        line.Center = new PointF (center.X, iv.Image.Size.Height * 3 / 4);
+                        arrow.Center = new PointF (center.X, iv.Image.Size.Height * 3 / 4);
                         line.Alpha = 0.0f;
                         arrow.Alpha = 0.4f;
                     },
@@ -767,21 +786,23 @@ namespace NachoClient.iOS
             // Start only the arrow animation
             public void StartArrowAnimation (UITableViewCell cell)
             {
-                cell.ImageView.Image = UIImage.FromFile (DownloadCircle);
+                var iv = cell.ViewWithTag (DOWNLOAD_IMAGEVIEW_TAG) as UIImageView;
+                iv.Image = UIImage.FromFile (DownloadCircle);
                 UIImageView arrow = new UIImageView (UIImage.FromBundle (DownloadArrow));
-                cell.ImageView.AddSubview (arrow);
+                iv.AddSubview (arrow);
 
                 ArrowAnimation (cell, arrow, arrow.Center);
             }
 
             private static void ArrowAnimation (UITableViewCell cell, UIImageView arrow, PointF center)
             {
+                var iv = cell.ViewWithTag (DOWNLOAD_IMAGEVIEW_TAG) as UIImageView;
                 UIView.Animate (
                     duration: 0.4,
                     delay: 0,
                     options: UIViewAnimationOptions.CurveEaseIn,
                     animation: () => {
-                        arrow.Center = new PointF (center.X, cell.ImageView.Image.Size.Height * 3 / 4);
+                        arrow.Center = new PointF (center.X, iv.Image.Size.Height * 3 / 4);
                         arrow.Alpha = 0.4f;
                     },
                     completion: () => {
@@ -795,11 +816,12 @@ namespace NachoClient.iOS
             public static void DownloadCompleteAnimation (UITableViewCell cell, Action displayAttachment)
             {
                 // Place the download icon in a separate view on the screen and animate it
+                var iv = cell.ViewWithTag (DOWNLOAD_IMAGEVIEW_TAG) as UIImageView;
                 FilesTableSource.StopAnimationsOnCell (cell);
-                var imageView = new UIImageView (new RectangleF (cell.ImageView.Frame.Width / 2, cell.ImageView.Frame.Height / 2, cell.ImageView.Frame.Width, cell.ImageView.Frame.Height));
-                imageView.Center = cell.ImageView.Center;
+                var imageView = new UIImageView (new RectangleF (iv.Frame.Width / 2, iv.Frame.Height / 2, iv.Frame.Width, iv.Frame.Height));
+                imageView.Center = iv.Center;
                 imageView.Image = UIImage.FromFile (FilesTableSource.DownloadCompleteIcon);
-                cell.ImageView.Alpha = 0.0f;
+                iv.Alpha = 0.0f;
                 cell.ContentView.AddSubview (imageView);
 
                 Action<double, Action, Action> transformAnimation = (duration, transformAction, transformComplete) => UIView.Animate (
@@ -827,7 +849,7 @@ namespace NachoClient.iOS
                                 imageView.Layer.Transform = MonoTouch.CoreAnimation.CATransform3D.MakeScale (1.0f, 1.0f, 1.0f);
                             }, () => {
                                 // return the cell to it's normal state
-                                cell.ImageView.Alpha = 1.0f;
+                                iv.Alpha = 1.0f;
                                 imageView.RemoveFromSuperview ();
 
                                 // allow caller to decide how to open the attachment
@@ -910,18 +932,7 @@ namespace NachoClient.iOS
                 return owner.UpdateSearchResults (searchOption, forSearchString);
             }
         }
-
-        public class NcFileIndex
-        {
-            public int Id { set; get; }
-
-            public string DisplayName { set; get; }
-
-            public int FileType { set; get; }
-
-            public DateTime CreatedAt { set; get; }
-        }
-
+            
         protected bool modal;
 
         public void SetModal (bool modal)
