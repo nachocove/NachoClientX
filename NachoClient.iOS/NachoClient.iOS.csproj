@@ -1140,6 +1140,7 @@
     <Compile Include="NachoUI.iOS\Support\ExpandableView.cs" />
     <Compile Include="NachoUI.iOS\Support\AttachmentView.cs" />
     <Compile Include="NachoUI.iOS\Support\AttachmentListView.cs" />
+    <Compile Include="NachoUI.iOS\Support\SwipeActionView.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
