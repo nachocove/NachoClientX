@@ -32,87 +32,21 @@ namespace NachoClient.iOS
         static List<UIBarButtonItem> preventBarButtonGC;
         NachoNowViewController owner;
 
+        // Colors for swipe action buttons 
+        private static UIColor DELETE_COLOR = new UIColor (232.0f / 255.0f, 61.0f / 255.0f, 14.0f / 255.0f, 1.0f); // red
+        private static UIColor ARCHIVE_COLOR = new UIColor (85.0f / 255.0f, 213.0f / 255.0f, 80.0f / 255.0f, 1.0f); // green
+        private static UIColor SAVE_COLOR = new UIColor (0.0f / 255.0f, 0.0f / 255.0f, 200.0f / 255.0f, 1.0f); // blue
+        private static UIColor DEFER_COLOR = new UIColor (254.0f / 255.0f, 217.0f / 255.0f, 56.0f / 255.0f, 1.0f); // yellow
 
-        float startingX;
-        float xOffset;
-
-        UIView colorView;
-        UIImageView swipingView;
-
-        double percentageSlide (UIView view)
-        {
-            return (xOffset - startingX) / view.Frame.Width;
-        }
-
-        /// <summary>
-        /// Gesture handler for date dots pan/swipe
-        /// </summary>
-        private void PanHandler (UIView view, UIPanGestureRecognizer obj)
-        {
-            Console.WriteLine ("PanHandler");
-            if (UIGestureRecognizerState.Began == obj.State) {
-                owner.carouselView.ScrollEnabled = false;
-                startingX = obj.TranslationInView (view).X;
-                colorView = new UIView (view.Frame);
-                colorView.BackgroundColor = UIColor.Brown;
-                colorView.Layer.CornerRadius = 5;
-                var Image = Util.captureView (view);
-                swipingView = new UIImageView (Image);
-                view.Superview.AddSubview (colorView);
-                view.Superview.AddSubview (swipingView);
-                return;
-            }
-
-            if (UIGestureRecognizerState.Changed == obj.State) {
-                xOffset = obj.TranslationInView (view).X;
-                var frame = swipingView.Frame;
-                frame.X = xOffset;
-                swipingView.Frame = frame;
-                var percentSlide = percentageSlide (view);
-                Console.WriteLine ("percentSlide = {0}", percentSlide);
-                if (-0.30 > percentSlide) {
-                    colorView.BackgroundColor = new UIColor (232.0f / 255.0f, 61.0f / 255.0f, 14.0f / 255.0f, 1.0f); // red
-                } else if (0 > percentSlide) {
-                    colorView.BackgroundColor = new UIColor (85.0f / 255.0f, 213.0f / 255.0f, 80.0f / 255.0f, 1.0f); // green
-                } else if (0.25 > percentSlide) {
-                    colorView.BackgroundColor = new UIColor (206.0f / 255.0f, 149.0f / 255.0f, 98.0f / 255.0f, 1.0f); // brown
-                } else {
-                    colorView.BackgroundColor = new UIColor (254.0f / 255.0f, 217.0f / 255.0f, 56.0f / 255.0f, 1.0f); // yellow
-                }
-                return;
-            }
-
-            if ((UIGestureRecognizerState.Ended == obj.State) || (UIGestureRecognizerState.Cancelled == obj.State)) {
-                owner.carouselView.ScrollEnabled = true;
-                if (null != colorView) {
-                    colorView.RemoveFromSuperview ();
-                    colorView = null;
-                }
-                if (null != swipingView) {
-                    UIView.Animate (0.1, () => {
-                        var frame = swipingView.Frame;
-                        frame.X = 0;
-                        swipingView.Frame = frame;
-                    }, () => {
-                        swipingView.RemoveFromSuperview ();
-                        swipingView = null;
-                    });
-                }
-                var percentSlide = percentageSlide (view);
-                if (-0.30 > percentSlide) {
-                    onDeleteButtonClicked (view);
-                } else if (-0.05 > percentSlide) {
-                    onArchiveButtonClicked (view);
-                } else if (0.05 > percentSlide) {
-                    // ignore a tiny swipe
-                } else if (0.30 > percentSlide) {
-                    onSaveButtonClicked (view);
-                } else { 
-                    onDeferButtonClicked (view);
-                }
-                return;
-            }
-        }
+        // Pre-made swipe action descriptors
+        private static SwipeActionDescriptor ARCHIVE_BUTTON =
+            new SwipeActionDescriptor (0.25f, UIImage.FromBundle ("email-archive-gray"), "Archive", ARCHIVE_COLOR);
+        private static SwipeActionDescriptor SAVE_BUTTON =
+            new SwipeActionDescriptor (0.25f, UIImage.FromBundle ("email-putintofolder-gray"), "Save", SAVE_COLOR);
+        private static SwipeActionDescriptor DELETE_BUTTON =
+            new SwipeActionDescriptor (0.25f, UIImage.FromBundle ("email-delete-gray"), "Delete", DELETE_COLOR);
+        private static SwipeActionDescriptor DEFER_BUTTON =
+            new SwipeActionDescriptor (0.25f, UIImage.FromBundle ("email-defer-gray"), "Defer", DEFER_COLOR);
 
         public HotListCarouselDataSource (NachoNowViewController o)
         {
@@ -150,7 +84,59 @@ namespace NachoClient.iOS
         {
             var carouselFrame = carousel.Frame;
             var frame = new RectangleF (0, 10, carouselFrame.Width - 15.0f, carouselFrame.Height - 30);
-            var view = new UIView (frame);
+            var view = new SwipeActionView (frame);
+            view.SetAction (ARCHIVE_BUTTON, SwipeSide.RIGHT);
+            view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
+            view.SetAction (SAVE_BUTTON, SwipeSide.LEFT);
+            view.SetAction (DEFER_BUTTON, SwipeSide.LEFT);
+            view.OnClick = (SwipeSide side, int index) => {
+                if (SwipeSide.LEFT == side) {
+                    switch (index) {
+                    case 0:
+                        onSaveButtonClicked (view);
+                        break;
+                    case 1:
+                        onDeferButtonClicked (view);
+                        break;
+                    default:
+                        var message = String.Format ("Unknown left index {0}", index);
+                        throw new NcAssert.NachoDefaultCaseFailure (message);
+                    }
+                } else if (SwipeSide.RIGHT == side) {
+                    switch (index) {
+                    case 0:
+                        onArchiveButtonClicked (view);
+                        break;
+                    case 1:
+                        onDeleteButtonClicked (view);
+                        break;
+                    default:
+                        var message = String.Format ("Unknwon right index {0}", index);
+                        throw new NcAssert.NachoDefaultCaseFailure(message);
+                    }
+                } else {
+                    NcAssert.True (false);
+                }
+            };
+            view.OnSwipe = (SwipeActionView.SwipeState state) => {
+                switch (state) {
+                case SwipeActionView.SwipeState.SWIPE_BEGIN:
+                    owner.carouselView.ScrollEnabled = false;
+                    owner.Selectable = false;
+                    break;
+                case SwipeActionView.SwipeState.SWIPE_END_ALL_HIDDEN:
+                    owner.carouselView.ScrollEnabled = true;
+                    owner.Selectable = true;
+                    break;
+                case SwipeActionView.SwipeState.SWIPE_END_ALL_SHOWN:
+                    owner.carouselView.ScrollEnabled = true;
+                    owner.Selectable = false;
+                    break;
+                default:
+                    var message = String.Format ("Unknown swipe state {0}", (int)state);
+                    throw new NcAssert.NachoDefaultCaseFailure (message);
+                }
+            };
             view.BackgroundColor = UIColor.White;
             view.AutoresizingMask = UIViewAutoresizing.None;
             view.ContentMode = UIViewContentMode.Center;
@@ -271,20 +257,6 @@ namespace NachoClient.iOS
                 }
             };
             view.AddSubview (toolbar);
-
-            var gestureRecognizer = new UIPanGestureRecognizer ((UIPanGestureRecognizer obj) => {
-                PanHandler (view, obj);
-            });
-            gestureRecognizer.ShouldRecognizeSimultaneously = delegate {
-                return true;
-            };
-            gestureRecognizer.ShouldBegin = delegate(UIGestureRecognizer obj) {
-                var Recognizer = (UIPanGestureRecognizer)obj;
-                var Velocity = Recognizer.VelocityInView (view);
-                return Math.Abs (Velocity.X) > Math.Abs (Velocity.Y);
-            };
-
-            view.AddGestureRecognizer (gestureRecognizer);
 
             return view;
         }
@@ -528,34 +500,6 @@ namespace NachoClient.iOS
 
             return view;
         }
-
-        protected void ReplyActionSheet (UIView view)
-        {
-            var actionSheet = new UIActionSheet ();
-            actionSheet.Add ("Reply");
-            actionSheet.Add ("Reply All");
-            actionSheet.Add ("Forward");
-            actionSheet.Add ("Cancel");
-
-            actionSheet.CancelButtonIndex = 3;
-
-            actionSheet.Clicked += delegate(object a, UIButtonEventArgs b) {
-                switch (b.ButtonIndex) {
-                case 0:
-                    onReplyButtonClicked (view, MessageComposeViewController.REPLY_ACTION);
-                    break;
-                case 1:
-                    onReplyButtonClicked (view, MessageComposeViewController.REPLY_ALL_ACTION);
-                    break;
-                case 2:
-                    onReplyButtonClicked (view, MessageComposeViewController.FORWARD_ACTION);
-                    break;
-                case 3:
-                    break; // Cancel
-                }
-            };
-            actionSheet.ShowInView (view);
-        }
     }
 
     public class HotListCarouselDelegate : iCarouselDelegate
@@ -565,6 +509,11 @@ namespace NachoClient.iOS
         public HotListCarouselDelegate (NachoNowViewController o)
         {
             owner = o;
+        }
+
+        public override bool ShouldSelectItemAtIndex (iCarousel carousel, int index)
+        {
+            return owner.Selectable;
         }
 
         public override void DidSelectItemAtIndex (iCarousel carousel, int index)
