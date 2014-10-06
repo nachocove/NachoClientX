@@ -19,6 +19,8 @@ namespace NachoCore.Model
 
         public DateTime CreatedAt { set; get; }
 
+        public string Contact { set; get; }
+
     }
     // If SQLite.Net would tolerate an abstract class, we'd be one.
     // hybrid - needs a singleton Instance to make virtual static functions.

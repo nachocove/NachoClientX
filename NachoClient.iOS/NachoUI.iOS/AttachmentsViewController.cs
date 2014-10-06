@@ -111,12 +111,12 @@ namespace NachoClient.iOS
             segmentedControl.SelectedSegment = 0;
             segmentedControl.TintColor = A.Color_NachoGreen;
 
-
             var segmentedControlTextAttributes = new UITextAttributes ();
             segmentedControlTextAttributes.Font = A.Font_AvenirNextDemiBold14;
             segmentedControl.SetTitleTextAttributes (segmentedControlTextAttributes, UIControlState.Normal);
 
             segmentedControl.ValueChanged += (sender, e) => {
+                FilesSource.SetSegmentedIndex (segmentedControl.SelectedSegment);
                 RefreshTableSource ();
             };
 
@@ -127,9 +127,9 @@ namespace NachoClient.iOS
             View.AddSubview (segmentedControlView);
 
             if (modal) {
-                tableView = new UITableView (new RectangleF (0, yOffset, View.Frame.Width, View.Frame.Height - yOffset));
+                tableView = new UITableView (new RectangleF (0, yOffset, View.Frame.Width, View.Frame.Height - yOffset), UITableViewStyle.Grouped);
             } else {
-                tableView = new UITableView (new RectangleF (0, yOffset, View.Frame.Width, View.Frame.Height - yOffset - 49 - 64));
+                tableView = new UITableView (new RectangleF (0, yOffset, View.Frame.Width, View.Frame.Height - yOffset - 49 - 64), UITableViewStyle.Grouped);
             }
 
             InitializeSearchDisplayController ();
@@ -144,7 +144,7 @@ namespace NachoClient.iOS
 
             UIBarButtonItem searchButton = new UIBarButtonItem (UIBarButtonSystemItem.Search);
             searchButton.TintColor = A.Color_NachoBlue;
-            NavigationItem.LeftBarButtonItem = searchButton;
+            NavigationItem.RightBarButtonItem = searchButton;
             searchButton.Clicked += (object sender, EventArgs e) => {
                 SearchDisplayController.SearchBar.BecomeFirstResponder ();
             };
@@ -243,7 +243,7 @@ namespace NachoClient.iOS
             FilesSource.Items = new List<NcFileIndex> ();
 
             NavigationItem.Title = "Files";
-            FilesSource.Items = McAbstrFileDesc.GetAllFiles();
+            FilesSource.Items = McAbstrFileDesc.GetAllFiles ();
 
             foreach (var item in FilesSource.Items) {
                 if (0 == item.FileType) {
@@ -252,12 +252,16 @@ namespace NachoClient.iOS
                     case McAbstrFolderEntry.ClassCodeEnum.Email:
                         var email = McEmailMessage.QueryById<McEmailMessage> (attachment.ItemId);
                         item.CreatedAt = email.DateReceived;
+                        item.Contact = Pretty.SenderString (email.From);
                         break;
                     case McAbstrFolderEntry.ClassCodeEnum.Calendar:
                         var calendar = McCalendar.QueryById<McCalendar> (attachment.ItemId);
                         item.CreatedAt = calendar.CreatedAt;
+                        item.Contact = calendar.OrganizerName;
                         break;
                     }
+                } else {
+                    item.Contact = "My Files";
                 }
             }
 
@@ -269,6 +273,8 @@ namespace NachoClient.iOS
                 FilesSource.Items.Reverse ();
                 break;
             case 2:
+                FilesSource.Items.Sort ((x, y) => x.Contact.CompareTo (y.Contact));
+                FilesSource.SetItems (FilesSource.Items);
                 break;
             }
 
@@ -397,7 +403,6 @@ namespace NachoClient.iOS
                     PlatformHelpers.DisplayAttachment (this, a);
                     return;
                 }
-
                 FileChooserSheet (a, () => PlatformHelpers.DisplayAttachment (this, a));
             });
         }
@@ -431,6 +436,12 @@ namespace NachoClient.iOS
 
             protected List<NcFileIndex> items;
             protected List<NcFileIndex> searchResults;
+            protected List<string> contactList;
+            protected List<string> contactFileList;
+            protected int segmentedIndex;
+            protected List<List<NcFileIndex>> nestedContactList;
+            int[] sectionLength;
+            string[] sectionTitle;
 
             AttachmentsViewController vc;
             UISearchDisplayController SearchDisplayController;
@@ -458,6 +469,51 @@ namespace NachoClient.iOS
                 this.vc = vc;
                 Items = new List<NcFileIndex> ();
                 SearchResults = new List<NcFileIndex> ();
+                segmentedIndex = 0;
+
+            }
+
+            public void SetItems (List<NcFileIndex> items)
+            {
+
+                this.Items = items;
+                contactList = ConfigureContactList (items);
+                sectionLength = new int[contactList.Count];
+                sectionTitle = new string[contactList.Count];
+
+                int index = 0;
+
+                foreach (var item in contactList) {
+                    sectionLength [index] = nestedContactList[index].Count;
+                    sectionTitle [index] = item;
+                    index++;
+                }
+            }
+
+            public List<string> ConfigureContactList (List<NcFileIndex> items)
+            {
+                List<string> tempList = new List<string> ();
+
+                foreach (var item in items) {
+                    if(!tempList.Contains(item.Contact)) {
+                        tempList.Add (item.Contact);
+                    }
+                }
+
+                int i = 0;
+                nestedContactList = new List<List<NcFileIndex>> ();
+
+                foreach (var contact in tempList) {
+                    var sublist = new List<NcFileIndex>();
+                    foreach (var item in items) {
+                        if (contact == item.Contact) {
+                            sublist.Add (item);
+                        }
+                    }
+                    nestedContactList.Add (sublist);
+                    i++;
+                }
+                return tempList;
             }
 
             public void SetOwner (IAttachmentTableViewSourceDelegate owner, UISearchDisplayController SearchDisplayController)
@@ -468,17 +524,11 @@ namespace NachoClient.iOS
                 SearchDisplayController.Delegate = new SearchDisplayDelegate (this);
             }
 
-            public override int RowsInSection (UITableView tableview, int section)
-            {
-                if (tableview == vc.SearchDisplayController.SearchResultsTableView) {
-                    return SearchResults.Count;
-                } else {
-                    return Items.Count;
-                }
-            }
-
             public override int NumberOfSections (UITableView tableView)
             {
+                if (2 == segmentedIndex) {
+                    return contactList.Count;
+                }
                 return 1;
             }
 
@@ -499,11 +549,7 @@ namespace NachoClient.iOS
                 NcFileIndex item;
 
                 // determine if table is for search results or all attachments
-                if (tableView == vc.SearchDisplayController.SearchResultsTableView) {
-                    item = SearchResults [indexPath.Row];
-                } else {
-                    item = Items [indexPath.Row];
-                }
+                item = FileFromIndexPath (tableView, indexPath);
 
                 switch (item.FileType) {
                 case 0:
@@ -522,6 +568,21 @@ namespace NachoClient.iOS
                 return cell;
             }
 
+            protected NcFileIndex FileFromIndexPath (UITableView tableView, NSIndexPath indexPath)
+            {
+                NcFileIndex file;
+
+                if (SearchDisplayController.SearchResultsTableView == tableView) {
+                    file = SearchResults [indexPath.Row];
+                } else if (2 == segmentedIndex) {
+                    var section = indexPath.Section;
+                    var index = indexPath.Row;
+                    file = nestedContactList[section][index];
+                } else {
+                    file = Items [indexPath.Row];
+                }
+                return file;
+            }
 
             protected static int DATE_LABEL_TAG = 200;
             protected static int TEXT_LABEL_TAG = 300;
@@ -628,7 +689,7 @@ namespace NachoClient.iOS
             public override void RowSelected (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
             {
                 NcFileIndex item;
-                item = Items [indexPath.Row];
+                item = FileFromIndexPath(tableView, indexPath);
 
                 switch (item.FileType) {
                 case 0:
@@ -858,13 +919,69 @@ namespace NachoClient.iOS
                         });
                     });
                 });
+            }
 
+            public override float GetHeightForHeader (UITableView tableView, int section)
+            {
+                if (SearchDisplayController.SearchResultsTableView == tableView) {
+                    return 0;
+                }
+                if (2 == segmentedIndex) {
+                    return 32;
+                } else {
+                    return 0;
+                }
+            }
 
+            public override UIView GetViewForHeader (UITableView tableView, int section)
+            {
+                if (2 != segmentedIndex) {
+                    return new UIView (new RectangleF (0, 0, 0, 0));
+                }
+                if (SearchDisplayController.SearchResultsTableView == tableView) {
+                    return new UIView (new RectangleF (0, 0, 0, 0));
+                }
+                var view = new UIView (new RectangleF (0, 0, tableView.Frame.Width, 32));
+                var label = new UILabel ();
+                label.Font = A.Font_AvenirNextDemiBold17;
+                label.TextColor = A.Color_NachoDarkText;
+                label.Text = TitleForHeader (tableView, section);
+                label.SizeToFit ();
+                label.Center = new PointF (15 + (label.Frame.Width / 2), 16);
+                view.AddSubview (label);
+                return view;
+            }
+
+            public override string TitleForHeader (UITableView tableView, int section)
+            {
+                return sectionTitle [section];
+            }
+
+            /// <summary>
+            /// The number of rows in the specified section.
+            /// </summary>
+            public override int RowsInSection (UITableView tableview, int section)
+            {
+                int rows;
+
+                if (SearchDisplayController.SearchResultsTableView == tableview) {
+                    rows = ((null == searchResults) ? 0 : searchResults.Count);
+                } else if (2 == segmentedIndex) {
+                    rows = sectionLength [section];
+                } else {
+                    rows = Items.Count;
+                }
+                return rows;
             }
 
             public void SetSearchResults (List<NcFileIndex> searchResults)
             {
                 this.searchResults = searchResults;
+            }
+
+            public void SetSegmentedIndex (int index)
+            {
+                this.segmentedIndex = index;
             }
 
             public bool UpdateSearchResults (int forSearchOption, string forSearchString)
@@ -932,7 +1049,7 @@ namespace NachoClient.iOS
                 return owner.UpdateSearchResults (searchOption, forSearchString);
             }
         }
-            
+
         protected bool modal;
 
         public void SetModal (bool modal)
