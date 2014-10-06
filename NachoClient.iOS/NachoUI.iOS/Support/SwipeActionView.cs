@@ -49,11 +49,26 @@ namespace NachoClient.iOS
             Tag = (int)SwipeActionViewTagType.SWIPE_ACTION_BUTTON;
             Config = descriptor;
             if (null != Config.Image) {
-                SetBackgroundImage (Config.Image, UIControlState.Normal);
+                UIImage image = Config.Image;
+                if (UIImageRenderingMode.AlwaysTemplate != image.RenderingMode) {
+                    // Make sure it is a template so we can use tint to match the icon color to that of the title
+                    image = image.ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate);
+                }
+                SetImage (image, UIControlState.Normal);
+                ImageView.TintColor = UIColor.White;
             }
             SetTitle (Config.Text, UIControlState.Normal);
             BackgroundColor = Config.Color;
             Enabled = true;
+
+            // Move the image on top of the title and center it
+            SizeToFit ();
+            float deltaX = Frame.Width - ImageView.Frame.X - ImageView.Frame.Width;
+            float deltaY = (ImageView.Frame.Height / 2.0f) + 1.0f;
+            ImageEdgeInsets = new UIEdgeInsets (-deltaY, -ImageView.Frame.X, deltaY, -deltaX);
+            deltaX = Frame.Width - TitleLabel.Frame.X - TitleLabel.Frame.Width;
+            deltaY = (TitleLabel.Frame.Height / 2.0f) + 1.0f;
+            TitleEdgeInsets = new UIEdgeInsets (deltaY, -TitleLabel.Frame.X, -deltaY, -deltaX);
 
             ViewFramer.Create (this)
                 .X (0)
@@ -100,6 +115,12 @@ namespace NachoClient.iOS
         UIView snapshotView;
 
         public float LastMovePercentage { get; protected set; }
+
+        public float FullMovePercentage {
+            get {
+                return GetFullMovePercentage (LastMovePercentage);
+            }
+        }
 
         public SwipeActionSwipingView (UIView view,
             SwipeActionButtonList leftButtons, SwipeActionButtonList rightButtons) : base (view.Frame)
@@ -153,21 +174,35 @@ namespace NachoClient.iOS
             }
         }
 
+        /// <summary>
+        /// Return a fraction from -1.0 to 1.0 that is the ratio of screen percentage to
+        /// the maximum screen percentage. (Screen percentage is the ratio of horizontal screen
+        /// translation in pixel to the screen width.)
+        /// </summary>
+        /// <returns>The full move percentage.</returns>
+        /// <param name="screenPercentage">Screen percentage.</param>
+        private float GetFullMovePercentage (float movePercentage)
+        {
+            if (0 > movePercentage) {
+                return movePercentage / maxLeftPercentage;
+            }
+            if (0 < movePercentage) {
+                return movePercentage / maxRightPercentage;
+            }
+            return 0.0f;
+        }
+
         public void MoveTo (float percentage)
         {
             LastMovePercentage = percentage;
-
-            if (0.0 > percentage) {
-                if (maxLeftPercentage < (-percentage)) {
-                    return;
-                }
-                percentage /= maxLeftPercentage;
-            }
-            if (0.0 < percentage) {
-                if (maxRightPercentage < percentage) {
-                    return;
-                }
-                percentage /= maxRightPercentage;
+            percentage = GetFullMovePercentage (percentage);
+            // If the full move percentage is greater than 100% in either directions,
+            // we must clip it at 100% (+/-) and update because we c
+            // we could be at -90% and then a quick swipe action causes the next update to be
+            if (-1 > percentage) {
+                percentage = -1;
+            } else if (1 < percentage) {
+                percentage = 1;
             }
 
             for (int i = 0; i < leftActionButtons.Count; i++) {
@@ -188,14 +223,23 @@ namespace NachoClient.iOS
                 ViewFramer.Create (snapshotView).X (percentage * leftOffsets [0]);
             }
 
-            ViewHelper.DumpViews<SwipeActionViewTagType> (this);
+            //ViewHelper.DumpViews<SwipeActionViewTagType> (this); // debug
         }
 
         public void SnapBackToMiddle ()
         {
-            UIView.Animate (1.0, 0, UIViewAnimationOptions.CurveLinear, () => {
+            UIView.Animate (0.4f, 0, UIViewAnimationOptions.CurveLinear, () => {
                 MoveTo (0.0f);
-                ViewHelper.DumpViews<SwipeActionViewTagType> (this);
+                ViewHelper.DumpViews<SwipeActionViewTagType> (this); // debug
+            }, () => {
+            });
+        }
+
+        public void SnapToFullyExtended ()
+        {
+            UIView.Animate (0.4f, 0, UIViewAnimationOptions.CurveLinear, () => {
+                MoveTo ((float)Math.Sign(LastMovePercentage) * 1.0f);
+                ViewHelper.DumpViews<SwipeActionViewTagType> (this); // debug
             }, () => {
             });
         }
@@ -206,6 +250,14 @@ namespace NachoClient.iOS
         LEFT,
         RIGHT
     }
+
+    /// <summary>
+    /// Callback function for notifying the owner that a button has been clicked. On click
+    /// the swiping view is automatically removed.
+    /// </summary>
+    public delegate void SwipeActionButtonCallback (SwipeSide side, int index);
+
+    public delegate void SwipeActionSwipeCallback (bool isBeginning);
 
     /// <summary>
     /// Swipe view is meant for a base class for all table cells that require swipe actions.
@@ -226,9 +278,13 @@ namespace NachoClient.iOS
         public float SnapOutThreshold = 0.5f;
         public float LastActionThreshold = 0.8f;
 
+        public SwipeActionButtonCallback OnClick;
+        public SwipeActionSwipeCallback OnSwipe;
+
+        public SwipeActionButtonList LeftSwipeActionButtons { get; protected set; }
+        public SwipeActionButtonList RightSwipeActionButtons { get; protected set; }
+
         protected UIPanGestureRecognizer swipeRecognizer;
-        protected SwipeActionButtonList leftSwipeActionButtons;
-        protected SwipeActionButtonList rightSwipeActionButtons;
         protected SwipeActionSwipingView swipingView;
         protected float startingXOffset;
 
@@ -252,39 +308,45 @@ namespace NachoClient.iOS
             swipeRecognizer.MaximumNumberOfTouches = 1;
             AddGestureRecognizer (swipeRecognizer);
 
-            leftSwipeActionButtons = new SwipeActionButtonList ();
-            rightSwipeActionButtons = new SwipeActionButtonList ();
+            LeftSwipeActionButtons = new SwipeActionButtonList ();
+            RightSwipeActionButtons = new SwipeActionButtonList ();
         }
 
         private void PanHandler (UIPanGestureRecognizer obj)
         {
-            if (UIGestureRecognizerState.Began == obj.State) {
-                ///owner.carouselView.ScrollEnabled = false; hack alert - make callback
+            switch (obj.State) {
+            case UIGestureRecognizerState.Began:
+                {
+                    OnSwipe (true);
 
-                // Create a swiping view
-                if (null == swipingView) {
-                    swipingView = new SwipeActionSwipingView (this, leftSwipeActionButtons, rightSwipeActionButtons);
-                    AddSubview (swipingView);
+                    // Create a swiping view
+                    if (null == swipingView) {
+                        swipingView = new SwipeActionSwipingView (this, LeftSwipeActionButtons, RightSwipeActionButtons);
+                        AddSubview (swipingView);
+                    }
+                    var touch = obj.TranslationInView (this);
+                    startingXOffset = touch.X;
+                    break;
                 }
-                var touch = obj.TranslationInView (this);
-                startingXOffset = touch.X;
-                Console.WriteLine (">>>>>> {0} {1}", touch.X, touch.Y);
-                return;
-            }
-
-            if (UIGestureRecognizerState.Changed == obj.State) {
-                // Move the swiping view
-                var touch = obj.TranslationInView (this);
-                Console.WriteLine (">>>>>> {0} {1}", touch.X, touch.Y);
-                float deltaX = touch.X - startingXOffset;
-                swipingView.MoveTo (deltaX / Frame.Width);
-
-            }
-
-            if ((UIGestureRecognizerState.Ended == obj.State) || (UIGestureRecognizerState.Cancelled == obj.State)) {
-                ////owner.carouselView.ScrollEnabled = true; hack alert - make callback
-                MayRemoveSwipingView ();
-                return;
+            case UIGestureRecognizerState.Changed:
+                {
+                    // Move the swiping view
+                    var touch = obj.TranslationInView (this);
+                    Console.WriteLine (">>>>>> {0} {1}", touch.X, touch.Y);
+                    float deltaX = touch.X - startingXOffset;
+                    swipingView.MoveTo (deltaX / Frame.Width);
+                    break;
+                }
+            default:
+                {
+                    NcAssert.True ((UIGestureRecognizerState.Ended == obj.State) ||
+                    (UIGestureRecognizerState.Cancelled == obj.State));
+                    if (!MayRemoveSwipingView ()) {
+                        MayCompletePullOut ();
+                    }
+                    OnSwipe (false);
+                    break;
+                }
             }
         }
 
@@ -305,10 +367,10 @@ namespace NachoClient.iOS
             SwipeActionButtonList actionButtons;
 
             if (SwipeSide.LEFT == side) {
-                actionButtons = leftSwipeActionButtons;
+                actionButtons = LeftSwipeActionButtons;
             } else {
                 NcAssert.True (SwipeSide.RIGHT == side);
-                actionButtons = rightSwipeActionButtons;
+                actionButtons = RightSwipeActionButtons;
             }
 
             NcAssert.True (actionButtons.Count > index);
@@ -317,6 +379,12 @@ namespace NachoClient.iOS
             SwipeActionButton newButton = null;
             if (null != descriptor) {
                 newButton = new SwipeActionButton (descriptor, this);
+                newButton.TouchUpInside += (object sender, EventArgs e) => {
+                    RemoveSwipingView ();
+                    // If we don't have the index, use the length of the list
+                    int realIndex = -1 == index ? actionButtons.Count : index;
+                    OnClick (side, realIndex);
+                };
             }
 
             if (-1 == index) {
@@ -349,11 +417,20 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void MayRemoveSwipingView ()
+        protected bool MayRemoveSwipingView ()
         {
-            if (SnapOutThreshold > Math.Abs(swipingView.LastMovePercentage)) {
+            if (SnapOutThreshold > Math.Abs(swipingView.FullMovePercentage)) {
                 swipingView.SnapBackToMiddle ();
                 RemoveSwipingView ();
+                return true;
+            }
+            return false;
+        }
+
+        protected void MayCompletePullOut ()
+        {
+            if (SnapOutThreshold <= Math.Abs(swipingView.FullMovePercentage)) {
+                swipingView.SnapToFullyExtended ();
             }
         }
 
@@ -363,10 +440,10 @@ namespace NachoClient.iOS
             swipingView.RemoveFromSuperview ();
             swipingView = null;
 
-            foreach (var button in leftSwipeActionButtons) {
+            foreach (var button in LeftSwipeActionButtons) {
                 button.RemoveFromSuperview ();
             }
-            foreach (var button in rightSwipeActionButtons) {
+            foreach (var button in RightSwipeActionButtons) {
                 button.RemoveFromSuperview ();
             }
             SetNeedsDisplay ();
