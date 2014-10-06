@@ -59,6 +59,8 @@ namespace NachoClient.iOS
         protected float expandedSeparatorYOffset;
         protected float compactSeparatorYOffset;
 
+        protected UIBarButtonItem blockMenuButton;
+
         protected float separator1YOffset {
             get {
                 return (expandedHeader ? expandedSeparatorYOffset : compactSeparatorYOffset);
@@ -102,9 +104,9 @@ namespace NachoClient.iOS
 
             chiliButton = new UIBarButtonItem ("Hot", UIBarButtonItemStyle.Plain, null);
 
-            var deferButton = new UIBarButtonItem ();
+            blockMenuButton = new UIBarButtonItem ();
             deadlineButton = new UIBarButtonItem ();
-            Util.SetOriginalImageForButton (deferButton, "email-defer");
+            Util.SetOriginalImageForButton (blockMenuButton, "gen-more");
             Util.SetOriginalImageForButton (quickReplyButton, "contact-quickemail");
             Util.SetOriginalImageForButton (deadlineButton, "email-calendartime");
             var spacer = new UIBarButtonItem(UIBarButtonSystemItem.FlexibleSpace) { Width = 5 };
@@ -129,16 +131,19 @@ namespace NachoClient.iOS
 
             // Multiple buttons on the right side
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
-                deferButton,
+                blockMenuButton,
                 deadlineButton,
                 quickReplyButton,
             };
             quickReplyButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("MessageViewToCompose", new SegueHolder (MessageComposeViewController.REPLY_ACTION, NcQuickResponse.QRTypeEnum.Reply));
             };
-            deferButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("MessageViewToMessagePriority", this);
+
+            blockMenuButton.Clicked += (object sender, EventArgs e) => {
+                UIBlockMenu blockMenu = (UIBlockMenu)View.ViewWithTag(1000);
+                blockMenu.MenuTapped ();
             };
+
             saveButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("MessageViewToFolders", this);
             };
@@ -166,9 +171,12 @@ namespace NachoClient.iOS
             CreateView ();
 
             MarkAsRead ();
+
+            //Remove thin black line from bottom of navigation controller
+            UINavigationBar b = NavigationController.NavigationBar;
+            b.SetBackgroundImage(new UIImage (),UIBarMetrics.Default);
+            b.ShadowImage = new UIImage ();
         }
-
-
 
         public override void ViewWillAppear (bool animated)
         {
@@ -781,6 +789,22 @@ namespace NachoClient.iOS
             ConfigureToolbar ();
 
             deferLayout.Decrement ();
+
+            UIBlockMenu blockMenu = new UIBlockMenu (this, new List<UIBlockMenu.Block> () {
+                new UIBlockMenu.Block ("contact-quickemail", "Quick Reply", () => {
+                    PerformSegue ("MessageViewToCompose", new SegueHolder (MessageComposeViewController.REPLY_ACTION, NcQuickResponse.QRTypeEnum.Reply));
+                }),
+                new UIBlockMenu.Block ("email-calendartime", "Create Deadline", () => {
+                    PerformSegue ("SegueToDatePicker", new SegueHolder (null));
+                }),
+                new UIBlockMenu.Block ("now-addcalevent", "Create Event", () => {
+                    var c = CalendarHelper.CreateMeeting (thread.SingleMessageSpecialCase ());
+                    PerformSegue ("SegueToEditEvent", new SegueHolder (c));
+                })
+            }, View.Frame.Width);
+
+            blockMenu.Tag = 1000;
+            View.AddSubview (blockMenu);
         }
 
         protected void AdjustY (UIView view, float yOffset)
