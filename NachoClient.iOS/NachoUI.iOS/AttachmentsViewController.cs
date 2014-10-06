@@ -437,7 +437,6 @@ namespace NachoClient.iOS
             protected List<NcFileIndex> items;
             protected List<NcFileIndex> searchResults;
             protected List<string> contactList;
-            protected List<string> contactFileList;
             protected int segmentedIndex;
             protected List<List<NcFileIndex>> nestedContactList;
             int[] sectionLength;
