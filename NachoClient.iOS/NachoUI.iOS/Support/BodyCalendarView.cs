@@ -47,19 +47,28 @@ namespace NachoClient.iOS
         {
             // Decode iCal
             var textPart = part as TextPart;
-            var decodedText = GetText (textPart);
-            var stringReader = new StringReader (decodedText);
-            IICalendar iCal = iCalendar.LoadFromStream (stringReader) [0];
+            IICalendar iCal;
+            using (var stringReader = new StringReader (textPart.Text)) {
+                iCal = iCalendar.LoadFromStream (stringReader) [0];
+            }
             var evt = iCal.Events.First () as DDay.iCal.Event;
             NachoCore.Utils.CalendarHelper.ExtrapolateTimes (ref evt);
 
-            // Render the event description
-            if (null != evt.Description) {
-                parentView.RenderTextString (evt.Description);
-            }
+            ShowEventInfo (evt);
 
-            // Display the event with an accept bar
-            MakeStyledCalendarInvite (evt);
+            // The contents of the action/info bar depends on whether this is a request,
+            // response, or cancellation.
+            if (iCal.Method.Equals (DDay.iCal.CalendarMethods.Reply)) {
+                ShowAttendeeResponseBar (evt);
+            } else if (iCal.Method.Equals (DDay.iCal.CalendarMethods.Cancel)) {
+                ShowCancellationBar (evt.UID);
+            } else {
+                if (!iCal.Method.Equals (DDay.iCal.CalendarMethods.Request)) {
+                    Log.Warn (Log.LOG_CALENDAR, "Unexpected calendar method: {0}. It will be treated as a {1}.",
+                        iCal.Method, DDay.iCal.CalendarMethods.Request);
+                }
+                ShowRequestChoicesBar (evt.UID);
+            }
 
             rendered = true;
 
@@ -67,15 +76,11 @@ namespace NachoClient.iOS
             ViewFramer.Create (this).Height (150);
         }
 
-        /// Gets the decoded text content.
-        protected string GetText (TextPart text)
+        /// <summary>
+        /// Display the basic information about the calendar event.
+        /// </summary>
+        private void ShowEventInfo (DDay.iCal.Event evt)
         {
-            return text.Text;
-        }
-
-        public void MakeStyledCalendarInvite (DDay.iCal.Event evt)
-        {
-            string UID = evt.UID;
             string subject = evt.Summary;
             bool isAllDay = evt.IsAllDay;
             DateTime start = evt.Start.UTC;
@@ -145,8 +150,6 @@ namespace NachoClient.iOS
             AddSubview (durationLabel);
             AddSubview (locationLabel);
 
-            MakeResponseBar (UID);
-
             Util.AddHorizontalLine (0, 20, viewWidth, A.Color_NachoBorderGray, this).Tag =
                 (int)TagType.CALENDAR_LINE_TAG;
             Util.AddHorizontalLine (0, 86, viewWidth, A.Color_NachoBorderGray, this).Tag =
@@ -169,26 +172,17 @@ namespace NachoClient.iOS
 
         UILabel messageLabel;
         UIButton changeResponseButton;
+        UIButton removeFromCalendarButton;
 
-        public void MakeResponseBar (string UID)
+        /// <summary>
+        /// Configuration of some of the subview elements of the action bar that are
+        /// common to at least two of the forms of the action bar.
+        /// </summary>
+        private void ActionBarCommon ()
         {
             float viewWidth = Frame.Width;
-            UIView responseView = new UIView (new RectangleF (0, 86, viewWidth, 54));
-            responseView.BackgroundColor = UIColor.Clear;
-
-            eventDoesNotExistLabel = new UILabel (new RectangleF (25, 15, viewWidth, 24));
-            eventDoesNotExistLabel.TextColor = A.Color_NachoBlack;
-            eventDoesNotExistLabel.TextAlignment = UITextAlignment.Left;
-            eventDoesNotExistLabel.Text = "This event has either been cancelled or removed";
-            eventDoesNotExistLabel.Font = A.Font_AvenirNextRegular12;
-            eventDoesNotExistLabel.Hidden = true;
-            responseView.Add (eventDoesNotExistLabel);
 
             acceptButton = new UIButton (UIButtonType.RoundedRect);
-            tentativeButton = new UIButton (UIButtonType.RoundedRect);
-            declineButton = new UIButton (UIButtonType.RoundedRect);
-
-            //acceptButton
             using (var acceptButtonImage = UIImage.FromBundle ("btn-mtng-accept")) {
                 acceptButton.SetImage (acceptButtonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal), UIControlState.Normal);
             }
@@ -199,7 +193,7 @@ namespace NachoClient.iOS
             acceptButton.Frame = new RectangleF (25, 10, 24, 24);
             acceptButton.TintColor = UIColor.Clear;
 
-            //tentativeButton
+            tentativeButton = new UIButton (UIButtonType.RoundedRect);
             using (var tentativeButtonImage = UIImage.FromBundle ("btn-mtng-tenative")) {
                 tentativeButton.SetImage (tentativeButtonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal), UIControlState.Normal);
             }
@@ -210,10 +204,9 @@ namespace NachoClient.iOS
             tentativeButton.Frame = new RectangleF ((viewWidth / 2) - 12, 10, 24, 24);
             tentativeButton.TintColor = UIColor.Clear;
 
-            //declineButton
+            declineButton = new UIButton (UIButtonType.RoundedRect);
             using (var declineButtonImage = UIImage.FromBundle ("btn-mtng-decline")) {
                 declineButton.SetImage (declineButtonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal), UIControlState.Normal);
-
             }
             using (var declinePressedButtonImage = UIImage.FromBundle ("btn-mtng-decline-pressed")) {
                 declineButton.SetImage (declinePressedButtonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal), UIControlState.Selected);
@@ -222,36 +215,58 @@ namespace NachoClient.iOS
             declineButton.Frame = new RectangleF (viewWidth - 24 - 25, 10, 24, 24);
             declineButton.TintColor = UIColor.Clear;
 
-            responseView.Add (acceptButton);
-            responseView.Add (tentativeButton);
-            responseView.Add (declineButton);
-
             acceptLabel = new UILabel (new RectangleF (15, 36, 44, 10));
             acceptLabel.TextColor = A.Color_NachoBlack;
             acceptLabel.TextAlignment = UITextAlignment.Center;
             acceptLabel.Font = A.Font_AvenirNextRegular10;
             acceptLabel.Text = "Accept";
-            responseView.Add (acceptLabel);
 
             tentativeLabel = new UILabel (new RectangleF ((viewWidth / 2) - 22, 36, 44, 10));
             tentativeLabel.TextColor = A.Color_NachoBlack;
             tentativeLabel.TextAlignment = UITextAlignment.Center;
             tentativeLabel.Font = A.Font_AvenirNextRegular10;
             tentativeLabel.Text = "Tentative";
-            responseView.Add (tentativeLabel);
 
             declineLabel = new UILabel (new RectangleF (viewWidth - 24 - 35, 36, 44, 10));
             declineLabel.TextColor = A.Color_NachoBlack;
             declineLabel.TextAlignment = UITextAlignment.Center;
             declineLabel.Font = A.Font_AvenirNextRegular10;
             declineLabel.Text = "Decline";
-            responseView.Add (declineLabel);
 
-            messageLabel = new UILabel (new RectangleF (25 + 24 + 10, 15, 100, 24));
+            float messageX = 25 + 24 + 10;
+            messageLabel = new UILabel (new RectangleF (messageX, 15, viewWidth - messageX, 24));
             messageLabel.TextColor = A.Color_NachoBlack;
             messageLabel.TextAlignment = UITextAlignment.Left;
             messageLabel.Font = A.Font_AvenirNextRegular12;
             messageLabel.Hidden = true;
+        }
+
+        /// <summary>
+        /// Show the action bar for a meeting request, with the "Accept", "Tentative", and "Decline" buttons.
+        /// </summary>
+        private void ShowRequestChoicesBar (string UID)
+        {
+            ActionBarCommon ();
+
+            float viewWidth = Frame.Width;
+            UIView responseView = new UIView (new RectangleF (0, 86, viewWidth, 54));
+            responseView.BackgroundColor = UIColor.Clear;
+
+            eventDoesNotExistLabel = new UILabel (new RectangleF (25, 15, viewWidth, 24));
+            eventDoesNotExistLabel.TextColor = A.Color_NachoBlack;
+            eventDoesNotExistLabel.TextAlignment = UITextAlignment.Left;
+            eventDoesNotExistLabel.Text = "This event has been removed from your calendar";
+            eventDoesNotExistLabel.Font = A.Font_AvenirNextRegular12;
+            eventDoesNotExistLabel.Hidden = true;
+            responseView.Add (eventDoesNotExistLabel);
+
+            responseView.Add (acceptButton);
+            responseView.Add (tentativeButton);
+            responseView.Add (declineButton);
+            responseView.Add (acceptLabel);
+            responseView.Add (tentativeLabel);
+            responseView.Add (declineLabel);
+
             responseView.Add (messageLabel);
 
             changeResponseButton = new UIButton (UIButtonType.RoundedRect);
@@ -260,14 +275,17 @@ namespace NachoClient.iOS
             changeResponseButton.Font = A.Font_AvenirNextRegular12;
             changeResponseButton.SizeToFit ();
             changeResponseButton.Frame = new RectangleF (viewWidth - changeResponseButton.Frame.Width - 25, 16, changeResponseButton.Frame.Width, 24);
-            changeResponseButton.SetTitleColor (A.Color_NachoBlue, UIControlState.Normal);
+            changeResponseButton.SetTitleColor (A.Color_SystemBlue, UIControlState.Normal);
             changeResponseButton.Hidden = true;
             changeResponseButton.TouchUpInside += (object sender, EventArgs e) => {
                 RestoreButtons ();
             };
             responseView.Add (changeResponseButton);
 
+            Log.Info (Log.LOG_CALENDAR, "Looking up calendar item by UID...");
             McCalendar calendarItem = McCalendar.QueryByUID (UID);
+            Log.Info (Log.LOG_CALENDAR, "Done looking up calendar item by UID.");
+
             if (null != calendarItem) {
 
                 acceptButton.TouchUpInside += (object sender, EventArgs e) => {
@@ -362,7 +380,11 @@ namespace NachoClient.iOS
             Add (responseView);
         }
 
-        protected void ToggleButtons (NcResponseType r)
+        /// <summary>
+        /// One of the "Accept", "Tentative", or "Decline" buttons has been touched.
+        /// Adjust the UI accordingly.
+        /// </summary>
+        private void ToggleButtons (NcResponseType r)
         {
             if (NcResponseType.Accepted == r) {
                 acceptButton.Selected = true;
@@ -461,7 +483,11 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void RestoreButtons ()
+        /// <summary>
+        /// The "Change my response" button has been touched. Restore the
+        /// "Accept", "Tentative", and "Decline" buttons.
+        /// </summary>
+        private void RestoreButtons ()
         {
             float viewWidth = Frame.Width;
 
@@ -503,9 +529,10 @@ namespace NachoClient.iOS
         }
 
         /// <summary>
-        /// Map meeting uid to calendar record.
+        /// Update the user's status for the meeting and send a meeting response
+        /// message to the organizer.
         /// </summary>
-        void UpdateMeetingStatus (McCalendar c, NcResponseType status)
+        private void UpdateMeetingStatus (McCalendar c, NcResponseType status)
         {
             BackEnd.Instance.RespondCalCmd (c.AccountId, c.Id, status);
 
@@ -517,6 +544,163 @@ namespace NachoClient.iOS
                 var mimeBody = CalendarHelper.CreateMime ("", iCalPart, new List<McAttachment> ());
                 CalendarHelper.SendMeetingResponse (account, (McCalendar)c, mimeBody, status);
             }
+        }
+
+        /// <summary>
+        /// Show the action bar for a meeting response.  The bar doesn't have any
+        /// action; it just shows the status of the person who responded.
+        /// </summary>
+        private void ShowAttendeeResponseBar (DDay.iCal.Event evt)
+        {
+            if (0 == evt.Attendees.Count || null == evt.Attendees [0].ParticipationStatus) {
+                // Malformed meeting reply.  It doesn't include anyone's status.
+                // Leave the action bar blank.
+                return;
+            }
+
+            ActionBarCommon ();
+
+            float viewWidth = Frame.Width;
+            UIView responseView = new UIView (new RectangleF (0, 86, viewWidth, 54));
+            responseView.BackgroundColor = UIColor.Clear;
+
+            var responder = evt.Attendees [0];
+
+            UIButton displayedButton = null;
+            string messageFormat;
+            switch (responder.ParticipationStatus) {
+            case DDay.iCal.ParticipationStatus.Accepted:
+                displayedButton = acceptButton;
+                messageFormat = "{0} has accepted the meeting.";
+                break;
+            case DDay.iCal.ParticipationStatus.Tentative:
+                displayedButton = tentativeButton;
+                messageFormat = "{0} has tentatively accepted the meeting.";
+                break;
+            case DDay.iCal.ParticipationStatus.Declined:
+                displayedButton = declineButton;
+                messageFormat = "{0} has declined the meeting.";
+                break;
+            case DDay.iCal.ParticipationStatus.Delegated:
+                messageFormat = "{0} has delegated the meeting.";
+                break;
+            case DDay.iCal.ParticipationStatus.NeedsAction:
+                messageFormat = "{0} has not yet responded.";
+                break;
+            default:
+                Log.Warn (Log.LOG_CALENDAR, "Unkown meeting response status: {0}", responder.ParticipationStatus);
+                messageFormat = "The status of {0} is unknown.";
+                break;
+            }
+
+            string displayName;
+            if (!string.IsNullOrEmpty (responder.CommonName)) {
+                displayName = responder.CommonName;
+            } else {
+                if (Uri.UriSchemeMailto == responder.Value.Scheme) {
+                    // String the "mailto:" off of the URL so the e-mail address is displayed.
+                    displayName = responder.Value.AbsoluteUri.Substring (Uri.UriSchemeMailto.Length + 1);
+                } else {
+                    displayName = responder.Value.ToString ();
+                }
+            }
+
+            if (null != displayedButton) {
+                displayedButton.Hidden = false;
+                displayedButton.Selected = true;
+                displayedButton.UserInteractionEnabled = false;
+                displayedButton.Frame = new RectangleF (25, 15, 24, 24);
+                responseView.Add (displayedButton);
+            }
+
+            messageLabel.Hidden = false;
+            messageLabel.Text = String.Format (messageFormat, displayName);
+            responseView.Add (messageLabel);
+
+            this.Add (responseView);
+        }
+
+        /// <summary>
+        /// Show the action bar for a meeting cancellation, which has a
+        /// "Remove from calendar" button.
+        /// </summary>
+        private void ShowCancellationBar (string UID)
+        {
+            ActionBarCommon ();
+
+            float viewWidth = Frame.Width;
+            UIView responseView = new UIView (new RectangleF (0, 86, viewWidth, 54));
+            responseView.BackgroundColor = UIColor.Clear;
+
+            Log.Info (Log.LOG_CALENDAR, "Looking up calendar item by UID...");
+            McCalendar calendarItem = McCalendar.QueryByUID (UID);
+            Log.Info (Log.LOG_CALENDAR, "Done looking up calendar item by UID.");
+
+            eventDoesNotExistLabel = new UILabel (new RectangleF (25, 15, viewWidth - 25, 24));
+            eventDoesNotExistLabel.TextColor = A.Color_NachoBlack;
+            eventDoesNotExistLabel.TextAlignment = UITextAlignment.Left;
+            eventDoesNotExistLabel.Text = "This event has been removed from your calendar";
+            eventDoesNotExistLabel.Font = A.Font_AvenirNextRegular12;
+            eventDoesNotExistLabel.Hidden = true;
+            responseView.Add (eventDoesNotExistLabel);
+
+            if (null == calendarItem) {
+
+                eventDoesNotExistLabel.Hidden = false;
+
+            } else {
+
+                // Let the user click either the red cirle X or the words "Remove from calendar."
+                // They both do the same thing.
+
+                declineButton.Hidden = false;
+                declineButton.Selected = false;
+                declineButton.Frame = new RectangleF (25, 15, 24, 24);
+                declineButton.TouchUpInside += (object sender, EventArgs e) => {
+                    RemoveFromCalendarAction (calendarItem);
+                };
+                responseView.Add (declineButton);
+
+                removeFromCalendarButton = new UIButton (UIButtonType.RoundedRect);
+                removeFromCalendarButton.SetTitle ("Remove from calendar", UIControlState.Normal);
+                removeFromCalendarButton.Font = A.Font_AvenirNextRegular12;
+                removeFromCalendarButton.SizeToFit ();
+                removeFromCalendarButton.Frame = new RectangleF (25 + 24 + 10, 16, removeFromCalendarButton.Frame.Width, 24);
+                removeFromCalendarButton.SetTitleColor (A.Color_SystemBlue, UIControlState.Normal);
+                removeFromCalendarButton.Hidden = false;
+                removeFromCalendarButton.TouchUpInside += (object sender, EventArgs e) => {
+                    RemoveFromCalendarAction (calendarItem);
+                };
+                responseView.Add (removeFromCalendarButton);
+            }
+
+            this.Add (responseView);
+        }
+
+        /// <summary>
+        /// The "Remove from calendar" button has been touched. Adjust the UI, and remove
+        /// the calendar entry.
+        /// </summary>
+        private void RemoveFromCalendarAction (McCalendar item)
+        {
+            // Handle the UI changes.
+            declineButton.UserInteractionEnabled = false;
+            removeFromCalendarButton.UserInteractionEnabled = false;
+            eventDoesNotExistLabel.Alpha = 0;
+            eventDoesNotExistLabel.Hidden = false;
+            UIView.Animate (0.2, 0, UIViewAnimationOptions.CurveLinear,
+                () => {
+                    declineButton.Alpha = 0;
+                    removeFromCalendarButton.Alpha = 0;
+                    eventDoesNotExistLabel.Alpha = 1;
+                },
+                () => {
+                    declineButton.Hidden = true;
+                    removeFromCalendarButton.Hidden = true;
+                });
+
+            // Remove the item from the calendar.
+            BackEnd.Instance.DeleteCalCmd (item.AccountId, item.Id);
         }
     }
 }
