@@ -1558,6 +1558,10 @@
     <BundleResource Include="Resources\nav-nachonow-active%402x.png" />
     <BundleResource Include="Resources\email-att-files%402x.png" />
     <BundleResource Include="Resources\email-att-photos%402x.png" />
+    <BundleResource Include="Resources\gen-more%402x.png" />
+    <BundleResource Include="Resources\gen-more-active%402x.png" />
+    <BundleResource Include="Resources\gen-more-activeVertical%402x.png" />
+    <BundleResource Include="Resources\now-addcalevent%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
