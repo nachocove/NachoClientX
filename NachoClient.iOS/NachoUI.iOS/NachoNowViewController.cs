@@ -19,9 +19,9 @@ namespace NachoClient.iOS
     public partial class NachoNowViewController : NcUIViewController, INachoMessageEditorParent, INachoFolderChooserParent, INachoCalendarItemEditorParent, ICalendarTableViewSourceDelegate, INachoDateControllerParent
     {
         public bool wrap = false;
+        public bool Selectable = true;
         public INachoEmailMessages priorityInbox;
         protected CalendarTableViewSource calendarSource;
-        UITapGestureRecognizer carouselTapGestureRecognizer = null;
 
         public iCarousel carouselView;
         protected UITableView calendarTableView;
@@ -76,22 +76,6 @@ namespace NachoClient.iOS
             carouselView.StopAtItemBoundary = true;
             carouselView.ScrollToItemBoundary = true;
             View.AddSubview (carouselView);
-
-            carouselTapGestureRecognizer = new UITapGestureRecognizer ();
-            carouselTapGestureRecognizer.NumberOfTapsRequired = 2;
-            carouselTapGestureRecognizer.AddTarget (this, new MonoTouch.ObjCRuntime.Selector ("CarouselTapSelector:"));
-            carouselTapGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
-                return true;
-            };
-            carouselTapGestureRecognizer.ShouldReceiveTouch += (UIGestureRecognizer r, UITouch t) => {
-                if (t.View is UIControl) {
-                    return false;
-                } else {
-                    return true;
-                }
-            };
-            carouselTapGestureRecognizer.Enabled = true;
-            carouselView.AddGestureRecognizer (carouselTapGestureRecognizer);
 
             calendarTableView = new UITableView ();
             calendarTableView.SeparatorStyle = UITableViewCellSeparatorStyle.SingleLine;
@@ -283,14 +267,6 @@ namespace NachoClient.iOS
             inboxFrame.X = parentFrame.X;
             inboxFrame.Width = parentFrame.Width;
             return inboxFrame;
-        }
-
-  
-
-        [MonoTouch.Foundation.Export ("CarouselTapSelector:")]
-        public void OnDoubleTapCarousel (UIGestureRecognizer sender)
-        {
-            // FIXME: What to do on double tap?
         }
 
         ///  IMessageTableViewSourceDelegate

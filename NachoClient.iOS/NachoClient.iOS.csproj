@@ -1139,6 +1139,7 @@
     <Compile Include="NachoUI.iOS\Support\ExpandableView.cs" />
     <Compile Include="NachoUI.iOS\Support\AttachmentView.cs" />
     <Compile Include="NachoUI.iOS\Support\AttachmentListView.cs" />
+    <Compile Include="NachoUI.iOS\Support\SwipeActionView.cs" />
     <Compile Include="NachoUI.iOS\Support\MessageHeaderView.cs" />
     <Compile Include="NachoUI.iOS\QuickResponseViewController.cs" />
     <Compile Include="NachoUI.iOS\QuickResponseViewController.designer.cs">

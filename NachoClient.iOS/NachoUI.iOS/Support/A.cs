@@ -56,6 +56,10 @@ namespace NachoClient.iOS
         protected static UIColor _Color_NachoSeparator = null;
         protected static UIColor _Color_NachoDarkText = null;
         protected static UIColor _Color_NachoLightText = null;
+        protected static UIColor _Color_NachoSwipeActionRed = null;
+        protected static UIColor _Color_NachoSwipeActionGreen = null;
+        protected static UIColor _Color_NachoSwipeActionBlue = null;
+        protected static UIColor _Color_NachoSwipeActionYellow = null;
 
         public A ()
         {
@@ -474,7 +478,42 @@ namespace NachoClient.iOS
                 return _Color_NachoLightText;
             }
         }
-            
+
+        public static UIColor Color_NachoSwipeActionRed {
+            get {
+                if (null == _Color_NachoSwipeActionRed) {
+                    _Color_NachoSwipeActionRed = UIColor.FromRGB (232, 61, 14);
+                }
+                return _Color_NachoSwipeActionRed;
+            }
+        }
+
+        public static UIColor Color_NachoSwipeActionGreen {
+            get {
+                if (null == _Color_NachoSwipeActionGreen) {
+                    _Color_NachoSwipeActionGreen = UIColor.FromRGB (85, 213, 80);
+                }
+                return _Color_NachoSwipeActionGreen;
+            }
+        }
+
+        public static UIColor Color_NachoSwipeActionBlue {
+            get {
+                if (null == _Color_NachoSwipeActionBlue) {
+                    _Color_NachoSwipeActionBlue = UIColor.FromRGB (0, 0, 255);
+                }
+                return _Color_NachoSwipeActionBlue;
+            }
+        }
+
+        public static UIColor Color_NachoSwipeActionYellow {
+            get {
+                if (null == _Color_NachoSwipeActionYellow) {
+                    _Color_NachoSwipeActionYellow = UIColor.FromRGB (254, 217, 56);
+                }
+                return _Color_NachoSwipeActionYellow;
+            }
+        }
     }
 }
 
