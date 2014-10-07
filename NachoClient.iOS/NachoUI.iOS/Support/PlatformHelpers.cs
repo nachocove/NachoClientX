@@ -87,6 +87,7 @@ namespace NachoClient
             string[] subtype = {
                 "tiff",
                 "jpeg",
+                "jpg",
                 "gif",
                 "png",
                 "x-icon",
