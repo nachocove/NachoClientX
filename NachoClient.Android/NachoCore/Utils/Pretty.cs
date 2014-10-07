@@ -211,6 +211,19 @@ namespace NachoCore.Utils
         }
 
         /// <summary>
+        /// Given an organizer name, return a string
+        /// worthy of being displayed in the files list.
+        /// </summary>
+        static public string OrganizerString (string organizer)
+        {
+            if (null == organizer) {
+                return "Organizer unavailable";
+            } else {
+                return organizer;
+            }
+        }
+
+        /// <summary>
         /// Given "From" (ex: "Steve Scalpone" <steves@nachocove.com>), 
         /// return a string containing just the address.
         /// </summary>

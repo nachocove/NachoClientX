@@ -19,6 +19,8 @@ namespace NachoCore.Model
 
         public DateTime CreatedAt { set; get; }
 
+        public string Contact { set; get; }
+
     }
     // If SQLite.Net would tolerate an abstract class, we'd be one.
     // hybrid - needs a singleton Instance to make virtual static functions.
@@ -279,14 +281,14 @@ namespace NachoCore.Model
             return File.ReadAllBytes (GetFilePath ());
         }
 
-        public static List<NcFileIndex> GetAllFiles ()
+        public static List<NcFileIndex> GetAllFiles (int accountId)
         {
             return (NcModel.Instance.Db.Query<NcFileIndex> (
                 "SELECT t1.Id, t1.DisplayName, t1.CreatedAt, t1.FileType " +
-                "FROM( SELECT Id, DisplayName, CreatedAt, 0 AS FileType FROM McAttachment " +
+                "FROM( SELECT Id, DisplayName, CreatedAt, 0 AS FileType FROM McAttachment WHERE AccountId=? " +
                 "UNION SELECT Id, DisplayName, CreatedAt, 1 AS FileType FROM McNote " +
-                "UNION SELECT Id, DisplayName, CreatedAt, 2 AS FileType FROM McDocument) t1 ORDER BY LOWER(t1.DisplayName) + 0," +
-                "LOWER(t1.DisplayName)"
+                "UNION SELECT Id, DisplayName, CreatedAt, 2 AS FileType FROM McDocument WHERE AccountId=? ) " +
+                "t1 ORDER BY LOWER(t1.DisplayName) + 0, LOWER(t1.DisplayName)", accountId
             ));
         }
 
