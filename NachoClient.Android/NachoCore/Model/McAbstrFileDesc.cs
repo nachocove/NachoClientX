@@ -9,11 +9,25 @@ using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
+    public class NcFileIndex
+    {
+        public int Id { set; get; }
+
+        public string DisplayName { set; get; }
+
+        public int FileType { set; get; }
+
+        public DateTime CreatedAt { set; get; }
+
+        public string Contact { set; get; }
+
+    }
     // If SQLite.Net would tolerate an abstract class, we'd be one.
     // hybrid - needs a singleton Instance to make virtual static functions.
     // Derived classes must implement singleton logic (C# FAIL).
     public class McAbstrFileDesc : McAbstrObjectPerAcc
     {
+
         [Indexed]
         public bool IsValid { get; set; }
 
@@ -116,7 +130,7 @@ namespace NachoCore.Model
         protected void CompleteInsertDuplicate (McAbstrFileDesc srcDesc)
         {
             Prep ();
-            File.Copy (GetFilePath (), srcDesc.GetFilePath ());
+            File.Copy (srcDesc.GetFilePath (), GetFilePath ());
             UpdateSaveFinish ();
         }
 
@@ -265,6 +279,17 @@ namespace NachoCore.Model
         public byte[] GetContentsByteArray ()
         {
             return File.ReadAllBytes (GetFilePath ());
+        }
+
+        public static List<NcFileIndex> GetAllFiles (int accountId)
+        {
+            return (NcModel.Instance.Db.Query<NcFileIndex> (
+                "SELECT t1.Id, t1.DisplayName, t1.CreatedAt, t1.FileType " +
+                "FROM( SELECT Id, DisplayName, CreatedAt, 0 AS FileType FROM McAttachment WHERE AccountId=? " +
+                "UNION SELECT Id, DisplayName, CreatedAt, 1 AS FileType FROM McNote " +
+                "UNION SELECT Id, DisplayName, CreatedAt, 2 AS FileType FROM McDocument WHERE AccountId=? ) " +
+                "t1 ORDER BY LOWER(t1.DisplayName) + 0, LOWER(t1.DisplayName)", accountId
+            ));
         }
 
         public override int Delete ()

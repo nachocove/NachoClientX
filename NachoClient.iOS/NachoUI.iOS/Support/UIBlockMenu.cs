@@ -24,11 +24,20 @@ namespace NachoClient.iOS
         protected List<UIButton> TheBlockButtons = new List<UIButton> ();
         protected List<RectangleF> FrameGrid = new List<RectangleF> ();
 
-        public UIBlockMenu (List<Block> TheBlocks, float width)
+        protected UIBarButtonItem[] rightBarButtons;
+        protected UIBarButtonItem[] leftBarButtons;
+        protected UIBarButtonItem menuButton;
+
+        protected UIViewController owner;
+        protected UIView menuView;
+
+        public UIBlockMenu (UIViewController owner, List<Block> TheBlocks, float width)
         {
-            if (null != TheBlocks) {
-                this.TheBlocks = TheBlocks;
-            }
+            NcAssert.NotNull (owner);
+            this.owner = owner;
+
+            NcAssert.NotNull (TheBlocks);
+            this.TheBlocks = TheBlocks;
 
             ViewWidth = width;
             BLOCK_WIDTH = ViewWidth / 3;
@@ -53,8 +62,6 @@ namespace NachoClient.iOS
 
         protected void CreateView ()
         {
-            this.BackgroundColor = A.Color_NachoGreen.ColorWithAlpha (.98f);
-
             float width = 0;
             float height = 0;
 
@@ -70,44 +77,60 @@ namespace NachoClient.iOS
                 height = ROW_HEIGHT;
             }
 
-            this.Frame = new RectangleF (ViewWidth - width, 0, width, height);
+            this.Frame = new RectangleF (0, 0, owner.View.Frame.Width, owner.View.Frame.Height);
+            this.BackgroundColor = UIColor.Clear;
+            this.Alpha = 0.0f;
+
+            menuView = new UIView(new RectangleF (ViewWidth - width, -height, width, height));
+            menuView.BackgroundColor = A.Color_NachoGreen;
+            this.AddSubview (menuView);
 
             foreach (Block b in TheBlocks) {
                 UIButton buttonBlock = BlockButton (b);
                 TheBlockButtons.Add (buttonBlock);
-                this.Add (buttonBlock);
+                menuView.AddSubview (buttonBlock);
             }
+
+            menuButton = new UIBarButtonItem ();
+            Util.SetOriginalImageForButton (menuButton, "gen-more-active");
+            menuButton.Clicked += (object sender, EventArgs e) => {
+                MenuTapped();
+            };
+
+            UIView tapCoverView = new UIView (new RectangleF (0, height, ViewWidth, this.Frame.Height - height));
+            UITapGestureRecognizer tap = new UITapGestureRecognizer (() => this.MenuTapped());
+            tapCoverView.AddGestureRecognizer (tap);
+            this.AddSubview (tapCoverView);
 
             LayoutView ();
             AddSeparators ();
-            this.Hidden = true;
         }
 
         protected void AddSeparators ()
         {
             switch (TheBlocks.Count) {
             case 2:
-                Util.AddVerticalLine (BLOCK_WIDTH, Y_PADDING, SEPARATOR_LENGTH, UIColor.LightGray, this);
+                Util.AddVerticalLine (BLOCK_WIDTH, Y_PADDING, SEPARATOR_LENGTH, UIColor.LightGray, menuView);
                 break;
             case 3:
-                Util.AddVerticalLine (BLOCK_WIDTH, Y_PADDING, SEPARATOR_LENGTH, UIColor.LightGray, this);
-                Util.AddVerticalLine (BLOCK_WIDTH * 2, Y_PADDING, SEPARATOR_LENGTH, UIColor.LightGray, this);
+                Util.AddVerticalLine (BLOCK_WIDTH, Y_PADDING, SEPARATOR_LENGTH, UIColor.LightGray, menuView);
+                Util.AddVerticalLine (BLOCK_WIDTH * 2, Y_PADDING, SEPARATOR_LENGTH, UIColor.LightGray, menuView);
                 break;
             case 4:
-                Util.AddVerticalLine (BLOCK_WIDTH, Y_PADDING, SEPARATOR_LENGTH, UIColor.LightGray, this);
-                Util.AddVerticalLine (BLOCK_WIDTH, Y_PADDING + ROW_HEIGHT, SEPARATOR_LENGTH, UIColor.LightGray, this);
-                Util.AddHorizontalLine (Y_PADDING, ROW_HEIGHT, SEPARATOR_LENGTH, UIColor.LightGray, this);
-                Util.AddHorizontalLine (Y_PADDING + BLOCK_WIDTH, ROW_HEIGHT, SEPARATOR_LENGTH, UIColor.LightGray, this);
+                Util.AddVerticalLine (BLOCK_WIDTH, Y_PADDING, SEPARATOR_LENGTH, UIColor.LightGray, menuView);
+                Util.AddVerticalLine (BLOCK_WIDTH, Y_PADDING + ROW_HEIGHT, SEPARATOR_LENGTH, UIColor.LightGray, menuView);
+                Util.AddHorizontalLine (Y_PADDING, ROW_HEIGHT, SEPARATOR_LENGTH, UIColor.LightGray, menuView);
+                Util.AddHorizontalLine (Y_PADDING + BLOCK_WIDTH, ROW_HEIGHT, SEPARATOR_LENGTH, UIColor.LightGray, menuView);
                 break;
             case 5:
             case 6:
-                Util.AddVerticalLine (BLOCK_WIDTH, Y_PADDING, SEPARATOR_LENGTH, UIColor.LightGray, this);
-                Util.AddVerticalLine (BLOCK_WIDTH, Y_PADDING + ROW_HEIGHT, SEPARATOR_LENGTH, UIColor.LightGray, this);
-                Util.AddVerticalLine (BLOCK_WIDTH * 2, Y_PADDING, SEPARATOR_LENGTH, UIColor.LightGray, this);
-                Util.AddVerticalLine (BLOCK_WIDTH * 2, Y_PADDING + ROW_HEIGHT, SEPARATOR_LENGTH, UIColor.LightGray, this);
-                Util.AddHorizontalLine (Y_PADDING, ROW_HEIGHT, SEPARATOR_LENGTH, UIColor.LightGray, this);
-                Util.AddHorizontalLine (Y_PADDING + BLOCK_WIDTH, ROW_HEIGHT, SEPARATOR_LENGTH, UIColor.LightGray, this);
-                Util.AddHorizontalLine (Y_PADDING + BLOCK_WIDTH * 2, ROW_HEIGHT, SEPARATOR_LENGTH, UIColor.LightGray, this);
+                Util.AddVerticalLine (BLOCK_WIDTH, Y_PADDING, SEPARATOR_LENGTH, UIColor.LightGray, menuView);
+                Util.AddVerticalLine (BLOCK_WIDTH, Y_PADDING + ROW_HEIGHT, SEPARATOR_LENGTH, UIColor.LightGray, menuView);
+                Util.AddVerticalLine (BLOCK_WIDTH * 2, Y_PADDING, SEPARATOR_LENGTH, UIColor.LightGray, menuView);
+                Util.AddVerticalLine (BLOCK_WIDTH * 2, Y_PADDING + ROW_HEIGHT, SEPARATOR_LENGTH, UIColor.LightGray, menuView);
+                Util.AddHorizontalLine (Y_PADDING, ROW_HEIGHT, SEPARATOR_LENGTH, UIColor.LightGray, menuView);
+                Util.AddHorizontalLine (Y_PADDING + BLOCK_WIDTH, ROW_HEIGHT, SEPARATOR_LENGTH, UIColor.LightGray, menuView);
+                Util.AddHorizontalLine (Y_PADDING + BLOCK_WIDTH * 2, ROW_HEIGHT, SEPARATOR_LENGTH, UIColor.LightGray, menuView);
                 break;
             } 
         }
@@ -129,14 +152,30 @@ namespace NachoClient.iOS
             }
         }
 
-        public void Display ()
+        public void MenuTapped ()
         {
-            this.Hidden = false;
-        }
+            if (this.Alpha == 0.0f) {
+                rightBarButtons = owner.NavigationItem.RightBarButtonItems;
+                leftBarButtons = owner.NavigationItem.LeftBarButtonItems;
 
-        public void Dismiss ()
-        {
-            this.Hidden = true;
+                owner.NavigationItem.SetRightBarButtonItems (new UIBarButtonItem[]{ menuButton }, true);
+                owner.NavigationItem.SetLeftBarButtonItems (new UIBarButtonItem[]{new UIBarButtonItem(new UIView()), new UIBarButtonItem(new UIView())}, true);
+
+                UIView.Animate (.3, () => {
+                    this.Alpha = 1.0f;
+                    menuView.Frame = new RectangleF (menuView.Frame.X, menuView.Frame.Y + menuView.Frame.Height, menuView.Frame.Width, menuView.Frame.Height);
+                });
+
+            } else {
+                owner.NavigationItem.SetRightBarButtonItems (rightBarButtons, true);
+                owner.NavigationItem.SetLeftBarButtonItems (leftBarButtons, true);
+                owner.NavigationItem.LeftBarButtonItem.Enabled = true;
+
+                UIView.Animate (.3, () => {
+                    this.Alpha = 0.0f;
+                    menuView.Frame = new RectangleF (menuView.Frame.X, menuView.Frame.Y - menuView.Frame.Height, menuView.Frame.Width, menuView.Frame.Height);
+                });
+            }
         }
 
         protected UIButton BlockButton (Block viewBlock)
@@ -166,6 +205,7 @@ namespace NachoClient.iOS
             if (null != viewBlock.blockAction) {
                 blockButton.TouchUpInside += (object sender, EventArgs e) => {
                     viewBlock.blockAction.Invoke();
+                    MenuTapped();
                 };
             }
 

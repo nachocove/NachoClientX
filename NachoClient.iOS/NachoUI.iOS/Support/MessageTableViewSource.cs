@@ -105,8 +105,8 @@ namespace NachoClient.iOS
         }
 
         const float COMPACT_ROW_HEIGHT = 69.0f;
-        const float NORMAL_ROW_HEIGHT = 116.0f;
-        const float DATED_ROW_HEIGHT = 141.0f;
+        const float NORMAL_ROW_HEIGHT = 126.0f;
+        const float DATED_ROW_HEIGHT = 161.0f;
 
         protected float HeightForMessage (McEmailMessage message)
         {
@@ -156,15 +156,11 @@ namespace NachoClient.iOS
 
         protected const int USER_IMAGE_TAG = 99101;
         protected const int USER_LABEL_TAG = 99102;
-        protected const int USER_CHILI_TAG = 99103;
-        protected const int USER_CHECKMARK_TAG = 99104;
-        protected const int FROM_TAG = 99105;
-        protected const int SUBJECT_TAG = 99106;
-        protected const int PREVIEW_TAG = 99107;
-        protected const int REMINDER_ICON_TAG = 99108;
-        protected const int REMINDER_TEXT_TAG = 99109;
-        protected const int ATTACHMENT_TAG = 99110;
-        protected const int RECEIVED_DATE_TAG = 99111;
+        protected const int USER_CHECKMARK_TAG = 99103;
+        protected const int PREVIEW_TAG = 99104;
+        protected const int REMINDER_ICON_TAG = 99105;
+        protected const int REMINDER_TEXT_TAG = 99106;
+        protected const int MESSAGE_HEADER_TAG = 99107;
 
         [MonoTouch.Foundation.Export ("MultiSelectTapSelector:")]
         public void MultiSelectTapSelector (UIGestureRecognizer sender)
@@ -324,35 +320,13 @@ namespace NachoClient.iOS
                 multiSelectTap.CancelsTouchesInView = true; // prevents the row from being selected
                 imageViews.AddGestureRecognizer (multiSelectTap);
 
-                // User chili view
-                var chiliY = 72;
-                var userChiliView = new UIImageView (new RectangleF (23, chiliY, 24, 24));
-                userChiliView.Image = UIImage.FromBundle ("icn-red-chili-small");
-                userChiliView.Tag = USER_CHILI_TAG;
-                cell.ContentView.AddSubview (userChiliView);
+                var messageHeaderView = new MessageHeaderView (new RectangleF (65, 15, cellWidth - 65 - 15, 60));
+                messageHeaderView.CreateView ();
+                messageHeaderView.Tag = MESSAGE_HEADER_TAG;
+                cell.ContentView.AddSubview (messageHeaderView);
 
-                // From label view
-                // Font will vary bold or regular, depending on isRead.
-                // Size fields will be recalculated after text is known.
-                var fromLabelView = new UILabel (new RectangleF (65, 20, 150, 20));
-                fromLabelView.Font = A.Font_AvenirNextDemiBold17;
-                fromLabelView.TextColor = A.Color_0F424C;
-                fromLabelView.Tag = FROM_TAG;
-                cell.ContentView.AddSubview (fromLabelView);
-
-                // Subject label view
-                // Size fields will be recalculated after text is known.
-                // TODO: Confirm 'y' of Subject
-                var subjectLabelView = new UILabel (new RectangleF (65, 40, cellWidth - 15 - 65, 20));
-                subjectLabelView.LineBreakMode = UILineBreakMode.TailTruncation;
-                subjectLabelView.Font = A.Font_AvenirNextMedium14;
-                subjectLabelView.TextColor = A.Color_0F424C;
-                subjectLabelView.Tag = SUBJECT_TAG;
-                cell.ContentView.AddSubview (subjectLabelView);
-
-                // Summary label view
-                // Size fields will be recalculated after text is known
-                var previewLabelView = new UILabel (new RectangleF (65, 60, cellWidth - 15 - 65, 60));
+                // Preview label view
+                var previewLabelView = new UILabel (new RectangleF (65, 70, cellWidth - 15 - 65, 60));
                 previewLabelView.ContentMode = UIViewContentMode.TopLeft;
                 previewLabelView.Font = A.Font_AvenirNextRegular14;
                 previewLabelView.TextColor = A.Color_NachoDarkText;
@@ -361,33 +335,17 @@ namespace NachoClient.iOS
                 cell.ContentView.AddSubview (previewLabelView);
 
                 // Reminder image view
-                var reminderImageView = new UIImageView (new RectangleF (65, 119, 12, 12));
+                var reminderImageView = new UIImageView (new RectangleF (65, 129, 12, 12));
                 reminderImageView.Image = UIImage.FromBundle ("inbox-icn-deadline");
                 reminderImageView.Tag = REMINDER_ICON_TAG;
                 cell.ContentView.AddSubview (reminderImageView);
 
                 // Reminder label view
-
-                var reminderLabelView = new UILabel (new RectangleF (87, 115, 230, 20));
+                var reminderLabelView = new UILabel (new RectangleF (87, 125, 230, 20));
                 reminderLabelView.Font = A.Font_AvenirNextRegular14;
                 reminderLabelView.TextColor = A.Color_9B9B9B;
                 reminderLabelView.Tag = REMINDER_TEXT_TAG;
                 cell.ContentView.AddSubview (reminderLabelView);
-
-                // Attachment image view
-                // Attachment 'x' will be adjusted to be left of date received field
-                var attachmentImageView = new UIImageView (new RectangleF (200, 18, 16, 16));
-                attachmentImageView.Image = UIImage.FromBundle ("inbox-icn-attachment");
-                attachmentImageView.Tag = ATTACHMENT_TAG;
-                cell.ContentView.AddSubview (attachmentImageView);
-
-                // Received label view
-                var receivedLabelView = new UILabel (new RectangleF (220, 18, 100, 20));
-                receivedLabelView.Font = A.Font_AvenirNextRegular14;
-                receivedLabelView.TextColor = A.Color_9B9B9B;
-                receivedLabelView.TextAlignment = UITextAlignment.Right;
-                receivedLabelView.Tag = RECEIVED_DATE_TAG;
-                cell.ContentView.AddSubview (receivedLabelView);
 
                 return cell;
             }
@@ -493,23 +451,22 @@ namespace NachoClient.iOS
                 userLabelView.BackgroundColor = Util.ColorForUser (message.cachedFromColor);
             }
 
-            // User chili view
-            var userChiliView = cell.ContentView.ViewWithTag (USER_CHILI_TAG) as UIImageView;
-            userChiliView.Hidden = (compactMode || (!message.isHot ()));
+            var messageHeaderView = cell.ContentView.ViewWithTag (MESSAGE_HEADER_TAG) as MessageHeaderView;
+            messageHeaderView.ConfigureView (message);
+
+            messageHeaderView.OnClick = (object sender, EventArgs e) => {
+                message.ToggleHotOrNot();
+                messageHeaderView.ConfigureView(message);
+            };
 
             // User checkmark view
             ConfigureMultiSelectCell (cell);
 
-            // Subject label view
-            var subjectLabelView = cell.ContentView.ViewWithTag (SUBJECT_TAG) as UILabel;
-            subjectLabelView.Text = Pretty.SubjectString (message.Subject);
-            subjectLabelView.Hidden = false;
 
             // Preview label view
             var previewLabelView = cell.ContentView.ViewWithTag (PREVIEW_TAG) as UILabel;
             previewLabelView.Hidden = compactMode;
             if (!compactMode) {
-                previewLabelView.Frame = new RectangleF (65, 60, cellWidth - 15 - 65, 60);
                 var rawPreview = message.GetBodyPreviewOrEmpty ();
                 var cookedPreview = System.Text.RegularExpressions.Regex.Replace (rawPreview, @"\s+", " ");
                 previewLabelView.AttributedText = new NSAttributedString (cookedPreview);
@@ -526,33 +483,7 @@ namespace NachoClient.iOS
                 reminderImageView.Hidden = true;
                 reminderLabelView.Hidden = true;
             }
-
-            // Received label view
-            var receivedLabelView = cell.ContentView.ViewWithTag (RECEIVED_DATE_TAG) as UILabel;
-            receivedLabelView.Text = Pretty.CompactDateString (message.DateReceived);
-            receivedLabelView.SizeToFit ();
-            var receivedLabelRect = receivedLabelView.Frame;
-            receivedLabelRect.X = cellWidth - 15 - receivedLabelRect.Width;
-            receivedLabelRect.Height = 20;
-            receivedLabelView.Frame = receivedLabelRect;
-            receivedLabelView.Hidden = false;
-
-            // Attachment image view
-            var attachmentImageView = cell.ContentView.ViewWithTag (ATTACHMENT_TAG) as UIImageView;
-            attachmentImageView.Hidden = !message.cachedHasAttachments;
-            var attachmentImageRect = attachmentImageView.Frame;
-            attachmentImageRect.X = receivedLabelRect.X - 10 - 16;
-            attachmentImageView.Frame = attachmentImageRect;
-
-            // From label view
-            var fromLabelView = cell.ContentView.ViewWithTag (FROM_TAG) as UILabel;
-            var fromLabelRect = fromLabelView.Frame;
-            fromLabelRect.Width = attachmentImageRect.X - 65;
-            fromLabelView.Frame = fromLabelRect;
-            fromLabelView.Text = Pretty.SenderString (message.From);
-            fromLabelView.Font = (message.IsRead ? A.Font_AvenirNextRegular17 : A.Font_AvenirNextDemiBold17);
-            fromLabelView.Hidden = false;
-
+                
             ConfigureSwipes (cell as MCSwipeTableViewCell, messageThread);
             ConfigureMultiSelectSwipe (cell as MCSwipeTableViewCell);
         }

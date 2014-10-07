@@ -405,6 +405,11 @@ namespace NachoClient.iOS
         {
             var image = PlatformHelpers.RenderImage (part);
 
+            if (null == image) {
+                Log.Error (Log.LOG_UI, "Unable to render {0}", part.ContentType);
+                return;
+            }
+
             float width = Frame.Width;
             float height = image.Size.Height * (width / image.Size.Width);
             image = image.Scale (new SizeF (width, height));

@@ -19,10 +19,15 @@ namespace NachoCore.Utils
         static public string SubjectString (String Subject)
         {
             if (null == Subject) {
-                return "No subject";
+                return "";
             } else {
                 return Subject;
             }
+        }
+
+        static public string NoSubjectString()
+        {
+            return "No subject";
         }
 
         /// <summary>
@@ -202,6 +207,19 @@ namespace NachoCore.Utils
                 return Sender;
             } else {
                 return address.Name;
+            }
+        }
+
+        /// <summary>
+        /// Given an organizer name, return a string
+        /// worthy of being displayed in the files list.
+        /// </summary>
+        static public string OrganizerString (string organizer)
+        {
+            if (null == organizer) {
+                return "Organizer unavailable";
+            } else {
+                return organizer;
             }
         }
 

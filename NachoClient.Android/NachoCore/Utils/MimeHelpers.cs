@@ -470,14 +470,21 @@ namespace NachoCore.Utils
         }
 
         /// <summary>
-        /// Renders the best alternative.
-        /// http://en.wikipedia.org/wiki/MIME#Alternative
+        /// Pick the best alternative to be displayed, which is always supposed to be
+        /// the last one in the list.
         /// </summary>
+        /// <description>
+        /// If the best alternative is a calendar entry, then also select the next best
+        /// item, since we want to display that one as well.
+        /// </description>
         protected static void MimeBestAlternativeDisplayList (Multipart multipart, ref List<MimeEntity> list)
         {
-            var e = multipart.Last ();
-            MimeEntityDisplayList (e, ref list);
-
+            var last = multipart.Last ();
+            MimeEntityDisplayList (last, ref list);
+            if (1 < multipart.Count && last.ContentType.Matches ("text", "calendar")) {
+                var nextToLast = multipart [multipart.Count - 2];
+                MimeEntityDisplayList (nextToLast, ref list);
+            }
         }
 
         private static void FixTnefMessage (MimeMessage tnefMessage)

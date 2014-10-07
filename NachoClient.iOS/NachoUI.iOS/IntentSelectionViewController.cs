@@ -121,6 +121,7 @@ namespace NachoClient.iOS
                 var vc = (MessagePriorityViewController)segue.DestinationViewController;
                 vc.SetOwner (dateOwner);
                 vc.SetIntentSelector (this);
+                vc.SetDateControllerType (DateControllerType.Intent);
                 return;
             }
 
