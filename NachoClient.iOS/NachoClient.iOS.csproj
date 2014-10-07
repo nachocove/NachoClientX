@@ -1140,6 +1140,7 @@
     <Compile Include="NachoUI.iOS\Support\ExpandableView.cs" />
     <Compile Include="NachoUI.iOS\Support\AttachmentView.cs" />
     <Compile Include="NachoUI.iOS\Support\AttachmentListView.cs" />
+    <Compile Include="NachoUI.iOS\Support\MessageHeaderView.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -1562,6 +1563,8 @@
     <BundleResource Include="Resources\gen-more-active%402x.png" />
     <BundleResource Include="Resources\gen-more-activeVertical%402x.png" />
     <BundleResource Include="Resources\now-addcalevent%402x.png" />
+    <BundleResource Include="Resources\email-hot%402x.png" />
+    <BundleResource Include="Resources\email-not-hot%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
