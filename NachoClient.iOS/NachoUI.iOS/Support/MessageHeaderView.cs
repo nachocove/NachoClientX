@@ -21,9 +21,11 @@ namespace NachoClient.iOS
         {
         }
 
-        public MessageHeaderView(RectangleF rect) : base(rect)
+        public MessageHeaderView (RectangleF rect) : base (rect)
         {
         }
+
+        public EventHandler OnClick;
 
         const int FROM_TAG = 881;
         const int SUBJECT_TAG = 882;
@@ -57,6 +59,15 @@ namespace NachoClient.iOS
             chiliImageView.Tag = USER_CHILI_TAG;
             this.AddSubview (chiliImageView);
 
+            chiliImageView.UserInteractionEnabled = true;
+            var chiliTapGestureRecognizer = new UITapGestureRecognizer (new NSAction (() => {
+                OnClick(null, null);
+            }));
+            chiliTapGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
+                return true;
+            };
+            chiliImageView.AddGestureRecognizer (chiliTapGestureRecognizer);
+
             // Subject label view has a line to itself
             var subjectLabelView = new UILabel (new RectangleF (leftMargin, 20, parentWidth - leftMargin - rightMargin, 20));
             subjectLabelView.LineBreakMode = UILineBreakMode.TailTruncation;
@@ -87,7 +98,7 @@ namespace NachoClient.iOS
             fromLabelView.Font = (message.IsRead ? A.Font_AvenirNextRegular17 : A.Font_AvenirNextDemiBold17);
             fromLabelView.Hidden = false;
 
-            // Chili image view - nothing to do. It is also shown
+            // Chili image view
             var chiliImageView = this.ViewWithTag (USER_CHILI_TAG) as UIImageView;
             var chiliImageIcon = (message.isHot () ? "email-hot" : "email-not-hot");
             using (var image = UIImage.FromBundle (chiliImageIcon)) {
@@ -126,6 +137,8 @@ namespace NachoClient.iOS
             attachmentImageRect.X = receivedLabelView.Frame.Right + 10;
             attachmentImageView.Frame = attachmentImageRect;
         }
+
+
     }
 }
 

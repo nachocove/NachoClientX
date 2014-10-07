@@ -454,6 +454,11 @@ namespace NachoClient.iOS
             var messageHeaderView = cell.ContentView.ViewWithTag (MESSAGE_HEADER_TAG) as MessageHeaderView;
             messageHeaderView.ConfigureView (message);
 
+            messageHeaderView.OnClick = (object sender, EventArgs e) => {
+                message.ToggleHotOrNot();
+                messageHeaderView.ConfigureView(message);
+            };
+
             // User checkmark view
             ConfigureMultiSelectCell (cell);
 

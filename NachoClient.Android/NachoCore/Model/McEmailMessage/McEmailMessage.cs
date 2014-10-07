@@ -482,8 +482,20 @@ namespace NachoCore.Model
 
         public const double minHotScore = 0.5;
 
+        /// <summary>
+        /// Returns true if this message is hot or if the user has said it is hot.
+        /// The UserAction comes into play after the user sets hot/not but before
+        /// the brain re-calculates hotness.
+        /// </summary>
+        /// <returns><c>true</c>, if the message is hot, <c>false</c> otherwise.</returns>
         public bool isHot ()
         {
+            if (0 < UserAction) {
+                return true;
+            }
+            if (0 > UserAction) {
+                return false;
+            }
             return (minHotScore < this.Score);
         }
 
