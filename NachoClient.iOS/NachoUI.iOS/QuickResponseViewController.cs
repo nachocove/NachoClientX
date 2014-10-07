@@ -26,16 +26,16 @@ namespace NachoClient.iOS
 
 		}
 
-        public override void ViewDidLoad ()
-        {
-            base.ViewDidLoad ();
-            CreateView ();
-        }
-
         public QuickResponseViewController (NcQuickResponse.QRTypeEnum whatType, ref McEmailMessage emailMessage)
         {
             ncQuick = new NcQuickResponse (whatType);
             this.emailMessage = emailMessage;
+        }
+
+        public override void ViewDidLoad ()
+        {
+            base.ViewDidLoad ();
+            CreateView ();
         }
 
         public void SetProperties (NcQuickResponse.QRTypeEnum whatType, ref McEmailMessage emailMessage)
@@ -110,6 +110,5 @@ namespace NachoClient.iOS
             }
             this.Add (qrView);
         }
-
 	}
 }
