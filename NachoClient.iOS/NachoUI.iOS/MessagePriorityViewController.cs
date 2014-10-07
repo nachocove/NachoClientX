@@ -17,6 +17,7 @@ namespace NachoClient.iOS
         public McEmailMessageThread thread;
         protected INachoDateControllerParent owner;
         protected IntentSelectionViewController intentSelector;
+        protected DateControllerType dateControllerType = DateControllerType.Defer;
 
         const float BUTTON_SIZE = 64;
         const float BUTTON_LABEL_HEIGHT = 40;
@@ -33,6 +34,11 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
             CreateView ();
+        }
+
+        public void SetDateControllerType (DateControllerType type)
+        {
+            this.dateControllerType = type;
         }
 
         public void SetIntentSelector (IntentSelectionViewController selector)
@@ -56,7 +62,11 @@ namespace NachoClient.iOS
             priorityView.Add (dismissButton);
 
             UILabel viewTitle = new UILabel (new RectangleF (priorityView.Frame.Width / 2 - 75, yOffset, 150, 25));
-            viewTitle.Text = "Defer Message";
+            if (DateControllerType.Defer == dateControllerType) {
+                viewTitle.Text = "Defer Message";
+            } else {
+                viewTitle.Text = "Pick A Date";
+            }
             viewTitle.Font = A.Font_AvenirNextDemiBold17;
             viewTitle.TextColor = UIColor.White;
             viewTitle.TextAlignment = UITextAlignment.Center;
@@ -70,13 +80,17 @@ namespace NachoClient.iOS
 
             yOffset = sectionSeparator.Frame.Bottom + 20;
 
-            UILabel messageSubject = new UILabel (new RectangleF (30, yOffset, View.Frame.Width - 60, 25));
-            messageSubject.Text = "Message Subject Goes Here";
-            messageSubject.Font = A.Font_AvenirNextRegular17;
-            messageSubject.TextColor = UIColor.White;
-            priorityView.Add (messageSubject);
+            if (DateControllerType.Defer == dateControllerType) {
+                UILabel messageSubject = new UILabel (new RectangleF (30, yOffset, View.Frame.Width - 60, 25));
+                messageSubject.Text = thread.GetEmailMessage(0).Subject;
+                messageSubject.Font = A.Font_AvenirNextRegular17;
+                messageSubject.TextColor = UIColor.White;
+                priorityView.Add (messageSubject);
 
-            yOffset = messageSubject.Frame.Bottom + 60;
+                yOffset = messageSubject.Frame.Bottom + 60;
+            } else {
+                yOffset += 40;
+            }
 
             var buttonInfoList = new List<ButtonInfo> (new ButtonInfo[] {
                 new ButtonInfo ("Later Today", "modal-later-today", () => DateSelected(MessageDeferralType.Later, DateTime.MinValue)),
@@ -84,10 +98,10 @@ namespace NachoClient.iOS
                 new ButtonInfo ("Tomorrow", "modal-tomorrow", () => DateSelected(MessageDeferralType.Tomorrow, DateTime.MinValue)),
                 new ButtonInfo (null, null, null),
                 new ButtonInfo ("This Week", "modal-this-week", () => DateSelected(MessageDeferralType.NextWeek, DateTime.MinValue)),
-                new ButtonInfo ("Next Week", "modal-next-week", () => DateSelected(MessageDeferralType.NextMonth, DateTime.MinValue)),
+                new ButtonInfo ("Next Week", "modal-next-week", () => DateSelected(MessageDeferralType.NextWeek, DateTime.MinValue)),
                 new ButtonInfo ("Pick Date", "modal-pick-date", () =>  PerformSegue ("MessagePriorityToDatePicker", this)),
                 new ButtonInfo (null, null, null),
-                new ButtonInfo ("Forever", "modal-forever", () => DateSelected(MessageDeferralType.None, DateTime.MinValue)),
+                new ButtonInfo ("Forever", "modal-forever", () => DateSelected(MessageDeferralType.Forever, DateTime.MinValue)),
                 new ButtonInfo ("None", "modal-none", () => DateSelected(MessageDeferralType.None, DateTime.MinValue)),
                 null,
             });
@@ -142,6 +156,7 @@ namespace NachoClient.iOS
         {
             owner = o;
         }
+
 
         public void DimissDateController (bool animated, NSAction action)
         {
