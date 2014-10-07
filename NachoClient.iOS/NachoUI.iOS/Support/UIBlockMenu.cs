@@ -205,6 +205,7 @@ namespace NachoClient.iOS
             if (null != viewBlock.blockAction) {
                 blockButton.TouchUpInside += (object sender, EventArgs e) => {
                     viewBlock.blockAction.Invoke();
+                    MenuTapped();
                 };
             }
 
