@@ -32,21 +32,19 @@ namespace NachoClient.iOS
         static List<UIBarButtonItem> preventBarButtonGC;
         NachoNowViewController owner;
 
-        // Colors for swipe action buttons 
-        private static UIColor DELETE_COLOR = new UIColor (232.0f / 255.0f, 61.0f / 255.0f, 14.0f / 255.0f, 1.0f); // red
-        private static UIColor ARCHIVE_COLOR = new UIColor (85.0f / 255.0f, 213.0f / 255.0f, 80.0f / 255.0f, 1.0f); // green
-        private static UIColor SAVE_COLOR = new UIColor (0.0f / 255.0f, 0.0f / 255.0f, 200.0f / 255.0f, 1.0f); // blue
-        private static UIColor DEFER_COLOR = new UIColor (254.0f / 255.0f, 217.0f / 255.0f, 56.0f / 255.0f, 1.0f); // yellow
-
         // Pre-made swipe action descriptors
         private static SwipeActionDescriptor ARCHIVE_BUTTON =
-            new SwipeActionDescriptor (0.25f, UIImage.FromBundle ("email-archive-gray"), "Archive", ARCHIVE_COLOR);
+            new SwipeActionDescriptor (0.25f, UIImage.FromBundle ("email-archive-gray"),
+                "Archive", A.Color_NachoSwipeActionRed);
         private static SwipeActionDescriptor SAVE_BUTTON =
-            new SwipeActionDescriptor (0.25f, UIImage.FromBundle ("email-putintofolder-gray"), "Save", SAVE_COLOR);
+            new SwipeActionDescriptor (0.25f, UIImage.FromBundle ("email-putintofolder-gray"),
+                "Save", A.Color_NachoSwipeActionGreen);
         private static SwipeActionDescriptor DELETE_BUTTON =
-            new SwipeActionDescriptor (0.25f, UIImage.FromBundle ("email-delete-gray"), "Delete", DELETE_COLOR);
+            new SwipeActionDescriptor (0.25f, UIImage.FromBundle ("email-delete-gray"),
+                "Delete", A.Color_NachoSwipeActionBlue);
         private static SwipeActionDescriptor DEFER_BUTTON =
-            new SwipeActionDescriptor (0.25f, UIImage.FromBundle ("email-defer-gray"), "Defer", DEFER_COLOR);
+            new SwipeActionDescriptor (0.25f, UIImage.FromBundle ("email-defer-gray"),
+                "Defer", A.Color_NachoSwipeActionYellow);
 
         public HotListCarouselDataSource (NachoNowViewController o)
         {
