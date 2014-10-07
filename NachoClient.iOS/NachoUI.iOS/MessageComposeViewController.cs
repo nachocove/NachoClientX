@@ -204,31 +204,20 @@ namespace NachoClient.iOS
 
         protected void ShowQuickResponses()
         {
-            QuickResponseView qr = (QuickResponseView)View.ViewWithTag (100);
-
-            if (null != qr) {
-                if (qr.Hidden) {
-                    qr.Hidden = false;
-                }
-            }else {
-                switch (QRType) {
-                case NcQuickResponse.QRTypeEnum.Compose:
-                    mcMessage.BodyId = McBody.InsertFile (account.Id, "").Id;
-                    break;
-                case NcQuickResponse.QRTypeEnum.Reply:
-                    mcMessage.BodyId = McBody.InsertFile (account.Id, bodyTextView.Text).Id;
-                    break;
-                case NcQuickResponse.QRTypeEnum.Forward:
-                    mcMessage.BodyId = McBody.InsertFile (account.Id, bodyTextView.Text).Id;
-                    break;
-                }
-
-                mcMessage.Subject = subjectField.Text;
-                qr = new QuickResponseView (QRType, ref mcMessage);
-                qr.SetOwner (this);
-                qr.CreateView ();
-                qr.ShowView ();
+            switch (QRType) {
+            case NcQuickResponse.QRTypeEnum.Compose:
+                mcMessage.BodyId = McBody.InsertFile (account.Id, "").Id;
+                break;
+            case NcQuickResponse.QRTypeEnum.Reply:
+                mcMessage.BodyId = McBody.InsertFile (account.Id, bodyTextView.Text).Id;
+                break;
+            case NcQuickResponse.QRTypeEnum.Forward:
+                mcMessage.BodyId = McBody.InsertFile (account.Id, bodyTextView.Text).Id;
+                break;
             }
+
+            mcMessage.Subject = subjectField.Text;
+            PerformSegue ("SegueToQuickResponse", this);
         }
 
         public void PopulateMessageFromQR(NcQuickResponse.QRTypeEnum whichType)
@@ -330,6 +319,12 @@ namespace NachoClient.iOS
             if (segue.Identifier == "SegueToMessagePriority") {
                 var vc = (MessagePriorityViewController)segue.DestinationViewController;
                 vc.SetOwner (this);
+                return;
+            }
+            if (segue.Identifier == "SegueToQuickResponse") {
+                var vc = (QuickResponseViewController)segue.DestinationViewController;
+                vc.SetOwner (this);
+                vc.SetProperties (QRType, ref mcMessage);
                 return;
             }
             if (segue.Identifier == "SegueToIntentSelection") {

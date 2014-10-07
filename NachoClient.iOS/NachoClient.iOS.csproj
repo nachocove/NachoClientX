@@ -1088,7 +1088,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McAbstrFileDesc.cs">
       <Link>NachoCore\Model\McAbstrFileDesc.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\Support\QuickResponseView.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcQuickResponse.cs">
       <Link>NachoCore\Brain\NcQuickResponse.cs</Link>
     </Compile>
@@ -1141,6 +1140,10 @@
     <Compile Include="NachoUI.iOS\Support\AttachmentView.cs" />
     <Compile Include="NachoUI.iOS\Support\AttachmentListView.cs" />
     <Compile Include="NachoUI.iOS\Support\MessageHeaderView.cs" />
+    <Compile Include="NachoUI.iOS\QuickResponseViewController.cs" />
+    <Compile Include="NachoUI.iOS\QuickResponseViewController.designer.cs">
+      <DependentUpon>QuickResponseViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
