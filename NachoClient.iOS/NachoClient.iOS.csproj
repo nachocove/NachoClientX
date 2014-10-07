@@ -1565,6 +1565,15 @@
     <BundleResource Include="Resources\now-addcalevent%402x.png" />
     <BundleResource Include="Resources\email-hot%402x.png" />
     <BundleResource Include="Resources\email-not-hot%402x.png" />
+    <BundleResource Include="Resources\modal-forever%402x.png" />
+    <BundleResource Include="Resources\modal-later-today%402x.png" />
+    <BundleResource Include="Resources\modal-next-week%402x.png" />
+    <BundleResource Include="Resources\modal-none%402x.png" />
+    <BundleResource Include="Resources\modal-pick-date%402x.png" />
+    <BundleResource Include="Resources\modal-this-week%402x.png" />
+    <BundleResource Include="Resources\modal-tomorrow%402x.png" />
+    <BundleResource Include="Resources\modal-tonight%402x.png" />
+    <BundleResource Include="Resources\modal-close%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
