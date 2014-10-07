@@ -29,14 +29,17 @@ namespace NachoClient.iOS
         public UIImage Image { get; protected set; }
         public string Text { get; protected set; }
         public UIColor Color { get; protected set; }
+        // This is not the tag for an UI object. Instead, it is for identifying the action during callback
+        public int Tag { get; protected set; }
 
-        public SwipeActionDescriptor (float widthDelta, UIImage image, string text, UIColor color = null)
+        public SwipeActionDescriptor (int tag, float widthDelta, UIImage image, string text, UIColor color = null)
         {
             NcAssert.True (0.3 >= widthDelta); // max width check
             WidthDelta = widthDelta;
             Image = image;
             Text = text;
             Color = color;
+            Tag = tag;
         }
     }
 
@@ -210,8 +213,9 @@ namespace NachoClient.iOS
             }
             movePercentage += BaseMovePercentage;
             // If the full move percentage is greater than 100% in either directions,
-            // we must clip it at 100% (+/-) and update because we c
-            // we could be at -90% and then a quick swipe action causes the next update to be
+            // we must clip it at 100% (+/-) and update because we could be at -90%
+            // and then a quick swipe action causes the next update to be over 100%.
+            // If we don't clip, it will not reach the fully extended state
             if (-1.0f > movePercentage) {
                 return -1.0f;
             }
@@ -343,7 +347,7 @@ namespace NachoClient.iOS
         /// the swiping view is automatically removed. The parameters indicate which
         /// button is clicked.
         /// </summary>
-        public delegate void ButtonCallback (SwipeSide side, int index);
+        public delegate void ButtonCallback (int tag);
 
         public enum SwipeState {
             SWIPE_BEGIN,
@@ -480,7 +484,7 @@ namespace NachoClient.iOS
                 newButton.TouchUpInside += (object sender, EventArgs e) => {
                     // If we don't have the index, use the length of the list
                     RemoveSwipingView ();
-                    OnClick (side, index);
+                    OnClick (newButton.Config.Tag);
                 };
             }
 

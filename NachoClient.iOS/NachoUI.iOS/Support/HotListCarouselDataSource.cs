@@ -32,18 +32,23 @@ namespace NachoClient.iOS
         static List<UIBarButtonItem> preventBarButtonGC;
         NachoNowViewController owner;
 
+        private const int ARCHIVE_TAG = 1;
+        private const int SAVE_TAG = 2;
+        private const int DELETE_TAG = 3;
+        private const int DEFER_TAG = 4;
+
         // Pre-made swipe action descriptors
         private static SwipeActionDescriptor ARCHIVE_BUTTON =
-            new SwipeActionDescriptor (0.25f, UIImage.FromBundle ("email-archive-gray"),
-                "Archive", A.Color_NachoSwipeActionRed);
+            new SwipeActionDescriptor (ARCHIVE_TAG, 0.25f, UIImage.FromBundle ("email-archive-gray"),
+                "Archive", A.Color_NachoSwipeActionGreen);
         private static SwipeActionDescriptor SAVE_BUTTON =
-            new SwipeActionDescriptor (0.25f, UIImage.FromBundle ("email-putintofolder-gray"),
-                "Save", A.Color_NachoSwipeActionGreen);
+            new SwipeActionDescriptor (SAVE_TAG, 0.25f, UIImage.FromBundle ("email-putintofolder-gray"),
+                "Save", A.Color_NachoSwipeActionBlue);
         private static SwipeActionDescriptor DELETE_BUTTON =
-            new SwipeActionDescriptor (0.25f, UIImage.FromBundle ("email-delete-gray"),
-                "Delete", A.Color_NachoSwipeActionBlue);
+            new SwipeActionDescriptor (DELETE_TAG, 0.25f, UIImage.FromBundle ("email-delete-gray"),
+                "Delete", A.Color_NachoSwipeActionRed);
         private static SwipeActionDescriptor DEFER_BUTTON =
-            new SwipeActionDescriptor (0.25f, UIImage.FromBundle ("email-defer-gray"),
+            new SwipeActionDescriptor (DEFER_TAG, 0.25f, UIImage.FromBundle ("email-defer-gray"),
                 "Defer", A.Color_NachoSwipeActionYellow);
 
         public HotListCarouselDataSource (NachoNowViewController o)
@@ -87,33 +92,23 @@ namespace NachoClient.iOS
             view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
             view.SetAction (SAVE_BUTTON, SwipeSide.LEFT);
             view.SetAction (DEFER_BUTTON, SwipeSide.LEFT);
-            view.OnClick = (SwipeSide side, int index) => {
-                if (SwipeSide.LEFT == side) {
-                    switch (index) {
-                    case 0:
-                        onSaveButtonClicked (view);
-                        break;
-                    case 1:
-                        onDeferButtonClicked (view);
-                        break;
-                    default:
-                        var message = String.Format ("Unknown left index {0}", index);
-                        throw new NcAssert.NachoDefaultCaseFailure (message);
-                    }
-                } else if (SwipeSide.RIGHT == side) {
-                    switch (index) {
-                    case 0:
-                        onArchiveButtonClicked (view);
-                        break;
-                    case 1:
-                        onDeleteButtonClicked (view);
-                        break;
-                    default:
-                        var message = String.Format ("Unknwon right index {0}", index);
-                        throw new NcAssert.NachoDefaultCaseFailure(message);
-                    }
-                } else {
-                    NcAssert.True (false);
+            view.OnClick = (int tag) => {
+                switch (tag) {
+                case SAVE_TAG:
+                    onSaveButtonClicked (view);
+                    break;
+                case DEFER_TAG:
+                    onDeferButtonClicked (view);
+                    break;
+                case ARCHIVE_TAG:
+                    onArchiveButtonClicked (view);
+                    break;
+                case DELETE_TAG:
+                    onDeleteButtonClicked (view);
+                    break;
+                default:
+                    var message = String.Format ("Unknown action tag {0}", tag);
+                    throw new NcAssert.NachoDefaultCaseFailure (message);
                 }
             };
             view.OnSwipe = (SwipeActionView.SwipeState state) => {
