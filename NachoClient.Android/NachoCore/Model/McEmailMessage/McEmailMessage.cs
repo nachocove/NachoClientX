@@ -76,7 +76,8 @@ namespace NachoCore.Model
         /// Subject of the message (optional)
         public string Subject { set; get; }
 
-        public enum IntentType {
+        public enum IntentType
+        {
             None = 0,
             FYI = 1,
             PleaseRead = 2,
@@ -285,7 +286,7 @@ namespace NachoCore.Model
         public void ConvertToRegularSend ()
         {
             if (ReferencedEmailId == 0 ||
-                    (ReferencedBodyIsIncluded && (!ReferencedIsForward || !WaitingForAttachmentsToDownload))) {
+                (ReferencedBodyIsIncluded && (!ReferencedIsForward || !WaitingForAttachmentsToDownload))) {
                 // No conversion necessary.
                 return;
             }
@@ -329,23 +330,23 @@ namespace NachoCore.Model
         public static List<NcEmailMessageIndex> QueryInteractions (int accountId, McContact contact)
         {
             if (null != contact.EmailAddresses) {
-                    string emailWildcard = "%" + McEmailAddress.QueryById<McEmailAddress> (contact.EmailAddresses.First ().EmailAddress).CanonicalEmailAddress + "%";
-                    McFolder deletedFolder = McFolder.GetDefaultDeletedFolder (accountId);
+                string emailWildcard = "%" + McEmailAddress.QueryById<McEmailAddress> (contact.EmailAddresses.First ().EmailAddress).CanonicalEmailAddress + "%";
+                McFolder deletedFolder = McFolder.GetDefaultDeletedFolder (accountId);
 
-                    return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
-                        "SELECT DISTINCT e.Id as Id FROM McEmailMessage AS e " +
-                        " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
-                        " JOIN McFolder AS f ON m.FolderId = f.Id " +
-                        " WHERE " +
-                        " e.AccountId = ? AND " +
-                        " e.IsAwaitingDelete = 0 AND " +
-                        " f.IsClientOwned != 1 AND " +
-                        " m.ClassCode = ? AND " +
-                        " m.AccountId = ? AND " +
-                        " m.FolderId != ? AND " +
-                        " e.[From] LIKE ? OR " +
-                        " e.[To] Like ? ORDER BY e.DateReceived DESC",
-                        accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, deletedFolder.Id, emailWildcard, emailWildcard);
+                return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
+                    "SELECT DISTINCT e.Id as Id FROM McEmailMessage AS e " +
+                    " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                    " JOIN McFolder AS f ON m.FolderId = f.Id " +
+                    " WHERE " +
+                    " e.AccountId = ? AND " +
+                    " e.IsAwaitingDelete = 0 AND " +
+                    " f.IsClientOwned != 1 AND " +
+                    " m.ClassCode = ? AND " +
+                    " m.AccountId = ? AND " +
+                    " m.FolderId != ? AND " +
+                    " e.[From] LIKE ? OR " +
+                    " e.[To] Like ? ORDER BY e.DateReceived DESC",
+                    accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, deletedFolder.Id, emailWildcard, emailWildcard);
             } else {
                 return new List<NcEmailMessageIndex> ();
             }
