@@ -128,7 +128,7 @@ namespace NachoCore.Model
         protected void CompleteInsertDuplicate (McAbstrFileDesc srcDesc)
         {
             Prep ();
-            File.Copy (GetFilePath (), srcDesc.GetFilePath ());
+            File.Copy (srcDesc.GetFilePath (), GetFilePath ());
             UpdateSaveFinish ();
         }
 
