@@ -196,7 +196,6 @@ namespace NachoClient.iOS
         protected UIButton BlockButton (Block viewBlock)
         {
             float yOffset = 20;
-            float approximateWidth = viewBlock.blockLabel.Length * 5;
 
             UIButton blockButton = new UIButton (new RectangleF (0, 0, ViewWidth / 3 - 2, ROW_HEIGHT - 2));
 
@@ -227,6 +226,10 @@ namespace NachoClient.iOS
             return blockButton;
         }
 
+        //This method takes the label for the button and adds a newline
+        //After the first word if there are two words, or after then 2nd word
+        //If there are more than two words. This way the words are displayed
+        //Evenly below the button's icon.
         protected string FormatBlockLabel (string label)
         {
             label = label.Trim ();
