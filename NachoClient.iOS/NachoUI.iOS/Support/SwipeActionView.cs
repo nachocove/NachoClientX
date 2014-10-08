@@ -738,7 +738,9 @@ namespace NachoClient.iOS
 
         protected void RemoveSwipingView ()
         {
-            NcAssert.True (null != swipingView);
+            if (null == swipingView) {
+                return;
+            }
             swipingView.RemoveFromSuperview ();
             swipingView = null;
 
