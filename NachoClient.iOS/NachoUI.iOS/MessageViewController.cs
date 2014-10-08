@@ -61,6 +61,8 @@ namespace NachoClient.iOS
 
         protected UIBarButtonItem blockMenuButton;
 
+        protected const int BLOCK_MENU_TAG = 1000;
+
         protected float separator1YOffset {
             get {
                 return (expandedHeader ? expandedSeparatorYOffset : compactSeparatorYOffset);
@@ -140,7 +142,7 @@ namespace NachoClient.iOS
             };
 
             blockMenuButton.Clicked += (object sender, EventArgs e) => {
-                UIBlockMenu blockMenu = (UIBlockMenu)View.ViewWithTag(1000);
+                UIBlockMenu blockMenu = (UIBlockMenu)View.ViewWithTag(BLOCK_MENU_TAG);
                 blockMenu.MenuTapped ();
             };
 
@@ -803,7 +805,7 @@ namespace NachoClient.iOS
                 })
             }, View.Frame.Width);
 
-            blockMenu.Tag = 1000;
+            blockMenu.Tag = BLOCK_MENU_TAG;
             View.AddSubview (blockMenu);
         }
 
