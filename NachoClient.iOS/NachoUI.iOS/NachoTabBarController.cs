@@ -10,6 +10,8 @@ namespace NachoClient.iOS
 {
     public partial class NachoTabBarController : UITabBarController
     {
+        protected static string TabBarOrderKey = "TabBarOrder";
+
         public NachoTabBarController (IntPtr handle) : base (handle)
         {
         }
@@ -17,18 +19,15 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-            CreateTabBar ();
 
-            FinishedCustomizingViewControllers += (object sender, UITabBarCustomizeChangeEventArgs e) => {
-                SaveCustomTabBarOrder (e);
-            };
-        }
+            TabBar.BarTintColor = UIColor.White;
+            TabBar.TintColor = A.Color_NachoIconGray;
+            TabBar.Translucent = false;
 
-        public override void ViewWillAppear (bool animated)
-        {
-            base.ViewWillAppear (animated);
+            MoreNavigationController.NavigationBar.TintColor = A.Color_NachoBlue;
+            MoreNavigationController.NavigationBar.Translucent = false;
 
-            SetCustomTabBarOrder ();
+            RestoreCustomTabBarOrder ();
 
             SetTabBarItem ("NachoClient.iOS.NachoNowViewController", "Now", "icn-inbox", "icn-inbox");
             SetTabBarItem ("NachoClient.iOS.CalendarViewController", "Calendar", "nav-calendar", "nav-calendar-active");
@@ -41,24 +40,11 @@ namespace NachoClient.iOS
             SetTabBarItem ("NachoClient.iOS.DeferredViewController", "Deferred", "icn-inbox", "icn-inbox");
             SetTabBarItem ("NachoClient.iOS.FoldersViewController", "Folders", "nav-folder", "nav-folder-active");
             SetTabBarItem ("NachoClient.iOS.AttachmentsViewController", "Attachments", "icn-inbox", "icn-inbox");
+
+            FinishedCustomizingViewControllers += (object sender, UITabBarCustomizeChangeEventArgs e) => {
+                SaveCustomTabBarOrder (e);
+            };
         }
-
-        public override void ViewDidAppear (bool animated)
-        {
-            base.ViewDidAppear (animated);
-        }
-
-        protected void CreateTabBar ()
-        {
-            TabBar.BarTintColor = UIColor.White;
-            TabBar.TintColor = A.Color_NachoIconGray;
-            TabBar.Translucent = false;
-
-            MoreNavigationController.NavigationBar.TintColor = A.Color_NachoBlue;
-            MoreNavigationController.NavigationBar.Translucent = false;
-        }
-
-        protected static string TabBarOrderKey = "TabBarOrder";
 
         protected string GetTabBarItemTypeName (UIViewController vc)
         {
@@ -81,7 +67,7 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void SetCustomTabBarOrder ()
+        protected void RestoreCustomTabBarOrder ()
         {
             var tabBarOrder = NSUserDefaults.StandardUserDefaults.StringArrayForKey (TabBarOrderKey);
             if (null == tabBarOrder) {
@@ -110,16 +96,15 @@ namespace NachoClient.iOS
         {
             foreach (var vc in ViewControllers) {
                 if (typeName == GetTabBarItemTypeName (vc)) {
-                    using(var image = UIImage.FromBundle(imageName)) {
-                        using(var selectedImage = UIImage.FromBundle(selectedImageName)) {
-                            var item = new UITabBarItem(title, image, selectedImage);
+                    using (var image = UIImage.FromBundle (imageName)) {
+                        using (var selectedImage = UIImage.FromBundle (selectedImageName)) {
+                            var item = new UITabBarItem (title, image, selectedImage);
                             vc.TabBarItem = item;
                         }
                     }
                 }
             }
         }
-
     }
 }
                       
