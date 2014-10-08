@@ -3,6 +3,7 @@
 using System;
 using System.Drawing;
 using System.Collections.Generic;
+using System.Linq;
 
 using MonoTouch.UIKit;
 using MonoTouch.CoreGraphics;
@@ -83,6 +84,21 @@ namespace NachoClient.iOS
         }
     }
 
+    /// <summary>
+    /// Swipe last action view is a simple colored background used to create an extension
+    /// of the last (outermost) action button with the same color. It is positioned 
+    /// below the last action button and above all other views so that it blocks
+    /// everything else except the last action button.
+    /// </summary>
+    public class SwipeLastActionView : UIView
+    {
+        public SwipeLastActionView (RectangleF frame, UIColor color) : base (frame)
+        {
+            BackgroundColor = color;
+            UserInteractionEnabled = false;
+        }
+    }
+
     public class SwipeActionButtonList : List<SwipeActionButton>
     {
         public delegate void IterationCallback (SwipeActionButton actionButton);
@@ -99,6 +115,11 @@ namespace NachoClient.iOS
             for (int i = startIndex; i < stopIndex; i++) {
                 callback (this [i]);
             }
+        }
+
+        public bool IsLastIndex (int i)
+        {
+            return ((Count - 1) == i);
         }
     }
 
@@ -119,7 +140,10 @@ namespace NachoClient.iOS
         SwipeActionButtonList rightActionButtons;
         UIView snapshotView;
         UIGestureRecognizer tapRecognizer;
-
+        float lastActionThreshold;
+        SwipeLastActionView leftLastActionView;
+        SwipeLastActionView rightLastActionView;
+        Action OnClear; // when user taps on the body part to clear all buttons
 
         public float LastScreenDelta { get; protected set; }
 
@@ -127,12 +151,19 @@ namespace NachoClient.iOS
 
         public float LastMovePercentage {
             get {
+                return ClipMovePercentage(UnclippedLastMovePercentage);
+            }
+        }
+
+        public float UnclippedLastMovePercentage {
+            get {
                 return GetMovePercentage (LastScreenDelta);
             }
         }
 
-        public SwipeActionSwipingView (UIView view,
-            SwipeActionButtonList leftButtons, SwipeActionButtonList rightButtons) : base (view.Frame)
+        public SwipeActionSwipingView (SwipeActionView view,
+            SwipeActionButtonList leftButtons, SwipeActionButtonList rightButtons,
+            Action onClear) : base (view.Frame)
         {
             Tag = (int)SwipeActionViewTagType.SWIPE_ACTION_SWIPING_VIEW;
 
@@ -141,27 +172,50 @@ namespace NachoClient.iOS
             rightActionButtons = rightButtons;
             LastScreenDelta = 0.0f;
             BaseMovePercentage = 0.0f;
+            OnClear = onClear;
+
+            lastActionThreshold = view.LastActionThreshold;
 
             // Take a snapshot of the original view
             snapshotView = view.SnapshotView (false);
             AddSubview (snapshotView);
 
+            // Add two last action views
+            if (0 < leftButtons.Count) {
+                leftLastActionView = new SwipeLastActionView (Frame, leftButtons.Last ().Config.Color);
+                ViewFramer.Create (leftLastActionView).X (-leftLastActionView.Frame.Width);
+            }
+            if (0 < rightButtons.Count) {
+                rightLastActionView = new SwipeLastActionView (Frame, rightButtons.Last ().Config.Color);
+                ViewFramer.Create (rightLastActionView).X (Frame.Width);
+            }
+
             // Stack the buttons on top of the image view
+            int k = 0;
             foreach (var button in leftActionButtons) {
                 NcAssert.True (button.Frame.Height == view.Frame.Height);
                 if (null != button.Superview) {
                     button.RemoveFromSuperview ();
                 }
                 ViewFramer.Create (button).X (-button.Frame.Width).Y (0);
+                if (leftActionButtons.IsLastIndex(k)) {
+                    AddSubview (leftLastActionView);
+                }
                 AddSubview (button);
+                k++;
             }
+            k = 0;
             foreach (var button in rightActionButtons) {
                 NcAssert.True (button.Frame.Height == view.Frame.Height);
                 if (null != button.Superview) {
                     button.RemoveFromSuperview ();
                 }
                 ViewFramer.Create (button).X (Frame.Width).Y (0);
+                if (rightActionButtons.IsLastIndex (k)) {
+                    AddSubview (rightLastActionView);
+                }
                 AddSubview (button);
+                k++;
             }
 
             // Compute the amount of shift required for each button
@@ -184,21 +238,16 @@ namespace NachoClient.iOS
             }
 
             // Add a tap gesture recognizer to retract pulled out buttons
-            tapRecognizer = new UITapGestureRecognizer (TapHandler);
+            tapRecognizer = new UITapGestureRecognizer ((UITapGestureRecognizer obj) => {
+                OnClear ();
+            });
             AddGestureRecognizer (tapRecognizer);
         }
 
-        private void TapHandler (UIGestureRecognizer recognizer)
-        {
-            if (0.0 != LastMovePercentage) {
-                SnapToAllButtonsHidden ();
-            }
-        }
-
         /// <summary>
-        /// Return a fraction from -1.0 to 1.0 that is the ratio of screen percentage to
-        /// the maximum screen percentage. (Screen percentage is the ratio of horizontal screen
-        /// translation in pixel to the screen width.)
+        /// Return the ratio of screen percentage to the maximum screen percentage.
+        /// (Screen percentage is the ratio of horizontal screen translation in pixel
+        /// to the screen width.)
         /// </summary>
         /// <returns>The full move percentage.</returns>
         /// <param name="screenPercentage">Screen percentage.</param>
@@ -212,6 +261,11 @@ namespace NachoClient.iOS
                 movePercentage = screenDelta / maxRightDelta;
             }
             movePercentage += BaseMovePercentage;
+            return movePercentage;
+        }
+
+        private float ClipMovePercentage (float movePercentage)
+        {
             // If the full move percentage is greater than 100% in either directions,
             // we must clip it at 100% (+/-) and update because we could be at -90%
             // and then a quick swipe action causes the next update to be over 100%.
@@ -225,48 +279,164 @@ namespace NachoClient.iOS
             return movePercentage;
         }
 
-        public void MoveTo (float delta)
+        public void MoveByDelta (float delta, float x)
         {
+            MoveByMovePercentage (GetMovePercentage (delta), x);
             LastScreenDelta = delta;
-            float movePercentage = GetMovePercentage (delta);
+        }
 
-            for (int i = 0; i < leftActionButtons.Count; i++) {
-                var button = leftActionButtons [i];
-                ViewFramer.Create (button).X (-button.Frame.Width + (movePercentage * leftOffsets [i]));
-            }
+        private bool ShouldStartLastActionAnimation (float movePercentage)
+        {
+            return ((lastActionThreshold <= movePercentage) || (-lastActionThreshold >= movePercentage));
+        }
 
-            for (int i = 0; i < rightActionButtons.Count; i++) {
-                var button = rightActionButtons [i];
-                ViewFramer.Create (button).X (Frame.Width + (movePercentage * rightOffsets [i]));
-            }
+        public void MoveByMovePercentage (float movePercentage, float x)
+        {
+            SwipeActionButton button;
+            float clippedPercentage = ClipMovePercentage (movePercentage);
 
             if (0.0 == movePercentage) {
                 ViewFramer.Create (snapshotView).X (0);
             } else if (0.0 > movePercentage) {
-                ViewFramer.Create (snapshotView).X (movePercentage * rightOffsets [0]);
+                ViewFramer.Create (snapshotView).X (clippedPercentage * rightOffsets [0]);
             } else {
-                ViewFramer.Create (snapshotView).X (movePercentage * leftOffsets [0]);
+                ViewFramer.Create (snapshotView).X (clippedPercentage * leftOffsets [0]);
             }
+
+            for (int i = 0; i < (leftActionButtons.Count - 1); i++) {
+                button = leftActionButtons [i];
+                ViewFramer.Create (button).X (-button.Frame.Width + (clippedPercentage * leftOffsets [i]));
+            }
+
+            for (int i = 0; i < (rightActionButtons.Count - 1); i++) {
+                button = rightActionButtons [i];
+                ViewFramer.Create (button).X (Frame.Width + (clippedPercentage * rightOffsets [i]));
+            }
+
+            // The last action is a special case. Between (+/1) 1.0 and 1.25, there is a dead zone
+            // where it moves to 1.0. Beyond that 1.25, it should track the unclipped move percentage
+            bool IsAnimatingLast = ShouldStartLastActionAnimation (movePercentage);
+            // Intentionally not use LastMovePercentage property because it clips to +/-1.0.
+            float lastMovePercentage = GetMovePercentage (LastScreenDelta);
+            bool WasAnimatingLast = ShouldStartLastActionAnimation (lastMovePercentage);
+            float duration = IsAnimatingLast != WasAnimatingLast ? 0.3f : 0.0f;
+
+            UIView.Animate (duration, 0, UIViewAnimationOptions.CurveLinear, () => {
+                if (IsAnimatingLast) {
+                    NcAssert.True (0.0f != movePercentage);
+                    if (0.0 < movePercentage) {
+                        var lastButton = leftActionButtons.Last ();
+                        // Touch points to the center of the button. Adjust to the left.
+                        x -= lastButton.Config.WidthDelta / 2.0f;
+                        if ((1.0f - lastButton.Config.WidthDelta) < x) {
+                            x = 1.0f - lastButton.Config.WidthDelta; // don't let the button scroll off the right edge
+                        }
+                        ViewFramer.Create (lastButton).X (x * Frame.Width);
+
+                        // Move the last action view
+                        if (null != leftLastActionView) {
+                            ViewFramer.Create (leftLastActionView).X ((x - 1.0f) * Frame.Width);
+                        }
+                    } else {
+                        var lastButton = rightActionButtons.Last ();
+                        // Touch points to the center of the button. Adjust to the left.
+                        x -= lastButton.Config.WidthDelta / 2.0f;
+                        if (0.0f > x) {
+                            x = 0.0f; // don't let the button scroll off the left edge of the screen
+                        }
+                        ViewFramer.Create (lastButton).X (x * Frame.Width);
+
+                        // Movve the last action view
+                        if (null != rightLastActionView) {
+                            ViewFramer.Create (rightLastActionView).X (x * Frame.Width);
+                        }
+                    }
+                } else {
+                    // Move last action views
+                    if (null != leftLastActionView) {
+                        ViewFramer.Create (leftLastActionView).X (-leftLastActionView.Frame.Width);
+                    }
+                    if (null != rightLastActionView) {
+                        ViewFramer.Create (rightLastActionView).X (Frame.Width);
+                    }
+
+                    // Move all buttons
+                    int i = leftActionButtons.Count - 1;
+                    button = leftActionButtons [i];
+                    ViewFramer.Create (button).X (-button.Frame.Width + (clippedPercentage * leftOffsets [i]));
+
+                    i = rightActionButtons.Count - 1;
+                    button = rightActionButtons [i];
+                    ViewFramer.Create (button).X (Frame.Width + (clippedPercentage * rightOffsets [i]));
+                }
+            }, () => {
+            });
 
             //ViewHelper.DumpViews<SwipeActionViewTagType> (this); // debug
         }
 
-        public void SnapToAllButtonsHidden ()
+        private float MovePercentToDelta (float movePercentage)
         {
-            UIView.Animate (0.4f, 0, UIViewAnimationOptions.CurveLinear, () => {
-                MoveTo (0.0f);
+            if (0 < movePercentage) {
+                return movePercentage * maxRightDelta;
+            }
+            if (0 > movePercentage) {
+                return movePercentage * maxLeftDelta;
+            }
+            return 0.0f;
+        }
+
+        /// <summary>
+        /// The amount of animation of pulling all buttons out and pushing all buttons back
+        /// to the edges depends on how far the buttons need to travel. In order to
+        /// maintain a constant speed, the duration must be computed based on the current
+        /// position (of buttons) and the final position.
+        ///
+        /// The computation tries to be invariant to device side / resolution by normalized
+        /// against the physical resolution of the device.
+        /// </summary>
+        /// <returns>The animate duration.</returns>
+        /// <param name="finalMovePercentage">Final move percentage.</param>
+        private float ComputeAnimationDuration (float finalMovePercentage)
+        {
+            float total = MovePercentToDelta (finalMovePercentage) - MovePercentToDelta (LastMovePercentage);
+            float rate = 1.0f; // 1 sec to move across the entire screen
+            return rate * Math.Abs (total);
+        }
+
+        private void SnapToPosition (float finalMovePercentage, float finalLocation, Action onComplete)
+        {
+            float duration = ComputeAnimationDuration (finalMovePercentage);
+            UIView.Animate (duration, 0, UIViewAnimationOptions.CurveLinear, () => {
+                MoveByMovePercentage (finalMovePercentage, finalLocation);
                 //ViewHelper.DumpViews<SwipeActionViewTagType> (this); // debug
             }, () => {
+                onComplete ();
             });
         }
 
-        public void SnapToAllButtonsShown ()
+        public void SnapToAllButtonsHidden (Action onComplete)
         {
-            UIView.Animate (0.4f, 0, UIViewAnimationOptions.CurveLinear, () => {
-                MoveTo ((float)Math.Sign(LastMovePercentage) * 1.0f);
-                //ViewHelper.DumpViews<SwipeActionViewTagType> (this); // debug
-            }, () => {
-            });
+            BaseMovePercentage = 0.0f;
+            SnapToPosition (0.0f, 0.0f, onComplete);
+        }
+
+        public void SnapToAllButtonsShown (Action onComplete)
+        {
+            SnapToPosition ((float)Math.Sign (LastMovePercentage) * 1.0f, 0.0f, onComplete);
+        }
+
+        public bool SnapToLastButtonOnly (Action onComplete)
+        {
+            if (0.0 == LastMovePercentage) {
+                return false;
+            }
+
+            float finalMovePercentage = 1.0f / (0.0 < LastMovePercentage ? maxLeftDelta : maxRightDelta);
+            float finalLocation =
+                (0.0f < LastMovePercentage ? 1.0f - leftActionButtons.Last ().Config.WidthDelta : 0.0f);
+            SnapToPosition (finalMovePercentage, finalLocation, onComplete);
+            return true;
         }
 
         public void EndSwipe ()
@@ -274,7 +444,7 @@ namespace NachoClient.iOS
             BaseMovePercentage = LastMovePercentage;
         }
 
-        public bool PointOnButtons (PointF point)
+        public bool PointOnActionButtons (PointF point)
         {
             foreach (var view in Subviews) {
                 var actionButton = view as SwipeActionButton;
@@ -364,7 +534,7 @@ namespace NachoClient.iOS
         public delegate void SwipeCallback (SwipeState state);
 
         public float SnapAllShownThreshold = 0.5f;
-        public float LastActionThreshold = 0.8f;
+        public float LastActionThreshold = 1.25f;
 
         public ButtonCallback OnClick;
         public SwipeCallback OnSwipe;
@@ -374,6 +544,8 @@ namespace NachoClient.iOS
 
         protected UIPanGestureRecognizer swipeRecognizer;
         protected SwipeActionSwipingView swipingView;
+        protected SwipeLastActionView leftLastActionView;
+        protected SwipeLastActionView rightLastActionView;
 
         public SwipeActionView (RectangleF frame) : base (frame)
         {
@@ -393,7 +565,7 @@ namespace NachoClient.iOS
                     return true;
                 }
                 // Check each of the subviews in the swiping view
-                if (swipingView.PointOnButtons(touch.LocationInView(swipingView))) {
+                if (swipingView.PointOnActionButtons (touch.LocationInView (swipingView))) {
                     return false;
                 }
                 return true;
@@ -420,7 +592,14 @@ namespace NachoClient.iOS
 
                     // Create a swiping view
                     if (null == swipingView) {
-                        swipingView = new SwipeActionSwipingView (this, LeftSwipeActionButtons, RightSwipeActionButtons);
+                        swipingView = new SwipeActionSwipingView (this, LeftSwipeActionButtons,
+                            RightSwipeActionButtons,
+                            () => {
+                                swipingView.SnapToAllButtonsHidden (() => {
+                                    RemoveSwipingView ();
+                                    OnSwipe (SwipeState.SWIPE_END_ALL_HIDDEN);
+                                });
+                            });
                         AddSubview (swipingView);
                     }
                     break;
@@ -429,19 +608,16 @@ namespace NachoClient.iOS
                 {
                     // Move the swiping view
                     float deltaPercentage = obj.TranslationInView (this).X / Frame.Width;
-                    swipingView.MoveTo (deltaPercentage);
+                    float locationPercentage = obj.LocationInView (this).X / Frame.Width;
+                    swipingView.MoveByDelta (deltaPercentage, locationPercentage);
                     break;
                 }
             default:
                 {
                     NcAssert.True ((UIGestureRecognizerState.Ended == obj.State) ||
                     (UIGestureRecognizerState.Cancelled == obj.State));
-                    if (!MayRemoveSwipingView ()) {
+                    if (!MayRemoveSwipingView () && !MayExecuteLastAction()) {
                         MayCompletePullOut ();
-                        swipingView.EndSwipe ();
-                        OnSwipe (SwipeState.SWIPE_END_ALL_SHOWN);
-                    } else {
-                        OnSwipe (SwipeState.SWIPE_END_ALL_HIDDEN);
                     }
                     break;
                 }
@@ -482,9 +658,9 @@ namespace NachoClient.iOS
             if (null != descriptor) {
                 newButton = new SwipeActionButton (descriptor, this);
                 newButton.TouchUpInside += (object sender, EventArgs e) => {
-                    // If we don't have the index, use the length of the list
+                    int tag = newButton.Config.Tag;
                     RemoveSwipingView ();
-                    OnClick (newButton.Config.Tag);
+                    OnClick (tag);
                 };
             }
 
@@ -520,18 +696,43 @@ namespace NachoClient.iOS
 
         protected bool MayRemoveSwipingView ()
         {
-            if (SnapAllShownThreshold > Math.Abs(swipingView.LastMovePercentage)) {
-                swipingView.SnapToAllButtonsHidden ();
-                RemoveSwipingView ();
+            if (SnapAllShownThreshold > Math.Abs (swipingView.LastMovePercentage)) {
+                swipingView.SnapToAllButtonsHidden (() => {
+                    RemoveSwipingView ();
+                    OnSwipe (SwipeState.SWIPE_END_ALL_HIDDEN);
+                });
                 return true;
             }
             return false;
         }
 
+        protected bool MayExecuteLastAction ()
+        {
+            if (LastActionThreshold > Math.Abs (swipingView.UnclippedLastMovePercentage)) {
+                return false;
+            }
+            swipingView.SnapToLastButtonOnly (() => {
+                SwipeSide side = 0.0f < swipingView.LastScreenDelta ? SwipeSide.LEFT : SwipeSide.RIGHT;
+                RemoveSwipingView();
+                OnSwipe (SwipeState.SWIPE_END_ALL_HIDDEN);
+                // Execute the last action
+                if (SwipeSide.LEFT == side) {
+                    OnClick (LeftSwipeActionButtons.Last ().Config.Tag);
+                } else {
+                    NcAssert.True (SwipeSide.RIGHT == side);
+                    OnClick (RightSwipeActionButtons.Last ().Config.Tag);
+                }
+            });
+            return true;
+        }
+
         protected void MayCompletePullOut ()
         {
             if (SnapAllShownThreshold <= Math.Abs(swipingView.LastMovePercentage)) {
-                swipingView.SnapToAllButtonsShown ();
+                swipingView.SnapToAllButtonsShown (() => {
+                    swipingView.EndSwipe ();
+                    OnSwipe (SwipeState.SWIPE_END_ALL_SHOWN);
+                });
             }
         }
 
