@@ -10,7 +10,6 @@ using iCarouselBinding;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
-using MCSwipeTableViewCellBinding;
 using MonoTouch.Dialog;
 using NachoCore.Brain;
 
