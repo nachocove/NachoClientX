@@ -290,14 +290,14 @@ namespace NachoClient.iOS
                 cell.ContentView.AddSubview (imageViews);
 
                 // User image view
-                var userImageView = new UIImageView (new RectangleF (15, 15, 40, 40));
+                var userImageView = new UIImageView (new RectangleF (15, 20, 40, 40));
                 userImageView.Layer.CornerRadius = 20;
                 userImageView.Layer.MasksToBounds = true;
                 userImageView.Tag = USER_IMAGE_TAG;
                 imageViews.AddSubview (userImageView);
 
                 // User userLabelView view, if no image
-                var userLabelView = new UILabel (new RectangleF (15, 15, 40, 40));
+                var userLabelView = new UILabel (new RectangleF (15, 20, 40, 40));
                 userLabelView.Font = A.Font_AvenirNextRegular24;
                 userLabelView.TextColor = UIColor.White;
                 userLabelView.TextAlignment = UITextAlignment.Center;
@@ -309,7 +309,7 @@ namespace NachoClient.iOS
 
                 // Multi-select checkmark overlay
                 // Images are already cropped & transparent
-                var userCheckmarkView = new UIImageView (new RectangleF (9, 45, 20, 20));
+                var userCheckmarkView = new UIImageView (new RectangleF (9, 50, 20, 20));
                 userCheckmarkView.Tag = USER_CHECKMARK_TAG;
                 imageViews.AddSubview (userCheckmarkView);
 
@@ -392,7 +392,7 @@ namespace NachoClient.iOS
             return null;
         }
 
-        protected void ConfigureAsUnavailable(UITableViewCell cell)
+        protected void ConfigureAsUnavailable (UITableViewCell cell)
         {
             foreach (var view in cell.ContentView.Subviews) {
                 view.Hidden = true;
@@ -455,8 +455,8 @@ namespace NachoClient.iOS
             messageHeaderView.ConfigureView (message);
 
             messageHeaderView.OnClick = (object sender, EventArgs e) => {
-                message.ToggleHotOrNot();
-                messageHeaderView.ConfigureView(message);
+                message.ToggleHotOrNot ();
+                messageHeaderView.ConfigureView (message);
             };
 
             // User checkmark view
@@ -565,9 +565,13 @@ namespace NachoClient.iOS
             if (null == cell) {
                 cell = CellWithReuseIdentifier (tableView, cellIdentifier);
             }
+
+            cell.Layer.CornerRadius = 15;
+            cell.Layer.MasksToBounds = true;
+            cell.SelectionStyle = UITableViewCellSelectionStyle.None;
+
             ConfigureCell (cell, indexPath);
             return cell;
-
         }
 
         UIView ViewWithImageName (string imageName)
@@ -640,6 +644,16 @@ namespace NachoClient.iOS
             var messageList = GetSelectedMessages ();
             foreach (var message in messageList) {
                 NcEmailArchiver.Move (message, folder);
+            }
+            MultiSelect.Clear ();
+            MultiSelectToggle (tableView);
+        }
+
+        public void MultiSelectArchive (UITableView tableView)
+        {
+            var messageList = GetSelectedMessages ();
+            foreach (var message in messageList) {
+                NcEmailArchiver.Archive (message);
             }
             MultiSelect.Clear ();
             MultiSelectToggle (tableView);
