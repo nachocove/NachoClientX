@@ -272,6 +272,9 @@ namespace NachoClient.iOS
                 return;
             }
             var message = messageThread.SingleMessageSpecialCase ();
+            if (null == message) {
+                return;
+            }
             message.ToggleHotOrNot ();
             owner.priorityInbox.Refresh ();
             owner.ReloadHotListData ();
@@ -305,6 +308,9 @@ namespace NachoClient.iOS
                 return;
             }
             var message = messageThread.SingleMessageSpecialCase ();
+            if (null == message) {
+                return;
+            }
             NcEmailArchiver.Archive (message);
         }
 
@@ -316,6 +322,9 @@ namespace NachoClient.iOS
                 return;
             }
             var message = messageThread.SingleMessageSpecialCase ();
+            if (null == message) {
+                return;
+            }
             NcEmailArchiver.Delete (message);
         }
 
