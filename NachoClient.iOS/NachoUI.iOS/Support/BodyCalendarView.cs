@@ -34,7 +34,6 @@ namespace NachoClient.iOS
         }
 
         protected BodyView parentView;
-        protected bool rendered;
 
         public BodyCalendarView (BodyView parentView) : base (parentView.Frame)
         {
@@ -52,25 +51,32 @@ namespace NachoClient.iOS
                 iCal = iCalendar.LoadFromStream (stringReader) [0];
             }
             var evt = iCal.Events.First () as DDay.iCal.Event;
-            NachoCore.Utils.CalendarHelper.ExtrapolateTimes (ref evt);
 
-            ShowEventInfo (evt);
+            if (null == evt) {
+                // The text/calendar part doesn't contain any events. There is nothing to show.
+                return;
+            }
+
+            McCalendar c = null;
+            if (null != evt.UID) {
+                c = McCalendar.QueryByUID (evt.UID);
+            }
+
+            ShowEventInfo (evt, c);
 
             // The contents of the action/info bar depends on whether this is a request,
             // response, or cancellation.
             if (iCal.Method.Equals (DDay.iCal.CalendarMethods.Reply)) {
-                ShowAttendeeResponseBar (evt);
+                ShowAttendeeResponseBar (evt, c);
             } else if (iCal.Method.Equals (DDay.iCal.CalendarMethods.Cancel)) {
-                ShowCancellationBar (evt.UID);
+                ShowCancellationBar (evt, c);
             } else {
                 if (!iCal.Method.Equals (DDay.iCal.CalendarMethods.Request)) {
                     Log.Warn (Log.LOG_CALENDAR, "Unexpected calendar method: {0}. It will be treated as a {1}.",
                         iCal.Method, DDay.iCal.CalendarMethods.Request);
                 }
-                ShowRequestChoicesBar (evt.UID);
+                ShowRequestChoicesBar (evt, c);
             }
-
-            rendered = true;
 
             // Layout all the subviews
             ViewFramer.Create (this).Height (150);
@@ -79,12 +85,12 @@ namespace NachoClient.iOS
         /// <summary>
         /// Display the basic information about the calendar event.
         /// </summary>
-        private void ShowEventInfo (DDay.iCal.Event evt)
+        private void ShowEventInfo (DDay.iCal.Event evt, McCalendar c)
         {
             string subject = evt.Summary;
             bool isAllDay = evt.IsAllDay;
-            DateTime start = evt.Start.UTC;
-            DateTime end = evt.End.UTC;
+            DateTime start = CalendarHelper.EventStartTime (evt, c);
+            DateTime end = CalendarHelper.EventEndTime (evt, c);
             string location = evt.Location;
             float viewWidth = parentView.Frame.Width;
 
@@ -244,7 +250,7 @@ namespace NachoClient.iOS
         /// <summary>
         /// Show the action bar for a meeting request, with the "Accept", "Tentative", and "Decline" buttons.
         /// </summary>
-        private void ShowRequestChoicesBar (string UID)
+        private void ShowRequestChoicesBar (DDay.iCal.Event evt, McCalendar calendarItem)
         {
             ActionBarCommon ();
 
@@ -281,10 +287,6 @@ namespace NachoClient.iOS
                 RestoreButtons ();
             };
             responseView.Add (changeResponseButton);
-
-            Log.Info (Log.LOG_CALENDAR, "Looking up calendar item by UID...");
-            McCalendar calendarItem = McCalendar.QueryByUID (UID);
-            Log.Info (Log.LOG_CALENDAR, "Done looking up calendar item by UID.");
 
             if (null != calendarItem) {
 
@@ -550,7 +552,7 @@ namespace NachoClient.iOS
         /// Show the action bar for a meeting response.  The bar doesn't have any
         /// action; it just shows the status of the person who responded.
         /// </summary>
-        private void ShowAttendeeResponseBar (DDay.iCal.Event evt)
+        private void ShowAttendeeResponseBar (DDay.iCal.Event evt, McCalendar calendarItem)
         {
             if (0 == evt.Attendees.Count || null == evt.Attendees [0].ParticipationStatus) {
                 // Malformed meeting reply.  It doesn't include anyone's status.
@@ -624,17 +626,13 @@ namespace NachoClient.iOS
         /// Show the action bar for a meeting cancellation, which has a
         /// "Remove from calendar" button.
         /// </summary>
-        private void ShowCancellationBar (string UID)
+        private void ShowCancellationBar (DDay.iCal.Event evt, McCalendar calendarItem)
         {
             ActionBarCommon ();
 
             float viewWidth = Frame.Width;
             UIView responseView = new UIView (new RectangleF (0, 86, viewWidth, 54));
             responseView.BackgroundColor = UIColor.Clear;
-
-            Log.Info (Log.LOG_CALENDAR, "Looking up calendar item by UID...");
-            McCalendar calendarItem = McCalendar.QueryByUID (UID);
-            Log.Info (Log.LOG_CALENDAR, "Done looking up calendar item by UID.");
 
             eventDoesNotExistLabel = new UILabel (new RectangleF (25, 15, viewWidth - 25, 24));
             eventDoesNotExistLabel.TextColor = A.Color_NachoBlack;

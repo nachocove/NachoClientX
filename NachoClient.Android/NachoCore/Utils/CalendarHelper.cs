@@ -18,17 +18,6 @@ namespace NachoCore.Utils
         {
         }
 
-        public static void ExtrapolateTimes (ref DDay.iCal.Event evt)
-        {
-//            if (evt.End == null && evt.Start != null && evt.Duration != default(TimeSpan)) {
-//                evt.End = evt.Start.Add (evt.Duration);
-//            } else if (evt.Duration == default(TimeSpan) && evt.Start != null && evt.End != null) {
-//                evt.Duration = evt.DTEnd.Subtract (evt.Start);
-//            } else if (evt.Start == null && evt.Duration != default(TimeSpan) && evt.End != null) {
-//                evt.Start = evt.End.Subtract (evt.Duration);
-//            }
-        }
-
         public static McCalendar DefaultMeeting ()
         {
             var c = new McCalendar ();
@@ -47,6 +36,72 @@ namespace NachoCore.Utils
         {
             var t = new McTask ();
             return t;
+        }
+
+        /// <summary>
+        /// Return the starting time for the event in UTC, without triggering the DDay.iCal
+        /// time zone code that would cause the app to crash.
+        /// </summary>
+        public static DateTime EventStartTime(DDay.iCal.Event evt, McCalendar c)
+        {
+            if (null != c) {
+                return c.StartTime;
+            }
+            // This isn't an error.  But we want to log a message to track how often this
+            // happens.  If it happens a lot, me might invest more in calculating correct
+            // times.
+            Log.Error (Log.LOG_CALENDAR, "Extracting the time from the iCalendar object in the message because the corresponding McCalendar object could not be found.");
+            return TimeZoneAdjustment (
+                evt.Parent as IICalendar,
+                evt.Start.Parameters.Get ("TZID"),
+                evt.Start.Value);
+        }
+
+        /// <summary>
+        /// Return the ending time for the event in UTC, without triggering the DDay.iCal
+        /// time zone code that would cause the app to crash.
+        /// </summary>
+        public static DateTime EventEndTime(DDay.iCal.Event evt, McCalendar c)
+        {
+            if (null != c) {
+                return c.EndTime;
+            }
+            return TimeZoneAdjustment (
+                evt.Parent as IICalendar,
+                evt.End.Parameters.Get ("TZID"),
+                evt.End.Value);
+        }
+
+        /// <summary>
+        /// Make a basic attempt to adjust the event time to UTC using the time zone
+        /// information in the calendar item, without using DDay.iCal's time zone
+        /// calculations. Calling Event.Start.UTC will cause a crash on iOS devices
+        /// due to a <a href="http://developer.xamarin.com/guides/ios/advanced_topics/limitations/">limitation</a>
+        /// in the way Mono runs on iOS. The calculation should be correct most of the
+        /// time, but it might be off by an hour or two when it guesses incorrectly
+        /// about whether or not the time in question is daylight saving time.
+        /// </summary>
+        private static DateTime TimeZoneAdjustment (IICalendar iCal, string tzid, DateTime time)
+        {
+            if (null == iCal || string.IsNullOrEmpty(tzid)) {
+                return time;
+            }
+            bool isDaylight = DateTime.SpecifyKind (time, DateTimeKind.Unspecified).IsDaylightSavingTime ();
+            foreach (var timeZone in iCal.TimeZones) {
+                if (timeZone.TZID == tzid) {
+                    foreach (var tzi in timeZone.TimeZoneInfos) {
+                        if (tzi.Name == (isDaylight ? "DAYLIGHT" : "STANDARD")) {
+                            var offset = tzi.OffsetTo;
+                            return DateTime.SpecifyKind (
+                                time.AddHours (offset.Positive ? -offset.Hours : offset.Hours)
+                                    .AddMinutes (offset.Positive ? -offset.Minutes : offset.Minutes)
+                                    .AddSeconds (offset.Positive ? -offset.Seconds : offset.Seconds),
+                                DateTimeKind.Utc);
+                        }
+                    }
+                }
+            }
+            return time;
         }
 
         public static IICalendar iCalendarFromMcCalendarWithResponse (McAccount account, McCalendar c, NcResponseType response)
@@ -125,7 +180,6 @@ namespace NachoCore.Utils
             vEvent.LastModified = new iCalDateTime (DateTime.UtcNow);
             vEvent.Start = new iCalDateTime (c.StartTime.LocalT (), localTimeZone.TZID);
             vEvent.End = new iCalDateTime (c.EndTime.LocalT (), localTimeZone.TZID);
-            NachoCore.Utils.CalendarHelper.ExtrapolateTimes (ref vEvent);
             vEvent.IsAllDay = c.AllDayEvent;
             vEvent.Priority = 5;
             if (c.AllDayEvent) {
