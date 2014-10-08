@@ -25,8 +25,7 @@ namespace NachoClient.iOS
         //PointF savedContentOffset; all uses are commented out, so comment out the definition to avoid a warning.
         protected UIBarButtonItem composeMailButton;
         protected UIBarButtonItem cancelSelectedButton;
-        protected UIBarButtonItem deleteSelectedButton;
-        protected UIBarButtonItem saveSelectedButton;
+        protected UIBarButtonItem moreSelectedButton;
 
         protected UIRefreshControl RefreshListControl;
         //        private static Object StaticLockObj = new Object ();
@@ -63,31 +62,44 @@ namespace NachoClient.iOS
                 PerformSegue ("MessageListToCompose", this);
             };
 
-            cancelSelectedButton = new UIBarButtonItem (UIBarButtonSystemItem.Cancel);
-            cancelSelectedButton.TintColor = A.Color_NachoBlue;
-
+            cancelSelectedButton = new UIBarButtonItem ();
+            Util.SetOriginalImageForButton (cancelSelectedButton, "gen-close");
             cancelSelectedButton.Clicked += (object sender, EventArgs e) => {
                 messageSource.MultiSelectCancel (TableView);
             };
 
-
-            deleteSelectedButton = new UIBarButtonItem ();
-            Util.SetOriginalImageForButton (deleteSelectedButton, "email-delete");
-            deleteSelectedButton.Clicked += (object sender, EventArgs e) => {
-                if (null != messageSource) {
-                    messageSource.MultiSelectDelete (TableView);
-                }
+            moreSelectedButton = new UIBarButtonItem ();
+            Util.SetOriginalImageForButton (moreSelectedButton, "gen-more");
+            moreSelectedButton.Clicked += (object sender, EventArgs e) => {
+                UIBlockMenu bm = (UIBlockMenu)View.ViewWithTag(1000);
+                TableView.ScrollEnabled = false;
+                bm.MenuTapped(View.Bounds);
             };
 
-            saveSelectedButton = new UIBarButtonItem (UIBarButtonSystemItem.Save);
-            saveSelectedButton.TintColor = A.Color_NachoBlue;
-            saveSelectedButton.Clicked += (object sender, EventArgs e) => {
-                var h = new SegueHolder (TableView);
-                PerformSegue ("MessageListToFolders", h);
+            UIBlockMenu blockMenu = new UIBlockMenu (this, new List<UIBlockMenu.Block> () {
+                new UIBlockMenu.Block ("contact-quickemail", "Delete", () => {
+                    if (null != messageSource) {
+                        messageSource.MultiSelectDelete (TableView);
+                    }
+                }),
+                new UIBlockMenu.Block ("email-calendartime", "Move to folder", () => {
+                    var h = new SegueHolder (TableView);
+                    PerformSegue ("MessageListToFolders", h);
+                }),
+                new UIBlockMenu.Block ("now-addcalevent", "Archive", () => {
+                    if(null != messageSource) {
+                        messageSource.MultiSelectArchive(TableView);
+                    }
+                })
+            }, View.Frame.Width);
+
+            blockMenu.Tag = 1000;
+            View.AddSubview (blockMenu);
+
+            blockMenu.MenuWillDisappear += (object sender, EventArgs e) => {
+                TableView.ScrollEnabled = true;
             };
 
-            // Initially let's hide the search controller
-//            TableView.SetContentOffset (new PointF (0.0f, 44.0f), false);
             TableView.SeparatorColor = A.Color_NachoBorderGray;
             NavigationController.NavigationBar.Translucent = false;
 
@@ -156,8 +168,7 @@ namespace NachoClient.iOS
             //                delegate {
             if (enabled) {
                 NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
-                    deleteSelectedButton,
-                    saveSelectedButton
+                    moreSelectedButton,
                 };
                 NavigationItem.SetLeftBarButtonItem (cancelSelectedButton, false);
                 NavigationItem.HidesBackButton = true;
