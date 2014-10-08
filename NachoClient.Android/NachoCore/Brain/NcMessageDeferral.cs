@@ -126,7 +126,9 @@ namespace NachoCore.Brain
                 from = DateTime.MaxValue;
                 break;
             case MessageDeferralType.Custom:
+                break;
             case MessageDeferralType.None:
+                break;
             default:
                 NcAssert.CaseError ();
                 return NcResult.Error (String.Format ("ComputeDeferral; {0} was unexpected", deferralType));
