@@ -272,10 +272,9 @@ namespace NachoClient.iOS
                 return;
             }
             var message = messageThread.SingleMessageSpecialCase ();
-            if (null == message) {
-                return;
+            if (null != message) {
+                message.ToggleHotOrNot ();
             }
-            message.ToggleHotOrNot ();
             owner.priorityInbox.Refresh ();
             owner.ReloadHotListData ();
         }
