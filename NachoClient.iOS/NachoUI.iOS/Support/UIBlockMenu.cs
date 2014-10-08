@@ -181,7 +181,6 @@ namespace NachoClient.iOS
         protected UIButton BlockButton (Block viewBlock)
         {
             float yOffset = 20;
-            float approximateWidth = viewBlock.blockLabel.Length * 5;
 
             UIButton blockButton = new UIButton (new RectangleF (0, 0, ViewWidth / 3 - 2, ROW_HEIGHT - 2));
 
