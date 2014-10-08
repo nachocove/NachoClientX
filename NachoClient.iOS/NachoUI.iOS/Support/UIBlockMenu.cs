@@ -13,6 +13,9 @@ namespace NachoClient.iOS
     [MonoTouch.Foundation.Register ("UIBlockMenu")]
     public class UIBlockMenu : UIView
     {
+
+        public event EventHandler MenuWillDisappear;
+
         protected float ViewWidth; 
 
         protected const int ROW_HEIGHT = 100;
@@ -154,6 +157,13 @@ namespace NachoClient.iOS
 
         public void MenuTapped ()
         {
+            MenuTapped(this.Frame);
+        }
+
+        public void MenuTapped (RectangleF rect)
+        {
+            this.Frame = rect;
+
             if (this.Alpha == 0.0f) {
                 rightBarButtons = owner.NavigationItem.RightBarButtonItems;
                 leftBarButtons = owner.NavigationItem.LeftBarButtonItems;
@@ -175,6 +185,11 @@ namespace NachoClient.iOS
                     this.Alpha = 0.0f;
                     menuView.Frame = new RectangleF (menuView.Frame.X, menuView.Frame.Y - menuView.Frame.Height, menuView.Frame.Width, menuView.Frame.Height);
                 });
+
+                var handler = MenuWillDisappear;
+                if (null != handler) {
+                    handler (this, null);
+                }
             }
         }
 
