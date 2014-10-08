@@ -214,6 +214,11 @@ namespace NachoClient.iOS
             case NcQuickResponse.QRTypeEnum.Forward:
                 mcMessage.BodyId = McBody.InsertFile (account.Id, bodyTextView.Text).Id;
                 break;
+            case NcQuickResponse.QRTypeEnum.None:
+                break;
+            default:
+                NcAssert.CaseError ("This type is not supported");
+                break;
             }
 
             mcMessage.Subject = subjectField.Text;

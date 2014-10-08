@@ -193,11 +193,11 @@ namespace NachoClient.iOS
             
             yOffset = blockIconImageView.Frame.Bottom + 5;
 
-            UILabel iconLabel = new UILabel (new RectangleF (blockButton.Frame.Width / 2 - approximateWidth / 2 , yOffset, approximateWidth, 40));
+            UILabel iconLabel = new UILabel (new RectangleF (10, yOffset, blockButton.Frame.Width - 20, (FormatBlockLabel (viewBlock.blockLabel).Contains("\n") ? 40 : 30)));
             iconLabel.Font = A.Font_AvenirNextMedium12;
             iconLabel.LineBreakMode = UILineBreakMode.WordWrap;
             iconLabel.Lines = 2;
-            iconLabel.Text = viewBlock.blockLabel;
+            iconLabel.Text = FormatBlockLabel (viewBlock.blockLabel);
             iconLabel.TextColor = UIColor.White;
             iconLabel.TextAlignment = UITextAlignment.Center;
             blockButton.AddSubview (iconLabel);
@@ -210,6 +210,29 @@ namespace NachoClient.iOS
             }
 
             return blockButton;
+        }
+
+        protected string FormatBlockLabel (string label)
+        {
+            label = label.Trim ();
+            string[] tokens = label.Split (" ".ToCharArray());
+
+            if (tokens.Length < 2) {
+                return label;
+            }
+
+            if (2 == tokens.Length) {
+                return label.Replace (" ", "\n");
+            } else {
+                string formattedLabel = "";
+                for (int i = 0; i < tokens.Length; i++) {
+                    formattedLabel += tokens [i] + " ";
+                    if (i == 1) {
+                        formattedLabel += "\n";
+                    }
+                }
+                return formattedLabel;
+            }
         }
 
         public class Block
