@@ -223,7 +223,7 @@ namespace NachoClient.iOS
                     continue;
                 }
                 bodyView.DownloadComplete (succeed);
-                carouselView.ReloadItemAtIndex (carouselView.CurrentItemIndex, true);
+                carouselView.ReloadItemAtIndex (index, true);
             }
         }
 
