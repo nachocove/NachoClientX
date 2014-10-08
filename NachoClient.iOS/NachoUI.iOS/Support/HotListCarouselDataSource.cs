@@ -554,7 +554,7 @@ namespace NachoClient.iOS
                 // change more than 16 items. When the user lifts the finger off
                 // the screen and get ready for another swipe, it will have a couple
                 // seconds to pre-render another set of items.
-                return 16.0f;
+                return 3.0f;
             default:
                 return value;
             }
