@@ -19,7 +19,6 @@ namespace NachoClient.iOS
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
         protected HashSet<int> MultiSelect = null;
         protected bool allowMultiSelect;
-        protected bool compactMode;
         public IMessageTableViewSourceDelegate owner;
 
         protected NcCapture ArchiveCaptureMessage;
@@ -43,11 +42,6 @@ namespace NachoClient.iOS
             NcCapture.AddKind (RefreshCaptureName);
             RefreshCapture = NcCapture.Create (RefreshCaptureName);
             messageCache = new Dictionary<int, McEmailMessage> ();
-        }
-
-        public void SetCompactMode (bool compactMode)
-        {
-            this.compactMode = compactMode;
         }
 
         public void SetEmailMessages (INachoEmailMessages messageThreads)
@@ -104,15 +98,11 @@ namespace NachoClient.iOS
             }
         }
 
-        const float COMPACT_ROW_HEIGHT = 69.0f;
         const float NORMAL_ROW_HEIGHT = 126.0f;
         const float DATED_ROW_HEIGHT = 161.0f;
 
         protected float HeightForMessage (McEmailMessage message)
         {
-            if (compactMode) {
-                return COMPACT_ROW_HEIGHT;
-            }
             if (message.IsDeferred () || message.HasDueDate ()) {
                 return DATED_ROW_HEIGHT;
             }
@@ -122,11 +112,11 @@ namespace NachoClient.iOS
         public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
         {
             if (NoMessageThreads ()) {
-                return COMPACT_ROW_HEIGHT;
+                return NORMAL_ROW_HEIGHT;
             }
             var messageThread = messageThreads.GetEmailThread (indexPath.Row);
             if (null == messageThread) {
-                return COMPACT_ROW_HEIGHT;
+                return NORMAL_ROW_HEIGHT;
             }
             var message = messageThread.SingleMessageSpecialCase ();
             messageCache [indexPath.Row] = message;
@@ -427,9 +417,6 @@ namespace NachoClient.iOS
             }
 
             var cellWidth = cell.Frame.Width;
-            if (compactMode) {
-                cellWidth -= 30;
-            }
 
             // User image view
             var userImageView = cell.ContentView.ViewWithTag (USER_IMAGE_TAG) as UIImageView;
@@ -465,17 +452,15 @@ namespace NachoClient.iOS
 
             // Preview label view
             var previewLabelView = cell.ContentView.ViewWithTag (PREVIEW_TAG) as UILabel;
-            previewLabelView.Hidden = compactMode;
-            if (!compactMode) {
-                var rawPreview = message.GetBodyPreviewOrEmpty ();
-                var cookedPreview = System.Text.RegularExpressions.Regex.Replace (rawPreview, @"\s+", " ");
-                previewLabelView.AttributedText = new NSAttributedString (cookedPreview);
-            }
+            previewLabelView.Hidden = false;
+            var rawPreview = message.GetBodyPreviewOrEmpty ();
+            var cookedPreview = System.Text.RegularExpressions.Regex.Replace (rawPreview, @"\s+", " ");
+            previewLabelView.AttributedText = new NSAttributedString (cookedPreview);
 
             // Reminder image view and label
             var reminderImageView = cell.ContentView.ViewWithTag (REMINDER_ICON_TAG) as UIImageView;
             var reminderLabelView = cell.ContentView.ViewWithTag (REMINDER_TEXT_TAG) as UILabel;
-            if ((!compactMode) && (message.HasDueDate () || message.IsDeferred ())) {
+            if (message.HasDueDate () || message.IsDeferred ()) {
                 reminderImageView.Hidden = false;
                 reminderLabelView.Hidden = false;
                 reminderLabelView.Text = Pretty.ReminderText (message);
