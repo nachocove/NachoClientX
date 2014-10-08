@@ -25,24 +25,21 @@ namespace NachoCore.Brain
         {
         }
 
-        /// <summary>
-        /// Defer the messages in a the thread.
-        /// </summary>
-        /// <returns>An NcResult with the status of the update.</returns>
-        /// <param name="thread">Message list</param>
-        /// <param name="deferralType">Delay type.</param>
-        static public NcResult DeferThread (McEmailMessageThread thread, MessageDeferralType deferralType)
-        {
-            NcResult r = ComputeDeferral (DateTime.Now, deferralType);
-            if (r.isError ()) {
-                return r;
-            }
-            var deferUntil = r.GetValue<DateTime> ();
-            return DeferThread (thread, deferralType, deferUntil);
-        }
-
         static public NcResult DeferThread (McEmailMessageThread thread, MessageDeferralType deferralType, DateTime deferUntil)
         {
+            if (MessageDeferralType.None == deferralType) {
+                UndeferThread (thread);
+                return NcResult.OK ();
+            }
+
+            if (MessageDeferralType.Custom != deferralType) {
+                NcResult r = ComputeDeferral (DateTime.Now, deferralType);
+                if (r.isError ()) {
+                    return r;
+                }
+                deferUntil = r.GetValue<DateTime> ();
+            }
+
             foreach (var message in thread) {
                 message.DeferralType = deferralType;
                 message.Update ();
@@ -126,9 +123,7 @@ namespace NachoCore.Brain
                 from = DateTime.MaxValue;
                 break;
             case MessageDeferralType.Custom:
-                break;
             case MessageDeferralType.None:
-                break;
             default:
                 NcAssert.CaseError ();
                 return NcResult.Error (String.Format ("ComputeDeferral; {0} was unexpected", deferralType));
