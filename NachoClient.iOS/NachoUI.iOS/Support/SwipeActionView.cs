@@ -660,6 +660,7 @@ namespace NachoClient.iOS
                 newButton.TouchUpInside += (object sender, EventArgs e) => {
                     int tag = newButton.Config.Tag;
                     RemoveSwipingView ();
+                    OnSwipe (SwipeState.SWIPE_END_ALL_HIDDEN);
                     OnClick (tag);
                 };
             }
