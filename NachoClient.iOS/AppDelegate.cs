@@ -139,6 +139,12 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "FailedToRegisterForRemoteNotifications: {0}", error.LocalizedDescription);
         }
 
+        public override void ReceiveMemoryWarning (UIApplication application)
+        {
+            Log.Info (Log.LOG_SYS, "Receive memory warning ({0} MB)",
+                (int)NachoPlatformBinding.PlatformProcess.GetUsedMemory () / (1024 * 1024));
+        }
+
         /// This is not a service but rather initialization of some native
         /// ObjC functions. It must be initialized before any UI object is
         /// created.
