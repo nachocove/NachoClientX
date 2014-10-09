@@ -605,6 +605,20 @@ namespace NachoCore.ActiveSync
             return retval;
         }
 
+        // <DEBUG>
+        private void DumpAsState ()
+        {
+            var protocolState = BEContext.ProtocolState;
+            NcAssert.NotNull (protocolState);
+            Log.Error (Log.LOG_AS, "DumpAsState: ProtoControlState: {0}", protocolState.ProtoControlState);
+            var servers = NcModel.Instance.Db.Table<McServer> ().ToList ();
+            Log.Error (Log.LOG_AS, "DumpAsState: {0} McServers in table", servers.Count);
+            foreach (var server in servers) {
+                Log.Error (Log.LOG_AS, "DumpAsState: server.Id/server.Host: {0}/{1}", server.Id, server.Host);
+            }
+        }
+        // </DEBUG>
+
         public Tuple<PickActionEnum, AsCommand> Pick ()
         {
             var accountId = BEContext.Account.Id;
@@ -706,6 +720,19 @@ namespace NachoCore.ActiveSync
 
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt ||
                 NcApplication.ExecutionContextEnum.Background == exeCtxt) {
+                // <DEBUG>
+                if (null == NcCommStatus.Instance) {
+                    NcAssert.True (false, "null NcCommStatus.Instance");
+                }
+                if (null == BEContext) {
+                    NcAssert.True (false, "null BEContext");
+                }
+                if (null == BEContext.Server) {
+                    Log.Error (Log.LOG_AS, "null BEContext.Server");
+                    DumpAsState ();
+                    NcAssert.True (false);
+                }
+                // </DEBUG>
                 if (NcCommStatus.Instance.IsRateLimited (BEContext.Server.Id)) {
                     // (FG, BG) If we are rate-limited, and we can execute a narrow Ping command at the 
                     // current filter setting, execute a narrow Ping command.

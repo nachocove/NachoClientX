@@ -111,6 +111,7 @@ namespace NachoClient.iOS
         public bool SpinnerCenteredOnParentFrame { get; set; }
 
         private float leftMargin;
+        private float htmlLeftMargin;
 
         protected UIView parentView;
         protected UIView messageView;
@@ -146,6 +147,7 @@ namespace NachoClient.iOS
             VerticalScrollingEnabled = true;
             AutomaticallyScaleHtmlContent = true;
             this.leftMargin = leftMargin;
+            this.htmlLeftMargin = htmlLeftMargin;
 
             this.parentView = parentView;
             BackgroundColor = SCROLLVIEW_BGCOLOR;
@@ -190,9 +192,6 @@ namespace NachoClient.iOS
             spinner.HidesWhenStopped = true;
             spinner.Tag = (int)TagType.SPINNER_TAG;
             AddSubview (spinner);
-
-            // webView holds all HTML content
-            webView = new BodyWebView (this, htmlLeftMargin);
         }
 
         public void Configure (McAbstrItem item)
@@ -208,6 +207,15 @@ namespace NachoClient.iOS
             for (int i = messageView.Subviews.Length - 1; i >= 0; i--) {
                 messageView.Subviews [i].RemoveFromSuperview ();
             }
+            // Web view consumes a lot of memory. We manually dispose it to force all ObjC
+            // objects to be freed.
+            if (null != webView) {
+                if (webView.IsLoading) {
+                    webView.StopLoading ();
+                }
+                webView.Dispose ();
+            }
+            webView = new BodyWebView (this, htmlLeftMargin);
 
             if (item.IsDownloaded ()) {
                 loadState = LoadState.IDLE;

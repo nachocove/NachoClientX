@@ -10,6 +10,10 @@ using NachoCore.Utils;
 using NachoCore.Wbxml;
 using NachoClient.Build;
 using NachoPlatform;
+#if __IOS__
+// TODO - Add Android version later
+using NachoPlatformBinding;
+#endif
 using System.Security.Cryptography.X509Certificates;
 
 namespace NachoCore
@@ -290,7 +294,11 @@ namespace NachoCore
 
         public void MonitorReport ()
         {
-            Log.Info (Log.LOG_SYS, "Monitor: Total Memory {0} MB", GC.GetTotalMemory (true) / (1024 * 1024));
+            #if __IOS__
+            // TODO - Add Android support later
+            Log.Info (Log.LOG_SYS, "Monitor: Process Memory {0} MB", (int)PlatformProcess.GetUsedMemory () / (1024 * 1024));
+            #endif
+            Log.Info (Log.LOG_SYS, "Monitor: GC Memory {0} MB", GC.GetTotalMemory (true) / (1024 * 1024));
             int workerThreads, completionPortThreads;
             ThreadPool.GetMinThreads (out workerThreads, out completionPortThreads);
             Log.Info (Log.LOG_SYS, "Monitor: Min Threads {0}/{1}", workerThreads, completionPortThreads);
