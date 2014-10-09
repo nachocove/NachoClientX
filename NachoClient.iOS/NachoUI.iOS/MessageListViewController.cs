@@ -37,6 +37,8 @@ namespace NachoClient.iOS
         protected NcCapture ReloadCapture;
         private string ReloadCaptureName;
 
+        protected const int BLOCK_MENU_TAG = 1000;
+
         public void SetEmailMessages (INachoEmailMessages messageThreads)
         {
             this.messageSource.SetEmailMessages (messageThreads);
@@ -71,7 +73,7 @@ namespace NachoClient.iOS
             moreSelectedButton = new UIBarButtonItem ();
             Util.SetOriginalImageForButton (moreSelectedButton, "gen-more");
             moreSelectedButton.Clicked += (object sender, EventArgs e) => {
-                UIBlockMenu bm = (UIBlockMenu)View.ViewWithTag(1000);
+                UIBlockMenu bm = (UIBlockMenu)View.ViewWithTag(BLOCK_MENU_TAG);
                 TableView.ScrollEnabled = false;
                 bm.MenuTapped(View.Bounds);
             };
@@ -93,7 +95,7 @@ namespace NachoClient.iOS
                 })
             }, View.Frame.Width);
 
-            blockMenu.Tag = 1000;
+            blockMenu.Tag = BLOCK_MENU_TAG;
             View.AddSubview (blockMenu);
 
             blockMenu.MenuWillDisappear += (object sender, EventArgs e) => {
@@ -102,6 +104,7 @@ namespace NachoClient.iOS
 
             TableView.SeparatorColor = A.Color_NachoBorderGray;
             NavigationController.NavigationBar.Translucent = false;
+            Util.HideBlackNavigationControllerLine (NavigationController.NavigationBar);
 
             // Search button brings up the search controller
 //            searchButton.Clicked += (object sender, EventArgs e) => {
