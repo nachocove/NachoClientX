@@ -39,7 +39,6 @@ namespace NachoCore.Brain
                 }
                 deferUntil = r.GetValue<DateTime> ();
             }
-
             foreach (var message in thread) {
                 message.DeferralType = deferralType;
                 message.Update ();
@@ -125,8 +124,8 @@ namespace NachoCore.Brain
             case MessageDeferralType.Custom:
             case MessageDeferralType.None:
             default:
-                NcAssert.CaseError ();
-                return NcResult.Error (String.Format ("ComputeDeferral; {0} was unexpected", deferralType));
+                NcAssert.CaseError (String.Format ("ComputeDeferral; {0} was unexpected", deferralType));
+                return NcResult.Error ("");
             }
             return NcResult.OK (from.ToUniversalTime ());
         }
