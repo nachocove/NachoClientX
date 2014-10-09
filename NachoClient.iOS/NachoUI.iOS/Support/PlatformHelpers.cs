@@ -22,6 +22,7 @@ namespace NachoClient
     public class PlatformHelpers
     {
         static public MimeMessage motd;
+        static public List<MimeMessage> motdList = new List<MimeMessage>();
 
         public PlatformHelpers ()
         {
@@ -29,7 +30,7 @@ namespace NachoClient
 
         static public UIImage RenderContentId (string value)
         {
-            MimeEntity e = MimeHelpers.SearchMessage (value, motd);
+            MimeEntity e = MimeHelpers.SearchMessages (value, motdList);
             if (null == e) {
                 Log.Error (Log.LOG_UTILS, "RenderContentId: MimeEntity is null: {0}", value);
                 return RenderStringToImage (value);

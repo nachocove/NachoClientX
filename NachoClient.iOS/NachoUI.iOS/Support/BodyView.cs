@@ -271,6 +271,7 @@ namespace NachoClient.iOS
                 var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
                 var mime = bodyParser.ParseMessage ();
                 PlatformHelpers.motd = mime; // for cid handler
+                PlatformHelpers.motdList.Add (mime);
                 MimeHelpers.DumpMessage (mime, 0);
                 var list = new List<MimeEntity> ();
                 MimeHelpers.MimeDisplayList (mime, ref list);
