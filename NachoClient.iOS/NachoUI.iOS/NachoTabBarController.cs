@@ -29,14 +29,14 @@ namespace NachoClient.iOS
 
             RestoreCustomTabBarOrder ();
 
-            SetTabBarItem ("NachoClient.iOS.NachoNowViewController", "Now", "icn-inbox", "icn-inbox");
+            SetTabBarItem ("NachoClient.iOS.NachoNowViewController", "Now", "nav-nachonow", "icn-nachonow-active");
             SetTabBarItem ("NachoClient.iOS.CalendarViewController", "Calendar", "nav-calendar", "nav-calendar-active");
             SetTabBarItem ("NachoClient.iOS.FilesHierarchyViewController", "Files", "icn-inbox", "icn-inbox");
             SetTabBarItem ("NachoClient.iOS.ContactListViewController", "Contacts", "nav-contacts", "nav-contact-active");
             SetTabBarItem ("NachoClient.iOS.InboxViewController", "Inbox", "icn-inbox", "icn-inbox");
             SetTabBarItem ("NachoClient.iOS.GeneralSettingsViewController", "Settings", "icn-inbox", "icn-inbox");
             SetTabBarItem ("NachoClient.iOS.SupportViewController", "Support", "icn-inbox", "icn-inbox");
-            SetTabBarItem ("NachoClient.iOS.HotListViewController", "Hot", "nav-nachonow", "nav-nachonow-active");
+            SetTabBarItem ("NachoClient.iOS.HotListViewController", "Hot", "nav-inbox", "nav-inbox");
             SetTabBarItem ("NachoClient.iOS.DeferredViewController", "Deferred", "icn-inbox", "icn-inbox");
             SetTabBarItem ("NachoClient.iOS.FoldersViewController", "Folders", "nav-folder", "nav-folder-active");
             SetTabBarItem ("NachoClient.iOS.AttachmentsViewController", "Attachments", "icn-inbox", "icn-inbox");
