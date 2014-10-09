@@ -69,9 +69,17 @@ namespace NachoCore.ActiveSync
 
             public static int[,] Ladder = new int[,] {
                 // { Email, Cal, Contact, Action }
-                { (int)EmailEnum.None, (int)CalEnum.None, (int)ContactEnum.RicInf, (int)FlagEnum.IgnorePower },
-                { (int)EmailEnum.Def1d, (int)CalEnum.Def2w, (int)ContactEnum.RicInf, (int)FlagEnum.RicSynced | (int)FlagEnum.IgnorePower },
-                { (int)EmailEnum.Def3d, (int)CalEnum.Def2w, (int)ContactEnum.RicInf, (int)FlagEnum.RicSynced | (int)FlagEnum.IgnorePower }, {
+                { (int)EmailEnum.None, (int)CalEnum.None, (int)ContactEnum.RicInf, (int)FlagEnum.IgnorePower }, {
+                    (int)EmailEnum.Def1d,
+                    (int)CalEnum.Def2w,
+                    (int)ContactEnum.RicInf,
+                    (int)FlagEnum.RicSynced | (int)FlagEnum.IgnorePower
+                }, {
+                    (int)EmailEnum.Def3d,
+                    (int)CalEnum.Def2w,
+                    (int)ContactEnum.RicInf,
+                    (int)FlagEnum.RicSynced | (int)FlagEnum.IgnorePower
+                }, {
                     (int)EmailEnum.Def1w,
                     (int)CalEnum.Def2w,
                     (int)ContactEnum.RicInf,
@@ -740,7 +748,7 @@ namespace NachoCore.ActiveSync
                     if (null != rlPingKit) {
                         Log.Info (Log.LOG_AS, "Strategy:FG/BG,RL:Narrow Ping");
                         return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping, 
-                                new AsPingCommand (BEContext.ProtoControl, rlPingKit));
+                            new AsPingCommand (BEContext.ProtoControl, rlPingKit));
                     }
                     // (FG, BG) If we are rate-limited, and we can’t execute a narrow Ping command
                     // at the current filter setting, then wait.
@@ -780,8 +788,8 @@ namespace NachoCore.ActiveSync
                     case McPending.Operations.TaskMove:
                         cmd = new AsMoveItemsCommand (BEContext.ProtoControl, next, McAbstrFolderEntry.ClassCodeEnum.Tasks);
                         break;
-                        // ... however one of these below, which would have been handled above, could have been
-                        // inserted into the Q while Pick() is in the middle of running.
+                    // ... however one of these below, which would have been handled above, could have been
+                    // inserted into the Q while Pick() is in the middle of running.
                     case McPending.Operations.EmailForward:
                         cmd = new AsSmartForwardCommand (BEContext.ProtoControl, next);
                         break;
@@ -823,7 +831,7 @@ namespace NachoCore.ActiveSync
                     return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.QOop, cmd);
                 }
                 // (FG, BG) Choose eligible option by priority, split tie randomly...
-                if (Scope.FlagIsSet(protocolState.StrategyRung, Scope.FlagEnum.IgnorePower) ||
+                if (Scope.FlagIsSet (protocolState.StrategyRung, Scope.FlagEnum.IgnorePower) ||
                     (Power.Instance.PowerState != PowerStateEnum.Unknown && Power.Instance.BatteryLevel > 0.7) ||
                     (Power.Instance.PowerStateIsPlugged () && Power.Instance.BatteryLevel > 0.2)) {
                     FetchKit fetchKit = null;
