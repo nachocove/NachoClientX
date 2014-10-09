@@ -707,6 +707,13 @@ namespace NachoClient.iOS
 
             UIApplication.SharedApplication.ApplicationIconBadgeNumber = badgeCount;
         }
+
+        public override void ReceiveMemoryWarning (UIApplication application)
+        {
+            Log.Info (Log.LOG_SYS, "ReceiveMemoryWarning;");
+            Log.Info (Log.LOG_SYS, "ReceiveMemoryWarning: NSURLCache usage {0}", NSUrlCache.SharedCache.CurrentMemoryUsage);
+            NcApplication.Instance.MonitorReport ();
+        }
     }
 
     public class HockeyAppCrashDelegate : BITCrashManagerDelegate
