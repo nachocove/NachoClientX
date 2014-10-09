@@ -82,7 +82,7 @@ namespace Test.iOS
                 AccountType = McAccount.AccountTypeEnum.Exchange,
             };
             account.Insert ();
-            var strat = new AsStrategy (context);
+            var strat = new AsStrategy (context, AsStrategy.LadderChoiceEnum.Test);
             folder = McFolder.Create (account.Id, false, false, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
             folder.Insert ();
             folder = McFolder.Create (account.Id, false, false, "0", "user", "User", Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
@@ -116,7 +116,7 @@ namespace Test.iOS
                 AccountType = McAccount.AccountTypeEnum.Exchange,
             };
             account.Insert ();
-            var strat = new AsStrategy (context);
+            var strat = new AsStrategy (context, AsStrategy.LadderChoiceEnum.Test);
             folder = McFolder.Create (account.Id, false, false, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
             folder.Insert ();
             folder = McFolder.Create (account.Id, false, false, "0", "user", "User", Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
@@ -150,7 +150,7 @@ namespace Test.iOS
                 AccountType = McAccount.AccountTypeEnum.Exchange,
             };
             account.Insert ();
-            var strat = new AsStrategy (context);
+            var strat = new AsStrategy (context, AsStrategy.LadderChoiceEnum.Test);
             folder = McFolder.Create (account.Id, false, false, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
             folder.Insert ();
             folder = McFolder.Create (account.Id, false, false, "0", "user", "User", Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
@@ -192,7 +192,7 @@ namespace Test.iOS
                 AccountType = McAccount.AccountTypeEnum.Exchange,
             };
             account.Insert ();
-            var strat = new AsStrategy (context);
+            var strat = new AsStrategy (context, AsStrategy.LadderChoiceEnum.Test);
             var emailFolder = McFolder.Create (account.Id, false, false, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
             emailFolder.AsSyncMetaToClientExpected = false;
             emailFolder.Insert ();
@@ -251,7 +251,7 @@ namespace Test.iOS
             context.ProtocolState.StrategyRung = 5;
             context.ProtocolState.Update ();
             int result;
-            var strat = new AsStrategy (context);
+            var strat = new AsStrategy (context, AsStrategy.LadderChoiceEnum.Test);
             var emailFolder = McFolder.Create (account.Id, false, false, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
             emailFolder.AsSyncMetaToClientExpected = false;
             emailFolder.Insert ();
@@ -289,7 +289,7 @@ namespace Test.iOS
                 AccountType = McAccount.AccountTypeEnum.Exchange,
             };
             account.Insert ();
-            var strat = new AsStrategy (context);
+            var strat = new AsStrategy (context, AsStrategy.LadderChoiceEnum.Test);
             folder = McFolder.Create (account.Id, false, false, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
             folder.Insert ();
             folder = McFolder.Create (account.Id, false, false, "0", "useremail", "UserEmail", Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
@@ -323,7 +323,7 @@ namespace Test.iOS
         public void TestEmailParametersProvider ()
         {
             var context = new MockContext ();
-            var strat = new AsStrategy (context);
+            var strat = new AsStrategy (context, AsStrategy.LadderChoiceEnum.Test);
             var account = new McAccount () {
                 AccountType = McAccount.AccountTypeEnum.Exchange,
             };
@@ -346,7 +346,7 @@ namespace Test.iOS
         public void CalEmailParametersProvider ()
         {
             var context = new MockContext ();
-            var strat = new AsStrategy (context);
+            var strat = new AsStrategy (context, AsStrategy.LadderChoiceEnum.Test);
             var account = new McAccount () {
                 AccountType = McAccount.AccountTypeEnum.Exchange,
             };
@@ -370,7 +370,7 @@ namespace Test.iOS
         {
 
             var context = new MockContext ();
-            var strat = new AsStrategy (context);
+            var strat = new AsStrategy (context, AsStrategy.LadderChoiceEnum.Test);
             var account = new McAccount () {
                 AccountType = McAccount.AccountTypeEnum.Exchange,
             };
@@ -393,7 +393,7 @@ namespace Test.iOS
         public void ParametersProvider ()
         {
             var context = new MockContext ();
-            var strat = new AsStrategy (context);
+            var strat = new AsStrategy (context, AsStrategy.LadderChoiceEnum.Test);
             var account = new McAccount () {
                 AccountType = McAccount.AccountTypeEnum.Exchange,
             };
@@ -440,7 +440,7 @@ namespace Test.iOS
         public void TestAllSyncedFolders ()
         {
             var context = new MockContext ();
-            var strat = new AsStrategy (context);
+            var strat = new AsStrategy (context, AsStrategy.LadderChoiceEnum.Test);
             var account = new McAccount () {
                 AccountType = McAccount.AccountTypeEnum.Exchange,
             };
@@ -473,7 +473,7 @@ namespace Test.iOS
         public void TestGenNarrowSyncKit ()
         {
             var context = new MockContext ();
-            var strat = new AsStrategy (context);
+            var strat = new AsStrategy (context, AsStrategy.LadderChoiceEnum.Test);
             var account = new McAccount () {
                 AccountType = McAccount.AccountTypeEnum.Exchange,
             };
@@ -518,7 +518,7 @@ namespace Test.iOS
         public void TestNarrowFoldersNoToClientExpected ()
         {
             var context = new MockContext ();
-            var strat = new AsStrategy (context);
+            var strat = new AsStrategy (context, AsStrategy.LadderChoiceEnum.Test);
             var account = new McAccount () {
                 AccountType = McAccount.AccountTypeEnum.Exchange,
             };
@@ -545,7 +545,7 @@ namespace Test.iOS
                 AccountType = McAccount.AccountTypeEnum.Exchange,
             };
             account.Insert ();
-            var strat = new AsStrategy (context);
+            var strat = new AsStrategy (context, AsStrategy.LadderChoiceEnum.Test);
             var inbox = McFolder.Create (account.Id, false, false, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
             inbox.AsSyncLastPing = DateTime.UtcNow;
             inbox.Insert ();
@@ -686,7 +686,7 @@ namespace Test.iOS
                 AccountType = McAccount.AccountTypeEnum.Exchange,
             };
             account.Insert ();
-            var strat = new AsStrategy (context);
+            var strat = new AsStrategy (context, AsStrategy.LadderChoiceEnum.Test);
             var result = strat.GenFetchKit (account.Id);
             Assert.IsNull (result);
 
@@ -728,7 +728,7 @@ namespace Test.iOS
             context.ProtocolState.StrategyRung = 6;
             context.ProtocolState.AsSyncLimit = 5;
             context.ProtocolState.Update ();
-            var strat = new AsStrategy (context);
+            var strat = new AsStrategy (context, AsStrategy.LadderChoiceEnum.Test);
             var inbox = McFolder.Create (account.Id, false, false, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
             inbox.AsSyncKey = "1";
             inbox.Insert ();

@@ -16,6 +16,12 @@ namespace NachoCore.ActiveSync
         public const int KBasePerFolderWindowSize = 100;
         public const int KBaseFetchSize = 10;
 
+        public enum LadderChoiceEnum
+        {
+            Production,
+            Test,
+        };
+
         // Public for testing only.
         public class Scope
         {
@@ -67,7 +73,9 @@ namespace NachoCore.ActiveSync
 
             private static ItemType[] ItemTypeSeq = new ItemType[] { ItemType.Email, ItemType.Cal, ItemType.Contact };
 
-            public static int[,] Ladder = new int[,] {
+            public static int[,] Ladder;
+
+            public static int[,] TestLadder = new int[,] {
                 // { Email, Cal, Contact, Action }
                 { (int)EmailEnum.None, (int)CalEnum.None, (int)ContactEnum.RicInf, (int)FlagEnum.IgnorePower }, {
                     (int)EmailEnum.Def1d,
@@ -162,10 +170,25 @@ namespace NachoCore.ActiveSync
         private IBEContext BEContext;
         private Random CoinToss;
 
-        public AsStrategy (IBEContext beContext)
+        public AsStrategy (IBEContext beContext, LadderChoiceEnum ladder)
         {
             BEContext = beContext;
             CoinToss = new Random ();
+            switch (ladder) {
+            case LadderChoiceEnum.Test:
+                Scope.Ladder = Scope.TestLadder;
+                break;
+            case LadderChoiceEnum.Production:
+                Scope.Ladder = Scope.TestLadder; // FIXME.
+                break;
+            default:
+                NcAssert.CaseError (ladder.ToString ());
+                break;
+            }
+        }
+
+        public AsStrategy (IBEContext beContext) : this (beContext, LadderChoiceEnum.Production)
+        {
         }
 
         public bool CanAdvance (int accountId, int rung)
