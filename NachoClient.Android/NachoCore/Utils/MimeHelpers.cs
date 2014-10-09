@@ -53,7 +53,6 @@ namespace NachoCore.Utils
             return null;
         }
 
-
         public static MimeEntity SearchMessage (string cid, MimeMessage message)
         {
             NcAssert.True (null != message);
