@@ -122,7 +122,7 @@ namespace NachoClient.iOS
                     owner.Selectable = true;
                     break;
                 case SwipeActionView.SwipeState.SWIPE_END_ALL_SHOWN:
-                    owner.carouselView.ScrollEnabled = true;
+                    owner.carouselView.ScrollEnabled = false;
                     owner.Selectable = false;
                     break;
                 default:
