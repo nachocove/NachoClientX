@@ -794,6 +794,11 @@ namespace NachoClient
             }
         }
 
+        public static void HideBlackNavigationControllerLine (UINavigationBar navBar){
+            navBar.SetBackgroundImage(new UIImage (),UIBarMetrics.Default);
+            navBar.ShadowImage = new UIImage ();
+        }
+
         #endregion
     }
 }
