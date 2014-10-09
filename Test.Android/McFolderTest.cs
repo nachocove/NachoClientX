@@ -79,8 +79,8 @@ namespace Test.iOS
                 FolderOps.CreateFolder (accountId, typeCode: typeCode1, parentId: parentId, name: name);
                 FolderOps.CreateFolder (accountId, typeCode: typeCode2, parentId: parentId, name: name);
 
-                McFolder expected1 = McFolder.GetUserFolder (accountId, typeCode1, parentId.ToInt (), name);
-                McFolder expected2 = McFolder.GetUserFolder (accountId, typeCode2, parentId.ToInt (), name);
+                McFolder expected1 = McFolder.GetUserFolders (accountId, typeCode1, parentId.ToInt (), name).First();
+                McFolder expected2 = McFolder.GetUserFolders (accountId, typeCode2, parentId.ToInt (), name).First();
 
                 Assert.AreNotEqual (expected1.Type, expected2.Type, "Folders should be able to have the same name and parent as long as their typecodes are different");
             }
@@ -102,8 +102,8 @@ namespace Test.iOS
                 FolderOps.CreateFolder (accountId, typeCode: typeCode, parentId: parent1.ServerId, name: name);
                 FolderOps.CreateFolder (accountId, typeCode: typeCode, parentId: parent2.ServerId, name: name);
 
-                McFolder expected1 = McFolder.GetUserFolder (accountId, typeCode, serverId1.ToInt (), name);
-                McFolder expected2 = McFolder.GetUserFolder (accountId, typeCode, serverId2.ToInt (), name);
+                McFolder expected1 = McFolder.GetUserFolders (accountId, typeCode, serverId1.ToInt (), name).First();
+                McFolder expected2 = McFolder.GetUserFolders (accountId, typeCode, serverId2.ToInt (), name).First();
 
                 Assert.AreNotEqual (expected1.ParentId, expected2.ParentId, "Folders with identical properties should be able to reside under different parents"); 
             }
@@ -122,8 +122,8 @@ namespace Test.iOS
                 FolderOps.CreateFolder (accountId, typeCode: typeCode, parentId: parentId, name: name1);
                 FolderOps.CreateFolder (accountId, typeCode: typeCode, parentId: parentId, name: name2);
 
-                McFolder expected1 = McFolder.GetUserFolder (accountId, typeCode: typeCode, parentId: parentId.ToInt (), name: name1);
-                McFolder expected2 = McFolder.GetUserFolder (accountId, typeCode: typeCode, parentId: parentId.ToInt (), name: name2);
+                McFolder expected1 = McFolder.GetUserFolders (accountId, typeCode: typeCode, parentId: parentId.ToInt (), name: name1).First();
+                McFolder expected2 = McFolder.GetUserFolders (accountId, typeCode: typeCode, parentId: parentId.ToInt (), name: name2).First();
 
                 Assert.AreNotEqual (expected1.DisplayName, expected2.DisplayName, "Folders with different names should be considered separate folders");
             }
