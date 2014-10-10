@@ -1095,7 +1095,7 @@ namespace NachoCore.Model
             );
         }
 
-        public static List<NcContactIndex> RicContactsSortedByRank (int accountId)
+        public static List<NcContactIndex> RicContactsSortedByRank (int accountId, int limit)
         {
             // Get the RIC folder
             McFolder ricFolder = McFolder.GetRicContactFolder (accountId);
@@ -1112,8 +1112,8 @@ namespace NachoCore.Model
                 " m.AccountId = ? AND " +
                 " m.ClassCode = ? AND " +
                 " m.FolderId = ? " +
-                " ORDER BY c.WeightedRank DESC",
-                accountId, accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Contact, ricFolder.Id);
+                " ORDER BY c.WeightedRank DESC LIMIT ?",
+                accountId, accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Contact, ricFolder.Id, limit);
         }
 
         public static McContact QueryByDeviceUniqueId (string deviceUniqueId)
