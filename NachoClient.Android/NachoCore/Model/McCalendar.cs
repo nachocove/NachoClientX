@@ -141,9 +141,25 @@ namespace NachoCore.Model
 
         public static McCalendar QueryByUID (string UID)
         {
-            return NcModel.Instance.Db.Table<McCalendar> ().Where (x => 
-                x.UID == UID
-            ).SingleOrDefault ();
+            var sameUid = NcModel.Instance.Db.Table<McCalendar> ().Where (
+                              x => x.UID == UID
+                          );
+            if (1 < sameUid.Count ()) {
+                // This shouldn't happen.  But we have seen it happen.
+                // Log an error message to help us get a grasp on the
+                // problem.  But don't crash.
+                Log.Error (Log.LOG_CALENDAR, "There are {0} events with the same UID ({1}). The one with the most recent modification time will be used.",
+                    sameUid.Count (), UID);
+                McCalendar mostRecent = null;
+                foreach (var cal in sameUid) {
+                    if (null == mostRecent || cal.LastModified.CompareTo (mostRecent.LastModified) > 0) {
+                        mostRecent = cal;
+                    }
+                }
+                return mostRecent;
+            } else {
+                return sameUid.FirstOrDefault ();
+            }
         }
 
         public static List<McCalendar> QueryOutOfDateRecurrences (DateTime generateUntil)
