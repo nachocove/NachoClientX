@@ -234,6 +234,13 @@ namespace NachoCore
             // Don't Task.Run.
             ServiceFromAccountId (accountId).Cancel (token);
         }
+
+        public void Prioritize (int accountId, string token)
+        {
+            // Don't Task.Run - must be super-fast return (no network).
+            ServiceFromAccountId (accountId).Prioritize (token);
+        }
+
         // TODO - should these take Token?
         public void UnblockPendingCmd (int accountId, int pendingId)
         {

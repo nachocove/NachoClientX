@@ -6,7 +6,6 @@ using NUnit.Framework;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore.ActiveSync;
-using System.Linq;
 using BlockReasonEnum = NachoCore.Model.McPending.BlockReasonEnum;
 using StateEnum = NachoCore.Model.McPending.StateEnum;
 using WhyEnum = NachoCore.Utils.NcResult.WhyEnum;

@@ -40,6 +40,8 @@ namespace NachoCore
         void CredResp (int accountId);
         // cancel command/request associated with this token (if possible).
         void Cancel (int accountId, string token);
+        // Move an operation to the head of the pending Q.
+        void Prioritize (int accountId, string token);
         // user-block issue is resolved, try again.
         void UnblockPendingCmd (int accountId, int pendingId);
         // accept the fail. delete the pending obj.
