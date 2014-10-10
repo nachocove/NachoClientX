@@ -775,6 +775,7 @@ namespace NachoClient.iOS
             fromLabelView.Font = (message.IsRead ? A.Font_AvenirNextDemiBold17 : A.Font_AvenirNextRegular17);
 
             deferLayout = new RecursionCounter (() => {
+                bodyView.RemoveMessageFromDict(message);
                 LayoutView ();
             });
             deferLayout.Increment (); // count = 1
@@ -836,7 +837,6 @@ namespace NachoClient.iOS
         protected void RenderBody (McEmailMessage message)
         {
             bodyView.Configure (message);
-
         }
 
         protected void ConfigureAttachments ()

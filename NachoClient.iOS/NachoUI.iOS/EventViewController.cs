@@ -677,6 +677,7 @@ namespace NachoClient.iOS
             }
 
             deferLayout = new RecursionCounter (() => {
+                descriptionView.RemoveMessageFromDict(c);
                 LayoutView ();
             });
             deferLayout.Increment ();

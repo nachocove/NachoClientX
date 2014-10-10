@@ -9,6 +9,7 @@ using System.Linq;
 using MimeKit;
 using NachoCore;
 using NachoCore.Model;
+using NachoClient;
 
 namespace NachoCore.Utils
 {
@@ -42,9 +43,9 @@ namespace NachoCore.Utils
             }
         }
 
-        public static MimeEntity SearchMessages (string cid, List<MimeMessage> messages)
+        public static MimeEntity SearchMessages (string cid, Dictionary<McAbstrItem,MimeMessage> motdDict)
         {
-            foreach (var message in messages) {
+            foreach (var message in motdDict.Values) {
                 var entity = SearchMimeEntity (cid, message.Body);
                 if (null != entity) {
                     return entity;
