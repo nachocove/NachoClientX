@@ -1079,8 +1079,14 @@ namespace Test.iOS
                     Operation = first.Operation,
                 };
                 Assert.True (second.IsDuplicate ());
+                McPending found;
+                Assert.True (second.IsDuplicate (out found));
+                Assert.NotNull (found);
+                Assert.AreEqual (first.ServerId, found.ServerId);
                 second.ServerId = secondSId;
                 Assert.False (second.IsDuplicate ());
+                Assert.False (second.IsDuplicate (out found));
+                Assert.Null (found);
                 second.ServerId = first.ServerId;
                 Assert.True (second.IsDuplicate ());
                 second.ParentId = "cat";

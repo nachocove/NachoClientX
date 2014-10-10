@@ -255,6 +255,12 @@ namespace NachoCore.Model
 
         public bool IsDuplicate ()
         {
+            McPending dummy;
+            return IsDuplicate (out dummy);
+        }
+
+        public bool IsDuplicate (out McPending dupRef)
+        {
             switch (Operation) {
             case Operations.EmailBodyDownload:
                 // TODO: if we add more cases, have lambda-per-Operation.
@@ -262,15 +268,18 @@ namespace NachoCore.Model
                 foreach (var pending in sameServerId) {
                     if (pending.Operation == Operation &&
                         pending.ParentId == ParentId) {
+                        dupRef = pending;
                         return true;
                     }
                 }
+                dupRef = null;
                 return false;
 
             default:
                 // TODO: implement additional cases as we care about them.
                 NcAssert.True (false);
-                return true;
+                dupRef = null;
+                return false;
             }
         }
 

@@ -464,9 +464,10 @@ namespace NachoCore.ActiveSync
                 ParentId = folder.ServerId,
             };
 
-            if (pending.IsDuplicate ()) {
+            McPending dup;
+            if (pending.IsDuplicate (out dup)) {
                 // TODO: Insert but have the result of the 1st duplicate trigger the same result events for all duplicates.
-                return null;
+                return dup.Token;
             }
 
             pending.Insert ();
