@@ -572,6 +572,16 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_UI, "DraggingEnded");
             NachoClient.Util.RegularPriority ();
         }
+
+        public override void CarouselCurrentItemIndexDidChange (iCarousel carousel)
+        {
+            var previewLabelView =
+                carousel.CurrentItemView.ViewWithTag (HotListCarouselDataSource.PREVIEW_TAG) as BodyView;
+            if (null == previewLabelView) {
+                return;
+            }
+            previewLabelView.Focus ();
+        }
     }
 }
 

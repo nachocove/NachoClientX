@@ -1061,45 +1061,6 @@ namespace NachoCore.ActiveSync
             Sm.PostEvent ((uint)AsEvt.E.ReSync, "ASPCFORCESYNC");
         }
 
-        public override void Cancel (string token)
-        {
-            var pendings = McPending.QueryByToken (Account.Id, token);
-            foreach (var pending in pendings) {
-                switch (pending.State) {
-                case McPending.StateEnum.Eligible:
-                    pending.Delete ();
-                    break;
-
-                case McPending.StateEnum.Deferred:
-                case McPending.StateEnum.Failed:
-                case McPending.StateEnum.PredBlocked:
-                case McPending.StateEnum.UserBlocked:
-                    if (McPending.Operations.ContactSearch == pending.Operation) {
-                        McPending.ResolvePendingSearchReqs (Account.Id, token, false);
-                    } else {
-                        pending.ResolveAsCancelled ();
-                    }
-                    break;
-
-                case McPending.StateEnum.Dispatched:
-                    if (null != Cmd) {
-                        // Command Cancel moves state to Deferred. Maybe many pending objs.
-                        Cmd.Cancel ();
-                    }
-                    pending.ResolveAsCancelled (false);
-                    // Don't REALLY know that we killed it before the server saw it.
-                    break;
-
-                case McPending.StateEnum.Deleted:
-                // Nothing to do.
-                    break;
-
-                default:
-                    throw new Exception (string.Format ("Unknown State {0}", pending.State));
-                }
-            }
-        }
-
         public override void ValidateConfig (McServer server, McCred cred)
         {
             CancelValidateConfig ();

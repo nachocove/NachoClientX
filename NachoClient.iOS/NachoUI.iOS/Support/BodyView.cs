@@ -121,6 +121,7 @@ namespace NachoClient.iOS
         protected BodyWebView webView;
 
         protected McAbstrItem abstrItem;
+        protected string downloadToken;
 
         public new float MinimumZoomScale {
             get {
@@ -197,6 +198,7 @@ namespace NachoClient.iOS
         public void Configure (McAbstrItem item)
         {
             abstrItem = item;
+            downloadToken = null;
 
             PointF center = !SpinnerCenteredOnParentFrame ? Center : Superview.Center;
             center.X -= Frame.X;
@@ -232,7 +234,7 @@ namespace NachoClient.iOS
                     if (LoadState.LOADING != loadState) {
                         switch (item.GetType ().Name) {
                         case "McEmailMessage":
-                            BackEnd.Instance.DnldEmailBodyCmd (item.AccountId, item.Id);
+                            StartDownload ();
                             break;
                         default:
                             var msg = String.Format ("unhandle abstract item type {0}", item.GetType ().Name);
@@ -525,11 +527,27 @@ namespace NachoClient.iOS
                 .Height (scrollHeight);
         }
 
+        protected void StartDownload ()
+        {
+            downloadToken = BackEnd.Instance.DnldEmailBodyCmd (abstrItem.AccountId, abstrItem.Id);
+            if (null != downloadToken) {
+                BackEnd.Instance.Prioritize (abstrItem.AccountId, downloadToken);
+            } else {
+                // Duplicate download command returns the first (highest priority)
+                // download's token. So, a null really means something has gone wrong.
+                Log.Warn (Log.LOG_UI, "Fail to start download for message {0} in account {1}",
+                    abstrItem.Id, abstrItem.AccountId);
+                RenderPartialDownloadMessage ("[ Message preview only. Tap here to download ]");
+                RenderTextString (abstrItem.GetBodyPreviewOrEmpty ());
+                return;
+            }
+        }
+
         [MonoTouch.Foundation.Export ("DownloadMessage:")]
         public void OnDownloadMessage (UIGestureRecognizer sender)
         {
             IndicateDownloadStarted ();
-            BackEnd.Instance.DnldEmailBodyCmd (abstrItem.AccountId, abstrItem.Id);
+            StartDownload ();
         }
 
         protected void IndicateDownloadStarted ()
@@ -563,6 +581,14 @@ namespace NachoClient.iOS
                 throw new NcAssert.NachoDefaultCaseFailure (String.Format("Unhandled class type {0}", className));
             }
             return newAbstrItem.IsDownloaded ();
+        }
+
+        public void Focus ()
+        {
+            if (null != downloadToken) {
+                // Possible to issue redundant prioritize requests which becomes no op
+                BackEnd.Instance.Prioritize (abstrItem.AccountId, downloadToken);
+            }
         }
     }
 

@@ -1,11 +1,11 @@
 ﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Linq;
 using NUnit.Framework;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore.ActiveSync;
-using System.Linq;
 using BlockReasonEnum = NachoCore.Model.McPending.BlockReasonEnum;
 using StateEnum = NachoCore.Model.McPending.StateEnum;
 using WhyEnum = NachoCore.Utils.NcResult.WhyEnum;
@@ -764,7 +764,7 @@ namespace Test.iOS
             {
                 string serverId = "5";
                 string other = "10";
-                TestQueryBySomeValue (serverId, other, () => McPending.QueryByServerId (defaultAccountId, serverId));
+                TestQueryBySomeValue (serverId, other, () => McPending.QueryByServerId (defaultAccountId, serverId).FirstOrDefault ());
             }
 
             // this function executes queries that return a single object
@@ -1043,6 +1043,68 @@ namespace Test.iOS
             }
         }
 
+        public class Misc : BaseMcPendingTest
+        {
+            const string firstSId = "first";
+            const string secondSId = "second";
+
+            [Test]
+            public void TestPriority ()
+            {
+                var first = CreatePending (item: null, operation: Operations.EmailBodyDownload, serverId: firstSId);
+                var second = CreatePending (item: null, operation: Operations.EmailBodyDownload, serverId: secondSId);
+                second.Prioritize ();
+                var seq = McPending.QueryEligibleOrderByPriorityStamp (defaultAccountId);
+                Assert.AreEqual (2, seq.Count ());
+                Assert.AreEqual (secondSId, seq.First ().ServerId);
+                first.Prioritize ();
+                seq = McPending.QueryEligibleOrderByPriorityStamp (defaultAccountId);
+                Assert.AreEqual (firstSId, seq.First ().ServerId);
+                Assert.AreEqual (2, seq.Count ());
+                second.Prioritize ();
+                seq = McPending.QueryEligibleOrderByPriorityStamp (defaultAccountId);
+                Assert.AreEqual (2, seq.Count ());
+                Assert.AreEqual (secondSId, seq.First ().ServerId);
+            }
+
+            [Test]
+            public void TestIsDuplicate ()
+            {
+                var first = CreatePending (item: null, operation: Operations.EmailBodyDownload, serverId: firstSId);
+                first.ParentId = "dog";
+                first.Update ();
+                var second = new McPending (defaultAccountId) {
+                    ServerId = first.ServerId,
+                    ParentId = first.ParentId,
+                    Operation = first.Operation,
+                };
+                Assert.True (second.IsDuplicate ());
+                McPending found;
+                Assert.True (second.IsDuplicate (out found));
+                Assert.NotNull (found);
+                Assert.AreEqual (first.ServerId, found.ServerId);
+                second.ServerId = secondSId;
+                Assert.False (second.IsDuplicate ());
+                Assert.False (second.IsDuplicate (out found));
+                Assert.Null (found);
+                second.ServerId = first.ServerId;
+                Assert.True (second.IsDuplicate ());
+                second.ParentId = "cat";
+                Assert.False (second.IsDuplicate ());
+                second.ParentId = first.ParentId;
+                Assert.True (second.IsDuplicate ());
+                second.Operation = Operations.AttachmentDownload;
+                try {
+                    second.IsDuplicate ();
+                    Assert.True(false);
+                } catch (NcAssert.NachoAssertionFailure) {
+                }
+                second.Operation = first.Operation;
+                Assert.True (second.IsDuplicate ());
+                second.AccountId++;
+                Assert.False (second.IsDuplicate ());
+            }
+        }
 
         public class DeleteAndRefCount : BaseMcPendingTest
         {
