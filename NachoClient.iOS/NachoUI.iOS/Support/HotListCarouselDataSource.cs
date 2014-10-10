@@ -28,6 +28,7 @@ namespace NachoClient.iOS
         protected const int RECEIVED_DATE_TAG = 108;
         protected const int USER_LABEL_TAG = 109;
         protected const int USER_CHILI_TAG = 110;
+        protected const int USER_MORE_TAG = 111;
         static List<UIView> PreventViewGC;
         static List<UIBarButtonItem> preventBarButtonGC;
         NachoNowViewController owner;
@@ -250,6 +251,17 @@ namespace NachoClient.iOS
                 }
             };
             view.AddSubview (toolbar);
+
+            // more icon view
+            var moreView = new UIView(new RectangleF(17, frame.Height - 44 - 14 - 13, 18, 10));
+            moreView.BackgroundColor = UIColor.White;
+            moreView.Layer.CornerRadius = 2;
+            view.AddSubview (moreView);
+
+            var moreImageView = new UIImageView (new RectangleF (18, frame.Height - 44 - 14 - 16, 16, 16));
+            moreImageView.Image = UIImage.FromBundle ("gen-readmore");
+            moreImageView.Tag = USER_CHILI_TAG;
+            view.AddSubview (moreImageView);
 
             return view;
         }
