@@ -21,6 +21,7 @@ namespace NachoClient.iOS
         SwipeView swipeView;
         LettersSwipeViewDataSource swipeViewDateSource;
         UITableView TableView;
+        McAccount account;
 
         ContactsTableViewSource contactTableViewSource;
 
@@ -35,6 +36,8 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+
+            account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
 
             swipeView = new SwipeView ();
             swipeView.Frame = new RectangleF (15, 0, View.Frame.Width - 30, 55);
@@ -161,7 +164,7 @@ namespace NachoClient.iOS
         protected void LoadContacts ()
         {
             NachoClient.Util.HighPriority ();
-            var recents = McContact.RicContactsSortedByRank (2);
+            var recents = McContact.RicContactsSortedByRank (account.Id, 5);
             var contacts = McContact.AllContactsSortedByName ();
             contactTableViewSource.SetContacts (recents, contacts, true);
             TableView.ReloadData ();
