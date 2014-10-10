@@ -66,7 +66,11 @@ namespace NachoClient.iOS
             chiliTapGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
                 return true;
             };
-            chiliImageView.AddGestureRecognizer (chiliTapGestureRecognizer);
+               
+            var chiliHitBox = new UIView (new RectangleF(chiliX - 20, 0, 40, 40));
+            chiliHitBox.BackgroundColor = UIColor.Clear;
+            chiliHitBox.AddGestureRecognizer (chiliTapGestureRecognizer);
+            this.AddSubview (chiliHitBox);
 
             // Subject label view has a line to itself
             var subjectLabelView = new UILabel (new RectangleF (leftMargin, 20, parentWidth - leftMargin - rightMargin, 20));

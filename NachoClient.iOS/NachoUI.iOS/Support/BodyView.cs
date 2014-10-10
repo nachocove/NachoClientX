@@ -74,10 +74,13 @@ namespace NachoClient.iOS
     public class BodyView : UIScrollView
     {
         public delegate void RenderStart ();
+
         public delegate void RenderComplete ();
+
         public delegate void DownloadStart ();
 
-        public enum TagType {
+        public enum TagType
+        {
             MESSAGE_PART_TAG = 300,
             DOWNLOAD_TAG = 304,
             SPINNER_TAG = 600
@@ -89,16 +92,21 @@ namespace NachoClient.iOS
         public const int MESSAGEVIEW_INSET = 4;
         public const int BODYVIEW_INSET = 4;
         #else
+
         static UIColor SCROLLVIEW_BGCOLOR = UIColor.White;
         static UIColor MESSAGEVIEW_BGCOLOR = UIColor.White;
         public const int MESSAGEVIEW_INSET = 1;
         public const int BODYVIEW_INSET = 1;
         #endif
 
-        protected enum LoadState {
-            IDLE,    // body is already there
-            LOADING, // body is being loaded
-            ERROR    // body was being loaded
+        protected enum LoadState
+        {
+            IDLE,
+            // body is already there
+            LOADING,
+            // body is being loaded
+            ERROR
+            // body was being loaded
         }
 
         public bool HorizontalScrollingEnabled { get; set; }
@@ -137,7 +145,7 @@ namespace NachoClient.iOS
         public DownloadStart OnDownloadStart;
 
         public BodyView (RectangleF initialFrame, UIView parentView)
-            : this(initialFrame, parentView, 15, 0)
+            : this (initialFrame, parentView, 15, 0)
         {
         }
 
@@ -183,7 +191,7 @@ namespace NachoClient.iOS
             // messageView contains all content views of the body
             messageView = new UIView ();
             messageView.BackgroundColor = MESSAGEVIEW_BGCOLOR;
-            messageView.Frame = ViewHelper.InnerFrameWithInset(Frame, MESSAGEVIEW_INSET);
+            messageView.Frame = ViewHelper.InnerFrameWithInset (Frame, MESSAGEVIEW_INSET);
             messageView.AddGestureRecognizer (doubleTap);
             AddSubview (messageView);
 
@@ -259,11 +267,11 @@ namespace NachoClient.iOS
                 RenderRtfString (item.GetBody ());
                 break;
             case McBody.MIME:
-                RenderMime (bodyPath);
+                RenderMime (bodyPath, item);
                 break;
             default:
                 Log.Info (Log.LOG_EMAIL, "BodyType zero; likely old client");
-                RenderMime (bodyPath);
+                RenderMime (bodyPath, item);
                 break;
             }
 
@@ -273,12 +281,12 @@ namespace NachoClient.iOS
             //}
         }
 
-        protected void RenderMime (string bodyPath)
+        protected void RenderMime (string bodyPath, McAbstrItem item)
         {
             using (var bodySource = new FileStream (bodyPath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
                 var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
                 var mime = bodyParser.ParseMessage ();
-                PlatformHelpers.motd = mime; // for cid handler
+                PlatformHelpers.motdDict.Add (item, mime);
                 MimeHelpers.DumpMessage (mime, 0);
                 var list = new List<MimeEntity> ();
                 MimeHelpers.MimeDisplayList (mime, ref list);
@@ -519,10 +527,15 @@ namespace NachoClient.iOS
             float scrollHeight = (VerticalScrollingEnabled ? height : messageHeight) + 2 * MESSAGEVIEW_INSET;
 
             ViewFramer.Create (this)
-                .X(X)
-                .Y(Y)
+                .X (X)
+                .Y (Y)
                 .Width (scrollWidth)
                 .Height (scrollHeight);
+        }
+
+        public void RemoveMessageFromDict (McAbstrItem item)
+        {
+            PlatformHelpers.motdDict.Remove (item);
         }
 
         [MonoTouch.Foundation.Export ("DownloadMessage:")]
@@ -560,7 +573,7 @@ namespace NachoClient.iOS
                 newAbstrItem = (McAbstrItem)McEmailMessage.QueryById<McEmailMessage> (abstrItem.Id);
                 break;
             default:
-                throw new NcAssert.NachoDefaultCaseFailure (String.Format("Unhandled class type {0}", className));
+                throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unhandled class type {0}", className));
             }
             return newAbstrItem.IsDownloaded ();
         }

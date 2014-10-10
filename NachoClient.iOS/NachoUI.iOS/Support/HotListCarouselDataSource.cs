@@ -31,6 +31,7 @@ namespace NachoClient.iOS
         static List<UIView> PreventViewGC;
         static List<UIBarButtonItem> preventBarButtonGC;
         NachoNowViewController owner;
+        RecursionCounter deferRender;
 
         private const int ARCHIVE_TAG = 1;
         private const int SAVE_TAG = 2;
@@ -382,7 +383,6 @@ namespace NachoClient.iOS
                 return;
             }
 
-
             var viewWidth = view.Frame.Width;
 
             // User image view
@@ -430,13 +430,24 @@ namespace NachoClient.iOS
 
             // Size of preview, depends on reminder view
             var previewLabelView = view.ViewWithTag (PREVIEW_TAG) as BodyView;
+            previewLabelView.OnRenderStart = () => {
+                deferRender.Increment ();
+            };
+            previewLabelView.OnRenderComplete = () => {
+                deferRender.Decrement ();
+            };
             previewLabelView.Hidden = false;
 
             var previewLabelViewHeight = view.Frame.Height - 80 - previewLabelAdjustment;
             previewLabelViewHeight -= 44; // toolbar
             previewLabelViewHeight -= 4; // padding
 
+            deferRender = new RecursionCounter (() => {
+                previewLabelView.RemoveMessageFromDict(message);
+            });
+            deferRender.Increment ();
             previewLabelView.Configure (message);
+            deferRender.Decrement ();
             previewLabelView.Layout (previewLabelView.Frame.X, previewLabelView.Frame.Y,
                 previewLabelView.Frame.Width, previewLabelViewHeight);
 

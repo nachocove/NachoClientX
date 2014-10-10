@@ -9,6 +9,7 @@ using System.Linq;
 using MimeKit;
 using NachoCore;
 using NachoCore.Model;
+using NachoClient;
 
 namespace NachoCore.Utils
 {
@@ -40,6 +41,17 @@ namespace NachoCore.Utils
                 };
                 return emptyMessage;
             }
+        }
+
+        public static MimeEntity SearchMessages (string cid, Dictionary<McAbstrItem,MimeMessage> motdDict)
+        {
+            foreach (var message in motdDict.Values) {
+                var entity = SearchMimeEntity (cid, message.Body);
+                if (null != entity) {
+                    return entity;
+                }
+            }
+            return null;
         }
 
         public static MimeEntity SearchMessage (string cid, MimeMessage message)
@@ -90,20 +102,20 @@ namespace NachoCore.Utils
         {
             if (entity is MessagePart) {
                 var messagePart = (MessagePart)entity;
-                Log.Info (Log.LOG_EMAIL, "{0}MimeEntity: {1} {2}", Indent (indent), messagePart, messagePart.ContentType);
+                Log.Info (Log.LOG_EMAIL, "{0}MimeEntity: {1} {2} {3}", Indent (indent), messagePart, messagePart.ContentType, messagePart.ContentId);
                 DumpMessage (messagePart.Message, indent + 1);
                 return;
             }
             if (entity is Multipart) {
                 var multipart = (Multipart)entity;
-                Log.Info (Log.LOG_EMAIL, "{0}Multipart: {1} {2}", Indent (indent), multipart, multipart.ContentType);
+                Log.Info (Log.LOG_EMAIL, "{0}Multipart: {1} {2} {3}", Indent (indent), multipart, multipart.ContentType, multipart.ContentId);
                 foreach (var subpart in multipart) {
-                    Log.Info (Log.LOG_EMAIL, "{0}Subpart: {1} {2}", Indent (indent), subpart, subpart.ContentType);
+                    Log.Info (Log.LOG_EMAIL, "{0}Subpart: {1} {2} {3}", Indent (indent), subpart, subpart.ContentType, multipart.ContentId);
                     DumpMimeEntity (subpart, indent + 1);
                 }
                 return;
             }
-            Log.Info (Log.LOG_EMAIL, "{0}MimeEntity: {1} {2}", Indent (indent), entity, entity.ContentType);
+            Log.Info (Log.LOG_EMAIL, "{0}MimeEntity: {1} {2} {3}", Indent (indent), entity, entity.ContentType, entity.ContentId);
         }
 
         /// <summary>
