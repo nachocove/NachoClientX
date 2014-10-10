@@ -578,6 +578,16 @@ namespace NachoClient.iOS
                 Account = ConstMcAccount.NotAccountSpecific,
             });
         }
+
+        public override void CarouselCurrentItemIndexDidChange (iCarousel carousel)
+        {
+            var previewLabelView =
+                carousel.CurrentItemView.ViewWithTag (HotListCarouselDataSource.PREVIEW_TAG) as BodyView;
+            if (null == previewLabelView) {
+                return;
+            }
+            previewLabelView.Focus ();
+        }
     }
 }
 
