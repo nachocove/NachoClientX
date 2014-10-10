@@ -921,7 +921,7 @@ namespace NachoCore.ActiveSync
                     var status = (Xml.AirSync.StatusCode)uint.Parse (xmlStatus.Value);
                     var serverId = xmlServerId.Value;
                     lock (PendingResolveLockObj) {
-                        var pending = McPending.QueryByServerId (folder.AccountId, serverId);
+                        var pending = McPending.QueryByServerId (folder.AccountId, serverId).FirstOrDefault ();
                         if (null == pending) {
                             Log.Error (Log.LOG_AS, "ProcessCollectionChangeResponse: could not find McPending with ServerId of {0}.",
                                 serverId);
