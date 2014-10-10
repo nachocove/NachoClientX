@@ -121,6 +121,7 @@ namespace NachoCore.Model
         public const uint KMaxDeferCount = 5;
         // Always valid.
         [Indexed]
+        // FIXME - rename this column - this is for sequencing, not priority.
         public float Priority { set; get; }
         // Always valid.
         [Indexed]
@@ -128,6 +129,9 @@ namespace NachoCore.Model
         // Always valid.
         [Indexed]
         public string Token { set; get; }
+        // Always valid.
+        [Indexed]
+        public DateTime PriorityStamp { set; get; }
         // Always valid.
         [Indexed]
         public Operations Operation { set; get; }
@@ -221,7 +225,11 @@ namespace NachoCore.Model
 
         public const string KSynchronouslyCompleted	= "synchronously completed";
 
-
+        public void Prioritize ()
+        {
+            PriorityStamp = DateTime.UtcNow;
+            Update ();
+        }
 
         // To be used by app/ui when dealing with McPending.
         // To be used by Commands when dealing with McPending.
@@ -243,6 +251,27 @@ namespace NachoCore.Model
                 Update ();
             }
             Log.Info (Log.LOG_SYNC, "Pending:MarkPredBlocked:{0}", Id);
+        }
+
+        public bool IsDuplicate ()
+        {
+            switch (Operation) {
+            case Operations.EmailBodyDownload:
+                // TODO: if we add more cases, have lambda-per-Operation.
+                var sameServerId = McPending.QueryByServerId (AccountId, ServerId);
+                foreach (var pending in sameServerId) {
+                    if (pending.Operation == Operation &&
+                        pending.ParentId == ParentId) {
+                        return true;
+                    }
+                }
+                return false;
+
+            default:
+                // TODO: implement additional cases as we care about them.
+                NcAssert.True (false);
+                return true;
+            }
         }
 
         private bool CanDepend ()
@@ -798,6 +827,14 @@ namespace NachoCore.Model
             ).OrderBy (x => x.Priority);
         }
 
+        public static IEnumerable<McPending> QueryEligibleOrderByPriorityStamp (int accountId)
+        {
+            return NcModel.Instance.Db.Table<McPending> ().Where (rec => 
+                rec.AccountId == accountId &&
+                rec.State == StateEnum.Eligible
+            ).OrderByDescending (x => x.PriorityStamp);
+        }
+
         public static List<McPending> QueryPredecessors (int accountId, int succId)
         {
             return NcModel.Instance.Db.Query<McPending> (
@@ -905,12 +942,12 @@ namespace NachoCore.Model
             rec.State == StateEnum.Eligible).OrderBy (x => x.Priority).ToList ();
         }
 
-        public static McPending QueryByServerId (int accountId, string serverId)
+        public static IEnumerable<McPending> QueryByServerId (int accountId, string serverId)
         {
             return NcModel.Instance.Db.Table<McPending> ()
                 .Where (rec =>
                         rec.AccountId == accountId &&
-            rec.ServerId == serverId).OrderBy (x => x.Priority).FirstOrDefault ();
+            rec.ServerId == serverId).OrderBy (x => x.Priority);
         }
 
         public static McPending QueryByAttachmentId (int accountId, int AttachmentId)

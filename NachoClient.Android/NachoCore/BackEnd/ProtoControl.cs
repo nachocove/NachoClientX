@@ -91,6 +91,10 @@ namespace NachoCore
         {
         }
 
+        public virtual void Prioritize (string token)
+        {
+        }
+
         public virtual void Cancel (string token)
         {
         }

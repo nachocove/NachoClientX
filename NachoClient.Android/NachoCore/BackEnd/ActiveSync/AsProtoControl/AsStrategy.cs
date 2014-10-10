@@ -666,14 +666,14 @@ namespace NachoCore.ActiveSync
                         new AsSearchCommand (BEContext.ProtoControl, search));
                 }
                 // (FG) If the user has initiated a ItemOperations Fetch (body or attachment), we do that.
-                var fetch = McPending.QueryEligible (accountId).
+                var fetch = McPending.QueryEligibleOrderByPriorityStamp (accountId).
                     Where (x => 
                         McPending.Operations.AttachmentDownload == x.Operation ||
                             McPending.Operations.EmailBodyDownload == x.Operation ||
                             McPending.Operations.CalBodyDownload == x.Operation ||
                             McPending.Operations.ContactBodyDownload == x.Operation ||
                             McPending.Operations.TaskBodyDownload == x.Operation
-                            ).FirstOrDefault ();
+                    ).FirstOrDefault ();
                 if (null != fetch) {
                     Log.Info (Log.LOG_AS, "Strategy:FG:Fetch");
                     return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.QOop,
