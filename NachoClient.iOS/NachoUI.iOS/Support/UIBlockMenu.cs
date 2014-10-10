@@ -30,6 +30,7 @@ namespace NachoClient.iOS
         protected UIBarButtonItem[] rightBarButtons;
         protected UIBarButtonItem[] leftBarButtons;
         protected UIBarButtonItem menuButton;
+        string navControllerTitle;
 
         protected UIViewController owner;
         protected UIView menuView;
@@ -167,9 +168,11 @@ namespace NachoClient.iOS
             if (this.Alpha == 0.0f) {
                 rightBarButtons = owner.NavigationItem.RightBarButtonItems;
                 leftBarButtons = owner.NavigationItem.LeftBarButtonItems;
+                navControllerTitle = owner.NavigationController.Title;
 
                 owner.NavigationItem.SetRightBarButtonItems (new UIBarButtonItem[]{ menuButton }, true);
                 owner.NavigationItem.SetLeftBarButtonItems (new UIBarButtonItem[]{new UIBarButtonItem(new UIView()), new UIBarButtonItem(new UIView())}, true);
+                owner.NavigationController.Title = "";
 
                 UIView.Animate (.3, () => {
                     this.Alpha = 1.0f;
@@ -177,9 +180,17 @@ namespace NachoClient.iOS
                 });
 
             } else {
-                owner.NavigationItem.SetRightBarButtonItems (rightBarButtons, true);
-                owner.NavigationItem.SetLeftBarButtonItems (leftBarButtons, true);
-                owner.NavigationItem.LeftBarButtonItem.Enabled = true;
+                if (null != rightBarButtons) {
+                    owner.NavigationItem.SetRightBarButtonItems (rightBarButtons, true);
+                }
+
+                if (null != leftBarButtons) {
+                    owner.NavigationItem.SetLeftBarButtonItems (leftBarButtons, true);
+                }
+
+                if (null != navControllerTitle) {
+                    owner.NavigationController.Title = navControllerTitle;
+                }
 
                 UIView.Animate (.3, () => {
                     this.Alpha = 0.0f;

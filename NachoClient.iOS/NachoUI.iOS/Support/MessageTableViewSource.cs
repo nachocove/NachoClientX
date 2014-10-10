@@ -5,7 +5,6 @@ using System.Drawing;
 using MonoTouch.UIKit;
 using MonoTouch.Foundation;
 using System.Collections.Generic;
-using MCSwipeTableViewCellBinding;
 using NachoCore.Model;
 using NachoCore;
 using NachoCore.Utils;
@@ -26,6 +25,24 @@ namespace NachoClient.iOS
         private string ArchiveMessageCaptureName;
         private string RefreshCaptureName;
 
+        private const int ARCHIVE_TAG = 1;
+        private const int SAVE_TAG = 2;
+        private const int DELETE_TAG = 3;
+        private const int DEFER_TAG = 4;
+
+        // Pre-made swipe action descriptors
+        private static SwipeActionDescriptor ARCHIVE_BUTTON =
+            new SwipeActionDescriptor (ARCHIVE_TAG, 0.25f, UIImage.FromBundle ("email-archive-gray"),
+                "Archive", A.Color_NachoSwipeActionGreen);
+        private static SwipeActionDescriptor SAVE_BUTTON =
+            new SwipeActionDescriptor (SAVE_TAG, 0.25f, UIImage.FromBundle ("email-putintofolder-gray"),
+                "Save", A.Color_NachoSwipeActionBlue);
+        private static SwipeActionDescriptor DELETE_BUTTON =
+            new SwipeActionDescriptor (DELETE_TAG, 0.25f, UIImage.FromBundle ("email-delete-gray"),
+                "Delete", A.Color_NachoSwipeActionRed);
+        private static SwipeActionDescriptor DEFER_BUTTON =
+            new SwipeActionDescriptor (DEFER_TAG, 0.25f, UIImage.FromBundle ("email-defer-gray"),
+                "Defer", A.Color_NachoSwipeActionYellow);
 
         // Short-term cache from GetHeight to GetCell
         private Dictionary<int, McEmailMessage> messageCache;
@@ -144,6 +161,7 @@ namespace NachoClient.iOS
             DumpInfo (messageThread);
         }
 
+        protected const int SWIPE_TAG = 99100;
         protected const int USER_IMAGE_TAG = 99101;
         protected const int USER_LABEL_TAG = 99102;
         protected const int USER_CHECKMARK_TAG = 99103;
@@ -197,19 +215,19 @@ namespace NachoClient.iOS
         /// <summary>
         /// Disable swipes during multi-select
         /// </summary>
-        protected void ConfigureMultiSelectSwipe (MCSwipeTableViewCell cell)
+        protected void ConfigureMultiSelectSwipe (UITableViewCell cell)
         {
-            if (0 == MultiSelect.Count) {
-                cell.ModeForState1 = MCSwipeTableViewCellMode.Switch;
-                cell.ModeForState2 = MCSwipeTableViewCellMode.Switch;
-                cell.ModeForState3 = MCSwipeTableViewCellMode.Switch;
-                cell.ModeForState4 = MCSwipeTableViewCellMode.Switch;
-            } else {
-                cell.ModeForState1 = MCSwipeTableViewCellMode.None;
-                cell.ModeForState2 = MCSwipeTableViewCellMode.None;
-                cell.ModeForState3 = MCSwipeTableViewCellMode.None;
-                cell.ModeForState4 = MCSwipeTableViewCellMode.None;
-            }
+//            if (0 == MultiSelect.Count) {
+//                cell.ModeForState1 = MCSwipeTableViewCellMode.Switch;
+//                cell.ModeForState2 = MCSwipeTableViewCellMode.Switch;
+//                cell.ModeForState3 = MCSwipeTableViewCellMode.Switch;
+//                cell.ModeForState4 = MCSwipeTableViewCellMode.Switch;
+//            } else {
+//                cell.ModeForState1 = MCSwipeTableViewCellMode.None;
+//                cell.ModeForState2 = MCSwipeTableViewCellMode.None;
+//                cell.ModeForState3 = MCSwipeTableViewCellMode.None;
+//                cell.ModeForState4 = MCSwipeTableViewCellMode.None;
+//            }
         }
 
         /// <summary>
@@ -221,7 +239,7 @@ namespace NachoClient.iOS
             if (!NoMessageThreads ()) {
                 foreach (var cell in tableView.VisibleCells) {
                     ConfigureMultiSelectCell (cell);
-                    ConfigureMultiSelectSwipe (cell as MCSwipeTableViewCell);
+                    ConfigureMultiSelectSwipe (cell);
                 }
             }
             if (null != owner) {
@@ -265,19 +283,32 @@ namespace NachoClient.iOS
             }
 
             if (identifier.Equals (EmailMessageReuseIdentifier)) {
-                var cell = new MCSwipeTableViewCell (UITableViewCellStyle.Default, identifier);
+                var cell = tableView.DequeueReusableCell (identifier);
+                if (null == cell) {
+                    cell = new UITableViewCell (UITableViewCellStyle.Default, identifier);
+                }
                 if (cell.RespondsToSelector (new MonoTouch.ObjCRuntime.Selector ("setSeparatorInset:"))) {
                     cell.SeparatorInset = UIEdgeInsets.Zero;
                 }
                 cell.SelectionStyle = UITableViewCellSelectionStyle.None;
                 cell.ContentView.BackgroundColor = UIColor.White;
-                cell.DefaultColor = UIColor.White;
 
                 var cellWidth = tableView.Frame.Width;
 
+                var frame = new RectangleF (0, 0, tableView.Frame.Width, NORMAL_ROW_HEIGHT);
+                var view = new SwipeActionView (frame);
+                view.Tag = SWIPE_TAG;
+
+                view.SetAction (ARCHIVE_BUTTON, SwipeSide.RIGHT);
+                view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
+                view.SetAction (SAVE_BUTTON, SwipeSide.LEFT);
+                view.SetAction (DEFER_BUTTON, SwipeSide.LEFT);
+
+                cell.ContentView.AddSubview (view);
+
                 // Create subview for a larger touch target for multi-select
                 var imageViews = new UIView (new RectangleF (0, 0, 60, 70));
-                cell.ContentView.AddSubview (imageViews);
+                view.AddSubview (imageViews);
 
                 // User image view
                 var userImageView = new UIImageView (new RectangleF (15, 20, 40, 40));
@@ -313,7 +344,7 @@ namespace NachoClient.iOS
                 var messageHeaderView = new MessageHeaderView (new RectangleF (65, 15, cellWidth - 65 - 15, 60));
                 messageHeaderView.CreateView ();
                 messageHeaderView.Tag = MESSAGE_HEADER_TAG;
-                cell.ContentView.AddSubview (messageHeaderView);
+                view.AddSubview (messageHeaderView);
 
                 // Preview label view
                 var previewLabelView = new UILabel (new RectangleF (65, 70, cellWidth - 15 - 65, 60));
@@ -322,20 +353,20 @@ namespace NachoClient.iOS
                 previewLabelView.TextColor = A.Color_NachoDarkText;
                 previewLabelView.Lines = 2;
                 previewLabelView.Tag = PREVIEW_TAG;
-                cell.ContentView.AddSubview (previewLabelView);
+                view.AddSubview (previewLabelView);
 
                 // Reminder image view
                 var reminderImageView = new UIImageView (new RectangleF (65, 129, 12, 12));
                 reminderImageView.Image = UIImage.FromBundle ("inbox-icn-deadline");
                 reminderImageView.Tag = REMINDER_ICON_TAG;
-                cell.ContentView.AddSubview (reminderImageView);
+                view.AddSubview (reminderImageView);
 
                 // Reminder label view
                 var reminderLabelView = new UILabel (new RectangleF (87, 125, 230, 20));
                 reminderLabelView.Font = A.Font_AvenirNextRegular14;
                 reminderLabelView.TextColor = A.Color_9B9B9B;
                 reminderLabelView.Tag = REMINDER_TEXT_TAG;
-                cell.ContentView.AddSubview (reminderLabelView);
+                view.AddSubview (reminderLabelView);
 
                 return cell;
             }
@@ -346,7 +377,7 @@ namespace NachoClient.iOS
         /// <summary>
         /// Populate cells with data, adjust sizes and visibility.
         /// </summary>
-        protected void ConfigureCell (UITableViewCell cell, NSIndexPath indexPath)
+        protected void ConfigureCell (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
         {
             if (cell.ReuseIdentifier.Equals (UICellReuseIdentifier)) {
                 cell.TextLabel.Text = "No messages";
@@ -354,7 +385,7 @@ namespace NachoClient.iOS
             }
 
             if (cell.ReuseIdentifier.Equals (EmailMessageReuseIdentifier)) {
-                ConfigureMessageCell (cell, indexPath.Row);
+                ConfigureMessageCell (tableView, cell, indexPath.Row);
                 return;
             }
             NcAssert.CaseError ();
@@ -394,7 +425,7 @@ namespace NachoClient.iOS
         /// <summary>
         /// Populate message cells with data, adjust sizes and visibility
         /// </summary>
-        protected void ConfigureMessageCell (UITableViewCell cell, int messageThreadIndex)
+        protected void ConfigureMessageCell (UITableView tableView, UITableViewCell cell, int messageThreadIndex)
         {
             // Save thread index
             cell.ContentView.Tag = messageThreadIndex;
@@ -417,6 +448,43 @@ namespace NachoClient.iOS
             }
 
             var cellWidth = cell.Frame.Width;
+
+            var view = cell.ContentView.ViewWithTag (SWIPE_TAG) as SwipeActionView;
+            view.Frame = new RectangleF (0, 0, cellWidth, HeightForMessage (message));
+
+            view.OnClick = (int tag) => {
+                switch (tag) {
+                case SAVE_TAG:
+                    ShowFileChooser (messageThread);
+                    break;
+                case DEFER_TAG:
+                    ShowPriorityChooser (messageThread);
+                    break;
+                case ARCHIVE_TAG:
+                    ArchiveThisMessage (messageThread);
+                    break;
+                case DELETE_TAG:
+                    DeleteThisMessage (messageThread);
+                    break;
+                default:
+                    throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action tag {0}", tag));
+                }
+            };
+            view.OnSwipe = (SwipeActionView.SwipeState state) => {
+                switch (state) {
+                case SwipeActionView.SwipeState.SWIPE_BEGIN:
+                    tableView.ScrollEnabled = false;
+                    break;
+                case SwipeActionView.SwipeState.SWIPE_END_ALL_HIDDEN:
+                    tableView.ScrollEnabled = true;
+                    break;
+                case SwipeActionView.SwipeState.SWIPE_END_ALL_SHOWN:
+                    tableView.ScrollEnabled = false;
+                    break;
+                default:
+                    throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown swipe state {0}", (int)state));
+                }
+            };
 
             // User image view
             var userImageView = cell.ContentView.ViewWithTag (USER_IMAGE_TAG) as UIImageView;
@@ -469,77 +537,7 @@ namespace NachoClient.iOS
                 reminderLabelView.Hidden = true;
             }
                 
-            ConfigureSwipes (cell as MCSwipeTableViewCell, messageThread);
-            ConfigureMultiSelectSwipe (cell as MCSwipeTableViewCell);
-        }
-
-        /// <summary>
-        /// Configures the swipes.
-        /// </summary>
-        void ConfigureSwipes (MCSwipeTableViewCell cell, McEmailMessageThread messageThread)
-        {
-            cell.FirstTrigger = 0.10f;
-            cell.SecondTrigger = 0.50f;
-
-            UIView checkView = null;
-            UIColor greenColor = null;
-            UIView crossView = null;
-            UIColor redColor = null;
-            UIView clockView = null;
-            UIColor yellowColor = null;
-            UIView listView = null;
-            UIColor brownColor = null;
-
-            try { 
-                listView = ViewWithImageName ("list");
-                brownColor = new UIColor (206.0f / 255.0f, 149.0f / 255.0f, 98.0f / 255.0f, 1.0f);
-                cell.SetSwipeGestureWithView (listView, brownColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State1, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                    ShowFileChooser (messageThread);
-                    return;
-                });
-                clockView = ViewWithImageName ("clock");
-                yellowColor = new UIColor (254.0f / 255.0f, 217.0f / 255.0f, 56.0f / 255.0f, 1.0f);
-                cell.SetSwipeGestureWithView (clockView, yellowColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State2, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                    ShowPriorityChooser (messageThread);
-                    return;
-                });
-
-                checkView = ViewWithImageName ("check");
-                greenColor = new UIColor (85.0f / 255.0f, 213.0f / 255.0f, 80.0f / 255.0f, 1.0f);
-                cell.SetSwipeGestureWithView (checkView, greenColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State3, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                    ArchiveThisMessage (messageThread);
-                });
-                crossView = ViewWithImageName ("cross");
-                redColor = new UIColor (232.0f / 255.0f, 61.0f / 255.0f, 14.0f / 255.0f, 1.0f);
-                cell.SetSwipeGestureWithView (crossView, redColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State4, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                    DeleteThisMessage (messageThread);
-                });
-            } finally {
-                if (null != checkView) {
-                    checkView.Dispose ();
-                }
-                if (null != greenColor) {
-                    greenColor.Dispose ();
-                }
-                if (null != crossView) {
-                    crossView.Dispose ();
-                }
-                if (null != redColor) {
-                    redColor.Dispose ();
-                }
-                if (null != clockView) {
-                    clockView.Dispose ();
-                }
-                if (null != yellowColor) {
-                    yellowColor.Dispose ();
-                }
-                if (null != listView) {
-                    listView.Dispose ();
-                }
-                if (null != brownColor) {
-                    brownColor.Dispose ();
-                }
-            }
+            ConfigureMultiSelectSwipe (cell);
         }
 
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
@@ -555,7 +553,7 @@ namespace NachoClient.iOS
             cell.Layer.MasksToBounds = true;
             cell.SelectionStyle = UITableViewCellSelectionStyle.None;
 
-            ConfigureCell (cell, indexPath);
+            ConfigureCell (tableView, cell, indexPath);
             return cell;
         }
 

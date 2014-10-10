@@ -137,6 +137,7 @@ namespace NachoClient.iOS
                 deadlineButton,
                 quickReplyButton,
             };
+
             quickReplyButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("MessageViewToCompose", new SegueHolder (MessageComposeViewController.REPLY_ACTION, NcQuickResponse.QRTypeEnum.Reply));
             };
@@ -174,10 +175,7 @@ namespace NachoClient.iOS
 
             MarkAsRead ();
 
-            //Remove thin black line from bottom of navigation controller
-            UINavigationBar b = NavigationController.NavigationBar;
-            b.SetBackgroundImage(new UIImage (),UIBarMetrics.Default);
-            b.ShadowImage = new UIImage ();
+            Util.HideBlackNavigationControllerLine (NavigationController.NavigationBar);
         }
 
         public override void ViewWillAppear (bool animated)

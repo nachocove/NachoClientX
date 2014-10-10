@@ -122,7 +122,7 @@ namespace NachoClient.iOS
                     owner.Selectable = true;
                     break;
                 case SwipeActionView.SwipeState.SWIPE_END_ALL_SHOWN:
-                    owner.carouselView.ScrollEnabled = true;
+                    owner.carouselView.ScrollEnabled = false;
                     owner.Selectable = false;
                     break;
                 default:
@@ -564,19 +564,13 @@ namespace NachoClient.iOS
         public override void CarouselWillBeginDragging (iCarousel carousel)
         {
             Log.Info (Log.LOG_UI, "DraggingStarted");
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStarted),
-                Account = ConstMcAccount.NotAccountSpecific,
-            });
+            NachoClient.Util.HighPriority ();
         }
 
         public override void CarouselDidEndDragging (iCarousel carousel, bool decelerate)
         {
             Log.Info (Log.LOG_UI, "DraggingEnded");
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStopped),
-                Account = ConstMcAccount.NotAccountSpecific,
-            });
+            NachoClient.Util.RegularPriority ();
         }
     }
 }
