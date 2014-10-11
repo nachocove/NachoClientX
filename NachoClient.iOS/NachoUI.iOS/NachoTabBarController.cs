@@ -37,8 +37,8 @@ namespace NachoClient.iOS
             SetTabBarItem ("NachoClient.iOS.SupportViewController", "Support", "icn-inbox", "icn-inbox");
             SetTabBarItem ("NachoClient.iOS.HotListViewController", "Hot", "navbar-icn-inbox", "navbar-icn-inbox-active");
             SetTabBarItem ("NachoClient.iOS.DeferredViewController", "Deferred", "navbar-icn-inbox", "navbar-icn-inbox-active");
-            SetTabBarItem ("NachoClient.iOS.FoldersViewController", "Folders", "nav-folder", "nav-folder-active");
-            SetTabBarItem ("NachoClient.iOS.AttachmentsViewController", "Attachments", "menu-icn-attachments", "menu-icn-attachments");
+            SetTabBarItem ("NachoClient.iOS.FoldersViewController", "Mail", "nav-folder", "nav-folder-active");
+            SetTabBarItem ("NachoClient.iOS.AttachmentsViewController", "Files", "menu-icn-attachments", "menu-icn-attachments");
 
             FinishedCustomizingViewControllers += (object sender, UITabBarCustomizeChangeEventArgs e) => {
                 SaveCustomTabBarOrder (e);

@@ -1005,14 +1005,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McDocument.cs">
       <Link>NachoCore\Model\McDocument.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\FilesViewController.cs" />
-    <Compile Include="NachoUI.iOS\FilesViewController.designer.cs">
-      <DependentUpon>FilesViewController.cs</DependentUpon>
-    </Compile>
-    <Compile Include="NachoUI.iOS\FilesHierarchyViewController.cs" />
-    <Compile Include="NachoUI.iOS\FilesHierarchyViewController.designer.cs">
-      <DependentUpon>FilesHierarchyViewController.cs</DependentUpon>
-    </Compile>
     <Compile Include="NachoUI.iOS\ContactEditViewController.cs" />
     <Compile Include="NachoUI.iOS\ContactEditViewController.designer.cs">
       <DependentUpon>ContactEditViewController.cs</DependentUpon>

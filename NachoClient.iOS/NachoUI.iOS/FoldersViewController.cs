@@ -108,7 +108,7 @@ namespace NachoClient.iOS
                 };
                 yOffset += navbar.Frame.Height;
             } else {
-                NavigationItem.Title = "Folders";
+                NavigationItem.Title = "Mail";
             }
 
             float marginPadding = 15f;
