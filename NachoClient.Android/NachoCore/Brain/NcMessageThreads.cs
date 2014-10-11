@@ -36,7 +36,7 @@ namespace NachoCore.Brain
             for (int n = 0; n < oldList.Count; n++) {
                 var message = oldList [n].GetEmailMessage (0);
                 if (null == message) {
-                    return false;
+                    return true;
                 }
                 if (message.Id != newList [n].Id) {
                     return true;
