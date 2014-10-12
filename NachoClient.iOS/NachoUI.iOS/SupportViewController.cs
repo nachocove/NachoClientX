@@ -174,11 +174,11 @@ namespace NachoClient.iOS
                 if (devBundleId != null) {
                     var version = devBundleId.InfoDictionary ["CFBundleVersion"];
                     var versionString = devBundleId.InfoDictionary ["CFBundleShortVersionString"];
-                    cell.TextLabel.Text = String.Format("{0} {1}({2})", VersionNumberText, versionString, version);
+                    cell.TextLabel.Text = String.Format("{0} {1} ({2})", VersionNumberText, versionString, version);
                 } else if (betaBundleId != null) {
                     var version = betaBundleId.InfoDictionary ["CFBundleVersion"];
                     var versionString = betaBundleId.InfoDictionary ["CFBundleShortVersionString"];
-                    cell.TextLabel.Text = String.Format("{0} {1}({2})", VersionNumberText, versionString, version);
+                    cell.TextLabel.Text = String.Format("{0} {1} ({2})", VersionNumberText, versionString, version);
                 } else {
                     cell.TextLabel.Text = String.Format("{0} {1}", VersionNumberText, "Unknown version");
                 }
