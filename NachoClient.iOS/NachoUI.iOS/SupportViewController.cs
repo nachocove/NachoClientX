@@ -24,7 +24,7 @@ namespace NachoClient.iOS
         const string ContactByPhoneDetailText = "Please have your problem and a way for us to contact you available when you call.";
 
         // Version # cell
-        const string VersionNumberText = "Version Number: ";
+        const string VersionNumberText = "Version Number:";
 
         // Id's
         const string SupportToComposeSegueId = "SupportToEmailCompose";
@@ -172,13 +172,15 @@ namespace NachoClient.iOS
                 var betaBundleId = NSBundle.FromIdentifier ("com.nachocove.nachomail.beta");
 
                 if (devBundleId != null) {
-                    var version = devBundleId.InfoDictionary ["CFBundleShortVersionString"];
-                    cell.TextLabel.Text = VersionNumberText + version;
+                    var version = devBundleId.InfoDictionary ["CFBundleVersion"];
+                    var versionString = devBundleId.InfoDictionary ["CFBundleShortVersionString"];
+                    cell.TextLabel.Text = String.Format("{0} {1}({2})", VersionNumberText, versionString, version);
                 } else if (betaBundleId != null) {
-                    var version = betaBundleId.InfoDictionary ["CFBundleShortVersionString"];
-                    cell.TextLabel.Text = VersionNumberText + version;
+                    var version = betaBundleId.InfoDictionary ["CFBundleVersion"];
+                    var versionString = betaBundleId.InfoDictionary ["CFBundleShortVersionString"];
+                    cell.TextLabel.Text = String.Format("{0} {1}({2})", VersionNumberText, versionString, version);
                 } else {
-                    cell.TextLabel.Text = VersionNumberText + "Unknown version";
+                    cell.TextLabel.Text = String.Format("{0} {1}", VersionNumberText, "Unknown version");
                 }
 
                 cell.SelectionStyle = UITableViewCellSelectionStyle.None;
