@@ -24,20 +24,22 @@ namespace NachoClient.iOS
             document.getElementsByTagName('head')[0].appendChild(viewPortTag);
         ";
 
+        public bool ScrollingEnabled;
+
         protected RecursionCounter htmlBusy;
         public RenderStart OnRenderStart;
         public RenderComplete OnRenderComplete;
-        protected UIView parentView;
 
         public BodyWebView (UIView parentView, float leftMargin) : base (parentView.Frame)
         {
-            this.parentView = parentView;
             ViewFramer.Create (this).X (leftMargin).Height (1);
             htmlBusy = new RecursionCounter (() => {
                 EvaluateJavascript (magic);
-                ViewFramer.Create (this)
+                if (!ScrollingEnabled) {
+                    ViewFramer.Create (this)
                     .Width (ScrollView.ContentSize.Width)
                     .Height (ScrollView.ContentSize.Height);
+                }
                 // Adjust scroll view minimum zoom scale based on the content. Make sure 
                 // that we cannot pinch (zoom out) to the point that the content is narrower
                 // than 95% of the device screen width.

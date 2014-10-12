@@ -218,6 +218,7 @@ namespace NachoClient.iOS
                 webView.Dispose ();
             }
             webView = new BodyWebView (this, htmlLeftMargin);
+            webView.ScrollingEnabled = (HorizontalScrollingEnabled && VerticalScrollingEnabled);
 
             if (item.IsDownloaded ()) {
                 loadState = LoadState.IDLE;
