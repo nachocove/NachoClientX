@@ -345,6 +345,7 @@ namespace NachoClient.iOS
                 var messageHeaderView = new MessageHeaderView (new RectangleF (65, 15, cellWidth - 65 - 15, 60));
                 messageHeaderView.CreateView ();
                 messageHeaderView.Tag = MESSAGE_HEADER_TAG;
+                messageHeaderView.SetAllBackgroundColors (UIColor.White);
                 view.AddSubview (messageHeaderView);
 
                 // Preview label view
@@ -352,6 +353,7 @@ namespace NachoClient.iOS
                 previewLabelView.ContentMode = UIViewContentMode.TopLeft;
                 previewLabelView.Font = A.Font_AvenirNextRegular14;
                 previewLabelView.TextColor = A.Color_NachoDarkText;
+                previewLabelView.BackgroundColor = UIColor.White;
                 previewLabelView.Lines = 2;
                 previewLabelView.Tag = PREVIEW_TAG;
                 view.AddSubview (previewLabelView);
@@ -359,6 +361,7 @@ namespace NachoClient.iOS
                 // Reminder image view
                 var reminderImageView = new UIImageView (new RectangleF (65, 129, 12, 12));
                 reminderImageView.Image = UIImage.FromBundle ("inbox-icn-deadline");
+                reminderImageView.BackgroundColor = UIColor.White;
                 reminderImageView.Tag = REMINDER_ICON_TAG;
                 view.AddSubview (reminderImageView);
 
@@ -366,6 +369,7 @@ namespace NachoClient.iOS
                 var reminderLabelView = new UILabel (new RectangleF (87, 125, 230, 20));
                 reminderLabelView.Font = A.Font_AvenirNextRegular14;
                 reminderLabelView.TextColor = A.Color_9B9B9B;
+                reminderLabelView.BackgroundColor = UIColor.White;
                 reminderLabelView.Tag = REMINDER_TEXT_TAG;
                 view.AddSubview (reminderLabelView);
 

@@ -33,7 +33,7 @@ namespace NachoClient.iOS
         const int USER_CHILI_TAG = 884;
         const int ATTACHMENT_TAG = 885;
 
-        const int CHILI_WIDTH = 20;
+        const int CHILI_WIDTH = 24;
         const int CHILI_PADDING = 10;
 
         const int ATTACHMENT_WIDTH = 16;
@@ -55,19 +55,19 @@ namespace NachoClient.iOS
 
             // Chili image view, to the far right of From
             var chiliX = parentWidth - rightMargin - CHILI_WIDTH;
-            var chiliImageView = new UIImageView (new RectangleF (chiliX, 0, 20, 20));
+            var chiliImageView = new UIImageView (new RectangleF (chiliX, 0, CHILI_WIDTH, CHILI_WIDTH));
             chiliImageView.Tag = USER_CHILI_TAG;
             this.AddSubview (chiliImageView);
 
             chiliImageView.UserInteractionEnabled = true;
             var chiliTapGestureRecognizer = new UITapGestureRecognizer (new NSAction (() => {
-                OnClick(null, null);
+                OnClick (null, null);
             }));
             chiliTapGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
                 return true;
             };
 
-            var chiliHitBox = new UIView (new RectangleF(chiliX - 20, 0, 40, 40));
+            var chiliHitBox = new UIView (new RectangleF (chiliX - 20, 0, 40, 40));
             chiliHitBox.BackgroundColor = UIColor.Clear;
             chiliHitBox.AddGestureRecognizer (chiliTapGestureRecognizer);
             this.AddSubview (chiliHitBox);
@@ -142,7 +142,16 @@ namespace NachoClient.iOS
             attachmentImageView.Frame = attachmentImageRect;
         }
 
-
+        // Opaque background prevents blending penalty
+        public void SetAllBackgroundColors(UIColor color)
+        {
+            this.BackgroundColor = color;
+            this.ViewWithTag (FROM_TAG).BackgroundColor = color;
+            this.ViewWithTag (SUBJECT_TAG).BackgroundColor = color;
+            this.ViewWithTag (RECEIVED_DATE_TAG).BackgroundColor = color;
+            this.ViewWithTag (USER_CHILI_TAG).BackgroundColor = color;
+            this.ViewWithTag (ATTACHMENT_TAG).BackgroundColor = color;
+        }
     }
 }
 
