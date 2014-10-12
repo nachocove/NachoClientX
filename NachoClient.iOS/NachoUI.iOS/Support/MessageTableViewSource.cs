@@ -174,7 +174,8 @@ namespace NachoClient.iOS
         public void MultiSelectTapSelector (UIGestureRecognizer sender)
         {
             var imageView = sender.View;
-            var contentView = imageView.Superview;
+            var swipeView = imageView.Superview;
+            var contentView = swipeView.Superview;
             var threadIndex = contentView.Tag;
 
             if (MultiSelect.Contains (threadIndex)) {
