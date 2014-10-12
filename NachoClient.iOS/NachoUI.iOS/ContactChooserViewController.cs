@@ -31,6 +31,7 @@ namespace NachoClient.iOS
         // ContactTableViewSource is used solely to create & config a cell
         ContactsTableViewSource contactTableViewSource;
         string contactSearchToken;
+        float keyboardHeight;
 
         protected const string ContactCellReuseIdentifier = "ContactCell";
 
@@ -73,6 +74,10 @@ namespace NachoClient.iOS
             NachoClient.Util.HighPriority ();
             resultsTableView.ReloadData ();
             NachoClient.Util.RegularPriority ();
+            if (HandlesKeyboardNotifications) {
+                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
+                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
+            }
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -80,16 +85,24 @@ namespace NachoClient.iOS
             base.ViewWillDisappear (animated);
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
             CancelSearchIfActive ();
+            if (HandlesKeyboardNotifications) {
+                NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillHideNotification);
+                NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillShowNotification);
+            }
+        }
+
+        public virtual bool HandlesKeyboardNotifications {
+            get { return true; }
         }
 
         public void CreateView ()
         {
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
 
-            UIView inputView = new UIView (new RectangleF (0, 0, 320, 44));
+            UIView inputView = new UIView (new RectangleF (0, 0, View.Frame.Width, 44));
             inputView.BackgroundColor = A.Color_NachoBackgroundGray;
 
-            resultsTableView = new UITableView (new RectangleF (0, 44, 320, View.Frame.Height - 44));
+            resultsTableView = new UITableView (new RectangleF (0, 44, View.Frame.Width, View.Frame.Height - 44));
             resultsTableView.SeparatorColor = A.Color_NachoBorderGray;
             resultsTableView.Source = new ContactChooserDataSource (this);
 
@@ -226,6 +239,52 @@ namespace NachoClient.iOS
             vc.owner = null;
             vc.NavigationController.PopViewControllerAnimated (false);
             NavigationController.PopViewControllerAnimated (true);
+        }
+
+
+        private void OnKeyboardNotification (NSNotification notification)
+        {
+            if (IsViewLoaded) {
+                //Check if the keyboard is becoming visible
+                bool visible = notification.Name == UIKeyboard.WillShowNotification;
+                //Start an animation, using values from the keyboard
+                UIView.BeginAnimations ("AnimateForKeyboard");
+                UIView.SetAnimationBeginsFromCurrentState (true);
+                UIView.SetAnimationDuration (UIKeyboard.AnimationDurationFromNotification (notification));
+                UIView.SetAnimationCurve ((UIViewAnimationCurve)UIKeyboard.AnimationCurveFromNotification (notification));
+                //Pass the notification, calculating keyboard height, etc.
+                bool landscape = InterfaceOrientation == UIInterfaceOrientation.LandscapeLeft || InterfaceOrientation == UIInterfaceOrientation.LandscapeRight;
+                if (visible) {
+                    var keyboardFrame = UIKeyboard.FrameEndFromNotification (notification);
+                    OnKeyboardChanged (visible, landscape ? keyboardFrame.Width : keyboardFrame.Height);
+                } else {
+                    var keyboardFrame = UIKeyboard.FrameBeginFromNotification (notification);
+                    OnKeyboardChanged (visible, landscape ? keyboardFrame.Width : keyboardFrame.Height);
+                }
+                //Commit the animation
+                UIView.CommitAnimations (); 
+            }
+        }
+
+        /// <summary>
+        /// Override this method to apply custom logic when the keyboard is shown/hidden
+        /// </summary>
+        /// <param name='visible'>
+        /// If the keyboard is visible
+        /// </param>
+        /// <param name='height'>
+        /// Calculated height of the keyboard (width not generally needed here)
+        /// </param>
+        protected virtual void OnKeyboardChanged (bool visible, float height)
+        {
+            var newHeight = (visible ? height : 0);
+
+            if (newHeight == keyboardHeight) {
+                return;
+            }
+            keyboardHeight = newHeight;
+
+            resultsTableView.Frame = new RectangleF (0, 44, View.Frame.Width, View.Frame.Height - keyboardHeight);
         }
 
         public class ContactChooserDataSource : UITableViewSource
