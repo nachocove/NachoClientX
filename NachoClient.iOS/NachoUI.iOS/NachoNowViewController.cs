@@ -42,6 +42,7 @@ namespace NachoClient.iOS
             CreateView ();
 
             // configure carousel
+            carouselView.ScrollSpeed = 0.5f;
             carouselView.DataSource = new HotListCarouselDataSource (this);
             carouselView.Delegate = new HotListCarouselDelegate (this);  
         }
