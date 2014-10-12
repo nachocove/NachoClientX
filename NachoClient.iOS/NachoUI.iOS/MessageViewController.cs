@@ -910,7 +910,7 @@ namespace NachoClient.iOS
             float width = scrollView.Frame.Width - 2 * VIEW_INSET;
             float height;
 
-            height = separator1YOffset;
+            height = separator2YOffset;
             height += bodyView.Frame.Height * bodyView.ZoomScale;
             height += 2 * VIEW_INSET;
             height = Math.Max (height, scrollView.Frame.Height);
