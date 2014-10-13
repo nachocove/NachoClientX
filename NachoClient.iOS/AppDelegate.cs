@@ -321,12 +321,16 @@ namespace NachoClient.iOS
                 switch (backEndState) {
                 case BackEndAutoDStateEnum.CertAskWait:
                     CertAskReqCallback (LoginHelpers.GetCurrentAccountId (), null);
+                    Log.Info (Log.LOG_STATE, "OnActived: CERTASKCALLBACK ");
                     break;
                 case BackEndAutoDStateEnum.CredWait:
                     CredReqCallback (LoginHelpers.GetCurrentAccountId ());
+                    Log.Info (Log.LOG_STATE, "OnActived: CREDCALLBACK ");
                     break;
                 case BackEndAutoDStateEnum.ServerConfWait:
                     ServConfReqCallback(LoginHelpers.GetCurrentAccountId());
+                    Log.Info (Log.LOG_STATE, "OnActived: SERVCONFCALLBACK ");
+
                     break;
                 default:
                     break;
@@ -548,15 +552,15 @@ namespace NachoClient.iOS
 
         public void CredReqCallback (int accountId)
         {
+            Log.Info (Log.LOG_UI, "CredReqCallback Called for account: {0}", accountId);
+
             hasFirstSyncCompleted = LoginHelpers.HasFirstSyncCompleted (accountId); 
             if (hasFirstSyncCompleted == false) {
-                Log.Info (Log.LOG_UI, "CredReqCallback Called for account: {0}", accountId);
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                     Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_CredReqCallback),
                     Account = ConstMcAccount.NotAccountSpecific,
                 });
             } else {
-                Log.Info (Log.LOG_UI, "CredReqCallback Called for account: {0}", accountId);
                 DisplayCredentialsFixView ();
             }
         }
@@ -564,9 +568,10 @@ namespace NachoClient.iOS
 
         public void ServConfReqCallback (int accountId)
         {
+            Log.Info (Log.LOG_UI, "ServConfReqCallback Called for account: {0}", accountId);
+
             hasFirstSyncCompleted = LoginHelpers.HasFirstSyncCompleted (accountId); 
             if (hasFirstSyncCompleted == false) {
-                Log.Info (Log.LOG_UI, "ServConfReqCallback Called for account: {0}", accountId);
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                     Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Error_ServerConfReqCallback),
                     Account = ConstMcAccount.NotAccountSpecific,
@@ -598,7 +603,7 @@ namespace NachoClient.iOS
 
                         var txt = parent.GetTextField (0).Text;
                         // FIXME need to scan string to make sure it is of right format (regex).
-                        if (txt != null) {
+                        if (txt != null && Util.IsValidHost(txt)) {
                             Log.Info (Log.LOG_LIFECYCLE, " New Server Name = " + txt);
                             NcModel.Instance.RunInTransaction (() => {
                                 var tmpServer = McServer.QueryByAccountId<McServer> (accountId).SingleOrDefault ();
@@ -641,6 +646,8 @@ namespace NachoClient.iOS
 
         public void CertAskReqCallback (int accountId, X509Certificate2 certificate)
         {
+            Log.Info (Log.LOG_UI, "CertAskReqCallback Called for account: {0}", accountId);
+
             hasFirstSyncCompleted = LoginHelpers.HasFirstSyncCompleted (accountId);
             if (hasFirstSyncCompleted == false) {
                 Log.Info (Log.LOG_UI, "CertAskReqCallback Called for account: {0}", accountId);

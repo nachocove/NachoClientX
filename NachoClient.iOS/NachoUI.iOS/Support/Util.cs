@@ -393,6 +393,16 @@ namespace NachoClient
             }
         }
 
+        public static bool IsValidHost (string host)
+        {
+            UriHostNameType hostnameURI = Uri.CheckHostName (host.Trim());
+                if (hostnameURI == UriHostNameType.Dns || hostnameURI == UriHostNameType.IPv4 || hostnameURI == UriHostNameType.IPv6) {
+                    return true;
+                } 
+
+            return false;
+        }
+
         public static UIImage DotWithColor (UIColor color)
         {
             UIGraphics.BeginImageContext (new SizeF (22, 22));
