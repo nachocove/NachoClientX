@@ -56,6 +56,7 @@ namespace NachoClient.iOS
 
             BackEndAutoDStateEnum backEndState = BackEnd.Instance.AutoDState (LoginHelpers.GetCurrentAccountId ());
             if (BackEndAutoDStateEnum.CertAskWait == backEndState) {
+                certificateView.SetCertificateInformation ();
                 certificateView.ShowView ();
             }
         }
