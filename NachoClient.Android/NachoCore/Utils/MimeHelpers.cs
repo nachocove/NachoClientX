@@ -75,6 +75,15 @@ namespace NachoCore.Utils
             }
         }
 
+        public static MimePart SearchParts (string cid, Dictionary<string,MimePart> partsDict)
+        {
+            var part = partsDict [cid];
+            if (null == part) {
+                return null;
+            }
+            return part;
+        }
+
         static string Indent (int indent)
         {
             return indent.ToString ().PadRight (2 + (indent * 2));
