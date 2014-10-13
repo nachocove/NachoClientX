@@ -32,6 +32,7 @@ namespace NachoClient.iOS
         protected UIView yourFoldersView;
         protected UIScrollView scrollView;
         protected int rootFolderCount;
+        const int MAX_RECENT_FOLDERS = 3;
 
         public override void ViewDidLoad ()
         {
@@ -687,16 +688,7 @@ namespace NachoClient.iOS
         public void UpdateLastAccessed ()
         {
             var list = McFolder.QueryByMostRecentlyAccessedFolders (account.Id);
-            list.Reverse ();
-            var tempList = new List<McFolder> ();
-            if (0 < list.Count) {
-                for (var i = 0; i < 3 && i < list.Count; i++) {
-                    if (list [i].LastAccessed > DateTime.UtcNow.AddYears (-1)) {
-                        tempList.Add (list [i]);
-                    }
-                }
-            }
-            recentFolderList = tempList;
+            recentFolderList = list.Take(MAX_RECENT_FOLDERS).ToList();
         }
 
         protected object cookie;
