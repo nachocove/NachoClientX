@@ -313,7 +313,6 @@ namespace NachoClient.iOS
                 FinalShutdown (null);
                 Log.Info (Log.LOG_LIFECYCLE, "BeginBackgroundTask: Callback exit");
             });
-            Log.Info (Log.LOG_LIFECYCLE, "OnActivated: Exit");
 
             if (LoginHelpers.IsCurrentAccountSet () && LoginHelpers.HasFirstSyncCompleted(LoginHelpers.GetCurrentAccountId())) {
                 BackEndAutoDStateEnum backEndState = BackEnd.Instance.AutoDState (LoginHelpers.GetCurrentAccountId ());
@@ -332,9 +331,11 @@ namespace NachoClient.iOS
                     Log.Info (Log.LOG_STATE, "OnActived: SERVCONFCALLBACK ");
                     break;
                 default:
+                    LoginHelpers.SetBackendDirty (LoginHelpers.GetCurrentAccountId (), false);
                     break;
                 }
             }
+            Log.Info (Log.LOG_LIFECYCLE, "OnActivated: Exit");
         }
 
         //
@@ -580,7 +581,7 @@ namespace NachoClient.iOS
                 // called if server name is wrong
                 // cancel should call "exit program, enter new server name should be updated server
 
-                Util.SetSettingsBadge (GetActiveTabBar(), true);
+                Util.GetActiveTabBar ().SetSettingsBadge (true);
                 LoginHelpers.SetBackendDirty (LoginHelpers.GetCurrentAccountId (), true);
 
                 var Mo = NcModel.Instance;
@@ -597,12 +598,12 @@ namespace NachoClient.iOS
                     var parent = (UIAlertView)a;
                     if (b.ButtonIndex == 0) {
 
-                        Util.SetSettingsBadge(GetActiveTabBar(), false);
+                        Util.GetActiveTabBar ().SetSettingsBadge (false);
                         LoginHelpers.SetBackendDirty(LoginHelpers.GetCurrentAccountId(), false);
 
                         var txt = parent.GetTextField (0).Text;
                         // FIXME need to scan string to make sure it is of right format (regex).
-                        if (txt != null && Util.IsValidHost(txt)) {
+                        if (txt != null && NachoCore.Utils.Uri_Helpers.IsValidHost(txt)) {
                             Log.Info (Log.LOG_LIFECYCLE, " New Server Name = " + txt);
                             NcModel.Instance.RunInTransaction (() => {
                                 var tmpServer = McServer.QueryByAccountId<McServer> (accountId).SingleOrDefault ();
@@ -660,27 +661,14 @@ namespace NachoClient.iOS
             }
         }
 
-        protected UITabBarController GetActiveTabBar ()
-        {
-            UITabBarController activeTabBar;
-            if (null != this.Window.RootViewController.PresentedViewController.TabBarController) {
-                activeTabBar = this.Window.RootViewController.PresentedViewController.TabBarController;
-            } else {
-                activeTabBar = (UITabBarController)this.Window.RootViewController.PresentedViewController;
-            }
-            NcAssert.NotNull (activeTabBar);
-
-            return activeTabBar;
-        }
-
         protected void DisplayCredentialsFixView ()
         {
-            Util.SetSettingsBadge (GetActiveTabBar(), true);
+            Util.GetActiveTabBar ().SetSettingsBadge (true);
             LoginHelpers.SetBackendDirty (LoginHelpers.GetCurrentAccountId (), true);
 
             UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
             CredentialsAskViewController cvc = (CredentialsAskViewController)x.InstantiateViewController ("CredentialsAskViewController");
-            cvc.SetTabBarController (GetActiveTabBar ());
+            cvc.SetTabBarController (Util.GetActiveTabBar ());
             this.Window.RootViewController.PresentedViewController.PresentViewController (cvc, true, null);
         }
 

@@ -104,6 +104,16 @@ namespace NachoClient.iOS
                 }
             }
         }
+
+        public void SetSettingsBadge(bool isDirty)
+        {
+            for (int i = 0; i < ViewControllers.Length; i++) {
+                if (ViewControllers [i].TabBarItem.Title == "Settings") {
+                    ViewControllers [i].TabBarItem.BadgeValue = (isDirty ? @"!" : null);
+                    MoreNavigationController.TabBarItem.BadgeValue = (isDirty ? @"!" : null);
+                }
+            }
+        }
     }
 }
                       

@@ -393,14 +393,19 @@ namespace NachoClient
             }
         }
 
-        public static bool IsValidHost (string host)
+        public static NachoTabBarController GetActiveTabBar ()
         {
-            UriHostNameType hostnameURI = Uri.CheckHostName (host.Trim());
-                if (hostnameURI == UriHostNameType.Dns || hostnameURI == UriHostNameType.IPv4 || hostnameURI == UriHostNameType.IPv6) {
-                    return true;
-                } 
+            var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
 
-            return false;
+            NachoTabBarController activeTabBar;
+            if (null != appDelegate.Window.RootViewController.PresentedViewController.TabBarController) {
+                activeTabBar = (NachoTabBarController)appDelegate.Window.RootViewController.PresentedViewController.TabBarController;
+            } else {
+                activeTabBar = (NachoTabBarController)appDelegate.Window.RootViewController.PresentedViewController;
+            }
+            NcAssert.NotNull (activeTabBar);
+
+            return activeTabBar;
         }
 
         public static UIImage DotWithColor (UIColor color)

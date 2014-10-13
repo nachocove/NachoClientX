@@ -21,7 +21,7 @@ namespace NachoClient.iOS
         protected const int PASSWORD_FIELD_TAG = 101;
         protected const int SUBMIT_BUTTON_TAG = 102;
         CertificateView certificateView;
-        protected UITabBarController sendersTabBar;
+        protected NachoTabBarController sendersTabBar;
 
 		public CredentialsAskViewController (IntPtr handle) : base (handle)
 		{
@@ -40,7 +40,7 @@ namespace NachoClient.iOS
             View.Add (certificateView);
         }
 
-        public void SetTabBarController(UITabBarController tabBar)
+        public void SetTabBarController(NachoTabBarController tabBar)
         {
             this.sendersTabBar = tabBar;
         }
@@ -164,7 +164,7 @@ namespace NachoClient.iOS
                     BackEnd.Instance.CredResp(UsersAccount.Id);
                     View.EndEditing(true);
                     DismissViewController(true, null);
-                    Util.SetSettingsBadge(this.sendersTabBar, false);
+                    this.sendersTabBar.SetSettingsBadge(false);
                     LoginHelpers.SetBackendDirty (LoginHelpers.GetCurrentAccountId (), false);
                 }else{
                     errorMessage.Text = "The email address you entered is not valid. Please update and try again.";

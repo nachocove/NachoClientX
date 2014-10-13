@@ -73,7 +73,7 @@ namespace NachoClient.iOS
                     if (BackEndAutoDStateEnum.CredWait == backEndState || BackEndAutoDStateEnum.CertAskWait == backEndState) {
                         UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
                         CredentialsAskViewController cvc = (CredentialsAskViewController)x.InstantiateViewController ("CredentialsAskViewController");
-                        cvc.SetTabBarController(this.TabBarController);
+                        cvc.SetTabBarController((NachoTabBarController)this.TabBarController);
                         this.PresentViewController (cvc, true, null);
                     }
 
