@@ -315,15 +315,21 @@ namespace NachoClient.iOS
             });
             Log.Info (Log.LOG_LIFECYCLE, "OnActivated: Exit");
 
-            if (LoginHelpers.IsCurrentAccountSet ()) {
+            if (LoginHelpers.IsCurrentAccountSet () && LoginHelpers.HasFirstSyncCompleted(LoginHelpers.GetCurrentAccountId())) {
                 BackEndAutoDStateEnum backEndState = BackEnd.Instance.AutoDState (LoginHelpers.GetCurrentAccountId ());
 
-                if (BackEndAutoDStateEnum.CredWait == backEndState || BackEndAutoDStateEnum.CertAskWait == backEndState) {
+                switch (backEndState) {
+                case BackEndAutoDStateEnum.CertAskWait:
+                    CertAskReqCallback (LoginHelpers.GetCurrentAccountId (), null);
+                    break;
+                case BackEndAutoDStateEnum.CredWait:
                     CredReqCallback (LoginHelpers.GetCurrentAccountId ());
-                }
-
-                if (BackEndAutoDStateEnum.ServerConfWait == backEndState) {
-                    ServConfReqCallback (LoginHelpers.GetCurrentAccountId ());
+                    break;
+                case BackEndAutoDStateEnum.ServerConfWait:
+                    ServConfReqCallback(LoginHelpers.GetCurrentAccountId());
+                    break;
+                default:
+                    break;
                 }
             }
         }
@@ -650,8 +656,6 @@ namespace NachoClient.iOS
 
         protected UITabBarController GetActiveTabBar ()
         {
-            UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-            CredentialsAskViewController cvc = (CredentialsAskViewController)x.InstantiateViewController ("CredentialsAskViewController");
             UITabBarController activeTabBar;
             if (null != this.Window.RootViewController.PresentedViewController.TabBarController) {
                 activeTabBar = this.Window.RootViewController.PresentedViewController.TabBarController;

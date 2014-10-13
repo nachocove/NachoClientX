@@ -4,8 +4,6 @@ using NachoCore.Model;
 
 namespace NachoClient.iOS
 {
-
-
     public interface INachoCertificateResponder
     {
         void SetOwner (INachoCertificateResponderParent o);

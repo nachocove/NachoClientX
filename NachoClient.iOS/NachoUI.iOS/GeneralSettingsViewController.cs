@@ -63,7 +63,7 @@ namespace NachoClient.iOS
             DirtyBackEnd.Layer.CornerRadius = 2.0f;
             DirtyBackEnd.BackgroundColor = A.Color_NachoRed;
             DirtyBackEnd.Font = A.Font_AvenirNextRegular14;
-            DirtyBackEnd.SetTitle ("FIX BE", UIControlState.Normal);
+            DirtyBackEnd.SetTitle ("Fix Account", UIControlState.Normal);
             DirtyBackEnd.SetTitleColor (UIColor.White, UIControlState.Normal);
             DirtyBackEnd.TouchUpInside += (object sender, EventArgs e) => {
                 if (LoginHelpers.IsCurrentAccountSet ()) {
@@ -220,7 +220,6 @@ namespace NachoClient.iOS
             var emailLabel = (UILabel)contentView.ViewWithTag (EMAIL_ADDRESS_LABEL_TAG);
             emailLabel.Text = GetEmailAddress ();
             LayoutView ();
-
 
             UIButton FixButton = (UIButton)View.ViewWithTag (FIX_BE_BUTTON_TAG);
             FixButton.Hidden = !LoginHelpers.IsBackendDirty (LoginHelpers.GetCurrentAccountId ());
