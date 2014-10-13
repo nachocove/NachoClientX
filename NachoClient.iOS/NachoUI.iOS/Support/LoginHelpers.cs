@@ -32,6 +32,18 @@ namespace NachoClient.iOS
             return McMutables.GetOrCreateBool(accountId, MODULE, "hasSyncedFolders", false);
         }
 
+        static public void SetBackendDirty (int accountId, bool toWhat)
+        {
+            NcAssert.True (GetCurrentAccountId() == accountId);
+            McMutables.SetBool (accountId, MODULE, "isBackendDirty", toWhat);
+        }
+
+        static public bool IsBackendDirty (int accountId)
+        {
+            NcAssert.True (GetCurrentAccountId() == accountId);
+            return McMutables.GetOrCreateBool(accountId, MODULE, "isBackendDirty", false);
+        }
+
         //Sets the status of the tutorial bit for given accountId
         static public void SetHasViewedTutorial (int accountId, bool toWhat)
         {

@@ -314,6 +314,18 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_LIFECYCLE, "BeginBackgroundTask: Callback exit");
             });
             Log.Info (Log.LOG_LIFECYCLE, "OnActivated: Exit");
+
+            if (LoginHelpers.IsCurrentAccountSet ()) {
+                BackEndAutoDStateEnum backEndState = BackEnd.Instance.AutoDState (LoginHelpers.GetCurrentAccountId ());
+
+                if (BackEndAutoDStateEnum.CredWait == backEndState || BackEndAutoDStateEnum.CertAskWait == backEndState) {
+                    CredReqCallback (LoginHelpers.GetCurrentAccountId ());
+                }
+
+                if (BackEndAutoDStateEnum.ServerConfWait == backEndState) {
+                    ServConfReqCallback (LoginHelpers.GetCurrentAccountId ());
+                }
+            }
         }
 
         //
@@ -490,7 +502,6 @@ namespace NachoClient.iOS
             NcApplication.Instance.QuickSync (KPerformFetchTimeoutSeconds);
         }
 
-
         public override void ReceivedLocalNotification (UIApplication application, UILocalNotification notification)
         {
             // Overwrite stuff  if we are "woken up"  from a LocalNotificaton out 
@@ -540,11 +551,10 @@ namespace NachoClient.iOS
                 });
             } else {
                 Log.Info (Log.LOG_UI, "CredReqCallback Called for account: {0}", accountId);
-                UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-                CredentialsAskViewController cvc = (CredentialsAskViewController)x.InstantiateViewController ("CredentialsAskViewController");
-                this.Window.RootViewController.PresentViewController (cvc, true, null);
+                DisplayCredentialsFixView ();
             }
         }
+
 
         public void ServConfReqCallback (int accountId)
         {
@@ -559,9 +569,12 @@ namespace NachoClient.iOS
 
                 // called if server name is wrong
                 // cancel should call "exit program, enter new server name should be updated server
+
+                Util.SetSettingsBadge (GetActiveTabBar(), true);
+                LoginHelpers.SetBackendDirty (LoginHelpers.GetCurrentAccountId (), true);
+
                 var Mo = NcModel.Instance;
                 var Be = BackEnd.Instance;
-
 
                 var credView = new UIAlertView ();
 
@@ -573,6 +586,10 @@ namespace NachoClient.iOS
                 credView.Clicked += delegate(object a, UIButtonEventArgs b) {
                     var parent = (UIAlertView)a;
                     if (b.ButtonIndex == 0) {
+
+                        Util.SetSettingsBadge(GetActiveTabBar(), false);
+                        LoginHelpers.SetBackendDirty(LoginHelpers.GetCurrentAccountId(), false);
+
                         var txt = parent.GetTextField (0).Text;
                         // FIXME need to scan string to make sure it is of right format (regex).
                         if (txt != null) {
@@ -627,8 +644,33 @@ namespace NachoClient.iOS
                 });
             } else {
                 // UI FIXME - ask user and call CertAskResp async'ly.
-                NcApplication.Instance.CertAskResp (accountId, true);
+                DisplayCredentialsFixView ();
             }
+        }
+
+        protected UITabBarController GetActiveTabBar ()
+        {
+            UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+            CredentialsAskViewController cvc = (CredentialsAskViewController)x.InstantiateViewController ("CredentialsAskViewController");
+            UITabBarController activeTabBar;
+            if (null != this.Window.RootViewController.PresentedViewController.TabBarController) {
+                activeTabBar = this.Window.RootViewController.PresentedViewController.TabBarController;
+            } else {
+                activeTabBar = (UITabBarController)this.Window.RootViewController.PresentedViewController;
+            }
+            NcAssert.NotNull (activeTabBar);
+
+            return activeTabBar;
+        }
+
+        protected void DisplayCredentialsFixView ()
+        {
+            UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+            CredentialsAskViewController cvc = (CredentialsAskViewController)x.InstantiateViewController ("CredentialsAskViewController");
+            cvc.SetTabBarController (GetActiveTabBar ());
+            this.Window.RootViewController.PresentedViewController.PresentViewController (cvc, true, null);
+            Util.SetSettingsBadge (GetActiveTabBar(), true);
+            LoginHelpers.SetBackendDirty (LoginHelpers.GetCurrentAccountId (), true);
         }
 
         /* BADGE & NOTIFICATION LOGIC HERE.
