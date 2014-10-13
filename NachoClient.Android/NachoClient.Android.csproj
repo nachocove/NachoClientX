@@ -540,4 +540,10 @@
       <Visible>False</Visible>
     </XamarinComponentReference>
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding.Android\NachoPlatformBinding.Android.csproj">
+      <Project>{99266C8C-3B30-436D-83BB-88C3B54C1D02}</Project>
+      <Name>NachoPlatformBinding.Android</Name>
+    </ProjectReference>
+  </ItemGroup>
 </Project>
