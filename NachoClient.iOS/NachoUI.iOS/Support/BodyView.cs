@@ -293,7 +293,7 @@ namespace NachoClient.iOS
             foreach (var entity in list) {
                 var part = (MimePart)entity;
                 if (null != part.ContentId) {
-                    AddCidPartToDict (part.ContentId, part);
+                    PlatformHelpers.AddCidPartToDict (part.ContentId, part);
                 }
                 if (part.ContentType.Matches ("text", "html")) {
                     RenderHtml (part);
@@ -315,13 +315,6 @@ namespace NachoClient.iOS
                     RenderImage (part);
                     continue;
                 }
-            }
-        }
-
-        public void AddCidPartToDict (string cid, MimePart part)
-        {
-            if (!PlatformHelpers.cidPartDict.ContainsKey (cid)) {
-                PlatformHelpers.cidPartDict.Add (cid, part);
             }
         }
 

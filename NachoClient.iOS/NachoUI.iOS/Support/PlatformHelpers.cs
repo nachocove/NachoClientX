@@ -29,7 +29,7 @@ namespace NachoClient
 
         static public UIImage RenderContentId (string value)
         {
-            MimePart p = MimeHelpers.SearchParts (value, cidPartDict);
+            MimePart p = PlatformHelpers.SearchParts (value, cidPartDict);
             if (null == p) {
                 Log.Error (Log.LOG_UTILS, "RenderContentId: MimeEntity is null: {0}", value);
                 return RenderStringToImage (value);
@@ -41,6 +41,16 @@ namespace NachoClient
                 return RenderStringToImage (value);
             }
             return image;
+        }
+
+        static public void AddCidPartToDict (string cid, MimePart part)
+        {
+            cidPartDict [cid] = part;
+        }
+
+        static public MimePart SearchParts (string cid, Dictionary<string,MimePart> partsDict)
+        {
+            return partsDict [cid];
         }
 
         /// <summary>

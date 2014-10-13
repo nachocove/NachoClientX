@@ -30,7 +30,7 @@ namespace NachoCore.Utils
         public static MimeMessage LoadMessage (string path)
         {
             try {
-                using (var fileStream = new FileStream(path, FileMode.Open, FileAccess.Read)) {
+                using (var fileStream = new FileStream (path, FileMode.Open, FileAccess.Read)) {
                     return MimeMessage.Load (fileStream);
                 }
             } catch {
@@ -73,15 +73,6 @@ namespace NachoCore.Utils
             } else {
                 return null;
             }
-        }
-
-        public static MimePart SearchParts (string cid, Dictionary<string,MimePart> partsDict)
-        {
-            var part = partsDict [cid];
-            if (null == part) {
-                return null;
-            }
-            return part;
         }
 
         static string Indent (int indent)
@@ -160,7 +151,7 @@ namespace NachoCore.Utils
             if (null == path) {
                 return null;
             }
-            if (McBody.MIME == message.GetBodyType()) {
+            if (McBody.MIME == message.GetBodyType ()) {
                 if (McAbstrItem.BodyStateEnum.Whole_0 != message.BodyState) {
                     return null;
                 }
@@ -176,7 +167,7 @@ namespace NachoCore.Utils
                     return null;
                 }
                 var raw = body.Substring (0, Math.Min (body.Length, 1000));
-                var cooked = System.Text.RegularExpressions.Regex.Replace(raw, @"\s+", " ");
+                var cooked = System.Text.RegularExpressions.Regex.Replace (raw, @"\s+", " ");
                 return cooked;
             }
             return "No summary available.";
@@ -192,7 +183,7 @@ namespace NachoCore.Utils
                 return null;
             }
             var raw = textPart.Text.Substring (0, Math.Min (textPart.Text.Length, 1000));
-            var cooked = System.Text.RegularExpressions.Regex.Replace(raw, @"\s+", " ");
+            var cooked = System.Text.RegularExpressions.Regex.Replace (raw, @"\s+", " ");
             return cooked;
         }
 
@@ -223,7 +214,7 @@ namespace NachoCore.Utils
         {
             error = null;
             if (McAbstrItem.BodyStateEnum.Whole_0 != message.BodyState) {
-                error = "Nacho Mail has not downloaded the body of this message yet.\n" + message.GetBodyPreviewOrEmpty();
+                error = "Nacho Mail has not downloaded the body of this message yet.\n" + message.GetBodyPreviewOrEmpty ();
                 return null;
             }
 
@@ -338,8 +329,8 @@ namespace NachoCore.Utils
                     bool didReplacement = SetPlainTextHelper (subpart, multipart, message, text, alreadyReplaced);
                     alreadyReplaced = alreadyReplaced || didReplacement;
                 }
-                if (multipart.ContentType.Matches ("multipart", "mixed") || 
-                        multipart.ContentType.Matches ("multipart", "alternative")) {
+                if (multipart.ContentType.Matches ("multipart", "mixed") ||
+                    multipart.ContentType.Matches ("multipart", "alternative")) {
                     // Get rid of any multipart entities that are no longer necessary now that
                     // some entities may have been removed.
                     if (0 == multipart.Count) {
