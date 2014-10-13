@@ -331,7 +331,7 @@ namespace NachoClient.iOS
                     Log.Info (Log.LOG_STATE, "OnActived: SERVCONFCALLBACK ");
                     break;
                 default:
-                    LoginHelpers.SetBackendDirty (LoginHelpers.GetCurrentAccountId (), false);
+                    LoginHelpers.SetDoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId (), false);
                     break;
                 }
             }
@@ -582,7 +582,7 @@ namespace NachoClient.iOS
                 // cancel should call "exit program, enter new server name should be updated server
 
                 Util.GetActiveTabBar ().SetSettingsBadge (true);
-                LoginHelpers.SetBackendDirty (LoginHelpers.GetCurrentAccountId (), true);
+                LoginHelpers.SetDoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId (), true);
 
                 var Mo = NcModel.Instance;
                 var Be = BackEnd.Instance;
@@ -599,7 +599,7 @@ namespace NachoClient.iOS
                     if (b.ButtonIndex == 0) {
 
                         Util.GetActiveTabBar ().SetSettingsBadge (false);
-                        LoginHelpers.SetBackendDirty(LoginHelpers.GetCurrentAccountId(), false);
+                        LoginHelpers.SetDoesBackEndHaveIssues(LoginHelpers.GetCurrentAccountId(), false);
 
                         var txt = parent.GetTextField (0).Text;
                         // FIXME need to scan string to make sure it is of right format (regex).
@@ -664,7 +664,7 @@ namespace NachoClient.iOS
         protected void DisplayCredentialsFixView ()
         {
             Util.GetActiveTabBar ().SetSettingsBadge (true);
-            LoginHelpers.SetBackendDirty (LoginHelpers.GetCurrentAccountId (), true);
+            LoginHelpers.SetDoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId (), true);
 
             UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
             CredentialsAskViewController cvc = (CredentialsAskViewController)x.InstantiateViewController ("CredentialsAskViewController");

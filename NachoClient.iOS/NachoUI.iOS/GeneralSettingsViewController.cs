@@ -222,7 +222,7 @@ namespace NachoClient.iOS
             LayoutView ();
 
             UIButton FixButton = (UIButton)View.ViewWithTag (FIX_BE_BUTTON_TAG);
-            FixButton.Hidden = !LoginHelpers.IsBackendDirty (LoginHelpers.GetCurrentAccountId ());
+            FixButton.Hidden = !LoginHelpers.DoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId ());
         }
 
         protected string GetEmailAddress ()
