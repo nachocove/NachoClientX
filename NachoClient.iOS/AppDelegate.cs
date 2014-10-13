@@ -330,7 +330,6 @@ namespace NachoClient.iOS
                 case BackEndAutoDStateEnum.ServerConfWait:
                     ServConfReqCallback(LoginHelpers.GetCurrentAccountId());
                     Log.Info (Log.LOG_STATE, "OnActived: SERVCONFCALLBACK ");
-
                     break;
                 default:
                     break;
