@@ -148,7 +148,6 @@ namespace NachoClient.iOS
             var certToBeExamined = BackEnd.Instance.ServerCertToBeExamined (LoginHelpers.GetCurrentAccountId ());
             certInfo = new CertificateHelper ().formatCertificateData (certToBeExamined);
             ConfigureView ();
-            ShowView ();
         }
 
         public void ShowView ()

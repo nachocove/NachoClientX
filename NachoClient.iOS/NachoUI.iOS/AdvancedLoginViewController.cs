@@ -784,6 +784,7 @@ namespace NachoClient.iOS
         {
             setTextToRed (new UITextField[]{ });
             certificateView.SetCertificateInformation ();
+            certificateView.ShowView ();
             waitScreen.InvalidateAutomaticSegueTimer ();
         }
 
