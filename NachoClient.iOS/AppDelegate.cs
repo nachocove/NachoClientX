@@ -669,12 +669,13 @@ namespace NachoClient.iOS
 
         protected void DisplayCredentialsFixView ()
         {
+            Util.SetSettingsBadge (GetActiveTabBar(), true);
+            LoginHelpers.SetBackendDirty (LoginHelpers.GetCurrentAccountId (), true);
+
             UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
             CredentialsAskViewController cvc = (CredentialsAskViewController)x.InstantiateViewController ("CredentialsAskViewController");
             cvc.SetTabBarController (GetActiveTabBar ());
             this.Window.RootViewController.PresentedViewController.PresentViewController (cvc, true, null);
-            Util.SetSettingsBadge (GetActiveTabBar(), true);
-            LoginHelpers.SetBackendDirty (LoginHelpers.GetCurrentAccountId (), true);
         }
 
         /* BADGE & NOTIFICATION LOGIC HERE.
