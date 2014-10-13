@@ -178,12 +178,12 @@ namespace NachoClient.iOS
                 recentView.Hidden = false;
                 hasRecents = true;
             } 
+
             var index = 0;
             foreach (var folder in recentFolderList) {
                 CreateRecentFolderCell (folder, index);
                 index++;
             }
-            recentView.Frame = new RectangleF (recentView.Frame.X, recentView.Frame.Y, recentView.Frame.Width, 3 * 44);
 
             index = 0;
             foreach (var f in nestedFolderList) {
@@ -221,6 +221,7 @@ namespace NachoClient.iOS
             defaultCellsOffset = 0;
 
             if (hasRecents) {
+                recentView.Frame = new RectangleF (recentView.Frame.X, recentView.Frame.Y, recentView.Frame.Width, recentFolderList.Count * 44);
                 yOffset += recentView.Frame.Bottom;
             }
 
@@ -687,7 +688,15 @@ namespace NachoClient.iOS
         {
             var list = McFolder.QueryByMostRecentlyAccessedFolders (account.Id);
             list.Reverse ();
-            recentFolderList = list.Take (3).ToList ();
+            var tempList = new List<McFolder> ();
+            if (0 < list.Count) {
+                for (var i = 0; i < 3 && i < list.Count; i++) {
+                    if (list [i].LastAccessed > DateTime.UtcNow.AddYears (-1)) {
+                        tempList.Add (list [i]);
+                    }
+                }
+            }
+            recentFolderList = tempList;
         }
 
         protected object cookie;
