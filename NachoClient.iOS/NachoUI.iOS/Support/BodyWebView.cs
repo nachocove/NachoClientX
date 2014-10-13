@@ -35,11 +35,6 @@ namespace NachoClient.iOS
             ViewFramer.Create (this).X (leftMargin).Height (1);
             htmlBusy = new RecursionCounter (() => {
                 EvaluateJavascript (magic);
-                if (!ScrollingEnabled) {
-                    ViewFramer.Create (this)
-                    .Width (ScrollView.ContentSize.Width)
-                    .Height (ScrollView.ContentSize.Height);
-                }
                 // Adjust scroll view minimum zoom scale based on the content. Make sure 
                 // that we cannot pinch (zoom out) to the point that the content is narrower
                 // than 95% of the device screen width.
@@ -48,6 +43,17 @@ namespace NachoClient.iOS
                     minZoomScale = 1.0f;
                 } else {
                     minZoomScale = (0.95f * parentView.Bounds.Width) / ScrollView.ContentSize.Width;
+                }
+                if (!ScrollingEnabled) {
+                    ViewFramer.Create (this)
+                        .Width (ScrollView.ContentSize.Width)
+                        .Height (ScrollView.ContentSize.Height);
+                } else {
+                    // Make frame bigger so that after body view scroll view scale the 
+                    // content down, the frame will still be the original size.
+                    ViewFramer.Create (this)
+                        .Width (Frame.Width / minZoomScale)
+                        .Height (Frame.Height / minZoomScale);
                 }
                 OnRenderComplete (minZoomScale);
             });
