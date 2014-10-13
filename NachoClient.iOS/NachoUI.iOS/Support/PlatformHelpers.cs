@@ -21,7 +21,7 @@ namespace NachoClient
     /// </summary>
     public class PlatformHelpers
     {
-        static public MimeMessage motd;
+        static public Dictionary<string,MimePart> cidPartDict = new Dictionary<string,MimePart> ();
 
         public PlatformHelpers ()
         {
@@ -29,24 +29,28 @@ namespace NachoClient
 
         static public UIImage RenderContentId (string value)
         {
-            MimeEntity e = MimeHelpers.SearchMessage (value, motd);
-            if (null == e) {
+            MimePart p = PlatformHelpers.SearchParts (value, cidPartDict);
+            if (null == p) {
                 Log.Error (Log.LOG_UTILS, "RenderContentId: MimeEntity is null: {0}", value);
                 return RenderStringToImage (value);
             }
 
-            var part = e as MimePart;
-            if (null == part) {
-                Log.Error (Log.LOG_UTILS, "RenderContentId: MimePart is null: {0}", value);
-                return RenderStringToImage (value);
-            }
-
-            var image = RenderImage (part);
+            var image = RenderImage (p);
             if (null == image) {
                 Log.Error (Log.LOG_UTILS, "RenderContentId: image is null: {0}", value);
                 return RenderStringToImage (value);
             }
             return image;
+        }
+
+        static public void AddCidPartToDict (string cid, MimePart part)
+        {
+            cidPartDict [cid] = part;
+        }
+
+        static public MimePart SearchParts (string cid, Dictionary<string,MimePart> partsDict)
+        {
+            return partsDict [cid];
         }
 
         /// <summary>
