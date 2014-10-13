@@ -109,6 +109,7 @@ namespace NachoClient.iOS
                 yOffset += navbar.Frame.Height;
             } else {
                 NavigationItem.Title = "Mail";
+                NavigationController.NavigationBar.Translucent = false;
             }
 
             float marginPadding = 15f;

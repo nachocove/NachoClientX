@@ -1572,6 +1572,7 @@
     <BundleResource Include="Resources\modal-tonight%402x.png" />
     <BundleResource Include="Resources\modal-close%402x.png" />
     <BundleResource Include="Resources\gen-close%402x.png" />
+    <BundleResource Include="Resources\folder-folder%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
