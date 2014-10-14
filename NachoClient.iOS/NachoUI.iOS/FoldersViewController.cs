@@ -32,6 +32,7 @@ namespace NachoClient.iOS
         protected UIView yourFoldersView;
         protected UIScrollView scrollView;
         protected int rootFolderCount;
+        const int MAX_RECENT_FOLDERS = 3;
 
         public override void ViewDidLoad ()
         {
@@ -178,12 +179,12 @@ namespace NachoClient.iOS
                 recentView.Hidden = false;
                 hasRecents = true;
             } 
+
             var index = 0;
             foreach (var folder in recentFolderList) {
                 CreateRecentFolderCell (folder, index);
                 index++;
             }
-            recentView.Frame = new RectangleF (recentView.Frame.X, recentView.Frame.Y, recentView.Frame.Width, 3 * 44);
 
             index = 0;
             foreach (var f in nestedFolderList) {
@@ -221,6 +222,7 @@ namespace NachoClient.iOS
             defaultCellsOffset = 0;
 
             if (hasRecents) {
+                recentView.Frame = new RectangleF (recentView.Frame.X, recentView.Frame.Y, recentView.Frame.Width, recentFolderList.Count * 44);
                 yOffset += recentView.Frame.Bottom;
             }
 
@@ -686,8 +688,7 @@ namespace NachoClient.iOS
         public void UpdateLastAccessed ()
         {
             var list = McFolder.QueryByMostRecentlyAccessedFolders (account.Id);
-            list.Reverse ();
-            recentFolderList = list.Take (3).ToList ();
+            recentFolderList = list.Take(MAX_RECENT_FOLDERS).ToList();
         }
 
         protected object cookie;
