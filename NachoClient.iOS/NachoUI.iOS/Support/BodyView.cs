@@ -281,7 +281,6 @@ namespace NachoClient.iOS
             using (var bodySource = new FileStream (bodyPath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
                 var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
                 var mime = bodyParser.ParseMessage ();
-                PlatformHelpers.motd = mime; // for cid handler
                 MimeHelpers.DumpMessage (mime, 0);
                 var list = new List<MimeEntity> ();
                 MimeHelpers.MimeDisplayList (mime, ref list);
@@ -293,6 +292,9 @@ namespace NachoClient.iOS
         {
             foreach (var entity in list) {
                 var part = (MimePart)entity;
+                if (null != part.ContentId) {
+                    PlatformHelpers.AddCidPartToDict (part.ContentId, part);
+                }
                 if (part.ContentType.Matches ("text", "html")) {
                     RenderHtml (part);
                     continue;

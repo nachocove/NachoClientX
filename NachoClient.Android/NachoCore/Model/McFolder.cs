@@ -218,8 +218,9 @@ namespace NachoCore.Model
 
         public static List<McFolder> QueryByMostRecentlyAccessedFolders (int accountId)
         {
-            var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                " f.AccountId = ? ORDER BY f.LastAccessed", accountId);
+            var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f " +
+                "WHERE f.AccountId = ? AND f.LastAccessed > ? " +
+                "ORDER BY f.LastAccessed DESC", accountId, DateTime.UtcNow.AddYears(-1));
             return folders.ToList ();
         }
 
