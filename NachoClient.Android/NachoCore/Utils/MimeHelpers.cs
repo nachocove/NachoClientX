@@ -90,20 +90,20 @@ namespace NachoCore.Utils
         {
             if (entity is MessagePart) {
                 var messagePart = (MessagePart)entity;
-                Log.Info (Log.LOG_EMAIL, "{0}MimeEntity: {1} {2}", Indent (indent), messagePart, messagePart.ContentType);
+                Log.Info (Log.LOG_EMAIL, "{0}MimeEntity: {1} {2} {3}", Indent (indent), messagePart, messagePart.ContentType, messagePart.ContentId);
                 DumpMessage (messagePart.Message, indent + 1);
                 return;
             }
             if (entity is Multipart) {
                 var multipart = (Multipart)entity;
-                Log.Info (Log.LOG_EMAIL, "{0}Multipart: {1} {2}", Indent (indent), multipart, multipart.ContentType);
+                Log.Info (Log.LOG_EMAIL, "{0}Multipart: {1} {2} {3}", Indent (indent), multipart, multipart.ContentType, multipart.ContentId);
                 foreach (var subpart in multipart) {
-                    Log.Info (Log.LOG_EMAIL, "{0}Subpart: {1} {2}", Indent (indent), subpart, subpart.ContentType);
+                    Log.Info (Log.LOG_EMAIL, "{0}Subpart: {1} {2} {3}", Indent (indent), subpart, subpart.ContentType, subpart.ContentId);
                     DumpMimeEntity (subpart, indent + 1);
                 }
                 return;
             }
-            Log.Info (Log.LOG_EMAIL, "{0}MimeEntity: {1} {2}", Indent (indent), entity, entity.ContentType);
+            Log.Info (Log.LOG_EMAIL, "{0}MimeEntity: {1} {2} {3}", Indent (indent), entity, entity.ContentType, entity.ContentId);
         }
 
         /// <summary>
