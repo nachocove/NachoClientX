@@ -383,16 +383,6 @@ namespace NachoClient
             return colors [index];
         }
 
-        public static void SetSettingsBadge(UITabBarController tabController, bool isDirty)
-        {
-            for (int i = 0; i < tabController.ViewControllers.Length; i++) {
-                if (tabController.ViewControllers [i].TabBarItem.Title == "Settings") {
-                    tabController.ViewControllers [i].TabBarItem.BadgeValue = (isDirty ? @"!" : null);
-                    tabController.MoreNavigationController.TabBarItem.BadgeValue = (isDirty ? @"!" : null);
-                }
-            }
-        }
-
         public static NachoTabBarController GetActiveTabBar ()
         {
             var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
