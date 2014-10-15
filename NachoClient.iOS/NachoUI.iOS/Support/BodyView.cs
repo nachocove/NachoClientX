@@ -85,7 +85,7 @@ namespace NachoClient.iOS
 
         protected delegate bool IterateCallback (UIView subview);
 
-        static UIColor SCROLLVIEW_BDCOLOR = A.Color_NachoGreen;
+        static UIColor SCROLLVIEW_BDCOLOR = UIColor.Magenta;
         static UIColor MESSAGEVIEW_BDCOLOR = UIColor.Brown;
 
         static UIColor SCROLLVIEW_BGCOLOR = UIColor.White;
@@ -450,9 +450,13 @@ namespace NachoClient.iOS
 
         void RenderImage (MimePart part)
         {
+            // Outlook and Thunderbird do not render MIME image parts. Embedded images
+            // are referenced via CID in HTML part.
+            #if (RENDER_IMAGE)
             var iv = new BodyImageView (Frame);
             iv.Configure (part);
             messageView.AddSubview (iv);
+            #endif
         }
 
         void RenderHtml (MimePart part)
@@ -660,13 +664,13 @@ namespace NachoClient.iOS
             float y = offset.Y;
             if (0.0f > x) {
                 x = 0.0f;
-            } else if ((renderView.ContentSize.Width - view.Frame.Width) < x) {
-                x = renderView.ContentSize.Width - view.Frame.Width;
+            } else if (renderView.ContentSize.Width < x) {
+                x = renderView.ContentSize.Width;
             }
             if (0.0f > y) {
                 y = 0.0f;
-            } else if ((renderView.ContentSize.Height - view.Frame.Height) < y) {
-                y = renderView.ContentSize.Height - view.Frame.Height;
+            } else if (renderView.ContentSize.Height < y) {
+                y = renderView.ContentSize.Height;
             }
             return new PointF (x, y);
         }

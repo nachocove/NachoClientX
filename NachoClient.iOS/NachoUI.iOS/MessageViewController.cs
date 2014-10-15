@@ -502,9 +502,9 @@ namespace NachoClient.iOS
                 bodyViewOffset.Y -= separator2YOffset;
                 ViewFramer framer = ViewFramer.Create (bodyView);
                 if (0 < bodyViewOffset.Y) {
-                    framer.Y (separator2YOffset + bodyViewOffset.Y);
+                    framer.Y (1.0f + separator2YOffset + bodyViewOffset.Y);
                 } else {
-                    framer.Y (separator2YOffset);
+                    framer.Y (1.0f + separator2YOffset);
                 }
                 bodyView.ScrollTo (bodyViewOffset);
 
