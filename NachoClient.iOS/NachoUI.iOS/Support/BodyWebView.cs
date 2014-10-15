@@ -8,7 +8,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public class BodyWebView : UIWebView
+    public class BodyWebView : UIWebView, IBodyRender
     {
         public delegate void RenderStart ();
         public delegate void RenderComplete (float minZoomScale);
@@ -30,37 +30,44 @@ namespace NachoClient.iOS
         public RenderStart OnRenderStart;
         public RenderComplete OnRenderComplete;
 
-        public BodyWebView (UIView parentView, float leftMargin) : base (parentView.Frame)
+        private SizeF _contentSize;
+        public SizeF ContentSize {
+            get {
+                float scale = ScrollView.ZoomScale;
+                return new SizeF (_contentSize.Width * scale, _contentSize.Height * scale);
+            }
+            protected set {
+                _contentSize = value;
+            }
+        }
+
+        public BodyWebView (UIView parentView, float leftMargin) : base ()
         {
-            ViewFramer.Create (this).X (leftMargin).Height (1);
+            ViewHelper.SetDebugBorder (this, UIColor.Red);
+
+            ViewFramer.Create (this)
+                .X (0)
+                .Y (0)
+                .Width (parentView.Frame.Width)
+                .Height (1);
+
             htmlBusy = new RecursionCounter (() => {
                 EvaluateJavascript (magic);
-                // Adjust scroll view minimum zoom scale based on the content. Make sure 
-                // that we cannot pinch (zoom out) to the point that the content is narrower
-                // than 95% of the device screen width.
-                float minZoomScale;
-                if (ScrollView.ContentSize.Width < (0.95f * parentView.Bounds.Width)) {
-                    minZoomScale = 1.0f;
-                } else {
-                    minZoomScale = (0.95f * parentView.Bounds.Width) / ScrollView.ContentSize.Width;
-                }
-                if (!ScrollingEnabled) {
-                    ViewFramer.Create (this)
-                        .Width (ScrollView.ContentSize.Width)
-                        .Height (ScrollView.ContentSize.Height);
-                } else {
-                    // Make frame bigger so that after body view scroll view scale the 
-                    // content down, the frame will still be the original size.
-                    ViewFramer.Create (this)
-                        .Width (Frame.Width / minZoomScale)
-                        .Height (Frame.Height / minZoomScale);
-                }
-                OnRenderComplete (minZoomScale);
+
+                // Save the rendered content size
+                _contentSize = ScrollView.ContentSize;
+
+                // If the content size is less than the given frame, we set the frame to the content size
+                ViewFramer.Create(this)
+                    .Width (Math.Min (ContentSize.Width, parentView.Frame.Width))
+                    .Height (Math.Min (ContentSize.Height, parentView.Frame.Height));
+
+                // If the content is wider than the frame, try to scale it down
+                OnRenderComplete (1.0f);
             });
 
+            UserInteractionEnabled = false;
             ScrollView.Bounces = false;
-            ScrollView.ScrollEnabled = true;
-            ScrollView.PagingEnabled = false;
             ScrollView.MultipleTouchEnabled = false;
             ContentMode = UIViewContentMode.ScaleAspectFit;
             BackgroundColor = UIColor.White;
@@ -87,6 +94,14 @@ namespace NachoClient.iOS
             };
         }
 
+        public override void SizeToFit ()
+        {
+            // Intentionally disable SizeToFit(). By allowing the base class SizeToFit() to
+            // take effect, it will create a UIWebView with its frame equal to the content size
+            // for large HTML email, it will consume a lot of memory. And ViewHelper.LayoutCursor
+            // always call SizeToFit(). So, we need to disable it.
+        }
+
         public void LoadHtmlString (string html)
         {
             NcAssert.True ((null != OnRenderStart) && (null != OnRenderComplete));
@@ -99,6 +114,18 @@ namespace NachoClient.iOS
             string wrap_pre = "<style>pre { white-space: pre-wrap;}</style>";
             html = disable_js + wrap_pre + html;
             LoadHtmlString (html, null);
+        }
+
+        public void ScrollTo (PointF upperLeft)
+        {
+            // TODO - Add sanity check
+            ScrollView.SetContentOffset (upperLeft, false);
+        }
+
+        public string LayoutInfo ()
+        {
+            return String.Format ("BodyWebView: offset=({0},{1})  frame=({2},{3})  content=({4},{5})",
+                Frame.X, Frame.Y, Frame.Width, Frame.Height, ContentSize.Width, ContentSize.Height);
         }
     }
 }

@@ -496,6 +496,22 @@ namespace NachoClient.iOS
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
             view = new UIView (ViewHelper.InnerFrameWithInset (View.Frame, VIEW_INSET));
             scrollView.AddSubview (view);
+            scrollView.Scrolled += (object sender, EventArgs e) => {
+                // Process vertical scrolling
+                PointF bodyViewOffset = new PointF (scrollView.ContentOffset.X, scrollView.ContentOffset.Y);
+                bodyViewOffset.Y -= separator2YOffset;
+                ViewFramer framer = ViewFramer.Create (bodyView);
+                if (0 < bodyViewOffset.Y) {
+                    framer.Y (1.0f + separator2YOffset + bodyViewOffset.Y);
+                } else {
+                    framer.Y (1.0f + separator2YOffset);
+                }
+                bodyView.ScrollTo (bodyViewOffset);
+
+                // Process horizontal scrolling
+                framer = ViewFramer.Create (view);
+                framer.X (scrollView.ContentOffset.X);
+            };
 
             #if (DEBUG_UI)
             view.BackgroundColor = A.Color_NachoRed;
@@ -630,10 +646,10 @@ namespace NachoClient.iOS
             // Attachments
             attachmentListView =
                 new AttachmentListView (new RectangleF (ATTACHMENTVIEW_INSET, yOffset + 1.0f,
-                    view.Frame.Width - ATTACHMENTVIEW_INSET, 30.0f));
+                    view.Frame.Width - ATTACHMENTVIEW_INSET, 40.0f));
             attachmentListView.OnAttachmentSelected = onAttachmentSelected;
             attachmentListView.OnStateChanged = (bool IsExpanded) => {
-                LayoutView ();
+                LayoutView (true);
             };
             attachmentListView.Tag = (int)TagType.ATTACHMENT_VIEW_TAG;
             if (HasAttachments) {
@@ -660,6 +676,7 @@ namespace NachoClient.iOS
                 view.Frame.Height - BodyView.BODYVIEW_INSET),
                 view);
             bodyView.VerticalScrollingEnabled = false;
+            bodyView.HorizontalScrollingEnabled = false;
             bodyView.SpinnerCenteredOnParentFrame = true;
             bodyView.OnRenderStart = () => {
                 deferLayout.Increment ();
@@ -918,11 +935,12 @@ namespace NachoClient.iOS
             height += bodyView.Frame.Height * bodyView.ZoomScale;
             height += 2 * VIEW_INSET;
             height = Math.Max (height, scrollView.Frame.Height);
-            view.Frame = new RectangleF (VIEW_INSET, VIEW_INSET, width, height);
+            view.Frame = new RectangleF (scrollView.ContentOffset.X + VIEW_INSET,
+                scrollView.ContentOffset.Y + VIEW_INSET, width, height);
 
-            scrollView.ContentSize = new SizeF(
-                view.Frame.Width + 2 * VIEW_INSET,
-                view.Frame.Height + 2 * VIEW_INSET
+            scrollView.ContentSize = new SizeF (
+                Math.Max (view.Frame.Width, bodyView.ContentSize.Width + 12.0f),
+                separator2YOffset + bodyView.ContentSize.Height
             );
         }
 
