@@ -288,7 +288,7 @@ namespace NachoClient.iOS
         public void AcceptCertificate ()
         {
             NcApplication.Instance.CertAskResp (LoginHelpers.GetCurrentAccountId (), true);
-            Util.SetSettingsBadge(this.sendersTabBar, false);
+            Util.GetActiveTabBar().SetSettingsBadge(false);
             LoginHelpers.SetDoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId (), false);
             View.EndEditing(true);
             DismissViewController(true, null);
