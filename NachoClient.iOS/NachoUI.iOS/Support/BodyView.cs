@@ -536,6 +536,7 @@ namespace NachoClient.iOS
             Console.WriteLine (LayoutInfo ());
         }
 
+        // FIXME: Null return might be body already downloaded, so check it again
         protected void StartDownload ()
         {
             downloadToken = BackEnd.Instance.DnldEmailBodyCmd (abstrItem.AccountId, abstrItem.Id);
