@@ -63,6 +63,9 @@ namespace NachoClient.iOS
 
         public void Reset ()
         {
+            foreach (var view in attachmentViews) {
+                view.RemoveFromSuperview ();
+            }
             attachmentViews.Clear ();
             ExpandedHeight = CollapsedHeight;
         }
