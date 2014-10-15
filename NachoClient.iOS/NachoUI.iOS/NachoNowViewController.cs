@@ -25,6 +25,9 @@ namespace NachoClient.iOS
         public iCarousel carouselView;
         protected UITableView calendarTableView;
 
+        protected bool calendarNeedsRefresh;
+        protected bool priorityInboxNeedsRefresh;
+
         public NachoNowViewController (IntPtr handle) : base (handle)
         {
         }
@@ -32,6 +35,8 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
             priorityInbox = NcEmailManager.PriorityInbox ();
 
@@ -92,14 +97,13 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
-
+            MaybeRefreshCalendar ();
+            MaybeRefreshPriorityInbox ();
         }
 
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
-            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 
         ///        NachoNowToCalendar(null)
@@ -184,25 +188,61 @@ namespace NachoClient.iOS
         public void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
+            Console.WriteLine ("NOW: {0}", s.Status.SubKind);
             if (NcResult.SubKindEnum.Info_EmailMessageSetChanged == s.Status.SubKind) {
-                if (priorityInbox.Refresh ()) {
-                    carouselView.ReloadData ();
-                }
+                RefreshPriorityInboxIfVisible ();
+
             }
             if (NcResult.SubKindEnum.Info_CalendarSetChanged == s.Status.SubKind) {
-                calendarSource.Refresh ();
-                calendarTableView.ReloadData ();
+                RefreshCalendarIfVisible ();
             }
             if (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated == s.Status.SubKind) {
-                if (priorityInbox.Refresh ()) {
-                    carouselView.ReloadData ();
-                }
+                RefreshPriorityInboxIfVisible ();
             }
             if (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded == s.Status.SubKind) {
+                Log.Info (Log.LOG_UI, "NachoNowViewController: mailMessageBodyDownloadSucceeded {0}", s.Tokens.FirstOrDefault ().ToString ());
                 ProcessDownloadComplete (true);
             }
             if (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed == s.Status.SubKind) {
+                Log.Info (Log.LOG_UI, "NachoNowViewController: mailMessageBodyDownloadFailed {0}", s.Tokens.FirstOrDefault ().ToString ());
                 ProcessDownloadComplete (false);
+            }
+        }
+
+        protected void RefreshPriorityInboxIfVisible ()
+        {
+            if (!this.IsVisible ()) {
+                priorityInboxNeedsRefresh = true;
+                return;
+            }
+            MaybeRefreshPriorityInbox ();
+        }
+
+        protected void MaybeRefreshPriorityInbox ()
+        {
+            if (priorityInboxNeedsRefresh) {
+                priorityInboxNeedsRefresh = false;
+                if (priorityInbox.Refresh ()) {
+                    carouselView.ReloadData ();
+                }
+            }
+        }
+
+        protected void RefreshCalendarIfVisible ()
+        {
+            if (!this.IsVisible ()) {
+                calendarNeedsRefresh = true;
+                return;
+            }
+            MaybeRefreshCalendar ();
+        }
+
+        protected void MaybeRefreshCalendar ()
+        {
+            if (calendarNeedsRefresh) {
+                calendarNeedsRefresh = false;
+                calendarSource.Refresh ();
+                calendarTableView.ReloadData ();
             }
         }
 
