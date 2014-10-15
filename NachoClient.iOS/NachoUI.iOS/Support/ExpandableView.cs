@@ -49,7 +49,7 @@ namespace NachoClient.iOS
             ClipsToBounds = true;
             CheckFrameSize (initialFrame);
             var upperLeftCorner =
-                new PointF (initialFrame.Width - EXPAND_INSET - ExpandButton.WIDTH, EXPAND_INSET);
+                new PointF (initialFrame.Width - EXPAND_INSET - ExpandButton.WIDTH, 0.0f);
             expandedButton = new ExpandButton (upperLeftCorner, isExpanded);
             AddSubview (expandedButton);
 
