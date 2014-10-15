@@ -605,6 +605,10 @@ namespace NachoCore.ActiveSync
             foreach (var email in emails) {
                 // TODO: all this can be one SQL JOIN.
                 var folders = McFolder.QueryByFolderEntryId<McEmailMessage> (accountId, email.Id);
+                if (0 == folders.Count) {
+                    Log.Error (Log.LOG_AS, "Are we scoring emails that aren't in folders (e.g. to-be-sent)?");
+                    continue;
+                }
                 fetchBodies.Add (new FetchKit.FetchBody () {
                     ServerId = email.ServerId,
                     ParentId = folders [0].ServerId,
