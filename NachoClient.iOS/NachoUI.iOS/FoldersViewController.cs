@@ -204,6 +204,10 @@ namespace NachoClient.iOS
         protected void LayoutView ()
         {
             var yOffset = 0f;
+            if (modal) {
+                yOffset += 64;
+            } 
+
             var selectedDefaultButtons = McMutables.GetOrCreate (McAccount.GetDeviceAccount ().Id, "FoldersDefaultsSelectedButtons", "DefaultsSelectedButtons", null);
             var selectedYourFoldersButtons = McMutables.GetOrCreate (McAccount.GetDeviceAccount ().Id, "FoldersYourFoldersSelectedButtons", "YourFoldersSelectedButtons", null);
             if (null != selectedDefaultButtons) {
@@ -223,7 +227,7 @@ namespace NachoClient.iOS
 
             if (hasRecents) {
                 recentView.Frame = new RectangleF (recentView.Frame.X, recentView.Frame.Y, recentView.Frame.Width, recentFolderList.Count * 44);
-                yOffset += recentView.Frame.Bottom;
+                yOffset += recentView.Frame.Height + recentLabel.Frame.Height + 35;
             }
 
             yOffset += 24;
