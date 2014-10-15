@@ -50,6 +50,10 @@ namespace NachoClient.iOS
             // Calendar view is not scrollable
         }
 
+        public BodyCalendarView (IntPtr ptr) : base (ptr)
+        {
+        }
+
         public BodyCalendarView (BodyView parentView) : base (parentView.Frame)
         {
             ViewHelper.SetDebugBorder (this, UIColor.Magenta);

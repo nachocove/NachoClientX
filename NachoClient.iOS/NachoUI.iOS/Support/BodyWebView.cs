@@ -41,6 +41,10 @@ namespace NachoClient.iOS
             }
         }
 
+        public BodyWebView (IntPtr ptr) : base (ptr)
+        {
+        }
+
         public BodyWebView (UIView parentView, float leftMargin) : base ()
         {
             ViewHelper.SetDebugBorder (this, UIColor.Red);
