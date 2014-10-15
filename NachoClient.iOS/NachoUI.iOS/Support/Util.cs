@@ -340,33 +340,37 @@ namespace NachoClient
         public static List<UIColor> colors = new List<UIColor> () {
             UIColor.Clear,
             UIColor.LightGray,
-            UIColor.FromRGB (0x05, 0x0e, 0x66),
-            UIColor.FromRGB (0x91, 0xa8, 0x10),
-            UIColor.FromRGB (0xbe, 0x15, 0xf2),
-            UIColor.FromRGB (0x09, 0x8e, 0x0e),
-            UIColor.FromRGB (0xb6, 0x07, 0xc6),
-            UIColor.FromRGB (0xe2, 0x67, 0x14),
-            UIColor.FromRGB (0xbe, 0x09, 0xe2),
-            UIColor.FromRGB (0x00, 0x1c, 0x6b),
-            UIColor.FromRGB (0x00, 0x42, 0x72),
-            UIColor.FromRGB (0x8c, 0x0c, 0x21),
-            UIColor.FromRGB (0x02, 0x69, 0x6b),
-            UIColor.FromRGB (0x39, 0x77, 0x03),
-            UIColor.FromRGB (0xd1, 0x0e, 0xa0),
-            UIColor.FromRGB (0xc6, 0x00, 0xaf),
-            UIColor.FromRGB (0x2f, 0x01, 0x91),
-            UIColor.FromRGB (0x45, 0x0a, 0x70),
-            UIColor.FromRGB (0x15, 0xad, 0x0d),
-            UIColor.FromRGB (0x3f, 0xaa, 0x0d),
-            UIColor.FromRGB (0x03, 0x9e, 0x2f),
-            UIColor.FromRGB (0x00, 0x7f, 0x7f),
-            UIColor.FromRGB (0x10, 0x9b, 0x09),
-            UIColor.FromRGB (0x00, 0x0d, 0x87),
-            UIColor.FromRGB (0x29, 0x82, 0x06),
-            UIColor.FromRGB (0x0b, 0x89, 0x28),
-            UIColor.FromRGB (0x55, 0x93, 0x02),
-            UIColor.FromRGB (0x48, 0x09, 0xa0),
-            UIColor.FromRGB (0xb2, 0x0e, 0x55),
+            UIColor.FromRGB (0xFC, 0xC8, 0xC7),
+            UIColor.FromRGB (0xF3, 0xB2, 0xB0),
+            UIColor.FromRGB (0xF0, 0x91, 0x80),
+            UIColor.FromRGB (0xEE, 0x70, 0x5B),
+            UIColor.FromRGB (0xE6, 0x59, 0x59),
+            UIColor.FromRGB (0xD2, 0x47, 0x47),
+            UIColor.FromRGB (0x66, 0xAF, 0xA7),
+            UIColor.FromRGB (0x2B, 0xD9, 0xB2),
+            UIColor.FromRGB (0x00, 0x96, 0x88),
+            UIColor.FromRGB (0x02, 0x82, 0x76),
+            UIColor.FromRGB (0x01, 0x6B, 0x5E),
+            UIColor.FromRGB (0x7A, 0xE3, 0xD8),
+            UIColor.FromRGB (0x3B, 0xCE, 0xD9),
+            UIColor.FromRGB (0x01, 0xB2, 0xCD),
+            UIColor.FromRGB (0x00, 0x88, 0x95),
+            UIColor.FromRGB (0x34, 0x7C, 0x9A),
+            UIColor.FromRGB (0x00, 0x5F, 0x6F),
+            UIColor.FromRGB (0xC5, 0xE1, 0xA5),
+            UIColor.FromRGB (0xBE, 0xCA, 0x39),
+            UIColor.FromRGB (0x7B, 0xB3, 0x3A),
+            UIColor.FromRGB (0x3C, 0xB9, 0x6A),
+            UIColor.FromRGB (0xA0, 0xAB, 0xB0),
+            UIColor.FromRGB (0x70, 0x87, 0x92),
+            UIColor.FromRGB (0x57, 0x75, 0x84),
+            UIColor.FromRGB (0x4F, 0x64, 0x6D),
+            UIColor.FromRGB (0xFF, 0xE1, 0x86),
+            UIColor.FromRGB (0xFF, 0xD4, 0x56),
+            UIColor.FromRGB (0xFA, 0xBF, 0x20),
+            UIColor.FromRGB (0xF5, 0x98, 0x27),
+            UIColor.FromRGB (0xEF, 0x7C, 0x00),
+            UIColor.FromRGB (0xF3, 0x68, 0x00),
         };
 
         static Random random = new Random ();
@@ -793,15 +797,16 @@ namespace NachoClient
 
         public static void SetBackButton (UINavigationController nc, UINavigationItem ni, UIColor tintColor)
         {
-            UIBarButtonItem backButton = new UIBarButtonItem (
-                UIImage.FromBundle ("nav-backarrow"), UIBarButtonItemStyle.Plain, (sender, args) => {
-                nc.PopViewControllerAnimated (true);
-            });
-            backButton.TintColor = tintColor;
-            ni.SetLeftBarButtonItem (backButton, true);
+            using (var image = UIImage.FromBundle ("nav-backarrow")) {
+                UIBarButtonItem backButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, (sender, args) => {
+                    nc.PopViewControllerAnimated (true);
+                });
+                backButton.TintColor = tintColor;
+                ni.SetLeftBarButtonItem (backButton, true);
+            }
         }
 
-        public static void HideViewHierarchy(UIView view)
+        public static void HideViewHierarchy (UIView view)
         {
             view.Hidden = true;
             foreach (var v in view.Subviews) {
@@ -809,9 +814,15 @@ namespace NachoClient
             }
         }
 
-        public static void HideBlackNavigationControllerLine (UINavigationBar navBar){
-            navBar.SetBackgroundImage(new UIImage (),UIBarMetrics.Default);
+        public static void HideBlackNavigationControllerLine (UINavigationBar navBar)
+        {
+            navBar.SetBackgroundImage (new UIImage (), UIBarMetrics.Default);
             navBar.ShadowImage = new UIImage ();
+        }
+
+        public static bool IsVisible (this UIViewController vc)
+        {
+            return(vc.IsViewLoaded && (null != vc.View.Window));
         }
 
         #endregion

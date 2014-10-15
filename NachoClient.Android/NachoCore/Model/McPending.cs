@@ -264,7 +264,7 @@ namespace NachoCore.Model
             switch (Operation) {
             case Operations.EmailBodyDownload:
                 // TODO: if we add more cases, have lambda-per-Operation.
-                var sameServerId = McPending.QueryByServerId (AccountId, ServerId);
+                var sameServerId = McPending.QueryByServerId (AccountId, ServerId).Where (x => x.State != StateEnum.Failed);
                 foreach (var pending in sameServerId) {
                     if (pending.Operation == Operation &&
                         pending.ParentId == ParentId) {

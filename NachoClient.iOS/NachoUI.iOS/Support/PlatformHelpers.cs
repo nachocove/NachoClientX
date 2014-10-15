@@ -27,6 +27,7 @@ namespace NachoClient
         {
         }
 
+        // https://www.ietf.org/rfc/rfc2392.txt
         static public UIImage RenderContentId (string value)
         {
             MimePart p = PlatformHelpers.SearchParts (value, cidPartDict);
@@ -50,7 +51,12 @@ namespace NachoClient
 
         static public MimePart SearchParts (string cid, Dictionary<string,MimePart> partsDict)
         {
-            return partsDict [cid];
+            MimePart part;
+            if (partsDict.TryGetValue (cid, out part)) {
+                return part;
+            } else {
+                return null;
+            }
         }
 
         /// <summary>
