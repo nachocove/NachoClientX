@@ -24,7 +24,7 @@ namespace NachoClient.iOS
         protected float BLOCK_WIDTH;
 
         protected List<Block> TheBlocks;
-        protected List<UIButton> TheBlockButtons = new List<UIButton> ();
+        protected List<BlockButton> TheBlockButtons = new List<BlockButton> ();
         protected List<RectangleF> FrameGrid = new List<RectangleF> ();
 
         protected UIBarButtonItem[] rightBarButtons;
@@ -90,16 +90,12 @@ namespace NachoClient.iOS
             this.AddSubview (menuView);
 
             foreach (Block b in TheBlocks) {
-                UIButton buttonBlock = BlockButton (b);
-                TheBlockButtons.Add (buttonBlock);
-                menuView.AddSubview (buttonBlock);
+                CreateBlockButton (b);
             }
 
             menuButton = new UIBarButtonItem ();
             Util.SetOriginalImageForButton (menuButton, "gen-more-active");
-            menuButton.Clicked += (object sender, EventArgs e) => {
-                MenuTapped();
-            };
+            menuButton.Clicked += MenuButtonClicked;
 
             UIView tapCoverView = new UIView (new RectangleF (0, height, ViewWidth, this.Frame.Height - height));
             UITapGestureRecognizer tap = new UITapGestureRecognizer (() => this.MenuTapped());
@@ -142,15 +138,15 @@ namespace NachoClient.iOS
         protected void LayoutView ()
         {
             if (4 == TheBlockButtons.Count) {
-                TheBlockButtons [0].Frame = FrameGrid [0];
-                TheBlockButtons [1].Frame = FrameGrid [1];
-                TheBlockButtons [2].Frame = FrameGrid [3];
-                TheBlockButtons [3].Frame = FrameGrid [4];
+                TheBlockButtons [0].Button.Frame = FrameGrid [0];
+                TheBlockButtons [1].Button.Frame = FrameGrid [1];
+                TheBlockButtons [2].Button.Frame = FrameGrid [3];
+                TheBlockButtons [3].Button.Frame = FrameGrid [4];
             } else {
-                for(int i = 0; i < TheBlockButtons.Count; i++){
-                    TheBlockButtons [i].Frame = FrameGrid [i];
+                for (int i = 0; i < TheBlockButtons.Count; i++) {
+                    TheBlockButtons [i].Button.Frame = FrameGrid [i];
                     if (5 == TheBlockButtons.Count && 3 == i) {
-                        TheBlockButtons [i].Frame = FrameGrid [5];
+                        TheBlockButtons [i].Button.Frame = FrameGrid [5];
                     }
                 }
             }
@@ -159,6 +155,11 @@ namespace NachoClient.iOS
         public void MenuTapped ()
         {
             MenuTapped(this.Frame);
+        }
+
+        private void MenuButtonClicked (object sender, EventArgs e)
+        {
+            MenuTapped();
         }
 
         public void MenuTapped (RectangleF rect)
@@ -204,37 +205,32 @@ namespace NachoClient.iOS
             }
         }
 
-        protected UIButton BlockButton (Block viewBlock)
+        protected void CreateBlockButton (Block block)
         {
             float yOffset = 20;
 
-            UIButton blockButton = new UIButton (new RectangleF (0, 0, ViewWidth / 3 - 2, ROW_HEIGHT - 2));
+            var button = new UIButton (new RectangleF (0, 0, ViewWidth / 3 - 2, ROW_HEIGHT - 2));
 
-            NcAssert.NotNull (UIImage.FromBundle (viewBlock.blockImage), "This image is not a resource: " + viewBlock.blockImage);
-            UIImageView blockIconImageView = new UIImageView (UIImage.FromBundle(viewBlock.blockImage));
+            NcAssert.NotNull (UIImage.FromBundle (block.blockImage), "This image is not a resource: " + block.blockImage);
+            var blockIconImageView = new UIImageView (UIImage.FromBundle (block.blockImage));
             blockIconImageView.SizeToFit ();
-            blockIconImageView.Frame = new RectangleF (blockButton.Frame.Width / 2 - blockIconImageView.Frame.Width / 2, yOffset, blockIconImageView.Frame.Width, blockIconImageView.Frame.Height);
-            blockButton.AddSubview (blockIconImageView);
-            
+            ViewFramer.Create (blockIconImageView).X (button.Frame.Width / 2 - blockIconImageView.Frame.Width / 2).Y (yOffset);
+            button.AddSubview (blockIconImageView);
+
             yOffset = blockIconImageView.Frame.Bottom + 5;
 
-            UILabel iconLabel = new UILabel (new RectangleF (10, yOffset, blockButton.Frame.Width - 20, (FormatBlockLabel (viewBlock.blockLabel).Contains("\n") ? 40 : 30)));
+            UILabel iconLabel = new UILabel (new RectangleF (10, yOffset, button.Frame.Width - 20, (FormatBlockLabel (block.blockLabel).Contains("\n") ? 40 : 30)));
             iconLabel.Font = A.Font_AvenirNextMedium12;
             iconLabel.LineBreakMode = UILineBreakMode.WordWrap;
             iconLabel.Lines = 2;
-            iconLabel.Text = FormatBlockLabel (viewBlock.blockLabel);
+            iconLabel.Text = FormatBlockLabel (block.blockLabel);
             iconLabel.TextColor = UIColor.White;
             iconLabel.TextAlignment = UITextAlignment.Center;
-            blockButton.AddSubview (iconLabel);
+            button.AddSubview (iconLabel);
 
-            if (null != viewBlock.blockAction) {
-                blockButton.TouchUpInside += (object sender, EventArgs e) => {
-                    viewBlock.blockAction.Invoke();
-                    MenuTapped();
-                };
-            }
+            menuView.AddSubview (button);
 
-            return blockButton;
+            TheBlockButtons.Add (new BlockButton (button, block.blockAction, this));
         }
 
         //This method takes the label for the button and adds a newline
@@ -261,6 +257,48 @@ namespace NachoClient.iOS
                     }
                 }
                 return formattedLabel;
+            }
+        }
+
+        public void Cleanup ()
+        {
+            menuButton.Clicked -= MenuButtonClicked;
+            foreach (var button in TheBlockButtons) {
+                button.Cleanup ();
+            }
+        }
+
+        protected class BlockButton
+        {
+            private UIButton button;
+            private Action action;
+            private UIBlockMenu menu;
+
+            public BlockButton (UIButton button, Action action, UIBlockMenu menu)
+            {
+                this.button = button;
+                this.action = action;
+                this.menu = menu;
+                button.TouchUpInside += ButtonTouchUpInside;
+            }
+
+            public UIButton Button {
+                get {
+                    return button;
+                }
+            }
+
+            public void Cleanup ()
+            {
+                button.TouchUpInside -= ButtonTouchUpInside;
+            }
+
+            private void ButtonTouchUpInside (object sender, EventArgs e)
+            {
+                if (null != action) {
+                    action.Invoke ();
+                }
+                menu.MenuTapped ();
             }
         }
 

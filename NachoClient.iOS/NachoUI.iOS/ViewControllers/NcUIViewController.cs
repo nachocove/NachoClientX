@@ -71,5 +71,126 @@ namespace NachoClient.iOS
             Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDDISAPPEAR + "_END");
         }
     }
+
+    public class NcUIViewControllerNoLeaks : NcUIViewController
+    {
+        public NcUIViewControllerNoLeaks ()
+            : base()
+        {
+        }
+
+        public NcUIViewControllerNoLeaks (IntPtr handle)
+            : base (handle)
+        {
+        }
+
+        public NcUIViewControllerNoLeaks (string nibName, NSBundle bundle)
+            : base (nibName, bundle)
+        {
+        }
+
+        protected virtual void CreateViewHierarchy ()
+        {
+        }
+
+        protected virtual void ConfigureAndLayout ()
+        {
+        }
+
+        protected virtual void Cleanup ()
+        {
+        }
+
+        protected static void DisposeViewHierarchy (UIView view)
+        {
+            try {
+                if (null == view || IntPtr.Zero == view.Handle) {
+                    return;
+                }
+                bool skipDispose = false;
+                foreach (var subview in view.Subviews ?? new UIView[0]) {
+                    try {
+                        //subview.RemoveFromSuperview ();
+                        DisposeViewHierarchy (subview);
+                    } catch (Exception e) {
+                        Log.Error(Log.LOG_UI, "Exception while disposing of view hierarchy: {0}", e.ToString());
+                    }
+                }
+                if (view is UIActivityIndicatorView) {
+                    var indicatorView = view as UIActivityIndicatorView;
+                    if (indicatorView.IsAnimating) {
+                        indicatorView.StopAnimating();
+                    }
+                } else if (view is UITableView) {
+                    var tableView = view as UITableView;
+                    if (null != tableView.DataSource) {
+                        tableView.DataSource.Dispose();
+                    }
+                    tableView.Source = null;
+                    tableView.Delegate = null;
+                    tableView.DataSource = null;
+                    tableView.WeakDelegate = null;
+                    tableView.WeakDataSource = null;
+                    foreach (var cell in tableView.VisibleCells ?? new UITableViewCell[0]) {
+                        DisposeViewHierarchy(cell);
+                    }
+                } else if (view is UICollectionView) {
+                    skipDispose = true;
+                    var collectionView = view as UICollectionView;
+                    if (null != collectionView.DataSource) {
+                        collectionView.DataSource.Dispose();
+                    }
+                    collectionView.Source = null;
+                    collectionView.Delegate = null;
+                    collectionView.DataSource = null;
+                    collectionView.WeakDelegate = null;
+                    collectionView.WeakDataSource = null;
+                    foreach (var cell in collectionView.VisibleCells ?? new UICollectionViewCell[0]) {
+                        DisposeViewHierarchy(cell);
+                    }
+                } else if (view is UIWebView) {
+                    var webView = view as UIWebView;
+                    if (webView.IsLoading) {
+                        webView.StopLoading();
+                    }
+                    webView.LoadHtmlString(string.Empty, null);
+                    webView.Delegate = null;
+                    webView.WeakDelegate = null;
+                }
+                if (null != view.Layer) {
+                    view.Layer.RemoveAllAnimations();
+                }
+                if (!skipDispose) {
+                    view.Dispose();
+                }
+            } catch (Exception e) {
+                Log.Error (Log.LOG_UI, "Exception while disposing of view hierarchy: {0}", e.ToString ());
+            }
+        }
+
+        public override void ViewDidLoad ()
+        {
+            base.ViewDidLoad ();
+            CreateViewHierarchy ();
+        }
+
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+            // Force the view hierarchy to be created by accessing the View property.
+            this.View.GetHashCode ();
+            ConfigureAndLayout ();
+        }
+
+        public override void ViewDidDisappear (bool animated)
+        {
+            base.ViewDidDisappear (animated);
+            if (this.IsViewLoaded && null == this.NavigationController) {
+                Cleanup ();
+                DisposeViewHierarchy (View);
+                View = null;
+            }
+        }
+    }
 }
 
