@@ -87,6 +87,7 @@ namespace NachoClient.iOS
 
             LoadError += (object sender, UIWebErrorArgs e) => {
                 OnRenderComplete (0.0f);
+                Log.Error(Log.LOG_UI, "WebView LoadError: {0}", e.Error);
             };
 
             ShouldStartLoad += delegate(UIWebView webView, NSUrlRequest request, UIWebViewNavigationType navigationType) {
