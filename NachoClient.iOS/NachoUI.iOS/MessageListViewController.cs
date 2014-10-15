@@ -283,7 +283,7 @@ namespace NachoClient.iOS
         {
             var s = (StatusIndEventArgs)e;
             if (NcResult.SubKindEnum.Info_EmailMessageSetChanged == s.Status.SubKind) {
-                Log.Debug (Log.LOG_UI, "StatusIndicatorCallback");
+                Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: EmailMessageSetChanged");
                 ReloadDataMaintainingPosition (false);
             }
         }

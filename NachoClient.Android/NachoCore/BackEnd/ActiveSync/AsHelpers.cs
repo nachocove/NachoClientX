@@ -754,6 +754,9 @@ namespace NachoCore.ActiveSync
                     break;
 
                 case Xml.Email.Subject:
+                    if (!String.IsNullOrEmpty (emailMessage.Subject) && (emailMessage.Subject != child.Value)) {
+                        Log.Error (Log.LOG_AS, "Subject overwritten with changed value: serverId={0} {1} {2}", emailMessage.ServerId, emailMessage.Subject, child.Value);
+                    }
                     emailMessage.Subject = child.Value;
                     break;
 

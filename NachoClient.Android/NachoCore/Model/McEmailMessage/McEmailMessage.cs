@@ -581,6 +581,11 @@ namespace NachoCore.Model
             return message;
         }
 
+        public int SingleMessageSpecialCaseIndex ()
+        {
+            return GetEmailMessageIndex (0);
+        }
+
         public int Count {
             get {
                 return thread.Count;

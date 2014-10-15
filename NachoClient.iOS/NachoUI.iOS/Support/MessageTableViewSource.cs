@@ -136,7 +136,7 @@ namespace NachoClient.iOS
                 return NORMAL_ROW_HEIGHT;
             }
             var message = messageThread.SingleMessageSpecialCase ();
-            messageCache [indexPath.Row] = message;
+            messageCache [message.Id] = message;
             return HeightForMessage (message);
         }
 
@@ -443,14 +443,21 @@ namespace NachoClient.iOS
                 return;
             }
 
-            cell.TextLabel.Text = "";
-            cell.ContentView.Hidden = false;
-
-            if (messageCache.TryGetValue (messageThreadIndex, out message)) {
+            // Avoid looking up msg twice in quick succession (see GetHeight)
+            var messageIndex = messageThread.SingleMessageSpecialCaseIndex ();
+            if (messageCache.TryGetValue (messageIndex, out message)) {
                 messageCache.Remove (messageThreadIndex);
             } else {
                 message = messageThread.SingleMessageSpecialCase ();
             }
+
+            if (null == message) {
+                ConfigureAsUnavailable (cell);
+                return;
+            }
+
+            cell.TextLabel.Text = "";
+            cell.ContentView.Hidden = false;
 
             var cellWidth = cell.Frame.Width;
 
