@@ -57,7 +57,7 @@ namespace NachoClient.iOS
         public void Decrement ()
         {
             lock (lockObject) {
-                //NcAssert.True (1 < count);
+                NcAssert.True (1 <= count);
                 count -= 1;
                 if (0 == count) {
                     InvokeOnUIThread.Instance.Invoke (() => {
@@ -83,17 +83,15 @@ namespace NachoClient.iOS
             SPINNER_TAG = 600
         };
 
-        #if (DEBUG_UI)
-        static UIColor SCROLLVIEW_BGCOLOR = A.Color_NachoGreen;
-        static UIColor MESSAGEVIEW_BGCOLOR = A.Color_NachoYellow;
-        public const int MESSAGEVIEW_INSET = 4;
-        public const int BODYVIEW_INSET = 4;
-        #else
+        protected delegate bool IterateCallback (UIView subview);
+
+        static UIColor SCROLLVIEW_BDCOLOR = UIColor.Magenta;
+        static UIColor MESSAGEVIEW_BDCOLOR = UIColor.Brown;
+
         static UIColor SCROLLVIEW_BGCOLOR = UIColor.White;
         static UIColor MESSAGEVIEW_BGCOLOR = UIColor.White;
         public const int MESSAGEVIEW_INSET = 1;
         public const int BODYVIEW_INSET = 1;
-        #endif
 
         protected enum LoadState {
             IDLE,    // body is already there
@@ -101,9 +99,29 @@ namespace NachoClient.iOS
             ERROR    // body was being loaded
         }
 
-        public bool HorizontalScrollingEnabled { get; set; }
+        public bool HorizontalScrollingEnabled {
+            get {
+                return ShowsHorizontalScrollIndicator;
+            }
+            set {
+                ShowsHorizontalScrollIndicator = value;
+                if (!VerticalScrollingEnabled && !HorizontalScrollingEnabled) {
+                    //ScrollEnabled = false;
+                }
+            }
+        }
 
-        public bool VerticalScrollingEnabled { get; set; }
+        public bool VerticalScrollingEnabled {
+            get {
+                return ShowsVerticalScrollIndicator;
+            }
+            set {
+                ShowsVerticalScrollIndicator = value;
+                if (!VerticalScrollingEnabled && !HorizontalScrollingEnabled) {
+                    //ScrollEnabled = false;
+                }
+            }
+        }
 
         public bool AutomaticallyScaleHtmlContent { get; set; }
 
@@ -119,9 +137,11 @@ namespace NachoClient.iOS
         protected LoadState loadState;
         protected UIActivityIndicatorView spinner;
         protected BodyWebView webView;
+        protected PointF scrollStartingOffset;
 
         protected McAbstrItem abstrItem;
         protected string downloadToken;
+        protected PointF dragStartingOffset;
 
         public new float MinimumZoomScale {
             get {
@@ -144,11 +164,14 @@ namespace NachoClient.iOS
 
         public BodyView (RectangleF initialFrame, UIView parentView, float leftMargin, float htmlLeftMargin)
         {
+            ViewHelper.SetDebugBorder (this, SCROLLVIEW_BDCOLOR);
+
             HorizontalScrollingEnabled = true;
             VerticalScrollingEnabled = true;
             AutomaticallyScaleHtmlContent = true;
             this.leftMargin = leftMargin;
             this.htmlLeftMargin = htmlLeftMargin;
+            ScrollEnabled = false;
 
             this.parentView = parentView;
             BackgroundColor = SCROLLVIEW_BGCOLOR;
@@ -183,6 +206,7 @@ namespace NachoClient.iOS
 
             // messageView contains all content views of the body
             messageView = new UIView ();
+            ViewHelper.SetDebugBorder (messageView, MESSAGEVIEW_BDCOLOR);
             messageView.BackgroundColor = MESSAGEVIEW_BGCOLOR;
             messageView.Frame = ViewHelper.InnerFrameWithInset(Frame, MESSAGEVIEW_INSET);
             messageView.AddGestureRecognizer (doubleTap);
@@ -276,6 +300,19 @@ namespace NachoClient.iOS
             //}
         }
 
+        protected void IterateAllRenderSubViews (IterateCallback callback)
+        {
+            NcAssert.True (null != callback);
+            foreach (var subview in messageView.Subviews) {
+                if ((int)TagType.MESSAGE_PART_TAG != subview.Tag) {
+                    continue;
+                }
+                if (!callback (subview)) {
+                    return;
+                }
+            }
+        }
+
         protected void RenderMime (string bodyPath)
         {
             using (var bodySource = new FileStream (bodyPath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
@@ -332,35 +369,11 @@ namespace NachoClient.iOS
             RenderRtfString (text);
         }
 
-        UITextView RenderAttributedString (NSAttributedString attributedString)
+        protected void RenderAttributedString (NSAttributedString attributedString)
         {
-            var label = new UITextView (new RectangleF (leftMargin, 0.0f, 290.0f, 1.0f));
-            label.Editable = false;
-            #if (DEBUG_UI)
-            label.BackgroundColor = A.Color_NachoBlue;
-            #endif
-            label.Font = A.Font_AvenirNextRegular17;
-            label.AttributedText = attributedString;
-            label.SizeToFit ();
-            label.Tag = (int)TagType.MESSAGE_PART_TAG;
-            // We don't need this view to scroll. This would result in a triple nesting of
-            // UIScrollView, which iOS doesn't handle well.  It handles two nested UIScrollViews,
-            // but seems to have problems with three.
-            label.ScrollEnabled = false;
-            // We are using double tap for zoom toggling. So, we want to disable 
-            // double tap to select action. A long tap can still select text.
-            foreach (var gc in label.GestureRecognizers) {
-                var tapGc = gc as UITapGestureRecognizer;
-                if (null == tapGc) {
-                    continue;
-                }
-                if ((1 == tapGc.NumberOfTouchesRequired) && (2 == tapGc.NumberOfTapsRequired)) {
-                    tapGc.Delegate = new BodyViewTextTapBlocker ();
-                }
-            }
-
+            var label = new BodyTextView (new RectangleF (leftMargin, 0.0f, 290.0f, 1.0f));
+            label.Configure (attributedString);
             messageView.AddSubview (label);
-            return label;
         }
 
         public void RenderTextString (string text)
@@ -416,20 +429,13 @@ namespace NachoClient.iOS
 
         void RenderImage (MimePart part)
         {
-            var image = PlatformHelpers.RenderImage (part);
-
-            if (null == image) {
-                Log.Error (Log.LOG_UI, "Unable to render {0}", part.ContentType);
-                return;
-            }
-
-            float width = Frame.Width;
-            float height = image.Size.Height * (width / image.Size.Width);
-            image = image.Scale (new SizeF (width, height));
-
-            var iv = new UIImageView (image);
-            iv.Tag = (int)TagType.MESSAGE_PART_TAG;
+            // Outlook and Thunderbird do not render MIME image parts. Embedded images
+            // are referenced via CID in HTML part.
+            #if (RENDER_IMAGE)
+            var iv = new BodyImageView (Frame);
+            iv.Configure (part);
             messageView.AddSubview (iv);
+            #endif
         }
 
         void RenderHtml (MimePart part)
@@ -458,7 +464,6 @@ namespace NachoClient.iOS
             messageView.Add (webView);
             webView.LoadHtmlString (html);
         }
-
 
         /// TODO: Guard against malformed calendars
         public void RenderCalendar (MimePart part)
@@ -499,35 +504,36 @@ namespace NachoClient.iOS
                 return true;
             });
 
-            // Adjust the bouding frame for insets
-            width -= 2 * MESSAGEVIEW_INSET;
-            height -= 2 * MESSAGEVIEW_INSET;
+            // Sum up all the render parts for height
+            float messageWidth = 0.0f, messageHeight = 0.0f;
+            float contentWidth = 0.0f, contentHeight = 0.0f;
+            IterateAllRenderSubViews ((UIView subview) => {
+                messageHeight += subview.Frame.Height;
+                messageWidth = Math.Max (messageWidth, subview.Frame.Width);
+
+                IBodyRender renderView = subview as IBodyRender;
+                contentHeight += renderView.ContentSize.Height;
+                contentWidth = Math.Max(contentWidth, renderView.ContentSize.Width);
+
+                return true;
+            });
 
             // Decide the message view size based on the bounding frame.
-            float messageWidth = Math.Max (width, messageView.Frame.Width);
-            float messageHeight = Math.Max (height, messageView.Frame.Height);
+            messageWidth = Math.Max (width, messageView.Frame.Width);
+            messageHeight = Math.Max (height, messageView.Frame.Height);
             ViewFramer.Create (messageView)
                 .Width (messageWidth)
                 .Height (messageHeight);
 
-            ContentSize = new SizeF (messageWidth, messageHeight);
+            ContentSize = new SizeF (contentWidth, contentHeight);
 
-            // Decide the body view frame based on message view , the bounding frame
-            // and configured scrolling options. If the required size (from
-            // messageCursor) is smaller than the bounding frame, use the bounding
-            // frame. If scrolling is enabled for a given direction, it is fixed
-            // to the dimension of the bounding frame. Otherwise, it is the size
-            // of the message view but at least as big as the bounding frame dimemsion.
-
-            // Set up scroll view frame based on the configured scrolling options
-            float scrollWidth = (HorizontalScrollingEnabled ? width : messageWidth) + 2 * MESSAGEVIEW_INSET;
-            float scrollHeight = (VerticalScrollingEnabled ? height : messageHeight) + 2 * MESSAGEVIEW_INSET;
-
+            // Put the view at the right location
             ViewFramer.Create (this)
-                .X(X)
-                .Y(Y)
-                .Width (scrollWidth)
-                .Height (scrollHeight);
+                .X (X)
+                .Y (Y);
+
+            Console.WriteLine ("BODYVIEW LAYOUT");
+            Console.WriteLine (LayoutInfo ());
         }
 
         protected void StartDownload ()
@@ -593,22 +599,59 @@ namespace NachoClient.iOS
                 BackEnd.Instance.Prioritize (abstrItem.AccountId, downloadToken);
             }
         }
-    }
 
-    public class BodyViewTextTapBlocker : UIGestureRecognizerDelegate
-    {
-        public BodyViewTextTapBlocker ()
+        public string LayoutInfo ()
         {
+            string desc = "\n";
+            desc += String.Format ("scrollView: frame=({0},{1})  content=({0},{1})\n",
+                Frame.Width, Frame.Height, ContentSize.Width, ContentSize.Height);
+            desc += String.Format ("  messageView: offset=({0},{1})  frame=({2},{3})\n",
+                Frame.X, Frame.Y, Frame.Width, Frame.Height);
+            foreach (var subview in messageView.Subviews) {
+                if ((int)TagType.MESSAGE_PART_TAG != subview.Tag) {
+                    continue;
+                }
+                IBodyRender renderView = subview as IBodyRender;
+
+                desc += String.Format ("    {0}\n", renderView.LayoutInfo ());
+            }
+            return desc;
         }
 
-        public override bool ShouldReceiveTouch (UIGestureRecognizer recognizer, UITouch touch)
+        public void ScrollTo (PointF contentOffset)
         {
-            return false;
+            PointF subviewOffset = new PointF (contentOffset.X, contentOffset.Y);
+            // Process the offset in the base scroll view
+            //SetContentOffset (contentOffset, false);
+ 
+            IterateAllRenderSubViews ((UIView subview) => {
+                IBodyRender renderView = subview as IBodyRender;
+                NcAssert.True (null != renderView);
+                PointF clippedOffset = ClipContentOffset(subview, subviewOffset);
+                renderView.ScrollTo (clippedOffset);
+                subviewOffset.Y -= renderView.ContentSize.Height;
+                return true;
+            });
         }
 
-        public override bool ShouldBegin (UIGestureRecognizer recognizer)
+        public static PointF ClipContentOffset (UIView view, PointF offset)
         {
-            return false;
+            IBodyRender renderView = view as IBodyRender;
+            NcAssert.True (null != renderView);
+
+            float x = offset.X;
+            float y = offset.Y;
+            if (0.0f > x) {
+                x = 0.0f;
+            } else if (renderView.ContentSize.Width < x) {
+                x = renderView.ContentSize.Width;
+            }
+            if (0.0f > y) {
+                y = 0.0f;
+            } else if (renderView.ContentSize.Height < y) {
+                y = renderView.ContentSize.Height;
+            }
+            return new PointF (x, y);
         }
     }
 }

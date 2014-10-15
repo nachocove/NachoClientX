@@ -449,6 +449,8 @@ namespace NachoClient.iOS
             previewLabelViewHeight -= 4; // padding
 
             previewLabelView.Configure (message);
+            ViewFramer.Create (previewLabelView)
+                .Height (previewLabelViewHeight);
             previewLabelView.Layout (previewLabelView.Frame.X, previewLabelView.Frame.Y,
                 previewLabelView.Frame.Width, previewLabelViewHeight);
 

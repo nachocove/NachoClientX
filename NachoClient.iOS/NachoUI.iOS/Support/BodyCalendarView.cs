@@ -18,7 +18,7 @@ using System.Collections.Generic;
 
 namespace NachoClient.iOS
 {
-    public class BodyCalendarView : UIView
+    public class BodyCalendarView : UIView, IBodyRender
     {
         public const int CALENDAR_PART_TAG = 400;
 
@@ -35,8 +35,25 @@ namespace NachoClient.iOS
 
         protected BodyView parentView;
 
+        private SizeF _contentSize;
+        public SizeF ContentSize {
+            get {
+                return _contentSize;
+            }
+            protected set {
+                _contentSize = value;
+            }
+        }
+
+        public void ScrollTo (PointF upperLeft)
+        {
+            // Calendar view is not scrollable
+        }
+
         public BodyCalendarView (BodyView parentView) : base (parentView.Frame)
         {
+            ViewHelper.SetDebugBorder (this, UIColor.Magenta);
+
             this.parentView = parentView;
             ViewFramer.Create (this).Height (1);
             Tag = CALENDAR_PART_TAG;
@@ -80,6 +97,9 @@ namespace NachoClient.iOS
 
             // Layout all the subviews
             ViewFramer.Create (this).Height (150);
+
+            // Save the content size
+            _contentSize = Frame.Size;
         }
 
         /// <summary>
@@ -699,6 +719,12 @@ namespace NachoClient.iOS
 
             // Remove the item from the calendar.
             BackEnd.Instance.DeleteCalCmd (item.AccountId, item.Id);
+        }
+
+        public string LayoutInfo ()
+        {
+            return String.Format ("BodyCalendarView: offset=({0},{1})  frame=({2},{3})  content=({4},{5})",
+                Frame.X, Frame.Y, Frame.Width, Frame.Height, ContentSize.Width, ContentSize.Height);
         }
     }
 }
