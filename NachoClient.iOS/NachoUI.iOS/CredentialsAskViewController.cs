@@ -13,13 +13,15 @@ using NachoCore;
 
 namespace NachoClient.iOS
 {
-	public partial class CredentialsAskViewController : NcUIViewController
+    public partial class CredentialsAskViewController : NcUIViewController, INachoCertificateResponderParent
 	{
         protected float yOffset = 0;
         protected float keyboardHeight;
         protected const int EMAIL_FIELD_TAG = 100;
         protected const int PASSWORD_FIELD_TAG = 101;
         protected const int SUBMIT_BUTTON_TAG = 102;
+        CertificateView certificateView;
+        protected NachoTabBarController sendersTabBar;
 
 		public CredentialsAskViewController (IntPtr handle) : base (handle)
 		{
@@ -31,6 +33,16 @@ namespace NachoClient.iOS
             CreateView ();
             LayoutView ();
             ConfigureView ();
+
+            certificateView = new CertificateView (View.Frame);
+            certificateView.SetOwner (this);
+            certificateView.CreateView ();
+            View.Add (certificateView);
+        }
+
+        public void SetTabBarController(NachoTabBarController tabBar)
+        {
+            this.sendersTabBar = tabBar;
         }
 
         public override void ViewDidAppear (bool animated)
@@ -40,6 +52,12 @@ namespace NachoClient.iOS
                 NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
                 NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
                 NSNotificationCenter.DefaultCenter.AddObserver (UITextField.TextFieldTextDidChangeNotification, OnTextFieldChanged);
+            }
+
+            BackEndAutoDStateEnum backEndState = BackEnd.Instance.AutoDState (LoginHelpers.GetCurrentAccountId ());
+            if (BackEndAutoDStateEnum.CertAskWait == backEndState) {
+                certificateView.SetCertificateInformation ();
+                certificateView.ShowView ();
             }
         }
             
@@ -146,6 +164,8 @@ namespace NachoClient.iOS
                     BackEnd.Instance.CredResp(UsersAccount.Id);
                     View.EndEditing(true);
                     DismissViewController(true, null);
+                    this.sendersTabBar.SetSettingsBadge(false);
+                    LoginHelpers.SetDoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId (), false);
                 }else{
                     errorMessage.Text = "The email address you entered is not valid. Please update and try again.";
                 }
@@ -257,6 +277,21 @@ namespace NachoClient.iOS
         protected void OnKeyboardChangeCompleted ()
         {
 
+        }
+
+        public void DontAcceptCertificate()
+        {
+            View.EndEditing(true);
+            DismissViewController(true, null);
+        }
+
+        public void AcceptCertificate ()
+        {
+            NcApplication.Instance.CertAskResp (LoginHelpers.GetCurrentAccountId (), true);
+            Util.SetSettingsBadge(this.sendersTabBar, false);
+            LoginHelpers.SetDoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId (), false);
+            View.EndEditing(true);
+            DismissViewController(true, null);
         }
 
         protected virtual void OnKeyboardChanged (bool visible, float height)

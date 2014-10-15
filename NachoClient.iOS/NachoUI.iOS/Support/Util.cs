@@ -387,6 +387,21 @@ namespace NachoClient
             return colors [index];
         }
 
+        public static NachoTabBarController GetActiveTabBar ()
+        {
+            var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
+
+            NachoTabBarController activeTabBar;
+            if (null != appDelegate.Window.RootViewController.PresentedViewController.TabBarController) {
+                activeTabBar = (NachoTabBarController)appDelegate.Window.RootViewController.PresentedViewController.TabBarController;
+            } else {
+                activeTabBar = (NachoTabBarController)appDelegate.Window.RootViewController.PresentedViewController;
+            }
+            NcAssert.NotNull (activeTabBar);
+
+            return activeTabBar;
+        }
+
         public static UIImage DotWithColor (UIColor color)
         {
             UIGraphics.BeginImageContext (new SizeF (22, 22));

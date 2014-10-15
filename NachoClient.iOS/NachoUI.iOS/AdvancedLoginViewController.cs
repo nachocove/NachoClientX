@@ -13,7 +13,7 @@ using NachoPlatform;
 
 namespace NachoClient.iOS
 {
-    public partial class AdvancedLoginViewController : NcUIViewController
+    public partial class AdvancedLoginViewController : NcUIViewController, INachoCertificateResponderParent
     {
         protected float CELL_HEIGHT = 44;
         protected float INSET = 15;
@@ -34,6 +34,7 @@ namespace NachoClient.iOS
         public UIView statusViewBackground;
         public string certificateInformation = "";
         public bool hasSyncedEmail = false;
+
 
         UIButton connectButton;
         AccountSettings theAccount;
@@ -781,16 +782,20 @@ namespace NachoClient.iOS
 
         public void certificateCallbackHandler ()
         {
-            var certToBeExamined = BackEnd.Instance.ServerCertToBeExamined (LoginHelpers.GetCurrentAccountId ());
-            certificateInformation = new CertificateHelper ().formatCertificateData (certToBeExamined);
-            certificateView.ConfigureView ();
-            Log.Info (Log.LOG_UI, "Display certificate alert to user");
+            setTextToRed (new UITextField[]{ });
+            certificateView.SetCertificateInformation ();
             certificateView.ShowView ();
             waitScreen.InvalidateAutomaticSegueTimer ();
         }
 
-        public void acceptCertificate ()
+        public void DontAcceptCertificate ()
         {
+            ConfigureView (LoginStatus.EnterInfo);
+        }
+
+        public void AcceptCertificate ()
+        {
+            ConfigureView (LoginStatus.AcceptCertificate);
             NcApplication.Instance.CertAskResp (LoginHelpers.GetCurrentAccountId (), true);
             waitScreen.InitializeAutomaticSegueTimer ();
         }

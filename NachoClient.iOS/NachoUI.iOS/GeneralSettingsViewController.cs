@@ -7,6 +7,7 @@ using MonoTouch.UIKit;
 using System.Collections.Generic;
 using NachoCore.Utils;
 using NachoCore.Model;
+using NachoCore;
 
 
 namespace NachoClient.iOS
@@ -21,6 +22,8 @@ namespace NachoClient.iOS
         protected string legalUrl;
         protected string legalTitle;
         protected bool isUrl;
+
+        protected const int FIX_BE_BUTTON_TAG = 2000;
 
         public GeneralSettingsViewController (IntPtr handle) : base (handle)
         {
@@ -42,6 +45,11 @@ namespace NachoClient.iOS
             ConfigureView ();
         }
 
+        public override void ViewDidAppear (bool animated)
+        {
+            base.ViewDidAppear (animated);
+        }
+
         protected const int EMAIL_ADDRESS_LABEL_TAG = 100;
 
         protected void CreateView ()
@@ -50,6 +58,34 @@ namespace NachoClient.iOS
             contentView.BackgroundColor = A.Color_NachoNowBackground;
             NavigationController.NavigationBar.Translucent = false;
             NavigationController.NavigationBar.TintColor = A.Color_NachoBlue;
+
+            UIButton DirtyBackEnd = new UIButton (new RectangleF (View.Frame.Width - 87.5f , 7.5f, 80, 30));
+            DirtyBackEnd.Layer.CornerRadius = 2.0f;
+            DirtyBackEnd.BackgroundColor = A.Color_NachoRed;
+            DirtyBackEnd.Font = A.Font_AvenirNextRegular14;
+            DirtyBackEnd.SetTitle ("Fix Account", UIControlState.Normal);
+            DirtyBackEnd.SetTitleColor (UIColor.White, UIControlState.Normal);
+            DirtyBackEnd.TouchUpInside += (object sender, EventArgs e) => {
+                if (LoginHelpers.IsCurrentAccountSet ()) {
+
+                    BackEndAutoDStateEnum backEndState = BackEnd.Instance.AutoDState (LoginHelpers.GetCurrentAccountId ());
+
+                    if (BackEndAutoDStateEnum.CredWait == backEndState || BackEndAutoDStateEnum.CertAskWait == backEndState) {
+                        UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+                        CredentialsAskViewController cvc = (CredentialsAskViewController)x.InstantiateViewController ("CredentialsAskViewController");
+                        cvc.SetTabBarController((NachoTabBarController)this.TabBarController);
+                        this.PresentViewController (cvc, true, null);
+                    }
+
+                    if (BackEndAutoDStateEnum.ServerConfWait == backEndState) {
+                        var x = (AppDelegate)UIApplication.SharedApplication.Delegate;
+                        x.ServConfReqCallback (LoginHelpers.GetCurrentAccountId ());
+                    }
+                }
+            };
+            DirtyBackEnd.Tag = FIX_BE_BUTTON_TAG;
+            DirtyBackEnd.Hidden = true;
+            View.Add(DirtyBackEnd);
 
             yOffset = 20;
 
@@ -184,6 +220,9 @@ namespace NachoClient.iOS
             var emailLabel = (UILabel)contentView.ViewWithTag (EMAIL_ADDRESS_LABEL_TAG);
             emailLabel.Text = GetEmailAddress ();
             LayoutView ();
+
+            UIButton FixButton = (UIButton)View.ViewWithTag (FIX_BE_BUTTON_TAG);
+            FixButton.Hidden = !LoginHelpers.DoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId ());
         }
 
         protected string GetEmailAddress ()

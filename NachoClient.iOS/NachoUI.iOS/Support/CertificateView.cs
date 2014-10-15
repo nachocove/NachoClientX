@@ -5,6 +5,9 @@ using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using UIImageEffectsBinding;
 using MonoTouch.CoreGraphics;
+using NachoCore;
+using NachoCore.Utils;
+
 
 namespace NachoClient.iOS
 {
@@ -12,15 +15,16 @@ namespace NachoClient.iOS
 
     public class CertificateView: UIView
     {
-        AdvancedLoginViewController owner;
+        INachoCertificateResponderParent owner;
         UIView certificateView;
+        protected string certInfo;
 
         public CertificateView ()
         {
 
         }
 
-        public void SetOwner (AdvancedLoginViewController owner)
+        public void SetOwner (INachoCertificateResponderParent owner)
         {
             this.owner = owner;
         }
@@ -48,8 +52,7 @@ namespace NachoClient.iOS
 
             //this.BackgroundColor = UIColor.LightGray.ColorWithAlpha (.4f);
             this.BackgroundColor = A.Color_NachoGreen.ColorWithAlpha (.7f);;
-            this.Frame = new RectangleF (0, 0, owner.View.Frame.Width, owner.View.Frame.Height);
-            certificateView = new UIView (new RectangleF (20, 64, owner.View.Frame.Width - 40, VIEW_HEIGHT - 64));
+            certificateView = new UIView (new RectangleF (20, 64, Frame.Width - 40, VIEW_HEIGHT - 64));
             certificateView.Tag = CERTIFICATE_VIEW_TAG;
             certificateView.BackgroundColor = UIColor.White;
             certificateView.Layer.CornerRadius = 7.0f;
@@ -99,8 +102,7 @@ namespace NachoClient.iOS
             trustCertificateButton.SetTitleColor (A.Color_SystemBlue, UIControlState.Normal);            
             trustCertificateButton.TouchUpInside += (object sender, EventArgs e) => {
                 DismissView ();
-                owner.ConfigureView (AdvancedLoginViewController.LoginStatus.EnterInfo);
-                owner.acceptCertificate ();
+                owner.AcceptCertificate();
             };
             certificateView.Add (trustCertificateButton);
 
@@ -114,8 +116,7 @@ namespace NachoClient.iOS
             dontTrustCertificateButton.SetTitleColor (A.Color_SystemBlue, UIControlState.Normal);
             dontTrustCertificateButton.TouchUpInside += (object sender, EventArgs e) => {
                 DismissView ();
-                owner.ConfigureView (AdvancedLoginViewController.LoginStatus.EnterInfo);
-                owner.waitScreen.DismissView ();
+                owner.DontAcceptCertificate();
             };
             certificateView.Add (dontTrustCertificateButton);
 
@@ -139,7 +140,14 @@ namespace NachoClient.iOS
         public void ConfigureView ()
         {
             var certInfoTextView = certificateView.ViewWithTag (CERTIFICATE_INFORMATION_TEXT_TAG) as UITextView;
-            certInfoTextView.Text = owner.certificateInformation;
+            certInfoTextView.Text = certInfo;
+        }
+
+        public void SetCertificateInformation ()
+        {
+            var certToBeExamined = BackEnd.Instance.ServerCertToBeExamined (LoginHelpers.GetCurrentAccountId ());
+            certInfo = new CertificateHelper ().formatCertificateData (certToBeExamined);
+            ConfigureView ();
         }
 
         public void ShowView ()
@@ -156,7 +164,6 @@ namespace NachoClient.iOS
 
         public void DismissView ()
         {
-            owner.setTextToRed (new UITextField[] { });
             this.Alpha = 0.0f;
         }
     }

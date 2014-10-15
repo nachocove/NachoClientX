@@ -9,6 +9,16 @@ namespace NachoCore.Utils
         {
             return uri.Scheme.ToUpper () == "HTTPS";
         }
+
+        public static bool IsValidHost (string host)
+        {
+            UriHostNameType hostnameURI = Uri.CheckHostName (host.Trim());
+            if (hostnameURI == UriHostNameType.Dns || hostnameURI == UriHostNameType.IPv4 || hostnameURI == UriHostNameType.IPv6) {
+                return true;
+            }
+
+            return false;
+        }
     }
 
     public static class string_Helpers
