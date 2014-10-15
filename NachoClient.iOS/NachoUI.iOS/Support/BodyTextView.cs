@@ -10,6 +10,10 @@ namespace NachoClient.iOS
 {
     public class BodyTextView : UITextView, IBodyRender
     {
+        public BodyTextView (IntPtr ptr) : base (ptr)
+        {
+        }
+
         public BodyTextView (RectangleF frame) : base (frame)
         {
             ViewHelper.SetDebugBorder (this, UIColor.Blue);
