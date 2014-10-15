@@ -211,8 +211,8 @@ namespace NachoClient.iOS
 
         protected void RefreshPriorityInboxIfVisible ()
         {
+            priorityInboxNeedsRefresh = true;
             if (!this.IsVisible ()) {
-                priorityInboxNeedsRefresh = true;
                 return;
             }
             MaybeRefreshPriorityInbox ();
@@ -230,8 +230,8 @@ namespace NachoClient.iOS
 
         protected void RefreshCalendarIfVisible ()
         {
+            calendarNeedsRefresh = true;
             if (!this.IsVisible ()) {
-                calendarNeedsRefresh = true;
                 return;
             }
             MaybeRefreshCalendar ();
