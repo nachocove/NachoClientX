@@ -119,7 +119,6 @@ namespace NachoClient.iOS
         public void ScrollTo (PointF upperLeft)
         {
             // TODO - Add sanity check
-            Log.Info (Log.LOG_UI, "BodyWebView: scroll = ({0},{1})", upperLeft.X, upperLeft.Y);
             ScrollView.SetContentOffset (upperLeft, false);
         }
 
