@@ -10,8 +10,8 @@ namespace NachoClient.iOS
     {
         public delegate void StateChangedCallback (bool IsExpanded);
 
-        public const float WIDTH = 25.0f;
-        public const float HEIGHT = 10.0f;
+        public const float WIDTH = 30.0f;
+        public const float HEIGHT = 20.0f;
 
         private bool _Expanded;
         protected bool Expanded {
@@ -20,7 +20,8 @@ namespace NachoClient.iOS
             }
             set {
                 _Expanded = value;
-                BackgroundColor = _Expanded ? A.Color_NachoGreen : A.Color_NachoLightGrayBackground;
+                SetImage (_Expanded ? UIImage.FromBundle ("gen-readmore-active") :
+                    UIImage.FromBundle ("gen-readmore"), UIControlState.Normal);
             }
         }
 
@@ -38,7 +39,6 @@ namespace NachoClient.iOS
         public ExpandButton (PointF upperLeftCorner, bool isExpanded = true) : base ()
         {
             Frame = new RectangleF (upperLeftCorner, new SizeF (WIDTH, HEIGHT));
-            // FIXME - no image yet. just use background color. Add the UIImage when it is available
             Expanded = isExpanded;
             this.TouchDown += (object sender, EventArgs e) => {
                 Expanded = !Expanded;
