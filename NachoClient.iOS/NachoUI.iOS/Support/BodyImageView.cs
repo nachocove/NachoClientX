@@ -19,6 +19,10 @@ namespace NachoClient.iOS
             }
         }
 
+        public BodyImageView (IntPtr ptr) : base (ptr)
+        {
+        }
+
         public BodyImageView (RectangleF frame) : base (frame)
         {
             ViewHelper.SetDebugBorder (this, UIColor.Orange);
