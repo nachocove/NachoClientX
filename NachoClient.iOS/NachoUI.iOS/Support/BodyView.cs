@@ -195,27 +195,6 @@ namespace NachoClient.iOS
                     OnRenderComplete ();
                 }
             };
-            ShowsVerticalScrollIndicator = false;
-            #if (HACK_ALERT)
-            Scrolled += (object sender, EventArgs e) => {
-                Console.WriteLine (">>>>>> Scrolled: contentOffset=({0},{1})", ContentOffset.X, ContentOffset.Y);
-                PointF currentOffset = ContentOffset;
-                if (!HorizontalScrollingEnabled) {
-                    currentOffset.X = dragStartingOffset.X;
-                }
-                if (!VerticalScrollingEnabled) {
-                    currentOffset.Y = dragStartingOffset.Y;
-                }
-                SetContentOffset (currentOffset, false);
-            };
-            DraggingStarted += (object sender, EventArgs e) => {
-                Console.WriteLine(">>>>>> DraggingStarted");
-                dragStartingOffset = ContentOffset;
-            };
-            DraggingEnded += (object sender, DraggingEventArgs e) => {
-                Console.WriteLine(">>>>>> DraggingEnd");
-            };
-            #endif
 
             // doubleTap handles zoom in and out
             doubleTap = new UITapGestureRecognizer ();
