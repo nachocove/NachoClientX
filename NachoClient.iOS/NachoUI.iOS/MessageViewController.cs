@@ -938,7 +938,7 @@ namespace NachoClient.iOS
             view.Frame = new RectangleF (VIEW_INSET, VIEW_INSET, width, height);
 
             scrollView.ContentSize = new SizeF (
-                Math.Max (view.Frame.Width, bodyView.ContentSize.Width),
+                Math.Max (view.Frame.Width, bodyView.ContentSize.Width + 12.0f),
                 separator2YOffset + bodyView.ContentSize.Height
             );
         }
