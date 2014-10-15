@@ -1,4 +1,6 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+﻿//#define UI_DEBUG
+
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Drawing;
@@ -121,6 +123,14 @@ namespace NachoClient.iOS
                 indent += 2;
             }
             Console.WriteLine (output);
+        }
+
+        public static void SetDebugBorder (UIView view, UIColor color)
+        {
+            #if (UI_DEBUG)
+            view.Layer.BorderColor = color.CGColor;
+            view.Layer.BorderWidth = 1.0f;
+            #endif
         }
     }
 

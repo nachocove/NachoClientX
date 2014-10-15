@@ -1138,6 +1138,9 @@
     <Compile Include="NachoUI.iOS\QuickResponseViewController.designer.cs">
       <DependentUpon>QuickResponseViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\IBodyRender.cs" />
+    <Compile Include="NachoUI.iOS\Support\BodyTextView.cs" />
+    <Compile Include="NachoUI.iOS\Support\BodyImageView.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
