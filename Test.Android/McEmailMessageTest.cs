@@ -99,8 +99,6 @@ namespace Test.Common
             addresses [8] = SetupAddress ("ivan@company.net", 3, 1, false);
             addresses [9] = SetupAddress ("jolene@company.net", 5, 5, false);
 
-
-
             McEmailMessage[] messages = new McEmailMessage[10];
             messages [0] = SetupMessage (addresses [0], new DateTime (2014, 8, 15, 1, 23, 0));
             messages [1] = SetupMessage (addresses [1], new DateTime (2014, 8, 15, 2, 0, 0));
