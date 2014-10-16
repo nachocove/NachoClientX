@@ -546,7 +546,8 @@ namespace NachoClient.iOS
                 if ((null == newAbstrItem) || newAbstrItem.IsDownloaded ()) {
                     // Download must have complete in the window from it was checked to
                     // download command here is issued. Must have a status indication
-                    // pending to stop the spinner. Just need to not print error message
+                    // pending to stop the spinner or remove the item from UI. Just need
+                    // to not print error message
                     return;
                 }
                 // Duplicate download command returns the first (highest priority)
