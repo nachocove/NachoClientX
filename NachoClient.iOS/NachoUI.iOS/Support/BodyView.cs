@@ -569,10 +569,14 @@ namespace NachoClient.iOS
             }
         }
 
-        public void DownloadComplete (bool succeed)
+        public bool DownloadComplete (bool succeed, string token)
         {
+            if (token != downloadToken) {
+                return false; // indication for a different message
+            }
             loadState = succeed ? LoadState.IDLE : LoadState.ERROR;
             spinner.StopAnimating ();
+            return true;
         }
 
         public bool WasDownloadStartedAndNowComplete ()

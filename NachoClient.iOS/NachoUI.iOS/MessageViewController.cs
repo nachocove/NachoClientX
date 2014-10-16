@@ -212,17 +212,17 @@ namespace NachoClient.iOS
                 return;
             }
             if (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded == s.Status.SubKind) {
-                Log.Info (Log.LOG_EMAIL, "EmailMessageBodyDownloadSucceeded");
-                if (bodyView.WasDownloadStartedAndNowComplete ()) {
-                    bodyView.DownloadComplete (true);
+                var token = s.Tokens.FirstOrDefault ();
+                Log.Info (Log.LOG_EMAIL, "EmailMessageBodyDownloadSucceeded {0}", token);
+                if (bodyView.DownloadComplete (true, token)) {
                     ConfigureView ();
                     MarkAsRead ();
                 }
             }
             if (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed == s.Status.SubKind) {
-                Log.Info (Log.LOG_EMAIL, "EmailMessageBodyDownloadFailed");
-                if (bodyView.WasDownloadStartedAndNowComplete ()) {
-                    bodyView.DownloadComplete (false);
+                var token = s.Tokens.FirstOrDefault ();
+                Log.Info (Log.LOG_EMAIL, "EmailMessageBodyDownloadFailed {0}", token);
+                if (bodyView.DownloadComplete (false, token)) {
                     ConfigureView ();
                 }
             }
