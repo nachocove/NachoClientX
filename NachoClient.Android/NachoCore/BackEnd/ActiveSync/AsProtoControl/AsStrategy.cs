@@ -878,9 +878,17 @@ namespace NachoCore.ActiveSync
                             new AsSyncCommand (BEContext.ProtoControl, syncKit));
                     }
                 }
-                var pingKit = GenPingKit (accountId, protocolState, false);
+                // DEBUG. It seems like the server is slow to respond when there is new email. 
+                // At least it is slower to tell us than other clients. Sniffing touchdown shows 
+                // that they do a narrow Ping and that each add'l folder needs to be manuall added
+                // as "synced". So we will do narrow Ping 90% of the time and see if that helps.
+                PingKit pingKit = null;
+                if (0.9 < CoinToss.NextDouble ()) {
+                    Log.Info (Log.LOG_AS, "Strategy:FG/BG:PingKit try generating wide PingKit.");
+                    pingKit = GenPingKit (accountId, protocolState, false);
+                }
                 if (null == pingKit) {
-                    Log.Info (Log.LOG_AS, "Strategy:FG/BG:PingKit must be narrow.");
+                    Log.Info (Log.LOG_AS, "Strategy:FG/BG:PingKit will be narrow.");
                     pingKit = GenPingKit (accountId, protocolState, true);
                 }
                 if (null != pingKit) {
