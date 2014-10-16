@@ -163,12 +163,8 @@ namespace NachoClient.iOS
             };
             chiliButton.Clicked += (object sender, EventArgs e) => {
                 var message = thread.SingleMessageSpecialCase ();
-                message.ToggleHotOrNot ();
+                NachoCore.Utils.ScoringHelpers.ToggleHotOrNot(message);
                 ConfigureToolbar ();
-                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
-                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated),
-                    Account = ConstMcAccount.NotAccountSpecific,
-                });
             };
             deadlineButton.Clicked += (object sender, EventArgs e) => {
                 DeadlineActionSheet ();
