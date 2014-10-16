@@ -27,7 +27,7 @@ namespace NachoCore.Utils
                 NcAssert.CaseError ();
                 break;
             }
-
+            Log.Info (Log.LOG_BRAIN, "HotOrNot: Was = {0}, New = {1}", ua, message.UserAction);
             message.Update ();
             NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
                 Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated),
