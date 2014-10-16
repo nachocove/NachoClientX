@@ -522,7 +522,6 @@ namespace NachoClient.iOS
             messageHeaderView.ConfigureView (message);
 
             messageHeaderView.OnClick = (object sender, EventArgs e) => {
-               // message.ToggleHotOrNot ();
                 NachoCore.Utils.ScoringHelpers.ToggleHotOrNot(message);
                 messageHeaderView.ConfigureView (message);
             };
