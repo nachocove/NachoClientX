@@ -111,7 +111,7 @@ namespace NachoClient.iOS
                 if (ViewControllers [i].GetType() == typeof(GeneralSettingsViewController)) {
                     ViewControllers [i].TabBarItem.BadgeValue = (isDirty ? @"!" : null);
                     //TODO: W/larger screen size there can be more than 5 TabBarItems visible in the list
-                    if (i > 3 && isDirty) {
+                    if (i > TabBar.Items.Length - 2 && isDirty) {
                         MoreNavigationController.TabBarItem.BadgeValue = @"!";
                     } else {
                         MoreNavigationController.TabBarItem.BadgeValue = null;
