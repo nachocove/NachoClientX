@@ -95,8 +95,8 @@ namespace NachoClient.iOS
         {
             foreach (var vc in ViewControllers) {
                 if (typeName == GetTabBarItemTypeName (vc)) {
-                    using (var image = UIImage.FromBundle (imageName)) {
-                        using (var selectedImage = UIImage.FromBundle (selectedImageName)) {
+                    using (var image = UIImage.FromBundle (imageName).ImageWithRenderingMode(UIImageRenderingMode.AlwaysTemplate)) {
+                        using (var selectedImage = UIImage.FromBundle (selectedImageName).ImageWithRenderingMode(UIImageRenderingMode.AlwaysTemplate)) {
                             var item = new UITabBarItem (title, image, selectedImage);
                             vc.TabBarItem = item;
                         }
@@ -110,7 +110,6 @@ namespace NachoClient.iOS
             for (int i = 0; i < ViewControllers.Length; i++) {
                 if (ViewControllers [i].GetType() == typeof(GeneralSettingsViewController)) {
                     ViewControllers [i].TabBarItem.BadgeValue = (isDirty ? @"!" : null);
-                    //TODO: W/larger screen size there can be more than 5 TabBarItems visible in the list
                     if (i > TabBar.Items.Length - 2 && isDirty) {
                         MoreNavigationController.TabBarItem.BadgeValue = @"!";
                     } else {
