@@ -40,6 +40,7 @@ namespace NachoCore.ActiveSync
                 Def3d,
                 Def1w,
                 Def2w,
+                Def1m,
                 All1m,
                 AllInf,
 
@@ -49,6 +50,7 @@ namespace NachoCore.ActiveSync
             {
                 None = 0,
                 Def2w,
+                Def1m,
                 All1m,
                 All3m,
                 All6m,
@@ -74,6 +76,21 @@ namespace NachoCore.ActiveSync
             private static ItemType[] ItemTypeSeq = new ItemType[] { ItemType.Email, ItemType.Cal, ItemType.Contact };
 
             public static int[,] Ladder;
+
+            public static int[,] ProductionLadder = new int[,] {
+                // { Email, Cal, Contact, Action }
+                { (int)EmailEnum.None, (int)CalEnum.None, (int)ContactEnum.RicInf, (int)FlagEnum.IgnorePower }, {
+                    (int)EmailEnum.Def1m,
+                    (int)CalEnum.Def1m,
+                    (int)ContactEnum.DefRicInf,
+                    (int)FlagEnum.RicSynced | (int)FlagEnum.NarrowSyncOk | (int)FlagEnum.IgnorePower
+                }, {
+                    (int)EmailEnum.All1m,
+                    (int)CalEnum.All1m,
+                    (int)ContactEnum.AllInf,
+                    (int)FlagEnum.RicSynced | (int)FlagEnum.NarrowSyncOk
+                },
+            };
 
             public static int[,] TestLadder = new int[,] {
                 // { Email, Cal, Contact, Action }
@@ -123,6 +140,17 @@ namespace NachoCore.ActiveSync
             public static int MaxRung ()
             {
                 return Ladder.GetLength (0) - 1;
+            }
+
+            public static int StrategyRung (McProtocolState protocolState)
+            {
+                // This is meant to fix an out-of-bounds value on-the-fly in an upgrade scenario.
+                // TODO - delete this once there is a general approach to migration.
+                if (protocolState.StrategyRung > MaxRung ()) {
+                    protocolState.StrategyRung = MaxRung ();
+                    protocolState.Update ();
+                }
+                return protocolState.StrategyRung;
             }
 
             public static bool FlagIsSet (int rung, FlagEnum flag)
@@ -179,7 +207,7 @@ namespace NachoCore.ActiveSync
                 Scope.Ladder = Scope.TestLadder;
                 break;
             case LadderChoiceEnum.Production:
-                Scope.Ladder = Scope.TestLadder; // FIXME.
+                Scope.Ladder = Scope.ProductionLadder;
                 break;
             default:
                 NcAssert.CaseError (ladder.ToString ());
@@ -252,6 +280,7 @@ namespace NachoCore.ActiveSync
             case Scope.EmailEnum.Def1w:
             case Scope.EmailEnum.Def2w:
             case Scope.EmailEnum.Def3d:
+            case Scope.EmailEnum.Def1m:
                 return new List<McFolder> () { McFolder.GetDefaultInboxFolder (accountId) };
 
             case Scope.EmailEnum.All1m:
@@ -279,6 +308,7 @@ namespace NachoCore.ActiveSync
                 return new List<McFolder> ();
 
             case Scope.CalEnum.Def2w:
+            case Scope.CalEnum.Def1m:
                 return new List<McFolder> () { McFolder.GetDefaultCalendarFolder (accountId) };
 
             case Scope.CalEnum.All1m:
@@ -354,6 +384,7 @@ namespace NachoCore.ActiveSync
                 return Tuple.Create (Xml.Provision.MaxAgeFilterCode.OneWeek_3, perFolderWindowSize);
             case Scope.EmailEnum.Def2w:
                 return Tuple.Create (Xml.Provision.MaxAgeFilterCode.TwoWeeks_4, perFolderWindowSize);
+            case Scope.EmailEnum.Def1m:
             case Scope.EmailEnum.All1m:
                 return Tuple.Create (Xml.Provision.MaxAgeFilterCode.OneMonth_5, perFolderWindowSize);
             case Scope.EmailEnum.AllInf:
@@ -375,6 +406,7 @@ namespace NachoCore.ActiveSync
                 return null;
             case Scope.CalEnum.Def2w:
                 return Tuple.Create (Xml.Provision.MaxAgeFilterCode.TwoWeeks_4, perFolderWindowSize);
+            case Scope.CalEnum.Def1m:
             case Scope.CalEnum.All1m:
                 return Tuple.Create (Xml.Provision.MaxAgeFilterCode.OneMonth_5, perFolderWindowSize);
             case Scope.CalEnum.All3m:
@@ -480,7 +512,7 @@ namespace NachoCore.ActiveSync
         // Returns null if nothing to do.
         public SyncKit GenSyncKit (int accountId, McProtocolState protocolState, bool isNarrow, bool cantBeEmpty)
         {
-            var rung = protocolState.StrategyRung;
+            var rung = Scope.StrategyRung (protocolState);
             int overallWindowSize = KBaseOverallWindowSize;
             switch (NcCommStatus.Instance.Speed) {
             case NetStatusSpeedEnum.CellFast:
@@ -571,7 +603,7 @@ namespace NachoCore.ActiveSync
 
         public PingKit GenPingKit (int accountId, McProtocolState protocolState, bool isNarrow)
         {
-            var folders = FolderListProvider (accountId, protocolState.StrategyRung, isNarrow);
+            var folders = FolderListProvider (accountId, Scope.StrategyRung (protocolState), isNarrow);
             if (folders.Any (x => true == x.AsSyncMetaToClientExpected)) {
                 return null;
             }
@@ -659,7 +691,7 @@ namespace NachoCore.ActiveSync
             var accountId = BEContext.Account.Id;
             var protocolState = BEContext.ProtocolState;
             var exeCtxt = NcApplication.Instance.ExecutionContext;
-            AdvanceIfPossible (accountId, protocolState.StrategyRung);
+            AdvanceIfPossible (accountId, Scope.StrategyRung (protocolState));
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
                 // (FG) If the user has initiated a Search command, we do that.
                 var search = McPending.QueryEligible (accountId).
@@ -677,7 +709,7 @@ namespace NachoCore.ActiveSync
                             McPending.Operations.CalBodyDownload == x.Operation ||
                             McPending.Operations.ContactBodyDownload == x.Operation ||
                             McPending.Operations.TaskBodyDownload == x.Operation
-                    ).FirstOrDefault ();
+                            ).FirstOrDefault ();
                 if (null != fetch) {
                     Log.Info (Log.LOG_AS, "Strategy:FG:Fetch");
                     return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.QOop,
@@ -726,7 +758,7 @@ namespace NachoCore.ActiveSync
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt ||
                 NcApplication.ExecutionContextEnum.Background == exeCtxt) {
                 var needNarrowSyncMarker = DateTime.UtcNow.AddSeconds (-300);
-                if (Scope.FlagIsSet (protocolState.StrategyRung, Scope.FlagEnum.NarrowSyncOk) &&
+                if (Scope.FlagIsSet (Scope.StrategyRung (protocolState), Scope.FlagEnum.NarrowSyncOk) &&
                     protocolState.LastNarrowSync < needNarrowSyncMarker &&
                     (protocolState.LastPing < needNarrowSyncMarker ||
                     !NarrowFoldersNoToClientExpected (accountId))) {
@@ -858,7 +890,7 @@ namespace NachoCore.ActiveSync
                     return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.QOop, cmd);
                 }
                 // (FG, BG) Choose eligible option by priority, split tie randomly...
-                if (Scope.FlagIsSet (protocolState.StrategyRung, Scope.FlagEnum.IgnorePower) ||
+                if (Scope.FlagIsSet (Scope.StrategyRung (protocolState), Scope.FlagEnum.IgnorePower) ||
                     (Power.Instance.PowerState != PowerStateEnum.Unknown && Power.Instance.BatteryLevel > 0.7) ||
                     (Power.Instance.PowerStateIsPlugged () && Power.Instance.BatteryLevel > 0.2)) {
                     FetchKit fetchKit = null;
@@ -878,9 +910,17 @@ namespace NachoCore.ActiveSync
                             new AsSyncCommand (BEContext.ProtoControl, syncKit));
                     }
                 }
-                var pingKit = GenPingKit (accountId, protocolState, false);
+                // DEBUG. It seems like the server is slow to respond when there is new email. 
+                // At least it is slower to tell us than other clients. Sniffing touchdown shows 
+                // that they do a narrow Ping and that each add'l folder needs to be manuall added
+                // as "synced". So we will do narrow Ping 90% of the time and see if that helps.
+                PingKit pingKit = null;
+                if (0.9 < CoinToss.NextDouble ()) {
+                    Log.Info (Log.LOG_AS, "Strategy:FG/BG:PingKit try generating wide PingKit.");
+                    pingKit = GenPingKit (accountId, protocolState, false);
+                }
                 if (null == pingKit) {
-                    Log.Info (Log.LOG_AS, "Strategy:FG/BG:PingKit must be narrow.");
+                    Log.Info (Log.LOG_AS, "Strategy:FG/BG:PingKit will be narrow.");
                     pingKit = GenPingKit (accountId, protocolState, true);
                 }
                 if (null != pingKit) {
