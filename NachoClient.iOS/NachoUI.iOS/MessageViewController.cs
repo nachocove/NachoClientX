@@ -163,7 +163,7 @@ namespace NachoClient.iOS
             };
             chiliButton.Clicked += (object sender, EventArgs e) => {
                 var message = thread.SingleMessageSpecialCase ();
-                message.ToggleHotOrNot ();
+                NachoCore.Utils.ScoringHelpers.ToggleHotOrNot(message);
                 ConfigureToolbar ();
             };
             deadlineButton.Clicked += (object sender, EventArgs e) => {
