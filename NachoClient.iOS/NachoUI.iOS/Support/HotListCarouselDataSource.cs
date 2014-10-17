@@ -29,8 +29,6 @@ namespace NachoClient.iOS
         protected const int USER_LABEL_TAG = 109;
         protected const int USER_CHILI_TAG = 110;
         protected const int USER_MORE_TAG = 111;
-        static List<UIView> PreventViewGC;
-        static List<UIBarButtonItem> preventBarButtonGC;
         NachoNowViewController owner;
 
         private const int ARCHIVE_TAG = 1;
@@ -72,10 +70,6 @@ namespace NachoClient.iOS
             // Create new view if no view is available for recycling
             if (view == null) {
                 view = CreateView (carousel);
-                if (null == PreventViewGC) {
-                    PreventViewGC = new List<UIView> ();
-                }
-                PreventViewGC.Add (view);
             }
             ConfigureView (view, (int)index);
             return view;

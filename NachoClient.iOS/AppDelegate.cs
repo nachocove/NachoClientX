@@ -200,7 +200,9 @@ namespace NachoClient.iOS
         // It gets called once during the app lifecycle.
         public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
         {
+            const uint MB = 1000 * 1000; // MB not MiB
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Called");
+            var webCache = new WebCache (1 * MB, 100 * MB);
             StartUIMonitor ();
             NcApplication.Instance.StartClass1Services ();
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartClass1Services complete");
