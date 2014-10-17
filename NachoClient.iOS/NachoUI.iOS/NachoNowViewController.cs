@@ -206,7 +206,7 @@ namespace NachoClient.iOS
             }
             if (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed == s.Status.SubKind) {
                 var token = s.Tokens.FirstOrDefault ();
-                Log.Info (Log.LOG_UI, "NachoNowViewController: mailMessageBodyDownloadFailed {0}", token.ToString ());
+                Log.Error (Log.LOG_UI, "NachoNowViewController: mailMessageBodyDownloadFailed {0}", token.ToString ());
                 ProcessDownloadComplete (false, token);
             }
         }
