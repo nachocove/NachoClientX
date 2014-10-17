@@ -110,7 +110,7 @@ namespace NachoClient.iOS
             for (int i = 0; i < ViewControllers.Length; i++) {
                 if (ViewControllers [i].GetType() == typeof(GeneralSettingsViewController)) {
                     ViewControllers [i].TabBarItem.BadgeValue = (isDirty ? @"!" : null);
-                    if (i > TabBar.Items.Length - 2 && isDirty) {
+                    if (i > (TabBar.Items.Length - 2) && isDirty) {
                         MoreNavigationController.TabBarItem.BadgeValue = @"!";
                     } else {
                         MoreNavigationController.TabBarItem.BadgeValue = null;
