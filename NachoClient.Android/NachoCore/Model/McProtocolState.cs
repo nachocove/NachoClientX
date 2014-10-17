@@ -62,6 +62,8 @@ namespace NachoCore.Model
 
         public bool HasSyncedInbox { get; set; }
 
+        public bool DisableProvisionCommand { get; set; }
+
         public void IncrementAsFolderSyncEpoch ()
         {
             ++AsFolderSyncEpoch;
