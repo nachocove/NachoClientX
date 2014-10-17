@@ -24,8 +24,6 @@ namespace NachoClient.iOS
             document.getElementsByTagName('head')[0].appendChild(viewPortTag);
         ";
 
-        public bool ScrollingEnabled;
-
         protected RecursionCounter htmlBusy;
         public RenderStart OnRenderStart;
         public RenderComplete OnRenderComplete;
@@ -70,7 +68,7 @@ namespace NachoClient.iOS
                 OnRenderComplete (1.0f);
             });
 
-            UserInteractionEnabled = false;
+            ScrollView.ScrollEnabled = false;
             ScrollView.Bounces = false;
             ScrollView.MultipleTouchEnabled = false;
             ContentMode = UIViewContentMode.ScaleAspectFit;

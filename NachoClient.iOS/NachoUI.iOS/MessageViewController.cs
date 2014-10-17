@@ -940,7 +940,7 @@ namespace NachoClient.iOS
 
             scrollView.ContentSize = new SizeF (
                 Math.Max (view.Frame.Width, bodyView.ContentSize.Width + 12.0f),
-                separator2YOffset + bodyView.ContentSize.Height
+                separator2YOffset + bodyView.ContentSize.Height + view.Frame.Height
             );
         }
 
@@ -960,7 +960,7 @@ namespace NachoClient.iOS
             // increase the height to prevent vertical scroll bar from showing up.
             float height = View.Frame.Height;
             height -= 2 * BodyView.BODYVIEW_INSET;
-            var separator = view.ViewWithTag ((int)TagType.SEPARATOR1_TAG);
+            var separator = view.ViewWithTag ((int)TagType.SEPARATOR2_TAG);
             height -= separator.Frame.Bottom;
             if (null != attachmentListView) {
                 height -= attachmentListView.Frame.Height;
