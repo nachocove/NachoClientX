@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -48,21 +49,40 @@ namespace NachoCore.ActiveSync
 
         internal static bool ProcessOptionsHeaders (HttpResponseHeaders headers, IBEContext beContext)
         {
-            IEnumerable<string> values;
+            IEnumerable<string> values = null;
+            McProtocolState protocolState = beContext.ProtocolState;
             bool retval = headers.TryGetValues ("MS-ASProtocolVersions", out values);
-            if (null != values) {
-                foreach (var value in values) {
-                    float[] float_versions = Array.ConvertAll (value.Split (','), x => float.Parse (x));
-                    Array.Sort (float_versions);
-                    Array.Reverse (float_versions);
-                    string[] versions = Array.ConvertAll (float_versions, x => x.ToString ("0.0"));
-                    McProtocolState update = beContext.ProtocolState;
-                    update.AsProtocolVersion = versions [0];
-                    beContext.ProtocolState = update;
-                    // NOTE: We don't have any reason to do anything with MS-ASProtocolCommands yet.
+            if (retval && null != values && 0 < values.Count ()) {
+                // numerically sort and pick the highest version.
+                if (1 != values.Count ()) {
+                    Log.Warn (Log.LOG_AS, "AsOptionsCommand: more than one MS-ASProtocolVersions header.");
+                }
+                var value = values.First ();
+                float[] float_versions = Array.ConvertAll (value.Split (','), x => float.Parse (x));
+                Array.Sort (float_versions);
+                Array.Reverse (float_versions);
+                string[] versions = Array.ConvertAll (float_versions, x => x.ToString ("0.0"));
+                protocolState.AsProtocolVersion = versions [0];
+            } else {
+                Log.Error (Log.LOG_AS, "AsOptionsCommand: Could not retrieve MS-ASProtocolVersions. Defaulting to 12.0");
+                protocolState.AsProtocolVersion = "12.0";
+            }
+            values = null;
+            retval = headers.TryGetValues ("MS-ASProtocolCommands", out values);
+            if (retval && null != values && 0 < values.Count ()) {
+                if (1 != values.Count ()) {
+                    Log.Warn (Log.LOG_AS, "AsOptionsCommand: more than one MS-ASProtocolVersions header.");
+                }
+                var value = values.First ();
+                string[] commands = value.Split (',');
+                // TODO: check for other potentially missing commands. ensure that all fundamental commands are listed.
+                if (!commands.Contains ("Provision")) {
+                    protocolState.DisableProvisionCommand = true;
                 }
             }
-            return retval;
+            beContext.ProtocolState = protocolState;
+            // Rather than just fail, make conservative assumptions.
+            return true;
         }
     }
 }

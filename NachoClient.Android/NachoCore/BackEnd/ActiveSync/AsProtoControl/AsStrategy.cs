@@ -338,12 +338,20 @@ namespace NachoCore.ActiveSync
                 return new List<McFolder> ();
 
             case Scope.ContactEnum.RicInf:
-                return new List<McFolder> () { McFolder.GetRicContactFolder (accountId) };
+                var ric = McFolder.GetRicContactFolder (accountId);
+                if (null != ric) {
+                    return new List<McFolder> () { ric };
+                } else {
+                    return new List<McFolder> ();
+                }
 
             case Scope.ContactEnum.DefRicInf:
-                return new List<McFolder> () { McFolder.GetRicContactFolder (accountId),
-                    McFolder.GetDefaultContactFolder (accountId)
-                };
+                ric = McFolder.GetRicContactFolder (accountId);
+                if (null != ric) {
+                    return new List<McFolder> () { ric, McFolder.GetDefaultContactFolder (accountId) };
+                } else {
+                    return new List<McFolder> () { McFolder.GetDefaultContactFolder (accountId) };
+                }
 
             case Scope.ContactEnum.AllInf:
                 return McFolder.ServerEndQueryAll (accountId).Where (f => 

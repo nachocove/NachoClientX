@@ -930,8 +930,12 @@ namespace NachoCore.ActiveSync
 
         private void DoProv ()
         {
-            SetCmd (new AsProvisionCommand (this));
-            Cmd.Execute (Sm);
+            if (ProtocolState.DisableProvisionCommand) {
+                Sm.PostEvent ((uint)SmEvt.E.Success, "DOPROVNOPROV");
+            } else {
+                SetCmd (new AsProvisionCommand (this));
+                Cmd.Execute (Sm);
+            }
         }
 
         private void DoOldProtoProv ()
