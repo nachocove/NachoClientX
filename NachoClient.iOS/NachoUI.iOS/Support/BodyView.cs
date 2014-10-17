@@ -105,9 +105,6 @@ namespace NachoClient.iOS
             }
             set {
                 ShowsHorizontalScrollIndicator = value;
-                if (!VerticalScrollingEnabled && !HorizontalScrollingEnabled) {
-                    //ScrollEnabled = false;
-                }
             }
         }
 
@@ -117,9 +114,6 @@ namespace NachoClient.iOS
             }
             set {
                 ShowsVerticalScrollIndicator = value;
-                if (!VerticalScrollingEnabled && !HorizontalScrollingEnabled) {
-                    //ScrollEnabled = false;
-                }
             }
         }
 
@@ -242,7 +236,6 @@ namespace NachoClient.iOS
                 webView.Dispose ();
             }
             webView = new BodyWebView (this, htmlLeftMargin);
-            webView.ScrollingEnabled = (HorizontalScrollingEnabled && VerticalScrollingEnabled);
 
             if (item.IsDownloaded ()) {
                 loadState = LoadState.IDLE;
