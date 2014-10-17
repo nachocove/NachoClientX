@@ -72,7 +72,7 @@ namespace NachoClient.iOS
         }
     }
 
-    public class NcUIViewControllerNoLeaks : NcUIViewController
+    public abstract class NcUIViewControllerNoLeaks : NcUIViewController
     {
         public NcUIViewControllerNoLeaks ()
             : base()
@@ -89,31 +89,29 @@ namespace NachoClient.iOS
         {
         }
 
-        protected virtual void CreateViewHierarchy ()
-        {
-        }
+        protected abstract void CreateViewHierarchy ();
 
-        protected virtual void ConfigureAndLayout ()
-        {
-        }
+        protected abstract void ConfigureAndLayout ();
 
-        protected virtual void Cleanup ()
-        {
-        }
+        protected abstract void Cleanup ();
 
         protected static void DisposeViewHierarchy (UIView view)
         {
+            // This code comes from a StackOverflow question, and was provided by
+            // Herman Schoenfeld.  I have made some slight modifications.
+            // http://stackoverflow.com/questions/25532870/xamarin-ios-memory-leaks-everywhere
             try {
                 if (null == view || IntPtr.Zero == view.Handle) {
                     return;
                 }
                 bool skipDispose = false;
-                foreach (var subview in view.Subviews ?? new UIView[0]) {
-                    try {
-                        //subview.RemoveFromSuperview ();
-                        DisposeViewHierarchy (subview);
-                    } catch (Exception e) {
-                        Log.Error(Log.LOG_UI, "Exception while disposing of view hierarchy: {0}", e.ToString());
+                if (null != view.Subviews) {
+                    foreach (var subview in view.Subviews) {
+                        try {
+                            DisposeViewHierarchy (subview);
+                        } catch (Exception e) {
+                            Log.Error(Log.LOG_UI, "Exception while disposing of view hierarchy: {0}", e.ToString());
+                        }
                     }
                 }
                 if (view is UIActivityIndicatorView) {
@@ -131,10 +129,13 @@ namespace NachoClient.iOS
                     tableView.DataSource = null;
                     tableView.WeakDelegate = null;
                     tableView.WeakDataSource = null;
-                    foreach (var cell in tableView.VisibleCells ?? new UITableViewCell[0]) {
-                        DisposeViewHierarchy(cell);
+                    if (null != tableView.VisibleCells) {
+                        foreach (var cell in tableView.VisibleCells) {
+                            DisposeViewHierarchy(cell);
+                        }
                     }
                 } else if (view is UICollectionView) {
+                    // UICollectionViewController with throw if its view is disposed before the controller.
                     skipDispose = true;
                     var collectionView = view as UICollectionView;
                     if (null != collectionView.DataSource) {
@@ -145,8 +146,10 @@ namespace NachoClient.iOS
                     collectionView.DataSource = null;
                     collectionView.WeakDelegate = null;
                     collectionView.WeakDataSource = null;
-                    foreach (var cell in collectionView.VisibleCells ?? new UICollectionViewCell[0]) {
-                        DisposeViewHierarchy(cell);
+                    if (null != collectionView.VisibleCells) {
+                        foreach (var cell in collectionView.VisibleCells) {
+                            DisposeViewHierarchy(cell);
+                        }
                     }
                 } else if (view is UIWebView) {
                     var webView = view as UIWebView;

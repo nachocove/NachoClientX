@@ -100,8 +100,6 @@ namespace NachoClient.iOS
 
         protected override void CreateViewHierarchy ()
         {
-            base.CreateViewHierarchy ();
-
             // Navigation controls
 
             chiliButton = new UIBarButtonItem ("Hot", UIBarButtonItemStyle.Plain, null);
@@ -333,8 +331,6 @@ namespace NachoClient.iOS
 
         protected override void ConfigureAndLayout ()
         {
-            base.ConfigureAndLayout ();
-
             var message = thread.SingleMessageSpecialCase ();
             attachments = McAttachment.QueryByItemId (message);
 
@@ -457,8 +453,6 @@ namespace NachoClient.iOS
             scrollView.DidZoom -= ScrollViewDidZoom;
 
             blockMenu.Cleanup ();
-
-            base.Cleanup ();
 
             archiveButton = null;
             deleteButton = null;
@@ -665,10 +659,10 @@ namespace NachoClient.iOS
 
         protected void ShowDeadlineActionSheet ()
         {
-            deadlineActionSheet = new UIActionSheet();
+            deadlineActionSheet = new UIActionSheet ();
             deadlineActionSheet.Add ("Set Deadline");
-            deadlineActionSheet.Add("Create Meeting");
-            deadlineActionSheet.Add("Cancel");
+            deadlineActionSheet.Add ("Create Meeting");
+            deadlineActionSheet.Add ("Cancel");
             deadlineActionSheet.CancelButtonIndex = 2;
             deadlineActionSheet.Clicked += DeadlineActionSheetClicked;
             deadlineActionSheet.ShowFrom (deadlineButton, true);
