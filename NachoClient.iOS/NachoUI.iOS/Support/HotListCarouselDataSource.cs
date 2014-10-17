@@ -216,10 +216,6 @@ namespace NachoClient.iOS
             attachmentImageView.Tag = ATTACHMENT_TAG;
             view.AddSubview (attachmentImageView);
 
-            if (null == preventBarButtonGC) {
-                preventBarButtonGC = new List<UIBarButtonItem> ();
-            }
-                
             var toolbar = new MessageToolbar (new RectangleF (0, frame.Height - 44, frame.Width, 44));
             toolbar.OnClick = (object sender, EventArgs e) => {
                 var toolbarEventArgs = e as MessageToolbarEventArgs;
