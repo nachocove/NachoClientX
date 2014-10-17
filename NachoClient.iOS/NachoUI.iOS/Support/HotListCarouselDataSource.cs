@@ -287,7 +287,7 @@ namespace NachoClient.iOS
             if (null == message) {
                 return;
             }
-            message.ToggleHotOrNot ();
+            NachoCore.Utils.ScoringHelpers.ToggleHotOrNot(message);
             owner.priorityInbox.Refresh ();
             owner.ReloadHotListData ();
         }

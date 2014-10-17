@@ -105,9 +105,6 @@ namespace NachoClient.iOS
             }
             set {
                 ShowsHorizontalScrollIndicator = value;
-                if (!VerticalScrollingEnabled && !HorizontalScrollingEnabled) {
-                    //ScrollEnabled = false;
-                }
             }
         }
 
@@ -117,9 +114,6 @@ namespace NachoClient.iOS
             }
             set {
                 ShowsVerticalScrollIndicator = value;
-                if (!VerticalScrollingEnabled && !HorizontalScrollingEnabled) {
-                    //ScrollEnabled = false;
-                }
             }
         }
 
@@ -242,7 +236,6 @@ namespace NachoClient.iOS
                 webView.Dispose ();
             }
             webView = new BodyWebView (this, htmlLeftMargin);
-            webView.ScrollingEnabled = (HorizontalScrollingEnabled && VerticalScrollingEnabled);
 
             if (item.IsDownloaded ()) {
                 loadState = LoadState.IDLE;
@@ -536,13 +529,20 @@ namespace NachoClient.iOS
             Console.WriteLine (LayoutInfo ());
         }
 
-        // FIXME: Null return might be body already downloaded, so check it again
         protected void StartDownload ()
         {
             downloadToken = BackEnd.Instance.DnldEmailBodyCmd (abstrItem.AccountId, abstrItem.Id);
             if (null != downloadToken) {
                 BackEnd.Instance.Prioritize (abstrItem.AccountId, downloadToken);
             } else {
+                var newAbstrItem = ReReadItem ();
+                if ((null == newAbstrItem) || newAbstrItem.IsDownloaded ()) {
+                    // Download must have complete in the window from it was checked to
+                    // download command here is issued. Must have a status indication
+                    // pending to stop the spinner or remove the item from UI. Just need
+                    // to not print error message
+                    return;
+                }
                 // Duplicate download command returns the first (highest priority)
                 // download's token. So, a null really means something has gone wrong.
                 Log.Warn (Log.LOG_UI, "Fail to start download for message {0} in account {1}",
@@ -569,10 +569,14 @@ namespace NachoClient.iOS
             }
         }
 
-        public void DownloadComplete (bool succeed)
+        public bool DownloadComplete (bool succeed, string token)
         {
+            if (token != downloadToken) {
+                return false; // indication for a different message
+            }
             loadState = succeed ? LoadState.IDLE : LoadState.ERROR;
             spinner.StopAnimating ();
+            return true;
         }
 
         public bool WasDownloadStartedAndNowComplete ()
@@ -580,15 +584,9 @@ namespace NachoClient.iOS
             if (LoadState.LOADING != loadState) {
                 return false;
             }
-            // Read the item again to get the new body state
-            McAbstrItem newAbstrItem;
-            string className = abstrItem.GetType ().Name;
-            switch (className) {
-            case "McEmailMessage":
-                newAbstrItem = (McAbstrItem)McEmailMessage.QueryById<McEmailMessage> (abstrItem.Id);
-                break;
-            default:
-                throw new NcAssert.NachoDefaultCaseFailure (String.Format("Unhandled class type {0}", className));
+            var newAbstrItem = ReReadItem ();
+            if (null == newAbstrItem) {
+                return false; // must have been deleted
             }
             return newAbstrItem.IsDownloaded ();
         }
@@ -653,6 +651,20 @@ namespace NachoClient.iOS
                 y = renderView.ContentSize.Height;
             }
             return new PointF (x, y);
+        }
+
+        protected McAbstrItem ReReadItem ()
+        {
+            McAbstrItem newAbstrItem;
+            string className = abstrItem.GetType ().Name;
+            switch (className) {
+            case "McEmailMessage":
+                newAbstrItem = (McAbstrItem)McEmailMessage.QueryById<McEmailMessage> (abstrItem.Id);
+                break;
+            default:
+                throw new NcAssert.NachoDefaultCaseFailure (String.Format("Unhandled class type {0}", className));
+            }
+            return newAbstrItem;
         }
     }
 }

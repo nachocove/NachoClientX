@@ -163,7 +163,7 @@ namespace NachoClient.iOS
             };
             chiliButton.Clicked += (object sender, EventArgs e) => {
                 var message = thread.SingleMessageSpecialCase ();
-                message.ToggleHotOrNot ();
+                NachoCore.Utils.ScoringHelpers.ToggleHotOrNot(message);
                 ConfigureToolbar ();
             };
             deadlineButton.Clicked += (object sender, EventArgs e) => {
@@ -212,17 +212,17 @@ namespace NachoClient.iOS
                 return;
             }
             if (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded == s.Status.SubKind) {
-                Log.Info (Log.LOG_EMAIL, "EmailMessageBodyDownloadSucceeded");
-                if (bodyView.WasDownloadStartedAndNowComplete ()) {
-                    bodyView.DownloadComplete (true);
+                var token = s.Tokens.FirstOrDefault ();
+                Log.Info (Log.LOG_EMAIL, "EmailMessageBodyDownloadSucceeded {0}", token);
+                if (bodyView.DownloadComplete (true, token)) {
                     ConfigureView ();
                     MarkAsRead ();
                 }
             }
             if (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed == s.Status.SubKind) {
-                Log.Info (Log.LOG_EMAIL, "EmailMessageBodyDownloadFailed");
-                if (bodyView.WasDownloadStartedAndNowComplete ()) {
-                    bodyView.DownloadComplete (false);
+                var token = s.Tokens.FirstOrDefault ();
+                Log.Info (Log.LOG_EMAIL, "EmailMessageBodyDownloadFailed {0}", token);
+                if (bodyView.DownloadComplete (false, token)) {
                     ConfigureView ();
                 }
             }
@@ -940,7 +940,7 @@ namespace NachoClient.iOS
 
             scrollView.ContentSize = new SizeF (
                 Math.Max (view.Frame.Width, bodyView.ContentSize.Width + 12.0f),
-                separator2YOffset + bodyView.ContentSize.Height
+                separator2YOffset + bodyView.ContentSize.Height + view.Frame.Height
             );
         }
 
@@ -960,7 +960,7 @@ namespace NachoClient.iOS
             // increase the height to prevent vertical scroll bar from showing up.
             float height = View.Frame.Height;
             height -= 2 * BodyView.BODYVIEW_INSET;
-            var separator = view.ViewWithTag ((int)TagType.SEPARATOR1_TAG);
+            var separator = view.ViewWithTag ((int)TagType.SEPARATOR2_TAG);
             height -= separator.Frame.Bottom;
             if (null != attachmentListView) {
                 height -= attachmentListView.Frame.Height;

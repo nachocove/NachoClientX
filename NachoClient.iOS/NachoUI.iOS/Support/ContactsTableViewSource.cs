@@ -472,18 +472,18 @@ namespace NachoClient.iOS
             subtitle2Label.Text = displaySubtitle2;
             subtitle2Label.TextColor = displaySubtitle2Color;
 
-            ConfigureLabelView (labelView, displayTitle, colorIndex);
+            if (null != labelView) {
+                ConfigureLabelView (labelView, displayTitle, colorIndex);
+            } else {
+                var imageView = cell.ViewWithTag(USER_LABEL_TAG) as UIImageView;
+                imageView.Image = Util.ImageOfContact (contact);
+            }
 
             ConfigureSwipes (cell, contact.Id);
         }
 
         protected void ConfigureLabelView (UILabel labelView, string labelText, int colorIndex)
         {
-            if (null == labelView) {
-                // This happens when the contact has a picture and a UIImageView
-                // is created for the cell instead.
-                return;
-            }
             labelView.Hidden = false;
             labelView.Text = Util.NameToLetters (labelText);
             labelView.BackgroundColor = Util.ColorForUser (colorIndex);

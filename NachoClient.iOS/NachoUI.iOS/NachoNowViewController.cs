@@ -200,12 +200,14 @@ namespace NachoClient.iOS
                 RefreshPriorityInboxIfVisible ();
             }
             if (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "NachoNowViewController: mailMessageBodyDownloadSucceeded {0}", s.Tokens.FirstOrDefault ().ToString ());
-                ProcessDownloadComplete (true);
+                var token = s.Tokens.FirstOrDefault ();
+                Log.Info (Log.LOG_UI, "NachoNowViewController: mailMessageBodyDownloadSucceeded {0}", token.ToString ());
+                ProcessDownloadComplete (true, token);
             }
             if (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "NachoNowViewController: mailMessageBodyDownloadFailed {0}", s.Tokens.FirstOrDefault ().ToString ());
-                ProcessDownloadComplete (false);
+                var token = s.Tokens.FirstOrDefault ();
+                Log.Info (Log.LOG_UI, "NachoNowViewController: mailMessageBodyDownloadFailed {0}", token.ToString ());
+                ProcessDownloadComplete (false, token);
             }
         }
 
@@ -246,7 +248,7 @@ namespace NachoClient.iOS
             }
         }
 
-        private void ProcessDownloadComplete (bool succeed)
+        private void ProcessDownloadComplete (bool succeed, string token)
         {
             var visibleIndices = carouselView.IndexesForVisibleItems;
             foreach (NSNumber nsIndex in visibleIndices) {
@@ -260,10 +262,9 @@ namespace NachoClient.iOS
 
                 // To avoid unnecessary reload, we only reload if the current item was downloading
                 // and the body is now completely downloaded.
-                if (!bodyView.WasDownloadStartedAndNowComplete ()) {
+                if (!bodyView.DownloadComplete (succeed, token)) {
                     continue;
                 }
-                bodyView.DownloadComplete (succeed);
                 carouselView.ReloadItemAtIndex (index, true);
             }
         }

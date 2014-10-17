@@ -396,7 +396,6 @@ namespace NachoCore.ActiveSync
 
             var l = new List<McException> ();
 
-            Log.Info (Log.LOG_CALENDAR, "ParseExceptions\n{0}", exceptions);
             foreach (var exception in exceptions.Elements()) {
                 NcAssert.True (exception.Name.LocalName.Equals (Xml.Calendar.Exceptions.Exception));
                 var e = new McException ();

@@ -24,8 +24,6 @@ namespace NachoClient.iOS
             document.getElementsByTagName('head')[0].appendChild(viewPortTag);
         ";
 
-        public bool ScrollingEnabled;
-
         protected RecursionCounter htmlBusy;
         public RenderStart OnRenderStart;
         public RenderComplete OnRenderComplete;
@@ -39,6 +37,10 @@ namespace NachoClient.iOS
             protected set {
                 _contentSize = value;
             }
+        }
+
+        public BodyWebView (IntPtr ptr) : base (ptr)
+        {
         }
 
         public BodyWebView (UIView parentView, float leftMargin) : base ()
@@ -66,7 +68,7 @@ namespace NachoClient.iOS
                 OnRenderComplete (1.0f);
             });
 
-            UserInteractionEnabled = false;
+            ScrollView.ScrollEnabled = false;
             ScrollView.Bounces = false;
             ScrollView.MultipleTouchEnabled = false;
             ContentMode = UIViewContentMode.ScaleAspectFit;
@@ -83,6 +85,7 @@ namespace NachoClient.iOS
 
             LoadError += (object sender, UIWebErrorArgs e) => {
                 OnRenderComplete (0.0f);
+                Log.Error(Log.LOG_UI, "WebView LoadError: {0}", e.Error);
             };
 
             ShouldStartLoad += delegate(UIWebView webView, NSUrlRequest request, UIWebViewNavigationType navigationType) {
