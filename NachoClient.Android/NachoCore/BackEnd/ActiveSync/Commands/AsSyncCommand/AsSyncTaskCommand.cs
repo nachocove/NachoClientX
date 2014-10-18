@@ -24,7 +24,12 @@ namespace NachoCore.ActiveSync
                 return;
             }
             var applicationData = command.Element (Ns + Xml.AirSync.ApplicationData);
+            // If the server attempts to overwrite, delete the pre-existing record first.
             var task = McTask.QueryByServerId<McTask> (folder.AccountId, xmlServerId.Value);
+            if (Xml.AirSync.Add == command.Name.LocalName && null != task) {
+                task.Delete ();
+                task = null;
+            }
             if (null == task) {
                 task = new McTask () {
                     AccountId = folder.AccountId,

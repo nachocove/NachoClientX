@@ -19,6 +19,13 @@ namespace NachoCore.ActiveSync
                 Log.Error (Log.LOG_AS, "ServerSaysAddOrChangeContact: No ServerId present.");
                 return;
             }
+            // If the server attempts to overwrite, delete the pre-existing record first.
+            var existingContact = McContact.QueryByServerId<McContact> (folder.AccountId, xmlServerId.Value);
+            if (Xml.AirSync.Add == command.Name.LocalName && null != existingContact) {
+                existingContact.Delete ();
+                existingContact = null;
+            }
+
             McContact mcContact = null;
             try {
                 var asResult = AsContact.FromXML (folder.AccountId, Ns, command);
@@ -39,9 +46,6 @@ namespace NachoCore.ActiveSync
                 mcContact.AccountId = folder.AccountId;
                 mcContact.IsIncomplete = true;
             }
-
-            var existingContact = McAbstrFolderEntry.QueryByServerId<McContact> (folder.AccountId, mcContact.ServerId);
-
             if (null == existingContact) {
                 var ur = mcContact.Insert ();
                 folder.Link (mcContact);
