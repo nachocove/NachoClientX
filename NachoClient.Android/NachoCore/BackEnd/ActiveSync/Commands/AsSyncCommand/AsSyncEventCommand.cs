@@ -42,7 +42,13 @@ namespace NachoCore.ActiveSync
             if (null == xmlServerId || null == xmlServerId.Value || string.Empty == xmlServerId.Value) {
                 Log.Error (Log.LOG_AS, "ServerSaysAddOrChangeCalendarItem: No ServerId present.");
                 return;
-            }            
+            }
+            // If the server attempts to overwrite, delete the pre-existing record first.
+            var oldItem = McCalendar.QueryByServerId<McCalendar> (folder.AccountId, xmlServerId.Value);
+            if (Xml.AirSync.Add == command.Name.LocalName && null != oldItem) {
+                oldItem.Delete ();
+                oldItem = null;
+            }
             var h = new AsHelpers ();
             McCalendar newItem = null;
             try {
@@ -59,10 +65,6 @@ namespace NachoCore.ActiveSync
                 }
                 newItem.IsIncomplete = true;
             }
-
-            // Look up the event by ServerId
-            var oldItem = McCalendar.QueryByServerId<McCalendar> (folder.AccountId, newItem.ServerId);
-
             // Check if the UID and ServerId are consistent.  We have seen cases where the ServerId
             // for an event seems to change over time, but we don't know what triggers it.  It is
             // hoped that these error messages will identify the source of the issue.

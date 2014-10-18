@@ -18,6 +18,13 @@ namespace NachoCore.ActiveSync
                 Log.Error (Log.LOG_AS, "ServerSaysAddOrChangeEmail: No ServerId present.");
                 return null;
             }
+            // If the server attempts to overwrite, delete the pre-existing record first.
+            var eMsg = McEmailMessage.QueryByServerId<McEmailMessage> (folder.AccountId, xmlServerId.Value);
+            if (Xml.AirSync.Add == command.Name.LocalName && null != eMsg) {
+                eMsg.Delete ();
+                eMsg = null;
+            }
+
             McEmailMessage emailMessage = null;
             AsHelpers aHelp = new AsHelpers ();
             try {
@@ -34,7 +41,6 @@ namespace NachoCore.ActiveSync
             }
             bool justCreated = false;
 
-            var eMsg = McAbstrFolderEntry.QueryByServerId<McEmailMessage> (folder.AccountId, emailMessage.ServerId);
             if (null == eMsg) {
                 justCreated = true;
                 emailMessage.AccountId = folder.AccountId;
