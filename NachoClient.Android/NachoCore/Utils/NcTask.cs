@@ -63,33 +63,15 @@ namespace NachoCore.Utils
                     Log.Warn (Log.LOG_SYS, "NcTask {0}: Weak reference unavailable", taskName);
                 }
                 else if (!TaskMap.TryRemove (taskRef, out dummy)) {
-                    Log.Error (Log.LOG_SYS, "Task {0} already removed from TaskMap.", taskName);
+                    Log.Error (Log.LOG_SYS, "Task already removed from TaskMap ({0}).", taskName);
                 }
             }, Cts.Token);
             taskRef = new WeakReference (task);
             if (!TaskMap.TryAdd (taskRef, taskName)) {
-                Log.Error (Log.LOG_SYS, "Task {0} already added to TaskMap.", taskName);
+                Log.Error (Log.LOG_SYS, "Task already added to TaskMap ({0}).", taskName);
             }
             return task;
-            /*
-             * XAMMIT - this code does not work reliably (FYI).
-            WeakReference taskRef = null;
-            var task = new NcTask (delegate {
-                Log.Info (Log.LOG_SYS, "NcTask {0} started.", name);
-                action.Invoke ();
-                Log.Info (Log.LOG_SYS, "NcTask {0} completed.", name);
-                if (!TaskMap.TryRemove (taskRef, out name)) {
-                    Log.Error (Log.LOG_SYS, "Task {0} already removed from TaskMap.", name);
-                }
-            });
-            taskRef = new WeakReference (task);
-            if (!TaskMap.TryAdd (taskRef, name)) {
-                Log.Error (Log.LOG_SYS, "Task {0} already removed from TaskMap.", name);
-            }
-            task.Start ();
-            Log.Info (Log.LOG_SYS, "Task {0} started.", name);
-            return task;
-            */
+            // XAMMIT - Task.Start() does not work reliably (FYI).
         }
 
         public static void StopService ()
