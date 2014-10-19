@@ -12,7 +12,11 @@ namespace NachoClient.iOS
 
         public WebCache (uint memoryCapacity, uint diskCapcity) : base (memoryCapacity, diskCapcity, "NachoCache")
         {
-            NSUrlCache.SharedCache = this;
+        }
+
+        public static void Configure (uint memoryCapacity, uint diskCapacity)
+        {
+            NSUrlCache.SharedCache = new WebCache (memoryCapacity, diskCapacity);
         }
 
         public override NSCachedUrlResponse CachedResponseForRequest (NSUrlRequest request)

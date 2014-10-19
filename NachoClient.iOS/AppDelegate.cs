@@ -202,6 +202,8 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Called");
             StartUIMonitor ();
+            const uint MB = 1000 * 1000; // MB not MiB
+            WebCache.Configure (1 * MB, 50 * MB);
             NcApplication.Instance.StartClass1Services ();
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartClass1Services complete");
 

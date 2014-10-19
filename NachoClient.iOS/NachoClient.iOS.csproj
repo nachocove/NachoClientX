@@ -1149,6 +1149,7 @@
     <Compile Include="NachoUI.iOS\Support\BodyTextView.cs" />
     <Compile Include="NachoUI.iOS\Support\BodyImageView.cs" />
     <Compile Include="NachoCore\Utils\ScoringHelpers.cs" />
+    <Compile Include="WebCache.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
