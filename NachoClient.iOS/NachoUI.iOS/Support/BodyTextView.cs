@@ -6,6 +6,8 @@ using System.Drawing;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 
+using NachoCore.Utils;
+
 namespace NachoClient.iOS
 {
     public class BodyTextView : UITextView, IBodyRender
@@ -51,8 +53,8 @@ namespace NachoClient.iOS
 
         public string LayoutInfo ()
         {
-            return String.Format ("BodyTextView: offset=({0},{1})  frame=({2},{3})  content=({4},{5})",
-                Frame.X, Frame.Y, Frame.Width, Frame.Height, ContentSize.Width, ContentSize.Height);
+            return String.Format ("BodyTextView: offset={0}  frame={1}  content={2}",
+                Pretty.PointF (Frame.Location), Pretty.SizeF (Frame.Size), Pretty.SizeF (ContentSize));
         }
     }
 
