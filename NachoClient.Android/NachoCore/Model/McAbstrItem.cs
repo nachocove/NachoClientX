@@ -68,6 +68,41 @@ namespace NachoCore.Model
             NcAssert.True (NcModel.Instance.IsInTransaction ());
         }
 
+        private IEnumerable<McAbstrItem> ExistingItems ()
+        {
+            IEnumerable<McAbstrItem> existingItems = null;
+            switch (GetClassCode ()) {
+            case ClassCodeEnum.Calendar:
+                existingItems = McCalendar.QueryByServerIdMult<McCalendar> (AccountId, ServerId);
+                break;
+            case ClassCodeEnum.Contact:
+                existingItems = McCalendar.QueryByServerIdMult<McContact> (AccountId, ServerId);
+                break;
+            case ClassCodeEnum.Email:
+                existingItems = McCalendar.QueryByServerIdMult<McEmailMessage> (AccountId, ServerId);
+                break;
+            }
+            return (null == existingItems) ? new List<McAbstrItem> () : existingItems;
+        }
+
+        public override int Insert ()
+        {
+            var existingItems = ExistingItems ();
+            foreach (var existingItem in existingItems) {
+                NcAssert.True (false, string.Format ("Existing item {0} has ServerId {1}", existingItem.Id, ServerId));
+            }
+            return base.Insert ();
+        }
+
+        public override int Update ()
+        {
+            var existingItems = ExistingItems ();
+            foreach (var existingItem in existingItems) {
+                NcAssert.Equals (Id, existingItem.Id);
+            }
+            return base.Update ();
+        }
+
         public override int Delete ()
         {
             NcAssert.True (100000 > PendingRefCount);
