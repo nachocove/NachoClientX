@@ -887,7 +887,9 @@ namespace NachoClient.iOS
             var separator2View = view.ViewWithTag ((int)TagType.SEPARATOR2_TAG);
             ViewFramer.Create (separator2View).Y (separator2YOffset);
 
-            LayoutScrollViews ();
+            LayoutAttachmentListView ();
+            LayoutBodyView ();
+            LayoutScrollView ();
 
             #if (DEBUG_UI)
             ViewHelper.DumpViews<TagType> (scrollView);
@@ -925,7 +927,7 @@ namespace NachoClient.iOS
             attachmentListView.Hidden = !HasAttachments;
         }
 
-        protected void LayoutVerticalScrollView ()
+        protected void LayoutScrollView ()
         {
             // Just need to set view (inside scrollView) with a small inset
             float width = scrollView.Frame.Width - 2 * VIEW_INSET;
@@ -935,8 +937,10 @@ namespace NachoClient.iOS
             height += bodyView.Frame.Height;
             height += 2 * VIEW_INSET;
             height = Math.Max (height, scrollView.Frame.Height);
-            view.Frame = new RectangleF (scrollView.ContentOffset.X + VIEW_INSET,
-                scrollView.ContentOffset.Y + VIEW_INSET, width, height);
+
+            // Set up the upper left corner. The trick to take into account of
+            // the X content offset in view and Y content offset in bodyView.
+            view.Frame = new RectangleF (VIEW_INSET + scrollView.ContentOffset.X, VIEW_INSET, width, height);
 
             scrollView.ContentSize = new SizeF (
                 Math.Max (view.Frame.Width, bodyView.ContentSize.Width + 12.0f),
@@ -966,15 +970,12 @@ namespace NachoClient.iOS
                 height -= attachmentListView.Frame.Height;
             }
 
-            bodyView.Layout (VIEW_INSET, separator2YOffset + 1,
-                view.Frame.Width - 2 * BodyView.BODYVIEW_INSET, height);
-        }
-
-        protected void LayoutScrollViews ()
-        {
-            LayoutAttachmentListView ();    // layout attachmentListView & view
-            LayoutBodyView ();
-            LayoutVerticalScrollView ();    // layout scrollView
+            float y, separatorY = separator2YOffset + 1;
+            y = separatorY;
+            if (scrollView.ContentOffset.Y > separatorY) {
+                y = scrollView.ContentOffset.Y;
+            }
+            bodyView.Layout (VIEW_INSET, y, view.Frame.Width - 2 * BodyView.BODYVIEW_INSET, height);
         }
 
         // IUcAddressBlockDelegate
