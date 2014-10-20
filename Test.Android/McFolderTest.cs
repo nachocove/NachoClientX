@@ -308,7 +308,7 @@ namespace Test.iOS
 
                 McFolder folder1 = FolderOps.CreateFolder (accountId, autoInsert: false);
                 McEmailMessage firstEmail = FolderOps.CreateUniqueItem<McEmailMessage> (accountId);
-                McEmailMessage secondEmail = FolderOps.CreateUniqueItem<McEmailMessage> (accountId);
+                McEmailMessage secondEmail = FolderOps.CreateUniqueItem<McEmailMessage> (accountId, FolderOps.defaultServerId+"1");
                 folder1.Link (secondEmail); // insert second email, but query for first email
 
                 List <McFolder> retrieved1 = McFolder.QueryByFolderEntryId<McEmailMessage> (accountId, firstEmail.Id);
@@ -521,7 +521,7 @@ namespace Test.iOS
             public void ShouldNotBreakDefaultFolder ()
             {
                 McFolder folder1 = FolderOps.CreateFolder (1, isClientOwned: false);
-                McFolder.AsResetState (1);
+                McFolder.UpdateAsResetState (1);
 
                 McFolder retrieved1 = McFolder.QueryById<McFolder> (folder1.Id);
                 FoldersAreEqual (folder1, retrieved1, "Folder should be the same after resetting state");
@@ -534,7 +534,7 @@ namespace Test.iOS
                 McFolder folder1 = FolderOps.CreateFolder (1, asSyncKey: "10", isClientOwned: false);
                 McFolder retrieved1 = McFolder.QueryById<McFolder> (folder1.Id);
                 Assert.AreEqual ("10", retrieved1.AsSyncKey, "AsSyncKey should be set correctly before reset event");
-                McFolder.AsResetState (1);
+                McFolder.UpdateAsResetState (1);
 
                 McFolder retrieved2 = McFolder.QueryById<McFolder> (folder1.Id);
                 FoldersAreEqual (folder1, retrieved2, "Folder core values should not be modified by AsResetState");
@@ -547,7 +547,7 @@ namespace Test.iOS
                 McFolder folder1 = FolderOps.CreateFolder (1, syncMetaToClient: false, isClientOwned: false);
                 McFolder retrieved1 = McFolder.QueryById<McFolder> (folder1.Id);
                 Assert.AreEqual (false, retrieved1.AsSyncMetaToClientExpected, "AsSyncMeta... flag should be set correctly");
-                McFolder.AsResetState (1);
+                McFolder.UpdateAsResetState (1);
 
                 McFolder retrieved2 = McFolder.QueryById<McFolder> (folder1.Id);
                 FoldersAreEqual (folder1, retrieved2, "Folder core values should not be modified by AsResetState");
@@ -557,7 +557,7 @@ namespace Test.iOS
                 folder1.AsSyncMetaToClientExpected = false;
                 folder1.AsSyncKey = "10";
                 folder1.Update ();
-                McFolder.AsResetState (1);
+                McFolder.UpdateAsResetState (1);
                 McFolder retrieved3 = McFolder.QueryById<McFolder> (folder1.Id);
                 FlagsAreReset (retrieved3, "Both folder flags should have been reset correctly");
             }
@@ -569,7 +569,7 @@ namespace Test.iOS
                 var folder1 = FolderOps.CreateFolder (2, asSyncKey: "10", syncMetaToClient: false, isClientOwned: false);
                 var folder2 = FolderOps.CreateFolder (1, asSyncKey: "10", syncMetaToClient: false, isClientOwned: false);  // only this folder should be retrieved
 
-                McFolder.AsResetState (1);
+                McFolder.UpdateAsResetState (1);
                 McFolder retrieved1 = McFolder.QueryById<McFolder> (folder2.Id);
                 FlagsAreReset (retrieved1, "Both folder flags should have been reset correctly");
 
