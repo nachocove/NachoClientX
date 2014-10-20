@@ -132,6 +132,11 @@ namespace NachoClient.iOS
             view.Layer.BorderWidth = 1.0f;
             #endif
         }
+
+        public static SizeF ScaleSizeF (float scale, SizeF size)
+        {
+            return new SizeF (scale * size.Width, scale * size.Height);
+        }
     }
 
     public class VerticalLayoutCursor
