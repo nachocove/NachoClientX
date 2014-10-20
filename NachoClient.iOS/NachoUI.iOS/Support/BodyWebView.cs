@@ -24,20 +24,17 @@ namespace NachoClient.iOS
             document.getElementsByTagName('head')[0].appendChild(viewPortTag);
         ";
 
-        public bool ScrollingEnabled;
-
+        protected BodyRenderZoomRecognizer zoomRecognizer;
         protected RecursionCounter htmlBusy;
         public RenderStart OnRenderStart;
         public RenderComplete OnRenderComplete;
 
-        private SizeF _contentSize;
         public SizeF ContentSize {
             get {
-                float scale = ScrollView.ZoomScale;
-                return new SizeF (_contentSize.Width * scale, _contentSize.Height * scale);
+                return ViewHelper.ScaleSizeF (ScrollView.ZoomScale, ScrollView.ContentSize);
             }
             protected set {
-                _contentSize = value;
+                ScrollView.ContentSize = value;
             }
         }
 
@@ -49,6 +46,15 @@ namespace NachoClient.iOS
         {
             ViewHelper.SetDebugBorder (this, UIColor.Red);
 
+            zoomRecognizer = new BodyRenderZoomRecognizer (ScrollView);
+            zoomRecognizer.OnTap = () => {
+                if ((null != OnRenderStart) && (null != OnRenderComplete)) {
+                    OnRenderStart ();
+                    OnRenderComplete (1.0f);
+                }
+            };
+            AddGestureRecognizer (zoomRecognizer);
+
             ViewFramer.Create (this)
                 .X (0)
                 .Y (0)
@@ -58,45 +64,79 @@ namespace NachoClient.iOS
             htmlBusy = new RecursionCounter (() => {
                 EvaluateJavascript (magic);
 
-                // Save the rendered content size
-                _contentSize = ScrollView.ContentSize;
-
                 // If the content size is less than the given frame, we set the frame to the content size
                 ViewFramer.Create(this)
                     .Width (Math.Min (ContentSize.Width, parentView.Frame.Width))
                     .Height (Math.Min (ContentSize.Height, parentView.Frame.Height));
 
+                zoomRecognizer.Configure ();
+
                 // If the content is wider than the frame, try to scale it down
                 OnRenderComplete (1.0f);
             });
 
-            UserInteractionEnabled = false;
+            ScrollView.ScrollEnabled = false;
+            ScrollView.MinimumZoomScale = 0.5f;
+            ScrollView.MaximumZoomScale = 4.0f;
             ScrollView.Bounces = false;
             ScrollView.MultipleTouchEnabled = false;
-            ContentMode = UIViewContentMode.ScaleAspectFit;
+            ContentMode = UIViewContentMode.TopLeft;
+            ScalesPageToFit = true;
             BackgroundColor = UIColor.White;
             Tag = (int)BodyView.TagType.MESSAGE_PART_TAG;
 
-            LoadStarted += (object sender, EventArgs e) => {
-                htmlBusy.Increment ();
-            };
+            LoadStarted += OnLoadStarted;
+            LoadFinished += OnLoadFinished;
+            LoadError += OnLoadError;
+            ShouldStartLoad += OnShouldStartLoad;
+            ScrollView.PinchGestureRecognizer.AddTarget (OnZoomChanged);
 
-            LoadFinished += (object sender, EventArgs e) => {
-                htmlBusy.Decrement ();
-            };
-
-            LoadError += (object sender, UIWebErrorArgs e) => {
-                OnRenderComplete (0.0f);
-                Log.Error(Log.LOG_UI, "WebView LoadError: {0}", e.Error);
-            };
-
-            ShouldStartLoad += delegate(UIWebView webView, NSUrlRequest request, UIWebViewNavigationType navigationType) {
-                if (UIWebViewNavigationType.LinkClicked == navigationType) {
-                    UIApplication.SharedApplication.OpenUrl (request.Url);
-                    return false;
+            // Disable all UIWebView double tap recognizers
+            foreach (var gr in ScrollView.Subviews[0].GestureRecognizers) {
+                var tapGr = gr as UITapGestureRecognizer;
+                if (null == tapGr) {
+                    continue;
                 }
-                return true;
-            };
+                if ((2 != tapGr.NumberOfTapsRequired) || (1 != tapGr.NumberOfTouchesRequired)) {
+                    continue;
+                }
+                tapGr.Enabled = false;
+            }
+        }
+
+        private void OnLoadStarted (object sender, EventArgs e)
+        {
+            htmlBusy.Increment ();
+        }
+
+        private void OnLoadFinished (object sender, EventArgs e)
+        {
+            htmlBusy.Decrement ();
+        }
+
+        private void OnLoadError (object sender, UIWebErrorArgs e)
+        {
+            OnRenderComplete (0.0f);
+            Log.Error(Log.LOG_UI, "BodyWebView LoadError: {0}", e.Error);
+        }
+
+        private void OnZoomChanged ()
+        {
+            if ((null != OnRenderStart) && (null != OnRenderComplete)) {
+                ScrollView.SetZoomScale (ScrollView.PinchGestureRecognizer.Scale, false);
+                OnRenderStart ();
+                OnRenderComplete (1.0f);
+            }
+        }
+
+        private bool OnShouldStartLoad (UIWebView webView, NSUrlRequest request,
+            UIWebViewNavigationType navigationType)
+        {
+            if (UIWebViewNavigationType.LinkClicked == navigationType) {
+                UIApplication.SharedApplication.OpenUrl (request.Url);
+                return false;
+            }
+            return true;
         }
 
         public override void SizeToFit ()
@@ -123,14 +163,13 @@ namespace NachoClient.iOS
 
         public void ScrollTo (PointF upperLeft)
         {
-            // TODO - Add sanity check
             ScrollView.SetContentOffset (upperLeft, false);
         }
 
         public string LayoutInfo ()
         {
-            return String.Format ("BodyWebView: offset=({0},{1})  frame=({2},{3})  content=({4},{5})",
-                Frame.X, Frame.Y, Frame.Width, Frame.Height, ContentSize.Width, ContentSize.Height);
+            return String.Format ("BodyWebView: offset={0}  frame={1}  content={2}",
+                Pretty.PointF (Frame.Location), Pretty.SizeF (Frame.Size), Pretty.SizeF (ContentSize));
         }
     }
 }

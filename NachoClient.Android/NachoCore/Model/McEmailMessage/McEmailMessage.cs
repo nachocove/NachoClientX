@@ -424,7 +424,8 @@ namespace NachoCore.Model
                 " m.ClassCode = ? AND " +
                 " m.FolderId = ? AND " +
                 " e.FlagUtcStartDate < ? AND " +
-                " e.Score > ? " +
+                " e.UserAction > -1 AND " +
+                " (e.Score > ? OR e.UserAction = 1) " +
                 "UNION " +
                 "SELECT e.Id as Id, e.DateReceived FROM McEmailMessage AS e " +
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +

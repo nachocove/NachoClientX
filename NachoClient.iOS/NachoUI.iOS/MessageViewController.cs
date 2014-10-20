@@ -496,21 +496,24 @@ namespace NachoClient.iOS
 
             ViewFramer.Create (attachmentListView).Y (separator1YOffset + 1.0f);
 
+            // When setting the upper left corner, account for the X content offset
+            // in "view", and the Y content offset in "bodyView".
+
             float bodyHeight = View.Frame.Height;
             bodyHeight -= 2 * BodyView.BODYVIEW_INSET;
-            bodyHeight -= separator1View.Frame.Bottom;
+            bodyHeight -= separator2View.Frame.Bottom;
             bodyHeight -= attachmentListView.Frame.Height;
-            bodyView.Layout (VIEW_INSET, separator2YOffset + 1,
-                view.Frame.Width - 2 * BodyView.BODYVIEW_INSET, bodyHeight);
+            float bodyY = Math.Max(scrollView.ContentOffset.Y, separator2YOffset + 1);
+            bodyView.Layout (VIEW_INSET, y, view.Frame.Width - 2 * BodyView.BODYVIEW_INSET, bodyHeight);
 
             float viewWidth = scrollView.Frame.Width - 2 * VIEW_INSET;
             float viewHeight = separator2YOffset;
-            viewHeight += bodyView.Frame.Height * bodyView.ZoomScale;
+            viewHeight += bodyView.Frame.Height;
             viewHeight += 2 * VIEW_INSET;
             viewHeight = Math.Max (viewHeight, scrollView.Frame.Height);
             view.Frame = new RectangleF (
-                scrollView.ContentOffset.X + VIEW_INSET, scrollView.ContentOffset.Y + VIEW_INSET,
-                viewWidth, viewHeight);
+                VIEW_INSET + scrollView.ContentOffset.X, VIEW_INSET,
+                viewWidth, viewHight);
             scrollView.ContentSize = new SizeF (
                 Math.Max (view.Frame.Width, bodyView.ContentSize.Width + 12.0f),
                 separator2YOffset + bodyView.ContentSize.Height);
@@ -850,7 +853,7 @@ namespace NachoClient.iOS
 
         private void ChiliButtonClicked (object sender, EventArgs e)
         {
-            thread.SingleMessageSpecialCase ().ToggleHotOrNot ();
+            NachoCore.Utils.ScoringHelpers.ToggleHotOrNot(thread.SingleMessageSpecialCase ());
             ConfigureToolbar ();
         }
 
@@ -902,17 +905,17 @@ namespace NachoClient.iOS
                 return;
             }
             if (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded == statusEvent.Status.SubKind) {
-                Log.Info (Log.LOG_EMAIL, "EmailMessageBodyDownloadSucceeded");
-                if (bodyView.WasDownloadStartedAndNowComplete ()) {
-                    bodyView.DownloadComplete (true);
+                var token = s.Tokens.FirstOrDefault ();
+                Log.Info (Log.LOG_EMAIL, "EmailMessageBodyDownloadSucceeded {0}", token);
+                if (bodyView.DownloadComplete (true, token)) {
                     ConfigureAndLayout ();
                     MarkAsRead ();
                 }
             }
             if (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed == statusEvent.Status.SubKind) {
-                Log.Info (Log.LOG_EMAIL, "EmailMessageBodyDownloadFailed");
-                if (bodyView.WasDownloadStartedAndNowComplete ()) {
-                    bodyView.DownloadComplete (false);
+                var token = s.Tokens.FirstOrDefault ();
+                Log.Info (Log.LOG_EMAIL, "EmailMessageBodyDownloadFailed {0}", token);
+                if (bodyView.DownloadComplete (false, token)) {
                     ConfigureAndLayout ();
                 }
             }

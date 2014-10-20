@@ -105,9 +105,6 @@ namespace NachoClient.iOS
             }
             set {
                 ShowsHorizontalScrollIndicator = value;
-                if (!VerticalScrollingEnabled && !HorizontalScrollingEnabled) {
-                    //ScrollEnabled = false;
-                }
             }
         }
 
@@ -117,9 +114,6 @@ namespace NachoClient.iOS
             }
             set {
                 ShowsVerticalScrollIndicator = value;
-                if (!VerticalScrollingEnabled && !HorizontalScrollingEnabled) {
-                    //ScrollEnabled = false;
-                }
             }
         }
 
@@ -133,7 +127,6 @@ namespace NachoClient.iOS
 
         protected UIView parentView;
         protected UIView messageView;
-        protected UITapGestureRecognizer doubleTap;
         protected LoadState loadState;
         protected UIActivityIndicatorView spinner;
         protected BodyWebView webView;
@@ -141,7 +134,6 @@ namespace NachoClient.iOS
 
         protected McAbstrItem abstrItem;
         protected string downloadToken;
-        protected PointF dragStartingOffset;
 
         public new float MinimumZoomScale {
             get {
@@ -176,40 +168,27 @@ namespace NachoClient.iOS
             this.parentView = parentView;
             BackgroundColor = SCROLLVIEW_BGCOLOR;
             Frame = initialFrame;
-            DidZoom += (object sender, EventArgs e) => {
-                Log.Info (Log.LOG_UI, "body view scroll view did zoom");
-            };
             MinimumZoomScale = 1.0f;
-            MaximumZoomScale = 4.0f;
+            MaximumZoomScale = 1.0f;
+
             ViewForZoomingInScrollView = delegate {
                 return messageView;
             };
-            ZoomingStarted += delegate(object sender, UIScrollViewZoomingEventArgs e) {
-                if (null != OnRenderStart) {
-                    OnRenderStart ();
-                }
-            };
-            ZoomingEnded += delegate(object sender, ZoomingEndedEventArgs e) {
-                Log.Debug (Log.LOG_UI, "body view scrollview zoomed (AtScale={0})", e.AtScale);
-                if (null != OnRenderComplete) {
-                    OnRenderComplete ();
-                }
-            };
-
-            // doubleTap handles zoom in and out
-            doubleTap = new UITapGestureRecognizer ();
-            doubleTap.NumberOfTapsRequired = 2;
-            doubleTap.AddTarget (this, new MonoTouch.ObjCRuntime.Selector ("DoubleTapSelector:"));
-            doubleTap.ShouldRecognizeSimultaneously = delegate {
-                return true;
-            };
+            // TODO - Scrolling and zooming was originally planned but after
+            // the 2nd version of BodyView, the scrolling is either entirely disabled
+            // (in hot list) or completely delegated to the parent view (message view).
+            // Hence, the base class UIScrollView is no longer used. It is conceivable
+            // that we enable scrolling (and zooming) for hot list eventually so this
+            // is kept around but disabled for now.
+            DidZoom += OnDidZoom;
+            ZoomingStarted += OnZoomingStarted;
+            ZoomingEnded += OnZoomingEnded;
 
             // messageView contains all content views of the body
             messageView = new UIView ();
             ViewHelper.SetDebugBorder (messageView, MESSAGEVIEW_BDCOLOR);
             messageView.BackgroundColor = MESSAGEVIEW_BGCOLOR;
             messageView.Frame = ViewHelper.InnerFrameWithInset(Frame, MESSAGEVIEW_INSET);
-            messageView.AddGestureRecognizer (doubleTap);
             AddSubview (messageView);
 
             // spinner indicates download activity
@@ -223,6 +202,7 @@ namespace NachoClient.iOS
         {
             abstrItem = item;
             downloadToken = null;
+            ZoomScale = 1.0f;
 
             PointF center = !SpinnerCenteredOnParentFrame ? Center : Superview.Center;
             center.X -= Frame.X;
@@ -241,8 +221,7 @@ namespace NachoClient.iOS
                 }
                 webView.Dispose ();
             }
-            webView = new BodyWebView (this, htmlLeftMargin);
-            webView.ScrollingEnabled = (HorizontalScrollingEnabled && VerticalScrollingEnabled);
+            webView = new BodyWebView (messageView, htmlLeftMargin);
 
             if (item.IsDownloaded ()) {
                 loadState = LoadState.IDLE;
@@ -298,6 +277,21 @@ namespace NachoClient.iOS
             //    var UID = Util.GlobalObjIdToUID (message.MeetingRequest.GlobalObjId);
             //    MakeStyledCalendarInvite (UID, message.Subject, message.MeetingRequest.AllDayEvent, message.MeetingRequest.StartTime, message.MeetingRequest.EndTime, message.MeetingRequest.Location, view);
             //}
+        }
+
+        private void OnDidZoom (object sender, EventArgs e)
+        {
+            throw new NotImplementedException ();
+        }
+
+        private void OnZoomingStarted (object sender, UIScrollViewZoomingEventArgs e)
+        {
+            throw new NotImplementedException ();
+        }
+
+        private void OnZoomingEnded (object sender, ZoomingEndedEventArgs e)
+        {
+            throw new NotImplementedException ();
         }
 
         protected void IterateAllRenderSubViews (IterateCallback callback)
@@ -453,10 +447,6 @@ namespace NachoClient.iOS
                 }
             };
             webView.OnRenderComplete = (float minimumZoomScale) => {
-                MinimumZoomScale = minimumZoomScale;
-                if (AutomaticallyScaleHtmlContent && (minimumZoomScale < 1.0)) {
-                    SetZoomScale (ZoomOutScale (), false);
-                }
                 if (null != OnRenderComplete) {
                     OnRenderComplete ();
                 }
@@ -471,29 +461,6 @@ namespace NachoClient.iOS
             var calView = new BodyCalendarView (this);
             calView.Configure (part);
             messageView.AddSubview (calView);
-        }
-
-        float ZoomOutScale ()
-        {
-            // Minimum zoom scale should scale the content to just a bit narrower
-            // than the bounding frame. However, scaling to this value often results
-            // in unreadable content. So, we lower bound the zoom out scale to 0.7.
-            return Math.Max (0.7f, MinimumZoomScale);
-        }
-
-        float ZoomInScale ()
-        {
-            return 2.0f * ZoomOutScale ();
-        }
-
-        [MonoTouch.Foundation.Export ("DoubleTapSelector:")]
-        public void OnDoubleTap (UIGestureRecognizer sender)
-        {
-            if (ZoomScale == ZoomOutScale ()) {
-                SetZoomScale (ZoomInScale (), true);
-            } else {
-                SetZoomScale (ZoomOutScale (), true);
-            }
         }
 
         public void Layout (float X, float Y, float width, float height)
@@ -519,8 +486,8 @@ namespace NachoClient.iOS
             });
 
             // Decide the message view size based on the bounding frame.
-            messageWidth = Math.Max (width, messageView.Frame.Width);
-            messageHeight = Math.Max (height, messageView.Frame.Height);
+            messageWidth = Math.Max (width - 2 * MESSAGEVIEW_INSET, messageView.Frame.Width);
+            messageHeight = Math.Max (height - 2 * MESSAGEVIEW_INSET, messageView.Frame.Height);
             ViewFramer.Create (messageView)
                 .Width (messageWidth)
                 .Height (messageHeight);
@@ -536,13 +503,20 @@ namespace NachoClient.iOS
             Console.WriteLine (LayoutInfo ());
         }
 
-        // FIXME: Null return might be body already downloaded, so check it again
         protected void StartDownload ()
         {
             downloadToken = BackEnd.Instance.DnldEmailBodyCmd (abstrItem.AccountId, abstrItem.Id);
             if (null != downloadToken) {
                 BackEnd.Instance.Prioritize (abstrItem.AccountId, downloadToken);
             } else {
+                var newAbstrItem = ReReadItem ();
+                if ((null == newAbstrItem) || newAbstrItem.IsDownloaded ()) {
+                    // Download must have complete in the window from it was checked to
+                    // download command here is issued. Must have a status indication
+                    // pending to stop the spinner or remove the item from UI. Just need
+                    // to not print error message
+                    return;
+                }
                 // Duplicate download command returns the first (highest priority)
                 // download's token. So, a null really means something has gone wrong.
                 Log.Warn (Log.LOG_UI, "Fail to start download for message {0} in account {1}",
@@ -569,10 +543,14 @@ namespace NachoClient.iOS
             }
         }
 
-        public void DownloadComplete (bool succeed)
+        public bool DownloadComplete (bool succeed, string token)
         {
+            if (token != downloadToken) {
+                return false; // indication for a different message
+            }
             loadState = succeed ? LoadState.IDLE : LoadState.ERROR;
             spinner.StopAnimating ();
+            return true;
         }
 
         public bool WasDownloadStartedAndNowComplete ()
@@ -580,15 +558,9 @@ namespace NachoClient.iOS
             if (LoadState.LOADING != loadState) {
                 return false;
             }
-            // Read the item again to get the new body state
-            McAbstrItem newAbstrItem;
-            string className = abstrItem.GetType ().Name;
-            switch (className) {
-            case "McEmailMessage":
-                newAbstrItem = (McAbstrItem)McEmailMessage.QueryById<McEmailMessage> (abstrItem.Id);
-                break;
-            default:
-                throw new NcAssert.NachoDefaultCaseFailure (String.Format("Unhandled class type {0}", className));
+            var newAbstrItem = ReReadItem ();
+            if (null == newAbstrItem) {
+                return false; // must have been deleted
             }
             return newAbstrItem.IsDownloaded ();
         }
@@ -604,10 +576,10 @@ namespace NachoClient.iOS
         public string LayoutInfo ()
         {
             string desc = "\n";
-            desc += String.Format ("scrollView: frame=({0},{1})  content=({0},{1})\n",
-                Frame.Width, Frame.Height, ContentSize.Width, ContentSize.Height);
-            desc += String.Format ("  messageView: offset=({0},{1})  frame=({2},{3})\n",
-                Frame.X, Frame.Y, Frame.Width, Frame.Height);
+            desc += String.Format ("scrollView: offset={0}  frame={1}  content={2}\n",
+                Pretty.PointF(Frame.Location), Pretty.SizeF(Frame.Size), Pretty.SizeF(ContentSize));
+            desc += String.Format ("  messageView: offset={0}  frame={1}\n",
+                Pretty.PointF (messageView.Frame.Location), Pretty.SizeF (messageView.Frame.Size));
             foreach (var subview in messageView.Subviews) {
                 if ((int)TagType.MESSAGE_PART_TAG != subview.Tag) {
                     continue;
@@ -622,9 +594,6 @@ namespace NachoClient.iOS
         public void ScrollTo (PointF contentOffset)
         {
             PointF subviewOffset = new PointF (contentOffset.X, contentOffset.Y);
-            // Process the offset in the base scroll view
-            //SetContentOffset (contentOffset, false);
- 
             IterateAllRenderSubViews ((UIView subview) => {
                 IBodyRender renderView = subview as IBodyRender;
                 NcAssert.True (null != renderView);
@@ -653,6 +622,20 @@ namespace NachoClient.iOS
                 y = renderView.ContentSize.Height;
             }
             return new PointF (x, y);
+        }
+
+        protected McAbstrItem ReReadItem ()
+        {
+            McAbstrItem newAbstrItem;
+            string className = abstrItem.GetType ().Name;
+            switch (className) {
+            case "McEmailMessage":
+                newAbstrItem = (McAbstrItem)McEmailMessage.QueryById<McEmailMessage> (abstrItem.Id);
+                break;
+            default:
+                throw new NcAssert.NachoDefaultCaseFailure (String.Format("Unhandled class type {0}", className));
+            }
+            return newAbstrItem;
         }
     }
 }

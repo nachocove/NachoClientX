@@ -53,6 +53,17 @@ namespace NachoCore.Model
                 accountId, serverId).SingleOrDefault ();
         }
 
+        public static IEnumerable<T> QueryByServerIdMult<T> (int accountId, string serverId) where T : McAbstrFolderEntry, new()
+        {
+            return NcModel.Instance.Db.Query<T> (
+                string.Format ("SELECT f.* FROM {0} AS f WHERE " +
+                    " f.AccountId = ? AND " + 
+                    " f.IsAwaitingDelete = 0 AND " +
+                    " f.ServerId = ? ", 
+                    typeof(T).Name), 
+                accountId, serverId);
+        }
+
         public static McAbstrFolderEntry QueryAllForServerId (int accountId, string serverId)
         {
             List<McAbstrFolderEntry> folderEntries = new List<McAbstrFolderEntry>();
