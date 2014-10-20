@@ -127,7 +127,6 @@ namespace NachoClient.iOS
 
         protected UIView parentView;
         protected UIView messageView;
-        protected UITapGestureRecognizer doubleTap;
         protected LoadState loadState;
         protected UIActivityIndicatorView spinner;
         protected BodyWebView webView;
@@ -185,20 +184,11 @@ namespace NachoClient.iOS
             ZoomingStarted += OnZoomingStarted;
             ZoomingEnded += OnZoomingEnded;
 
-            // doubleTap handles zoom in and out
-            doubleTap = new UITapGestureRecognizer ();
-            doubleTap.NumberOfTapsRequired = 2;
-            doubleTap.AddTarget (this, new MonoTouch.ObjCRuntime.Selector ("DoubleTapSelector:"));
-            doubleTap.ShouldRecognizeSimultaneously = delegate {
-                return true;
-            };
-
             // messageView contains all content views of the body
             messageView = new UIView ();
             ViewHelper.SetDebugBorder (messageView, MESSAGEVIEW_BDCOLOR);
             messageView.BackgroundColor = MESSAGEVIEW_BGCOLOR;
             messageView.Frame = ViewHelper.InnerFrameWithInset(Frame, MESSAGEVIEW_INSET);
-            messageView.AddGestureRecognizer (doubleTap);
             AddSubview (messageView);
 
             // spinner indicates download activity
@@ -457,10 +447,6 @@ namespace NachoClient.iOS
                 }
             };
             webView.OnRenderComplete = (float minimumZoomScale) => {
-                MinimumZoomScale = minimumZoomScale;
-                if (AutomaticallyScaleHtmlContent && (minimumZoomScale < 1.0)) {
-                    SetZoomScale (ZoomOutScale (), false);
-                }
                 if (null != OnRenderComplete) {
                     OnRenderComplete ();
                 }
@@ -475,29 +461,6 @@ namespace NachoClient.iOS
             var calView = new BodyCalendarView (this);
             calView.Configure (part);
             messageView.AddSubview (calView);
-        }
-
-        float ZoomOutScale ()
-        {
-            // Minimum zoom scale should scale the content to just a bit narrower
-            // than the bounding frame. However, scaling to this value often results
-            // in unreadable content. So, we lower bound the zoom out scale to 0.7.
-            return Math.Max (0.7f, MinimumZoomScale);
-        }
-
-        float ZoomInScale ()
-        {
-            return 2.0f * ZoomOutScale ();
-        }
-
-        [MonoTouch.Foundation.Export ("DoubleTapSelector:")]
-        public void OnDoubleTap (UIGestureRecognizer sender)
-        {
-            if (ZoomScale == ZoomOutScale ()) {
-                SetZoomScale (ZoomInScale (), true);
-            } else {
-                SetZoomScale (ZoomOutScale (), true);
-            }
         }
 
         public void Layout (float X, float Y, float width, float height)
