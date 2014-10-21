@@ -11,10 +11,6 @@ namespace NachoPlatform
         private static volatile Notif instance;
         private static object syncRoot = new Object();
 
-        private Notif ()
-        {
-        }
-
         public static Notif Instance
         {
             get 
@@ -30,6 +26,9 @@ namespace NachoPlatform
                 return instance;
             }
         }
+
+        public int MaxScheduledCount { get { return 10000; /* FIXME */} }
+        public int ScheduledCount { get { return 0; /* FIXME */} }
 
         public void ScheduleNotif (int handle, DateTime when, string message)
         {

@@ -44,6 +44,9 @@ namespace NachoPlatform
             return null;
         }
 
+        public int MaxScheduledCount { get { return 63; } }
+        public int ScheduledCount { get { return UIApplication.SharedApplication.ScheduledLocalNotifications.Length; } }
+
         public void ScheduleNotif (int handle, DateTime when, string message)
         {
             InvokeOnUIThread.Instance.Invoke (delegate {

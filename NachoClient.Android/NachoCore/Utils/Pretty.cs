@@ -307,7 +307,9 @@ namespace NachoCore.Utils
         public static string FormatAlert (uint alert)
         {
             var alertMessage = "";
-            if (1 == alert) {
+            if (0 == alert) {
+                alertMessage = " now";
+            } else if (1 == alert) {
                 alertMessage = " in a minute";
             } else if (5 == alert || 15 == alert || 30 == alert) {
                 alertMessage = " in " + alert + " minutes";
