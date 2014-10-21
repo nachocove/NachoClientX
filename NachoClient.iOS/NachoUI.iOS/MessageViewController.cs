@@ -173,8 +173,6 @@ namespace NachoClient.iOS
             FetchAttachments ();
             CreateView ();
 
-            MarkAsRead ();
-
             Util.HideBlackNavigationControllerLine (NavigationController.NavigationBar);
         }
 
@@ -856,8 +854,9 @@ namespace NachoClient.iOS
 
         protected void RenderBody (McEmailMessage message)
         {
-            bodyView.Configure (message);
-
+            if (bodyView.Configure (message)) {
+                MarkAsRead ();
+            }
         }
 
         protected void ConfigureAttachments ()

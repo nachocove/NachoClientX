@@ -198,7 +198,7 @@ namespace NachoClient.iOS
             AddSubview (spinner);
         }
 
-        public void Configure (McAbstrItem item)
+        public bool Configure (McAbstrItem item)
         {
             abstrItem = item;
             downloadToken = null;
@@ -231,7 +231,7 @@ namespace NachoClient.iOS
                     Log.Info (Log.LOG_UI, "Previous download resulted in error");
                     RenderPartialDownloadMessage ("[ Message preview only. Tap here to download ]");
                     RenderTextString (item.GetBodyPreviewOrEmpty ());
-                    return;
+                    return false;
                 }
                 if (!item.IsDownloaded ()) {
                     Log.Info (Log.LOG_UI, "Starting download of whole message body");
@@ -246,13 +246,13 @@ namespace NachoClient.iOS
                         }
                     }
                     IndicateDownloadStarted ();
-                    return;
+                    return false;
                 }
             }
 
             var bodyPath = item.GetBodyPath ();
             if (null == bodyPath) {
-                return;
+                return false;
             }
             switch (item.GetBodyType ()) {
             case McBody.PlainText:
@@ -277,6 +277,8 @@ namespace NachoClient.iOS
             //    var UID = Util.GlobalObjIdToUID (message.MeetingRequest.GlobalObjId);
             //    MakeStyledCalendarInvite (UID, message.Subject, message.MeetingRequest.AllDayEvent, message.MeetingRequest.StartTime, message.MeetingRequest.EndTime, message.MeetingRequest.Location, view);
             //}
+
+            return true;
         }
 
         private void OnDidZoom (object sender, EventArgs e)
