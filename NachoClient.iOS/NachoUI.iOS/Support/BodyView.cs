@@ -323,6 +323,7 @@ namespace NachoClient.iOS
             }
             catch (System.IO.IOException e) {
                 Log.DumpFileDescriptors ();
+                throw e;
             }
         }
 
