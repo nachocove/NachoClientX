@@ -367,7 +367,7 @@ namespace NachoClient.iOS
 
         protected void RenderAttributedString (NSAttributedString attributedString)
         {
-            var label = new BodyTextView (new RectangleF (leftMargin, 0.0f, 290.0f, 1.0f));
+            var label = new BodyTextView (messageView.Frame);
             label.Configure (attributedString);
             messageView.AddSubview (label);
         }
