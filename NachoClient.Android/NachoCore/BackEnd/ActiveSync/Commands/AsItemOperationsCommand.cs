@@ -140,7 +140,11 @@ namespace NachoCore.ActiveSync
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
         {
             var xmlStatus = doc.Root.Element (m_ns + Xml.ItemOperations.Status);
-            switch ((Xml.ItemOperations.StatusCode)Convert.ToUInt32 (xmlStatus.Value)) {
+            var outerStatus = (Xml.ItemOperations.StatusCode)uint.Parse (xmlStatus.Value);
+            if (Xml.ItemOperations.StatusCode.Success_1 != outerStatus) {
+                Log.Warn (Log.LOG_AS, "ItemOperations: Status {0}", outerStatus);
+            }
+            switch (outerStatus) {
             case Xml.ItemOperations.StatusCode.Success_1:
                 var xmlResponse = doc.Root.Element (m_ns + Xml.ItemOperations.Response);
                 var xmlFetches = xmlResponse.Elements (m_ns + Xml.ItemOperations.Fetch);
@@ -149,7 +153,11 @@ namespace NachoCore.ActiveSync
                     var xmlServerId = xmlFetch.Element (AirSyncNs + Xml.AirSync.ServerId);
                     var xmlProperties = xmlFetch.Element (m_ns + Xml.ItemOperations.Properties);
                     xmlStatus = xmlFetch.ElementAnyNs (Xml.ItemOperations.Status);
-                    switch ((Xml.ItemOperations.StatusCode)Convert.ToUInt32 (xmlStatus.Value)) {
+                    var innerStatus = (Xml.ItemOperations.StatusCode)uint.Parse (xmlStatus.Value);
+                    if (Xml.ItemOperations.StatusCode.Success_1 != innerStatus) {
+                        Log.Warn (Log.LOG_AS, "ItemOperations: Status {0}", innerStatus);
+                    }
+                    switch (innerStatus) {
                     case Xml.ItemOperations.StatusCode.Success_1:
                         if (null != xmlFileReference) {
                             // This means we are processing an AttachmentDownload response.
@@ -258,7 +266,7 @@ namespace NachoCore.ActiveSync
                         break;
 
                     default:
-                        Log.Error (Log.LOG_AS, "ItemOperations: Status {0}", xmlStatus.Value);
+                        Log.Error (Log.LOG_AS, "ItemOperations: unknown Status {0}", innerStatus);
                         break;
                     }
                 }

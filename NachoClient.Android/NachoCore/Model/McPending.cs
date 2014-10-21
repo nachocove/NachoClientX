@@ -450,13 +450,12 @@ namespace NachoCore.Model
             }
             State = StateEnum.Deleted;
             Update ();
-            Log.Info (Log.LOG_SYNC, "Pending:ResolveAsSuccess:{0}", Id);
+            Log.Info (Log.LOG_SYNC, "Pending:ResolveAsSuccess:{0}:{1}", Id, Token);
             // TODO: Find a clean way to send UpdateQ event to TL SM.
             UnblockSuccessors (StateEnum.Eligible);
             // Why update and then delete? I think we may want to defer deletion at some point.
             // If we do, then these are a good "log" of what has been done. So keep the records 
             // accurate.
-            Log.Info (Log.LOG_SYNC, "Pending:ResolveAsSuccess:{0}", Id);
             Delete ();
         }
 
@@ -466,7 +465,7 @@ namespace NachoCore.Model
             State = StateEnum.Deleted;
             // TODO: Status-ind for successors as well.
             UnblockSuccessors (StateEnum.Deleted);
-            Log.Info (Log.LOG_SYNC, "Pending:ResolveAsCancelled:{0}", Id);
+            Log.Info (Log.LOG_SYNC, "Pending:ResolveAsCancelled:{0}:{1}", Id, Token);
             Delete ();
         }
 
@@ -488,7 +487,7 @@ namespace NachoCore.Model
             Update ();
             // TODO: Status-ind for successors as well.
             UnblockSuccessors (StateEnum.Failed);
-            Log.Info (Log.LOG_SYNC, "Pending:ResolveAsHardFail:{0}", Id);
+            Log.Info (Log.LOG_SYNC, "Pending:ResolveAsHardFail:{0}:{1}", Id, Token);
         }
 
         private NcResult.SubKindEnum DefaultErrorSubKind ()
@@ -566,9 +565,10 @@ namespace NachoCore.Model
                 if (0 == remaining.Count ()) {
                     succ.State = toState;
                     succ.Update ();
-                    Log.Info (Log.LOG_SYNC, "Pending:UnblockSuccessors:{0}=>{1} now {2}", Id, succ.Id, toState.ToString ());
+                    Log.Info (Log.LOG_SYNC, "Pending:UnblockSuccessors:{0}/{1} => {2} now {3}", Id, Token, succ.Id, toState.ToString ());
                     if (StateEnum.Deleted == toState) {
                         // TODO: we need to status-ind for successor.
+                        Log.Info (Log.LOG_SYNC, "Pending:UnblockSuccessors: Deleting {0}/{1}", Id, Token);
                         succ.Delete ();
                     }
                 }
@@ -630,7 +630,7 @@ namespace NachoCore.Model
                 DeferredReason = reason;
                 State = StateEnum.Deferred;
                 Update ();
-                Log.Info (Log.LOG_SYNC, "Pending:ResolveAsDeferred:{0}", Id);
+                Log.Info (Log.LOG_SYNC, "Pending:ResolveAsDeferred:{0}:{1}", Id, Token);
             }
         }
 
@@ -665,7 +665,7 @@ namespace NachoCore.Model
             control.StatusInd (result, new [] { Token });
             State = StateEnum.UserBlocked;
             Update ();
-            Log.Info (Log.LOG_SYNC, "Pending:ResolveAsUserBlocked:{0}", Id);
+            Log.Info (Log.LOG_SYNC, "Pending:ResolveAsUserBlocked:{0}:{1}", Id, Token);
         }
 
         public void ResolveAsUserBlocked (ProtoControl control, BlockReasonEnum reason, NcResult.WhyEnum why)

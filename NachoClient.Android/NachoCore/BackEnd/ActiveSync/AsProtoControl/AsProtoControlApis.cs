@@ -453,9 +453,11 @@ namespace NachoCore.ActiveSync
             McEmailMessage emailMessage;
             McFolder folder;
             if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder)) {
+                Log.Error (Log.LOG_AS, "DnldEmailBodyCmd: can't find McEmailMessage and/or McFolder");
                 return null;
             }
             if (McAbstrItem.BodyStateEnum.Whole_0 == emailMessage.BodyState) {
+                Log.Error (Log.LOG_AS, "DnldEmailBodyCmd: BodyState is Whole");
                 return null;
             }
             var pending = new McPending (Account.Id) {
@@ -467,6 +469,7 @@ namespace NachoCore.ActiveSync
             McPending dup;
             if (pending.IsDuplicate (out dup)) {
                 // TODO: Insert but have the result of the 1st duplicate trigger the same result events for all duplicates.
+                Log.Info (Log.LOG_AS, "DnldEmailBodyCmd: IsDuplicate of Id/Token {0}/{1}", dup.Id, dup.Token);
                 return dup.Token;
             }
 
