@@ -465,8 +465,20 @@ namespace NachoClient.iOS
             messageView.AddSubview (calView);
         }
 
-        public void Layout (float X, float Y, float width, float height)
+        public void Layout (float X, float Y, float width, float height, bool adjustFrame = false)
         {
+            if (adjustFrame) {
+                // This option is for event view. In which, the event description is almost certainly
+                // small and there is no need to implement a complicate scrolling mechanism. So,
+                // we can just scale each rendering view frame to the content size and
+                // adjust the body view frame size at the end.
+                IterateAllRenderSubViews ((UIView subview) => {
+                    ViewFramer.Create(subview)
+                        .Size (subview.SizeThatFits (subview.Frame.Size));
+                    return true;
+                });
+            }
+
             // Layout all message parts in messageView
             var messageCursor = new VerticalLayoutCursor (messageView);
             messageCursor.IteratorSubviewsWithFilter ((v) => {
@@ -497,9 +509,16 @@ namespace NachoClient.iOS
             ContentSize = new SizeF (contentWidth, contentHeight);
 
             // Put the view at the right location
-            ViewFramer.Create (this)
+            ViewFramer framer = ViewFramer.Create (this);
+            framer
                 .X (X)
                 .Y (Y);
+
+            if (adjustFrame) {
+                framer
+                    .Width (messageCursor.MaxSubViewWidth)
+                    .Height (messageCursor.TotalHeight);
+            }
 
             Console.WriteLine ("BODYVIEW LAYOUT");
             Console.WriteLine (LayoutInfo ());

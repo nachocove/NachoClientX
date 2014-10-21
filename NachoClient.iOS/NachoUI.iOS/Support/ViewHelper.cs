@@ -276,6 +276,13 @@ namespace NachoClient.iOS
             return MayUpdate ();
         }
 
+        public ViewFramer Size (SizeF size)
+        {
+            Frame.Width = size.Width;
+            Frame.Height = size.Height;
+            return MayUpdate ();
+        }
+
         public ViewFramer Update ()
         {
             View.Frame = Frame;
