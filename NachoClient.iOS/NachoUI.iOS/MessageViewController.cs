@@ -504,7 +504,7 @@ namespace NachoClient.iOS
             bodyHeight -= separator2View.Frame.Bottom;
             bodyHeight -= attachmentListView.Frame.Height;
             float bodyY = Math.Max(scrollView.ContentOffset.Y, separator2YOffset + 1);
-            bodyView.Layout (VIEW_INSET, y, view.Frame.Width - 2 * BodyView.BODYVIEW_INSET, bodyHeight);
+            bodyView.Layout (VIEW_INSET, bodyY, view.Frame.Width - 2 * BodyView.BODYVIEW_INSET, bodyHeight);
 
             float viewWidth = scrollView.Frame.Width - 2 * VIEW_INSET;
             float viewHeight = separator2YOffset;
@@ -513,7 +513,7 @@ namespace NachoClient.iOS
             viewHeight = Math.Max (viewHeight, scrollView.Frame.Height);
             view.Frame = new RectangleF (
                 VIEW_INSET + scrollView.ContentOffset.X, VIEW_INSET,
-                viewWidth, viewHight);
+                viewWidth, viewHeight);
             scrollView.ContentSize = new SizeF (
                 Math.Max (view.Frame.Width, bodyView.ContentSize.Width + 12.0f),
                 separator2YOffset + bodyView.ContentSize.Height);
@@ -905,7 +905,7 @@ namespace NachoClient.iOS
                 return;
             }
             if (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded == statusEvent.Status.SubKind) {
-                var token = s.Tokens.FirstOrDefault ();
+                var token = statusEvent.Tokens.FirstOrDefault ();
                 Log.Info (Log.LOG_EMAIL, "EmailMessageBodyDownloadSucceeded {0}", token);
                 if (bodyView.DownloadComplete (true, token)) {
                     ConfigureAndLayout ();
@@ -913,7 +913,7 @@ namespace NachoClient.iOS
                 }
             }
             if (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed == statusEvent.Status.SubKind) {
-                var token = s.Tokens.FirstOrDefault ();
+                var token = statusEvent.Tokens.FirstOrDefault ();
                 Log.Info (Log.LOG_EMAIL, "EmailMessageBodyDownloadFailed {0}", token);
                 if (bodyView.DownloadComplete (false, token)) {
                     ConfigureAndLayout ();
