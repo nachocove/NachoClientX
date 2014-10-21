@@ -689,7 +689,6 @@ namespace NachoCore.ActiveSync
                     new Node {
                         State = (uint)Lst.IdleW,
                         Drop = new [] {
-                            (uint)CtlEvt.E.PendQ,
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
                             (uint)CtlEvt.E.UiSetCred,
@@ -713,6 +712,7 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
                             new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)CtlEvt.E.PendQ, Act = DoPick, State = (uint)Lst.Pick },
                             new Trans { Event = (uint)CtlEvt.E.PendQHot, Act = DoPick, State = (uint)Lst.Pick },
                             new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
                         }
