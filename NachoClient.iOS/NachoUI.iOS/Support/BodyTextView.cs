@@ -53,8 +53,8 @@ namespace NachoClient.iOS
         public override void SizeToFit ()
         {
             // Intentionally disable SizeToFit(). By allowing the base class SizeToFit() to
-            // take effect, it will create a UIWebView with its frame equal to the content size
-            // for large HTML email, it will consume a lot of memory. And ViewHelper.LayoutCursor
+            // take effect, it will create a UITextView with its frame equal to the content size
+            // for large text email, it will consume a lot of memory. And ViewHelper.LayoutCursor
             // always call SizeToFit(). So, we need to disable it.
             base.ContentSize = SizeThatFits (Frame.Size);
         }
