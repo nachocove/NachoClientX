@@ -170,6 +170,7 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcAssert.cs">
       <Link>NachoCore\Utils\NcAssert.cs</Link>
     </Compile>
+    <Compile Include="MockNachoPlatformBinding.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
