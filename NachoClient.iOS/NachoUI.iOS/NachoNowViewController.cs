@@ -259,6 +259,7 @@ namespace NachoClient.iOS
                 }
                 var bodyView = currentView.ViewWithTag (HotListCarouselDataSource.PREVIEW_TAG) as BodyView;
                 if (null == bodyView) {
+                    NcAssert.True (HotListCarouselDataSource.PLACEHOLDER_TAG == currentView.Tag);
                     continue; // might be a placeholder view
                 }
                 // To avoid unnecessary reload, we only reload if the current item was downloading

@@ -18,6 +18,7 @@ namespace NachoClient.iOS
 {
     public class HotListCarouselDataSource : iCarouselDataSource
     {
+        public const int PLACEHOLDER_TAG = -1;
         protected const int USER_IMAGE_TAG = 101;
         protected const int FROM_TAG = 102;
         protected const int SUBJECT_TAG = 103;
@@ -497,11 +498,11 @@ namespace NachoClient.iOS
                 l.BackgroundColor = UIColor.White;
                 l.TextAlignment = UITextAlignment.Center;
                 l.Font = l.Font.WithSize (20f);
-                l.Tag = 1;
+                l.Tag = PLACEHOLDER_TAG;
                 v.AddSubview (l);
                 view = v;
             }
-            var label = (UILabel)view.ViewWithTag (1);
+            var label = (UILabel)view.ViewWithTag (PLACEHOLDER_TAG);
             label.Text = "No hot items!";
 
             return view;
