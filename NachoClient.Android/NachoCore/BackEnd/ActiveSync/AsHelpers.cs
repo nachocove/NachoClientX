@@ -35,7 +35,11 @@ namespace NachoCore.ActiveSync
                     item.BodyId = body.Id;
                 }
                 item.BodyType = bodyType;
-                item.BodyState = (null == xmlTruncated) ? McAbstrItem.BodyStateEnum.Whole_0 : McAbstrItem.BodyStateEnum.Truncated_1;
+                if ((null != xmlTruncated) && ToBoolean (xmlTruncated.Value)) {
+                    item.BodyState = McAbstrItem.BodyStateEnum.Truncated_1;
+                } else {
+                    item.BodyState = McAbstrItem.BodyStateEnum.Whole_0;
+                }
             } else {
                 item.BodyId = 0;
                 item.BodyState = McAbstrItem.BodyStateEnum.Missing_2;
@@ -108,7 +112,7 @@ namespace NachoCore.ActiveSync
                 xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.Reminder, cal.Reminder));
             }
 
-             xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.Timezone, cal.TimeZone));
+            xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.Timezone, cal.TimeZone));
 
             if (null != cal.Subject) {
                 xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.Subject, cal.Subject));
