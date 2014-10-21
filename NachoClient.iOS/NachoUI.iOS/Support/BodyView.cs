@@ -524,8 +524,7 @@ namespace NachoClient.iOS
                     .Height (messageCursor.TotalHeight);
             }
 
-            Console.WriteLine ("BODYVIEW LAYOUT");
-            Console.WriteLine (LayoutInfo ());
+            Log.Info (Log.LOG_UI, "BODYVIEW LAYOUT{0}", LayoutInfo ());
         }
 
         protected void StartDownload ()
