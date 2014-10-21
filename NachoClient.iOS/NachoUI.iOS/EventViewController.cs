@@ -690,7 +690,7 @@ namespace NachoClient.iOS
             yOffset += tl.Frame.Height;
 
             yOffset += 5;
-            descriptionView.Layout (0, yOffset, SCREEN_WIDTH - 2 * BodyView.BODYVIEW_INSET, 10);
+            descriptionView.Layout (0, yOffset, SCREEN_WIDTH - 2 * BodyView.BODYVIEW_INSET, 10, true);
             yOffset += descriptionView.Frame.Height;
 
             yOffset += 10;
