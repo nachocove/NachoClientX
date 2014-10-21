@@ -488,6 +488,7 @@ namespace NachoClient.iOS
                 var f = carousel.Frame;
                 var frame = new RectangleF (f.X, f.Y, f.Width - 30.0f, f.Height - 30.0f);
                 var v = new UIView (frame);
+                v.Tag = PLACEHOLDER_TAG;
                 v.ContentMode = UIViewContentMode.Center;
                 v.BackgroundColor = UIColor.Blue;
                 v.Layer.CornerRadius = 5;
@@ -498,11 +499,11 @@ namespace NachoClient.iOS
                 l.BackgroundColor = UIColor.White;
                 l.TextAlignment = UITextAlignment.Center;
                 l.Font = l.Font.WithSize (20f);
-                l.Tag = PLACEHOLDER_TAG;
+                l.Tag = 1;
                 v.AddSubview (l);
                 view = v;
             }
-            var label = (UILabel)view.ViewWithTag (PLACEHOLDER_TAG);
+            var label = (UILabel)view.ViewWithTag (1);
             label.Text = "No hot items!";
 
             return view;
