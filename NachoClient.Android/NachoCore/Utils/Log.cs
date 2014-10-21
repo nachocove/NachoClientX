@@ -9,6 +9,7 @@ using System.IO;
 using System.Reflection;
 using System.Threading;
 using NachoCore.Utils;
+using NachoPlatformBinding;
 
 namespace NachoCore.Utils
 {
@@ -356,6 +357,18 @@ namespace NachoCore.Utils
         public static void Error (ulong subsystem, string fmt, params object[] list)
         {
             Log.SharedInstance.Error (subsystem, fmt, list);
+        }
+
+        public static void DumpFileDescriptors ()
+        {
+            int numFd = PlatformProcess.GetCurrentNumberOfFileDescriptors ();
+            for (int fd = 0; fd < numFd; fd++) {
+                var path = PlatformProcess.GetFileNameForDescriptor (fd);
+                if (null == path) {
+                    continue;
+                }
+                Log.Warn (Log.LOG_SYS, "fd {0}: {1}", fd, path);
+            }
         }
 
         // This is for testing only
