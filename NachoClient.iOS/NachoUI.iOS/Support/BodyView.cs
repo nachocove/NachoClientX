@@ -311,13 +311,19 @@ namespace NachoClient.iOS
 
         protected void RenderMime (string bodyPath)
         {
-            using (var bodySource = new FileStream (bodyPath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
-                var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
-                var mime = bodyParser.ParseMessage ();
-                MimeHelpers.DumpMessage (mime, 0);
-                var list = new List<MimeEntity> ();
-                MimeHelpers.MimeDisplayList (mime, ref list);
-                RenderDisplayList (list);
+            try {
+                using (var bodySource = new FileStream (bodyPath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                    var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
+                    var mime = bodyParser.ParseMessage ();
+                    MimeHelpers.DumpMessage (mime, 0);
+                    var list = new List<MimeEntity> ();
+                    MimeHelpers.MimeDisplayList (mime, ref list);
+                    RenderDisplayList (list);
+                }
+            }
+            catch (System.IO.IOException e) {
+                Log.DumpFileDescriptors ();
+                throw e;
             }
         }
 
