@@ -430,7 +430,9 @@ namespace NachoClient.iOS
 
             ConfigureAttachments ();
 
-            bodyView.Configure (message);
+            if (bodyView.Configure (message)) {
+                MarkAsRead ();
+            }
 
             deferLayout.Decrement ();
         }
@@ -529,12 +531,6 @@ namespace NachoClient.iOS
             if (null != TabBarController) {
                 ViewFramer.Create (View).AdjustHeight (TabBarController.TabBar.Frame.Height);
             }
-        }
-
-        public override void ViewDidLoad ()
-        {
-            base.ViewDidLoad ();
-            MarkAsRead ();
         }
 
         public override void ViewWillAppear (bool animated)

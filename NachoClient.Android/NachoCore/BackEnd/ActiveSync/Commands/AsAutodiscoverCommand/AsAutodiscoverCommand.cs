@@ -363,12 +363,32 @@ namespace NachoCore.ActiveSync
             Sm.Validate ();
         }
 
+        // TODO: replace this code with data that gets pushed to the app.
+        private string KnownServer (string domain)
+        {
+            switch (domain) {
+            case "outlook.com":
+            case "live.com":
+            case "hotmail.com":
+                return "s.outlook.com";
+            }
+            return null;
+        }
+
         public override void Execute (NcStateMachine ownerSm)
         {
             OwnerSm = ownerSm;
             Sm.Name = OwnerSm.Name + ":AUTOD";
             Domain = DomainFromEmailAddr (BEContext.Account.EmailAddr);
             BaseDomain = NachoPlatform.RegDom.Instance.RegDomFromFqdn (Domain);
+            var known = KnownServer (Domain);
+            if (null != known) {
+                var server = new McServer () {
+                    AccountId = Account.Id,
+                    Host = known,
+                };
+                server.Insert ();
+            }
             if (null == BEContext.Server || true == BEContext.Server.UsedBefore) {
                 Sm.Start ();
             } else {

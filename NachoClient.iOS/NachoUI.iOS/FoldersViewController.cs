@@ -588,7 +588,7 @@ namespace NachoClient.iOS
         public void CreateNestedFolderList ()
         {
             foreach (var folder in foldersToMcFolders) {
-                if (Int32.Parse (folder.ParentId) == 0) {
+                if (McFolder.AsRootServerId == folder.ParentId) {
                     int folderID = folder.Id;
                     string fname = folder.DisplayName;
                     Xml.FolderHierarchy.TypeCode ftype = folder.Type;

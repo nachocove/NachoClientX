@@ -74,13 +74,16 @@ namespace NachoClient.iOS
     public class BodyView : UIScrollView
     {
         public delegate void RenderStart ();
+
         public delegate void RenderComplete ();
+
         public delegate void DownloadStart ();
 
-        public enum TagType {
+        public enum TagType
+        {
             MESSAGE_PART_TAG = 300,
             DOWNLOAD_TAG = 304,
-            SPINNER_TAG = 600
+            SPINNER_TAG = 600,
         };
 
         protected delegate bool IterateCallback (UIView subview);
@@ -93,10 +96,14 @@ namespace NachoClient.iOS
         public const int MESSAGEVIEW_INSET = 1;
         public const int BODYVIEW_INSET = 1;
 
-        protected enum LoadState {
-            IDLE,    // body is already there
-            LOADING, // body is being loaded
-            ERROR    // body was being loaded
+        protected enum LoadState
+        {
+            // body is already there
+            IDLE,
+            // body is being loaded
+            LOADING,
+            // body was being loaded
+            ERROR
         }
 
         public bool HorizontalScrollingEnabled {
@@ -127,11 +134,10 @@ namespace NachoClient.iOS
 
         protected UIView parentView;
         protected UIView messageView;
-        protected LoadState loadState;
         protected UIActivityIndicatorView spinner;
         protected BodyWebView webView;
-        protected PointF scrollStartingOffset;
 
+        protected LoadState loadState;
         protected McAbstrItem abstrItem;
         protected string downloadToken;
 
@@ -150,7 +156,7 @@ namespace NachoClient.iOS
         public DownloadStart OnDownloadStart;
 
         public BodyView (RectangleF initialFrame, UIView parentView)
-            : this(initialFrame, parentView, 15, 0)
+            : this (initialFrame, parentView, 15, 0)
         {
         }
 
@@ -188,7 +194,7 @@ namespace NachoClient.iOS
             messageView = new UIView ();
             ViewHelper.SetDebugBorder (messageView, MESSAGEVIEW_BDCOLOR);
             messageView.BackgroundColor = MESSAGEVIEW_BGCOLOR;
-            messageView.Frame = ViewHelper.InnerFrameWithInset(Frame, MESSAGEVIEW_INSET);
+            messageView.Frame = ViewHelper.InnerFrameWithInset (Frame, MESSAGEVIEW_INSET);
             AddSubview (messageView);
 
             // spinner indicates download activity
@@ -198,10 +204,11 @@ namespace NachoClient.iOS
             AddSubview (spinner);
         }
 
-        public void Configure (McAbstrItem item)
+        public bool Configure (McAbstrItem item)
         {
             abstrItem = item;
             downloadToken = null;
+            loadState = LoadState.IDLE;
             ZoomScale = 1.0f;
 
             PointF center = !SpinnerCenteredOnParentFrame ? Center : Superview.Center;
@@ -213,8 +220,9 @@ namespace NachoClient.iOS
             for (int i = messageView.Subviews.Length - 1; i >= 0; i--) {
                 messageView.Subviews [i].RemoveFromSuperview ();
             }
-            // Web view consumes a lot of memory. We manually dispose it to force all ObjC
-            // objects to be freed.
+
+            // Web view consumes a lot of memory.
+            // We manually dispose it to force all ObjCobjects to be freed.
             if (null != webView) {
                 if (webView.IsLoading) {
                     webView.StopLoading ();
@@ -223,36 +231,27 @@ namespace NachoClient.iOS
             }
             webView = new BodyWebView (messageView, htmlLeftMargin);
 
-            if (item.IsDownloaded ()) {
-                loadState = LoadState.IDLE;
-                spinner.StopAnimating ();
-            } else {
-                if (LoadState.ERROR == loadState) {
-                    Log.Info (Log.LOG_UI, "Previous download resulted in error");
-                    RenderPartialDownloadMessage ("[ Message preview only. Tap here to download ]");
-                    RenderTextString (item.GetBodyPreviewOrEmpty ());
-                    return;
-                }
-                if (!item.IsDownloaded ()) {
-                    Log.Info (Log.LOG_UI, "Starting download of whole message body");
-                    if (LoadState.LOADING != loadState) {
-                        switch (item.GetType ().Name) {
-                        case "McEmailMessage":
-                            StartDownload ();
-                            break;
-                        default:
-                            var msg = String.Format ("unhandle abstract item type {0}", item.GetType ().Name);
-                            throw new NcAssert.NachoDefaultCaseFailure (msg);
-                        }
-                    }
+            // If the body isn't downloaded,
+            // start the download and return.
+            if (!item.IsDownloaded ()) {
+                Log.Info (Log.LOG_UI, "Starting download of whole message body");
+                switch (item.GetType ().Name) {
+                case "McEmailMessage":
                     IndicateDownloadStarted ();
-                    return;
+                    StartDownload ();
+                    break;
+                default:
+                    var msg = String.Format ("unhandle abstract item type {0}", item.GetType ().Name);
+                    throw new NcAssert.NachoDefaultCaseFailure (msg);
                 }
+                return false;
             }
+
+            spinner.StopAnimating ();
 
             var bodyPath = item.GetBodyPath ();
             if (null == bodyPath) {
-                return;
+                return false;
             }
             switch (item.GetBodyType ()) {
             case McBody.PlainText:
@@ -277,6 +276,8 @@ namespace NachoClient.iOS
             //    var UID = Util.GlobalObjIdToUID (message.MeetingRequest.GlobalObjId);
             //    MakeStyledCalendarInvite (UID, message.Subject, message.MeetingRequest.AllDayEvent, message.MeetingRequest.StartTime, message.MeetingRequest.EndTime, message.MeetingRequest.Location, view);
             //}
+
+            return true;
         }
 
         private void OnDidZoom (object sender, EventArgs e)
@@ -309,13 +310,18 @@ namespace NachoClient.iOS
 
         protected void RenderMime (string bodyPath)
         {
-            using (var bodySource = new FileStream (bodyPath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
-                var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
-                var mime = bodyParser.ParseMessage ();
-                MimeHelpers.DumpMessage (mime, 0);
-                var list = new List<MimeEntity> ();
-                MimeHelpers.MimeDisplayList (mime, ref list);
-                RenderDisplayList (list);
+            try {
+                using (var bodySource = new FileStream (bodyPath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                    var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
+                    var mime = bodyParser.ParseMessage ();
+                    MimeHelpers.DumpMessage (mime, 0);
+                    var list = new List<MimeEntity> ();
+                    MimeHelpers.MimeDisplayList (mime, ref list);
+                    RenderDisplayList (list);
+                }
+            } catch (System.IO.IOException e) {
+                Log.DumpFileDescriptors ();
+                throw e;
             }
         }
 
@@ -365,7 +371,7 @@ namespace NachoClient.iOS
 
         protected void RenderAttributedString (NSAttributedString attributedString)
         {
-            var label = new BodyTextView (new RectangleF (leftMargin, 0.0f, 290.0f, 1.0f));
+            var label = new BodyTextView (messageView.Frame);
             label.Configure (attributedString);
             messageView.AddSubview (label);
         }
@@ -480,7 +486,7 @@ namespace NachoClient.iOS
 
                 IBodyRender renderView = subview as IBodyRender;
                 contentHeight += renderView.ContentSize.Height;
-                contentWidth = Math.Max(contentWidth, renderView.ContentSize.Width);
+                contentWidth = Math.Max (contentWidth, renderView.ContentSize.Width);
 
                 return true;
             });
@@ -577,7 +583,7 @@ namespace NachoClient.iOS
         {
             string desc = "\n";
             desc += String.Format ("scrollView: offset={0}  frame={1}  content={2}\n",
-                Pretty.PointF(Frame.Location), Pretty.SizeF(Frame.Size), Pretty.SizeF(ContentSize));
+                Pretty.PointF (Frame.Location), Pretty.SizeF (Frame.Size), Pretty.SizeF (ContentSize));
             desc += String.Format ("  messageView: offset={0}  frame={1}\n",
                 Pretty.PointF (messageView.Frame.Location), Pretty.SizeF (messageView.Frame.Size));
             foreach (var subview in messageView.Subviews) {
@@ -597,7 +603,7 @@ namespace NachoClient.iOS
             IterateAllRenderSubViews ((UIView subview) => {
                 IBodyRender renderView = subview as IBodyRender;
                 NcAssert.True (null != renderView);
-                PointF clippedOffset = ClipContentOffset(subview, subviewOffset);
+                PointF clippedOffset = ClipContentOffset (subview, subviewOffset);
                 renderView.ScrollTo (clippedOffset);
                 subviewOffset.Y -= renderView.ContentSize.Height;
                 return true;
@@ -633,7 +639,7 @@ namespace NachoClient.iOS
                 newAbstrItem = (McAbstrItem)McEmailMessage.QueryById<McEmailMessage> (abstrItem.Id);
                 break;
             default:
-                throw new NcAssert.NachoDefaultCaseFailure (String.Format("Unhandled class type {0}", className));
+                throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unhandled class type {0}", className));
             }
             return newAbstrItem;
         }

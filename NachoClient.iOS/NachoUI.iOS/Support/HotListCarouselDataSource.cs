@@ -18,6 +18,7 @@ namespace NachoClient.iOS
 {
     public class HotListCarouselDataSource : iCarouselDataSource
     {
+        public const int PLACEHOLDER_TAG = -1;
         protected const int USER_IMAGE_TAG = 101;
         protected const int FROM_TAG = 102;
         protected const int SUBJECT_TAG = 103;
@@ -487,6 +488,7 @@ namespace NachoClient.iOS
                 var f = carousel.Frame;
                 var frame = new RectangleF (f.X, f.Y, f.Width - 30.0f, f.Height - 30.0f);
                 var v = new UIView (frame);
+                v.Tag = PLACEHOLDER_TAG;
                 v.ContentMode = UIViewContentMode.Center;
                 v.BackgroundColor = UIColor.Blue;
                 v.Layer.CornerRadius = 5;

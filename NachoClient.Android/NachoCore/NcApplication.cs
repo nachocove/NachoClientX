@@ -165,6 +165,7 @@ namespace NachoCore
         private NcTimer Class4LateShowTimer;
 
         public event EventHandler Class4LateShowEvent;
+        public event EventHandler MonitorEvent;
 
         public static NcApplication Instance {
             get {
@@ -302,6 +303,9 @@ namespace NachoCore
                 NcCommStatus.Instance.Status, NcCommStatus.Instance.Speed);
             Log.Info (Log.LOG_SYS, "Monitor: Battery Level {0}, Plugged Status {1}",
                 NachoPlatform.Power.Instance.BatteryLevel, NachoPlatform.Power.Instance.PowerState);
+            if (null != MonitorEvent) {
+                MonitorEvent (this, EventArgs.Empty);
+            }
         }
 
         public void EstablishService ()

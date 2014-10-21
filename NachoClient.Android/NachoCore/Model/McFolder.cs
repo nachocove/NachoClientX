@@ -311,9 +311,8 @@ namespace NachoCore.Model
             }
         }
 
-        public override int Delete ()
+        public void DeleteItems ()
         {
-            // Delete anything in the folder and any sub-folders/map entries (recursively).
             var contentMaps = McMapFolderFolderEntry.QueryByFolderId (AccountId, Id);
             foreach (var map in contentMaps) {
                 map.Delete ();
@@ -347,6 +346,13 @@ namespace NachoCore.Model
                     break;
                 }
             }
+        }
+
+        public override int Delete ()
+        {
+            // Delete anything in the folder and any sub-folders/map entries (recursively).
+            DeleteItems ();
+
             // Delete any sub-folders.
             var subs = McFolder.QueryByParentId (AccountId, ServerId);
             foreach (var sub in subs) {
@@ -417,16 +423,27 @@ namespace NachoCore.Model
             }
         }
 
-        public static void AsResetState (int accountId)
+        public void UpdateAsResetState ()
         {
-            var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
+            // TODO - would be nice to let the user see old contents (read-only) until next sync comes in.
+            AsSyncKey = AsSyncKey_Initial;
+            AsSyncMetaToClientExpected = true;
+            NcModel.Instance.RunInTransaction (() => {
+                Update ();
+                DeleteItems ();
+            });
+        }
+
+        public static void UpdateAsResetState (int accountId)
+        {
+            NcModel.Instance.RunInTransaction (() => {
+                var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
                           " f.AccountId = ? ",
                               accountId);
-            foreach (var folder in folders) {
-                folder.AsSyncKey = AsSyncKey_Initial;
-                folder.AsSyncMetaToClientExpected = true;
-                folder.Update ();
-            }
+                foreach (var folder in folders) {
+                    folder.UpdateAsResetState ();
+                }
+            });
         }
 
         public override ClassCodeEnum GetClassCode ()
