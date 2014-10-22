@@ -742,17 +742,23 @@ namespace NachoCore.Utils
 
                 // Send it to the telemetry server
                 transactionTime.Start ();
-                BackEnd.SendEvent (tEvent);
+                bool succeed = BackEnd.SendEvent (tEvent);
                 transactionTime.Stop ();
                 transactionTime.Reset ();
 
-                // If it is a support, make the callback.
-                if (tEvent.IsSupportEvent () && (null != tEvent.Callback)) {
-                    InvokeOnUIThread.Instance.Invoke (tEvent.Callback);
-                }
+                if (succeed) {
+                    // If it is a support, make the callback.
+                    if (tEvent.IsSupportEvent () && (null != tEvent.Callback)) {
+                        InvokeOnUIThread.Instance.Invoke (tEvent.Callback);
+                    }
 
-                if (null != dbEvent) {
-                    dbEvent.Delete ();
+                    if (null != dbEvent) {
+                        dbEvent.Delete ();
+                    }
+                } else {
+                    // Log only to console. Logging telemetry failures to telemetry is
+                    // a vicious cycle.
+                    Console.WriteLine ("fail to reach telemetry server");
                 }
             }
         }
@@ -774,6 +780,6 @@ namespace NachoCore.Utils
 
         string GetUserName ();
 
-        void SendEvent (TelemetryEvent tEvent);
+        bool SendEvent (TelemetryEvent tEvent);
     }
 }
