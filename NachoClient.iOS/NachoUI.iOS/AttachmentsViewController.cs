@@ -244,26 +244,6 @@ namespace NachoClient.iOS
             NavigationItem.Title = "Files";
             FilesSource.Items = McAbstrFileDesc.GetAllFiles (account.Id);
 
-            foreach (var item in FilesSource.Items) {
-                if (0 == item.FileType) {
-                    var attachment = McAttachment.QueryById<McAttachment> (item.Id);
-                    switch (attachment.ClassCode) {
-                    case McAbstrFolderEntry.ClassCodeEnum.Email:
-                        var email = McEmailMessage.QueryById<McEmailMessage> (attachment.ItemId);
-                        item.CreatedAt = email.DateReceived;
-                        item.Contact = Pretty.SenderString (email.From);
-                        break;
-                    case McAbstrFolderEntry.ClassCodeEnum.Calendar:
-                        var calendar = McCalendar.QueryById<McCalendar> (attachment.ItemId);
-                        item.CreatedAt = calendar.CreatedAt;
-                        item.Contact = Pretty.OrganizerString (calendar.OrganizerName);
-                        break;
-                    }
-                } else {
-                    item.Contact = "Me";
-                }
-            }
-
             switch (segmentedControl.SelectedSegment) {
             case 0:
                 break;
@@ -330,18 +310,21 @@ namespace NachoClient.iOS
 
         public void DeleteAttachment (McAttachment attachment)
         {
-            if (attachment.IsInline) {
-                UIAlertView alert = new UIAlertView (
-                                        "File is Inline", 
-                                        "Attachments that are contained within the body of an email cannot be deleted", 
-                                        null, 
-                                        "OK"
-                                    );
-                alert.Show ();
-            } else {
-                attachment.DeleteFile ();
-                RefreshTableSource ();
+            if (null != attachment) {
+                if (attachment.IsInline) {
+                    UIAlertView alert = new UIAlertView (
+                                            "File is Inline", 
+                                            "Attachments that are contained within the body of an email cannot be deleted", 
+                                            null, 
+                                            "OK"
+                                        );
+                    alert.Show ();
+                } else {
+                    attachment.DeleteFile ();
+                
+                }
             }
+            RefreshTableSource ();
         }
 
         public override void ViewDidLayoutSubviews ()
@@ -359,7 +342,9 @@ namespace NachoClient.iOS
 
         public void DeleteDocument (McDocument document)
         {
-            document.Delete ();
+            if (null != document) {
+                document.Delete ();
+            }
             RefreshTableSource ();
         }
 
@@ -568,7 +553,7 @@ namespace NachoClient.iOS
                     ConfigureSwipes (cell as MCSwipeTableViewCell, item);
                     break;
                 case 1:
-                    cell = FormatNoteCell (cell, McNote.QueryById<McNote> (item.Id));
+                    cell = FormatNoteCell (cell, item);
                     break;
                 case 2:
                     cell = FormatDocumentCell (cell, McDocument.QueryById<McDocument> (item.Id));
@@ -603,41 +588,43 @@ namespace NachoClient.iOS
 
             private UITableViewCell FormatAttachmentCell (UITableViewCell cell, McAttachment attachment, NcFileIndex item)
             {
-                // sanitize file name so that /'s in display name don't cause formatting issues in the cells
-                string displayName = attachment.DisplayName.SantizeFileName ();
-                CellLabel (cell, Path.GetFileNameWithoutExtension (displayName));
+                if (null != attachment) {
+                    CellLabel (cell, Path.GetFileNameWithoutExtension (item.DisplayName)); 
 
-                var detailText = "";
-                if (attachment.IsInline) {
-                    detailText += "Inline ";
-                }
-                string extension = Path.GetExtension (attachment.DisplayName).ToUpper ();
-                detailText += extension.Length > 1 ? extension.Substring (1) + " " : "Unrecognized "; // get rid of period and format
-                detailText += "file";
-                CellDetailLabel (cell, detailText, item.CreatedAt, attachment.FileSize);
-                CellDownloadAnimationView (cell);
+                    var detailText = "";
+                    if (attachment.IsInline) {
+                        detailText += "Inline ";
+                    }
+                    string extension = Path.GetExtension (attachment.DisplayName).ToUpper ();
+                    detailText += extension.Length > 1 ? extension.Substring (1) + " " : "Unrecognized "; // get rid of period and format
+                    detailText += "file";
+                    CellDetailLabel (cell, detailText, item.CreatedAt, attachment.FileSize);
+                    CellDownloadAnimationView (cell);
 
-                var iv = cell.ViewWithTag (DOWNLOAD_IMAGEVIEW_TAG) as UIImageView;
-                if (McAbstrFileDesc.FilePresenceEnum.Complete == attachment.FilePresence || attachment.IsInline) {
-                    iv.Image = UIImage.FromFile (DownloadCompleteIcon);
-                } else if (McAbstrFileDesc.FilePresenceEnum.Partial == attachment.FilePresence) {
-                    vc.AttachmentAction (attachment.Id, cell);
+                    var iv = cell.ViewWithTag (DOWNLOAD_IMAGEVIEW_TAG) as UIImageView;
+                    if (McAbstrFileDesc.FilePresenceEnum.Complete == attachment.FilePresence || attachment.IsInline) {
+                        iv.Image = UIImage.FromFile (DownloadCompleteIcon);
+                    } else if (McAbstrFileDesc.FilePresenceEnum.Partial == attachment.FilePresence) {
+                        vc.AttachmentAction (attachment.Id, cell);
+                    } else {
+                        iv.Image = UIImage.FromFile (DownloadIcon);
+                    }
+
+                    if (detailText.Contains ("JPG") || detailText.Contains ("JPEG")
+                        || detailText.Contains ("TIFF") || detailText.Contains ("PNG")
+                        || detailText.Contains ("GIF") || detailText.Contains ("RAW")) {
+                        cell.ImageView.Image = UIImage.FromBundle ("email-att-photos");
+                    } else {
+                        cell.ImageView.Image = UIImage.FromBundle ("email-att-files");
+                    }
                 } else {
-                    iv.Image = UIImage.FromFile (DownloadIcon);
-                }
-
-                if (detailText.Contains ("JPG") || detailText.Contains ("JPEG")
-                    || detailText.Contains ("TIFF") || detailText.Contains ("PNG")
-                    || detailText.Contains ("GIF") || detailText.Contains ("RAW")) {
-                    cell.ImageView.Image = UIImage.FromBundle ("email-att-photos");
-                } else {
-                    cell.ImageView.Image = UIImage.FromBundle ("email-att-files");
+                    CellLabel (cell, "File no longer exists"); 
                 }
 
                 return cell;
             }
 
-            private UITableViewCell FormatNoteCell (UITableViewCell cell, McNote note)
+            private UITableViewCell FormatNoteCell (UITableViewCell cell, NcFileIndex note)
             {
                 CellLabel (cell, note.DisplayName);
                 CellDetailLabel (cell, "Note", note.CreatedAt, 0);
@@ -650,9 +637,13 @@ namespace NachoClient.iOS
 
             private UITableViewCell FormatDocumentCell (UITableViewCell cell, McDocument document)
             {
-                CellLabel (cell, document.DisplayName);
-                CellDetailLabel (cell, document.SourceApplication, document.CreatedAt, document.FileSize);
-                cell.ImageView.Image = UIImage.FromFile (DownloadCompleteIcon);
+                if (null != document) {
+                    CellLabel (cell, document.DisplayName);
+                    CellDetailLabel (cell, document.SourceApplication, document.CreatedAt, document.FileSize);
+                    cell.ImageView.Image = UIImage.FromFile (DownloadCompleteIcon);
+                } else {
+                    CellLabel (cell, "File no longer exists"); 
+                }
                 return cell;
             }
 
@@ -679,10 +670,14 @@ namespace NachoClient.iOS
                 label.Tag = DETAIL_TEXT_LABEL_TAG;
                 label.Font = A.Font_AvenirNextRegular14;
                 label.TextColor = A.Color_NachoTextGray;
+                string dateText = "Date unknown";
+                if (date != DateTime.MinValue) {
+                    dateText = Pretty.CompactDateString (date);
+                }
                 if (0 != fileSize) {
-                    label.Text = Pretty.CompactDateString (date) + " - " + fileType + " - " + Pretty.PrettyFileSize (fileSize);
+                    label.Text = dateText + " - " + fileType + " - " + Pretty.PrettyFileSize (fileSize);
                 } else {
-                    label.Text = Pretty.CompactDateString (date) + " - " + fileType;
+                    label.Text = dateText + " - " + fileType;
                 }
                 label.Frame = new RectangleF (54, 11 + 19.5f, cell.Frame.Width - 54 - 54, 19.5f);
                 cell.Add (label);
@@ -705,17 +700,23 @@ namespace NachoClient.iOS
 
                 switch (item.FileType) {
                 case 0:
-                    McAttachment att = McAttachment.QueryById<McAttachment> (item.Id);
+                    McAttachment attachment = McAttachment.QueryById<McAttachment> (item.Id);
                     UITableViewCell cell = tableView.CellAt (indexPath);
-                    vc.AttachmentAction (att.Id, cell);
+                    if (null != attachment) {
+                        vc.AttachmentAction (attachment.Id, cell);
+                    }
                     break;
                 case 1:
                     McNote note = McNote.QueryById<McNote> (item.Id);
-                    vc.NoteAction (note);
+                    if (null != note) {
+                        vc.NoteAction (note);
+                    }
                     break;
                 case 2:
                     McDocument document = McDocument.QueryById<McDocument> (item.Id);
-                    vc.DocumentAction (document);
+                    if (null != document) {
+                        vc.DocumentAction (document);
+                    }
                     break;
                 }
 
@@ -745,7 +746,9 @@ namespace NachoClient.iOS
                     cell.SetSwipeGestureWithView (forwardView, greenColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State1, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
                         if (item.FileType == 0) {
                             McAttachment attachment = McAttachment.QueryById<McAttachment> (item.Id);
-                            vc.ForwardAttachment (attachment, cell);
+                            if (null != attachment) {
+                                vc.ForwardAttachment (attachment, cell);
+                            }
                         }
                         return;
                     });
@@ -769,7 +772,9 @@ namespace NachoClient.iOS
                     cell.SetSwipeGestureWithView (previewView, yellowColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State3, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
                         if (item.FileType == 0) {
                             McAttachment attachment = McAttachment.QueryById<McAttachment> (item.Id);
-                            vc.AttachmentAction (attachment.Id, cell);
+                            if (null != attachment) {
+                                vc.AttachmentAction (attachment.Id, cell);
+                            }
                         }
                         return;
                     });
@@ -778,7 +783,9 @@ namespace NachoClient.iOS
                     cell.SetSwipeGestureWithView (openView, brownColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State4, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
                         if (item.FileType == 0) {
                             McAttachment attachment = McAttachment.QueryById<McAttachment> (item.Id);
-                            vc.OpenInOtherApp (attachment, cell);
+                            if (null != attachment) {
+                                vc.OpenInOtherApp (attachment, cell);
+                            }
                         }
                         return;
                     });
@@ -939,7 +946,11 @@ namespace NachoClient.iOS
                     return 0;
                 }
                 if (BY_CONTACT_SEGMENT == segmentedIndex) {
-                    return 32;
+                    if (0 == section) {
+                        return 64;
+                    } else {
+                        return 32;
+                    }
                 } else {
                     return 0;
                 }
@@ -957,9 +968,13 @@ namespace NachoClient.iOS
                 var label = new UILabel ();
                 label.Font = A.Font_AvenirNextDemiBold17;
                 label.TextColor = A.Color_NachoDarkText;
-                label.Text = TitleForHeader (tableView, section);
+                label.Text = Pretty.SenderString (TitleForHeader (tableView, section));
                 label.SizeToFit ();
-                label.Center = new PointF (15 + (label.Frame.Width / 2), 16);
+                var yOffset = 16;
+                if (0 == section) {
+                    yOffset += 32;
+                }
+                label.Center = new PointF (15 + (label.Frame.Width / 2), yOffset);
                 view.AddSubview (label);
                 return view;
             }

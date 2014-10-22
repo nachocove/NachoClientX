@@ -284,10 +284,21 @@ namespace NachoCore.Model
         public static List<NcFileIndex> GetAllFiles (int accountId)
         {
             return (NcModel.Instance.Db.Query<NcFileIndex> (
-                "SELECT t1.Id, t1.DisplayName, t1.CreatedAt, t1.FileType " +
-                "FROM( SELECT Id, DisplayName, CreatedAt, 0 AS FileType FROM McAttachment WHERE AccountId=? " +
-                "UNION SELECT Id, DisplayName, CreatedAt, 1 AS FileType FROM McNote " +
-                "UNION SELECT Id, DisplayName, CreatedAt, 2 AS FileType FROM McDocument WHERE AccountId=? ) " +
+                "SELECT t1.Id, t1.DisplayName, t1.CreatedAt, t1.FileType, t1.Contact " +
+                "FROM(SELECT a.Id, a.DisplayName, e.DateReceived AS CreatedAt, 0 AS FileType, e.[From] AS Contact " +
+                "FROM McAttachment a, McEmailMessage e " +
+                "WHERE a.ItemId=e.Id AND a.AccountId=?" +
+                "UNION " +
+                "SELECT a.Id, a.DisplayName, c.CreatedAt AS CreatedAt, 0 AS FileType, c.OrganizerName AS Contact " +
+                "FROM McAttachment a, McCalendar c " +
+                "WHERE a.ItemId=c.Id AND a.AccountId=?" +
+                "UNION " +
+                "SELECT Id, DisplayName, CreatedAt, 1 AS FileType, 'Me' AS Contact " +
+                "FROM McNote " +
+                "UNION " +
+                "SELECT Id, DisplayName, CreatedAt, 2 AS FileType, 'Me' AS Contact " +
+                "FROM McDocument " +
+                "WHERE AccountId=?) " +
                 "t1 ORDER BY LOWER(t1.DisplayName) + 0, LOWER(t1.DisplayName)", accountId
             ));
         }
