@@ -297,14 +297,14 @@ namespace NachoCore
             return ServiceFromAccountId (accountId).MoveEmailCmd (emailMessageId, destFolderId);
         }
 
-        public string DnldAttCmd (int accountId, int attId)
+        public string DnldAttCmd (int accountId, int attId, bool doNotDefer = false)
         {
-            return ServiceFromAccountId (accountId).DnldAttCmd (attId);
+            return ServiceFromAccountId (accountId).DnldAttCmd (attId, doNotDefer);
         }
 
-        public string DnldEmailBodyCmd (int accountId, int emailMessageId)
+        public string DnldEmailBodyCmd (int accountId, int emailMessageId, bool doNotDefer = false)
         {
-            return ServiceFromAccountId (accountId).DnldEmailBodyCmd (emailMessageId);
+            return ServiceFromAccountId (accountId).DnldEmailBodyCmd (emailMessageId, doNotDefer);
         }
 
         public string CreateCalCmd (int accountId, int calId, int folderId)

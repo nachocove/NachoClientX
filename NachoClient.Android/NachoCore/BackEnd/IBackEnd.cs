@@ -75,9 +75,9 @@ namespace NachoCore
         // mark the flag as "done" for the server, and clear the values in the DB.
         string MarkEmailFlagDone (int accountId, int emailMessageId,
                             DateTime completeTime, DateTime dateCompleted);
-        string DnldEmailBodyCmd (int accountId, int emailMessageId);
+        string DnldEmailBodyCmd (int accountId, int emailMessageId, bool doNotDefer = false);
         // download an attachment. returns token that can be used to possibly cancel.
-        string DnldAttCmd (int accountId, int attId);
+        string DnldAttCmd (int accountId, int attId, bool doNotDefer = false);
         string CreateCalCmd (int accountId, int calId, int folderId);
         string UpdateCalCmd (int accountId, int calId);
         string DeleteCalCmd (int accountId, int calId);

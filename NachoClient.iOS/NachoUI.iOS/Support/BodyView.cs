@@ -529,7 +529,7 @@ namespace NachoClient.iOS
 
         protected void StartDownload ()
         {
-            downloadToken = BackEnd.Instance.DnldEmailBodyCmd (abstrItem.AccountId, abstrItem.Id);
+            downloadToken = BackEnd.Instance.DnldEmailBodyCmd (abstrItem.AccountId, abstrItem.Id, true);
             if (null != downloadToken) {
                 BackEnd.Instance.Prioritize (abstrItem.AccountId, downloadToken);
             } else {

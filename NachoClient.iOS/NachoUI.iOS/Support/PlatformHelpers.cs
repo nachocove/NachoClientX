@@ -151,7 +151,7 @@ namespace NachoClient
         public static string DownloadAttachment (McAttachment attachment)
         {
             if (McAbstrFileDesc.FilePresenceEnum.None == attachment.FilePresence) {
-                return BackEnd.Instance.DnldAttCmd (attachment.AccountId, attachment.Id);
+                return BackEnd.Instance.DnldAttCmd (attachment.AccountId, attachment.Id, true);
             } else if (McAbstrFileDesc.FilePresenceEnum.Partial == attachment.FilePresence) {
                 return McPending.QueryByAttachmentId (attachment.AccountId, attachment.Id).Token;
             } 

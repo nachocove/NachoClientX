@@ -576,6 +576,11 @@ namespace NachoCore.Model
             return (0 != successors.Count);
         }
 
+        public void DoNotDefer ()
+        {
+            DefersRemaining = 0;
+        }
+
         public static bool MakeEligibleOnFSync (int accountId)
         {
             var makeEligible = QueryDeferredFSync (accountId);

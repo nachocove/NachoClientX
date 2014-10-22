@@ -170,12 +170,12 @@ namespace NachoCore
             return null;
         }
 
-        public virtual string DnldEmailBodyCmd (int emailMessageId)
+        public virtual string DnldEmailBodyCmd (int emailMessageId, bool doNotDefer = false)
         {
             return null;
         }
 
-        public virtual string DnldAttCmd (int attId)
+        public virtual string DnldAttCmd (int attId, bool doNotDefer = false)
         {
             return null;
         }
