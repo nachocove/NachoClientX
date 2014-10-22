@@ -102,8 +102,8 @@ namespace NachoClient.iOS
 
         public void CreateView ()
         {
-            View.BackgroundColor = A.Color_NachoNowBackground;
-            contentView.BackgroundColor = A.Color_NachoNowBackground;
+            View.BackgroundColor = A.Color_NachoBackgroundGray;
+            contentView.BackgroundColor = A.Color_NachoBackgroundGray;
 
             navigationBar.Frame = new RectangleF (0, 0, View.Frame.Width, 64);
             navigationBar.Alpha = 1.0f;
