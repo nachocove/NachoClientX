@@ -253,15 +253,19 @@ namespace NachoClient.iOS
             var visibleIndices = carouselView.IndexesForVisibleItems;
             foreach (NSNumber nsIndex in visibleIndices) {
                 int index = nsIndex.IntValue;
+                // Ignore placeholders
+                if ((0 > index) || (carouselView.NumberOfItems <= index)) {
+                    continue;
+                }
                 var currentView = carouselView.ItemViewAtIndex (index);
                 if (null == currentView) {
                     continue;
                 }
-                var bodyView = currentView.ViewWithTag (HotListCarouselDataSource.PREVIEW_TAG) as BodyView;
-                if (null == bodyView) {
-                    NcAssert.True (HotListCarouselDataSource.PLACEHOLDER_TAG == currentView.Tag);
-                    continue; // might be a placeholder view
+                if (HotListCarouselDataSource.PLACEHOLDER_TAG == currentView.Tag) {
+                    continue;
                 }
+                var bodyView = currentView.ViewWithTag (HotListCarouselDataSource.PREVIEW_TAG) as BodyView;
+                NcAssert.True (null != bodyView);
                 // To avoid unnecessary reload, we only reload if the current item was downloading
                 // and the body is now completely downloaded.
                 if (!bodyView.DownloadComplete (succeed, token)) {
