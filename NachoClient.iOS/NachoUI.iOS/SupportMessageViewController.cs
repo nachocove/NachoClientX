@@ -17,7 +17,9 @@ namespace NachoClient.iOS
         protected static float CELL_HEIGHT = 44f;
         protected static float LINE_OFFSET = 30f;
         protected static float KEYBOARD_HEIGHT = 216f;
-        protected const float HORIZONTAL_PADDING = 15f;
+        protected const float HORIZONTAL_PADDING = 12f;
+        protected const float INDENT = 18f;
+
         protected const float VERTICAL_PADDING = 20f;
         protected float keyboardHeight;
 
@@ -120,18 +122,18 @@ namespace NachoClient.iOS
             sectionOneView.BackgroundColor = UIColor.White;
             sectionOneView.Layer.CornerRadius = 4;
 
-            UILabel sectionOneHeader = new UILabel (new RectangleF (HORIZONTAL_PADDING, 0, sectionOneView.Frame.Width - HORIZONTAL_PADDING, CELL_HEIGHT));
+            UILabel sectionOneHeader = new UILabel (new RectangleF (INDENT, 0, sectionOneView.Frame.Width - INDENT, CELL_HEIGHT));
             sectionOneHeader.Font = A.Font_AvenirNextRegular14;
             sectionOneHeader.TextColor = UIColor.DarkGray;
             sectionOneHeader.Text = "How can we reach you?";
             sectionOneHeader.TextAlignment = UITextAlignment.Left;
             sectionOneView.AddSubview (sectionOneHeader);
 
-            UIView sectionOneHR = new UIView (new RectangleF (HORIZONTAL_PADDING, sectionOneHeader.Frame.Bottom - .5f, sectionOneView.Frame.Width - HORIZONTAL_PADDING, .5f));
+            UIView sectionOneHR = new UIView (new RectangleF (INDENT, sectionOneHeader.Frame.Bottom - .5f, sectionOneView.Frame.Width - INDENT, .5f));
             sectionOneHR.BackgroundColor = A.Color_NachoBorderGray;
             sectionOneView.AddSubview (sectionOneHR);
 
-            UITextField sectionOneTextField = new UITextField (new RectangleF (HORIZONTAL_PADDING, sectionOneHR.Frame.Bottom, sectionOneView.Frame.Width - HORIZONTAL_PADDING, CELL_HEIGHT));
+            UITextField sectionOneTextField = new UITextField (new RectangleF (INDENT, sectionOneHR.Frame.Bottom, sectionOneView.Frame.Width - INDENT, CELL_HEIGHT));
             sectionOneTextField.Placeholder = "yourname@email.com";
             sectionOneTextField.BackgroundColor = sectionOneView.BackgroundColor;
             sectionOneTextField.Font = A.Font_AvenirNextMedium14;
@@ -151,18 +153,18 @@ namespace NachoClient.iOS
             sectionTwoView.BackgroundColor = UIColor.White;
             sectionTwoView.Layer.CornerRadius = 4;
 
-            UILabel sectionTwoHeader = new UILabel (new RectangleF (HORIZONTAL_PADDING, 0, sectionTwoView.Frame.Width - HORIZONTAL_PADDING, CELL_HEIGHT));
+            UILabel sectionTwoHeader = new UILabel (new RectangleF (INDENT, 0, sectionTwoView.Frame.Width - INDENT, CELL_HEIGHT));
             sectionTwoHeader.Font = A.Font_AvenirNextRegular14;
             sectionTwoHeader.TextColor = UIColor.DarkGray;
             sectionTwoHeader.Text = "What can we help you with?";
             sectionTwoHeader.TextAlignment = UITextAlignment.Left;
             sectionTwoView.AddSubview (sectionTwoHeader);
 
-            UIView sectionTwoHR = new UIView (new RectangleF (HORIZONTAL_PADDING, sectionTwoHeader.Frame.Bottom - .5f, sectionTwoView.Frame.Width - HORIZONTAL_PADDING, .5f));
+            UIView sectionTwoHR = new UIView (new RectangleF (INDENT, sectionTwoHeader.Frame.Bottom - .5f, sectionTwoView.Frame.Width - INDENT, .5f));
             sectionTwoHR.BackgroundColor = A.Color_NachoBorderGray;
             sectionTwoView.AddSubview (sectionTwoHR);
 
-            UITextView sectionTwoTextView = new UITextView (new RectangleF (HORIZONTAL_PADDING - 4, sectionTwoHR.Frame.Bottom, sectionTwoView.Frame.Width - HORIZONTAL_PADDING, sectionTwoView.Frame.Height - CELL_HEIGHT));
+            UITextView sectionTwoTextView = new UITextView (new RectangleF (INDENT - 4, sectionTwoHR.Frame.Bottom + 8, sectionTwoView.Frame.Width - INDENT, sectionTwoView.Frame.Height - CELL_HEIGHT - 8));
             sectionTwoTextView.Font = A.Font_AvenirNextMedium14;
             sectionTwoTextView.TextColor = UIColor.LightGray;
             sectionTwoTextView.Text = "Briefly describe what's going on";
