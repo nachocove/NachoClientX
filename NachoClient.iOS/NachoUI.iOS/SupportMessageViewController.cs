@@ -102,12 +102,8 @@ namespace NachoClient.iOS
 
         public void CreateView ()
         {
-            this.View.BackgroundColor = A.Color_NachoNowBackground;
+            View.BackgroundColor = A.Color_NachoNowBackground;
             contentView.BackgroundColor = A.Color_NachoNowBackground;
-
-            UITextField sectionOneTextField = new UITextField ();
-
-            yOffset = 0;
 
             navigationBar.Frame = new RectangleF (0, 0, View.Frame.Width, 64);
             navigationBar.Alpha = 1.0f;
@@ -118,7 +114,7 @@ namespace NachoClient.iOS
 
             yOffset = navigationBar.Frame.Bottom + VERTICAL_PADDING;
 
-            UIView sectionOneView = new UIView (new RectangleF (HORIZONTAL_PADDING, yOffset, View.Frame.Width - 30, 90));
+            UIView sectionOneView = new UIView (new RectangleF (HORIZONTAL_PADDING, yOffset, View.Frame.Width - (HORIZONTAL_PADDING * 2), CELL_HEIGHT * 2));
             sectionOneView.Layer.BorderWidth = .5f;
             sectionOneView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
             sectionOneView.BackgroundColor = UIColor.White;
@@ -135,14 +131,15 @@ namespace NachoClient.iOS
             sectionOneHR.BackgroundColor = A.Color_NachoBorderGray;
             sectionOneView.AddSubview (sectionOneHR);
 
-            sectionOneTextField.Frame = new RectangleF (HORIZONTAL_PADDING, sectionOneHR.Frame.Bottom, sectionOneView.Frame.Width - HORIZONTAL_PADDING, CELL_HEIGHT);
+            UITextField sectionOneTextField = new UITextField (new RectangleF (HORIZONTAL_PADDING, sectionOneHR.Frame.Bottom, sectionOneView.Frame.Width - HORIZONTAL_PADDING, CELL_HEIGHT));
             sectionOneTextField.Placeholder = "yourname@email.com";
             sectionOneTextField.BackgroundColor = sectionOneView.BackgroundColor;
-            sectionOneTextField.Font = A.Font_AvenirNextRegular14;
+            sectionOneTextField.Font = A.Font_AvenirNextMedium14;
             sectionOneTextField.KeyboardType = UIKeyboardType.EmailAddress;
             sectionOneTextField.AutocapitalizationType = UITextAutocapitalizationType.None;
             sectionOneTextField.AutocorrectionType = UITextAutocorrectionType.No;
             sectionOneTextField.Tag = CONTACT_TEXTFIELD_TAG;
+            sectionOneTextField.Layer.CornerRadius = 4f;
             sectionOneView.AddSubview (sectionOneTextField);
             contentView.AddSubview (sectionOneView);
 
@@ -166,9 +163,9 @@ namespace NachoClient.iOS
             sectionTwoView.AddSubview (sectionTwoHR);
 
             UITextView sectionTwoTextView = new UITextView (new RectangleF (HORIZONTAL_PADDING - 4, sectionTwoHR.Frame.Bottom, sectionTwoView.Frame.Width - HORIZONTAL_PADDING, sectionTwoView.Frame.Height - CELL_HEIGHT));
-            sectionTwoTextView.Font = A.Font_AvenirNextRegular14;
+            sectionTwoTextView.Font = A.Font_AvenirNextMedium14;
             sectionTwoTextView.TextColor = UIColor.LightGray;
-            sectionTwoTextView.Text = "Briefly describe what's going on...";
+            sectionTwoTextView.Text = "Briefly describe what's going on";
             sectionTwoTextView.Tag = MESSAGEBODY_VIEW_TAG;
             sectionTwoTextView.BackgroundColor = UIColor.White;
             sectionTwoTextView.ScrollEnabled = true;
