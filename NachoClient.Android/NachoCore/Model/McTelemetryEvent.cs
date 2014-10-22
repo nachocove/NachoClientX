@@ -53,7 +53,7 @@ namespace NachoCore.Model
         {
             List<McTelemetryEvent> eventList = 
                 NcModel.Instance.TeleDb.Query<McTelemetryEvent> (
-                    "SELECT * FROM McTelemetryEvent ORDER BY IsSupport DESC LIMIT 1;");
+                    "SELECT * FROM McTelemetryEvent ORDER BY IsSupport DESC, Id LIMIT 1;");
             if (1 == eventList.Count) {
                 return eventList [0];
             }

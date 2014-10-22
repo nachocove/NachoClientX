@@ -382,7 +382,7 @@ namespace NachoCore.ActiveSync
             Domain = DomainFromEmailAddr (BEContext.Account.EmailAddr);
             BaseDomain = NachoPlatform.RegDom.Instance.RegDomFromFqdn (Domain);
             var known = KnownServer (Domain);
-            if (null != known) {
+            if (null == BEContext.Server && null != known) {
                 var server = new McServer () {
                     AccountId = Account.Id,
                     Host = known,

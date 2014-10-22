@@ -71,6 +71,9 @@ namespace NachoClient.iOS
             // Create new view if no view is available for recycling
             if (view == null) {
                 view = CreateView (carousel);
+            } else {
+                // Make sure we're getting an item view
+                NcAssert.True(PLACEHOLDER_TAG != view.Tag);
             }
             ConfigureView (view, (int)index);
             return view;
@@ -244,7 +247,7 @@ namespace NachoClient.iOS
             view.AddSubview (toolbar);
 
             // more icon view
-            var moreView = new UIView(new RectangleF(17, frame.Height - 44 - 14 - 13, 18, 10));
+            var moreView = new UIView (new RectangleF (17, frame.Height - 44 - 14 - 13, 18, 10));
             moreView.BackgroundColor = UIColor.White;
             moreView.Layer.CornerRadius = 2;
             view.AddSubview (moreView);
@@ -278,7 +281,7 @@ namespace NachoClient.iOS
             if (null == message) {
                 return;
             }
-            NachoCore.Utils.ScoringHelpers.ToggleHotOrNot(message);
+            NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
             owner.priorityInbox.Refresh ();
             owner.ReloadHotListData ();
         }
@@ -369,7 +372,7 @@ namespace NachoClient.iOS
         /// Populate message cells with data, adjust sizes and visibility
         /// </summary>
         protected void ConfigureView (UIView view, int messageThreadIndex)
-        {           
+        { 
             // Save thread index
             view.Tag = messageThreadIndex;
             var messageThread = owner.priorityInbox.GetEmailThread (messageThreadIndex);
@@ -384,7 +387,6 @@ namespace NachoClient.iOS
                 HandleUnavailableMessage (view);
                 return;
             }
-
 
             var viewWidth = view.Frame.Width;
 
@@ -455,7 +457,7 @@ namespace NachoClient.iOS
             var attachmentImageView = view.ViewWithTag (ATTACHMENT_TAG) as UIImageView;
             attachmentImageView.Hidden = !message.cachedHasAttachments;
             var attachmentImageRect = attachmentImageView.Frame;
-            attachmentImageRect.X = receivedLabelView.Frame.Right + 10;;
+            attachmentImageRect.X = receivedLabelView.Frame.Right + 10;
             attachmentImageView.Frame = attachmentImageRect;
 
             // Chili image view - nothing to do. It is also shown
@@ -503,9 +505,9 @@ namespace NachoClient.iOS
                 v.AddSubview (l);
                 view = v;
             }
+            NcAssert.True (PLACEHOLDER_TAG == view.Tag);
             var label = (UILabel)view.ViewWithTag (1);
             label.Text = "No hot items!";
-
             return view;
         }
     }
@@ -527,7 +529,7 @@ namespace NachoClient.iOS
         public override void DidSelectItemAtIndex (iCarousel carousel, int index)
         {
             // Ignore placeholders
-            if ((0 > index) || (owner.priorityInbox.Count () <= index)) {
+            if ((0 > index) || (carousel.NumberOfItems <= index)) {
                 return;
             }
             var messageThread = owner.priorityInbox.GetEmailThread (index);
