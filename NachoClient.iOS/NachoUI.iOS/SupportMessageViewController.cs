@@ -124,7 +124,7 @@ namespace NachoClient.iOS
 
             UILabel sectionOneHeader = new UILabel (new RectangleF (INDENT, 0, sectionOneView.Frame.Width - INDENT, CELL_HEIGHT));
             sectionOneHeader.Font = A.Font_AvenirNextRegular14;
-            sectionOneHeader.TextColor = UIColor.DarkGray;
+            sectionOneHeader.TextColor = A.Color_NachoBlack;
             sectionOneHeader.Text = "How can we reach you?";
             sectionOneHeader.TextAlignment = UITextAlignment.Left;
             sectionOneView.AddSubview (sectionOneHeader);
@@ -155,7 +155,7 @@ namespace NachoClient.iOS
 
             UILabel sectionTwoHeader = new UILabel (new RectangleF (INDENT, 0, sectionTwoView.Frame.Width - INDENT, CELL_HEIGHT));
             sectionTwoHeader.Font = A.Font_AvenirNextRegular14;
-            sectionTwoHeader.TextColor = UIColor.DarkGray;
+            sectionTwoHeader.TextColor = A.Color_NachoBlack;
             sectionTwoHeader.Text = "What can we help you with?";
             sectionTwoHeader.TextAlignment = UITextAlignment.Left;
             sectionTwoView.AddSubview (sectionTwoHeader);
