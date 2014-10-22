@@ -71,6 +71,9 @@ namespace NachoClient.iOS
             // Create new view if no view is available for recycling
             if (view == null) {
                 view = CreateView (carousel);
+            } else {
+                // Make sure we're getting an item view
+                NcAssert.True(PLACEHOLDER_TAG != view.Tag);
             }
             ConfigureView (view, (int)index);
             return view;
