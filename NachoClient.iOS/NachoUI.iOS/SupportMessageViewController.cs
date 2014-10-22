@@ -131,11 +131,11 @@ namespace NachoClient.iOS
             sectionOneHeader.TextAlignment = UITextAlignment.Left;
             sectionOneView.AddSubview (sectionOneHeader);
 
-            UIView sectionOnHR = new UIView (new RectangleF (HORIZONTAL_PADDING, sectionOneHeader.Frame.Bottom - .5f, sectionOneView.Frame.Width - HORIZONTAL_PADDING, .5f));
-            sectionOnHR.BackgroundColor = A.Color_NachoBorderGray;
-            sectionOneView.AddSubview (sectionOnHR);
+            UIView sectionOneHR = new UIView (new RectangleF (HORIZONTAL_PADDING, sectionOneHeader.Frame.Bottom - .5f, sectionOneView.Frame.Width - HORIZONTAL_PADDING, .5f));
+            sectionOneHR.BackgroundColor = A.Color_NachoBorderGray;
+            sectionOneView.AddSubview (sectionOneHR);
 
-            sectionOneTextField.Frame = new RectangleF (HORIZONTAL_PADDING, sectionOnHR.Frame.Bottom, sectionOneView.Frame.Width - HORIZONTAL_PADDING, CELL_HEIGHT);
+            sectionOneTextField.Frame = new RectangleF (HORIZONTAL_PADDING, sectionOneHR.Frame.Bottom, sectionOneView.Frame.Width - HORIZONTAL_PADDING, CELL_HEIGHT);
             sectionOneTextField.Placeholder = "yourname@email.com";
             sectionOneTextField.BackgroundColor = sectionOneView.BackgroundColor;
             sectionOneTextField.Font = A.Font_AvenirNextRegular14;
