@@ -158,7 +158,7 @@ namespace NachoClient.iOS
             sectionTwoHeader.TextAlignment = UITextAlignment.Left;
             sectionTwoView.AddSubview (sectionTwoHeader);
 
-            UIView sectionTwoHR = new UIView (new RectangleF (HORIZONTAL_PADDING, sectionTwoHeader.Frame.Bottom - .5f, sectionTwoHeader.Frame.Width - HORIZONTAL_PADDING, .5f));
+            UIView sectionTwoHR = new UIView (new RectangleF (HORIZONTAL_PADDING, sectionTwoHeader.Frame.Bottom - .5f, sectionTwoView.Frame.Width - HORIZONTAL_PADDING, .5f));
             sectionTwoHR.BackgroundColor = A.Color_NachoBorderGray;
             sectionTwoView.AddSubview (sectionTwoHR);
 
