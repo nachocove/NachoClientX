@@ -403,6 +403,7 @@ namespace NachoCore.Utils
         private ITelemetryBE BackEnd;
 
         NcCounter[] Counters;
+        NcCounter FailToSend;
 
         public Telemetry ()
         {
@@ -426,6 +427,9 @@ namespace NachoCore.Utils
             }
             // Counter must be the last counter created!
             Counters [(int)TelemetryEventType.COUNTER] = Counters [0].AddChild ("COUNTER");
+
+            // Add other non-event type related counters
+            FailToSend = Counters [0].AddChild ("FAIL_TO_SEND");
         }
 
         // This is kind of a hack. When Telemetry is reporting the counter values,
@@ -759,6 +763,7 @@ namespace NachoCore.Utils
                     // Log only to console. Logging telemetry failures to telemetry is
                     // a vicious cycle.
                     Console.WriteLine ("fail to reach telemetry server");
+                    FailToSend.Click ();
                 }
             }
         }
