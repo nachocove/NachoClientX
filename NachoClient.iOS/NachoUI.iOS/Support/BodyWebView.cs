@@ -57,13 +57,15 @@ namespace NachoClient.iOS
 
             ViewFramer.Create (this)
                 .X (0)
-                .Y (0)
-                .Size (parentView.Frame.Size);
+                .Y (0);
 
             htmlBusy = new RecursionCounter (() => {
                 EvaluateJavascript (magic);
 
                 zoomRecognizer.Configure ();
+
+                ViewFramer.Create(this)
+                    .Size (parentView.Frame.Size);
 
                 // If the content is wider than the frame, try to scale it down
                 OnRenderComplete (1.0f);
