@@ -133,6 +133,7 @@ namespace NachoClient.iOS
             View.AddSubview (segmentedControlView);
 
             tableView = new UITableView (new RectangleF (0, 0, 0, 0), UITableViewStyle.Grouped);
+            tableView.SeparatorColor = UIColor.Clear;
 
             InitializeSearchDisplayController ();
             FilesSource = new FilesTableSource (this);
@@ -348,6 +349,14 @@ namespace NachoClient.iOS
             RefreshTableSource ();
         }
 
+        public void DeleteNote (McNote note)
+        {
+            if (null != note) {
+                note.Delete ();
+            }
+            RefreshTableSource ();
+        }
+
         public void ForwardAttachment (McAttachment attachment, UITableViewCell cell)
         {
             DownloadAndDoAction (attachment.Id, cell, (a) => {
@@ -444,11 +453,27 @@ namespace NachoClient.iOS
             public IAttachmentTableViewSourceDelegate owner;
 
             // icon id's
-            string DownloadIcon = "downloadicon.png";
+            string DownloadIcon = "email-att-download.png";
             public static string DownloadCompleteIcon = "icn-file-complete.png";
             string DownloadArrow = "downloadarrow.png";
             string DownloadLine = "downloadline.png";
             string DownloadCircle = "downloadcircle.png";
+
+            protected const int SWIPE_TAG = 99100;
+            private const int EMAIL_ATTACH_TAG = 1000;
+            private const int OPEN_IN_TAG = 2000;
+            private const int DELETE_TAG = 3000;
+
+            // Pre-made swipe action descriptors
+            private static SwipeActionDescriptor EMAIL_ATTACH_BUTTON =
+                new SwipeActionDescriptor (EMAIL_ATTACH_TAG, 0.25f, UIImage.FromBundle ("email-archive-gray"),
+                    "Attach", A.Color_NachoSwipeActionGreen);
+            private static SwipeActionDescriptor OPEN_IN_BUTTON =
+                new SwipeActionDescriptor (OPEN_IN_TAG, 0.25f, UIImage.FromBundle ("email-putintofolder-gray"),
+                    "Open in", A.Color_NachoSwipeActionBlue);
+            private static SwipeActionDescriptor DELETE_BUTTON =
+                new SwipeActionDescriptor (DELETE_TAG, 0.25f, UIImage.FromBundle ("email-delete-gray"),
+                    "Delete", A.Color_NachoSwipeActionRed);
 
             public List<NcFileIndex> Items {
                 get { return items; }
@@ -530,7 +555,7 @@ namespace NachoClient.iOS
 
             public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
             {
-                return 60.0f;
+                return 80.0f;
             }
 
             public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
@@ -538,29 +563,69 @@ namespace NachoClient.iOS
                 UITableViewCell cell = null;
                 cell = tableView.DequeueReusableCell (FileCell);
                 if (cell == null) {
-                    cell = new MCSwipeTableViewCell (UITableViewCellStyle.Subtitle, FileCell);
+                    cell = new UITableViewCell (UITableViewCellStyle.Default, FileCell);
                 }
                 NcAssert.True (null != cell);
 
                 NcFileIndex item;
-
-                // determine if table is for search results or all attachments
                 item = FileFromIndexPath (tableView, indexPath);
+
+                if (null != cell.ViewWithTag (SWIPE_TAG)) {
+                    cell.ViewWithTag (SWIPE_TAG).RemoveFromSuperview ();
+                }
+                var frame = new RectangleF (0, 0, tableView.Frame.Width, 80);
+                var view = new SwipeActionView (frame);
+                view.Tag = SWIPE_TAG;
+
+                view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
+                view.SetAction (EMAIL_ATTACH_BUTTON, SwipeSide.LEFT);
+                view.SetAction (OPEN_IN_BUTTON, SwipeSide.LEFT);
+
+                view.OnClick = (int tag) => {
+                    switch (tag) {
+                    case OPEN_IN_TAG:
+                        break;
+                    case EMAIL_ATTACH_TAG:
+                        AttachFile(item, cell);
+                        break;
+                    case DELETE_TAG:
+                        DeleteFile (item);
+                        break;
+                    default:
+                        throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action tag {0}", tag));
+                    }
+                };
+                view.OnSwipe = (SwipeActionView.SwipeState state) => {
+                    switch (state) {
+                    case SwipeActionView.SwipeState.SWIPE_BEGIN:
+                        tableView.ScrollEnabled = false;
+                        break;
+                    case SwipeActionView.SwipeState.SWIPE_END_ALL_HIDDEN:
+                        tableView.ScrollEnabled = true;
+                        break;
+                    case SwipeActionView.SwipeState.SWIPE_END_ALL_SHOWN:
+                        tableView.ScrollEnabled = false;
+                        break;
+                    default:
+                        throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown swipe state {0}", (int)state));
+                    }
+                };
+                Util.AddHorizontalLine (60, 79.5f, cell.Frame.Width - 60, A.Color_NachoBorderGray, view);
+
+                cell.Add (view);
 
                 switch (item.FileType) {
                 case 0:
-                    cell = FormatAttachmentCell (cell, McAttachment.QueryById<McAttachment> (item.Id), item);
-                    ConfigureSwipes (cell as MCSwipeTableViewCell, item);
+                    FormatAttachmentCell (view, McAttachment.QueryById<McAttachment> (item.Id), item);
                     break;
                 case 1:
-                    cell = FormatNoteCell (cell, item);
+                    FormatNoteCell (view, item);
                     break;
                 case 2:
-                    cell = FormatDocumentCell (cell, McDocument.QueryById<McDocument> (item.Id));
-                    ConfigureSwipes (cell as MCSwipeTableViewCell, item);
+                    FormatDocumentCell (view, McDocument.QueryById<McDocument> (item.Id));
                     break;
                 }
-                  
+
                 return cell;
             }
 
@@ -580,16 +645,33 @@ namespace NachoClient.iOS
                 return file;
             }
 
+            protected static int ICON_TAG = 150;
             protected static int DATE_LABEL_TAG = 200;
             protected static int TEXT_LABEL_TAG = 300;
             protected static int DETAIL_TEXT_LABEL_TAG = 400;
+            protected static int DATE_TEXT_LABEL_TAG = 450;
             protected static int DOWNLOAD_IMAGEVIEW_TAG = 500;
             protected static int BY_CONTACT_SEGMENT = 2;
+            protected bool downloaded;
 
-            private UITableViewCell FormatAttachmentCell (UITableViewCell cell, McAttachment attachment, NcFileIndex item)
+            private void FormatAttachmentCell (UIView cell, McAttachment attachment, NcFileIndex item)
             {
                 if (null != attachment) {
+                    downloaded = false;
                     CellLabel (cell, Path.GetFileNameWithoutExtension (item.DisplayName)); 
+
+                    CellDownloadAnimationView (cell);
+                    var iv = cell.ViewWithTag (DOWNLOAD_IMAGEVIEW_TAG) as UIImageView;
+                    if (McAbstrFileDesc.FilePresenceEnum.Complete == attachment.FilePresence) {
+                        downloaded = true;
+                        iv.Image = UIImage.FromFile (DownloadIcon);
+                        iv.Alpha = 0;
+                        cell.SendSubviewToBack (iv);
+                    } else if (McAbstrFileDesc.FilePresenceEnum.Partial == attachment.FilePresence) {
+                        //vc.AttachmentAction (attachment.Id, cell);
+                    } else {
+                        iv.Image = UIImage.FromFile (DownloadIcon);
+                    }
 
                     var detailText = "";
                     if (attachment.IsInline) {
@@ -598,56 +680,57 @@ namespace NachoClient.iOS
                     string extension = Path.GetExtension (attachment.DisplayName).ToUpper ();
                     detailText += extension.Length > 1 ? extension.Substring (1) + " " : "Unrecognized "; // get rid of period and format
                     detailText += "file";
-                    CellDetailLabel (cell, detailText, item.CreatedAt, attachment.FileSize);
-                    CellDownloadAnimationView (cell);
+                    CellDetailLabel (cell, detailText, attachment.FileSize);
+                    CellDateLabel (cell, item.CreatedAt);
 
-                    var iv = cell.ViewWithTag (DOWNLOAD_IMAGEVIEW_TAG) as UIImageView;
-                    if (McAbstrFileDesc.FilePresenceEnum.Complete == attachment.FilePresence || attachment.IsInline) {
-                        iv.Image = UIImage.FromFile (DownloadCompleteIcon);
-                    } else if (McAbstrFileDesc.FilePresenceEnum.Partial == attachment.FilePresence) {
-                        vc.AttachmentAction (attachment.Id, cell);
-                    } else {
-                        iv.Image = UIImage.FromFile (DownloadIcon);
-                    }
 
                     if (detailText.Contains ("JPG") || detailText.Contains ("JPEG")
                         || detailText.Contains ("TIFF") || detailText.Contains ("PNG")
                         || detailText.Contains ("GIF") || detailText.Contains ("RAW")) {
-                        cell.ImageView.Image = UIImage.FromBundle ("email-att-photos");
+                        CellIcon (cell, UIImage.FromBundle ("email-att-photos"));
                     } else {
-                        cell.ImageView.Image = UIImage.FromBundle ("email-att-files");
+                        CellIcon (cell, UIImage.FromBundle ("email-att-files"));
                     }
                 } else {
                     CellLabel (cell, "File no longer exists"); 
                 }
-
-                return cell;
+                    
             }
 
-            private UITableViewCell FormatNoteCell (UITableViewCell cell, NcFileIndex note)
+            private void FormatNoteCell (UIView cell, NcFileIndex note)
             {
                 CellLabel (cell, note.DisplayName);
-                CellDetailLabel (cell, "Note", note.CreatedAt, 0);
-                CellDownloadAnimationView (cell);
-
-                var iv = cell.ViewWithTag (DOWNLOAD_IMAGEVIEW_TAG) as UIImageView;
-                iv.Image = UIImage.FromFile (DownloadCompleteIcon);
-                return cell;
+                CellDetailLabel (cell, "Note", 0);
+                CellDateLabel (cell, note.CreatedAt);
+                CellIcon (cell, UIImage.FromBundle ("email-att-files"));
+               
             }
 
-            private UITableViewCell FormatDocumentCell (UITableViewCell cell, McDocument document)
+            private void FormatDocumentCell (UIView cell, McDocument document)
             {
                 if (null != document) {
                     CellLabel (cell, document.DisplayName);
-                    CellDetailLabel (cell, document.SourceApplication, document.CreatedAt, document.FileSize);
-                    cell.ImageView.Image = UIImage.FromFile (DownloadCompleteIcon);
+                    CellDetailLabel (cell, document.SourceApplication, document.FileSize);
+                    CellDateLabel (cell, document.CreatedAt);
+                    CellIcon (cell, UIImage.FromBundle ("email-att-files"));
                 } else {
                     CellLabel (cell, "File no longer exists"); 
                 }
-                return cell;
             }
 
-            public void CellLabel (UITableViewCell cell, string text)
+            public void CellIcon (UIView cell, UIImage icon)
+            {
+                if (null != cell.ViewWithTag (ICON_TAG)) {
+                    cell.ViewWithTag (ICON_TAG).RemoveFromSuperview ();
+                }
+                UIImageView iv = new UIImageView (); 
+                iv.Tag = ICON_TAG;
+                iv.Frame = new RectangleF (18, 28, 24, 24);
+                iv.Image = icon;
+                cell.Add (iv);
+            }
+
+            public void CellLabel (UIView cell, string text)
             {
                 if (null != cell.ViewWithTag (TEXT_LABEL_TAG)) {
                     cell.ViewWithTag (TEXT_LABEL_TAG).RemoveFromSuperview ();
@@ -657,12 +740,18 @@ namespace NachoClient.iOS
                 label.Font = A.Font_AvenirNextDemiBold14;
                 label.TextColor = A.Color_NachoDarkText;
                 label.Text = text;
-                label.Frame = new RectangleF (54, 11, cell.Frame.Width - 54 - 54, 19.5f);
+                var labelWidth = cell.Frame.Width - 60 - 52;
+                ;
+                if (downloaded) {
+                    labelWidth += cell.Frame.Width - 60 - 18;
+                }
+                label.Frame = new RectangleF (60, 11, labelWidth, 19.5f);
                 cell.Add (label);
             }
 
-            public void CellDetailLabel (UITableViewCell cell, string fileType, DateTime date, long fileSize)
+            public void CellDetailLabel (UIView cell, string fileType, long fileSize)
             {
+                var text = fileType;
                 if (null != cell.ViewWithTag (DETAIL_TEXT_LABEL_TAG)) {
                     cell.ViewWithTag (DETAIL_TEXT_LABEL_TAG).RemoveFromSuperview ();
                 }
@@ -670,25 +759,43 @@ namespace NachoClient.iOS
                 label.Tag = DETAIL_TEXT_LABEL_TAG;
                 label.Font = A.Font_AvenirNextRegular14;
                 label.TextColor = A.Color_NachoTextGray;
+                if (0 != fileSize) {
+                    text += " - " + Pretty.PrettyFileSize (fileSize);
+                } 
+                var labelWidth = cell.Frame.Width - 60 - 52;
+                if (downloaded) {
+                    text += " - Downloaded";
+                    labelWidth = cell.Frame.Width - 60 - 18;
+                }
+                label.Text = text;
+                label.Frame = new RectangleF (60, 11 + 19.5f, labelWidth, 19.5f);
+                cell.Add (label);
+            }
+
+            public void CellDateLabel (UIView cell, DateTime date)
+            {
+                if (null != cell.ViewWithTag (DATE_TEXT_LABEL_TAG)) {
+                    cell.ViewWithTag (DATE_TEXT_LABEL_TAG).RemoveFromSuperview ();
+                }
+                UILabel label = new UILabel (); 
+                label.Tag = DATE_TEXT_LABEL_TAG;
+                label.Font = A.Font_AvenirNextRegular14;
+                label.TextColor = A.Color_NachoTextGray;
                 string dateText = "Date unknown";
                 if (date != DateTime.MinValue) {
                     dateText = Pretty.CompactDateString (date);
                 }
-                if (0 != fileSize) {
-                    label.Text = dateText + " - " + fileType + " - " + Pretty.PrettyFileSize (fileSize);
-                } else {
-                    label.Text = dateText + " - " + fileType;
-                }
-                label.Frame = new RectangleF (54, 11 + 19.5f, cell.Frame.Width - 54 - 54, 19.5f);
+                label.Text = dateText;
+                label.Frame = new RectangleF (60, 11 + 19.5f + 19.5f, cell.Frame.Width - 60 - 18, 19.5f);
                 cell.Add (label);
             }
 
-            public void CellDownloadAnimationView (UITableViewCell cell)
+            public void CellDownloadAnimationView (UIView cell)
             {
                 if (null != cell.ViewWithTag (DOWNLOAD_IMAGEVIEW_TAG)) {
                     cell.ViewWithTag (DOWNLOAD_IMAGEVIEW_TAG).RemoveFromSuperview ();
                 }
-                UIImageView dowloadImageView = new UIImageView (new RectangleF (cell.Frame.Width - 24 - 15, 18, 24, 24)); 
+                UIImageView dowloadImageView = new UIImageView (new RectangleF (cell.Frame.Width - 18 - 16, 32, 16, 16)); 
                 dowloadImageView.Tag = DOWNLOAD_IMAGEVIEW_TAG;
                 cell.Add (dowloadImageView);
             }
@@ -817,6 +924,78 @@ namespace NachoClient.iOS
                 }
             }
 
+            public void DeleteFile (NcFileIndex item)
+            {
+                switch (item.FileType) {
+                case 0:
+                    McAttachment attachment = McAttachment.QueryById<McAttachment> (item.Id);
+                    if (null != attachment) {
+                        vc.DeleteAttachment (attachment);
+                    }
+                    break;
+                case 1:
+                    McNote note = McNote.QueryById<McNote> (item.Id);
+                    if (null != note) {
+                        vc.DeleteNote (note);
+                    }
+                    break;
+                case 2:
+                    McDocument document = McDocument.QueryById<McDocument> (item.Id);
+                    if (null != document) {
+                        vc.DeleteDocument (document);
+                    }
+                    break;
+                default:
+                    NcAssert.CaseError ("Deleting unknown file type");
+                    break;
+                }
+            }
+
+            public void AttachFile (NcFileIndex item, UITableViewCell cell)
+            {
+                switch (item.FileType) {
+                case 0:
+                    McAttachment attachment = McAttachment.QueryById<McAttachment> (item.Id);
+                    if (null != attachment) {
+                        vc.ForwardAttachment (attachment, cell);
+                    }
+                    break;
+                case 1:
+                    //TODO
+                    //McNote note = McNote.QueryById<McNote> (item.Id);
+                    break;
+                case 2:
+                    //TODO
+                    //McDocument document = McDocument.QueryById<McDocument> (item.Id);
+                    break;
+                default:
+                    NcAssert.CaseError ("Attaching unknown file type");
+                    break;
+                }
+            }
+
+            public void OpenFileIn (NcFileIndex item, UITableViewCell cell)
+            {
+                switch (item.FileType) {
+                case 0:
+                    McAttachment attachment = McAttachment.QueryById<McAttachment> (item.Id);
+                    if (null != attachment) {
+                        vc.OpenInOtherApp (attachment, cell);
+                    }
+                    break;
+                case 1:
+                    //TODO
+                    //McNote note = McNote.QueryById<McNote> (item.Id);
+                    break;
+                case 2:
+                    //TODO
+                    //McDocument document = McDocument.QueryById<McDocument> (item.Id);
+                    break;
+                default:
+                    NcAssert.CaseError ("Opening unknown file type");
+                    break;
+                }
+            }
 
             public static void StopAnimationsOnCell (UITableViewCell cell)
             {
@@ -986,7 +1165,7 @@ namespace NachoClient.iOS
 
             public override UIView GetViewForFooter (UITableView tableView, int section)
             {
-                if (BY_CONTACT_SEGMENT == segmentedIndex) {
+                if (BY_CONTACT_SEGMENT == segmentedIndex || SearchDisplayController.SearchResultsTableView == tableView) {
                     return new UIView (new RectangleF (0, 0, 0, 0));
                 }
                 var view = new UIView (new RectangleF (0, 0, tableView.Frame.Width, 32));
@@ -1002,17 +1181,10 @@ namespace NachoClient.iOS
 
             public override string TitleForFooter (UITableView tableView, int section)
             {
-                if (SearchDisplayController.SearchResultsTableView == tableView) {
-                    if (1 == searchResults.Count) {
-                        return "1 match";
-                    }
-                    return searchResults.Count + " matches";
-                } else {
-                    if (1 == this.items.Count) {
-                        return "1 file";
-                    }
-                    return this.items.Count + " files";
+                if (1 == this.items.Count) {
+                    return "1 file";
                 }
+                return this.items.Count + " files";
             }
 
             /// <summary>
