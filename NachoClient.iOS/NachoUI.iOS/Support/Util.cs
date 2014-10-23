@@ -831,11 +831,15 @@ namespace NachoClient
             var betaBundleId = NSBundle.FromIdentifier ("com.nachocove.nachomail.beta");
 
             if (devBundleId != null) {
-                return devBundleId.InfoDictionary ["CFBundleShortVersionString"].ToString();
+                var build = devBundleId.InfoDictionary ["CFBundleVersion"];
+                var version = devBundleId.InfoDictionary ["CFBundleShortVersionString"].ToString();
+                return build.ToString() + "." + version.ToString ();
             } 
 
             if (betaBundleId != null) {
-                return betaBundleId.InfoDictionary ["CFBundleShortVersionString"].ToString();
+                var build = betaBundleId.InfoDictionary ["CFBundleVersion"];
+                var version = betaBundleId.InfoDictionary ["CFBundleShortVersionString"].ToString();
+                return build.ToString() + "." + version.ToString ();
             } 
             return "unkown";
         }
