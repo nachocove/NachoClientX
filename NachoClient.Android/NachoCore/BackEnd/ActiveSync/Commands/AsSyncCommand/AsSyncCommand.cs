@@ -388,12 +388,18 @@ namespace NachoCore.ActiveSync
                 var xmlSyncKey = collection.Element (m_ns + Xml.AirSync.SyncKey);
                 var xmlMoreAvailable = collection.Element (m_ns + Xml.AirSync.MoreAvailable);
                 var xmlStatus = collection.Element (m_ns + Xml.AirSync.Status);
-
+                // The protocol requires SyncKey, but GOOG does not obey in the StatusCode.NotFound case.
                 if (null != xmlSyncKey) {
-                    // The protocol requires SyncKey, but GOOG does not obey in the StatusCode.NotFound case.
-                    folder.AsSyncKey = xmlSyncKey.Value;
-                    folder.AsSyncMetaToClientExpected = (McFolder.AsSyncKey_Initial == oldSyncKey) || (null != xmlMoreAvailable);
-                    folder.Update ();
+                    int count = 0;
+                    folder = folder.UpdateWithOCApply<McFolder> ((record) => {
+                        var target = (McFolder)record;
+                        target.AsSyncKey = xmlSyncKey.Value;
+                        target.AsSyncMetaToClientExpected = (McFolder.AsSyncKey_Initial == oldSyncKey) || (null != xmlMoreAvailable);
+                        return true;
+                    }, out count);
+                    if (0 >= count) {
+                        // Go kill something small & furry.
+                    }
                 } else {
                     Log.Warn (Log.LOG_SYNC, "SyncKey missing from XML.");
                 }
