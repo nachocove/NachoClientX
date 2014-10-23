@@ -240,7 +240,7 @@
             <objects>
                 <viewController storyboardIdentifier="SupportViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="MRl-Tp-bqC" customClass="SupportViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="FGn-F3-AXL">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="455"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -1247,6 +1247,20 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="ouG-uP-eY3" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-493" y="860"/>
+        </scene>
+        <!--Account Settings View Controller-->
+        <scene sceneID="fE5-BJ-2a2">
+            <objects>
+                <viewController storyboardIdentifier="AccountSettingsViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="WIT-yF-b17" customClass="AccountSettingsViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="EqU-wp-I5R">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="piC-17-y5j" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="177" y="-112"/>
         </scene>
         <!--Contact Detail-->
         <scene sceneID="Faz-15-tSR">
