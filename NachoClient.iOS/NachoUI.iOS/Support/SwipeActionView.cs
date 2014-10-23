@@ -13,10 +13,12 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public enum SwipeActionViewTagType {
+    public enum SwipeActionViewTagType
+    {
         SWIPE_ACTION_VIEW,
         SWIPE_ACTION_BUTTON,
-        SWIPE_ACTION_SWIPING_VIEW
+        SWIPE_ACTION_SWIPING_VIEW,
+
     };
 
     /// <summary>
@@ -27,8 +29,11 @@ namespace NachoClient.iOS
     public class SwipeActionDescriptor
     {
         public float WidthDelta { get; protected set; }
+
         public UIImage Image { get; protected set; }
+
         public string Text { get; protected set; }
+
         public UIColor Color { get; protected set; }
         // This is not the tag for an UI object. Instead, it is for identifying the action during callback
         public int Tag { get; protected set; }
@@ -125,7 +130,8 @@ namespace NachoClient.iOS
         SwipeActionButtonList rightActionButtons;
         UIView snapshotView;
         UIGestureRecognizer tapRecognizer;
-        Action OnClear; // when user taps on the body part to clear all buttons
+        Action OnClear;
+        // when user taps on the body part to clear all buttons
 
         public float LastScreenDelta { get; protected set; }
 
@@ -133,7 +139,7 @@ namespace NachoClient.iOS
 
         public float LastMovePercentage {
             get {
-                return ClipMovePercentage(UnclippedLastMovePercentage);
+                return ClipMovePercentage (UnclippedLastMovePercentage);
             }
         }
 
@@ -144,8 +150,8 @@ namespace NachoClient.iOS
         }
 
         public SwipeActionSwipingView (SwipeActionView view,
-            SwipeActionButtonList leftButtons, SwipeActionButtonList rightButtons,
-            Action onClear) : base (view.Frame)
+                                       SwipeActionButtonList leftButtons, SwipeActionButtonList rightButtons,
+                                       Action onClear) : base (view.Frame)
         {
             Tag = (int)SwipeActionViewTagType.SWIPE_ACTION_SWIPING_VIEW;
 
@@ -198,7 +204,7 @@ namespace NachoClient.iOS
             for (int i = rightActionButtons.Count - 1; i >= 0; i--) {
                 total += rightActionButtons [i].Frame.Width;
                 rightOffsets [i] = total;
-                maxLeftDelta += rightActionButtons[i].Config.WidthDelta;
+                maxLeftDelta += rightActionButtons [i].Config.WidthDelta;
             }
 
             // Add a tap gesture recognizer to retract pulled out buttons
@@ -419,11 +425,13 @@ namespace NachoClient.iOS
         /// </summary>
         public delegate void ButtonCallback (int tag);
 
-        public enum SwipeState {
+        public enum SwipeState
+        {
             SWIPE_BEGIN,
             SWIPE_END_ALL_HIDDEN,
-            SWIPE_END_ALL_SHOWN
-        };
+            SWIPE_END_ALL_SHOWN}
+
+        ;
 
         /// <summary>
         /// Callback function for notifying when swiping is beginning or ending.
@@ -439,6 +447,7 @@ namespace NachoClient.iOS
         public SwipeCallback OnSwipe;
 
         public SwipeActionButtonList LeftSwipeActionButtons { get; protected set; }
+
         public SwipeActionButtonList RightSwipeActionButtons { get; protected set; }
 
         protected UIPanGestureRecognizer swipeRecognizer;
@@ -606,7 +615,7 @@ namespace NachoClient.iOS
 
         protected void MayCompletePullOut ()
         {
-            if (SnapAllShownThreshold <= Math.Abs(swipingView.LastMovePercentage)) {
+            if (SnapAllShownThreshold <= Math.Abs (swipingView.LastMovePercentage)) {
                 swipingView.SnapToAllButtonsShown (() => {
                     swipingView.EndSwipe ();
                     OnSwipe (SwipeState.SWIPE_END_ALL_SHOWN);
