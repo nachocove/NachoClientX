@@ -19,7 +19,7 @@ namespace NachoClient.iOS
     public class HotListCarouselDataSource : iCarouselDataSource
     {
         public const int PLACEHOLDER_TAG = -1;
-        protected const int USER_IMAGE_TAG = -11;
+        protected const int USER_IMAGE_TAG = -101;
         protected const int FROM_TAG = -102;
         protected const int SUBJECT_TAG = -103;
         public const int PREVIEW_TAG = -104;
