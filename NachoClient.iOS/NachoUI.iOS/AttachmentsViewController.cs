@@ -610,7 +610,12 @@ namespace NachoClient.iOS
                         throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown swipe state {0}", (int)state));
                     }
                 };
-                Util.AddHorizontalLine (60, 79.5f, cell.Frame.Width - 60, A.Color_NachoBorderGray, view);
+                var totalRow = tableView.NumberOfRowsInSection (indexPath.Section);
+                if (totalRow - 1 == indexPath.Row) {
+                    Util.AddHorizontalLine (0, 79.5f, cell.Frame.Width, A.Color_NachoBorderGray, view);
+                } else {
+                    Util.AddHorizontalLine (60, 79.5f, cell.Frame.Width - 60, A.Color_NachoBorderGray, view);
+                }
 
                 cell.Add (view);
 
@@ -783,7 +788,7 @@ namespace NachoClient.iOS
                 label.TextColor = A.Color_NachoTextGray;
                 string dateText = "Date unknown";
                 if (date != DateTime.MinValue) {
-                    dateText = Pretty.CompactDateString (date);
+                    dateText = Pretty.FullDateTimeString (date);
                 }
                 label.Text = dateText;
                 label.Frame = new RectangleF (60, 11 + 19.5f + 19.5f, cell.Frame.Width - 60 - 18, 19.5f);
