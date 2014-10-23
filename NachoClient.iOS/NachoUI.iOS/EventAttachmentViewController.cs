@@ -77,7 +77,9 @@ namespace NachoClient.iOS
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
-            owner.UpdateAttachmentList (this.AttachmentsList);
+            if (editing && null != owner) {
+                owner.UpdateAttachmentList (this.AttachmentsList);
+            }
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 

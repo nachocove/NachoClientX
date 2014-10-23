@@ -81,7 +81,7 @@ namespace NachoClient.iOS
                 var devAccountId = McAccount.GetDeviceAccount ().Id;
                 var eventId = Convert.ToInt32(McMutables.Get (devAccountId, "EventNotif", LoginHelpers.GetCurrentAccountId ().ToString ()));
                 var item = McEvent.QueryById<McEvent> (eventId);
-                vc.SetCalendarItem (item, CalendarItemEditorAction.view);
+                vc.SetCalendarItem (item);
                 McMutables.Delete (devAccountId, "EventNotif", LoginHelpers.GetCurrentAccountId ().ToString ());
                 //vc.SetOwner (this);
                 return;

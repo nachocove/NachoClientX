@@ -272,13 +272,13 @@ namespace NachoClient.iOS
         {
             private UIButton button;
             private Action action;
-            private UIBlockMenu menu;
+            private UIBlockMenu owner;
 
-            public BlockButton (UIButton button, Action action, UIBlockMenu menu)
+            public BlockButton (UIButton button, Action action, UIBlockMenu owner)
             {
                 this.button = button;
                 this.action = action;
-                this.menu = menu;
+                this.owner = owner;
                 button.TouchUpInside += ButtonTouchUpInside;
             }
 
@@ -298,7 +298,7 @@ namespace NachoClient.iOS
                 if (null != action) {
                     action.Invoke ();
                 }
-                menu.MenuTapped ();
+                owner.MenuTapped ();
             }
         }
 
