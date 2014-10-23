@@ -169,21 +169,19 @@ namespace NachoClient.iOS
             // Stack the buttons on top of the image view
             int k = 0;
             foreach (var button in leftActionButtons) {
-                NcAssert.True (button.Frame.Height == view.Frame.Height);
                 if (null != button.Superview) {
                     button.RemoveFromSuperview ();
                 }
-                ViewFramer.Create (button).X (-button.Frame.Width).Y (0);
+                ViewFramer.Create (button).X (-button.Frame.Width).Y (0).Height (view.Frame.Height);
                 AddSubview (button);
                 k++;
             }
             k = 0;
             foreach (var button in rightActionButtons) {
-                NcAssert.True (button.Frame.Height == view.Frame.Height);
                 if (null != button.Superview) {
                     button.RemoveFromSuperview ();
                 }
-                ViewFramer.Create (button).X (Frame.Width).Y (0);
+                ViewFramer.Create (button).X (Frame.Width).Y (0).Height (view.Frame.Height);
                 AddSubview (button);
                 k++;
             }
