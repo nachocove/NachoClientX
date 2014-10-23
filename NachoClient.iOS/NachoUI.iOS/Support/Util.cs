@@ -832,16 +832,15 @@ namespace NachoClient
 
             if (devBundleId != null) {
                 var build = devBundleId.InfoDictionary ["CFBundleVersion"];
-                var version = devBundleId.InfoDictionary ["CFBundleShortVersionString"].ToString();
-                return build.ToString() + "." + version.ToString ();
+                var version = devBundleId.InfoDictionary ["CFBundleShortVersionString"].ToString ();
+                return String.Format ("{0} ({1})", version, build);
             } 
-
             if (betaBundleId != null) {
                 var build = betaBundleId.InfoDictionary ["CFBundleVersion"];
-                var version = betaBundleId.InfoDictionary ["CFBundleShortVersionString"].ToString();
-                return build.ToString() + "." + version.ToString ();
+                var version = betaBundleId.InfoDictionary ["CFBundleShortVersionString"].ToString ();
+                return String.Format ("{0} ({1})", version, build);
             } 
-            return "unkown";
+            return "Unknown version";
         }
 
         #endregion
