@@ -238,59 +238,12 @@
         <!--Support-->
         <scene sceneID="vbl-v1-uBK">
             <objects>
-                <tableViewController storyboardIdentifier="SupportViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="MRl-Tp-bqC" customClass="SupportViewController" sceneMemberID="viewController">
-                    <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="3Ax-0N-BUW">
-                        <rect key="frame" x="0.0" y="64" width="320" height="455"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                        <prototypes>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="BasicCell" textLabel="Dld-4z-KpH" style="IBUITableViewCellStyleDefault" id="vN4-lE-7eV">
-                                <rect key="frame" x="0.0" y="22" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="vN4-lE-7eV" id="zQX-fG-jYb">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                    <subviews>
-                                        <label opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="left" text="This is a Support Cell" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="Dld-4z-KpH">
-                                            <rect key="frame" x="15" y="0.0" width="290" height="43"/>
-                                            <autoresizingMask key="autoresizingMask"/>
-                                            <fontDescription key="fontDescription" type="system" pointSize="18"/>
-                                            <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
-                                            <nil key="highlightedColor"/>
-                                        </label>
-                                    </subviews>
-                                </tableViewCellContentView>
-                            </tableViewCell>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="SubtitleCell" textLabel="HUH-wI-ZD6" detailTextLabel="Bkf-1c-qH3" style="IBUITableViewCellStyleSubtitle" id="uOF-47-GrC">
-                                <rect key="frame" x="0.0" y="66" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="uOF-47-GrC" id="RvY-P6-i4U">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                    <subviews>
-                                        <label opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="left" text="This is a subtitle support cell" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="HUH-wI-ZD6">
-                                            <rect key="frame" x="15" y="3" width="230" height="22"/>
-                                            <autoresizingMask key="autoresizingMask"/>
-                                            <fontDescription key="fontDescription" type="system" pointSize="18"/>
-                                            <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
-                                            <nil key="highlightedColor"/>
-                                        </label>
-                                        <label opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="left" text="Subtitle" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="Bkf-1c-qH3">
-                                            <rect key="frame" x="15" y="25" width="43" height="15"/>
-                                            <autoresizingMask key="autoresizingMask"/>
-                                            <fontDescription key="fontDescription" type="system" pointSize="12"/>
-                                            <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
-                                            <nil key="highlightedColor"/>
-                                        </label>
-                                    </subviews>
-                                </tableViewCellContentView>
-                            </tableViewCell>
-                        </prototypes>
-                        <connections>
-                            <outlet property="dataSource" destination="MRl-Tp-bqC" id="xtG-0Y-RvI"/>
-                            <outlet property="delegate" destination="MRl-Tp-bqC" id="B9d-j5-p7o"/>
-                        </connections>
-                    </tableView>
+                <viewController storyboardIdentifier="SupportViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="MRl-Tp-bqC" customClass="SupportViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="FGn-F3-AXL">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
+                    </view>
                     <extendedEdge key="edgesForExtendedLayout"/>
                     <tabBarItem key="tabBarItem" title="Support" id="AEp-H2-ACI"/>
                     <navigationItem key="navigationItem" title="Support" id="mWr-gQ-Yyx"/>
@@ -300,7 +253,7 @@
                         <segue destination="OCr-PO-3nH" kind="push" identifier="SegueToNachoNow" id="BXA-38-Jy8"/>
                         <segue destination="kuw-v2-91Q" kind="modal" identifier="SupportToSupportMessage" id="CeD-4t-veK"/>
                     </connections>
-                </tableViewController>
+                </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="sxr-xY-2cF" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-4747" y="-3163"/>
@@ -1753,29 +1706,29 @@
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
+        <segue reference="szv-KC-TId"/>
+        <segue reference="tQS-oL-XNh"/>
         <segue reference="4z2-t5-9Cd"/>
         <segue reference="QbR-l1-NT5"/>
         <segue reference="od0-Sz-R9p"/>
-        <segue reference="HwV-au-Wta"/>
         <segue reference="XQg-JR-vxA"/>
-        <segue reference="L3g-YM-YjM"/>
         <segue reference="Eb2-K0-nI3"/>
+        <segue reference="L3g-YM-YjM"/>
+        <segue reference="TEI-cG-N0R"/>
+        <segue reference="BXA-38-Jy8"/>
+        <segue reference="ywO-BF-h0n"/>
         <segue reference="Kmd-x6-iCJ"/>
+        <segue reference="tdu-G2-PEp"/>
+        <segue reference="HCr-Oa-UHV"/>
         <segue reference="RR1-bJ-URL"/>
         <segue reference="k2t-Pj-AhS"/>
         <segue reference="Tfk-Mt-BlS"/>
-        <segue reference="tdu-G2-PEp"/>
-        <segue reference="HCr-Oa-UHV"/>
-        <segue reference="TEI-cG-N0R"/>
-        <segue reference="tQS-oL-XNh"/>
-        <segue reference="szv-KC-TId"/>
-        <segue reference="KnL-e9-HQR"/>
-        <segue reference="p7w-hx-Y70"/>
-        <segue reference="xrp-ey-B0j"/>
         <segue reference="DDa-hb-SgY"/>
+        <segue reference="xrp-ey-B0j"/>
+        <segue reference="B5b-jg-ZNg"/>
         <segue reference="dAf-rc-Hh3"/>
         <segue reference="6J3-c2-bz5"/>
-        <segue reference="B5b-jg-ZNg"/>
+        <segue reference="KnL-e9-HQR"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.45098039215686275" green="1" blue="0.95294117647058818" alpha="1" colorSpace="deviceRGB"/>
 </document>
