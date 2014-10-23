@@ -19,17 +19,17 @@ namespace NachoClient.iOS
     public class HotListCarouselDataSource : iCarouselDataSource
     {
         public const int PLACEHOLDER_TAG = -1;
-        protected const int USER_IMAGE_TAG = 101;
-        protected const int FROM_TAG = 102;
-        protected const int SUBJECT_TAG = 103;
-        public const int PREVIEW_TAG = 104;
-        protected const int REMINDER_ICON_TAG = 105;
-        protected const int REMINDER_TEXT_TAG = 106;
-        protected const int ATTACHMENT_TAG = 107;
-        protected const int RECEIVED_DATE_TAG = 108;
-        protected const int USER_LABEL_TAG = 109;
-        protected const int USER_CHILI_TAG = 110;
-        protected const int USER_MORE_TAG = 111;
+        protected const int USER_IMAGE_TAG = -101;
+        protected const int FROM_TAG = -102;
+        protected const int SUBJECT_TAG = -103;
+        public const int PREVIEW_TAG = -104;
+        protected const int REMINDER_ICON_TAG = -105;
+        protected const int REMINDER_TEXT_TAG = -106;
+        protected const int ATTACHMENT_TAG = -107;
+        protected const int RECEIVED_DATE_TAG = -108;
+        protected const int USER_LABEL_TAG = -109;
+        protected const int USER_CHILI_TAG = -110;
+        protected const int USER_MORE_TAG = -111;
         NachoNowViewController owner;
 
         private const int ARCHIVE_TAG = 1;
