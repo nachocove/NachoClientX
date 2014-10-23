@@ -80,6 +80,8 @@ namespace NachoCore.Model
         // Set only on Insert.
         public DateTime CreatedAt { get; set; }
 
+        public int RowVersion { get; set; }
+
         protected Boolean isDeleted;
 
         public McAbstrObject ()
@@ -138,6 +140,34 @@ namespace NachoCore.Model
             capture.Stop ();
             capture.Reset ();
             return rc;
+        }
+
+        public delegate bool Mutator (McAbstrObject record);
+        /// <summary>
+        /// Update() with optimistic concurrency.
+        /// </summary>
+        /// <returns>The the value of the latest record we successfuly wrote or pulled from the DB, otherwise, this</returns>
+        /// <param name="mutator">Mutator must return false if it can't apply change.</param>
+        /// <param name="count">Count is the same as the retval from plain-old Update(). 0 indicates failure.</param>
+        /// <param name="tries">Tries before giving up.</param>
+        /// <typeparam name="T">T must match the type of the object.</typeparam>
+        public virtual T UpdateWithOCApply<T> (Mutator mutator, out int count, int tries = 5) where T : McAbstrObject, new ()
+        {
+            NcAssert.True (typeof(T) == this.GetType ());
+            var record = this;
+            count = 0;
+            while (0 == count && 0 < tries) {
+                --tries;
+                if (!mutator (this)) {
+                    return (T)this;
+                }
+                count = NcModel.Instance.Db.Update (record, record.GetType (), true, record.RowVersion);
+                if (0 < count) {
+                    break;
+                }
+                record = NcModel.Instance.Db.Get<T> (record.Id);
+            }
+            return (T)record;
         }
 
         public virtual int Update ()
