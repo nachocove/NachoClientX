@@ -17,7 +17,11 @@ namespace NachoClient.iOS
         protected static float CELL_HEIGHT = 44f;
         protected static float LINE_OFFSET = 30f;
         protected static float KEYBOARD_HEIGHT = 216f;
-        protected static float MESSAGEBODY_TEXTVIEW_HEIGHT = UIScreen.MainScreen.Bounds.Height - KEYBOARD_HEIGHT - LINE_OFFSET - 10;
+        protected const float HORIZONTAL_PADDING = 12f;
+        protected const float INDENT = 18f;
+
+        protected const float VERTICAL_PADDING = 20f;
+        protected float keyboardHeight;
 
         public SupportMessageViewController (IntPtr handle) : base (handle)
         {
@@ -35,12 +39,55 @@ namespace NachoClient.iOS
         {
             base.ViewWillAppear (animated);
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+
+            if (HandlesKeyboardNotifications) {
+                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
+                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
+            }
         }
 
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+
+            if (HandlesKeyboardNotifications) {
+                NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillHideNotification);
+                NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillShowNotification);
+            }
+        }
+
+        public virtual bool HandlesKeyboardNotifications {
+            get { return true; }
+        }
+
+        private void OnKeyboardNotification (NSNotification notification)
+        {
+            if (IsViewLoaded) {
+                //Check if the keyboard is becoming visible
+                bool visible = notification.Name == UIKeyboard.WillShowNotification;
+
+                bool landscape = InterfaceOrientation == UIInterfaceOrientation.LandscapeLeft || InterfaceOrientation == UIInterfaceOrientation.LandscapeRight;
+                if (visible) {
+                    var keyboardFrame = UIKeyboard.FrameEndFromNotification (notification);
+                    OnKeyboardChanged (visible, landscape ? keyboardFrame.Width : keyboardFrame.Height);
+                } else {
+                    var keyboardFrame = UIKeyboard.FrameBeginFromNotification (notification);
+                    OnKeyboardChanged (visible, landscape ? keyboardFrame.Width : keyboardFrame.Height);
+                }
+            }
+        }
+
+        protected virtual void OnKeyboardChanged (bool visible, float height)
+        {
+            var newHeight = (visible ? height : 0);
+
+            if (newHeight == keyboardHeight) {
+                return;
+            }
+            keyboardHeight = newHeight;
+
+            LayoutView ();
         }
 
         protected void StatusIndicatorCallback (object sender, EventArgs e)
@@ -54,31 +101,125 @@ namespace NachoClient.iOS
 
         protected const int MESSAGEBODY_VIEW_TAG = 100;
         protected const int CONTACT_TEXTFIELD_TAG = 101;
+
         public void CreateView ()
         {
-            UITextField contactTextField = new UITextField ();
-            UITextView messageBodyTextView = new UITextView (new RectangleF (10, 5, View.Frame.Width - 30, MESSAGEBODY_TEXTVIEW_HEIGHT));
-
-            yOffset = 0;
+            View.BackgroundColor = A.Color_NachoBackgroundGray;
+            contentView.BackgroundColor = A.Color_NachoBackgroundGray;
 
             navigationBar.Frame = new RectangleF (0, 0, View.Frame.Width, 64);
             navigationBar.Alpha = 1.0f;
             navigationBar.Opaque = true;
             navigationBar.BackgroundColor = A.Color_NachoGreen.ColorWithAlpha (1.0f);
             navigationBar.BarTintColor = A.Color_NachoGreen;
-            UINavigationItem navItems = new UINavigationItem ("Contact Us");
-            cancelButton.Title = "Back";
-            cancelButton.Clicked += (object sender, EventArgs e) => {
-                this.DismissViewController (true, null);
-            };
-            navItems.LeftBarButtonItem = cancelButton;
-            sendButton.Title = "Submit";
+            navigationBar.Translucent = false;
 
+            yOffset = navigationBar.Frame.Bottom + VERTICAL_PADDING;
+
+            UIView sectionOneView = new UIView (new RectangleF (HORIZONTAL_PADDING, yOffset, View.Frame.Width - (HORIZONTAL_PADDING * 2), CELL_HEIGHT * 2));
+            sectionOneView.Layer.BorderWidth = .5f;
+            sectionOneView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
+            sectionOneView.BackgroundColor = UIColor.White;
+            sectionOneView.Layer.CornerRadius = 4;
+
+            UILabel sectionOneHeader = new UILabel (new RectangleF (INDENT, 0, sectionOneView.Frame.Width - INDENT, CELL_HEIGHT));
+            sectionOneHeader.Font = A.Font_AvenirNextRegular14;
+            sectionOneHeader.TextColor = A.Color_NachoBlack;
+            sectionOneHeader.Text = "How can we reach you?";
+            sectionOneHeader.TextAlignment = UITextAlignment.Left;
+            sectionOneView.AddSubview (sectionOneHeader);
+
+            UIView sectionOneHR = new UIView (new RectangleF (INDENT, sectionOneHeader.Frame.Bottom - .5f, sectionOneView.Frame.Width - INDENT, .5f));
+            sectionOneHR.BackgroundColor = A.Color_NachoBorderGray;
+            sectionOneView.AddSubview (sectionOneHR);
+
+            UITextField sectionOneTextField = new UITextField (new RectangleF (INDENT, sectionOneHR.Frame.Bottom, sectionOneView.Frame.Width - INDENT, CELL_HEIGHT));
+            sectionOneTextField.Placeholder = "yourname@email.com";
+            sectionOneTextField.BackgroundColor = sectionOneView.BackgroundColor;
+            sectionOneTextField.Font = A.Font_AvenirNextMedium14;
+            sectionOneTextField.KeyboardType = UIKeyboardType.EmailAddress;
+            sectionOneTextField.AutocapitalizationType = UITextAutocapitalizationType.None;
+            sectionOneTextField.AutocorrectionType = UITextAutocorrectionType.No;
+            sectionOneTextField.Tag = CONTACT_TEXTFIELD_TAG;
+            sectionOneTextField.Layer.CornerRadius = 4f;
+            sectionOneView.AddSubview (sectionOneTextField);
+            contentView.AddSubview (sectionOneView);
+
+            yOffset = sectionOneView.Frame.Bottom + HORIZONTAL_PADDING;
+
+            UIView sectionTwoView = new UIView (new RectangleF (HORIZONTAL_PADDING, yOffset, View.Frame.Width - (HORIZONTAL_PADDING * 2), View.Frame.Height - yOffset - VERTICAL_PADDING));
+            sectionTwoView.Layer.BorderWidth = .5f;
+            sectionTwoView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
+            sectionTwoView.BackgroundColor = UIColor.White;
+            sectionTwoView.Layer.CornerRadius = 4;
+
+            UILabel sectionTwoHeader = new UILabel (new RectangleF (INDENT, 0, sectionTwoView.Frame.Width - INDENT, CELL_HEIGHT));
+            sectionTwoHeader.Font = A.Font_AvenirNextRegular14;
+            sectionTwoHeader.TextColor = A.Color_NachoBlack;
+            sectionTwoHeader.Text = "What can we help you with?";
+            sectionTwoHeader.TextAlignment = UITextAlignment.Left;
+            sectionTwoView.AddSubview (sectionTwoHeader);
+
+            UIView sectionTwoHR = new UIView (new RectangleF (INDENT, sectionTwoHeader.Frame.Bottom - .5f, sectionTwoView.Frame.Width - INDENT, .5f));
+            sectionTwoHR.BackgroundColor = A.Color_NachoBorderGray;
+            sectionTwoView.AddSubview (sectionTwoHR);
+
+            UITextView sectionTwoTextView = new UITextView (new RectangleF (INDENT - 4, sectionTwoHR.Frame.Bottom + 8, sectionTwoView.Frame.Width - INDENT, sectionTwoView.Frame.Height - CELL_HEIGHT - 8));
+            sectionTwoTextView.Font = A.Font_AvenirNextMedium14;
+            sectionTwoTextView.TextColor = UIColor.LightGray;
+            sectionTwoTextView.Text = "Briefly describe what's going on";
+            sectionTwoTextView.Tag = MESSAGEBODY_VIEW_TAG;
+            sectionTwoTextView.BackgroundColor = UIColor.White;
+            sectionTwoTextView.ScrollEnabled = true;
+            sectionTwoTextView.Changed += (object sender, EventArgs e) => {
+                MessageBodySelectionChanged (sectionTwoTextView);
+            };
+            sectionTwoView.AddSubview (sectionTwoTextView);
+            contentView.AddSubview (sectionTwoView);
+
+            yOffset = sectionTwoTextView.Frame.Bottom;
+
+            sectionOneTextField.ShouldReturn += ((textField) => {
+                sectionTwoTextView.BecomeFirstResponder ();
+                return true;
+            });
+
+            sectionTwoTextView.ShouldBeginEditing += ((textView) => {
+                if (textView.TextColor == UIColor.LightGray) {
+                    textView.Text = "";
+                    textView.TextColor = A.Color_NachoBlack;
+                }
+                return true;
+            });
+
+            sectionTwoTextView.ShouldEndEditing += ((textView) => {
+                if (0 == textView.Text.Trim ().Length) {
+                    sectionTwoTextView.TextColor = UIColor.LightGray;
+                    sectionTwoTextView.Text = "Briefly describe what's going on...";
+                }
+                textView.ResignFirstResponder();
+                return true;
+            });
+
+            scrollView.BackgroundColor = A.Color_NachoNowBackground;
+
+            UINavigationItem navItems = new UINavigationItem ("Support");
+
+            using (var image = UIImage.FromBundle ("nav-backarrow")) {
+                UIBarButtonItem backButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, (sender, args) => {
+                    this.DismissViewController (true, null);
+                });
+                backButton.Title = "Back";
+                backButton.TintColor = A.Color_NachoBlue;
+                navItems.SetLeftBarButtonItem (backButton, true);
+            }
+
+            Util.SetOriginalImageForButton (sendButton, "icn-send");
 
             sendButton.Clicked += (object sender, EventArgs e) => {
                 Dictionary<string,string> supportInfo = new Dictionary<string, string> ();
-                supportInfo.Add ("ContactInfo", contactTextField.Text);
-                supportInfo.Add ("Message", messageBodyTextView.Text);
+                supportInfo.Add ("ContactInfo", sectionOneTextField.Text);
+                supportInfo.Add ("Message", sectionTwoTextView.Text);
                 Telemetry.RecordSupport (supportInfo, () => {
                     NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                         Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_TelemetrySupportMessageReceived),
@@ -88,104 +229,20 @@ namespace NachoClient.iOS
             };
             navItems.RightBarButtonItem = sendButton;
             navigationBar.Items = new UINavigationItem[]{ navItems };
-            View.Add (navigationBar);
-
-            yOffset = navigationBar.Frame.Bottom;
-
-            UIView sectionOne = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 35));
-            sectionOne.BackgroundColor = A.Color_NachoNowBackground;
-
-            UILabel sectionOneHeader = new UILabel (new RectangleF (15, 0, sectionOne.Frame.Width - 15, sectionOne.Frame.Height));
-            sectionOneHeader.Font = A.Font_AvenirNextRegular14;
-            sectionOneHeader.TextColor = A.Color_NachoBlack;
-            sectionOneHeader.Text = "How can we reach you?";
-            sectionOneHeader.TextAlignment = UITextAlignment.Left;
-            sectionOne.Add (sectionOneHeader);
-            contentView.AddSubview (sectionOne);
-
-            yOffset = sectionOne.Frame.Bottom;
-
-            contactTextField.Frame = new RectangleF (15, yOffset, View.Frame.Width - 15, CELL_HEIGHT);
-            contactTextField.Placeholder = "Email address or phone number...";
-            contactTextField.BackgroundColor = UIColor.White;
-            contactTextField.Font = A.Font_AvenirNextRegular14;
-            contactTextField.KeyboardType = UIKeyboardType.EmailAddress;
-            contactTextField.AutocapitalizationType = UITextAutocapitalizationType.None;
-            contactTextField.AutocorrectionType = UITextAutocorrectionType.No;
-            contactTextField.Tag = CONTACT_TEXTFIELD_TAG;
-            contentView.AddSubview (contactTextField);
-
-            yOffset = contactTextField.Frame.Bottom;
-
-            UIView horizontalBottomBorder = new UIView (new RectangleF (0, yOffset - .5f, View.Frame.Width, .5f));
-            horizontalBottomBorder.BackgroundColor = A.Color_NachoBorderGray;
-            contentView.AddSubview (horizontalBottomBorder);
-
-            UIView sectionTwo = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 35));
-            sectionTwo.BackgroundColor = A.Color_NachoNowBackground;
-
-            UILabel sectionTwoHeader = new UILabel (new RectangleF (15, 0, sectionTwo.Frame.Width - 15, sectionTwo.Frame.Height));
-            sectionTwoHeader.Font = A.Font_AvenirNextRegular14;
-            sectionTwoHeader.TextColor = A.Color_NachoBlack;
-            sectionTwoHeader.Text = "What can we help you with?";
-            sectionTwoHeader.TextAlignment = UITextAlignment.Left;
-            sectionTwo.Add (sectionTwoHeader);
-            contentView.AddSubview (sectionTwo);
-
-            yOffset = sectionTwo.Frame.Bottom;
-
-            UIView messageBodyView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, MESSAGEBODY_TEXTVIEW_HEIGHT + 200));
-            messageBodyView.Tag = MESSAGEBODY_VIEW_TAG;
-            messageBodyView.BackgroundColor = UIColor.White;
-            messageBodyTextView.Font = A.Font_AvenirNextRegular14;
-            messageBodyTextView.TextColor = UIColor.LightGray;
-            messageBodyTextView.Text = "Briefly describe what's going on...";
-            messageBodyTextView.BackgroundColor = UIColor.White;
-            var beginningRange = new NSRange (0, 0);
-            messageBodyTextView.SelectedRange = beginningRange;
-            messageBodyTextView.Changed += (object sender, EventArgs e) => {
-                MessageBodySelectionChanged (messageBodyTextView);
-            };
-            messageBodyView.Add (messageBodyTextView);
-            contentView.AddSubview (messageBodyView);
-
-            yOffset = messageBodyTextView.Frame.Bottom;
-
-            contactTextField.ShouldReturn += ((textField) => {
-                messageBodyTextView.BecomeFirstResponder ();
-                return true;
-            });
-
-            messageBodyTextView.ShouldBeginEditing += ((textView) => {
-                if (textView.TextColor == UIColor.LightGray) {
-                    textView.Text = "";
-                    textView.TextColor = A.Color_NachoBlack;
-                }
-                return true;
-            });
-
-            messageBodyTextView.ShouldEndEditing += ((textView) => {
-                if (0 == textView.Text.Trim ().Length) {
-                    messageBodyTextView.TextColor = UIColor.LightGray;
-                    messageBodyTextView.Text = "Briefly describe what's going on...";
-                }
-                return true;
-            });
-
-            scrollView.BackgroundColor = A.Color_NachoNowBackground;
+            View.AddSubview (navigationBar);
         }
 
         protected void LayoutView ()
         {
-            scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - KEYBOARD_HEIGHT);
-            var contentFrame = new RectangleF (0, 0, View.Frame.Width, MESSAGEBODY_TEXTVIEW_HEIGHT + LINE_OFFSET + 10);
+            scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
+            var contentFrame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - VERTICAL_PADDING);
             contentView.Frame = contentFrame;
             scrollView.ContentSize = contentFrame.Size;
         }
 
         protected void ConfigureView ()
         {
-            UITextField contactText = (UITextField)contentView.ViewWithTag (CONTACT_TEXTFIELD_TAG);
+            UITextField contactText = (UITextField)View.ViewWithTag (CONTACT_TEXTFIELD_TAG);
             contactText.Text = GetEmailAddress ();
         }
 
@@ -201,21 +258,11 @@ namespace NachoClient.iOS
 
         protected void MessageBodySelectionChanged (UITextView textView)
         {
-            // We want to scroll the caret rect into view
             var caretRect = textView.GetCaretRectForPosition (textView.SelectedTextRange.End);
-            caretRect.Size = new SizeF (caretRect.Size.Width, caretRect.Size.Height + textView.TextContainerInset.Bottom);
-            // Make sure our textview is big enough to hold the text
-            var frame = textView.Frame;
-            frame.Size = new SizeF (textView.ContentSize.Width, textView.ContentSize.Height);
-            textView.Frame = frame;
+            caretRect.Size = new SizeF (caretRect.Size.Width, caretRect.Size.Height);
+
             var notesView = (UIView)contentView.ViewWithTag (MESSAGEBODY_VIEW_TAG);
-            var newNotesViewFrame = notesView.Frame;
-            newNotesViewFrame.Size = new SizeF (notesView.Frame.Width, textView.ContentSize.Height + 250);
-            notesView.Frame = newNotesViewFrame;
-            // And update our enclosing scrollview for the new content size
-            scrollView.ContentSize = new SizeF (scrollView.ContentSize.Width, textView.Frame.Height + notesView.Frame.Y + 30);
-            // Adjust the caretRect to be in our enclosing scrollview, and then scroll it
-            caretRect.Y += notesView.Frame.Y + 30;
+            caretRect.Y += notesView.Frame.Y + KEYBOARD_HEIGHT;
             scrollView.ScrollRectToVisible (caretRect, true);
         }
 

@@ -521,7 +521,7 @@ namespace NachoClient.iOS
             var messageHeaderView = cell.ContentView.ViewWithTag (MESSAGE_HEADER_TAG) as MessageHeaderView;
             messageHeaderView.ConfigureView (message);
 
-            messageHeaderView.OnClick = (object sender, EventArgs e) => {
+            messageHeaderView.OnClickChili = (object sender, EventArgs e) => {
                 NachoCore.Utils.ScoringHelpers.ToggleHotOrNot(message);
                 messageHeaderView.ConfigureView (message);
             };
