@@ -25,7 +25,7 @@ namespace NachoClient.iOS
         {
         }
 
-        public EventHandler OnClick;
+        public EventHandler OnClickChili;
 
         const int FROM_TAG = 881;
         const int SUBJECT_TAG = 882;
@@ -61,11 +61,12 @@ namespace NachoClient.iOS
 
             chiliImageView.UserInteractionEnabled = true;
             var chiliTapGestureRecognizer = new UITapGestureRecognizer (new NSAction (() => {
-                OnClick (null, null);
+                OnClickChili (null, null);
             }));
             chiliTapGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
-                return true;
+                return false;
             };
+            chiliTapGestureRecognizer.CancelsTouchesInView = true; // Prevents item from being selected
 
             var chiliHitBox = new UIView (new RectangleF (chiliX - 20, 0, 40, 40));
             chiliHitBox.BackgroundColor = UIColor.Clear;

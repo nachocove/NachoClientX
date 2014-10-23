@@ -9,7 +9,7 @@ namespace NachoCore
     // Used to manage fetch of an on-server object on behalf of the UI for immediate use.
     public class NcFetchAssist
     {
-        private delegate string BEActionFunc (int accountId, int subjectId);
+        private delegate string BEActionFunc (int accountId, int subjectId, bool doNotDefer);
 
         private BEActionFunc BEAction;
         private NcResult.SubKindEnum SubKindMatchS, SubKindMatchF;
@@ -54,7 +54,7 @@ namespace NachoCore
                 return NcResult.Error (NcResult.SubKindEnum.Error_NetworkUnavailable);
             }
             NcApplication.Instance.StatusIndEvent += StatusIndReceiver;
-            Token = BEAction (Subject.AccountId, Subject.Id);
+            Token = BEAction (Subject.AccountId, Subject.Id, true);
             if (null == Token) {
                 return NcResult.Error (NcResult.SubKindEnum.Error_InvalidParameter);
             }

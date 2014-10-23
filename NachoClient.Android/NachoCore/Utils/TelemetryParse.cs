@@ -127,7 +127,7 @@ namespace NachoCore.Utils
 
         public static string dummy = "";
 
-        public void SendEvent (TelemetryEvent tEvent)
+        public bool SendEvent (TelemetryEvent tEvent)
         {
             // I think we are running in this problem:
             // http://forums.xamarin.com/discussion/6404/memory-leaks-and-nsautoreleasepool
@@ -221,8 +221,10 @@ namespace NachoCore.Utils
                 }
                 PFObject anEvent = PFObject.ObjectWithClassName ("Events", dict.GetDictionary ());
                 anEvent.ACL = DefaultAcl;
-                anEvent.Save ();
+                bool succeed = anEvent.Save ();
                 anEvent.Dispose ();
+
+                return succeed;
             }
         }
     }

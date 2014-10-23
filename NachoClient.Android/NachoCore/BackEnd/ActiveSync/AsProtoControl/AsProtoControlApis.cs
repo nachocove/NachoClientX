@@ -100,6 +100,7 @@ namespace NachoCore.ActiveSync
                 Search_MaxResults = (null == maxResults) ? 50 : (uint)maxResults,
                 Token = token
             };
+            newSearch.DoNotDefer ();
             newSearch.Insert ();
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCSRCH");
@@ -448,7 +449,7 @@ namespace NachoCore.ActiveSync
             return markFlagDone.Token;
         }
 
-        public override string DnldEmailBodyCmd (int emailMessageId)
+        public override string DnldEmailBodyCmd (int emailMessageId, bool doNotDefer = false)
         {
             McEmailMessage emailMessage;
             McFolder folder;
@@ -473,6 +474,9 @@ namespace NachoCore.ActiveSync
                 return dup.Token;
             }
 
+            if (doNotDefer) {
+                pending.DoNotDefer ();
+            }
             pending.Insert ();
 
             NcTask.Run (delegate {
@@ -481,7 +485,7 @@ namespace NachoCore.ActiveSync
             return pending.Token;
         }
 
-        public override string DnldAttCmd (int attId)
+        public override string DnldAttCmd (int attId, bool doNotDefer = false)
         {
             var att = McAbstrObject.QueryById<McAttachment> (attId);
             if (null == att) {
@@ -501,19 +505,22 @@ namespace NachoCore.ActiveSync
                 return pendings.First ().Token;
             }
 
-            var update = new McPending (Account.Id) {
+            var pending = new McPending (Account.Id) {
                 Operation = McPending.Operations.AttachmentDownload,
                 ServerId = emailMessage.ServerId,
                 AttachmentId = attId,
             };
-            update.Insert ();
+            if (doNotDefer) {
+                pending.DoNotDefer ();
+            }
+            pending.Insert ();
 
             att.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Partial);
             att.Update ();
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCDNLDATT");
             }, "DnldAttCmd");
-            return update.Token;
+            return pending.Token;
         }
 
         public override string CreateCalCmd (int calId, int folderId)
