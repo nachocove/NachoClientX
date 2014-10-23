@@ -158,10 +158,12 @@ namespace NachoCore.Model
             count = 0;
             while (0 == count && 0 < tries) {
                 --tries;
-                if (!mutator (this)) {
-                    return (T)this;
+                if (!mutator (record)) {
+                    return (T)record;
                 }
-                count = NcModel.Instance.Db.Update (record, record.GetType (), true, record.RowVersion);
+                int priorVersion = record.RowVersion;
+                record.RowVersion = priorVersion + 1;
+                count = NcModel.Instance.Db.Update (record, record.GetType (), true, priorVersion);
                 if (0 < count) {
                     break;
                 }
