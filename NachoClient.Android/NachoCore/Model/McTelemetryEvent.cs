@@ -51,27 +51,52 @@ namespace NachoCore.Model
 
         public static McTelemetryEvent QueryOne ()
         {
-            List<McTelemetryEvent> eventList = 
-                NcModel.Instance.TeleDb.Query<McTelemetryEvent> (
-                    "SELECT * FROM McTelemetryEvent ORDER BY IsSupport DESC, Id LIMIT 1;");
-            if (1 == eventList.Count) {
-                return eventList [0];
+            try {
+                return NcModel.Instance.TeleDb.Query<McTelemetryEvent> (
+                    "SELECT * FROM McTelemetryEvent ORDER BY IsSupport DESC, Id LIMIT 1;").SingleOrDefault ();
             }
-            return null;
+            catch (SQLiteException e) {
+                if (SQLite3.Result.Corrupt == e.Result) {
+                    NcModel.Instance.ResetTeleDb ();
+                    return null;
+                } else {
+                    throw;
+                }
+            }
         }
 
         public int Insert ()
         {
             NcAssert.True (0 == Id);
-            int rc =  NcModel.Instance.TeleDb.Insert (this);
-            return rc;
+            try {
+                int rc =  NcModel.Instance.TeleDb.Insert (this);
+                return rc;
+            }
+            catch (SQLiteException e) {
+                if (SQLite3.Result.Corrupt == e.Result) {
+                    NcModel.Instance.ResetTeleDb ();
+                    return 0;
+                } else {
+                    throw;
+                }
+            }
         }
 
         public int Delete ()
         {
             NcAssert.True (0 < Id);
-            int rc = NcModel.Instance.TeleDb.Delete (this);
-            return rc;
+            try {
+                int rc = NcModel.Instance.TeleDb.Delete (this);
+                return rc;
+            }
+            catch (SQLiteException e) {
+                if (SQLite3.Result.Corrupt == e.Result) {
+                    NcModel.Instance.ResetTeleDb ();
+                    return 0;
+                } else {
+                    throw;
+                }
+            }
         }
     }
 }

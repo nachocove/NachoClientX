@@ -2428,7 +2428,8 @@ namespace SQLite
 					SQLiteCommand.BindParameter (Statement, i + 1, source [i], Connection.StoreDateTimeAsTicks);
 				}
 			}
-			r = SQLite3.Step (Statement);
+			while (SQLite3.Result.Row == (r = SQLite3.Step (Statement))) {
+			}
 
 			if (r == SQLite3.Result.Done) {
 				int rowsAffected = SQLite3.Changes (Connection.Handle);

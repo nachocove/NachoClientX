@@ -27,6 +27,14 @@ namespace NachoCore.Model
 
         public string TeleDbFileName { set; get; }
 
+        public enum AutoVacuumEnum {
+            NONE = 0,
+            FULL = 1,
+            INCREMENTAL = 2
+        };
+
+        public AutoVacuumEnum AutoVacuum { set; get; }
+
         public SQLiteConnection Db {
             get {
                 var threadId = Thread.CurrentThread.ManagedThreadId;
@@ -43,17 +51,20 @@ namespace NachoCore.Model
             } 
         }
 
+        private object _TeleDbLock;
         private SQLiteConnection _TeleDb = null;
 
         public SQLiteConnection TeleDb {
             get {
-                if (null == _TeleDb) {
-                    _TeleDb = new SQLiteConnection (TeleDbFileName,
-                        SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.FullMutex,
-                        storeDateTimeAsTicks: true);
-                    _TeleDb.BusyTimeout = TimeSpan.FromSeconds (10.0);
+                lock (_TeleDbLock) {
+                    if (null == _TeleDb) {
+                        _TeleDb = new SQLiteConnection (TeleDbFileName,
+                            SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.FullMutex,
+                            storeDateTimeAsTicks: true);
+                        _TeleDb.BusyTimeout = TimeSpan.FromSeconds (10.0);
+                    }
+                    return _TeleDb;
                 }
-                return _TeleDb;
             }
         }
 
@@ -77,6 +88,15 @@ namespace NachoCore.Model
         private void ConfigureDb (SQLiteConnection db)
         {
             NcAssert.NotNull (db);
+            var auto_vacuum = db.ExecuteScalar<int> ("PRAGMA auto_vacuum");
+            QueueLogInfo (string.Format ("PRAGMA auto_vacuum: {0}", auto_vacuum));
+            if ((int)AutoVacuum != auto_vacuum) {
+                var cmd = String.Format ("PRAGMA auto_vacuum = {0}", (int)AutoVacuum);
+                db.Execute (cmd);
+                auto_vacuum = db.ExecuteScalar<int> ("PRAGMA auto_vacuum");
+                NcAssert.Equals (auto_vacuum, (int)AutoVacuum);
+                QueueLogInfo (string.Format ("PRAGMA auto_vacuum set to {0}", (int)AutoVacuum));
+            }
             var cache_size = db.ExecuteScalar<int> ("PRAGMA cache_size");
             QueueLogInfo (string.Format ("PRAGMA cache_size: {0}", cache_size));
             var journal_mode = db.ExecuteScalar<string> ("PRAGMA journal_mode");
@@ -108,6 +128,7 @@ namespace NachoCore.Model
             RateLimiter = new NcRateLimter (16, 0.250);
             DbConns = new ConcurrentDictionary<int, SQLiteConnection> ();
             TransDepth = new ConcurrentDictionary<int, int> ();
+            AutoVacuum = AutoVacuumEnum.NONE;
             Db.CreateTable<McAccount> ();
             Db.CreateTable<McConference> ();
             Db.CreateTable<McCred> ();
@@ -149,8 +170,11 @@ namespace NachoCore.Model
 
         private void InitializeTeleDb ()
         {
-            TeleDb.CreateTable<McTelemetryEvent> ();
+            _TeleDbLock = new object ();
+            AutoVacuum = AutoVacuumEnum.INCREMENTAL;
             ConfigureDb (TeleDb);
+            // Auto-vacuum setting requires the table to be created after.
+            TeleDb.CreateTable<McTelemetryEvent> ();
         }
 
         private void QueueLogInfo (string message)
@@ -415,6 +439,35 @@ namespace NachoCore.Model
                 Log.Error (Log.LOG_DB, "Duplicate McCalendar Entry: Id={0}, ServerId={1}, UID={2}", 
                     dupCal.Id, dupCal.ServerId, dupCal.UID);
             }
+        }
+
+        public void ResetTeleDb ()
+        {
+            lock (_TeleDbLock) {
+                // Close the connection
+                _TeleDb.Close ();
+                _TeleDb.Dispose ();
+                _TeleDb = null; // next reference will re-initialize the connection
+
+                // Remove the db file
+                File.Delete (TeleDbFileName);
+
+                // Recreate the db
+                InitializeTeleDb ();
+
+                Log.Error (Log.LOG_DB, "TeleDB corrupted. Reset.");
+            }
+        }
+
+        public static void MayIncrementallyVacuum (SQLiteConnection db, int numberOfPages)
+        {
+            var freelistCount = db.ExecuteScalar<int> ("PRAGMA freelist_count");
+            if (freelistCount <= numberOfPages) {
+                return;
+            }
+            Log.Info (Log.LOG_DB, "Vacuuming free pages ({0})", freelistCount);
+            var cmd = String.Format ("PRAGMA incremental_vacuum({0})", numberOfPages);
+            db.Execute (cmd);
         }
     }
 }
