@@ -86,10 +86,7 @@ namespace NachoClient.iOS
             UIView messageTapView = new UIView (new RectangleF (0, topEmailCellYVal, supportView.Frame.Width, bottomEmailCellYVal - topEmailCellYVal));
             messageTapView.BackgroundColor = UIColor.Clear;
             messageTapView.Tag = MESSAGE_TAP_VIEW_TAG;
-            messageTapView.UserInteractionEnabled = true; 
-            UITapGestureRecognizer emailTap = new UITapGestureRecognizer (() => {
-            });
-            messageTapView.AddGestureRecognizer (emailTap);
+            messageTapView.UserInteractionEnabled = true;
 
             messageTapGesture = new UITapGestureRecognizer ();
             messageTapGesture.NumberOfTapsRequired = 1;
