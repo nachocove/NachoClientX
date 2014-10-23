@@ -45,7 +45,11 @@ namespace NachoClient.iOS
 
             float yOffset = INDENT;
 
-            UIImageView nachoLogoImageView = new UIImageView (UIImage.FromBundle ("Bootscreen-1"));
+
+            UIImageView nachoLogoImageView;
+            using (var nachoLogo = UIImage.FromBundle ("Bootscreen-1")) {
+                nachoLogoImageView = new UIImageView (nachoLogo);
+            }
             nachoLogoImageView.Frame = new RectangleF (supportView.Frame.Width / 2 - 40, yOffset, 80, 80);
             supportView.Add (nachoLogoImageView);
 
@@ -67,7 +71,10 @@ namespace NachoClient.iOS
             yOffset += INDENT;
             float topEmailCellYVal = yOffset;
 
-            UIImageView emailIconImage = new UIImageView (UIImage.FromBundle ("contacts-email"));
+            UIImageView emailIconImage;
+            using (var emailIcon = UIImage.FromBundle ("contacts-email")) {
+                emailIconImage = new UIImageView (emailIcon);
+            }
             emailIconImage.Frame = new RectangleF (INDENT, yOffset, emailIconImage.Frame.Width, emailIconImage.Frame.Height);
             supportView.AddSubview (emailIconImage);
 
@@ -99,7 +106,10 @@ namespace NachoClient.iOS
 
             yOffset += INDENT;
 
-            UIImageView callIconImage = new UIImageView (UIImage.FromBundle ("contacts-call"));
+            UIImageView callIconImage;
+            using (var callIcon = UIImage.FromBundle ("contacts-call")) {
+                callIconImage = new UIImageView (callIcon);
+            }
             callIconImage.Frame = new RectangleF (INDENT, yOffset, callIconImage.Frame.Width, callIconImage.Frame.Height);
             supportView.AddSubview (callIconImage);
 
