@@ -145,8 +145,6 @@ namespace NachoClient.iOS
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             if (segue.Identifier.Equals ("SegueToSupport")) {
-                var vc = (SupportViewController)segue.DestinationViewController;
-                vc.CalledFromLogin = true;
                 return;
             }
         }

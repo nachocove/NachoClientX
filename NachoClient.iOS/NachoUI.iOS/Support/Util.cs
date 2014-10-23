@@ -825,6 +825,25 @@ namespace NachoClient
             return(vc.IsViewLoaded && (null != vc.View.Window));
         }
 
+        public static string GetVersionNumber ()
+        {
+            var devBundleId = NSBundle.FromIdentifier ("com.nachocove.nachomail");
+            var betaBundleId = NSBundle.FromIdentifier ("com.nachocove.nachomail.beta");
+
+            if (devBundleId != null) {
+                var build = devBundleId.InfoDictionary ["CFBundleVersion"];
+                var version = devBundleId.InfoDictionary ["CFBundleShortVersionString"].ToString();
+                return build.ToString() + "." + version.ToString ();
+            } 
+
+            if (betaBundleId != null) {
+                var build = betaBundleId.InfoDictionary ["CFBundleVersion"];
+                var version = betaBundleId.InfoDictionary ["CFBundleShortVersionString"].ToString();
+                return build.ToString() + "." + version.ToString ();
+            } 
+            return "unkown";
+        }
+
         #endregion
     }
 }

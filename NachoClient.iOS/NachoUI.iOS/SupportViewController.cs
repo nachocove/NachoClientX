@@ -6,38 +6,22 @@ using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using NachoCore.Utils;
 using System.Collections.Generic;
+using System.Drawing;
 
 namespace NachoClient.iOS
 {
-    public partial class SupportViewController : NcUITableViewController
+    public partial class SupportViewController : NcUIViewControllerNoLeaks
     {
-        // Submit a log cell
-        const string SubmitLogText = "Submit a log";
+        protected const float HORIZONTAL_PADDING = 12;
+        protected const float INDENT = 18;
 
-        // Email cell
-        const string ContactByEmailText = "Get Help Now";
-        const string SupportEmail = "support@nachocove.com";
+        protected UITapGestureRecognizer messageTapGesture;
+        protected UITapGestureRecognizer.Token messageTapGestureHandlerToken;
+        protected const int MESSAGE_TAP_VIEW_TAG = 111;
 
-        // Phone # cell
-        const string ContactByPhoneText = "Call Us: +1 (404) 436-2246";
-        const string PhoneNumberLink = "telprompt://14044362246";
-        const string ContactByPhoneDetailText = "Please have your problem and a way for us to contact you available when you call.";
-
-        // Version # cell
-        const string VersionNumberText = "Version Number:";
-
-        // Id's
-        const string SupportToComposeSegueId = "SupportToEmailCompose";
-        const string SegueToNachoNowSegueId = "SegueToNachoNow";
-        const string BasicCell = "BasicCell";
-        const string SubtitleCell = "SubtitleCell";
-
-        // this string is sent to Telemetry when the user sends a log so we can collect the log
-        const string LogNotification = "USER_SENDING_LOG";
-        const string ContactingSupportNotification = "USER_IS_CONTACTING_SUPPORT";
-
-        public bool CalledFromLogin = false;
-        // Implies that account is not yet set up or sync'd
+        protected UITapGestureRecognizer callTapGesture;
+        protected UITapGestureRecognizer.Token callTapGestureHandlerToken;
+        protected const int CALL_TAP_VIEW_TAG = 222;
 
         public SupportViewController (IntPtr handle) : base (handle)
         {
@@ -46,9 +30,155 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-
-            this.TableView.TableFooterView = new UIView (new System.Drawing.RectangleF (0, 0, 0, 0));
             Telemetry.RecordSupport (new Dictionary<string, string>());
+        }
+
+        protected override void CreateViewHierarchy ()
+        {
+            View.BackgroundColor = A.Color_NachoBackgroundGray;
+
+            UIView supportView = new UIView (new RectangleF (HORIZONTAL_PADDING, 20, View.Frame.Width - HORIZONTAL_PADDING * 2, View.Frame.Height - 24 - 120));
+            supportView.BackgroundColor = UIColor.White;
+            supportView.Layer.CornerRadius = 4f;
+            supportView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
+            supportView.Layer.BorderWidth = 1f;
+
+            float yOffset = INDENT;
+
+
+            UIImageView nachoLogoImageView;
+            using (var nachoLogo = UIImage.FromBundle ("Bootscreen-1")) {
+                nachoLogoImageView = new UIImageView (nachoLogo);
+            }
+            nachoLogoImageView.Frame = new RectangleF (supportView.Frame.Width / 2 - 40, yOffset, 80, 80);
+            supportView.Add (nachoLogoImageView);
+
+            yOffset = nachoLogoImageView.Frame.Bottom + 26;
+
+            UILabel happyToHearLabel = new UILabel (new RectangleF (INDENT, yOffset, supportView.Frame.Width - INDENT * 2, 50));
+            happyToHearLabel.Font = A.Font_AvenirNextDemiBold17;
+            happyToHearLabel.TextColor = A.Color_NachoGreen;
+            happyToHearLabel.TextAlignment = UITextAlignment.Center;
+            happyToHearLabel.Lines = 2;
+            happyToHearLabel.LineBreakMode = UILineBreakMode.WordWrap;
+            happyToHearLabel.Text = "We're always more than happy to hear from you.";
+            supportView.AddSubview (happyToHearLabel);
+
+            yOffset = happyToHearLabel.Frame.Bottom + 14;
+
+            Util.AddHorizontalLine (0, yOffset, supportView.Frame.Width, A.Color_NachoBorderGray, supportView);
+
+            yOffset += INDENT;
+            float topEmailCellYVal = yOffset;
+
+            UIImageView emailIconImage;
+            using (var emailIcon = UIImage.FromBundle ("contacts-email")) {
+                emailIconImage = new UIImageView (emailIcon);
+            }
+            emailIconImage.Frame = new RectangleF (INDENT, yOffset, emailIconImage.Frame.Width, emailIconImage.Frame.Height);
+            supportView.AddSubview (emailIconImage);
+
+            UILabel sendUsEmailLabel = new UILabel (new RectangleF (emailIconImage.Frame.Right + 12, yOffset - 3, 220, 40));
+            sendUsEmailLabel.Font = A.Font_AvenirNextMedium14;
+            sendUsEmailLabel.TextColor = A.Color_NachoBlack;
+            sendUsEmailLabel.TextAlignment = UITextAlignment.Left;
+            sendUsEmailLabel.Lines = 2;
+            sendUsEmailLabel.LineBreakMode = UILineBreakMode.WordWrap;
+            sendUsEmailLabel.Text = "Send us a message at support@nachocove.com";
+            supportView.AddSubview (sendUsEmailLabel);
+
+            yOffset = sendUsEmailLabel.Frame.Bottom + INDENT;
+            float bottomEmailCellYVal = yOffset;
+
+            UIView messageTapView = new UIView (new RectangleF (0, topEmailCellYVal, supportView.Frame.Width, bottomEmailCellYVal - topEmailCellYVal));
+            messageTapView.BackgroundColor = UIColor.Clear;
+            messageTapView.Tag = MESSAGE_TAP_VIEW_TAG;
+            messageTapView.UserInteractionEnabled = true;
+
+            messageTapGesture = new UITapGestureRecognizer ();
+            messageTapGesture.NumberOfTapsRequired = 1;
+            messageTapGestureHandlerToken = messageTapGesture.AddTarget (MessageSingleTapHandler);
+            messageTapView.AddGestureRecognizer (messageTapGesture);
+
+            supportView.AddSubview (messageTapView);
+
+            Util.AddHorizontalLine (0, yOffset, supportView.Frame.Width, A.Color_NachoBorderGray, supportView);
+
+            yOffset += INDENT;
+
+            UIImageView callIconImage;
+            using (var callIcon = UIImage.FromBundle ("contacts-call")) {
+                callIconImage = new UIImageView (callIcon);
+            }
+            callIconImage.Frame = new RectangleF (INDENT, yOffset, callIconImage.Frame.Width, callIconImage.Frame.Height);
+            supportView.AddSubview (callIconImage);
+
+            UILabel callUsLabel = new UILabel (new RectangleF (callIconImage.Frame.Right + 12, yOffset, 220, 30));
+            callUsLabel.Font = A.Font_AvenirNextMedium14;
+            callUsLabel.TextColor = A.Color_NachoBlack;
+            callUsLabel.TextAlignment = UITextAlignment.Left;
+            callUsLabel.Text = "Call us at +1 (404) 436-2246";
+            supportView.AddSubview (callUsLabel);
+
+            yOffset = callUsLabel.Frame.Bottom + INDENT;
+            float bottomCallCellYVal = yOffset;
+
+            UIView callTapView = new UIView (new RectangleF (0, bottomEmailCellYVal, supportView.Frame.Width, bottomCallCellYVal - bottomEmailCellYVal));
+            callTapView.BackgroundColor = UIColor.Clear;
+            callTapView.UserInteractionEnabled = true; 
+            callTapView.Tag = CALL_TAP_VIEW_TAG;
+
+            callTapGesture = new UITapGestureRecognizer ();
+            callTapGesture.NumberOfTapsRequired = 1;
+            callTapGestureHandlerToken = callTapGesture.AddTarget (CallSingleTapHandler);
+            callTapView.AddGestureRecognizer (callTapGesture);
+
+            supportView.AddSubview (callTapView);
+
+            Util.AddHorizontalLine (0, yOffset, supportView.Frame.Width, A.Color_NachoBorderGray, supportView);
+
+            UILabel versionLabel = new UILabel (new RectangleF (supportView.Frame.Width / 2 - 75, supportView.Frame.Bottom - 50, 150, 20));
+            versionLabel.Font = A.Font_AvenirNextRegular10;
+            versionLabel.TextColor = A.Color_NachoBlack;
+            versionLabel.TextAlignment = UITextAlignment.Center;
+            versionLabel.Text = "NachoMail version " + Util.GetVersionNumber ();//"NachoMail version 0.9";
+            supportView.AddSubview (versionLabel);
+
+            View.AddSubview (supportView);
+        }
+
+        protected override void ConfigureAndLayout ()
+        {
+            return;
+        }
+
+        private void MessageSingleTapHandler (NSObject sender)
+        {
+            var gesture = sender as UIGestureRecognizer;
+            if (null != gesture) {
+                PerformSegue ("SupportToSupportMessage", this);
+            }
+        }
+
+        private void CallSingleTapHandler (NSObject sender)
+        {
+            var gesture = sender as UIGestureRecognizer;
+            if (null != gesture) {
+                UIApplication.SharedApplication.OpenUrl (new NSUrl ("telprompt://14044362246"));
+            }
+        }
+
+        protected override void Cleanup ()
+        {
+            messageTapGesture.RemoveTarget (messageTapGestureHandlerToken);
+            messageTapGesture.ShouldRecognizeSimultaneously = null;
+            UIView messageTapView = (UIView)View.ViewWithTag (MESSAGE_TAP_VIEW_TAG);
+            messageTapView.RemoveGestureRecognizer (messageTapGesture);
+
+            callTapGesture.RemoveTarget (callTapGestureHandlerToken);
+            callTapGesture.ShouldRecognizeSimultaneously = null;
+            UIView callTapView = (UIView)View.ViewWithTag (CALL_TAP_VIEW_TAG);
+            callTapView.RemoveGestureRecognizer (callTapGesture);
         }
 
         public override void ViewWillAppear (bool animated)
@@ -59,9 +189,11 @@ namespace NachoClient.iOS
                 this.NavigationController.ToolbarHidden = true;
             }
 
-            if (CalledFromLogin) {
+            if (!LoginHelpers.HasFirstSyncCompleted(LoginHelpers.GetCurrentAccountId())) {
                 NavigationItem.SetHidesBackButton (false, true);
-            } 
+            } else {
+                NavigationItem.SetHidesBackButton (true, true);
+            }
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -70,168 +202,6 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
-        }
-
-        public override int RowsInSection (UITableView tableview, int section)
-        {
-            return 3;
-        }
-
-        public override int NumberOfSections (UITableView tableView)
-        {
-            return 1;
-        }
-
-        public override void RowSelected (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
-        {
-            switch (indexPath.Row) {
-            case 0:
-                ContactViaEmail ();
-                break;
-            case 1:
-                UIApplication.SharedApplication.OpenUrl (new NSUrl (PhoneNumberLink));
-                break;
-            }
-
-            tableView.DeselectRow (indexPath, true);
-        }
-
-        public void ContactViaEmail ()
-        {
-            PerformSegue ("SupportToSupportMessage", this);
-        }
-
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            if (segue.Identifier.Equals (SupportToComposeSegueId)) {
-                var dc = (MessageComposeViewController)segue.DestinationViewController;
-                NcEmailAddress address = new NcEmailAddress (NcEmailAddress.Kind.To, SupportEmail);
-
-                var holder = sender as SegueHolder;
-                var contents = (Dictionary<string, string>)holder.value;
-
-                string subject = null;
-                string template = null;
-                if (contents != null) {
-                    contents.TryGetValue ("subject", out subject);
-                    contents.TryGetValue ("template", out template);
-                }
-
-                dc.SetEmailPresetFields (address, subject, template);
-                return;
-            }
-            if (segue.Identifier.Equals (SegueToNachoNowSegueId)) {
-                return;
-            }
-
-            if(segue.Identifier.Equals("SupportToSupportMessage")){
-                return;
-            }
-
-            Log.Info (Log.LOG_UI, "Unhandled segue identifier {0}", segue.Identifier);
-            NcAssert.CaseError ();
-        }
-
-        public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
-        {
-            UITableViewCell cell = null;
-
-            switch (indexPath.Row) {
-            case 0:
-                cell = tableView.DequeueReusableCell (SubtitleCell);
-                NcAssert.True (null != cell);
-                //cell.Accessory = UITableViewCellAccessory.DisclosureIndicator;
-                cell.TextLabel.Text = ContactByEmailText;
-                cell.DetailTextLabel.Text = SupportEmail;
-                cell.DetailTextLabel.TextColor = UIColor.LightGray;
-                cell.DetailTextLabel.Font = A.Font_AvenirNextRegular12;
-                cell.DetailTextLabel.LineBreakMode = UILineBreakMode.WordWrap;
-                cell.DetailTextLabel.Lines = 0;
-                UIImageView emailIcon = new UIImageView (UIImage.FromBundle ("icn-contact-quickemail"));
-                emailIcon.Frame = new System.Drawing.RectangleF (cell.Frame.Width - 30, cell.Frame.Height / 2, 20, 20);
-                cell.ContentView.Add (emailIcon);
-                break;
-            case 1:
-                cell = tableView.DequeueReusableCell (SubtitleCell);
-                NcAssert.True (null != cell);
-                cell.TextLabel.Text = ContactByPhoneText;
-                cell.DetailTextLabel.Text = ContactByPhoneDetailText;
-                cell.DetailTextLabel.TextColor = UIColor.LightGray;
-                cell.DetailTextLabel.Font = A.Font_AvenirNextRegular12;
-                cell.DetailTextLabel.LineBreakMode = UILineBreakMode.WordWrap;
-                cell.DetailTextLabel.Lines = 0;
-                UIImageView phoneIcon = new UIImageView (UIImage.FromBundle ("icn-contact-quickcall"));
-                phoneIcon.Frame = new System.Drawing.RectangleF (cell.Frame.Width - 30, cell.Frame.Height / 2, 20, 20);
-                cell.ContentView.Add (phoneIcon);
-                break;
-            case 2:
-                cell = tableView.DequeueReusableCell (BasicCell);
-                NcAssert.True (null != cell);
-
-                var devBundleId = NSBundle.FromIdentifier ("com.nachocove.nachomail");
-                var betaBundleId = NSBundle.FromIdentifier ("com.nachocove.nachomail.beta");
-
-                if (devBundleId != null) {
-                    var version = devBundleId.InfoDictionary ["CFBundleVersion"];
-                    var versionString = devBundleId.InfoDictionary ["CFBundleShortVersionString"];
-                    cell.TextLabel.Text = String.Format("{0} {1} ({2})", VersionNumberText, versionString, version);
-                } else if (betaBundleId != null) {
-                    var version = betaBundleId.InfoDictionary ["CFBundleVersion"];
-                    var versionString = betaBundleId.InfoDictionary ["CFBundleShortVersionString"];
-                    cell.TextLabel.Text = String.Format("{0} {1} ({2})", VersionNumberText, versionString, version);
-                } else {
-                    cell.TextLabel.Text = String.Format("{0} {1}", VersionNumberText, "Unknown version");
-                }
-
-                cell.SelectionStyle = UITableViewCellSelectionStyle.None;
-                break;
-            }
-
-            cell.TextLabel.TextColor = A.Color_NachoBlack;
-            cell.TextLabel.Font = A.Font_AvenirNextRegular14;
-
-            return cell;
-        }
-
-        public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
-        {
-            float height = 0;
-
-            var textAttributesDict = new NSDictionary (UIStringAttributeKey.Font, A.Font_AvenirNextRegular14);
-            var detailTextAttributesDict = new NSDictionary (UIStringAttributeKey.Font, A.Font_AvenirNextRegular12);
-            UIStringAttributes textAttrib = new UIStringAttributes (textAttributesDict);
-            UIStringAttributes detailTextAttrib = new UIStringAttributes (detailTextAttributesDict);
-
-            NSString text = null;
-            NSString detailText = null;
-            switch (indexPath.Row) {
-            case 0:
-                text = new NSString (ContactByEmailText);
-                detailText = new NSString (SupportEmail);
-                break;
-            case 1:
-                text = new NSString (ContactByPhoneText);
-                detailText = new NSString (ContactByPhoneDetailText);
-                break;
-            case 2:
-                text = new NSString (VersionNumberText);
-                detailText = new NSString ("");
-                break;
-            default:
-                NcAssert.True (false, "Tried to show extra cell on support page");
-                break;
-            }
-
-            var textSize = text.GetSizeUsingAttributes (textAttrib);
-            var rect = text.GetBoundingRect (new System.Drawing.SizeF (textSize.Width, 1000), NSStringDrawingOptions.UsesLineFragmentOrigin, textAttrib, null);
-
-            if (detailText != null) {
-                var detailRect = text.GetBoundingRect (new System.Drawing.SizeF (textSize.Width, 1000), NSStringDrawingOptions.UsesLineFragmentOrigin, 
-                                     detailTextAttrib, null);
-                height += detailRect.Height;
-            }
-
-            return height + rect.Height + 30.0F;
         }
     }
 }
