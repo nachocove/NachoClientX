@@ -2108,7 +2108,8 @@ namespace SQLite
 			}
 			var r = SQLite3.Result.OK;
 			var stmt = Prepare ();
-			r = SQLite3.Step (stmt);
+			while (SQLite3.Result.Row == (r = SQLite3.Step (stmt))) {
+			}
 			Finalize (stmt);
 			if (r == SQLite3.Result.Done) {
 				int rowsAffected = SQLite3.Changes (_conn.Handle);
