@@ -181,8 +181,11 @@ namespace NachoClient.iOS
             base.ViewWillAppear (animated);
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = false;
+                if (this.NavigationController.RespondsToSelector (new MonoTouch.ObjCRuntime.Selector ("interactivePopGestureRecognizer"))) {
+                    this.NavigationController.InteractivePopGestureRecognizer.Enabled = false;
+                }
             }
-
+                
             ConfigureFullView ();
 
             if (NcQuickResponse.QRTypeEnum.None != QRType) {
