@@ -29,16 +29,16 @@ namespace NachoClient.iOS
 
             RestoreCustomTabBarOrder ();
 
-            SetTabBarItem ("NachoClient.iOS.NachoNowViewController", "Now", "nav-nachonow", "nav-nachonow-active");
-            SetTabBarItem ("NachoClient.iOS.CalendarViewController", "Calendar", "nav-calendar", "nav-calendar-active");
-            SetTabBarItem ("NachoClient.iOS.ContactListViewController", "Contacts", "nav-contacts", "nav-contacts-active");
-            SetTabBarItem ("NachoClient.iOS.InboxViewController", "Inbox", "navbar-icn-inbox", "navbar-icn-inbox-active");
-            SetTabBarItem ("NachoClient.iOS.GeneralSettingsViewController", "Settings", "icn-inbox", "icn-inbox");
-            SetTabBarItem ("NachoClient.iOS.SupportViewController", "Support", "icn-inbox", "icn-inbox");
-            SetTabBarItem ("NachoClient.iOS.HotListViewController", "Hot", "navbar-icn-inbox", "navbar-icn-inbox-active");
-            SetTabBarItem ("NachoClient.iOS.DeferredViewController", "Deferred", "navbar-icn-inbox", "navbar-icn-inbox-active");
-            SetTabBarItem ("NachoClient.iOS.FoldersViewController", "Mail", "nav-folder", "nav-folder-active");
-            SetTabBarItem ("NachoClient.iOS.AttachmentsViewController", "Files", "menu-icn-attachments", "menu-icn-attachments");
+            SetTabBarItem ("NachoClient.iOS.NachoNowViewController", "Now", "nav-nachonow", "nav-nachonow-active"); // Done
+            SetTabBarItem ("NachoClient.iOS.CalendarViewController", "Calendar", "nav-calendar", "nav-calendar-active"); // Done
+            SetTabBarItem ("NachoClient.iOS.ContactListViewController", "Contacts", "nav-contacts", "nav-contacts-active"); // Done
+            SetTabBarItem ("NachoClient.iOS.InboxViewController", "Inbox", "nav-mail", "nav-mail-active"); // Done
+            SetTabBarItem ("NachoClient.iOS.GeneralSettingsViewController", "Settings", "more-settings", "more-settings-active"); // Done
+            SetTabBarItem ("NachoClient.iOS.SupportViewController", "Support", "more-support", "more-support-active"); // Done
+            SetTabBarItem ("NachoClient.iOS.HotListViewController", "Hot", "nav-mail", "nav-mail-active"); // Done
+            SetTabBarItem ("NachoClient.iOS.DeferredViewController", "Deferred", "nav-mail", "nav-mail-active"); // Done
+            SetTabBarItem ("NachoClient.iOS.FoldersViewController", "Mail", "nav-mail", "nav-mail-active"); // Done
+            SetTabBarItem ("NachoClient.iOS.AttachmentsViewController", "Files", "more-files", "more-files-active"); // Done
 
             FinishedCustomizingViewControllers += (object sender, UITabBarCustomizeChangeEventArgs e) => {
                 SaveCustomTabBarOrder (e);
@@ -95,8 +95,8 @@ namespace NachoClient.iOS
         {
             foreach (var vc in ViewControllers) {
                 if (typeName == GetTabBarItemTypeName (vc)) {
-                    using (var image = UIImage.FromBundle (imageName).ImageWithRenderingMode(UIImageRenderingMode.AlwaysTemplate)) {
-                        using (var selectedImage = UIImage.FromBundle (selectedImageName).ImageWithRenderingMode(UIImageRenderingMode.AlwaysTemplate)) {
+                    using (var image = UIImage.FromBundle (imageName).ImageWithRenderingMode(UIImageRenderingMode.AlwaysOriginal)) {
+                        using (var selectedImage = UIImage.FromBundle (selectedImageName).ImageWithRenderingMode(UIImageRenderingMode.AlwaysOriginal)) {
                             var item = new UITabBarItem (title, image, selectedImage);
                             vc.TabBarItem = item;
                         }

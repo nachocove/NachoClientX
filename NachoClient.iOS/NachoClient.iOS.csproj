@@ -1593,6 +1593,16 @@
     <BundleResource Include="Resources\contacts-call%403x.png" />
     <BundleResource Include="Resources\contacts-call%402x.png" />
     <BundleResource Include="Resources\contacts-email%402x.png" />
+    <BundleResource Include="Resources\more-support%402x.png" />
+    <BundleResource Include="Resources\more-support-active%402x.png" />
+    <BundleResource Include="Resources\more-settings%402x.png" />
+    <BundleResource Include="Resources\more-settings-active%402x.png" />
+    <BundleResource Include="Resources\more-nachomail%402x.png" />
+    <BundleResource Include="Resources\more-nachomail-active%402x.png" />
+    <BundleResource Include="Resources\more-files%402x.png" />
+    <BundleResource Include="Resources\more-files-active%402x.png" />
+    <BundleResource Include="Resources\nav-mail-active%402x.png" />
+    <BundleResource Include="Resources\nav-mail%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
