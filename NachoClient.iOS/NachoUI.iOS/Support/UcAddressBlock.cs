@@ -337,7 +337,7 @@ namespace NachoClient.iOS
             }
             if (isEditable) {
                 var yEntryTextField = yOffset + (LINE_HEIGHT / 2) - (entryTextField.Frame.Height / 2);
-                entryTextField.Frame = new RectangleF (xOffset, yEntryTextField, (xLimit - xOffset), entryTextField.Frame.Height);
+                entryTextField.Frame = new RectangleF (xOffset, 0, (xLimit - xOffset), LINE_HEIGHT);
                 xOffset += entryTextField.Frame.Width;
             }
             yOffset += LINE_HEIGHT;
@@ -411,7 +411,7 @@ namespace NachoClient.iOS
             }
             if (isEditable) {
                 var yEntryTextField = yOffset + (LINE_HEIGHT / 2) - (entryTextField.Frame.Height / 2);
-                entryTextField.Frame = new RectangleF (xOffset, yEntryTextField, (xLimit - xOffset), entryTextField.Frame.Height);
+                entryTextField.Frame = new RectangleF (xOffset, 0, (xLimit - xOffset), LINE_HEIGHT);
                 xOffset += entryTextField.Frame.Width;
             }
             yOffset += LINE_HEIGHT;
