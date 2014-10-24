@@ -445,24 +445,32 @@ namespace NachoClient
 
         public static void CacheUserMessageFields (McEmailMessage emailMessage)
         {
+            int ColorIndex;
+            string Initials;
+            UserMessageField (emailMessage.From, emailMessage.AccountId, out ColorIndex, out Initials);
+            emailMessage.cachedFromColor = ColorIndex;
+            emailMessage.cachedFromLetters = Initials;
+            emailMessage.Update ();
+        }
+
+        public static void UserMessageField(string from, int accountId, out int ColorIndex, out string Initials)
+        {
             // Parse the from address
-            var mailboxAddress = NcEmailAddress.ParseMailboxAddressString (emailMessage.From);
+            var mailboxAddress = NcEmailAddress.ParseMailboxAddressString (from);
             if (null == mailboxAddress) {
-                emailMessage.cachedFromColor = 1;
-                emailMessage.cachedFromLetters = "";
-                emailMessage.Update ();
+                ColorIndex = 1;
+                Initials = "";
                 return;
             }
             // And get a McEmailAddress
             McEmailAddress emailAddress;
-            if (!McEmailAddress.Get (emailMessage.AccountId, mailboxAddress, out emailAddress)) {
-                emailMessage.cachedFromColor = 1;
-                emailMessage.cachedFromLetters = "";
-                emailMessage.Update ();
+            if (!McEmailAddress.Get (accountId, mailboxAddress, out emailAddress)) {
+                ColorIndex = 1;
+                Initials = "";
                 return;
             }
             // Cache the color
-            emailMessage.cachedFromColor = emailAddress.ColorIndex;
+            ColorIndex = emailAddress.ColorIndex;
             // Let create the initials
             McContact contact = new McContact ();
             NcEmailAddress.SplitName (mailboxAddress, ref contact);
@@ -476,8 +484,8 @@ namespace NachoClient
             }
             // Or, failing that, the first char
             if (String.IsNullOrEmpty (initials)) {
-                if (!String.IsNullOrEmpty (emailMessage.From)) {
-                    foreach (char c in emailMessage.From) {
+                if (!String.IsNullOrEmpty (from)) {
+                    foreach (char c in from) {
                         if (Char.IsLetterOrDigit (c)) {
                             initials += Char.ToUpper (c);
                             break;
@@ -486,8 +494,7 @@ namespace NachoClient
                 }
             }
             // Save it to the db
-            emailMessage.cachedFromLetters = initials;
-            emailMessage.Update ();
+            Initials = initials;
         }
 
         public static UIImage ImageOfContact (McContact contact)
