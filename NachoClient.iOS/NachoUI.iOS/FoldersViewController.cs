@@ -27,6 +27,7 @@ namespace NachoClient.iOS
         protected UILabel recentLabel;
         protected UILabel defaultsLabel;
         protected UILabel yourFoldersLabel;
+        protected UIView topView;
         protected UIView recentView;
         protected UIView defaultsView;
         protected UIView yourFoldersView;
@@ -71,14 +72,20 @@ namespace NachoClient.iOS
             base.ViewWillDisappear (animated);
             ClearViews ();
         }
-            
+
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            if (segue.Identifier == "FoldersToMessageList") {
+            if ("FoldersToMessageList" == segue.Identifier) {
                 var holder = (SegueHolder)sender;
                 var messageList = new NachoEmailMessages ((McFolder)holder.value);
                 var messageListViewController = (MessageListViewController)segue.DestinationViewController;
                 messageListViewController.SetEmailMessages (messageList);
+                return;
+            }
+            if ("SegueToHotList" == segue.Identifier) {
+                return;
+            }
+            if ("SegueToDeferredList" == segue.Identifier) {
                 return;
             }
 
@@ -115,6 +122,12 @@ namespace NachoClient.iOS
 
             float marginPadding = 15f;
 
+            topView = new UIView (new RectangleF (marginPadding / 2, yOffset, View.Frame.Width - marginPadding, 44));
+            topView.Layer.CornerRadius = 4;
+            topView.BackgroundColor = UIColor.White;
+            yOffset += topView.Frame.Height;
+
+            yOffset += 20;
             recentLabel = new UILabel (new RectangleF (20, yOffset, 160, 20));
             recentLabel.Text = "Recent Folders";
             recentLabel.Font = A.Font_AvenirNextDemiBold17;
@@ -156,6 +169,7 @@ namespace NachoClient.iOS
             yOffset += yourFoldersView.Frame.Height;
 
             yOffset += 20;
+            scrollView.Add (topView);
             scrollView.Add (recentLabel);
             scrollView.Add (recentView);
 
@@ -173,6 +187,19 @@ namespace NachoClient.iOS
 
         protected void ConfigureView ()
         {
+            if (!modal) {
+                CreateTopFolderCell ("Inbox", 0, true, () => {
+                    var folder = McFolder.GetDefaultInboxFolder (account.Id);
+                    PerformSegue ("FoldersToMessageList", new SegueHolder (folder));
+                });
+                CreateTopFolderCell ("Hot List", 1, true, () => {
+                    PerformSegue ("SegueToHotList", new SegueHolder (null));
+                });
+                CreateTopFolderCell ("Deferred Messages", 2, false, () => {
+                    PerformSegue ("SegueToDeferredList", new SegueHolder (null));
+                });
+            }
+
             UpdateLastAccessed ();
             if (0 != recentFolderList.Count) {
                 recentLabel.Hidden = false;
@@ -225,29 +252,36 @@ namespace NachoClient.iOS
 
             defaultCellsOffset = 0;
 
-            if (hasRecents) {
-                recentView.Frame = new RectangleF (recentView.Frame.X, recentView.Frame.Y, recentView.Frame.Width, recentFolderList.Count * 44);
-                yOffset += recentView.Frame.Height + recentLabel.Frame.Height + 35;
+            yOffset += 24;
+
+            if (!modal) {
+                ViewFramer.Create (topView).Y (yOffset).Height (3 * 44);
+                yOffset = topView.Frame.Bottom + 24;
             }
 
-            yOffset += 24;
-            defaultsLabel.Frame = new RectangleF (20, yOffset, 160, 20);
+            if (hasRecents) {
+                ViewFramer.Create (recentLabel).Y (yOffset);
+                ViewFramer.Create (recentView).Y (yOffset + 35).Height (recentFolderList.Count * 44);
+                yOffset = recentView.Frame.Bottom + 24;
+            }
+
+            ViewFramer.Create (defaultsLabel).Y (yOffset);
             yOffset += 35;
             LayoutCells (defaultsView, nestedFolderList);
 
             var folderListHeight = defaultCellsOffset * 44;
-            defaultsView.Frame = new RectangleF (defaultsView.Frame.X, yOffset, defaultsView.Frame.Width, folderListHeight);
+            ViewFramer.Create (defaultsView).Y (yOffset).Height (folderListHeight);
             yOffset += folderListHeight;
 
             defaultCellsOffset = 0;
 
             yOffset += 24;
-            yourFoldersLabel.Frame = new RectangleF (20, yOffset, 160, 20);
+            ViewFramer.Create (yourFoldersLabel).Y (yOffset);
             yOffset += 35;
             LayoutCells (yourFoldersView, yourFolderList);
 
             folderListHeight = defaultCellsOffset * 44;
-            yourFoldersView.Frame = new RectangleF (yourFoldersView.Frame.X, yOffset, yourFoldersView.Frame.Width, folderListHeight);
+            ViewFramer.Create (yourFoldersView).Y (yOffset).Height (folderListHeight);
             yOffset += folderListHeight;
            
             if (!modal) {
@@ -286,6 +320,34 @@ namespace NachoClient.iOS
             var parentCell = parentView.ViewWithTag (parentFolder.Id + 10000) as UIView;
             var cell = parentView.ViewWithTag (folder.folderID + 10000) as UIView;
             cell.Frame = new RectangleF (cell.Frame.X, parentCell.Frame.Y, cell.Frame.Width, 44);
+        }
+
+        protected void CreateTopFolderCell (String name, int index, bool addSeparator, Action action)
+        {
+            UIView cell = new UIView (new RectangleF (5, 44 * index, recentView.Frame.Width - 10, 44));
+            cell.BackgroundColor = UIColor.White;
+            var cellTap = new UITapGestureRecognizer ();
+            cellTap.AddTarget (() => {
+                action ();
+            });
+            cell.AddGestureRecognizer (cellTap);
+
+            UILabel label = new UILabel (new RectangleF (52, 0, cell.Frame.Width - 52, 44));
+            label.Text = name;
+            label.Font = A.Font_AvenirNextMedium14;
+            label.TextColor = A.Color_NachoDarkText;
+            cell.Add (label);
+
+            UIImageView imageView = new UIImageView (new RectangleF (13, cell.Frame.Height / 2 - 14, 24, 24));
+            imageView.Image = UIImage.FromBundle ("folder-folder");
+            cell.Add (imageView);
+
+            if (addSeparator) {
+                var line = Util.AddHorizontalLineView (52, 43, cell.Frame.Width - 47, A.Color_NachoBorderGray);
+                cell.Add (line);
+            }
+
+            topView.Add (cell);
         }
 
         protected void CreateRecentFolderCell (McFolder folder, int index)
@@ -692,7 +754,7 @@ namespace NachoClient.iOS
         public void UpdateLastAccessed ()
         {
             var list = McFolder.QueryByMostRecentlyAccessedFolders (account.Id);
-            recentFolderList = list.Take(MAX_RECENT_FOLDERS).ToList();
+            recentFolderList = list.Take (MAX_RECENT_FOLDERS).ToList ();
         }
 
         protected object cookie;
