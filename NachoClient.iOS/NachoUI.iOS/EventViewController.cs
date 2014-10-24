@@ -180,15 +180,17 @@ namespace NachoClient.iOS
 
             // Phone label, image, and detail.  The phone field has been removed from the UI
             // until we figure out how to make it useful.
-//            AddTextLabelWithImageView (45, yOffset, "Phone", "icn-mtng-phone", TagType.EVENT_PHONE_TITLE_TAG, contentView);
-//            yOffset += 20 + 5;
-//            UIButton phoneDetailButton = new UIButton (new RectangleF (45, yOffset, SCREEN_WIDTH - 50, 20));
-//            phoneDetailButton.Font = A.Font_AvenirNextRegular14;
-//            phoneDetailButton.SetTitleColor (A.Color_NachoDarkText, UIControlState.Normal);
-//            phoneDetailButton.Tag = (int)TagType.EVENT_PHONE_DETAIL_BUTTON_TAG;
-//            phoneDetailButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
-//            contentView.AddSubview (phoneDetailButton);
-//            yOffset += 20 + 20;
+            #if PHONE_UI
+            AddTextLabelWithImageView (45, yOffset, "Phone", "icn-mtng-phone", TagType.EVENT_PHONE_TITLE_TAG, contentView);
+            yOffset += 20 + 5;
+            UIButton phoneDetailButton = new UIButton (new RectangleF (45, yOffset, SCREEN_WIDTH - 50, 20));
+            phoneDetailButton.Font = A.Font_AvenirNextRegular14;
+            phoneDetailButton.SetTitleColor (A.Color_NachoDarkText, UIControlState.Normal);
+            phoneDetailButton.Tag = (int)TagType.EVENT_PHONE_DETAIL_BUTTON_TAG;
+            phoneDetailButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
+            contentView.AddSubview (phoneDetailButton);
+            yOffset += 20 + 20;
+            #endif
 
             // Attendees label, image, and detail
             AddTextLabelWithImageView (45, yOffset, "Attendees", "icn-mtng-people", TagType.EVENT_ATTENDEE_TITLE_TAG, contentView);
@@ -437,9 +439,11 @@ namespace NachoClient.iOS
             }
 
             // Phone disabled for now.
-//            var phoneButton = View.ViewWithTag ((int)TagType.EVENT_PHONE_DETAIL_BUTTON_TAG) as UIButton;
-//            phoneButton.SetTitle ("Not available", UIControlState.Normal);
-//            phoneButton.Enabled = false;
+            #if PHONE_UI
+            var phoneButton = View.ViewWithTag ((int)TagType.EVENT_PHONE_DETAIL_BUTTON_TAG) as UIButton;
+            phoneButton.SetTitle ("Not available", UIControlState.Normal);
+            phoneButton.Enabled = false;
+            #endif
 
             var alertDetailLabel = View.ViewWithTag ((int)TagType.ALERT_DETAIL_TAG) as UILabel;
             alertDetailLabel.Text = UIntToString (c.Reminder);
@@ -756,8 +760,10 @@ namespace NachoClient.iOS
                 AdjustViewLayout (TagType.EVENT_WHEN_RECURRENCE_TAG, 45, ref yOffset, 0);
             }
 
-//            AdjustViewLayout (TagType.EVENT_PHONE_TITLE_TAG, 23, ref yOffset, 20, SCREEN_WIDTH - 50);
-//            AdjustViewLayout (TagType.EVENT_PHONE_DETAIL_BUTTON_TAG, 45, ref yOffset, 5);
+            #if PHONE_UI
+            AdjustViewLayout (TagType.EVENT_PHONE_TITLE_TAG, 23, ref yOffset, 20, SCREEN_WIDTH - 50);
+            AdjustViewLayout (TagType.EVENT_PHONE_DETAIL_BUTTON_TAG, 45, ref yOffset, 5);
+            #endif
 
             if (0 != c.attendees.Count) {
                 AdjustViewLayout (TagType.EVENT_ATTENDEE_TITLE_TAG, 23, ref yOffset, 20, SCREEN_WIDTH - 50);
