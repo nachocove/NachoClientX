@@ -719,6 +719,7 @@ namespace NachoCore.Utils
                 Task.WaitAll (new Task[] { Task.Delay (5000, NcTask.Cts.Token) });
             }
 
+            int eventDeleted = 0;
             SendSha1AccountEmailAddresses ();
             while (true) {
                 // TODO - We need to be smart about when we run. 
@@ -758,6 +759,11 @@ namespace NachoCore.Utils
 
                     if (null != dbEvent) {
                         dbEvent.Delete ();
+                        eventDeleted = (eventDeleted + 1) & 0xfff;
+                        if (0 == eventDeleted) {
+                            // 4K events deleted. Try to vacuum
+                            NcModel.MayIncrementallyVacuum (NcModel.Instance.TeleDb, 256);
+                        }
                     }
                 } else {
                     // Log only to console. Logging telemetry failures to telemetry is
