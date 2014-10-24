@@ -24,107 +24,78 @@ using MonoTouch.MapKit;
 
 namespace NachoClient.iOS
 {
-    public partial class EventViewController : NcUIViewController, INachoCalendarItemEditor, INachoAttendeeListChooserDelegate, INachoAttachmentListChooserDelegate, INachoNotesControllerParent
+    public partial class EventViewController : NcUIViewControllerNoLeaks, INachoNotesControllerParent
     {
-        protected INachoCalendarItemEditorParent owner;
-        protected CalendarItemEditorAction action;
+        // Model information
         protected McEvent e;
         protected McCalendar root;
         protected McAbstrCalendarRoot c;
-        protected McFolder folder;
         protected McAccount account;
-        protected NachoFolders calendars;
-        protected string TempPhone = "";
-        protected int calendarIndex = 0;
 
-        protected List<McAttendee> PresetAttendees;
-        protected bool PresetsWereSet = false;
-
-        List<McAttachment> attachments = new List<McAttachment> ();
-
-        protected UIView EventInfoView;
-        protected UIView TitleView;
-        protected UIImageView MapImage;
-        protected MKMapView map;
-
-        BodyView descriptionView;
-
-        UIView eventAttendeeView;
-
-        UIView eventAlertsView;
-        UIView eventAttachmentsView;
-        UIView eventNotesView;
-
-        UILabel acceptLabel;
-        UILabel tentativeLabel;
-        UILabel declineLabel;
-
-        UILabel messageLabel;
-        UIButton changeResponseButton;
-
-        RecursionCounter deferLayout;
-
-        UIColor separatorColor = A.Color_NachoBorderGray;
-        protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
-        protected int LINE_OFFSET = 30;
-        protected int CELL_HEIGHT = 44;
-        protected int START_PICKER_HEIGHT = 0;
-        protected int END_PICKER_HEIGHT = 0;
-        protected float TEXT_LINE_HEIGHT = 19.124f;
-        protected float DESCRIPTION_OFFSET = 0f;
-        public float IMAGE_HEIGHT = SCREEN_WIDTH / 2 - 45;
-        protected float TOOL_BAR_HEIGHT = 65f;
-        protected float TITLE_OFFSET = 0f;
-        protected int attachmentCount = 0;
-        protected float keyboardHeight;
-        protected bool suppressLayout = false;
-        protected bool suppressLowerLayout = false;
-        protected bool startDateOpen = false;
-        protected bool endDateOpen = false;
-        protected bool startIsOpening = false;
-        protected bool endIsOpening = false;
-        protected bool endChanged = false;
-        protected bool allDayEvent = false;
-        protected bool eventEditStarted = false;
-        protected bool isRecurring = false;
-
-        protected bool createEvent = false;
-        protected bool displayEvent = false;
-        protected bool editEvent = false;
-
-        public bool showMenu;
+        // UI elements
+        protected BodyView descriptionView;
+        protected UIView eventAttendeeView;
+        protected UIView eventAlertsView;
+        protected UIView eventAttachmentsView;
+        protected UIView eventNotesView;
+        protected UILabel acceptLabel;
+        protected UILabel tentativeLabel;
+        protected UILabel declineLabel;
+        protected UILabel messageLabel;
+        protected UIButton changeResponseButton;
+        protected UIButton extraAttendeesButton;
         protected UIView line1;
         protected UIView line2;
         protected UIView line3;
         protected UIView line4;
-        protected UIColor solidTextColor = A.Color_NachoBlack;
 
-        const int ALERT_DETAIL_TAG = 207;
+        // UI Gesture recognizers
+        protected UITapGestureRecognizer attendeeTapGestureRecognizer;
+        protected UIGestureRecognizer.Token attendeeTapGestureRecognizerTapToken;
+        protected UITapGestureRecognizer alertTapGestureRecognizer;
+        protected UIGestureRecognizer.Token alertTapGestureRecognizerTapToken;
+        protected UITapGestureRecognizer attachmentsTapGestureRecognizer;
+        protected UIGestureRecognizer.Token attachmentsTapGestureRecognizerTapToken;
+        protected UITapGestureRecognizer notesTapGestureRecognizer;
+        protected UIGestureRecognizer.Token notesTapGestureRecognizerTapToken;
 
-        const int EVENT_TITLE_LABEL_TAG = 101;
-        const int EVENT_DESCRIPTION_LABEL_TAG = 102;
-        const int EVENT_LOCATION_DETAIL_LABEL_TAG = 103;
-        const int EVENT_WHEN_DETAIL_LABEL_TAG = 104;
-        const int EVENT_WHEN_DURATION_TAG = 500;
-        const int EVENT_WHEN_RECURRENCE_TAG = 601;
-        const int EVENT_PHONE_DETAIL_BUTTON_TAG = 105;
-        const int EVENT_ATTENDEE_TAG = 106;
-        const int EVENT_ATTENDEE_DETAIL_TAG = 110;
-        const int EVENT_ATTENDEE_LABEL_TAG = 120;
-        const int EVENT_ATTENDEE_VIEW_TAG = 1000;
-        const int EVENT_ATTACHMENT_DETAIL_TAG = 121;
+        // Helper objects
+        protected bool isRecurring = false;
+        protected RecursionCounter deferLayout;
 
-        const int EVENT_LOCATION_TITLE_TAG = 301;
-        const int EVENT_WHEN_TITLE_TAG = 302;
-        const int EVENT_PHONE_TITLE_TAG = 303;
-        const int EVENT_ATTENDEE_TITLE_TAG = 308;
-        const int EVENT_ALERT_TITLE_TAG = 305;
-        const int EVENT_ATTACHMENT_TITLE_TAG = 306;
-        const int EVENT_NOTE_TITLE_TAG = 307;
+        // UI-related constants, or pseudo-constants
+        protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
+        protected const int CELL_HEIGHT = 44;
+        protected const float TEXT_LINE_HEIGHT = 19.124f;
 
-        const int EVENT_ALERTS_VIEW_TAG = 700;
-        const int EVENT_ATTACHMENTS_VIEW_TAG = 800;
-        const int EVENT_NOTES_VIEW_TAG = 900;
+        public enum TagType {
+            ALERT_DETAIL_TAG = 207,
+
+            EVENT_TITLE_LABEL_TAG = 101,
+            EVENT_DESCRIPTION_LABEL_TAG = 102,
+            EVENT_LOCATION_DETAIL_LABEL_TAG = 103,
+            EVENT_WHEN_DETAIL_LABEL_TAG = 104,
+            EVENT_WHEN_DURATION_TAG = 500,
+            EVENT_WHEN_RECURRENCE_TAG = 601,
+            EVENT_PHONE_DETAIL_BUTTON_TAG = 105,
+            EVENT_ATTENDEE_TAG = 106,
+            EVENT_ATTENDEE_DETAIL_TAG = 110,
+            EVENT_ATTENDEE_LABEL_TAG = 120,
+            EVENT_ATTENDEE_VIEW_TAG = 1000,
+            EVENT_ATTACHMENT_DETAIL_TAG = 121,
+
+            EVENT_LOCATION_TITLE_TAG = 301,
+            EVENT_WHEN_TITLE_TAG = 302,
+            EVENT_PHONE_TITLE_TAG = 303,
+            EVENT_ATTENDEE_TITLE_TAG = 308,
+            EVENT_ALERT_TITLE_TAG = 305,
+            EVENT_ATTACHMENT_TITLE_TAG = 306,
+            EVENT_NOTE_TITLE_TAG = 307,
+
+            EVENT_ALERTS_VIEW_TAG = 700,
+            EVENT_ATTACHMENTS_VIEW_TAG = 800,
+            EVENT_NOTES_VIEW_TAG = 900,
+        }
 
         protected static TupleList<uint, string> minList = new TupleList<uint, string> {
             { 0, "None" },
@@ -139,50 +110,534 @@ namespace NachoClient.iOS
             { 10080, "1 week before" },
         };
 
-        public EventViewController (IntPtr handle) : base (handle)
+        public EventViewController (IntPtr handle)
+            : base (handle)
         {
         }
 
-        public override void ViewDidLoad ()
+        protected override void CreateViewHierarchy ()
         {
-            base.ViewDidLoad ();
+            // Navigation controls
 
-            var g = new UITapGestureRecognizer (() => View.EndEditing (true));
-            contentView.AddGestureRecognizer (g);
+            NavigationItem.Title = "Event Details";
+            NavigationController.NavigationBar.Translucent = false;
 
-            calendars = new NachoFolders (NachoFolders.FilterForCalendars);
+            Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
 
-            CreateEventView ();
+            // Main view
+
+            scrollView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, View.Frame.Height - 54);
+            scrollView.BackgroundColor = UIColor.White;
+            scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
+
+            contentView.BackgroundColor = UIColor.White;
+
+            float yOffset = 20;
+
+            editButton.Clicked += EditButtonClicked;
+
+            // Title label
+            var eventTitleLabel = new UILabel (new RectangleF (25, yOffset, SCREEN_WIDTH - 50, 20));
+            eventTitleLabel.Font = A.Font_AvenirNextDemiBold17;
+            eventTitleLabel.TextColor = A.Color_NachoBlack;
+            eventTitleLabel.Tag = (int)TagType.EVENT_TITLE_LABEL_TAG;
+            contentView.AddSubview (eventTitleLabel);
+
+            yOffset += 30;
+
+            // Description, for which we use a BodyView.
+            descriptionView = new BodyView (
+                new RectangleF (0, yOffset, SCREEN_WIDTH - 2 * BodyView.BODYVIEW_INSET, 10),
+                contentView, 20, 20);
+            descriptionView.Tag = (int)TagType.EVENT_DESCRIPTION_LABEL_TAG;
+            descriptionView.HorizontalScrollingEnabled = true;
+            descriptionView.VerticalScrollingEnabled = false;
+            descriptionView.OnRenderStart = () => {
+                deferLayout.Increment ();
+            };
+            descriptionView.OnRenderComplete = () => {
+                deferLayout.Decrement ();
+            };
+            contentView.AddSubview (descriptionView);
+
+            yOffset += 10 + 20;
+
+            // Location label, image, and detail
+            AddTextLabelWithImageView (45, yOffset, "Location", "icn-mtng-location", TagType.EVENT_LOCATION_TITLE_TAG, contentView);
+            yOffset += 20 + 5;
+            AddDetailTextLabel (45, yOffset, SCREEN_WIDTH - 90, 20, TagType.EVENT_LOCATION_DETAIL_LABEL_TAG, contentView);
+            yOffset += 20 + 20;
+
+            // When label, image, and detail
+            AddTextLabelWithImageView (45, yOffset, "When", "icn-mtng-time", TagType.EVENT_WHEN_TITLE_TAG, contentView);
+            yOffset += 20 + 5;
+            AddDetailTextLabel (45, yOffset, SCREEN_WIDTH - 50, 20, TagType.EVENT_WHEN_DETAIL_LABEL_TAG, contentView);
+            yOffset += 20;
+            AddDetailTextLabel (45, yOffset, SCREEN_WIDTH - 50, 20, TagType.EVENT_WHEN_DURATION_TAG, contentView);
+            yOffset += 20;
+            AddDetailTextLabel (45, yOffset, SCREEN_WIDTH - 90, 20, TagType.EVENT_WHEN_RECURRENCE_TAG, contentView);
+            yOffset += 20 + 20;
+
+            // Phone label, image, and detail.  The phone field has been removed from the UI
+            // until we figure out how to make it useful.
+            #if PHONE_UI
+            AddTextLabelWithImageView (45, yOffset, "Phone", "icn-mtng-phone", TagType.EVENT_PHONE_TITLE_TAG, contentView);
+            yOffset += 20 + 5;
+            UIButton phoneDetailButton = new UIButton (new RectangleF (45, yOffset, SCREEN_WIDTH - 50, 20));
+            phoneDetailButton.Font = A.Font_AvenirNextRegular14;
+            phoneDetailButton.SetTitleColor (A.Color_NachoDarkText, UIControlState.Normal);
+            phoneDetailButton.Tag = (int)TagType.EVENT_PHONE_DETAIL_BUTTON_TAG;
+            phoneDetailButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
+            contentView.AddSubview (phoneDetailButton);
+            yOffset += 20 + 20;
+            #endif
+
+            // Attendees label, image, and detail
+            AddTextLabelWithImageView (45, yOffset, "Attendees", "icn-mtng-people", TagType.EVENT_ATTENDEE_TITLE_TAG, contentView);
+            yOffset += 20;
+            eventAttendeeView = new UIView (new RectangleF (8, yOffset, SCREEN_WIDTH, 96));
+            eventAttendeeView.Tag = (int)TagType.EVENT_ATTENDEE_VIEW_TAG;
+            attendeeTapGestureRecognizer = new UITapGestureRecognizer ();
+            attendeeTapGestureRecognizerTapToken = attendeeTapGestureRecognizer.AddTarget (AttendeeTapGestureRecognizerTap);
+            eventAttendeeView.AddGestureRecognizer (attendeeTapGestureRecognizer);
+            contentView.AddSubview (eventAttendeeView);
+
+            yOffset += 96 + 20;
+
+            float bottomCellsYOffset = yOffset;
+
+            // Alerts
+            eventAlertsView = new UIView (new RectangleF (0, yOffset, SCREEN_WIDTH, CELL_HEIGHT));
+            eventAlertsView.Tag = (int)TagType.EVENT_ALERTS_VIEW_TAG;
+            eventAlertsView.BackgroundColor = UIColor.White;
+
+            Util.AddArrowAccessory (SCREEN_WIDTH - 23, CELL_HEIGHT / 2 - 6, 12, eventAlertsView);
+
+            AddTextLabelWithImageView (45, 12.438f, "Alerts", "icn-defer", TagType.EVENT_ALERT_TITLE_TAG, eventAlertsView);
+
+            var alertsDetail = new UILabel ();
+            alertsDetail.Text = "None";
+            alertsDetail.Tag = (int)TagType.ALERT_DETAIL_TAG;
+            alertsDetail.SizeToFit ();
+            alertsDetail.TextAlignment = UITextAlignment.Right;
+            alertsDetail.Frame = new RectangleF (
+                SCREEN_WIDTH - alertsDetail.Frame.Width - 34, 12.438f,
+                alertsDetail.Frame.Width, TEXT_LINE_HEIGHT);
+            alertsDetail.Font = A.Font_AvenirNextRegular14;
+            alertsDetail.TextColor = A.Color_808080;
+            eventAlertsView.AddSubview (alertsDetail);
+
+            alertTapGestureRecognizer = new UITapGestureRecognizer ();
+            alertTapGestureRecognizerTapToken = alertTapGestureRecognizer.AddTarget (AlertTapGestureRecognizerTap);
+            eventAlertsView.AddGestureRecognizer (alertTapGestureRecognizer);
+
+            contentView.AddSubview (eventAlertsView);
+
+            yOffset += CELL_HEIGHT;
+
+            // Attachments
+            eventAttachmentsView = new UIView (new RectangleF (0, yOffset, SCREEN_WIDTH, CELL_HEIGHT));
+            eventAttachmentsView.Tag = (int)TagType.EVENT_ATTACHMENTS_VIEW_TAG;
+            eventAttachmentsView.BackgroundColor = UIColor.White;
+
+            Util.AddArrowAccessory (SCREEN_WIDTH - 23, CELL_HEIGHT / 2 - 6, 12, eventAttachmentsView);
+
+            AddTextLabelWithImageView (45, 12.438f, "Attachments", "icn-attachedfile", TagType.EVENT_ATTACHMENT_TITLE_TAG, eventAttachmentsView);
+
+            var attachmentDetail = new UILabel ();
+            attachmentDetail.Text = "(0)";
+            attachmentDetail.Tag = (int)TagType.EVENT_ATTACHMENT_DETAIL_TAG;
+            attachmentDetail.SizeToFit ();
+            attachmentDetail.TextAlignment = UITextAlignment.Right;
+            attachmentDetail.Frame = new RectangleF (
+                SCREEN_WIDTH - attachmentDetail.Frame.Width - 34, 12.438f,
+                attachmentDetail.Frame.Width, TEXT_LINE_HEIGHT);
+            attachmentDetail.Font = A.Font_AvenirNextRegular14;
+            attachmentDetail.TextColor = A.Color_808080;
+            eventAttachmentsView.AddSubview (attachmentDetail);
+
+            attachmentsTapGestureRecognizer = new UITapGestureRecognizer ();
+            attachmentsTapGestureRecognizerTapToken = attachmentsTapGestureRecognizer.AddTarget (AttachmentsTapGestureRecognizerTap);
+            eventAttachmentsView.AddGestureRecognizer (attachmentsTapGestureRecognizer);
+
+            contentView.AddSubview (eventAttachmentsView);
+
+            yOffset += CELL_HEIGHT;
+
+            // Notes
+            eventNotesView = new UIView (new RectangleF (0, yOffset, SCREEN_WIDTH, CELL_HEIGHT));
+            eventNotesView.Tag = (int)TagType.EVENT_NOTES_VIEW_TAG;
+            eventNotesView.BackgroundColor = UIColor.White;
+
+            Util.AddArrowAccessory (SCREEN_WIDTH - 23, CELL_HEIGHT / 2 - 6, 12, eventNotesView);
+
+            AddTextLabelWithImageView (45, 12.438f, "Notes", "icn-notes", TagType.EVENT_NOTE_TITLE_TAG, eventNotesView);
+
+            var notesDetail = new UILabel ();
+            notesDetail.SizeToFit ();
+            notesDetail.TextAlignment = UITextAlignment.Right;
+            notesDetail.Frame = new RectangleF (SCREEN_WIDTH - notesDetail.Frame.Width - 34, 12.438f, notesDetail.Frame.Width, TEXT_LINE_HEIGHT);
+            notesDetail.Font = A.Font_AvenirNextRegular14;
+            notesDetail.TextColor = A.Color_808080;
+            eventNotesView.AddSubview (notesDetail);
+
+            notesTapGestureRecognizer = new UITapGestureRecognizer ();
+            notesTapGestureRecognizerTapToken = notesTapGestureRecognizer.AddTarget (NotesTapGestureRecognizerTap);
+            eventNotesView.AddGestureRecognizer (notesTapGestureRecognizer);
+
+            contentView.AddSubview (eventNotesView);
+
+            yOffset += CELL_HEIGHT;
+
+            line1 = Util.AddHorizontalLineView (23, bottomCellsYOffset, SCREEN_WIDTH - 23, A.Color_NachoBorderGray);
+            line2 = Util.AddHorizontalLineView (23, bottomCellsYOffset + CELL_HEIGHT, SCREEN_WIDTH - 23, A.Color_NachoBorderGray);
+            line3 = Util.AddHorizontalLineView (23, bottomCellsYOffset + CELL_HEIGHT * 2, SCREEN_WIDTH - 23, A.Color_NachoBorderGray);
+            line4 = Util.AddHorizontalLineView (23, bottomCellsYOffset + CELL_HEIGHT * 3, SCREEN_WIDTH - 23, A.Color_NachoBorderGray);
+            contentView.AddSubviews (new UIView[] {
+                line1, line2, line3, line4
+            });
+
+            scrollView.ContentSize = new SizeF (SCREEN_WIDTH, yOffset + 20);
+
+            // RSVP bar at the bottom of the screen
+
+            var rsvpBar = new UIView (new RectangleF (0, View.Frame.Height - 118, SCREEN_WIDTH, 54));
+            rsvpBar.BackgroundColor = A.Color_NachoBlack;
+
+            AddButtonImage (acceptButton, "btn-mtng-accept", UIControlState.Normal);
+            AddButtonImage (acceptButton, "btn-mtng-accept-pressed", UIControlState.Selected);
+            acceptButton.Frame = new RectangleF (25, 10, 24, 24);
+            acceptButton.TintColor = UIColor.Clear;
+            acceptButton.TouchUpInside += AcceptButtonTouchUpInside;
+            rsvpBar.AddSubview (acceptButton);
+
+            AddButtonImage (tentativeButton, "btn-mtng-tenative", UIControlState.Normal);
+            AddButtonImage (tentativeButton, "btn-mtng-tenative-pressed", UIControlState.Selected);
+            tentativeButton.Frame = new RectangleF (SCREEN_WIDTH / 2 - 12, 10, 24, 24);
+            tentativeButton.TintColor = UIColor.Clear;
+            tentativeButton.TouchUpInside += TentativeButtonTouchUpInside;
+            rsvpBar.AddSubview (tentativeButton);
+
+            AddButtonImage (declineButton, "btn-mtng-decline", UIControlState.Normal);
+            AddButtonImage (declineButton, "btn-mtng-decline-pressed", UIControlState.Selected);
+            declineButton.Frame = new RectangleF (SCREEN_WIDTH - 24 - 25, 10, 24, 24);
+            declineButton.TintColor = UIColor.Clear;
+            declineButton.TouchUpInside += DeclineButtonTouchUpInside;
+            rsvpBar.AddSubview (declineButton);
+
+            acceptLabel = new UILabel (new RectangleF (15, 36, 44, 10));
+            acceptLabel.TextColor = UIColor.White;
+            acceptLabel.TextAlignment = UITextAlignment.Center;
+            acceptLabel.Font = A.Font_AvenirNextRegular10;
+            acceptLabel.Text = "Accept";
+            rsvpBar.Add (acceptLabel);
+
+            tentativeLabel = new UILabel (new RectangleF ((SCREEN_WIDTH / 2) - 22, 36, 44, 10));
+            tentativeLabel.TextColor = UIColor.White;
+            tentativeLabel.TextAlignment = UITextAlignment.Center;
+            tentativeLabel.Font = A.Font_AvenirNextRegular10;
+            tentativeLabel.Text = "Tentative";
+            rsvpBar.Add (tentativeLabel);
+
+            declineLabel = new UILabel (new RectangleF (SCREEN_WIDTH - 24 - 35, 36, 44, 10));
+            declineLabel.TextColor = UIColor.White;
+            declineLabel.TextAlignment = UITextAlignment.Center;
+            declineLabel.Font = A.Font_AvenirNextRegular10;
+            declineLabel.Text = "Decline";
+            rsvpBar.Add (declineLabel);
+
+            messageLabel = new UILabel (new RectangleF (25 + 24 + 10, 15, 100, 24));
+            messageLabel.TextColor = UIColor.White;
+            messageLabel.TextAlignment = UITextAlignment.Left;
+            messageLabel.Font = A.Font_AvenirNextRegular12;
+            messageLabel.Hidden = true;
+            rsvpBar.Add (messageLabel);
+
+            changeResponseButton = new UIButton (UIButtonType.RoundedRect);
+            changeResponseButton.SetTitle ("Change response", UIControlState.Normal);
+            changeResponseButton.Font = A.Font_AvenirNextRegular12;
+            changeResponseButton.SizeToFit ();
+            changeResponseButton.Frame = new RectangleF (SCREEN_WIDTH - changeResponseButton.Frame.Width - 25, 16, changeResponseButton.Frame.Width, 24);
+            changeResponseButton.SetTitleColor (A.Color_NachoBlue, UIControlState.Normal);
+            changeResponseButton.Hidden = true;
+            changeResponseButton.TouchUpInside += ChangeResponseTouchUpInside;
+            rsvpBar.Add (changeResponseButton);
+
+            // The RSVP bar doesn't scroll with the rest of the view, so it gets added to the main View element, not the contentView.
+            View.AddSubview (rsvpBar);
         }
 
-        public void SetEventPresetFields (List<McAttendee> attendees)
+        protected override void ConfigureAndLayout ()
         {
-            PresetAttendees = attendees;
-            PresetsWereSet = true;
+            NcAssert.NotNull (e);
+
+            account = McAccount.QueryById<McAccount> (e.AccountId);
+            root = McCalendar.QueryById<McCalendar> (e.CalendarId);
+            if (0 == e.ExceptionId) {
+                c = root;
+            } else {
+                c = McException.QueryById<McException> (e.ExceptionId);
+            }
+            if (null == account || null == root || null == c) {
+                ShowNothing ();
+                return;
+            }
+
+            if (0 != root.recurrences.Count) {
+                isRecurring = true;
+            }
+
+            bool isOrganizer = account.EmailAddr == root.OrganizerEmail && account.Id == c.AccountId;
+            if (isOrganizer) {
+                NavigationItem.RightBarButtonItem = editButton;
+            }
+
+            var titleLabel = View.ViewWithTag ((int)TagType.EVENT_TITLE_LABEL_TAG) as UILabel;
+            titleLabel.Text = c.Subject;
+            titleLabel.Lines = 0;
+            titleLabel.LineBreakMode = UILineBreakMode.WordWrap;
+            titleLabel.SizeToFit ();
+
+            var locationLabel = View.ViewWithTag ((int)TagType.EVENT_LOCATION_DETAIL_LABEL_TAG) as UILabel;
+            if (string.IsNullOrEmpty (c.Location)) {
+                locationLabel.Text = "Not specified";
+            } else {
+                locationLabel.Text = c.Location;
+            }
+            locationLabel.Lines = 0;
+            locationLabel.LineBreakMode = UILineBreakMode.WordWrap;
+            locationLabel.SizeToFit ();
+
+            var whenLabel = View.ViewWithTag ((int)TagType.EVENT_WHEN_DETAIL_LABEL_TAG) as UILabel;
+            whenLabel.Text = Pretty.ExtendedDateString (e.StartTime);
+
+            var durationLabel = View.ViewWithTag ((int)TagType.EVENT_WHEN_DURATION_TAG) as UILabel;
+            if (c.AllDayEvent) {
+                // TODO Does this handle time zones correctly?
+                if (e.StartTime.DayOfYear == e.EndTime.DayOfYear) {
+                    durationLabel.Text = "all day event";
+                } else {
+                    durationLabel.Text = string.Format ("from {0} until {1}",
+                        Pretty.FullDateString (e.StartTime), Pretty.FullDateString (e.EndTime));
+                }
+            } else {
+                if (e.StartTime.LocalT ().DayOfYear == e.EndTime.LocalT ().DayOfYear) {
+                    durationLabel.Text = string.Format ("from {0} until {1}",
+                        Pretty.FullTimeString (e.StartTime), Pretty.FullTimeString (e.EndTime));
+                } else {
+                    durationLabel.Text = string.Format ("from {0} until {1}",
+                        Pretty.FullTimeString (e.StartTime), Pretty.FullDateTimeString (e.EndTime));
+                }
+            }
+
+            if (isRecurring) {
+                var recurrenceLabel = View.ViewWithTag ((int)TagType.EVENT_WHEN_RECURRENCE_TAG) as UILabel;
+                recurrenceLabel.Text = MakeRecurrenceString (root.recurrences);
+                recurrenceLabel.Lines = 0;
+                recurrenceLabel.LineBreakMode = UILineBreakMode.WordWrap;
+                recurrenceLabel.SizeToFit ();
+            }
+
+            // Phone disabled for now.
+            #if PHONE_UI
+            var phoneButton = View.ViewWithTag ((int)TagType.EVENT_PHONE_DETAIL_BUTTON_TAG) as UIButton;
+            phoneButton.SetTitle ("Not available", UIControlState.Normal);
+            phoneButton.Enabled = false;
+            #endif
+
+            var alertDetailLabel = View.ViewWithTag ((int)TagType.ALERT_DETAIL_TAG) as UILabel;
+            alertDetailLabel.Text = UIntToString (c.Reminder);
+            alertDetailLabel.SizeToFit ();
+            alertDetailLabel.Frame = new RectangleF (SCREEN_WIDTH - alertDetailLabel.Frame.Width - 34, 12.438f, alertDetailLabel.Frame.Width, TEXT_LINE_HEIGHT);
+
+            // Attendees
+
+            ClearView (eventAttendeeView);
+            extraAttendeesButton = null;
+            if (0 == c.attendees.Count) {
+                // Disable the attendees view.
+                View.ViewWithTag ((int)TagType.EVENT_ATTENDEE_TITLE_TAG).Hidden = true;
+                eventAttendeeView.Hidden = true;
+            } else {
+                View.ViewWithTag ((int)TagType.EVENT_ATTENDEE_TITLE_TAG).Hidden = false;
+                eventAttendeeView.Hidden = false;
+                float spacing = 0;
+                int attendeeNum = 0;
+                foreach (var attendee in c.attendees) {
+
+                    var attendeeButton = UIButton.FromType (UIButtonType.RoundedRect);
+                    attendeeButton.Layer.CornerRadius = 45 / 2;
+                    attendeeButton.Layer.MasksToBounds = true;
+                    attendeeButton.Frame = new RectangleF (23 + spacing, 10, 45, 45);
+                    attendeeButton.Font = A.Font_AvenirNextRegular24;
+                    attendeeButton.ShowsTouchWhenHighlighted = true;
+                    attendeeButton.SetTitleColor (UIColor.White, UIControlState.Normal);
+                    attendeeButton.SetTitleColor (UIColor.LightGray, UIControlState.Selected);
+                    attendeeButton.Tag = (int)TagType.EVENT_ATTENDEE_TAG + attendeeNum;
+                    attendeeButton.SetTitle (Util.NameToLetters (attendee.DisplayName), UIControlState.Normal);
+                    attendeeButton.Layer.BackgroundColor = GetCircleColorForEmail (attendee.Email).CGColor;
+                    // There are future plans to do something with these buttons, but right now
+                    // they don't have any behavior.  So pass their events to the parent view.
+                    attendeeButton.UserInteractionEnabled = false;
+                    eventAttendeeView.AddSubview (attendeeButton);
+
+                    var attendeeName = new UILabel (new RectangleF (23 + spacing, 65, 45, 15));
+                    attendeeName.Font = A.Font_AvenirNextRegular14;
+                    attendeeName.TextColor = UIColor.LightGray;
+                    attendeeName.Tag = (int)TagType.EVENT_ATTENDEE_LABEL_TAG + attendeeNum;
+                    attendeeName.TextAlignment = UITextAlignment.Center;
+                    attendeeName.Text = Util.GetFirstName (attendee.DisplayName);
+                    eventAttendeeView.AddSubview (attendeeName);
+
+                    // If the current user is the organizer, then construct a little circle in the
+                    // lower right corner of the main attendee circle, where the attendee's status
+                    // can be displayed.  If the user is not the organizer, then the attendees'
+                    // status is not known, so we don't want to display a blank circle.
+                    if (isOrganizer) {
+                        var responseView = new UIView (new RectangleF (23 + spacing + 27, 37, 20, 20));
+                        responseView.Tag = (int)TagType.EVENT_ATTENDEE_LABEL_TAG + attendeeNum + 200;
+                        responseView.BackgroundColor = UIColor.White;
+                        responseView.Layer.CornerRadius = 10;
+                        eventAttendeeView.AddSubview (responseView);
+                        var circleView = new UIView (new RectangleF (2.5f, 2.5f, 15, 15));
+                        circleView.BackgroundColor = UIColor.White;
+                        circleView.Layer.CornerRadius = 15 / 2;
+                        circleView.Layer.BorderColor = A.Color_NachoLightGrayBackground.CGColor;
+                        circleView.Layer.BorderWidth = 1;
+                        responseView.AddSubview (circleView);
+                        var responseImageView = new UIImageView (new RectangleF (2.5f, 2.5f, 15, 15));
+                        responseImageView.Tag = (int)TagType.EVENT_ATTENDEE_LABEL_TAG + attendeeNum + 100;
+                        using (var image = GetImageForAttendeeResponse (attendee.AttendeeStatus)) {
+                            if (null != image) {
+                                responseImageView.Image = image;
+                            }
+                        }
+                        responseView.AddSubview (responseImageView);
+                    }
+
+                    spacing += 55;
+                    if (4 <= ++attendeeNum && 5 < c.attendees.Count) {
+                        // There is room for five attendees in the view.  If the meeting
+                        // has more than five attendees, only show four of them and save
+                        // the last slot for showing the number of extra attendees.
+                        break;
+                    }
+                }
+                if (4 < c.attendees.Count) {
+                    extraAttendeesButton = UIButton.FromType (UIButtonType.RoundedRect);
+                    extraAttendeesButton.Layer.CornerRadius = 45 / 2;
+                    extraAttendeesButton.Layer.MasksToBounds = true;
+                    extraAttendeesButton.Layer.BorderColor = A.Color_NachoBlack.CGColor;
+                    extraAttendeesButton.Layer.BorderWidth = 1;
+                    extraAttendeesButton.Frame = new RectangleF (243, 10, 45, 45);
+                    extraAttendeesButton.Font = A.Font_AvenirNextRegular14;
+                    extraAttendeesButton.SetTitleColor (A.Color_NachoBlack, UIControlState.Normal);
+                    extraAttendeesButton.SetTitleColor (UIColor.LightGray, UIControlState.Selected);
+                    extraAttendeesButton.Tag = (int)TagType.EVENT_ATTENDEE_DETAIL_TAG;
+                    extraAttendeesButton.SetTitle (string.Format ("+{0}", c.attendees.Count - 4), UIControlState.Normal);
+                    extraAttendeesButton.TouchUpInside += ExtraAttendeesTouchUpInside;
+                    eventAttendeeView.AddSubview (extraAttendeesButton);
+                }
+                Util.AddArrowAccessory (SCREEN_WIDTH - 23, 24.5f, 12, eventAttendeeView);
+            }
+
+            var attachmentView = View.ViewWithTag ((int)TagType.EVENT_ATTACHMENTS_VIEW_TAG) as UIView;
+            if (0 == c.attachments.Count) {
+                attachmentView.Hidden = true;
+                line2.Hidden = true;
+            } else {
+                attachmentView.Hidden = false;
+                line2.Hidden = false;
+                var attachmentDetail = View.ViewWithTag ((int)TagType.EVENT_ATTACHMENT_DETAIL_TAG) as UILabel;
+                attachmentDetail.Text = string.Format ("({0})", c.attachments.Count);
+                attachmentDetail.SizeToFit ();
+                attachmentDetail.Frame = new RectangleF (SCREEN_WIDTH - attachmentDetail.Frame.Width - 34, 12.438f, attachmentDetail.Frame.Width, TEXT_LINE_HEIGHT);
+            }
+
+            deferLayout = new RecursionCounter (() => {
+                LayoutView ();
+            });
+            deferLayout.Increment ();
+
+            descriptionView.Configure (c);
+
+            ConfigureRsvpBar ();
+
+            deferLayout.Decrement ();
         }
 
-        public void SetCalendarItem (McEvent e, CalendarItemEditorAction action)
+        protected override void Cleanup ()
+        {
+            // Cleanup gesture recognizers
+
+            attendeeTapGestureRecognizer.RemoveTarget (attendeeTapGestureRecognizerTapToken);
+            eventAttendeeView.RemoveGestureRecognizer (attendeeTapGestureRecognizer);
+
+            alertTapGestureRecognizer.RemoveTarget (alertTapGestureRecognizerTapToken);
+            eventAlertsView.RemoveGestureRecognizer (alertTapGestureRecognizer);
+
+            attachmentsTapGestureRecognizer.RemoveTarget (attachmentsTapGestureRecognizerTapToken);
+            eventAttachmentsView.RemoveGestureRecognizer (attachmentsTapGestureRecognizer);
+
+            notesTapGestureRecognizer.RemoveTarget (notesTapGestureRecognizerTapToken);
+            eventNotesView.RemoveGestureRecognizer (notesTapGestureRecognizer);
+
+            // Remove event handlers
+            changeResponseButton.TouchUpInside -= ChangeResponseTouchUpInside;
+            editButton.Clicked -= EditButtonClicked;
+            if (null != extraAttendeesButton) {
+                extraAttendeesButton.TouchUpInside -= ExtraAttendeesTouchUpInside;
+            }
+
+            acceptButton = null;
+            contentView = null;
+            declineButton = null;
+            editButton = null;
+            scrollView = null;
+            tentativeButton = null;
+            descriptionView = null;
+            eventAttendeeView = null;
+            eventAlertsView = null;
+            eventAttachmentsView = null;
+            eventNotesView = null;
+            acceptLabel = null;
+            tentativeLabel = null;
+            declineLabel = null;
+            messageLabel = null;
+            changeResponseButton = null;
+            extraAttendeesButton = null;
+            line1 = null;
+            line2 = null;
+            line3 = null;
+            line4 = null;
+            attendeeTapGestureRecognizer = null;
+            alertTapGestureRecognizer = null;
+            attachmentsTapGestureRecognizer = null;
+            notesTapGestureRecognizer = null;
+        }
+
+        protected static void AddButtonImage (UIButton button, string imageName, UIControlState buttonState)
+        {
+            using (var buttonImage = UIImage.FromBundle(imageName)) {
+                button.SetImage (buttonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal), buttonState);
+            }
+        }
+
+        public void SetCalendarItem (McEvent e)
         {
             this.e = e;
-            this.action = action;
         }
 
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
-            if (null != this.NavigationController) {
-            }
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-            if (null != this.NavigationController) {
-            }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
-            ConfigureEventView ();
-
         }
 
         public override bool HidesBottomBarWhenPushed {
@@ -195,33 +650,8 @@ namespace NachoClient.iOS
         {
             var s = (StatusIndEventArgs)e;
             if (NcResult.SubKindEnum.Info_CalendarChanged == s.Status.SubKind) {
-                ConfigureEventView ();
+                ConfigureAndLayout ();
             }
-        }
-
-        public override void ViewDidAppear (bool animated)
-        {
-            base.ViewDidAppear (animated);
-        }
-
-        /// <summary>
-        /// Interface INachoCalendarItemEditor
-        /// </summary>
-        /// <param name="owner">Owner.</param>
-        public void SetOwner (INachoCalendarItemEditorParent owner)
-        {
-            this.owner = owner;
-        }
-
-        /// <summary>
-        /// Interface INachoCalendarItemEditor
-        /// </summary>
-        /// <param name="animated">If set to <c>true</c> animated.</param>
-        /// <param name="action">Action.</param>
-        public void DismissCalendarItemEditor (bool animated, NSAction action)
-        {
-            owner = null;
-            NavigationController.PopViewControllerAnimated (true);
         }
 
         protected string MyCalendarName (McCalendar c)
@@ -238,7 +668,7 @@ namespace NachoClient.iOS
         {
             if (segue.Identifier.Equals ("EventToEventAttendees")) {
                 var dc = (EventAttendeeViewController)segue.DestinationViewController;
-                dc.SetOwner (this, c.attendees, c, false);
+                dc.SetOwner (null, c.attendees, c, false);
                 return;
             }
 
@@ -248,52 +678,47 @@ namespace NachoClient.iOS
                 dc.ViewDisappearing += (object s, EventArgs e) => {
                     c.Reminder = dc.GetReminder ();
                     SyncMeetingRequest ();
-                    ConfigureEventView ();
                 };
                 return;
             }
 
             if (segue.Identifier.Equals ("EventToPhone")) {
+                // TODO I don't this this seque is possible.
                 var dc = (PhoneViewController)segue.DestinationViewController;
-                dc.SetPhone (TempPhone);
+                dc.SetPhone ("");
                 dc.ViewDisappearing += (object s, EventArgs e) => {
-                    TempPhone = dc.GetPhone ();
-                    ConfigureEventView ();
+                    // TODO Do something with the phone number that is returned.
+                    // dc.GetPhone ();
                 };
                 return;
             }
 
             if (segue.Identifier.Equals ("EventToCal")) {
+                // TODO I don't this this segue is possible.
                 var dc = (ChooseCalendarViewController)segue.DestinationViewController;
-                dc.SetCalendars (calendars);
+                dc.SetCalendars (new NachoFolders (NachoFolders.FilterForCalendars));
                 dc.ViewDisappearing += (object s, EventArgs e) => {
-                    calendarIndex = dc.GetCalIndex ();
-                    ConfigureEventView ();
+                    // TODO Do something with the calendar index that is returned.
+                    // dc.GetCalIndex ();
                 };
                 return;
             }
 
             if (segue.Identifier.Equals ("EventToAttachment")) {
                 var dc = (EventAttachmentViewController)segue.DestinationViewController;
-                dc.SetOwner (this, attachments, c, createEvent);
+                dc.SetOwner (null, c.attachments, c, false);
                 return;
             }
 
             if (segue.Identifier.Equals ("EventToNotes")) {
                 var dc = (NotesViewController)segue.DestinationViewController;
                 dc.SetOwner (this);
-                dc.ViewDisappearing += (object s, EventArgs e) => {
-                    displayEvent = true;
-                };
                 return;
             }
 
             if (segue.Identifier.Equals ("EventToEditEvent")) {
                 var dc = (EditEventViewController)segue.DestinationViewController;
                 dc.SetCalendarItem (e, CalendarItemEditorAction.edit);
-                dc.ViewDisappearing += (object s, EventArgs eventArgs) => {
-                    displayEvent = true;
-                };
                 return;
             }
 
@@ -301,220 +726,10 @@ namespace NachoClient.iOS
             NcAssert.CaseError ();
         }
 
-        protected void CreateEventView ()
-        {
-            Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
-            scrollView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, View.Frame.Height - 54);
-
-            NavigationItem.Title = "Event Details";
-            NavigationController.NavigationBar.Translucent = false;
-
-            //Map/location header image
-            map = new MKMapView (new RectangleF (0, 0, SCREEN_WIDTH, IMAGE_HEIGHT));
-            map.ZoomEnabled = false;
-            map.ScrollEnabled = false;
-
-//                if (map != null) {
-//                    contentView.AddSubview (map);
-//                } else {
-//                    IMAGE_HEIGHT = 0;
-//                }
-            IMAGE_HEIGHT = 0;
-
-            var yOffset = 20;
-
-            //title label
-            UILabel eventTitleLabel = new UILabel (new RectangleF (25, yOffset, SCREEN_WIDTH - 50, 20));
-            eventTitleLabel.Font = A.Font_AvenirNextDemiBold17;
-            eventTitleLabel.TextColor = A.Color_NachoBlack;
-            eventTitleLabel.Tag = EVENT_TITLE_LABEL_TAG;
-            contentView.Add (eventTitleLabel);
-
-            yOffset += 30;
-
-            //desciption label
-            descriptionView = new BodyView (
-                new RectangleF (0, yOffset, SCREEN_WIDTH - 2 * BodyView.BODYVIEW_INSET, 10),
-                contentView, 20, 20);
-            descriptionView.Tag = EVENT_DESCRIPTION_LABEL_TAG;
-            descriptionView.HorizontalScrollingEnabled = true;
-            descriptionView.VerticalScrollingEnabled = false;
-            descriptionView.OnRenderStart = () => {
-                deferLayout.Increment ();
-            };
-            descriptionView.OnRenderComplete = () => {
-                deferLayout.Decrement ();
-            };
-            contentView.Add (descriptionView);
-
-            yOffset += 10 + 20;
-
-            //location label, image and detail
-            AddTextLabelWithImageView (45, yOffset, "Location", UIImage.FromBundle ("icn-mtng-location"), EVENT_LOCATION_TITLE_TAG, contentView);
-
-            yOffset += 20 + 5;
-
-            AddDetailTextLabel (45, yOffset, SCREEN_WIDTH - 90, 20, EVENT_LOCATION_DETAIL_LABEL_TAG, contentView);
-
-            yOffset += 20 + 20;
-
-            //when label, image and detail
-            AddTextLabelWithImageView (45, yOffset, "When", UIImage.FromBundle ("icn-mtng-time"), EVENT_WHEN_TITLE_TAG, contentView);
-
-            yOffset += 20 + 5;
-
-            AddDetailTextLabel (45, yOffset, SCREEN_WIDTH - 50, 20, EVENT_WHEN_DETAIL_LABEL_TAG, contentView);
-            yOffset += 20;
-            AddDetailTextLabel (45, yOffset, SCREEN_WIDTH - 50, 20, EVENT_WHEN_DURATION_TAG, contentView);
-            yOffset += 20;
-            AddDetailTextLabel (45, yOffset, SCREEN_WIDTH - 90, 20, EVENT_WHEN_RECURRENCE_TAG, contentView);
-            yOffset += 20 + 20;
-
-            //phone label, image and detail
-            AddTextLabelWithImageView (45, yOffset, "Phone", UIImage.FromBundle ("icn-mtng-phone"), EVENT_PHONE_TITLE_TAG, contentView);
-            yOffset += 20 + 5;
-            UIButton eventPhoneDetailButton = new UIButton (new RectangleF (45, yOffset, SCREEN_WIDTH - 50, 20));
-            eventPhoneDetailButton.Font = A.Font_AvenirNextRegular14;
-            eventPhoneDetailButton.SetTitleColor (A.Color_NachoDarkText, UIControlState.Normal);
-            eventPhoneDetailButton.Tag = EVENT_PHONE_DETAIL_BUTTON_TAG;
-            eventPhoneDetailButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
-            eventPhoneDetailButton.TouchUpInside += (object sender, EventArgs e) => {
-
-            };
-            contentView.Add (eventPhoneDetailButton);  
-
-            yOffset += 20 + 20;
-
-            //attendees label, image and detail
-            AddTextLabelWithImageView (45, yOffset, "Attendees", UIImage.FromBundle ("icn-mtng-people"), EVENT_ATTENDEE_TITLE_TAG, contentView);
-            yOffset += 20;
-            eventAttendeeView = new UIView (new RectangleF (0, yOffset, SCREEN_WIDTH, 96));
-            eventAttendeeView.Tag = EVENT_ATTENDEE_VIEW_TAG;
-            var attendeeTap = new UITapGestureRecognizer ();
-            attendeeTap.AddTarget (() => {
-                PerformSegue ("EventToEventAttendees", this);
-            });
-            eventAttendeeView.AddGestureRecognizer (attendeeTap);
-            contentView.Add (eventAttendeeView);
-
-            //////////////////////
-            /// Bottom three cells
-            //////////////////////
-
-            yOffset += 96 + 20;
-
-            var bottomCellsyOffset = yOffset;
-
-            //alerts 
-            eventAlertsView = new UIView (new RectangleF (0, yOffset, SCREEN_WIDTH, CELL_HEIGHT));
-            eventAlertsView.Tag = EVENT_ALERTS_VIEW_TAG;
-            eventAlertsView.BackgroundColor = UIColor.White;
-
-            Util.AddArrowAccessory (SCREEN_WIDTH - 23, CELL_HEIGHT / 2 - 6, 12, eventAlertsView);
-
-            AddTextLabelWithImageView (45, 12.438f, "Alerts", UIImage.FromBundle ("icn-defer"), EVENT_ALERT_TITLE_TAG, eventAlertsView);
-
-            UILabel alertsDetailLabel = new UILabel ();
-            alertsDetailLabel.Text = "None";
-            alertsDetailLabel.Tag = ALERT_DETAIL_TAG;
-            alertsDetailLabel.SizeToFit ();
-            alertsDetailLabel.TextAlignment = UITextAlignment.Right;
-            alertsDetailLabel.Frame = new RectangleF (SCREEN_WIDTH - alertsDetailLabel.Frame.Width - 34, 12.438f, alertsDetailLabel.Frame.Width, TEXT_LINE_HEIGHT);
-            alertsDetailLabel.Font = A.Font_AvenirNextRegular14;
-            alertsDetailLabel.TextColor = A.Color_808080;
-            eventAlertsView.AddSubview (alertsDetailLabel);
-
-            var alertTap = new UITapGestureRecognizer ();
-            alertTap.AddTarget (() => {
-                PerformSegue ("EventToAlert", this);
-            });
-            eventAlertsView.AddGestureRecognizer (alertTap);
-            contentView.Add (eventAlertsView);
-
-            yOffset += CELL_HEIGHT;
-
-            //attachments
-            eventAttachmentsView = new UIView (new RectangleF (0, yOffset, SCREEN_WIDTH, CELL_HEIGHT));
-            eventAttachmentsView.Tag = EVENT_ATTACHMENTS_VIEW_TAG;
-            eventAttachmentsView.BackgroundColor = UIColor.White;
-
-            Util.AddArrowAccessory (SCREEN_WIDTH - 23, CELL_HEIGHT / 2 - 6, 12, eventAttachmentsView);
-
-            AddTextLabelWithImageView (45, 12.438f, "Attachments", UIImage.FromBundle ("icn-attachedfile"), EVENT_ATTACHMENT_TITLE_TAG, eventAttachmentsView);
-
-            UILabel attachmentDetailLabel = new UILabel ();
-            attachmentDetailLabel.Text = "(0)";
-            attachmentDetailLabel.Tag = EVENT_ATTACHMENT_DETAIL_TAG;
-            attachmentDetailLabel.SizeToFit ();
-            attachmentDetailLabel.TextAlignment = UITextAlignment.Right;
-            attachmentDetailLabel.Frame = new RectangleF (SCREEN_WIDTH - attachmentDetailLabel.Frame.Width - 34, 12.438f, attachmentDetailLabel.Frame.Width, TEXT_LINE_HEIGHT);
-            attachmentDetailLabel.Font = A.Font_AvenirNextRegular14;
-            attachmentDetailLabel.TextColor = A.Color_808080;
-            eventAttachmentsView.AddSubview (attachmentDetailLabel);
-
-            var attachmentTap = new UITapGestureRecognizer ();
-            attachmentTap.AddTarget (() => {
-                PerformSegue ("EventToAttachment", this);
-            });
-            eventAttachmentsView.AddGestureRecognizer (attachmentTap);
-            contentView.Add (eventAttachmentsView);
-
-            yOffset += CELL_HEIGHT;
-
-            //notes
-            eventNotesView = new UIView (new RectangleF (0, yOffset, SCREEN_WIDTH, CELL_HEIGHT));
-            eventNotesView.Tag = EVENT_NOTES_VIEW_TAG;
-            eventNotesView.BackgroundColor = UIColor.White;
-
-            Util.AddArrowAccessory (SCREEN_WIDTH - 23, CELL_HEIGHT / 2 - 6, 12, eventNotesView);
-
-            AddTextLabelWithImageView (45, 12.438f, "Notes", UIImage.FromBundle ("icn-notes"), EVENT_NOTE_TITLE_TAG, eventNotesView);
-
-            UILabel notesDetailLabel = new UILabel ();
-            notesDetailLabel.SizeToFit ();
-            notesDetailLabel.TextAlignment = UITextAlignment.Right;
-            notesDetailLabel.Frame = new RectangleF (SCREEN_WIDTH - notesDetailLabel.Frame.Width - 34, 12.438f, notesDetailLabel.Frame.Width, TEXT_LINE_HEIGHT);
-            notesDetailLabel.Font = A.Font_AvenirNextRegular14;
-            notesDetailLabel.TextColor = A.Color_808080;
-            eventNotesView.AddSubview (notesDetailLabel);
-
-            var notesTap = new UITapGestureRecognizer ();
-            notesTap.AddTarget (() => {
-                PerformSegue ("EventToNotes", this);
-            });
-            eventNotesView.AddGestureRecognizer (notesTap);
-            contentView.Add (eventNotesView);
-
-            yOffset += CELL_HEIGHT;
-
-            line1 = Util.AddHorizontalLineView (23f, bottomCellsyOffset, SCREEN_WIDTH - 23f, separatorColor);
-            line2 = Util.AddHorizontalLineView (23f, bottomCellsyOffset + CELL_HEIGHT, SCREEN_WIDTH - 23f, separatorColor);
-            line3 = Util.AddHorizontalLineView (23f, bottomCellsyOffset + (CELL_HEIGHT * 2), SCREEN_WIDTH - 23f, separatorColor);
-            line4 = Util.AddHorizontalLineView (23f, bottomCellsyOffset + (CELL_HEIGHT * 3), SCREEN_WIDTH - 23f, separatorColor);
-
-            contentView.AddSubviews (new UIView[] {
-                line1,
-                line2,
-                line3,
-                line4
-            }); 
-
-            MakeToolbar ();
-
-            //Content View
-            contentView.BackgroundColor = UIColor.White;
-
-            //Scroll View
-            scrollView.BackgroundColor = UIColor.White;
-            scrollView.ContentSize = new SizeF (SCREEN_WIDTH, yOffset + 20);
-            scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
-
-        }
-
         protected void ShowNothing()
         {
             Util.HideViewHierarchy (View);
-            var titleLabelView = View.ViewWithTag (EVENT_TITLE_LABEL_TAG) as UILabel;
+            var titleLabelView = View.ViewWithTag ((int)TagType.EVENT_TITLE_LABEL_TAG) as UILabel;
             titleLabelView.Hidden = false;
             contentView.Hidden = false;
             scrollView.Hidden = false;
@@ -525,250 +740,81 @@ namespace NachoClient.iOS
             titleLabelView.SizeToFit ();
         }
 
-        protected void ConfigureEventView ()
-        {
-            NcAssert.NotNull (e);
-
-            account = McAccount.QueryById<McAccount> (e.AccountId);
-            if (null == account) {
-                ShowNothing ();
-                return;
-            }
-            root = McCalendar.QueryById<McCalendar> (e.CalendarId);
-            if(null == root) {
-                ShowNothing ();
-                return;
-            }
-            if (0 != root.recurrences.Count) {
-                isRecurring = true;
-            }
-            if (0 == e.ExceptionId) {
-                c = root;
-            } else {
-                c = McException.QueryById<McException> (e.ExceptionId);
-            }
-            if (null == c) {
-                ShowNothing ();
-                return;
-            }
-
-            if (account.EmailAddr == root.OrganizerEmail && account.Id == c.AccountId) {
-                NavigationItem.RightBarButtonItem = editButton;
-                editButton.Clicked += (object sender, EventArgs eventArgs) => {
-                    PerformSegue ("EventToEditEvent", this);
-                };
-            }
-           
-            contentView.BackgroundColor = UIColor.White;
-
-            //title view
-            var titleLabelView = View.ViewWithTag (EVENT_TITLE_LABEL_TAG) as UILabel;
-            titleLabelView.Text = c.Subject;
-            titleLabelView.Lines = 0;
-            titleLabelView.LineBreakMode = UILineBreakMode.WordWrap;
-            titleLabelView.SizeToFit ();
-
-            //location view
-            var locationLabelView = View.ViewWithTag (EVENT_LOCATION_DETAIL_LABEL_TAG) as UILabel;
-            if (null != c.Location & "" != c.Location) {
-                locationLabelView.Text = c.Location;
-            } else {
-                locationLabelView.Text = "Not specified";
-            }
-            locationLabelView.Lines = 0;
-            locationLabelView.LineBreakMode = UILineBreakMode.WordWrap;
-            locationLabelView.SizeToFit ();
-
-            //when view
-            var whenLabelView = View.ViewWithTag (EVENT_WHEN_DETAIL_LABEL_TAG) as UILabel;
-            whenLabelView.Text = Pretty.ExtendedDateString (e.StartTime);
-
-            var durationLabelView = View.ViewWithTag (EVENT_WHEN_DURATION_TAG) as UILabel;
-            if (!c.AllDayEvent) {
-                if (e.StartTime.DayOfYear == e.EndTime.DayOfYear) {
-                    durationLabelView.Text = "from " + Pretty.FullTimeString (e.StartTime) + " until " + Pretty.FullTimeString (e.EndTime);
-                } else {
-                    durationLabelView.Text = "from " + Pretty.FullTimeString (e.StartTime) + " until " + Pretty.FullDateTimeString (e.EndTime);
-                }
-            } else {
-                if (e.StartTime.DayOfYear == e.EndTime.DayOfYear) {
-                    durationLabelView.Text = "all day event";
-                } else {
-                    durationLabelView.Text = "from " + Pretty.FullDateString (e.StartTime) + " until " + Pretty.FullDateString (e.EndTime);
-                }
-            }
-
-            var recurrenceLabelView = View.ViewWithTag (EVENT_WHEN_RECURRENCE_TAG) as UILabel;
-            if (isRecurring) {
-                recurrenceLabelView.Text = MakeRecurrenceString (root.recurrences);
-                recurrenceLabelView.Lines = 0;
-                recurrenceLabelView.LineBreakMode = UILineBreakMode.WordWrap;
-                recurrenceLabelView.SizeToFit ();
-            }
-
-            //phone view
-            var phoneButtonView = View.ViewWithTag (EVENT_PHONE_DETAIL_BUTTON_TAG) as UIButton;
-            //phoneButtonView.SetTitle (c.Phone, UIControlState.Normal);
-            phoneButtonView.SetTitle ("Not available", UIControlState.Normal);
-            phoneButtonView.Enabled = false;
-
-            //alert view
-            var alertDetailLabelView = contentView.ViewWithTag (ALERT_DETAIL_TAG) as UILabel;
-            alertDetailLabelView.Text = UIntToString (c.Reminder);
-            alertDetailLabelView.SizeToFit ();
-            alertDetailLabelView.Frame = new RectangleF (SCREEN_WIDTH - alertDetailLabelView.Frame.Width - 34, 12.438f, alertDetailLabelView.Frame.Width, TEXT_LINE_HEIGHT);
-
-            // Attendee image view
-            ConfigureAttendeesButtons (eventAttendeeView);
-            int i = 0;
-            foreach (var attendee in c.attendees) {
-                var attendeeButtonView = View.ViewWithTag (EVENT_ATTENDEE_TAG + i) as UIButton;
-                attendeeButtonView.SetTitle (Util.NameToLetters (attendee.DisplayName), UIControlState.Normal);
-
-                var circleColor = GetCircleColorForEmail (attendee.Email);
-                attendeeButtonView.Layer.BackgroundColor = circleColor.CGColor;
-
-                var attendeeLabelView = View.ViewWithTag (EVENT_ATTENDEE_LABEL_TAG + i) as UILabel;
-                attendeeLabelView.Text = Util.GetFirstName (attendee.DisplayName);
-
-                UIImage image;
-                if (attendee.Email == account.EmailAddr) {
-                    // The current user's status is not in the attendee field, but in the ResponseType field of the event.
-                    image = GetImageForAttendeeResponse (c.ResponseType);
-                } else {
-                    image = GetImageForAttendeeResponse (attendee.AttendeeStatus);
-                }
-                if (null != image) {
-                    var attendeeResponseImageView = View.ViewWithTag (EVENT_ATTENDEE_LABEL_TAG + i + 100) as UIImageView;
-                    attendeeResponseImageView.Image = image;
-                }
-
-                ++i;
-                if (4 <= i) {
-                    // There is only room to display four attendees.
-                    break;
-                }
-            }
-            if (4 < c.attendees.Count) {
-                // Tell the user that there are more attendees that aren't being shown.
-                var attendeeDetailButtonView = View.ViewWithTag (EVENT_ATTENDEE_DETAIL_TAG) as UIButton;
-                attendeeDetailButtonView.SetTitle ("+" + (c.attendees.Count - 4), UIControlState.Normal);
-            }
-
-            //get attachments out of an event
-            attachmentCount = c.attachments.Count;
-            var attachmentView = contentView.ViewWithTag (EVENT_ATTACHMENTS_VIEW_TAG) as UIView;
-            if (0 == attachmentCount) {
-                attachmentView.Hidden = true;
-                line2.Hidden = true;
-            } else {
-                var attachmentDetailLabelView = contentView.ViewWithTag (EVENT_ATTACHMENT_DETAIL_TAG) as UILabel;
-                attachmentDetailLabelView.Text = "(" + attachmentCount +  ")";
-                attachmentDetailLabelView.SizeToFit ();
-                attachmentDetailLabelView.Frame = new RectangleF (SCREEN_WIDTH - attachmentDetailLabelView.Frame.Width - 34, 12.438f, attachmentDetailLabelView.Frame.Width, TEXT_LINE_HEIGHT);
-                attachmentView.Hidden = false;
-                line2.Hidden = false;
-            }
-
-            deferLayout = new RecursionCounter (() => {
-                LayoutView ();
-            });
-            deferLayout.Increment ();
-
-            descriptionView.Configure (c);
-
-            ConfigureRsvpBar ();
-
-            deferLayout.Decrement ();
-        }
-
         public void LayoutView ()
         {
-            var yOffset = 20f;
-            var tl = View.ViewWithTag (EVENT_TITLE_LABEL_TAG) as UILabel;
-            tl.Frame = new RectangleF (25, yOffset, SCREEN_WIDTH - 50, tl.Frame.Height);
-            yOffset += tl.Frame.Height;
+            float yOffset = 0;
+
+            AdjustViewLayout (TagType.EVENT_TITLE_LABEL_TAG, 25, ref yOffset, 20, SCREEN_WIDTH - 50);
 
             yOffset += 5;
             descriptionView.Layout (0, yOffset, SCREEN_WIDTH - 2 * BodyView.BODYVIEW_INSET, 10, true);
             yOffset += descriptionView.Frame.Height;
 
-            yOffset += 10;
-            var lt = View.ViewWithTag (EVENT_LOCATION_TITLE_TAG) as UIView;
-            lt.Frame = new RectangleF (23, yOffset, SCREEN_WIDTH - 50, lt.Frame.Height);
-            yOffset += lt.Frame.Height;
+            AdjustViewLayout (TagType.EVENT_LOCATION_TITLE_TAG, 23, ref yOffset, 10, SCREEN_WIDTH - 50);
+            AdjustViewLayout (TagType.EVENT_LOCATION_DETAIL_LABEL_TAG, 45, ref yOffset, 5, SCREEN_WIDTH - 90);
 
-            yOffset += 5;
-            var ll = View.ViewWithTag (EVENT_LOCATION_DETAIL_LABEL_TAG) as UILabel;
-            ll.Frame = new RectangleF (45, yOffset, SCREEN_WIDTH - 90, ll.Frame.Height);
-            yOffset += ll.Frame.Height;
-
-            yOffset += 20;
-            var wt = View.ViewWithTag (EVENT_WHEN_TITLE_TAG) as UIView;
-            wt.Frame = new RectangleF (23, yOffset, SCREEN_WIDTH - 50, wt.Frame.Height);
-            yOffset += wt.Frame.Height;
-
-            yOffset += 5;
-            var wl = View.ViewWithTag (EVENT_WHEN_DETAIL_LABEL_TAG) as UILabel;
-            wl.Frame = new RectangleF (45, yOffset, SCREEN_WIDTH - 50, wl.Frame.Height);
-            yOffset += wl.Frame.Height;
-
-            var wdl = View.ViewWithTag (EVENT_WHEN_DURATION_TAG) as UILabel;
-            wdl.Frame = new RectangleF (45, yOffset, wdl.Frame.Width, wdl.Frame.Height);
-            yOffset += wdl.Frame.Height;
-
-            var wrl = View.ViewWithTag (EVENT_WHEN_RECURRENCE_TAG) as UILabel;
-            wrl.Frame = new RectangleF (45, yOffset, wrl.Frame.Width, wrl.Frame.Height);
+            AdjustViewLayout (TagType.EVENT_WHEN_TITLE_TAG, 23, ref yOffset, 20, SCREEN_WIDTH - 50);
+            AdjustViewLayout (TagType.EVENT_WHEN_DETAIL_LABEL_TAG, 45, ref yOffset, 5, SCREEN_WIDTH - 50);
+            AdjustViewLayout (TagType.EVENT_WHEN_DURATION_TAG, 45, ref yOffset, 0);
             if (isRecurring) {
-                yOffset += wrl.Frame.Height;
+                AdjustViewLayout (TagType.EVENT_WHEN_RECURRENCE_TAG, 45, ref yOffset, 0);
             }
 
-            yOffset += 20;
-            var pt = View.ViewWithTag (EVENT_PHONE_TITLE_TAG) as UIView;
-            pt.Frame = new RectangleF (23, yOffset, SCREEN_WIDTH - 50, pt.Frame.Height);
-            yOffset += pt.Frame.Height;
+            #if PHONE_UI
+            AdjustViewLayout (TagType.EVENT_PHONE_TITLE_TAG, 23, ref yOffset, 20, SCREEN_WIDTH - 50);
+            AdjustViewLayout (TagType.EVENT_PHONE_DETAIL_BUTTON_TAG, 45, ref yOffset, 5);
+            #endif
 
-            yOffset += 5;
-            var pl = View.ViewWithTag (EVENT_PHONE_DETAIL_BUTTON_TAG) as UIButton;
-            pl.Frame = new RectangleF (45, yOffset, pl.Frame.Width, pl.Frame.Height);
-            yOffset += pl.Frame.Height;
-
-            yOffset += 20;
-            var at = View.ViewWithTag (EVENT_ATTENDEE_TITLE_TAG) as UIView;
-            at.Frame = new RectangleF (23, yOffset, SCREEN_WIDTH - 50, at.Frame.Height);
-            yOffset += at.Frame.Height;
-
-            yOffset += 5;
-            var av = View.ViewWithTag (EVENT_ATTENDEE_VIEW_TAG) as UIView;
-            av.Frame = new RectangleF (0, yOffset, av.Frame.Width, av.Frame.Height);
-            yOffset += av.Frame.Height;
-
-            yOffset += 20;
-            var alv = View.ViewWithTag (EVENT_ALERTS_VIEW_TAG) as UIView;
-            alv.Frame = new RectangleF (0, yOffset, alv.Frame.Width, alv.Frame.Height);
-            line1.Frame = new RectangleF (23f, yOffset, line1.Frame.Width, line1.Frame.Height);
-            yOffset += alv.Frame.Height;
-
-            if (0 != attachmentCount) {
-                var atv = View.ViewWithTag (EVENT_ATTACHMENTS_VIEW_TAG) as UIView;
-                atv.Frame = new RectangleF (0, yOffset, atv.Frame.Width, atv.Frame.Height);
-                line2.Frame = new RectangleF (23f, yOffset, line1.Frame.Width, line1.Frame.Height);
-                yOffset += atv.Frame.Height;
+            if (0 != c.attendees.Count) {
+                AdjustViewLayout (TagType.EVENT_ATTENDEE_TITLE_TAG, 23, ref yOffset, 20, SCREEN_WIDTH - 50);
+                AdjustViewLayout (TagType.EVENT_ATTENDEE_VIEW_TAG, 0, ref yOffset, 5);
             }
 
-            var nv = View.ViewWithTag (EVENT_NOTES_VIEW_TAG) as UIView;
-            nv.Frame = new RectangleF (0, yOffset, nv.Frame.Width, nv.Frame.Height);
-            line3.Frame = new RectangleF (23f, yOffset, line1.Frame.Width, line1.Frame.Height);
-            yOffset += nv.Frame.Height;
+            AdjustViewLayout (line1, 23, ref yOffset, 20, line1.Frame.Width);
+            AdjustViewLayout (TagType.EVENT_ALERTS_VIEW_TAG, 0, ref yOffset, 0);
 
-            line4.Frame = new RectangleF (23f, yOffset, line1.Frame.Width, line1.Frame.Height);
+            if (0 != c.attachments.Count) {
+                AdjustViewLayout (line2, 23, ref yOffset, 0, line2.Frame.Width);
+                AdjustViewLayout (TagType.EVENT_ATTACHMENTS_VIEW_TAG, 0, ref yOffset, 0);
+            }
 
-            var bottom = yOffset + 20;
+            AdjustViewLayout (line3, 23, ref yOffset, 0, line3.Frame.Width);
+            AdjustViewLayout (TagType.EVENT_NOTES_VIEW_TAG, 0, ref yOffset, 0);
+
+            AdjustViewLayout (line4, 23, ref yOffset, 0, line4.Frame.Width);
+
+            float bottom = yOffset + 20;
             contentView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, bottom);
             scrollView.ContentSize = new SizeF (SCREEN_WIDTH, bottom);
         }
 
-        public void AddTextLabel (float xOffset, float yOffset, float width, float height, string text, UIView parentView)
+        protected static void AdjustViewLayout (UIView view, float X, ref float Y, float extraY)
+        {
+            AdjustViewLayout (view, X, ref Y, extraY, view.Frame.Width);
+        }
+
+        protected static void AdjustViewLayout (UIView view, float X, ref float Y, float extraY, float width)
+        {
+            Y += extraY;
+            view.Frame = new RectangleF (X, Y, width, view.Frame.Height);
+            Y += view.Frame.Height;
+        }
+
+        protected void AdjustViewLayout (TagType tag, float X, ref float Y, float extraY)
+        {
+            var view = View.ViewWithTag ((int)tag);
+            NcAssert.NotNull (view);
+            AdjustViewLayout (view, X, ref Y, extraY, view.Frame.Width);
+        }
+
+        protected void AdjustViewLayout (TagType tag, float X, ref float Y, float extraY, float width)
+        {
+            var view = View.ViewWithTag ((int)tag);
+            NcAssert.NotNull (view);
+            AdjustViewLayout (view, X, ref Y, extraY, width);
+        }
+
+        protected static void AddTextLabel (float xOffset, float yOffset, float width, float height, string text, UIView parentView)
         {
             var textLabel = new UILabel (new RectangleF (xOffset, yOffset, width, height));
             textLabel.Text = text;
@@ -777,67 +823,33 @@ namespace NachoClient.iOS
             parentView.AddSubview (textLabel);
         }
 
-        public void AddTextLabelWithImageView (float xOffset, float yOffset, string text, UIImage image, int tag, UIView parentView)
+        protected static void AddTextLabelWithImageView (float xOffset, float yOffset, string text, string imageName, TagType tag, UIView parentView)
         {
-            UIView view = new UIView (new RectangleF (xOffset - 22, yOffset, SCREEN_WIDTH, 20));
-            view.Tag = tag;
+            var view = new UIView (new RectangleF (xOffset - 22, yOffset, SCREEN_WIDTH, 20));
+            view.Tag = (int)tag;
+
             var textLabel = new UILabel (new RectangleF (22, 0, 100, 20));
             textLabel.Text = text;
             textLabel.Font = A.Font_AvenirNextRegular14;
             textLabel.TextColor = A.Color_NachoLightText;
             view.AddSubview (textLabel);
 
-            UIImageView theImage = new UIImageView (new RectangleF (0, 0, 15, 15));
-            theImage.Image = image;
-            view.AddSubview (theImage);
-            parentView.Add (view);
+            var imageView = new UIImageView (new RectangleF (0, 0, 15, 15));
+            using (var image = UIImage.FromBundle (imageName)) {
+                imageView.Image = image;
+            }
+            view.AddSubview (imageView);
+
+            parentView.AddSubview (view);
         }
 
-        public void AddDetailTextLabel (float xOffset, float yOffset, float width, float height, int tag, UIView parentView)
+        protected static void AddDetailTextLabel (float xOffset, float yOffset, float width, float height, TagType tag, UIView parentView)
         {
-            UILabel DetailTextLabel = new UILabel (new RectangleF (xOffset, yOffset, width, height));
-            DetailTextLabel.Font = A.Font_AvenirNextRegular14;
-            DetailTextLabel.TextColor = A.Color_NachoDarkText;
-            DetailTextLabel.Tag = tag;
-            parentView.Add (DetailTextLabel);
-        }
-
-        public void AttendeeNameLabel (float xOffset, float yOffset, float width, float height, int tag, UIView parentView)
-        {
-            UILabel NameLabel = new UILabel (new RectangleF (xOffset, yOffset, width, height));
-            NameLabel.Font = A.Font_AvenirNextRegular14;
-            NameLabel.TextColor = UIColor.LightGray;
-            NameLabel.Tag = tag;
-            NameLabel.TextAlignment = UITextAlignment.Center;
-            parentView.Add (NameLabel);
-        }
-
-        public void AttendeeButton (float xOffset, float yOffset, float width, float height, int tag, UIView parentView)
-        {
-            UIButton attendeeButton = UIButton.FromType (UIButtonType.RoundedRect);
-            attendeeButton.Layer.CornerRadius = (45 / 2);
-            attendeeButton.Layer.MasksToBounds = true;
-            attendeeButton.Frame = new RectangleF (xOffset, yOffset, width, height);
-            attendeeButton.Font = A.Font_AvenirNextRegular24;
-            attendeeButton.ShowsTouchWhenHighlighted = true;
-            attendeeButton.SetTitleColor (UIColor.White, UIControlState.Normal);
-            attendeeButton.SetTitleColor (UIColor.LightGray, UIControlState.Selected);
-            attendeeButton.Tag = tag;
-            attendeeButton.TouchUpInside += (object sender, EventArgs e) => {
-                //                var identifer = buttonInfo.segueIdentifier;
-                //                PerformSegue (identifer, new SegueHolder (null));
-            };
-            parentView.Add (attendeeButton);
-        }
-
-        public void MakeEmptyCircle (UIView parentView)
-        {
-            var attendeeResponseView = new UIView (new RectangleF (2.5f, 2.5f, 15, 15));
-            attendeeResponseView.BackgroundColor = UIColor.White;
-            attendeeResponseView.Layer.CornerRadius = 15 / 2;
-            attendeeResponseView.Layer.BorderColor = A.Color_NachoLightGrayBackground.CGColor;
-            attendeeResponseView.Layer.BorderWidth = 1;
-            parentView.Add (attendeeResponseView);
+            var textLabel = new UILabel (new RectangleF (xOffset, yOffset, width, height));
+            textLabel.Font = A.Font_AvenirNextRegular14;
+            textLabel.TextColor = A.Color_NachoDarkText;
+            textLabel.Tag = (int)tag;
+            parentView.AddSubview (textLabel);
         }
 
         public UIColor GetCircleColorForEmail (string displayEmailAddress)
@@ -853,80 +865,6 @@ namespace NachoClient.iOS
             }
 
             return Util.ColorForUser (colorIndex);
-        }
-
-        public void ConfigureAttendeesButtons (UIView parentView)
-        {
-            ClearView (parentView);
-            int counter = 0;
-            int SPACING = 0;
-
-            if (0 == c.attendees.Count) {
-                UILabel noAttendeeDetailTextLabel = new UILabel (new RectangleF (25, 10, SCREEN_WIDTH - 50, 15));
-                noAttendeeDetailTextLabel.Font = A.Font_AvenirNextRegular14;
-                noAttendeeDetailTextLabel.Text = "This event has no attendees";
-                noAttendeeDetailTextLabel.TextColor = UIColor.LightGray;
-                parentView.Add (noAttendeeDetailTextLabel);
-            } else if (5 >= c.attendees.Count) {
-                foreach (var attendee in c.attendees) {
-                    AttendeeButton (23 + SPACING, 10, 45, 45, EVENT_ATTENDEE_TAG + counter, parentView);
-                    AttendeeNameLabel (23 + SPACING, 65, 45, 15, EVENT_ATTENDEE_LABEL_TAG + counter, parentView);
-
-                    var attendeeResponseView = new UIView (new RectangleF (23 + SPACING + 27, 37, 20, 20));
-                    attendeeResponseView.Tag = EVENT_ATTENDEE_LABEL_TAG + counter + 200;
-                    attendeeResponseView.BackgroundColor = UIColor.White;
-                    attendeeResponseView.Layer.CornerRadius = 10;
-
-                    MakeEmptyCircle (attendeeResponseView);
-
-                    UIImageView responseImageView = new UIImageView (new RectangleF (2.5f, 2.5f, 15, 15));
-                    responseImageView.Tag = EVENT_ATTENDEE_LABEL_TAG + counter + 100;
-                    attendeeResponseView.Add (responseImageView);
-                    parentView.Add (attendeeResponseView);
-
-                    counter++;
-                    SPACING = SPACING + 55;
-                }
-                Util.AddArrowAccessory (SCREEN_WIDTH - 23, 24.5f, 12, parentView);
-            } else {
-                foreach (var attendee in c.attendees) {
-                    AttendeeButton (23 + SPACING, 10, 45, 45, EVENT_ATTENDEE_TAG + counter, parentView);
-                    AttendeeNameLabel (23 + SPACING, 65, 45, 15, EVENT_ATTENDEE_LABEL_TAG + counter, parentView);
-
-                    var attendeeResponseView = new UIView (new RectangleF (23 + SPACING + 27, 37, 20, 20));
-                    attendeeResponseView.Tag = EVENT_ATTENDEE_LABEL_TAG + counter + 200;
-                    attendeeResponseView.BackgroundColor = UIColor.White;
-                    attendeeResponseView.Layer.CornerRadius = 10;
-
-                    MakeEmptyCircle (attendeeResponseView);
-
-                    UIImageView responseImageView = new UIImageView (new RectangleF (2.5f, 2.5f, 15, 15));
-                    responseImageView.Tag = EVENT_ATTENDEE_LABEL_TAG + counter + 100;
-                    attendeeResponseView.Add (responseImageView);
-                    parentView.Add (attendeeResponseView);
-
-                    counter++;
-                    if (4 == counter) {
-                        break;
-                    }
-                    SPACING = SPACING + 55;
-                }
-                UIButton eventAttendeeDetailButton = UIButton.FromType (UIButtonType.RoundedRect);
-                eventAttendeeDetailButton.Layer.CornerRadius = (45 / 2);
-                eventAttendeeDetailButton.Layer.MasksToBounds = true;
-                eventAttendeeDetailButton.Layer.BorderColor = A.Color_NachoBlack.CGColor;
-                eventAttendeeDetailButton.Layer.BorderWidth = 1;
-                eventAttendeeDetailButton.Frame = new RectangleF (243, 10, 45, 45);
-                eventAttendeeDetailButton.Font = A.Font_AvenirNextRegular14;
-                eventAttendeeDetailButton.SetTitleColor (A.Color_NachoBlack, UIControlState.Normal);
-                eventAttendeeDetailButton.SetTitleColor (UIColor.LightGray, UIControlState.Selected);
-                eventAttendeeDetailButton.Tag = EVENT_ATTENDEE_DETAIL_TAG;
-                eventAttendeeDetailButton.TouchUpInside += (object sender, EventArgs e) => {
-                    PerformSegue ("EventToEventAttendees", this);
-                };
-                Util.AddArrowAccessory (SCREEN_WIDTH - 23, 24.5f, 12, parentView);
-                parentView.Add (eventAttendeeDetailButton);
-            }
         }
 
         /// <summary>
@@ -1034,113 +972,6 @@ namespace NachoClient.iOS
                 s.RemoveFromSuperview ();
             }
         }
-
-        public void DismissView ()
-        {
-            NavigationController.PopViewControllerAnimated (true);
-            View.EndEditing (true);
-        }
-
-        public void MakeToolbar ()
-        {
-            UIView rsvpBar = new UIView (new RectangleF (0, View.Frame.Height - 118, SCREEN_WIDTH, 54));
-            rsvpBar.BackgroundColor = A.Color_NachoBlack;
-
-            //acceptButton
-            using (var acceptButtonImage = UIImage.FromBundle ("btn-mtng-accept")) {
-                acceptButton.SetImage (acceptButtonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal), UIControlState.Normal);
-            }
-            using (var acceptPressedButtonImage = UIImage.FromBundle ("btn-mtng-accept-pressed")) {
-                acceptButton.SetImage (acceptPressedButtonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal), UIControlState.Selected);
-            }
-            acceptButton.Frame = new RectangleF (25, 10, 24, 24);
-            acceptButton.TintColor = UIColor.Clear;
-
-            //tentativeButton
-            using (var tentativeButtonImage = UIImage.FromBundle ("btn-mtng-tenative")) {
-                tentativeButton.SetImage (tentativeButtonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal), UIControlState.Normal);
-            }
-            using (var tentativePressedButtonImage = UIImage.FromBundle ("btn-mtng-tenative-pressed")) {
-                tentativeButton.SetImage (tentativePressedButtonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal), UIControlState.Selected);
-            }
-            tentativeButton.Frame = new RectangleF ((SCREEN_WIDTH / 2) - 12, 10, 24, 24);
-            tentativeButton.TintColor = UIColor.Clear;
-
-            //declineButton
-            using (var declineButtonImage = UIImage.FromBundle ("btn-mtng-decline")) {
-                declineButton.SetImage (declineButtonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal), UIControlState.Normal);
-
-            }
-            using (var declinePressedButtonImage = UIImage.FromBundle ("btn-mtng-decline-pressed")) {
-                declineButton.SetImage (declinePressedButtonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal), UIControlState.Selected);
-            }
-            declineButton.Frame = new RectangleF (SCREEN_WIDTH - 24 - 25, 10, 24, 24);
-            declineButton.TintColor = UIColor.Clear;
-
-
-            acceptButton.TouchUpInside += (object sender, EventArgs e) => {
-                ToggleButtons (NcResponseType.Accepted);
-                UpdateStatus (NcResponseType.Accepted);
-            };
-
-            tentativeButton.TouchUpInside += (object sender, EventArgs e) => {
-                ToggleButtons (NcResponseType.Tentative);
-                UpdateStatus (NcResponseType.Tentative);
-            };
-
-            declineButton.TouchUpInside += (object sender, EventArgs e) => {
-                ToggleButtons (NcResponseType.Declined);
-                UpdateStatus (NcResponseType.Declined);
-            };
-
-            rsvpBar.Add (acceptButton);
-            rsvpBar.Add (tentativeButton);
-            rsvpBar.Add (declineButton);
-
-            acceptLabel = new UILabel (new RectangleF (15, 36, 44, 10));
-            acceptLabel.TextColor = UIColor.White;
-            acceptLabel.TextAlignment = UITextAlignment.Center;
-            acceptLabel.Font = A.Font_AvenirNextRegular10;
-            acceptLabel.Text = "Accept";
-            rsvpBar.Add (acceptLabel);
-
-            tentativeLabel = new UILabel (new RectangleF ((SCREEN_WIDTH / 2) - 22, 36, 44, 10));
-            tentativeLabel.TextColor = UIColor.White;
-            tentativeLabel.TextAlignment = UITextAlignment.Center;
-            tentativeLabel.Font = A.Font_AvenirNextRegular10;
-            tentativeLabel.Text = "Tentative";
-            rsvpBar.Add (tentativeLabel);
-
-            declineLabel = new UILabel (new RectangleF (SCREEN_WIDTH - 24 - 35, 36, 44, 10));
-            declineLabel.TextColor = UIColor.White;
-            declineLabel.TextAlignment = UITextAlignment.Center;
-            declineLabel.Font = A.Font_AvenirNextRegular10;
-            declineLabel.Text = "Decline";
-            rsvpBar.Add (declineLabel);
-
-            messageLabel = new UILabel (new RectangleF (25 + 24 + 10, 15, 100, 24));
-            messageLabel.TextColor = UIColor.White;
-            messageLabel.TextAlignment = UITextAlignment.Left;
-            messageLabel.Font = A.Font_AvenirNextRegular12;
-            messageLabel.Hidden = true;
-            rsvpBar.Add (messageLabel);
-
-            changeResponseButton = new UIButton (UIButtonType.RoundedRect);
-
-            changeResponseButton.SetTitle ("Change response", UIControlState.Normal);
-            changeResponseButton.Font = A.Font_AvenirNextRegular12;
-            changeResponseButton.SizeToFit ();
-            changeResponseButton.Frame = new RectangleF (SCREEN_WIDTH - changeResponseButton.Frame.Width - 25, 16, changeResponseButton.Frame.Width, 24);
-            changeResponseButton.SetTitleColor (A.Color_NachoBlue, UIControlState.Normal);
-            changeResponseButton.Hidden = true;
-            changeResponseButton.TouchUpInside += (object sender, EventArgs e) => {
-                RestoreButtons ();
-            };
-            rsvpBar.Add (changeResponseButton);
-
-            View.Add (rsvpBar);
-        }
-
 
         protected void ToggleButtons (NcResponseType r)
         {
@@ -1402,15 +1233,9 @@ namespace NachoClient.iOS
 
         protected void SyncMeetingRequest ()
         {
-            // TODO: If calendar changes folders
-            if (0 == c.Id) {
-                c.Insert (); // new entry
-                folder.Link (c);
-                BackEnd.Instance.CreateCalCmd (account.Id, c.Id, folder.Id);
-            } else {
-                c.Update ();
-                BackEnd.Instance.UpdateCalCmd (account.Id, c.Id);
-            }
+            NcAssert.True (0 != c.Id);
+            c.Update ();
+            BackEnd.Instance.UpdateCalCmd (account.Id, c.Id);
         }
 
         protected void UpdateStatus (NcResponseType status)
@@ -1425,26 +1250,6 @@ namespace NachoClient.iOS
                 var mimeBody = CalendarHelper.CreateMime ("", iCalPart, new List<McAttachment> ());
                 CalendarHelper.SendMeetingResponse (account, (McCalendar)c, mimeBody, status);
             }
-        }
-
-        public void UpdateAttendeeList (List<McAttendee> attendees)
-        {
-            c.attendees = attendees;
-        }
-
-        public void DismissINachoAttendeeListChooser (INachoAttendeeListChooser vc)
-        {
-            NcAssert.CaseError ();
-        }
-
-        public void UpdateAttachmentList (List<McAttachment> attachments)
-        {
-            this.attachments = attachments;
-        }
-
-        public void DismissINachoAttachmentListChooser (INachoAttachmentListChooser vc)
-        {
-            NcAssert.CaseError ();
         }
 
         public string GetNoteText ()
@@ -1475,6 +1280,61 @@ namespace NachoClient.iOS
                     Note.Update ();
                 }
             }
+        }
+
+        // Event handlers
+
+        private void AttendeeTapGestureRecognizerTap ()
+        {
+            PerformSegue ("EventToEventAttendees", this);
+        }
+
+        private void AlertTapGestureRecognizerTap ()
+        {
+            PerformSegue ("EventToAlert", this);
+        }
+
+        private void AttachmentsTapGestureRecognizerTap ()
+        {
+            PerformSegue ("EventToAttachment", this);
+        }
+
+        private void NotesTapGestureRecognizerTap ()
+        {
+            PerformSegue ("EventToNotes", this);
+        }
+
+        private void AcceptButtonTouchUpInside (object sender, EventArgs e)
+        {
+            ToggleButtons (NcResponseType.Accepted);
+            UpdateStatus (NcResponseType.Accepted);
+        }
+
+        private void TentativeButtonTouchUpInside (object sender, EventArgs e)
+        {
+            ToggleButtons (NcResponseType.Tentative);
+            UpdateStatus (NcResponseType.Tentative);
+        }
+
+        private void DeclineButtonTouchUpInside (object sender, EventArgs e)
+        {
+            ToggleButtons (NcResponseType.Declined);
+            UpdateStatus (NcResponseType.Declined);
+        }
+
+        private void ChangeResponseTouchUpInside (object sender, EventArgs e)
+        {
+            RestoreButtons ();
+        }
+
+        private void EditButtonClicked (object sender, EventArgs e)
+        {
+            PerformSegue ("EventToEditEvent", this);
+        }
+
+        private void ExtraAttendeesTouchUpInside (object sender, EventArgs e)
+        {
+            PerformSegue ("EventToEventAttendees", this);
         }
     }
 }

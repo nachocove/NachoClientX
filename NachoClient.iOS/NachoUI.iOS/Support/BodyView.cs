@@ -371,13 +371,17 @@ namespace NachoClient.iOS
 
         protected void RenderAttributedString (NSAttributedString attributedString)
         {
-            var label = new BodyTextView (messageView.Frame);
+            var label = new BodyTextView (new RectangleF (
+                leftMargin, 0, messageView.Frame.Width - leftMargin, messageView.Frame.Height));
             label.Configure (attributedString);
             messageView.AddSubview (label);
         }
 
         public void RenderTextString (string text)
         {
+            if (string.IsNullOrEmpty (text)) {
+                return;
+            }
             MonoTouch.CoreText.CTStringAttributes attributes;
             MonoTouch.CoreText.CTFont font;
             UIFont uiFont = A.Font_AvenirNextRegular17;
@@ -420,6 +424,9 @@ namespace NachoClient.iOS
 
         void RenderRtfString (string rtf)
         {
+            if (string.IsNullOrEmpty (rtf)) {
+                return;
+            }
             var nsError = new NSError ();
             var nsAttributes = new NSAttributedStringDocumentAttributes ();
             nsAttributes.DocumentType = NSDocumentType.RTF;
@@ -520,7 +527,7 @@ namespace NachoClient.iOS
 
             if (adjustFrame) {
                 framer
-                    .Width (messageCursor.MaxSubViewWidth)
+                    .Width (messageCursor.MaxSubViewWidth + leftMargin)
                     .Height (messageCursor.TotalHeight);
             }
 
