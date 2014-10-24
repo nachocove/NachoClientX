@@ -23,7 +23,7 @@ namespace NachoClient.iOS
         }
 
         INachoFileChooserParent Owner;
-        protected static McAccount account;
+        protected McAccount account;
         FilesTableSource FilesSource;
 
         string Token;
@@ -451,6 +451,7 @@ namespace NachoClient.iOS
             AttachmentsViewController vc;
             UISearchDisplayController SearchDisplayController;
             public IAttachmentTableViewSourceDelegate owner;
+            protected McAccount account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
 
             // icon id's
             string DownloadIcon = "email-att-download.png";
