@@ -33,6 +33,7 @@ namespace NachoClient.iOS
         protected UIView yourFoldersView;
         protected UIScrollView scrollView;
         protected int rootFolderCount;
+        protected int topFolderCount;
         const int MAX_RECENT_FOLDERS = 3;
 
         public override void ViewDidLoad ()
@@ -188,16 +189,22 @@ namespace NachoClient.iOS
         protected void ConfigureView ()
         {
             if (!modal) {
-                CreateTopFolderCell ("Inbox", 0, true, () => {
-                    var folder = McFolder.GetDefaultInboxFolder (account.Id);
-                    PerformSegue ("FoldersToMessageList", new SegueHolder (folder));
-                });
-                CreateTopFolderCell ("Hot List", 1, true, () => {
+                topFolderCount = 0;
+                var folder = McFolder.GetDefaultInboxFolder (account.Id);
+                if (null != folder) {
+                    CreateTopFolderCell ("Inbox", topFolderCount, true, () => {
+                        PerformSegue ("FoldersToMessageList", new SegueHolder (folder));
+                    });
+                    topFolderCount += 1;
+                }
+                CreateTopFolderCell ("Hot List", topFolderCount, true, () => {
                     PerformSegue ("SegueToHotList", new SegueHolder (null));
                 });
-                CreateTopFolderCell ("Deferred Messages", 2, false, () => {
+                topFolderCount += 1;
+                CreateTopFolderCell ("Deferred Messages", topFolderCount, false, () => {
                     PerformSegue ("SegueToDeferredList", new SegueHolder (null));
                 });
+                topFolderCount += 1;
             }
 
             UpdateLastAccessed ();
@@ -255,7 +262,7 @@ namespace NachoClient.iOS
             yOffset += 24;
 
             if (!modal) {
-                ViewFramer.Create (topView).Y (yOffset).Height (3 * 44);
+                ViewFramer.Create (topView).Y (yOffset).Height (topFolderCount * 44);
                 yOffset = topView.Frame.Bottom + 24;
             }
 
