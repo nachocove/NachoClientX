@@ -272,6 +272,13 @@ namespace NachoClient.iOS
                     UIApplication.SharedApplication.ApplicationIconBadgeNumber = 0;
                 }
             }
+
+            if ("SegueToTabController" == StartupViewController.NextSegue ()) {
+                var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+                var vc = storyboard.InstantiateViewController ("NachoTabBarController");
+                Window.RootViewController = (UIViewController)vc;
+            }
+
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Exit");
 
             return true;
