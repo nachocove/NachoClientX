@@ -19,16 +19,10 @@ namespace NachoClient.iOS
     public partial class MessageListViewController : NcUITableViewController, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoMessageEditorParent, INachoCalendarItemEditorParent, INachoFolderChooserParent, IMessageTableViewSourceDelegate, INachoDateControllerParent
     {
         MessageTableViewSource messageSource;
-        // iOS Bug Workaround
-        // The cancel button on the search bar breaks
-        // if the searchbar is hidden by a scrolled tableview.
-        //PointF savedContentOffset; all uses are commented out, so comment out the definition to avoid a warning.
         protected UIBarButtonItem composeMailButton;
         protected UIBarButtonItem cancelSelectedButton;
         protected UIBarButtonItem moreSelectedButton;
 
-        protected UIRefreshControl RefreshListControl;
-        //        private static Object StaticLockObj = new Object ();
         protected const string UICellReuseIdentifier = "UICell";
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
 
@@ -73,9 +67,9 @@ namespace NachoClient.iOS
             moreSelectedButton = new UIBarButtonItem ();
             Util.SetOriginalImageForButton (moreSelectedButton, "gen-more");
             moreSelectedButton.Clicked += (object sender, EventArgs e) => {
-                UIBlockMenu bm = (UIBlockMenu)View.ViewWithTag(BLOCK_MENU_TAG);
+                UIBlockMenu bm = (UIBlockMenu)View.ViewWithTag (BLOCK_MENU_TAG);
                 TableView.ScrollEnabled = false;
-                bm.MenuTapped(View.Bounds);
+                bm.MenuTapped (View.Bounds);
             };
 
             UIBlockMenu blockMenu = new UIBlockMenu (this, new List<UIBlockMenu.Block> () {
@@ -89,8 +83,8 @@ namespace NachoClient.iOS
                     PerformSegue ("MessageListToFolders", h);
                 }),
                 new UIBlockMenu.Block ("now-addcalevent", "Archive", () => {
-                    if(null != messageSource) {
-                        messageSource.MultiSelectArchive(TableView);
+                    if (null != messageSource) {
+                        messageSource.MultiSelectArchive (TableView);
                     }
                 })
             }, View.Frame.Width);
@@ -106,56 +100,11 @@ namespace NachoClient.iOS
             NavigationController.NavigationBar.Translucent = false;
             Util.HideBlackNavigationControllerLine (NavigationController.NavigationBar);
 
-            // Search button brings up the search controller
-//            searchButton.Clicked += (object sender, EventArgs e) => {
-//                if (SearchDisplayController.Active) {
-//                    return;
-//                }
-//                // Cleans up the UI
-//                if (RefreshControl.Refreshing) {
-//                    RefreshControl.EndRefreshing ();
-//                }
-//                // Save the tableview location, then scroll
-//                // searchbar into view.  This searchbar is
-//                // not used; it works around an iOS bug.
-//                savedContentOffset = TableView.ContentOffset;
-//                TableView.SetContentOffset (new PointF (0.0f, 0.0f), false);
-//                if (44.0f >= savedContentOffset.Y) {
-//                    SearchDisplayController.SetActive (true, true);
-//                } else {
-//                    SearchDisplayController.SetActive (true, false);
-//                }
-//            };
-//
-//            // Search cancel handler needed as workaround for 'inactive button' bug
-//            SearchDisplayController.SearchBar.CancelButtonClicked += (object sender, EventArgs e) => {
-//                // Disable search & reset the tableview
-//                if (44.0f >= savedContentOffset.Y) {
-//                    SearchDisplayController.SetActive (false, true);
-//                } else {
-//                    SearchDisplayController.SetActive (false, false);
-//                }
-//                TableView.SetContentOffset (savedContentOffset, false);
-//            };
-
-            // Refreshing
-            RefreshListControl = new UIRefreshControl ();
-            RefreshListControl.ValueChanged += delegate {
-                // iOS 7 BUGS
-                // Setting Title in ViewDidLoad hides the SearchBar
-                // Title is misaligned the first time a refresh controller is displayed
-                // RefreshControl.AttributedTitle = new NSAttributedString ("Refreshing");
-                // TODO: Sleeping is a placeholder until we implement the refresh code.
-                ReloadDataMaintainingPosition (true);
-            };
+            ReloadDataMaintainingPosition ();
 
             UIView backgroundView = new UIView (new RectangleF (0, 0, 320, 480));
             backgroundView.BackgroundColor = new UIColor (227f / 255f, 227f / 255f, 227f / 255f, 1.0f);
             TableView.BackgroundView = backgroundView;
-
-            // iOS 7 BUG Workaround
-            // iOS 7 puts the  background view over the refresh view, hiding it.
-            RefreshListControl.Layer.ZPosition = TableView.BackgroundView.Layer.ZPosition + 1;
 
             messageSource.owner = this;
             TableView.Source = messageSource;
@@ -167,8 +116,6 @@ namespace NachoClient.iOS
 
         public void MultiSelectToggle (MessageTableViewSource source, bool enabled)
         {
-            //            UIView.Animate (0.2, new NSAction (
-            //                delegate {
             if (enabled) {
                 NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
                     moreSelectedButton,
@@ -182,8 +129,6 @@ namespace NachoClient.iOS
                 NavigationItem.LeftBarButtonItem = null;
                 NavigationItem.HidesBackButton = false;
             }
-            //                })
-            //            );
         }
 
         public int GetFirstVisibleRow ()
@@ -199,51 +144,15 @@ namespace NachoClient.iOS
             return path.Row;
         }
 
-        public void ReloadDataMaintainingPosition (bool endRefreshing)
+        public void ReloadDataMaintainingPosition ()
         {
             NachoClient.Util.HighPriority ();
-            messageSource.RefreshEmailMessages ();
-            ReloadCapture.Start ();
-            TableView.ReloadData ();
-            ReloadCapture.Stop ();
-            NachoClient.Util.RegularPriority ();
-
-
-//            // Refresh in background    
-//            System.Threading.ThreadPool.QueueUserWorkItem (delegate {
-//                lock (StaticLockObj) {
-//                    var idList = new int[messageThreads.Count ()];
-//                    for (var i = 0; i < messageThreads.Count (); i++) {
-//                        var m = messageThreads.GetEmailThread (i);
-//                        idList [i] = m.GetEmailMessageIndex (0);
-//                    }
-//                    messageThreads.Refresh ();
-//                    InvokeOnMainThread (() => {
-//                        var row = GetFirstVisibleRow ();
-//                        NSIndexPath p = null;
-//                        if ((-1 != row) && (0 < idList.Count ())) {
-//                            var targetId = idList [row];
-//                            for (int i = 0; i < messageThreads.Count (); i++) {
-//                                var m = messageThreads.GetEmailThread (i);
-//                                if (m.GetEmailMessageIndex (0) == targetId) {
-//                                    p = NSIndexPath.FromItemSection (i, 0);
-//                                    break;
-//                                }
-//                            }
-//                        }
-//                        TableView.ReloadData ();
-//                        if (null != p) {
-//                            TableView.ScrollToRow (p, UITableViewScrollPosition.Top, false);
-//                        }
-//                        if (endRefreshing) {
-//                            RefreshControl.EndRefreshing ();
-//                        }
-//                    });
-//                }
-//            });
-            if (endRefreshing) {
-                RefreshControl.EndRefreshing ();
+            if (messageSource.RefreshEmailMessages ()) {
+                ReloadCapture.Start ();
+                TableView.ReloadData ();
+                ReloadCapture.Stop ();
             }
+            NachoClient.Util.RegularPriority ();
         }
 
         public override void ViewWillAppear (bool animated)
@@ -256,19 +165,7 @@ namespace NachoClient.iOS
 
             NavigationItem.Title = messageSource.GetDisplayName ();
 
-            ReloadDataMaintainingPosition (false);
-
-//            for (int i = 0; i < messageThreads.Count (); i++) {
-//                Console.WriteLine ("Thread {0}", i); 
-//                var messageThread = messageThreads.GetEmailThread (i);
-//                foreach (var msg in messageThread) {
-//                    Console.WriteLine ("    SBJ: {0}", msg.Subject);
-//                    Console.WriteLine ("    MID: {0}", msg.MessageID);
-//                    Console.WriteLine ("    RPL: {0}", msg.InReplyTo);
-//                    Console.WriteLine ("    REF: {0}", msg.References);
-//                    Console.WriteLine ("    CID: {0}", msg.ConversationId);
-//                }
-//            }
+            ReloadDataMaintainingPosition ();
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -284,7 +181,7 @@ namespace NachoClient.iOS
             var s = (StatusIndEventArgs)e;
             if (NcResult.SubKindEnum.Info_EmailMessageSetChanged == s.Status.SubKind) {
                 Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: EmailMessageSetChanged");
-                ReloadDataMaintainingPosition (false);
+                ReloadDataMaintainingPosition ();
             }
         }
 

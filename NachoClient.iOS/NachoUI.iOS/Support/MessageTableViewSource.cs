@@ -82,12 +82,13 @@ namespace NachoClient.iOS
             return this.messageThreads.GetEmailThread (0);
         }
 
-        public void RefreshEmailMessages ()
+        public bool RefreshEmailMessages ()
         {
             RefreshCapture.Start ();
             messageCache.Clear ();
-            messageThreads.Refresh ();
+            var didRefresh = messageThreads.Refresh ();
             RefreshCapture.Stop ();
+            return didRefresh;
         }
 
         protected bool NoMessageThreads ()
@@ -291,7 +292,7 @@ namespace NachoClient.iOS
                 if (cell.RespondsToSelector (new MonoTouch.ObjCRuntime.Selector ("setSeparatorInset:"))) {
                     cell.SeparatorInset = UIEdgeInsets.Zero;
                 }
-                cell.SelectionStyle = UITableViewCellSelectionStyle.None;
+                cell.SelectionStyle = UITableViewCellSelectionStyle.Default;
                 cell.ContentView.BackgroundColor = UIColor.White;
 
                 var cellWidth = tableView.Frame.Width;
@@ -563,7 +564,7 @@ namespace NachoClient.iOS
 
             cell.Layer.CornerRadius = 15;
             cell.Layer.MasksToBounds = true;
-            cell.SelectionStyle = UITableViewCellSelectionStyle.None;
+            cell.SelectionStyle = UITableViewCellSelectionStyle.Default;
 
             ConfigureCell (tableView, cell, indexPath);
             return cell;

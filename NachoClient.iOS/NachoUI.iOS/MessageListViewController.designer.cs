@@ -12,47 +12,9 @@ namespace NachoClient.iOS
 	[Register ("MessageListViewController")]
 	partial class MessageListViewController
 	{
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem cancelButton { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem composeButton { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem deleteButton { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem saveButton { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem searchButton { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
-			if (cancelButton != null) {
-				cancelButton.Dispose ();
-				cancelButton = null;
-			}
-
-			if (composeButton != null) {
-				composeButton.Dispose ();
-				composeButton = null;
-			}
-
-			if (deleteButton != null) {
-				deleteButton.Dispose ();
-				deleteButton = null;
-			}
-
-			if (saveButton != null) {
-				saveButton.Dispose ();
-				saveButton = null;
-			}
-
-			if (searchButton != null) {
-				searchButton.Dispose ();
-				searchButton = null;
-			}
 		}
 	}
 }
