@@ -13,6 +13,30 @@ namespace NachoCore.Model
 {
     public class McTelemetryEvent
     {
+        private static NcCapture _InsertCapture;
+        private static NcCapture InsertCapture {
+            get {
+                if (null == _InsertCapture) {
+                    var kind = "NcModel.McTelemetryEvent.Insert";
+                    NcCapture.AddKind (kind);
+                    _InsertCapture = NcCapture.Create (kind);
+                }
+                return _InsertCapture;
+            }
+        }
+
+        private static NcCapture _DeleteCapture;
+        private static NcCapture DeleteCapture {
+            get {
+                if (null == _DeleteCapture) {
+                    var kind = "NcModel.McTelemetryEvent.Delete";
+                    NcCapture.AddKind (kind);
+                    _DeleteCapture = NcCapture.Create (kind);
+                }
+                return _DeleteCapture;
+            }
+        }
+
         [PrimaryKey, AutoIncrement, Unique]
         public virtual int Id { get; set; }
         // Optimistic concurrency control
@@ -69,7 +93,10 @@ namespace NachoCore.Model
         {
             NcAssert.True (0 == Id);
             try {
+                InsertCapture.Start ();
                 int rc =  NcModel.Instance.TeleDb.Insert (this);
+                InsertCapture.Stop ();
+                InsertCapture.Reset ();
                 return rc;
             }
             catch (SQLiteException e) {
@@ -86,7 +113,10 @@ namespace NachoCore.Model
         {
             NcAssert.True (0 < Id);
             try {
+                DeleteCapture.Start ();
                 int rc = NcModel.Instance.TeleDb.Delete (this);
+                DeleteCapture.Stop ();
+                DeleteCapture.Reset ();
                 return rc;
             }
             catch (SQLiteException e) {

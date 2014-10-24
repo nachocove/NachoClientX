@@ -449,8 +449,9 @@ namespace NachoCore.Model
                 _TeleDb.Dispose ();
                 _TeleDb = null; // next reference will re-initialize the connection
 
-                // Remove the db file
-                File.Delete (TeleDbFileName);
+                // Rename the db file
+                var timestamp = DateTime.Now.ToString ().Replace (' ', '_').Replace ('/', '-');
+                File.Move (TeleDbFileName, TeleDbFileName + "." + timestamp);
 
                 // Recreate the db
                 InitializeTeleDb ();
