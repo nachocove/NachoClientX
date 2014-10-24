@@ -45,7 +45,6 @@ namespace NachoClient.iOS
 
             float yOffset = INDENT;
 
-
             UIImageView nachoLogoImageView;
             using (var nachoLogo = UIImage.FromBundle ("Bootscreen-1")) {
                 nachoLogoImageView = new UIImageView (nachoLogo);
@@ -189,7 +188,10 @@ namespace NachoClient.iOS
                 this.NavigationController.ToolbarHidden = true;
             }
 
-            if (!LoginHelpers.HasFirstSyncCompleted(LoginHelpers.GetCurrentAccountId())) {
+            if (!LoginHelpers.IsCurrentAccountSet ()) {
+                NavigationItem.SetHidesBackButton (false, true);
+            }
+            else if (!LoginHelpers.HasFirstSyncCompleted(LoginHelpers.GetCurrentAccountId())) {
                 NavigationItem.SetHidesBackButton (false, true);
             } else {
                 NavigationItem.SetHidesBackButton (true, true);
