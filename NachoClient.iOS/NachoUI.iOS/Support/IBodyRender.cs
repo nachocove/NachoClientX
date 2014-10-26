@@ -32,6 +32,8 @@ namespace NachoClient.iOS
 
         public Action OnTap;
 
+        private UIGestureRecognizer.Token onTappedToken;
+
         public BodyRenderZoomRecognizer (UIScrollView view) : base ()
         {
             zoomIn = true;
@@ -42,7 +44,7 @@ namespace NachoClient.iOS
                 (UIGestureRecognizer gestureRecognizer, UIGestureRecognizer otherGestureRecognizer) => {
                 return true;
             };
-            AddTarget (onTapped);
+            onTappedToken = AddTarget (onTapped);
         }
 
         public void Configure ()
@@ -56,6 +58,11 @@ namespace NachoClient.iOS
             ZoomInScale = Math.Max (0.7f, ZoomInScale);
 
             ZoomOutScale = 2.0f * ZoomInScale;
+        }
+
+        public void Cleanup ()
+        {
+            RemoveTarget (onTappedToken);
         }
 
         private void onTapped ()
