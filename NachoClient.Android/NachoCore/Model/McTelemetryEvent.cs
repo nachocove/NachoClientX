@@ -42,17 +42,11 @@ namespace NachoCore.Model
         // Optimistic concurrency control
         public DateTime LastModified { get; set; }
 
-        // This boolean serves a priority bit. Support events are 
-        // process first out of order.
-        [Indexed]
-        public bool IsSupport { set; get; }
-
         public byte[] Data { set; get; }
 
         public McTelemetryEvent ()
         {
             Data = null;
-            IsSupport = false;
         }
 
         public McTelemetryEvent (TelemetryEvent tEvent)
@@ -63,7 +57,6 @@ namespace NachoCore.Model
             BinaryFormatter serializer = new BinaryFormatter ();
             serializer.Serialize (binaryStream, tEvent);
             Data = binaryStream.ToArray ();
-            IsSupport = tEvent.IsSupportEvent ();
         }
 
         public TelemetryEvent GetTelemetryEvent ()
@@ -77,7 +70,7 @@ namespace NachoCore.Model
         {
             try {
                 return NcModel.Instance.TeleDb.Query<McTelemetryEvent> (
-                    "SELECT * FROM McTelemetryEvent ORDER BY IsSupport DESC, Id LIMIT 1;").SingleOrDefault ();
+                    "SELECT * FROM McTelemetryEvent LIMIT 1;").SingleOrDefault ();
             }
             catch (SQLiteException e) {
                 if (SQLite3.Result.Corrupt == e.Result) {
@@ -123,6 +116,33 @@ namespace NachoCore.Model
                 if (SQLite3.Result.Corrupt == e.Result) {
                     NcModel.Instance.ResetTeleDb ();
                     return 0;
+                } else {
+                    throw;
+                }
+            }
+        }
+    }
+
+    public class McTelemetrySupportEvent : McTelemetryEvent
+    {
+        public McTelemetrySupportEvent () : base ()
+        {
+        }
+
+        public McTelemetrySupportEvent (TelemetryEvent tEvent) : base (tEvent)
+        {
+        }
+
+        public static McTelemetryEvent QueryOne ()
+        {
+            try {
+                return (McTelemetryEvent)NcModel.Instance.TeleDb.Query<McTelemetrySupportEvent> (
+                    "SELECT * FROM McTelemetrySupportEvent LIMIT 1;").SingleOrDefault ();
+            }
+            catch (SQLiteException e) {
+                if (SQLite3.Result.Corrupt == e.Result) {
+                    NcModel.Instance.ResetTeleDb ();
+                    return null;
                 } else {
                     throw;
                 }
