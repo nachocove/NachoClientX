@@ -451,6 +451,7 @@ namespace NachoClient.iOS
             AttachmentsViewController vc;
             UISearchDisplayController SearchDisplayController;
             public IAttachmentTableViewSourceDelegate owner;
+            protected McAccount account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
 
             // icon id's
             string DownloadIcon = "email-att-download.png";
@@ -1131,35 +1132,80 @@ namespace NachoClient.iOS
                 }
                 if (BY_CONTACT_SEGMENT == segmentedIndex) {
                     if (0 == section) {
-                        return 64;
+                        return 78;
                     } else {
-                        return 32;
+                        return 56;
                     }
                 } else {
                     return 0;
                 }
             }
 
+            public override float GetHeightForFooter (UITableView tableView, int section)
+            {
+                if (BY_CONTACT_SEGMENT == segmentedIndex || SearchDisplayController.SearchResultsTableView == tableView) {
+                    return 0;
+                }
+                return 32;
+            }
+
             public override UIView GetViewForHeader (UITableView tableView, int section)
             {
+                var senderString = TitleForHeader (tableView, section);
+                var senderEmail = Pretty.EmailString (senderString);
+                var senderDisplayName = Pretty.SenderString (senderString);
                 if (SearchDisplayController.SearchResultsTableView == tableView) {
                     return new UIView (new RectangleF (0, 0, 0, 0));
                 }
                 if (BY_CONTACT_SEGMENT != segmentedIndex) {
                     return new UIView (new RectangleF (0, 0, 0, 0));
                 }
-                var view = new UIView (new RectangleF (0, 0, tableView.Frame.Width, 32));
+                var view = new UIView ();
                 var label = new UILabel ();
                 label.Font = A.Font_AvenirNextDemiBold17;
                 label.TextColor = A.Color_NachoDarkText;
-                label.Text = Pretty.SenderString (TitleForHeader (tableView, section));
+                label.Text = senderDisplayName;
                 label.SizeToFit ();
-                var yOffset = 16;
+                var yOffset = 26;
+                var iconOffset = 5;
                 if (0 == section) {
-                    yOffset += 32;
+                    yOffset += 19;
+                    iconOffset += 19;
                 }
-                label.Center = new PointF (15 + (label.Frame.Width / 2), yOffset);
+                label.Center = new PointF (60 + (label.Frame.Width / 2), yOffset);
                 view.AddSubview (label);
+
+                var userImageView = new UIImageView (new RectangleF (12, iconOffset, 40, 40));
+                userImageView.Center = new PointF (userImageView.Center.X, label.Center.Y);
+                userImageView.Layer.CornerRadius = 20;
+                view.AddSubview (userImageView);
+
+                var userLabelView = new UILabel (new RectangleF (12, iconOffset, 40, 40));
+                userLabelView.Font = A.Font_AvenirNextRegular24;
+                userLabelView.TextColor = UIColor.White;
+                userLabelView.TextAlignment = UITextAlignment.Center;
+                userLabelView.LineBreakMode = UILineBreakMode.Clip;
+                userLabelView.Layer.CornerRadius = 20;
+                userLabelView.Layer.MasksToBounds = true;
+                view.AddSubview (userLabelView);
+
+                // User image view
+                userImageView.Hidden = true;
+                userLabelView.Hidden = true;
+
+                var userImage = Util.ImageOfSender (account.Id, senderEmail);
+
+                if (null != userImage) {
+                    userImageView.Hidden = false;
+                    userImageView.Image = userImage;
+                } else {
+                    userLabelView.Hidden = false;
+                    int ColorIndex;
+                    string Initials;
+                    Util.UserMessageField (senderString, account.Id, out ColorIndex, out Initials);
+                    userLabelView.Text = Initials;
+                    userLabelView.BackgroundColor = Util.ColorForUser (ColorIndex);
+                }
                 return view;
             }
 
