@@ -97,6 +97,7 @@ namespace NachoClient.iOS
 
         protected override void CreateViewHierarchy ()
         {
+            NavigationController.InteractivePopGestureRecognizer.Enabled = false;
             NavigationController.NavigationBar.Translucent = false;
             NavigationItem.Title = "Account Settings";
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
