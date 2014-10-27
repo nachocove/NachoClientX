@@ -36,6 +36,7 @@ namespace NachoCore.ActiveSync
             SyncW,
             PingW,
             QOpW,
+            HotQOpW,
             FetchW,
             IdleW,
         };
@@ -66,6 +67,7 @@ namespace NachoCore.ActiveSync
                 case (uint)Lst.SyncW:
                 case (uint)Lst.PingW:
                 case (uint)Lst.QOpW:
+                case (uint)Lst.HotQOpW:
                 case (uint)Lst.FetchW:
                 case (uint)Lst.IdleW:
                      return (ProtocolState.HasSyncedInbox) ? 
@@ -114,7 +116,8 @@ namespace NachoCore.ActiveSync
                 PendQHot,
                 ReFSync,
                 PkPing,
-                PkQOop,
+                PkQOp,
+                PkHotQOp,
                 PkFetch,
                 PkWait,
             };
@@ -175,7 +178,8 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.GetCertOk,
                             (uint)CtlEvt.E.ReFSync,
                             (uint)CtlEvt.E.PkPing,
-                            (uint)CtlEvt.E.PkQOop,
+                            (uint)CtlEvt.E.PkQOp,
+                            (uint)CtlEvt.E.PkHotQOp,
                             (uint)CtlEvt.E.PkFetch,
                             (uint)CtlEvt.E.PkWait,
                         },
@@ -194,7 +198,8 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
                             (uint)CtlEvt.E.PkPing,
-                            (uint)CtlEvt.E.PkQOop,
+                            (uint)CtlEvt.E.PkQOp,
+                            (uint)CtlEvt.E.PkHotQOp,
                             (uint)CtlEvt.E.PkFetch,
                             (uint)CtlEvt.E.PkWait,
                         },
@@ -251,7 +256,8 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.GetCertOk,
                             (uint)CtlEvt.E.ReFSync,
                             (uint)CtlEvt.E.PkPing,
-                            (uint)CtlEvt.E.PkQOop,
+                            (uint)CtlEvt.E.PkQOp,
+                            (uint)CtlEvt.E.PkHotQOp,
                             (uint)CtlEvt.E.PkFetch,
                             (uint)CtlEvt.E.PkWait,
                         },
@@ -286,7 +292,8 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.GetCertOk,
                             (uint)CtlEvt.E.ReFSync,
                             (uint)CtlEvt.E.PkPing,
-                            (uint)CtlEvt.E.PkQOop,
+                            (uint)CtlEvt.E.PkQOp,
+                            (uint)CtlEvt.E.PkHotQOp,
                             (uint)CtlEvt.E.PkFetch,
                             (uint)CtlEvt.E.PkWait,
                         },
@@ -321,7 +328,8 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.GetCertOk,
                             (uint)CtlEvt.E.ReFSync,
                             (uint)CtlEvt.E.PkPing,
-                            (uint)CtlEvt.E.PkQOop,
+                            (uint)CtlEvt.E.PkQOp,
+                            (uint)CtlEvt.E.PkHotQOp,
                             (uint)CtlEvt.E.PkFetch,
                             (uint)CtlEvt.E.PkWait,
                         },
@@ -354,7 +362,8 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.UiSetCred, // TODO: should we re-consider?
                             (uint)CtlEvt.E.ReFSync,
                             (uint)CtlEvt.E.PkPing,
-                            (uint)CtlEvt.E.PkQOop,
+                            (uint)CtlEvt.E.PkQOp,
+                            (uint)CtlEvt.E.PkHotQOp,
                             (uint)CtlEvt.E.PkFetch,
                             (uint)CtlEvt.E.PkWait,
                         },
@@ -393,7 +402,8 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.GetCertOk,
                             (uint)CtlEvt.E.ReFSync,
                             (uint)CtlEvt.E.PkPing,
-                            (uint)CtlEvt.E.PkQOop,
+                            (uint)CtlEvt.E.PkQOp,
+                            (uint)CtlEvt.E.PkHotQOp,
                             (uint)CtlEvt.E.PkFetch,
                             (uint)CtlEvt.E.PkWait,
                         },
@@ -423,7 +433,8 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.GetCertOk,
                             (uint)CtlEvt.E.ReFSync,
                             (uint)CtlEvt.E.PkPing,
-                            (uint)CtlEvt.E.PkQOop,
+                            (uint)CtlEvt.E.PkQOp,
+                            (uint)CtlEvt.E.PkHotQOp,
                             (uint)CtlEvt.E.PkFetch,
                             (uint)CtlEvt.E.PkWait,
                         },
@@ -453,7 +464,8 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.GetCertOk,
                             (uint)CtlEvt.E.ReFSync,
                             (uint)CtlEvt.E.PkPing,
-                            (uint)CtlEvt.E.PkQOop,
+                            (uint)CtlEvt.E.PkQOp,
+                            (uint)CtlEvt.E.PkHotQOp,
                             (uint)CtlEvt.E.PkFetch,
                             (uint)CtlEvt.E.PkWait,
                         },
@@ -482,7 +494,8 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.GetServConf,
                             (uint)CtlEvt.E.GetCertOk,
                             (uint)CtlEvt.E.PkPing,
-                            (uint)CtlEvt.E.PkQOop,
+                            (uint)CtlEvt.E.PkQOp,
+                            (uint)CtlEvt.E.PkHotQOp,
                             (uint)CtlEvt.E.PkFetch,
                             (uint)CtlEvt.E.PkWait,
                         },
@@ -514,7 +527,8 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.GetServConf,
                             (uint)CtlEvt.E.GetCertOk,
                             (uint)CtlEvt.E.PkPing,
-                            (uint)CtlEvt.E.PkQOop,
+                            (uint)CtlEvt.E.PkQOp,
+                            (uint)CtlEvt.E.PkHotQOp,
                             (uint)CtlEvt.E.PkFetch,
                             (uint)CtlEvt.E.PkWait,
                         },
@@ -553,7 +567,8 @@ namespace NachoCore.ActiveSync
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPick, State = (uint)Lst.Pick },
-                            new Trans { Event = (uint)CtlEvt.E.PkQOop, Act = DoArg, State = (uint)Lst.QOpW },
+                            new Trans { Event = (uint)CtlEvt.E.PkQOp, Act = DoArg, State = (uint)Lst.QOpW },
+                            new Trans { Event = (uint)CtlEvt.E.PkHotQOp, Act = DoArg, State = (uint)Lst.HotQOpW },
                             new Trans { Event = (uint)CtlEvt.E.PkFetch, Act = DoArg, State = (uint)Lst.FetchW },
                             new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },
                             new Trans { Event = (uint)CtlEvt.E.PkPing, Act = DoArg, State = (uint)Lst.PingW },
@@ -574,7 +589,8 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.GetServConf,
                             (uint)CtlEvt.E.GetCertOk,
                             (uint)CtlEvt.E.PkPing,
-                            (uint)CtlEvt.E.PkQOop,
+                            (uint)CtlEvt.E.PkQOp,
+                            (uint)CtlEvt.E.PkHotQOp,
                             (uint)CtlEvt.E.PkFetch,
                             (uint)CtlEvt.E.PkWait,
                         },
@@ -604,7 +620,8 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.GetCertOk,
                             (uint)CtlEvt.E.GetServConf,
                             (uint)CtlEvt.E.PkPing,
-                            (uint)CtlEvt.E.PkQOop,
+                            (uint)CtlEvt.E.PkQOp,
+                            (uint)CtlEvt.E.PkHotQOp,
                             (uint)CtlEvt.E.PkFetch,
                             (uint)CtlEvt.E.PkWait,
                         },
@@ -627,7 +644,6 @@ namespace NachoCore.ActiveSync
                         State = (uint)Lst.QOpW,
                         Drop = new [] {
                             (uint)CtlEvt.E.PendQ,
-                            // TODO: we should prioritize a search command over in-process commands.
                             (uint)CtlEvt.E.UiCertOkNo,
                             (uint)CtlEvt.E.UiCertOkYes,
                             (uint)CtlEvt.E.UiSetCred,
@@ -637,7 +653,8 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.GetServConf,
                             (uint)CtlEvt.E.GetCertOk,
                             (uint)CtlEvt.E.PkPing,
-                            (uint)CtlEvt.E.PkQOop,
+                            (uint)CtlEvt.E.PkQOp,
+                            (uint)CtlEvt.E.PkHotQOp,
                             (uint)CtlEvt.E.PkFetch,
                             (uint)CtlEvt.E.PkWait,
                         },
@@ -656,6 +673,38 @@ namespace NachoCore.ActiveSync
                     },
 
                     new Node {
+                        State = (uint)Lst.HotQOpW,
+                        Drop = new [] {
+                            (uint)CtlEvt.E.PendQ,
+                            (uint)CtlEvt.E.PendQHot,
+                            (uint)CtlEvt.E.UiCertOkNo,
+                            (uint)CtlEvt.E.UiCertOkYes,
+                            (uint)CtlEvt.E.UiSetCred,
+                            (uint)CtlEvt.E.UiSetServConf,
+                        },
+                        Invalid = new [] {
+                            (uint)CtlEvt.E.GetServConf,
+                            (uint)CtlEvt.E.GetCertOk,
+                            (uint)CtlEvt.E.PkPing,
+                            (uint)CtlEvt.E.PkQOp,
+                            (uint)CtlEvt.E.PkHotQOp,
+                            (uint)CtlEvt.E.PkFetch,
+                            (uint)CtlEvt.E.PkWait,
+                        },
+                        On = new [] {
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
+                            new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
+                            new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
+                        }
+                    },
+
+                    new Node {
                         State = (uint)Lst.FetchW,
                         Drop = new [] {
                             (uint)CtlEvt.E.PendQ,
@@ -668,7 +717,8 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.GetServConf,
                             (uint)CtlEvt.E.GetCertOk,
                             (uint)CtlEvt.E.PkPing,
-                            (uint)CtlEvt.E.PkQOop,
+                            (uint)CtlEvt.E.PkQOp,
+                            (uint)CtlEvt.E.PkHotQOp,
                             (uint)CtlEvt.E.PkFetch,
                             (uint)CtlEvt.E.PkWait,
                         },
@@ -701,7 +751,8 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.GetServConf,
                             (uint)CtlEvt.E.GetCertOk,
                             (uint)CtlEvt.E.PkPing,
-                            (uint)CtlEvt.E.PkQOop,
+                            (uint)CtlEvt.E.PkQOp,
+                            (uint)CtlEvt.E.PkHotQOp,
                             (uint)CtlEvt.E.PkFetch,
                             (uint)CtlEvt.E.PkWait,
 
@@ -977,7 +1028,11 @@ namespace NachoCore.ActiveSync
                 break;
 
             case PickActionEnum.QOop:
-                Sm.PostEvent ((uint)CtlEvt.E.PkQOop, "PCKQOP", cmd);
+                Sm.PostEvent ((uint)CtlEvt.E.PkQOp, "PCKQOP", cmd);
+                break;
+
+            case PickActionEnum.HotQOp:
+                Sm.PostEvent ((uint)CtlEvt.E.PkHotQOp, "PCKHQOP", cmd);
                 break;
 
             case PickActionEnum.Sync:
@@ -1045,13 +1100,11 @@ namespace NachoCore.ActiveSync
             StopCurrentOp ();
             var defaultInbox = McFolder.GetDefaultInboxFolder (Account.Id);
             if (null != defaultInbox) {
-                defaultInbox.AsSyncMetaToClientExpected = true;
-                defaultInbox.Update ();
+                defaultInbox.UpdateSet_AsSyncMetaToClientExpected (true);
             }
             var defaultCal = McFolder.GetDefaultCalendarFolder (Account.Id);
             if (null != defaultCal) {
-                defaultCal.AsSyncMetaToClientExpected = true;
-                defaultCal.Update ();
+                defaultCal.UpdateSet_AsSyncMetaToClientExpected (true);
             }
             if (null == defaultInbox && null == defaultCal) {
                 Log.Info (Log.LOG_AS, "QuickSync called before initial account Sync - ignoring.");

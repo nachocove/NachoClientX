@@ -995,8 +995,7 @@ namespace NachoCore.ActiveSync
         // recursively mark param and its children with isAwaitingDelete == true
         public void MarkFoldersAwaitingDelete (McFolder folder)
         {
-            folder.IsAwaitingDelete = true;
-            folder.Update ();
+            folder = folder.UpdateSet_IsAwaitingDelete (true);
             var children = McFolder.QueryByParentId (folder.AccountId, folder.ServerId);
             foreach (McFolder child in children) {
                 MarkFoldersAwaitingDelete (child);
@@ -1010,8 +1009,8 @@ namespace NachoCore.ActiveSync
             NcAssert.True (folder.IsClientOwned == false, "BackEnd should not move client-owned folders");
             NcAssert.True (destFolder.IsClientOwned == false, "BackEnd should not modify client-owned folders");
 
-            folder.ParentId = destFolder.ServerId;
-            folder.Update ();
+            folder = folder.UpdateSet_ParentId (destFolder.ServerId);
+
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
 
             if (folder.IsClientOwned) {
@@ -1041,8 +1040,8 @@ namespace NachoCore.ActiveSync
             var folder = McAbstrObject.QueryById<McFolder> (folderId);
             NcAssert.True (folder.IsClientOwned == false, "BackEnd cannot modify client-owned folders");
 
-            folder.DisplayName = displayName;
-            folder.Update ();
+            folder = folder.UpdateSet_DisplayName (displayName);
+
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
 
             if (folder.IsClientOwned) {

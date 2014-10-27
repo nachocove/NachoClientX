@@ -363,8 +363,7 @@ namespace NachoClient.iOS
             cell.BackgroundColor = UIColor.White;
             var cellTap = new UITapGestureRecognizer ();
             cellTap.AddTarget (() => {
-                folder.LastAccessed = DateTime.UtcNow;
-                folder.Update ();
+                folder = folder.UpdateSet_LastAccessed (DateTime.UtcNow);
                 UpdateLastAccessed ();
                 if (modal) {
                     FolderSelected (folder);
@@ -403,29 +402,28 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void CreateFolderCell (int subLevel, UIView parentView, bool subFolders, bool isHidden, FolderStruct folder)
+        protected void CreateFolderCell (int subLevel, UIView parentView, bool subFolders, bool isHidden, FolderStruct folderStruct)
         {
-            var tag = folder.folderID + 10000;
+            var tag = folderStruct.folderID + 10000;
 
             var indentation = subLevel * 10;
             UIView cell = new UIView (new RectangleF (5 + indentation, 0, parentView.Frame.Width - 10 - indentation, 44));
             cell.BackgroundColor = UIColor.White;
             var cellTap = new UITapGestureRecognizer ();
             cellTap.AddTarget (() => {
-                var McFolderFolder = GetFolder (folder);
-                McFolderFolder.LastAccessed = DateTime.UtcNow;
-                McFolderFolder.Update ();
+                var folder = GetFolder (folderStruct);
+                folder = folder.UpdateSet_LastAccessed (DateTime.UtcNow);
                 UpdateLastAccessed ();
                 if (modal) {
-                    FolderSelected (McFolderFolder);
+                    FolderSelected (folder);
                 } else {
-                    PerformSegue ("FoldersToMessageList", new SegueHolder (McFolderFolder));
+                    PerformSegue ("FoldersToMessageList", new SegueHolder (folder));
                 }
             });
             cell.AddGestureRecognizer (cellTap);
 
             UILabel label = new UILabel (new RectangleF (52, 0, cell.Frame.Width - 52, 44));
-            label.Text = folder.folderName;
+            label.Text = folderStruct.folderName;
             label.Font = A.Font_AvenirNextMedium14;
             label.TextColor = A.Color_NachoDarkText;
             cell.Add (label);
@@ -439,7 +437,7 @@ namespace NachoClient.iOS
             cell.Add (line);
 
             if (subFolders) {
-                CreateNestedCells (folder, subLevel, parentView);
+                CreateNestedCells (folderStruct, subLevel, parentView);
 
                 UIImageView buttonImageView = new UIImageView (new RectangleF (cell.Frame.Width - 31, cell.Frame.Height / 2 - 10, 18, 18));
                 buttonImageView.Image = UIImage.FromBundle ("gen-readmore");
@@ -452,7 +450,7 @@ namespace NachoClient.iOS
                 expandButton.Tag = tag + 10000;
                 expandButton.TouchUpInside += (sender, e) => {
                     parentView.BringSubviewToFront (cell);
-                    ToggleHiddenCells (folder, parentView);
+                    ToggleHiddenCells (folderStruct, parentView);
                 };
                 cell.Add (expandButton);
             }

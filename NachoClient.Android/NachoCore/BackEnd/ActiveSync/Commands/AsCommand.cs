@@ -441,7 +441,7 @@ namespace NachoCore.ActiveSync
                 PendingResolveApply (pending => {
                     pending.ResolveAsDeferredForce (BEContext.ProtoControl);
                 });
-                McFolder.AsSetExpected (BEContext.Account.Id);
+                McFolder.UpdateSet_AsSyncMetaToClientExpected (BEContext.Account.Id, true);
                 return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "TLS132-6");
 
             case Xml.StatusCode.CommandNotSupported_137:
