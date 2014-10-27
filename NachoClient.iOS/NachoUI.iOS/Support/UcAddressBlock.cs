@@ -217,7 +217,8 @@ namespace NachoClient.iOS
             topLeftLabel.Font = A.Font_AvenirNextRegular14;
             topLeftLabel.TextColor = A.Color_0B3239;
 
-            chooserButton = UIButton.FromType (UIButtonType.ContactAdd);
+            chooserButton = UIButton.FromType (UIButtonType.System);
+            Util.SetOriginalImagesForButton (chooserButton, "email-add", "email-add-active");
             chooserButton.Tag = (int)TagType.CHOOSER_BUTTON_TAG;
             chooserButton.SizeToFit ();
             chooserButton.Frame = new RectangleF (parentWidth - chooserButton.Frame.Width - RIGHT_INDENT, 0, chooserButton.Frame.Width, chooserButton.Frame.Height);

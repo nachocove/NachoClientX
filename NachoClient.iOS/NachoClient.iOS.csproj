@@ -1607,6 +1607,8 @@
     <BundleResource Include="Resources\more-files-active%402x.png" />
     <BundleResource Include="Resources\nav-mail-active%402x.png" />
     <BundleResource Include="Resources\nav-mail%402x.png" />
+    <BundleResource Include="Resources\email-add-active%402x.png" />
+    <BundleResource Include="Resources\email-add%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
