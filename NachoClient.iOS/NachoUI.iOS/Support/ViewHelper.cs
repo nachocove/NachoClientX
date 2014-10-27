@@ -137,6 +137,82 @@ namespace NachoClient.iOS
         {
             return new SizeF (scale * size.Width, scale * size.Height);
         }
+
+        public static void DisposeViewHierarchy (UIView view)
+        {
+            // This code comes from a StackOverflow question, and was provided by
+            // Herman Schoenfeld.  I have made some slight modifications.
+            // http://stackoverflow.com/questions/25532870/xamarin-ios-memory-leaks-everywhere
+            try {
+                if (null == view || IntPtr.Zero == view.Handle) {
+                    return;
+                }
+                bool skipDispose = false;
+                if (null != view.Subviews) {
+                    foreach (var subview in view.Subviews) {
+                        try {
+                            DisposeViewHierarchy (subview);
+                        } catch (Exception e) {
+                            Log.Error(Log.LOG_UI, "Exception while disposing of view hierarchy: {0}", e.ToString());
+                        }
+                    }
+                }
+                if (view is UIActivityIndicatorView) {
+                    var indicatorView = view as UIActivityIndicatorView;
+                    if (indicatorView.IsAnimating) {
+                        indicatorView.StopAnimating();
+                    }
+                } else if (view is UITableView) {
+                    var tableView = view as UITableView;
+                    if (null != tableView.DataSource) {
+                        tableView.DataSource.Dispose();
+                    }
+                    tableView.Source = null;
+                    tableView.Delegate = null;
+                    tableView.DataSource = null;
+                    tableView.WeakDelegate = null;
+                    tableView.WeakDataSource = null;
+                    if (null != tableView.VisibleCells) {
+                        foreach (var cell in tableView.VisibleCells) {
+                            DisposeViewHierarchy(cell);
+                        }
+                    }
+                } else if (view is UICollectionView) {
+                    // UICollectionViewController with throw if its view is disposed before the controller.
+                    skipDispose = true;
+                    var collectionView = view as UICollectionView;
+                    if (null != collectionView.DataSource) {
+                        collectionView.DataSource.Dispose();
+                    }
+                    collectionView.Source = null;
+                    collectionView.Delegate = null;
+                    collectionView.DataSource = null;
+                    collectionView.WeakDelegate = null;
+                    collectionView.WeakDataSource = null;
+                    if (null != collectionView.VisibleCells) {
+                        foreach (var cell in collectionView.VisibleCells) {
+                            DisposeViewHierarchy(cell);
+                        }
+                    }
+                } else if (view is UIWebView) {
+                    var webView = view as UIWebView;
+                    if (webView.IsLoading) {
+                        webView.StopLoading();
+                    }
+                    webView.LoadHtmlString(string.Empty, null);
+                    webView.Delegate = null;
+                    webView.WeakDelegate = null;
+                }
+                if (null != view.Layer) {
+                    view.Layer.RemoveAllAnimations();
+                }
+                if (!skipDispose) {
+                    view.Dispose();
+                }
+            } catch (Exception e) {
+                Log.Error (Log.LOG_UI, "Exception while disposing of view hierarchy: {0}", e.ToString ());
+            }
+        }
     }
 
     public class VerticalLayoutCursor
