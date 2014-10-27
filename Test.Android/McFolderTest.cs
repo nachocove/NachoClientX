@@ -988,6 +988,32 @@ namespace Test.iOS
             check = McFolder.QueryById<McFolder> (folder1.Id);
             Assert.AreEqual (displayName, check.DisplayName);
         }
+
+        [Test]
+        public void BadRowVersion ()
+        {
+            int count = -1;
+            var folder2 = FolderOps.CreateFolder (accountId: 1, serverId: "2", name: "initial");
+            folder2.RowVersion = 99;
+            var folder2r = folder2.UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.DisplayName = "FUBAR";
+                return true;
+            }, out count, 1);
+            Assert.AreEqual (0, count);
+            Assert.AreEqual (0, folder2r.RowVersion);
+            folder2.RowVersion = 99;
+            folder2r = folder2.UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.DisplayName = "FUBAR";
+                return true;
+            }, out count, 2);
+            Assert.AreEqual (1, count);
+            Assert.AreEqual (1, folder2r.RowVersion);
+            Assert.AreEqual ("FUBAR", folder2r.DisplayName);
+            var check = McFolder.QueryById<McFolder> (folder2.Id);
+            Assert.AreEqual (folder2r.DisplayName, check.DisplayName);
+        }
     }
 
     public class BaseMcFolderTest : CommonTestOps
