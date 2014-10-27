@@ -545,37 +545,33 @@ namespace NachoClient.iOS
             }
         }
 
+        public void StatusIndicatorTriggered ()
+        {
+            HideStatusView ();
+            if (handleStatusEnums) {
+                HandleAccountIssue ();
+            }
+        }
+
         public void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
 
             if (NcResult.SubKindEnum.Info_ValidateConfigSucceeded == s.Status.SubKind) {
                 accountIssue = AccountIssue.None;
-                HideStatusView ();
-                if (handleStatusEnums) {
-                    HandleAccountIssue ();
-                }
+                StatusIndicatorTriggered ();
             }
             if (NcResult.SubKindEnum.Error_ValidateConfigFailedComm == s.Status.SubKind) {
                 accountIssue = AccountIssue.ErrorComm;
-                HideStatusView ();
-                if (handleStatusEnums) {
-                    HandleAccountIssue ();
-                }
+                StatusIndicatorTriggered ();
             }
             if (NcResult.SubKindEnum.Error_ValidateConfigFailedAuth == s.Status.SubKind) {
                 accountIssue = AccountIssue.ErrorAuth;
-                HideStatusView ();
-                if (handleStatusEnums) {
-                    HandleAccountIssue ();
-                }
+                StatusIndicatorTriggered ();
             }
             if (NcResult.SubKindEnum.Error_ValidateConfigFailedUser == s.Status.SubKind) {
                 accountIssue = AccountIssue.ErrorUser;
-                HideStatusView ();
-                if (handleStatusEnums) {
-                    HandleAccountIssue ();
-                }
+                StatusIndicatorTriggered ();
             }
 
         }
