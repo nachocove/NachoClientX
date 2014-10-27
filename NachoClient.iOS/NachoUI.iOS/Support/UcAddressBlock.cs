@@ -269,6 +269,11 @@ namespace NachoClient.iOS
             }
         }
 
+        public void SetEditFieldAsFirstResponder()
+        {
+            this.entryTextField.BecomeFirstResponder ();
+        }
+
         /// Adjusts x & y on the top line of a view
         protected void AdjustXY (UIView view, float X, float Y)
         {
@@ -410,7 +415,7 @@ namespace NachoClient.iOS
                 xLimit = parentWidth;
             }
             if (isEditable) {
-                entryTextField.Frame = new RectangleF (xOffset, 0, (xLimit - xOffset), LINE_HEIGHT);
+                entryTextField.Frame = new RectangleF (xOffset, yOffset, (xLimit - xOffset), LINE_HEIGHT);
                 xOffset += entryTextField.Frame.Width;
             }
             yOffset += LINE_HEIGHT;

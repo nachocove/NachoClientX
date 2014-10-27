@@ -26,9 +26,8 @@ namespace NachoClient.iOS
             Send,
             Reply,
             ReplyAll,
-            Forward}
-
-        ;
+            Forward,
+        };
 
         // Strings to be used when calling SetAction()
         public static readonly string REPLY_ACTION = "Reply";
@@ -59,13 +58,13 @@ namespace NachoClient.iOS
         UITextField subjectField;
         UILabel intentLabel;
         UILabel intentDisplayLabel;
-        UIButton priorityButton;
 
         UITextView bodyTextView;
 
         UIView toViewHR;
         UIView ccViewHR;
         UIView bccViewHR;
+        UIView headerViewHR;
         UIView subjectLabelHR;
         UIView intentLabelHR;
         UIView attachmentViewHR;
@@ -153,6 +152,13 @@ namespace NachoClient.iOS
 
             if (IsForwardOrReplyAction ()) {
                 InitializeMessageForAction ();
+            }
+
+            if (IsReplyAction ()) {
+                bodyTextView.BecomeFirstResponder ();
+                bodyTextView.SelectedRange = new NSRange (0, 0);
+            } else {
+                toView.SetEditFieldAsFirstResponder ();
             }
         }
 
@@ -364,13 +370,16 @@ namespace NachoClient.iOS
             bccViewHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 1));
             bccViewHR.BackgroundColor = A.Color_NachoNowBackground;
 
-            subjectLabelHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 2));
+            headerViewHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 2));
+            headerViewHR.BackgroundColor = A.Color_NachoNowBackground;
+
+            subjectLabelHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 1));
             subjectLabelHR.BackgroundColor = A.Color_NachoNowBackground;
 
-            intentLabelHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 1));
+            intentLabelHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 3));
             intentLabelHR.BackgroundColor = A.Color_NachoNowBackground;
 
-            attachmentViewHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 2));
+            attachmentViewHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 1));
             attachmentViewHR.BackgroundColor = A.Color_NachoNowBackground;
 
             subjectLabel = new UILabel ();
@@ -410,8 +419,6 @@ namespace NachoClient.iOS
             intentArrowAccessory = new UIImageView (new RectangleF (0, 0, 12, 12));
             intentArrowAccessory.Image = UIImage.FromBundle ("icn-rightarrow");
 
-            priorityButton = UIButton.FromType (UIButtonType.ContactAdd);
-
             attachmentView = new UcAttachmentBlock (this, account.Id, View.Frame.Width);
 
             bodyTextView = new UITextView ();
@@ -439,10 +446,10 @@ namespace NachoClient.iOS
                 ccViewHR,
                 bccView,
                 bccViewHR,
+                headerViewHR,
                 subjectLabel,
                 subjectLabelHR,
                 subjectField,
-                priorityButton,
                 intentLabel,
                 intentLabelHR,
                 intentDisplayLabel,
@@ -494,6 +501,7 @@ namespace NachoClient.iOS
             toViewHR.Hidden = false;
             ccViewHR.Hidden = false;
             bccViewHR.Hidden = false;
+            headerViewHR.Hidden = false;
             attachmentViewHR.Hidden = false;
 
             suppressLayout = true;
@@ -542,6 +550,7 @@ namespace NachoClient.iOS
             toViewHR.Hidden = false;
             ccViewHR.Hidden = true;
             bccViewHR.Hidden = true;
+            headerViewHR.Hidden = false;
             attachmentViewHR.Hidden = true;
 
 
@@ -617,11 +626,15 @@ namespace NachoClient.iOS
                     yOffset += bccViewHR.Frame.Height;
                 }
 
+                if(!headerViewHR.Hidden) {
+                    AdjustY(headerViewHR, yOffset);
+                    yOffset += headerViewHR.Frame.Height;
+                }
+
                 CenterY (subjectLabel, LEFT_INDENT, yOffset, subjectLabel.Frame.Width, LINE_HEIGHT);
-                CenterY (priorityButton, View.Frame.Width - priorityButton.Frame.Width - RIGHT_INDENT, yOffset, priorityButton.Frame.Width, LINE_HEIGHT);
 
                 var subjectFieldStart = subjectLabel.Frame.X + subjectLabel.Frame.Width;
-                var subjectFieldWidth = priorityButton.Frame.X - subjectFieldStart;
+                var subjectFieldWidth = View.Frame.Width - subjectField.Frame.X;
                 CenterY (subjectField, subjectFieldStart, yOffset, subjectFieldWidth, LINE_HEIGHT);
                 yOffset += LINE_HEIGHT;
 
