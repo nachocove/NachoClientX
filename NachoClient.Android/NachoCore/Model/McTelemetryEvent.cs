@@ -70,7 +70,7 @@ namespace NachoCore.Model
         {
             try {
                 return NcModel.Instance.TeleDb.Query<McTelemetryEvent> (
-                    "SELECT * FROM McTelemetryEvent LIMIT 1;").SingleOrDefault ();
+                    "SELECT * FROM McTelemetryEvent ORDER BY Id LIMIT 1;").SingleOrDefault ();
             }
             catch (SQLiteException e) {
                 if (SQLite3.Result.Corrupt == e.Result) {
@@ -133,11 +133,11 @@ namespace NachoCore.Model
         {
         }
 
-        public static McTelemetryEvent QueryOne ()
+        public new static McTelemetryEvent QueryOne ()
         {
             try {
                 return (McTelemetryEvent)NcModel.Instance.TeleDb.Query<McTelemetrySupportEvent> (
-                    "SELECT * FROM McTelemetrySupportEvent LIMIT 1;").SingleOrDefault ();
+                    "SELECT * FROM McTelemetrySupportEvent ORDER BY Id ASC LIMIT 1;").SingleOrDefault ();
             }
             catch (SQLiteException e) {
                 if (SQLite3.Result.Corrupt == e.Result) {
