@@ -26,9 +26,9 @@ namespace NachoClient.iOS
         protected const float LABEL_HEIGHT = 17f;
         protected const float TEXTFIELD_HEIGHT = 17f;
 
-        protected UIColor labelColor = A.Color_NachoDarkText;
-        protected UIColor textFieldColor = A.Color_NachoGreen;
-        protected UIFont textFieldFond = A.Font_AvenirNextMedium14;
+        protected readonly UIColor LABEL_TEXT_COLOR = A.Color_NachoDarkText;
+        protected readonly UIColor TEXT_FIELD_TEXT_COLOR = A.Color_NachoGreen;
+        protected readonly UIFont TEXT_FIELD_FONT = A.Font_AvenirNextMedium14;
 
         protected const int NAME_TAG = 100;
         protected const int USERNAME_TAG = 101;
@@ -38,13 +38,13 @@ namespace NachoClient.iOS
         protected const int CONFERENCE_TAG = 105;
         protected const int SIGNATURE_TAG = 106;
 
-        protected string ORIGINAL_ACCOUNT_NAME_VALUE = "";
-        protected string ORIGINAL_USERNAME_VALUE = "";
-        protected string ORIGINAL_PASSWORD_VALUE = "";
-        protected string ORIGINAL_EMAIL_VALUE = "";
-        protected string ORIGINAL_MAILSERVER_VALUE = "";
-        protected string ORIGINAL_CONFERENCE_VALUE = "";
-        protected string ORIGINAL_SIGNATURE_VALUE = "";
+        protected string originalAccountNameValue = "";
+        protected string originalUsernameValue = "";
+        protected string originalPasswordValue = "";
+        protected string originalEmailValue = "";
+        protected string originalMailServerValue = "";
+        protected string originalConferenceValue = "";
+        protected string originalSignatureValue = "";
 
         protected const int GREY_BACKGROUND_VIEW_TAG = 200;
         protected const int STATUS_VIEW_TAG = 201;
@@ -53,8 +53,13 @@ namespace NachoClient.iOS
         protected const int ERROR_ALERT_VIEW_TAG = 301;
         protected const int CANCEL_VALIDATION_ALERT_VIEW_TAG = 302;
         protected const int BAD_NETWORK_ALERT_VIEW_TAG = 303;
+        protected const int CANCEL_VALIDATION_BUTTON_TAG = 304;
+        protected const int SIGNATURE_VIEW_TAG = 305;
 
         protected bool handleStatusEnums = true;
+
+        protected UITapGestureRecognizer signatureTapGesture;
+        protected UITapGestureRecognizer.Token signatureTapGestureHandlerToken;
 
         protected enum AccountIssue
         {
@@ -115,14 +120,14 @@ namespace NachoClient.iOS
             UILabel nameLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset, LABEL_WIDTH, LABEL_HEIGHT));
             nameLabel.Font = A.Font_AvenirNextRegular14;
             nameLabel.TextAlignment = UITextAlignment.Left;
-            nameLabel.TextColor = labelColor;
+            nameLabel.TextColor = LABEL_TEXT_COLOR;
             nameLabel.Text = "Name";
             settingsView.Add (nameLabel);
 
             UITextField nameTextField = new UITextField (new RectangleF (nameLabel.Frame.Right + SPACER, yOffset, 171, TEXTFIELD_HEIGHT));
             nameTextField.Placeholder = "Exchange";
-            nameTextField.TextColor = textFieldColor;
-            nameTextField.Font = textFieldFond;
+            nameTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
+            nameTextField.Font = TEXT_FIELD_FONT;
             nameTextField.TextAlignment = UITextAlignment.Left;
             nameTextField.Tag = NAME_TAG;
             settingsView.Add (nameTextField);
@@ -136,14 +141,14 @@ namespace NachoClient.iOS
             UILabel usernameLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset, LABEL_WIDTH, LABEL_HEIGHT));
             usernameLabel.Font = A.Font_AvenirNextRegular14;
             usernameLabel.TextAlignment = UITextAlignment.Left;
-            usernameLabel.TextColor = labelColor;
+            usernameLabel.TextColor = LABEL_TEXT_COLOR;
             usernameLabel.Text = "Username";
             settingsView.Add (usernameLabel);
 
             UITextField usernameTextField = new UITextField (new RectangleF (nameLabel.Frame.Right + SPACER, yOffset, 171, TEXTFIELD_HEIGHT));
             usernameTextField.Placeholder = "username";
-            usernameTextField.TextColor = textFieldColor;
-            usernameTextField.Font = textFieldFond;
+            usernameTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
+            usernameTextField.Font = TEXT_FIELD_FONT;
             usernameTextField.TextAlignment = UITextAlignment.Left;
             usernameTextField.Tag = USERNAME_TAG;
             settingsView.Add (usernameTextField);
@@ -157,14 +162,14 @@ namespace NachoClient.iOS
             UILabel passwordLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset, LABEL_WIDTH, LABEL_HEIGHT));
             passwordLabel.Font = A.Font_AvenirNextRegular14;
             passwordLabel.TextAlignment = UITextAlignment.Left;
-            passwordLabel.TextColor = labelColor;
+            passwordLabel.TextColor = LABEL_TEXT_COLOR;
             passwordLabel.Text = "Password";
             settingsView.Add (passwordLabel);
 
             UITextField passwordTextField = new UITextField (new RectangleF (nameLabel.Frame.Right + SPACER, yOffset, 171, TEXTFIELD_HEIGHT));
             passwordTextField.Placeholder = "********";
-            passwordTextField.TextColor = textFieldColor;
-            passwordTextField.Font = textFieldFond;
+            passwordTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
+            passwordTextField.Font = TEXT_FIELD_FONT;
             passwordTextField.TextAlignment = UITextAlignment.Left;
             passwordTextField.SecureTextEntry = true;
             passwordTextField.Tag = PASSWORD_TAG;
@@ -179,14 +184,14 @@ namespace NachoClient.iOS
             UILabel emailLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset, LABEL_WIDTH, LABEL_HEIGHT));
             emailLabel.Font = A.Font_AvenirNextRegular14;
             emailLabel.TextAlignment = UITextAlignment.Left;
-            emailLabel.TextColor = labelColor;
+            emailLabel.TextColor = LABEL_TEXT_COLOR;
             emailLabel.Text = "Email";
             settingsView.Add (emailLabel);
 
             UITextField emailTextField = new UITextField (new RectangleF (nameLabel.Frame.Right + SPACER, yOffset, 171, TEXTFIELD_HEIGHT));
             emailTextField.Placeholder = "zachq@nachocove.com";
-            emailTextField.TextColor = textFieldColor;
-            emailTextField.Font = textFieldFond;
+            emailTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
+            emailTextField.Font = TEXT_FIELD_FONT;
             emailTextField.TextAlignment = UITextAlignment.Left;
             emailTextField.Tag = EMAIL_TAG;
             settingsView.Add (emailTextField);
@@ -200,14 +205,14 @@ namespace NachoClient.iOS
             UILabel mailserverLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset, LABEL_WIDTH, LABEL_HEIGHT));
             mailserverLabel.Font = A.Font_AvenirNextRegular14;
             mailserverLabel.TextAlignment = UITextAlignment.Left;
-            mailserverLabel.TextColor = labelColor;
+            mailserverLabel.TextColor = LABEL_TEXT_COLOR;
             mailserverLabel.Text = "Mail Server";
             settingsView.Add (mailserverLabel);
 
             UITextField mailserverTextField = new UITextField (new RectangleF (nameLabel.Frame.Right + SPACER, yOffset, 171, TEXTFIELD_HEIGHT));
             mailserverTextField.Placeholder = "outlook.office365.com";
-            mailserverTextField.TextColor = textFieldColor;
-            mailserverTextField.Font = textFieldFond;
+            mailserverTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
+            mailserverTextField.Font = TEXT_FIELD_FONT;
             mailserverTextField.TextAlignment = UITextAlignment.Left;
             mailserverTextField.Tag = MAILSERVER_TAG;
             settingsView.Add (mailserverTextField);
@@ -221,7 +226,7 @@ namespace NachoClient.iOS
             UILabel conferencecallLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset - 13, LABEL_WIDTH, LABEL_HEIGHT + 25));
             conferencecallLabel.Font = A.Font_AvenirNextRegular14;
             conferencecallLabel.TextAlignment = UITextAlignment.Left;
-            conferencecallLabel.TextColor = labelColor;
+            conferencecallLabel.TextColor = LABEL_TEXT_COLOR;
             conferencecallLabel.Text = "Conference Call Number";
             conferencecallLabel.Lines = 2;
             conferencecallLabel.LineBreakMode = UILineBreakMode.WordWrap;
@@ -230,8 +235,8 @@ namespace NachoClient.iOS
 
             UITextField conferencecallTextField = new UITextField (new RectangleF (nameLabel.Frame.Right + SPACER, yOffset, 171, TEXTFIELD_HEIGHT));
             conferencecallTextField.Placeholder = "1928342-3";
-            conferencecallTextField.TextColor = textFieldColor;
-            conferencecallTextField.Font = textFieldFond;
+            conferencecallTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
+            conferencecallTextField.Font = TEXT_FIELD_FONT;
             conferencecallTextField.TextAlignment = UITextAlignment.Left;
             conferencecallTextField.Tag = CONFERENCE_TAG;
             settingsView.Add (conferencecallTextField);
@@ -246,27 +251,26 @@ namespace NachoClient.iOS
             UILabel signatureLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset, LABEL_WIDTH, LABEL_HEIGHT));
             signatureLabel.Font = A.Font_AvenirNextRegular14;
             signatureLabel.TextAlignment = UITextAlignment.Left;
-            signatureLabel.TextColor = labelColor;
+            signatureLabel.TextColor = LABEL_TEXT_COLOR;
             signatureLabel.Text = "Signature";
             settingsView.Add (signatureLabel);
 
             UILabel displaySignatureLabel = new UILabel (new RectangleF (signatureLabel.Frame.Right + SPACER, yOffset, 171 - 15, LABEL_HEIGHT));
-            displaySignatureLabel.TextColor = textFieldColor;
-            displaySignatureLabel.Font = textFieldFond;
+            displaySignatureLabel.TextColor = TEXT_FIELD_TEXT_COLOR;
+            displaySignatureLabel.Font = TEXT_FIELD_FONT;
             displaySignatureLabel.TextAlignment = UITextAlignment.Left;
             displaySignatureLabel.Text = "Sent from Nacho Mail";
             displaySignatureLabel.Tag = SIGNATURE_TAG;
             settingsView.AddSubview (displaySignatureLabel);
 
             UIView signatureCellView = new UIView (new RectangleF (0, topSignatureCell, View.Frame.Width, settingsView.Frame.Height - topSignatureCell));
-            signatureLabel.BackgroundColor = UIColor.Clear;
+            signatureCellView.BackgroundColor = UIColor.Clear;
             signatureCellView.UserInteractionEnabled = true;
+            signatureCellView.Tag = SIGNATURE_VIEW_TAG;
 
-            UITapGestureRecognizer signatureTap = new UITapGestureRecognizer (() => {
-                PerformSegue ("SegueToSignatureEdit", this);
-            });
+            UITapGestureRecognizer signatureTap = new UITapGestureRecognizer ();
+            signatureTapGestureHandlerToken = signatureTapGesture.AddTarget (SignatureTapHandler);
             signatureCellView.AddGestureRecognizer (signatureTap);
-
             settingsView.AddSubview (signatureCellView);
 
             UIImageView disclosureArrowImageView;
@@ -306,10 +310,6 @@ namespace NachoClient.iOS
             greyBackground.Hidden = true;
             View.Add (greyBackground);
 
-            //Used to extract the default blue system color
-            UIButton y = new UIButton (UIButtonType.System);
-            UIColor blue = y.CurrentTitleColor;
-
             UIView statusView = new UIView (new System.Drawing.RectangleF (View.Frame.Width / 6, View.Frame.Height / 2 - 150, View.Frame.Width * 2 / 3, 150));
             statusView.Tag = STATUS_VIEW_TAG;
             statusView.Layer.CornerRadius = 7.0f;
@@ -330,13 +330,13 @@ namespace NachoClient.iOS
             theSpinner.Alpha = 1.0f;
             theSpinner.HidesWhenStopped = true;
             theSpinner.Frame = new System.Drawing.RectangleF (statusView.Frame.Width / 2 - 20, 50, 40, 40);
-            theSpinner.Color = blue;
+            theSpinner.Color = A.Color_SystemBlue;
             theSpinner.StartAnimating ();
 
             statusView.AddSubview (theSpinner);
 
             UIView cancelLine = new UIView (new System.Drawing.RectangleF (0, 105, statusView.Frame.Width, .5f));
-            cancelLine.BackgroundColor = UIColor.LightGray;
+            cancelLine.BackgroundColor = A.Color_NachoLightBorderGray;
             statusView.AddSubview (cancelLine);
 
             UIButton cancelValidation = new UIButton (new System.Drawing.RectangleF (0, 106, statusView.Frame.Width, 40));
@@ -344,17 +344,15 @@ namespace NachoClient.iOS
             cancelValidation.BackgroundColor = UIColor.White;
             cancelValidation.TitleLabel.TextAlignment = UITextAlignment.Center;
             cancelValidation.SetTitle ("Cancel", UIControlState.Normal);
-            cancelValidation.SetTitleColor (blue, UIControlState.Normal);
+            cancelValidation.SetTitleColor (A.Color_SystemBlue, UIControlState.Normal);
+            cancelValidation.Tag = CANCEL_VALIDATION_BUTTON_TAG;
             statusView.AddSubview (cancelValidation);
 
             UIAlertView userHitCancel = new UIAlertView ("Validation Cancelled", "Your settings have not been validated and therefore may not work correctly. Would you still like to save?", null, "Save", "Cancel");
             userHitCancel.Tag = CANCEL_VALIDATION_ALERT_VIEW_TAG;
             userHitCancel.Clicked += SaveAnywayClicked;
 
-            cancelValidation.AddTarget (((object sender, EventArgs e) => {
-                BackEnd.Instance.CancelValidateConfig (LoginHelpers.GetCurrentAccountId ());
-                userHitCancel.Show ();
-            }), UIControlEvent.TouchUpInside);
+            cancelValidation.TouchUpInside += CancelValidationButtonClicked;
 
             statusView.AddSubview (cancelValidation);
 
@@ -428,10 +426,10 @@ namespace NachoClient.iOS
             var emailTextField = (UITextField)View.ViewWithTag (EMAIL_TAG);
             var mailserverTextField = (UITextField)View.ViewWithTag (MAILSERVER_TAG);
 
-            usernameTextField.TextColor = textFieldColor;
-            passwordTextField.TextColor = textFieldColor;
-            emailTextField.TextColor = textFieldColor;
-            mailserverTextField.TextColor = textFieldColor;
+            usernameTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
+            passwordTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
+            emailTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
+            mailserverTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
 
             switch (accountIssue) {
             case AccountIssue.ErrorAuth:
@@ -459,22 +457,22 @@ namespace NachoClient.iOS
             var mailserverTextField = (UITextField)View.ViewWithTag (MAILSERVER_TAG);
             var conferenceTextField = (UITextField)View.ViewWithTag (CONFERENCE_TAG);
 
-            if (nameTextField.Text != ORIGINAL_ACCOUNT_NAME_VALUE) {
+            if (nameTextField.Text != originalAccountNameValue) {
                 return true;
             }
-            if (usernameTextField.Text != ORIGINAL_USERNAME_VALUE) {
+            if (usernameTextField.Text != originalUsernameValue) {
                 return true;
             }
-            if (passwordTextField.Text != ORIGINAL_PASSWORD_VALUE) {
+            if (passwordTextField.Text != originalPasswordValue) {
                 return true;
             }
-            if (emailTextField.Text != ORIGINAL_EMAIL_VALUE) {
+            if (emailTextField.Text != originalEmailValue) {
                 return true;
             }
-            if (mailserverTextField.Text != ORIGINAL_MAILSERVER_VALUE) {
+            if (mailserverTextField.Text != originalMailServerValue) {
                 return true;
             }
-            if (conferenceTextField.Text != ORIGINAL_CONFERENCE_VALUE) {
+            if (conferenceTextField.Text != originalConferenceValue) {
                 return true;
             }
 
@@ -514,6 +512,18 @@ namespace NachoClient.iOS
                 networkFailureAlertView.Clicked -= SaveAnywayClicked;
                 networkFailureAlertView = null;
             }
+
+            var cancelValidationButton = (UIButton)View.ViewWithTag (CANCEL_VALIDATION_BUTTON_TAG);
+            if (null != cancelValidationButton) {
+                cancelValidationButton.TouchUpInside -= CancelValidationButtonClicked;
+                cancelValidationButton = null;
+            }
+
+            signatureTapGesture.RemoveTarget (signatureTapGestureHandlerToken);
+            var signatureView = (UIView)View.ViewWithTag (SIGNATURE_VIEW_TAG);
+            if (null != signatureView) {
+                signatureView.RemoveGestureRecognizer (signatureTapGesture);
+            }
         }
 
         protected void ValidateAndDisplayWaitingView ()
@@ -522,7 +532,7 @@ namespace NachoClient.iOS
             var passwordTextField = (UITextField)View.ViewWithTag (PASSWORD_TAG);
             var mailserverTextField = (UITextField)View.ViewWithTag (MAILSERVER_TAG);
 
-            if (!NachoCore.Utils.RegexUtilities.IsValidHost (mailserverTextField.Text.Trim ())) {
+            if (!NachoCore.Utils.RegexUtilities.IsValidHostName (mailserverTextField.Text.Trim ())) {
                 accountIssue = AccountIssue.InvalidHost;
                 ConfigureAndLayout ();
                 return;
@@ -600,6 +610,13 @@ namespace NachoClient.iOS
             }
         }
 
+        protected void CancelValidationButtonClicked (object sender, EventArgs e)
+        {
+            BackEnd.Instance.CancelValidateConfig (LoginHelpers.GetCurrentAccountId ());
+            var cancelValidationAlertView = (UIAlertView)View.ViewWithTag (CANCEL_VALIDATION_ALERT_VIEW_TAG);
+            cancelValidationAlertView.Show ();
+        }
+
         protected void CaptureOriginalSettings ()
         {
             McAccount theAccount = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
@@ -608,22 +625,22 @@ namespace NachoClient.iOS
             McConference theConference = McConference.QueryByAccountId<McConference> (LoginHelpers.GetCurrentAccountId ()).FirstOrDefault ();
 
             if (null != theAccount.DisplayName) {
-                ORIGINAL_ACCOUNT_NAME_VALUE = theAccount.DisplayName;
+                originalAccountNameValue = theAccount.DisplayName;
             }
             if (null != theCred.Username) {
-                ORIGINAL_USERNAME_VALUE = theCred.Username;
+                originalUsernameValue = theCred.Username;
             }
             if (null != theCred.GetPassword ()) {
-                ORIGINAL_PASSWORD_VALUE = theCred.GetPassword ();
+                originalPasswordValue = theCred.GetPassword ();
             }
             if (null != theAccount.EmailAddr) {
-                ORIGINAL_EMAIL_VALUE = theAccount.EmailAddr;
+                originalEmailValue = theAccount.EmailAddr;
             }
             if (null != theServer.Host) {
-                ORIGINAL_MAILSERVER_VALUE = theServer.Host;
+                originalMailServerValue = theServer.Host;
             }
             if (null != theConference.DefaultPhoneNumber) {
-                ORIGINAL_CONFERENCE_VALUE = theConference.DefaultPhoneNumber;
+                originalConferenceValue = theConference.DefaultPhoneNumber;
             }
         }
 
@@ -641,6 +658,14 @@ namespace NachoClient.iOS
                 ToggleEditing ();
                 SaveAccountSettings ();
                 DismissViewController (true, null);
+            }
+        }
+
+        protected void SignatureTapHandler (NSObject sender)
+        {
+            var gesture = sender as UIGestureRecognizer;
+            if (null != gesture) {
+                PerformSegue ("SegueToSignatureEdit", this);
             }
         }
 

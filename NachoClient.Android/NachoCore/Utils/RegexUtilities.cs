@@ -7,7 +7,7 @@ namespace NachoCore.Utils{
     {
         bool invalid = false;
 
-        public static bool IsValidHost (string host)
+        public static bool IsValidHostName (string host)
         {
             UriHostNameType hostnameURI = Uri.CheckHostName (host);
             if (hostnameURI == UriHostNameType.Dns || hostnameURI == UriHostNameType.IPv4 || hostnameURI == UriHostNameType.IPv6) {
