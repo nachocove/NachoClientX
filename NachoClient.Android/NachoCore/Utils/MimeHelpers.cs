@@ -80,30 +80,28 @@ namespace NachoCore.Utils
             return indent.ToString ().PadRight (2 + (indent * 2));
         }
 
-        static public void DumpMessage (MimeMessage message, int indent)
+        static public void DumpMessage (MimeMessage message)
         {
-            Log.Info (Log.LOG_EMAIL, "{0}MimeMessage: {1}", Indent (indent), message);
+            DumpMessage (message, 0);
+        }
+
+        static private void DumpMessage (MimeMessage message, int indent)
+        {
+            Log.Info (Log.LOG_EMAIL, "{0}{1} {2}", Indent (indent), message.GetType ().Name, message.Subject);
             DumpMimeEntity (message.Body, indent + 1);
         }
 
-        static void DumpMimeEntity (MimeEntity entity, int indent)
+        static private void DumpMimeEntity (MimeEntity entity, int indent)
         {
+            Log.Info (Log.LOG_EMAIL, "{0}{1} {2} {3} {4}", Indent (indent), entity.GetType ().Name, entity.ContentType, entity.ContentId, entity.ContentDisposition);
             if (entity is MessagePart) {
-                var messagePart = (MessagePart)entity;
-                Log.Info (Log.LOG_EMAIL, "{0}MimeEntity: {1} {2} {3}", Indent (indent), messagePart, messagePart.ContentType, messagePart.ContentId);
-                DumpMessage (messagePart.Message, indent + 1);
-                return;
+                DumpMessage (((MessagePart)entity).Message, indent + 1);
             }
             if (entity is Multipart) {
-                var multipart = (Multipart)entity;
-                Log.Info (Log.LOG_EMAIL, "{0}Multipart: {1} {2} {3}", Indent (indent), multipart, multipart.ContentType, multipart.ContentId);
-                foreach (var subpart in multipart) {
-                    Log.Info (Log.LOG_EMAIL, "{0}Subpart: {1} {2} {3}", Indent (indent), subpart, subpart.ContentType, subpart.ContentId);
+                foreach (var subpart in (Multipart)entity) {
                     DumpMimeEntity (subpart, indent + 1);
                 }
-                return;
             }
-            Log.Info (Log.LOG_EMAIL, "{0}MimeEntity: {1} {2} {3}", Indent (indent), entity, entity.ContentType, entity.ContentId);
         }
 
         /// <summary>

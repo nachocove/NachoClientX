@@ -319,7 +319,7 @@ namespace NachoClient.iOS
                 using (var bodySource = new FileStream (bodyPath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
                     var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
                     var mime = bodyParser.ParseMessage ();
-                    MimeHelpers.DumpMessage (mime, 0);
+                    MimeHelpers.DumpMessage (mime);
                     var list = new List<MimeEntity> ();
                     MimeHelpers.MimeDisplayList (mime, ref list);
                     RenderDisplayList (list);
