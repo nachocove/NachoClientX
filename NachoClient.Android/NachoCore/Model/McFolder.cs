@@ -90,14 +90,27 @@ namespace NachoCore.Model
             return folder;
         }
 
-        public override int Update ()
+        // TODO - is there a good way not to specify tries here?
+        public override T UpdateWithOCApply<T> (Mutator mutator, out int count, int tries = 100)
         {
             if (IsHidden) {
                 NcAssert.True (IsClientOwned, "Cannot update synced folders to be hidden");
             }
+            return base.UpdateWithOCApply<T> (mutator, out count, tries);
+        }
 
-            int retval = base.Update ();
-            return retval;
+        public override T UpdateWithOCApply<T> (Mutator mutator, int tries = 100)
+        {
+            if (IsHidden) {
+                NcAssert.True (IsClientOwned, "Cannot update synced folders to be hidden");
+            }
+            return base.UpdateWithOCApply<T> (mutator, tries);
+        }
+
+        public override int Update ()
+        {
+            NcAssert.True (false, "Must use UpdateWithOCApply.");
+            return 0;
         }
 
         public static McFolder GetClientOwnedFolder (int accountId, string serverId)
@@ -293,10 +306,14 @@ namespace NachoCore.Model
             NcAssert.NotNull (potentialFolder, "Server to move should exist");
 
             NcAssert.True (potentialFolder.IsClientOwned == false, "Folder to be moved should be synced");
-            potentialFolder.IsClientOwned = true;
-            potentialFolder.ParentId = destParentId;
-            potentialFolder.Update ();
 
+            potentialFolder = potentialFolder.UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.IsClientOwned = true;
+                target.ParentId = destParentId;
+                return true;
+            });
+            
             RecursivelyChangeFlags (accountId, potentialFolder.ServerId);
         }
 
@@ -304,9 +321,9 @@ namespace NachoCore.Model
         private static void RecursivelyChangeFlags (int accountId, string parentServerId)
         {
             var children = McFolder.ServerEndQueryByParentId (accountId, parentServerId);
-            foreach (McFolder child in children) {
-                child.IsClientOwned = true;
-                child.Update ();
+            foreach (McFolder iterChild in children) {
+                var child = iterChild;
+                child = child.UpdateSet_IsClientOwned (true);
                 RecursivelyChangeFlags (accountId, child.ServerId);
             }
         }
@@ -412,38 +429,148 @@ namespace NachoCore.Model
             return NcResult.OK ();
         }
 
-        public static void AsSetExpected (int accountId)
+        public static void UpdateSet_AsSyncMetaToClientExpected (int accountId, bool toClientExpected)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                          " f.AccountId = ? AND f.IsClientOwned = 0",
-                              accountId);
+                " f.AccountId = ? AND f.IsClientOwned = 0",
+                accountId);
             foreach (var folder in folders) {
-                folder.AsSyncMetaToClientExpected = true;
-                folder.Update ();
+                folder.UpdateSet_AsSyncMetaToClientExpected (toClientExpected);
             }
         }
 
-        public void UpdateAsResetState ()
+        public McFolder UpdateSet_AsSyncMetaToClientExpected (bool toClientExpected)
         {
-            // TODO - would be nice to let the user see old contents (read-only) until next sync comes in.
-            AsSyncKey = AsSyncKey_Initial;
-            AsSyncMetaToClientExpected = true;
-            NcModel.Instance.RunInTransaction (() => {
-                Update ();
-                DeleteItems ();
+            var folder = UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.AsSyncMetaToClientExpected = toClientExpected;
+                return true;
             });
+            return folder;
         }
 
-        public static void UpdateAsResetState (int accountId)
+        public McFolder UpdateSet_IsAwaitingDelete (bool isAwaitingDelete)
         {
-            NcModel.Instance.RunInTransaction (() => {
-                var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                          " f.AccountId = ? ",
-                              accountId);
-                foreach (var folder in folders) {
-                    folder.UpdateAsResetState ();
-                }
+            var folder = UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.IsAwaitingDelete = isAwaitingDelete;
+                return true;
             });
+            return folder;
+        }
+
+        public McFolder UpdateSet_IsAwaitingCreate (bool isAwaitingCreate)
+        {
+            var folder = UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.IsAwaitingCreate = isAwaitingCreate;
+                return true;
+            });
+            return folder;
+        }
+
+        public McFolder UpdateSet_IsClientOwned (bool isClientOwned)
+        {
+            var folder = UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                if (!isClientOwned) {
+                    NcAssert.True (!target.IsHidden, "Cannot update synced folders to be hidden");
+                }
+                target.IsClientOwned = isClientOwned;
+                return true;
+            });
+            return folder;
+        }
+
+        public McFolder UpdateSet_IsHidden (bool isHidden)
+        {
+            var folder = UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                if (isHidden) {
+                    NcAssert.True (target.IsClientOwned, "Cannot update synced folders to be hidden");
+                }
+                target.IsHidden = isHidden;
+                return true;
+            });
+            return folder;
+        }
+
+        public McFolder UpdateSet_ParentId (string parentId)
+        {
+            var folder = UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.ParentId = parentId;
+                return true;
+            });
+            return folder;
+        }
+
+        public McFolder UpdateSet_ServerId (string serverId)
+        {
+            var folder = UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.ServerId = serverId;
+                return true;
+            });
+            return folder;
+        }
+
+        public McFolder UpdateSet_DisplayName (string displayName)
+        {
+            var folder = UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.DisplayName = displayName;
+                return true;
+            });
+            return folder;
+        }
+
+        public McFolder UpdateSet_AsSyncLastPing (DateTime asSyncLastPing)
+        {
+            var folder = UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.AsSyncLastPing = asSyncLastPing;
+                return true;
+            });
+            return folder;
+        }
+
+        public McFolder UpdateSet_LastAccessed (DateTime lastAccessed)
+        {
+            var folder = UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.LastAccessed = lastAccessed;
+                return true;
+            });
+            return folder;
+        }
+
+        public void ResetSyncState ()
+        {
+            AsSyncKey = AsSyncKey_Initial;
+            AsSyncMetaToClientExpected = true;
+        }
+
+        // TODO - would be nice to let the user see old folder contents (read-only) until next sync comes in.
+        public McFolder UpdateResetSyncState ()
+        {
+            var folder = UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.ResetSyncState ();
+                return true;
+            });
+            folder.DeleteItems ();
+            return folder;
+        }
+
+        public static void UpdateResetSyncState (int accountId)
+        {
+            var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
+                " f.AccountId = ? ",
+                accountId);
+            foreach (var iterFolder in folders) {
+                iterFolder.UpdateResetSyncState ();
+            }
         }
 
         public override ClassCodeEnum GetClassCode ()
@@ -458,7 +585,7 @@ namespace NachoCore.Model
             } 
 
             searchFor = "%" + searchFor + "%";
-
+            // FIXME - double-check this query.
             return NcModel.Instance.Db.Query<McFolder> (
                 "SELECT f.* FROM McFolder AS f" +
                 "WHERE " +

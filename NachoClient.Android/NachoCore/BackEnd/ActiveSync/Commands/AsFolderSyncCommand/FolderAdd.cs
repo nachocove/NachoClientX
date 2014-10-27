@@ -99,12 +99,15 @@ namespace NachoCore.ActiveSync
                     maybeSame.Type == FolderType &&
                     maybeSame.AsFolderSyncEpoch < folderSyncEpoch) {
                     // The FolderSync:Add is really the same as this old folder.
-                    maybeSame.ParentId = ParentId;
-                    // We tried leaving the AsSyncKey untouched, and the server took it.
-                    // We are going to rely on the server resetting the AsSyncKey if it wants it reset.
-                    maybeSame.AsFolderSyncEpoch = folderSyncEpoch;
-                    maybeSame.AsSyncMetaToClientExpected = true;
-                    maybeSame.Update ();
+                    maybeSame = maybeSame.UpdateWithOCApply<McFolder> ((record) => {
+                        var target = (McFolder)record;
+                        target.ParentId = ParentId;
+                        // We tried leaving the AsSyncKey untouched, and the server took it.
+                        // We are going to rely on the server resetting the AsSyncKey if it wants it reset.
+                        target.AsFolderSyncEpoch = folderSyncEpoch;
+                        target.AsSyncMetaToClientExpected = true;
+                        return true;
+                    });
                 } else {
                     if (null != maybeSame) {
                         // We aren't confident that the folder is the same, but we can't keep executing 
@@ -115,9 +118,8 @@ namespace NachoCore.ActiveSync
                                 maybeSame.ToString (), folder.ToString ());
                         }
                         var newServerId = Guid.NewGuid ().ToString ("N");
-                        maybeSame.ServerId = newServerId;
                         NcModel.Instance.RunInTransaction (() => {
-                            maybeSame.Update ();
+                            maybeSame = maybeSame.UpdateSet_ServerId (newServerId);
                             McAbstrFolderEntry.GloballyReWriteServerId (AccountId, ServerId, newServerId);
                         });
                     }

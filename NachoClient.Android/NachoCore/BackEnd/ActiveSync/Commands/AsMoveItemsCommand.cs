@@ -72,7 +72,7 @@ namespace NachoCore.ActiveSync
                 PendingResolveApply ((pending) => {
                     pending.ResolveAsDeferred (BEContext.ProtoControl, McPending.DeferredEnum.UntilFSyncThenSync, LocalFailureInd);
                 });
-                McFolder.AsSetExpected (BEContext.Account.Id);
+                McFolder.UpdateSet_AsSyncMetaToClientExpected (BEContext.Account.Id, true);
                 return Event.Create (new Event[] {
                     Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "MIIS1"),
                     Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "MIIS2"),
@@ -160,7 +160,7 @@ namespace NachoCore.ActiveSync
                     pending.ResolveAsDeferred (BEContext.ProtoControl,
                         DateTime.UtcNow.AddSeconds (McPending.KDefaultDeferDelaySeconds), LocalFailureInd);
                 });
-                McFolder.AsSetExpected (BEContext.Account.Id);
+                McFolder.UpdateSet_AsSyncMetaToClientExpected (BEContext.Account.Id, true);
                 return Event.Create ((uint)(uint)AsProtoControl.AsEvt.E.ReSync, "MVSYNC");
             
             default:

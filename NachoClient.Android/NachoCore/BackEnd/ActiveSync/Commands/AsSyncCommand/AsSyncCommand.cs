@@ -314,9 +314,8 @@ namespace NachoCore.ActiveSync
             case Xml.AirSync.StatusCode.SyncKeyInvalid_3:
                 Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: SyncKeyInvalid_3");
                 // FoldersInRequest is NOT stale here.
-                // TODO - combine logic with AsResetState?
                 foreach (var folder in FoldersInRequest) {
-                    folder.UpdateAsResetState ();
+                    folder.UpdateResetSyncState ();
                 }
                 ResolveAllDeferred ();
                 return Event.Create ((uint)SmEvt.E.HardFail, "ASYNCTOPFOOF");
@@ -390,16 +389,12 @@ namespace NachoCore.ActiveSync
                 var xmlStatus = collection.Element (m_ns + Xml.AirSync.Status);
                 // The protocol requires SyncKey, but GOOG does not obey in the StatusCode.NotFound case.
                 if (null != xmlSyncKey) {
-                    int count = 0;
                     folder = folder.UpdateWithOCApply<McFolder> ((record) => {
                         var target = (McFolder)record;
                         target.AsSyncKey = xmlSyncKey.Value;
                         target.AsSyncMetaToClientExpected = (McFolder.AsSyncKey_Initial == oldSyncKey) || (null != xmlMoreAvailable);
                         return true;
-                    }, out count);
-                    if (0 >= count) {
-                        // Go kill something small & furry.
-                    }
+                    });
                 } else {
                     Log.Warn (Log.LOG_SYNC, "SyncKey missing from XML.");
                 }
@@ -442,7 +437,7 @@ namespace NachoCore.ActiveSync
 
                 case Xml.AirSync.StatusCode.SyncKeyInvalid_3:
                     Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: SyncKeyInvalid_3");
-                    folder.UpdateAsResetState ();
+                    folder = folder.UpdateResetSyncState ();
                     lock (PendingResolveLockObj) {
                         // Defer all the outbound commands until after ReSync.
                         pendingInFolder = PendingList.Where (x => x.ParentId == folder.ServerId).ToList ();
@@ -492,7 +487,7 @@ namespace NachoCore.ActiveSync
 
                 case Xml.AirSync.StatusCode.Retry_16:
                     Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: Retry_16");
-                    folder.AsSyncMetaToClientExpected = true;
+                    folder = folder.UpdateSet_AsSyncMetaToClientExpected (true);
                     lock (PendingResolveLockObj) {
                         pendingInFolder = PendingList.Where (x => x.ParentId == folder.ServerId).ToList ();
                         foreach (var pending in pendingInFolder) {
@@ -506,7 +501,6 @@ namespace NachoCore.ActiveSync
                     Log.Error (Log.LOG_AS, "AsSyncCommand ProcessResponse UNHANDLED Collection status: {0}", status);
                     break;
                 }
-                folder.Update ();
             }
             // For any folders missing from the response, we need to note that there isn't more on the server-side.
             // Remember the loop above re-writes folders, so FoldersInRequest object will be stale!
@@ -514,8 +508,7 @@ namespace NachoCore.ActiveSync
             foreach (var maybeStale in FoldersInRequest) {
                 var folder = McFolder.ServerEndQueryById (maybeStale.Id);
                 if (0 == processedFolders.Where (f => folder.Id == f.Id).Count ()) {
-                    folder.AsSyncMetaToClientExpected = false;
-                    folder.Update ();
+                    folder = folder.UpdateSet_AsSyncMetaToClientExpected (false);
                 }
                 reloadedFolders.Add (folder);
             }
@@ -569,8 +562,7 @@ namespace NachoCore.ActiveSync
         {
             // FoldersInRequest NOT stale here.
             foreach (var folder in FoldersInRequest) {
-                folder.AsSyncMetaToClientExpected = false;
-                folder.Update ();
+                folder.UpdateSet_AsSyncMetaToClientExpected (false);
             }
             lock (PendingResolveLockObj) {
                 ProcessImplicitResponses (PendingList);
@@ -961,8 +953,7 @@ namespace NachoCore.ActiveSync
 
                         case Xml.AirSync.StatusCode.NotFound_8:
                             Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: NotFound_8");
-                            folder.AsSyncMetaToClientExpected = true;
-                            folder.Update ();
+                            folder.UpdateSet_AsSyncMetaToClientExpected (true);
                             PendingList.RemoveAll (x => x.Id == pending.Id);
                             pending.ResolveAsDeferred (BEContext.ProtoControl,
                                 McPending.DeferredEnum.UntilSync,

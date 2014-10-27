@@ -254,13 +254,9 @@ namespace Test.iOS
                 DateTime now2 = DateTime.UtcNow.AddHours(-2);
                 DateTime now3 = DateTime.UtcNow.AddDays(-3);
 
-                folder1.LastAccessed = now1;
-                folder2.LastAccessed = now2;
-                folder3.LastAccessed = now3;
-
-                folder1.Update ();
-                folder2.Update ();
-                folder3.Update ();
+                folder1 = folder1.UpdateSet_LastAccessed (now1);
+                folder2 = folder2.UpdateSet_LastAccessed (now2);
+                folder3 = folder3.UpdateSet_LastAccessed (now3);
 
                 List<McFolder> recentlyAccessed = McFolder.QueryByMostRecentlyAccessedFolders (accountId);
                 FoldersAreEqual (folder3, recentlyAccessed[0], "folder3 should be the first folder in the list");
@@ -446,8 +442,7 @@ namespace Test.iOS
                 List<McFolder> retrieved1 = McFolder.ServerEndQueryAll (1);
                 Assert.AreEqual (0, retrieved1.Count, "Server should not return a folder awaiting creation on the server");
 
-                folder1.IsAwaitingCreate = false;
-                folder1.Update ();
+                folder1 = folder1.UpdateSet_IsAwaitingCreate (false);
 
                 retrieved1 = McFolder.ServerEndQueryAll (1);
                 Assert.AreEqual (1, retrieved1.Count, "Server should return a folder once it is no longer awaiting creation");
@@ -470,15 +465,13 @@ namespace Test.iOS
                 Assert.AreEqual (0, retrieved1.Count, "Should not return folders that are client owned");
 
                 // add isAwaitingDelete flag
-                folder1.IsAwaitingDelete = true;
-                folder1.Update ();
+                folder1 = folder1.UpdateSet_IsAwaitingDelete (true);
 
                 retrieved1 = McFolder.ServerEndQueryAll (1);
                 Assert.AreEqual (0, retrieved1.Count, "Should not return folders that are client owned, even if they are awaiting delete");
 
                 // folder is no longer client owned
-                folder1.IsClientOwned = false;
-                folder1.Update ();
+                folder1 = folder1.UpdateSet_IsClientOwned (false);
 
                 retrieved1 = McFolder.ServerEndQueryAll (1);
                 Assert.AreEqual (1, retrieved1.Count, "Should return folders that are client owned, but previously were not");
@@ -494,7 +487,7 @@ namespace Test.iOS
             {
                 int accountId = 1;
                 var folder = FolderOps.CreateFolder (accountId, isClientOwned: true);
-                McFolder.AsSetExpected (accountId);
+                McFolder.UpdateSet_AsSyncMetaToClientExpected (accountId, true);
                 var received = McFolder.QueryById<McFolder> (folder.Id);
                 Assert.AreEqual (false, received.AsSyncMetaToClientExpected, "Should not set meta to true on client-owned folder");
                 FoldersAreEqual (folder, received, "Should not modify client-owned folder");
@@ -505,7 +498,7 @@ namespace Test.iOS
             {
                 int accountId = 1;
                 var folder = FolderOps.CreateFolder (accountId, isClientOwned: false, syncMetaToClient: false);
-                McFolder.AsSetExpected (accountId);
+                McFolder.UpdateSet_AsSyncMetaToClientExpected (accountId, true);
                 var received = McFolder.QueryById<McFolder> (folder.Id);
                 Assert.AreEqual (true, received.AsSyncMetaToClientExpected, "Should set meta to true on synced folder");
                 FoldersAreEqual (folder, received, "Should not modify non-meta fields");
@@ -521,7 +514,7 @@ namespace Test.iOS
             public void ShouldNotBreakDefaultFolder ()
             {
                 McFolder folder1 = FolderOps.CreateFolder (1, isClientOwned: false);
-                McFolder.UpdateAsResetState (1);
+                McFolder.UpdateResetSyncState (1);
 
                 McFolder retrieved1 = McFolder.QueryById<McFolder> (folder1.Id);
                 FoldersAreEqual (folder1, retrieved1, "Folder should be the same after resetting state");
@@ -534,7 +527,7 @@ namespace Test.iOS
                 McFolder folder1 = FolderOps.CreateFolder (1, asSyncKey: "10", isClientOwned: false);
                 McFolder retrieved1 = McFolder.QueryById<McFolder> (folder1.Id);
                 Assert.AreEqual ("10", retrieved1.AsSyncKey, "AsSyncKey should be set correctly before reset event");
-                McFolder.UpdateAsResetState (1);
+                McFolder.UpdateResetSyncState (1);
 
                 McFolder retrieved2 = McFolder.QueryById<McFolder> (folder1.Id);
                 FoldersAreEqual (folder1, retrieved2, "Folder core values should not be modified by AsResetState");
@@ -547,17 +540,20 @@ namespace Test.iOS
                 McFolder folder1 = FolderOps.CreateFolder (1, syncMetaToClient: false, isClientOwned: false);
                 McFolder retrieved1 = McFolder.QueryById<McFolder> (folder1.Id);
                 Assert.AreEqual (false, retrieved1.AsSyncMetaToClientExpected, "AsSyncMeta... flag should be set correctly");
-                McFolder.UpdateAsResetState (1);
+                McFolder.UpdateResetSyncState (1);
 
                 McFolder retrieved2 = McFolder.QueryById<McFolder> (folder1.Id);
                 FoldersAreEqual (folder1, retrieved2, "Folder core values should not be modified by AsResetState");
                 FlagsAreReset (retrieved2, "Folder flags should have been reset correctly");
 
                 // set both at the same time
-                folder1.AsSyncMetaToClientExpected = false;
-                folder1.AsSyncKey = "10";
-                folder1.Update ();
-                McFolder.UpdateAsResetState (1);
+                folder1 = folder1.UpdateWithOCApply<McFolder> ((record) => {
+                    var target = (McFolder)record;
+                    target.AsSyncMetaToClientExpected = false;
+                    target.AsSyncKey = "10";
+                    return true;
+                });
+                McFolder.UpdateResetSyncState (1);
                 McFolder retrieved3 = McFolder.QueryById<McFolder> (folder1.Id);
                 FlagsAreReset (retrieved3, "Both folder flags should have been reset correctly");
             }
@@ -569,7 +565,7 @@ namespace Test.iOS
                 var folder1 = FolderOps.CreateFolder (2, asSyncKey: "10", syncMetaToClient: false, isClientOwned: false);
                 var folder2 = FolderOps.CreateFolder (1, asSyncKey: "10", syncMetaToClient: false, isClientOwned: false);  // only this folder should be retrieved
 
-                McFolder.UpdateAsResetState (1);
+                McFolder.UpdateResetSyncState (1);
                 McFolder retrieved1 = McFolder.QueryById<McFolder> (folder2.Id);
                 FlagsAreReset (retrieved1, "Both folder flags should have been reset correctly");
 
@@ -900,16 +896,14 @@ namespace Test.iOS
 
                 // try creating a synced folder, then setting hidden to true
                 McFolder syncedFolder = FolderOps.CreateFolder (accountId, isClientOwned: false, isHidden: false);
-                syncedFolder.IsHidden = true;
                 TestForNachoExceptionFailure (() => {
-                    syncedFolder.Update ();
+                    syncedFolder.UpdateSet_IsHidden (true);
                 }, "Should throw NachoExceptionFailure when updating a synced folder after setting isHidden to true");
 
                 // try creating a hidden folder, then setting it to synced
                 var hiddenFolder = FolderOps.CreateFolder (accountId, isClientOwned: true, isHidden: true);
-                hiddenFolder.IsClientOwned = false;
                 TestForNachoExceptionFailure (() => {
-                    hiddenFolder.Update ();
+                    hiddenFolder.UpdateSet_IsClientOwned (false);
                 }, "Should throw NachoExceptionFailure when changing a client-owned folder to synced after isHidden is set to true");
             }
 
@@ -941,6 +935,58 @@ namespace Test.iOS
                     folder.Link (email);
                 }, "Should not be able to link item to folder of different accountId");
             }
+        }
+    }
+
+    [TestFixture]
+    public class FolderOC : BaseMcFolderTest
+    {
+        [Test]
+        public void NoClobber ()
+        {
+            var displayName = "updated";
+            int count = -1;
+            var folder1 = FolderOps.CreateFolder (accountId: 1, serverId: "1", name: "initial");
+            var folder1b = McFolder.QueryById<McFolder> (folder1.Id);
+            Assert.AreEqual (folder1.ServerId, folder1b.ServerId);
+            folder1b = folder1b.UpdateSet_AsSyncMetaToClientExpected (true);
+            Assert.False (folder1.AsSyncMetaToClientExpected);
+            Assert.AreEqual (0, folder1.RowVersion);
+            Assert.AreEqual (1, folder1b.RowVersion);
+            var folder1r = folder1.UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.DisplayName = displayName;
+                return false;
+            }, out count, 1);
+            Assert.AreEqual (0, count);
+            count = -1;
+            Assert.AreEqual (folder1r.RowVersion, folder1.RowVersion);
+            var check = McFolder.QueryById<McFolder> (folder1.Id);
+            Assert.AreEqual ("initial", check.DisplayName);
+            folder1r = folder1.UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.DisplayName = displayName;
+                return true;
+            }, out count, 1);
+            Assert.AreEqual (0, count);
+            count = -1;
+            Assert.AreEqual (folder1r.RowVersion, folder1.RowVersion);
+            check = McFolder.QueryById<McFolder> (folder1.Id);
+            Assert.AreEqual ("initial", check.DisplayName);
+            folder1r = folder1.UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.DisplayName = displayName;
+                return true;
+            }, out count, 2);
+            Assert.AreEqual (folder1r.DisplayName, displayName);
+            Assert.AreEqual (folder1r.RowVersion, 2);
+            Assert.AreEqual (1, count);
+            Assert.AreEqual (folder1r.Id, folder1.Id);
+            folder1 = McFolder.QueryById<McFolder> (folder1r.Id);
+            Assert.AreEqual (folder1.RowVersion, folder1r.RowVersion);
+            Assert.AreEqual (folder1.DisplayName, folder1r.DisplayName);
+            check = McFolder.QueryById<McFolder> (folder1.Id);
+            Assert.AreEqual (displayName, check.DisplayName);
         }
     }
 
