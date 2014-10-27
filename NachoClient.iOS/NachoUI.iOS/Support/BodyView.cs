@@ -135,7 +135,9 @@ namespace NachoClient.iOS
         protected UIView parentView;
         protected UIView messageView;
         protected UIActivityIndicatorView spinner;
-        protected BodyWebView webView;
+
+        protected UITapGestureRecognizer partialDownloadGestureRecognizer;
+        protected UIGestureRecognizer.Token partialDownloadGestureRecognizerToken;
 
         protected LoadState loadState;
         protected McAbstrItem abstrItem;
@@ -177,15 +179,13 @@ namespace NachoClient.iOS
             MinimumZoomScale = 1.0f;
             MaximumZoomScale = 1.0f;
 
-            ViewForZoomingInScrollView = delegate {
-                return messageView;
-            };
             // TODO - Scrolling and zooming was originally planned but after
             // the 2nd version of BodyView, the scrolling is either entirely disabled
             // (in hot list) or completely delegated to the parent view (message view).
             // Hence, the base class UIScrollView is no longer used. It is conceivable
             // that we enable scrolling (and zooming) for hot list eventually so this
             // is kept around but disabled for now.
+            ViewForZoomingInScrollView = GetMessageView;
             DidZoom += OnDidZoom;
             ZoomingStarted += OnZoomingStarted;
             ZoomingEnded += OnZoomingEnded;
@@ -206,6 +206,13 @@ namespace NachoClient.iOS
 
         public bool Configure (McAbstrItem item)
         {
+            // Clear out the existing BodyView
+            for (int i = messageView.Subviews.Length - 1; i >= 0; --i) {
+                var subview = messageView.Subviews [i];
+                subview.RemoveFromSuperview ();
+                ViewHelper.DisposeViewHierarchy (subview);
+            }
+
             abstrItem = item;
             downloadToken = null;
             loadState = LoadState.IDLE;
@@ -215,21 +222,6 @@ namespace NachoClient.iOS
             center.X -= Frame.X;
             center.Y -= Frame.Y;
             spinner.Center = center;
-
-            // TODO: Revisit
-            for (int i = messageView.Subviews.Length - 1; i >= 0; i--) {
-                messageView.Subviews [i].RemoveFromSuperview ();
-            }
-
-            // Web view consumes a lot of memory.
-            // We manually dispose it to force all ObjCobjects to be freed.
-            if (null != webView) {
-                if (webView.IsLoading) {
-                    webView.StopLoading ();
-                }
-                webView.Dispose ();
-            }
-            webView = new BodyWebView (messageView, htmlLeftMargin);
 
             // If the body isn't downloaded,
             // start the download and return.
@@ -272,12 +264,25 @@ namespace NachoClient.iOS
                 break;
             }
 
-            //if (null != message.MeetingRequest && !calendarRendered) {
-            //    var UID = Util.GlobalObjIdToUID (message.MeetingRequest.GlobalObjId);
-            //    MakeStyledCalendarInvite (UID, message.Subject, message.MeetingRequest.AllDayEvent, message.MeetingRequest.StartTime, message.MeetingRequest.EndTime, message.MeetingRequest.Location, view);
-            //}
-
             return true;
+        }
+
+        protected override void Dispose (bool disposing)
+        {
+            ViewForZoomingInScrollView = null;
+            DidZoom -= OnDidZoom;
+            ZoomingStarted -= OnZoomingStarted;
+            ZoomingEnded -= OnZoomingEnded;
+            if (null != partialDownloadGestureRecognizer) {
+                partialDownloadGestureRecognizer.RemoveTarget (partialDownloadGestureRecognizerToken);
+                partialDownloadGestureRecognizer = null;
+            }
+            base.Dispose (disposing);
+        }
+
+        private UIView GetMessageView (UIScrollView scrollView)
+        {
+            return messageView;
         }
 
         private void OnDidZoom (object sender, EventArgs e)
@@ -314,7 +319,7 @@ namespace NachoClient.iOS
                 using (var bodySource = new FileStream (bodyPath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
                     var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
                     var mime = bodyParser.ParseMessage ();
-                    MimeHelpers.DumpMessage (mime, 0);
+                    MimeHelpers.DumpMessage (mime);
                     var list = new List<MimeEntity> ();
                     MimeHelpers.MimeDisplayList (mime, ref list);
                     RenderDisplayList (list);
@@ -411,13 +416,14 @@ namespace NachoClient.iOS
             label.UserInteractionEnabled = true;
 
             // Detect tap of the partially download mesasge label
-            var singletap = new UITapGestureRecognizer ();
-            singletap.NumberOfTapsRequired = 1;
-            singletap.AddTarget (this, new MonoTouch.ObjCRuntime.Selector ("DownloadMessage:"));
-            singletap.ShouldRecognizeSimultaneously = delegate {
+            partialDownloadGestureRecognizer = new UITapGestureRecognizer ();
+
+            partialDownloadGestureRecognizer.NumberOfTapsRequired = 1;
+            partialDownloadGestureRecognizerToken = partialDownloadGestureRecognizer.AddTarget (OnDownloadMessage);
+            partialDownloadGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
                 return false;
             };
-            label.AddGestureRecognizer (singletap);
+            label.AddGestureRecognizer (partialDownloadGestureRecognizer);
 
             messageView.AddSubview (label);
         }
@@ -454,6 +460,7 @@ namespace NachoClient.iOS
 
         void RenderHtmlString (string html)
         {
+            var webView = new BodyWebView (messageView, htmlLeftMargin);
             webView.OnRenderStart = () => {
                 if (null != OnRenderStart) {
                     OnRenderStart ();
@@ -471,7 +478,7 @@ namespace NachoClient.iOS
         /// TODO: Guard against malformed calendars
         public void RenderCalendar (MimePart part)
         {
-            var calView = new BodyCalendarView (this);
+            var calView = new BodyCalendarView (Frame.Width);
             calView.Configure (part);
             messageView.AddSubview (calView);
         }
@@ -552,14 +559,13 @@ namespace NachoClient.iOS
                 // download's token. So, a null really means something has gone wrong.
                 Log.Warn (Log.LOG_UI, "Fail to start download for message {0} in account {1}",
                     abstrItem.Id, abstrItem.AccountId);
-                RenderPartialDownloadMessage ("[ Message preview only. Tap here to download ]");
+                RenderPartialDownloadMessage ("[ Message preview only. Tap here to download. ]");
                 RenderTextString (abstrItem.GetBodyPreviewOrEmpty ());
                 return;
             }
         }
 
-        [MonoTouch.Foundation.Export ("DownloadMessage:")]
-        public void OnDownloadMessage (UIGestureRecognizer sender)
+        public void OnDownloadMessage ()
         {
             IndicateDownloadStarted ();
             StartDownload ();

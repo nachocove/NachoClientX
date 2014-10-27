@@ -100,6 +100,16 @@ namespace NachoClient.iOS
             }
         }
 
+        protected override void Dispose (bool disposing)
+        {
+            if (IsLoading) {
+                StopLoading ();
+            }
+            zoomRecognizer.Cleanup ();
+            RemoveGestureRecognizer (zoomRecognizer);
+            base.Dispose (disposing);
+        }
+
         private void OnLoadStarted (object sender, EventArgs e)
         {
             htmlBusy.Increment ();

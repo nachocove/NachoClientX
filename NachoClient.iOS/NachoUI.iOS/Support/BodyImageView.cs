@@ -32,19 +32,20 @@ namespace NachoClient.iOS
 
         public void Configure (MimePart part)
         {
-            var image = PlatformHelpers.RenderImage (part);
+            using (var image = PlatformHelpers.RenderImage (part)) {
 
-            if (null == image) {
-                Log.Error (Log.LOG_UI, "Unable to render {0}", part.ContentType);
-                // TODO - maybe put a bad image icon here?
-                return;
+                if (null == image) {
+                    Log.Error (Log.LOG_UI, "Unable to render {0}", part.ContentType);
+                    // TODO - maybe put a bad image icon here?
+                    return;
+                }
+
+                float width = Frame.Width;
+                float height = image.Size.Height * (width / image.Size.Width);
+                Image = image.Scale (new SizeF (width, height));
+
+                _contentSize = new SizeF (width, height);
             }
-
-            float width = Frame.Width;
-            float height = image.Size.Height * (width / image.Size.Width);
-            Image = image.Scale (new SizeF (width, height));
-
-            _contentSize = new SizeF (width, height);
         }
 
         public void ScrollTo (PointF upperLeft)
