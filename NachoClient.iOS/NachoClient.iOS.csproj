@@ -1607,6 +1607,8 @@
     <BundleResource Include="Resources\more-files-active%402x.png" />
     <BundleResource Include="Resources\nav-mail-active%402x.png" />
     <BundleResource Include="Resources\nav-mail%402x.png" />
+    <BundleResource Include="Resources\email-add-active%402x.png" />
+    <BundleResource Include="Resources\email-add%402x.png" />
     <BundleResource Include="Resources\email-delete-two%402x.png" />
     <BundleResource Include="Resources\gen-more-arrow%402x.png" />
     <BundleResource Include="Resources\gen-edit%402x.png" />

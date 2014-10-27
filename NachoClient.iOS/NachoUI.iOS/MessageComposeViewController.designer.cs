@@ -13,53 +13,21 @@ namespace NachoClient.iOS
 	partial class MessageComposeViewController
 	{
 		[Outlet]
-		MonoTouch.UIKit.UIButton attachButton { get; set; }
-
-		[Outlet]
 		MonoTouch.UIKit.UIView contentView { get; set; }
 
 		[Outlet]
-		MonoTouch.UIKit.UIButton quckButton { get; set; }
-
-		[Outlet]
 		MonoTouch.UIKit.UIScrollView scrollView { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem sendButton { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIButton taskButton { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
-			if (attachButton != null) {
-				attachButton.Dispose ();
-				attachButton = null;
-			}
-
 			if (contentView != null) {
 				contentView.Dispose ();
 				contentView = null;
 			}
 
-			if (quckButton != null) {
-				quckButton.Dispose ();
-				quckButton = null;
-			}
-
 			if (scrollView != null) {
 				scrollView.Dispose ();
 				scrollView = null;
-			}
-
-			if (sendButton != null) {
-				sendButton.Dispose ();
-				sendButton = null;
-			}
-
-			if (taskButton != null) {
-				taskButton.Dispose ();
-				taskButton = null;
 			}
 		}
 	}

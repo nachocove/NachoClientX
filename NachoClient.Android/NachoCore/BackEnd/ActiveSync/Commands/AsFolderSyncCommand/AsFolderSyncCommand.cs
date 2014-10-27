@@ -139,13 +139,17 @@ namespace NachoCore.ActiveSync
             var orphaned = McFolder.QueryByIsClientOwned (BEContext.Account.Id, false)
                 .Where (x => x.AsFolderSyncEpoch < BEContext.ProtocolState.AsFolderSyncEpoch).ToList ();
             Log.Info (Log.LOG_AS, "PerformFolderSyncEpochScrub: {0} folders.", orphaned.Count);
-            foreach (var folder in orphaned) {
+            foreach (var iterFolder in orphaned) {
+                var folder = iterFolder;
                 Log.Info (Log.LOG_AS, "PerformFolderSyncEpochScrub: moving old {0} under LAF.", folder.DisplayName);
                 // If an Add command from the server re-used this folder's ServerId, then
                 // we changed that server id to a GUID when applying the Add to the model.
-                folder.ParentId = laf.ServerId;
-                folder.IsClientOwned = true;
-                folder.Update ();
+                folder = folder.UpdateWithOCApply<McFolder> ((record) => {
+                    var target = (McFolder)record;
+                    target.ParentId = laf.ServerId;
+                    target.IsClientOwned = true;
+                    return true;
+                });
             }
         }
     }

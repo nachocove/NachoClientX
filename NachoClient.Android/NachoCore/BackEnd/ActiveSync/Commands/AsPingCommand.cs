@@ -43,9 +43,8 @@ namespace NachoCore.ActiveSync
 
         private void MarkFoldersPinged ()
         {
-            foreach (var folder in FoldersInRequest) {
-                folder.AsSyncLastPing = DateTime.UtcNow;
-                folder.Update ();
+            foreach (var iterFolder in FoldersInRequest) {
+                iterFolder.UpdateSet_AsSyncLastPing (DateTime.UtcNow);
             }
             var update = BEContext.ProtocolState;
             update.LastPing = DateTime.UtcNow;
@@ -70,8 +69,7 @@ namespace NachoCore.ActiveSync
                     var folder = NcModel.Instance.Db.Table<McFolder> ().
                         Where (rec => BEContext.Account.Id == rec.AccountId && xmlFolder.Value == rec.ServerId).
                         Single ();
-                    folder.AsSyncMetaToClientExpected = true;
-                    folder.Update ();
+                    folder = folder.UpdateSet_AsSyncMetaToClientExpected (true);
                 }
                 return Event.Create ((uint)AsProtoControl.AsEvt.E.ReSync, "PINGRESYNC");
             

@@ -85,22 +85,26 @@ namespace NachoCore.Model
         public static void GloballyReWriteServerId (int accountId, string oldServerId, string newServerId)
         {
             var maybes = new List<McAbstrFolderEntry> ();
-            maybes.Add (McAbstrFolderEntry.QueryByServerId<McFolder> (accountId, oldServerId));
-            maybes.Add (McAbstrFolderEntry.QueryByServerId<McEmailMessage> (accountId, oldServerId));
-            maybes.Add (McAbstrFolderEntry.QueryByServerId<McContact> (accountId, oldServerId));
-            maybes.Add (McAbstrFolderEntry.QueryByServerId<McCalendar> (accountId, oldServerId));
-            maybes.Add (McAbstrFolderEntry.QueryByServerId<McTask> (accountId, oldServerId));
+            maybes.Add (McFolder.QueryByServerId<McFolder> (accountId, oldServerId));
+            maybes.Add (McEmailMessage.QueryByServerId<McEmailMessage> (accountId, oldServerId));
+            maybes.Add (McContact.QueryByServerId<McContact> (accountId, oldServerId));
+            maybes.Add (McCalendar.QueryByServerId<McCalendar> (accountId, oldServerId));
+            maybes.Add (McTask.QueryByServerId<McTask> (accountId, oldServerId));
 
             foreach (var entry in maybes) {
                 if (null != entry) {
-                    entry.ServerId = newServerId;
-                    entry.Update ();
+                    var folder = entry as McFolder;
+                    if (null != folder) {
+                        folder.UpdateSet_ServerId (newServerId);
+                    } else {
+                        entry.ServerId = newServerId;
+                        entry.Update ();
+                    }
                 }
             }
             var folders = McFolder.QueryByParentId (accountId, oldServerId);
             foreach (var folder in folders) {
-                folder.ParentId = newServerId;
-                folder.Update ();
+                folder.UpdateSet_ParentId (newServerId);
             }
         }
     }

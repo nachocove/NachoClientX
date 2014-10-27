@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="6245" systemVersion="13F34" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="Ds7-Ad-QXl">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="6250" systemVersion="14A389" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="Ds7-Ad-QXl">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="6238"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="6244"/>
     </dependencies>
     <scenes>
         <!--Advanced Login View Controller-->
@@ -813,15 +813,15 @@
             <objects>
                 <viewController storyboardIdentifier="ChooseCalendarViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="cXD-rq-iSl" userLabel="Choose Calendar View Controller" customClass="ChooseCalendarViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="eJB-Pb-Y39">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="2Bb-OE-BsP">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="ucq-Ja-oju" userLabel="Content View">
-                                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                                     </view>
@@ -904,15 +904,15 @@
             <objects>
                 <viewController storyboardIdentifier="AlertChooserViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="p7r-P8-BKK" customClass="AlertChooserViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="87C-EB-0MK">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="Utd-6b-paG">
-                                <rect key="frame" x="-1" y="0.0" width="320" height="568"/>
+                                <rect key="frame" x="-1" y="0.0" width="320" height="504"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="Qls-U5-Qsb" userLabel="Content View">
-                                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                                     </view>
@@ -1045,15 +1045,15 @@
             <objects>
                 <viewController storyboardIdentifier="MessageComposeViewController" title="Compose" useStoryboardIdentifierAsRestorationIdentifier="YES" id="tAw-fh-hJX" customClass="MessageComposeViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="SAP-Km-eLj">
-                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="Ad7-zj-0RZ" userLabel="Scroll View - scrollView">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="460"/>
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" id="Za1-Fi-gqx" userLabel="View - contentView">
-                                        <rect key="frame" x="0.0" y="0.0" width="320" height="460"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                                     </view>
@@ -1063,16 +1063,11 @@
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
                     <toolbarItems/>
-                    <navigationItem key="navigationItem" id="JFt-bp-ygy"/>
+                    <navigationItem key="navigationItem" title="Compose" id="JFt-bp-ygy"/>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
-                    <simulatedToolbarMetrics key="simulatedBottomBarMetrics" translucent="NO"/>
                     <connections>
-                        <outlet property="attachButton" destination="jLf-LW-xg9" id="oGY-nT-pPz"/>
                         <outlet property="contentView" destination="Za1-Fi-gqx" id="Lgz-hX-jFU"/>
-                        <outlet property="quckButton" destination="NJd-R3-mHv" id="TN2-HE-L4v"/>
                         <outlet property="scrollView" destination="Ad7-zj-0RZ" id="oxX-sO-fdG"/>
-                        <outlet property="sendButton" destination="7vA-of-pNi" id="xiN-6Z-B9R"/>
-                        <outlet property="taskButton" destination="WmS-2K-Dgt" id="eXM-YJ-TnQ"/>
                         <segue destination="Mow-Gy-F9N" kind="custom" identifier="ComposeToContactChooser" customClass="FadeCustomSegue" id="xrp-ey-B0j"/>
                         <segue destination="OCr-PO-3nH" kind="push" identifier="ComposeToNachoNow" id="tkk-6o-6oa"/>
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="SegueToMessagePriority" modalTransitionStyle="crossDissolve" id="DDa-hb-SgY"/>
@@ -1082,31 +1077,6 @@
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="K96-0O-l77" userLabel="First Responder" sceneMemberID="firstResponder"/>
-                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" id="jLf-LW-xg9" userLabel="Button - Attach">
-                    <rect key="frame" x="2" y="11" width="69" height="22"/>
-                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                    <accessibility key="accessibilityConfiguration" label="Attach"/>
-                    <state key="normal" title="Attach" image="icn-attach-files.png">
-                        <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
-                    </state>
-                </button>
-                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" id="NJd-R3-mHv" userLabel="Button - Quick">
-                    <rect key="frame" x="2" y="11" width="69" height="23"/>
-                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                    <accessibility key="accessibilityConfiguration" label="Quick"/>
-                    <state key="normal" title="Quick" image="icn-quick-message.png">
-                        <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
-                    </state>
-                </button>
-                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" id="WmS-2K-Dgt" userLabel="Button - Deadline">
-                    <rect key="frame" x="-9" y="10" width="91" height="24"/>
-                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                    <accessibility key="accessibilityConfiguration" label="Deadline"/>
-                    <state key="normal" title="Deadline" image="navbar-icn-defer.png">
-                        <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
-                    </state>
-                </button>
-                <barButtonItem image="icn-send.png" id="7vA-of-pNi" userLabel="Bar Button Item - sendButton"/>
             </objects>
             <point key="canvasLocation" x="-2425" y="2417"/>
         </scene>
@@ -1702,11 +1672,8 @@
     </scenes>
     <resources>
         <image name="icn-archive.png" width="24" height="24"/>
-        <image name="icn-attach-files.png" width="16" height="16"/>
         <image name="icn-quick-message.png" width="24" height="24"/>
-        <image name="icn-send.png" width="24" height="24"/>
         <image name="navbar-icn-close.png" width="17" height="17"/>
-        <image name="navbar-icn-defer.png" width="20" height="24"/>
         <image name="toolbar-icn-delete.png" width="19" height="21"/>
         <image name="toolbar-icn-fwd.png" width="24" height="24"/>
         <image name="toolbar-icn-move.png" width="24" height="20"/>
@@ -1719,30 +1686,30 @@
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="Sbt-au-uDg"/>
+        <segue reference="w67-dy-XSq"/>
+        <segue reference="uqv-uq-oCq"/>
         <segue reference="szv-KC-TId"/>
         <segue reference="FD7-0T-FGT"/>
-        <segue reference="rEt-DF-c51"/>
         <segue reference="zOx-eF-clw"/>
-        <segue reference="gkM-dU-I3K"/>
-        <segue reference="hxO-14-opZ"/>
-        <segue reference="uqv-uq-oCq"/>
+        <segue reference="rEt-DF-c51"/>
+        <segue reference="Sbt-au-uDg"/>
         <segue reference="c79-xS-Npa"/>
-        <segue reference="Kmd-x6-iCJ"/>
-        <segue reference="Tfk-Mt-BlS"/>
-        <segue reference="HCr-Oa-UHV"/>
-        <segue reference="RR1-bJ-URL"/>
-        <segue reference="tdu-G2-PEp"/>
-        <segue reference="B5b-jg-ZNg"/>
+        <segue reference="84g-IQ-Iaw"/>
+        <segue reference="DDa-hb-SgY"/>
         <segue reference="xrp-ey-B0j"/>
+        <segue reference="tkk-6o-6oa"/>
+        <segue reference="KnL-e9-HQR"/>
+        <segue reference="B5b-jg-ZNg"/>
         <segue reference="dAf-rc-Hh3"/>
-        <segue reference="4z2-t5-9Cd"/>
+        <segue reference="Kmd-x6-iCJ"/>
+        <segue reference="m2D-2n-RiV"/>
+        <segue reference="7sK-rg-HQL"/>
+        <segue reference="peA-r2-tjq"/>
         <segue reference="QbR-l1-NT5"/>
         <segue reference="od0-Sz-R9p"/>
+        <segue reference="4z2-t5-9Cd"/>
         <segue reference="XQg-JR-vxA"/>
         <segue reference="Eb2-K0-nI3"/>
-        <segue reference="L3g-YM-YjM"/>
-        <segue reference="KnL-e9-HQR"/>
         <segue reference="TEI-cG-N0R"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.45098039215686275" green="1" blue="0.95294117647058818" alpha="1" colorSpace="deviceRGB"/>

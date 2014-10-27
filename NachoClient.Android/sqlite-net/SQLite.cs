@@ -1381,7 +1381,7 @@ namespace SQLite
 			return count;
 		}
 
-		/// <summary>
+        /// <summary>
 		/// Updates all of the columns of a table using the specified object
 		/// except for its primary key.
 		/// The object is required to have a primary key.
@@ -1414,7 +1414,7 @@ namespace SQLite
 		/// <returns>
 		/// The number of rows updated.
 		/// </returns>
-		public int Update (object obj, Type objType)
+        public int Update (object obj, Type objType, bool performOC = false, int priorVersion = 0)
 		{
 			int rowsAffected = 0;
 			if (obj == null || objType == null) {
@@ -1438,7 +1438,10 @@ namespace SQLite
 			ps.Add (pk.GetValue (obj));
 			var q = string.Format ("update \"{0}\" set {1} where {2} = ? ", map.TableName, string.Join (",", (from c in cols
 				select "\"" + c.Name + "\" = ? ").ToArray ()), pk.Name);
-
+            if (performOC) {
+                q = q + " and RowVersion = ? ";
+                ps.Add (priorVersion);
+            }
 			try {
 				rowsAffected = Execute (q, ps.ToArray ());
 			}

@@ -208,14 +208,11 @@ namespace Test.iOS
             ricFolder.Insert ();
             result = strat.CanAdvance (account.Id, 5);
             Assert.False (result);
-            calFolder.AsSyncMetaToClientExpected = false;
-            calFolder.Update ();
-            conFolder.AsSyncMetaToClientExpected = true;
-            conFolder.Update ();
+            calFolder.UpdateSet_AsSyncMetaToClientExpected (false);
+            conFolder.UpdateSet_AsSyncMetaToClientExpected (true);
             result = strat.CanAdvance (account.Id, 5);
             Assert.False (result);
-            conFolder.AsSyncMetaToClientExpected = false;
-            conFolder.Update ();
+            conFolder.UpdateSet_AsSyncMetaToClientExpected (false);
             result = strat.CanAdvance (account.Id, 5);
             Assert.True (result);
         }
@@ -267,8 +264,7 @@ namespace Test.iOS
             ricFolder.Insert ();
             result = strat.AdvanceIfPossible (account.Id, context.ProtocolState.StrategyRung);
             Assert.AreEqual (context.ProtocolState.StrategyRung, result);
-            calFolder.AsSyncMetaToClientExpected = false;
-            calFolder.Update ();
+            calFolder.UpdateSet_AsSyncMetaToClientExpected (false);
             var oldRung = context.ProtocolState.StrategyRung;
             result = strat.AdvanceIfPossible (account.Id, context.ProtocolState.StrategyRung);
             Assert.AreEqual (oldRung + 1, result);
@@ -530,8 +526,7 @@ namespace Test.iOS
             folder.Insert ();
             var result = strat.NarrowFoldersNoToClientExpected (account.Id);
             Assert.False (result);
-            folder.AsSyncMetaToClientExpected = false;
-            folder.Update ();
+            folder.UpdateSet_AsSyncMetaToClientExpected (false);
             result = strat.NarrowFoldersNoToClientExpected (account.Id);
             Assert.True (result);
         }
@@ -574,14 +569,12 @@ namespace Test.iOS
             Assert.AreEqual (2, result.Folders.Count);
             Assert.True (result.Folders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Type));
             Assert.True (result.Folders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultCal_8 == x.Type));
-            inbox.AsSyncMetaToClientExpected = true;
-            inbox.Update ();
+            inbox.UpdateSet_AsSyncMetaToClientExpected (true);
             result = strat.GenPingKit (account.Id, context.ProtocolState, true);
             Assert.IsNull (result);
             result = strat.GenPingKit (account.Id, context.ProtocolState, false);
             Assert.IsNull (result);
-            inbox.AsSyncMetaToClientExpected = false;
-            inbox.Update ();
+            inbox.UpdateSet_AsSyncMetaToClientExpected (false);
             result = strat.GenPingKit (account.Id, context.ProtocolState, false);
             Assert.AreEqual (7, result.Folders.Count);
             context.ProtocolState.MaxFolders = 3;
@@ -762,8 +755,7 @@ namespace Test.iOS
             Assert.True (result.PerFolders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultCal_8 == x.Folder.Type));
             Assert.True (AsStrategy.KBaseOverallWindowSize <= result.OverallWindowSize);
             foreach (var rst in folders) {
-                rst.AsSyncMetaToClientExpected = false;
-                rst.Update ();
+                rst.UpdateSet_AsSyncMetaToClientExpected (false);
             }
 
             // Test of narrow.
@@ -772,28 +764,23 @@ namespace Test.iOS
             Assert.True (result.PerFolders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Folder.Type));
             Assert.True (result.PerFolders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultCal_8 == x.Folder.Type));
             foreach (var rst in folders) {
-                rst.AsSyncMetaToClientExpected = false;
-                rst.Update ();
+                rst.UpdateSet_AsSyncMetaToClientExpected (false);
             }
 
             // Test simple more-available case.
-            folder.AsSyncMetaToClientExpected = true;
-            folder.Update ();
+            folder.UpdateSet_AsSyncMetaToClientExpected (true);
             result = strat.GenSyncKit (account.Id, context.ProtocolState, false, false);
             Assert.AreEqual (1, result.PerFolders.Count);
             Assert.True (result.PerFolders.Any (x => Xml.FolderHierarchy.TypeCode.Ric_19 == x.Folder.Type));
 
             // Broad test.
             foreach (var rst in folders) {
-                rst.AsSyncMetaToClientExpected = true;
-                rst.Update ();
+                rst.UpdateSet_AsSyncMetaToClientExpected (true);
             }
             context.ProtocolState.AsSyncLimit = 4;
             context.ProtocolState.Update ();
             // Verify inbox does not have getChanges or pending attached.
-            inbox.AsSyncKey = McFolder.AsSyncKey_Initial;
-            inbox.AsSyncMetaToClientExpected = true;
-            inbox.Update ();
+            inbox = inbox.UpdateResetSyncState ();
             var pending = new McPending () {
                 Operation = McPending.Operations.EmailMarkRead,
                 AccountId = account.Id,
@@ -803,11 +790,9 @@ namespace Test.iOS
             };
             pending.Insert ();
             // Verify cal has no pending.
-            cal.AsSyncMetaToClientExpected = true;
-            cal.Update ();
+            cal.UpdateSet_AsSyncMetaToClientExpected (true);
             // Verify usermail has 2 pendings and no getChanges.
-            useremail.AsSyncMetaToClientExpected = false;
-            useremail.Update ();
+            useremail.UpdateSet_AsSyncMetaToClientExpected (false);
             pending = new McPending () {
                 Operation = McPending.Operations.EmailMarkRead,
                 AccountId = account.Id,

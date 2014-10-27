@@ -606,7 +606,7 @@ namespace NachoCore.ActiveSync
                 Owner.ResolveAllDeferred ();
                 if (response.Headers.Contains (HeaderXMsRp)) {
                     Log.Warn (Log.LOG_AS, "HTTP Status 302 with X-MS-RP");
-                    McFolder.UpdateAsResetState (BEContext.Account.Id);
+                    McFolder.UpdateResetSyncState (BEContext.Account.Id);
                     // Per MS-ASHTTP 3.2.5.1, we should look for OPTIONS headers. If they are missing, okay.
                     AsOptionsCommand.ProcessOptionsHeaders (response.Headers, BEContext);
                     IndicateUriIfChanged ();
@@ -653,7 +653,7 @@ namespace NachoCore.ActiveSync
                 ReportCommResult (ServerUri.Host, false); // Non-general failure.
                 if (response.Headers.Contains (HeaderXMsRp)) {
                     Log.Warn (Log.LOG_AS, "HTTP Status 403 with X-MS-RP");
-                    McFolder.UpdateAsResetState (BEContext.Account.Id);
+                    McFolder.UpdateResetSyncState (BEContext.Account.Id);
                     // Per MS-ASHTTP 3.2.5.1, we should look for OPTIONS headers. If they are missing, okay.
                     AsOptionsCommand.ProcessOptionsHeaders (response.Headers, BEContext);
                     IndicateUriIfChanged ();
@@ -735,7 +735,7 @@ namespace NachoCore.ActiveSync
                 ReportCommResult (ServerUri.Host, false); // Non-general failure.
                 if (response.Headers.Contains (HeaderXMsRp)) {
                     Log.Warn (Log.LOG_AS, "HTTP Status 500 with X-MS-RP");
-                    McFolder.UpdateAsResetState (BEContext.Account.Id);
+                    McFolder.UpdateResetSyncState (BEContext.Account.Id);
                     // Per MS-ASHTTP 3.2.5.1, we should look for OPTIONS headers. If they are missing, okay.
                     AsOptionsCommand.ProcessOptionsHeaders (response.Headers, BEContext);
                     IndicateUriIfChanged ();
