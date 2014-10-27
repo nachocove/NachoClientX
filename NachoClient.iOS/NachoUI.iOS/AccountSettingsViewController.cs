@@ -110,7 +110,7 @@ namespace NachoClient.iOS
             settingsView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
             settingsView.Layer.BorderWidth = .5f;
 
-            float yOffset = 17;
+            float yOffset = LABEL_HEIGHT;
 
             UILabel nameLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset, LABEL_WIDTH, LABEL_HEIGHT));
             nameLabel.Font = A.Font_AvenirNextRegular14;
@@ -127,11 +127,11 @@ namespace NachoClient.iOS
             nameTextField.Tag = NAME_TAG;
             settingsView.Add (nameTextField);
 
-            yOffset = nameTextField.Frame.Bottom + 15;
+            yOffset = nameTextField.Frame.Bottom + SPACER;
 
             Util.AddHorizontalLine (HORIZONTAL_PADDING, yOffset, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, settingsView);
 
-            yOffset += 17;
+            yOffset += LABEL_HEIGHT;
 
             UILabel usernameLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset, LABEL_WIDTH, LABEL_HEIGHT));
             usernameLabel.Font = A.Font_AvenirNextRegular14;
@@ -148,11 +148,11 @@ namespace NachoClient.iOS
             usernameTextField.Tag = USERNAME_TAG;
             settingsView.Add (usernameTextField);
 
-            yOffset = usernameTextField.Frame.Bottom + 15;
+            yOffset = usernameTextField.Frame.Bottom + SPACER;
 
             Util.AddHorizontalLine (HORIZONTAL_PADDING, yOffset, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, settingsView);
 
-            yOffset += 17;
+            yOffset += LABEL_HEIGHT;
 
             UILabel passwordLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset, LABEL_WIDTH, LABEL_HEIGHT));
             passwordLabel.Font = A.Font_AvenirNextRegular14;
@@ -170,11 +170,11 @@ namespace NachoClient.iOS
             passwordTextField.Tag = PASSWORD_TAG;
             settingsView.Add (passwordTextField);
 
-            yOffset = passwordTextField.Frame.Bottom + 15;
+            yOffset = passwordTextField.Frame.Bottom + SPACER;
 
             Util.AddHorizontalLine (HORIZONTAL_PADDING, yOffset, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, settingsView);
 
-            yOffset += 17;
+            yOffset += LABEL_HEIGHT;
 
             UILabel emailLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset, LABEL_WIDTH, LABEL_HEIGHT));
             emailLabel.Font = A.Font_AvenirNextRegular14;
@@ -191,11 +191,11 @@ namespace NachoClient.iOS
             emailTextField.Tag = EMAIL_TAG;
             settingsView.Add (emailTextField);
 
-            yOffset = emailTextField.Frame.Bottom + 15;
+            yOffset = emailTextField.Frame.Bottom + SPACER;
 
             Util.AddHorizontalLine (HORIZONTAL_PADDING, yOffset, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, settingsView);
 
-            yOffset += 17;
+            yOffset += LABEL_HEIGHT;
 
             UILabel mailserverLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset, LABEL_WIDTH, LABEL_HEIGHT));
             mailserverLabel.Font = A.Font_AvenirNextRegular14;
@@ -212,11 +212,11 @@ namespace NachoClient.iOS
             mailserverTextField.Tag = MAILSERVER_TAG;
             settingsView.Add (mailserverTextField);
 
-            yOffset = mailserverTextField.Frame.Bottom + 15;
+            yOffset = mailserverTextField.Frame.Bottom + SPACER;
 
             Util.AddHorizontalLine (HORIZONTAL_PADDING, yOffset, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, settingsView);
 
-            yOffset += 17;
+            yOffset += LABEL_HEIGHT;
 
             UILabel conferencecallLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset - 13, LABEL_WIDTH, LABEL_HEIGHT + 25));
             conferencecallLabel.Font = A.Font_AvenirNextRegular14;
@@ -236,12 +236,12 @@ namespace NachoClient.iOS
             conferencecallTextField.Tag = CONFERENCE_TAG;
             settingsView.Add (conferencecallTextField);
 
-            yOffset = conferencecallTextField.Frame.Bottom + 15;
+            yOffset = conferencecallTextField.Frame.Bottom + SPACER;
             float topSignatureCell = yOffset;
 
             Util.AddHorizontalLine (HORIZONTAL_PADDING, yOffset, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, settingsView);
 
-            yOffset += 17;
+            yOffset += LABEL_HEIGHT;
 
             UILabel signatureLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset, LABEL_WIDTH, LABEL_HEIGHT));
             signatureLabel.Font = A.Font_AvenirNextRegular14;
