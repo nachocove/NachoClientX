@@ -105,7 +105,7 @@ namespace NachoClient.iOS
             var accountTap = new UITapGestureRecognizer ();
             accountTap.AddTarget (() => {
                 View.EndEditing (true);
-                PerformSegue ("GeneralSettingsToSettings", this);
+                PerformSegue ("SegueToAccountSettings", this);
             });
             accountSettingsCell.AddGestureRecognizer (accountTap);
 
@@ -254,7 +254,7 @@ namespace NachoClient.iOS
                 }
                 return;
             }
-            if (segue.Identifier.Equals ("GeneralSettingsToSettings")) {
+            if (segue.Identifier.Equals ("SegueToAccountSettings")) {
                 return;
             }
             if (segue.Identifier.Equals ("SegueToNachoNow")) {
