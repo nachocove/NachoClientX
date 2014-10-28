@@ -185,12 +185,12 @@ namespace NachoClient.iOS
                 MultiSelect.Add (threadIndex);
             }
             // Skip the intermediate scroll view
-            var cell = FindEnclosingTableViewCell (contentView);
+            var cell = Util.FindEnclosingTableViewCell (contentView);
             ConfigureMultiSelectCell (cell);
 
             // Did we just transition to or from multi-select?
             if (1 >= MultiSelect.Count) {
-                var tableView = FindEnclosingTableView (cell);
+                var tableView = Util.FindEnclosingTableView (cell);
                 MultiSelectToggle (tableView);
             }
         }
@@ -395,28 +395,6 @@ namespace NachoClient.iOS
                 return;
             }
             NcAssert.CaseError ();
-        }
-
-        protected UITableView FindEnclosingTableView (UIView view)
-        {
-            while (null != view) {
-                if (view is UITableView) {
-                    return (view as UITableView);
-                }
-                view = view.Superview;
-            }
-            return null;
-        }
-
-        protected UITableViewCell FindEnclosingTableViewCell (UIView view)
-        {
-            while (null != view) {
-                if (view is UITableViewCell) {
-                    return (view as UITableViewCell);
-                }
-                view = view.Superview;
-            }
-            return null;
         }
 
         protected void ConfigureAsUnavailable (UITableViewCell cell)
