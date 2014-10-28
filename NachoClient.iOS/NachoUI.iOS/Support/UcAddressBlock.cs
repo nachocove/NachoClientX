@@ -217,7 +217,8 @@ namespace NachoClient.iOS
             topLeftLabel.Font = A.Font_AvenirNextRegular14;
             topLeftLabel.TextColor = A.Color_0B3239;
 
-            chooserButton = UIButton.FromType (UIButtonType.ContactAdd);
+            chooserButton = UIButton.FromType (UIButtonType.System);
+            Util.SetOriginalImagesForButton (chooserButton, "email-add", "email-add-active");
             chooserButton.Tag = (int)TagType.CHOOSER_BUTTON_TAG;
             chooserButton.SizeToFit ();
             chooserButton.Frame = new RectangleF (parentWidth - chooserButton.Frame.Width - RIGHT_INDENT, 0, chooserButton.Frame.Width, chooserButton.Frame.Height);
@@ -266,6 +267,11 @@ namespace NachoClient.iOS
             if (null != owner) {
                 owner.AddressBlockNeedsLayout (this);
             }
+        }
+
+        public void SetEditFieldAsFirstResponder()
+        {
+            this.entryTextField.BecomeFirstResponder ();
         }
 
         /// Adjusts x & y on the top line of a view
@@ -409,7 +415,7 @@ namespace NachoClient.iOS
                 xLimit = parentWidth;
             }
             if (isEditable) {
-                entryTextField.Frame = new RectangleF (xOffset, 0, (xLimit - xOffset), LINE_HEIGHT);
+                entryTextField.Frame = new RectangleF (xOffset, yOffset, (xLimit - xOffset), LINE_HEIGHT);
                 xOffset += entryTextField.Frame.Width;
             }
             yOffset += LINE_HEIGHT;

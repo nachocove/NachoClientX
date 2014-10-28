@@ -21,8 +21,12 @@ namespace NachoClient.iOS
     public partial class MessageComposeViewController : UIViewController, IUcAddressBlockDelegate, IUcAttachmentBlockDelegate, INachoContactChooserDelegate, INachoFileChooserParent, INachoDateControllerParent, INachoIntentChooserParent
     {
         // The reason for sending this message
-        protected enum Action {
-            Send, Reply, ReplyAll, Forward
+        protected enum Action
+        {
+            Send,
+            Reply,
+            ReplyAll,
+            Forward,
         };
 
         // Strings to be used when calling SetAction()
@@ -37,8 +41,10 @@ namespace NachoClient.iOS
         protected McEmailMessage mcMessage = new McEmailMessage ();
         protected McBody mcBody = new McBody ();
 
-        protected McEmailMessage referencedMessage; // The message being forwarded or replied to, if any
-        protected Action action; // The reason for sending this message
+        protected McEmailMessage referencedMessage;
+        // The message being forwarded or replied to, if any
+        protected Action action;
+        // The reason for sending this message
 
         bool suppressLayout;
         float keyboardHeight;
@@ -52,18 +58,16 @@ namespace NachoClient.iOS
         UITextField subjectField;
         UILabel intentLabel;
         UILabel intentDisplayLabel;
-        UIButton priorityButton;
 
         UITextView bodyTextView;
 
         UIView toViewHR;
         UIView ccViewHR;
         UIView bccViewHR;
+        UIView headerViewHR;
         UIView subjectLabelHR;
         UIView intentLabelHR;
         UIView attachmentViewHR;
-
-        UIToolbar keyboardToolbar;
 
         NcEmailAddress PresetToAddress;
         string PresetSubject;
@@ -82,6 +86,7 @@ namespace NachoClient.iOS
 
         protected NcQuickResponse.QRTypeEnum QRType = NcQuickResponse.QRTypeEnum.None;
 
+        UIBarButtonItem sendButton;
         UIBarButtonItem quickResponseButton;
         public NcMessageIntent messageIntent;
         protected MessageDeferralType intentDateType;
@@ -123,6 +128,7 @@ namespace NachoClient.iOS
 
             account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
 
+            sendButton = new UIBarButtonItem ();
             quickResponseButton = new UIBarButtonItem ();
 
             Util.SetOriginalImageForButton (quickResponseButton, "contact-quickemail");
@@ -131,33 +137,6 @@ namespace NachoClient.iOS
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
                 sendButton,
                 quickResponseButton,
-            };
-
-            attachButton.SetTitle (" Attach Files", UIControlState.Normal);
-            attachButton.SizeToFit ();
-
-            taskButton.SetTitle (" Set Reminder", UIControlState.Normal);
-            taskButton.SizeToFit ();
-
-            keyboardToolbar = new UIToolbar (NavigationController.Toolbar.Frame);
-            var b1 = new UIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace);
-            var b2 = new UIBarButtonItem (attachButton);
-            var b3 = new UIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace);
-            var b4 = new UIBarButtonItem (taskButton);
-            var b5 = new UIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace);
-            keyboardToolbar.SetItems (new UIBarButtonItem[] { b1, b2, b3, b4, b5 }, false);
-            keyboardToolbar.BackgroundColor = A.Color_NachoBlack;
-            keyboardToolbar.BarTintColor = A.Color_NachoBlack;
-
-            attachButton.TouchUpInside += (object sender, EventArgs e) => {
-                suppressLayout = true;
-                View.EndEditing (true);
-                suppressLayout = false;
-                attachmentView.Hidden = false;
-                attachmentViewHR.Hidden = false;
-                attachmentView.SetCompact (false);
-                attachmentView.ConfigureView ();
-                attachmentView.PromptForAttachment ("message");
             };
 
             sendButton.Clicked += (object sender, EventArgs e) => {
@@ -173,6 +152,13 @@ namespace NachoClient.iOS
 
             if (IsForwardOrReplyAction ()) {
                 InitializeMessageForAction ();
+            }
+
+            if (IsReplyAction ()) {
+                bodyTextView.BecomeFirstResponder ();
+                bodyTextView.SelectedRange = new NSRange (0, 0);
+            } else {
+                toView.SetEditFieldAsFirstResponder ();
             }
         }
 
@@ -205,7 +191,7 @@ namespace NachoClient.iOS
             };
         }
 
-        protected void ShowQuickResponses()
+        protected void ShowQuickResponses ()
         {
             switch (QRType) {
             case NcQuickResponse.QRTypeEnum.Compose:
@@ -228,7 +214,7 @@ namespace NachoClient.iOS
             PerformSegue ("SegueToQuickResponse", this);
         }
 
-        public void PopulateMessageFromQR(NcQuickResponse.QRTypeEnum whichType)
+        public void PopulateMessageFromQR (NcQuickResponse.QRTypeEnum whichType)
         {
             switch (whichType) {
             case NcQuickResponse.QRTypeEnum.Compose:
@@ -255,18 +241,6 @@ namespace NachoClient.iOS
         {
             intentDateType = intentDateTypeEnum;
             intentDisplayLabel.Text = NcMessageIntent.GetIntentString (intentDateTypeEnum, mcMessage);
-        }
-
-        public override UIView InputAccessoryView {
-            get {
-                return keyboardToolbar;
-            }
-        }
-
-        public override bool CanBecomeFirstResponder {
-            get {
-                return true;
-            }
         }
 
         public override void ViewDidAppear (bool animated)
@@ -353,7 +327,7 @@ namespace NachoClient.iOS
 
         public void SelectIntent (NcMessageIntent.Intent intent)
         {
-            messageIntent.SetType(intent);
+            messageIntent.SetType (intent);
             messageIntent.SetMessageIntent (ref mcMessage);
             PopulateMessageFromSelectedIntent (MessageDeferralType.None);
         }
@@ -396,10 +370,13 @@ namespace NachoClient.iOS
             bccViewHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 1));
             bccViewHR.BackgroundColor = A.Color_NachoNowBackground;
 
+            headerViewHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 2));
+            headerViewHR.BackgroundColor = A.Color_NachoNowBackground;
+
             subjectLabelHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 1));
             subjectLabelHR.BackgroundColor = A.Color_NachoNowBackground;
 
-            intentLabelHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 1));
+            intentLabelHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 3));
             intentLabelHR.BackgroundColor = A.Color_NachoNowBackground;
 
             attachmentViewHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 1));
@@ -434,15 +411,13 @@ namespace NachoClient.iOS
 
             UITapGestureRecognizer intentTap = new UITapGestureRecognizer (() => {
                 View.EndEditing (true);
-                PerformSegue("SegueToIntentSelection", this);
+                PerformSegue ("SegueToIntentSelection", this);
             });
             intentDisplayLabel.AddGestureRecognizer (intentTap);
             intentDisplayLabel.UserInteractionEnabled = true;
 
             intentArrowAccessory = new UIImageView (new RectangleF (0, 0, 12, 12));
             intentArrowAccessory.Image = UIImage.FromBundle ("icn-rightarrow");
-
-            priorityButton = UIButton.FromType (UIButtonType.ContactAdd);
 
             attachmentView = new UcAttachmentBlock (this, account.Id, View.Frame.Width);
 
@@ -471,10 +446,10 @@ namespace NachoClient.iOS
                 ccViewHR,
                 bccView,
                 bccViewHR,
+                headerViewHR,
                 subjectLabel,
                 subjectLabelHR,
                 subjectField,
-                priorityButton,
                 intentLabel,
                 intentLabelHR,
                 intentDisplayLabel,
@@ -526,6 +501,7 @@ namespace NachoClient.iOS
             toViewHR.Hidden = false;
             ccViewHR.Hidden = false;
             bccViewHR.Hidden = false;
+            headerViewHR.Hidden = false;
             attachmentViewHR.Hidden = false;
 
             suppressLayout = true;
@@ -574,6 +550,7 @@ namespace NachoClient.iOS
             toViewHR.Hidden = false;
             ccViewHR.Hidden = true;
             bccViewHR.Hidden = true;
+            headerViewHR.Hidden = false;
             attachmentViewHR.Hidden = true;
 
 
@@ -649,11 +626,15 @@ namespace NachoClient.iOS
                     yOffset += bccViewHR.Frame.Height;
                 }
 
+                if(!headerViewHR.Hidden) {
+                    AdjustY(headerViewHR, yOffset);
+                    yOffset += headerViewHR.Frame.Height;
+                }
+
                 CenterY (subjectLabel, LEFT_INDENT, yOffset, subjectLabel.Frame.Width, LINE_HEIGHT);
-                CenterY (priorityButton, View.Frame.Width - priorityButton.Frame.Width - RIGHT_INDENT, yOffset, priorityButton.Frame.Width, LINE_HEIGHT);
 
                 var subjectFieldStart = subjectLabel.Frame.X + subjectLabel.Frame.Width;
-                var subjectFieldWidth = priorityButton.Frame.X - subjectFieldStart;
+                var subjectFieldWidth = View.Frame.Width - subjectField.Frame.X;
                 CenterY (subjectField, subjectFieldStart, yOffset, subjectFieldWidth, LINE_HEIGHT);
                 yOffset += LINE_HEIGHT;
 
@@ -664,11 +645,11 @@ namespace NachoClient.iOS
 
                 var intentFieldStart = intentLabel.Frame.X + intentLabel.Frame.Width;
 
-                intentArrowAccessory.Frame = new RectangleF(View.Frame.Width - 33, yOffset + LINE_HEIGHT / 2 - 6, intentArrowAccessory.Frame.Width, intentArrowAccessory.Frame.Height);
+                intentArrowAccessory.Frame = new RectangleF (View.Frame.Width - 33, yOffset + LINE_HEIGHT / 2 - 6, intentArrowAccessory.Frame.Width, intentArrowAccessory.Frame.Height);
 
                 var intentFieldWidth = View.Frame.Width - 37;
-                CenterY(intentDisplayLabel, intentFieldStart, yOffset, intentFieldWidth, LINE_HEIGHT);
-                intentDisplayLabel.Frame = new RectangleF(intentDisplayLabel.Frame.X + 4, intentDisplayLabel.Frame.Y, intentFieldWidth - intentFieldStart + 2, intentDisplayLabel.Frame.Height);
+                CenterY (intentDisplayLabel, intentFieldStart, yOffset, intentFieldWidth, LINE_HEIGHT);
+                intentDisplayLabel.Frame = new RectangleF (intentDisplayLabel.Frame.X + 4, intentDisplayLabel.Frame.Y, intentFieldWidth - intentFieldStart + 2, intentDisplayLabel.Frame.Height);
 
                 yOffset += LINE_HEIGHT;
 
@@ -872,10 +853,10 @@ namespace NachoClient.iOS
             mimeMessage.Subject = Pretty.SubjectString (subjectField.Text);
 
             if (McEmailMessage.IntentType.None != (McEmailMessage.IntentType)mcMessage.Intent) {
-                if(String.IsNullOrEmpty(mimeMessage.Subject)){
+                if (String.IsNullOrEmpty (mimeMessage.Subject)) {
                     mimeMessage.Subject = NcMessageIntent.GetIntentString (intentDateType, mcMessage);
                 } else {
-                    mimeMessage.Subject = NcMessageIntent.GetIntentString (intentDateType, mcMessage)+ " - " + mimeMessage.Subject;
+                    mimeMessage.Subject = NcMessageIntent.GetIntentString (intentDateType, mcMessage) + " - " + mimeMessage.Subject;
                 }
             }
 
@@ -1042,7 +1023,7 @@ namespace NachoClient.iOS
                 result.Append ("Cc: ").Append (message.Cc).Append ("\n");
             }
             result.Append ("Subject: ").Append (message.Subject ?? "").Append ("\n");
-            result.Append ("Date: ").Append (Pretty.UniversalFullDateTimeString(message.DateReceived));
+            result.Append ("Date: ").Append (Pretty.UniversalFullDateTimeString (message.DateReceived));
             result.Append ("\n\n");
             return result.ToString ();
         }
@@ -1086,7 +1067,7 @@ namespace NachoClient.iOS
 
         public void DateSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
         {
-            messageIntent.SetMessageIntentDate(ref mcMessage, selectedDate);
+            messageIntent.SetMessageIntentDate (ref mcMessage, selectedDate);
             PopulateMessageFromSelectedIntent (request);
         }
 
@@ -1118,7 +1099,7 @@ namespace NachoClient.iOS
             } else if (FORWARD_ACTION.Equals (actionString)) {
                 action = Action.Forward;
             } else {
-                NcAssert.CaseError(String.Format("Unexpected value for message action: {0}", actionString));
+                NcAssert.CaseError (String.Format ("Unexpected value for message action: {0}", actionString));
             }
             if (Action.Send != action) {
                 NcAssert.NotNull (referencedMessage, String.Format ("A null message was passed to MessageComposeViewController for an action of {0}", actionString));

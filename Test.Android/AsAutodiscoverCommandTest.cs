@@ -798,7 +798,7 @@ namespace Test.iOS
         {
             new public enum E : uint
             {
-                MoveUITest = (AsProtoControl.CtlEvt.E.PkQOop + 1),
+                MoveUITest = (AsProtoControl.CtlEvt.E.PkQOp + 1),
                 Last = MoveUITest,
             };
         }

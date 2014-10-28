@@ -256,9 +256,8 @@ namespace NachoCore.ActiveSync
                 protocolState.Update ();
                 rung = protocolState.StrategyRung;
                 var folders = FolderListProvider (accountId, rung, false);
-                foreach (var folder in folders) {
-                    folder.AsSyncMetaToClientExpected = true;
-                    folder.Update ();
+                foreach (var iterFolder in folders) {
+                    iterFolder.UpdateSet_AsSyncMetaToClientExpected (true);
                 }
                 if (Scope.FlagIsSet (rung, Scope.FlagEnum.RicSynced)) {
                     BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_RicInitialSyncCompleted));
@@ -496,10 +495,10 @@ namespace NachoCore.ActiveSync
         public SyncKit GenNarrowSyncKit (List<McFolder> folders, int rung, int overallWindowSize)
         {
             var perFolders = new List<SyncKit.PerFolder> ();
-            foreach (var folder in folders) {
+            foreach (var iterFolder in folders) {
+                var folder = iterFolder;
                 if (!folder.AsSyncMetaToClientExpected) {
-                    folder.AsSyncMetaToClientExpected = true;
-                    folder.Update ();
+                    folder = folder.UpdateSet_AsSyncMetaToClientExpected (true);
                 }
                 var parms = ParametersProvider (folder, rung, true);
                 perFolders.Add (new SyncKit.PerFolder () {
@@ -706,7 +705,7 @@ namespace NachoCore.ActiveSync
                     Where (x => McPending.Operations.ContactSearch == x.Operation).FirstOrDefault ();
                 if (null != search) {
                     Log.Info (Log.LOG_AS, "Strategy:FG:Search");
-                    return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.QOop, 
+                    return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.HotQOp, 
                         new AsSearchCommand (BEContext.ProtoControl, search));
                 }
                 // (FG) If the user has initiated a ItemOperations Fetch (body or attachment), we do that.
@@ -720,7 +719,7 @@ namespace NachoCore.ActiveSync
                             ).FirstOrDefault ();
                 if (null != fetch) {
                     Log.Info (Log.LOG_AS, "Strategy:FG:Fetch");
-                    return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.QOop,
+                    return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.HotQOp,
                         new AsItemOperationsCommand (BEContext.ProtoControl,
                             new FetchKit () {
                                 FetchBodies = new List<FetchKit.FetchBody> (),
@@ -759,7 +758,7 @@ namespace NachoCore.ActiveSync
                         NcAssert.CaseError (send.Operation.ToString ());
                         break;
                     }
-                    return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.QOop, cmd);
+                    return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.HotQOp, cmd);
                 }
             }
             // (FG, BG) Unless one of these conditions are met, perform a narrow Sync Command...

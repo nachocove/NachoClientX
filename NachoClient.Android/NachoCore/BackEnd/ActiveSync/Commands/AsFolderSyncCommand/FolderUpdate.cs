@@ -50,9 +50,12 @@ namespace NachoCore.ActiveSync
             protected override void ApplyCommandToModel ()
             {
                 var folder = McAbstrItem.QueryByServerId<McFolder> (AccountId, ServerId);
-                folder.ParentId = ParentId;
-                folder.DisplayName = DisplayName;
-                folder.Update ();
+                folder = folder.UpdateWithOCApply<McFolder> ((record) => {
+                    var target = (McFolder)record;
+                    target.ParentId = ParentId;
+                    target.DisplayName = DisplayName;
+                    return true;
+                });
             }
         }
     }

@@ -450,8 +450,13 @@ namespace NachoCore.Utils
             if (!PERSISTED) {
                 SharedInstance.EventQueue.Enqueue (tEvent);
             } else {
-                McTelemetryEvent dbEvent = new McTelemetryEvent (tEvent);
-                dbEvent.Insert ();
+                if (tEvent.IsSupportEvent ()) {
+                    McTelemetrySupportEvent dbEvent = new McTelemetrySupportEvent (tEvent);
+                    dbEvent.Insert ();
+                } else {
+                    McTelemetryEvent dbEvent = new McTelemetryEvent (tEvent);
+                    dbEvent.Insert ();
+                }
                 Telemetry.SharedInstance.DbUpdated.Set ();
             }
         }
@@ -732,7 +737,12 @@ namespace NachoCore.Utils
                 if (!PERSISTED) {
                     tEvent = EventQueue.Dequeue ();
                 } else {
-                    dbEvent = McTelemetryEvent.QueryOne ();
+                    // Always check for support event first
+                    dbEvent = McTelemetrySupportEvent.QueryOne ();
+                    if (null == dbEvent) {
+                        // If doesn't have any, check for other events
+                        dbEvent = McTelemetryEvent.QueryOne ();
+                    }
                     if (null == dbEvent) {
                         // No pending event. Wait for one.
                         while (!DbUpdated.WaitOne (NcTask.MaxCancellationTestInterval)) {

@@ -65,6 +65,7 @@ namespace NachoClient.iOS
         bool isCompact;
         UIView contentView;
         UILabel mainLabel;
+        UIButton chooserButton;
 
         public UcAttachmentBlock (IUcAttachmentBlockDelegate owner, int accountId, float parentWidth)
         {
@@ -104,7 +105,17 @@ namespace NachoClient.iOS
             mainLabel.Font = A.Font_AvenirNextRegular14;
             mainLabel.TextColor = A.Color_0B3239;
 
-            contentView.AddSubviews (new UIView[] { mainLabel });
+            chooserButton = UIButton.FromType (UIButtonType.System);
+            Util.SetOriginalImagesForButton (chooserButton, "email-add", "email-add-active");
+            chooserButton.SizeToFit ();
+            chooserButton.Frame = new RectangleF (parentWidth - chooserButton.Frame.Width - RIGHT_INDENT, 0, chooserButton.Frame.Width, LINE_HEIGHT);
+            chooserButton.TouchUpInside += (object sender, EventArgs e) => {
+                if (null != owner) {
+                    PromptForAttachment();
+                }
+            };
+
+            contentView.AddSubviews (new UIView[] { mainLabel, chooserButton });
 
             // Enabled & disable 'compact view' with a tap
             var tap = new UITapGestureRecognizer ();
@@ -131,7 +142,7 @@ namespace NachoClient.iOS
             ConfigureView ();
         }
 
-        public void PromptForAttachment (string compositionType)
+        public void PromptForAttachment ()
         {
             AttachFileActionSheet ();
         }
