@@ -33,7 +33,9 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            // Navigation
+            if (this.NavigationController.RespondsToSelector (new MonoTouch.ObjCRuntime.Selector ("interactivePopGestureRecognizer"))) {
+                this.NavigationController.InteractivePopGestureRecognizer.Enabled = false;
+            }
             NavigationItem.Title = "Settings";
 
             CreateView ();

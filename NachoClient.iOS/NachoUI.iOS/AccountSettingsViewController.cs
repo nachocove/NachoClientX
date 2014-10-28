@@ -98,7 +98,6 @@ namespace NachoClient.iOS
 
         protected override void CreateViewHierarchy ()
         {
-            NavigationController.InteractivePopGestureRecognizer.Enabled = false;
             NavigationController.NavigationBar.Translucent = false;
             NavigationItem.Title = "Account Settings";
 
