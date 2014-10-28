@@ -166,7 +166,6 @@ namespace NachoClient.iOS
         {
             base.ViewWillAppear (animated);
             if (null != this.NavigationController) {
-                this.NavigationController.ToolbarHidden = false;
                 if (this.NavigationController.RespondsToSelector (new MonoTouch.ObjCRuntime.Selector ("interactivePopGestureRecognizer"))) {
                     this.NavigationController.InteractivePopGestureRecognizer.Enabled = false;
                 }
@@ -553,8 +552,6 @@ namespace NachoClient.iOS
             headerViewHR.Hidden = false;
             attachmentViewHR.Hidden = true;
 
-
-
             suppressLayout = true;
             toView.ConfigureView ();
             ccView.ConfigureView ();
@@ -626,8 +623,8 @@ namespace NachoClient.iOS
                     yOffset += bccViewHR.Frame.Height;
                 }
 
-                if(!headerViewHR.Hidden) {
-                    AdjustY(headerViewHR, yOffset);
+                if (!headerViewHR.Hidden) {
+                    AdjustY (headerViewHR, yOffset);
                     yOffset += headerViewHR.Frame.Height;
                 }
 
