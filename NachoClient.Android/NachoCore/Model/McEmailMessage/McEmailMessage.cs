@@ -83,6 +83,7 @@ namespace NachoCore.Model
             PleaseRead = 2,
             ResponseRequired = 3,
             Urgent = 4,
+            Important = 5,
         }
 
         // Intent of the message (default None (0))

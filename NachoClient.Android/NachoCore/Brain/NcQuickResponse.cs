@@ -89,9 +89,9 @@ namespace NachoCore.Brain
         {
             public string subject;
             public string body;
-            public NcMessageIntent.Intent intent;
+            public NcMessageIntent.MessageIntent intent;
 
-            public QuickResponse (string subject, string body, NcMessageIntent.Intent intent = null)
+            public QuickResponse (string subject, string body, NcMessageIntent.MessageIntent intent = null)
             {
                 this.subject = subject;
                 this.body = body;
