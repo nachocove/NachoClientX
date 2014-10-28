@@ -17,12 +17,12 @@ namespace NachoCore.Brain
         public const string URGENT = "URGENT";
         public const string IMPORTANT = "IMPORTANT";
 
-        public static MessageIntent NONE_INTENT = new MessageIntent(McEmailMessage.IntentType.None, NONE, false);
+        public static MessageIntent NONE_INTENT = new MessageIntent (McEmailMessage.IntentType.None, NONE, false);
         public static MessageIntent FYI_INTENT = new MessageIntent (McEmailMessage.IntentType.FYI, FYI, false);
         public static MessageIntent PLEASE_READ_INTENT = new MessageIntent (McEmailMessage.IntentType.PleaseRead, PLEASE_READ, true);
-        public static MessageIntent RESPONSE_REQUIRED_INTENT = new MessageIntent(McEmailMessage.IntentType.ResponseRequired, RESPONSE_REQUIRED, true);
-        public static MessageIntent URGENT_INTENT = new MessageIntent(McEmailMessage.IntentType.Urgent, URGENT, true);
-        public static MessageIntent IMPORTANT_INTENT = new MessageIntent(McEmailMessage.IntentType.Important, IMPORTANT, true);
+        public static MessageIntent RESPONSE_REQUIRED_INTENT = new MessageIntent (McEmailMessage.IntentType.ResponseRequired, RESPONSE_REQUIRED, true);
+        public static MessageIntent URGENT_INTENT = new MessageIntent (McEmailMessage.IntentType.Urgent, URGENT, true);
+        public static MessageIntent IMPORTANT_INTENT = new MessageIntent (McEmailMessage.IntentType.Important, IMPORTANT, true);
 
 
         protected static List<MessageIntent> MessageIntentList = new List<MessageIntent> () {
@@ -81,14 +81,27 @@ namespace NachoCore.Brain
                 return null;
             }
         }
+
         public static string GetIntentString (MessageDeferralType intentDateTypeEnum, McEmailMessage mcMessage)
         {
-            string intentString = IntentEnumToString((McEmailMessage.IntentType)mcMessage.Intent);
+            string intentString = IntentEnumToString ((McEmailMessage.IntentType)mcMessage.Intent);
 
             if (MessageDeferralType.None != intentDateTypeEnum) {
                 switch (intentDateTypeEnum) {
+                case MessageDeferralType.None:
+                    intentString += "";
+                    break;
+                case MessageDeferralType.OneHour:
+                    intentString += " In One Hour";
+                    break;
+                case MessageDeferralType.TwoHours:
+                    intentString += " In Two Hours";
+                    break;
                 case MessageDeferralType.Later:
-                    intentString += " By Today";
+                    intentString += " Later Today";
+                    break;
+                case MessageDeferralType.EndOfDay:
+                    intentString += " By End of Day";
                     break;
                 case MessageDeferralType.Tonight:
                     intentString += " By Tonight";
@@ -99,8 +112,14 @@ namespace NachoCore.Brain
                 case MessageDeferralType.NextWeek:
                     intentString += " By Next Week";
                     break;
+                case MessageDeferralType.MonthEnd:
+                    intentString += "By Month End";
+                    break;
                 case MessageDeferralType.NextMonth:
                     intentString += " By Next Month";
+                    break;
+                case MessageDeferralType.Forever:
+                    intentString += "";
                     break;
                 case MessageDeferralType.Custom:
                     intentString += " By " + mcMessage.IntentDate.ToShortDateString ();
@@ -116,8 +135,10 @@ namespace NachoCore.Brain
         public class MessageIntent
         {
             public McEmailMessage.IntentType type { get; private set; }
+
             public string value { get; private set; }
-            public bool dueDateAllowed {get; private set;}
+
+            public bool dueDateAllowed { get; private set; }
 
             public MessageIntent (McEmailMessage.IntentType type, string value, bool dueDateAllowed)
             {

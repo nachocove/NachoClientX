@@ -17,9 +17,7 @@ namespace NachoCore.Brain
         /// User's first day of week
         /// TODO: Must be configurable
         const DayOfWeek FirstDayOfWork = DayOfWeek.Monday;
-        /// User's first time in the morning
-        /// TODO: Must be configurable
-        const double DawnOffset = 0.0d;
+
 
         public NcMessageDeferral ()
         {
@@ -33,7 +31,7 @@ namespace NachoCore.Brain
             }
 
             if (MessageDeferralType.Custom != deferralType) {
-                NcResult r = ComputeDeferral (DateTime.Now, deferralType);
+                NcResult r = ComputeDeferral (DateTime.UtcNow, deferralType, deferUntil);
                 if (r.isError ()) {
                     return r;
                 }
@@ -80,69 +78,81 @@ namespace NachoCore.Brain
         /// <returns>The UTC time when the message is again visible.</returns>
         /// <param name="from">Start time for the computation.</param>
         /// <param name="deferralType">Deferral type.</param>
-        private static NcResult ComputeDeferral (DateTime from, MessageDeferralType deferralType)
+        public static NcResult ComputeDeferral (DateTime from, MessageDeferralType deferralType, DateTime customDate)
         {
+            NcAssert.True (DateTimeKind.Utc == from.Kind);
+            NcAssert.True ((MessageDeferralType.Custom != deferralType) || (DateTimeKind.Utc == customDate.Kind));
+
             switch (deferralType) {
+            case MessageDeferralType.None:
+                from = DateTime.MinValue;
+                break;
+            case MessageDeferralType.OneHour:
+                from = AdjustToHour (from, from.AddMinutes (90).Hour);
+                break;
+            case MessageDeferralType.TwoHours:
+                from = AdjustToHour (from, from.AddMinutes (150).Hour);
+                break;
             case MessageDeferralType.Later:
                 // TODO: Probaly want to choose next free hour
-                from = from.AddHours (4.0d);
+                from = AdjustToHour (from, from.AddMinutes (270).Hour);
+                break;
+            case MessageDeferralType.EndOfDay:
+                if (from.Hour >= 17) {
+                    from = AdjustToHour (from, 23);
+                } else {
+                    from = AdjustToHour (from, 17);
+                }
                 break;
             case MessageDeferralType.Tonight:
-                if (from.Hour >= 18.0d) {
+                if (from.Hour > 18) {
                     // Later this evening...
-                    from = from.AddHours (4.0d);
+                    from = from.AddHours (2);
                 } else {
-                    // Until six pm
-                    from = from.AddHours (18.0 - from.Hour);
+                    from = AdjustToHour (from, 19);
                 }
                 break;
             case MessageDeferralType.Tomorrow:
                 from = from.AddDays (1d);
-                from = AdjustToDawn (from);
+                from = AdjustToHour (from, 8);
                 break;
             case MessageDeferralType.NextWeek:
                 do {
                     from = from.AddDays (1.0d);
                 } while(from.DayOfWeek != FirstDayOfWork);
-                from = AdjustToDawn (from);
+                from = AdjustToHour (from, 8);
                 break;
             case MessageDeferralType.MonthEnd:
                 // Last day
                 from = from.AddMonths (1);
                 from = from.AddDays (-from.Day); // Day is 1..31
-                from = AdjustToDawn (from);
+                from = AdjustToHour (from, 8);
                 break;
             case MessageDeferralType.NextMonth:
                 // First day
                 from = from.AddMonths (1);
                 from = from.AddDays (1.0 - from.Day); // Day is 1..32
-                from = AdjustToDawn (from);
+                from = AdjustToHour (from, 8);
                 break;
             case MessageDeferralType.Forever:
                 from = DateTime.MaxValue;
                 break;
             case MessageDeferralType.Custom:
-            case MessageDeferralType.None:
+                from = customDate;
+                break;
             default:
                 NcAssert.CaseError (String.Format ("ComputeDeferral; {0} was unexpected", deferralType));
                 return NcResult.Error ("");
             }
+            Console.WriteLine ("Defer until raw={0} utc={1} local={2}", from, from.ToUniversalTime(), from.ToLocalTime());
             return NcResult.OK (from.ToUniversalTime ());
         }
 
-        /// <summary>
-        /// Adjusts a DateTime to the beginning a user's day
-        /// </summary>
-        /// <returns>The adjusted time</returns>
-        /// <param name="t">the time to adjust</param>
-        static DateTime AdjustToDawn (DateTime t)
+        static DateTime AdjustToHour (DateTime t, int hour)
         {
-            t = t.AddHours (t.Hour);
-            t = t.AddMinutes (t.Minute);
-            t = t.AddSeconds (t.Second);
-            t = t.AddSeconds (DawnOffset);
-            return t;
+            return new DateTime (t.Year, t.Month, t.Day, hour, 0, 0);
         }
+
     }
 }
 

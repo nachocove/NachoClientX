@@ -19,7 +19,10 @@ namespace NachoCore.Model
     public enum MessageDeferralType
     {
         None,
+        OneHour,
+        TwoHours,
         Later,
+        EndOfDay,
         Tonight,
         Tomorrow,
         NextWeek,

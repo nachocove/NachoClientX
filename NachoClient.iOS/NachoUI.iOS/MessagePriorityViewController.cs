@@ -24,8 +24,6 @@ namespace NachoClient.iOS
         const float BUTTON_PADDING_HEIGHT = 15;
         const float BUTTON_PADDING_WIDTH = 35;
 
-        private List<UIButton> ActionButtons = new List<UIButton> ();
-
         public MessagePriorityViewController (IntPtr handle) : base (handle)
         {
         }
@@ -55,7 +53,7 @@ namespace NachoClient.iOS
             float yOffset = 40;
 
             UIButton dismissButton = new UIButton (new RectangleF (30, yOffset, 25, 25));
-            dismissButton.SetImage(UIImage.FromBundle("modal-close"), UIControlState.Normal);
+            dismissButton.SetImage (UIImage.FromBundle ("modal-close"), UIControlState.Normal);
             dismissButton.TouchUpInside += (object sender, EventArgs e) => {
                 DismissViewController (true, null);
             };
@@ -65,7 +63,7 @@ namespace NachoClient.iOS
             if (DateControllerType.Defer == dateControllerType) {
                 viewTitle.Text = "Defer Message";
             } else {
-                viewTitle.Text = "Pick A Date";
+                viewTitle.Text = "Set Deadline";
             }
             viewTitle.Font = A.Font_AvenirNextDemiBold17;
             viewTitle.TextColor = UIColor.White;
@@ -74,37 +72,54 @@ namespace NachoClient.iOS
 
             yOffset = viewTitle.Frame.Bottom + 20;
 
-            UIView sectionSeparator = new UIView (new RectangleF(0, yOffset, View.Frame.Width, .5f));
-            sectionSeparator.BackgroundColor = UIColor.LightGray.ColorWithAlpha(.6f);
+            UIView sectionSeparator = new UIView (new RectangleF (0, yOffset, View.Frame.Width, .5f));
+            sectionSeparator.BackgroundColor = UIColor.LightGray.ColorWithAlpha (.6f);
             priorityView.AddSubview (sectionSeparator);
 
             yOffset = sectionSeparator.Frame.Bottom + 20;
 
             if (DateControllerType.Defer == dateControllerType) {
                 UILabel messageSubject = new UILabel (new RectangleF (30, yOffset, View.Frame.Width - 60, 25));
-                messageSubject.Text = thread.GetEmailMessage(0).Subject;
+                messageSubject.Text = thread.GetEmailMessage (0).Subject;
                 messageSubject.Font = A.Font_AvenirNextRegular17;
                 messageSubject.TextColor = UIColor.White;
                 priorityView.Add (messageSubject);
-
                 yOffset = messageSubject.Frame.Bottom + 60;
             } else {
                 yOffset += 40;
             }
 
-            var buttonInfoList = new List<ButtonInfo> (new ButtonInfo[] {
-                new ButtonInfo ("Later Today", "modal-later-today", () => DateSelected(MessageDeferralType.Later, DateTime.MinValue)),
-                new ButtonInfo ("Tonight", "modal-tonight", () => DateSelected(MessageDeferralType.Tonight, DateTime.MinValue)),
-                new ButtonInfo ("Tomorrow", "modal-tomorrow", () => DateSelected(MessageDeferralType.Tomorrow, DateTime.MinValue)),
-                new ButtonInfo (null, null, null),
-                new ButtonInfo ("This Week", "modal-this-week", () => DateSelected(MessageDeferralType.NextWeek, DateTime.MinValue)),
-                new ButtonInfo ("Next Week", "modal-next-week", () => DateSelected(MessageDeferralType.NextWeek, DateTime.MinValue)),
-                new ButtonInfo ("Pick Date", "modal-pick-date", () =>  PerformSegue ("MessagePriorityToDatePicker", this)),
-                new ButtonInfo (null, null, null),
-                new ButtonInfo ("Forever", "modal-forever", () => DateSelected(MessageDeferralType.Forever, DateTime.MinValue)),
-                new ButtonInfo ("None", "modal-none", () => DateSelected(MessageDeferralType.None, DateTime.MinValue)),
-                null,
-            });
+            List<ButtonInfo> buttonInfoList;
+
+            if (DateControllerType.Defer == dateControllerType) {
+                buttonInfoList = new List<ButtonInfo> (new ButtonInfo[] {
+                    new ButtonInfo ("Later Today", "modal-later-today", () => DateSelected (MessageDeferralType.Later, DateTime.MinValue)),
+                    new ButtonInfo ("Tonight", "modal-tonight", () => DateSelected (MessageDeferralType.Tonight, DateTime.MinValue)),
+                    new ButtonInfo ("Tomorrow", "modal-tomorrow", () => DateSelected (MessageDeferralType.Tomorrow, DateTime.MinValue)),
+                    new ButtonInfo (null, null, null),
+                    new ButtonInfo ("This Week", "modal-this-week", () => DateSelected (MessageDeferralType.NextWeek, DateTime.MinValue)),
+                    new ButtonInfo ("Next Week", "modal-next-week", () => DateSelected (MessageDeferralType.NextWeek, DateTime.MinValue)),
+                    new ButtonInfo ("Forever", "modal-forever", () => DateSelected (MessageDeferralType.Forever, DateTime.MinValue)),
+                    new ButtonInfo (null, null, null),
+                    null,
+                    new ButtonInfo ("Pick Date", "modal-pick-date", () => PerformSegue ("MessagePriorityToDatePicker", this)),
+                    null,
+                });
+            } else {
+                buttonInfoList = new List<ButtonInfo> (new ButtonInfo[] {
+                    new ButtonInfo ("One hour", "modal-later-today", () => DateSelected (MessageDeferralType.OneHour, DateTime.MinValue)),
+                    new ButtonInfo ("Two hours", "modal-later-today", () => DateSelected (MessageDeferralType.TwoHours, DateTime.MinValue)),
+                    new ButtonInfo ("Today", "modal-later-today", () => DateSelected (MessageDeferralType.EndOfDay, DateTime.MinValue)),
+                    new ButtonInfo (null, null, null),
+                    new ButtonInfo ("Tomorrow", "modal-tomorrow", () => DateSelected (MessageDeferralType.Tomorrow, DateTime.MinValue)),
+                    new ButtonInfo ("Next Week", "modal-this-week", () => DateSelected (MessageDeferralType.NextWeek, DateTime.MinValue)),
+                    new ButtonInfo ("Next Month", "modal-next-week", () => DateSelected (MessageDeferralType.NextMonth, DateTime.MinValue)),
+                    new ButtonInfo (null, null, null),
+                    null,
+                    new ButtonInfo ("Pick Date", "modal-pick-date", () => PerformSegue ("MessagePriorityToDatePicker", this)),
+                    null,
+                });
+            }
 
             var center = priorityView.Center;
             center.X = (priorityView.Frame.Width / 2);
@@ -134,7 +149,6 @@ namespace NachoClient.iOS
                 buttonRect.TouchUpInside += (object sender, EventArgs e) => {
                     buttonInfo.buttonAction ();
                 };
-                ActionButtons.Add (buttonRect);
                 priorityView.Add (buttonRect);
 
                 var label = new UILabel ();
@@ -176,52 +190,26 @@ namespace NachoClient.iOS
                 vc.owner = this;
             }
         }
-        // TODO: Do we need to worry about local vs. utc time?
+
         public void DismissDatePicker (DatePickerViewController vc, DateTime chosenDateTime)
         {
             if (DateTime.UtcNow > chosenDateTime) {
-                // TODO -- Confirm that the user wants to go back in time.
                 return;
-            } 
-
-            DateSelected (MessageDeferralType.Custom, chosenDateTime);
+            }
 
             vc.owner = null;
             vc.DismissViewController (false, new NSAction (delegate {
-                owner.DismissChildDateController (this);
-                if (null != intentSelector) {
-                    intentSelector.DismissIntentChooser (false, null);
-                }
+                DateSelected (MessageDeferralType.Custom, chosenDateTime);
             }));
         }
 
         public void DateSelected (MessageDeferralType dateType, DateTime selectedDate)
         {
-            if (MessageDeferralType.Custom == dateType) {
-                owner.DateSelected (dateType, thread, selectedDate);
-            } else {
-                switch (dateType) {
-                case MessageDeferralType.Later:
-                    selectedDate = DateTime.Today;
-                    break;
-                case MessageDeferralType.Tonight:
-                    selectedDate = DateTime.Today.AddHours(23);
-                    break;
-                case MessageDeferralType.Tomorrow:
-                    selectedDate = DateTime.Today.AddDays (1);
-                    break;
-                case MessageDeferralType.NextWeek:
-                    selectedDate = DateTime.Today.AddDays (8 - (int)DateTime.Today.DayOfWeek);
-                    break;
-                case MessageDeferralType.NextMonth:
-                    selectedDate = new DateTime (DateTime.Today.AddMonths (1).Year, DateTime.Today.AddMonths (1).Month, 1);
-                    break;
-                default:
-                    break;
-                }
-                owner.DateSelected (dateType, thread, selectedDate);
+            var rc = NcMessageDeferral.ComputeDeferral (DateTime.UtcNow, dateType, selectedDate);
+            if (rc.isOK ()) {
+                var date = rc.GetValue<DateTime> ();   
+                owner.DateSelected (dateType, thread, date);
                 owner.DismissChildDateController (this);
-
                 if (null != intentSelector) {
                     intentSelector.DismissIntentChooser (false, null);
                 }
