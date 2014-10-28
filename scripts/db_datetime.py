@@ -21,11 +21,12 @@ def usage():
 if __name__ == '__main__':
     if len(sys.argv) != 2:
         usage()
+    db_val = None
     try:
-        value = int(sys.argv[1], 10)
+        db_val = int(sys.argv[1], 10)
     except ValueError:
         usage()
-    (date_val, time_val) = db2datetime(value)
+    (date_val, time_val) = db2datetime(db_val)
     time_str = time_val.strftime('%H:%M:%S') + ('.%03d' % (time_val.microsecond/1000))
     print 'Generic: %s %s' % (date_val.strftime('%m-%d-%Y'), time_str)
     print 'ISO-8601 UTC: %sT%sZ' % (date_val.strftime('%Y-%m-%d'), time_str)
