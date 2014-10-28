@@ -145,7 +145,9 @@ namespace NachoClient.iOS
                 buttonRect.Layer.BorderWidth = .5f;                 
                 buttonRect.Frame = new RectangleF (0, 0, BUTTON_SIZE, BUTTON_SIZE);
                 buttonRect.Center = new PointF (xOffset, yOffset);
-                buttonRect.SetImage (UIImage.FromBundle (buttonInfo.buttonIcon), UIControlState.Normal);
+                using (var image = UIImage.FromBundle (buttonInfo.buttonIcon).ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
+                    buttonRect.SetImage (image, UIControlState.Normal);
+                }
                 buttonRect.TouchUpInside += (object sender, EventArgs e) => {
                     buttonInfo.buttonAction ();
                 };
