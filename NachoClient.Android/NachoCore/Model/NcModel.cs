@@ -71,6 +71,8 @@ namespace NachoCore.Model
         private ConcurrentDictionary<int, SQLiteConnection> DbConns;
         private ConcurrentDictionary<int, int> TransDepth;
 
+        private int walCheckpointCount = 0;
+
         public string GetFileDirPath (int accountId, string segment)
         {
             return Path.Combine (Documents, KFilesPathSegment, accountId.ToString (), segment);
@@ -170,11 +172,14 @@ namespace NachoCore.Model
 
         private void InitializeTeleDb ()
         {
-            _TeleDbLock = new object ();
+            if (null == _TeleDbLock) {
+                _TeleDbLock = new object ();
+            }
             AutoVacuum = AutoVacuumEnum.INCREMENTAL;
             ConfigureDb (TeleDb);
             // Auto-vacuum setting requires the table to be created after.
             TeleDb.CreateTable<McTelemetryEvent> ();
+            TeleDb.CreateTable<McTelemetrySupportEvent> ();
         }
 
         private void QueueLogInfo (string message)
@@ -197,8 +202,7 @@ namespace NachoCore.Model
                     Message = string.Format ("SQLite Error Log (code {0}): {1}", code, message),
                     Occurred = DateTime.UtcNow,
                 });
-            }), 
-                (IntPtr)null);
+            }), (IntPtr)null);
             Documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
             DbFileName = Path.Combine (Documents, "db");
             InitializeDb ();
@@ -238,11 +242,22 @@ namespace NachoCore.Model
 
         public void Start ()
         {
-
             CheckPointTimer = new NcTimer ("NcModel.CheckPointTimer", state => {
                 var checkpointCmd = "PRAGMA main.wal_checkpoint (PASSIVE);";
                 foreach (var db in new List<SQLiteConnection> { Db, TeleDb }) {
-                    db.Query<CheckpointResult> (checkpointCmd);
+                    var thisDb = db;
+                    if (0 == walCheckpointCount) {
+                        var ok = db.ExecuteScalar<string> ("PRAGMA integrity_check(1);");
+                        if ("ok" != ok) {
+                            Console.WriteLine ("Corrupted db detected. ({0})", db.DatabasePath);
+                            if (TeleDbFileName == db.DatabasePath) {
+                                NcModel.Instance.ResetTeleDb ();
+                                thisDb = TeleDb;
+                            }
+                        }
+                    }
+                    walCheckpointCount = (walCheckpointCount + 1) & 0xfff;
+                    thisDb.Query<CheckpointResult> (checkpointCmd);
                     /*
                      * TODO: Try using the C interface. It doesn't seem that the log/checkpointed
                      * values always make sense as they don't float down to zero. This is the case 
@@ -451,7 +466,9 @@ namespace NachoCore.Model
 
                 // Rename the db file
                 var timestamp = DateTime.Now.ToString ().Replace (' ', '_').Replace ('/', '-');
-                File.Move (TeleDbFileName, TeleDbFileName + "." + timestamp);
+                File.Replace (TeleDbFileName, TeleDbFileName + "." + timestamp, null);
+                File.Replace (TeleDbFileName + "-wal", TeleDbFileName + "-wal." + timestamp, null);
+                File.Replace (TeleDbFileName + "-shm", TeleDbFileName + "-shm." + timestamp, null);
 
                 // Recreate the db
                 InitializeTeleDb ();
