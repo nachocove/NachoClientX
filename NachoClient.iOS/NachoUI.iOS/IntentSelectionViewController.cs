@@ -48,7 +48,6 @@ namespace NachoClient.iOS
             UIView contentView = new UIView (View.Frame);
             contentView.BackgroundColor = A.Color_NachoGreen;
 
-            int curItem = 0;
             float yOffset = 30;
 
             UILabel headerLabel = new UILabel (new RectangleF (contentView.Frame.Width / 2 - 75, yOffset, 150, 25));
@@ -75,6 +74,7 @@ namespace NachoClient.iOS
             var tableView = new UITableView (new RectangleF (X_INDENT, yOffset, View.Frame.Width - (2 * X_INDENT), 44 * messageIntentList.Count));
             tableView.Source = new MessageIntentSource (this);
             tableView.BackgroundColor = A.Color_NachoGreen;
+            tableView.ScrollEnabled = false;
             contentView.AddSubview (tableView);
 
             View.AddSubview (contentView);
