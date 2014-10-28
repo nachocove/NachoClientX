@@ -74,6 +74,8 @@ namespace NachoCore.Brain
                 return "RESPONSE REQUIRED";
             case McEmailMessage.IntentType.Urgent:
                 return "URGENT";
+            case McEmailMessage.IntentType.Important:
+                return "IMPORTANT";
             default:
                 NcAssert.CaseError ("Type not recognized");
                 return null;
