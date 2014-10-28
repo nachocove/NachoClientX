@@ -53,6 +53,7 @@ namespace NachoCore.Brain
         private DateTime LastEmailMessageScoreUpdate;
 
         private DateTime LastPeriodicGlean;
+        private DateTime LastPeriodicGleanRestart;
 
         public NcBrain ()
         {
@@ -395,7 +396,10 @@ namespace NachoCore.Brain
             if (NcResult.SubKindEnum.Info_BackgroundAbateStopped != eventArgs.Status.SubKind) {
                 return;
             }
-            if ((double)NcContactGleaner.GLEAN_PERIOD < (DateTime.Now - LastPeriodicGlean).TotalSeconds) {
+            DateTime now = DateTime.Now;
+            if (((double)NcContactGleaner.GLEAN_PERIOD < (now - LastPeriodicGlean).TotalSeconds) &&
+                (LastPeriodicGleanRestart < LastPeriodicGlean)) {
+                LastPeriodicGleanRestart = now;
                 NcContactGleaner.Stop ();
                 NcContactGleaner.Start ();
             }
