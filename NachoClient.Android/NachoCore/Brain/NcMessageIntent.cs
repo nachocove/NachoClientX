@@ -15,34 +15,38 @@ namespace NachoCore.Brain
         public const string PLEASE_READ = "PLEASE READ";
         public const string RESPONSE_REQUIRED = "RESPONSE REQUIRED";
         public const string URGENT = "URGENT";
+        public const string IMPORTANT = "IMPORTANT";
 
-        public static Intent NONE_INTENT = new Intent(McEmailMessage.IntentType.None, NONE, false);
-        public static Intent FYI_INTENT = new Intent (McEmailMessage.IntentType.FYI, FYI, false);
-        public static Intent PLEASE_READ_INTENT = new Intent (McEmailMessage.IntentType.PleaseRead, PLEASE_READ, true);
-        public static Intent RESPONSE_REQUIRED_INTENT = new Intent(McEmailMessage.IntentType.ResponseRequired, RESPONSE_REQUIRED, true);
-        public static Intent URGENT_INTENT = new Intent(McEmailMessage.IntentType.Urgent, URGENT, true);
+        public static MessageIntent NONE_INTENT = new MessageIntent (McEmailMessage.IntentType.None, NONE, false);
+        public static MessageIntent FYI_INTENT = new MessageIntent (McEmailMessage.IntentType.FYI, FYI, false);
+        public static MessageIntent PLEASE_READ_INTENT = new MessageIntent (McEmailMessage.IntentType.PleaseRead, PLEASE_READ, true);
+        public static MessageIntent RESPONSE_REQUIRED_INTENT = new MessageIntent (McEmailMessage.IntentType.ResponseRequired, RESPONSE_REQUIRED, true);
+        public static MessageIntent URGENT_INTENT = new MessageIntent (McEmailMessage.IntentType.Urgent, URGENT, true);
+        public static MessageIntent IMPORTANT_INTENT = new MessageIntent (McEmailMessage.IntentType.Important, IMPORTANT, true);
 
-        protected List<Intent> IntentsList = new List<Intent> () {
+
+        protected static List<MessageIntent> MessageIntentList = new List<MessageIntent> () {
             NONE_INTENT,
             FYI_INTENT,
             PLEASE_READ_INTENT,
             RESPONSE_REQUIRED_INTENT,
             URGENT_INTENT,
+            IMPORTANT_INTENT,
         };
 
-        public Intent intentType { get; private set; }
+        public MessageIntent intentType { get; private set; }
 
         public NcMessageIntent ()
         {
             intentType = NONE_INTENT;
         }
 
-        public List<Intent> GetIntentList ()
+        public static List<MessageIntent> GetIntentList ()
         {
-            return IntentsList;
+            return MessageIntentList;
         }
 
-        public void SetType (Intent intent)
+        public void SetType (MessageIntent intent)
         {
             intentType = intent;
         }
@@ -70,19 +74,34 @@ namespace NachoCore.Brain
                 return "RESPONSE REQUIRED";
             case McEmailMessage.IntentType.Urgent:
                 return "URGENT";
+            case McEmailMessage.IntentType.Important:
+                return "IMPORTANT";
             default:
                 NcAssert.CaseError ("Type not recognized");
                 return null;
             }
         }
+
         public static string GetIntentString (MessageDeferralType intentDateTypeEnum, McEmailMessage mcMessage)
         {
-            string intentString = IntentEnumToString((McEmailMessage.IntentType)mcMessage.Intent);
+            string intentString = IntentEnumToString ((McEmailMessage.IntentType)mcMessage.Intent);
 
             if (MessageDeferralType.None != intentDateTypeEnum) {
                 switch (intentDateTypeEnum) {
+                case MessageDeferralType.None:
+                    intentString += "";
+                    break;
+                case MessageDeferralType.OneHour:
+                    intentString += " In One Hour";
+                    break;
+                case MessageDeferralType.TwoHours:
+                    intentString += " In Two Hours";
+                    break;
                 case MessageDeferralType.Later:
-                    intentString += " By Today";
+                    intentString += " Later Today";
+                    break;
+                case MessageDeferralType.EndOfDay:
+                    intentString += " By End of Day";
                     break;
                 case MessageDeferralType.Tonight:
                     intentString += " By Tonight";
@@ -93,8 +112,14 @@ namespace NachoCore.Brain
                 case MessageDeferralType.NextWeek:
                     intentString += " By Next Week";
                     break;
+                case MessageDeferralType.MonthEnd:
+                    intentString += "By Month End";
+                    break;
                 case MessageDeferralType.NextMonth:
                     intentString += " By Next Month";
+                    break;
+                case MessageDeferralType.Forever:
+                    intentString += "";
                     break;
                 case MessageDeferralType.Custom:
                     intentString += " By " + mcMessage.IntentDate.ToShortDateString ();
@@ -107,13 +132,15 @@ namespace NachoCore.Brain
             return intentString;
         }
 
-        public class Intent
+        public class MessageIntent
         {
             public McEmailMessage.IntentType type { get; private set; }
-            public string value { get; private set; }
-            public bool dueDateAllowed {get; private set;}
 
-            public Intent (McEmailMessage.IntentType type, string value, bool dueDateAllowed)
+            public string value { get; private set; }
+
+            public bool dueDateAllowed { get; private set; }
+
+            public MessageIntent (McEmailMessage.IntentType type, string value, bool dueDateAllowed)
             {
                 this.type = type;
                 this.value = value;

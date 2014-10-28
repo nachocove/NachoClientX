@@ -17,6 +17,7 @@ namespace NachoClient.iOS
         protected UIBarButtonItem editButton = new UIBarButtonItem ();
         protected UIBarButtonItem cancelButton = new UIBarButtonItem ();
         protected UIBarButtonItem saveButton = new UIBarButtonItem ();
+        protected UIBarButtonItem backButton = new UIBarButtonItem (); 
 
         protected bool textFieldsEditable = false;
 
@@ -97,17 +98,23 @@ namespace NachoClient.iOS
 
         protected override void CreateViewHierarchy ()
         {
-            NavigationController.InteractivePopGestureRecognizer.Enabled = false;
             NavigationController.NavigationBar.Translucent = false;
             NavigationItem.Title = "Account Settings";
-            Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
 
             editButton.Image = UIImage.FromBundle ("gen-edit");
-            NavigationItem.RightBarButtonItem = editButton;
+            cancelButton.Image = UIImage.FromBundle ("icn-close");
+            backButton.Image = UIImage.FromBundle ("nav-backarrow");
+            saveButton.Title = "Done";
+
+            backButton.TintColor = A.Color_NachoBlue;
+
+            NavigationItem.SetLeftBarButtonItem (backButton, true);
+            NavigationItem.SetRightBarButtonItem (editButton, true); 
 
             editButton.Clicked += EditButtonClicked;
             saveButton.Clicked += SaveButtonClicked;
             cancelButton.Clicked += CancelButtonClicked;
+            backButton.Clicked += BackButtonClicked;
 
             View.BackgroundColor = A.Color_NachoBackgroundGray;
 
@@ -269,9 +276,9 @@ namespace NachoClient.iOS
             signatureCellView.UserInteractionEnabled = true;
             signatureCellView.Tag = SIGNATURE_VIEW_TAG;
 
-            UITapGestureRecognizer signatureTap = new UITapGestureRecognizer ();
+            signatureTapGesture = new UITapGestureRecognizer ();
             signatureTapGestureHandlerToken = signatureTapGesture.AddTarget (SignatureTapHandler);
-            signatureCellView.AddGestureRecognizer (signatureTap);
+            signatureCellView.AddGestureRecognizer (signatureTapGesture);
             settingsView.AddSubview (signatureCellView);
 
             UIImageView disclosureArrowImageView;
@@ -485,10 +492,12 @@ namespace NachoClient.iOS
             cancelButton.Clicked -= CancelButtonClicked;
             editButton.Clicked -= EditButtonClicked;
             saveButton.Clicked -= SaveButtonClicked;
+            backButton.Clicked -= BackButtonClicked;
 
             cancelButton = null;
             editButton = null;
             saveButton = null;
+            backButton = null;
 
             var cancelValidationAlertView = (UIAlertView)View.ViewWithTag (CANCEL_VALIDATION_ALERT_VIEW_TAG);
             if (null != cancelValidationAlertView) {
@@ -596,6 +605,11 @@ namespace NachoClient.iOS
         protected void EditButtonClicked (object sender, EventArgs e)
         {
             ToggleEditing ();
+        }
+
+        protected void BackButtonClicked (object sender, EventArgs e)
+        {
+            DismissViewController (true, null);
         }
 
         protected void CancelButtonClicked (object sender, EventArgs e)
@@ -755,16 +769,13 @@ namespace NachoClient.iOS
         {
             textFieldsEditable = !textFieldsEditable;
             if (textFieldsEditable) {
-                cancelButton.Image = UIImage.FromBundle ("icn-close");
-                saveButton.Title = "Done";
                 NavigationItem.SetLeftBarButtonItem (cancelButton, true);
                 NavigationItem.SetRightBarButtonItem (saveButton, true);
                 UIView.Animate (1, () => {
                     NavigationItem.Title = "";
                 });
             } else {
-                editButton.Image = UIImage.FromBundle ("gen-edit");
-                Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
+                NavigationItem.SetLeftBarButtonItem (backButton, true);
                 NavigationItem.SetRightBarButtonItem (editButton, true);
                 UIView.Animate (1, () => {
                     NavigationItem.Title = "Account Settings";

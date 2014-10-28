@@ -1970,7 +1970,11 @@ namespace SQLite
 		public static string SqlDecl (TableMapping.Column p, bool storeDateTimeAsTicks)
 		{
 			string decl = "\"" + p.Name + "\" " + SqlType (p, storeDateTimeAsTicks) + " ";
-			
+
+            if (SqlZeroDefault (p, storeDateTimeAsTicks)) {
+                decl += "default 0 ";
+            }
+
 			if (p.IsPK) {
 				decl += "primary key ";
 			}
@@ -1987,7 +1991,44 @@ namespace SQLite
 			return decl;
 		}
 
-		public static string SqlType (TableMapping.Column p, bool storeDateTimeAsTicks)
+        public static bool SqlZeroDefault (TableMapping.Column p, bool storeDateTimeAsTicks)
+        {
+            var clrType = p.ColumnType;
+            if (clrType == typeof(Boolean) || clrType == typeof(Byte) || clrType == typeof(UInt16) || clrType == typeof(SByte) || clrType == typeof(Int16) || clrType == typeof(Int32)) {
+                return true;
+            } else if (clrType == typeof(UInt32) || clrType == typeof(Int64)) {
+                return true;
+            } else if (clrType == typeof(Single) || clrType == typeof(Double) || clrType == typeof(Decimal)) {
+                return true;
+            } else if (clrType == typeof(String)) {
+                int? len = p.MaxStringLength;
+
+                if (len.HasValue)
+                    return false;
+
+                return false;
+            } else if (clrType == typeof(TimeSpan)) {
+                return true;
+            } else if (clrType == typeof(DateTime)) {
+                return storeDateTimeAsTicks ? true : false;
+            } else if (clrType == typeof(DateTimeOffset)) {
+                return true;
+                #if !USE_NEW_REFLECTION_API
+                } else if (clrType.IsEnum) {
+                #else
+            } else if (clrType.GetTypeInfo().IsEnum) {
+                #endif
+                return true;
+            } else if (clrType == typeof(byte[])) {
+                return false;
+            } else if (clrType == typeof(Guid)) {
+                return false;
+            } else {
+                throw new NotSupportedException ("Don't know about " + clrType);
+            }
+        }
+
+        public static string SqlType (TableMapping.Column p, bool storeDateTimeAsTicks)
 		{
 			var clrType = p.ColumnType;
 			if (clrType == typeof(Boolean) || clrType == typeof(Byte) || clrType == typeof(UInt16) || clrType == typeof(SByte) || clrType == typeof(Int16) || clrType == typeof(Int32)) {

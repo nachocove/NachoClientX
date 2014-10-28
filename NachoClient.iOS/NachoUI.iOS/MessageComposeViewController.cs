@@ -56,8 +56,10 @@ namespace NachoClient.iOS
 
         UILabel subjectLabel;
         UITextField subjectField;
+        UIView intentView;
         UILabel intentLabel;
         UILabel intentDisplayLabel;
+        UIImageView intentArrowAccessory;
 
         UITextView bodyTextView;
 
@@ -90,7 +92,6 @@ namespace NachoClient.iOS
         UIBarButtonItem quickResponseButton;
         public NcMessageIntent messageIntent;
         protected MessageDeferralType intentDateType;
-        UIImageView intentArrowAccessory;
 
         public MessageComposeViewController (IntPtr handle) : base (handle)
         {
@@ -166,7 +167,6 @@ namespace NachoClient.iOS
         {
             base.ViewWillAppear (animated);
             if (null != this.NavigationController) {
-                this.NavigationController.ToolbarHidden = false;
                 if (this.NavigationController.RespondsToSelector (new MonoTouch.ObjCRuntime.Selector ("interactivePopGestureRecognizer"))) {
                     this.NavigationController.InteractivePopGestureRecognizer.Enabled = false;
                 }
@@ -325,7 +325,7 @@ namespace NachoClient.iOS
             NcAssert.CaseError ();
         }
 
-        public void SelectIntent (NcMessageIntent.Intent intent)
+        public void SelectMessageIntent (NcMessageIntent.MessageIntent intent)
         {
             messageIntent.SetType (intent);
             messageIntent.SetMessageIntent (ref mcMessage);
@@ -397,6 +397,8 @@ namespace NachoClient.iOS
             }
             subjectField.SizeToFit ();
 
+            intentView = new UIView ();
+
             intentLabel = new UILabel ();
             intentLabel.Text = "Intent:";
             intentLabel.Font = A.Font_AvenirNextRegular14;
@@ -413,11 +415,13 @@ namespace NachoClient.iOS
                 View.EndEditing (true);
                 PerformSegue ("SegueToIntentSelection", this);
             });
-            intentDisplayLabel.AddGestureRecognizer (intentTap);
-            intentDisplayLabel.UserInteractionEnabled = true;
+            intentView.AddGestureRecognizer (intentTap);
+            intentView.UserInteractionEnabled = true;
 
             intentArrowAccessory = new UIImageView (new RectangleF (0, 0, 12, 12));
             intentArrowAccessory.Image = UIImage.FromBundle ("icn-rightarrow");
+
+            intentView.AddSubviews (new UIView[] { intentLabel, intentDisplayLabel, intentArrowAccessory });
 
             attachmentView = new UcAttachmentBlock (this, account.Id, View.Frame.Width);
 
@@ -450,10 +454,8 @@ namespace NachoClient.iOS
                 subjectLabel,
                 subjectLabelHR,
                 subjectField,
-                intentLabel,
+                intentView,
                 intentLabelHR,
-                intentDisplayLabel,
-                intentArrowAccessory,
                 attachmentView,
                 attachmentViewHR,
                 bodyTextView
@@ -553,8 +555,6 @@ namespace NachoClient.iOS
             headerViewHR.Hidden = false;
             attachmentViewHR.Hidden = true;
 
-
-
             suppressLayout = true;
             toView.ConfigureView ();
             ccView.ConfigureView ();
@@ -626,8 +626,8 @@ namespace NachoClient.iOS
                     yOffset += bccViewHR.Frame.Height;
                 }
 
-                if(!headerViewHR.Hidden) {
-                    AdjustY(headerViewHR, yOffset);
+                if (!headerViewHR.Hidden) {
+                    AdjustY (headerViewHR, yOffset);
                     yOffset += headerViewHR.Frame.Height;
                 }
 
@@ -641,15 +641,17 @@ namespace NachoClient.iOS
                 AdjustY (subjectLabelHR, yOffset);
                 yOffset += subjectLabelHR.Frame.Height;
 
-                CenterY (intentLabel, LEFT_INDENT, yOffset, intentLabel.Frame.Width, LINE_HEIGHT);
+                // Intent subviews
+                CenterY(intentLabel, LEFT_INDENT, 0, intentLabel.Frame.Width, LINE_HEIGHT);
+   
+                var intentDisplayStart = intentLabel.Frame.Right + 4;
+                var intentDisplayWidth = View.Frame.Width - intentDisplayStart - intentArrowAccessory.Frame.Width - RIGHT_INDENT;
+                CenterY(intentDisplayLabel, intentDisplayStart, 0, intentDisplayWidth, LINE_HEIGHT);
 
-                var intentFieldStart = intentLabel.Frame.X + intentLabel.Frame.Width;
+                var intentArrowStart = View.Frame.Width - intentArrowAccessory.Frame.Width - RIGHT_INDENT;
+                CenterY(intentArrowAccessory, intentArrowStart, 0, intentArrowAccessory.Frame.Width, LINE_HEIGHT);
 
-                intentArrowAccessory.Frame = new RectangleF (View.Frame.Width - 33, yOffset + LINE_HEIGHT / 2 - 6, intentArrowAccessory.Frame.Width, intentArrowAccessory.Frame.Height);
-
-                var intentFieldWidth = View.Frame.Width - 37;
-                CenterY (intentDisplayLabel, intentFieldStart, yOffset, intentFieldWidth, LINE_HEIGHT);
-                intentDisplayLabel.Frame = new RectangleF (intentDisplayLabel.Frame.X + 4, intentDisplayLabel.Frame.Y, intentFieldWidth - intentFieldStart + 2, intentDisplayLabel.Frame.Height);
+                intentView.Frame = new RectangleF(0, yOffset, View.Frame.Width, LINE_HEIGHT);
 
                 yOffset += LINE_HEIGHT;
 

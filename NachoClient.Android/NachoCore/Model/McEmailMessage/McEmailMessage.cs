@@ -19,7 +19,10 @@ namespace NachoCore.Model
     public enum MessageDeferralType
     {
         None,
+        OneHour,
+        TwoHours,
         Later,
+        EndOfDay,
         Tonight,
         Tomorrow,
         NextWeek,
@@ -83,6 +86,7 @@ namespace NachoCore.Model
             PleaseRead = 2,
             ResponseRequired = 3,
             Urgent = 4,
+            Important = 5,
         }
 
         // Intent of the message (default None (0))

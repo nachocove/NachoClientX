@@ -10,10 +10,9 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public partial class IntentSelectionViewController : BlurryViewController, INachoIntentChooser
+    public partial class IntentSelectionViewController : NcUIViewController, INachoIntentChooser
     {
-        protected NcMessageIntent messageIntent;
-        protected float yOffset;
+        protected const float X_INDENT = 30;
 
         INachoIntentChooserParent owner;
         INachoDateControllerParent dateOwner;
@@ -40,83 +39,61 @@ namespace NachoClient.iOS
 
         public override void ViewDidLoad ()
         {
-            messageIntent = new NcMessageIntent ();
             base.ViewDidLoad ();
             CreateView ();
         }
 
         public void CreateView ()
         {
+            UIView contentView = new UIView (View.Frame);
+            contentView.BackgroundColor = A.Color_NachoGreen;
 
-            float viewHeight = 64 + (messageIntent.GetIntentList ().Count * 41);
-            UIView viewBody = new UIView ();
-            viewBody.Layer.CornerRadius = 8f;
-            viewBody.Frame = new RectangleF (15, (View.Frame.Height - viewHeight) / 2.0f - 20, View.Frame.Width - 30, viewHeight);
-            viewBody.ClipsToBounds = true;
-            viewBody.BackgroundColor = UIColor.White;
+            float yOffset = 30;
 
-            yOffset = 14;
+            UILabel headerLabel = new UILabel (new RectangleF (contentView.Frame.Width / 2 - 75, yOffset, 150, 25));
+            headerLabel.Text = "Message Intent";
+            headerLabel.TextAlignment = UITextAlignment.Center;
+            headerLabel.Font = A.Font_AvenirNextDemiBold17;
+            headerLabel.TextColor = UIColor.White;
+            contentView.Add (headerLabel);
 
-            UILabel messageIntentsLabel = new UILabel (new RectangleF (viewBody.Frame.Width / 2 - 80, yOffset, 160, 25));
-            messageIntentsLabel.Text = "Message Intents";
-            messageIntentsLabel.TextAlignment = UITextAlignment.Center;
-            messageIntentsLabel.Font = A.Font_AvenirNextRegular17;
-            messageIntentsLabel.TextColor = A.Color_NachoDarkText;
-            viewBody.Add (messageIntentsLabel);
-
-            UIButton dismissView = new UIButton (new RectangleF (20, yOffset + 2, 20, 20));
-            dismissView.SetImage (UIImage.FromBundle ("icn-close"), UIControlState.Normal);
+            UIButton dismissView = new UIButton (new RectangleF (X_INDENT, yOffset, 25, 25));
+            dismissView.SetImage (UIImage.FromBundle ("modal-close"), UIControlState.Normal);
             dismissView.TouchUpInside += (object sender, EventArgs e) => {
-                DismissViewController (false, null);
+                DismissViewController (true, null);
             };
-            viewBody.Add (dismissView);
+            contentView.Add (dismissView);
 
-            yOffset = messageIntentsLabel.Frame.Bottom + 16;
+            yOffset = headerLabel.Frame.Bottom + 16;
 
-            Util.AddHorizontalLine (0, yOffset - 5, viewBody.Frame.Width, A.Color_NachoLightBorderGray, viewBody);
+            Util.AddHorizontalLine (0, yOffset, contentView.Frame.Width, UIColor.LightGray, contentView);
 
-            int curItem = 0;
-            foreach (var intent in messageIntent.GetIntentList ()) {
-                curItem++;
-                UIButton intentButton = new UIButton (new RectangleF (20, yOffset, viewBody.Frame.Width - 60, 40));
-                intentButton.BackgroundColor = UIColor.White;
-                intentButton.SetTitle (intent.value, UIControlState.Normal);
-                intentButton.SetTitleColor (A.Color_NachoTextGray, UIControlState.Normal);
-                intentButton.Font = A.Font_AvenirNextRegular14;
-                intentButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
-                intentButton.TouchUpInside += (object sender, EventArgs e) => {
-                    owner.SelectIntent (intent);
-                    DismissViewController (false, null);
-                };
+            yOffset += 2;
 
-                if (intent.dueDateAllowed) {
-                    UIButton dueDateButton = new UIButton (new RectangleF (viewBody.Frame.Width - 40, yOffset + 6f, 25, 25));
-                    dueDateButton.SetImage (UIImage.FromBundle ("icn-defer"), UIControlState.Normal);
-                    dueDateButton.TouchUpInside += (object sender, EventArgs e) => {
-                        owner.SelectIntent (intent);
-                        PerformSegue ("SegueToMessagePriority", this);
-                    };
-                    viewBody.Add (dueDateButton);
-                }
+            var messageIntentList = NcMessageIntent.GetIntentList ();
+            var tableView = new UITableView (new RectangleF (X_INDENT, yOffset, View.Frame.Width - (2 * X_INDENT), 44 * messageIntentList.Count));
+            tableView.Source = new MessageIntentSource (this);
+            tableView.BackgroundColor = A.Color_NachoGreen;
+            tableView.ScrollEnabled = false;
+            contentView.AddSubview (tableView);
 
-                viewBody.Add (intentButton);
-                if (curItem < messageIntent.GetIntentList ().Count) {
-                    Util.AddHorizontalLine (20, intentButton.Frame.Bottom, viewBody.Frame.Width - 20, A.Color_NachoLightBorderGray, viewBody);
-                }
+            View.AddSubview (contentView);
+        }
 
-                yOffset = intentButton.Frame.Bottom + 1;
+        public void SelectMessageIntent (NcMessageIntent.MessageIntent messageIntent)
+        {
+            if (null != owner) {
+                owner.SelectMessageIntent (messageIntent);
             }
-
-            View.Add (viewBody);
+            if (messageIntent.dueDateAllowed) {
+                PerformSegue ("SegueToMessagePriority", new SegueHolder (null));
+            } else {
+                DismissViewController (true, null);
+            }
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-            var blurry = segue.DestinationViewController as BlurryViewController;
-            if (null != blurry) {
-                blurry.CaptureView (this.View);
-            }
-
             if (segue.Identifier == "SegueToMessagePriority") {
                 var vc = (MessagePriorityViewController)segue.DestinationViewController;
                 vc.SetOwner (dateOwner);
@@ -124,8 +101,61 @@ namespace NachoClient.iOS
                 vc.SetDateControllerType (DateControllerType.Intent);
                 return;
             }
+            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
+            NcAssert.CaseError ();
+        }
 
-            NcAssert.CaseError ("Not prepared for segue: " + segue.Identifier);
+        protected class MessageIntentSource : UITableViewSource
+        {
+            IntentSelectionViewController owner;
+
+            public MessageIntentSource (IntentSelectionViewController owner)
+            {
+                this.owner = owner;
+            }
+
+            public override int NumberOfSections (UITableView tableView)
+            {
+                return 1;
+            }
+
+            public override int RowsInSection (UITableView tableView, int section)
+            {
+                return NcMessageIntent.GetIntentList ().Count;
+            }
+
+            public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
+            {
+                string cellIdentifier = "MessageIntentCellIdentifier";
+
+                var cell = tableView.DequeueReusableCell (cellIdentifier);
+                if (null == cell) {
+                    cell = new UITableViewCell (UITableViewCellStyle.Default, cellIdentifier);
+                    cell.BackgroundColor = A.Color_NachoGreen;
+                    cell.TextLabel.TextColor = UIColor.White;
+                    cell.TextLabel.Font = A.Font_AvenirNextRegular14;
+                    using (var image = UIImage.FromBundle ("icn-defer")) {
+                        cell.AccessoryView = new UIImageView (image);
+                    }
+                }
+
+                var messageIntent = NcMessageIntent.GetIntentList () [indexPath.Row];
+                cell.TextLabel.Text = messageIntent.value;
+                cell.AccessoryView.Hidden = !messageIntent.dueDateAllowed;
+                return cell;
+            }
+
+            public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
+            {
+                var cell = tableView.CellAt (indexPath);
+                cell.Selected = false;
+
+                var messageIntent = NcMessageIntent.GetIntentList () [indexPath.Row];
+                if (null != owner) {
+                    owner.SelectMessageIntent (messageIntent);
+                }
+            }
+
         }
     }
 }

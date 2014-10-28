@@ -15,6 +15,6 @@ namespace NachoClient.iOS
 
     public interface INachoIntentChooserParent
     {
-        void SelectIntent (NcMessageIntent.Intent intent);
+        void SelectMessageIntent (NcMessageIntent.MessageIntent intent);
     }
 }

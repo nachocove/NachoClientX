@@ -21,7 +21,7 @@ namespace NachoClient.iOS
 
             OKButton.TouchUpInside += (object sender, EventArgs e) => {
                 NSDate nsDate = datePicker.Date;
-                var dateTime = DateTime.SpecifyKind (nsDate, DateTimeKind.Unspecified);
+                var dateTime = DateTime.SpecifyKind (nsDate, DateTimeKind.Utc);
                 owner.DismissDatePicker (this, dateTime);
             };
 

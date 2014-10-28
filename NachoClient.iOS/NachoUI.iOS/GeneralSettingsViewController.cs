@@ -33,7 +33,9 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            // Navigation
+            if (this.NavigationController.RespondsToSelector (new MonoTouch.ObjCRuntime.Selector ("interactivePopGestureRecognizer"))) {
+                this.NavigationController.InteractivePopGestureRecognizer.Enabled = false;
+            }
             NavigationItem.Title = "Settings";
 
             CreateView ();
@@ -105,7 +107,7 @@ namespace NachoClient.iOS
             var accountTap = new UITapGestureRecognizer ();
             accountTap.AddTarget (() => {
                 View.EndEditing (true);
-                PerformSegue ("GeneralSettingsToSettings", this);
+                PerformSegue ("SegueToAccountSettings", this);
             });
             accountSettingsCell.AddGestureRecognizer (accountTap);
 
@@ -254,7 +256,7 @@ namespace NachoClient.iOS
                 }
                 return;
             }
-            if (segue.Identifier.Equals ("GeneralSettingsToSettings")) {
+            if (segue.Identifier.Equals ("SegueToAccountSettings")) {
                 return;
             }
             if (segue.Identifier.Equals ("SegueToNachoNow")) {

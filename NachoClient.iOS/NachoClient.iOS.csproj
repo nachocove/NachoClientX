@@ -1158,6 +1158,10 @@
     <Compile Include="NachoUI.iOS\SignatureEditViewController.designer.cs">
       <DependentUpon>SignatureEditViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="NachoUI.iOS\AboutUsViewController.cs" />
+    <Compile Include="NachoUI.iOS\AboutUsViewController.designer.cs">
+      <DependentUpon>AboutUsViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
