@@ -216,10 +216,9 @@ namespace NachoClient.iOS
             application.SetStatusBarStyle (UIStatusBarStyle.LightContent, true);
             Account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
 
-
             UINavigationBar.Appearance.BarTintColor = UIColor.FromRGB (0x11, 0x46, 0x4F);
             UIToolbar.Appearance.BackgroundColor = UIColor.White;
-            UIBarButtonItem.Appearance.TintColor = A.Color_29CCBE;
+            UIBarButtonItem.Appearance.TintColor = A.Color_NachoBlue;
 
             var navigationTitleTextAttributes = new UITextAttributes ();
             navigationTitleTextAttributes.Font = A.Font_AvenirNextDemiBold17;
