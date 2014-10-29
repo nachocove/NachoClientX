@@ -109,7 +109,7 @@ namespace NachoClient.iOS
                 UINavigationItem title = new UINavigationItem ("Move To");
                 navbar.SetItems (new UINavigationItem[]{ title }, false);
                 UIBarButtonItem cancelButton = new UIBarButtonItem ();
-                Util.SetOriginalImageForButton (cancelButton, "icn-close");
+                Util.SetAutomaticImageForButton (cancelButton, "icn-close");
 
                 navbar.TopItem.LeftBarButtonItem = cancelButton;
                 cancelButton.Clicked += (object sender, EventArgs e) => {

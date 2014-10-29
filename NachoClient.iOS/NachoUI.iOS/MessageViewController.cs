@@ -46,7 +46,6 @@ namespace NachoClient.iOS
         protected UITapGestureRecognizer.Token singleTapGestureHandlerToken;
 
         // UI elements for the navigation bar
-        protected UIBarButtonItem chiliButton;
         protected UIBarButtonItem deadlineButton;
         protected UIBarButtonItem blockMenuButton;
         protected UIActionSheet replyActionSheet;
@@ -102,31 +101,30 @@ namespace NachoClient.iOS
         {
             // Navigation controls
 
-            chiliButton = new UIBarButtonItem ("Hot", UIBarButtonItemStyle.Plain, null);
-            Util.SetOriginalImageForButton (replyButton, "toolbar-icn-reply");
-            Util.SetOriginalImageForButton (archiveButton, "email-archive-gray");
-            Util.SetOriginalImageForButton (saveButton, "email-fileinfolder-gray");
-            Util.SetOriginalImageForButton (deleteButton, "email-delete-gray");
-            var spacer1 = new UIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace) { Width = 5 };
-            var spacer2 = new UIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace) { Width = 5 };
+            Util.SetAutomaticImageForButton (replyButton, "toolbar-icn-reply");
+            replyButton.TintColor = A.Color_NachoGreen;
+
+            Util.SetAutomaticImageForButton (archiveButton, "email-archive-gray");
+            archiveButton.TintColor = A.Color_NachoGreen;
+
+            Util.SetAutomaticImageForButton (deleteButton, "email-delete-gray");
+            deleteButton.TintColor = A.Color_NachoGreen;
+
+            fixedSpaceButton.Width = 10;
 
             ToolbarItems = new UIBarButtonItem[] {
                 replyButton,
                 flexibleSpaceButton,
-                chiliButton,
-                flexibleSpaceButton,
                 archiveButton,
-                spacer1,
-                saveButton,
-                spacer2,
+                fixedSpaceButton,
                 deleteButton,
             };
 
             blockMenuButton = new UIBarButtonItem ();
-            Util.SetOriginalImageForButton (blockMenuButton, "gen-more");
+            Util.SetAutomaticImageForButton (blockMenuButton, "gen-more");
             deadlineButton = new UIBarButtonItem ();
-            Util.SetOriginalImageForButton (deadlineButton, "email-calendartime");
-            Util.SetOriginalImageForButton (quickReplyButton, "contact-quickemail");
+            Util.SetAutomaticImageForButton (deadlineButton, "email-calendartime");
+            Util.SetAutomaticImageForButton (quickReplyButton, "contact-quickemail");
 
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
                 blockMenuButton,
@@ -136,11 +134,9 @@ namespace NachoClient.iOS
 
             quickReplyButton.Clicked += QuickReplyButtonClicked;
             blockMenuButton.Clicked += BlockMenuBottonClicked;
-            saveButton.Clicked += SaveButtonClicked;
             replyButton.Clicked += ReplyButtonClicked;
             archiveButton.Clicked += ArchiveButtonClicked;
             deleteButton.Clicked += DeleteButtonClicked;
-            chiliButton.Clicked += ChiliButtonClicked;
             deadlineButton.Clicked += DeadlineButtonClicked;
 
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
@@ -446,11 +442,9 @@ namespace NachoClient.iOS
             scrollView.Scrolled -= ScrollViewScrolled;
             quickReplyButton.Clicked -= QuickReplyButtonClicked;
             blockMenuButton.Clicked -= BlockMenuBottonClicked;
-            saveButton.Clicked -= SaveButtonClicked;
             replyButton.Clicked -= ReplyButtonClicked;
             archiveButton.Clicked -= ArchiveButtonClicked;
             deleteButton.Clicked -= DeleteButtonClicked;
-            chiliButton.Clicked -= ChiliButtonClicked;
             deadlineButton.Clicked -= DeadlineButtonClicked;
             scrollView.DidZoom -= ScrollViewDidZoom;
 
@@ -464,7 +458,6 @@ namespace NachoClient.iOS
             quickReplyButton = null;
             replyAllButton = null;
             replyButton = null;
-            saveButton = null;
             scrollView = null;
             blockMenu = null;
 
@@ -473,7 +466,6 @@ namespace NachoClient.iOS
             toView = null;
             ccView = null;
             bodyView = null;
-            chiliButton = null;
             deadlineButton = null;
             blockMenuButton = null;
             replyActionSheet = null;
@@ -669,10 +661,6 @@ namespace NachoClient.iOS
 
         protected void ConfigureToolbar ()
         {
-            var message = thread.SingleMessageSpecialCase ();
-            Util.SetOriginalImageForButton (chiliButton,
-                -1 == message.UserAction || (0 == message.UserAction && message.isHot ()) ?
-                "icn-hot-gray" : "icn-nothot-gray");
         }
 
         protected void ConfigureAttachments ()
@@ -825,11 +813,6 @@ namespace NachoClient.iOS
             blockMenu.MenuTapped ();
         }
 
-        private void SaveButtonClicked (object sender, EventArgs e)
-        {
-            PerformSegue ("MessageViewToFolders", this);
-        }
-
         private void ReplyButtonClicked (object sender, EventArgs e)
         {
             ShowReplyActionSheet ();
@@ -845,12 +828,6 @@ namespace NachoClient.iOS
         {
             DeleteThisMessage ();
             NavigationController.PopViewControllerAnimated (true);
-        }
-
-        private void ChiliButtonClicked (object sender, EventArgs e)
-        {
-            NachoCore.Utils.ScoringHelpers.ToggleHotOrNot(thread.SingleMessageSpecialCase ());
-            ConfigureToolbar ();
         }
 
         private void DeadlineButtonClicked (object sender, EventArgs e)

@@ -56,7 +56,7 @@ namespace NachoClient.iOS
             UINavigationItem title = new UINavigationItem ("Signature");
             navbar.SetItems (new UINavigationItem[]{ title }, false);
             cancelButton = new UIBarButtonItem ();
-            Util.SetOriginalImageForButton (cancelButton, "icn-close");
+            Util.SetAutomaticImageForButton (cancelButton, "icn-close");
 
             navbar.TopItem.LeftBarButtonItem = cancelButton;
             cancelButton.Clicked += CancelButtonClicked;

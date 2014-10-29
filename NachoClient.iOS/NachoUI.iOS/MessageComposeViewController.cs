@@ -132,8 +132,8 @@ namespace NachoClient.iOS
             sendButton = new UIBarButtonItem ();
             quickResponseButton = new UIBarButtonItem ();
 
-            Util.SetOriginalImageForButton (quickResponseButton, "contact-quickemail");
-            Util.SetOriginalImageForButton (sendButton, "icn-send");
+            Util.SetAutomaticImageForButton (quickResponseButton, "contact-quickemail");
+            Util.SetAutomaticImageForButton (sendButton, "icn-send");
 
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
                 sendButton,

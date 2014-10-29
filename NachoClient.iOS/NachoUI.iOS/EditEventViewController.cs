@@ -373,7 +373,7 @@ namespace NachoClient.iOS
         {
             scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height);
 
-            Util.SetOriginalImageForButton (cancelButton, "icn-close");
+            Util.SetAutomaticImageForButton (cancelButton, "icn-close");
             cancelButton.Clicked += (sender, e) => {
                 View.EndEditing (true);
                 if (eventEditStarted) {
