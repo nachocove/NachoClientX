@@ -66,7 +66,6 @@ namespace NachoClient.iOS
                 textView.Text =  System.IO.File.ReadAllText(url);
                 interiorView.Add (textView);
             }
-
             View.AddSubview (interiorView);
         }
 

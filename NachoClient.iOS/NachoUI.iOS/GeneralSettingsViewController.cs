@@ -12,24 +12,32 @@ using System.Linq;
 
 namespace NachoClient.iOS
 {
-    public partial class GeneralSettingsViewController : NcUIViewController
+    public partial class GeneralSettingsViewController : NcUIViewControllerNoLeaks
     {
         protected static float CELL_HEIGHT = 44f;
         protected static float INSET = 15f;
-        protected float TEXT_LINE_HEIGHT = 19.124f;
+        protected static float TEXT_LINE_HEIGHT = 19.124f;
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
-        protected float yOffset;
-        protected string legalUrl;
-        protected string legalTitle;
-        protected bool isUrl;
 
-        protected const int FIX_BE_BUTTON_TAG = 2000;
+        protected float yOffset;
 
         protected const int NAME_LABEL_TAG = 100;
         protected const int EMAIL_ADDRESS_LABEL_TAG = 101;
         protected const int USER_IMAGE_VIEW_TAG = 102;
         protected const int USER_LABEL_VIEW_TAG = 103;
+        protected const int FIX_BE_BUTTON_TAG = 104;
+        protected const int ACCOUNT_SETTINGS_CELL_TAG = 105;
+        protected const int ABOUT_US_CELL_TAG = 106;
+        protected const int PRIVACY_POLICY_CELL_TAG = 107;
 
+        protected UITapGestureRecognizer accountSettingsTapGesture;
+        protected UITapGestureRecognizer.Token accountSettingsTapGestureHandlerToken;
+
+        protected UITapGestureRecognizer aboutUsTapGesture;
+        protected UITapGestureRecognizer.Token aboutUsTapGestureHandlerToken;
+
+        protected UITapGestureRecognizer privacyPolicyTapGesture;
+        protected UITapGestureRecognizer.Token privacyPolicyTapGestureHandlerToken;
 
         public GeneralSettingsViewController (IntPtr handle) : base (handle)
         {
@@ -43,14 +51,11 @@ namespace NachoClient.iOS
                 this.NavigationController.InteractivePopGestureRecognizer.Enabled = false;
             }
             NavigationItem.Title = "Settings";
-
-            CreateView ();
         }
 
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-            ConfigureView ();
         }
 
         public override void ViewDidAppear (bool animated)
@@ -58,38 +63,20 @@ namespace NachoClient.iOS
             base.ViewDidAppear (animated);
         }
 
-
-        protected void CreateView ()
+        protected override void CreateViewHierarchy ()
         {
             View.BackgroundColor = A.Color_NachoNowBackground;
             contentView.BackgroundColor = A.Color_NachoNowBackground;
             NavigationController.NavigationBar.Translucent = false;
             NavigationController.NavigationBar.TintColor = A.Color_NachoBlue;
 
-            UIButton DirtyBackEnd = new UIButton (new RectangleF (View.Frame.Width - 87.5f , 7.5f, 80, 30));
+            UIButton DirtyBackEnd = new UIButton (new RectangleF (View.Frame.Width / 2 - 40, View.Frame.Bottom - 100, 80, 30));
             DirtyBackEnd.Layer.CornerRadius = 2.0f;
             DirtyBackEnd.BackgroundColor = A.Color_NachoRed;
             DirtyBackEnd.Font = A.Font_AvenirNextRegular14;
             DirtyBackEnd.SetTitle ("Fix Account", UIControlState.Normal);
             DirtyBackEnd.SetTitleColor (UIColor.White, UIControlState.Normal);
-            DirtyBackEnd.TouchUpInside += (object sender, EventArgs e) => {
-                if (LoginHelpers.IsCurrentAccountSet ()) {
-
-                    BackEndAutoDStateEnum backEndState = BackEnd.Instance.AutoDState (LoginHelpers.GetCurrentAccountId ());
-
-                    if (BackEndAutoDStateEnum.CredWait == backEndState || BackEndAutoDStateEnum.CertAskWait == backEndState) {
-                        UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-                        CredentialsAskViewController cvc = (CredentialsAskViewController)x.InstantiateViewController ("CredentialsAskViewController");
-                        cvc.SetTabBarController((NachoTabBarController)this.TabBarController);
-                        this.PresentViewController (cvc, true, null);
-                    }
-
-                    if (BackEndAutoDStateEnum.ServerConfWait == backEndState) {
-                        var x = (AppDelegate)UIApplication.SharedApplication.Delegate;
-                        x.ServConfReqCallback (LoginHelpers.GetCurrentAccountId ());
-                    }
-                }
-            };
+            DirtyBackEnd.TouchUpInside += FixBackEndButtonClicked; 
             DirtyBackEnd.Tag = FIX_BE_BUTTON_TAG;
             DirtyBackEnd.Hidden = true;
             View.Add(DirtyBackEnd);
@@ -101,13 +88,10 @@ namespace NachoClient.iOS
             accountSettingsCell.Layer.CornerRadius = 4f;
             accountSettingsCell.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
             accountSettingsCell.Layer.BorderWidth = .5f;
-
-            var accountTap = new UITapGestureRecognizer ();
-            accountTap.AddTarget (() => {
-                View.EndEditing (true);
-                PerformSegue ("SegueToAccountSettings", this);
-            });
-            accountSettingsCell.AddGestureRecognizer (accountTap);
+            accountSettingsCell.Tag = ACCOUNT_SETTINGS_CELL_TAG;
+            accountSettingsTapGesture = new UITapGestureRecognizer ();
+            accountSettingsTapGestureHandlerToken = accountSettingsTapGesture.AddTarget (AccountSettingsTapHandler);
+            accountSettingsCell.AddGestureRecognizer (accountSettingsTapGesture);
 
             var userImageView = new UIImageView (new RectangleF (12, 15, 50, 50));
             userImageView.Center = new PointF (userImageView.Center.X, accountSettingsCell.Frame.Height / 2);
@@ -157,20 +141,15 @@ namespace NachoClient.iOS
             accountEmailAddress.TextColor = A.Color_NachoBlack;
             accountSettingsCell.AddSubview (accountEmailAddress);
 
-
             UIImageView accountSettingsIndicatorArrow;
             using (var disclosureIcon = UIImage.FromBundle ("gen-more-arrow")) {
                 accountSettingsIndicatorArrow = new UIImageView (disclosureIcon);
             }
             accountSettingsIndicatorArrow.Frame = new RectangleF (accountEmailAddress.Frame.Right + 10, accountSettingsCell.Frame.Height / 2 - accountSettingsIndicatorArrow.Frame.Height / 2, accountSettingsIndicatorArrow.Frame.Width, accountSettingsIndicatorArrow.Frame.Height);
             accountSettingsCell.AddSubview (accountSettingsIndicatorArrow);
-
             contentView.AddSubview (accountSettingsCell);
 
-            yOffset = accountSettingsCell.Frame.Bottom;
-
-
-            yOffset += 30;
+            yOffset = accountSettingsCell.Frame.Bottom + 30;
 
             UIView buttonsCell = new UIView (new RectangleF(INSET, yOffset, View.Frame.Width - (INSET * 2), CELL_HEIGHT * 2));
             buttonsCell.BackgroundColor = UIColor.White;
@@ -187,14 +166,10 @@ namespace NachoClient.iOS
             UIView aboutUsCell = new UIView (new RectangleF (0, 0, buttonsCell.Frame.Width, CELL_HEIGHT));
             aboutUsCell.BackgroundColor = UIColor.Clear;
             aboutUsCell.UserInteractionEnabled = true;
-
-            var aboutUsTap = new UITapGestureRecognizer ();
-            aboutUsTap.AddTarget (() => {
-                PerformSegue ("SegueToAboutUs", this);
-                View.EndEditing (true);
-            });
-            aboutUsCell.AddGestureRecognizer (aboutUsTap);
-
+            aboutUsCell.Tag = ABOUT_US_CELL_TAG;
+            aboutUsTapGesture = new UITapGestureRecognizer ();
+            aboutUsTapGestureHandlerToken = aboutUsTapGesture.AddTarget (AboutUsTapHandler);
+            aboutUsCell.AddGestureRecognizer (aboutUsTapGesture);
             buttonsCell.AddSubview (aboutUsCell);
 
             Util.AddHorizontalLine (0, CELL_HEIGHT, buttonsCell.Frame.Width, A.Color_NachoBorderGray, buttonsCell);
@@ -208,16 +183,94 @@ namespace NachoClient.iOS
             UIView privacyPolicyCell = new UIView (new RectangleF (0, CELL_HEIGHT, buttonsCell.Frame.Width, CELL_HEIGHT));
             privacyPolicyCell.BackgroundColor = UIColor.Clear;
             privacyPolicyCell.UserInteractionEnabled = true;
+            privacyPolicyCell.Tag = PRIVACY_POLICY_CELL_TAG;
 
-            var privacyPolicyTap = new UITapGestureRecognizer ();
-            privacyPolicyTap.AddTarget (() => {
-                PerformSegue ("GeneralSettingsToSettingsLegal", this);
-                View.EndEditing (true);
-            });
-            privacyPolicyCell.AddGestureRecognizer (privacyPolicyTap);
+            privacyPolicyTapGesture = new UITapGestureRecognizer ();
+            privacyPolicyTapGestureHandlerToken = privacyPolicyTapGesture.AddTarget (PrivacyPolicyTapHandler);
+            privacyPolicyCell.AddGestureRecognizer (privacyPolicyTapGesture);
             buttonsCell.AddSubview (privacyPolicyCell);
 
             View.AddSubview (buttonsCell);
+        }
+
+        protected override void ConfigureAndLayout ()
+        {
+            var nameLabel = (UILabel)contentView.ViewWithTag (NAME_LABEL_TAG);
+
+            McAccount userAccount = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
+            McContact userContact = McContact.QueryByEmailAddress (LoginHelpers.GetCurrentAccountId (), userAccount.EmailAddr).FirstOrDefault();
+            nameLabel.Text = userContact.FileAs;
+
+            var emailLabel = (UILabel)contentView.ViewWithTag (EMAIL_ADDRESS_LABEL_TAG);
+            emailLabel.Text = GetEmailAddress ();
+
+            UIButton FixButton = (UIButton)View.ViewWithTag (FIX_BE_BUTTON_TAG);
+            FixButton.Hidden = !LoginHelpers.DoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId ());
+
+            LayoutView ();
+        }
+
+        protected override void Cleanup ()
+        {
+            UIButton FixButton = (UIButton)View.ViewWithTag (FIX_BE_BUTTON_TAG);
+            FixButton.TouchUpInside -= FixBackEndButtonClicked;
+            FixButton = null;
+
+            accountSettingsTapGesture.RemoveTarget (accountSettingsTapGestureHandlerToken);
+            var accountSettings = (UIView)View.ViewWithTag (ACCOUNT_SETTINGS_CELL_TAG);
+            if (null != accountSettings){
+                accountSettings.RemoveGestureRecognizer (accountSettingsTapGesture);
+            }
+
+            aboutUsTapGesture.RemoveTarget (aboutUsTapGestureHandlerToken);
+            var aboutUs = (UIView)View.ViewWithTag (ABOUT_US_CELL_TAG);
+            if (null != aboutUs){
+                aboutUs.RemoveGestureRecognizer (aboutUsTapGesture);
+            }
+
+            privacyPolicyTapGesture.RemoveTarget (privacyPolicyTapGestureHandlerToken);
+            var privacyPolicy = (UIView)View.ViewWithTag (PRIVACY_POLICY_CELL_TAG);
+            if (null != privacyPolicy){
+                privacyPolicy.RemoveGestureRecognizer (privacyPolicyTapGesture);
+            }
+        }
+
+        protected void AccountSettingsTapHandler (NSObject sender)
+        {
+            PerformSegue ("SegueToAccountSettings", this);
+            View.EndEditing (true);
+        }
+
+        protected void PrivacyPolicyTapHandler (NSObject sender)
+        {
+            PerformSegue ("GeneralSettingsToSettingsLegal", this);
+            View.EndEditing (true);
+        }
+
+        protected void AboutUsTapHandler (NSObject sender)
+        {
+            PerformSegue ("SegueToAboutUs", this);
+            View.EndEditing (true);
+        }
+
+        protected void FixBackEndButtonClicked (object sender, EventArgs e)
+        {
+            if (LoginHelpers.IsCurrentAccountSet ()) {
+
+                BackEndAutoDStateEnum backEndState = BackEnd.Instance.AutoDState (LoginHelpers.GetCurrentAccountId ());
+
+                if (BackEndAutoDStateEnum.CredWait == backEndState || BackEndAutoDStateEnum.CertAskWait == backEndState) {
+                    UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+                    CredentialsAskViewController cvc = (CredentialsAskViewController)x.InstantiateViewController ("CredentialsAskViewController");
+                    cvc.SetTabBarController((NachoTabBarController)this.TabBarController);
+                    this.PresentViewController (cvc, true, null);
+                }
+
+                if (BackEndAutoDStateEnum.ServerConfWait == backEndState) {
+                    var x = (AppDelegate)UIApplication.SharedApplication.Delegate;
+                    x.ServConfReqCallback (LoginHelpers.GetCurrentAccountId ());
+                }
+            }
         }
 
         protected void LayoutView ()
@@ -226,21 +279,6 @@ namespace NachoClient.iOS
             var contentFrame = new RectangleF (0, 0, View.Frame.Width, yOffset);
             contentView.Frame = contentFrame;
             scrollView.ContentSize = contentFrame.Size;
-        }
-
-        protected void ConfigureView ()
-        {
-            var nameLabel = (UILabel)contentView.ViewWithTag (NAME_LABEL_TAG);
-            nameLabel.Text = "Zach Quiring";
-
-            var emailLabel = (UILabel)contentView.ViewWithTag (EMAIL_ADDRESS_LABEL_TAG);
-            emailLabel.Text = GetEmailAddress ();
-            LayoutView ();
-
-
-
-            UIButton FixButton = (UIButton)View.ViewWithTag (FIX_BE_BUTTON_TAG);
-            FixButton.Hidden = !LoginHelpers.DoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId ());
         }
 
         protected string GetEmailAddress ()

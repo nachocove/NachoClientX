@@ -14,9 +14,22 @@ namespace NachoClient.iOS
         protected const float INDENT = 18;
         protected const float CELL_HEIGHT = 44;
 
+        protected const int LICENSE_AGREEMENT_VIEW_TAG = 100;
+        protected const int OPEN_SOURCE_VIEW_TAG = 101;
+
         protected string url;
         protected string title;
         protected bool loadFromWeb;
+
+        protected UIBarButtonItem backButton;
+
+        protected UITapGestureRecognizer licenseAgreementTapGesture;
+        protected UITapGestureRecognizer.Token licenseAgreementTapGestureHandlerToken;
+
+        protected UITapGestureRecognizer openSourceTapGesture;
+        protected UITapGestureRecognizer.Token openSourceTapGestureHandlerToken;
+
+
 
 		public AboutUsViewController (IntPtr handle) : base (handle)
 		{
@@ -27,16 +40,13 @@ namespace NachoClient.iOS
             NavigationController.NavigationBar.Translucent = false;
             NavigationItem.Title = "About NachoMail";
 
-            UIBarButtonItem backButton = new UIBarButtonItem ();
-            backButton.Clicked += (object sender, EventArgs e) => {
-                DismissViewController(true, null);
-            };
-
-            backButton.Image = UIImage.FromBundle ("nav-backarrow");
+            backButton = new UIBarButtonItem ();
+            backButton.Clicked += BackButtonClicked;
+            using (var backIcon = UIImage.FromBundle ("nav-backarrow")) {
+                backButton.Image = backIcon;
+            }
             backButton.TintColor = A.Color_NachoBlue;
-
             NavigationItem.LeftBarButtonItem = backButton;
-
 
             View.BackgroundColor = A.Color_NachoBackgroundGray;
 
@@ -95,21 +105,15 @@ namespace NachoClient.iOS
             licenseAgreementLabel.Text = "Read License Agreement";
             buttonsCell.AddSubview (licenseAgreementLabel);
 
-            UIView licenseAgreementCell = new UIView (new RectangleF (0, 0, buttonsCell.Frame.Width, CELL_HEIGHT));
-            licenseAgreementCell.BackgroundColor = UIColor.Clear;
-            licenseAgreementCell.UserInteractionEnabled = true;
+            UIView licenseAgreementView = new UIView (new RectangleF (0, 0, buttonsCell.Frame.Width, CELL_HEIGHT));
+            licenseAgreementView.BackgroundColor = UIColor.Clear;
+            licenseAgreementView.UserInteractionEnabled = true;
+            licenseAgreementView.Tag = LICENSE_AGREEMENT_VIEW_TAG;
 
-            var license = new UITapGestureRecognizer ();
-            license.AddTarget (() => {
-                url = "https://nachocove.com/legal-text/";
-                title = "License Agreement";
-                loadFromWeb = true;
-                PerformSegue ("SegueToSettingsLegal", this);
-                View.EndEditing (true);
-            });
-            licenseAgreementCell.AddGestureRecognizer (license);
-
-            buttonsCell.AddSubview (licenseAgreementCell);
+            licenseAgreementTapGesture = new UITapGestureRecognizer ();
+            licenseAgreementTapGestureHandlerToken = licenseAgreementTapGesture.AddTarget (LicenseAgreementTapHandler);
+            licenseAgreementView.AddGestureRecognizer (licenseAgreementTapGesture);
+            buttonsCell.AddSubview (licenseAgreementView);
 
             Util.AddHorizontalLine (0, CELL_HEIGHT, buttonsCell.Frame.Width, A.Color_NachoBorderGray, buttonsCell);
 
@@ -119,21 +123,44 @@ namespace NachoClient.iOS
             openSourceLabel.Text = "View Open Source Contributions";
             buttonsCell.AddSubview (openSourceLabel);
 
-            UIView openSourceCell = new UIView (new RectangleF (0, CELL_HEIGHT, buttonsCell.Frame.Width, CELL_HEIGHT));
-            openSourceCell.BackgroundColor = UIColor.Clear;
-            openSourceCell.UserInteractionEnabled = true;
+            UIView openSourceView = new UIView (new RectangleF (0, CELL_HEIGHT, buttonsCell.Frame.Width, CELL_HEIGHT));
+            openSourceView.BackgroundColor = UIColor.Clear;
+            openSourceView.UserInteractionEnabled = true;
+            openSourceView.Tag = OPEN_SOURCE_VIEW_TAG;
 
             var openSourceTap = new UITapGestureRecognizer ();
-            openSourceTap.AddTarget (() => {
+            openSourceTapGestureHandlerToken = openSourceTap.AddTarget (OpenSourceTapHandler);
+            openSourceView.AddGestureRecognizer (openSourceTap);
+            buttonsCell.AddSubview (openSourceView);
+
+            View.AddSubview (buttonsCell);
+        }
+
+        protected void BackButtonClicked (object sender, EventArgs e)
+        {
+            DismissViewController(true, null);
+        }
+
+        protected void LicenseAgreementTapHandler (NSObject sender)
+        {
+            var gesture = sender as UIGestureRecognizer;
+            if (null != gesture) {
+                url = "https://nachocove.com/legal-text/";
+                title = "License Agreement";
+                loadFromWeb = true;
+                PerformSegue ("SegueToSettingsLegal", this);
+            }
+        }
+
+        protected void OpenSourceTapHandler (NSObject sender)
+        {
+            var gesture = sender as UIGestureRecognizer;
+            if (null != gesture) {
                 url = NSBundle.MainBundle.PathForResource("LegalInfo", "txt", "", "").ToString();
                 title = "Open Source Contributions";
                 loadFromWeb = false;
                 PerformSegue ("SegueToSettingsLegal", this);
-            });
-            openSourceCell.AddGestureRecognizer (openSourceTap);
-            buttonsCell.AddSubview (openSourceCell);
-
-            View.AddSubview (buttonsCell);
+            }
         }
 
         protected override void ConfigureAndLayout ()
@@ -143,7 +170,20 @@ namespace NachoClient.iOS
 
         protected override void Cleanup ()
         {
+            backButton.Clicked -= BackButtonClicked;
+            backButton = null;
 
+            licenseAgreementTapGesture.RemoveTarget (licenseAgreementTapGestureHandlerToken);
+            var licenseView = (UIView)View.ViewWithTag (LICENSE_AGREEMENT_VIEW_TAG);
+            if (null != licenseView) {
+                licenseView.RemoveGestureRecognizer (licenseAgreementTapGesture);
+            }
+
+            openSourceTapGesture.RemoveTarget (openSourceTapGestureHandlerToken);
+            var openSource = (UIView)View.ViewWithTag (OPEN_SOURCE_VIEW_TAG);
+            if (null != openSource){
+                openSource.RemoveGestureRecognizer (openSourceTapGesture);
+            }
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
