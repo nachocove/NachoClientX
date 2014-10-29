@@ -73,6 +73,12 @@ namespace NachoCore.Model
 
         private int walCheckpointCount = 0;
 
+        public int NumberDbConnections {
+            get {
+                return DbConns.Count;
+            }
+        }
+
         public string GetFileDirPath (int accountId, string segment)
         {
             return Path.Combine (Documents, KFilesPathSegment, accountId.ToString (), segment);

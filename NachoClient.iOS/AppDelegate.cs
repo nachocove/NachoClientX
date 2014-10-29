@@ -201,6 +201,9 @@ namespace NachoClient.iOS
         public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
         {
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Called");
+            bool isSet = ThreadPool.SetMaxThreads (50, 8);
+            NcAssert.True (isSet);
+
             StartUIMonitor ();
             const uint MB = 1000 * 1000; // MB not MiB
             WebCache.Configure (1 * MB, 50 * MB);
