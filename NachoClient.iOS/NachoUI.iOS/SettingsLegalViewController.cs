@@ -4,66 +4,75 @@ using System;
 
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
+using System.Drawing;
 
 namespace NachoClient.iOS
 {
     public partial class SettingsLegalViewController : NcUIViewController
     {
         protected string url;
-        protected string title;
-        protected bool isUrl;
-
-        UIBarButtonItem backButton;
+        protected string navigationBarTitle;
+        protected bool loadFromWeb;
 
         public SettingsLegalViewController (IntPtr handle) : base (handle)
         {
-            backButton = new UIBarButtonItem (UIBarButtonSystemItem.Done);
         }
 
-        public void SetProperties (string aUrl, string aTitle, bool isUrl)
+        public void SetProperties (string url, string navigationBarTitle, bool loadFromWeb)
         {
-            url = aUrl;
-            title = aTitle;
-            this.isUrl = isUrl;
+            this.url = url;
+            this.navigationBarTitle = navigationBarTitle;
+            this.loadFromWeb = loadFromWeb;
+            NavigationItem.Title = navigationBarTitle;
         }
 
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
 
-            if (isUrl) {
-                CreateUrlView ();
+            UIBarButtonItem backButton = new UIBarButtonItem();
+            backButton.Clicked += (object sender, EventArgs e) => {
+                DismissViewController(true, null);
+            };
+            backButton.Image = UIImage.FromBundle ("nav-backarrow");
+            backButton.TintColor = A.Color_NachoBlue;
+            NavigationItem.LeftBarButtonItem = backButton;
+
+            View.BackgroundColor = A.Color_NachoBackgroundGray;
+
+            float yOffset = 20;
+
+            UIView interiorView = new UIView (new RectangleF (12, yOffset, View.Frame.Width - 24, View.Frame.Height - 100));
+            interiorView.BackgroundColor = UIColor.White;
+            interiorView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
+            interiorView.Layer.BorderWidth = 1.0f;
+            interiorView.Layer.CornerRadius = 6;
+
+            UIImageView nachoLogoImageView;
+            using (var nachoLogo = UIImage.FromBundle ("Bootscreen-1")) {
+                nachoLogoImageView = new UIImageView (nachoLogo);
+            }
+            nachoLogoImageView.Frame = new RectangleF (interiorView.Frame.Width / 2 - 40, 18, 80, 80);
+            interiorView.Add (nachoLogoImageView);
+
+            yOffset = nachoLogoImageView.Frame.Bottom + 20;
+
+            if (loadFromWeb) {
+                UIWebView webView = new UIWebView (new RectangleF (10, yOffset, interiorView.Frame.Width - 20, interiorView.Frame.Height - yOffset - 10));
+                webView.LoadRequest (new NSUrlRequest (new NSUrl (url)));
+                interiorView.Add (webView);
             } else {
-                CreateNonUrlView ();
+                UITextView textView = new UITextView (new RectangleF(10, yOffset, interiorView.Frame.Width - 20, interiorView.Frame.Height - yOffset - 10));
+                textView.Text =  System.IO.File.ReadAllText(url);
+                interiorView.Add (textView);
             }
 
-            backButton.Clicked += (object sender, EventArgs e) => {
-                NavigationController.DismissViewController (true, new NSAction (delegate {
-                    NavigationController.PopToRootViewController (false);
-                }));
-            };
+            View.AddSubview (interiorView);
         }
 
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
-            NavigationItem.LeftBarButtonItem = backButton;
-        }
-
-        protected void CreateUrlView ()
-        {
-            UIWebView webView = new UIWebView (View.Frame);
-            View.Add (webView);
-            webView.LoadRequest (new NSUrlRequest (new NSUrl (url)));
-            NavigationItem.Title = title;
-        }
-
-        protected void CreateNonUrlView ()
-        {
-            var textView = new UITextView (View.Frame);
-            View.Add (textView);
-            textView.Text =  System.IO.File.ReadAllText(url);
-            NavigationItem.Title = title;
         }
     }
 }
