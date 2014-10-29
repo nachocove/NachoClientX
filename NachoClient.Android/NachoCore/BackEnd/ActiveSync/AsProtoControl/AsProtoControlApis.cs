@@ -30,11 +30,13 @@ namespace NachoCore.ActiveSync
 
         public override void DeletePendingCmd (int pendingId)
         {
-            var pending = McAbstrObject.QueryById<McPending> (pendingId);
-            if (null != pending) {
-                NcAssert.True (Account.Id == pending.AccountId);
-                pending.ResolveAsCancelled ();
-            }
+            NcModel.Instance.RunInTransaction (() => {
+                var pending = McAbstrObject.QueryById<McPending> (pendingId);
+                if (null != pending) {
+                    NcAssert.True (Account.Id == pending.AccountId);
+                    pending.ResolveAsCancelled (false);
+                }
+            });
         }
 
         public override void Prioritize (string token)
