@@ -615,9 +615,10 @@ namespace NachoClient.iOS
         {
             if (SnapAllShownThreshold <= Math.Abs (swipingView.LastMovePercentage)) {
                 swipingView.SnapToAllButtonsShown (() => {
-                    if (null != swipingView) {
-                        swipingView.EndSwipe ();
+                    if (null == swipingView) {
+                        return;
                     }
+                    swipingView.EndSwipe ();
                     OnSwipe (SwipeState.SWIPE_END_ALL_SHOWN);
                 });
             }
