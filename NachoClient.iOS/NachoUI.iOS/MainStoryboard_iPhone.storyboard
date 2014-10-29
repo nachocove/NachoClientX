@@ -1762,5 +1762,5 @@
         <segue reference="dAf-rc-Hh3"/>
         <segue reference="KnL-e9-HQR"/>
     </inferredMetricsTieBreakers>
-    <color key="tintColor" red="0.45098039215686275" green="1" blue="0.95294117647058818" alpha="1" colorSpace="deviceRGB"/>
+    <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>
