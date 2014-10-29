@@ -1210,6 +1210,9 @@
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                     </view>
                     <navigationItem key="navigationItem" id="kfk-r0-3P9"/>
+                    <connections>
+                        <segue destination="dqi-Cj-nDi" kind="modal" identifier="SegueToSettingsLegal" id="q1z-t8-4kp"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="cr8-O2-f2u" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
@@ -1739,28 +1742,29 @@
         <segue reference="4z2-t5-9Cd"/>
         <segue reference="QbR-l1-NT5"/>
         <segue reference="od0-Sz-R9p"/>
-        <segue reference="Eb2-K0-nI3"/>
         <segue reference="XQg-JR-vxA"/>
+        <segue reference="Eb2-K0-nI3"/>
         <segue reference="TEI-cG-N0R"/>
         <segue reference="v9F-jf-qe1"/>
+        <segue reference="q1z-t8-4kp"/>
         <segue reference="Kmd-x6-iCJ"/>
         <segue reference="B5b-jg-ZNg"/>
         <segue reference="DDa-hb-SgY"/>
         <segue reference="Sbt-au-uDg"/>
         <segue reference="szv-KC-TId"/>
         <segue reference="FD7-0T-FGT"/>
-        <segue reference="rEt-DF-c51"/>
         <segue reference="zOx-eF-clw"/>
-        <segue reference="c79-xS-Npa"/>
+        <segue reference="rEt-DF-c51"/>
         <segue reference="uqv-uq-oCq"/>
+        <segue reference="c79-xS-Npa"/>
+        <segue reference="peA-r2-tjq"/>
         <segue reference="w67-dy-XSq"/>
         <segue reference="m2D-2n-RiV"/>
         <segue reference="7sK-rg-HQL"/>
-        <segue reference="peA-r2-tjq"/>
-        <segue reference="xrp-ey-B0j"/>
         <segue reference="84g-IQ-Iaw"/>
-        <segue reference="dAf-rc-Hh3"/>
+        <segue reference="xrp-ey-B0j"/>
         <segue reference="KnL-e9-HQR"/>
+        <segue reference="dAf-rc-Hh3"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>
