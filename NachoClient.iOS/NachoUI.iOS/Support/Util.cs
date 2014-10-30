@@ -665,7 +665,9 @@ namespace NachoClient
         public static void AddArrowAccessory (float xOffset, float yOffset, float size, UIView parentView)
         {
             UIImageView ArrowAcccessoryImage = new UIImageView (new RectangleF (xOffset, yOffset, size, size));
-            ArrowAcccessoryImage.Image = UIImage.FromBundle ("icn-rightarrow");
+            using (var image = UIImage.FromBundle ("icn-rightarrow")) {
+                ArrowAcccessoryImage.Image = image;
+            }
             parentView.AddSubview (ArrowAcccessoryImage);
         }
 
