@@ -19,7 +19,7 @@ namespace NachoCore.ActiveSync
             FailureInd = NcResult.Error (NcResult.SubKindEnum.Error_FolderSyncFailed);
         }
 
-        public override XDocument ToXDocument (AsHttpOperation Sender)
+        protected override XDocument ToXDocument (AsHttpOperation Sender)
         {
             var syncKey = BEContext.ProtocolState.AsSyncKey;
             Log.Info (Log.LOG_AS, "AsFolderSyncCommand: AsSyncKey=" + syncKey);

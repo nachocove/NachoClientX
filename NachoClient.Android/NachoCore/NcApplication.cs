@@ -303,6 +303,11 @@ namespace NachoCore
                 NcCommStatus.Instance.Status, NcCommStatus.Instance.Speed);
             Log.Info (Log.LOG_SYS, "Monitor: Battery Level {0}, Plugged Status {1}",
                 NachoPlatform.Power.Instance.BatteryLevel, NachoPlatform.Power.Instance.PowerState);
+            Log.Info (Log.LOG_SYS, "Monitor: DB Connections {0}", NcModel.Instance.NumberDbConnections);
+            if (100 < PlatformProcess.GetCurrentNumberOfInUseFileDescriptors ()) {
+                Log.DumpFileDescriptors ();
+            }
+
             if (null != MonitorEvent) {
                 MonitorEvent (this, EventArgs.Empty);
             }

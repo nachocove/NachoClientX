@@ -83,7 +83,6 @@ namespace NachoCore.ActiveSync
         private IBEContext BEContext;
         private IAsHttpOperationOwner Owner;
         private CancellationTokenSource Cts;
-        private List<object> OldCrap;
         private NcTimer DelayTimer;
         private NcTimer TimeoutTimer;
         // The OldXxxTimer lists is used to avoid eliminating a reference while still in a callback (can cause timer crash).
@@ -116,7 +115,6 @@ namespace NachoCore.ActiveSync
 
         public AsHttpOperation (string commandName, IAsHttpOperationOwner owner, IBEContext beContext)
         {
-            OldCrap = new List<object> ();
             NcCapture.AddKind (KToXML);
             HttpClientType = typeof(MockableHttpClient);
             NcCommStatusSingleton = NcCommStatus.Instance;
@@ -234,7 +232,6 @@ namespace NachoCore.ActiveSync
         {
             if (null != DelayTimer) {
                 DelayTimer.Dispose ();
-                OldCrap.Add (DelayTimer);
                 DelayTimer = null;
             }
         }
@@ -262,11 +259,9 @@ namespace NachoCore.ActiveSync
                 if (!Cts.IsCancellationRequested) {
                     Cts.Cancel ();
                 }
-                OldCrap.Add (Cts);
                 Cts = null;
             }
             if (null != Client) {
-                OldCrap.Add (Client);
                 Client = null;
             }
         }
@@ -299,7 +294,6 @@ namespace NachoCore.ActiveSync
         {
             if (null != TimeoutTimer) {
                 TimeoutTimer.Dispose ();
-                OldCrap.Add (TimeoutTimer);
                 TimeoutTimer = null;
             }
         }
@@ -344,7 +338,11 @@ namespace NachoCore.ActiveSync
 
         private bool CreateHttpRequest (out HttpRequestMessage request, CancellationToken cToken)
         {
-            XDocument doc = Owner.ToXDocument (this);
+            request = null;
+            XDocument doc;
+            if (!Owner.SafeToXDocument (this, out doc)) {
+                return false;
+            }
             request = new HttpRequestMessage (Owner.Method (this), ServerUri);
             if (null != doc) {
                 Log.Debug (Log.LOG_XML, "{0}:\n{1}", CommandName, doc);
@@ -362,7 +360,10 @@ namespace NachoCore.ActiveSync
                     request.Content = new StringContent (xmlText, UTF8Encoding.UTF8, ContentTypeXml);
                 }
             }
-            var mime = Owner.ToMime (this);
+            StreamContent mime;
+            if (!Owner.SafeToMime (this, out mime)) {
+                return false;
+            }
             if (null != mime) {
                 request.Content = mime;
             }

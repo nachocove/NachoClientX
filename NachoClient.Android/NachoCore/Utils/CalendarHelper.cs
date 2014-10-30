@@ -9,6 +9,7 @@ using DDay.iCal.Serialization.iCalendar;
 using MimeKit;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoCore.ActiveSync;
 
 namespace NachoCore.Utils
 {
@@ -167,7 +168,7 @@ namespace NachoCore.Utils
             var iCal = new iCalendar ();
             iCal.ProductID = "Nacho Mail";
 
-            var tzi = TimeZoneInfo.Local;
+            var tzi = CalendarHelper.SimplifiedLocalTimeZone ();
             var timezone = FromSystemTimeZone (tzi, c.StartTime.AddYears (-1), false);
             var localTimeZone = iCal.AddTimeZone (timezone);
             if (null != tzi.StandardName) {
@@ -273,20 +274,30 @@ namespace NachoCore.Utils
             var dday_tz = new iCalTimeZone ();
             dday_tz.TZID = tzinfo.Id;
 
+            DateTime y1901 = new DateTime (1901, 1, 1);
+            if (includeHistoricalData || earlistDateTimeToSupport < y1901) {
+                earlistDateTimeToSupport = y1901;
+            }
             IDateTime earliest = new iCalDateTime (earlistDateTimeToSupport);
+
             foreach (var adjustmentRule in adjustmentRules) {
                 // Only include historical data if asked to do so.  Otherwise,
                 // use only the most recent adjustment rule available.
-                if (!includeHistoricalData && adjustmentRule.DateEnd < earlistDateTimeToSupport)
+                if (adjustmentRule.DateEnd < earlistDateTimeToSupport) {
                     continue;
+                }
 
                 var delta = adjustmentRule.DaylightDelta;
                 var dday_tzinfo_standard = new DDay.iCal.iCalTimeZoneInfo ();
                 dday_tzinfo_standard.Name = "STANDARD";
                 dday_tzinfo_standard.TimeZoneName = tzinfo.StandardName;
-                dday_tzinfo_standard.Start = new iCalDateTime (new DateTime (adjustmentRule.DateStart.Year, adjustmentRule.DaylightTransitionEnd.Month, adjustmentRule.DaylightTransitionEnd.Day, adjustmentRule.DaylightTransitionEnd.TimeOfDay.Hour, adjustmentRule.DaylightTransitionEnd.TimeOfDay.Minute, adjustmentRule.DaylightTransitionEnd.TimeOfDay.Second).AddDays (1));
-                if (dday_tzinfo_standard.Start.LessThan (earliest))
-                    dday_tzinfo_standard.Start = dday_tzinfo_standard.Start.AddYears (earliest.Year - dday_tzinfo_standard.Start.Year);
+                IDateTime ruleStart = new iCalDateTime (adjustmentRule.DateStart);
+                if (ruleStart.LessThan (earliest)) {
+                    // The start time for this rule should be no earlier than one calendar
+                    // year before the earliest supported date.
+                    ruleStart = ruleStart.AddYears (Math.Max (0, earliest.Year - ruleStart.Year - 1));
+                }
+                dday_tzinfo_standard.Start = ruleStart;
                 dday_tzinfo_standard.OffsetFrom = new UTCOffset (utcOffset + delta);
                 dday_tzinfo_standard.OffsetTo = new UTCOffset (utcOffset);
                 PopulateiCalTimeZoneInfo (dday_tzinfo_standard, adjustmentRule.DaylightTransitionEnd, adjustmentRule.DateStart.Year);
@@ -298,9 +309,7 @@ namespace NachoCore.Utils
                     var dday_tzinfo_daylight = new DDay.iCal.iCalTimeZoneInfo ();
                     dday_tzinfo_daylight.Name = "DAYLIGHT";
                     dday_tzinfo_daylight.TimeZoneName = tzinfo.DaylightName;
-                    dday_tzinfo_daylight.Start = new iCalDateTime (new DateTime (adjustmentRule.DateStart.Year, adjustmentRule.DaylightTransitionStart.Month, adjustmentRule.DaylightTransitionStart.Day, adjustmentRule.DaylightTransitionStart.TimeOfDay.Hour, adjustmentRule.DaylightTransitionStart.TimeOfDay.Minute, adjustmentRule.DaylightTransitionStart.TimeOfDay.Second));
-                    if (dday_tzinfo_daylight.Start.LessThan (earliest))
-                        dday_tzinfo_daylight.Start = dday_tzinfo_daylight.Start.AddYears (earliest.Year - dday_tzinfo_daylight.Start.Year);
+                    dday_tzinfo_daylight.Start = ruleStart;
                     dday_tzinfo_daylight.OffsetFrom = new UTCOffset (utcOffset);
                     dday_tzinfo_daylight.OffsetTo = new UTCOffset (utcOffset + delta);
                     PopulateiCalTimeZoneInfo (dday_tzinfo_daylight, adjustmentRule.DaylightTransitionStart, adjustmentRule.DateStart.Year);
@@ -999,13 +1008,26 @@ namespace NachoCore.Utils
 
         protected static void ExpandAllDayEvent (McCalendar c)
         {
-            var eventStartTime = c.StartTime;
-            var eventEndTime = c.EndTime;
+            // Create local events for an all-day calendar item.  Figure out the starting
+            // day of the event in the organizer's time zone.  Create a local event that
+            // starts at midnight local time on the same day.  If the original item is
+            // more than one day long, repeat for subsequent days.
 
-            while (eventStartTime <= c.EndTime) {
-                CreateEventRecord (c, eventStartTime, eventEndTime);
-                eventStartTime = eventStartTime.AddDays (1);
-            }
+            TimeZoneInfo timeZone = new AsTimeZone (c.TimeZone).ConvertToSystemTimeZone ();
+            DateTime organizersTime = TimeZoneInfo.ConvertTimeFromUtc (c.StartTime, timeZone);
+            DateTime localStartTime = new DateTime (organizersTime.Year, organizersTime.Month, organizersTime.Day, 0, 0, 0, DateTimeKind.Local);
+            double days = (c.EndTime - c.StartTime).TotalDays;
+            // Use a do/while loop so we will always create at least one event, even if
+            // the original item is improperly less than one day long.  If the all-day
+            // event spans the transition from daylight saving time to standard time,
+            // then it will have an extra hour in its duration.  So the cutoff for
+            // creating an extra event is a quarter of a day.
+            do {
+                DateTime nextDay = localStartTime.AddDays (1.0);
+                CreateEventRecord (c, localStartTime.ToUniversalTime (), nextDay.ToUniversalTime ());
+                localStartTime = nextDay;
+                days -= 1.0;
+            } while (days > 0.25);
         }
 
         public static bool ExpandRecurrences (DateTime untilDate)
@@ -1097,6 +1119,95 @@ namespace NachoCore.Utils
             if (DateTime.UtcNow < notificationTime) {
                 notifier.ScheduleNotif (e.Id, e.StartTime.AddMinutes (-reminder), Pretty.FormatAlert (reminder));
             }
+        }
+
+        /// <summary>
+        /// Convert the local time zone information into a form that can be represented in
+        /// Exchange's time zone format.
+        /// </summary>
+        /// <remarks>
+        /// Exchange's time zone information has very limited flexability for specifying
+        /// daylight saving rules.  There is room for just one floating rule, e.g. second
+        /// Sunday in March.  Take the local time zone and simplify its rules to fit within
+        /// Exchange's limitations.  If the current year has a fixed date rule, deduce a
+        /// floating rule and assume that it applies to all years.
+        /// </remarks>
+        public static TimeZoneInfo SimplifiedLocalTimeZone ()
+        {
+            TimeZoneInfo local = TimeZoneInfo.Local;
+
+            if (!local.SupportsDaylightSavingTime) {
+                // No problem.
+                return local;
+            }
+
+            // Find the DST adjustment for right now.
+            DateTime now = DateTime.Now;
+            TimeZoneInfo.AdjustmentRule currentAdjustment = null;
+            foreach (var adjustment in local.GetAdjustmentRules()) {
+                if (adjustment.DateStart <= now && now < adjustment.DateEnd) {
+                    currentAdjustment = adjustment;
+                    break;
+                }
+                // If there are separate DST rules for each year, there can be a small window in between
+                // the effective ranges of the rules. So we also look for an adjustment rule that will
+                // be applicable within the near future.
+                if (now < adjustment.DateStart && (adjustment.DateStart - now).TotalDays < 365 &&
+                        (null == currentAdjustment || adjustment.DateStart < currentAdjustment.DateStart)) {
+                    currentAdjustment = adjustment;
+                }
+            }
+
+            if (null == currentAdjustment) {
+                // No DST in effect in the near future.  Return a new TimeZoneInfo object that simply
+                // has DST disabled.
+                return TimeZoneInfo.CreateCustomTimeZone (
+                    local.Id, local.BaseUtcOffset, local.DisplayName, local.StandardName);
+            }
+
+            TimeZoneInfo.TransitionTime dstStart = currentAdjustment.DaylightTransitionStart;
+            if (dstStart.IsFixedDateRule) {
+                dstStart = FlexibleRuleFromFixedDate (dstStart, currentAdjustment.DateEnd);
+            }
+            TimeZoneInfo.TransitionTime dstEnd = currentAdjustment.DaylightTransitionEnd;
+            if (dstEnd.IsFixedDateRule) {
+                dstEnd = FlexibleRuleFromFixedDate (dstEnd, currentAdjustment.DateEnd);
+            }
+            return TimeZoneInfo.CreateCustomTimeZone (
+                local.Id, local.BaseUtcOffset, local.DisplayName, local.StandardName, local.DaylightName,
+                new TimeZoneInfo.AdjustmentRule[] { TimeZoneInfo.AdjustmentRule.CreateAdjustmentRule (
+                    DateTime.MinValue.Date, DateTime.MaxValue.Date, currentAdjustment.DaylightDelta, dstStart, dstEnd)
+                });
+        }
+
+        private static TimeZoneInfo.TransitionTime FlexibleRuleFromFixedDate (TimeZoneInfo.TransitionTime fixedTransition, DateTime endDate)
+        {
+            int month = fixedTransition.Month;
+            int day = fixedTransition.Day;
+            DateTime now = DateTime.Now;
+            DateTime transitionDate = new DateTime (now.Year, month, day);
+            if (transitionDate < now) {
+                transitionDate = new DateTime (now.Year + 1, month, day);
+            }
+            while (endDate < transitionDate) {
+                transitionDate = new DateTime (transitionDate.Year - 1, month, day);
+            }
+            // If the date is within the last seven days of the month, assume that
+            // the rule is "last" rather than "4th".
+            int week;
+            if (day <= 7) {
+                week = 1;
+            } else if (day <= 14) {
+                week = 2;
+            } else if (day <= 21) {
+                week = 3;
+            } else if (day <= DateTime.DaysInMonth (transitionDate.Year, month) - 7) {
+                week = 4;
+            } else {
+                week = 5;
+            }
+            return TimeZoneInfo.TransitionTime.CreateFloatingDateRule (
+                fixedTransition.TimeOfDay, month, week, transitionDate.DayOfWeek);
         }
 
     }

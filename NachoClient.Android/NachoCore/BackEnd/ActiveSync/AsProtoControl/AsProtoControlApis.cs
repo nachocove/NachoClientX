@@ -30,11 +30,13 @@ namespace NachoCore.ActiveSync
 
         public override void DeletePendingCmd (int pendingId)
         {
-            var pending = McAbstrObject.QueryById<McPending> (pendingId);
-            if (null != pending) {
-                NcAssert.True (Account.Id == pending.AccountId);
-                pending.ResolveAsCancelled ();
-            }
+            NcModel.Instance.RunInTransaction (() => {
+                var pending = McAbstrObject.QueryById<McPending> (pendingId);
+                if (null != pending) {
+                    NcAssert.True (Account.Id == pending.AccountId);
+                    pending.ResolveAsCancelled (false);
+                }
+            });
         }
 
         public override void Prioritize (string token)
@@ -457,8 +459,9 @@ namespace NachoCore.ActiveSync
                 Log.Error (Log.LOG_AS, "DnldEmailBodyCmd: can't find McEmailMessage and/or McFolder");
                 return null;
             }
-            if (McAbstrItem.BodyStateEnum.Whole_0 == emailMessage.BodyState) {
-                Log.Error (Log.LOG_AS, "DnldEmailBodyCmd: BodyState is Whole");
+            var body = emailMessage.GetBody ();
+            if(McAbstrFileDesc.IsComplete(body)) {
+                Log.Error (Log.LOG_AS, "DnldEmailBodyCmd: FilePresence is Complete");
                 return null;
             }
             var pending = new McPending (Account.Id) {
@@ -625,7 +628,8 @@ namespace NachoCore.ActiveSync
             if (!GetItemAndFolder<McCalendar> (calId, out cal, -1, out folder)) {
                 return null;
             }
-            if (McAbstrItem.BodyStateEnum.Whole_0 == cal.BodyState) {
+            var body = cal.GetBody ();
+            if(McAbstrFileDesc.IsComplete(body)) {
                 return null;
             }
             var pending = new McPending (Account.Id) {
@@ -743,7 +747,8 @@ namespace NachoCore.ActiveSync
             if (!GetItemAndFolder<McContact> (contactId, out contact, -1, out folder)) {
                 return null;
             }
-            if (McAbstrItem.BodyStateEnum.Whole_0 == contact.BodyState) {
+            var body = contact.GetBody ();
+            if(McAbstrFileDesc.IsComplete(body)) {
                 return null;
             }
             var pending = new McPending (Account.Id) {
@@ -859,7 +864,8 @@ namespace NachoCore.ActiveSync
             if (!GetItemAndFolder<McTask> (taskId, out task, -1, out folder)) {
                 return null;
             }
-            if (McAbstrItem.BodyStateEnum.Whole_0 == task.BodyState) {
+            var body = task.GetBody ();
+            if(McAbstrFileDesc.IsComplete(body)) {
                 return null;
             }
             var pending = new McPending (Account.Id) {

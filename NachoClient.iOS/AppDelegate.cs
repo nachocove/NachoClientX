@@ -201,6 +201,9 @@ namespace NachoClient.iOS
         public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
         {
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Called");
+            bool isSet = ThreadPool.SetMaxThreads (50, 8);
+            NcAssert.True (isSet);
+
             StartUIMonitor ();
             const uint MB = 1000 * 1000; // MB not MiB
             WebCache.Configure (1 * MB, 50 * MB);
@@ -216,13 +219,13 @@ namespace NachoClient.iOS
             application.SetStatusBarStyle (UIStatusBarStyle.LightContent, true);
             Account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
 
-            UINavigationBar.Appearance.BarTintColor = UIColor.FromRGB (0x11, 0x46, 0x4F);
+            UINavigationBar.Appearance.BarTintColor = A.Color_NachoGreen;
             UIToolbar.Appearance.BackgroundColor = UIColor.White;
             UIBarButtonItem.Appearance.TintColor = A.Color_NachoBlue;
 
             var navigationTitleTextAttributes = new UITextAttributes ();
             navigationTitleTextAttributes.Font = A.Font_AvenirNextDemiBold17;
-            navigationTitleTextAttributes.TextColor = A.Color_FFFFFF;
+            navigationTitleTextAttributes.TextColor = UIColor.White;
             UINavigationBar.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes);
             UIBarButtonItem.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes, UIControlState.Normal);
             UIApplication.SharedApplication.RegisterForRemoteNotificationTypes (

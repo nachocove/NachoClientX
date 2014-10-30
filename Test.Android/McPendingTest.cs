@@ -374,6 +374,18 @@ namespace Test.iOS
             }
 
             [Test]
+            public void ResolveAsCancelledNotDispatchedOk ()
+            {
+                var pending = CreatePending ();
+                var id = pending.Id;
+                var pendingr = McPending.QueryById<McPending> (id);
+                Assert.NotNull (pendingr);
+                pending.ResolveAsCancelled (false);
+                pendingr = McPending.QueryById<McPending> (id);
+                Assert.Null (pendingr);
+            }
+
+            [Test]
             public void BasicResolveAsCancelledTest ()
             {
                 var pending = CreatePending ();

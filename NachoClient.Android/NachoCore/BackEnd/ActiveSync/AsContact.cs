@@ -211,9 +211,6 @@ namespace NachoCore.ActiveSync
         /// Index of Body container
         public int BodyId { get; set; }
 
-        /// Type of the body in the container
-        public int BodyType { get; set; }
-
         /// How the body stored on the server.
         /// Beware: Not documented in MS-ASCNTC.
         public int NativeBodyType { get; set; }
@@ -260,26 +257,13 @@ namespace NachoCore.ActiveSync
             var applicationData = command.Element (ns + Xml.AirSync.ApplicationData);
             NcAssert.True (null != applicationData);
 
-            XNamespace m_baseNs = Xml.AirSyncBase.Ns;
-
             Log.Debug (Log.LOG_XML, "AsContact FromXML\n{0}", applicationData);
             foreach (var child in applicationData.Elements()) {
                 switch (child.Name.LocalName) {
                 case Xml.AirSyncBase.Body:
-                    var bodyType = child.Element (m_baseNs + Xml.AirSyncBase.Type).Value.ToInt ();
-                    var bodyElement = child.Element (m_baseNs + Xml.AirSyncBase.Data);
-                    if (null != bodyElement) {
-                        var saveAttr = bodyElement.Attributes ().Where (x => x.Name == "nacho-body-id").SingleOrDefault ();
-                        if (null != saveAttr) {
-                            c.BodyId = int.Parse (saveAttr.Value);
-                        } else {
-                            var body = McBody.InsertFile (accountId, bodyElement.Value);
-                            c.BodyId = body.Id;
-                        }
-                        c.BodyType = bodyType;
-                    } else {
-                        c.BodyId = 0;
-                    }
+                    McAbstrItem tmp = new McAbstrItem ();
+                    tmp.ApplyAsXmlBody (child);
+                    c.BodyId = tmp.BodyId;
                     break;
                 case Xml.AirSyncBase.NativeBodyType:
                     c.NativeBodyType = child.Value.ToInt ();

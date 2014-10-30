@@ -214,7 +214,7 @@ namespace NachoClient.iOS
                 navItems.SetLeftBarButtonItem (backButton, true);
             }
 
-            Util.SetOriginalImageForButton (sendButton, "icn-send");
+            Util.SetAutomaticImageForButton (sendButton, "icn-send");
 
             sendButton.Clicked += (object sender, EventArgs e) => {
                 Dictionary<string,string> supportInfo = new Dictionary<string, string> ();

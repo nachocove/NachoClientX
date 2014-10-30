@@ -655,10 +655,11 @@ namespace NachoCore.ActiveSync
                 throw new Exception ("We should not be getting this (HTTP 451) while doing autodiscovery.");
             }
 
-            public virtual StreamContent ToMime (AsHttpOperation Sender)
+            public virtual bool SafeToMime (AsHttpOperation Sender, out StreamContent mime)
             {
                 // We don't generate MIME.
-                return null;
+                mime = null;
+                return true;
             }
 
             public Event ProcessTopLevelStatus (AsHttpOperation Sender, uint status)
@@ -719,17 +720,18 @@ namespace NachoCore.ActiveSync
                 return false;
             }
 
-            public XDocument ToXDocument (AsHttpOperation Sender)
+            public bool SafeToXDocument (AsHttpOperation Sender, out XDocument doc)
             {
                 if (HttpMethod.Post != MethodToUse) {
-                    return null;
+                    doc = null;
+                    return true;
                 }
-                var doc = AsCommand.ToEmptyXDocument ();
+                doc = AsCommand.ToEmptyXDocument ();
                 doc.Add (new XElement (Ns + Xml.Autodisco.Autodiscover,
                     new XElement (Ns + Xml.Autodisco.Request,
                         new XElement (Ns + Xml.Autodisco.EMailAddress, SrEmailAddr),
                         new XElement (Ns + Xml.Autodisco.AcceptableResponseSchema, AsAutodiscoverCommand.ResponseSchema))));
-                return doc;
+                return true;
             }
 
             public Event PreProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)

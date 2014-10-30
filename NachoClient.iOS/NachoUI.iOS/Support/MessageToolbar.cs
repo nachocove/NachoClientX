@@ -48,28 +48,28 @@ namespace NachoClient.iOS
 
             replyButton = new UIBarButtonItem ();
             replyButton.TintColor = BUTTON_COLOR;
-            Util.SetOriginalImageForButton (replyButton, "toolbar-icn-reply");
+            Util.SetAutomaticImageForButton (replyButton, "toolbar-icn-reply");
             replyButton.Clicked += (object sender, EventArgs e) => {
                 OnClick (sender, new MessageToolbarEventArgs (ActionType.REPLY));
             };
 
             replyAllButton = new UIBarButtonItem ();
             replyAllButton.TintColor = BUTTON_COLOR;
-            Util.SetOriginalImageForButton (replyAllButton, "toolbar-icn-reply-all");
+            Util.SetAutomaticImageForButton (replyAllButton, "toolbar-icn-reply-all");
             replyAllButton.Clicked += (object sender, EventArgs e) => {
                 OnClick (sender, new MessageToolbarEventArgs (ActionType.REPLY_ALL));
             };
 
             forwardButton = new UIBarButtonItem ();
             forwardButton.TintColor = BUTTON_COLOR;
-            Util.SetOriginalImageForButton (forwardButton, "toolbar-icn-fwd");
+            Util.SetAutomaticImageForButton (forwardButton, "toolbar-icn-fwd");
             forwardButton.Clicked += (object sender, EventArgs e) => {
                 OnClick (sender, new MessageToolbarEventArgs (ActionType.FORWARD));
             };
 
             archiveButton = new UIBarButtonItem ();
             archiveButton.TintColor = BUTTON_COLOR;
-            Util.SetOriginalImageForButton (archiveButton, "email-archive-gray");
+            Util.SetAutomaticImageForButton (archiveButton, "email-archive-gray");
             archiveButton.Clicked += (object sender, EventArgs e) => {
                 OnClick (sender, new MessageToolbarEventArgs (ActionType.ARCHIVE));
             };
@@ -81,7 +81,7 @@ namespace NachoClient.iOS
 
             deleteButton = new UIBarButtonItem ();
             deleteButton.TintColor = BUTTON_COLOR;
-            Util.SetOriginalImageForButton (deleteButton, "email-delete-gray");
+            Util.SetAutomaticImageForButton (deleteButton, "email-delete-gray");
             deleteButton.Clicked += (object sender, EventArgs e) => {
                 OnClick (sender, new MessageToolbarEventArgs(ActionType.DELETE));
             };

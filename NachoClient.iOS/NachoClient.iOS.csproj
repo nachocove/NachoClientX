@@ -1021,9 +1021,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McPortrait.cs">
       <Link>NachoCore\Model\McPortrait.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\CertificateHelper.cs">
-      <Link>NachoCore\Utils\CertificateHelper.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Support\CertificateView.cs" />
     <Compile Include="NachoUI.iOS\EventAttachmentViewController.cs" />
     <Compile Include="NachoUI.iOS\EventAttachmentViewController.designer.cs">
@@ -1161,6 +1158,12 @@
     <Compile Include="NachoUI.iOS\AboutUsViewController.cs" />
     <Compile Include="NachoUI.iOS\AboutUsViewController.designer.cs">
       <DependentUpon>AboutUsViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\CertificateHelper.cs">
+      <Link>NachoCore\Utils\CertificateHelper.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\ContactsHelpers.cs">
+      <Link>NachoCore\Utils\ContactsHelpers.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

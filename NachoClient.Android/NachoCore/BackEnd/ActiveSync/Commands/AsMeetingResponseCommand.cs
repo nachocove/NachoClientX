@@ -17,7 +17,12 @@ namespace NachoCore.ActiveSync
             PendingSingle.MarkDispached ();
         }
 
-        public override XDocument ToXDocument (AsHttpOperation Sender)
+        protected override bool RequiresPending ()
+        {
+            return true;
+        }
+
+        protected override XDocument ToXDocument (AsHttpOperation Sender)
         {
             var meetingResp = new XElement (m_ns + Xml.MeetingResp.MeetingResponse,
                                   new XElement (m_ns + Xml.MeetingResp.Request,

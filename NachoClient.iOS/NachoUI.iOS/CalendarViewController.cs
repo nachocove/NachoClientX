@@ -46,7 +46,7 @@ namespace NachoClient.iOS
             base.ViewDidLoad ();
 
             var todayButton = new UIBarButtonItem ();
-            Util.SetOriginalImageForButton (todayButton, "nav-calendar-empty");
+            Util.SetAutomaticImageForButton (todayButton, "nav-calendar-empty");
             todayButton.Clicked += (object sender, EventArgs e) => {
                 ReturnToToday ();
             };

@@ -105,7 +105,7 @@ namespace NachoCore.Model
                         return "";
                     }
                     McBody body = McBody.QueryById<McBody> (BodyId);
-                    if (McBody.MIME == BodyType) {
+                    if (McAbstrFileDesc.BodyTypeEnum.MIME_4 == body.BodyType) {
                         cachedDescription = MimeHelpers.ExtractTextPart (body);
                         if (null == cachedDescription) {
                             cachedDescription = "";
@@ -123,6 +123,7 @@ namespace NachoCore.Model
                 }
             }
         }
+
         private string cachedDescription = null;
         private bool descriptionWasChanged = false;
 
@@ -137,16 +138,15 @@ namespace NachoCore.Model
             }
             if (0 == BodyId) {
                 // No existing body.  Create one.
-                McBody body = McBody.InsertFile (AccountId, cachedDescription);
+                McBody body = McBody.InsertFile (AccountId, McAbstrFileDesc.BodyTypeEnum.PlainText_1, cachedDescription);
                 BodyId = body.Id;
-                BodyType = McBody.PlainText;
             } else {
                 // Existing body.  We can't replace just the description, leaving
                 // the attachments untouched.  So replace the entire body, which will
                 // unfortunately destroy the attachments.
                 var body = McBody.QueryById<McBody> (BodyId);
                 body.UpdateData (cachedDescription);
-                BodyType = McBody.PlainText;
+                body.BodyType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
             }
             descriptionWasChanged = false;
             cachedDescription = null;
@@ -168,7 +168,8 @@ namespace NachoCore.Model
                     // and ones that came from the server in a previous synch (with ContentId != null)
                     var dbAttachments = McAttachment.QueryByItemId (this);
                     // Retrieve all the attachments that are in the body of event.
-                    var bodyAttachments = MimeHelpers.AllAttachments (MimeHelpers.LoadMessage (McBody.GetFilePath (BodyId)));
+                    var body = McBody.QueryById<McBody> (BodyId);
+                    var bodyAttachments = MimeHelpers.AllAttachments (MimeHelpers.LoadMessage (body));
                     // The majority of the time, there will be no attachments. Optimize this case.
                     if (0 == dbAttachments.Count && 0 == bodyAttachments.Count) {
                         cachedAttachments = new List<McAttachment> ();
@@ -246,8 +247,8 @@ namespace NachoCore.Model
             var localAttachments = new List<McAttachment> (cachedAttachments.Count);
             foreach (var attachment in cachedAttachments) {
                 if (attachment.AccountId != this.AccountId ||
-                        (0 != attachment.ItemId && attachment.ItemId != this.Id) ||
-                        (0 != (int)attachment.ClassCode && attachment.ClassCode != this.GetClassCode ())) {
+                    (0 != attachment.ItemId && attachment.ItemId != this.Id) ||
+                    (0 != (int)attachment.ClassCode && attachment.ClassCode != this.GetClassCode ())) {
                     // The attachment is owed by something else.  Make a copy.
                     var copy = new McAttachment () {
                         AccountId = this.AccountId,

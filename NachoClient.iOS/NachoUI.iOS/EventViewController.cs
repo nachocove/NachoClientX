@@ -452,6 +452,9 @@ namespace NachoClient.iOS
 
             // Attendees
 
+            if (null != extraAttendeesButton) {
+                extraAttendeesButton.TouchUpInside -= ExtraAttendeesTouchUpInside;
+            }
             ClearView (eventAttendeeView);
             extraAttendeesButton = null;
             if (0 == c.attendees.Count) {
@@ -583,6 +586,9 @@ namespace NachoClient.iOS
             eventNotesView.RemoveGestureRecognizer (notesTapGestureRecognizer);
 
             // Remove event handlers
+            acceptButton.TouchUpInside -= AcceptButtonTouchUpInside;
+            tentativeButton.TouchUpInside -= TentativeButtonTouchUpInside;
+            declineButton.TouchUpInside -= DeclineButtonTouchUpInside;
             changeResponseButton.TouchUpInside -= ChangeResponseTouchUpInside;
             editButton.Clicked -= EditButtonClicked;
             if (null != extraAttendeesButton) {

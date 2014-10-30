@@ -97,7 +97,7 @@ namespace NachoClient.iOS
                 UINavigationItem title = new UINavigationItem ("Attach file");
                 navbar.SetItems (new UINavigationItem[]{ title }, false);
                 UIBarButtonItem cancelButton = new UIBarButtonItem ();
-                Util.SetOriginalImageForButton (cancelButton, "icn-close");
+                Util.SetAutomaticImageForButton (cancelButton, "icn-close");
 
                 navbar.TopItem.LeftBarButtonItem = cancelButton;
                 navbar.TopItem.RightBarButtonItem = searchButton;

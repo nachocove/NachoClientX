@@ -53,19 +53,19 @@ namespace NachoClient.iOS
             ReloadCapture = NcCapture.Create (ReloadCaptureName);
 
             composeMailButton = new UIBarButtonItem ();
-            Util.SetOriginalImageForButton (composeMailButton, "contact-newemail");
+            Util.SetAutomaticImageForButton (composeMailButton, "contact-newemail");
             composeMailButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("MessageListToCompose", this);
             };
 
             cancelSelectedButton = new UIBarButtonItem ();
-            Util.SetOriginalImageForButton (cancelSelectedButton, "gen-close");
+            Util.SetAutomaticImageForButton (cancelSelectedButton, "gen-close");
             cancelSelectedButton.Clicked += (object sender, EventArgs e) => {
                 messageSource.MultiSelectCancel (TableView);
             };
 
             moreSelectedButton = new UIBarButtonItem ();
-            Util.SetOriginalImageForButton (moreSelectedButton, "gen-more");
+            Util.SetAutomaticImageForButton (moreSelectedButton, "gen-more");
             moreSelectedButton.Clicked += (object sender, EventArgs e) => {
                 UIBlockMenu bm = (UIBlockMenu)View.ViewWithTag (BLOCK_MENU_TAG);
                 TableView.ScrollEnabled = false;

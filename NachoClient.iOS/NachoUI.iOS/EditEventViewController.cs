@@ -373,7 +373,7 @@ namespace NachoClient.iOS
         {
             scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height);
 
-            Util.SetOriginalImageForButton (cancelButton, "icn-close");
+            Util.SetAutomaticImageForButton (cancelButton, "icn-close");
             cancelButton.Clicked += (sender, e) => {
                 View.EndEditing (true);
                 if (eventEditStarted) {
@@ -1196,8 +1196,14 @@ namespace NachoClient.iOS
             c.Subject = titleField.Text;
             c.Description = descriptionTextView.Text;
             c.AllDayEvent = allDayEvent;
-            c.StartTime = startDate;
-            c.EndTime = endDate;
+            if (allDayEvent) {
+                // An all-day event is supposed to run midnight to midnight in the local time zone.
+                c.StartTime = startDate.ToLocalTime ().Date.ToUniversalTime ();
+                c.EndTime = endDate.ToLocalTime ().AddDays (1.0).Date.ToUniversalTime ();
+            } else {
+                c.StartTime = startDate;
+                c.EndTime = endDate;
+            }
             // c.attendees is already set via PullAttendees
             //c.Phone = phoneDetailLabel.Text;
             c.Location = locationField.Text;
@@ -1219,11 +1225,8 @@ namespace NachoClient.iOS
                 c.ResponseRequestedIsSet = true;
             }
 
-            // Timezone hardcoded
-            var l = TimeZoneInfo.Local;
-            var tzi = l;
-            var tz = new AsTimeZone (tzi, c.StartTime);
-            c.TimeZone = tz.toEncodedTimeZone ();
+            // The event always uses the local time zone.
+            c.TimeZone = new AsTimeZone (CalendarHelper.SimplifiedLocalTimeZone (), c.StartTime).toEncodedTimeZone ();
 
             if (String.IsNullOrEmpty (c.UID)) {
                 c.UID = System.Guid.NewGuid ().ToString ().Replace ("-", null).ToUpper ();

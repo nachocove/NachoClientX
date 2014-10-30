@@ -132,8 +132,8 @@ namespace NachoClient.iOS
             sendButton = new UIBarButtonItem ();
             quickResponseButton = new UIBarButtonItem ();
 
-            Util.SetOriginalImageForButton (quickResponseButton, "contact-quickemail");
-            Util.SetOriginalImageForButton (sendButton, "icn-send");
+            Util.SetAutomaticImageForButton (quickResponseButton, "contact-quickemail");
+            Util.SetAutomaticImageForButton (sendButton, "icn-send");
 
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
                 sendButton,
@@ -195,13 +195,13 @@ namespace NachoClient.iOS
         {
             switch (QRType) {
             case NcQuickResponse.QRTypeEnum.Compose:
-                mcMessage.BodyId = McBody.InsertFile (account.Id, "").Id;
+                mcMessage.BodyId = McBody.InsertFile (account.Id, McAbstrFileDesc.BodyTypeEnum.PlainText_1, "").Id;
                 break;
             case NcQuickResponse.QRTypeEnum.Reply:
-                mcMessage.BodyId = McBody.InsertFile (account.Id, bodyTextView.Text).Id;
+                mcMessage.BodyId = McBody.InsertFile (account.Id, McAbstrFileDesc.BodyTypeEnum.PlainText_1, bodyTextView.Text).Id;
                 break;
             case NcQuickResponse.QRTypeEnum.Forward:
-                mcMessage.BodyId = McBody.InsertFile (account.Id, bodyTextView.Text).Id;
+                mcMessage.BodyId = McBody.InsertFile (account.Id, McAbstrFileDesc.BodyTypeEnum.PlainText_1, bodyTextView.Text).Id;
                 break;
             case NcQuickResponse.QRTypeEnum.None:
                 break;

@@ -20,11 +20,11 @@ namespace Test.iOS
         public void TestScopeFlagIsSet ()
         {
             Assert.False (AsStrategy.Scope.FlagIsSet (0, AsStrategy.Scope.FlagEnum.RicSynced));
-            Assert.True (AsStrategy.Scope.FlagIsSet(1, AsStrategy.Scope.FlagEnum.RicSynced));
-            Assert.True (AsStrategy.Scope.FlagIsSet(2, AsStrategy.Scope.FlagEnum.RicSynced));
+            Assert.True (AsStrategy.Scope.FlagIsSet (1, AsStrategy.Scope.FlagEnum.RicSynced));
+            Assert.True (AsStrategy.Scope.FlagIsSet (2, AsStrategy.Scope.FlagEnum.RicSynced));
             for (int i = 3; i < AsStrategy.Scope.Ladder.GetLength (0); ++i) {
-                Assert.True (AsStrategy.Scope.FlagIsSet(i, AsStrategy.Scope.FlagEnum.RicSynced));
-                Assert.True (AsStrategy.Scope.FlagIsSet(i, AsStrategy.Scope.FlagEnum.NarrowSyncOk));
+                Assert.True (AsStrategy.Scope.FlagIsSet (i, AsStrategy.Scope.FlagEnum.RicSynced));
+                Assert.True (AsStrategy.Scope.FlagIsSet (i, AsStrategy.Scope.FlagEnum.NarrowSyncOk));
             }
         }
 
@@ -243,7 +243,8 @@ namespace Test.iOS
             var account = new McAccount () {
                 AccountType = McAccount.AccountTypeEnum.Exchange,
             };
-            account.Insert ();var context = new MockContext ();
+            account.Insert ();
+            var context = new MockContext ();
             context.ProtoControl = new MockProtoControl (context.Owner, account.Id);
             context.ProtocolState.StrategyRung = 5;
             context.ProtocolState.Update ();
@@ -589,18 +590,24 @@ namespace Test.iOS
         private List<McEmailMessage> Fetch_Emails;
         private List<McAttachment> Fetch_Atts;
         private McFolder Fetch_Folder;
+
         private void Fetch_InjectEmails (int accountId, int count)
         {
             Fetch_Folder = McFolder.Create (accountId, false, false, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
             Fetch_Folder.Insert ();
             Fetch_Emails = new List<McEmailMessage> ();
             for (int i = 0; i < count; i++) {
+                var body = new McBody () {
+                    AccountId = accountId,
+                    FilePresence = McAbstrFileDesc.FilePresenceEnum.None,
+                };
+                body.Insert ();
                 var email = new McEmailMessage () {
                     AccountId = accountId,
                     ServerId = string.Format ("email{0}", i),
                     IsAwaitingDelete = false,
                     Score = 0.71,
-                    BodyState = McAbstrItem.BodyStateEnum.Missing_2,
+                    BodyId = body.Id,
                     DateReceived = DateTime.UtcNow.AddDays (-2),
                 };
                 email.Insert ();
@@ -786,7 +793,7 @@ namespace Test.iOS
                 AccountId = account.Id,
                 State = McPending.StateEnum.Eligible,
                 ParentId = inbox.ServerId,
-                ServerId = serverIdGen++.ToString(),
+                ServerId = serverIdGen++.ToString (),
             };
             pending.Insert ();
             // Verify cal has no pending.
@@ -798,7 +805,7 @@ namespace Test.iOS
                 AccountId = account.Id,
                 State = McPending.StateEnum.Eligible,
                 ParentId = useremail.ServerId,
-                ServerId = serverIdGen++.ToString(),
+                ServerId = serverIdGen++.ToString (),
             };
             pending.Insert ();
             pending = new McPending () {
@@ -806,7 +813,7 @@ namespace Test.iOS
                 AccountId = account.Id,
                 State = McPending.StateEnum.Eligible,
                 ParentId = useremail.ServerId,
-                ServerId = serverIdGen++.ToString(),
+                ServerId = serverIdGen++.ToString (),
             };
             pending.Insert ();
             pending = new McPending () {
@@ -814,7 +821,7 @@ namespace Test.iOS
                 AccountId = account.Id,
                 State = McPending.StateEnum.Eligible,
                 ParentId = useremail.ServerId,
-                ServerId = serverIdGen++.ToString(),
+                ServerId = serverIdGen++.ToString (),
             };
             pending.Insert ();
             // Verify contact has 1 pending.
@@ -823,7 +830,7 @@ namespace Test.iOS
                 AccountId = account.Id,
                 State = McPending.StateEnum.Eligible,
                 ParentId = contact.ServerId,
-                ServerId = serverIdGen++.ToString(),
+                ServerId = serverIdGen++.ToString (),
             };
             pending.Insert ();
             result = strat.GenSyncKit (account.Id, context.ProtocolState, false, false);
@@ -856,7 +863,7 @@ namespace Test.iOS
                 AccountId = account.Id,
                 State = McPending.StateEnum.Eligible,
                 ParentId = useremail.ServerId,
-                ServerId = serverIdGen++.ToString(),
+                ServerId = serverIdGen++.ToString (),
             };
             pending.Insert ();
             pending = new McPending () {
@@ -864,7 +871,7 @@ namespace Test.iOS
                 AccountId = account.Id,
                 State = McPending.StateEnum.Eligible,
                 ParentId = useremail.ServerId,
-                ServerId = serverIdGen++.ToString(),
+                ServerId = serverIdGen++.ToString (),
                 DeferredSerialIssueOnly = true,
             };
             pending.Insert ();
@@ -873,7 +880,7 @@ namespace Test.iOS
                 AccountId = account.Id,
                 State = McPending.StateEnum.Eligible,
                 ParentId = useremail.ServerId,
-                ServerId = serverIdGen++.ToString(),
+                ServerId = serverIdGen++.ToString (),
             };
             pending.Insert ();
             result = strat.GenSyncKit (account.Id, context.ProtocolState, false, false);
@@ -894,7 +901,7 @@ namespace Test.iOS
                 AccountId = account.Id,
                 State = McPending.StateEnum.Eligible,
                 ParentId = useremail.ServerId,
-                ServerId = serverIdGen++.ToString(),
+                ServerId = serverIdGen++.ToString (),
                 DeferredSerialIssueOnly = true,
             };
             pending.Insert ();
@@ -903,7 +910,7 @@ namespace Test.iOS
                 AccountId = account.Id,
                 State = McPending.StateEnum.Eligible,
                 ParentId = useremail.ServerId,
-                ServerId = serverIdGen++.ToString(),
+                ServerId = serverIdGen++.ToString (),
             };
             pending.Insert ();
             result = strat.GenSyncKit (account.Id, context.ProtocolState, false, false);

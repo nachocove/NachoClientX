@@ -16,9 +16,6 @@ namespace NachoCore.ActiveSync
     {
         private IAsCommand Cmd;
         private AsValidateConfig Validator;
-        #pragma warning disable 414
-        private IAsCommand DisposedCmd;
-        #pragma warning restore 414
 
         public enum Lst : uint
         {
@@ -1074,9 +1071,8 @@ namespace NachoCore.ActiveSync
 
         private void SetCmd (IAsCommand nextCmd)
         {
-            DisposedCmd = Cmd;
-            if (null != DisposedCmd) {
-                DisposedCmd.Cancel ();
+            if (null != Cmd) {
+                Cmd.Cancel ();
             }
             Cmd = nextCmd;
         }

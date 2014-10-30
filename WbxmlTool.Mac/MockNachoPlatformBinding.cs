@@ -23,6 +23,11 @@ namespace NachoPlatformBinding
             throw new NotImplementedException ();
         }
 
+        public static int GetCurrentNumberOfInUseFileDescriptors ()
+        {
+            throw new NotImplementedException ();
+        }
+
         public static string GetFileNameForDescriptor (int fd)
         {
             throw new NotImplementedException ();

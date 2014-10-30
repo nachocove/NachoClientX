@@ -453,7 +453,7 @@ namespace NachoClient
             emailMessage.Update ();
         }
 
-        public static void UserMessageField(string from, int accountId, out int ColorIndex, out string Initials)
+        public static void UserMessageField (string from, int accountId, out int ColorIndex, out string Initials)
         {
             // Parse the from address
             var mailboxAddress = NcEmailAddress.ParseMailboxAddressString (from);
@@ -665,7 +665,9 @@ namespace NachoClient
         public static void AddArrowAccessory (float xOffset, float yOffset, float size, UIView parentView)
         {
             UIImageView ArrowAcccessoryImage = new UIImageView (new RectangleF (xOffset, yOffset, size, size));
-            ArrowAcccessoryImage.Image = UIImage.FromBundle ("icn-rightarrow");
+            using (var image = UIImage.FromBundle ("icn-rightarrow")) {
+                ArrowAcccessoryImage.Image = image;
+            }
             parentView.AddSubview (ArrowAcccessoryImage);
         }
 
@@ -795,10 +797,17 @@ namespace NachoClient
             return UID;
         }
 
-        public static void SetOriginalImageForButton (UIBarButtonItem button, string iconName)
+        public static void SetAutomaticImageForButton (UIBarButtonItem button, string iconName)
         {
             using (var buttonImage = UIImage.FromBundle (iconName)) {
                 button.Image = buttonImage.ImageWithRenderingMode (UIImageRenderingMode.Automatic);
+            }
+        }
+
+        public static void SetOriginalImageForButton (UIBarButtonItem button, string iconName)
+        {
+            using (var buttonImage = UIImage.FromBundle (iconName)) {
+                button.Image = buttonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
             }
         }
 

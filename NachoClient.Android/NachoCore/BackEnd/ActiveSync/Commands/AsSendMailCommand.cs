@@ -31,7 +31,12 @@ namespace NachoCore.ActiveSync
             };
         }
 
-        public override XDocument ToXDocument (AsHttpOperation Sender)
+        protected override bool RequiresPending ()
+        {
+            return true;
+        }
+
+        protected override XDocument ToXDocument (AsHttpOperation Sender)
         {
             if (14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
                 return null;
@@ -46,7 +51,7 @@ namespace NachoCore.ActiveSync
             return doc;
         }
 
-        public override StreamContent ToMime (AsHttpOperation Sender)
+        protected override StreamContent ToMime (AsHttpOperation Sender)
         {
             if (14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
                 return EmailMessage.ToMime ();

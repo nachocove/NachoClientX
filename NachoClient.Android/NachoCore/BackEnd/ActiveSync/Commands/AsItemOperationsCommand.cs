@@ -48,7 +48,12 @@ namespace NachoCore.ActiveSync
                 new XElement (m_baseNs + Xml.AirSyncBase.FileReference, fileRef));
         }
 
-        public override XDocument ToXDocument (AsHttpOperation Sender)
+        protected override bool RequiresPending ()
+        {
+            return 0 >= FetchKit.FetchBodies.Count && 0 >= FetchKit.FetchAttachments.Count;
+        }
+
+        protected override XDocument ToXDocument (AsHttpOperation Sender)
         {
             var itemOp = new XElement (m_ns + Xml.ItemOperations.Ns);
             XElement fetch = null;

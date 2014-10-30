@@ -55,13 +55,13 @@ namespace NachoClient.iOS
         protected void CreateView ()
         {
             var composeButton = new UIBarButtonItem ();
-            Util.SetOriginalImageForButton (composeButton, "contact-newemail");
+            Util.SetAutomaticImageForButton (composeButton, "contact-newemail");
             composeButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("NachoNowToCompose", new SegueHolder (null));
             };
 
             var newMeetingButton = new UIBarButtonItem ();
-            Util.SetOriginalImageForButton (newMeetingButton, "cal-add");
+            Util.SetAutomaticImageForButton (newMeetingButton, "cal-add");
             newMeetingButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("NachoNowToEditEventView", new SegueHolder (null));
             };

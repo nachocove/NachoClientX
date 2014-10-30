@@ -24,7 +24,7 @@ namespace NachoCore.ActiveSync
             return false;
         }
 
-        public override XDocument ToXDocument (AsHttpOperation Sender)
+        protected override XDocument ToXDocument (AsHttpOperation Sender)
         {
             var xFolders = new XElement (m_ns + Xml.Ping.Folders);
 

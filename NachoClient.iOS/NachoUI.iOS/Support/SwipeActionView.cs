@@ -611,10 +611,23 @@ namespace NachoClient.iOS
             return false;
         }
 
+        public void EnableSwipe ()
+        {
+            swipeRecognizer.Enabled = true;
+        }
+
+        public void DisableSwipe ()
+        {
+            swipeRecognizer.Enabled = false;
+        }
+
         protected void MayCompletePullOut ()
         {
             if (SnapAllShownThreshold <= Math.Abs (swipingView.LastMovePercentage)) {
                 swipingView.SnapToAllButtonsShown (() => {
+                    if (null == swipingView) {
+                        return;
+                    }
                     swipingView.EndSwipe ();
                     OnSwipe (SwipeState.SWIPE_END_ALL_SHOWN);
                 });
