@@ -695,10 +695,12 @@ namespace NachoCore.Utils
             if (!ENABLED) {
                 return;
             }
-            NcTask.Run (() => {
-                EventQueue.Token = NcTask.Cts.Token;
-                Process<T> ();
-            }, "Telemetry");
+            if (EventQueue.Token != NcTask.Cts.Token) {
+                NcTask.Run (() => {
+                    EventQueue.Token = NcTask.Cts.Token;
+                    Process<T> ();
+                }, "Telemetry");
+            }
         }
 
         /// Send a SHA1 hash of the email address of all McAccounts (that have an email addresss)
@@ -768,7 +770,8 @@ namespace NachoCore.Utils
                     }
 
                     if (null != dbEvent) {
-                        dbEvent.Delete ();
+                        var rowsDeleted = dbEvent.Delete ();
+                        NcAssert.True (1 == rowsDeleted);
                         eventDeleted = (eventDeleted + 1) & 0xfff;
                         if (0 == eventDeleted) {
                             // 4K events deleted. Try to vacuum
