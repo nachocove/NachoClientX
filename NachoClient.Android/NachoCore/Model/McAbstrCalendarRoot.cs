@@ -105,7 +105,7 @@ namespace NachoCore.Model
                         return "";
                     }
                     McBody body = McBody.QueryById<McBody> (BodyId);
-                    if (McBody.MIME == body.BodyType) {
+                    if (McAbstrFileDesc.BodyTypeEnum.MIME_4 == body.BodyType) {
                         cachedDescription = MimeHelpers.ExtractTextPart (body);
                         if (null == cachedDescription) {
                             cachedDescription = "";
@@ -138,7 +138,7 @@ namespace NachoCore.Model
             }
             if (0 == BodyId) {
                 // No existing body.  Create one.
-                McBody body = McBody.InsertFile (AccountId, McBody.PlainText, cachedDescription);
+                McBody body = McBody.InsertFile (AccountId, McAbstrFileDesc.BodyTypeEnum.PlainText_1, cachedDescription);
                 BodyId = body.Id;
             } else {
                 // Existing body.  We can't replace just the description, leaving
@@ -146,7 +146,7 @@ namespace NachoCore.Model
                 // unfortunately destroy the attachments.
                 var body = McBody.QueryById<McBody> (BodyId);
                 body.UpdateData (cachedDescription);
-                body.BodyType = McBody.PlainText;
+                body.BodyType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
             }
             descriptionWasChanged = false;
             cachedDescription = null;

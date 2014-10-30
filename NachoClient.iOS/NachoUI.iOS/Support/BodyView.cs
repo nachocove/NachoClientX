@@ -250,16 +250,16 @@ namespace NachoClient.iOS
             }
 
             switch (body.BodyType) {
-            case McBody.PlainText:
+            case McAbstrFileDesc.BodyTypeEnum.PlainText_1:
                 RenderTextString (body.GetContentsString ());
                 break;
-            case McBody.HTML:
+            case McAbstrFileDesc.BodyTypeEnum.HTML_2:
                 RenderHtmlString (body.GetContentsString ());
                 break;
-            case McBody.RTF:
+            case McAbstrFileDesc.BodyTypeEnum.RTF_3:
                 RenderRtfString (body.GetContentsString ());
                 break;
-            case McBody.MIME:
+            case McAbstrFileDesc.BodyTypeEnum.MIME_4:
                 RenderMime (bodyPath);
                 break;
             default:

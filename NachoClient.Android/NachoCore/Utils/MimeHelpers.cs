@@ -194,21 +194,21 @@ namespace NachoCore.Utils
                 return null;
             }
 
-            if (McBody.PlainText == body.BodyType) {
+            if (McAbstrFileDesc.BodyTypeEnum.PlainText_1 == body.BodyType) {
                 return body.GetContentsString ();
             }
 
-            if (McBody.HTML == body.BodyType) {
+            if (McAbstrFileDesc.BodyTypeEnum.HTML_2 == body.BodyType) {
                 error = "Nacho Mail has not converted the HTML to reply text.\n" + message.GetBodyPreviewOrEmpty ();
                 return null;
             }
 
-            if (McBody.RTF == body.BodyType) {
+            if (McAbstrFileDesc.BodyTypeEnum.RTF_3 == body.BodyType) {
                 error = "Nacho Mail has not converted the RTF to reply text.\n" + message.GetBodyPreviewOrEmpty ();
                 return null;
             }
 
-            NcAssert.True (McBody.MIME == body.BodyType);
+            NcAssert.True (McAbstrFileDesc.BodyTypeEnum.MIME_4 == body.BodyType);
 
             return ExtractTextPart (McBody.QueryById<McBody> (message.BodyId));
         }
@@ -365,7 +365,7 @@ namespace NachoCore.Utils
             msg.Subject = mimeMessage.Subject;
 
             // Create body
-            var body = McBody.InsertFile (AccountId, McBody.MIME, (FileStream stream) => {
+            var body = McBody.InsertFile (AccountId, McAbstrFileDesc.BodyTypeEnum.MIME_4, (FileStream stream) => {
                 mimeMessage.WriteTo (stream);
             });
             msg.BodyId = body.Id;

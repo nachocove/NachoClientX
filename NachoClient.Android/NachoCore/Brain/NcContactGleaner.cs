@@ -119,7 +119,7 @@ namespace NachoCore.Brain
                 return;
             }
             var body = McBody.QueryById<McBody> (emailMessage.BodyId);
-            if (McAbstrFileDesc.IsComplete(body) && (McBody.MIME == body.BodyType)) {
+            if (McAbstrFileDesc.IsComplete(body) && (McAbstrFileDesc.BodyTypeEnum.MIME_4 == body.BodyType)) {
                 GleanContactsFromMime (accountId, gleanedFolder, emailMessage, body);
             } else {
                 GleanContactsFromMcEmailMessage (accountId, gleanedFolder, emailMessage);

@@ -36,9 +36,11 @@ namespace NachoCore.Model
         public bool GCWaitForReLaunch { get; set; }
 
         /// Type of the transferred body
-        public int BodyType { get; set; }
+        public BodyTypeEnum BodyType { get; set; }
 
         public long FileSize { get; set; }
+
+        public bool Truncated { get; set; }
 
         public FileSizeAccuracyEnum FileSizeAccuracy { get; set; }
 
@@ -89,6 +91,16 @@ namespace NachoCore.Model
             None,
             Partial,
             Complete,
+        }
+
+        /// FYI, AirSync.TypeCode PlainText_1, Html_2, Rtf_3, Mime_4
+        public enum BodyTypeEnum
+        {
+            None = 0,
+            PlainText_1 = 1,
+            HTML_2 = 2,
+            RTF_3 = 3,
+            MIME_4 = 4,
         }
 
         private string DirPath ()

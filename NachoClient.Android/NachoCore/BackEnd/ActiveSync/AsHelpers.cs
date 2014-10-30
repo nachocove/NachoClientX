@@ -15,7 +15,7 @@ namespace NachoCore.ActiveSync
     {
         public static void ApplyAsXmlBody (this McAbstrItem item, XElement xmlBody)
         {
-            var bodyType = xmlBody.ElementAnyNs (Xml.AirSyncBase.Type).Value.ToInt ();
+            var xmlType = xmlBody.ElementAnyNs (Xml.AirSyncBase.Type);
             var xmlData = xmlBody.ElementAnyNs (Xml.AirSyncBase.Data);
             var xmlEstimatedDataSize = xmlBody.ElementAnyNs (Xml.AirSyncBase.EstimatedDataSize);
             var xmlTruncated = xmlBody.ElementAnyNs (Xml.AirSyncBase.Truncated);
@@ -26,6 +26,8 @@ namespace NachoCore.ActiveSync
             }
             if (null != xmlData) {
                 McBody body;
+                var typeCode = xmlType.Value.ToEnum<Xml.AirSync.TypeCode> ();
+                var bodyType = typeCode.ToBodyType ();
                 var saveAttr = xmlData.Attributes ().Where (x => x.Name == "nacho-body-id").SingleOrDefault ();
                 if (null != saveAttr) {
                     item.BodyId = int.Parse (saveAttr.Value);
@@ -76,6 +78,23 @@ namespace NachoCore.ActiveSync
         public static uint ToUint (this string intString)
         {
             return uint.Parse (intString);
+        }
+
+        public static McAbstrFileDesc.BodyTypeEnum ToBodyType (this Xml.AirSync.TypeCode typeCode)
+        {
+            switch (typeCode) {
+            case Xml.AirSync.TypeCode.PlainText_1:
+                return McAbstrFileDesc.BodyTypeEnum.PlainText_1;
+            case Xml.AirSync.TypeCode.Html_2:
+                return McAbstrFileDesc.BodyTypeEnum.HTML_2;
+            case Xml.AirSync.TypeCode.Rtf_3:
+                return McAbstrFileDesc.BodyTypeEnum.RTF_3;
+            case Xml.AirSync.TypeCode.Mime_4:
+                return McAbstrFileDesc.BodyTypeEnum.MIME_4;
+            default:
+                NcAssert.CaseError ();
+                return McAbstrFileDesc.BodyTypeEnum.PlainText_1;
+            }
         }
     }
 
