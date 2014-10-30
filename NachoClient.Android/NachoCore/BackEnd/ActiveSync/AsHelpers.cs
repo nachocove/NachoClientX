@@ -39,8 +39,10 @@ namespace NachoCore.ActiveSync
                 }
                 body.BodyType = bodyType;
                 if ((null != xmlTruncated) && ToBoolean (xmlTruncated.Value)) {
-                    body.FilePresence = McAbstrFileDesc.FilePresenceEnum.Partial;
+                    body.Truncated = true;
+                    body.FilePresence = McAbstrFileDesc.FilePresenceEnum.Complete;
                 } else {
+                    body.Truncated = false;
                     body.FilePresence = McAbstrFileDesc.FilePresenceEnum.Complete;
                 }
                 if (null != xmlEstimatedDataSize) {
