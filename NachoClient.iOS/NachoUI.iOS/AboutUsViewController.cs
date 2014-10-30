@@ -29,8 +29,6 @@ namespace NachoClient.iOS
         protected UITapGestureRecognizer openSourceTapGesture;
         protected UITapGestureRecognizer.Token openSourceTapGestureHandlerToken;
 
-
-
 		public AboutUsViewController (IntPtr handle) : base (handle)
 		{
 		}
@@ -93,19 +91,19 @@ namespace NachoClient.iOS
 
             yOffset = aboutUsView.Frame.Bottom + 12;
 
-            UIView buttonsCell = new UIView (new RectangleF(HORIZONTAL_PADDING, yOffset, View.Frame.Width - (HORIZONTAL_PADDING * 2), CELL_HEIGHT * 2));
-            buttonsCell.BackgroundColor = UIColor.White;
-            buttonsCell.Layer.CornerRadius = 4f;
-            buttonsCell.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
-            buttonsCell.Layer.BorderWidth = 1f;
+            UIView buttonsView = new UIView (new RectangleF(HORIZONTAL_PADDING, yOffset, View.Frame.Width - (HORIZONTAL_PADDING * 2), CELL_HEIGHT * 2));
+            buttonsView.BackgroundColor = UIColor.White;
+            buttonsView.Layer.CornerRadius = 4f;
+            buttonsView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
+            buttonsView.Layer.BorderWidth = 1f;
 
             UILabel licenseAgreementLabel = new UILabel (new RectangleF (INDENT, 12, 200, 20));
             licenseAgreementLabel.Font = A.Font_AvenirNextMedium14;
             licenseAgreementLabel.TextColor = A.Color_NachoGreen;
             licenseAgreementLabel.Text = "Read License Agreement";
-            buttonsCell.AddSubview (licenseAgreementLabel);
+            buttonsView.AddSubview (licenseAgreementLabel);
 
-            UIView licenseAgreementView = new UIView (new RectangleF (0, 0, buttonsCell.Frame.Width, CELL_HEIGHT));
+            UIView licenseAgreementView = new UIView (new RectangleF (0, 0, buttonsView.Frame.Width, CELL_HEIGHT));
             licenseAgreementView.BackgroundColor = UIColor.Clear;
             licenseAgreementView.UserInteractionEnabled = true;
             licenseAgreementView.Tag = LICENSE_AGREEMENT_VIEW_TAG;
@@ -113,17 +111,17 @@ namespace NachoClient.iOS
             licenseAgreementTapGesture = new UITapGestureRecognizer ();
             licenseAgreementTapGestureHandlerToken = licenseAgreementTapGesture.AddTarget (LicenseAgreementTapHandler);
             licenseAgreementView.AddGestureRecognizer (licenseAgreementTapGesture);
-            buttonsCell.AddSubview (licenseAgreementView);
+            buttonsView.AddSubview (licenseAgreementView);
 
-            Util.AddHorizontalLine (0, CELL_HEIGHT, buttonsCell.Frame.Width, A.Color_NachoBorderGray, buttonsCell);
+            Util.AddHorizontalLine (0, CELL_HEIGHT, buttonsView.Frame.Width, A.Color_NachoBorderGray, buttonsView);
 
             UILabel openSourceLabel = new UILabel (new RectangleF (INDENT, CELL_HEIGHT + 11, 230, 20));
             openSourceLabel.Font = A.Font_AvenirNextMedium14;
             openSourceLabel.TextColor = A.Color_NachoGreen;
             openSourceLabel.Text = "View Open Source Contributions";
-            buttonsCell.AddSubview (openSourceLabel);
+            buttonsView.AddSubview (openSourceLabel);
 
-            UIView openSourceView = new UIView (new RectangleF (0, CELL_HEIGHT, buttonsCell.Frame.Width, CELL_HEIGHT));
+            UIView openSourceView = new UIView (new RectangleF (0, CELL_HEIGHT, buttonsView.Frame.Width, CELL_HEIGHT));
             openSourceView.BackgroundColor = UIColor.Clear;
             openSourceView.UserInteractionEnabled = true;
             openSourceView.Tag = OPEN_SOURCE_VIEW_TAG;
@@ -131,9 +129,9 @@ namespace NachoClient.iOS
             var openSourceTap = new UITapGestureRecognizer ();
             openSourceTapGestureHandlerToken = openSourceTap.AddTarget (OpenSourceTapHandler);
             openSourceView.AddGestureRecognizer (openSourceTap);
-            buttonsCell.AddSubview (openSourceView);
+            buttonsView.AddSubview (openSourceView);
 
-            View.AddSubview (buttonsCell);
+            View.AddSubview (buttonsView);
         }
 
         protected void BackButtonClicked (object sender, EventArgs e)

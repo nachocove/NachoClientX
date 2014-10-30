@@ -8,11 +8,13 @@ using System.Drawing;
 
 namespace NachoClient.iOS
 {
-    public partial class SettingsLegalViewController : NcUIViewController
+    public partial class SettingsLegalViewController : NcUIViewControllerNoLeaks
     {
         protected string url;
         protected string navigationBarTitle;
         protected bool loadFromWeb;
+
+        protected UIBarButtonItem backButton;
 
         public SettingsLegalViewController (IntPtr handle) : base (handle)
         {
@@ -26,14 +28,10 @@ namespace NachoClient.iOS
             NavigationItem.Title = navigationBarTitle;
         }
 
-        public override void ViewDidLoad ()
+        protected override void CreateViewHierarchy ()
         {
-            base.ViewDidLoad ();
-
-            UIBarButtonItem backButton = new UIBarButtonItem();
-            backButton.Clicked += (object sender, EventArgs e) => {
-                DismissViewController(true, null);
-            };
+            backButton = new UIBarButtonItem();
+            backButton.Clicked += BackButtonClicked;
             backButton.Image = UIImage.FromBundle ("nav-backarrow");
             backButton.TintColor = A.Color_NachoBlue;
             NavigationItem.LeftBarButtonItem = backButton;
@@ -69,9 +67,20 @@ namespace NachoClient.iOS
             View.AddSubview (interiorView);
         }
 
-        public override void ViewDidAppear (bool animated)
+        protected override void ConfigureAndLayout ()
         {
-            base.ViewDidAppear (animated);
+
         }
+
+        protected override void Cleanup ()
+        {
+            backButton.Clicked -= BackButtonClicked;
+            backButton = null;
+        }
+
+        protected void BackButtonClicked (object sender, EventArgs e)
+        {
+            DismissViewController (true, null);
+        }    
     }
 }
