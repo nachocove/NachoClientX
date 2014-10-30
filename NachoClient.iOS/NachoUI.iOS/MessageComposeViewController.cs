@@ -195,13 +195,13 @@ namespace NachoClient.iOS
         {
             switch (QRType) {
             case NcQuickResponse.QRTypeEnum.Compose:
-                mcMessage.BodyId = McBody.InsertFile (account.Id, "").Id;
+                mcMessage.BodyId = McBody.InsertFile (account.Id, McBody.PlainText, "").Id;
                 break;
             case NcQuickResponse.QRTypeEnum.Reply:
-                mcMessage.BodyId = McBody.InsertFile (account.Id, bodyTextView.Text).Id;
+                mcMessage.BodyId = McBody.InsertFile (account.Id, McBody.PlainText, bodyTextView.Text).Id;
                 break;
             case NcQuickResponse.QRTypeEnum.Forward:
-                mcMessage.BodyId = McBody.InsertFile (account.Id, bodyTextView.Text).Id;
+                mcMessage.BodyId = McBody.InsertFile (account.Id, McBody.PlainText, bodyTextView.Text).Id;
                 break;
             case NcQuickResponse.QRTypeEnum.None:
                 break;

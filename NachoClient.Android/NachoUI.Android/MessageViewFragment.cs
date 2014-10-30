@@ -85,8 +85,9 @@ namespace NachoClient.AndroidClient
             }
 
             var body = message.GetBody ();
+            var bodyString = body.GetContentsString ();
             if (null != body) {
-                var bodySource = new MemoryStream (Encoding.UTF8.GetBytes (body));
+                var bodySource = new MemoryStream (Encoding.UTF8.GetBytes (bodyString));
                 var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
                 var parsedMessage = bodyParser.ParseMessage ();
                 MimeHelpers.DumpMessage (parsedMessage);

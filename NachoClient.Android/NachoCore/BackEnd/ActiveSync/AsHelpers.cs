@@ -20,29 +20,34 @@ namespace NachoCore.ActiveSync
             var xmlEstimatedDataSize = xmlBody.ElementAnyNs (Xml.AirSyncBase.EstimatedDataSize);
             var xmlTruncated = xmlBody.ElementAnyNs (Xml.AirSyncBase.Truncated);
             var xmlPreview = xmlBody.ElementAnyNs (Xml.AirSyncBase.Preview);
-            if (null != xmlEstimatedDataSize) {
-                item.EstimatedBodySize = xmlEstimatedDataSize.Value.ToInt ();
-            }
+
             if (null != xmlPreview) {
                 item.BodyPreview = xmlPreview.Value;
             }
             if (null != xmlData) {
+                McBody body;
                 var saveAttr = xmlData.Attributes ().Where (x => x.Name == "nacho-body-id").SingleOrDefault ();
                 if (null != saveAttr) {
                     item.BodyId = int.Parse (saveAttr.Value);
+                    body = McBody.QueryById<McBody> (item.BodyId);
+                    NcAssert.NotNull (body);
                 } else {
-                    var body = McBody.InsertFile (item.AccountId, xmlData.Value); 
+                    body = McBody.InsertFile (item.AccountId, bodyType, xmlData.Value); 
                     item.BodyId = body.Id;
                 }
-                item.BodyType = bodyType;
+                body.BodyType = bodyType;
                 if ((null != xmlTruncated) && ToBoolean (xmlTruncated.Value)) {
-                    item.BodyState = McAbstrItem.BodyStateEnum.Truncated_1;
+                    body.FilePresence = McAbstrFileDesc.FilePresenceEnum.Partial;
                 } else {
-                    item.BodyState = McAbstrItem.BodyStateEnum.Whole_0;
+                    body.FilePresence = McAbstrFileDesc.FilePresenceEnum.Complete;
                 }
+                if (null != xmlEstimatedDataSize) {
+                    body.FileSize = xmlEstimatedDataSize.Value.ToInt ();
+                    body.FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate;
+                }
+                body.Update ();
             } else {
                 item.BodyId = 0;
-                item.BodyState = McAbstrItem.BodyStateEnum.Missing_2;
             }
         }
 
@@ -144,7 +149,7 @@ namespace NachoCore.ActiveSync
                 var body = McBody.QueryById<McBody> (cal.BodyId);
                 NcAssert.True (null != body);
                 xmlAppData.Add (new XElement (AirSyncBaseNs + Xml.AirSyncBase.Body,
-                    new XElement (AirSyncBaseNs + Xml.AirSyncBase.Type, cal.BodyType),
+                    new XElement (AirSyncBaseNs + Xml.AirSyncBase.Type, body.BodyType),
                     new XElement (AirSyncBaseNs + Xml.AirSyncBase.Data, body.GetContentsString ())));
             }
 

@@ -146,9 +146,20 @@ namespace Test.Common
             Assert.IsTrue (s.Equals (e));
         }
 
+        public void CreateMcBody(MockDataSource mds, int id)
+        {
+            var body = new McBody () {
+                AccountId = mds.Account.Id,
+            };
+            body.Insert ();
+            Assert.AreEqual(id, body.Id);
+        }
+
         [Test]
         public void NewEntryWithAdd ()
         {
+            var mds = new MockDataSource ();
+            CreateMcBody (mds, 1);
             var command = System.Xml.Linq.XElement.Parse (addString_01);
             Assert.IsNotNull (command);
             Assert.AreEqual (command.Name.LocalName, Xml.AirSync.Add);
@@ -370,6 +381,8 @@ namespace Test.Common
         [Test]
         public void CreateNcCalendarFromXML ()
         {
+            var mds = new MockDataSource ();
+            CreateMcBody (mds, 1);
             var command = System.Xml.Linq.XElement.Parse (addString_01);
             Assert.IsNotNull (command);
             Assert.AreEqual (command.Name.LocalName, Xml.AirSync.Add);
@@ -398,7 +411,6 @@ namespace Test.Common
             Assert.IsNotNull (c.attendees);
             Assert.AreEqual (c.attendees.Count, 4);
 
-            var mds = new MockDataSource ();
             c.AccountId = mds.Account.Id;
 
             c.Insert ();
@@ -415,6 +427,8 @@ namespace Test.Common
         [Test]
         public void CreateNcCalendarFromXML2 ()
         {
+            var mds = new MockDataSource ();
+            CreateMcBody (mds, 1);
             var command = System.Xml.Linq.XElement.Parse (addString_02);
             Assert.IsNotNull (command);
             Assert.AreEqual (command.Name.LocalName, Xml.AirSync.Add);
@@ -445,6 +459,8 @@ namespace Test.Common
         [Test]
         public void CreateNcCalendarFromXML3 ()
         {
+            var mds = new MockDataSource ();
+            CreateMcBody (mds, 1);
             var command = System.Xml.Linq.XElement.Parse (addString_03);
             Assert.IsNotNull (command);
             Assert.AreEqual (command.Name.LocalName, Xml.AirSync.Add);
@@ -459,6 +475,8 @@ namespace Test.Common
         [Test]
         public void CreateNcCalendarFromXML4 ()
         {
+            var mds = new MockDataSource ();
+            CreateMcBody (mds, 1);
             var command = System.Xml.Linq.XElement.Parse (addString_04);
             Assert.IsNotNull (command);
             Assert.AreEqual (command.Name.LocalName, Xml.AirSync.Add);
@@ -480,6 +498,8 @@ namespace Test.Common
         [Test]
         public void ExceptionParse01()
         {
+            var mds = new MockDataSource ();
+            CreateMcBody (mds, 1);
             var command = System.Xml.Linq.XElement.Parse (Exception_String_01);
             Assert.IsNotNull (command);
             var h = new NachoCore.ActiveSync.AsHelpers ();
@@ -943,7 +963,7 @@ namespace Test.Common
             <Body xmlns=""AirSyncBase"">
               <Type>4</Type>
               <EstimatedDataSize>12457</EstimatedDataSize>
-              <Data nacho-body-id=""404"" />
+              <Data nacho-body-id=""1"" />
             </Body>
             <Sensitivity xmlns=""Calendar"">0</Sensitivity>
             <BusyStatus xmlns=""Calendar"">2</BusyStatus>
@@ -979,7 +999,7 @@ namespace Test.Common
             <Body xmlns=""AirSyncBase"">
               <Type>4</Type>
               <EstimatedDataSize>21111</EstimatedDataSize>
-              <Data nacho-body-id=""405"" />
+              <Data nacho-body-id=""1"" />
             </Body>
             <Sensitivity xmlns=""Calendar"">0</Sensitivity>
             <BusyStatus xmlns=""Calendar"">2</BusyStatus>
@@ -993,7 +1013,7 @@ namespace Test.Common
                 <Body xmlns=""AirSyncBase"">
                   <Type>4</Type>
                   <EstimatedDataSize>4223</EstimatedDataSize>
-                  <Data nacho-body-id=""406"" />
+                  <Data nacho-body-id=""1"" />
                 </Body>
                 <Categories />
                 <ExceptionStartTime>20140902T150000Z</ExceptionStartTime>
@@ -1019,7 +1039,7 @@ namespace Test.Common
     <Body xmlns=""AirSyncBase"">
       <Type>4</Type>
       <EstimatedDataSize>4211</EstimatedDataSize>
-      <Data nacho-body-id=""455"" />
+      <Data nacho-body-id=""1"" />
     </Body>
     <Categories />
     <ExceptionStartTime>20140811T160000Z</ExceptionStartTime>

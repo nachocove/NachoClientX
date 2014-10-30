@@ -35,6 +35,9 @@ namespace NachoCore.Model
 
         public bool GCWaitForReLaunch { get; set; }
 
+        /// Type of the transferred body
+        public int BodyType { get; set; }
+
         public long FileSize { get; set; }
 
         public FileSizeAccuracyEnum FileSizeAccuracy { get; set; }
@@ -344,6 +347,16 @@ namespace NachoCore.Model
                 }
             }
             UpdateSaveFinish ();
+        }
+
+        public static bool IsComplete (McAbstrFileDesc file)
+        {
+            return ((null != file) && (FilePresenceEnum.Complete == file.FilePresence));
+        }
+
+        public bool IsComplete ()
+        {
+            return (FilePresenceEnum.Complete == FilePresence);
         }
     }
 }

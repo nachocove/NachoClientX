@@ -78,9 +78,8 @@ namespace NachoPlatform
                     contact.AddDateAttribute (accountId, "Birthday", null, birthday.ToDateTime ());
                 }
                 if (null != Person.Note) {
-                    var body = McBody.InsertFile (accountId, Person.Note);
+                    var body = McBody.InsertFile (accountId, McBody.PlainText, Person.Note);
                     contact.BodyId = body.Id;
-                    contact.BodyType = McBody.PlainText;
                 }
                 var phones = Person.GetPhones ();
                 foreach (var phone in phones) {

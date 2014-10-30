@@ -817,7 +817,7 @@ namespace NachoClient.iOS
                 if (null != contactBody) {
                     contactBody.UpdateData (noteText);
                 } else {
-                    contact.BodyId = McBody.InsertFile (accountId, noteText).Id;
+                    contact.BodyId = McBody.InsertFile (accountId, McBody.PlainText, noteText).Id;
                 }
 
                 contact.Update ();

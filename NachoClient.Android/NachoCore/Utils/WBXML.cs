@@ -142,7 +142,7 @@ namespace NachoCore.Wbxml
                             #if (!WBXMLTOOL)
                             // We don't need to save the body to a file in the redacted XML case.
                             if (0 < accountId) {
-                                var data = McBody.InsertFile(accountId, ((FileStream stream) => {
+                                var data = McBody.InsertFile(accountId, 0, ((FileStream stream) => {
                                     bytes.DequeueStringToStream (stream, CToken);
                                 }));
                                 currentNode.Add (new XAttribute ("nacho-body-id", data.Id.ToString ()));

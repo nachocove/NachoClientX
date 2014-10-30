@@ -118,8 +118,9 @@ namespace NachoCore.Brain
                 MarkAsGleaned (emailMessage);
                 return;
             }
-            if ((McBody.MIME == emailMessage.BodyType) && (McAbstrItem.BodyStateEnum.Whole_0 == emailMessage.BodyState)) {
-                GleanContactsFromMime (accountId, gleanedFolder, emailMessage);
+            var body = McBody.QueryById<McBody> (emailMessage.BodyId);
+            if (McAbstrFileDesc.IsComplete(body) && (McBody.MIME == body.BodyType)) {
+                GleanContactsFromMime (accountId, gleanedFolder, emailMessage, body);
             } else {
                 GleanContactsFromMcEmailMessage (accountId, gleanedFolder, emailMessage);
             }
@@ -156,9 +157,9 @@ namespace NachoCore.Brain
             }
         }
 
-        public static void GleanContactsFromMime (int accountId, McFolder gleanedFolder, McEmailMessage emailMessage)
+        public static void GleanContactsFromMime (int accountId, McFolder gleanedFolder, McEmailMessage emailMessage, McAbstrFileDesc body)
         {
-            var path = emailMessage.GetBodyPath ();
+            var path = body.GetFilePath ();
             if (null == path) {
                 MarkAsGleaned (emailMessage);
                 return;

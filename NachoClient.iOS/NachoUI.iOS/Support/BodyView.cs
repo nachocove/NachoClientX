@@ -223,9 +223,11 @@ namespace NachoClient.iOS
             center.Y -= Frame.Y;
             spinner.Center = center;
 
+            var body = McBody.QueryById<McBody> (item.BodyId);
+
             // If the body isn't downloaded,
             // start the download and return.
-            if (!item.IsDownloaded ()) {
+            if (!McAbstrFileDesc.IsComplete (body)) {
                 Log.Info (Log.LOG_UI, "Starting download of whole message body");
                 switch (item.GetType ().Name) {
                 case "McEmailMessage":
@@ -241,19 +243,21 @@ namespace NachoClient.iOS
 
             spinner.StopAnimating ();
 
-            var bodyPath = item.GetBodyPath ();
+            NcAssert.NotNull (body);
+            var bodyPath = body.GetFilePath ();
             if (null == bodyPath) {
                 return false;
             }
-            switch (item.GetBodyType ()) {
+
+            switch (body.BodyType) {
             case McBody.PlainText:
-                RenderTextString (item.GetBody ());
+                RenderTextString (body.GetContentsString ());
                 break;
             case McBody.HTML:
-                RenderHtmlString (item.GetBody ());
+                RenderHtmlString (body.GetContentsString ());
                 break;
             case McBody.RTF:
-                RenderRtfString (item.GetBody ());
+                RenderRtfString (body.GetContentsString ());
                 break;
             case McBody.MIME:
                 RenderMime (bodyPath);
@@ -377,7 +381,7 @@ namespace NachoClient.iOS
         protected void RenderAttributedString (NSAttributedString attributedString)
         {
             var label = new BodyTextView (new RectangleF (
-                leftMargin, 0, messageView.Frame.Width - leftMargin, messageView.Frame.Height));
+                            leftMargin, 0, messageView.Frame.Width - leftMargin, messageView.Frame.Height));
             label.Configure (attributedString);
             messageView.AddSubview (label);
         }
@@ -491,7 +495,7 @@ namespace NachoClient.iOS
                 // we can just scale each rendering view frame to the content size and
                 // adjust the body view frame size at the end.
                 IterateAllRenderSubViews ((UIView subview) => {
-                    ViewFramer.Create(subview)
+                    ViewFramer.Create (subview)
                         .Size (subview.SizeThatFits (subview.Frame.Size));
                     return true;
                 });
@@ -547,8 +551,8 @@ namespace NachoClient.iOS
             if (null != downloadToken) {
                 BackEnd.Instance.Prioritize (abstrItem.AccountId, downloadToken);
             } else {
-                var newAbstrItem = ReReadItem ();
-                if ((null == newAbstrItem) || newAbstrItem.IsDownloaded ()) {
+                var newBody = McBody.QueryById<McBody> (abstrItem.BodyId);
+                if (McAbstrFileDesc.IsComplete (newBody)) {
                     // Download must have complete in the window from it was checked to
                     // download command here is issued. Must have a status indication
                     // pending to stop the spinner or remove the item from UI. Just need
@@ -588,18 +592,6 @@ namespace NachoClient.iOS
             loadState = succeed ? LoadState.IDLE : LoadState.ERROR;
             spinner.StopAnimating ();
             return true;
-        }
-
-        public bool WasDownloadStartedAndNowComplete ()
-        {
-            if (LoadState.LOADING != loadState) {
-                return false;
-            }
-            var newAbstrItem = ReReadItem ();
-            if (null == newAbstrItem) {
-                return false; // must have been deleted
-            }
-            return newAbstrItem.IsDownloaded ();
         }
 
         public void Focus ()
@@ -661,19 +653,6 @@ namespace NachoClient.iOS
             return new PointF (x, y);
         }
 
-        protected McAbstrItem ReReadItem ()
-        {
-            McAbstrItem newAbstrItem;
-            string className = abstrItem.GetType ().Name;
-            switch (className) {
-            case "McEmailMessage":
-                newAbstrItem = (McAbstrItem)McEmailMessage.QueryById<McEmailMessage> (abstrItem.Id);
-                break;
-            default:
-                throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unhandled class type {0}", className));
-            }
-            return newAbstrItem;
-        }
     }
 }
 

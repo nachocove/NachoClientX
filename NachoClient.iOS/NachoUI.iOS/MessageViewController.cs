@@ -58,7 +58,8 @@ namespace NachoClient.iOS
         #if DEBUG_UI
         const int VIEW_INSET = 4;
         const int ATTACHMENTVIEW_INSET = 10;
-        #else
+        
+#else
         const int VIEW_INSET = 2;
         const int ATTACHMENTVIEW_INSET = 15;
         #endif
@@ -69,7 +70,8 @@ namespace NachoClient.iOS
         protected float expandedSeparatorYOffset;
         protected float compactSeparatorYOffset;
 
-        public enum TagType {
+        public enum TagType
+        {
             USER_IMAGE_TAG = 101,
             FROM_TAG = 102,
             SUBJECT_TAG = 103,
@@ -261,7 +263,7 @@ namespace NachoClient.iOS
 
             // Chili image
             var chiliImageView = new UIImageView (new RectangleF (View.Frame.Width - 20 - 15, 14, 20, 20));
-            chiliImageView.Image = UIImage.FromBundle("icn-red-chili-small");
+            chiliImageView.Image = UIImage.FromBundle ("icn-red-chili-small");
             chiliImageView.Tag = (int)TagType.USER_CHILI_TAG;
             view.AddSubview (chiliImageView);
 
@@ -497,7 +499,7 @@ namespace NachoClient.iOS
             bodyHeight -= 2 * BodyView.BODYVIEW_INSET;
             bodyHeight -= separator2View.Frame.Bottom;
             bodyHeight -= attachmentListView.Frame.Height;
-            float bodyY = Math.Max(scrollView.ContentOffset.Y, separator2YOffset + 1);
+            float bodyY = Math.Max (scrollView.ContentOffset.Y, separator2YOffset + 1);
             bodyView.Layout (VIEW_INSET, bodyY, view.Frame.Width - 2 * BodyView.BODYVIEW_INSET, bodyHeight);
 
             float viewWidth = scrollView.Frame.Width - 2 * VIEW_INSET;
@@ -570,7 +572,7 @@ namespace NachoClient.iOS
                     vc.SetAction (thread, (string)h.value);
                     vc.SetOwner (this);  
                     if (null != h.value2) {
-                        vc.SetQRType((NcQuickResponse.QRTypeEnum)h.value2);
+                        vc.SetQRType ((NcQuickResponse.QRTypeEnum)h.value2);
                     }
                 }
 
@@ -679,8 +681,11 @@ namespace NachoClient.iOS
         protected void MarkAsRead ()
         {
             var message = thread.SingleMessageSpecialCase ();
-            if (message.IsDownloaded() && !message.IsRead) {
-                BackEnd.Instance.MarkEmailReadCmd(message.AccountId, message.Id);
+            if (!message.IsRead) {
+                var body = McBody.QueryById<McBody> (message.BodyId);
+                if (McBody.IsComplete (body)) {
+                    BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id);
+                }
             }
         }
 
@@ -771,7 +776,8 @@ namespace NachoClient.iOS
 
         // Event handlers
 
-        private void ScrollViewScrolled (object sender, EventArgs e) {
+        private void ScrollViewScrolled (object sender, EventArgs e)
+        {
 
             // Process vertical scrolling
             PointF bodyViewOffset = new PointF (scrollView.ContentOffset.X, scrollView.ContentOffset.Y);
@@ -832,7 +838,7 @@ namespace NachoClient.iOS
 
         private void DeadlineButtonClicked (object sender, EventArgs e)
         {
-            ShowDeadlineActionSheet();
+            ShowDeadlineActionSheet ();
         }
 
         private void ScrollViewDidZoom (object sender, EventArgs e)
@@ -945,7 +951,7 @@ namespace NachoClient.iOS
         {
         }
 
-        public void AddressBlockAddContactClicked(UcAddressBlock view, string prefix)
+        public void AddressBlockAddContactClicked (UcAddressBlock view, string prefix)
         {
         }
     }
