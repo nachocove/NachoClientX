@@ -257,8 +257,6 @@ namespace NachoCore.ActiveSync
             var applicationData = command.Element (ns + Xml.AirSync.ApplicationData);
             NcAssert.True (null != applicationData);
 
-            XNamespace m_baseNs = Xml.AirSyncBase.Ns;
-
             Log.Debug (Log.LOG_XML, "AsContact FromXML\n{0}", applicationData);
             foreach (var child in applicationData.Elements()) {
                 switch (child.Name.LocalName) {
