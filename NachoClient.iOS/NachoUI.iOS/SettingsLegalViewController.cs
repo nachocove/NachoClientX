@@ -5,6 +5,12 @@ using System;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using System.Drawing;
+using System.Net;
+using NachoCore.Model;
+using NachoCore.Utils;
+using NachoCore;
+using NachoPlatform;
+
 
 namespace NachoClient.iOS
 {
@@ -12,7 +18,12 @@ namespace NachoClient.iOS
     {
         protected string url;
         protected string navigationBarTitle;
+        protected string key;
         protected bool loadFromWeb;
+
+        protected const string CACHE_MODULE = "CACHE";
+
+        protected const int WEB_VIEW_TAG = 100;
 
         protected UIBarButtonItem backButton;
 
@@ -20,10 +31,11 @@ namespace NachoClient.iOS
         {
         }
 
-        public void SetProperties (string url, string navigationBarTitle, bool loadFromWeb)
+        public void SetProperties (string url, string navigationBarTitle, string key, bool loadFromWeb)
         {
             this.url = url;
             this.navigationBarTitle = navigationBarTitle;
+            this.key = key;
             this.loadFromWeb = loadFromWeb;
             NavigationItem.Title = navigationBarTitle;
         }
@@ -57,14 +69,48 @@ namespace NachoClient.iOS
 
             if (loadFromWeb) {
                 UIWebView webView = new UIWebView (new RectangleF (10, yOffset, interiorView.Frame.Width - 20, interiorView.Frame.Height - yOffset - 10));
-                webView.LoadRequest (new NSUrlRequest (new NSUrl (url)));
+                webView.Tag = WEB_VIEW_TAG;
                 interiorView.Add (webView);
+                View.AddSubview (interiorView);
+                if (hasNetworkConnection ()) {
+                    webView.LoadRequest (new NSUrlRequest (new NSUrl (url)));
+                    webView.LoadError += HandleLoadError;
+                    webView.LoadFinished += CacheUrlHtml;
+                } else {
+                    HandleLoadError (this, null);
+                }
             } else {
                 UITextView textView = new UITextView (new RectangleF(10, yOffset, interiorView.Frame.Width - 20, interiorView.Frame.Height - yOffset - 10));
                 textView.Text =  System.IO.File.ReadAllText(url);
                 interiorView.Add (textView);
+                View.AddSubview (interiorView);
             }
-            View.AddSubview (interiorView);
+        }
+
+        void CacheUrlHtml (object sender, EventArgs e)
+        {
+            string urlSourceCode = new WebClient ().DownloadString (url);
+            McMutables.Set (LoginHelpers.GetCurrentAccountId (), CACHE_MODULE, key, urlSourceCode);
+        }
+
+        void HandleLoadError (object sender, UIWebErrorArgs e)
+        {
+            UIWebView webView = (UIWebView)View.ViewWithTag (WEB_VIEW_TAG);
+            string theText = McMutables.GetOrCreate (LoginHelpers.GetCurrentAccountId (), CACHE_MODULE, key, "");
+            if (!string.IsNullOrEmpty (theText)) {
+                webView.LoadHtmlString (theText, null);
+            } else {
+                webView.LoadHtmlString ("<h2>Sorry, you will need an internet connection to view this information.&nbsp;</h2>", null);
+            }
+        }
+
+        public bool hasNetworkConnection ()
+        {
+            if (NcCommStatus.Instance.Status != NetStatusStatusEnum.Up) {
+                return false;
+            } else {
+                return true;
+            }
         }
 
         protected override void ConfigureAndLayout ()
@@ -76,6 +122,11 @@ namespace NachoClient.iOS
         {
             backButton.Clicked -= BackButtonClicked;
             backButton = null;
+
+            UIWebView webView = (UIWebView)View.ViewWithTag (WEB_VIEW_TAG);
+            webView.LoadError -= HandleLoadError;
+            webView.LoadFinished -= CacheUrlHtml;
+            webView = null;
         }
 
         protected void BackButtonClicked (object sender, EventArgs e)

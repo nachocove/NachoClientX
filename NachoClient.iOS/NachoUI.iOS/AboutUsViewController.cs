@@ -19,6 +19,7 @@ namespace NachoClient.iOS
 
         protected string url;
         protected string title;
+        protected string key;
         protected bool loadFromWeb;
 
         protected UIBarButtonItem backButton;
@@ -145,6 +146,7 @@ namespace NachoClient.iOS
             if (null != gesture) {
                 url = "https://nachocove.com/legal-text/";
                 title = "License Agreement";
+                key = GeneralSettingsViewController.LICENSE_AGREEMENT_KEY;
                 loadFromWeb = true;
                 PerformSegue ("SegueToSettingsLegal", this);
             }
@@ -189,7 +191,7 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("SegueToSettingsLegal")) {
                 var x = segue.DestinationViewController;
                 var settingsLegal = (SettingsLegalViewController)segue.DestinationViewController.ChildViewControllers[0];
-                settingsLegal.SetProperties (url, title, loadFromWeb);
+                settingsLegal.SetProperties (url, title, key, loadFromWeb);
                 return;
             }
         }
