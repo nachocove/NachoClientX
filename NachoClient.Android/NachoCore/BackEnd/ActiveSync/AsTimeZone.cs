@@ -41,39 +41,80 @@ namespace NachoCore.ActiveSync
         {
             binaryData = new byte[4 + 64 + 16 + 4 + 64 + 16 + 4];
 
-            TimeZoneInfo.AdjustmentRule adjustment = null;
-
-            var adjustmentRules = tzi.GetAdjustmentRules ();
-            foreach (var a in adjustmentRules) {
-                if ((a.DateStart <= forEventDate) && (a.DateEnd >= forEventDate)) {
-                    adjustment = a;
-                    break;
-                }
-            }
-            if (null == adjustment) {
-                if ((null == adjustmentRules) || (0 == adjustmentRules.Length)) {
-                    return;
-                }
-            }
-            adjustment = adjustmentRules [adjustmentRules.Length - 1];
-
             this.Bias = -(long)tzi.BaseUtcOffset.TotalMinutes;
+            this.StandardBias = 0;
             this.StandardName = tzi.StandardName;
+
+            TimeZoneInfo.AdjustmentRule adjustment = null;
             if (tzi.SupportsDaylightSavingTime) {
+                foreach (var a in tzi.GetAdjustmentRules()) {
+                    if (a.DateStart <= forEventDate && a.DateEnd > forEventDate) {
+                        adjustment = a;
+                        break;
+                    }
+                }
+            }
+
+            if (null != adjustment) {
                 this.DaylightName = tzi.DaylightName;
+                this.DaylightBias = -(long)adjustment.DaylightDelta.TotalMinutes;
+                this.DaylightDate = SystemTime.ToSystemTime (adjustment.DaylightTransitionStart, forEventDate);
+                this.StandardDate = SystemTime.ToSystemTime (adjustment.DaylightTransitionEnd, forEventDate);
             } else {
                 this.DaylightName = "";
+                this.DaylightBias = 0;
             }
+        }
 
-            if (null == adjustment) {
-                return;
-            }
+        public TimeZoneInfo ConvertToSystemTimeZone ()
+        {
+            try {
+                if (0 == DaylightBias && 0 == StandardBias) {
+                    // Simple case. No daylight saving time.
+                    return TimeZoneInfo.CreateCustomTimeZone (
+                        StandardName, new TimeSpan (-(Bias * TimeSpan.TicksPerMinute)), StandardName, StandardName);
+                }
+                TimeZoneInfo.TransitionTime transitionToDaylight;
+                if (0 == DaylightDate.year) {
+                    transitionToDaylight = TimeZoneInfo.TransitionTime.CreateFloatingDateRule (
+                        new DateTime (1, 1, 1, DaylightDate.hour, DaylightDate.minute, DaylightDate.second),
+                        DaylightDate.month, DaylightDate.day, (DayOfWeek)DaylightDate.dayOfWeek);
+                } else {
+                    transitionToDaylight = TimeZoneInfo.TransitionTime.CreateFixedDateRule (
+                        new DateTime (1, 1, 1, DaylightDate.hour, DaylightDate.minute, DaylightDate.second),
+                        DaylightDate.month, DaylightDate.day);
+                }
 
-            if (tzi.SupportsDaylightSavingTime) {
-                this.StandardBias = 0;
-                this.DaylightBias = -(long)adjustment.DaylightDelta.TotalMinutes;
-                this.StandardDate = SystemTime.ToSystemTime (adjustment.DaylightTransitionEnd, forEventDate);
-                this.DaylightDate = SystemTime.ToSystemTime (adjustment.DaylightTransitionStart, forEventDate);
+                TimeZoneInfo.TransitionTime transitionToStandard;
+                if (0 == StandardDate.year) {
+                    transitionToStandard = TimeZoneInfo.TransitionTime.CreateFloatingDateRule (
+                        new DateTime (1, 1, 1, StandardDate.hour, StandardDate.minute, StandardDate.second),
+                        StandardDate.month, StandardDate.day, (DayOfWeek)StandardDate.dayOfWeek);
+                } else {
+                    transitionToStandard = TimeZoneInfo.TransitionTime.CreateFixedDateRule (
+                        new DateTime (1, 1, 1, StandardDate.hour, StandardDate.minute, StandardDate.second),
+                        StandardDate.month, StandardDate.day);
+                }
+
+                var adjustment = TimeZoneInfo.AdjustmentRule.CreateAdjustmentRule (
+                    DateTime.MinValue.Date, DateTime.MaxValue.Date,
+                    new TimeSpan (-((DaylightBias - StandardBias) * TimeSpan.TicksPerMinute)),
+                    transitionToDaylight, transitionToStandard);
+
+                return TimeZoneInfo.CreateCustomTimeZone (
+                    StandardName, new TimeSpan (-((Bias + StandardBias) * TimeSpan.TicksPerMinute)),
+                    StandardName, StandardName, DaylightName,
+                    new TimeZoneInfo.AdjustmentRule[] { adjustment });
+
+            } catch (ArgumentException e) {
+                // Most likely caused by malformed time zone information in
+                // the event.
+                Log.Error (Log.LOG_CALENDAR, "Malformed time zone information in an ActiveSync event: {0}", e.ToString ());
+                return TimeZoneInfo.Utc;
+            } catch (InvalidTimeZoneException e) {
+                // Unlikely, but it might happen if the offsets are messed up.
+                Log.Error (Log.LOG_CALENDAR, "Malformed time zone information in an ActiveSync event: {0}", e.ToString ());
+                return TimeZoneInfo.Utc;
             }
         }
 
@@ -353,6 +394,23 @@ namespace NachoCore.ActiveSync
             InsertShortIntoBinaryData (value.milliseconds, binaryData, start + 12);
             return value;
         }
+
+        // Enable this to dump AsTimeZone objects.
+        #if FOR_DEBUGGING
+        private static string DumpSystemTime (SystemTime time)
+        {
+            return string.Format ("Y:{0} M:{1} DoW:{2} D:{3} H:{4} m:{5} ms:{6}",
+                time.year, time.month, time.dayOfWeek, time.day, time.hour, time.minute, time.milliseconds);
+        }
+
+        public static void DumpTimeZone (AsTimeZone tz)
+        {
+            Log.Info (Log.LOG_CALENDAR, "Time zone info: Standard={0} Daylight={1} Bias={2} StandardBias={3} DaylightBias={4}",
+                tz.StandardName, tz.DaylightName, tz.Bias, tz.StandardBias, tz.DaylightBias);
+            Log.Info (Log.LOG_CALENDAR, "Time zone info: Daylight start: {0}", DumpSystemTime (tz.DaylightDate));
+            Log.Info (Log.LOG_CALENDAR, "Time zone info: Daylight end:   {0}", DumpSystemTime (tz.StandardDate));
+        }
+        #endif
     }
 }
 
