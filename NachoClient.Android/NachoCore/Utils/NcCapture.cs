@@ -97,8 +97,10 @@ namespace NachoCore.Utils
                 Count = 0;
                 Total = 0;
                 Total2 = 0;
-                foreach (var kind in Xtra.Keys) {
-                    Xtra [kind].Reset ();
+                if (null != Xtra) {
+                    foreach (var kind in Xtra.Keys) {
+                        Xtra [kind].Reset ();
+                    }
                 }
             }
 
