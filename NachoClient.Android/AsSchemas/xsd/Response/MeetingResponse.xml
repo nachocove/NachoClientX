@@ -6,12 +6,12 @@
          <element_redaction>none</element_redaction>
          <attribute_redaction>none</attribute_redaction>
          <RequestId>
-            <element_redaction>full</element_redaction>
-            <attribute_redaction>full</attribute_redaction>
+            <element_redaction>none</element_redaction>
+            <attribute_redaction>none</attribute_redaction>
          </RequestId>
          <Status>
-            <element_redaction>full</element_redaction>
-            <attribute_redaction>full</attribute_redaction>
+            <element_redaction>none</element_redaction>
+            <attribute_redaction>none</attribute_redaction>
          </Status>
          <CalendarId>
             <element_redaction>full</element_redaction>

@@ -4,35 +4,35 @@
       <attribute_redaction>full</attribute_redaction>
    </Store>
    <Range>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
+      <element_redaction>none</element_redaction>
+      <attribute_redaction>none</attribute_redaction>
    </Range>
    <Total>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
+      <element_redaction>none</element_redaction>
+      <attribute_redaction>none</attribute_redaction>
    </Total>
    <Properties>
       <element_redaction>none</element_redaction>
       <attribute_redaction>none</attribute_redaction>
       <Range>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </Range>
       <Total>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </Total>
       <Data>
          <element_redaction>full</element_redaction>
          <attribute_redaction>full</attribute_redaction>
       </Data>
       <Part>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </Part>
       <Version>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </Version>
    </Properties>
    <Data>
@@ -40,24 +40,24 @@
       <attribute_redaction>full</attribute_redaction>
    </Data>
    <Status>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
+      <element_redaction>none</element_redaction>
+      <attribute_redaction>none</attribute_redaction>
    </Status>
    <Version>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
+      <element_redaction>none</element_redaction>
+      <attribute_redaction>none</attribute_redaction>
    </Version>
    <Schema>
       <element_redaction>none</element_redaction>
       <attribute_redaction>none</attribute_redaction>
    </Schema>
    <Part>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
+      <element_redaction>none</element_redaction>
+      <attribute_redaction>none</attribute_redaction>
    </Part>
    <DeleteSubFolders>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
+      <element_redaction>none</element_redaction>
+      <attribute_redaction>none</attribute_redaction>
    </DeleteSubFolders>
    <UserName>
       <element_redaction>full</element_redaction>
@@ -68,23 +68,23 @@
       <attribute_redaction>full</attribute_redaction>
    </Password>
    <DstFldId>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
+      <element_redaction>none</element_redaction>
+      <attribute_redaction>none</attribute_redaction>
    </DstFldId>
    <ConversationId>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
+      <element_redaction>none</element_redaction>
+      <attribute_redaction>none</attribute_redaction>
    </ConversationId>
    <MoveAlways>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
+      <element_redaction>none</element_redaction>
+      <attribute_redaction>none</attribute_redaction>
    </MoveAlways>
    <ItemOperations>
       <element_redaction>none</element_redaction>
       <attribute_redaction>none</attribute_redaction>
       <Status>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </Status>
       <Response>
          <element_redaction>none</element_redaction>
@@ -93,51 +93,51 @@
             <element_redaction>none</element_redaction>
             <attribute_redaction>none</attribute_redaction>
             <Status>
-               <element_redaction>full</element_redaction>
-               <attribute_redaction>full</attribute_redaction>
+               <element_redaction>none</element_redaction>
+               <attribute_redaction>none</attribute_redaction>
             </Status>
             <ConversationId>
-               <element_redaction>full</element_redaction>
-               <attribute_redaction>full</attribute_redaction>
+               <element_redaction>none</element_redaction>
+               <attribute_redaction>none</attribute_redaction>
             </ConversationId>
          </Move>
          <EmptyFolderContents>
             <element_redaction>none</element_redaction>
             <attribute_redaction>none</attribute_redaction>
             <Status>
-               <element_redaction>full</element_redaction>
-               <attribute_redaction>full</attribute_redaction>
+               <element_redaction>none</element_redaction>
+               <attribute_redaction>none</attribute_redaction>
             </Status>
          </EmptyFolderContents>
          <Fetch>
             <element_redaction>none</element_redaction>
             <attribute_redaction>none</attribute_redaction>
             <Status>
-               <element_redaction>full</element_redaction>
-               <attribute_redaction>full</attribute_redaction>
+               <element_redaction>none</element_redaction>
+               <attribute_redaction>none</attribute_redaction>
             </Status>
             <Properties>
                <element_redaction>none</element_redaction>
                <attribute_redaction>none</attribute_redaction>
                <Range>
-                  <element_redaction>full</element_redaction>
-                  <attribute_redaction>full</attribute_redaction>
+                  <element_redaction>none</element_redaction>
+                  <attribute_redaction>none</attribute_redaction>
                </Range>
                <Total>
-                  <element_redaction>full</element_redaction>
-                  <attribute_redaction>full</attribute_redaction>
+                  <element_redaction>none</element_redaction>
+                  <attribute_redaction>none</attribute_redaction>
                </Total>
                <Data>
                   <element_redaction>full</element_redaction>
                   <attribute_redaction>full</attribute_redaction>
                </Data>
                <Part>
-                  <element_redaction>full</element_redaction>
-                  <attribute_redaction>full</attribute_redaction>
+                  <element_redaction>none</element_redaction>
+                  <attribute_redaction>none</attribute_redaction>
                </Part>
                <Version>
-                  <element_redaction>full</element_redaction>
-                  <attribute_redaction>full</attribute_redaction>
+                  <element_redaction>none</element_redaction>
+                  <attribute_redaction>none</attribute_redaction>
                </Version>
             </Properties>
          </Fetch>
