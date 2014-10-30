@@ -96,9 +96,9 @@ namespace NachoClient.iOS
         void HandleLoadError (object sender, UIWebErrorArgs e)
         {
             UIWebView webView = (UIWebView)View.ViewWithTag (WEB_VIEW_TAG);
-            string theText = McMutables.GetOrCreate (LoginHelpers.GetCurrentAccountId (), CACHE_MODULE, key, "");
-            if (!string.IsNullOrEmpty (theText)) {
-                webView.LoadHtmlString (theText, null);
+            string urlHtml = McMutables.GetOrCreate (LoginHelpers.GetCurrentAccountId (), CACHE_MODULE, key, "");
+            if (!string.IsNullOrEmpty (urlHtml)) {
+                webView.LoadHtmlString (urlHtml, null);
             } else {
                 webView.LoadHtmlString ("<h2>Sorry, you will need an internet connection to view this information.&nbsp;</h2>", null);
             }
