@@ -168,6 +168,8 @@ namespace Test.Common
         [Test]
         public void SetOptionalFields ()
         {
+            var mds = new MockDataSource ();
+            CreateMcBody (mds, 1);
             var setOptionalsXML = System.Xml.Linq.XElement.Parse (CategoryTestXML);
             McEmailMessage setOptionalsEmail = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (setOptionalsXML, new MockNcFolder ());
             Assert.NotNull (setOptionalsEmail.To);
@@ -491,10 +493,20 @@ namespace Test.Common
             }
         }
 
+        public void CreateMcBody (MockDataSource mds, int id)
+        {
+            var body = new McBody () {
+                AccountId = mds.Account.Id,
+            };
+            body.Insert ();
+            Assert.AreEqual (id, body.Id);
+        }
+
         [Test]
         public void EmailCategoriesTest ()
         {
-            Console.WriteLine (CategoryTestXML);
+            var mds = new MockDataSource ();
+            CreateMcBody (mds, 1);
             var categoriesXMLCommand = System.Xml.Linq.XElement.Parse (CategoryTestXML);
             Assert.IsNotNull (categoriesXMLCommand);
             Assert.AreEqual (categoriesXMLCommand.Name.LocalName, Xml.AirSync.Add);
@@ -520,12 +532,32 @@ namespace Test.Common
         [Test]
         public void TestQueryNeedsFetch ()
         {
+            var bodyMissing_1 = new McBody () {
+                AccountId = 1,
+                FilePresence = McAbstrFileDesc.FilePresenceEnum.None,
+            };
+            bodyMissing_1.Insert ();
+            var bodyMissing_2 = new McBody () {
+                AccountId = 2,
+                FilePresence = McAbstrFileDesc.FilePresenceEnum.None,
+            };
+            bodyMissing_2.Insert ();
+            var bodyPartial_1 = new McBody () {
+                AccountId = 1,
+                FilePresence = McAbstrFileDesc.FilePresenceEnum.Partial,
+            };
+            bodyPartial_1.Insert ();
+            var bodyComplete_1 = new McBody () {
+                AccountId = 1,
+                FilePresence = McAbstrFileDesc.FilePresenceEnum.Complete,
+            };
+            bodyComplete_1.Insert ();
             var keeper1 = new McEmailMessage () {
                 AccountId = 1,
                 ServerId = "keeper1",
                 IsAwaitingDelete = false,
                 Score = 0.98,
-                BodyState = McAbstrItem.BodyStateEnum.Missing_2,
+                BodyId = bodyMissing_1.Id,
                 DateReceived = DateTime.UtcNow.AddDays (-2),
             };
             keeper1.Insert ();
@@ -534,7 +566,7 @@ namespace Test.Common
                 ServerId = "keeper2",
                 IsAwaitingDelete = false,
                 Score = 0.98,
-                BodyState = McAbstrItem.BodyStateEnum.Truncated_1,
+                BodyId = bodyPartial_1.Id,
                 DateReceived = DateTime.UtcNow.AddDays (-3),
             };
             keeper2.Insert ();
@@ -543,7 +575,7 @@ namespace Test.Common
                 ServerId = "falloff",
                 IsAwaitingDelete = false,
                 Score = 0.97,
-                BodyState = McAbstrItem.BodyStateEnum.Missing_2,
+                BodyId = bodyMissing_1.Id,
                 DateReceived = DateTime.UtcNow.AddDays (-1),
             };
             fallOff.Insert ();
@@ -552,7 +584,7 @@ namespace Test.Common
                 ServerId = "other_account",
                 IsAwaitingDelete = false,
                 Score = 0.99,
-                BodyState = McAbstrItem.BodyStateEnum.Missing_2,
+                BodyId = bodyMissing_2.Id,
                 DateReceived = DateTime.UtcNow,
             };
             trash.Insert ();
@@ -561,7 +593,7 @@ namespace Test.Common
                 ServerId = "is_deleted",
                 IsAwaitingDelete = true,
                 Score = 0.99,
-                BodyState = McAbstrItem.BodyStateEnum.Missing_2,
+                BodyId = bodyMissing_1.Id,
                 DateReceived = DateTime.UtcNow,
             };
             trash.Insert ();
@@ -570,7 +602,7 @@ namespace Test.Common
                 ServerId = "low_score",
                 IsAwaitingDelete = false,
                 Score = 0.69,
-                BodyState = McAbstrItem.BodyStateEnum.Missing_2,
+                BodyId = bodyMissing_1.Id,
                 DateReceived = DateTime.UtcNow,
             };
             trash.Insert ();
@@ -579,7 +611,7 @@ namespace Test.Common
                 ServerId = "downloaded",
                 IsAwaitingDelete = false,
                 Score = 0.99,
-                BodyState = McAbstrItem.BodyStateEnum.Whole_0,
+                BodyId = bodyComplete_1.Id,
                 DateReceived = DateTime.UtcNow,
             };
             trash.Insert ();

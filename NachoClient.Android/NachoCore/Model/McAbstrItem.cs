@@ -23,18 +23,8 @@ namespace NachoCore.Model
         [Indexed]
         public bool HasBeenGleaned { get; set; }
 
-        public enum BodyStateEnum { Whole_0 = 0, Truncated_1 = 1, Missing_2 = 2 };
-        [Indexed]
-        public BodyStateEnum BodyState { get; set; }
-
-        // Valid only when the body is Missing or Truncated.
-        public int EstimatedBodySize { get; set; }
-
         /// Index of Body container
         public int BodyId { get; set; }
-
-        /// Type of the transferred body
-        public int BodyType { get; set; }
 
         public string BodyPreview { get; set; }
 
@@ -43,6 +33,7 @@ namespace NachoCore.Model
 
         // Platform-specific code sets this when a user-notification is sent.
         public bool HasBeenNotified { get; set; }
+
         /// The parser blew up when parsing this item, so we know it is missing some fields.
         public bool IsIncomplete { get; set; }
 
@@ -137,8 +128,8 @@ namespace NachoCore.Model
         {
             return NcModel.Instance.Db.Query<T> (
                 string.Format ("SELECT f.* FROM {0} AS f WHERE " +
-                    " f.AccountId = ? AND " +
-                    " f.BodyId = ? ",
+                " f.AccountId = ? AND " +
+                " f.BodyId = ? ",
                     typeof(T).Name), 
                 accountId, bodyId);
         }
@@ -167,22 +158,15 @@ namespace NachoCore.Model
                 accountId, accountId, folderId);
         }
 
-        public string GetBody ()
+        public McBody GetBody ()
         {
-            return McBody.GetContentsString (BodyId);
+            if (0 == BodyId) {
+                return null;
+            }
+            return McBody.QueryById<McBody> (BodyId);
         }
 
-        public string GetBodyPath ()
-        {
-            return McBody.GetFilePath (BodyId);
-        }
-
-        public int GetBodyType ()
-        {
-            return BodyType;
-        }
-
-        public string GetBodyPreviewOrEmpty()
+        public string GetBodyPreviewOrEmpty ()
         {
             if (null == BodyPreview) {
                 return String.Empty;
@@ -197,10 +181,6 @@ namespace NachoCore.Model
             return ClassCodeEnum.NeverInFolder;
         }
 
-        public bool IsDownloaded ()
-        {
-            return (BodyStateEnum.Whole_0 == BodyState);
-        }
     }
 }
 

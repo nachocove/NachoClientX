@@ -303,30 +303,6 @@ namespace NachoClient.iOS
             NcEmailArchiver.Delete (message);
         }
 
-        private string GetPreview (McEmailMessage message)
-        {
-            string error;
-            string preview = message.GetBodyPreviewOrEmpty ();
-            if (String.Empty != preview) {
-                return preview;
-            }
-            preview = MimeHelpers.ExtractTextPartWithError (message, out error);
-            if (String.IsNullOrEmpty (preview)) {
-                preview = " ";
-            }
-
-            // Truncate the body to 1000 characters
-            if (preview.Length > 1000) {
-                preview = preview.Substring (0, 1000);
-            }
-
-            // Cache a truncated version of preview
-            message.BodyPreview = preview;
-            message.Update ();
-
-            return preview;
-        }
-
         protected void HandleUnavailableMessage (UIView view)
         {
             foreach (var s in view.Subviews) {

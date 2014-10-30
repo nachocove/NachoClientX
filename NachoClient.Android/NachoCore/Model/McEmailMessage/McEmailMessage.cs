@@ -267,7 +267,8 @@ namespace NachoCore.Model
                 // appropriate place, once one is found.
                 AddMissingAttachmentsToBody ();
             }
-            return McBody.GetFilePath (BodyId);
+            var body = McBody.QueryById<McBody> (BodyId);
+            return body.GetFilePath ();
         }
 
         public void AddMissingAttachmentsToBody ()
@@ -278,7 +279,7 @@ namespace NachoCore.Model
             }
             var originalAttachments = McAttachment.QueryByItemId (AccountId, ReferencedEmailId, this.GetClassCode ());
             var body = McBody.QueryById<McBody> (BodyId);
-            MimeMessage mime = MimeHelpers.LoadMessage (body.GetFilePath ());
+            MimeMessage mime = MimeHelpers.LoadMessage (body);
             MimeHelpers.AddAttachments (mime, originalAttachments);
             body.UpdateData ((FileStream stream) => {
                 mime.WriteTo (stream);
@@ -300,7 +301,7 @@ namespace NachoCore.Model
                 return;
             }
             var body = McBody.QueryById<McBody> (BodyId);
-            var outgoingMime = MimeHelpers.LoadMessage (body.GetFilePath ());
+            var outgoingMime = MimeHelpers.LoadMessage (body);
             if (!ReferencedBodyIsIncluded) {
                 // Append the body of the original message to the outgoing message.
                 // TODO Be smart about formatting.  Right now everything is forced to plain text.
@@ -407,13 +408,14 @@ namespace NachoCore.Model
         {
             return NcModel.Instance.Db.Query<McEmailMessage> (
                 "SELECT e.* FROM McEmailMessage AS e " +
+                " JOIN McBody AS b ON b.Id = e.BodyId" +
                 " WHERE " +
                 " e.AccountId = ? AND " +
                 " e.IsAwaitingDelete = 0 AND " +
                 " e.Score >= ? AND " +
-                " e.BodyState != ? " +
+                " b.FilePresence != ? " +
                 " ORDER BY e.Score DESC, e.DateReceived DESC LIMIT ?",
-                accountId, minScore, (int)BodyStateEnum.Whole_0, limit);
+                accountId, minScore, (int)McAbstrFileDesc.FilePresenceEnum.Complete, limit);
         }
 
         public static List<NcEmailMessageIndex> QueryActiveMessageItemsByScore (int accountId, int folderId, double hotScore)
