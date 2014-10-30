@@ -91,6 +91,7 @@ namespace NachoCore.Model
             None,
             Partial,
             Complete,
+            Error,
         }
 
         /// FYI, AirSync.TypeCode PlainText_1, Html_2, Rtf_3, Mime_4
@@ -192,6 +193,7 @@ namespace NachoCore.Model
         {
             switch (presence) {
             case FilePresenceEnum.None:
+            case FilePresenceEnum.Error:
                 FilePresenceFraction = 0.0;
                 break;
             case FilePresenceEnum.Partial:
@@ -202,6 +204,7 @@ namespace NachoCore.Model
             case FilePresenceEnum.Complete:
                 FilePresenceFraction = 1.0;
                 break;
+
             default:
                 NcAssert.CaseError (string.Format ("{0}", presence.ToString ()));
                 break;
