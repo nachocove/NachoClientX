@@ -20,7 +20,12 @@ namespace NachoCore.ActiveSync
             PendingSingle.MarkDispached ();
         }
 
-        public override XDocument ToXDocument (AsHttpOperation Sender)
+        protected override bool RequiresPending ()
+        {
+            return true;
+        }
+
+        protected override XDocument ToXDocument (AsHttpOperation Sender)
         {
             var folderUpdate = new XElement (m_ns + Xml.FolderHierarchy.FolderUpdate,
                                    new XElement (m_ns + Xml.FolderHierarchy.SyncKey, BEContext.ProtocolState.AsSyncKey),

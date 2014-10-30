@@ -77,17 +77,20 @@ namespace Test.iOS
             return null;
         }
 
-        public virtual XDocument ToXDocument (AsHttpOperation sender)
+        public virtual bool SafeToXDocument (AsHttpOperation sender, out XDocument doc)
         {
             if (null != ProvideXDocument) {
-                return ProvideXDocument ();
+                doc = ProvideXDocument ();
+                return true;
             }
-            return null;
+            doc = null;
+            return true;
         }
 
-        public virtual StreamContent ToMime (AsHttpOperation sender)
+        public virtual bool SafeToMime (AsHttpOperation sender, out StreamContent mime)
         {
-            return null;
+            mime = null;
+            return true;
         }
 
         public virtual Uri ServerUri (AsHttpOperation sender)

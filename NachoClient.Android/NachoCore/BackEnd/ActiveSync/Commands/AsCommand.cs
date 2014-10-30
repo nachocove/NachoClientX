@@ -180,13 +180,44 @@ namespace NachoCore.ActiveSync
         public class AbortCommandException : Exception
         {
         }
+
+        protected virtual bool RequiresPending ()
+        {
+            return false;
+        }
+
+        // SafeToX methods return false only in the case where missing McPending prevent success.
+        public bool SafeToXDocument (AsHttpOperation Sender, out XDocument doc)
+        {
+            lock (PendingResolveLockObj) {
+                if (RequiresPending () && null == PendingSingle && 0 == PendingList.Count) {
+                    doc = null;
+                    return false;
+                }
+                doc = ToXDocument (Sender);
+                return true;
+            }
+        }
+
         // The subclass should for any given instatiation only return non-null from ToXDocument XOR ToMime.
-        public virtual XDocument ToXDocument (AsHttpOperation Sender)
+        protected virtual XDocument ToXDocument (AsHttpOperation Sender)
         {
             return null;
         }
 
-        public virtual StreamContent ToMime (AsHttpOperation Sender)
+        public virtual bool SafeToMime (AsHttpOperation Sender, out StreamContent mime)
+        {
+            lock (PendingResolveLockObj) {
+                if (RequiresPending () && null == PendingSingle && 0 == PendingList.Count) {
+                    mime = null;
+                    return false;
+                }
+                mime = ToMime (Sender);
+                return true;
+            }
+        }
+
+        protected virtual StreamContent ToMime (AsHttpOperation Sender)
         {
             return null;
         }

@@ -344,7 +344,11 @@ namespace NachoCore.ActiveSync
 
         private bool CreateHttpRequest (out HttpRequestMessage request, CancellationToken cToken)
         {
-            XDocument doc = Owner.ToXDocument (this);
+            request = null;
+            XDocument doc;
+            if (!Owner.SafeToXDocument (this, out doc)) {
+                return false;
+            }
             request = new HttpRequestMessage (Owner.Method (this), ServerUri);
             if (null != doc) {
                 Log.Debug (Log.LOG_XML, "{0}:\n{1}", CommandName, doc);
@@ -362,7 +366,10 @@ namespace NachoCore.ActiveSync
                     request.Content = new StringContent (xmlText, UTF8Encoding.UTF8, ContentTypeXml);
                 }
             }
-            var mime = Owner.ToMime (this);
+            StreamContent mime;
+            if (!Owner.SafeToMime (this, out mime)) {
+                return false;
+            }
             if (null != mime) {
                 request.Content = mime;
             }

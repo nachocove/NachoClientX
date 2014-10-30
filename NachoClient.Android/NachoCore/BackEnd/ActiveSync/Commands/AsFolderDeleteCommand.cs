@@ -19,7 +19,12 @@ namespace NachoCore.ActiveSync
             PendingSingle.MarkDispached ();
         }
 
-        public override XDocument ToXDocument (AsHttpOperation Sender)
+        protected override bool RequiresPending ()
+        {
+            return true;
+        }
+
+        protected override XDocument ToXDocument (AsHttpOperation Sender)
         {
             var folderDelete = new XElement (m_ns + Xml.FolderHierarchy.FolderDelete,
                                    new XElement (m_ns + Xml.FolderHierarchy.SyncKey, BEContext.ProtocolState.AsSyncKey),

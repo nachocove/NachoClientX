@@ -130,7 +130,7 @@ namespace NachoCore.ActiveSync
             Sm.Start ();
         }
 
-        public override XDocument ToXDocument (AsHttpOperation Sender)
+        protected override XDocument ToXDocument (AsHttpOperation Sender)
         {
             var provision = new XElement (m_ns + Xml.Provision.Ns);
             if (BEContext.ProtocolState.IsWipeRequired) {

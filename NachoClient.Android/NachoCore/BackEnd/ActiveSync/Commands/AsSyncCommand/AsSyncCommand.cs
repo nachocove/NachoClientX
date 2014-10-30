@@ -180,7 +180,7 @@ namespace NachoCore.ActiveSync
                 new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId));
         }
 
-        public override XDocument ToXDocument (AsHttpOperation Sender)
+        protected override XDocument ToXDocument (AsHttpOperation Sender)
         {
             var collections = new XElement (m_ns + Xml.AirSync.Collections);
             foreach (var perFolder in SyncKitList) {
