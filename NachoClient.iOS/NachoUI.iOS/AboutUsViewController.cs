@@ -4,13 +4,196 @@ using System;
 
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
+using System.Drawing;
 
 namespace NachoClient.iOS
 {
-	public partial class AboutUsViewController : UIViewController
+    public partial class AboutUsViewController : NcUIViewControllerNoLeaks
 	{
+        protected const float HORIZONTAL_PADDING = 12;
+        protected const float INDENT = 18;
+        protected const float CELL_HEIGHT = 44;
+
+        protected const int LICENSE_AGREEMENT_VIEW_TAG = 100;
+        protected const int OPEN_SOURCE_VIEW_TAG = 101;
+
+        protected string url;
+        protected string title;
+        protected bool loadFromWeb;
+
+        protected UIBarButtonItem backButton;
+
+        protected UITapGestureRecognizer licenseAgreementTapGesture;
+        protected UITapGestureRecognizer.Token licenseAgreementTapGestureHandlerToken;
+
+        protected UITapGestureRecognizer openSourceTapGesture;
+        protected UITapGestureRecognizer.Token openSourceTapGestureHandlerToken;
+
+
+
 		public AboutUsViewController (IntPtr handle) : base (handle)
 		{
 		}
+
+        protected override void CreateViewHierarchy ()
+        {
+            NavigationController.NavigationBar.Translucent = false;
+            NavigationItem.Title = "About NachoMail";
+
+            backButton = new UIBarButtonItem ();
+            backButton.Clicked += BackButtonClicked;
+            using (var backIcon = UIImage.FromBundle ("nav-backarrow")) {
+                backButton.Image = backIcon;
+            }
+            backButton.TintColor = A.Color_NachoBlue;
+            NavigationItem.LeftBarButtonItem = backButton;
+
+            View.BackgroundColor = A.Color_NachoBackgroundGray;
+
+            UIView aboutUsView = new UIView (new RectangleF (HORIZONTAL_PADDING, 20, View.Frame.Width - HORIZONTAL_PADDING * 2, View.Frame.Height - 24 - 120 - 75));
+            aboutUsView.BackgroundColor = UIColor.White;
+            aboutUsView.Layer.CornerRadius = 6f;
+            aboutUsView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
+            aboutUsView.Layer.BorderWidth = 1f;
+
+            float yOffset = INDENT;
+
+            UIImageView nachoLogoImageView;
+            using (var nachoLogo = UIImage.FromBundle ("Bootscreen-1")) {
+                nachoLogoImageView = new UIImageView (nachoLogo);
+            }
+            nachoLogoImageView.Frame = new RectangleF (aboutUsView.Frame.Width / 2 - 40, yOffset, 80, 80);
+            aboutUsView.Add (nachoLogoImageView);
+
+            yOffset = nachoLogoImageView.Frame.Bottom + 15;
+
+            UILabel aboutUsHeaderLabel = new UILabel (new RectangleF (INDENT, yOffset, aboutUsView.Frame.Width - INDENT * 2, 100));
+            aboutUsHeaderLabel.Font = A.Font_AvenirNextDemiBold17;
+            aboutUsHeaderLabel.TextColor = A.Color_NachoGreen;
+            aboutUsHeaderLabel.TextAlignment = UITextAlignment.Center;
+            aboutUsHeaderLabel.Lines = 4;
+            aboutUsHeaderLabel.LineBreakMode = UILineBreakMode.WordWrap;
+            aboutUsHeaderLabel.Text = "Nacho Core believes that productivity software is more than " +
+                "just a great email app with contacts and calendar capability.";
+            aboutUsView.AddSubview (aboutUsHeaderLabel);
+
+            yOffset = aboutUsHeaderLabel.Frame.Bottom + 15;
+
+            UILabel aboutUsDescriptionLabel = new UILabel (new RectangleF (INDENT, yOffset, aboutUsView.Frame.Width - INDENT * 2, 100));
+            aboutUsDescriptionLabel.Font = A.Font_AvenirNextRegular14;
+            aboutUsDescriptionLabel.TextColor = A.Color_NachoBlack;
+            aboutUsDescriptionLabel.TextAlignment = UITextAlignment.Center;
+            aboutUsDescriptionLabel.Lines = 5;
+            aboutUsDescriptionLabel.LineBreakMode = UILineBreakMode.WordWrap;
+            aboutUsDescriptionLabel.Text = "In addition to being a great email client, your PIM software should actively help" +
+                " you achieve your goals, help you manage your time and reduce clutter that gets in your way.";
+            aboutUsView.AddSubview (aboutUsDescriptionLabel);
+
+            View.AddSubview (aboutUsView);
+
+            yOffset = aboutUsView.Frame.Bottom + 12;
+
+            UIView buttonsCell = new UIView (new RectangleF(HORIZONTAL_PADDING, yOffset, View.Frame.Width - (HORIZONTAL_PADDING * 2), CELL_HEIGHT * 2));
+            buttonsCell.BackgroundColor = UIColor.White;
+            buttonsCell.Layer.CornerRadius = 4f;
+            buttonsCell.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
+            buttonsCell.Layer.BorderWidth = 1f;
+
+            UILabel licenseAgreementLabel = new UILabel (new RectangleF (INDENT, 12, 200, 20));
+            licenseAgreementLabel.Font = A.Font_AvenirNextMedium14;
+            licenseAgreementLabel.TextColor = A.Color_NachoGreen;
+            licenseAgreementLabel.Text = "Read License Agreement";
+            buttonsCell.AddSubview (licenseAgreementLabel);
+
+            UIView licenseAgreementView = new UIView (new RectangleF (0, 0, buttonsCell.Frame.Width, CELL_HEIGHT));
+            licenseAgreementView.BackgroundColor = UIColor.Clear;
+            licenseAgreementView.UserInteractionEnabled = true;
+            licenseAgreementView.Tag = LICENSE_AGREEMENT_VIEW_TAG;
+
+            licenseAgreementTapGesture = new UITapGestureRecognizer ();
+            licenseAgreementTapGestureHandlerToken = licenseAgreementTapGesture.AddTarget (LicenseAgreementTapHandler);
+            licenseAgreementView.AddGestureRecognizer (licenseAgreementTapGesture);
+            buttonsCell.AddSubview (licenseAgreementView);
+
+            Util.AddHorizontalLine (0, CELL_HEIGHT, buttonsCell.Frame.Width, A.Color_NachoBorderGray, buttonsCell);
+
+            UILabel openSourceLabel = new UILabel (new RectangleF (INDENT, CELL_HEIGHT + 11, 230, 20));
+            openSourceLabel.Font = A.Font_AvenirNextMedium14;
+            openSourceLabel.TextColor = A.Color_NachoGreen;
+            openSourceLabel.Text = "View Open Source Contributions";
+            buttonsCell.AddSubview (openSourceLabel);
+
+            UIView openSourceView = new UIView (new RectangleF (0, CELL_HEIGHT, buttonsCell.Frame.Width, CELL_HEIGHT));
+            openSourceView.BackgroundColor = UIColor.Clear;
+            openSourceView.UserInteractionEnabled = true;
+            openSourceView.Tag = OPEN_SOURCE_VIEW_TAG;
+
+            var openSourceTap = new UITapGestureRecognizer ();
+            openSourceTapGestureHandlerToken = openSourceTap.AddTarget (OpenSourceTapHandler);
+            openSourceView.AddGestureRecognizer (openSourceTap);
+            buttonsCell.AddSubview (openSourceView);
+
+            View.AddSubview (buttonsCell);
+        }
+
+        protected void BackButtonClicked (object sender, EventArgs e)
+        {
+            DismissViewController(true, null);
+        }
+
+        protected void LicenseAgreementTapHandler (NSObject sender)
+        {
+            var gesture = sender as UIGestureRecognizer;
+            if (null != gesture) {
+                url = "https://nachocove.com/legal-text/";
+                title = "License Agreement";
+                loadFromWeb = true;
+                PerformSegue ("SegueToSettingsLegal", this);
+            }
+        }
+
+        protected void OpenSourceTapHandler (NSObject sender)
+        {
+            var gesture = sender as UIGestureRecognizer;
+            if (null != gesture) {
+                url = NSBundle.MainBundle.PathForResource("LegalInfo", "txt", "", "").ToString();
+                title = "Open Source Contributions";
+                loadFromWeb = false;
+                PerformSegue ("SegueToSettingsLegal", this);
+            }
+        }
+
+        protected override void ConfigureAndLayout ()
+        {
+
+        }
+
+        protected override void Cleanup ()
+        {
+            backButton.Clicked -= BackButtonClicked;
+            backButton = null;
+
+            licenseAgreementTapGesture.RemoveTarget (licenseAgreementTapGestureHandlerToken);
+            var licenseView = (UIView)View.ViewWithTag (LICENSE_AGREEMENT_VIEW_TAG);
+            if (null != licenseView) {
+                licenseView.RemoveGestureRecognizer (licenseAgreementTapGesture);
+            }
+
+            openSourceTapGesture.RemoveTarget (openSourceTapGestureHandlerToken);
+            var openSource = (UIView)View.ViewWithTag (OPEN_SOURCE_VIEW_TAG);
+            if (null != openSource){
+                openSource.RemoveGestureRecognizer (openSourceTapGesture);
+            }
+        }
+
+        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        {
+            if (segue.Identifier.Equals ("SegueToSettingsLegal")) {
+                var x = segue.DestinationViewController;
+                var settingsLegal = (SettingsLegalViewController)segue.DestinationViewController.ChildViewControllers[0];
+                settingsLegal.SetProperties (url, title, loadFromWeb);
+                return;
+            }
+        }
 	}
 }
