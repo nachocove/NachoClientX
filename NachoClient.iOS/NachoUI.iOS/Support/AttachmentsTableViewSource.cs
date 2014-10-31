@@ -397,8 +397,6 @@ namespace NachoClient.iOS
                 } else {
                     iconView.Image = UIImage.FromBundle ("email-att-files");
                 }
-
-
             } else {
                 textLabel.Text = "File no longer exists"; 
             }
@@ -471,9 +469,9 @@ namespace NachoClient.iOS
                     multiSelect.Add (indexPath, file);
                 }
                 if (multiSelect.Count >= 2) {
-                    vc.ConfigureMultiSelectNavBar (false);
+                    vc.ConfigureMultiSelectNavBar (false, multiSelect.Count);
                 } else {
-                    vc.ConfigureMultiSelectNavBar (true);
+                    vc.ConfigureMultiSelectNavBar (true, multiSelect.Count);
                 }
             } else {
                 NcFileIndex item;

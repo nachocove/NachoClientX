@@ -206,7 +206,8 @@ namespace NachoClient.iOS
                 ToggleSearchBar (false);
                 isMultiSelecting = true;
                 AttachmentsSource.IsMultiSelecting = true;
-                UIView.Animate (.1, 0, UIViewAnimationOptions.CurveLinear,
+                ConfigureMultiSelectNavBar (true, 0);
+                UIView.Animate (.15, 0, UIViewAnimationOptions.CurveLinear,
                     () => {
                         segmentedControlView.Center = new PointF (segmentedControlView.Center.X, segmentedControlView.Center.Y - segmentedControlView.Frame.Height);
                         tableView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height);
@@ -245,7 +246,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public void ConfigureMultiSelectNavBar (bool openIn)
+        public void ConfigureMultiSelectNavBar (bool openIn, int count)
         {
             if (openIn) {
                 NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
@@ -253,11 +254,27 @@ namespace NachoClient.iOS
                     multiAttachButton,
                     multiOpenInButton
                 };
+                if (0 == count) {
+                    multiDeleteButton.Enabled = false;
+                    multiAttachButton.Enabled = false;
+                    multiOpenInButton.Enabled = false;
+                } else {
+                    multiDeleteButton.Enabled = true;
+                    multiAttachButton.Enabled = true;
+                    multiOpenInButton.Enabled = true;
+                }
             } else {
                 NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
                     multiDeleteButton,
                     multiAttachButton
                 };
+                if (0 == count) {
+                    multiDeleteButton.Enabled = false;
+                    multiAttachButton.Enabled = false;
+                } else {
+                    multiDeleteButton.Enabled = true;
+                    multiAttachButton.Enabled = true;
+                }
             }
         }
 
