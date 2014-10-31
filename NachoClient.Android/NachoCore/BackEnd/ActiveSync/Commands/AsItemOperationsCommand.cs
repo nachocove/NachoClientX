@@ -137,37 +137,9 @@ namespace NachoCore.ActiveSync
         private void MaybeResolveAsHardFail (McPending pending, NcResult.WhyEnum why)
         {
             if (null != pending) {
-                ApplyError (pending);
                 pending.ResolveAsHardFail (BEContext.ProtoControl, why);
             }
             PendingList.Remove (pending);
-        }
-
-        private void ApplyError (McPending pending, bool isDefer = false)
-        {
-            if (isDefer && 0 < pending.DefersRemaining) {
-                return;
-            }
-            if (McPending.Operations.EmailBodyDownload == pending.Operation) {
-                NcModel.Instance.RunInTransaction (() => {
-                    var email = McEmailMessage.QueryByServerId<McEmailMessage> (pending.AccountId, pending.ServerId);
-                    if (null == email) {
-                        Log.Error (Log.LOG_AS, "AsItemOperations:ApplyError: can't find McEmailMessage with ServerId {0}", pending.ServerId);
-                        return;
-                    }
-                    if (0 != email.BodyId) {
-                        var oldBody = McBody.QueryById<McBody> (email.BodyId);
-                        if (null == oldBody) {
-                            Log.Error (Log.LOG_AS, "AsItemOperations:ApplyError: BodyId {0} has no body", email.BodyId);
-                        } else {
-                            oldBody.Delete();
-                        }
-                    }
-                    var body = McBody.InsertError (pending.AccountId);
-                    email.BodyId = body.Id;
-                    email.Update ();
-                });
-            }
         }
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
@@ -207,7 +179,6 @@ namespace NachoCore.ActiveSync
                                 }
                             } else {
                                 if (null != pending) {
-                                    ApplyError (pending);
                                     pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.Error (NcResult.SubKindEnum.Error_AttDownloadFailed));
                                 }
                             }
@@ -312,7 +283,6 @@ namespace NachoCore.ActiveSync
             case Xml.ItemOperations.StatusCode.AttachmentOrIdInvalid_15:
             case Xml.ItemOperations.StatusCode.ProtocolErrorMissing_155:
                 PendingResolveApply ((pending) => {
-                    ApplyError (pending);
                     pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.WhyEnum.ProtocolError);
                 });
                 return Event.Create ((uint)SmEvt.E.HardFail, "IOHARD0");
@@ -321,7 +291,6 @@ namespace NachoCore.ActiveSync
             case Xml.ItemOperations.StatusCode.IoFailure_12:
             case Xml.ItemOperations.StatusCode.ConversionFailure_14:
                 PendingResolveApply ((pending) => {
-                    ApplyError (pending);
                     pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.WhyEnum.ServerError);
                 });
                 return Event.Create ((uint)SmEvt.E.HardFail, "IOHARD1");
@@ -332,7 +301,6 @@ namespace NachoCore.ActiveSync
             case Xml.ItemOperations.StatusCode.PartialFailure_17:
             case Xml.ItemOperations.StatusCode.ActionNotSupported_156:
                 PendingResolveApply ((pending) => {
-                    ApplyError (pending);
                     pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.WhyEnum.Unknown);
                 });
                 return Event.Create ((uint)SmEvt.E.HardFail, "IOHARD2");
@@ -340,34 +308,29 @@ namespace NachoCore.ActiveSync
             case Xml.ItemOperations.StatusCode.DocLibAccessDeniedOrMissing_6:
             case Xml.ItemOperations.StatusCode.FileEmpty_10:
                 PendingResolveApply ((pending) => {
-                    ApplyError (pending);
                     pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.WhyEnum.MissingOnServer);
                 });
                 return Event.Create ((uint)SmEvt.E.HardFail, "IOHARD3");
 
             case Xml.ItemOperations.StatusCode.RequestTooLarge_11:
                 PendingResolveApply ((pending) => {
-                    ApplyError (pending);
                     pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.WhyEnum.TooBig);
                 });
                 return Event.Create ((uint)SmEvt.E.HardFail, "IOHARD3");
 
             case Xml.ItemOperations.StatusCode.ResourceAccessDenied_16:
                 PendingResolveApply ((pending) => {
-                    ApplyError (pending);
                     pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.WhyEnum.AccessDeniedOrBlocked);
                 });
                 return Event.Create ((uint)SmEvt.E.HardFail, "IOHARD4");
 
             case Xml.ItemOperations.StatusCode.CredRequired_18:
                 PendingResolveApply ((pending) => {
-                    ApplyError (pending, true);
                     pending.ResolveAsDeferredForce (BEContext.ProtoControl);
                 });
                 return Event.Create ((uint)AsProtoControl.AsEvt.E.AuthFail, "IOAUTH");
             default:
                 PendingResolveApply ((pending) => {
-                    ApplyError (pending);
                     pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.WhyEnum.Unknown);
                 });
                 return Event.Create ((uint)SmEvt.E.Success, "IOFAIL");
