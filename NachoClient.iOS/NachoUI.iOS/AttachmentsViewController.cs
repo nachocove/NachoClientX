@@ -43,6 +43,18 @@ namespace NachoClient.iOS
         // animation constants
         public float AnimationDuration = 3.0f;
 
+        UIBarButtonItem searchButton;
+        UIBarButtonItem multiSelectButton;
+        UIBarButtonItem multiOpenInButton;
+        UIBarButtonItem multiAttachButton;
+        UIBarButtonItem multiDeleteButton;
+        UIBarButtonItem multiCancelButton;
+        public bool isMultiSelecting;
+
+        private bool suppressLayout;
+
+        UINavigationBar navbar = new UINavigationBar ();
+
         /// <summary>
         /// INachoFileChooser delegate
         /// </summary>
@@ -67,17 +79,35 @@ namespace NachoClient.iOS
             NavigationItem.SetHidesBackButton (true, false);
             account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
 
-            // Watch for changes from the back end
-            NcApplication.Instance.StatusIndEvent += (object sender, EventArgs e) => {
-                var s = (StatusIndEventArgs)e;
-                if (NcResult.SubKindEnum.Info_AttDownloadUpdate == s.Status.SubKind) {
-                    RefreshTableSource ();
-                }
-            };
             CreateView ();
         }
 
-        UINavigationBar navbar = new UINavigationBar ();
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+            if (null != this.NavigationController) {
+                this.NavigationController.ToolbarHidden = true;
+            }
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            RefreshTableSource ();
+        }
+
+        public override void ViewWillDisappear (bool animated)
+        {
+            base.ViewWillDisappear (animated);
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+            // In case we exit during scrolling
+            NachoClient.Util.RegularPriority ();
+        }
+
+        public void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+            if (NcResult.SubKindEnum.Info_AttDownloadUpdate == s.Status.SubKind) {
+                Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: AttachmentsSetChanged");
+                RefreshTableSource ();
+            }
+        }
 
         private void CreateView ()
         {
@@ -91,7 +121,7 @@ namespace NachoClient.iOS
 
             if (modal) {
                 navbar.Frame = new RectangleF (0, 0, View.Frame.Width, 64);
-                View.Add (navbar);
+                View.AddSubview (navbar);
                 navbar.BackgroundColor = A.Color_NachoGreen;
                 navbar.Translucent = false;
                 UINavigationItem title = new UINavigationItem ("Attach file");
@@ -133,7 +163,7 @@ namespace NachoClient.iOS
             yOffset += segmentedControlView.Frame.Height;
 
             Util.AddHorizontalLine (0, segmentedControlView.Frame.Height, View.Frame.Width, A.Color_NachoBorderGray, segmentedControlView);
-            segmentedControlView.Add (segmentedControl);
+            segmentedControlView.AddSubview (segmentedControl);
             View.AddSubview (segmentedControlView);
 
             tableView = new UITableView (new RectangleF (0, 0, 0, 0), UITableViewStyle.Grouped);
@@ -143,7 +173,7 @@ namespace NachoClient.iOS
             AttachmentsSource = new AttachmentsTableViewSource (this, account);
             AttachmentsSource.SetOwner (this, SearchDisplayController);
 
-            View.Add (tableView);
+            View.AddSubview (tableView);
             // set up the table view source
             tableView.Source = AttachmentsSource;
             SearchDisplayController.SearchResultsTableView.Source = AttachmentsSource;
@@ -181,16 +211,7 @@ namespace NachoClient.iOS
             View.AddSubview (EmptyListLabel);
 
             View.BringSubviewToFront (segmentedControlView);
-
         }
-
-        UIBarButtonItem searchButton;
-        UIBarButtonItem multiSelectButton;
-        UIBarButtonItem multiOpenInButton;
-        UIBarButtonItem multiAttachButton;
-        UIBarButtonItem multiDeleteButton;
-        UIBarButtonItem multiCancelButton;
-        public static bool isMultiSelecting;
 
         private void ToggleMultiSelect (bool isMultiSelect)
         {
@@ -207,7 +228,7 @@ namespace NachoClient.iOS
                 isMultiSelecting = true;
                 AttachmentsSource.IsMultiSelecting = true;
                 ConfigureMultiSelectNavBar (true, 0);
-                UIView.Animate (.15, 0, UIViewAnimationOptions.CurveLinear,
+                UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
                     () => {
                         segmentedControlView.Center = new PointF (segmentedControlView.Center.X, segmentedControlView.Center.Y - segmentedControlView.Frame.Height);
                         tableView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height);
@@ -280,7 +301,7 @@ namespace NachoClient.iOS
 
         private void ConfigureFilesView ()
         {
-            if (AttachmentsSource.Items.Count == 0) {
+            if (0 == AttachmentsSource.Items.Count) {
                 this.tableView.ScrollEnabled = false;
                 tableView.Hidden = true;
                 EmptyListLabel.Hidden = false;
@@ -290,20 +311,6 @@ namespace NachoClient.iOS
                 EmptyListLabel.Hidden = true;
                 tableView.Hidden = false;
             }
-        }
-
-        public override void ViewWillAppear (bool animated)
-        {
-            base.ViewWillAppear (animated);
-            if (null != this.NavigationController) {
-                this.NavigationController.ToolbarHidden = true;
-            }
-            RefreshTableSource ();
-        }
-
-        public override void ViewWillDisappear (bool animated)
-        {
-            base.ViewWillDisappear (animated);
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
@@ -327,6 +334,9 @@ namespace NachoClient.iOS
                 dc.SetOwner (this);
                 return;
             }
+
+            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
+            NcAssert.CaseError ();
         }
 
         protected void InitializeSearchDisplayController ()
@@ -442,8 +452,6 @@ namespace NachoClient.iOS
             }
             RefreshTableSource ();
         }
-
-        private bool suppressLayout;
 
         public override void ViewDidLayoutSubviews ()
         {
@@ -584,17 +592,18 @@ namespace NachoClient.iOS
             var tempAttachmentsList = new List<McAttachment> ();
             foreach (var entry in AttachmentsSource.MultiSelect) {
                 var item = entry.Value;
+                var tempAttachment = new McAttachment ();
                 switch (item.FileType) {
                 case 0:
                     McAttachment attachment = McAttachment.QueryById<McAttachment> (item.Id);
                     if (null != attachment) {
-                        tempAttachmentsList.Add (attachment);
+                        tempAttachment = attachment;
                     }
                     break;
                 case 1:
                     McNote note = McNote.QueryById<McNote> (item.Id);
                     if (null != note) {
-                        tempAttachmentsList.Add (AttachmentsSource.NoteToAttachment (note));
+                        tempAttachment = AttachmentsSource.NoteToAttachment (note);
                     }
                     break;
                 case 2:
@@ -603,6 +612,18 @@ namespace NachoClient.iOS
                 default:
                     NcAssert.CaseError ("Attaching unknown file type");
                     break;
+                }
+                if (McAbstrFileDesc.FilePresenceEnum.Complete != tempAttachment.FilePresence) {
+                    UIAlertView alert = new UIAlertView (
+                                            "Hold on", 
+                                            "All attachments must be downloaded before they can be attached to an email.", 
+                                            null, 
+                                            "OK"
+                                        );
+                    alert.Show ();
+                    return;
+                } else {
+                    tempAttachmentsList.Add (tempAttachment);
                 }
             }
             ForwardAttachments (tempAttachmentsList);
@@ -640,7 +661,7 @@ namespace NachoClient.iOS
                 searchbarOverlay.Hidden = false;
                 searchbarOverlay.BackgroundColor = UIColor.Black;
                 searchbarOverlay.Alpha = 0;
-                SearchDisplayController.SearchBar.Add (searchbarOverlay);
+                SearchDisplayController.SearchBar.AddSubview (searchbarOverlay);
                 UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
                     () => {
                         searchbarOverlay.Alpha = .3f;

@@ -55,6 +55,17 @@ namespace NachoClient.iOS
         private const int OPEN_IN_TAG = 2000;
         private const int DELETE_TAG = 3000;
 
+        protected static int ICON_TAG = 150;
+        protected static int MULTI_ICON_TAG = 175;
+        protected static int DATE_LABEL_TAG = 200;
+        protected static int TEXT_LABEL_TAG = 300;
+        protected static int DETAIL_TEXT_LABEL_TAG = 400;
+        protected static int DATE_TEXT_LABEL_TAG = 450;
+        protected static int DOWNLOAD_IMAGEVIEW_TAG = 500;
+        protected static int SEPARATOR_LINE_TAG = 600;
+        protected static int BY_CONTACT_SEGMENT = 2;
+        protected bool downloaded;
+
         // Pre-made swipe action descriptors
         private static SwipeActionDescriptor EMAIL_ATTACH_BUTTON =
             new SwipeActionDescriptor (EMAIL_ATTACH_TAG, 0.25f, UIImage.FromBundle ("email-archive-gray"),
@@ -193,7 +204,7 @@ namespace NachoClient.iOS
             view.SetAction (EMAIL_ATTACH_BUTTON, SwipeSide.LEFT);
             view.SetAction (OPEN_IN_BUTTON, SwipeSide.LEFT);
 
-            cell.Add (view);
+            cell.AddSubview (view);
             view.Tag = SWIPE_TAG;
             view.BackgroundColor = CELL_COMPONENT_BG_COLOR;
 
@@ -203,14 +214,14 @@ namespace NachoClient.iOS
             multiSelectImageView.BackgroundColor = CELL_COMPONENT_BG_COLOR;
             multiSelectImageView.Frame = new RectangleF (18, (view.Frame.Height / 2) - 8, 16, 16);
             multiSelectImageView.Hidden = true;
-            view.Add (multiSelectImageView);
+            view.AddSubview (multiSelectImageView);
 
             //Cell icon
             var cellIconImageView = new UIImageView (); 
             cellIconImageView.Tag = ICON_TAG;
             cellIconImageView.BackgroundColor = CELL_COMPONENT_BG_COLOR;
             cellIconImageView.Frame = new RectangleF (18, 28, 24, 24);
-            view.Add (cellIconImageView);
+            view.AddSubview (cellIconImageView);
 
             //Text label
             var textLabel = new UILabel (); 
@@ -219,7 +230,7 @@ namespace NachoClient.iOS
             textLabel.TextColor = A.Color_NachoDarkText;
             textLabel.BackgroundColor = CELL_COMPONENT_BG_COLOR;
             textLabel.Frame = new RectangleF (60, 11, cell.Frame.Width - 60 - 52, 19.5f);
-            view.Add (textLabel);
+            view.AddSubview (textLabel);
 
             //Detail text label
             var detailTextlabel = new UILabel (); 
@@ -228,7 +239,7 @@ namespace NachoClient.iOS
             detailTextlabel.Font = A.Font_AvenirNextRegular14;
             detailTextlabel.TextColor = A.Color_NachoTextGray;
             detailTextlabel.Frame = new RectangleF (60, 11 + 19.5f, cell.Frame.Width - 60 - 52, 19.5f);
-            view.Add (detailTextlabel);
+            view.AddSubview (detailTextlabel);
 
             //Date text label
             var dateTextlabel = new UILabel (); 
@@ -237,19 +248,19 @@ namespace NachoClient.iOS
             dateTextlabel.Font = A.Font_AvenirNextRegular14;
             dateTextlabel.TextColor = A.Color_NachoTextGray;
             dateTextlabel.Frame = new RectangleF (60, 11 + 19.5f + 19.5f, cell.Frame.Width - 60 - 52, 19.5f);
-            view.Add (dateTextlabel);
+            view.AddSubview (dateTextlabel);
 
             //Download image view
             var dowloadImageView = new UIImageView (new RectangleF (cell.Frame.Width - 18 - 16, (view.Frame.Height / 2) - 8, 16, 16)); 
             dowloadImageView.Tag = DOWNLOAD_IMAGEVIEW_TAG;
-            view.Add (dowloadImageView);
+            view.AddSubview (dowloadImageView);
 
             //Separator line
             var separatorLine = Util.AddHorizontalLineView (60, 80, cell.Frame.Width - 60, A.Color_NachoBorderGray);
             separatorLine.Tag = SEPARATOR_LINE_TAG;
-            view.Add (separatorLine);
+            view.AddSubview (separatorLine);
 
-            cell.Add (view);
+            cell.AddSubview (view);
             return cell;
         }
 
@@ -360,14 +371,13 @@ namespace NachoClient.iOS
                 if (McAbstrFileDesc.FilePresenceEnum.Complete == attachment.FilePresence) {
                     downloaded = true;
                     downloadImageView.Image = UIImage.FromFile (DownloadIcon);
-                    downloadImageView.Alpha = 0;
-                    (downloadImageView.Superview).SendSubviewToBack (downloadImageView);
+                    downloadImageView.Hidden = true;
                 } else if (McAbstrFileDesc.FilePresenceEnum.Partial == attachment.FilePresence) {
                     //vc.AttachmentAction (attachment.Id, cell);
                 } else {
                     (downloadImageView.Superview).BringSubviewToFront (downloadImageView);
                     downloadImageView.Image = UIImage.FromFile (DownloadIcon);
-                    downloadImageView.Alpha = 1;
+                    downloadImageView.Hidden = false;
                 }
 
                 textLabel.Text = Path.GetFileNameWithoutExtension (item.DisplayName);
@@ -443,17 +453,6 @@ namespace NachoClient.iOS
             }
             return file;
         }
-
-        protected static int ICON_TAG = 150;
-        protected static int MULTI_ICON_TAG = 175;
-        protected static int DATE_LABEL_TAG = 200;
-        protected static int TEXT_LABEL_TAG = 300;
-        protected static int DETAIL_TEXT_LABEL_TAG = 400;
-        protected static int DATE_TEXT_LABEL_TAG = 450;
-        protected static int DOWNLOAD_IMAGEVIEW_TAG = 500;
-        protected static int SEPARATOR_LINE_TAG = 600;
-        protected static int BY_CONTACT_SEGMENT = 2;
-        protected bool downloaded;
 
         public override void RowSelected (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
         {
