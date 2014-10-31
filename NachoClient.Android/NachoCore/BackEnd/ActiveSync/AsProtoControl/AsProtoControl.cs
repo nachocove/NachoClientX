@@ -1077,9 +1077,17 @@ namespace NachoCore.ActiveSync
             Cmd = nextCmd;
         }
 
-        public override void ForceStop ()
+        private void LongStop ()
         {
             StopCurrentOp ();
+            // Because we are going to stop for a while, we need to fail any
+            // non-Dispached pending that aren't allowed to be deferred.
+            McPending.ResolveAllDoNotDelayAsFailed (ProtoControl, Account.Id);
+        }
+
+        public override void ForceStop ()
+        {
+            LongStop ();
             if (null != PendingOnTimeTimer) {
                 PendingOnTimeTimer.Dispose ();
                 PendingOnTimeTimer = null;
@@ -1145,7 +1153,7 @@ namespace NachoCore.ActiveSync
 
                 case NcCommStatus.CommQualityEnum.Unusable:
                     Log.Info (Log.LOG_AS, "Server {0} communication quality unusable.", Server.Host);
-                    StopCurrentOp ();
+                    LongStop ();
                     break;
                 }
             }
@@ -1157,7 +1165,7 @@ namespace NachoCore.ActiveSync
                 Execute ();
             } else {
                 // The "Down" case.
-                StopCurrentOp ();
+                LongStop ();
             }
         }
     }

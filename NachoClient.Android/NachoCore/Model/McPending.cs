@@ -147,6 +147,9 @@ namespace NachoCore.Model
         [Indexed]
         public bool DeferredSerialIssueOnly { set; get; }
         // Valid when Deferred, Blocked, or Failed.
+        [Indexed]
+        // Always valid.
+        public bool DelayNotAllowed { set; get; }
         public XmlStatusKindEnum ResponseXmlStatusKind { set; get; }
         // Valid when Deferred, Blocked, or Failed. 0 is unset.
         public uint ResponsegXmlStatus { set; get; }
@@ -482,11 +485,36 @@ namespace NachoCore.Model
             ResultKind = result.Kind;
             ResultSubKind = result.SubKind;
             ResultWhy = result.Why;
-            control.StatusInd (result, new [] { Token });
             State = StateEnum.Failed;
-            Update ();
-            // TODO: Status-ind for successors as well.
-            UnblockSuccessors (StateEnum.Failed);
+            NcModel.Instance.RunInTransaction (() => {
+                Update ();
+                // You're not human if the code below doesn't make you want to throw up.
+                if (McPending.Operations.EmailBodyDownload == Operation) {
+                    var email = McEmailMessage.QueryByServerId<McEmailMessage> (AccountId, ServerId);
+                    if (null == email) {
+                        Log.Error (Log.LOG_AS, "ResolveAsHardFail: can't find McEmailMessage with ServerId {0}", ServerId);
+                    } else {
+                        McBody body = null;
+                        if (0 == email.BodyId) {
+                            body = McBody.InsertError (AccountId);
+                        } else {
+                            body = McBody.QueryById<McBody> (email.BodyId);
+                            if (null == body) {
+                                Log.Error (Log.LOG_AS, "ResolveAsHardFail: BodyId {0} has no body", email.BodyId);
+                                body = McBody.InsertError (AccountId);
+                            } else {
+                                body.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Error);
+                                body.Update ();
+                            }
+                        }
+                        email.BodyId = body.Id;
+                        email.Update ();
+                    }
+                }
+                // TODO: Status-ind for successors as well.
+                UnblockSuccessors (StateEnum.Failed);
+            });
+            control.StatusInd (result, new [] { Token });
             Log.Info (Log.LOG_SYNC, "Pending:ResolveAsHardFail:{0}:{1}", Id, Token);
         }
 
@@ -576,9 +604,9 @@ namespace NachoCore.Model
             return (0 != successors.Count);
         }
 
-        public void DoNotDefer ()
+        public void DoNotDelay ()
         {
-            DefersRemaining = 0;
+            DelayNotAllowed = true;
         }
 
         public static bool MakeEligibleOnFSync (int accountId)
@@ -628,7 +656,7 @@ namespace NachoCore.Model
         {
             NcAssert.True (StateEnum.Dispatched == State);
             // Added check in case of any bug causing underflow.
-            if (0 >= DefersRemaining || KMaxDeferCount < DefersRemaining) {
+            if (DelayNotAllowed || 0 >= DefersRemaining || KMaxDeferCount < DefersRemaining) {
                 ResolveAsHardFail (control, onFail);
             } else {
                 DefersRemaining--;
@@ -690,6 +718,17 @@ namespace NachoCore.Model
             foreach (var kill in killList) {
                 kill.ResolveAsCancelled (false);
             }
+        }
+
+        public static void ResolveAllDoNotDelayAsFailed (ProtoControl control, int accountId)
+        {
+            NcModel.Instance.Db.Table<McPending> ()
+                .Where (rec =>
+                    rec.AccountId == accountId &&
+                    rec.State != StateEnum.Failed).All (y => {
+                        y.ResolveAsHardFail (control, NcResult.WhyEnum.UnavoidableDelay);
+                        return true;
+                    });
         }
 
         public static void ResolveAllDispatchedAsDeferred (ProtoControl control, int accountId)

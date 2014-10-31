@@ -50,7 +50,8 @@ namespace NachoCore.ActiveSync
         public override void Cancel (string token)
         {
             var pendings = McPending.QueryByToken (Account.Id, token);
-            foreach (var pending in pendings) {
+            foreach (var iterPending in pendings) {
+                var pending = iterPending;
                 switch (pending.State) {
                 case McPending.StateEnum.Eligible:
                     pending.Delete ();
@@ -68,12 +69,14 @@ namespace NachoCore.ActiveSync
                     break;
 
                 case McPending.StateEnum.Dispatched:
-                    if (null != Cmd) {
-                        // Command Cancel moves state to Deferred. Maybe many pending objs.
-                        Cmd.Cancel ();
+                    // Don't REALLY know that we killed this before the server saw it.
+                    // Command Cancel() moves pending(s) state to Deferred. Maybe many pending objs.
+                    StopCurrentOp ();
+                    pending = McPending.QueryById<McPending> (pending.Id);
+                    if (null != pending) {
+                        pending.ResolveAsCancelled (false);
                     }
-                    pending.ResolveAsCancelled (false);
-                    // Don't REALLY know that we killed it before the server saw it.
+                    Sm.PostEvent (Event.Create ((uint)SmEvt.E.TempFail, "CANCLDISP"));
                     break;
 
                 case McPending.StateEnum.Deleted:
@@ -102,7 +105,7 @@ namespace NachoCore.ActiveSync
                 Search_MaxResults = (null == maxResults) ? 50 : (uint)maxResults,
                 Token = token
             };
-            newSearch.DoNotDefer ();
+            newSearch.DoNotDelay ();
             newSearch.Insert ();
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCSRCH");
@@ -478,7 +481,7 @@ namespace NachoCore.ActiveSync
             }
 
             if (doNotDefer) {
-                pending.DoNotDefer ();
+                pending.DoNotDelay ();
             }
             pending.Insert ();
 
@@ -514,7 +517,7 @@ namespace NachoCore.ActiveSync
                 AttachmentId = attId,
             };
             if (doNotDefer) {
-                pending.DoNotDefer ();
+                pending.DoNotDelay ();
             }
             pending.Insert ();
 
