@@ -51,7 +51,7 @@ namespace NachoClient.iOS
 
             UIView aboutUsView = new UIView (new RectangleF (HORIZONTAL_PADDING, 20, View.Frame.Width - HORIZONTAL_PADDING * 2, View.Frame.Height - 24 - 120 - 75));
             aboutUsView.BackgroundColor = UIColor.White;
-            aboutUsView.Layer.CornerRadius = 6f;
+            aboutUsView.Layer.CornerRadius = GeneralSettingsViewController.VIEW_CORNER_RADIUS;
             aboutUsView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
             aboutUsView.Layer.BorderWidth = 1f;
 
@@ -94,7 +94,7 @@ namespace NachoClient.iOS
 
             UIView buttonsView = new UIView (new RectangleF(HORIZONTAL_PADDING, yOffset, View.Frame.Width - (HORIZONTAL_PADDING * 2), CELL_HEIGHT * 2));
             buttonsView.BackgroundColor = UIColor.White;
-            buttonsView.Layer.CornerRadius = 4f;
+            buttonsView.Layer.CornerRadius = GeneralSettingsViewController.VIEW_CORNER_RADIUS;
             buttonsView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
             buttonsView.Layer.BorderWidth = 1f;
 
