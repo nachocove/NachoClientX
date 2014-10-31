@@ -3,8 +3,8 @@
       <element_redaction>none</element_redaction>
       <attribute_redaction>none</attribute_redaction>
       <HeartbeatInterval>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </HeartbeatInterval>
       <Folders>
          <element_redaction>none</element_redaction>
@@ -13,12 +13,12 @@
             <element_redaction>none</element_redaction>
             <attribute_redaction>none</attribute_redaction>
             <Id>
-               <element_redaction>full</element_redaction>
-               <attribute_redaction>full</attribute_redaction>
+               <element_redaction>none</element_redaction>
+               <attribute_redaction>none</attribute_redaction>
             </Id>
             <Class>
-               <element_redaction>full</element_redaction>
-               <attribute_redaction>full</attribute_redaction>
+               <element_redaction>none</element_redaction>
+               <attribute_redaction>none</attribute_redaction>
             </Class>
          </Folder>
       </Folders>

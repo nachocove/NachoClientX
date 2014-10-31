@@ -18,17 +18,17 @@ namespace NachoCore.Wbxml
             // Ping
             node1 = new NcXmlFilterNode ("Ping", RedactionType.NONE, RedactionType.NONE);
             // HeartbeatInterval
-            node2 = new NcXmlFilterNode ("HeartbeatInterval", RedactionType.FULL, RedactionType.FULL);
+            node2 = new NcXmlFilterNode ("HeartbeatInterval", RedactionType.NONE, RedactionType.NONE);
             node1.Add(node2); // Ping -> HeartbeatInterval
             // Folders
             node2 = new NcXmlFilterNode ("Folders", RedactionType.NONE, RedactionType.NONE);
             // Folder
             node3 = new NcXmlFilterNode ("Folder", RedactionType.NONE, RedactionType.NONE);
             // Id
-            node4 = new NcXmlFilterNode ("Id", RedactionType.FULL, RedactionType.FULL);
+            node4 = new NcXmlFilterNode ("Id", RedactionType.NONE, RedactionType.NONE);
             node3.Add(node4); // Folder -> Id
             // Class
-            node4 = new NcXmlFilterNode ("Class", RedactionType.FULL, RedactionType.FULL);
+            node4 = new NcXmlFilterNode ("Class", RedactionType.NONE, RedactionType.NONE);
             node3.Add(node4); // Folder -> Class
             node2.Add(node3); // Folders -> Folder
             node1.Add(node2); // Ping -> Folders
