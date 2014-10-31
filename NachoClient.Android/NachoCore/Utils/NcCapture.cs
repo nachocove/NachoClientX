@@ -90,6 +90,20 @@ namespace NachoCore.Utils
                 Update (value, null);
             }
 
+            public void Reset ()
+            {
+                _Min = uint.MaxValue;
+                _Max = uint.MinValue;
+                Count = 0;
+                Total = 0;
+                Total2 = 0;
+                if (null != Xtra) {
+                    foreach (var kind in Xtra.Keys) {
+                        Xtra [kind].Reset ();
+                    }
+                }
+            }
+
             public override string ToString ()
             {
                 if (IsTop) {
@@ -120,6 +134,7 @@ namespace NachoCore.Utils
                         Xtra [key].Report (key);
                     }
                 }
+                Reset ();
             }
         }
 
@@ -349,16 +364,16 @@ namespace NachoCore.Utils
         public static void ResumeAll ()
         {
             lock (ClassLockObj) {
-                const int reportPeriodMsec = 5 * 60 * 1000; // every 5 min
+                const int reportPeriodMsec = 15 * 1000; // every 15 sec
                 if (null == SleepWatch) {
                     SleepWatch = (IStopwatch) Activator.CreateInstance (StopwatchClass);
                 }
                 int dueTime = reportPeriodMsec;
                 if (reportPeriodMsec < SleepWatch.ElapsedMilliseconds) {
-                    dueTime = 1000; // if it has slept for more than report period, report immediately
+                    dueTime = 0; // if it has slept for more than report period, report immediately
                 }
                 if (null == ReportTimer) {
-                    // Report once every 5 min
+                    // Report periodically
                     ReportTimer = new NcTimer ("NcCapture", NcCapture.Callback, null, dueTime, reportPeriodMsec);
                 }
                 foreach (string kind in PerKind.Keys) {

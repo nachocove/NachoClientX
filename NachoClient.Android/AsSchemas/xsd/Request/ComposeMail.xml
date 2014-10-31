@@ -1,62 +1,62 @@
 <xml namespace="ComposeMail">
    <ClientId>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
+      <element_redaction>none</element_redaction>
+      <attribute_redaction>none</attribute_redaction>
    </ClientId>
    <AccountId>
       <element_redaction>full</element_redaction>
       <attribute_redaction>full</attribute_redaction>
    </AccountId>
    <SaveInSentItems>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
+      <element_redaction>none</element_redaction>
+      <attribute_redaction>none</attribute_redaction>
    </SaveInSentItems>
    <ReplaceMime>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
+      <element_redaction>none</element_redaction>
+      <attribute_redaction>none</attribute_redaction>
    </ReplaceMime>
    <Mime>
       <element_redaction>full</element_redaction>
       <attribute_redaction>full</attribute_redaction>
    </Mime>
    <Status>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
+      <element_redaction>none</element_redaction>
+      <attribute_redaction>none</attribute_redaction>
    </Status>
    <Source>
       <element_redaction>none</element_redaction>
       <attribute_redaction>none</attribute_redaction>
       <FolderId>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </FolderId>
       <ItemId>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </ItemId>
       <LongId>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </LongId>
       <InstanceId>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </InstanceId>
    </Source>
    <SendMail>
       <element_redaction>none</element_redaction>
       <attribute_redaction>none</attribute_redaction>
       <ClientId>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </ClientId>
       <AccountId>
          <element_redaction>full</element_redaction>
          <attribute_redaction>full</attribute_redaction>
       </AccountId>
       <SaveInSentItems>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </SaveInSentItems>
       <Mime>
          <element_redaction>full</element_redaction>
@@ -67,27 +67,27 @@
       <element_redaction>none</element_redaction>
       <attribute_redaction>none</attribute_redaction>
       <ClientId>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </ClientId>
       <Source>
          <element_redaction>none</element_redaction>
          <attribute_redaction>none</attribute_redaction>
          <FolderId>
-            <element_redaction>full</element_redaction>
-            <attribute_redaction>full</attribute_redaction>
+            <element_redaction>none</element_redaction>
+            <attribute_redaction>none</attribute_redaction>
          </FolderId>
          <ItemId>
-            <element_redaction>full</element_redaction>
-            <attribute_redaction>full</attribute_redaction>
+            <element_redaction>none</element_redaction>
+            <attribute_redaction>none</attribute_redaction>
          </ItemId>
          <LongId>
-            <element_redaction>full</element_redaction>
-            <attribute_redaction>full</attribute_redaction>
+            <element_redaction>none</element_redaction>
+            <attribute_redaction>none</attribute_redaction>
          </LongId>
          <InstanceId>
-            <element_redaction>full</element_redaction>
-            <attribute_redaction>full</attribute_redaction>
+            <element_redaction>none</element_redaction>
+            <attribute_redaction>none</attribute_redaction>
          </InstanceId>
       </Source>
       <AccountId>
@@ -95,12 +95,12 @@
          <attribute_redaction>full</attribute_redaction>
       </AccountId>
       <SaveInSentItems>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </SaveInSentItems>
       <ReplaceMime>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </ReplaceMime>
       <Mime>
          <element_redaction>full</element_redaction>
@@ -111,27 +111,27 @@
       <element_redaction>none</element_redaction>
       <attribute_redaction>none</attribute_redaction>
       <ClientId>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </ClientId>
       <Source>
          <element_redaction>none</element_redaction>
          <attribute_redaction>none</attribute_redaction>
          <FolderId>
-            <element_redaction>full</element_redaction>
-            <attribute_redaction>full</attribute_redaction>
+            <element_redaction>none</element_redaction>
+            <attribute_redaction>none</attribute_redaction>
          </FolderId>
          <ItemId>
-            <element_redaction>full</element_redaction>
-            <attribute_redaction>full</attribute_redaction>
+            <element_redaction>none</element_redaction>
+            <attribute_redaction>none</attribute_redaction>
          </ItemId>
          <LongId>
-            <element_redaction>full</element_redaction>
-            <attribute_redaction>full</attribute_redaction>
+            <element_redaction>none</element_redaction>
+            <attribute_redaction>none</attribute_redaction>
          </LongId>
          <InstanceId>
-            <element_redaction>full</element_redaction>
-            <attribute_redaction>full</attribute_redaction>
+            <element_redaction>none</element_redaction>
+            <attribute_redaction>none</attribute_redaction>
          </InstanceId>
       </Source>
       <AccountId>
@@ -139,12 +139,12 @@
          <attribute_redaction>full</attribute_redaction>
       </AccountId>
       <SaveInSentItems>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </SaveInSentItems>
       <ReplaceMime>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </ReplaceMime>
       <Mime>
          <element_redaction>full</element_redaction>

@@ -1,54 +1,54 @@
 <xml namespace="FolderHierarchy">
    <ServerId>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
+      <element_redaction>none</element_redaction>
+      <attribute_redaction>none</attribute_redaction>
    </ServerId>
    <ParentId>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
+      <element_redaction>none</element_redaction>
+      <attribute_redaction>none</attribute_redaction>
    </ParentId>
    <Status>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
+      <element_redaction>none</element_redaction>
+      <attribute_redaction>none</attribute_redaction>
    </Status>
    <SyncKey>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
+      <element_redaction>none</element_redaction>
+      <attribute_redaction>none</attribute_redaction>
    </SyncKey>
    <FolderCreate>
       <element_redaction>none</element_redaction>
       <attribute_redaction>none</attribute_redaction>
       <SyncKey>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </SyncKey>
       <ParentId>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </ParentId>
       <DisplayName>
          <element_redaction>full</element_redaction>
          <attribute_redaction>full</attribute_redaction>
       </DisplayName>
       <Type>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </Type>
    </FolderCreate>
    <FolderUpdate>
       <element_redaction>none</element_redaction>
       <attribute_redaction>none</attribute_redaction>
       <SyncKey>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </SyncKey>
       <ServerId>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </ServerId>
       <ParentId>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </ParentId>
       <DisplayName>
          <element_redaction>full</element_redaction>
@@ -59,20 +59,20 @@
       <element_redaction>none</element_redaction>
       <attribute_redaction>none</attribute_redaction>
       <SyncKey>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </SyncKey>
       <ServerId>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </ServerId>
    </FolderDelete>
    <FolderSync>
       <element_redaction>none</element_redaction>
       <attribute_redaction>none</attribute_redaction>
       <SyncKey>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </SyncKey>
    </FolderSync>
 </xml>

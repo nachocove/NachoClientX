@@ -153,7 +153,7 @@ namespace NachoClient.iOS
             // always call SizeToFit(). So, we need to disable it.
         }
 
-        public void LoadHtmlString (string html)
+        public void LoadHtmlContent (string html, NSUrl baseUrl)
         {
             NcAssert.True ((null != OnRenderStart) && (null != OnRenderComplete));
 
@@ -164,7 +164,7 @@ namespace NachoClient.iOS
             string disable_js = "<meta http-equiv=\"Content-Security-Policy\" content=\"script-src 'none'\">";
             string wrap_pre = "<style>pre { white-space: pre-wrap;}</style>";
             html = disable_js + wrap_pre + html;
-            LoadHtmlString (html, null);
+            LoadHtmlString (html, baseUrl);
         }
 
         public void ScrollTo (PointF upperLeft)

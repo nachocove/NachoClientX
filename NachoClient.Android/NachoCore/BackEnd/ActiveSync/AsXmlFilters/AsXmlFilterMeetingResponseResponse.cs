@@ -19,10 +19,10 @@ namespace NachoCore.Wbxml
             // Result
             node2 = new NcXmlFilterNode ("Result", RedactionType.NONE, RedactionType.NONE);
             // RequestId
-            node3 = new NcXmlFilterNode ("RequestId", RedactionType.FULL, RedactionType.FULL);
+            node3 = new NcXmlFilterNode ("RequestId", RedactionType.NONE, RedactionType.NONE);
             node2.Add(node3); // Result -> RequestId
             // Status
-            node3 = new NcXmlFilterNode ("Status", RedactionType.FULL, RedactionType.FULL);
+            node3 = new NcXmlFilterNode ("Status", RedactionType.NONE, RedactionType.NONE);
             node2.Add(node3); // Result -> Status
             // CalendarId
             node3 = new NcXmlFilterNode ("CalendarId", RedactionType.FULL, RedactionType.FULL);

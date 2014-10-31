@@ -71,6 +71,8 @@ namespace NachoClient.iOS
             } else {
                 // Make sure we're getting an item view
                 NcAssert.True (PLACEHOLDER_TAG != view.Tag);
+                var previewView = view.ViewWithTag (PREVIEW_TAG) as BodyView;
+                previewView.Initialize ();
             }
             ConfigureView (view, (int)index);
             return view;
@@ -339,8 +341,8 @@ namespace NachoClient.iOS
             var viewWidth = view.Frame.Width;
 
             // User image view
-            var userImageView = view.ViewWithTag (USER_IMAGE_TAG) as UIImageView;
-            var userLabelView = view.ViewWithTag (USER_LABEL_TAG) as UILabel;
+            var userImageView = (UIImageView) view.ViewWithTag (USER_IMAGE_TAG);
+            var userLabelView = (UILabel) view.ViewWithTag (USER_LABEL_TAG);
             userImageView.Hidden = true;
             userLabelView.Hidden = true;
 

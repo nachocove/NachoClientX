@@ -1,22 +1,22 @@
 <xml namespace="AirSyncBase">
    <FileReference>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
+      <element_redaction>none</element_redaction>
+      <attribute_redaction>none</attribute_redaction>
    </FileReference>
    <BodyPreference>
       <element_redaction>none</element_redaction>
       <attribute_redaction>none</attribute_redaction>
       <Type>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </Type>
       <TruncationSize>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </TruncationSize>
       <AllOrNone>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </AllOrNone>
       <Preview>
          <element_redaction>full</element_redaction>
@@ -27,16 +27,16 @@
       <element_redaction>none</element_redaction>
       <attribute_redaction>none</attribute_redaction>
       <Type>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </Type>
       <TruncationSize>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </TruncationSize>
       <AllOrNone>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </AllOrNone>
       <Preview>
          <element_redaction>full</element_redaction>
@@ -47,16 +47,16 @@
       <element_redaction>none</element_redaction>
       <attribute_redaction>none</attribute_redaction>
       <Type>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </Type>
       <EstimatedDataSize>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </EstimatedDataSize>
       <Truncated>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </Truncated>
       <Data>
          <element_redaction>full</element_redaction>
@@ -71,20 +71,20 @@
       <element_redaction>none</element_redaction>
       <attribute_redaction>none</attribute_redaction>
       <Status>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </Status>
       <Type>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </Type>
       <EstimatedDataSize>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </EstimatedDataSize>
       <Truncated>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </Truncated>
       <Data>
          <element_redaction>full</element_redaction>
@@ -106,16 +106,16 @@
             <attribute_redaction>full</attribute_redaction>
          </DisplayName>
          <FileReference>
-            <element_redaction>full</element_redaction>
-            <attribute_redaction>full</attribute_redaction>
+            <element_redaction>none</element_redaction>
+            <attribute_redaction>none</attribute_redaction>
          </FileReference>
          <Method>
             <element_redaction>full</element_redaction>
             <attribute_redaction>full</attribute_redaction>
          </Method>
          <EstimatedDataSize>
-            <element_redaction>full</element_redaction>
-            <attribute_redaction>full</attribute_redaction>
+            <element_redaction>none</element_redaction>
+            <attribute_redaction>none</attribute_redaction>
          </EstimatedDataSize>
          <ContentId>
             <element_redaction>full</element_redaction>
@@ -126,13 +126,13 @@
             <attribute_redaction>full</attribute_redaction>
          </ContentLocation>
          <IsInline>
-            <element_redaction>full</element_redaction>
-            <attribute_redaction>full</attribute_redaction>
+            <element_redaction>none</element_redaction>
+            <attribute_redaction>none</attribute_redaction>
          </IsInline>
       </Attachment>
    </Attachments>
    <NativeBodyType>
-      <element_redaction>full</element_redaction>
-      <attribute_redaction>full</attribute_redaction>
+      <element_redaction>none</element_redaction>
+      <attribute_redaction>none</attribute_redaction>
    </NativeBodyType>
 </xml>

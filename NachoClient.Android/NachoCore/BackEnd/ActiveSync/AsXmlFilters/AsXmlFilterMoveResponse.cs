@@ -19,13 +19,13 @@ namespace NachoCore.Wbxml
             // Response
             node2 = new NcXmlFilterNode ("Response", RedactionType.NONE, RedactionType.NONE);
             // SrcMsgId
-            node3 = new NcXmlFilterNode ("SrcMsgId", RedactionType.FULL, RedactionType.FULL);
+            node3 = new NcXmlFilterNode ("SrcMsgId", RedactionType.NONE, RedactionType.NONE);
             node2.Add(node3); // Response -> SrcMsgId
             // Status
-            node3 = new NcXmlFilterNode ("Status", RedactionType.FULL, RedactionType.FULL);
+            node3 = new NcXmlFilterNode ("Status", RedactionType.NONE, RedactionType.NONE);
             node2.Add(node3); // Response -> Status
             // DstMsgId
-            node3 = new NcXmlFilterNode ("DstMsgId", RedactionType.FULL, RedactionType.FULL);
+            node3 = new NcXmlFilterNode ("DstMsgId", RedactionType.NONE, RedactionType.NONE);
             node2.Add(node3); // Response -> DstMsgId
             node1.Add(node2); // MoveItems -> Response
             node0.Add(node1); // xml -> MoveItems
