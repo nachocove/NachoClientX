@@ -74,7 +74,7 @@ namespace NachoClient.iOS
         NcEmailAddress PresetToAddress;
         string PresetSubject;
         string EmailTemplate;
-        McAttachment PresetAttachment;
+        List<McAttachment> PresetAttachmentList;
 
         // If this is a reply or forward, keep track of the quoted text that is inserted.
         // This makes it possible to check later if the user changed the text.
@@ -107,12 +107,12 @@ namespace NachoClient.iOS
             this.QRType = QRType;
         }
         // Can be called by owner to set a pre-existing To: address, subject, email template and/or attachment
-        public void SetEmailPresetFields (NcEmailAddress toAddress = null, string subject = null, string emailTemplate = null, McAttachment attachment = null, bool isQR = false)
+        public void SetEmailPresetFields (NcEmailAddress toAddress = null, string subject = null, string emailTemplate = null, List<McAttachment> attachmentList = null, bool isQR = false)
         {
             PresetToAddress = toAddress;
             PresetSubject = subject;
             EmailTemplate = emailTemplate;
-            PresetAttachment = attachment;
+            PresetAttachmentList = attachmentList;
         }
 
         public override void ViewWillLayoutSubviews ()
@@ -477,8 +477,10 @@ namespace NachoClient.iOS
                 UpdateEmailAddress (PresetToAddress);
             }
 
-            if (PresetAttachment != null) {
-                attachmentView.Append (PresetAttachment);
+            if (PresetAttachmentList != null) {
+                foreach (var attachment in PresetAttachmentList) {
+                    attachmentView.Append (attachment);
+                }
             }
 
 //            attachmentView.BackgroundColor = UIColor.Yellow;

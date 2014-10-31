@@ -873,6 +873,38 @@ namespace NachoClient
             return "Unknown version";
         }
 
+        public static UITableView FindEnclosingTableView (UIView view)
+        {
+            while (null != view) {
+                if (view is UITableView) {
+                    return (view as UITableView);
+                }
+                view = view.Superview;
+            }
+            return null;
+        }
+
+        public static UITableViewCell FindEnclosingTableViewCell (UIView view)
+        {
+            while (null != view) {
+                if (view is UITableViewCell) {
+                    return (view as UITableViewCell);
+                }
+                view = view.Superview;
+            }
+            return null;
+        }
+
+        public static Stream GenerateStreamFromString (string s)
+        {
+            MemoryStream stream = new MemoryStream ();
+            StreamWriter writer = new StreamWriter (stream);
+            writer.Write (s);
+            writer.Flush ();
+            stream.Position = 0;
+            return stream;
+        }
+
         #endregion
     }
 }
