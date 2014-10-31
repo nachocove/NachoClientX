@@ -173,9 +173,7 @@ namespace NachoClient.iOS
 
                 owner.NavigationItem.SetRightBarButtonItems (new UIBarButtonItem[]{ menuButton }, true);
                 owner.NavigationItem.SetLeftBarButtonItems (new UIBarButtonItem[]{new UIBarButtonItem(new UIView()), new UIBarButtonItem(new UIView())}, true);
-                if (null != owner.NavigationController.Title) {
-                    owner.NavigationController.Title = "";
-                }
+                SetNavigationTitle ("");
 
                 UIView.Animate (.3, () => {
                     this.Alpha = 1.0f;
@@ -192,7 +190,7 @@ namespace NachoClient.iOS
                 }
 
                 if (null != navControllerTitle) {
-                    owner.NavigationController.Title = navControllerTitle;
+                    SetNavigationTitle (navControllerTitle);
                 }
 
                 UIView.Animate (.3, () => {
@@ -204,6 +202,19 @@ namespace NachoClient.iOS
                 if (null != handler) {
                     handler (this, null);
                 }
+            }
+        }
+
+        private void SetNavigationTitle (string title)
+        {
+            string tabItemTitle = null;
+            bool hasTabItem = (null != owner.NavigationController) && (null != owner.NavigationController.TabBarItem);
+            if (hasTabItem) {
+                tabItemTitle = owner.NavigationController.TabBarItem.Title;
+            }
+            owner.NavigationController.Title = title;
+            if (hasTabItem) {
+                owner.NavigationController.TabBarItem.Title = tabItemTitle;
             }
         }
 
