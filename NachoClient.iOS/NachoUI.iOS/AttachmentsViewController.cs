@@ -425,6 +425,11 @@ namespace NachoClient.iOS
                         }
                     }
                     NcApplication.Instance.StatusIndEvent -= fileAction;
+                    var tempA = McAttachment.QueryById<McAttachment> (attachmentId);
+                    if (McAbstrFileDesc.FilePresenceEnum.Complete == tempA.FilePresence) {
+                        AttachmentsTableViewSource.DownloadCompleteAnimation (cell, displayAttachment: () => {
+                        });
+                    }
                 };
 
                 NcApplication.Instance.StatusIndEvent += new EventHandler (fileAction);
