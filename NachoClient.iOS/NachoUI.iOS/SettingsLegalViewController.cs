@@ -112,11 +112,6 @@ namespace NachoClient.iOS
             LayoutView ();
         }
 
-        void CacheLoaded (object sender, EventArgs e)
-        {
-            LayoutView ();
-        }
-
         void HandleLoadError (object sender, UIWebErrorArgs e)
         {
             UIWebView webView = (UIWebView)View.ViewWithTag (WEB_VIEW_TAG);
@@ -126,7 +121,7 @@ namespace NachoClient.iOS
             } else {
                 webView.LoadHtmlString ("<h2>Sorry, you will need an internet connection to view this information.&nbsp;</h2>", new NSUrl("about:blank"));
             }
-            webView.LoadFinished += CacheLoaded;
+            webView.LoadFinished += CacheUrlHtml;
         }
 
         public bool hasNetworkConnection ()
@@ -179,7 +174,6 @@ namespace NachoClient.iOS
             webView.StopLoading ();
             webView.LoadError -= HandleLoadError;
             webView.LoadFinished -= CacheUrlHtml;
-            webView.LoadFinished -= CacheLoaded;
             webView = null;
         }
 
