@@ -102,7 +102,7 @@ namespace NachoCore.ActiveSync
                 Search_MaxResults = (null == maxResults) ? 50 : (uint)maxResults,
                 Token = token
             };
-            newSearch.DoNotDefer ();
+            newSearch.DoNotDelay ();
             newSearch.Insert ();
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCSRCH");
@@ -478,7 +478,7 @@ namespace NachoCore.ActiveSync
             }
 
             if (doNotDefer) {
-                pending.DoNotDefer ();
+                pending.DoNotDelay ();
             }
             pending.Insert ();
 
@@ -514,7 +514,7 @@ namespace NachoCore.ActiveSync
                 AttachmentId = attId,
             };
             if (doNotDefer) {
-                pending.DoNotDefer ();
+                pending.DoNotDelay ();
             }
             pending.Insert ();
 

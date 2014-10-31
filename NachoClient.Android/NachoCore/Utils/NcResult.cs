@@ -166,7 +166,7 @@ namespace NachoCore.Utils
             UnresolvedRecipient,
             NoRecipient,
             ReplyNotAllowed,
-
+            UnavoidableDelay,
         };
 
         public KindEnum Kind { get; set; }
