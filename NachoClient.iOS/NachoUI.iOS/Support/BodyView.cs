@@ -96,16 +96,6 @@ namespace NachoClient.iOS
         public const int MESSAGEVIEW_INSET = 1;
         public const int BODYVIEW_INSET = 1;
 
-        protected enum LoadState
-        {
-            // body is already there
-            IDLE,
-            // body is being loaded
-            LOADING,
-            // body was being loaded
-            ERROR
-        }
-
         public bool HorizontalScrollingEnabled {
             get {
                 return ShowsHorizontalScrollIndicator;
@@ -139,7 +129,6 @@ namespace NachoClient.iOS
         protected UITapGestureRecognizer partialDownloadGestureRecognizer;
         protected UIGestureRecognizer.Token partialDownloadGestureRecognizerToken;
 
-        protected LoadState loadState;
         protected McAbstrItem abstrItem;
         protected string downloadToken;
 
@@ -202,6 +191,14 @@ namespace NachoClient.iOS
             spinner.HidesWhenStopped = true;
             spinner.Tag = (int)TagType.SPINNER_TAG;
             AddSubview (spinner);
+
+            Initialize ();
+        }
+
+        public void Initialize ()
+        {
+            downloadToken = null;
+            ZoomScale = 1.0f;
         }
 
         public bool Configure (McAbstrItem item)
@@ -214,9 +211,6 @@ namespace NachoClient.iOS
             }
 
             abstrItem = item;
-            downloadToken = null;
-            loadState = LoadState.IDLE;
-            ZoomScale = 1.0f;
 
             PointF center = !SpinnerCenteredOnParentFrame ? Center : Superview.Center;
             center.X -= Frame.X;
@@ -225,20 +219,26 @@ namespace NachoClient.iOS
 
             var body = McBody.QueryById<McBody> (item.BodyId);
 
-            // If the body isn't downloaded,
-            // start the download and return.
-            if (!McAbstrFileDesc.IsComplete (body)) {
-                Log.Info (Log.LOG_UI, "Starting download of whole message body");
-                switch (item.GetType ().Name) {
-                case "McEmailMessage":
-                    IndicateDownloadStarted ();
-                    StartDownload ();
-                    break;
-                default:
-                    var msg = String.Format ("unhandle abstract item type {0}", item.GetType ().Name);
-                    throw new NcAssert.NachoDefaultCaseFailure (msg);
-                }
+            if (null == body) {
+                StartDownload ();
                 return false;
+            }
+                
+            switch (body.FilePresence) {
+            case McAbstrFileDesc.FilePresenceEnum.None:
+                StartDownload ();
+                return false;
+            case McAbstrFileDesc.FilePresenceEnum.Partial:
+                spinner.StartAnimating ();
+                return false;
+            case McAbstrFileDesc.FilePresenceEnum.Error:
+                ShowErrorMessage ();
+                return false;
+            case McAbstrFileDesc.FilePresenceEnum.Complete:
+                break;
+            default:
+                NcAssert.CaseError ();
+                break;
             }
 
             spinner.StopAnimating ();
@@ -547,41 +547,50 @@ namespace NachoClient.iOS
 
         protected void StartDownload ()
         {
-            downloadToken = BackEnd.Instance.DnldEmailBodyCmd (abstrItem.AccountId, abstrItem.Id, true);
+            switch (abstrItem.GetType ().Name) {
+            case "McEmailMessage":
+                downloadToken = BackEnd.Instance.DnldEmailBodyCmd (abstrItem.AccountId, abstrItem.Id, true);
+                break;
+            case "McCalendar":
+                downloadToken = BackEnd.Instance.DnldCalBodyCmd (abstrItem.AccountId, abstrItem.Id);
+                break;
+            default:
+                var msg = String.Format ("unhandle abstract item type {0}", abstrItem.GetType ().Name);
+                throw new NcAssert.NachoDefaultCaseFailure (msg);
+            }
+                
+            // Success, or duplicate
             if (null != downloadToken) {
                 BackEnd.Instance.Prioritize (abstrItem.AccountId, downloadToken);
-            } else {
-                var newBody = McBody.QueryById<McBody> (abstrItem.BodyId);
-                if (McAbstrFileDesc.IsComplete (newBody)) {
-                    // Download must have complete in the window from it was checked to
-                    // download command here is issued. Must have a status indication
-                    // pending to stop the spinner or remove the item from UI. Just need
-                    // to not print error message
-                    return;
+                spinner.StartAnimating ();
+                if (null != OnDownloadStart) {
+                    OnDownloadStart ();
                 }
-                // Duplicate download command returns the first (highest priority)
-                // download's token. So, a null really means something has gone wrong.
-                Log.Warn (Log.LOG_UI, "Fail to start download for message {0} in account {1}",
-                    abstrItem.Id, abstrItem.AccountId);
-                RenderPartialDownloadMessage ("[ Message preview only. Tap here to download. ]");
-                RenderTextString (abstrItem.GetBodyPreviewOrEmpty ());
                 return;
             }
+
+            // Null might be that the body is alreday downloaded
+            var newBody = McBody.QueryById<McBody> (abstrItem.BodyId);
+            if (McAbstrFileDesc.IsComplete (newBody)) {
+                return;
+            }
+
+            // Nope, this null is an error
+            Log.Warn (Log.LOG_UI, "Fail to start download dnld for message {0} in account {1}", abstrItem.Id, abstrItem.AccountId);
+            ShowErrorMessage ();
+            return;
+        }
+
+        protected void ShowErrorMessage ()
+        {
+            spinner.StopAnimating ();
+            RenderPartialDownloadMessage ("[ Message preview only. Tap here to download. ]");
+            RenderTextString (abstrItem.GetBodyPreviewOrEmpty ());
         }
 
         public void OnDownloadMessage ()
         {
-            IndicateDownloadStarted ();
             StartDownload ();
-        }
-
-        protected void IndicateDownloadStarted ()
-        {
-            loadState = LoadState.LOADING;
-            spinner.StartAnimating ();
-            if (null != OnDownloadStart) {
-                OnDownloadStart ();
-            }
         }
 
         public bool DownloadComplete (bool succeed, string token)
@@ -589,7 +598,12 @@ namespace NachoClient.iOS
             if (token != downloadToken) {
                 return false; // indication for a different message
             }
-            loadState = succeed ? LoadState.IDLE : LoadState.ERROR;
+            abstrItem = ReRead ();
+            var body = McBody.QueryById<McBody> (abstrItem.BodyId);
+            NcAssert.NotNull (body);
+            if (!succeed) {
+                ShowErrorMessage ();
+            }
             spinner.StopAnimating ();
             return true;
         }
@@ -618,6 +632,19 @@ namespace NachoClient.iOS
                 desc += String.Format ("    {0}\n", renderView.LayoutInfo ());
             }
             return desc;
+        }
+
+        protected McAbstrItem ReRead ()
+        {
+            switch (abstrItem.GetType ().Name) {
+            case "McEmailMessage":
+                return McEmailMessage.QueryById<McEmailMessage> (abstrItem.Id);
+            case "McCalendar":
+                return McCalendar.QueryById<McCalendar> (abstrItem.Id);
+            default:
+                var msg = String.Format ("unhandle abstract item type {0}", abstrItem.GetType ().Name);
+                throw new NcAssert.NachoDefaultCaseFailure (msg);
+            }
         }
 
         public void ScrollTo (PointF contentOffset)
