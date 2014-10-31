@@ -531,17 +531,18 @@ namespace NachoClient.iOS
         public void AttachFile (NcFileIndex item, UITableViewCell cell)
         {
             var tempAttachmentList = new List<McAttachment> ();
+            var tempAttachment = new McAttachment ();
             switch (item.FileType) {
             case 0:
                 McAttachment attachment = McAttachment.QueryById<McAttachment> (item.Id);
                 if (null != attachment) {
-                    tempAttachmentList.Add (attachment);
+                    tempAttachment = attachment;
                 }
                 break;
             case 1:
                 McNote note = McNote.QueryById<McNote> (item.Id);
                 if (null != note) {
-                    tempAttachmentList.Add (NoteToAttachment (note));
+                    tempAttachment = NoteToAttachment (note);
                 }
                 break;
             case 2:
@@ -551,6 +552,18 @@ namespace NachoClient.iOS
             default:
                 NcAssert.CaseError ("Attaching unknown file type");
                 break;
+            }
+            if (McAbstrFileDesc.FilePresenceEnum.Complete != tempAttachment.FilePresence) {
+                UIAlertView alert = new UIAlertView (
+                                        "Hold on!", 
+                                        "All attachments must be downloaded before they can be attached to an email.", 
+                                        null, 
+                                        "OK"
+                                    );
+                alert.Show ();
+                return;
+            } else {
+                tempAttachmentList.Add (tempAttachment);
             }
             vc.ForwardAttachments (tempAttachmentList);
         }

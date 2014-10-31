@@ -401,7 +401,6 @@ namespace NachoClient.iOS
                 string token = PlatformHelpers.DownloadAttachment (a);
                 Token = token; // make this the attachment that will get opened next
                 NcAssert.NotNull (Token, "Found token should not be null");
-
                 EventHandler fileAction = null;
 
                 // prepare to do action on the most recently clicked item
@@ -620,7 +619,7 @@ namespace NachoClient.iOS
                 }
                 if (McAbstrFileDesc.FilePresenceEnum.Complete != tempAttachment.FilePresence) {
                     UIAlertView alert = new UIAlertView (
-                                            "Hold on", 
+                                            "Hold on!", 
                                             "All attachments must be downloaded before they can be attached to an email.", 
                                             null, 
                                             "OK"
