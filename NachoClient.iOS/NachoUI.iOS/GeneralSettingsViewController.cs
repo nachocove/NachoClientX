@@ -14,10 +14,13 @@ namespace NachoClient.iOS
 {
     public partial class GeneralSettingsViewController : NcUIViewControllerNoLeaks
     {
-        protected static float CELL_HEIGHT = 44f;
-        protected static float INSET = 15f;
-        protected static float TEXT_LINE_HEIGHT = 19.124f;
-        protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
+        public static string PRIVACY_POLICY_KEY = "PRIVACY_POLICY";
+        public static string LICENSE_AGREEMENT_KEY = "LICENSE_AGREEMENT";
+        public static float VIEW_CORNER_RADIUS = 6f;
+
+        protected const float CELL_HEIGHT = 44f;
+        protected const float INSET = 15f;
+        protected const float TEXT_LINE_HEIGHT = 19.124f;
 
         protected float yOffset;
 
@@ -85,7 +88,7 @@ namespace NachoClient.iOS
 
             UIView accountSettingsView = new UIView (new RectangleF (INSET, yOffset, contentView.Frame.Width - (INSET * 2), 80));
             accountSettingsView.BackgroundColor = UIColor.White;
-            accountSettingsView.Layer.CornerRadius = 4f;
+            accountSettingsView.Layer.CornerRadius = VIEW_CORNER_RADIUS;
             accountSettingsView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
             accountSettingsView.Layer.BorderWidth = .5f;
             accountSettingsView.Tag = ACCOUNT_SETTINGS_VIEW_TAG;
@@ -153,7 +156,7 @@ namespace NachoClient.iOS
 
             UIView buttonsView = new UIView (new RectangleF(INSET, yOffset, View.Frame.Width - (INSET * 2), CELL_HEIGHT * 2));
             buttonsView.BackgroundColor = UIColor.White;
-            buttonsView.Layer.CornerRadius = 4f;
+            buttonsView.Layer.CornerRadius = VIEW_CORNER_RADIUS;
             buttonsView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
             buttonsView.Layer.BorderWidth = .5f;
 
@@ -303,7 +306,7 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("GeneralSettingsToSettingsLegal")) {
                 var x = segue.DestinationViewController;
                 var settingsLegal = (SettingsLegalViewController)segue.DestinationViewController.ChildViewControllers[0];
-                settingsLegal.SetProperties ("https://nachocove.com/privacy-policy-text/", "Privacy Policy", true);
+                settingsLegal.SetProperties ("https://nachocove.com/privacy-policy-text/", "Privacy Policy", PRIVACY_POLICY_KEY, true);
                 return;
             }
             if (segue.Identifier.Equals ("SegueToAccountSettings")) {
