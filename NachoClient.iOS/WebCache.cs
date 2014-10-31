@@ -21,10 +21,10 @@ namespace NachoClient.iOS
 
         public override NSCachedUrlResponse CachedResponseForRequest (NSUrlRequest request)
         {
-            NSCachedUrlResponse response = base.CachedResponseForRequest (request);
             if (request.ToString().StartsWith (parseUrl)) {
                 return null;
             }
+            NSCachedUrlResponse response = base.CachedResponseForRequest (request);
             return response;
         }
 

@@ -476,7 +476,8 @@ namespace NachoClient.iOS
                 }
             };
             messageView.Add (webView);
-            webView.LoadHtmlString (html);
+            var url = String.Format ("cid://{0}", abstrItem.BodyId);
+            webView.LoadHtmlContent (html, NSUrl.FromString (url));
         }
 
         /// TODO: Guard against malformed calendars
