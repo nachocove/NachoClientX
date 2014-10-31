@@ -325,6 +325,8 @@ namespace NachoClient.iOS
             view.AddSubview (blockMenu);
 
             Util.HideBlackNavigationControllerLine (NavigationController.NavigationBar);
+
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 
         protected override void ConfigureAndLayout ()
@@ -449,6 +451,7 @@ namespace NachoClient.iOS
             deleteButton.Clicked -= DeleteButtonClicked;
             deadlineButton.Clicked -= DeadlineButtonClicked;
             scrollView.DidZoom -= ScrollViewDidZoom;
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
 
             blockMenu.Cleanup ();
 
@@ -533,7 +536,6 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = false;
             }
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -542,7 +544,6 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
-            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)

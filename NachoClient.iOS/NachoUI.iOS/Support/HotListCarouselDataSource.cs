@@ -71,6 +71,8 @@ namespace NachoClient.iOS
             } else {
                 // Make sure we're getting an item view
                 NcAssert.True (PLACEHOLDER_TAG != view.Tag);
+                var previewView = view.ViewWithTag (PREVIEW_TAG) as BodyView;
+                previewView.Initialize ();
             }
             ConfigureView (view, (int)index);
             return view;

@@ -22,6 +22,7 @@ namespace NachoClient.iOS
 
             TabBar.BarTintColor = UIColor.White;
             TabBar.TintColor = A.Color_NachoIconGray;
+            TabBar.SelectedImageTintColor = A.Color_NachoGreen;
             TabBar.Translucent = false;
 
             MoreNavigationController.NavigationBar.TintColor = A.Color_NachoBlue;
@@ -95,8 +96,8 @@ namespace NachoClient.iOS
         {
             foreach (var vc in ViewControllers) {
                 if (typeName == GetTabBarItemTypeName (vc)) {
-                    using (var image = UIImage.FromBundle (imageName).ImageWithRenderingMode(UIImageRenderingMode.AlwaysOriginal)) {
-                        using (var selectedImage = UIImage.FromBundle (selectedImageName).ImageWithRenderingMode(UIImageRenderingMode.AlwaysOriginal)) {
+                    using (var image = UIImage.FromBundle (imageName).ImageWithRenderingMode(UIImageRenderingMode.AlwaysTemplate)) {
+                        using (var selectedImage = UIImage.FromBundle (selectedImageName).ImageWithRenderingMode(UIImageRenderingMode.AlwaysTemplate)) {
                             var item = new UITabBarItem (title, image, selectedImage);
                             vc.TabBarItem = item;
                         }
