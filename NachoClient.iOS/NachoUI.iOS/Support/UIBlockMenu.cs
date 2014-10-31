@@ -173,7 +173,9 @@ namespace NachoClient.iOS
 
                 owner.NavigationItem.SetRightBarButtonItems (new UIBarButtonItem[]{ menuButton }, true);
                 owner.NavigationItem.SetLeftBarButtonItems (new UIBarButtonItem[]{new UIBarButtonItem(new UIView()), new UIBarButtonItem(new UIView())}, true);
-                owner.NavigationController.Title = "";
+                if (null != owner.NavigationController.Title) {
+                    owner.NavigationController.Title = "";
+                }
 
                 UIView.Animate (.3, () => {
                     this.Alpha = 1.0f;
