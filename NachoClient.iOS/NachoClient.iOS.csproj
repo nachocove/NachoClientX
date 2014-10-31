@@ -1159,6 +1159,7 @@
     <Compile Include="NachoUI.iOS\AboutUsViewController.designer.cs">
       <DependentUpon>AboutUsViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\AttachmentsTableViewSource.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\CertificateHelper.cs">
       <Link>NachoCore\Utils\CertificateHelper.cs</Link>
     </Compile>

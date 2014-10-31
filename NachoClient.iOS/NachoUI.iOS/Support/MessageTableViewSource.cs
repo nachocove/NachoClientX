@@ -501,13 +501,12 @@ namespace NachoClient.iOS
             messageHeaderView.ConfigureView (message);
 
             messageHeaderView.OnClickChili = (object sender, EventArgs e) => {
-                NachoCore.Utils.ScoringHelpers.ToggleHotOrNot(message);
+                NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
                 messageHeaderView.ConfigureView (message);
             };
 
             // User checkmark view
             ConfigureMultiSelectCell (cell);
-
 
             // Preview label view
             var previewLabelView = cell.ContentView.ViewWithTag (PREVIEW_TAG) as UILabel;
