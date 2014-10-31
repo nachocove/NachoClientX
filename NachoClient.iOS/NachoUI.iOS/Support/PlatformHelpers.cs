@@ -28,9 +28,28 @@ namespace NachoClient
         }
 
         // https://www.ietf.org/rfc/rfc2392.txt
-        static public UIImage RenderContentId (string value)
+        static public UIImage RenderContentId (string cid)
         {
+            // In order to deal with gmail's logo.png CID, we encode
+            // McBody id into the CID URL. The format is cid://[body_id]/[value]
+            NcAssert.True (cid.StartsWith ("//"));
+            var index = cid.Substring (2).IndexOf ('/');
+            var value = cid.Substring (index + 3);
+            var bodyId = Convert.ToInt32 (cid.Substring (2, index));
             MimePart p = PlatformHelpers.SearchParts (value, cidPartDict);
+            if (null == p) {
+                // Can't find it in the cid dictionary, search the attachment parts in the body
+                McBody body = McBody.QueryById<McBody> (bodyId);
+                if (null != body) {
+                    var mime = MimeHelpers.LoadMessage (body);
+                    foreach (var part in MimeHelpers.AllAttachments(mime)) {
+                        if (value == part.ContentId) {
+                            p = (MimePart)part;
+                            break;
+                        }
+                    }
+                }
+            }
             if (null == p) {
                 Log.Error (Log.LOG_UTILS, "RenderContentId: MimeEntity is null: {0}", value);
                 return RenderStringToImage (value);
