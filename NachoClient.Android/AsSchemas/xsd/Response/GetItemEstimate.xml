@@ -3,26 +3,26 @@
       <element_redaction>none</element_redaction>
       <attribute_redaction>none</attribute_redaction>
       <Status>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </Status>
       <Response>
          <element_redaction>none</element_redaction>
          <attribute_redaction>none</attribute_redaction>
          <Status>
-            <element_redaction>full</element_redaction>
-            <attribute_redaction>full</attribute_redaction>
+            <element_redaction>none</element_redaction>
+            <attribute_redaction>none</attribute_redaction>
          </Status>
          <Collection>
             <element_redaction>none</element_redaction>
             <attribute_redaction>none</attribute_redaction>
             <CollectionId>
-               <element_redaction>full</element_redaction>
-               <attribute_redaction>full</attribute_redaction>
+               <element_redaction>none</element_redaction>
+               <attribute_redaction>none</attribute_redaction>
             </CollectionId>
             <Estimate>
-               <element_redaction>full</element_redaction>
-               <attribute_redaction>full</attribute_redaction>
+               <element_redaction>none</element_redaction>
+               <attribute_redaction>none</attribute_redaction>
             </Estimate>
          </Collection>
       </Response>

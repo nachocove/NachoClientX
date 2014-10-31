@@ -6,16 +6,16 @@
          <element_redaction>none</element_redaction>
          <attribute_redaction>none</attribute_redaction>
          <SrcMsgId>
-            <element_redaction>full</element_redaction>
-            <attribute_redaction>full</attribute_redaction>
+            <element_redaction>none</element_redaction>
+            <attribute_redaction>none</attribute_redaction>
          </SrcMsgId>
          <SrcFldId>
-            <element_redaction>full</element_redaction>
-            <attribute_redaction>full</attribute_redaction>
+            <element_redaction>none</element_redaction>
+            <attribute_redaction>none</attribute_redaction>
          </SrcFldId>
          <DstFldId>
-            <element_redaction>full</element_redaction>
-            <attribute_redaction>full</attribute_redaction>
+            <element_redaction>none</element_redaction>
+            <attribute_redaction>none</attribute_redaction>
          </DstFldId>
       </Move>
    </MoveItems>

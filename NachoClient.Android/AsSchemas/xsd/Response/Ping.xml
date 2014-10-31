@@ -3,24 +3,24 @@
       <element_redaction>none</element_redaction>
       <attribute_redaction>none</attribute_redaction>
       <Status>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </Status>
       <Folders>
          <element_redaction>none</element_redaction>
          <attribute_redaction>none</attribute_redaction>
          <Folder>
-            <element_redaction>full</element_redaction>
-            <attribute_redaction>full</attribute_redaction>
+            <element_redaction>none</element_redaction>
+            <attribute_redaction>none</attribute_redaction>
          </Folder>
       </Folders>
       <MaxFolders>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </MaxFolders>
       <HeartbeatInterval>
-         <element_redaction>full</element_redaction>
-         <attribute_redaction>full</attribute_redaction>
+         <element_redaction>none</element_redaction>
+         <attribute_redaction>none</attribute_redaction>
       </HeartbeatInterval>
    </Ping>
 </xml>
