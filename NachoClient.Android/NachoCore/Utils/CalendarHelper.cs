@@ -1088,11 +1088,15 @@ namespace NachoCore.Utils
 
             if ((null == exceptions) || (0 == exceptions.Count)) {
                 var e = McEvent.Create (c.AccountId, startTime, endTime, c.Id, 0);
-                ScheduleNotification (e, c.Reminder);
+                if (c.ReminderIsSet) {
+                    ScheduleNotification (e, c.Reminder);
+                }
             } else {
                 foreach (var exception in exceptions) {
                     var e = McEvent.Create (c.AccountId, exception.StartTime, exception.EndTime, c.Id, exception.Id);
-                    ScheduleNotification (e, exception.Reminder);
+                    if (exception.ReminderIsSet) {
+                        ScheduleNotification (e, exception.Reminder);
+                    }
                 }
             }
         }
@@ -1110,9 +1114,6 @@ namespace NachoCore.Utils
         /// the notification. The 'calendar view' event will show the proper view.
         protected static void ScheduleNotification (McEvent e, uint reminder)
         {
-            if (0 == reminder) {
-                return;
-            }
             var notifier = NachoPlatform.Notif.Instance;
             notifier.CancelNotif (e.Id);
             var notificationTime = e.StartTime.AddMinutes (-reminder);

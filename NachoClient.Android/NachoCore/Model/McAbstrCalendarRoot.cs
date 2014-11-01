@@ -32,6 +32,8 @@ namespace NachoCore.Model
         /// Number of minutes before start time to display a message (optional)
         public uint Reminder { get; set; }
 
+        public bool ReminderIsSet { get; set; }
+
         // The actual string from activesync
         public string TimeZone { get; set; }
 

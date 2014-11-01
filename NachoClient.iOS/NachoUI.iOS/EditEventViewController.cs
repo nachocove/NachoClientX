@@ -328,10 +328,14 @@ namespace NachoClient.iOS
 
             if (segue.Identifier.Equals ("EditEventToAlert")) {
                 var dc = (AlertChooserViewController)segue.DestinationViewController;
-                dc.SetReminder (c.Reminder);
+                dc.SetReminder (c.ReminderIsSet, c.Reminder);
                 ExtractValues ();
                 dc.ViewDisappearing += (object s, EventArgs e) => {
-                    c.Reminder = dc.GetReminder ();
+                    uint reminder;
+                    c.ReminderIsSet = dc.GetReminder (out reminder);
+                    if (c.ReminderIsSet) {
+                        c.Reminder = reminder;
+                    }
                     ConfigureEditEventView ();
                 };
                 return;
@@ -1005,7 +1009,7 @@ namespace NachoClient.iOS
 
             //alert view
             var alertDetailLabelView = contentView.ViewWithTag (ALERT_DETAIL_TAG) as UILabel;
-            alertDetailLabelView.Text = UIntToString (c.Reminder);
+            alertDetailLabelView.Text = Pretty.ReminderString (c.ReminderIsSet, c.Reminder);
             alertDetailLabelView.SizeToFit ();
             alertDetailLabelView.Frame = new RectangleF (SCREEN_WIDTH - alertDetailLabelView.Frame.Width - 34, 12.438f, alertDetailLabelView.Frame.Width, TEXT_LINE_HEIGHT);
 
@@ -1014,8 +1018,6 @@ namespace NachoClient.iOS
             phoneDetailLabelView.Text = TempPhone;
             phoneDetailLabelView.SizeToFit ();
             phoneDetailLabelView.Frame = new RectangleF (SCREEN_WIDTH - phoneDetailLabelView.Frame.Width - 34, 12.438f, phoneDetailLabelView.Frame.Width, TEXT_LINE_HEIGHT);
-
-
         }
 
         protected void ConfigureDateView (string command)

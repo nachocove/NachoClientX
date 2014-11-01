@@ -134,7 +134,7 @@ namespace NachoCore.ActiveSync
                 xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.EndTime,
                     cal.EndTime.ToString (CompactDateTimeFmt1)));
             }
-            if (0 != cal.Reminder) {
+            if (cal.ReminderIsSet) {
                 xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.Reminder, cal.Reminder));
             }
 
@@ -468,6 +468,7 @@ namespace NachoCore.ActiveSync
                         break;
                     case Xml.Calendar.Exception.Reminder:
                         if (!String.IsNullOrEmpty (child.Value)) {
+                            e.ReminderIsSet = true;
                             e.Reminder = child.Value.ToUint ();
                         }
                         break;
@@ -588,6 +589,7 @@ namespace NachoCore.ActiveSync
                     if (string.IsNullOrEmpty (child.Value)) {
                         // TODO: add support for top-level Reminder element.
                     } else {
+                        c.ReminderIsSet = true;
                         c.Reminder = child.Value.ToUint ();
                     }
                     break;
@@ -877,7 +879,10 @@ namespace NachoCore.ActiveSync
                                 TrySetStringFromXml (e, meetingRequestPart.Name.LocalName, meetingRequestPart.Value);
                                 break;
                             case Xml.Email.Reminder:
-                                e.Reminder = meetingRequestPart.Value.ToUint ();
+                                if (!String.IsNullOrEmpty (meetingRequestPart.Value)) {
+                                    e.ReminderIsSet = true;
+                                    e.Reminder = meetingRequestPart.Value.ToUint ();
+                                }
                                 break;
                             case Xml.Email.ResponseRequested:
                                 e.ResponseRequested = meetingRequestPart.Value.ToBoolean ();

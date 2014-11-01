@@ -68,7 +68,8 @@ namespace NachoClient.iOS
         protected const int CELL_HEIGHT = 44;
         protected const float TEXT_LINE_HEIGHT = 19.124f;
 
-        public enum TagType {
+        public enum TagType
+        {
             ALERT_DETAIL_TAG = 207,
 
             EVENT_TITLE_LABEL_TAG = 101,
@@ -446,7 +447,7 @@ namespace NachoClient.iOS
             #endif
 
             var alertDetailLabel = View.ViewWithTag ((int)TagType.ALERT_DETAIL_TAG) as UILabel;
-            alertDetailLabel.Text = UIntToString (c.Reminder);
+            alertDetailLabel.Text = Pretty.ReminderString (c.ReminderIsSet, c.Reminder);
             alertDetailLabel.SizeToFit ();
             alertDetailLabel.Frame = new RectangleF (SCREEN_WIDTH - alertDetailLabel.Frame.Width - 34, 12.438f, alertDetailLabel.Frame.Width, TEXT_LINE_HEIGHT);
 
@@ -624,7 +625,7 @@ namespace NachoClient.iOS
 
         protected static void AddButtonImage (UIButton button, string imageName, UIControlState buttonState)
         {
-            using (var buttonImage = UIImage.FromBundle(imageName)) {
+            using (var buttonImage = UIImage.FromBundle (imageName)) {
                 button.SetImage (buttonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal), buttonState);
             }
         }
@@ -680,9 +681,13 @@ namespace NachoClient.iOS
 
             if (segue.Identifier.Equals ("EventToAlert")) {
                 var dc = (AlertChooserViewController)segue.DestinationViewController;
-                dc.SetReminder (c.Reminder);
+                dc.SetReminder (c.ReminderIsSet, c.Reminder);
                 dc.ViewDisappearing += (object s, EventArgs e) => {
-                    c.Reminder = dc.GetReminder ();
+                    uint reminder;
+                    c.ReminderIsSet = dc.GetReminder (out reminder);
+                    if(c.ReminderIsSet) {
+                        c.Reminder = reminder;
+                    }
                     SyncMeetingRequest ();
                 };
                 return;
@@ -732,7 +737,7 @@ namespace NachoClient.iOS
             NcAssert.CaseError ();
         }
 
-        protected void ShowNothing()
+        protected void ShowNothing ()
         {
             Util.HideViewHierarchy (View);
             var titleLabelView = View.ViewWithTag ((int)TagType.EVENT_TITLE_LABEL_TAG) as UILabel;

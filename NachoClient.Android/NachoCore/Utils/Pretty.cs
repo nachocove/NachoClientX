@@ -26,7 +26,7 @@ namespace NachoCore.Utils
             }
         }
 
-        static public string NoSubjectString()
+        static public string NoSubjectString ()
         {
             return "No subject";
         }
@@ -57,10 +57,13 @@ namespace NachoCore.Utils
         /// <summary>
         /// String for a reminder, in minutes.
         /// </summary>
-        static public string ReminderString (uint reminder)
+        static public string ReminderString (bool reminderIsSet, uint reminder)
         {
-            if (0 == reminder) {
+            if (!reminderIsSet) {
                 return "None";
+            }
+            if (0 == reminder) {
+                return "At time of event";
             }
             if (1 == reminder) {
                 return "1 minute before";
@@ -70,6 +73,18 @@ namespace NachoCore.Utils
             }
             if ((24 * 60) == reminder) {
                 return "1 day before";
+            }
+            if ((7 * 24 * 60) == reminder) {
+                return "1 week before";
+            }
+            if (0 == (reminder % (7 * 24 * 60))) {
+                return String.Format ("{0} weeks before", reminder / (7 * 24 * 60));
+            }
+            if (0 == (reminder % (24 * 60))) {
+                return String.Format ("{0} days before", reminder / (24 * 60));
+            }
+            if (0 == (reminder % 60)) {
+                return String.Format ("{0} hours before", reminder / 60);
             }
             return String.Format ("{0} minutes before", reminder);
         }
@@ -94,12 +109,12 @@ namespace NachoCore.Utils
             NcAssert.True (DateTimeKind.Local != startTime.Kind);
             NcAssert.True (DateTimeKind.Local != endTime.Kind);
 
-            var startString = startTime.LocalT().ToString ("t");
+            var startString = startTime.LocalT ().ToString ("t");
 
             if (startTime == endTime) {
                 return startString;
             }
-            var localEndTime = endTime.LocalT();
+            var localEndTime = endTime.LocalT ();
             var durationString = PrettyEventDuration (startTime, endTime);
             if (startTime.Date == endTime.Date) {
                 return String.Format ("{0} - {1} ({2})", startString, localEndTime.ToString ("t"), durationString);
@@ -118,7 +133,7 @@ namespace NachoCore.Utils
 
         }
 
-        static public string UniversalFullDateTimeString(DateTime d)
+        static public string UniversalFullDateTimeString (DateTime d)
         {
             return d.LocalT ().ToString ("U");
         }
@@ -283,7 +298,7 @@ namespace NachoCore.Utils
 
         static public string ReminderDate (DateTime utcDueDate)
         {
-            var local = utcDueDate.LocalT();
+            var local = utcDueDate.LocalT ();
             var duration = System.DateTime.UtcNow - utcDueDate;
             if (365 < Math.Abs (duration.Days)) {
                 return local.ToString ("MMM dd, yyyy"); // FIXME: Localize
