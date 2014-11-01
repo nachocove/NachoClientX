@@ -745,39 +745,36 @@ namespace NachoCore.Model
         public override int Insert ()
         {
             var predIds = new List<int> ();
-            try {
-                NcModel.Instance.RunInTransaction (() => {
-                    if (CanDepend ()) {
-                        // Walk from the back toward the front of the Q looking for anything this pending might depend upon.
-                        // If this gets to be expensive, we can implement a scoreboard (and possibly also RAM cache).
-                        // Note that items might get deleted out from under us.
-                        var pendq = Query (AccountId).OrderByDescending (x => x.Priority);
-                        foreach (var elem in pendq) {
-                            if (DependsUpon (elem)) {
-                                predIds.Add (elem.Id);
-                            }
-                        }
-                        if (0 != predIds.Count) {
-                            State = StateEnum.PredBlocked;
+
+            NcModel.Instance.RunInTransaction (() => {
+                if (CanDepend ()) {
+                    // Walk from the back toward the front of the Q looking for anything this pending might depend upon.
+                    // If this gets to be expensive, we can implement a scoreboard (and possibly also RAM cache).
+                    // Note that items might get deleted out from under us.
+                    var pendq = Query (AccountId).OrderByDescending (x => x.Priority);
+                    foreach (var elem in pendq) {
+                        if (DependsUpon (elem)) {
+                            predIds.Add (elem.Id);
                         }
                     }
-                    if (null != Item) {
-                        ItemId = Item.Id;
-                        Item.PendingRefCount++;
-                        Item.Update ();
+                    if (0 != predIds.Count) {
+                        State = StateEnum.PredBlocked;
                     }
-                    base.Insert ();
-                    Priority = Id;
-                    base.Update ();
-                    foreach (var predId in predIds) {
-                        var pendDep = new McPendDep (AccountId, predId, Id);
-                        pendDep.Insert ();
-                    }
-                });
-            } catch (SQLiteException ex) {
-                Log.Error (Log.LOG_SYNC, "McPending.Insert: RunInTransaction: {0}", ex);
-                return 0;
-            }
+                }
+                if (null != Item) {
+                    ItemId = Item.Id;
+                    Item.PendingRefCount++;
+                    Item.Update ();
+                }
+                base.Insert ();
+                Priority = Id;
+                base.Update ();
+                foreach (var predId in predIds) {
+                    var pendDep = new McPendDep (AccountId, predId, Id);
+                    pendDep.Insert ();
+                }
+            });
+
             if (null != Item) {
                 Log.Info (Log.LOG_SYNC, "Item {0}: PendingRefCount+: {1}", Item.Id, Item.PendingRefCount);
             }
@@ -806,60 +803,57 @@ namespace NachoCore.Model
         public override int Delete ()
         {
             McAbstrItem item = null;
-            try {
-                NcModel.Instance.RunInTransaction (() => {
-                    // Deal with referenced McItem ref count if needed.
-                    if (0 != ItemId) {
-                        switch (Operation) {
-                        case Operations.EmailSend:
-                        case Operations.EmailForward:
-                        case Operations.EmailReply:
-                            item = McAbstrObject.QueryById<McEmailMessage> (ItemId);
-                            break;
 
-                        case Operations.CalCreate:
-                        case Operations.CalUpdate:
-                            item = McAbstrObject.QueryById<McCalendar> (ItemId);
-                            break;
+            NcModel.Instance.RunInTransaction (() => {
+                // Deal with referenced McItem ref count if needed.
+                if (0 != ItemId) {
+                    switch (Operation) {
+                    case Operations.EmailSend:
+                    case Operations.EmailForward:
+                    case Operations.EmailReply:
+                        item = McAbstrObject.QueryById<McEmailMessage> (ItemId);
+                        break;
 
-                        case Operations.ContactCreate:
-                        case Operations.ContactUpdate:
-                            item = McAbstrObject.QueryById<McContact> (ItemId);
-                            break;
+                    case Operations.CalCreate:
+                    case Operations.CalUpdate:
+                        item = McAbstrObject.QueryById<McCalendar> (ItemId);
+                        break;
 
-                        case Operations.TaskCreate:
-                        case Operations.TaskUpdate:
-                            item = McAbstrObject.QueryById<McTask> (ItemId);
-                            break;
+                    case Operations.ContactCreate:
+                    case Operations.ContactUpdate:
+                        item = McAbstrObject.QueryById<McContact> (ItemId);
+                        break;
 
-                        default:
-                            Log.Error (Log.LOG_SYS, "Pending ItemId set to {0} for {1}.", ItemId, Operation);
-                            NcAssert.True (false);
-                            break;
-                        }
-                        NcAssert.NotNull (item);
-                        NcAssert.True (0 < item.PendingRefCount);
-                        item.PendingRefCount--;
-                        item.Update ();
-                        Log.Info (Log.LOG_SYNC, "Item {0}: PendingRefCount-: {1}", item.Id, item.PendingRefCount);
-                        if (0 == item.PendingRefCount && item.IsAwaitingDelete) {
-                            item.Delete ();
-                        }
-                        // Deal with any dependent McPending (if there are any, it is an error).
-                        var successors = QuerySuccessors (AccountId, Id);
-                        if (0 != successors.Count) {
-                            Log.Error (Log.LOG_SYNC, "{0} successors found in McPending.Delete.", successors.Count);
-                            foreach (var succ in successors) {
-                                succ.Delete();
-                            }
+                    case Operations.TaskCreate:
+                    case Operations.TaskUpdate:
+                        item = McAbstrObject.QueryById<McTask> (ItemId);
+                        break;
+
+                    default:
+                        Log.Error (Log.LOG_SYS, "Pending ItemId set to {0} for {1}.", ItemId, Operation);
+                        NcAssert.True (false);
+                        break;
+                    }
+                    NcAssert.NotNull (item);
+                    NcAssert.True (0 < item.PendingRefCount);
+                    item.PendingRefCount--;
+                    item.Update ();
+                    Log.Info (Log.LOG_SYNC, "Item {0}: PendingRefCount-: {1}", item.Id, item.PendingRefCount);
+                    if (0 == item.PendingRefCount && item.IsAwaitingDelete) {
+                        item.Delete ();
+                    }
+                    // Deal with any dependent McPending (if there are any, it is an error).
+                    var successors = QuerySuccessors (AccountId, Id);
+                    if (0 != successors.Count) {
+                        Log.Error (Log.LOG_SYNC, "{0} successors found in McPending.Delete.", successors.Count);
+                        foreach (var succ in successors) {
+                            succ.Delete();
                         }
                     }
-                    base.Delete ();
-                });
-            } catch (SQLiteException ex) {
-                Log.Error (Log.LOG_SYNC, "McPending.Delete: RunInTransaction: {0}", ex);
-                return 0;
-            }
+                }
+                base.Delete ();
+            });
+            
             Log.Info (Log.LOG_SYNC, "Pending:Delete:{0}", Id);
             return 1;
         }

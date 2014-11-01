@@ -98,29 +98,26 @@ namespace NachoCore.Model
         {
             NcAssert.True (100000 > PendingRefCount);
             var returnVal = -1;
-            try {
-                NcModel.Instance.RunInTransaction (() => {
-                    McFolder.UnlinkAll (this);
-                    if (0 == PendingRefCount) {
-                        var result = base.Delete ();
-                        if (0 < BodyId) {
-                            var body = McBody.QueryById<McBody> (BodyId);
-                            if (null != body) {
-                                body.Delete ();
-                            }
+
+            NcModel.Instance.RunInTransaction (() => {
+                McFolder.UnlinkAll (this);
+                if (0 == PendingRefCount) {
+                    var result = base.Delete ();
+                    if (0 < BodyId) {
+                        var body = McBody.QueryById<McBody> (BodyId);
+                        if (null != body) {
+                            body.Delete ();
                         }
-                        DeleteAncillary ();
-                        returnVal = result;
-                    } else {
-                        IsAwaitingDelete = true;
-                        Update ();
-                        returnVal = 0;
                     }
-                });
-            } catch (SQLiteException ex) {
-                Log.Error (Log.LOG_EMAIL, "Deleting the item failed: {0} No changes were made to the DB.", ex.Message);
-                return -1;
-            }
+                    DeleteAncillary ();
+                    returnVal = result;
+                } else {
+                    IsAwaitingDelete = true;
+                    Update ();
+                    returnVal = 0;
+                }
+            });
+
             return returnVal;
         }
 
