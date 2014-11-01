@@ -297,7 +297,7 @@ namespace NachoCore.Model
             int rc = 0;
             if (IsInTransaction ()) {
                 // Do not loop-retry within the transaction. 
-                // If we are being given the busy, then rollback may be needed to release a SQLite lock.
+                // If we are being given the busy, then rollback is needed to release a SQLite lock.
                 rc = action ();
                 return rc;
             }
@@ -307,15 +307,15 @@ namespace NachoCore.Model
                     rc = action ();
                     return rc;
                 } catch (SQLiteException ex) {
-                    if (ex.Message.Contains ("Busy")) {
+                    if (SQLite3.Result.Busy == ex.Result) {
                         if (DateTime.UtcNow > whoa) {
-                            Log.Error (Log.LOG_DB, "Caught a Busy");
+                            Log.Error (Log.LOG_DB, "BusyProtect: Caught a Busy");
                             throw;
                         } else {
-                            Log.Warn (Log.LOG_DB, "Caught a Busy");
+                            Log.Warn (Log.LOG_DB, "BusyProtect: Caught a Busy");
                         }
                     } else {
-                        Log.Error (Log.LOG_DB, "Caught a non-Busy: {0}", ex);
+                        Log.Error (Log.LOG_DB, "BusyProtect: Caught a non-Busy: {0}", ex);
                         throw;
                     }
                 }
@@ -367,10 +367,10 @@ namespace NachoCore.Model
                         break;
                     } catch (SQLiteException ex) {
                         watch.Reset ();
-                        if (ex.Message.Contains ("Busy")) {
-                            Log.Warn (Log.LOG_DB, "Caught a Busy");
+                        if (SQLite3.Result.Busy == ex.Result) {
+                            Log.Warn (Log.LOG_DB, "RunInTransaction: Caught a Busy");
                         } else {
-                            Log.Error (Log.LOG_DB, "Caught a non-Busy: {0}", ex);
+                            Log.Error (Log.LOG_DB, "RunInTransaction: Caught a non-Busy: {0}", ex);
                             throw;
                         }
                     }

@@ -697,38 +697,32 @@ namespace NachoCore.Model
         {
             int returnVal = -1; 
 
-            try {
-                if (0 == ScoreVersion) {
-                    // Try to use the contact score for initial email message score
-                    McEmailAddress emailAddress = GetFromAddress ();
-                    if (null != emailAddress) {
-                        Score = emailAddress.Score;
-                    }
+            if (0 == ScoreVersion) {
+                // Try to use the contact score for initial email message score
+                McEmailAddress emailAddress = GetFromAddress ();
+                if (null != emailAddress) {
+                    Score = emailAddress.Score;
                 }
-                NcModel.Instance.RunInTransaction (() => {
-                    returnVal = base.Insert ();
-                    InsertAncillaryData (NcModel.Instance.Db);
-                });
-            } catch (SQLiteException ex) {
-                Log.Error (Log.LOG_EMAIL, "Inserting the email failed: {0} No changes were made to the DB.", ex.Message);
             }
-                
+
+            NcModel.Instance.RunInTransaction (() => {
+                returnVal = base.Insert ();
+                InsertAncillaryData (NcModel.Instance.Db);
+            });
+              
             return returnVal;
         }
 
         public override int Update ()
         {
             int returnVal = -1;  
-            try {
-                NcModel.Instance.RunInTransaction (() => {
-                    returnVal = base.Update ();
-                    ReadAncillaryData ();
-                    DeleteAncillaryData (NcModel.Instance.Db);
-                    InsertAncillaryData (NcModel.Instance.Db);
-                });
-            } catch (SQLiteException ex) {
-                Log.Error (Log.LOG_EMAIL, "Updating the email failed: {0} No changes were made to the DB.", ex.Message);
-            }
+
+            NcModel.Instance.RunInTransaction (() => {
+                returnVal = base.Update ();
+                ReadAncillaryData ();
+                DeleteAncillaryData (NcModel.Instance.Db);
+                InsertAncillaryData (NcModel.Instance.Db);
+            });
 
             return returnVal;
         }
