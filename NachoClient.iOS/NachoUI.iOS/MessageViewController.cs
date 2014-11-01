@@ -21,7 +21,6 @@ using MimeKit;
 using DDay.iCal;
 using DDay.iCal.Serialization;
 using DDay.iCal.Serialization.iCalendar;
-using MonoTouch.Dialog;
 
 namespace NachoClient.iOS
 {

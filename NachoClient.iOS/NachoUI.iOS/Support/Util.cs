@@ -28,7 +28,6 @@ using System.Text;
 using System.Threading;
 using MonoTouch.UIKit;
 using MonoTouch.Foundation;
-using MonoTouch.Dialog;
 using MonoTouch.CoreLocation;
 using System.Globalization;
 using System.Drawing;
@@ -74,46 +73,7 @@ namespace NachoClient
             }
         }
 
-        public static void ReportError (UIViewController current, Exception e, string msg)
-        {
-            if (current == null)
-                throw new ArgumentNullException ("current");
-
-            var root = new RootElement (Locale.GetText ("Error")) {
-                new Section (Locale.GetText ("Error")) {
-                    new StyledStringElement (msg) {
-                        Font = UIFont.BoldSystemFontOfSize (14),
-                    }
-                }
-            };
-
-            if (e != null) {
-                root.Add (new Section (e.GetType ().ToString ()) {
-                    new StyledStringElement (e.Message) {
-                        Font = UIFont.SystemFontOfSize (14),
-                    }
-                });
-                root.Add (new Section ("Stacktrace") {
-                    new StyledStringElement (e.ToString ()) {
-                        Font = UIFont.SystemFontOfSize (14),
-                    }
-                });
-            }
-            ;
-
-            // Delay one second, as UIKit does not like to present
-            // views in the middle of an animation.
-            NSTimer.CreateScheduledTimer (TimeSpan.FromSeconds (1), delegate {
-                UINavigationController nav = null;
-                DialogViewController dvc = new DialogViewController (root);
-                dvc.NavigationItem.LeftBarButtonItem = new UIBarButtonItem (Locale.GetText ("Close"), UIBarButtonItemStyle.Plain, delegate {
-                    nav.DismissViewController (false, null);
-                });
-
-                nav = new UINavigationController (dvc);
-                current.PresentViewController (nav, false, null);
-            });
-        }
+     
 
         public static DateTime LastUpdate (string key)
         {
@@ -236,23 +196,6 @@ namespace NachoClient
             return sb.ToString ();
         }
 
-        public static RootElement MakeProgressRoot (string caption)
-        {
-            return new RootElement (caption) {
-                new Section () {
-                    new ActivityElement ()
-                }
-            };
-        }
-
-        public static RootElement MakeError (string diagMsg)
-        {
-            return new RootElement (Locale.GetText ("Error")) {
-                new Section (Locale.GetText ("Error")) {
-                    new MultilineElement (Locale.GetText ("Unable to retrieve the information"))
-                }
-            };
-        }
 
         static long lastTime;
 

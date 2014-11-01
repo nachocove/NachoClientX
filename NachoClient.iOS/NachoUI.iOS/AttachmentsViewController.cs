@@ -6,7 +6,6 @@ using System.Linq;
 using System.Drawing;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
-using MonoTouch.Dialog;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;

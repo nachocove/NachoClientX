@@ -179,7 +179,6 @@
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Net" />
-    <Reference Include="MonoTouch.Dialog-1" />
     <Reference Include="MimeKit">
       <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\MonoTouch\MimeKit.dll</HintPath>
     </Reference>
@@ -254,10 +253,6 @@
     <Compile Include="NachoUI.iOS\CalendarViewController.cs" />
     <Compile Include="NachoUI.iOS\CalendarViewController.designer.cs">
       <DependentUpon>CalendarViewController.cs</DependentUpon>
-    </Compile>
-    <Compile Include="NachoUI.iOS\SettingsViewController.cs" />
-    <Compile Include="NachoUI.iOS\SettingsViewController.designer.cs">
-      <DependentUpon>SettingsViewController.cs</DependentUpon>
     </Compile>
     <Compile Include="NachoUI.iOS\HomeViewController.cs" />
     <Compile Include="NachoUI.iOS\HomeViewController.designer.cs">
@@ -497,7 +492,6 @@
     <Compile Include="NachoUI.iOS\Support\Locale.cs" />
     <Compile Include="NachoUI.iOS\Support\Util.cs" />
     <Compile Include="NachoUI.iOS\Support\PlatformHelpers.cs" />
-    <Compile Include="NachoUI.iOS\Support\MultilineEntryElement.cs" />
     <Compile Include="NachoUI.iOS\Support\CidImageProtocol.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoMessageController.cs" />
     <Compile Include="NachoPlatform.iOS\NetStatusiOS.cs" />
@@ -519,13 +513,11 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsFolderUpdateCommand.cs">
       <Link>NachoCore\BackEnd\ActiveSync\Commands\AsFolderUpdateCommand.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\Support\AppointmentEntryElement.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoContactChooser.cs" />
     <Compile Include="NachoUI.iOS\Support\SegueHolder.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\Pretty.cs">
       <Link>NachoCore\Utils\Pretty.cs</Link>
     </Compile>
-    <Compile Include="NachoUI.iOS\Support\Elements.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsMeetingResponseCommand.cs">
       <Link>NachoCore\BackEnd\ActiveSync\Commands\AsMeetingResponseCommand.cs</Link>
     </Compile>
@@ -770,7 +762,6 @@
     <Compile Include="LogSettings.cs" />
     <Compile Include="NachoUI.iOS\ViewControllers\NcUIViewController.cs" />
     <Compile Include="NachoUI.iOS\ViewControllers\NcUITableViewController.cs" />
-    <Compile Include="NachoUI.iOS\ViewControllers\NcDialogViewController.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McPendDep.cs">
       <Link>NachoCore\Model\McPendDep.cs</Link>
     </Compile>
@@ -1629,6 +1620,14 @@
     <BundleResource Include="Resources\email-att-download-arrow%402x.png" />
     <BundleResource Include="Resources\email-att-download-circle%402x.png" />
     <BundleResource Include="Resources\email-att-download-vline%402x.png" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-all-non-framework-target-headers.hmap" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-all-target-headers.hmap" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-generated-files.hmap" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-own-target-headers.hmap" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-project-headers.hmap" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS.hmap" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\dgph" />
+    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\NachoClient.iOS.LinkFileList" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

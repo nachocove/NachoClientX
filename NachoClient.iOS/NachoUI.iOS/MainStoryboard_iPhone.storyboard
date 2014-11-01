@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="6245" systemVersion="13F34" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="Ds7-Ad-QXl">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="6250" systemVersion="14A389" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="Ds7-Ad-QXl">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="6238"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="6244"/>
     </dependencies>
     <scenes>
         <!--Advanced Login View Controller-->
@@ -192,50 +192,6 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="94A-qQ-Dpy" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-773" y="-3981"/>
-        </scene>
-        <!--Settings-->
-        <scene sceneID="Jbb-0l-SOs">
-            <objects>
-                <tableViewController restorationIdentifier="SettingsViewController" storyboardIdentifier="SettingsViewController" id="n4d-09-jTS" customClass="SettingsViewController" sceneMemberID="viewController">
-                    <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="NSF-cU-4FU">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                        <prototypes>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" textLabel="25n-TB-62q" style="IBUITableViewCellStyleDefault" id="CzT-ly-hjt">
-                                <rect key="frame" x="0.0" y="22" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="CzT-ly-hjt" id="25U-4B-IRy">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                    <subviews>
-                                        <label opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="left" text="This is Settings" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="25n-TB-62q">
-                                            <rect key="frame" x="15" y="0.0" width="290" height="43"/>
-                                            <autoresizingMask key="autoresizingMask"/>
-                                            <fontDescription key="fontDescription" type="system" pointSize="18"/>
-                                            <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
-                                            <nil key="highlightedColor"/>
-                                        </label>
-                                    </subviews>
-                                </tableViewCellContentView>
-                            </tableViewCell>
-                        </prototypes>
-                        <connections>
-                            <outlet property="dataSource" destination="n4d-09-jTS" id="7h5-2m-xJg"/>
-                            <outlet property="delegate" destination="n4d-09-jTS" id="RVB-Ew-54W"/>
-                        </connections>
-                    </tableView>
-                    <extendedEdge key="edgesForExtendedLayout"/>
-                    <navigationItem key="navigationItem" title="Settings" id="adw-HC-FaJ"/>
-                    <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
-                    <connections>
-                        <segue destination="OCr-PO-3nH" kind="push" identifier="SettingsToNachoNow" id="AcJ-nB-pBP"/>
-                        <segue destination="T5y-Ms-wQ4" kind="push" identifier="SettingsToCalendarSettings" id="zXa-AG-jcx"/>
-                    </connections>
-                </tableViewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="YtI-ix-b1g" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-243" y="-2467"/>
         </scene>
         <!--Support-->
         <scene sceneID="vbl-v1-uBK">
@@ -1400,9 +1356,6 @@
                         <autoresizingMask key="autoresizingMask"/>
                     </navigationBar>
                     <nil name="viewControllers"/>
-                    <connections>
-                        <segue destination="n4d-09-jTS" kind="relationship" relationship="rootViewController" id="bAb-OG-S74"/>
-                    </connections>
                 </navigationController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="MG6-YG-WSQ" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
@@ -1739,32 +1692,32 @@
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="Sbt-au-uDg"/>
-        <segue reference="szv-KC-TId"/>
-        <segue reference="FD7-0T-FGT"/>
-        <segue reference="rEt-DF-c51"/>
-        <segue reference="zOx-eF-clw"/>
-        <segue reference="c79-xS-Npa"/>
-        <segue reference="uqv-uq-oCq"/>
-        <segue reference="m2D-2n-RiV"/>
-        <segue reference="7sK-rg-HQL"/>
-        <segue reference="peA-r2-tjq"/>
-        <segue reference="w67-dy-XSq"/>
-        <segue reference="DDa-hb-SgY"/>
-        <segue reference="84g-IQ-Iaw"/>
-        <segue reference="xrp-ey-B0j"/>
-        <segue reference="B5b-jg-ZNg"/>
-        <segue reference="KnL-e9-HQR"/>
-        <segue reference="dAf-rc-Hh3"/>
-        <segue reference="4z2-t5-9Cd"/>
         <segue reference="QbR-l1-NT5"/>
         <segue reference="od0-Sz-R9p"/>
+        <segue reference="4z2-t5-9Cd"/>
         <segue reference="XQg-JR-vxA"/>
         <segue reference="Eb2-K0-nI3"/>
         <segue reference="TEI-cG-N0R"/>
         <segue reference="v9F-jf-qe1"/>
         <segue reference="wZy-ga-YEb"/>
         <segue reference="Kmd-x6-iCJ"/>
+        <segue reference="KnL-e9-HQR"/>
+        <segue reference="84g-IQ-Iaw"/>
+        <segue reference="Sbt-au-uDg"/>
+        <segue reference="szv-KC-TId"/>
+        <segue reference="FD7-0T-FGT"/>
+        <segue reference="rEt-DF-c51"/>
+        <segue reference="zOx-eF-clw"/>
+        <segue reference="uqv-uq-oCq"/>
+        <segue reference="c79-xS-Npa"/>
+        <segue reference="w67-dy-XSq"/>
+        <segue reference="m2D-2n-RiV"/>
+        <segue reference="7sK-rg-HQL"/>
+        <segue reference="peA-r2-tjq"/>
+        <segue reference="xrp-ey-B0j"/>
+        <segue reference="DDa-hb-SgY"/>
+        <segue reference="dAf-rc-Hh3"/>
+        <segue reference="B5b-jg-ZNg"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>
