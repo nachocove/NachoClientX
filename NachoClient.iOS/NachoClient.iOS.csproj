@@ -1620,14 +1620,6 @@
     <BundleResource Include="Resources\email-att-download-arrow%402x.png" />
     <BundleResource Include="Resources\email-att-download-circle%402x.png" />
     <BundleResource Include="Resources\email-att-download-vline%402x.png" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-all-non-framework-target-headers.hmap" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-all-target-headers.hmap" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-generated-files.hmap" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-own-target-headers.hmap" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS-project-headers.hmap" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\NachoClient.iOS.hmap" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\dgph" />
-    <BundleResource Include="Resources\build\NachoClient.iOS.build\MonoTouch-iphonesimulator\NachoClient.iOS.build\Objects-normal\i386\NachoClient.iOS.LinkFileList" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
