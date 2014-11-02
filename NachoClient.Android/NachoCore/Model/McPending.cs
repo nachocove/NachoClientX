@@ -480,7 +480,7 @@ namespace NachoCore.Model
         public void ResolveAsHardFail (ProtoControl control, NcResult result)
         {
             // This is the designated ResolveAsHardFail.
-            NcAssert.True (StateEnum.Dispatched == State);
+            NcAssert.True (StateEnum.Dispatched == State || DelayNotAllowed);
             NcAssert.True (NcResult.KindEnum.Error == result.Kind);
             ResultKind = result.Kind;
             ResultSubKind = result.SubKind;
