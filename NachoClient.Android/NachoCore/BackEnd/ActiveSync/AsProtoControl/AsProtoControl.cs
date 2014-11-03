@@ -1082,7 +1082,7 @@ namespace NachoCore.ActiveSync
             StopCurrentOp ();
             // Because we are going to stop for a while, we need to fail any
             // non-Dispached pending that aren't allowed to be deferred.
-            McPending.ResolveAllDoNotDelayAsFailed (ProtoControl, Account.Id);
+            McPending.ResolveAllDelayNotAllowedAsFailed (ProtoControl, Account.Id);
         }
 
         public override void ForceStop ()

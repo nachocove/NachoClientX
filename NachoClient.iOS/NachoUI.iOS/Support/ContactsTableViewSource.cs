@@ -55,7 +55,7 @@ namespace NachoClient.iOS
             }
             index = hit;
             count = 0;
-            while ((hit < contacts.Count) && (uppercaseTarget == contacts [hit].FirstLetter[0])) {
+            while ((hit < contacts.Count) && (uppercaseTarget == contacts [hit].FirstLetter [0])) {
                 count = count + 1;
                 hit = hit + 1;
             }
@@ -140,6 +140,16 @@ namespace NachoClient.iOS
             if (SearchDisplayController.SearchResultsTableView == tableView) {
                 return new UIView (new RectangleF (0, 0, 0, 0));
             }
+//            if ((null != recent) && (0 == section)) {
+//                using(var image = UIImage.FromBundle("contacts-recent")) {
+//                    var imageView = new UIImageView(image);
+//                    imageView.AutoresizingMask = UIViewAutoresizing.FlexibleRightMargin | UIViewAutoresizing.FlexibleTopMargin | UIViewAutoresizing.FlexibleBottomMargin;
+//                    imageView.Center = new PointF (15 + (imageView.Frame.Width / 2), 16 + (imageView.Frame.Height / 2));
+//                    var viewX = new UIView (new RectangleF (0, 0, tableView.Frame.Width, 32));
+//                    viewX.AddSubview(imageView);
+//                    return viewX;
+//                }            
+//            }
             var view = new UIView (new RectangleF (0, 0, tableView.Frame.Width, 32));
             var label = new UILabel ();
             label.Font = A.Font_AvenirNextRegular24;
@@ -475,7 +485,7 @@ namespace NachoClient.iOS
             if (null != labelView) {
                 ConfigureLabelView (labelView, displayTitle, colorIndex);
             } else {
-                var imageView = cell.ViewWithTag(USER_LABEL_TAG) as UIImageView;
+                var imageView = cell.ViewWithTag (USER_LABEL_TAG) as UIImageView;
                 imageView.Image = Util.ImageOfContact (contact);
             }
 
@@ -489,20 +499,10 @@ namespace NachoClient.iOS
             labelView.BackgroundColor = Util.ColorForUser (colorIndex);
         }
 
-        public void ScrollToSection (UITableView tableView, char c)
+        public void ScrollToSection (UITableView tableView, int index)
         {
-            int i;
-
-            if ('#' == c) {
-                i = 26;
-            } else {
-                i = ((int)c) - ((int)'A');
-            }
-            if (null != recent) {
-                i += 1;
-            }
-            if (0 <= i) {
-                var p = NSIndexPath.FromItemSection (NSRange.NotFound, i);
+            if (0 <= index) {
+                var p = NSIndexPath.FromItemSection (NSRange.NotFound, index);
                 tableView.ScrollToRow (p, UITableViewScrollPosition.Top, true);
             }
         }
