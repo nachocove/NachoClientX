@@ -113,7 +113,7 @@ namespace NachoClient.iOS
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
-            swipeViewDateSource.SelectButton (0);
+//            swipeViewDateSource.SelectButton (0);
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -183,9 +183,9 @@ namespace NachoClient.iOS
             PerformSegue ("ContactsToContactDetail", new SegueHolder (contact));
         }
 
-        public void SelectSection (char c)
+        public void SelectSection (int index)
         {
-            contactTableViewSource.ScrollToSection (TableView, c);
+            contactTableViewSource.ScrollToSection (TableView, index);
         }
 
         public class LettersSwipeViewDelegate : SwipeViewDelegate
@@ -200,7 +200,7 @@ namespace NachoClient.iOS
             public override void DidSelectItemAtIndex (SwipeView swipeView, int index)
             {
                 if (null != owner) {
-                    owner.SelectSection ((char)(((int)'A') + index));
+                    owner.SelectSection (index);
                 }
             }
         }
@@ -211,13 +211,20 @@ namespace NachoClient.iOS
 
             ContactListViewController owner;
 
+            // Recent, A..Z, #
+            public override int NumberOfItemsInSwipeView (SwipeView swipeView)
+            {
+                return 28;
+            }
+
             public LettersSwipeViewDataSource (ContactListViewController owner) : base ()
             {
                 this.owner = owner;
-                viewList = new UIView[27];
-                viewList [26] = CreateView ('#');
-                for (int i = 0; i < 26; i++) {
-                    viewList [i] = CreateView ((char)(((int)'A') + i));
+                viewList = new UIView[28];
+                viewList[0] = CreateImageView(0);
+                const string letters = "!ABCDEFGHIJKLMNOPQRSTUVWXYZ#";
+                for (int i = 1; i < 28; i++) {
+                    viewList [i] = CreateLetterView (i, letters[i]);
                 }
             }
 
@@ -236,26 +243,19 @@ namespace NachoClient.iOS
                     }
                 }
                 button.Selected = true;
+                button.BackgroundColor = A.Color_NachoLightGrayBackground;
                 button.BackgroundColor = A.Color_FEBA32;
             }
 
             public void SelectButton (int section)
             {
-                if (0 == section) {
-                    return;
-                }
-                var n = section - 1;
+                var n = section;
                 var view = viewList [n];
                 var button = (UIButton)view.Subviews [0];
                 SelectButton (button);
             }
 
-            public override int NumberOfItemsInSwipeView (SwipeView swipeView)
-            {
-                return 27;
-            }
-
-            protected UIView CreateView (char c)
+            protected UIView CreateLetterView (int index, char c)
             {
                 var view = new UIView (new RectangleF (0, 0, 50, 50));
                 var title = new String (c, 1);
@@ -274,7 +274,7 @@ namespace NachoClient.iOS
                 button.TouchUpInside += (object sender, EventArgs e) => {
                     SelectButton ((UIButton)sender);
                     if (null != owner) {
-                        owner.SelectSection (c);
+                        owner.SelectSection (index);
                     }
                 };
                 button.UserInteractionEnabled = false;
@@ -282,7 +282,29 @@ namespace NachoClient.iOS
                 return view;
             }
 
+            protected UIView CreateImageView(int index)
+            {
+                var button = UIButton.FromType (UIButtonType.Custom);
+                button.Frame = new RectangleF (7, 7, 36, 36);
+                button.Layer.CornerRadius = 18;
+                button.Layer.MasksToBounds = true;
+                using (var image = UIImage.FromBundle ("contacts-recent")) {
+                    button.SetImage (image, UIControlState.Normal);
+                }
+                using (var image = UIImage.FromBundle ("contacts-recent-active")) {
+                    button.SetImage (image, UIControlState.Disabled);
+                }
+                button.TouchUpInside += (object sender, EventArgs e) => {
+                    SelectButton ((UIButton)sender);
+                    if (null != owner) {
+                        owner.SelectSection (index);
+                    }
+                };
+                button.UserInteractionEnabled = false;
+                var view = new UIView (new RectangleF (0, 0, 50, 50));
+                view.AddSubview (button);
+                return view;
+            }
         }
-
     }
 }
