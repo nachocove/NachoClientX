@@ -27,6 +27,7 @@ namespace NachoClient.iOS
         protected UILabel recentLabel;
         protected UILabel defaultsLabel;
         protected UILabel yourFoldersLabel;
+        protected UIView titleView;
         protected UIView topView;
         protected UIView recentView;
         protected UIView defaultsView;
@@ -104,8 +105,6 @@ namespace NachoClient.iOS
             NcAssert.CaseError ();
         }
 
-        UIView titleView = new UIView ();
-
         protected void CreateView ()
         {
             float yOffset = 20f;
@@ -113,6 +112,7 @@ namespace NachoClient.iOS
             ConfigureColors ();
 
             if (modal) {
+                titleView = new UIView ();
                 titleView.Frame = new RectangleF (0, 0, View.Frame.Width, 85);
                 titleView.ClipsToBounds = true;
                 titleView.BackgroundColor = A.Color_NachoGreen;
