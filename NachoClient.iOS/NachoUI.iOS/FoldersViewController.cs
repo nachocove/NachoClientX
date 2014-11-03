@@ -237,9 +237,9 @@ namespace NachoClient.iOS
 
         protected void LayoutView ()
         {
-            var yOffset = 0f;
+            var yOffset = 24f;
             if (modal) {
-                yOffset += 64;
+                yOffset = 64f;
             } 
 
             var selectedDefaultButtons = McMutables.GetOrCreate (McAccount.GetDeviceAccount ().Id, "FoldersDefaultsSelectedButtons", "DefaultsSelectedButtons", null);
@@ -259,12 +259,8 @@ namespace NachoClient.iOS
 
             defaultCellsOffset = 0;
 
-            yOffset += 24;
-
-            if (!modal) {
-                ViewFramer.Create (topView).Y (yOffset).Height (topFolderCount * 44);
-                yOffset = topView.Frame.Bottom + 24;
-            }
+            ViewFramer.Create (topView).Y (yOffset).Height (topFolderCount * 44);
+            yOffset = topView.Frame.Bottom + 24;
 
             if (hasRecents) {
                 ViewFramer.Create (recentLabel).Y (yOffset);
