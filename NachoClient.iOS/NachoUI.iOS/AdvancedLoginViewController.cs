@@ -151,6 +151,11 @@ namespace NachoClient.iOS
 
         public void CreateView ()
         {
+            if (null != this.NavigationController) {
+                NavigationController.NavigationBar.Opaque = true;
+                NavigationController.NavigationBar.BackgroundColor = A.Color_NachoGreen.ColorWithAlpha (1.0f);
+                NavigationController.NavigationBar.Translucent = false;
+            }
             contentView = new UIView ();
             contentView.BackgroundColor = A.Color_NachoNowBackground;
 
