@@ -246,7 +246,7 @@ namespace NachoClient.iOS
                 ToggleSearchBar (true);
                 isMultiSelecting = false;
                 AttachmentsSource.IsMultiSelecting = false;
-                UIView.Animate (.1, 0, UIViewAnimationOptions.CurveLinear,
+                UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
                     () => {
                         segmentedControlView.Center = new PointF (segmentedControlView.Center.X, segmentedControlView.Center.Y + segmentedControlView.Frame.Height);
                         tableView.Frame = new RectangleF (0, segmentedControlView.Frame.Height, View.Frame.Width, View.Frame.Height - segmentedControlView.Frame.Height);

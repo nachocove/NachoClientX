@@ -349,7 +349,7 @@ namespace NachoClient.iOS
 
             switch (item.FileType) {
             case 0:
-                ConfigureAttachmentView (McAttachment.QueryById<McAttachment> (item.Id), item, cellIconImageView, textLabel, detailTextlabel, dateTextlabel, downloadImageView);
+                ConfigureAttachmentView (cell, McAttachment.QueryById<McAttachment> (item.Id), item, cellIconImageView, textLabel, detailTextlabel, dateTextlabel, downloadImageView);
                 break;
             case 1:
                 ConfigureNoteView (item, cellIconImageView, textLabel, detailTextlabel, dateTextlabel);
@@ -361,7 +361,7 @@ namespace NachoClient.iOS
 
         }
 
-        protected void ConfigureAttachmentView (McAttachment attachment, NcFileIndex item, UIImageView iconView, UILabel textLabel, UILabel detailTextLabel, UILabel dateTextLabel, UIImageView downloadImageView)
+        protected void ConfigureAttachmentView (UITableViewCell cell, McAttachment attachment, NcFileIndex item, UIImageView iconView, UILabel textLabel, UILabel detailTextLabel, UILabel dateTextLabel, UIImageView downloadImageView)
         {
             if (null != attachment) {
                 downloaded = false;
@@ -372,7 +372,7 @@ namespace NachoClient.iOS
                     downloadImageView.Image = UIImage.FromFile (DownloadIcon);
                     downloadImageView.Hidden = true;
                 } else if (McAbstrFileDesc.FilePresenceEnum.Partial == attachment.FilePresence) {
-                    //vc.AttachmentAction (attachment.Id, cell);
+                    vc.AttachmentAction (attachment.Id, cell);
                 } else {
                     (downloadImageView.Superview).BringSubviewToFront (downloadImageView);
                     downloadImageView.Image = UIImage.FromFile (DownloadIcon);
@@ -455,8 +455,8 @@ namespace NachoClient.iOS
 
         public override void RowSelected (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
         {
+            UITableViewCell cell = tableView.CellAt (indexPath);
             if (isMultiSelecting) {
-                var cell = tableView.CellAt (indexPath);
                 var iv = cell.ViewWithTag (MULTI_ICON_TAG) as UIImageView;
                 ToggleMultiSelectIcon (iv);
 
@@ -474,11 +474,11 @@ namespace NachoClient.iOS
             } else {
                 NcFileIndex item;
                 item = FileFromIndexPath (tableView, indexPath);
-
+            
                 switch (item.FileType) {
                 case 0:
                     McAttachment attachment = McAttachment.QueryById<McAttachment> (item.Id);
-                    UITableViewCell cell = tableView.CellAt (indexPath);
+
                     if (null != attachment) {
                         vc.AttachmentAction (attachment.Id, cell);
                     }
@@ -628,7 +628,8 @@ namespace NachoClient.iOS
 
         public static void StopAnimationsOnCell (UITableViewCell cell)
         {
-            foreach (UIView subview in cell.ImageView.Subviews) {
+            var iv = cell.ViewWithTag (DOWNLOAD_IMAGEVIEW_TAG) as UIImageView;
+            foreach (UIView subview in iv) {
                 subview.Layer.RemoveAllAnimations ();
                 subview.RemoveFromSuperview ();
             }
@@ -703,49 +704,8 @@ namespace NachoClient.iOS
 
         public static void DownloadCompleteAnimation (UITableViewCell cell, Action displayAttachment)
         {
-            // Place the download icon in a separate view on the screen and animate it
-            var iv = cell.ViewWithTag (DOWNLOAD_IMAGEVIEW_TAG) as UIImageView;
             StopAnimationsOnCell (cell);
-            var imageView = new UIImageView (new RectangleF (iv.Frame.Width / 2, iv.Frame.Height / 2, iv.Frame.Width, iv.Frame.Height));
-            imageView.Center = iv.Center;
-            imageView.Image = UIImage.FromFile (DownloadCompleteIcon);
-            iv.Alpha = 0.0f;
-            cell.ContentView.AddSubview (imageView);
-
-            Action<double, Action, Action> transformAnimation = (duration, transformAction, transformComplete) => UIView.Animate (
-                                                                    duration: duration,
-                                                                    delay: 0,
-                                                                    options: UIViewAnimationOptions.CurveEaseIn,
-                                                                    animation: () => {
-                    transformAction ();
-                },
-                                                                    completion: () => {
-                    transformComplete ();
-                }
-                                                                );
-
-            transformAnimation (0.0, () => {
-                imageView.Layer.Transform = MonoTouch.CoreAnimation.CATransform3D.MakeScale (0.7f, 0.7f, 1.0f);
-            }, () => {
-                transformAnimation (0.15, () => {
-                    imageView.Layer.Transform = MonoTouch.CoreAnimation.CATransform3D.MakeScale (1.3f, 1.3f, 1.0f);
-                }, () => {
-                    transformAnimation (0.15, () => {
-                        imageView.Layer.Transform = MonoTouch.CoreAnimation.CATransform3D.MakeScale (0.8f, 0.8f, 1.0f);
-                    }, () => {
-                        transformAnimation (0.15, () => {
-                            imageView.Layer.Transform = MonoTouch.CoreAnimation.CATransform3D.MakeScale (1.0f, 1.0f, 1.0f);
-                        }, () => {
-                            // return the cell to it's normal state
-                            iv.Alpha = 1.0f;
-                            imageView.RemoveFromSuperview ();
-
-                            // allow caller to decide how to open the attachment
-                            displayAttachment ();
-                        });
-                    });
-                });
-            });
+            displayAttachment ();
         }
 
         public override float GetHeightForHeader (UITableView tableView, int section)
