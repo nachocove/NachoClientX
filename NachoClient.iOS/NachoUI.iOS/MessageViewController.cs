@@ -581,9 +581,9 @@ namespace NachoClient.iOS
             if (segue.Identifier == "MessageViewToEditEvent") {
                 var vc = (EditEventViewController)segue.DestinationViewController;
                 var h = sender as SegueHolder;
-                var e = h.value as McEvent;
+                var c = h.value as McCalendar;
                 vc.SetOwner (this);
-                vc.SetCalendarItem (e, CalendarItemEditorAction.create);
+                vc.SetCalendarItem (c);
                 return;
             }
             if (segue.Identifier == "SegueToDatePicker") {
@@ -594,8 +594,8 @@ namespace NachoClient.iOS
             if (segue.Identifier == "SegueToEditEvent") {
                 var vc = (EditEventViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
-                var e = holder.value as McEvent;
-                vc.SetCalendarItem (e, CalendarItemEditorAction.create);
+                var e = holder.value as McCalendar;
+                vc.SetCalendarItem (e);
                 vc.SetOwner (this);
                 return;
             }

@@ -123,12 +123,8 @@ namespace NachoClient.iOS
             if (segue.Identifier == "NachoNowToEditEventView") {
                 var vc = (EditEventViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
-                var e = holder.value as McEvent;
-                if (null == e) { 
-                    vc.SetCalendarItem (null, CalendarItemEditorAction.create);
-                } else {
-                    vc.SetCalendarItem (e, CalendarItemEditorAction.create);
-                }
+                var c = holder.value as McCalendar;
+                vc.SetCalendarItem (c);
                 vc.SetOwner (this);
                 return;
             }
@@ -262,7 +258,7 @@ namespace NachoClient.iOS
                 if (HotListCarouselDataSource.PLACEHOLDER_TAG == currentView.Tag) {
                     continue;
                 }
-                var bodyView = (BodyView) currentView.ViewWithTag (HotListCarouselDataSource.PREVIEW_TAG);
+                var bodyView = (BodyView)currentView.ViewWithTag (HotListCarouselDataSource.PREVIEW_TAG);
                 NcAssert.True (null != bodyView);
                 // To avoid unnecessary reload, we only reload if the current item was downloading
                 // and the body is now completely downloaded.

@@ -485,6 +485,7 @@ namespace NachoCore.Utils
         public static McCalendar CreateMeeting (McEmailMessage message)
         {
             var c = DefaultMeeting ();
+            c.AccountId = message.AccountId;
             c.Subject = message.Subject;
             var dupBody = McBody.InsertDuplicate (message.AccountId, message.BodyId);
             c.BodyId = dupBody.Id;

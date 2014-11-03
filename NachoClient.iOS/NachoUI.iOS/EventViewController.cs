@@ -729,7 +729,7 @@ namespace NachoClient.iOS
 
             if (segue.Identifier.Equals ("EventToEditEvent")) {
                 var dc = (EditEventViewController)segue.DestinationViewController;
-                dc.SetCalendarItem (e, CalendarItemEditorAction.edit);
+                dc.SetCalendarEvent (e, CalendarItemEditorAction.edit);
                 return;
             }
 

@@ -194,7 +194,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public void SetCalendarItem (McEvent e, CalendarItemEditorAction action)
+        public void SetCalendarEvent (McEvent e, CalendarItemEditorAction action)
         {
             if (null == e) {
                 this.item = null;
@@ -202,6 +202,20 @@ namespace NachoClient.iOS
                 this.item = McCalendar.QueryById<McCalendar> (e.CalendarId);
             }
             this.action = action;
+        }
+
+        public void SetCalendarItem (McCalendar c)
+        {
+            if (null == c) {
+                this.item = null;
+                this.action = CalendarItemEditorAction.create;
+                return;
+            }
+            if (0 == c.Id) {
+                c.Insert ();
+            }
+            this.item = c;
+            this.action = CalendarItemEditorAction.edit;
         }
 
         public void SetStartingDate (DateTime startingDate)

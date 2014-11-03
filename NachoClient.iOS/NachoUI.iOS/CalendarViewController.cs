@@ -142,7 +142,7 @@ namespace NachoClient.iOS
                     var dt = (DateTime)holder.value;
                     vc.SetStartingDate (dt);
                 }
-                vc.SetCalendarItem (null, CalendarItemEditorAction.create);
+                vc.SetCalendarItem (null);
                 vc.SetOwner (this);
                 return;
             }
