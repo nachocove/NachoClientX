@@ -1,0 +1,2 @@
+The AWS SDK is distributed as a .msi. So, I extract the .dll for VS2013 manually and put it here.
+
