@@ -27,6 +27,7 @@ namespace NachoClient.iOS
         protected UILabel recentLabel;
         protected UILabel defaultsLabel;
         protected UILabel yourFoldersLabel;
+        protected UIView titleView;
         protected UIView topView;
         protected UIView recentView;
         protected UIView defaultsView;
@@ -35,6 +36,16 @@ namespace NachoClient.iOS
         protected int rootFolderCount;
         protected int topFolderCount;
         const int MAX_RECENT_FOLDERS = 3;
+
+        protected UIColor textLabelColor;
+        protected UIColor textColor;
+        protected UIColor seperatorColor;
+        protected UIColor cellBGColor;
+        protected UIColor scrollViewBGColor;
+
+        protected UIImage folderIcon;
+        protected UIImage moreIcon;
+        protected UIImage moreIconSelected;
 
         public override void ViewDidLoad ()
         {
@@ -94,28 +105,45 @@ namespace NachoClient.iOS
             NcAssert.CaseError ();
         }
 
-        UINavigationBar navbar = new UINavigationBar ();
-
         protected void CreateView ()
         {
             float yOffset = 20f;
             scrollView = new UIScrollView (new RectangleF (0, 0, View.Frame.Width, View.Frame.Height));
+            ConfigureColors ();
 
             if (modal) {
-                navbar.Frame = new RectangleF (0, 0, View.Frame.Width, 64);
-                View.Add (navbar);
-                navbar.BackgroundColor = A.Color_NachoGreen;
-                navbar.Translucent = false;
-                UINavigationItem title = new UINavigationItem ("Move To");
-                navbar.SetItems (new UINavigationItem[]{ title }, false);
-                UIBarButtonItem cancelButton = new UIBarButtonItem ();
-                Util.SetAutomaticImageForButton (cancelButton, "icn-close");
+                titleView = new UIView ();
+                titleView.Frame = new RectangleF (0, 0, View.Frame.Width, 85);
+                titleView.ClipsToBounds = true;
+                titleView.BackgroundColor = A.Color_NachoGreen;
 
-                navbar.TopItem.LeftBarButtonItem = cancelButton;
-                cancelButton.Clicked += (object sender, EventArgs e) => {
+                yOffset = 40;
+
+                UIButton dismissButton = new UIButton (new RectangleF (30, yOffset, 25, 25));
+                dismissButton.SetImage (UIImage.FromBundle ("modal-close"), UIControlState.Normal);
+                dismissButton.TouchUpInside += (object sender, EventArgs e) => {
                     DismissViewController (true, null);
                 };
-                yOffset += navbar.Frame.Height;
+                titleView.AddSubview (dismissButton);
+
+                UILabel viewTitle = new UILabel (new RectangleF (View.Frame.Width / 2 - 75, yOffset, 150, 25));
+                viewTitle.Text = "Move to Folder";
+
+                viewTitle.Font = A.Font_AvenirNextDemiBold17;
+                viewTitle.TextColor = UIColor.White;
+                viewTitle.TextAlignment = UITextAlignment.Center;
+                titleView.AddSubview (viewTitle);
+
+                yOffset = viewTitle.Frame.Bottom + 20;
+
+                UIView sectionSeparator = new UIView (new RectangleF (0, yOffset - .5f, View.Frame.Width, .5f));
+                sectionSeparator.BackgroundColor = seperatorColor;
+                titleView.AddSubview (sectionSeparator);
+
+                yOffset = sectionSeparator.Frame.Bottom + 20;
+
+                View.AddSubview (titleView);
+
             } else {
                 NavigationItem.Title = "Mail";
                 NavigationController.NavigationBar.Translucent = false;
@@ -125,21 +153,21 @@ namespace NachoClient.iOS
 
             topView = new UIView (new RectangleF (marginPadding / 2, yOffset, View.Frame.Width - marginPadding, 44));
             topView.Layer.CornerRadius = 4;
-            topView.BackgroundColor = UIColor.White;
+            topView.BackgroundColor = cellBGColor;
             yOffset += topView.Frame.Height;
 
             yOffset += 20;
             recentLabel = new UILabel (new RectangleF (20, yOffset, 160, 20));
             recentLabel.Text = "Recent Folders";
             recentLabel.Font = A.Font_AvenirNextDemiBold17;
-            recentLabel.TextColor = A.Color_NachoGreen;
+            recentLabel.TextColor = textLabelColor;
             recentLabel.Hidden = true;
             yOffset += recentLabel.Frame.Height;
 
             yOffset += 15;
             recentView = new UIView (new RectangleF (marginPadding / 2, yOffset, View.Frame.Width - marginPadding, 44));
             recentView.Layer.CornerRadius = 4;
-            recentView.BackgroundColor = UIColor.White;
+            recentView.BackgroundColor = cellBGColor;
             recentView.Hidden = true;
             yOffset += recentView.Frame.Height;
 
@@ -147,26 +175,26 @@ namespace NachoClient.iOS
             defaultsLabel = new UILabel (new RectangleF (20, yOffset, 160, 20));
             defaultsLabel.Text = "Default Folders";
             defaultsLabel.Font = A.Font_AvenirNextDemiBold17;
-            defaultsLabel.TextColor = A.Color_NachoGreen;
+            defaultsLabel.TextColor = textLabelColor;
             yOffset += defaultsLabel.Frame.Height;
 
             yOffset += 5;
             defaultsView = new UIView (new RectangleF (marginPadding / 2, yOffset, View.Frame.Width - marginPadding, 44));
             defaultsView.Layer.CornerRadius = 4;
-            defaultsView.BackgroundColor = UIColor.White;
+            defaultsView.BackgroundColor = cellBGColor;
             yOffset += defaultsView.Frame.Height;
 
             yOffset += 20;
             yourFoldersLabel = new UILabel (new RectangleF (20, yOffset, 160, 20));
             yourFoldersLabel.Text = "Your Folders";
             yourFoldersLabel.Font = A.Font_AvenirNextDemiBold17;
-            yourFoldersLabel.TextColor = A.Color_NachoGreen;
+            yourFoldersLabel.TextColor = textLabelColor;
             yOffset += yourFoldersLabel.Frame.Height;
 
             yOffset += 5;
             yourFoldersView = new UIView (new RectangleF (marginPadding / 2, yOffset, View.Frame.Width - marginPadding, 44));
             yourFoldersView.Layer.CornerRadius = 4;
-            yourFoldersView.BackgroundColor = UIColor.White;
+            yourFoldersView.BackgroundColor = cellBGColor;
             yOffset += yourFoldersView.Frame.Height;
 
             yOffset += 20;
@@ -178,11 +206,34 @@ namespace NachoClient.iOS
             scrollView.Add (defaultsView);
             scrollView.Add (yourFoldersLabel);
             scrollView.Add (yourFoldersView);
-            scrollView.BackgroundColor = A.Color_NachoBackgroundGray;
+            scrollView.BackgroundColor = scrollViewBGColor;
             scrollView.ContentSize = new SizeF (View.Frame.Width, yOffset);
             View.Add (scrollView);
             if (modal) {
-                View.BringSubviewToFront (navbar);
+                View.BringSubviewToFront (titleView);
+            }
+        }
+
+        protected void ConfigureColors ()
+        {
+            if (modal) {
+                textLabelColor = UIColor.White;
+                textColor = UIColor.White;
+                seperatorColor = UIColor.LightGray.ColorWithAlpha (.6f);
+                cellBGColor = A.Color_NachoGreen;
+                scrollViewBGColor = A.Color_NachoGreen;
+                folderIcon = UIImage.FromBundle ("modal-folder");
+                moreIcon = UIImage.FromBundle ("modal-readmore");
+                moreIconSelected = UIImage.FromBundle ("modal-readmore-active");
+            } else {
+                textLabelColor = A.Color_NachoGreen;
+                textColor = A.Color_NachoDarkText;
+                seperatorColor = A.Color_NachoBorderGray;
+                cellBGColor = UIColor.White;
+                scrollViewBGColor = A.Color_NachoBackgroundGray;
+                folderIcon = UIImage.FromBundle ("folder-folder");
+                moreIcon = UIImage.FromBundle ("gen-readmore");
+                moreIconSelected = UIImage.FromBundle ("gen-readmore-active");
             }
         }
 
@@ -237,9 +288,9 @@ namespace NachoClient.iOS
 
         protected void LayoutView ()
         {
-            var yOffset = 0f;
+            var yOffset = 24f;
             if (modal) {
-                yOffset += 64;
+                yOffset = 85f;
             } 
 
             var selectedDefaultButtons = McMutables.GetOrCreate (McAccount.GetDeviceAccount ().Id, "FoldersDefaultsSelectedButtons", "DefaultsSelectedButtons", null);
@@ -259,12 +310,8 @@ namespace NachoClient.iOS
 
             defaultCellsOffset = 0;
 
-            yOffset += 24;
-
-            if (!modal) {
-                ViewFramer.Create (topView).Y (yOffset).Height (topFolderCount * 44);
-                yOffset = topView.Frame.Bottom + 24;
-            }
+            ViewFramer.Create (topView).Y (yOffset).Height (topFolderCount * 44);
+            yOffset = topView.Frame.Bottom + 24;
 
             if (hasRecents) {
                 ViewFramer.Create (recentLabel).Y (yOffset);
@@ -332,7 +379,7 @@ namespace NachoClient.iOS
         protected void CreateTopFolderCell (String name, int index, bool addSeparator, Action action)
         {
             UIView cell = new UIView (new RectangleF (5, 44 * index, recentView.Frame.Width - 10, 44));
-            cell.BackgroundColor = UIColor.White;
+            cell.BackgroundColor = cellBGColor;
             var cellTap = new UITapGestureRecognizer ();
             cellTap.AddTarget (() => {
                 action ();
@@ -342,15 +389,15 @@ namespace NachoClient.iOS
             UILabel label = new UILabel (new RectangleF (52, 0, cell.Frame.Width - 52, 44));
             label.Text = name;
             label.Font = A.Font_AvenirNextMedium14;
-            label.TextColor = A.Color_NachoDarkText;
+            label.TextColor = textColor;
             cell.Add (label);
 
             UIImageView imageView = new UIImageView (new RectangleF (13, cell.Frame.Height / 2 - 14, 24, 24));
-            imageView.Image = UIImage.FromBundle ("folder-folder");
+            imageView.Image = folderIcon;
             cell.Add (imageView);
 
             if (addSeparator) {
-                var line = Util.AddHorizontalLineView (52, 43, cell.Frame.Width - 47, A.Color_NachoBorderGray);
+                var line = Util.AddHorizontalLineView (52, 43, cell.Frame.Width - 47, seperatorColor);
                 cell.Add (line);
             }
 
@@ -360,7 +407,7 @@ namespace NachoClient.iOS
         protected void CreateRecentFolderCell (McFolder folder, int index)
         {
             UIView cell = new UIView (new RectangleF (5, 44 * index, recentView.Frame.Width - 10, 44));
-            cell.BackgroundColor = UIColor.White;
+            cell.BackgroundColor = cellBGColor;
             var cellTap = new UITapGestureRecognizer ();
             cellTap.AddTarget (() => {
                 folder = folder.UpdateSet_LastAccessed (DateTime.UtcNow);
@@ -376,15 +423,15 @@ namespace NachoClient.iOS
             UILabel label = new UILabel (new RectangleF (52, 0, cell.Frame.Width - 52, 44));
             label.Text = folder.DisplayName;
             label.Font = A.Font_AvenirNextMedium14;
-            label.TextColor = A.Color_NachoDarkText;
+            label.TextColor = textColor;
             cell.Add (label);
 
             UIImageView imageView = new UIImageView (new RectangleF (13, cell.Frame.Height / 2 - 14, 24, 24));
-            imageView.Image = UIImage.FromBundle ("folder-folder");
+            imageView.Image = folderIcon;
             cell.Add (imageView);
 
             if (folder != recentFolderList.Last ()) {
-                var line = Util.AddHorizontalLineView (52, 43, cell.Frame.Width - 47, A.Color_NachoBorderGray);
+                var line = Util.AddHorizontalLineView (52, 43, cell.Frame.Width - 47, seperatorColor);
                 line.Tag = folder.Id;
                 cell.Add (line);
             }
@@ -408,7 +455,7 @@ namespace NachoClient.iOS
 
             var indentation = subLevel * 10;
             UIView cell = new UIView (new RectangleF (5 + indentation, 0, parentView.Frame.Width - 10 - indentation, 44));
-            cell.BackgroundColor = UIColor.White;
+            cell.BackgroundColor = cellBGColor;
             var cellTap = new UITapGestureRecognizer ();
             cellTap.AddTarget (() => {
                 var folder = GetFolder (folderStruct);
@@ -425,14 +472,14 @@ namespace NachoClient.iOS
             UILabel label = new UILabel (new RectangleF (52, 0, cell.Frame.Width - 52, 44));
             label.Text = folderStruct.folderName;
             label.Font = A.Font_AvenirNextMedium14;
-            label.TextColor = A.Color_NachoDarkText;
+            label.TextColor = textColor;
             cell.Add (label);
 
             UIImageView imageView = new UIImageView (new RectangleF (13, cell.Frame.Height / 2 - 14, 24, 24));
-            imageView.Image = UIImage.FromBundle ("folder-folder");
+            imageView.Image = folderIcon;
             cell.Add (imageView);
 
-            var line = Util.AddHorizontalLineView (52, 43, cell.Frame.Width - 47, A.Color_NachoBorderGray);
+            var line = Util.AddHorizontalLineView (52, 43, cell.Frame.Width - 47, seperatorColor);
             line.Tag = tag + 20000;
             cell.Add (line);
 
@@ -440,7 +487,7 @@ namespace NachoClient.iOS
                 CreateNestedCells (folderStruct, subLevel, parentView);
 
                 UIImageView buttonImageView = new UIImageView (new RectangleF (cell.Frame.Width - 31, cell.Frame.Height / 2 - 10, 18, 18));
-                buttonImageView.Image = UIImage.FromBundle ("gen-readmore");
+                buttonImageView.Image = moreIcon;
                 buttonImageView.Tag = tag + 30000;
                 cell.Add (buttonImageView);
 
@@ -470,7 +517,7 @@ namespace NachoClient.iOS
                 }
                 expandButton.Selected = true;
                 var buttonImage = parentView.ViewWithTag (40000 + folder.folderID) as UIImageView;
-                buttonImage.Image = UIImage.FromBundle ("gen-readmore-active");
+                buttonImage.Image = moreIconSelected;
                 if (defaultsView == parentView) {
                     UpdateSelectedButtonsList (20000 + folder.folderID, true, "DefaultsSelectedButtons");
                 } else {
@@ -488,7 +535,7 @@ namespace NachoClient.iOS
                 HideAllSubFolders (folder, parentView);
                 expandButton.Selected = false;
                 var buttonImage = parentView.ViewWithTag (40000 + folder.folderID) as UIImageView;
-                buttonImage.Image = UIImage.FromBundle ("gen-readmore");
+                buttonImage.Image = moreIcon;
                 if (defaultsView == parentView) {
                     UpdateSelectedButtonsList (20000 + folder.folderID, false, "DefaultsSelectedButtons");
                 } else {
@@ -581,7 +628,7 @@ namespace NachoClient.iOS
                         if (null != button) {
                             button.Selected = true;
                             var buttonImage = parentView.ViewWithTag (numTag + 20000) as UIImageView;
-                            buttonImage.Image = UIImage.FromBundle ("gen-readmore-active");
+                            buttonImage.Image = moreIconSelected;
                             var folder = GetFolderStructById (folderID, folders);
                             if (IsParentCellButtonSelected (GetFolder (folder), selectedButtons)) {
                                 foreach (var subFolder in folder.subFolders) {

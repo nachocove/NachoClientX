@@ -1622,6 +1622,9 @@
     <BundleResource Include="Resources\email-att-download-vline%402x.png" />
     <BundleResource Include="Resources\contacts-recent-active%402x.png" />
     <BundleResource Include="Resources\contacts-recent%402x.png" />
+    <BundleResource Include="Resources\modal-folder%402x.png" />
+    <BundleResource Include="Resources\modal-readmore-active%402x.png" />
+    <BundleResource Include="Resources\modal-readmore%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
