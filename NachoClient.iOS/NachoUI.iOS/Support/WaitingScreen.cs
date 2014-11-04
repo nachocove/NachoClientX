@@ -267,23 +267,11 @@ namespace NachoClient.iOS
             
         private void ArrowAnimation (UIImageView theTopSpinner, UIImageView theBottomSpinner, PointF topSpinnerCenter, PointF bottomSpinnerCenter, bool bottomIsOnTop)
         {
-            if (!quitLoadingAnimation) {
-                    UIView.Animate(3, 0, (UIViewAnimationOptions.OverrideInheritedDuration | UIViewAnimationOptions.OverrideInheritedOptions | UIViewAnimationOptions.OverrideInheritedCurve | UIViewAnimationOptions.CurveLinear), () => {
-                        theTopSpinner.Center = new PointF (topSpinnerCenter.X, topSpinnerCenter.Y + 190f);
-                        theBottomSpinner.Center = new PointF (bottomSpinnerCenter.X, bottomSpinnerCenter.Y + 190f);
-                    }, (() => { 
-                            if (bottomIsOnTop) {
-                                spinnerView.BringSubviewToFront (theTopSpinner);
-                                theTopSpinner.Center = bottomSpinnerCenter;
-                                bottomIsOnTop = false;
-                            } else {
-                                spinnerView.BringSubviewToFront (theBottomSpinner);
-                                theBottomSpinner.Center = topSpinnerCenter;
-                                bottomIsOnTop = true;
-                            }
-                            ArrowAnimation (theTopSpinner, theBottomSpinner, theTopSpinner.Center, theBottomSpinner.Center, bottomIsOnTop);
-                    }));
-            }
+            Animate(3, 0, (UIViewAnimationOptions.Repeat | UIViewAnimationOptions.OverrideInheritedDuration | UIViewAnimationOptions.OverrideInheritedOptions | UIViewAnimationOptions.OverrideInheritedCurve | UIViewAnimationOptions.CurveLinear), () => {
+                    theTopSpinner.Center = new PointF (topSpinnerCenter.X, topSpinnerCenter.Y + 190f);
+                    theBottomSpinner.Center = new PointF (bottomSpinnerCenter.X, bottomSpinnerCenter.Y + 190f);
+                }, (() => { 
+            }));
         }
 
         public void StartSyncedEmailAnimation ()

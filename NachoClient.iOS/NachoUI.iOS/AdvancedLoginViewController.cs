@@ -727,6 +727,7 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_UI, "Info_EmailMessageSetChanged Status Ind (AdvancedView)");
                 LoginHelpers.SetFirstSyncCompleted (LoginHelpers.GetCurrentAccountId (), true);
                 if (!hasSyncedEmail) {
+                    waitScreen.Layer.RemoveAllAnimations ();
                     waitScreen.StartSyncedEmailAnimation ();
                     hasSyncedEmail = true;
                 }
