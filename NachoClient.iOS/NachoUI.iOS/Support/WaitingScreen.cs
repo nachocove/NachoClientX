@@ -248,7 +248,7 @@ namespace NachoClient.iOS
 
         protected void StartLoadingAnimation ()
         {
-            UIView.AnimateKeyframes (1, 0, (UIViewKeyframeAnimationOptions.OverrideInheritedDuration | UIViewKeyframeAnimationOptions.CalculationModeLinear), () => {
+            UIView.AnimateKeyframes (1, 0, (UIViewKeyframeAnimationOptions.OverrideInheritedDuration | UIViewKeyframeAnimationOptions.CalculationModeCubicPaced), () => {
 
                 UIView.AddKeyframeWithRelativeStartTime (0, .5, () => {
                     circleMask.Layer.Transform = CATransform3D.MakeScale (1.0f, 1.0f, 1.0f);
@@ -264,29 +264,25 @@ namespace NachoClient.iOS
                 ArrowAnimation (topHalfSpinner, bottomHalfSpinner, topHalfSpinnerCenter, bottomHalfSpinnerCenter, false);
             }));
         }
-
+            
         private void ArrowAnimation (UIImageView theTopSpinner, UIImageView theBottomSpinner, PointF topSpinnerCenter, PointF bottomSpinnerCenter, bool bottomIsOnTop)
         {
             if (!quitLoadingAnimation) {
-                UIView.AnimateKeyframes (3, 0, (UIViewKeyframeAnimationOptions.OverrideInheritedDuration | UIViewKeyframeAnimationOptions.CalculationModeLinear), () => {
-                    UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
+                    UIView.Animate(3, 0, (UIViewAnimationOptions.OverrideInheritedDuration | UIViewAnimationOptions.OverrideInheritedOptions | UIViewAnimationOptions.OverrideInheritedCurve | UIViewAnimationOptions.CurveLinear), () => {
                         theTopSpinner.Center = new PointF (topSpinnerCenter.X, topSpinnerCenter.Y + 190f);
                         theBottomSpinner.Center = new PointF (bottomSpinnerCenter.X, bottomSpinnerCenter.Y + 190f);
-                    });
-                }, ((bool finished) => { 
-                    if (finished) {
-                        if (bottomIsOnTop) {
-                            spinnerView.BringSubviewToFront (theTopSpinner);
-                            theTopSpinner.Center = bottomSpinnerCenter;
-                            bottomIsOnTop = false;
-                        } else {
-                            spinnerView.BringSubviewToFront (theBottomSpinner);
-                            theBottomSpinner.Center = topSpinnerCenter;
-                            bottomIsOnTop = true;
-                        }
-                        ArrowAnimation (theTopSpinner, theBottomSpinner, theTopSpinner.Center, theBottomSpinner.Center, bottomIsOnTop);
-                    }
-                }));
+                    }, (() => { 
+                            if (bottomIsOnTop) {
+                                spinnerView.BringSubviewToFront (theTopSpinner);
+                                theTopSpinner.Center = bottomSpinnerCenter;
+                                bottomIsOnTop = false;
+                            } else {
+                                spinnerView.BringSubviewToFront (theBottomSpinner);
+                                theBottomSpinner.Center = topSpinnerCenter;
+                                bottomIsOnTop = true;
+                            }
+                            ArrowAnimation (theTopSpinner, theBottomSpinner, theTopSpinner.Center, theBottomSpinner.Center, bottomIsOnTop);
+                    }));
             }
         }
 
