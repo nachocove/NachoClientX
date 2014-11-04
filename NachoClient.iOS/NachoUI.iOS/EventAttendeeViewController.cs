@@ -178,7 +178,6 @@ namespace NachoClient.iOS
             segmentedControlTextAttributes.Font = A.Font_AvenirNextDemiBold14;
             segmentedControl.SetTitleTextAttributes (segmentedControlTextAttributes, UIControlState.Normal);
 
-
             segmentedControl.ValueChanged += (sender, e) => {
                 var selectedSegmentId = (sender as UISegmentedControl).SelectedSegment;
                 switch (selectedSegmentId) {
