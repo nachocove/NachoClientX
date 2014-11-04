@@ -69,14 +69,7 @@ namespace NachoCore.ActiveSync
                     break;
 
                 case McPending.StateEnum.Dispatched:
-                    // Don't REALLY know that we killed this before the server saw it.
-                    // Command Cancel() moves pending(s) state to Deferred. Maybe many pending objs.
-                    StopCurrentOp ();
-                    pending = McPending.QueryById<McPending> (pending.Id);
-                    if (null != pending) {
-                        pending.ResolveAsCancelled (false);
-                    }
-                    Sm.PostEvent (Event.Create ((uint)SmEvt.E.TempFail, "CANCLDISP"));
+                    // TODO: find a way to remove this pending from PendingList for any re-try.
                     break;
 
                 case McPending.StateEnum.Deleted:
