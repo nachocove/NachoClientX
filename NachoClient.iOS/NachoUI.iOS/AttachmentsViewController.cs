@@ -147,7 +147,6 @@ namespace NachoClient.iOS
             segmentedControl.InsertSegment ("By Date", 1, false);
             segmentedControl.InsertSegment ("By Contact", 2, false);
             segmentedControl.SelectedSegment = 0;
-            segmentedControl.SelectedSegment = 0;
             segmentedControl.TintColor = A.Color_NachoGreen;
 
             var segmentedControlTextAttributes = new UITextAttributes ();
