@@ -90,6 +90,10 @@ namespace Test.iOS
         {
         }
 
+        public void Dispose ()
+        {
+        }
+
         public Task<HttpResponseMessage> GetAsync (Uri uri)
         {
             // provide validated certificate

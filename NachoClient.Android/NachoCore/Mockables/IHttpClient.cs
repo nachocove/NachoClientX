@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace NachoCore.Utils
 {
-    public interface IHttpClient
+    public interface IHttpClient : IDisposable
     {
         TimeSpan Timeout { get; set; }
         Task<HttpResponseMessage> SendAsync (HttpRequestMessage request, 
