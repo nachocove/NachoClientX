@@ -39,7 +39,7 @@ namespace NachoClient.iOS
 
         protected UIColor textLabelColor;
         protected UIColor textColor;
-        protected UIColor seperatorColor;
+        protected UIColor separatorColor;
         protected UIColor cellBGColor;
         protected UIColor scrollViewBGColor;
 
@@ -137,7 +137,7 @@ namespace NachoClient.iOS
                 yOffset = viewTitle.Frame.Bottom + 20;
 
                 UIView sectionSeparator = new UIView (new RectangleF (0, yOffset - .5f, View.Frame.Width, .5f));
-                sectionSeparator.BackgroundColor = seperatorColor;
+                sectionSeparator.BackgroundColor = separatorColor;
                 titleView.AddSubview (sectionSeparator);
 
                 yOffset = sectionSeparator.Frame.Bottom + 20;
@@ -219,7 +219,7 @@ namespace NachoClient.iOS
             if (modal) {
                 textLabelColor = UIColor.White;
                 textColor = UIColor.White;
-                seperatorColor = UIColor.LightGray.ColorWithAlpha (.6f);
+                separatorColor = UIColor.LightGray.ColorWithAlpha (.6f);
                 cellBGColor = A.Color_NachoGreen;
                 scrollViewBGColor = A.Color_NachoGreen;
                 folderIcon = UIImage.FromBundle ("modal-folder");
@@ -228,7 +228,7 @@ namespace NachoClient.iOS
             } else {
                 textLabelColor = A.Color_NachoGreen;
                 textColor = A.Color_NachoDarkText;
-                seperatorColor = A.Color_NachoBorderGray;
+                separatorColor = A.Color_NachoBorderGray;
                 cellBGColor = UIColor.White;
                 scrollViewBGColor = A.Color_NachoBackgroundGray;
                 folderIcon = UIImage.FromBundle ("folder-folder");
@@ -397,7 +397,7 @@ namespace NachoClient.iOS
             cell.Add (imageView);
 
             if (addSeparator) {
-                var line = Util.AddHorizontalLineView (52, 43, cell.Frame.Width - 47, seperatorColor);
+                var line = Util.AddHorizontalLineView (52, 43, cell.Frame.Width - 47, separatorColor);
                 cell.Add (line);
             }
 
@@ -431,7 +431,7 @@ namespace NachoClient.iOS
             cell.Add (imageView);
 
             if (folder != recentFolderList.Last ()) {
-                var line = Util.AddHorizontalLineView (52, 43, cell.Frame.Width - 47, seperatorColor);
+                var line = Util.AddHorizontalLineView (52, 43, cell.Frame.Width - 47, separatorColor);
                 line.Tag = folder.Id;
                 cell.Add (line);
             }
@@ -479,7 +479,7 @@ namespace NachoClient.iOS
             imageView.Image = folderIcon;
             cell.Add (imageView);
 
-            var line = Util.AddHorizontalLineView (52, 43, cell.Frame.Width - 47, seperatorColor);
+            var line = Util.AddHorizontalLineView (52, 43, cell.Frame.Width - 47, separatorColor);
             line.Tag = tag + 20000;
             cell.Add (line);
 
