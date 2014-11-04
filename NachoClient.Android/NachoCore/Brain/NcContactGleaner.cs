@@ -164,6 +164,14 @@ namespace NachoCore.Brain
                 MarkAsGleaned (emailMessage);
                 return;
             }
+            if (!File.Exists (path)) {
+                var e2 = McEmailMessage.QueryById<McEmailMessage> (emailMessage.Id);
+                var b2 = McBody.QueryById<McBody> (e2.BodyId);
+                Log.Error (Log.LOG_BRAIN, "Lost body: {0} == {1} and {2} == {3}", emailMessage.BodyId, body.Id, e2.BodyId, b2.Id);
+                // FIXME: Let's not crash at the moment
+                MarkAsGleaned (emailMessage);
+                return;
+            }
             using (var fileStream = new FileStream (path, FileMode.Open, FileAccess.Read)) {
                 MimeMessage mimeMsg;
                 try {

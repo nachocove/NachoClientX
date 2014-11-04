@@ -33,9 +33,12 @@ namespace NachoCore.ActiveSync
                     item.BodyId = int.Parse (saveAttr.Value);
                     body = McBody.QueryById<McBody> (item.BodyId);
                     NcAssert.NotNull (body);
-                } else {
+                } else if (0 == item.BodyId) {
                     body = McBody.InsertFile (item.AccountId, bodyType, xmlData.Value); 
                     item.BodyId = body.Id;
+                } else {
+                    body = McBody.QueryById<McBody> (item.BodyId);
+                    body.UpdateData (xmlData.Value);
                 }
                 body.BodyType = bodyType;
                 if ((null != xmlTruncated) && ToBoolean (xmlTruncated.Value)) {
