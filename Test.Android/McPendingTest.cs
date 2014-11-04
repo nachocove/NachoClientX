@@ -361,6 +361,40 @@ namespace Test.iOS
             }
         }
 
+        public class TestDelayNotAllowed : BaseMcPendingTest
+        {
+            [Test]
+            public void ResolveAllDoNotDelayAsFailed ()
+            {
+                // rejected because DoNotDelay is false.
+                var pending1r = CreatePending (accountId:5, operation:Operations.EmailBodyDownload, serverId:"1:1");
+                var pending2 = CreatePending (accountId:5, operation:Operations.EmailBodyDownload, serverId:"1:2");
+                // rejected because accountId is 6.
+                var pending3r = CreatePending (accountId:6, operation:Operations.EmailBodyDownload, serverId:"1:3");
+                // rejected because state is Failed.
+                var pending4r = CreatePending (accountId:5, operation:Operations.EmailBodyDownload, serverId:"1:4");
+                pending2.DelayNotAllowed = true;
+                pending2.Update ();
+                pending3r.DelayNotAllowed = true;
+                pending3r.Update ();
+                pending4r.State = StateEnum.Failed;
+                pending4r.Update ();
+                McPending.ResolveAllDelayNotAllowedAsFailed (protoControl, 5);
+                var search = McPending.QueryById<McPending> (pending1r.Id);
+                Assert.True (null != search && pending1r.Id == search.Id);
+                Assert.True (StateEnum.Eligible == search.State);
+                search = McPending.QueryById<McPending> (pending2.Id);
+                Assert.True (null != search && pending2.Id == search.Id);
+                Assert.True (StateEnum.Failed == search.State);
+                search = McPending.QueryById<McPending> (pending3r.Id);
+                Assert.True (null != search && pending3r.Id == search.Id);
+                Assert.True (StateEnum.Eligible == search.State);
+                search = McPending.QueryById<McPending> (pending4r.Id);
+                Assert.True (null != search && pending4r.Id == search.Id);
+                Assert.True (StateEnum.Failed == search.State);
+            }
+        }
+
         public class TestResolveAsCancelled : BaseMcPendingTest
         {
             [Test]

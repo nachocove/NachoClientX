@@ -480,7 +480,8 @@ namespace NachoCore.Model
         public void ResolveAsHardFail (ProtoControl control, NcResult result)
         {
             // This is the designated ResolveAsHardFail.
-            NcAssert.True (StateEnum.Dispatched == State || DelayNotAllowed);
+            NcAssert.True (StateEnum.Dispatched == State || DelayNotAllowed,
+                string.Format ("State = {0}, DelayNotAllowed = {1}", State.ToString (), DelayNotAllowed));
             NcAssert.True (NcResult.KindEnum.Error == result.Kind);
             ResultKind = result.Kind;
             ResultSubKind = result.SubKind;
@@ -720,11 +721,12 @@ namespace NachoCore.Model
             }
         }
 
-        public static void ResolveAllDoNotDelayAsFailed (ProtoControl control, int accountId)
+        public static void ResolveAllDelayNotAllowedAsFailed (ProtoControl control, int accountId)
         {
             NcModel.Instance.Db.Table<McPending> ()
                 .Where (rec =>
                     rec.AccountId == accountId &&
+                    rec.DelayNotAllowed &&
                     rec.State != StateEnum.Failed).All (y => {
                         y.ResolveAsHardFail (control, NcResult.WhyEnum.UnavoidableDelay);
                         return true;

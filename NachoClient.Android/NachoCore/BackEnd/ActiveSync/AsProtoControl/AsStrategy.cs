@@ -781,7 +781,7 @@ namespace NachoCore.ActiveSync
             // (QS) If a narrow Sync hasn’t successfully completed in the last N seconds, 
             // perform a narrow Sync Command.
             if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
-                if (protocolState.LastNarrowSync < DateTime.UtcNow.AddSeconds (-300)) {
+                if (protocolState.LastNarrowSync < DateTime.UtcNow.AddSeconds (-60)) {
                     var nSyncKit = GenSyncKit (accountId, protocolState, true, false);
                     Log.Info (Log.LOG_AS, "Strategy:QS:Narrow Sync...");
                     if (null != nSyncKit) {
@@ -941,6 +941,7 @@ namespace NachoCore.ActiveSync
             }
             // (QS) Wait.
             if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
+                Log.Info (Log.LOG_AS, "Strategy:QS:Wait");
                 return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Wait,
                     new AsWaitCommand (BEContext.ProtoControl, 120, true));
             }

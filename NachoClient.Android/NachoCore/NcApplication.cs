@@ -29,16 +29,16 @@ namespace NachoCore
         {
             Foreground,
             Background,
-            QuickSync}
-
-        ;
+            QuickSync,
+        };
 
         private ExecutionContextEnum _ExecutionContext;
 
         public ExecutionContextEnum ExecutionContext {
             get { return _ExecutionContext; }
-            private set { 
+            set { 
                 _ExecutionContext = value; 
+                Log.Info (Log.LOG_LIFECYCLE, "ExecutionContext => {0}", value.ToString ());
                 InvokeStatusIndEvent (new StatusIndEventArgs () { 
                     Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ExecutionContextChanged),
                     Account = ConstMcAccount.NotAccountSpecific,
@@ -234,7 +234,7 @@ namespace NachoCore
         // ALL CLASS-4 STARTS ARE DEFERRED BASED ON TIME.
         public void StartClass4Services ()
         {
-            _ExecutionContext = ExecutionContextEnum.Foreground;
+            ExecutionContext = ExecutionContextEnum.Foreground;
             MonitorStart (); // Has a deferred timer start inside.
             Log.Info (Log.LOG_LIFECYCLE, "{0} (build {1}) built at {2} by {3}",
                 BuildInfo.Version, BuildInfo.BuildNumber, BuildInfo.Time, BuildInfo.User);
@@ -263,7 +263,7 @@ namespace NachoCore
         public void StopClass4Services ()
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass4Services called.");
-            _ExecutionContext = ExecutionContextEnum.Background;
+            ExecutionContext = ExecutionContextEnum.Background;
             MonitorStop ();
             if (Class4EarlyShowTimer.DisposeAndCheckHasFired ()) {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4EarlyShowTimer.DisposeAndCheckHasFired.");
@@ -350,7 +350,9 @@ namespace NachoCore
 
         public void QuickSync (uint seconds)
         {
-            _ExecutionContext = ExecutionContextEnum.QuickSync;
+            if (ExecutionContextEnum.QuickSync != ExecutionContext) {
+                ExecutionContext = ExecutionContextEnum.QuickSync;
+            }
             // Needs Class-3 Services up. Cause accounts to do a quick check for new messages.
             // If start is called while wating for the QuickCheck, the system keeps going after the QuickCheck completes.
             BackEnd.Instance.QuickSync (seconds);

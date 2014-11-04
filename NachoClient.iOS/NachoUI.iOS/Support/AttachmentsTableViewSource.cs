@@ -366,6 +366,7 @@ namespace NachoClient.iOS
             if (null != attachment) {
                 downloaded = false;
                 float xOffset = isMultiSelecting ? 34 : 0;
+                StopAnimationsOnCell (cell);
 
                 if (McAbstrFileDesc.FilePresenceEnum.Complete == attachment.FilePresence) {
                     downloaded = true;
@@ -686,20 +687,11 @@ namespace NachoClient.iOS
         private static void ArrowAnimation (UITableViewCell cell, UIImageView arrow, PointF center)
         {
             var iv = cell.ViewWithTag (DOWNLOAD_IMAGEVIEW_TAG) as UIImageView;
-            UIView.Animate (
-                duration: 0.4,
-                delay: 0,
-                options: UIViewAnimationOptions.CurveEaseIn,
-                animation: () => {
-                    arrow.Center = new PointF (center.X, iv.Frame.Size.Height * 3 / 4);
-                    arrow.Alpha = 0.4f;
-                },
-                completion: () => {
-                    arrow.Center = new PointF (center.X, 2);
-                    arrow.Alpha = 1.0f;
-                    ArrowAnimation (cell, arrow, center);
-                }
-            );
+            UIView.Animate (0.4, 0, (UIViewAnimationOptions.Repeat | UIViewAnimationOptions.OverrideInheritedDuration | UIViewAnimationOptions.OverrideInheritedOptions | UIViewAnimationOptions.OverrideInheritedCurve | UIViewAnimationOptions.CurveLinear), () => {
+                arrow.Center = new PointF (center.X, iv.Frame.Size.Height * 3 / 4);
+                arrow.Alpha = 0.4f;
+            }, (() => { 
+            }));
         }
 
         public static void DownloadCompleteAnimation (UITableViewCell cell, Action displayAttachment)

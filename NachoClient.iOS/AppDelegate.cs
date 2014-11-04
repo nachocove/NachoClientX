@@ -94,7 +94,7 @@ namespace NachoClient.iOS
 
                 // Enable automatic reporting
                 manager.CrashManager.CrashManagerStatus = BITCrashManagerStatus.AutoSend;
-                manager.CrashManager.EnableOnDeviceSymbolication = true;
+                manager.CrashManager.EnableOnDeviceSymbolication = false;
                 manager.CrashManager.Delegate = new HockeyAppCrashDelegate ();
                 if (BuildInfo.Version.StartsWith ("DEV")) {
                     manager.DebugLogEnabled = true;
@@ -395,6 +395,10 @@ namespace NachoClient.iOS
             NcApplication.Instance.StartClass1Services ();
             Log.Info (Log.LOG_LIFECYCLE, "ReverseFinalShutdown: StartClass1Services complete");
             NcApplication.Instance.StartClass2Services ();
+            Log.Info (Log.LOG_LIFECYCLE, "ReverseFinalShutdown: StartClass2Services complete");
+            NcApplication.Instance.StartClass3Services ();
+            Log.Info (Log.LOG_LIFECYCLE, "ReverseFinalShutdown: StartClass3Services complete");
+
             FinalShutdownHasHappened = false;
             Log.Info (Log.LOG_LIFECYCLE, "ReverseFinalShutdown: Exit");
         }
@@ -406,7 +410,8 @@ namespace NachoClient.iOS
         {
             var timeRemaining = application.BackgroundTimeRemaining;
             Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground: time remaining: {0}", timeRemaining);
-            if (25.0 > timeRemaining) {
+            // XAMMIT: sometimes BackgroundTimeRemaining reads as MAXFLOAT.
+            if (25.0 > timeRemaining || 60*10 < timeRemaining) {
                 FinalShutdown (null);
             } else {
                 var secs = timeRemaining - 20.0;
@@ -514,6 +519,8 @@ namespace NachoClient.iOS
         public override void PerformFetch (UIApplication application, Action<UIBackgroundFetchResult> completionHandler)
         {
             Log.Info (Log.LOG_LIFECYCLE, "PerformFetch called.");
+            // Need to set ExecutionContext before Start of BE so that strategy can see it.
+            NcApplication.Instance.ExecutionContext = NcApplication.ExecutionContextEnum.QuickSync;
             if (FinalShutdownHasHappened) {
                 ReverseFinalShutdown ();
             }

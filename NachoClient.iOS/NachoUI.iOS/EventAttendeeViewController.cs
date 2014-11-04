@@ -162,8 +162,8 @@ namespace NachoClient.iOS
             emptyListLabel.LineBreakMode = UILineBreakMode.WordWrap;
             emptyListLabel.Hidden = true;
             View.AddSubview (emptyListLabel);
-           
-            var segmentedControlView = new UIView (new RectangleF (0, 0, SCREEN_WIDTH, 40));
+
+            var segmentedControlView = new UIView (new RectangleF (0, 0, View.Frame.Width, 40));
             segmentedControlView.BackgroundColor = UIColor.White;
 
             segmentedControl = new UISegmentedControl ();
@@ -172,12 +172,10 @@ namespace NachoClient.iOS
             segmentedControl.InsertSegment ("Required", 1, false);
             segmentedControl.InsertSegment ("Optional", 2, false);
             segmentedControl.SelectedSegment = 0;
-            segmentedControl.SelectedSegment = 0;
-            segmentedControl.TintColor = A.Color_NachoIconGray;
-
+            segmentedControl.TintColor = A.Color_NachoGreen;
 
             var segmentedControlTextAttributes = new UITextAttributes ();
-            segmentedControlTextAttributes.Font = A.Font_AvenirNextRegular12;
+            segmentedControlTextAttributes.Font = A.Font_AvenirNextDemiBold14;
             segmentedControl.SetTitleTextAttributes (segmentedControlTextAttributes, UIControlState.Normal);
 
             segmentedControl.ValueChanged += (sender, e) => {
