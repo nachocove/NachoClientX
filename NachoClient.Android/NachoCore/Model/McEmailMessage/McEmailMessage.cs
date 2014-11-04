@@ -398,10 +398,11 @@ namespace NachoCore.Model
                 " e.IsAwaitingDelete = 0 AND " +
                 " e.Score >= ? AND " +
                 " b.FilePresence != ? AND " +
+                " b.FilePresence != ? AND " +
                 " b.FilePresence != ? " +
                 " ORDER BY e.Score DESC, e.DateReceived DESC LIMIT ?",
                 accountId, minScore, 
-                (int)McAbstrFileDesc.FilePresenceEnum.Complete, (int)McAbstrFileDesc.FilePresenceEnum.Error,
+                (int)McAbstrFileDesc.FilePresenceEnum.Complete, (int)McAbstrFileDesc.FilePresenceEnum.Partial, (int)McAbstrFileDesc.FilePresenceEnum.Error,
                 limit);
         }
 

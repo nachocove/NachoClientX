@@ -632,7 +632,8 @@ namespace Test.Common
             var result = McEmailMessage.QueryNeedsFetch (1, 2, 0.9);
             Assert.AreEqual (2, result.Count ());
             Assert.True (result.Any (x => "keeper1" == x.ServerId));
-            Assert.True (result.Any (x => "keeper2" == x.ServerId));
+            // Strategy should not be tugging on Partial bodies. 
+            Assert.False (result.Any (x => "keeper2" == x.ServerId));
             Assert.AreEqual ("keeper1", result.First ().ServerId);
         }
 

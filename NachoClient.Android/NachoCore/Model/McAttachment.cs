@@ -110,13 +110,16 @@ namespace NachoCore.Model
                 " JOIN McEmailMessage AS e ON e.Id = a.ItemId " +
                 " WHERE " +
                 " a.AccountId = ? AND " +
-                " e.AccountId = ? AND " +
                 " e.IsAwaitingDelete = 0 AND " +
                 " e.Score >= ? AND " +
                 " a.FileSize <= ? AND " +
-                " a.FilePresence = ? " + 
+                " a.FilePresence != ? AND " + 
+                " a.FilePresence != ? AND " +
+                " a.FilePresence != ? " + 
                 " ORDER BY e.Score DESC, e.DateReceived DESC LIMIT ?",
-                accountId, accountId, minScore, maxSize, (int)FilePresenceEnum.None, limit);
+                accountId, minScore, maxSize,
+                (int)FilePresenceEnum.Complete, (int)FilePresenceEnum.Partial, (int)FilePresenceEnum.Error,
+                limit);
         }
     }
 }
