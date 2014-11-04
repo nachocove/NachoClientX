@@ -552,6 +552,11 @@ namespace Test.Common
                 FilePresence = McAbstrFileDesc.FilePresenceEnum.Complete,
             };
             bodyComplete_1.Insert ();
+            var bodyError_1 = new McBody () {
+                AccountId = 1,
+                FilePresence = McAbstrFileDesc.FilePresenceEnum.Error,
+            };
+            bodyError_1.Insert ();
             var keeper1 = new McEmailMessage () {
                 AccountId = 1,
                 ServerId = "keeper1",
@@ -612,6 +617,15 @@ namespace Test.Common
                 IsAwaitingDelete = false,
                 Score = 0.99,
                 BodyId = bodyComplete_1.Id,
+                DateReceived = DateTime.UtcNow,
+            };
+            trash.Insert ();
+            trash = new McEmailMessage () {
+                AccountId = 1,
+                ServerId = "error",
+                IsAwaitingDelete = false,
+                Score = 0.99,
+                BodyId = bodyError_1.Id,
                 DateReceived = DateTime.UtcNow,
             };
             trash.Insert ();
