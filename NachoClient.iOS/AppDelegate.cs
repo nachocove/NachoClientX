@@ -94,7 +94,7 @@ namespace NachoClient.iOS
 
                 // Enable automatic reporting
                 manager.CrashManager.CrashManagerStatus = BITCrashManagerStatus.AutoSend;
-                manager.CrashManager.EnableOnDeviceSymbolication = true;
+                manager.CrashManager.EnableOnDeviceSymbolication = false;
                 manager.CrashManager.Delegate = new HockeyAppCrashDelegate ();
                 if (BuildInfo.Version.StartsWith ("DEV")) {
                     manager.DebugLogEnabled = true;
