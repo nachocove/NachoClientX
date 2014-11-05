@@ -134,7 +134,7 @@ namespace NachoClient.iOS
             };
 
             quickReplyButton.Clicked += QuickReplyButtonClicked;
-            blockMenuButton.Clicked += BlockMenuBottonClicked;
+            blockMenuButton.Clicked += BlockMenuButtonClicked;
             replyButton.Clicked += ReplyButtonClicked;
             archiveButton.Clicked += ArchiveButtonClicked;
             deleteButton.Clicked += DeleteButtonClicked;
@@ -321,7 +321,7 @@ namespace NachoClient.iOS
                 })
             }, View.Frame.Width);
             blockMenu.Tag = (int)TagType.BLOCK_MENU_TAG;
-            view.AddSubview (blockMenu);
+            View.AddSubview (blockMenu);
 
             Util.HideBlackNavigationControllerLine (NavigationController.NavigationBar);
 
@@ -444,7 +444,7 @@ namespace NachoClient.iOS
             view.RemoveGestureRecognizer (singleTapGesture);
             scrollView.Scrolled -= ScrollViewScrolled;
             quickReplyButton.Clicked -= QuickReplyButtonClicked;
-            blockMenuButton.Clicked -= BlockMenuBottonClicked;
+            blockMenuButton.Clicked -= BlockMenuButtonClicked;
             replyButton.Clicked -= ReplyButtonClicked;
             archiveButton.Clicked -= ArchiveButtonClicked;
             deleteButton.Clicked -= DeleteButtonClicked;
@@ -813,7 +813,7 @@ namespace NachoClient.iOS
                 MessageComposeViewController.REPLY_ACTION, NcQuickResponse.QRTypeEnum.Reply));
         }
 
-        private void BlockMenuBottonClicked (object sender, EventArgs e)
+        private void BlockMenuButtonClicked (object sender, EventArgs e)
         {
             UIBlockMenu blockMenu = (UIBlockMenu)View.ViewWithTag ((int)TagType.BLOCK_MENU_TAG);
             blockMenu.MenuTapped ();
