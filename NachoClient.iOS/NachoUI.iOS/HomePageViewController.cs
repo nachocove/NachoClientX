@@ -7,6 +7,7 @@ using MonoTouch.UIKit;
 using System.Drawing;
 using MonoTouch.CoreGraphics;
 using MonoTouch.CoreAnimation;
+using System.Collections.Generic;
 
 using NachoCore.Utils;
 
@@ -18,17 +19,32 @@ namespace NachoClient.iOS
     {
         public HomeViewController owner;
 
-        // container for iPhone screen-in-screen 
+        // container for iPhone screen-in-screen
         // doing these as internal globals
-        protected UIView pageContainerView; // full screen
+        protected UIView pageContainerView;
+        // full screen
 
-        protected UIView contentContainer; // the phone-image content
-        protected UIView helperContainer; // the helpful text container
-        protected UILabel helperTitleText; // text Title
-        protected UILabel helperBodyText; // text body
+        // the phone-image content
+        protected UIView contentContainer;
+
+        // the helpful text container
+        protected UIView helperContainer;
+
+        // text Title
+        protected UILabel helperTitleText;
+
+        // text Body
+        protected UIWebView helperWebView;
 
         protected UIView pageView;
         protected UIView contentView;
+
+        //View Zero Components
+        protected NSTimer viewZeroTimer;
+        protected UILabel swipeLabel;
+        protected List<UIImageView> swipeLeftArrows = new List<UIImageView> ();
+        protected PointF swipeLabelCenter;
+        protected bool viewZeroShouldAnimate = false;
 
         //View One Components
         protected UIImageView redButton;
@@ -40,41 +56,33 @@ namespace NachoClient.iOS
 
         //View Two Components
         protected UIImageView mailRedDot;
-        protected UIImageView swipeMailLeft;
-        protected UIImageView swipeMailRight;
+        protected UIImageView nachoCardOne;
+        protected UIImageView nachoCardTwo;
 
-        protected PointF swipeMailLeftCenter;
-        protected PointF swipeMailRightCenter;
         protected PointF mailRedDotCenter;
+        protected PointF nachoCardOneCenter;
+        protected PointF nachoCardTwoCenter;
 
         protected NSTimer flashOneTimer;
         protected NSTimer flashTwoTimer;
-        protected NSTimer swipeMailLeftTimer;
-        protected NSTimer swipeMailRightTimer;
+        protected NSTimer swipeMailUpTimer;
+        protected NSTimer swipeMailDownTimer;
 
         //View Three Components
-        protected UIImageView pullimageView;
-        protected UIImageView calimageView;
-        protected UIImageView timelineView;
         protected UIImageView pullDownDotView;
+        protected UIImageView meetingMessage;
 
-        protected PointF pullimageCenter;
-        protected PointF calimageCenter;
-        protected PointF timelineCenter;
-        protected PointF pullDownDotCenter;
-
-        protected NSTimer pullDownCalendarTimer;
         protected NSTimer flashPullDotTimer;
 
         //View Four Components
         protected UIImageView emailCellView;
-        protected UIImageView redSwipeCellView;
-        protected UIImageView greenSwipeCellView;
+        protected UIImageView swipeLeftImageView;
+        protected UIImageView swipeRightImageView;
         protected UIImageView swipeDotView;
 
         protected PointF emailCellViewCenter;
-        protected PointF redSwipeCenter;
-        protected PointF greenSwipeCenter;
+        protected PointF swipeLeftCenter;
+        protected PointF swipeRightCenter;
         protected PointF swipeDotCenter;
 
         protected NSTimer flashDotsFirstTimer;
@@ -97,29 +105,38 @@ namespace NachoClient.iOS
         }
 
         // Helper Text Strings
-        const string TitleOne = "Your Messages";
+        const string TitleZero = "Welcome to NachoMail";
+        const string TitleOne = "Your Email";
         const string TitleTwo = "Navigating Your Hot List";
-        const string TitleThree= "Time Line View";
+        const string TitleThree = "Your Meetings and Events";
         const string TitleFour = "Just One Last Thing ...";
 
-        const string BodyOne = "Your hot messages go in your hot list" + "\n" + "All other messages will be in your inbox";
-        const string BodyTwo = "Quickly browse through your hot list" + "\n" + "by swiping left and right";
-        const string BodyThree = "This contains your upcoming meetings" + "\n" + "and events";
-        const string BodyFour = "Sliding right or left elsewhere will get you" + "\n" + "shortcusts and options for the items";
+        const string BodyZero = "This tutorial will help you use <br> NachoMail";
+        const string BodyOne = "Important mesages go to your <font color=\"FF3F20\">Hot List</font>. <br> All messages can be found in <font color=\"1CCEC2\">Mail</font>.";
+        const string BodyTwo = "Quickly browse through your Hot <br> List by swiping up and down.";
+        const string BodyThree = "Your next meeting is <font color=\"FF3F20\">here</font>. Manage <br> your schedule using Calendar.";
+        const string BodyFour = "Sliding right or left elsewhere will get you <br> shortcuts and options for the items";
 
-        const string contentscreen = "Slide1-3.png"; // phone-face image
-        const string calendarpull = "Slide1-2.png"; // calendar pull down
-        const string msg1loc = "Slide1-1A.png"; // Meagan message
-        const string msg2loc = "Slide1-1B.png"; // next message
-        const string inboxloc = "Slide1-4.png"; // inbox msg at bottom of screen
+        const string contentscreen = "Slide1-3.png";
+        // phone-face image
+        const string calendarpull = "Slide1-2.png";
+        // calendar pull down
+        const string msg1loc = "Slide1-1A.png";
+        // Meagan message
+        const string msg2loc = "Slide1-1B.png";
+        // next message
+        const string inboxloc = "Slide1-4.png";
+        // inbox msg at bottom of screen
 
         string[] titleText = {
+            TitleZero,
             TitleOne,
             TitleTwo,
             TitleThree,
-            TitleFour,
+            TitleFour
         };
         string[] bodyText = {
+            BodyZero,
             BodyOne,
             BodyTwo,
             BodyThree,
@@ -128,21 +145,19 @@ namespace NachoClient.iOS
 
         public override void ViewDidLoad ()
         {
-            this.pageContainerView = new UIView (new RectangleF(0,0, this.owner.View.Bounds.Width, this.owner.View.Bounds.Height-48));
+            this.pageContainerView = new UIView (new RectangleF (0, 0, this.owner.View.Bounds.Width, this.owner.View.Bounds.Height - 48));
             pageContainerView.BackgroundColor = A.Color_NachoGreen;
 
             if (UIScreen.MainScreen.Bounds.Height == 480) {
-
-                this.contentContainer = new UIView (new RectangleF (54 , 60, 212, 306)); // see size of helpercontainer
+                this.contentContainer = new UIView (new RectangleF (54, 60, 212, 306)); // see size of helpercontainer
                 this.helperContainer = new UIView (new RectangleF (0, this.contentContainer.Frame.Bottom, pageContainerView.Frame.Width, pageContainerView.Frame.Bottom - this.contentContainer.Frame.Bottom));// contains the helpertext and labels  
                 this.helperTitleText = new UILabel (new RectangleF (0, 12, helperContainer.Frame.Width, 20));
-                this.helperBodyText = new UILabel (new RectangleF ((helperContainer.Frame.Width - 284) / 2, helperTitleText.Frame.Bottom, 284, 40));
-
+                this.helperWebView = new UIWebView (new RectangleF ((helperContainer.Frame.Width - 284) / 2, helperTitleText.Frame.Bottom, 284, 40));
             } else {
-                this.contentContainer = new UIView (new RectangleF (54 , 85, 212, 306)); // see size of helpercontainer
-                this.helperContainer = new UIView (new RectangleF(0,this.contentContainer.Frame.Bottom, pageContainerView.Frame.Width, 130));// contains the helpertext and labels  
-                this.helperTitleText = new UILabel (new RectangleF(0,24, helperContainer.Frame.Width, 20));
-                this.helperBodyText = new UILabel (new RectangleF((helperContainer.Frame.Width - 284) / 2, helperTitleText.Frame.Bottom + 10, 284, 40));
+                this.contentContainer = new UIView (new RectangleF (54, 85, 212, 306)); // see size of helpercontainer
+                this.helperContainer = new UIView (new RectangleF (0, this.contentContainer.Frame.Bottom, pageContainerView.Frame.Width, 130));// contains the helpertext and labels  
+                this.helperTitleText = new UILabel (new RectangleF (0, 24, helperContainer.Frame.Width, 20));
+                this.helperWebView = new UIWebView (new RectangleF ((helperContainer.Frame.Width - 284) / 2, helperTitleText.Frame.Bottom, 284, 50));
             }
 
             pageView = new UIView (pageContainerView.Frame);
@@ -155,21 +170,24 @@ namespace NachoClient.iOS
 
             switch (this.PageIndex) {
             case 0:
+                CreateViewZero ();
+                break;
+            case 1:
                 leftNachos = "BG-S01Left@2x";
                 rightNachos = "BG-S01Right@2x";
                 CreateViewOne ();
                 break;
-            case 1:
+            case 2:
                 leftNachos = "BG-S02Left@2x";
                 rightNachos = "BG-S02Right@2x";
                 CreateViewTwo ();
                 break;
-            case 2:
+            case 3:
                 leftNachos = "BG-S03Left@2x";
                 rightNachos = "BG-S03Right@2x";
                 CreateViewThree ();
                 break;
-            case 3:
+            case 4:
                 leftNachos = "BG-S04Left@2x";
                 rightNachos = "BG-S04Right@2x";
                 CreateViewFour ();
@@ -178,7 +196,9 @@ namespace NachoClient.iOS
 
             this.View.AddSubview (pageContainerView);
             this.View.AddSubview (pageView);
-            CreateNachos (leftNachos, rightNachos);
+            if (this.PageIndex != 0) {
+                CreateNachos (leftNachos, rightNachos);
+            }
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -191,17 +211,19 @@ namespace NachoClient.iOS
             base.ViewDidDisappear (animated);
 
             switch (this.PageIndex) {
-
             case 0:
-                ResetViewOne ();
+                ResetViewZero ();
                 break;
             case 1:
-                ResetViewTwo ();
+                ResetViewOne ();
                 break;
             case 2:
-                ResetViewThree ();
+                ResetViewTwo ();
                 break;
             case 3:
+                ResetViewThree ();
+                break;
+            case 4:
                 ResetViewFour ();
                 break;
             }
@@ -218,6 +240,15 @@ namespace NachoClient.iOS
             } else {
                 this.owner.pageDots.CurrentPage = this.PageIndex; // update containerView.PageDots
             }
+
+            switch (this.PageIndex) {
+            case 3:
+                owner.closeTutorial.SetTitle ("Dismiss", UIControlState.Normal);
+                break;
+            case 4:
+                owner.closeTutorial.SetTitle ("Go to Nacho Mail", UIControlState.Normal);
+                break;
+            }
         }
 
         public override void ViewDidAppear (bool animated)
@@ -226,36 +257,45 @@ namespace NachoClient.iOS
 
             switch (this.PageIndex) {
             case 0:
+                ResetViewZero ();
+                viewZeroShouldAnimate = true;
+                viewZeroTimer = NSTimer.CreateScheduledTimer (2, delegate {
+                    AnimateViewZero (0);
+                });
+                break;
+            case 1:
                 ResetViewOne ();
                 AnimateViewOne ();
                 break;
-            case 1:
+            case 2:
                 ResetViewTwo ();
                 AnimateViewTwo ();
                 break;
-            case 2:
+            case 3:
+                owner.closeTutorial.SetTitle ("Dismiss", UIControlState.Normal);
                 ResetViewThree ();
                 AnimateViewThree ();
                 break;
-            case 3:
+            case 4:
+                owner.closeTutorial.SetTitle ("Go to Nacho Mail", UIControlState.Normal);
                 ResetViewFour ();
                 AnimateViewFour ();
                 break;
             }
         }
 
-        private void CreateNachos(string leftNachos, string rightNachos)
+        private void CreateNachos (string leftNachos, string rightNachos)
         {
             UIImageView leftSideNachos = new UIImageView (UIImage.FromBundle (leftNachos));
-            leftSideNachos.Frame = new RectangleF (0, this.contentContainer.Frame.Bottom - leftSideNachos.Frame.Height / 2, this.contentContainer.Frame.X, leftSideNachos.Frame.Height / 2);
+            leftSideNachos.Frame = new RectangleF (0, this.contentContainer.Frame.Bottom - leftSideNachos.Frame.Height, this.contentContainer.Frame.X, leftSideNachos.Frame.Height);
             this.View.AddSubview (leftSideNachos);
 
             UIImageView rightSideNachos = new UIImageView (UIImage.FromBundle (rightNachos));
-            rightSideNachos.Frame = new RectangleF (this.contentContainer.Frame.X + this.contentContainer.Frame.Width, this.contentContainer.Frame.Bottom - rightSideNachos.Frame.Height / 2, this.contentContainer.Frame.X, rightSideNachos.Frame.Height / 2);
+            rightSideNachos.Frame = new RectangleF (this.contentContainer.Frame.X + this.contentContainer.Frame.Width, this.contentContainer.Frame.Bottom - rightSideNachos.Frame.Height, this.contentContainer.Frame.X, rightSideNachos.Frame.Height);
             this.View.AddSubview (rightSideNachos);
         }
 
-        void CreateHelperText()
+        void CreateHelperText ()
         {
             helperContainer.BackgroundColor = UIColor.White;
 
@@ -266,157 +306,273 @@ namespace NachoClient.iOS
             helperTitleText.TextAlignment = UITextAlignment.Center;
             helperContainer.Add (helperTitleText);
 
-            helperBodyText.BackgroundColor = UIColor.White; // debug
-            helperBodyText.TextColor = A.Color_9B9B9B;
-            helperBodyText.Lines = 2;
-            helperBodyText.Text = bodyText[this.PageIndex];
-            helperBodyText.Font = A.Font_AvenirNextRegular14;
-            helperBodyText.TextAlignment = UITextAlignment.Center;
-            helperContainer.Add (helperBodyText);
+            helperWebView.LoadHtmlString (
+                "<html>" +
+                "<style>" +
+                "body {font-family:\"avenir next\";font-size:14px;font-style:normal;font-weight:400;color: 444444; text-align:center;}" +
+                "</style>" +
+                "<body>" +
+                bodyText [this.PageIndex] +
+                "</body>" +
+                "</html>", new NSUrl ("about:blank"));
+            helperContainer.Add (helperWebView);
 
-            Util.AddHorizontalLine (0, helperContainer.Frame.Height + 10 , helperContainer.Frame.Width, A.Color_NachoBorderGray, helperContainer);
+
+            Util.AddHorizontalLine (0, helperContainer.Frame.Height + 10, helperContainer.Frame.Width, A.Color_NachoBorderGray, helperContainer);
         }
 
-        protected void CreateViewOne()
+        protected void CreateViewZero ()
         {
-            UIImageView screenImage = new UIImageView (UIImage.FromBundle (contentscreen));
-            screenImage.Frame = (new RectangleF (0,0, contentContainer.Frame.Width, contentContainer.Frame.Height));
-            contentContainer.AddSubview(screenImage);
+            UIImageView theNachos;
+            using (var image = UIImage.FromBundle ("BG-S01")) {
+                theNachos = new UIImageView (image);
+            }
+            theNachos.Frame = new RectangleF (0, this.contentContainer.Frame.Bottom - theNachos.Frame.Height, View.Frame.Width, theNachos.Frame.Height);
+            pageContainerView.AddSubview (theNachos);
 
-            UIImageView centerMessage = new UIImageView (UIImage.FromBundle (msg1loc));
-            centerMessage.Frame = new RectangleF (10, 60, 192, 207);
-            centerMessage.Center = new PointF (contentContainer.Frame.Width / 2 , contentContainer.Frame.Height / 2 +10);
-            contentContainer.AddSubview (centerMessage);
+            UIImageView nachoLogoImageView;
+            using (var image = UIImage.FromBundle ("Bootscreen-1")) {
+                nachoLogoImageView = new UIImageView (image);
+            }
+            nachoLogoImageView.Center = new PointF (pageContainerView.Center.X, 130 + nachoLogoImageView.Frame.Width / 2);
+            pageContainerView.AddSubview (nachoLogoImageView);
 
-            UIImageView inboximageView = new UIImageView (UIImage.FromBundle (inboxloc));
-            inboximageView.Frame = new RectangleF (10, centerMessage.Frame.Bottom + 20, 192, 20);
-            inboximageView.Center = new PointF (contentContainer.Frame.Width / 2, contentContainer.Frame.Height - 10);
-            contentContainer.AddSubview (inboximageView);
+            swipeLabel = new UILabel (new RectangleF (235, nachoLogoImageView.Frame.Bottom + 24, 150, 20));
+            swipeLabel.Font = A.Font_AvenirNextMedium14;
+            swipeLabel.Text = "Swipe left to continue";
+            swipeLabel.TextColor = A.Color_NachoYellow;
+            swipeLabel.TextAlignment = UITextAlignment.Center;
+            swipeLabel.Alpha = 0.0f;
+            swipeLabelCenter = swipeLabel.Center;
+            pageContainerView.AddSubview (swipeLabel);
 
-            redButton = new UIImageView (UIImage.FromBundle ("red_pointer.png"));
-            redButton.Center = new PointF (this.contentContainer.Frame.Width / 2, centerMessage.Frame.Height / 3 + 70);
+            for (int i = 0; i < 10; i++) {
+                var tempSwipeArrow = new UIImageView ();
+                using (var image = UIImage.FromBundle ("SlideNav-SwipeArrow")) {
+                    tempSwipeArrow = new UIImageView (image);
+                }
+                tempSwipeArrow.Center = new PointF (225 - (i * 15), swipeLabel.Center.Y);
+                tempSwipeArrow.Alpha = 0.0f;
+                swipeLeftArrows.Add (tempSwipeArrow);
+                pageContainerView.AddSubview (tempSwipeArrow);
+            }
+
+            CreateHelperText ();
+            pageContainerView.AddSubview (helperContainer);
+        }
+
+        protected void CreateViewOne ()
+        {
+            UIImageView nachoNowImageView = new UIImageView ();
+            using (var image = UIImage.FromBundle ("Slide02BG")) {
+                nachoNowImageView.Image = image;
+            }
+            nachoNowImageView.Frame = (new RectangleF (0, 0, contentContainer.Frame.Width, contentContainer.Frame.Height));
+            contentContainer.AddSubview (nachoNowImageView);
+
+            using (var image = UIImage.FromBundle ("red_pointer")) {
+                redButton = new UIImageView (image);
+            }
+            redButton.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 4);
             redButton.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
             contentContainer.AddSubview (redButton);
 
-            redToolTip = new UIImageView (UIImage.FromBundle ("red_balloon.png"));
-            redToolTip.Center = new PointF (this.contentContainer.Frame.Width / 2, centerMessage.Frame.Height / 3 + 35 + 70);
+            using (var image = UIImage.FromBundle ("Slide02MessageUp")) {
+                redToolTip = new UIImageView (image);
+            }
+            redToolTip.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 4 + 35);
             redToolTip.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
             contentContainer.AddSubview (redToolTip);
 
-            greenButton = new UIImageView (UIImage.FromBundle ("teal_pointer.png"));
-            greenButton.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height - 15);
+            using (var image = UIImage.FromBundle ("teal_pointer")) {
+                greenButton = new UIImageView (image);
+            }
+            greenButton.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height - 25);
             greenButton.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
             contentContainer.AddSubview (greenButton);
 
-            greenToolTip = new UIImageView (UIImage.FromBundle ("teal_balloon.png"));
-            greenToolTip.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height - 50);
+            using (var image = UIImage.FromBundle ("Slide02MessageDown")) {
+                greenToolTip = new UIImageView (image);
+            }
+            greenToolTip.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height - 60);
             greenToolTip.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
             contentContainer.AddSubview (greenToolTip);
 
             CreateHelperText ();
             contentContainer.ClipsToBounds = true;
-            pageContainerView.AddSubview(contentContainer);
+            pageContainerView.AddSubview (contentContainer);
             pageContainerView.AddSubview (helperContainer);
         }
 
-        protected void CreateViewTwo()
+        protected void CreateViewTwo ()
         {
-            UIImageView screenImage = new UIImageView (UIImage.FromBundle (contentscreen));
-            screenImage.Frame = (new RectangleF (0,0, contentContainer.Frame.Width, contentContainer.Frame.Height));
-            contentView.AddSubview(screenImage);
+            UIImageView nachoGrayBackground = new UIImageView ();
+            using (var image = UIImage.FromBundle ("Slide03BG")) {
+                nachoGrayBackground.Image = image;
+            }
+            nachoGrayBackground.Frame = (new RectangleF (0, 0, contentContainer.Frame.Width, contentContainer.Frame.Height));
+            contentContainer.AddSubview (nachoGrayBackground);
 
-            swipeMailLeft = new UIImageView (UIImage.FromBundle (msg1loc));
-            swipeMailLeft.Frame = new RectangleF (10, 60, 192, 207);
-            swipeMailLeft.Center = new PointF (contentContainer.Frame.Width / 2 , contentContainer.Frame.Height / 2 +10);
-            swipeMailLeftCenter = swipeMailLeft.Center;
-            contentView.AddSubview (swipeMailLeft);
+            UIImageView nachoNowBackground = new UIImageView ();
+            using (var image = UIImage.FromBundle ("Slide03MidBG")) {
+                nachoNowBackground.Image = image;
+            }
+            nachoNowBackground.Frame = (new RectangleF (0, 0, contentContainer.Frame.Width, contentContainer.Frame.Height));
+            contentContainer.AddSubview (nachoNowBackground);
 
-            swipeMailRight = new UIImageView (UIImage.FromBundle ("Slide1-1B.png"));
-            swipeMailRight.Center = new PointF (this.pageContainerView.Frame.Width, this.contentContainer.Frame.Height / 2 +10);
-            swipeMailRightCenter = swipeMailRight.Center;
-            contentView.AddSubview (swipeMailRight);
+            UIView cardHolderView = new UIView (new RectangleF (8, 56, contentContainer.Frame.Width - 15, contentContainer.Frame.Height - 75));
+            cardHolderView.Layer.CornerRadius = 4f;
+            cardHolderView.ClipsToBounds = true;
+            contentContainer.AddSubview (cardHolderView);
 
-            UIImageView inboximageView = new UIImageView (UIImage.FromBundle (inboxloc));
-            inboximageView.Frame = new RectangleF (10, swipeMailLeft.Frame.Bottom + 20, 192, 20);
-            inboximageView.Center = new PointF (contentContainer.Frame.Width / 2, contentContainer.Frame.Height - 10);
-            contentView.AddSubview (inboximageView);
+            nachoCardOne = new UIImageView ();
+            using (var image = UIImage.FromBundle ("Slide03Card01")) {
+                nachoCardOne.Image = image;
+            }
+            nachoCardOne.Frame = (new RectangleF (0, 0, cardHolderView.Frame.Width, cardHolderView.Frame.Height));
+            nachoCardOneCenter = nachoCardOne.Center;
+            cardHolderView.AddSubview (nachoCardOne);
+
+            nachoCardTwo = new UIImageView ();
+            using (var image = UIImage.FromBundle ("Slide03Card02")) {
+                nachoCardTwo.Image = image;
+            }
+            nachoCardTwo.Frame = (new RectangleF (0, nachoCardOne.Frame.Bottom + 15, cardHolderView.Frame.Width, cardHolderView.Frame.Height));
+            nachoCardTwoCenter = nachoCardTwo.Center;
+            cardHolderView.AddSubview (nachoCardTwo);
 
             mailRedDot = new UIImageView (UIImage.FromBundle ("red_pointer.png"));
-            mailRedDot.Center = new PointF (swipeMailLeft.Frame.X + 130, swipeMailLeft.Center.Y);
+            mailRedDot.Center = new PointF (nachoCardOne.Center.X, nachoCardOne.Center.Y + 30);
             mailRedDotCenter = mailRedDot.Center;
-            contentView.AddSubview(mailRedDot);
+            cardHolderView.AddSubview (mailRedDot);
 
             CreateHelperText ();
             contentView.ClipsToBounds = true;
-            pageView.AddSubview(contentView);
+            pageView.AddSubview (contentContainer);
             pageView.AddSubview (helperContainer);
         }
 
-        protected void CreateViewThree()
+        protected void CreateViewThree ()
         {
-            UIImageView screenImage = new UIImageView (UIImage.FromBundle ("Slide3-2.png"));
-            screenImage.Frame = (new RectangleF (0,0, contentContainer.Frame.Width, contentContainer.Frame.Height));
-            contentContainer.AddSubview(screenImage);
+            UIImageView calendarBackground = new UIImageView ();
+            using (var image = UIImage.FromBundle ("Slide04BG")) {
+                calendarBackground.Image = image;
+            }
+            calendarBackground.Frame = (new RectangleF (0, 0, contentContainer.Frame.Width, contentContainer.Frame.Height));
+            contentContainer.AddSubview (calendarBackground);
 
-            calimageView = new UIImageView(UIImage.FromBundle ("Slide3-1A.png"));
-            calimageView.Frame = new RectangleF (0, 0, contentContainer.Frame.Width, 46);
-            calimageCenter = calimageView.Center;
-            contentContainer.AddSubview (calimageView);
+            using (var image = UIImage.FromBundle ("Slide04MessageUp")) {
+                meetingMessage = new UIImageView (image);
+            }
+            meetingMessage.Frame = (new RectangleF (contentContainer.Frame.Width / 2 - meetingMessage.Frame.Width / 2, 43, meetingMessage.Frame.Width, meetingMessage.Frame.Height));
+            meetingMessage.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
+            contentContainer.AddSubview (meetingMessage);
 
-            pullimageView = new UIImageView (UIImage.FromBundle ("Slide3-1B.png"));
-            pullimageView.Frame = new RectangleF (0, calimageView.Frame.Bottom, contentContainer.Frame.Width, 7);
-            pullimageCenter = pullimageView.Center;
-            contentContainer.AddSubview (pullimageView);
-
-            timelineView = new UIImageView (UIImage.FromBundle ("Slide3-5.png"));
-            timelineView.Frame = new RectangleF (0,  -contentContainer.Frame.Height, this.contentContainer.Frame.Width, this.contentContainer.Frame.Height);
-            timelineCenter = timelineView.Center;
-            contentContainer.AddSubview(timelineView);
-
-            pullDownDotView = new UIImageView (UIImage.FromBundle ("red_pointer.png"));
-            pullDownDotView.Center = new PointF(pullimageCenter.X, pullimageCenter.Y - 12);
-            pullDownDotCenter = pullDownDotView.Center;
+            using (var image = UIImage.FromBundle ("red_pointer.png")) {
+                pullDownDotView = new UIImageView (image);
+            }
+            pullDownDotView.Center = new PointF (meetingMessage.Center.X, 25);
+            pullDownDotView.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
             contentContainer.AddSubview (pullDownDotView);
 
             CreateHelperText ();
             contentContainer.ClipsToBounds = true;
-            pageContainerView.AddSubview(contentContainer);
+            pageContainerView.AddSubview (contentContainer);
             pageContainerView.AddSubview (helperContainer);
         }
 
-        private void CreateViewFour()
+        private void CreateViewFour ()
         {
-            UIImageView screenImage = new UIImageView (UIImage.FromBundle ("Slide4-1.png"));
-            screenImage.Frame = (new RectangleF (0,0, contentContainer.Frame.Width, contentContainer.Frame.Height));
-            contentContainer.AddSubview(screenImage);
+            UIImageView inboxBackgroundImageView = new UIImageView ();
+            using (var image = UIImage.FromBundle ("Slide05BG.png")) {
+                inboxBackgroundImageView.Image = image;
+            }
+            inboxBackgroundImageView.Frame = (new RectangleF (0, 0, contentContainer.Frame.Width, contentContainer.Frame.Height));
+            contentContainer.AddSubview (inboxBackgroundImageView);
 
-            greenSwipeCellView = new UIImageView (UIImage.FromBundle ("Slide4-2A.png"));
-            greenSwipeCellView.Frame = new RectangleF (0-this.contentContainer.Frame.Width, 77, this.contentContainer.Frame.Width, 93);
-            greenSwipeCenter = greenSwipeCellView.Center;
-            contentContainer.AddSubview (greenSwipeCellView);
+            using (var image = UIImage.FromBundle ("Slide05SwipeRight.png")) {
+                swipeRightImageView = new UIImageView (image);
+            }
+            swipeRightImageView.Frame = new RectangleF (-swipeRightImageView.Frame.Width, 0, swipeRightImageView.Frame.Width, swipeRightImageView.Frame.Height);
+            swipeRightCenter = swipeRightImageView.Center;
+            contentContainer.AddSubview (swipeRightImageView);
 
-            emailCellView = new UIImageView (UIImage.FromBundle ("Slide4-3.png"));
-            emailCellView.Frame = new RectangleF(0, 77, this.contentContainer.Frame.Width, 93);
+            using (var image = UIImage.FromBundle ("Slide05Email.png")) {
+                emailCellView = new UIImageView (image);
+            }
+            emailCellView.Frame = new RectangleF (0, 0, this.contentContainer.Frame.Width, emailCellView.Frame.Height);
             emailCellViewCenter = emailCellView.Center;
             contentContainer.AddSubview (emailCellView);
 
-            redSwipeCellView = new UIImageView (UIImage.FromBundle ("Slide4-2B.png"));
-            redSwipeCellView.Frame = new RectangleF (this.contentContainer.Frame.Width, 77, this.contentContainer.Frame.Width, 93);
-            redSwipeCenter = redSwipeCellView.Center;
-            contentContainer.AddSubview (redSwipeCellView);
+            using (var image = UIImage.FromBundle ("Slide05SwipeLeft.png")) {
+                swipeLeftImageView = new UIImageView (image);
+            }
+            swipeLeftImageView.Frame = new RectangleF (this.contentContainer.Frame.Width, 0, swipeLeftImageView.Frame.Width, swipeLeftImageView.Frame.Height);
+            swipeLeftCenter = swipeLeftImageView.Center;
+            contentContainer.AddSubview (swipeLeftImageView);
 
             swipeDotView = new UIImageView (UIImage.FromBundle ("red_pointer.png"));
             swipeDotView.Center = new PointF (emailCellView.Center.X + 30, emailCellView.Center.Y);
             swipeDotCenter = swipeDotView.Center;
-            contentContainer.AddSubview(swipeDotView);
+            contentContainer.AddSubview (swipeDotView);
 
             CreateHelperText ();
             contentContainer.ClipsToBounds = true;
-            pageContainerView.AddSubview(contentContainer);
+            pageContainerView.AddSubview (contentContainer);
             pageContainerView.AddSubview (helperContainer);
         }
 
-        protected void AnimateViewOne()
+        protected void AnimateViewZero (int i)
+        {
+            if (viewZeroShouldAnimate) {
+                if (i < 10) {
+                    if (i == 5) {
+                        //Starts sliding in the 'Swipe left...' text
+                        AnimateViewZeroPartTwo ();
+                    }
+                    UIView.Animate (.2, 0, (UIViewAnimationOptions.CurveLinear | UIViewAnimationOptions.OverrideInheritedDuration), () => {
+                        //Turns on arrows one at a time from right to left
+                        swipeLeftArrows [i].Alpha = 1.0f;
+                        //Decreases alpha of all the arrows prior to it
+                        for (int j = 0; j < i; j++) {
+                            swipeLeftArrows [j].Alpha -= .2f;
+                        }
+                    }, () => {
+                        i++;
+                        AnimateViewZero (i);
+                    });
+                } else if (i >= 10 && i < 16) {
+                    UIView.Animate (.2, 0, (UIViewAnimationOptions.CurveLinear | UIViewAnimationOptions.OverrideInheritedDuration), () => {
+                        //At this point all arrows are turned on, now we just need to decrease
+                        //their alpha so they disappear
+                        for (int k = 5; k < 10; k++) {
+                            if (swipeLeftArrows [k].Alpha > 0) {
+                                swipeLeftArrows [k].Alpha -= .2f;
+                            }
+                        }
+                    }, () => {
+                        i++;
+                        AnimateViewZero (i);
+                    });
+                } else {
+                    return;
+                }
+            }
+        }
+
+        //Slides in the 'Swipe left to...' text, increases alpha while it slides in
+        protected void AnimateViewZeroPartTwo ()
+        {
+            if (viewZeroShouldAnimate) {
+                UIView.Animate (2, 0, (UIViewAnimationOptions.CurveLinear | UIViewAnimationOptions.OverrideInheritedDuration), () => {
+                    swipeLabel.Alpha = 1.0f;
+                    swipeLabel.Center = new PointF (swipeLabel.Center.X - 150, swipeLabel.Center.Y);
+                }, () => {
+                });
+            }
+        }
+
+        protected void AnimateViewOne ()
         {
             toolTipTimer = NSTimer.CreateScheduledTimer (1, delegate {
                 UIView.AnimateKeyframes (1, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
@@ -446,19 +602,19 @@ namespace NachoClient.iOS
                 }));
             });
 
-            swipeMailLeftTimer = NSTimer.CreateScheduledTimer (2.5, delegate {
+            swipeMailUpTimer = NSTimer.CreateScheduledTimer (2.5, delegate {
                 UIView.AnimateKeyframes (1, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
                     UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
-                        mailRedDot.Center = new PointF(mailRedDot.Center.X - this.contentContainer.Frame.Width, mailRedDot.Center.Y);
-                        swipeMailLeft.Center = new PointF (swipeMailLeft.Center.X - this.contentContainer.Frame.Width, this.contentContainer.Frame.Height/2 +10 );
-                        swipeMailRight.Center = new PointF (swipeMailRight.Center.X - this.contentContainer.Frame.Width, this.contentContainer.Frame.Height/2 +10 );
+                        mailRedDot.Center = new PointF (mailRedDot.Center.X, mailRedDot.Center.Y - (nachoCardOne.Frame.Height + 15));
+                        nachoCardOne.Center = new PointF (nachoCardOne.Center.X, nachoCardOne.Center.Y - (nachoCardOne.Frame.Height + 15));
+                        nachoCardTwo.Center = new PointF (nachoCardTwo.Center.X, nachoCardTwo.Center.Y - (nachoCardOne.Frame.Height + 15));
                     });
                 }, ((bool finished) => {
                 }));
             });
 
             flashTwoTimer = NSTimer.CreateScheduledTimer (3.6, delegate {
-                mailRedDot.Center = new PointF(mailRedDotCenter.X - 80, mailRedDotCenter.Y);
+                mailRedDot.Center = new PointF (mailRedDotCenter.X, mailRedDotCenter.Y - 80);
                 UIView.AnimateKeyframes (2.1, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
                     UIView.AddKeyframeWithRelativeStartTime (0, .5, () => {
                         mailRedDot.Alpha = .5f;
@@ -470,12 +626,12 @@ namespace NachoClient.iOS
                 }));
             });
 
-            swipeMailRightTimer = NSTimer.CreateScheduledTimer (5.7, delegate {
+            swipeMailDownTimer = NSTimer.CreateScheduledTimer (5.7, delegate {
                 UIView.AnimateKeyframes (1, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
                     UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
-                        mailRedDot.Center = new PointF(mailRedDot.Center.X + this.contentContainer.Frame.Width, mailRedDot.Center.Y);
-                        swipeMailLeft.Center = new PointF (swipeMailLeft.Center.X + this.contentContainer.Frame.Width, this.contentContainer.Frame.Height/2 +10 );
-                        swipeMailRight.Center = new PointF (swipeMailRight.Center.X + this.contentContainer.Frame.Width, this.contentContainer.Frame.Height/2 +10 );
+                        mailRedDot.Center = new PointF (mailRedDot.Center.X, mailRedDot.Center.Y + (nachoCardOne.Frame.Height + 15));
+                        nachoCardOne.Center = new PointF (nachoCardOne.Center.X, nachoCardOne.Center.Y + (nachoCardOne.Frame.Height + 15));
+                        nachoCardTwo.Center = new PointF (nachoCardTwo.Center.X, nachoCardTwo.Center.Y + (nachoCardOne.Frame.Height + 15));
                     });
                 }, ((bool finished) => {
                 }));
@@ -484,28 +640,12 @@ namespace NachoClient.iOS
 
         public void AnimateViewThree ()
         {
-            flashPullDotTimer = NSTimer.CreateScheduledTimer (.5, delegate {
-                UIView.AnimateKeyframes (1.5, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
-                    UIView.AddKeyframeWithRelativeStartTime (0, .5, () => {
-                        pullDownDotView.Alpha = 0.4f;
-                    });
-
-                    UIView.AddKeyframeWithRelativeStartTime (.5, .5, () => {
-                        pullDownDotView.Alpha = 1.0f;
-                    });
-                }, ((bool finished) => {
-                }));
-            });
-
-            pullDownCalendarTimer = NSTimer.CreateScheduledTimer (2, delegate {
-                UIView.AnimateKeyframes (1.1, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+            flashPullDotTimer = NSTimer.CreateScheduledTimer (1, delegate {
+                UIView.AnimateKeyframes (1, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
                     UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
-                        pullimageView.Center = new PointF (pullimageView.Center.X, pullimageView.Center.Y + contentContainer.Frame.Height);
-                        calimageView.Center = new PointF (calimageView.Center.X, calimageView.Center.Y + contentContainer.Frame.Height);
-                        timelineView.Center = new PointF(timelineView.Center.X, timelineView.Center.Y + contentContainer.Frame.Height); 
-                        pullDownDotView.Center = new PointF(pullDownDotView.Center.X, pullDownDotView.Center.Y + contentContainer.Frame.Height);
+                        pullDownDotView.Layer.Transform = CATransform3D.MakeScale (1.0f, 1.0f, 1.0f);
+                        meetingMessage.Layer.Transform = CATransform3D.MakeScale (1.0f, 1.0f, 1.0f);
                     });
-
                 }, ((bool finished) => {
                 }));
             });
@@ -515,91 +655,112 @@ namespace NachoClient.iOS
         {
 
             flashDotsFirstTimer = NSTimer.CreateScheduledTimer (.5, delegate {
-                    UIView.AnimateKeyframes (1.5, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
-                        UIView.AddKeyframeWithRelativeStartTime (0, .5, () => {
-                            swipeDotView.Alpha = 0.4f;
-                        });
+                UIView.AnimateKeyframes (1.5, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+                    UIView.AddKeyframeWithRelativeStartTime (0, .5, () => {
+                        swipeDotView.Alpha = 0.4f;
+                    });
 
-                        UIView.AddKeyframeWithRelativeStartTime (.5, .5, () => {
-                            swipeDotView.Alpha = 1.0f;
-                        });
-                    }, ((bool finished) => {
-                    }));
+                    UIView.AddKeyframeWithRelativeStartTime (.5, .5, () => {
+                        swipeDotView.Alpha = 1.0f;
+                    });
+                }, ((bool finished) => {
+                }));
             });
 
             swipeLeftTimer = NSTimer.CreateScheduledTimer (3, delegate {
-                    UIView.AnimateKeyframes (.7, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
-                        UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
-                            swipeDotView.Center = new PointF(swipeDotView.Center.X - redSwipeCellView.Frame.Width, swipeDotView.Center.Y);
-                            redSwipeCellView.Center = new PointF(redSwipeCellView.Center.X - redSwipeCellView.Frame.Width, redSwipeCellView.Center.Y);
-                            emailCellView.Center = new PointF(emailCellView.Center.X - emailCellView.Frame.Width, emailCellView.Center.Y);
-                            swipeDotView.Alpha = 0.0f;
-                        });
+                UIView.AnimateKeyframes (.7, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+                    UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
+                        swipeDotView.Center = new PointF (swipeDotView.Center.X - swipeLeftImageView.Frame.Width, swipeDotView.Center.Y);
+                        swipeLeftImageView.Center = new PointF (swipeLeftImageView.Center.X - swipeLeftImageView.Frame.Width, swipeLeftImageView.Center.Y);
+                        emailCellView.Center = new PointF (emailCellView.Center.X - swipeLeftImageView.Frame.Width, emailCellView.Center.Y);
+                        swipeDotView.Alpha = 0.0f;
+                    });
 
-                    }, ((bool finished) => {
-                    }));
+                }, ((bool finished) => {
+                }));
             });
 
-            revertLeftToCenterTimer = NSTimer.CreateScheduledTimer (4, delegate {
-                    UIView.AnimateKeyframes (.7, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
-                        UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
-                            swipeDotView.Center = new PointF(swipeDotView.Center.X + redSwipeCellView.Frame.Width, swipeDotView.Center.Y);
-                            redSwipeCellView.Center = new PointF(redSwipeCellView.Center.X + redSwipeCellView.Frame.Width, redSwipeCellView.Center.Y);
-                            emailCellView.Center = new PointF(emailCellView.Center.X + emailCellView.Frame.Width, emailCellView.Center.Y);
-                        });
+            revertLeftToCenterTimer = NSTimer.CreateScheduledTimer (4.5, delegate {
+                UIView.AnimateKeyframes (.7, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+                    UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
+                        swipeDotView.Center = new PointF (swipeDotView.Center.X + swipeLeftImageView.Frame.Width, swipeDotView.Center.Y);
+                        swipeLeftImageView.Center = new PointF (swipeLeftImageView.Center.X + swipeLeftImageView.Frame.Width, swipeLeftImageView.Center.Y);
+                        emailCellView.Center = new PointF (emailCellView.Center.X + swipeLeftImageView.Frame.Width, emailCellView.Center.Y);
+                    });
 
-                    }, ((bool finished) => {
+                }, ((bool finished) => {
 
-                    }));
+                }));
             });
 
-            moveDotsTimer = NSTimer.CreateScheduledTimer (4.7, delegate {
-                    UIView.AnimateKeyframes (.2, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
-                        UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
-                            swipeDotView.Center = new PointF(swipeDotCenter.X - 70, swipeDotCenter.Y);
-                        });
+            moveDotsTimer = NSTimer.CreateScheduledTimer (5.2, delegate {
+                UIView.AnimateKeyframes (.2, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+                    UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
+                        swipeDotView.Center = new PointF (swipeDotCenter.X - 70, swipeDotCenter.Y);
+                    });
 
-                    }, ((bool finished) => {
+                }, ((bool finished) => {
 
-                    }));
+                }));
             });
 
 
-            flashDotsSecondTimer = NSTimer.CreateScheduledTimer (5.2, delegate {
-                    UIView.AnimateKeyframes (1.7, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+            flashDotsSecondTimer = NSTimer.CreateScheduledTimer (5.7, delegate {
+                UIView.AnimateKeyframes (1.7, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
 
-                        UIView.AddKeyframeWithRelativeStartTime (0, .5, () => {
-                            swipeDotView.Alpha = 0.4f;
-                        });
+                    UIView.AddKeyframeWithRelativeStartTime (0, .5, () => {
+                        swipeDotView.Alpha = 0.4f;
+                    });
 
-                        UIView.AddKeyframeWithRelativeStartTime (.5, .5, () => {
-                            swipeDotView.Alpha = 1.0f;
-                        });
-                    }, ((bool finished) => {
-                    }));
+                    UIView.AddKeyframeWithRelativeStartTime (.5, .5, () => {
+                        swipeDotView.Alpha = 1.0f;
+                    });
+                }, ((bool finished) => {
+                }));
             });
 
-            swipeRightTimer = NSTimer.CreateScheduledTimer (7.1, delegate {
-                    UIView.AnimateKeyframes (.8, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
-                        UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
-                            swipeDotView.Center = new PointF(swipeDotView.Center.X + redSwipeCellView.Frame.Width, swipeDotView.Center.Y);
-                            emailCellView.Center = new PointF(emailCellView.Center.X + emailCellView.Frame.Width, emailCellView.Center.Y);
-                            greenSwipeCellView.Center = new PointF (greenSwipeCellView.Center.X + greenSwipeCellView.Frame.Width, greenSwipeCellView.Center.Y);
-                        });
+            swipeRightTimer = NSTimer.CreateScheduledTimer (7.6, delegate {
+                UIView.AnimateKeyframes (.8, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+                    UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
+                        swipeDotView.Center = new PointF (swipeDotView.Center.X + swipeLeftImageView.Frame.Width, swipeDotView.Center.Y);
+                        emailCellView.Center = new PointF (emailCellView.Center.X + swipeLeftImageView.Frame.Width, emailCellView.Center.Y);
+                        swipeRightImageView.Center = new PointF (swipeRightImageView.Center.X + swipeLeftImageView.Frame.Width, swipeRightImageView.Center.Y);
+                    });
 
-                    }, ((bool finished) => {
-                    }));
+                }, ((bool finished) => {
+                }));
             });
 
-            revertRightToCenterTimer = NSTimer.CreateScheduledTimer (8.1, delegate {
-                    UIView.AnimateKeyframes (.8, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
-                        UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
-                            emailCellView.Center = new PointF(emailCellView.Center.X - emailCellView.Frame.Width, emailCellView.Center.Y);
-                            greenSwipeCellView.Center = new PointF (greenSwipeCellView.Center.X - greenSwipeCellView.Frame.Width, greenSwipeCellView.Center.Y);
-                        });
-                    }, ((bool finished) => {
-                    }));
+            revertRightToCenterTimer = NSTimer.CreateScheduledTimer (9.1, delegate {
+                UIView.AnimateKeyframes (.8, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
+                    UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
+                        emailCellView.Center = new PointF (emailCellView.Center.X - swipeLeftImageView.Frame.Width, emailCellView.Center.Y);
+                        swipeRightImageView.Center = new PointF (swipeRightImageView.Center.X - swipeLeftImageView.Frame.Width, swipeRightImageView.Center.Y);
+                    });
+                }, ((bool finished) => {
+                }));
             });
+        }
+
+        protected void ResetViewZero ()
+        {
+            if (null != viewZeroTimer) {
+                viewZeroTimer.Invalidate ();
+            }
+
+            viewZeroShouldAnimate = false;
+
+            //Cancel any live animations
+            swipeLabel.Layer.RemoveAllAnimations ();
+
+            //Place items back to original position
+            swipeLabel.Center = swipeLabelCenter;
+            swipeLabel.Alpha = 0.0f;
+
+            for (int i = 0; i < 10; i++) {
+                swipeLeftArrows [i].Layer.RemoveAllAnimations ();
+                swipeLeftArrows [i].Alpha = 0.0f;
+            }
         }
 
         protected void ResetViewOne ()
@@ -622,30 +783,30 @@ namespace NachoClient.iOS
             greenToolTip.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
         }
 
-        protected void ResetViewTwo()
+        protected void ResetViewTwo ()
         {
             //Disable any active timers
             if (null != flashOneTimer) {
                 flashOneTimer.Invalidate ();
             }
-            if (null != swipeMailLeftTimer) {
-                swipeMailLeftTimer.Invalidate ();
+            if (null != swipeMailUpTimer) {
+                swipeMailUpTimer.Invalidate ();
             }
             if (null != flashTwoTimer) {
                 flashTwoTimer.Invalidate ();
             }
-            if (null != swipeMailRightTimer) {
-                swipeMailRightTimer.Invalidate ();
+            if (null != swipeMailDownTimer) {
+                swipeMailDownTimer.Invalidate ();
             }
 
             //Cancel any live animations
-            swipeMailLeft.Layer.RemoveAllAnimations ();
-            swipeMailRight.Layer.RemoveAllAnimations ();
+            nachoCardOne.Layer.RemoveAllAnimations ();
+            nachoCardTwo.Layer.RemoveAllAnimations ();
             mailRedDot.Layer.RemoveAllAnimations ();
 
             //Move items back to original position
-            swipeMailLeft.Center = swipeMailLeftCenter;
-            swipeMailRight.Center = swipeMailRightCenter;
+            nachoCardOne.Center = nachoCardOneCenter;
+            nachoCardTwo.Center = nachoCardTwoCenter;
             mailRedDot.Center = mailRedDotCenter;
         }
 
@@ -654,22 +815,15 @@ namespace NachoClient.iOS
             if (null != flashPullDotTimer) {
                 flashPullDotTimer.Invalidate ();
             }
-            if (null != pullDownCalendarTimer) {
-                pullDownCalendarTimer.Invalidate ();
-            }
 
             pullDownDotView.Layer.RemoveAllAnimations ();
-            calimageView.Layer.RemoveAllAnimations ();
-            pullimageView.Layer.RemoveAllAnimations ();
-            timelineView.Layer.RemoveAllAnimations ();
+            meetingMessage.Layer.RemoveAllAnimations ();
 
-            calimageView.Center = calimageCenter;
-            pullimageView.Center = pullimageCenter;
-            timelineView.Center = timelineCenter;
-            pullDownDotView.Center = pullDownDotCenter;
+            pullDownDotView.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
+            meetingMessage.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
         }
 
-        protected void ResetViewFour()
+        protected void ResetViewFour ()
         {
             //Disable any active timers
             if (null != flashDotsFirstTimer) {
@@ -698,14 +852,14 @@ namespace NachoClient.iOS
             } 
 
             //Cancel any live animations
-            redSwipeCellView.Layer.RemoveAllAnimations ();
-            greenSwipeCellView.Layer.RemoveAllAnimations ();
+            swipeLeftImageView.Layer.RemoveAllAnimations ();
+            swipeRightImageView.Layer.RemoveAllAnimations ();
             emailCellView.Layer.RemoveAllAnimations ();
             swipeDotView.Layer.RemoveAllAnimations ();
 
             //Move items back to original position
-            redSwipeCellView.Center = redSwipeCenter;
-            greenSwipeCellView.Center = greenSwipeCenter;
+            swipeLeftImageView.Center = swipeLeftCenter;
+            swipeRightImageView.Center = swipeRightCenter;
             emailCellView.Center = emailCellViewCenter;
             swipeDotView.Center = swipeDotCenter;
         }

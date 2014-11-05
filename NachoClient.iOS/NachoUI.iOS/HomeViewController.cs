@@ -15,6 +15,7 @@ namespace NachoClient.iOS
         int accountId;
         public UIPageControl pageDots;
         public bool isFirstLoad = true;
+        public UIButton closeTutorial;
 
         public HomeViewController (IntPtr handle) : base (handle)
         {
@@ -111,7 +112,7 @@ namespace NachoClient.iOS
             this.View.AddSubview (this.pageController.View);
 
             //Simulates a user dismissing tutorial, or the tutorial finishing on its own
-            UIButton closeTutorial = new UIButton (new System.Drawing.RectangleF (View.Frame.Width-75, 0, 60, 30));
+            closeTutorial = new UIButton (new System.Drawing.RectangleF (View.Frame.Width-145, 0, 130, 30));
             closeTutorial.TitleLabel.TextColor = UIColor.Black;
             closeTutorial.SetTitle ("Dismiss", UIControlState.Normal);
             closeTutorial.TitleLabel.TextColor = UIColor.Black;
@@ -119,6 +120,7 @@ namespace NachoClient.iOS
             closeTutorial.SetTitleColor (UIColor.Black, UIControlState.Normal);
             closeTutorial.BackgroundColor = UIColor.White;
             //closeTutorial.BackgroundColor = A.Color_NachoRed; // debug
+            closeTutorial.HorizontalAlignment = UIControlContentHorizontalAlignment.Right;
             closeTutorial.TouchUpInside += (object sender, EventArgs e) => {
                 LoginHelpers.SetHasViewedTutorial (accountId, true);
                 PerformSegue(StartupViewController.NextSegue(), this);
@@ -140,7 +142,7 @@ namespace NachoClient.iOS
         /// </value>
         public int TotalPages {
             get {
-                return 4;
+                return 5;
             }
         }
 

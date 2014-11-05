@@ -1629,6 +1629,23 @@
     <BundleResource Include="Resources\modal-folder%402x.png" />
     <BundleResource Include="Resources\modal-readmore-active%402x.png" />
     <BundleResource Include="Resources\modal-readmore%402x.png" />
+    <BundleResource Include="Resources\Slide02BG%402x.png" />
+    <BundleResource Include="Resources\Slide02MessageDown%402x.png" />
+    <BundleResource Include="Resources\Slide02MessageUp%402x.png" />
+    <BundleResource Include="Resources\Slide02RedMarker%402x.png" />
+    <BundleResource Include="Resources\Slide02TealMarker%402x.png" />
+    <BundleResource Include="Resources\Slide03BG%402x.png" />
+    <BundleResource Include="Resources\Slide03Card01%402x.png" />
+    <BundleResource Include="Resources\Slide03Card02%402x.png" />
+    <BundleResource Include="Resources\Slide03MidBG%402x.png" />
+    <BundleResource Include="Resources\Slide04BG%402x.png" />
+    <BundleResource Include="Resources\Slide04MessageUp%402x.png" />
+    <BundleResource Include="Resources\Slide05BG%402x.png" />
+    <BundleResource Include="Resources\Slide05Email%402x.png" />
+    <BundleResource Include="Resources\Slide05SwipeLeft%402x.png" />
+    <BundleResource Include="Resources\Slide05SwipeRight%402x.png" />
+    <BundleResource Include="Resources\BG-S01%402x.png" />
+    <BundleResource Include="Resources\SlideNav-SwipeArrow%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

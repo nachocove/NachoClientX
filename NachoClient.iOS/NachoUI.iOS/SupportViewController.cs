@@ -190,6 +190,7 @@ namespace NachoClient.iOS
 
             if (!LoginHelpers.IsCurrentAccountSet ()) {
                 NavigationItem.SetHidesBackButton (false, true);
+                NavigationController.NavigationBar.TintColor = A.Color_NachoBlue;
             }
             else if (!LoginHelpers.HasFirstSyncCompleted(LoginHelpers.GetCurrentAccountId())) {
                 NavigationItem.SetHidesBackButton (false, true);
