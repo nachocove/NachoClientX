@@ -32,6 +32,7 @@ namespace NachoClient.iOS
 
         // text Title
         protected UILabel helperTitleText;
+
         // text Body
         protected UIWebView helperWebView;
 
@@ -41,7 +42,6 @@ namespace NachoClient.iOS
         //View Zero Components
         protected NSTimer viewZeroTimer;
         protected UILabel swipeLabel;
-        protected UIImageView swipeArrowImageView;
         protected List<UIImageView> swipeLeftArrows = new List<UIImageView> ();
         protected PointF swipeLabelCenter;
         protected bool viewZeroShouldAnimate = false;
