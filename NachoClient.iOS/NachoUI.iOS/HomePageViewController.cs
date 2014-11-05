@@ -42,7 +42,7 @@ namespace NachoClient.iOS
         protected NSTimer viewZeroTimer;
         protected UILabel swipeLabel;
         protected UIImageView swipeArrowImageView;
-        protected List<UIImageView> swipeLeftArrows = new List<UIImageView>();
+        protected List<UIImageView> swipeLeftArrows = new List<UIImageView> ();
         protected PointF swipeLabelCenter;
         protected bool viewZeroShouldAnimate = false;
 
@@ -308,13 +308,13 @@ namespace NachoClient.iOS
 
             helperWebView.LoadHtmlString (
                 "<html>" +
-                    "<style>" +
-                        "body {font-family:\"avenir next\";font-size:14px;font-style:normal;font-weight:400;color: 444444; text-align:center;}" +
-                    "</style>" +
-                    "<body>" +
-                        bodyText [this.PageIndex] +
-                    "</body>" +
-                "</html>", new NSUrl("about:blank"));
+                "<style>" +
+                "body {font-family:\"avenir next\";font-size:14px;font-style:normal;font-weight:400;color: 444444; text-align:center;}" +
+                "</style>" +
+                "<body>" +
+                bodyText [this.PageIndex] +
+                "</body>" +
+                "</html>", new NSUrl ("about:blank"));
             helperContainer.Add (helperWebView);
 
 
@@ -325,7 +325,7 @@ namespace NachoClient.iOS
         {
             UIImageView theNachos;
             using (var image = UIImage.FromBundle ("BG-S01")) {
-                theNachos = new UIImageView(image);
+                theNachos = new UIImageView (image);
             }
             theNachos.Frame = new RectangleF (0, this.contentContainer.Frame.Bottom - theNachos.Frame.Height, View.Frame.Width, theNachos.Frame.Height);
             pageContainerView.AddSubview (theNachos);
@@ -347,7 +347,7 @@ namespace NachoClient.iOS
             pageContainerView.AddSubview (swipeLabel);
 
             for (int i = 0; i < 10; i++) {
-                var tempSwipeArrow = new UIImageView();
+                var tempSwipeArrow = new UIImageView ();
                 using (var image = UIImage.FromBundle ("SlideNav-SwipeArrow")) {
                     tempSwipeArrow = new UIImageView (image);
                 }
@@ -561,10 +561,10 @@ namespace NachoClient.iOS
         }
 
         //Slides in the 'Swipe left to...' text, increases alpha while it slides in
-        protected void AnimateViewZeroPartTwo()
+        protected void AnimateViewZeroPartTwo ()
         {
             if (viewZeroShouldAnimate) {
-                UIView.Animate (2, 0, (UIViewAnimationOptions.CurveLinear |  UIViewAnimationOptions.OverrideInheritedDuration), () => {
+                UIView.Animate (2, 0, (UIViewAnimationOptions.CurveLinear | UIViewAnimationOptions.OverrideInheritedDuration), () => {
                     swipeLabel.Alpha = 1.0f;
                     swipeLabel.Center = new PointF (swipeLabel.Center.X - 150, swipeLabel.Center.Y);
                 }, () => {
@@ -745,7 +745,7 @@ namespace NachoClient.iOS
         protected void ResetViewZero ()
         {
             if (null != viewZeroTimer) {
-                viewZeroTimer.Invalidate();
+                viewZeroTimer.Invalidate ();
             }
 
             viewZeroShouldAnimate = false;
@@ -757,8 +757,8 @@ namespace NachoClient.iOS
             swipeLabel.Center = swipeLabelCenter;
             swipeLabel.Alpha = 0.0f;
 
-            for (int i = 0; i < 10; i++){
-                swipeLeftArrows [i].Layer.RemoveAllAnimations();
+            for (int i = 0; i < 10; i++) {
+                swipeLeftArrows [i].Layer.RemoveAllAnimations ();
                 swipeLeftArrows [i].Alpha = 0.0f;
             }
         }
