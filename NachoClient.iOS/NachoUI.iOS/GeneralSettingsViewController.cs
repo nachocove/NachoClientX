@@ -32,6 +32,7 @@ namespace NachoClient.iOS
         protected const int ACCOUNT_SETTINGS_VIEW_TAG = 105;
         protected const int ABOUT_US_VIEW_TAG = 106;
         protected const int PRIVACY_POLICY_VIEW_TAG = 107;
+        protected const int FIX_BE_LABEL_TAG = 108;
 
         protected UITapGestureRecognizer accountSettingsTapGesture;
         protected UITapGestureRecognizer.Token accountSettingsTapGestureHandlerToken;
@@ -72,17 +73,6 @@ namespace NachoClient.iOS
             contentView.BackgroundColor = A.Color_NachoNowBackground;
             NavigationController.NavigationBar.Translucent = false;
             NavigationController.NavigationBar.TintColor = A.Color_NachoBlue;
-
-            UIButton DirtyBackEnd = new UIButton (new RectangleF (View.Frame.Width / 2 - 40, View.Frame.Bottom - 100, 80, 30));
-            DirtyBackEnd.Layer.CornerRadius = 2.0f;
-            DirtyBackEnd.BackgroundColor = A.Color_NachoRed;
-            DirtyBackEnd.Font = A.Font_AvenirNextRegular14;
-            DirtyBackEnd.SetTitle ("Fix Account", UIControlState.Normal);
-            DirtyBackEnd.SetTitleColor (UIColor.White, UIControlState.Normal);
-            DirtyBackEnd.TouchUpInside += FixBackEndButtonClicked; 
-            DirtyBackEnd.Tag = FIX_BE_BUTTON_TAG;
-            DirtyBackEnd.Hidden = true;
-            View.Add(DirtyBackEnd);
 
             yOffset = INSET;
 
@@ -193,7 +183,34 @@ namespace NachoClient.iOS
             privacyPolicyView.AddGestureRecognizer (privacyPolicyTapGesture);
             buttonsView.AddSubview (privacyPolicyView);
 
+            yOffset = buttonsView.Frame.Bottom + 30f;
+
             View.AddSubview (buttonsView);
+
+            UILabel dirtyBackEndLabel = new UILabel (new RectangleF (INSET, yOffset, View.Frame.Width - (INSET * 2), CELL_HEIGHT));
+            dirtyBackEndLabel.Text = "There is an issue with your account that is preventing you from sending or receiving messages.";
+            dirtyBackEndLabel.Font = A.Font_AvenirNextRegular12;
+            dirtyBackEndLabel.TextAlignment = UITextAlignment.Center;
+            dirtyBackEndLabel.BackgroundColor = UIColor.Clear;
+            dirtyBackEndLabel.TextColor = A.Color_NachoGreen;
+            dirtyBackEndLabel.Lines = 2;
+            dirtyBackEndLabel.LineBreakMode = UILineBreakMode.WordWrap;
+            dirtyBackEndLabel.Tag = FIX_BE_LABEL_TAG;
+            dirtyBackEndLabel.Hidden = true;
+            View.AddSubview (dirtyBackEndLabel);
+
+            yOffset = dirtyBackEndLabel.Frame.Bottom + 5;
+
+            UIButton DirtyBackEnd = new UIButton (new RectangleF (INSET, yOffset, View.Frame.Width - (INSET * 2), CELL_HEIGHT));
+            DirtyBackEnd.Layer.CornerRadius = 4.0f;
+            DirtyBackEnd.BackgroundColor = A.Color_NachoRed;
+            DirtyBackEnd.TitleLabel.Font = A.Font_AvenirNextDemiBold14;
+            DirtyBackEnd.SetTitle ("Fix Account", UIControlState.Normal);
+            DirtyBackEnd.SetTitleColor (UIColor.White, UIControlState.Normal);
+            DirtyBackEnd.TouchUpInside += FixBackEndButtonClicked; 
+            DirtyBackEnd.Tag = FIX_BE_BUTTON_TAG;
+            DirtyBackEnd.Hidden = true;
+            View.Add(DirtyBackEnd);
         }
 
         protected override void ConfigureAndLayout ()
@@ -209,6 +226,9 @@ namespace NachoClient.iOS
 
             UIButton FixButton = (UIButton)View.ViewWithTag (FIX_BE_BUTTON_TAG);
             FixButton.Hidden = !LoginHelpers.DoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId ());
+
+            UILabel FixLabel = (UILabel)View.ViewWithTag (FIX_BE_LABEL_TAG);
+            FixLabel.Hidden = !LoginHelpers.DoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId ());
 
             LayoutView ();
         }
