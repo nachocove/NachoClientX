@@ -22,6 +22,7 @@ namespace NachoClient.iOS
         protected AttachmentTableViewSource attachmentSource;
         protected McAccount account;
         protected McAbstrCalendarRoot c;
+        protected UITableView tableView;
         protected bool editing;
         protected INachoAttachmentListChooserDelegate owner;
         List<McAttachment> AttachmentsList = new List<McAttachment> ();
@@ -52,9 +53,6 @@ namespace NachoClient.iOS
             attachmentSource = new AttachmentTableViewSource ();
             attachmentSource.SetOwner (this);
 
-            EventAttachmentsTableView.Source = attachmentSource;
-
-            EventAttachmentsTableView.ReloadData ();
             CreateEventAttachmentView ();
         }
 
@@ -71,7 +69,7 @@ namespace NachoClient.iOS
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
-            EventAttachmentsTableView.ReloadData ();
+            tableView.ReloadData ();
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -108,7 +106,8 @@ namespace NachoClient.iOS
             attachmentSource.SetAttachmentList (this.AttachmentsList);
             attachmentSource.SetAccount (account);
             attachmentSource.SetEditing (editing);
-            EventAttachmentsTableView.ReloadData ();
+            attachmentSource.SetVC (this);
+            tableView.ReloadData ();
             NachoClient.Util.RegularPriority ();
         }
 
@@ -130,7 +129,7 @@ namespace NachoClient.iOS
             var s = (StatusIndEventArgs)e;
             if (NcResult.SubKindEnum.Info_CalendarSetChanged == s.Status.SubKind) {
                 Log.Debug (Log.LOG_UI, "StatusIndicatorCallback");
-                EventAttachmentsTableView.ReloadData ();
+                tableView.ReloadData ();
             }
         }
 
@@ -140,9 +139,12 @@ namespace NachoClient.iOS
 
             float yOffset = 0f;
 
-            addButtonView = new UIView (new RectangleF (0, 20, View.Frame.Width, 44));
+            addButtonView = new UIView (new RectangleF (15, 20, View.Frame.Width - 30, 44));
             addButtonView.Tag = ADD_BUTTON_VIEW_TAG;
             addButtonView.BackgroundColor = UIColor.White;
+            addButtonView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
+            addButtonView.Layer.BorderWidth = .5f;
+            addButtonView.Layer.CornerRadius = 6;
             addButtonView.Hidden = true;
 
             UIButton addPhotoButton = new UIButton (UIButtonType.RoundedRect);
@@ -155,7 +157,7 @@ namespace NachoClient.iOS
             addPhotoButton.SetImage (UIImage.FromBundle ("icn-photos"), UIControlState.Normal);
 
             addPhotoButton.Frame = new RectangleF (0, 0, View.Frame.Width / 2, 44);
-            addButtonView.Add (addPhotoButton);
+            addButtonView.AddSubview (addPhotoButton);
 
             UIButton addAttachmentButton = new UIButton (UIButtonType.RoundedRect);
             addAttachmentButton.TintColor = A.Color_NachoIconGray;
@@ -165,31 +167,32 @@ namespace NachoClient.iOS
             addAttachmentButton.SetTitle ("+", UIControlState.Normal);
             addAttachmentButton.TitleEdgeInsets = new UIEdgeInsets (-2f, -52f, 0f, 0f);
             addAttachmentButton.SetImage (UIImage.FromBundle ("icn-attach-files"), UIControlState.Normal);
-            addAttachmentButton.Frame = new RectangleF (160, 0, View.Frame.Width / 2, 44);
-            addButtonView.Add (addAttachmentButton);
+            addAttachmentButton.Frame = new RectangleF (addButtonView.Frame.Width / 2, 0, View.Frame.Width / 2, 44);
+            addButtonView.AddSubview (addAttachmentButton);
 
             Util.AddVerticalLine (addButtonView.Frame.Width / 2, 6, 32, A.Color_NachoBorderGray, addButtonView);
-            line = Util.AddHorizontalLineView (0, addButtonView.Frame.Bottom, View.Frame.Width, A.Color_NachoBorderGray);
             yOffset += addButtonView.Frame.Bottom;
 
             yOffset += 16;
-            attachedLabel = new UILabel (new RectangleF (15, yOffset, 160, 20));
+            attachedLabel = new UILabel ();
             attachedLabel.Tag = ATTACHED_LABEL_TAG;
-            attachedLabel.Text = "ATTACHED";
-            attachedLabel.Font = A.Font_AvenirNextRegular12;
-            attachedLabel.TextColor = A.Color_NachoIconGray;
+            attachedLabel.Text = "Attached";
+            attachedLabel.SizeToFit ();
+            attachedLabel.Font = A.Font_AvenirNextDemiBold17;
+            attachedLabel.TextColor = A.Color_NachoGreen;
             attachedLabel.Hidden = true;
-            yOffset += attachedLabel.Frame.Height;
 
-            yOffset += 4;
-            EventAttachmentsTableView.Frame = new RectangleF (0, yOffset, View.Frame.Width, View.Frame.Height - yOffset);
-            EventAttachmentsTableView.SeparatorColor = A.Color_NachoBorderGray;
-            EventAttachmentsTableView.Tag = ATTACHMENTS_TABLE_TAG;
+            yOffset += 0;
+            tableView = new UITableView (new RectangleF (0, yOffset, View.Frame.Width, View.Frame.Height - yOffset), UITableViewStyle.Plain);
+            tableView.SeparatorColor = A.Color_NachoBorderGray;
+            tableView.BackgroundColor = UIColor.White;
+            tableView.Tag = ATTACHMENTS_TABLE_TAG;
+            tableView.Source = attachmentSource;
+            View.AddSubview (tableView);
 
             View.BackgroundColor = A.Color_NachoBackgroundGray;
 
-            View.Add (line);
-            View.Add (addButtonView);
+            View.AddSubview (addButtonView);
             View.AddSubview (attachedLabel);
         }
 
@@ -198,45 +201,36 @@ namespace NachoClient.iOS
             if (editing) {
                 NavigationItem.Title = "Add Attachments";
                 addButtonView.Hidden = false;
+                attachedLabel.Hidden = false;
             } else {
                 NavigationItem.Title = "Attachments";
-                line.Hidden = true;
-            }
-
-            if (0 == AttachmentsList.Count) {
-                EventAttachmentsTableView.Hidden = true;
                 attachedLabel.Hidden = true;
-            } else {
-                attachmentSource.SetAttachmentList (this.AttachmentsList);
-                EventAttachmentsTableView.ReloadData ();
-                EventAttachmentsTableView.Hidden = false;
-                attachedLabel.Hidden = false;
             }
+            attachmentSource.SetAttachmentList (this.AttachmentsList);
+            tableView.ReloadData ();
 
             LayoutView ();
         }
 
         protected void LayoutView ()
         {
-            var yOffset = 20f;
+            var yOffset = 0f;
 
             if (editing) {
+                yOffset += 20;
                 var abv = View.ViewWithTag (ADD_BUTTON_VIEW_TAG) as UIView;
-                abv.Frame = new RectangleF (0, yOffset, View.Frame.Width, 44);
+                abv.Frame = new RectangleF (15, yOffset, View.Frame.Width - 30, 44);
                 yOffset += abv.Frame.Height;
+                yOffset += 20;
 
-                line.Frame = new RectangleF (0, yOffset, View.Frame.Width, line.Frame.Height);
-                yOffset += 16;
+                var al = View.ViewWithTag (ATTACHED_LABEL_TAG) as UILabel;
+                al.Frame = new RectangleF (15, yOffset, 160, al.Frame.Height);
+                yOffset += al.Frame.Height;
+                yOffset += 9;
             }
 
-            var al = View.ViewWithTag (ATTACHED_LABEL_TAG) as UILabel;
-            al.Frame = new RectangleF (15, yOffset, 160, 20);
-            yOffset += al.Frame.Height;
-
-            yOffset += 4;
             var at = View.ViewWithTag (ATTACHMENTS_TABLE_TAG) as UITableView;
             at.Frame = new RectangleF (0, yOffset, View.Frame.Width, View.Frame.Height - yOffset);
-
         }
 
         protected void AttachFileActionSheet ()

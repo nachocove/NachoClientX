@@ -1,6 +1,7 @@
 ﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.IO;
 using System.Linq;
 using System.Drawing;
 using MonoTouch.UIKit;
@@ -20,9 +21,26 @@ namespace NachoClient.iOS
         protected McAccount Account;
         protected bool editing = false;
         public IAttachmentTableViewSourceDelegate owner;
+        public UIViewController vc;
 
-        protected const string UICellReuseIdentifier = "UICell";
         protected const string AttachmentCellReuseIdentifier = "AttachmentCell";
+
+        protected UIColor CELL_COMPONENT_BG_COLOR = UIColor.White;
+
+        protected const int SWIPE_TAG = 99100;
+        private const int OPEN_IN_TAG = 2000;
+        private const int REMOVE_TAG = 3000;
+
+        protected static int ICON_TAG = 150;
+        protected static int TEXT_LABEL_TAG = 300;
+        protected static int DETAIL_TEXT_LABEL_TAG = 400;
+
+        private static SwipeActionDescriptor DELETE_BUTTON =
+            new SwipeActionDescriptor (REMOVE_TAG, 0.25f, UIImage.FromBundle (""),
+                "Remove", A.Color_NachoSwipeActionRed);
+        private static SwipeActionDescriptor OPEN_IN_BUTTON =
+            new SwipeActionDescriptor (OPEN_IN_TAG, 0.25f, UIImage.FromBundle (""),
+                "", A.Color_NachoLightGrayBackground);
 
         public AttachmentTableViewSource ()
         {
@@ -32,6 +50,11 @@ namespace NachoClient.iOS
         public void SetOwner (IAttachmentTableViewSourceDelegate owner)
         {
             this.owner = owner;
+        }
+
+        public void SetVC (UIViewController vc)
+        {
+            this.vc = vc;
         }
 
         public void SetAttachmentList (List<McAttachment> attachments)
@@ -73,110 +96,179 @@ namespace NachoClient.iOS
             return AttachmentsList.Count;
         }
 
-        UIView ViewWithImageName (string imageName)
-        {
-            var image = UIImage.FromBundle (imageName);
-            var imageView = new UIImageView (image);
-            imageView.ContentMode = UIViewContentMode.Center;
-            return imageView;
-        }
-
-        UIView ViewWithLabel (string text)
-        {
-            var label = new UILabel ();
-            label.Text = text;
-            label.Font = A.Font_AvenirNextDemiBold14;
-            label.TextColor = UIColor.White;
-            label.SizeToFit ();
-            var labelView = new UIView ();
-            labelView.Frame = new RectangleF (30, 0, label.Frame.Width + 50, label.Frame.Height);
-            labelView.Add (label);
-            return labelView;
-        }
-
         public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
         {
-            return 44;
+            return 60;
         }
-
-        protected const int ATTACHMENT_DISPLAY_NAME_TAG = 333;
-        protected const int ATTACHMENT_IMAGE_TAG = 334;
 
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
         {
-            McAttachment attachment;
-            attachment = AttachmentsList [indexPath.Row];
-
-            var cell = CreateCell ();
-            ConfigureCell (cell, attachment);
-
-            return cell;
-        }
-
-        void ConfigureSwipes (MCSwipeTableViewCell cell, McAttachment attachment)
-        {
-            cell.FirstTrigger = 0.20f;
-            cell.SecondTrigger = 0.50f;
-
-            UIColor redColor = null;
-            UIView deleteView = null;
-
-            try { 
-                deleteView = ViewWithLabel ("remove");
-                redColor = new UIColor (A.Color_NachoRed.CGColor);
-
-                cell.SetSwipeGestureWithView (deleteView, redColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State3, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                    RemoveAttachment (attachment);
-                });
-                cell.SetSwipeGestureWithView (deleteView, redColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State4, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                    RemoveAttachment (attachment);
-                });
-            } finally {
-                if (null != redColor) {
-                    redColor.Dispose ();
-                }
-                if (null != deleteView) {
-                    deleteView.Dispose ();
-                }
+            UITableViewCell cell = null;
+            cell = tableView.DequeueReusableCell (AttachmentCellReuseIdentifier);
+            if (cell == null) {
+                cell = CreateCell (tableView, AttachmentCellReuseIdentifier);
             }
-        }
-
-        public MCSwipeTableViewCell CreateCell ()
-        {
-            var cell = new MCSwipeTableViewCell (UITableViewCellStyle.Subtitle, AttachmentCellReuseIdentifier);
             NcAssert.True (null != cell);
 
-            if (null == cell.ViewWithTag (ATTACHMENT_DISPLAY_NAME_TAG)) {
-                var userNameView = new UILabel (new RectangleF (40, 0, 320 - 40 - 15, 44));
-                userNameView.LineBreakMode = UILineBreakMode.TailTruncation;
-                userNameView.Tag = ATTACHMENT_DISPLAY_NAME_TAG;
-                cell.ContentView.AddSubview (userNameView);
+            McAttachment attachment = AttachmentsList [indexPath.Row];
+            ConfigureCell (tableView, cell, indexPath, attachment);
 
-                UIImageView responseImageView = new UIImageView (new RectangleF (15, 22 - 7.5f, 15, 15));
-                responseImageView.Image = UIImage.FromBundle ("icn-attach-files");
-                responseImageView.Tag = ATTACHMENT_IMAGE_TAG;
-
-                cell.ContentView.AddSubview (responseImageView);
-            }
             return cell;
         }
 
-        public void ConfigureCell (MCSwipeTableViewCell cell, McAttachment attachment)
+        protected UITableViewCell CreateCell (UITableView tableView, string identifier)
         {
-            var displayName = attachment.DisplayName;
-            cell.TextLabel.Text = null;
-            cell.DetailTextLabel.Text = null;
-
-            ConfigureSwipes (cell, attachment);
-
-            var TextLabel = cell.ViewWithTag (ATTACHMENT_DISPLAY_NAME_TAG) as UILabel;
-            TextLabel.Text = displayName;
-            TextLabel.TextColor = A.Color_0B3239;
-            TextLabel.Font = A.Font_AvenirNextDemiBold17;
-
-            if (!editing) {
-                cell.UserInteractionEnabled = false;
+            var cell = tableView.DequeueReusableCell (identifier);
+            if (null == cell) {
+                cell = new UITableViewCell (UITableViewCellStyle.Default, identifier);
             }
+            if (cell.RespondsToSelector (new MonoTouch.ObjCRuntime.Selector ("setSeparatorInset:"))) {
+                cell.SeparatorInset = UIEdgeInsets.Zero;
+            }
+            cell.SelectionStyle = UITableViewCellSelectionStyle.Default;
+            cell.ContentView.BackgroundColor = CELL_COMPONENT_BG_COLOR;
+
+            var cellWidth = tableView.Frame.Width;
+
+            var frame = new RectangleF (0, 0, tableView.Frame.Width, 60);
+            var view = new SwipeActionView (frame);
+            view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
+            view.SetAction (OPEN_IN_BUTTON, SwipeSide.LEFT);
+
+            cell.AddSubview (view);
+            view.Tag = SWIPE_TAG;
+            view.BackgroundColor = CELL_COMPONENT_BG_COLOR;
+
+            //Cell icon
+            var cellIconImageView = new UIImageView (); 
+            cellIconImageView.Tag = ICON_TAG;
+            cellIconImageView.BackgroundColor = CELL_COMPONENT_BG_COLOR;
+            cellIconImageView.Frame = new RectangleF (18, 28, 24, 24);
+            view.AddSubview (cellIconImageView);
+
+            //Text label
+            var textLabel = new UILabel (); 
+            textLabel.Tag = TEXT_LABEL_TAG;
+            textLabel.Font = A.Font_AvenirNextDemiBold14;
+            textLabel.TextColor = A.Color_NachoDarkText;
+            textLabel.BackgroundColor = CELL_COMPONENT_BG_COLOR;
+            textLabel.Frame = new RectangleF (60, 11, cell.Frame.Width - 60 - 52, 19.5f);
+            view.AddSubview (textLabel);
+
+            //Detail text label
+            var detailTextlabel = new UILabel (); 
+            detailTextlabel.Tag = DETAIL_TEXT_LABEL_TAG;
+            detailTextlabel.BackgroundColor = CELL_COMPONENT_BG_COLOR;
+            detailTextlabel.Font = A.Font_AvenirNextRegular14;
+            detailTextlabel.TextColor = A.Color_NachoTextGray;
+            detailTextlabel.Frame = new RectangleF (60, 11 + 19.5f, cell.Frame.Width - 60 - 52, 19.5f);
+            view.AddSubview (detailTextlabel);
+
+            cell.AddSubview (view);
+            return cell;
+        }
+
+        public void ConfigureCell (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath, McAttachment attachment)
+        {
+            float yOffset = 10.5f;
+
+            //Swipe view
+            var view = cell.ViewWithTag (SWIPE_TAG) as SwipeActionView;
+            if (editing) {
+                view.EnableSwipe ();
+            } else {
+                view.DisableSwipe ();
+            }
+
+            view.OnClick = (int tag) => {
+                switch (tag) {
+                case OPEN_IN_TAG:
+
+                    break;
+                case REMOVE_TAG:
+                    RemoveAttachment (attachment);
+                    break;
+                default:
+                    throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action tag {0}", tag));
+                }
+            };
+            view.OnSwipe = (SwipeActionView.SwipeState state) => {
+                switch (state) {
+                case SwipeActionView.SwipeState.SWIPE_BEGIN:
+                    tableView.ScrollEnabled = false;
+                    break;
+                case SwipeActionView.SwipeState.SWIPE_END_ALL_HIDDEN:
+                    tableView.ScrollEnabled = true;
+                    break;
+                case SwipeActionView.SwipeState.SWIPE_END_ALL_SHOWN:
+                    tableView.ScrollEnabled = false;
+                    break;
+                default:
+                    throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown swipe state {0}", (int)state));
+                }
+            };
+
+            //Cell icon
+            var cellIconImageView = view.ViewWithTag (ICON_TAG) as UIImageView;
+            cellIconImageView.Frame = new RectangleF (18, 18, 24, 24);
+
+            //Text label
+            var textLabel = view.ViewWithTag (TEXT_LABEL_TAG) as UILabel; 
+            textLabel.Frame = new RectangleF (60, yOffset, cell.Frame.Width - 112, 19.5f);
+            yOffset += textLabel.Frame.Height;
+
+            //Detail text label
+            var detailTextlabel = view.ViewWithTag (DETAIL_TEXT_LABEL_TAG) as UILabel;  
+            detailTextlabel.Frame = new RectangleF (60, yOffset, cell.Frame.Width - 112, 19.5f);
+            yOffset += detailTextlabel.Frame.Height;
+
+            ConfigureAttachmentView (cell, attachment, cellIconImageView, textLabel, detailTextlabel);
+        }
+
+        public override void RowSelected (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
+        {
+            PlatformHelpers.DisplayAttachment (this.vc, AttachmentsList [indexPath.Row]);
+            tableView.DeselectRow (indexPath, true);
+        }
+
+        protected void ConfigureAttachmentView (UITableViewCell cell, McAttachment attachment, UIImageView iconView, UILabel textLabel, UILabel detailTextLabel)
+        {
+            if (null != attachment) {
+
+                textLabel.Text = Path.GetFileNameWithoutExtension (attachment.DisplayName);
+
+                var detailText = "";
+                if (attachment.IsInline) {
+                    detailText += "Inline ";
+                }
+                string extension = Path.GetExtension (attachment.DisplayName).ToUpper ();
+                detailText += extension.Length > 1 ? extension.Substring (1) + " " : "Unrecognized "; // get rid of period and format
+                detailText += "file";
+                if (0 != attachment.FileSize) {
+                    detailText += " - " + Pretty.PrettyFileSize (attachment.FileSize);
+                } 
+                detailTextLabel.Text = detailText;
+
+                if (detailText.Contains ("JPG") || detailText.Contains ("JPEG")
+                    || detailText.Contains ("TIFF") || detailText.Contains ("PNG")
+                    || detailText.Contains ("GIF") || detailText.Contains ("RAW")) {
+                    iconView.Image = UIImage.FromBundle ("email-att-photos");
+                } else {
+                    iconView.Image = UIImage.FromBundle ("email-att-files");
+                }
+            } else {
+                textLabel.Text = "File no longer exists"; 
+            }
+        }
+
+        public override UIView GetViewForHeader (UITableView tableView, int section)
+        {
+            return new UIView (new RectangleF (0, 0, 0, 0));
+        }
+
+        public override UIView GetViewForFooter (UITableView tableView, int section)
+        {
+            return new UIView (new RectangleF (0, 0, 0, 0));
         }
 
         public void RemoveAttachment (McAttachment attachment)
