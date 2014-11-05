@@ -29,7 +29,6 @@ namespace NachoClient.iOS
 
         UILabel attachedLabel;
         UIView addButtonView;
-        UIView line;
 
         const int ADD_BUTTON_VIEW_TAG = 101;
         const int ATTACHED_LABEL_TAG = 102;

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="6245" systemVersion="13F34" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="Ds7-Ad-QXl">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="6250" systemVersion="14A389" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="Ds7-Ad-QXl">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="6238"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="6244"/>
     </dependencies>
     <scenes>
         <!--Advanced Login View Controller-->
@@ -518,7 +518,7 @@
             <objects>
                 <tableViewController storyboardIdentifier="MessageListViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="kq1-eO-X0p" customClass="MessageListViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="PBw-9w-NMN">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="455"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <connections>
@@ -967,7 +967,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="PMN-Ra-w2D" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-5175" y="-450"/>
+            <point key="canvasLocation" x="-3911" y="476"/>
         </scene>
         <!--Event Attachment View Controller-->
         <scene sceneID="ZMa-bI-tY1">
@@ -991,6 +991,7 @@
                         <outlet property="EventAttachmentsTableView" destination="fhu-bP-xWZ" id="jdL-IM-bML"/>
                         <outlet property="addAttachmentButton" destination="N2c-Hs-Cv9" id="QHy-9U-koS"/>
                         <segue destination="1pE-rh-uML" kind="modal" identifier="EventAttachmentToFiles" id="GKm-A3-njZ"/>
+                        <segue destination="SX4-pu-5YA" kind="modal" identifier="EventAttachmentsToAddAttachment" modalTransitionStyle="crossDissolve" id="Zgo-Hx-sjv"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="2A8-Nn-b9g" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1032,11 +1033,12 @@
                         <segue destination="ErX-HX-Xxl" kind="modal" identifier="SegueToIntentSelection" modalPresentationStyle="fullScreen" modalTransitionStyle="crossDissolve" id="5qs-bm-OYT"/>
                         <segue destination="1pE-rh-uML" kind="modal" identifier="ComposeToFiles" id="84g-IQ-Iaw"/>
                         <segue destination="q23-o6-SFp" kind="modal" identifier="SegueToQuickResponse" modalTransitionStyle="crossDissolve" id="tsd-Qf-0s2"/>
+                        <segue destination="SX4-pu-5YA" kind="modal" identifier="ComposeToAddAttachment" id="zby-Sy-Y3J"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="K96-0O-l77" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-2425" y="2417"/>
+            <point key="canvasLocation" x="-2449" y="2296"/>
         </scene>
         <!--Intent Selection View Controller-->
         <scene sceneID="mbi-5g-bbR">
@@ -1090,6 +1092,23 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Fx1-ms-9ya" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-773" y="-3179"/>
+        </scene>
+        <!--Add Attachment View Controller-->
+        <scene sceneID="iNT-Bg-Usj">
+            <objects>
+                <viewController storyboardIdentifier="AddAttachmentViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="SX4-pu-5YA" customClass="AddAttachmentViewController" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="fCw-Z7-yVT">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                    </view>
+                    <connections>
+                        <segue destination="1pE-rh-uML" kind="modal" identifier="AddAttachmentToAttachments" id="bIh-V3-UrL"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="3d3-Vl-kXG" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-3413" y="476"/>
         </scene>
         <!--Message Priority View Controller-->
         <scene sceneID="qaB-g2-0kE">
@@ -1692,32 +1711,33 @@
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
+        <segue reference="xrp-ey-B0j"/>
+        <segue reference="p7w-hx-Y70"/>
+        <segue reference="bIh-V3-UrL"/>
+        <segue reference="Zgo-Hx-sjv"/>
+        <segue reference="peA-r2-tjq"/>
+        <segue reference="uqv-uq-oCq"/>
+        <segue reference="szv-KC-TId"/>
+        <segue reference="tQS-oL-XNh"/>
         <segue reference="4z2-t5-9Cd"/>
         <segue reference="g4G-tD-G9H"/>
-        <segue reference="emO-35-rbd"/>
         <segue reference="iqA-wd-xqD"/>
-        <segue reference="Kmd-x6-iCJ"/>
         <segue reference="XQg-JR-vxA"/>
         <segue reference="Eb2-K0-nI3"/>
         <segue reference="TEI-cG-N0R"/>
         <segue reference="wZy-ga-YEb"/>
-        <segue reference="szv-KC-TId"/>
-        <segue reference="FD7-0T-FGT"/>
         <segue reference="zOx-eF-clw"/>
         <segue reference="rEt-DF-c51"/>
-        <segue reference="Sbt-au-uDg"/>
-        <segue reference="uqv-uq-oCq"/>
         <segue reference="c79-xS-Npa"/>
-        <segue reference="DDa-hb-SgY"/>
-        <segue reference="84g-IQ-Iaw"/>
-        <segue reference="xrp-ey-B0j"/>
-        <segue reference="B5b-jg-ZNg"/>
-        <segue reference="KnL-e9-HQR"/>
-        <segue reference="dAf-rc-Hh3"/>
-        <segue reference="peA-r2-tjq"/>
+        <segue reference="w67-dy-XSq"/>
         <segue reference="m2D-2n-RiV"/>
         <segue reference="7sK-rg-HQL"/>
-        <segue reference="w67-dy-XSq"/>
+        <segue reference="KnL-e9-HQR"/>
+        <segue reference="tkk-6o-6oa"/>
+        <segue reference="Kmd-x6-iCJ"/>
+        <segue reference="eUJ-3D-Pjk"/>
+        <segue reference="B5b-jg-ZNg"/>
+        <segue reference="dAf-rc-Hh3"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>

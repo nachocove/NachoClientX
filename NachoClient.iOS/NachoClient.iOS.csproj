@@ -1157,6 +1157,10 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\ContactsHelpers.cs">
       <Link>NachoCore\Utils\ContactsHelpers.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\AddAttachmentViewController.cs" />
+    <Compile Include="NachoUI.iOS\AddAttachmentViewController.designer.cs">
+      <DependentUpon>AddAttachmentViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
