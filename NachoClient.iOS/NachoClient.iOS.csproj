@@ -1640,6 +1640,8 @@
     <BundleResource Include="Resources\Slide05Email%402x.png" />
     <BundleResource Include="Resources\Slide05SwipeLeft%402x.png" />
     <BundleResource Include="Resources\Slide05SwipeRight%402x.png" />
+    <BundleResource Include="Resources\BG-S01%402x.png" />
+    <BundleResource Include="Resources\SlideNav-SwipeArrow%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
