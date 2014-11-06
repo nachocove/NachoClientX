@@ -153,12 +153,12 @@ namespace NachoClient.iOS
                 this.contentContainer = new UIView (new RectangleF (View.Frame.Width / 2 - GetContentSize ().Width / 2, 60, GetContentSize ().Width, GetContentSize ().Height)); // see size of helpercontainer
                 this.helperContainer = new UIView (new RectangleF (0, this.contentContainer.Frame.Bottom, pageContainerView.Frame.Width, pageContainerView.Frame.Bottom - this.contentContainer.Frame.Bottom));// contains the helpertext and labels  
                 this.helperTitleText = new UILabel (new RectangleF (0, 12, helperContainer.Frame.Width, 20));
-                this.helperWebView = new UIWebView (new RectangleF ((helperContainer.Frame.Width - descriptionTextWidth) / 2, helperTitleText.Frame.Bottom, descriptionTextWidth, 40));
+                this.helperWebView = new UIWebView (new RectangleF ((helperContainer.Frame.Width - DESCRIPTION_TEXT_WIDTH) / 2, helperTitleText.Frame.Bottom, DESCRIPTION_TEXT_WIDTH, 40));
             } else {
                 this.contentContainer = new UIView (new RectangleF (View.Frame.Width / 2 - GetContentSize ().Width / 2, 85, GetContentSize ().Width, GetContentSize ().Height)); // see size of helpercontainer
                 this.helperContainer = new UIView (new RectangleF (0, this.contentContainer.Frame.Bottom, pageContainerView.Frame.Width, 130));// contains the helpertext and labels  
                 this.helperTitleText = new UILabel (new RectangleF (0, 24, helperContainer.Frame.Width, 20));
-                this.helperWebView = new UIWebView (new RectangleF ((helperContainer.Frame.Width - descriptionTextWidth) / 2, helperTitleText.Frame.Bottom, descriptionTextWidth, 50));
+                this.helperWebView = new UIWebView (new RectangleF ((helperContainer.Frame.Width - DESCRIPTION_TEXT_WIDTH) / 2, helperTitleText.Frame.Bottom, DESCRIPTION_TEXT_WIDTH, 50));
             }
 
             pageView = new UIView (pageContainerView.Frame);
