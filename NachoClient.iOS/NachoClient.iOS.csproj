@@ -1645,7 +1645,6 @@
     <BundleResource Include="Resources\Slide03Card01%402x.png" />
     <BundleResource Include="Resources\Slide03Card02%402x.png" />
     <BundleResource Include="Resources\Slide04BG%402x.png" />
-    <BundleResource Include="Resources\Slide05SwipeRight%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
