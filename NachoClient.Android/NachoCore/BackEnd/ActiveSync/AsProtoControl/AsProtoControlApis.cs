@@ -939,6 +939,7 @@ namespace NachoCore.ActiveSync
             var folder = McFolder.Create (Account.Id,
                              false,
                              false,
+                             false,
                              destFldServerId,
                              serverId,
                              displayName,

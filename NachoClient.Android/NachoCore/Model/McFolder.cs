@@ -40,6 +40,8 @@ namespace NachoCore.Model
 
         public int DisplayColor { get; set; }
 
+        public bool IsDistinguished { get; set; }
+
         public Xml.FolderHierarchy.TypeCode Type { get; set; }
         // Client-owned distinguised folders.
         public const string ClientOwned_Outbox = "Outbox2";
@@ -59,6 +61,7 @@ namespace NachoCore.Model
         public static McFolder Create (int accountId, 
                                        bool isClientOwned,
                                        bool isHidden,
+                                       bool isDistinguished,
                                        string parentId,
                                        string serverId,
                                        string displayName,
@@ -82,6 +85,7 @@ namespace NachoCore.Model
                 AccountId = accountId,
                 IsClientOwned = isClientOwned,
                 IsHidden = isHidden,
+                IsDistinguished = isDistinguished,
                 ParentId = parentId,
                 ServerId = serverId,
                 DisplayName = displayName,

@@ -220,12 +220,12 @@ namespace Test.iOS
             Assert.AreEqual (item2.ServerId, item2.ServerId, "Equivalent items should have the same ServerId");
         }
 
-        public static McFolder CreateFolder (int accountId, bool isClientOwned = false, bool isHidden = false, string parentId = "0", 
+        public static McFolder CreateFolder (int accountId, bool isClientOwned = false, bool isHidden = false, bool isDistinguished = false, string parentId = "0", 
             string serverId = defaultServerId, string name = "Default name", NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode typeCode = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1,
             bool isAwaitingDelete = false, bool isAwaitingCreate = false, bool autoInsert = true, string asSyncKey = "-1", 
             bool syncMetaToClient = false)
         {
-            McFolder folder = McFolder.Create (accountId, isClientOwned, isHidden, parentId, serverId, name, typeCode);
+            McFolder folder = McFolder.Create (accountId, isClientOwned, isHidden, isDistinguished, parentId, serverId, name, typeCode);
 
             folder.IsAwaitingDelete = isAwaitingDelete;
             folder.IsAwaitingCreate = isAwaitingCreate;

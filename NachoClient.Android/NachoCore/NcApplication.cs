@@ -332,7 +332,7 @@ namespace NachoCore
             // Create Device contacts/calendars if not yet there.
             NcModel.Instance.RunInTransaction (() => {
                 if (null == McFolder.GetDeviceContactsFolder ()) {
-                    var freshMade = McFolder.Create (deviceAccount.Id, true, false, "0",
+                    var freshMade = McFolder.Create (deviceAccount.Id, true, false, true, "0",
                                         McFolder.ClientOwned_DeviceContacts, "Device Contacts",
                                         NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
                     freshMade.Insert ();
@@ -340,7 +340,7 @@ namespace NachoCore
             });
             NcModel.Instance.RunInTransaction (() => {
                 if (null == McFolder.GetDeviceCalendarsFolder ()) {
-                    var freshMade = McFolder.Create (deviceAccount.Id, true, false, "0",
+                    var freshMade = McFolder.Create (deviceAccount.Id, true, false, true, "0",
                                         McFolder.ClientOwned_DeviceCalendars, "Device Calendars",
                                         NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
                     freshMade.Insert ();
