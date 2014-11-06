@@ -140,7 +140,8 @@ namespace NachoCore.Utils
                 dict.AddString ("os_type", Device.Instance.OsType ());
                 dict.AddString ("os_version", Device.Instance.OsVersion ());
                 dict.AddString ("device_model", Device.Instance.Model ());
-                dict.AddString ("build_version", BuildInfo.Version);
+                dict.AddString ("build_version",
+                    String.Format("{0} (build {1})", BuildInfo.Version, BuildInfo.BuildNumber));
 
                 if (tEvent.IsLogEvent ()) {
                     switch (tEvent.Type) {
