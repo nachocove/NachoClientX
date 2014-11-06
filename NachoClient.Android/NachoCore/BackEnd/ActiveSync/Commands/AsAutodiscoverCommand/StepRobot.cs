@@ -542,8 +542,8 @@ namespace NachoCore.ActiveSync
                 }
                 if (0 < RetriesLeft--) {
                     ServerCertificate = null;
-                    var client = (IHttpClient)Activator.CreateInstance (HttpClientType, 
-                                     new HttpClientHandler () { AllowAutoRedirect = false });
+                    var handler = new HttpClientHandler () { AllowAutoRedirect = false };
+                    var client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler);
                     client.Timeout = CertTimeout;
                     ServerCertificatePeek.Instance.ValidationEvent += ServerCertificateEventHandler;
                     try {
@@ -553,6 +553,10 @@ namespace NachoCore.ActiveSync
                         StepSm.PostEvent ((uint)SmEvt.E.TempFail, "SRDRGSC0", null, 
                             string.Format ("SR:GetAsync Exception: {0}", ex.ToString ()));
                         return;
+                    }
+                    finally {
+                        client.Dispose ();
+                        handler.Dispose ();
                     }
                     ServerCertificatePeek.Instance.ValidationEvent -= ServerCertificateEventHandler;
                     if (null == ServerCertificate) {

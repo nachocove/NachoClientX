@@ -349,7 +349,7 @@ namespace NachoClient.iOS
 
             switch (item.FileType) {
             case 0:
-                ConfigureAttachmentView (cell, McAttachment.QueryById<McAttachment> (item.Id), item, cellIconImageView, textLabel, detailTextlabel, dateTextlabel, downloadImageView);
+                ConfigureAttachmentView (view, cell, McAttachment.QueryById<McAttachment> (item.Id), item, cellIconImageView, textLabel, detailTextlabel, dateTextlabel, downloadImageView);
                 break;
             case 1:
                 ConfigureNoteView (item, cellIconImageView, textLabel, detailTextlabel, dateTextlabel);
@@ -361,23 +361,30 @@ namespace NachoClient.iOS
 
         }
 
-        protected void ConfigureAttachmentView (UITableViewCell cell, McAttachment attachment, NcFileIndex item, UIImageView iconView, UILabel textLabel, UILabel detailTextLabel, UILabel dateTextLabel, UIImageView downloadImageView)
+        protected void ConfigureAttachmentView (SwipeActionView view, UITableViewCell cell, McAttachment attachment, NcFileIndex item, UIImageView iconView, UILabel textLabel, UILabel detailTextLabel, UILabel dateTextLabel, UIImageView downloadImageView)
         {
             if (null != attachment) {
                 downloaded = false;
                 float xOffset = isMultiSelecting ? 34 : 0;
                 StopAnimationsOnCell (cell);
 
-                if (McAbstrFileDesc.FilePresenceEnum.Complete == attachment.FilePresence) {
+                switch (attachment.FilePresence) {
+                case McAbstrFileDesc.FilePresenceEnum.Complete:
                     downloaded = true;
                     downloadImageView.Image = UIImage.FromFile (DownloadIcon);
                     downloadImageView.Hidden = true;
-                } else if (McAbstrFileDesc.FilePresenceEnum.Partial == attachment.FilePresence) {
+                    view.EnableSwipe ();
+                    break;
+                case McAbstrFileDesc.FilePresenceEnum.Partial:
                     vc.AttachmentAction (attachment.Id, cell);
-                } else {
+                    view.DisableSwipe ();
+                    break;
+                default:
                     (downloadImageView.Superview).BringSubviewToFront (downloadImageView);
                     downloadImageView.Image = UIImage.FromFile (DownloadIcon);
                     downloadImageView.Hidden = false;
+                    view.DisableSwipe ();
+                    break;
                 }
 
                 textLabel.Text = Path.GetFileNameWithoutExtension (item.DisplayName);
@@ -634,6 +641,7 @@ namespace NachoClient.iOS
                 subview.Layer.RemoveAllAnimations ();
                 subview.RemoveFromSuperview ();
             }
+            cell.UserInteractionEnabled = true;
         }
 
         UIView ViewWithImageName (string imageName)
@@ -647,6 +655,7 @@ namespace NachoClient.iOS
         // Do arrow with line animation followed by repeating arrow-only animations
         public void StartDownloadingAnimation (UITableViewCell cell)
         {
+            cell.UserInteractionEnabled = false;
             var iv = cell.ViewWithTag (DOWNLOAD_IMAGEVIEW_TAG) as UIImageView;
             iv.Image = UIImage.FromBundle (DownloadCircle);
             UIImageView line = new UIImageView (UIImage.FromBundle (DownloadLine));

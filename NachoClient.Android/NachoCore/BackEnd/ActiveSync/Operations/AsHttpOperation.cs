@@ -262,6 +262,7 @@ namespace NachoCore.ActiveSync
                 Cts = null;
             }
             if (null != Client) {
+                Client.Dispose ();
                 Client = null;
             }
         }
