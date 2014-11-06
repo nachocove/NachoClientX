@@ -388,34 +388,43 @@ namespace NachoCore.Model
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
         }
 
-        public static IEnumerable<McEmailMessage> QueryNeedsFetch (int accountId, int folderId, int limit)
-        {
-            return NcModel.Instance.Db.Query<McEmailMessage> (
-                "SELECT e.* FROM McEmailMessage AS e " +
-                " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
-                " WHERE " +
-                " e.AccountId = ? AND " +
-                " e.IsAwaitingDelete = 0 AND " +
-                " m.AccountId = ? AND " +
-                " m.ClassCode = ? AND " +
-                " m.FolderId = ? AND " +
-                " e.BodyState != 0 " +
-                " ORDER BY e.Score DESC, e.DateReceived DESC LIMIT ?",
-                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, limit);
-        }
-
         public static IEnumerable<McEmailMessage> QueryNeedsFetch (int accountId, int limit, double minScore)
         {
             return NcModel.Instance.Db.Query<McEmailMessage> (
                 "SELECT e.* FROM McEmailMessage AS e " +
-                " JOIN McBody AS b ON b.Id = e.BodyId" +
+                " LEFT OUTER JOIN McBody AS b ON b.Id = e.BodyId" +
                 " WHERE " +
                 " e.AccountId = ? AND " +
                 " e.IsAwaitingDelete = 0 AND " +
-                " e.Score >= ? AND " +
-                " b.FilePresence != ? " +
-                " ORDER BY e.Score DESC, e.DateReceived DESC LIMIT ?",
-                accountId, minScore, (int)McAbstrFileDesc.FilePresenceEnum.Complete, limit);
+                " e.FlagUtcStartDate < ? AND " +
+                " e.UserAction > -1 AND " +
+                " (e.Score > ? OR e.UserAction = 1) AND " +
+                " ((b.FilePresence != ? AND " +
+                "   b.FilePresence != ? AND " +
+                "   b.FilePresence != ?) OR " +
+                "  e.BodyId = 0) " +
+                "UNION " +
+                "SELECT e.* FROM McEmailMessage AS e " +
+                " LEFT OUTER JOIN McBody AS b ON b.Id = e.BodyId" +
+                " JOIN McEmailMessageDependency AS d ON e.Id = d.EmailMessageId " +
+                " WHERE " +
+                " e.AccountId = ? AND " +
+                " e.IsAwaitingDelete = 0 AND " +
+                " d.EmailAddressId IN (SELECT a.Id FROM McEmailAddress AS a WHERE a.IsVip != 0) AND " +
+                " ((b.FilePresence != ? AND " +
+                "   b.FilePresence != ? AND " +
+                "   b.FilePresence != ?) OR " +
+                "  e.BodyId = 0) " +
+                " ORDER BY e.DateReceived DESC LIMIT ?",
+                accountId, DateTime.UtcNow, minScore,
+                (int)McAbstrFileDesc.FilePresenceEnum.Complete,
+                (int)McAbstrFileDesc.FilePresenceEnum.Partial,
+                (int)McAbstrFileDesc.FilePresenceEnum.Error,
+                accountId,
+                (int)McAbstrFileDesc.FilePresenceEnum.Complete,
+                (int)McAbstrFileDesc.FilePresenceEnum.Partial,
+                (int)McAbstrFileDesc.FilePresenceEnum.Error,
+                limit);
         }
 
         public static List<NcEmailMessageIndex> QueryActiveMessageItemsByScore (int accountId, int folderId, double hotScore)

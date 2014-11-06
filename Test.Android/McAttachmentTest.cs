@@ -183,6 +183,42 @@ namespace Test.iOS
             trashatt.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Complete);
             trashatt.Insert ();
 
+            trash = new McEmailMessage () {
+                AccountId = 1,
+                ServerId = "error",
+                IsAwaitingDelete = false,
+                Score = 0.99,
+                DateReceived = DateTime.UtcNow,
+            };
+            trash.Insert ();
+            trashatt = new McAttachment () {
+                ItemId = trash.Id,
+                ClassCode = trash.GetClassCode (),
+                AccountId = trash.AccountId,
+                FileSize = 50000,
+                FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
+            };
+            trashatt.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Error);
+            trashatt.Insert ();
+
+            trash = new McEmailMessage () {
+                AccountId = 1,
+                ServerId = "partial",
+                IsAwaitingDelete = false,
+                Score = 0.99,
+                DateReceived = DateTime.UtcNow,
+            };
+            trash.Insert ();
+            trashatt = new McAttachment () {
+                ItemId = trash.Id,
+                ClassCode = trash.GetClassCode (),
+                AccountId = trash.AccountId,
+                FileSize = 50000,
+                FileSizeAccuracy = McAbstrFileDesc.FileSizeAccuracyEnum.Estimate,
+            };
+            trashatt.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Partial);
+            trashatt.Insert ();
+
             var result = McAttachment.QueryNeedsFetch (1, 2, 0.9, 100000);
             Assert.AreEqual (2, result.Count ());
             Assert.True (result.Any (x => 50001 == x.FileSize));
