@@ -24,6 +24,7 @@ namespace NachoClient.iOS
         protected UIView pageContainerView;
         // full screen
 
+        protected const float DESCRIPTION_TEXT_WIDTH = 284; //As defined by Hugo
         // the phone-image content
         protected UIView contentContainer;
 
@@ -149,15 +150,15 @@ namespace NachoClient.iOS
             pageContainerView.BackgroundColor = A.Color_NachoGreen;
 
             if (UIScreen.MainScreen.Bounds.Height == 480) {
-                this.contentContainer = new UIView (new RectangleF (54, 60, 212, 306)); // see size of helpercontainer
+                this.contentContainer = new UIView (new RectangleF (View.Frame.Width / 2 - GetContentSize ().Width / 2, 60, GetContentSize ().Width, GetContentSize ().Height)); // see size of helpercontainer
                 this.helperContainer = new UIView (new RectangleF (0, this.contentContainer.Frame.Bottom, pageContainerView.Frame.Width, pageContainerView.Frame.Bottom - this.contentContainer.Frame.Bottom));// contains the helpertext and labels  
                 this.helperTitleText = new UILabel (new RectangleF (0, 12, helperContainer.Frame.Width, 20));
-                this.helperWebView = new UIWebView (new RectangleF ((helperContainer.Frame.Width - 284) / 2, helperTitleText.Frame.Bottom, 284, 40));
+                this.helperWebView = new UIWebView (new RectangleF ((helperContainer.Frame.Width - DESCRIPTION_TEXT_WIDTH) / 2, helperTitleText.Frame.Bottom, DESCRIPTION_TEXT_WIDTH, 40));
             } else {
-                this.contentContainer = new UIView (new RectangleF (54, 85, 212, 306)); // see size of helpercontainer
+                this.contentContainer = new UIView (new RectangleF (View.Frame.Width / 2 - GetContentSize ().Width / 2, 85, GetContentSize ().Width, GetContentSize ().Height)); // see size of helpercontainer
                 this.helperContainer = new UIView (new RectangleF (0, this.contentContainer.Frame.Bottom, pageContainerView.Frame.Width, 130));// contains the helpertext and labels  
                 this.helperTitleText = new UILabel (new RectangleF (0, 24, helperContainer.Frame.Width, 20));
-                this.helperWebView = new UIWebView (new RectangleF ((helperContainer.Frame.Width - 284) / 2, helperTitleText.Frame.Bottom, 284, 50));
+                this.helperWebView = new UIWebView (new RectangleF ((helperContainer.Frame.Width - DESCRIPTION_TEXT_WIDTH) / 2, helperTitleText.Frame.Bottom, DESCRIPTION_TEXT_WIDTH, 50));
             }
 
             pageView = new UIView (pageContainerView.Frame);
@@ -284,6 +285,15 @@ namespace NachoClient.iOS
             }
         }
 
+        private SizeF GetContentSize ()
+        {
+            UIImageView contentImage;
+            using (var image = UIImage.FromBundle ("Slide03BG")) {
+                contentImage = new UIImageView (image);
+            }
+            return new SizeF (contentImage.Frame.Width, contentImage.Frame.Height);
+        }
+              
         private void CreateNachos (string leftNachos, string rightNachos)
         {
             UIImageView leftSideNachos = new UIImageView (UIImage.FromBundle (leftNachos));
