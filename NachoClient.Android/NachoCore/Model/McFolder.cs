@@ -309,8 +309,11 @@ namespace NachoCore.Model
             var potentialFolder = ServerEndQueryByServerId (accountId, serverId);
             NcAssert.NotNull (potentialFolder, "Server to move should exist");
 
-            NcAssert.True (potentialFolder.IsClientOwned == false, "Folder to be moved should be synced");
+            NcAssert.False (potentialFolder.IsClientOwned, "Folder to be moved should be synced");
+            NcAssert.False (potentialFolder.IsDistinguished, "Folder to be moved must not be distinguished");
 
+            // TODO: we should also give new ServerId values to everything. It should not matter.
+            // But a bug that makes it matter would be hard to fix!
             potentialFolder = potentialFolder.UpdateWithOCApply<McFolder> ((record) => {
                 var target = (McFolder)record;
                 target.IsClientOwned = true;

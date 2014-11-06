@@ -27,6 +27,11 @@ namespace NachoCore.Utils
         {
         }
 
+        public static void False (bool b, string message = "")
+        {
+            NcAssert.True (!b, message);
+        }
+
         public static void True (bool b, string message = "")
         {
             if (!b) {
