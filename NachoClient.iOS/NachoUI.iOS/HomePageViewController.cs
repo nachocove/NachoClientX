@@ -24,7 +24,7 @@ namespace NachoClient.iOS
         protected UIView pageContainerView;
         // full screen
 
-        protected const float descriptionTextWidth = 284; //As defined by Hugo
+        protected const float DESCRIPTION_TEXT_WIDTH = 284; //As defined by Hugo
         // the phone-image content
         protected UIView contentContainer;
 
