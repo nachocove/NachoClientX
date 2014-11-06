@@ -1639,7 +1639,6 @@
     <BundleResource Include="Resources\Slide05BG%402x.png" />
     <BundleResource Include="Resources\Slide05Email%402x.png" />
     <BundleResource Include="Resources\Slide05SwipeLeft%402x.png" />
-    <BundleResource Include="Resources\Slide05SwipeRight%402x.png" />
     <BundleResource Include="Resources\BG-S01%402x.png" />
     <BundleResource Include="Resources\SlideNav-SwipeArrow%402x.png" />
     <BundleResource Include="Resources\Slide02BG%402x.png" />
