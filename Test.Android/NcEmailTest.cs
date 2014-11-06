@@ -566,25 +566,25 @@ namespace Test.Common
                 DateReceived = DateTime.UtcNow.AddDays (-2),
             };
             keeper1.Insert ();
-            var keeper2 = new McEmailMessage () {
+            var keeper3 = new McEmailMessage () {
                 AccountId = 1,
                 ServerId = "keeper2",
-                IsAwaitingDelete = false,
-                Score = 0.98,
-                BodyId = bodyPartial_1.Id,
-                DateReceived = DateTime.UtcNow.AddDays (-3),
-            };
-            keeper2.Insert ();
-            var fallOff = new McEmailMessage () {
-                AccountId = 1,
-                ServerId = "falloff",
                 IsAwaitingDelete = false,
                 Score = 0.97,
                 BodyId = bodyMissing_1.Id,
                 DateReceived = DateTime.UtcNow.AddDays (-1),
             };
-            fallOff.Insert ();
+            keeper3.Insert ();
             var trash = new McEmailMessage () {
+                AccountId = 1,
+                ServerId = "mid_download",
+                IsAwaitingDelete = false,
+                Score = 0.98,
+                BodyId = bodyPartial_1.Id,
+                DateReceived = DateTime.UtcNow.AddDays (-3),
+            };
+            trash.Insert ();
+            trash = new McEmailMessage () {
                 AccountId = 2,
                 ServerId = "other_account",
                 IsAwaitingDelete = false,
@@ -632,9 +632,8 @@ namespace Test.Common
             var result = McEmailMessage.QueryNeedsFetch (1, 2, 0.9);
             Assert.AreEqual (2, result.Count ());
             Assert.True (result.Any (x => "keeper1" == x.ServerId));
-            // Strategy should not be tugging on Partial bodies. 
-            Assert.False (result.Any (x => "keeper2" == x.ServerId));
-            Assert.AreEqual ("keeper1", result.First ().ServerId);
+            Assert.True (result.Any (x => "keeper2" == x.ServerId));
+            Assert.AreEqual ("keeper2", result.First ().ServerId);
         }
 
         public string CategoryTestXML = @"

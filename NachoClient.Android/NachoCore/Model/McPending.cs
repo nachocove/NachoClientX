@@ -511,6 +511,14 @@ namespace NachoCore.Model
                         email.BodyId = body.Id;
                         email.Update ();
                     }
+                } else if (McPending.Operations.AttachmentDownload == Operation) {
+                    var att = McAttachment.QueryById<McAttachment> (AttachmentId);
+                    if (null == att) {
+                        Log.Error (Log.LOG_AS, "ResolveAsHardFail: AttachmentId {0} finds no attachment", AttachmentId);
+                    } else {
+                        att.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Error);
+                        att.Update ();
+                    }
                 }
                 // TODO: Status-ind for successors as well.
                 UnblockSuccessors (StateEnum.Failed);

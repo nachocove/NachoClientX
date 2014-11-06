@@ -638,12 +638,14 @@ namespace Test.iOS
             }
             Fetch_Atts = new List<McAttachment> ();
             for (int i = 0; i < count; i++) {
+                var body = McBody.InsertFile (accountId, McAbstrFileDesc.BodyTypeEnum.PlainText_1, "foo");
                 var email = new McEmailMessage () {
                     AccountId = accountId,
                     ServerId = string.Format ("dummy{0}", i),
                     IsAwaitingDelete = false,
                     Score = 0.91,
                     DateReceived = DateTime.UtcNow.AddDays (-2),
+                    BodyId = body.Id,
                 };
                 email.Insert ();
                 var att = new McAttachment () {

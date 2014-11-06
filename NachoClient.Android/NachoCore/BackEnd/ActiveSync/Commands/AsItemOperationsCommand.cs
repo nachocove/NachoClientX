@@ -134,6 +134,51 @@ namespace NachoCore.ActiveSync
             return null;
         }
 
+        private void MaybeErrorFileDesc (XElement xmlFileReference, XElement xmlServerId)
+        {
+            if (null != FindPending (xmlFileReference, xmlServerId)) {
+                // McPending-based requests will deal with this in the McPending logic.
+                // TODO: unify result logic for API-based and speculative fetches.
+                return;
+            }
+            if (null != xmlFileReference) {
+                // This means we are processing an AttachmentDownload prefetch response.
+                NcModel.Instance.RunInTransaction (() => {
+                    var attachment = Attachments.Where (x => x.FileReference == xmlFileReference.Value).FirstOrDefault ();
+                    if (null == attachment) {
+                        Log.Error (Log.LOG_AS, "MaybeErrorFileDesc: could not find FileReference {0}", xmlFileReference.Value);
+                    } else {
+                        attachment.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Error);
+                        attachment.Update ();
+                    }
+                });
+            } else if (null != xmlServerId) {
+                // This means we are processing a body download prefetch response.
+                NcModel.Instance.RunInTransaction (() => {
+                    var item = McEmailMessage.QueryByServerId<McEmailMessage> (BEContext.Account.Id, xmlServerId.Value);
+                    if (null == item) {
+                        Log.Error (Log.LOG_AS, "MaybeErrorFileDesc: could not find McEmailMessage with ServerId {0}", xmlServerId.Value);
+                    } else {
+                        if (0 == item.BodyId) {
+                            var body = McBody.InsertError (BEContext.Account.Id);
+                            item.BodyId = body.Id;
+                            item.Update ();
+                        } else {
+                            var body = McBody.QueryById<McBody> (item.BodyId);
+                            if (null == body) {
+                                Log.Error (Log.LOG_AS, "MaybeErrorFileDesc: could not find McBody with Id {0}", item.BodyId);
+                            } else {
+                                body.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Error);
+                                body.Update ();
+                            }
+                        }
+                    }
+                });
+            } else {
+                Log.Error (Log.LOG_AS, "MaybeErrorFileDesc: null xmlFileReference and xmlServerId");
+            }
+        }
+
         private void MaybeResolveAsHardFail (McPending pending, NcResult.WhyEnum why)
         {
             if (null != pending) {
@@ -240,12 +285,14 @@ namespace NachoCore.ActiveSync
                     case Xml.ItemOperations.StatusCode.StoreUnknownOrNotSupported_9:
                     case Xml.ItemOperations.StatusCode.AttachmentOrIdInvalid_15:
                     case Xml.ItemOperations.StatusCode.ProtocolErrorMissing_155:
+                        MaybeErrorFileDesc (xmlFileReference, xmlServerId);
                         MaybeResolveAsHardFail (FindPending (xmlFileReference, xmlServerId), NcResult.WhyEnum.ProtocolError);
                         break;
 
                     case Xml.ItemOperations.StatusCode.ServerError_3:
                     case Xml.ItemOperations.StatusCode.IoFailure_12:
                     case Xml.ItemOperations.StatusCode.ConversionFailure_14:
+                        MaybeErrorFileDesc (xmlFileReference, xmlServerId);
                         MaybeResolveAsHardFail (FindPending (xmlFileReference, xmlServerId), NcResult.WhyEnum.ServerError);
                         break;
 
@@ -254,23 +301,28 @@ namespace NachoCore.ActiveSync
                     case Xml.ItemOperations.StatusCode.DocLibFailedServerConn_7:
                     case Xml.ItemOperations.StatusCode.PartialFailure_17:
                     case Xml.ItemOperations.StatusCode.ActionNotSupported_156:
+                        MaybeErrorFileDesc (xmlFileReference, xmlServerId);
                         MaybeResolveAsHardFail (FindPending (xmlFileReference, xmlServerId), NcResult.WhyEnum.Unknown);
                         break;
 
                     case Xml.ItemOperations.StatusCode.DocLibAccessDeniedOrMissing_6:
                     case Xml.ItemOperations.StatusCode.FileEmpty_10:
+                        MaybeErrorFileDesc (xmlFileReference, xmlServerId);
                         MaybeResolveAsHardFail (FindPending (xmlFileReference, xmlServerId), NcResult.WhyEnum.MissingOnServer);
                         break;
 
                     case Xml.ItemOperations.StatusCode.RequestTooLarge_11:
+                        MaybeErrorFileDesc (xmlFileReference, xmlServerId);
                         MaybeResolveAsHardFail (FindPending (xmlFileReference, xmlServerId), NcResult.WhyEnum.TooBig);
                         break;
 
                     case Xml.ItemOperations.StatusCode.ResourceAccessDenied_16:
+                        MaybeErrorFileDesc (xmlFileReference, xmlServerId);
                         MaybeResolveAsHardFail (FindPending (xmlFileReference, xmlServerId), NcResult.WhyEnum.AccessDeniedOrBlocked);
                         break;
 
                     default:
+                        MaybeErrorFileDesc (xmlFileReference, xmlServerId);
                         Log.Error (Log.LOG_AS, "ItemOperations: unknown Status {0}", innerStatus);
                         break;
                     }

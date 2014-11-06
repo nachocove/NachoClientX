@@ -29,11 +29,21 @@ namespace NachoCore.Model
         /// <returns>A new McAttachment object that has been added to the database</returns>
         public static McAttachment InsertFile (int accountId, WriteFileDelegate writer)
         {
-            var body = new McAttachment () {
+            var att = new McAttachment () {
                 AccountId = accountId,
             };
-            body.CompleteInsertFile (writer);
-            return body;
+            att.CompleteInsertFile (writer);
+            return att;
+        }
+
+        public static McAttachment InsertError (int accountId)
+        {
+            var att = new McAttachment () {
+                AccountId = accountId,
+                FilePresence = FilePresenceEnum.Error,
+            };
+            att.CompleteInsertSaveStart ();
+            return att;
         }
 
         /// <summary>
