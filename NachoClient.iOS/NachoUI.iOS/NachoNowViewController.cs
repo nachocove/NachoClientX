@@ -230,16 +230,6 @@ namespace NachoClient.iOS
             if (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated == s.Status.SubKind) {
                 RefreshPriorityInboxIfVisible ();
             }
-            if (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded == s.Status.SubKind) {
-                var token = s.Tokens.FirstOrDefault ();
-                Log.Info (Log.LOG_UI, "NachoNowViewController: mailMessageBodyDownloadSucceeded {0}", token.ToString ());
-                ProcessDownloadComplete (true, token);
-            }
-            if (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed == s.Status.SubKind) {
-                var token = s.Tokens.FirstOrDefault ();
-                Log.Error (Log.LOG_UI, "NachoNowViewController: mailMessageBodyDownloadFailed {0}", token.ToString ());
-                ProcessDownloadComplete (false, token);
-            }
         }
 
         protected void RefreshPriorityInboxIfVisible ()
@@ -276,33 +266,6 @@ namespace NachoClient.iOS
                 calendarNeedsRefresh = false;
                 calendarSource.Refresh ();
                 calendarTableView.ReloadData ();
-            }
-        }
-
-        private void ProcessDownloadComplete (bool succeed, string token)
-        {
-            var visibleIndices = carouselView.IndexesForVisibleItems;
-            foreach (NSNumber nsIndex in visibleIndices) {
-                int index = nsIndex.IntValue;
-                // Ignore placeholders
-                if ((0 > index) || (carouselView.NumberOfItems <= index)) {
-                    continue;
-                }
-                var currentView = carouselView.ItemViewAtIndex (index);
-                if (null == currentView) {
-                    continue;
-                }
-                if (HotListCarouselDataSource.PLACEHOLDER_TAG == currentView.Tag) {
-                    continue;
-                }
-                var bodyView = (BodyView)currentView.ViewWithTag (HotListCarouselDataSource.PREVIEW_TAG);
-                NcAssert.True (null != bodyView);
-                // To avoid unnecessary reload, we only reload if the current item was downloading
-                // and the body is now completely downloaded.
-                if (!bodyView.DownloadComplete (succeed, token)) {
-                    continue;
-                }
-                carouselView.ReloadItemAtIndex (index, true);
             }
         }
 

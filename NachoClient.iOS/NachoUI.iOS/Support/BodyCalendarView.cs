@@ -38,36 +38,12 @@ namespace NachoClient.iOS
         private bool cancelActions = false;
         private float viewWidth;
 
-        private SizeF _contentSize;
-        public SizeF ContentSize {
-            get {
-                return _contentSize;
-            }
-            protected set {
-                _contentSize = value;
-            }
-        }
-
-        public void ScrollTo (PointF upperLeft)
+        public BodyCalendarView (float Y, float width, MimePart part)
+            : base (new RectangleF(0, Y, width, 150))
         {
-            // Calendar view is not scrollable
-        }
-
-        public BodyCalendarView (IntPtr ptr) : base (ptr)
-        {
-        }
-
-        public BodyCalendarView (float width) : base (new RectangleF (0, 0, width, 150))
-        {
-            ViewHelper.SetDebugBorder (this, UIColor.Magenta);
-
             viewWidth = width;
             Tag = CALENDAR_PART_TAG;
-        }
 
-        public void Configure (MimePart part)
-        {
-            // Decode iCal
             var textPart = part as TextPart;
             IICalendar iCal;
             using (var stringReader = new StringReader (textPart.Text)) {
@@ -77,6 +53,7 @@ namespace NachoClient.iOS
 
             if (null == evt) {
                 // The text/calendar part doesn't contain any events. There is nothing to show.
+                ViewFramer.Create (this).Height (1);
                 return;
             }
 
@@ -99,9 +76,24 @@ namespace NachoClient.iOS
                 }
                 ShowRequestChoicesBar (evt);
             }
+        }
 
-            // Save the content size
-            _contentSize = Frame.Size;
+        public UIView uiView ()
+        {
+            return this;
+        }
+
+        public SizeF ContentSize {
+            get {
+                return Frame.Size;
+            }
+        }
+
+        public void ScrollingAdjustment (RectangleF frame, PointF contentOffset)
+        {
+            // The calendar section does not scroll or resize.
+            // The only thing that can be adjusted is the view's origin.
+            ViewFramer.Create (this).X (frame.X - contentOffset.X).Y (frame.Y - contentOffset.Y);
         }
 
         /// <summary>
@@ -697,12 +689,6 @@ namespace NachoClient.iOS
 
             // Remove the item from the calendar.
             BackEnd.Instance.DeleteCalCmd (calendarItem.AccountId, calendarItem.Id);
-        }
-
-        public string LayoutInfo ()
-        {
-            return String.Format ("BodyCalendarView: offset={0}  frame={1}  content={2}",
-                Pretty.PointF (Frame.Location), Pretty.SizeF (Frame.Size), Pretty.SizeF (ContentSize));
         }
 
         protected override void Dispose (bool disposing)

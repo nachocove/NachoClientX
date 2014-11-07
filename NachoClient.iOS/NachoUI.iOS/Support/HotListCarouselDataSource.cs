@@ -70,8 +70,6 @@ namespace NachoClient.iOS
             } else {
                 // Make sure we're getting an item view
                 NcAssert.True (PLACEHOLDER_TAG != view.Tag);
-                var previewView = view.ViewWithTag (PREVIEW_TAG) as BodyView;
-                previewView.Initialize ();
             }
             ConfigureView (view, (int)index);
             return view;
@@ -168,8 +166,6 @@ namespace NachoClient.iOS
             messageHeaderView.SetAllBackgroundColors (UIColor.White);
             view.AddSubview (messageHeaderView);
 
-            var bottomY = frame.Height - 44; // toolbar height is 44
-
             // Reminder image view
             var reminderImageView = new UIImageView (new RectangleF (65, 75 + 4, 12, 12));
             reminderImageView.Image = UIImage.FromBundle ("inbox-icn-deadline");
@@ -185,9 +181,8 @@ namespace NachoClient.iOS
 
             // Preview label view
             // Size fields will be recalculated after text is known
-            var previewLabelView = new BodyView (new RectangleF (12, 70, viewWidth - 15 - 12, bottomY - 60), view);
+            var previewLabelView = BodyView.FixedSizeBodyView (new RectangleF (12, 70, viewWidth - 15 - 12, view.Frame.Height - 128));
             previewLabelView.Tag = PREVIEW_TAG;
-            previewLabelView.UserInteractionEnabled = false;
             view.AddSubview (previewLabelView);
 
             var toolbar = new MessageToolbar (new RectangleF (0, frame.Height - 44, frame.Width, 44));
@@ -383,16 +378,13 @@ namespace NachoClient.iOS
             }
 
             // Size of preview, depends on reminder view
-            var previewView = view.ViewWithTag (PREVIEW_TAG) as BodyView;
-            previewView.Hidden = false;
-
             var previewViewHeight = view.Frame.Height - 80 - previewViewAdjustment;
             previewViewHeight -= 44; // toolbar
             previewViewHeight -= 4; // padding
 
+            var previewView = view.ViewWithTag (PREVIEW_TAG) as BodyView;
             previewView.Configure (message);
-            ViewFramer.Create (previewView).Height (previewViewHeight);
-            previewView.Layout (previewView.Frame.X, previewView.Frame.Y + previewViewAdjustment, previewView.Frame.Width, previewViewHeight);
+            previewView.Resize (new RectangleF (12, 70 + previewViewAdjustment, previewView.Frame.Width, previewViewHeight));
         }
 
         public override uint NumberOfPlaceholdersInCarousel (iCarousel carousel)
@@ -509,7 +501,7 @@ namespace NachoClient.iOS
             if (null == previewLabelView) {
                 return;
             }
-            previewLabelView.Focus ();
+            previewLabelView.PrioritizeBodyDownload ();
         }
     }
 }
