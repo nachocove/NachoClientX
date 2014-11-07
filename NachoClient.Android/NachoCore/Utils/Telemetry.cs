@@ -725,14 +725,20 @@ namespace NachoCore.Utils
                 NcTask.Cts.Token.ThrowIfCancellationRequested ();
                 Task.WaitAll (new Task[] { Task.Delay (5000, NcTask.Cts.Token) });
             }
+            Log.Info (Log.LOG_LIFECYCLE, "Telemetry starts running");
 
             int eventDeleted = 0;
             SendSha1AccountEmailAddresses ();
+            DateTime heartBeat = DateTime.Now;
             while (true) {
                 // TODO - We need to be smart about when we run. 
                 // For example, if we don't have WiFi, it may not be a good
                 // idea to upload a lot of data. The exact algorithm is TBD.
                 // But for now, let's not run when we're scrolling.
+                if ((DateTime.Now - heartBeat).TotalSeconds > 30) {
+                    heartBeat = DateTime.Now;
+                    Console.WriteLine ("Telemetry heartbeat {0}", heartBeat);
+                }
                 NcAssert.True (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId);
                 TelemetryEvent tEvent = null;
                 McTelemetryEvent dbEvent = null;
@@ -747,8 +753,12 @@ namespace NachoCore.Utils
                     }
                     if (null == dbEvent) {
                         // No pending event. Wait for one.
+                        DateTime then = DateTime.Now;
                         while (!DbUpdated.WaitOne (NcTask.MaxCancellationTestInterval)) {
                             NcTask.Cts.Token.ThrowIfCancellationRequested ();
+                            if (30 < (DateTime.Now - then).TotalSeconds) {
+                                Console.WriteLine ("Telemetry has no event for more than 30 seconds");
+                            }
                         }
                         continue;
                     } else {
@@ -771,6 +781,10 @@ namespace NachoCore.Utils
 
                     if (null != dbEvent) {
                         var rowsDeleted = dbEvent.Delete ();
+                        if (1 != rowsDeleted) {
+                            Log.Error (Log.LOG_UTILS, "Telemetry fails to delete event. (rowsDeleted={0}, id={1})",
+                                rowsDeleted, dbEvent.Id);
+                        }
                         NcAssert.True (1 == rowsDeleted);
                         eventDeleted = (eventDeleted + 1) & 0xfff;
                         if (0 == eventDeleted) {
