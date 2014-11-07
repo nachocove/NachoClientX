@@ -43,7 +43,7 @@ namespace NachoCore.Utils
         /// Return the starting time for the event in UTC, without triggering the DDay.iCal
         /// time zone code that would cause the app to crash.
         /// </summary>
-        public static DateTime EventStartTime(DDay.iCal.Event evt, McCalendar c)
+        public static DateTime EventStartTime (DDay.iCal.Event evt, McCalendar c)
         {
             if (null != c) {
                 return c.StartTime;
@@ -62,7 +62,7 @@ namespace NachoCore.Utils
         /// Return the ending time for the event in UTC, without triggering the DDay.iCal
         /// time zone code that would cause the app to crash.
         /// </summary>
-        public static DateTime EventEndTime(DDay.iCal.Event evt, McCalendar c)
+        public static DateTime EventEndTime (DDay.iCal.Event evt, McCalendar c)
         {
             if (null != c) {
                 return c.EndTime;
@@ -84,7 +84,7 @@ namespace NachoCore.Utils
         /// </summary>
         private static DateTime TimeZoneAdjustment (IICalendar iCal, string tzid, DateTime time)
         {
-            if (null == iCal || string.IsNullOrEmpty(tzid)) {
+            if (null == iCal || string.IsNullOrEmpty (tzid)) {
                 return time;
             }
             bool isDaylight = DateTime.SpecifyKind (time, DateTimeKind.Unspecified).IsDaylightSavingTime ();
@@ -1118,8 +1118,10 @@ namespace NachoCore.Utils
             var notifier = NachoPlatform.Notif.Instance;
             notifier.CancelNotif (e.Id);
             var notificationTime = e.StartTime.AddMinutes (-reminder);
+            var calendarItem = e.GetCalendarItemforEvent ();
+            var message = Pretty.Join (Pretty.SubjectString (calendarItem.Subject), Pretty.FormatAlert (reminder));
             if (DateTime.UtcNow < notificationTime) {
-                notifier.ScheduleNotif (e.Id, e.StartTime.AddMinutes (-reminder), Pretty.FormatAlert (reminder));
+                notifier.ScheduleNotif (e.Id, e.StartTime.AddMinutes (-reminder), message);
             }
         }
 
@@ -1155,7 +1157,7 @@ namespace NachoCore.Utils
                 // the effective ranges of the rules. So we also look for an adjustment rule that will
                 // be applicable within the near future.
                 if (now < adjustment.DateStart && (adjustment.DateStart - now).TotalDays < 365 &&
-                        (null == currentAdjustment || adjustment.DateStart < currentAdjustment.DateStart)) {
+                    (null == currentAdjustment || adjustment.DateStart < currentAdjustment.DateStart)) {
                     currentAdjustment = adjustment;
                 }
             }
@@ -1178,7 +1180,7 @@ namespace NachoCore.Utils
             return TimeZoneInfo.CreateCustomTimeZone (
                 local.Id, local.BaseUtcOffset, local.DisplayName, local.StandardName, local.DaylightName,
                 new TimeZoneInfo.AdjustmentRule[] { TimeZoneInfo.AdjustmentRule.CreateAdjustmentRule (
-                    DateTime.MinValue.Date, DateTime.MaxValue.Date, currentAdjustment.DaylightDelta, dstStart, dstEnd)
+                        DateTime.MinValue.Date, DateTime.MaxValue.Date, currentAdjustment.DaylightDelta, dstStart, dstEnd)
                 });
         }
 

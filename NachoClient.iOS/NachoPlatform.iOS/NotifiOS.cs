@@ -48,7 +48,7 @@ namespace NachoPlatform
                 var notif = FindNotif (handle);
                 NcAssert.True (null == notif, string.Format ("ScheduleNotif: attempt schedule another notif with same handle {0}.", handle));
                 notif = new UILocalNotification () {
-                    AlertAction = "Nacho Mail",
+                    AlertAction = null,
                     AlertBody = message,
                     UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (handle), NachoClient.iOS.AppDelegate.EventNotificationKey),
                     SoundName = UILocalNotification.DefaultSoundName,

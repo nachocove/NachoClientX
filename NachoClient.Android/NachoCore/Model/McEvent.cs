@@ -46,6 +46,15 @@ namespace NachoCore.Model
             notifier.CancelNotif (this.Id);
             return base.Delete ();
         }
+
+        public McAbstrCalendarRoot GetCalendarItemforEvent()
+        {
+            if (0 != ExceptionId) {
+                return McException.QueryById<McException> (ExceptionId);
+            } else {
+                return McCalendar.QueryById<McCalendar> (CalendarId);
+            }
+        }
     }
 }
 
