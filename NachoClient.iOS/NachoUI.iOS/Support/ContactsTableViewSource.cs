@@ -6,7 +6,6 @@ using System.Drawing;
 using MonoTouch.UIKit;
 using MonoTouch.Foundation;
 using System.Collections.Generic;
-using MCSwipeTableViewCellBinding;
 using NachoCore.Model;
 using NachoCore;
 using NachoCore.Utils;
@@ -316,9 +315,9 @@ namespace NachoClient.iOS
             return cell;
         }
 
-        public MCSwipeTableViewCell CreateCell (McContact contact, UITableView tableView)
+        public UITableViewCell CreateCell (McContact contact, UITableView tableView)
         {
-            var cell = new MCSwipeTableViewCell (UITableViewCellStyle.Subtitle, ContactCellReuseIdentifier);
+            var cell = new UITableViewCell (UITableViewCellStyle.Subtitle, ContactCellReuseIdentifier);
             NcAssert.True (null != cell);
 
             NcAssert.True (null == cell.ViewWithTag (TITLE_LABEL_TAG));
@@ -411,69 +410,74 @@ namespace NachoClient.iOS
 
         protected void CallSwipeHandler (McContact contact)
         {
-            if (contact.PhoneNumbers.Count == 0) {
-                //TODO: Display a 'enter phone number' for the contact. 
-                SwipedCall (contact.GetPhoneNumber());
-                return;
-            }
-
-            if (contact.PhoneNumbers.Count == 1) {
-                if (!contact.PhoneNumbers.FirstOrDefault ().IsDefault) {
-                    contact.PhoneNumbers.FirstOrDefault ().IsDefault = true;
-                    contact.Update ();
-                }
-                SwipedCall (contact.GetPhoneNumber());
-                return;
-            }
-
-            if (contact.PhoneNumbers.Count > 1) {
-                foreach (var e in contact.PhoneNumbers) {
-                    if (e.IsDefault) {
-                        SwipedCall (e.Value);
-                        return;
-                    }
-                }
-                //TODO: Display a 'default-phone chooser' for the contact
-                contact.PhoneNumbers.FirstOrDefault ().IsDefault = true;
-                contact.Update ();
-                SwipedCall (contact.GetPhoneNumber());
-                return;
-            }
+            SwipedCall (contact.GetPhoneNumber());
+            return;
+//            if (contact.PhoneNumbers.Count == 0) {
+//                //TODO: Display a 'enter phone number' for the contact. 
+//                SwipedCall (contact.GetPhoneNumber());
+//                return;
+//            }
+//
+//            if (contact.PhoneNumbers.Count == 1) {
+//                if (!contact.PhoneNumbers.FirstOrDefault ().IsDefault) {
+//                    contact.PhoneNumbers.FirstOrDefault ().IsDefault = true;
+//                    contact.Update ();
+//                }
+//                SwipedCall (contact.GetPhoneNumber());
+//                return;
+//            }
+//
+//            if (contact.PhoneNumbers.Count > 1) {
+//                foreach (var e in contact.PhoneNumbers) {
+//                    if (e.IsDefault) {
+//                        SwipedCall (e.Value);
+//                        return;
+//                    }
+//                }
+//                //TODO: Display a 'default-phone chooser' for the contact
+//                contact.PhoneNumbers.FirstOrDefault ().IsDefault = true;
+//                contact.Update ();
+//                SwipedCall (contact.GetPhoneNumber());
+//                return;
+//            }
         }
 
         protected void EmailSwipeHandler (McContact contact)
         {
-            if (contact.EmailAddresses.Count == 0) {
-                //TODO: Display a 'enter email address' for the contact. 
-                SwipedEmail (contact.GetEmailAddress());
-                return;
-            }
+            SwipedEmail (contact.GetEmailAddress());
+            return;
 
-            if (contact.EmailAddresses.Count == 1) {
-                if (!contact.EmailAddresses.FirstOrDefault ().IsDefault) {
-                    contact.EmailAddresses.FirstOrDefault ().IsDefault = true;
-                    contact.Update ();
-                }
-                SwipedEmail (contact.GetEmailAddress());
-                return;
-            }
-
-            if (contact.EmailAddresses.Count > 1) {
-                foreach (var e in contact.EmailAddresses) {
-                    if (e.IsDefault) {
-                        SwipedEmail (e.Value);
-                        return;
-                    }
-                }
-                //TODO: Display a 'default-email chooser' for the contact
-                contact.EmailAddresses.FirstOrDefault ().IsDefault = true;
-                contact.Update ();
-                SwipedEmail (contact.GetEmailAddress());
-                return;
-            }
+//            if (contact.EmailAddresses.Count == 0) {
+//                //TODO: Display a 'enter email address' for the contact. 
+//                SwipedEmail (contact.GetEmailAddress());
+//                return;
+//            }
+//
+//            if (contact.EmailAddresses.Count == 1) {
+//                if (!contact.EmailAddresses.FirstOrDefault ().IsDefault) {
+//                    contact.EmailAddresses.FirstOrDefault ().IsDefault = true;
+//                    contact.Update ();
+//                }
+//                SwipedEmail (contact.GetEmailAddress());
+//                return;
+//            }
+//
+//            if (contact.EmailAddresses.Count > 1) {
+//                foreach (var e in contact.EmailAddresses) {
+//                    if (e.IsDefault) {
+//                        SwipedEmail (e.Value);
+//                        return;
+//                    }
+//                }
+//                //TODO: Display a 'default-email chooser' for the contact
+//                contact.EmailAddresses.FirstOrDefault ().IsDefault = true;
+//                contact.Update ();
+//                SwipedEmail (contact.GetEmailAddress());
+//                return;
+//            }
         }
 
-        public void ConfigureCell (MCSwipeTableViewCell cell, McContact contact)
+        public void ConfigureCell (UITableViewCell cell, McContact contact)
         {
             var titleLabel = cell.ViewWithTag (TITLE_LABEL_TAG) as UILabel;
             var subtitle1Label = cell.ViewWithTag (SUBTITLE1_LABEL_TAG) as UILabel;
