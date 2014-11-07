@@ -1646,6 +1646,10 @@
     <BundleResource Include="Resources\Slide03Card02%402x.png" />
     <BundleResource Include="Resources\Slide04BG%402x.png" />
     <BundleResource Include="Resources\Slide05SwipeRight%402x.png" />
+    <BundleResource Include="Resources\contacts-icn-email%402x.png" />
+    <BundleResource Include="Resources\contacts-icn-phone%402x.png" />
+    <BundleResource Include="Resources\contacts-vip-checked%402x.png" />
+    <BundleResource Include="Resources\contacts-vip%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
