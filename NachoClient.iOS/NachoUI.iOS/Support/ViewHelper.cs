@@ -75,35 +75,60 @@ namespace NachoClient.iOS
             return InnerFrameWithInset (outerFrame, inset, InsetMode.BOTH, InsetMode.BOTH);
         }
 
-        private static void DumpView<T> (UIView view, int indentation)
+        private static string ViewInfo (UIView view, string tagName)
         {
-            string msg = "";
-            for (int n = 0; n < indentation; n++) {
-                msg += " ";
+            string result = view.GetType ().Name;
+            if (!string.IsNullOrEmpty (tagName)) {
+                result += string.Format (" [{0}]", tagName);
             }
-            T tag = (T)Enum.Parse (typeof(T), view.Tag.ToString ());
-            string tagName = Enum.GetName (typeof (T), tag);
-            if (String.IsNullOrEmpty (tagName)) {
-                tagName = view.Tag.ToString ();
+            result += string.Format (": Origin {0} Size {1}",
+                Pretty.PointF (view.Frame.Location), Pretty.SizeF (view.Frame.Size));
+            if (view is UIScrollView) {
+                var scroll = (UIScrollView)view;
+                result += string.Format (" Scrollable content: Offset {0} Size {1} ZoomScale {2}",
+                    Pretty.PointF (scroll.ContentOffset), Pretty.SizeF (scroll.ContentSize), scroll.ZoomScale);
             }
-            msg += String.Format ("{0} [{1}]: (X,Y)=({2}, {3})  (Width, Height)=({4}, {5})",
-                view.GetType ().Name, tagName,
-                view.Frame.X + (null == view.Superview ? 0 : view.Superview.Frame.X),
-                view.Frame.Y + (null == view.Superview ? 0 : view.Superview.Frame.Y),
-                view.Frame.Width, view.Frame.Height);
-            Console.WriteLine (msg);
-            for (int n = 0; n < view.Subviews.Length; n++) {
-                var v = view.Subviews [n];
-                if (v.Hidden) {
-                    continue;
+            return result;
+        }
+
+        private static void DumpViews<T> (UIView view, int indentation)
+        {
+            string tagName = null;
+            if (0 != view.Tag) {
+                T tag = (T)Enum.Parse (typeof(T), view.Tag.ToString ());
+                tagName = Enum.GetName (typeof(T), tag);
+                if (string.IsNullOrEmpty (tagName)) {
+                    tagName = view.Tag.ToString ();
                 }
-                DumpView <T> (v, indentation + 2);
+            }
+            string viewInfo = string.Format ("{0}{1}", indentation.ToString ().PadRight (2 + (indentation * 2)), ViewInfo (view, tagName));
+            Console.WriteLine (viewInfo);
+            foreach (var subview in view.Subviews) {
+                if (!subview.Hidden) {
+                    DumpViews<T> (subview, indentation + 1);
+                }
             }
         }
 
         public static void DumpViews<T> (UIView view)
         {
-            DumpView <T> (view, 0);
+            DumpViews <T> (view, 0);
+        }
+
+        private static void DumpViewHierarchy (UIView view, int indent)
+        {
+            string viewInfo = string.Format ("{0}{1}", indent.ToString ().PadRight (2 + (indent * 2)), ViewInfo (view, null));
+            Console.WriteLine (viewInfo);
+            foreach (var subview in view.Subviews) {
+                if (!subview.Hidden) {
+                    DumpViewHierarchy (subview, indent + 1);
+                }
+            }
+        }
+
+        public static void DumpViewHierarchy (UIView view)
+        {
+            DumpViewHierarchy (view, 0);
         }
 
         public static void DumpViewControllerHierarchy (UIViewController vc)

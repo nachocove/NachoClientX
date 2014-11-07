@@ -36,19 +36,11 @@ namespace NachoClient
             var index = cid.Substring (2).IndexOf ('/');
             var value = cid.Substring (index + 3);
             var bodyId = Convert.ToInt32 (cid.Substring (2, index));
-            MimePart p = PlatformHelpers.SearchParts (value, cidPartDict);
-            if (null == p) {
-                // Can't find it in the cid dictionary, search the attachment parts in the body
-                McBody body = McBody.QueryById<McBody> (bodyId);
-                if (null != body) {
-                    var mime = MimeHelpers.LoadMessage (body);
-                    foreach (var part in MimeHelpers.AllAttachments(mime)) {
-                        if (value == part.ContentId) {
-                            p = (MimePart)part;
-                            break;
-                        }
-                    }
-                }
+            McBody body = McBody.QueryById<McBody> (bodyId);
+            MimePart p = null;
+            if (null != body) {
+                var mime = MimeHelpers.LoadMessage (body);
+                p = MimeHelpers.EntityWithContentId (mime, value);
             }
             if (null == p) {
                 Log.Error (Log.LOG_UTILS, "RenderContentId: MimeEntity is null: {0}", value);
@@ -61,21 +53,6 @@ namespace NachoClient
                 return RenderStringToImage (value);
             }
             return image;
-        }
-
-        static public void AddCidPartToDict (string cid, MimePart part)
-        {
-            cidPartDict [cid] = part;
-        }
-
-        static public MimePart SearchParts (string cid, Dictionary<string,MimePart> partsDict)
-        {
-            MimePart part;
-            if (partsDict.TryGetValue (cid, out part)) {
-                return part;
-            } else {
-                return null;
-            }
         }
 
         /// <summary>

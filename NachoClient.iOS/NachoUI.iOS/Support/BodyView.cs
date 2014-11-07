@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
@@ -19,235 +20,117 @@ using NachoPlatform;
 
 namespace NachoClient.iOS
 {
-    public delegate void LayoutCompleteCallback ();
-
-    public class RecursionCounter
+    public class BodyView : UIView
     {
-        private int count;
-        private object lockObject;
-        public Action DecrementToZero;
+        // Which kind of BodyView is this?
+        private bool variableHeight;
 
-        public int Count {
-            get {
-                return count;
-            }
-        }
+        // The item whose body is being shown
+        private McAbstrItem item = null;
 
-        public RecursionCounter (Action decrementToZero = null)
+        // Information about size and position
+        private float preferredWidth;
+        private float yOffset = 0;
+        private PointF contentOffset = PointF.Empty;
+        private SizeF visibleArea;
+
+        // UI elements
+        private List<IBodyRender> childViews = new List<IBodyRender> ();
+        private UILabel errorMessage;
+        private UIActivityIndicatorView spinner;
+        private UITapGestureRecognizer retryDownloadGestureRecognizer = null;
+        private UITapGestureRecognizer.Token retryDownloadGestureRecognizerToken;
+
+        // Other stuff
+        private Action sizeChangedCallback = null;
+        private string downloadToken = null;
+        private bool statusIndicatorIsRegistered = false;
+
+        /// <summary>
+        /// Create a BodyView that will be displayed in a fixed sized view. The BodyView
+        /// will be cropped if it is too big for the parent view. The parent will not
+        /// adjust its layout to fit the BodyView.
+        /// </summary>
+        /// <returns>A new BodyView object that still needs to be configured.</returns>
+        /// <param name="frame">The location and size of the BodyView.</param>
+        public static BodyView FixedSizeBodyView (RectangleF frame)
         {
-            count = 0;
-            lockObject = new object ();
-            DecrementToZero = decrementToZero;
+            BodyView newBodyView = new BodyView (frame);
+            newBodyView.variableHeight = false;
+            newBodyView.visibleArea = frame.Size;
+            newBodyView.UserInteractionEnabled = false;
+            return newBodyView;
         }
 
-        public void Reset ()
+        /// <summary>
+        /// Create a BodyView that will be displayed in a view that will adjust its layout
+        /// based on the size of the BodyView.
+        /// </summary>
+        /// <returns>A new BodyView object that still needs to be configured.</returns>
+        /// <param name="location">The location of the BodyView within its parent view.</param>
+        /// <param name="preferredWidth">The preferred width of the BodyView.</param>
+        /// <param name="visibleArea">The maximum amount of space that is visible at one time in the parent view.</param>
+        /// <param name="sizeChangedCallback">A function to call when the size of the BodyView changes.</param>
+        public static BodyView VariableHeightBodyView (PointF location, float preferredWidth, SizeF visibleArea, Action sizeChangedCallback)
         {
-            lock (lockObject) {
-                count = 0;
-            }
+            BodyView newBodyView = new BodyView (new RectangleF(location.X, location.Y, preferredWidth, 1));
+            newBodyView.variableHeight = true;
+            newBodyView.visibleArea = visibleArea;
+            newBodyView.sizeChangedCallback = sizeChangedCallback;
+            return newBodyView;
         }
 
-        public void Increment ()
+        private BodyView (RectangleF frame)
+            : base (frame)
         {
-            lock (lockObject) {
-                count += 1;
-            }
-        }
+            preferredWidth = frame.Width;
 
-        public void Decrement ()
-        {
-            lock (lockObject) {
-                NcAssert.True (1 <= count);
-                count -= 1;
-                if (0 == count) {
-                    InvokeOnUIThread.Instance.Invoke (() => {
-                        DecrementToZero ();
-                    });
-                }
-            }
-        }
-    }
+            BackgroundColor = UIColor.White;
 
-    /// <summary>
-    /// BodyView is a special type of view 
-    /// </summary>
-    public class BodyView : UIScrollView
-    {
-        public delegate void RenderStart ();
-
-        public delegate void RenderComplete ();
-
-        public delegate void DownloadStart ();
-
-        public enum TagType
-        {
-            MESSAGE_PART_TAG = 300,
-            DOWNLOAD_TAG = 304,
-            SPINNER_TAG = 600,
-        };
-
-        protected delegate bool IterateCallback (UIView subview);
-
-        static UIColor SCROLLVIEW_BDCOLOR = UIColor.Magenta;
-        static UIColor MESSAGEVIEW_BDCOLOR = UIColor.Brown;
-
-        static UIColor SCROLLVIEW_BGCOLOR = UIColor.White;
-        static UIColor MESSAGEVIEW_BGCOLOR = UIColor.White;
-        public const int MESSAGEVIEW_INSET = 1;
-        public const int BODYVIEW_INSET = 1;
-
-        public bool HorizontalScrollingEnabled {
-            get {
-                return ShowsHorizontalScrollIndicator;
-            }
-            set {
-                ShowsHorizontalScrollIndicator = value;
-            }
-        }
-
-        public bool VerticalScrollingEnabled {
-            get {
-                return ShowsVerticalScrollIndicator;
-            }
-            set {
-                ShowsVerticalScrollIndicator = value;
-            }
-        }
-
-        public bool AutomaticallyScaleHtmlContent { get; set; }
-
-        // If false, center on view frame
-        public bool SpinnerCenteredOnParentFrame { get; set; }
-
-        private float leftMargin;
-        private float htmlLeftMargin;
-
-        protected UIView parentView;
-        protected UIView messageView;
-        protected UIActivityIndicatorView spinner;
-
-        protected UITapGestureRecognizer partialDownloadGestureRecognizer;
-        protected UIGestureRecognizer.Token partialDownloadGestureRecognizerToken;
-
-        protected McAbstrItem abstrItem;
-        protected string downloadToken;
-
-        public new float MinimumZoomScale {
-            get {
-                return base.MinimumZoomScale;
-            }
-            set {
-                base.MinimumZoomScale = Math.Min (base.MinimumZoomScale, value);
-            }
-        }
-
-        // Various delegates for notification
-        public RenderStart OnRenderStart;
-        public RenderComplete OnRenderComplete;
-        public DownloadStart OnDownloadStart;
-
-        public BodyView (RectangleF initialFrame, UIView parentView)
-            : this (initialFrame, parentView, 15, 0)
-        {
-        }
-
-        public BodyView (RectangleF initialFrame, UIView parentView, float leftMargin, float htmlLeftMargin)
-        {
-            ViewHelper.SetDebugBorder (this, SCROLLVIEW_BDCOLOR);
-
-            HorizontalScrollingEnabled = true;
-            VerticalScrollingEnabled = true;
-            AutomaticallyScaleHtmlContent = true;
-            this.leftMargin = leftMargin;
-            this.htmlLeftMargin = htmlLeftMargin;
-            ScrollEnabled = false;
-
-            this.parentView = parentView;
-            BackgroundColor = SCROLLVIEW_BGCOLOR;
-            Frame = initialFrame;
-            MinimumZoomScale = 1.0f;
-            MaximumZoomScale = 1.0f;
-
-            // TODO - Scrolling and zooming was originally planned but after
-            // the 2nd version of BodyView, the scrolling is either entirely disabled
-            // (in hot list) or completely delegated to the parent view (message view).
-            // Hence, the base class UIScrollView is no longer used. It is conceivable
-            // that we enable scrolling (and zooming) for hot list eventually so this
-            // is kept around but disabled for now.
-            ViewForZoomingInScrollView = GetMessageView;
-            DidZoom += OnDidZoom;
-            ZoomingStarted += OnZoomingStarted;
-            ZoomingEnded += OnZoomingEnded;
-
-            // messageView contains all content views of the body
-            messageView = new UIView ();
-            ViewHelper.SetDebugBorder (messageView, MESSAGEVIEW_BDCOLOR);
-            messageView.BackgroundColor = MESSAGEVIEW_BGCOLOR;
-            messageView.Frame = ViewHelper.InnerFrameWithInset (Frame, MESSAGEVIEW_INSET);
-            AddSubview (messageView);
-
-            // spinner indicates download activity
             spinner = new UIActivityIndicatorView (UIActivityIndicatorViewStyle.Gray);
             spinner.HidesWhenStopped = true;
-            spinner.Tag = (int)TagType.SPINNER_TAG;
             AddSubview (spinner);
 
-            Initialize ();
+            errorMessage = new UILabel (new RectangleF (0, 10, frame.Width, 1));
+            errorMessage.Font = A.Font_AvenirNextDemiBold14;
+            errorMessage.LineBreakMode = UILineBreakMode.WordWrap;
+            errorMessage.TextColor = A.Color_808080;
+            errorMessage.Hidden = true;
+            AddSubview (errorMessage);
         }
 
-        public void Initialize ()
-        {
-            downloadToken = null;
-            ZoomScale = 1.0f;
-        }
-
-        public bool Configure (McAbstrItem item)
+        /// <summary>
+        /// Display the body of the given item. The current contents of the BodyView are discarded.
+        /// </summary>
+        /// <param name="item">The item whose body should be displayed.</param>
+        public void Configure (McAbstrItem item)
         {
             // Clear out the existing BodyView
-            for (int i = messageView.Subviews.Length - 1; i >= 0; --i) {
-                var subview = messageView.Subviews [i];
-                subview.RemoveFromSuperview ();
-                ViewHelper.DisposeViewHierarchy (subview);
+            foreach (var subview in childViews) {
+                var view = subview.uiView ();
+                view.RemoveFromSuperview ();
+                ViewHelper.DisposeViewHierarchy (view);
             }
+            childViews.Clear ();
+            errorMessage.Hidden = true;
+            downloadToken = null;
 
-            abstrItem = item;
-
-            PointF center = !SpinnerCenteredOnParentFrame ? Center : Superview.Center;
-            center.X -= Frame.X;
-            center.Y -= Frame.Y;
-            spinner.Center = center;
+            this.item = item;
 
             var body = McBody.QueryById<McBody> (item.BodyId);
 
-            if (null == body) {
-                StartDownload ();
-                return false;
-            }
-                
-            switch (body.FilePresence) {
-            case McAbstrFileDesc.FilePresenceEnum.None:
-                StartDownload ();
-                return false;
-            case McAbstrFileDesc.FilePresenceEnum.Partial:
-                spinner.StartAnimating ();
-                return false;
-            case McAbstrFileDesc.FilePresenceEnum.Error:
-                ShowErrorMessage ();
-                return false;
-            case McAbstrFileDesc.FilePresenceEnum.Complete:
-                break;
-            default:
-                NcAssert.CaseError ();
-                break;
+            if (null == body || McAbstrFileDesc.FilePresenceEnum.Complete != body.FilePresence) {
+                if (null != body && McAbstrFileDesc.FilePresenceEnum.Error == body.FilePresence) {
+                    // A download has already been attempted and was unsuccessful. Don't retry
+                    // the download without explicit user interaction.
+                    ShowErrorMessage ();
+                } else {
+                    StartDownload ();
+                }
+                return;
             }
 
             spinner.StopAnimating ();
-
-            NcAssert.NotNull (body);
-            var bodyPath = body.GetFilePath ();
-            if (null == bodyPath) {
-                return false;
-            }
 
             switch (body.BodyType) {
             case McAbstrFileDesc.BodyTypeEnum.PlainText_1:
@@ -260,427 +143,400 @@ namespace NachoClient.iOS
                 RenderRtfString (body.GetContentsString ());
                 break;
             case McAbstrFileDesc.BodyTypeEnum.MIME_4:
-                RenderMime (bodyPath);
+                RenderMime (body);
                 break;
             default:
-                Log.Info (Log.LOG_EMAIL, "BodyType zero; likely old client");
-                RenderMime (bodyPath);
+                Log.Error (Log.LOG_UI, "Body {0} has an unknown body type {1}.", body.Id, (int)body.BodyType);
+                RenderTextString (body.GetContentsString ());
                 break;
             }
 
-            return true;
+            LayoutQuietly ();
+        }
+
+        private McAbstrItem RefreshItem ()
+        {
+            McAbstrItem refreshedItem;
+            if (item is McEmailMessage) {
+                refreshedItem = McEmailMessage.QueryById<McEmailMessage> (item.Id);
+            } else if (item is McAbstrCalendarRoot) {
+                refreshedItem = McCalendar.QueryById<McCalendar> (item.Id);
+            } else {
+                throw new NcAssert.NachoDefaultCaseFailure (string.Format ("Unhandled abstract item type {0}", item.GetType ().Name));
+            }
+            return refreshedItem;
+        }
+
+        private void Reconfigure ()
+        {
+            // The status callback indicator callback isn't needed any more.
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+            statusIndicatorIsRegistered = false;
+
+            Configure (RefreshItem ());
+
+            // Configure() normally doesn't call the parent view's callback. But because
+            // the download completed in the background, that callback needs to be called.
+            if (null != sizeChangedCallback) {
+                sizeChangedCallback ();
+            }
+        }
+
+        private void StartDownload ()
+        {
+            // Register for the status indicator event, so we will know when the body has
+            // been downloaded.
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            statusIndicatorIsRegistered = true;
+
+            // Download the body.
+            if (item is McEmailMessage) {
+                downloadToken = BackEnd.Instance.DnldEmailBodyCmd (item.AccountId, item.Id, true);
+            } else if (item is McAbstrCalendarRoot) {
+                downloadToken = BackEnd.Instance.DnldCalBodyCmd (item.AccountId, item.Id);
+            } else {
+                throw new NcAssert.NachoDefaultCaseFailure (string.Format (
+                    "Unhandled abstract item type {0}", item.GetType ().Name));
+            }
+
+            if (null == downloadToken) {
+                // There is a race condition where the download of the body could complete
+                // in between checking the FilePresence value and calling DnldEmailBodyCmd.
+                // Refresh the item and the body to see if that is the case.
+                item = RefreshItem ();
+                var body = McBody.QueryById<McBody> (item.BodyId);
+                if (null != body && McAbstrFileDesc.FilePresenceEnum.Complete == body.FilePresence) {
+                    // It was a race condition. We're good.
+                    Reconfigure ();
+                } else {
+                    Log.Warn (Log.LOG_UI, "Failed to start body download for message {0} in account {1}", item.Id, item.AccountId);
+                    NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+                    statusIndicatorIsRegistered = false;
+                    ShowErrorMessage ();
+                }
+            } else {
+                // The download has started.
+                BackEnd.Instance.Prioritize (item.AccountId, downloadToken);
+                ActivateSpinner ();
+            }
+        }
+
+        private void ActivateSpinner ()
+        {
+            // Remove everything else from the view. There can be stuff visible if the
+            // download was started by the user tapping on the "Download failed" message.
+            foreach (var subview in childViews) {
+                var view = subview.uiView ();
+                view.RemoveFromSuperview ();
+                ViewHelper.DisposeViewHierarchy (view);
+            }
+            childViews.Clear ();
+            errorMessage.Hidden = true;
+
+            if (variableHeight) {
+                // Try to put the spinner in the center of the screen.
+                spinner.Center = new PointF (visibleArea.Width / 2 - Frame.X, visibleArea.Height / 2 - Frame.Y);
+            } else {
+                // Put the spinner in the center of the BodyView.
+                spinner.Center = new PointF (Frame.Width / 2, Frame.Height / 2);
+            }
+            spinner.StartAnimating ();
+        }
+
+        private static float Min4 (float a, float b, float c, float d)
+        {
+            return Math.Min (Math.Min (a, b), Math.Min (c, d));
+        }
+
+        private bool LayoutAndDetectSizeChange ()
+        {
+            SizeF oldSize = Frame.Size;
+
+            float screenTop = contentOffset.Y;
+            float screenBottom = contentOffset.Y + visibleArea.Height;
+
+            float subviewX = Math.Max (0f, contentOffset.X);
+            float subviewY = 0;
+            if (!errorMessage.Hidden) {
+                subviewY = errorMessage.Frame.Bottom;
+            }
+
+            float maxWidth = preferredWidth;
+
+            foreach (var subview in childViews) {
+                // If any part of the view is currently visible or should be visible,
+                // then adjust it.  If the view is completely off the screen, leave
+                // it alone.  If we adjust the width of the view, it is possible that
+                // the height will change as a result.  In which case we have to redo
+                // all the calculations.
+                SizeF size;
+                int loopCount = 0;
+                do {
+                    size = subview.ContentSize;
+                    var currentFrame = subview.uiView ().Frame;
+                    float viewTop = subviewY;
+                    float viewBottom = viewTop + size.Height;
+                    if (viewTop < screenBottom && screenTop < viewBottom) {
+                        // Part of the view should be visible on the screen.
+                        float newX = Math.Max (0f, Math.Min (subviewX, size.Width - preferredWidth));
+                        float newWidth = Math.Max (preferredWidth, Math.Min (size.Width - subviewX, visibleArea.Width));
+                        float newXOffset = newX;
+
+                        float newY = Math.Max (viewTop, screenTop);
+                        float newHeight = Min4 (viewBottom - screenTop, screenBottom - viewTop, size.Height, visibleArea.Height);
+                        float newYOffset = newY - viewTop;
+
+                        subview.ScrollingAdjustment (new RectangleF (newX, newY, newWidth, newHeight), new PointF (newXOffset, newYOffset));
+                        subview.uiView ().Hidden = false;
+                    } else {
+                        // None of the view is currently on the screen.
+                        subview.uiView ().Hidden = true;
+                    }
+                } while (size != subview.ContentSize && ++loopCount < 4);
+
+                subviewY += size.Height;
+                maxWidth = Math.Max (maxWidth, size.Width);
+            }
+
+            bool sizeChanged = oldSize.Width != maxWidth || oldSize.Height != subviewY;
+            if (sizeChanged && variableHeight) {
+                ViewFramer.Create (this).Width (maxWidth).Height (subviewY);
+            }
+
+            return sizeChanged;
+        }
+
+        public void LayoutAndNotifyParent ()
+        {
+            if (LayoutAndDetectSizeChange ()) {
+                if (null != sizeChangedCallback) {
+                    sizeChangedCallback ();
+                }
+            }
+        }
+
+        public void LayoutQuietly ()
+        {
+            LayoutAndDetectSizeChange ();
+        }
+
+        /// <summary>
+        /// Adjust the subviews so that one screen worth of content is visible
+        /// at the given offset.
+        /// </summary>
+        /// <param name="newContentOffset">The top left corner of the area that
+        /// should be visible, in the BodyView's coordinates.</param>
+        public void ScrollingAdjustment (PointF newContentOffset)
+        {
+            this.contentOffset = newContentOffset;
+            LayoutAndNotifyParent ();
+        }
+
+        /// <summary>
+        /// Resize and relocate the BodyView. This can only be called for a
+        /// fixed size BodyView.
+        /// </summary>
+        /// <param name="newFrame">The new location and size for the BodyView.</param>
+        public void Resize (RectangleF newFrame)
+        {
+            // Resizing only makes sense for a fixed size BodyView
+            NcAssert.True (!variableHeight);
+            preferredWidth = newFrame.Width;
+            visibleArea = newFrame.Size;
+            LayoutQuietly ();
+        }
+
+        /// <summary>
+        /// The view is front and center right now. If a download is in progress, tell the
+        /// back end to speed it up.
+        /// </summary>
+        public void PrioritizeBodyDownload ()
+        {
+            if (null != downloadToken) {
+                BackEnd.Instance.Prioritize (item.AccountId, downloadToken);
+            }
         }
 
         protected override void Dispose (bool disposing)
         {
-            ViewForZoomingInScrollView = null;
-            DidZoom -= OnDidZoom;
-            ZoomingStarted -= OnZoomingStarted;
-            ZoomingEnded -= OnZoomingEnded;
-            if (null != partialDownloadGestureRecognizer) {
-                partialDownloadGestureRecognizer.RemoveTarget (partialDownloadGestureRecognizerToken);
-                partialDownloadGestureRecognizer = null;
+            if (statusIndicatorIsRegistered) {
+                NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+                statusIndicatorIsRegistered = false;
+            }
+            if (null != retryDownloadGestureRecognizer) {
+                retryDownloadGestureRecognizer.RemoveTarget (retryDownloadGestureRecognizerToken);
+                errorMessage.RemoveGestureRecognizer (retryDownloadGestureRecognizer);
             }
             base.Dispose (disposing);
         }
 
-        private UIView GetMessageView (UIScrollView scrollView)
+        private void ShowErrorMessage ()
         {
-            return messageView;
-        }
-
-        private void OnDidZoom (object sender, EventArgs e)
-        {
-            throw new NotImplementedException ();
-        }
-
-        private void OnZoomingStarted (object sender, UIScrollViewZoomingEventArgs e)
-        {
-            throw new NotImplementedException ();
-        }
-
-        private void OnZoomingEnded (object sender, ZoomingEndedEventArgs e)
-        {
-            throw new NotImplementedException ();
-        }
-
-        protected void IterateAllRenderSubViews (IterateCallback callback)
-        {
-            NcAssert.True (null != callback);
-            foreach (var subview in messageView.Subviews) {
-                if ((int)TagType.MESSAGE_PART_TAG != subview.Tag) {
-                    continue;
+            spinner.StopAnimating ();
+            string preview = item.GetBodyPreviewOrEmpty ();
+            bool hasPreview = !string.IsNullOrEmpty (preview);
+            string message;
+            if (variableHeight) {
+                if (hasPreview) {
+                    message = "[ Download failed. Tap here to retry. Message preview only. ]";
+                } else {
+                    message = "[ Download failed. Tap here to retry. ]";
                 }
-                if (!callback (subview)) {
-                    return;
+            } else {
+                if (hasPreview) {
+                    message = "[ Download failed. Message preview only. ]";
+                } else {
+                    message = "[ Download failed. ]";
                 }
             }
-        }
-
-        protected void RenderMime (string bodyPath)
-        {
-            try {
-                using (var bodySource = new FileStream (bodyPath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
-                    var bodyParser = new MimeParser (bodySource, MimeFormat.Default);
-                    var mime = bodyParser.ParseMessage ();
-                    MimeHelpers.DumpMessage (mime);
-                    var list = new List<MimeEntity> ();
-                    MimeHelpers.MimeDisplayList (mime, ref list);
-                    RenderDisplayList (list);
-                }
-            } catch (System.IO.IOException e) {
-                Log.DumpFileDescriptors ();
-                throw e;
+            RenderDownloadFailure (message);
+            if (hasPreview) {
+                RenderTextString (preview);
             }
+            LayoutQuietly ();
         }
 
-        protected void RenderDisplayList (List<MimeEntity> list)
+        private void StatusIndicatorCallback (object sender, EventArgs e)
         {
-            foreach (var entity in list) {
-                var part = (MimePart)entity;
-                if (null != part.ContentId) {
-                    PlatformHelpers.AddCidPartToDict (part.ContentId, part);
-                }
-                if (part.ContentType.Matches ("text", "html")) {
-                    RenderHtml (part);
-                    continue;
-                }
-                if (part.ContentType.Matches ("text", "calendar")) {
-                    RenderCalendar (part);
-                    continue;
-                }
-                if (part.ContentType.Matches ("text", "rtf")) {
-                    RenderRtf (part);
-                    continue;
-                }
-                if (part.ContentType.Matches ("text", "*")) {
-                    RenderText (part);
-                    continue;
-                }
-                if (part.ContentType.Matches ("image", "*")) {
-                    RenderImage (part);
-                    continue;
-                }
-            }
-        }
-
-        void RenderText (MimePart part)
-        {
-            var textPart = part as TextPart;
-            var text = textPart.Text;
-            RenderTextString (text);
-        }
-
-        void RenderRtf (MimePart part)
-        {
-            var textPart = part as TextPart;
-            var text = textPart.Text;
-            RenderRtfString (text);
-        }
-
-        protected void RenderAttributedString (NSAttributedString attributedString)
-        {
-            var label = new BodyTextView (new RectangleF (
-                            leftMargin, 0, messageView.Frame.Width - leftMargin, messageView.Frame.Height));
-            label.Configure (attributedString);
-            messageView.AddSubview (label);
-        }
-
-        public void RenderTextString (string text)
-        {
-            if (string.IsNullOrEmpty (text)) {
+            if (null == downloadToken) {
                 return;
             }
-            MonoTouch.CoreText.CTStringAttributes attributes;
-            MonoTouch.CoreText.CTFont font;
-            UIFont uiFont = A.Font_AvenirNextRegular17;
-            font = new MonoTouch.CoreText.CTFont (uiFont.Name, uiFont.PointSize);
-
-            attributes = new MonoTouch.CoreText.CTStringAttributes ();
-            attributes.Font = font;
-
-            var attributedString = new NSAttributedString (text, attributes);
-            RenderAttributedString (attributedString);
+            var statusEvent = (StatusIndEventArgs)e;
+            if (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded == statusEvent.Status.SubKind ||
+                NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed == statusEvent.Status.SubKind ||
+                NcResult.SubKindEnum.Info_CalendarBodyDownloadSucceeded == statusEvent.Status.SubKind ||
+                NcResult.SubKindEnum.Error_CalendarBodyDownloadFailed == statusEvent.Status.SubKind)
+            {
+                var token = statusEvent.Tokens.FirstOrDefault ();
+                if (token == downloadToken) {
+                    // The download request has completed. Reconfigure the BodyView.
+                    Reconfigure ();
+                }
+            }
         }
 
-        void RenderPartialDownloadMessage (string message)
+        private void RenderAttributedString (NSAttributedString text)
         {
-            var attributedString = new NSAttributedString (message);
-            var label = new UILabel (new RectangleF (leftMargin, 0.0f, 290.0f, 1.0f));
-            label.Lines = 0;
-            label.Font = A.Font_AvenirNextDemiBold14;
-            label.LineBreakMode = UILineBreakMode.WordWrap;
-            label.AttributedText = attributedString;
-            label.TextColor = A.Color_808080;
-            label.SizeToFit ();
-            var frame = label.Frame;
-            frame.Height = frame.Height + 30;
-            label.Frame = frame;
-            label.Tag = (int)TagType.DOWNLOAD_TAG;
-            label.UserInteractionEnabled = true;
-
-            // Detect tap of the partially download mesasge label
-            partialDownloadGestureRecognizer = new UITapGestureRecognizer ();
-
-            partialDownloadGestureRecognizer.NumberOfTapsRequired = 1;
-            partialDownloadGestureRecognizerToken = partialDownloadGestureRecognizer.AddTarget (OnDownloadMessage);
-            partialDownloadGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
-                return false;
-            };
-            label.AddGestureRecognizer (partialDownloadGestureRecognizer);
-
-            messageView.AddSubview (label);
+            var textView = new BodyTextView (yOffset, Frame.Width, text);
+            AddSubview (textView);
+            childViews.Add (textView);
+            yOffset += textView.ContentSize.Height;
         }
 
-        void RenderRtfString (string rtf)
+        private void RenderTextString (string text)
+        {
+            if (string.IsNullOrWhiteSpace (text)) {
+                return;
+            }
+            UIFont uiFont = A.Font_AvenirNextRegular17;
+            var attributes = new MonoTouch.CoreText.CTStringAttributes ();
+            attributes.Font = new MonoTouch.CoreText.CTFont (uiFont.Name, uiFont.PointSize);
+            RenderAttributedString (new NSAttributedString (text, attributes));
+        }
+
+        private void RenderRtfString (string rtf)
         {
             if (string.IsNullOrEmpty (rtf)) {
                 return;
             }
             var nsError = new NSError ();
-            var nsAttributes = new NSAttributedStringDocumentAttributes ();
-            nsAttributes.DocumentType = NSDocumentType.RTF;
-            var attributedString = new NSAttributedString (rtf, nsAttributes, ref nsError);
-            RenderAttributedString (attributedString);
+            var attributes = new NSAttributedStringDocumentAttributes ();
+            attributes.DocumentType = NSDocumentType.RTF;
+            RenderAttributedString (new NSAttributedString (rtf, attributes, ref nsError));
         }
 
-        void RenderImage (MimePart part)
+        private void RenderHtmlString (string html)
         {
-            // Outlook and Thunderbird do not render MIME image parts. Embedded images
-            // are referenced via CID in HTML part.
-            #if (RENDER_IMAGE)
-            var iv = new BodyImageView (Frame);
-            iv.Configure (part);
-            messageView.AddSubview (iv);
-            #endif
+            var webView = new BodyWebView (
+                yOffset, Frame.Width, LayoutAndNotifyParent,
+                html, NSUrl.FromString (string.Format ("cid://{0}", item.BodyId)));
+            AddSubview (webView);
+            childViews.Add (webView);
+            yOffset += webView.ContentSize.Height;
         }
 
-        void RenderHtml (MimePart part)
+        private void RenderTextPart (MimePart part)
         {
-            var textPart = part as TextPart;
-            var html = textPart.Text;
-            RenderHtmlString (html);
+            RenderTextString ((part as TextPart).Text);
         }
 
-        void RenderHtmlString (string html)
+        private void RenderRtfPart (MimePart part)
         {
-            var webView = new BodyWebView (messageView, htmlLeftMargin);
-            webView.OnRenderStart = () => {
-                if (null != OnRenderStart) {
-                    OnRenderStart ();
+            RenderRtfString ((part as TextPart).Text);
+        }
+
+        private void RenderHtmlPart (MimePart part)
+        {
+            RenderHtmlString ((part as TextPart).Text);
+        }
+
+        private void RenderImagePart (MimePart part)
+        {
+            using (var image = PlatformHelpers.RenderImage (part)) {
+                if (null == image) {
+                    Log.Error (Log.LOG_UI, "Unable to render image {0}", part.ContentType);
+                    RenderTextString ("[ Unable to display image ]");
+                } else {
+                    var imageView = new BodyImageView (yOffset, preferredWidth, image);
+                    AddSubview (imageView);
+                    childViews.Add (imageView);
+                    yOffset += imageView.Frame.Height;
                 }
-            };
-            webView.OnRenderComplete = (float minimumZoomScale) => {
-                if (null != OnRenderComplete) {
-                    OnRenderComplete ();
+            }
+        }
+
+        private void RenderCalendarPart (MimePart part)
+        {
+            var calView = new BodyCalendarView (yOffset, preferredWidth, part);
+            AddSubview (calView);
+            childViews.Add (calView);
+            yOffset += calView.Frame.Height;
+        }
+
+        private void RenderMime (McBody body)
+        {
+            var message = MimeHelpers.LoadMessage (body);
+            MimeHelpers.DumpMessage (message);
+            var list = new List<MimeEntity> ();
+            MimeHelpers.MimeDisplayList (message, ref list);
+
+            foreach (var entity in list) {
+                var part = (MimePart)entity;
+                if (part.ContentType.Matches ("text", "html")) {
+                    RenderHtmlPart (part);
+                } else if (part.ContentType.Matches ("text", "calendar")) {
+                    RenderCalendarPart (part);
+                } else if (part.ContentType.Matches ("text", "rtf")) {
+                    RenderRtfPart (part);
+                } else if (part.ContentType.Matches ("text", "*")) {
+                    RenderTextPart (part);
+                } else if (part.ContentType.Matches ("image", "*")) {
+                    RenderImagePart (part);
                 }
-            };
-            messageView.Add (webView);
-            var url = String.Format ("cid://{0}", abstrItem.BodyId);
-            webView.LoadHtmlContent (html, NSUrl.FromString (url));
+            }
         }
 
-        /// TODO: Guard against malformed calendars
-        public void RenderCalendar (MimePart part)
+        private void RenderDownloadFailure (string message)
         {
-            var calView = new BodyCalendarView (Frame.Width);
-            calView.Configure (part);
-            messageView.AddSubview (calView);
-        }
+            var attributedString = new NSAttributedString (message);
+            errorMessage.Lines = 0;
+            errorMessage.AttributedText = attributedString;
+            errorMessage.SizeToFit ();
+            errorMessage.Hidden = false;
 
-        public void Layout (float X, float Y, float width, float height, bool adjustFrame = false)
-        {
-            if (adjustFrame) {
-                // This option is for event view. In which, the event description is almost certainly
-                // small and there is no need to implement a complicate scrolling mechanism. So,
-                // we can just scale each rendering view frame to the content size and
-                // adjust the body view frame size at the end.
-                IterateAllRenderSubViews ((UIView subview) => {
-                    ViewFramer.Create (subview)
-                        .Size (subview.SizeThatFits (subview.Frame.Size));
-                    return true;
-                });
-            }
+            yOffset = errorMessage.Frame.Bottom;
 
-            // Layout all message parts in messageView
-            var messageCursor = new VerticalLayoutCursor (messageView);
-            messageCursor.IteratorSubviewsWithFilter ((v) => {
-                return true;
-            });
-
-            // Sum up all the render parts for height
-            float messageWidth = 0.0f, messageHeight = 0.0f;
-            float contentWidth = 0.0f, contentHeight = 0.0f;
-            IterateAllRenderSubViews ((UIView subview) => {
-                messageHeight += subview.Frame.Height;
-                messageWidth = Math.Max (messageWidth, subview.Frame.Width);
-
-                IBodyRender renderView = subview as IBodyRender;
-                contentHeight += renderView.ContentSize.Height;
-                contentWidth = Math.Max (contentWidth, renderView.ContentSize.Width);
-
-                return true;
-            });
-
-            // Decide the message view size based on the bounding frame.
-            messageWidth = Math.Max (width - 2 * MESSAGEVIEW_INSET, messageView.Frame.Width);
-            messageHeight = Math.Max (height - 2 * MESSAGEVIEW_INSET, messageView.Frame.Height);
-            ViewFramer.Create (messageView)
-                .Width (messageWidth)
-                .Height (messageHeight);
-
-            ContentSize = new SizeF (contentWidth, contentHeight);
-
-            // Put the view at the right location
-            ViewFramer framer = ViewFramer.Create (this);
-            framer
-                .X (X)
-                .Y (Y);
-
-            if (adjustFrame) {
-                framer
-                    .Width (messageCursor.MaxSubViewWidth + leftMargin)
-                    .Height (messageCursor.TotalHeight);
-            }
-
-            Log.Info (Log.LOG_UI, "BODYVIEW LAYOUT{0}", LayoutInfo ());
-        }
-
-        protected void StartDownload ()
-        {
-            switch (abstrItem.GetType ().Name) {
-            case "McEmailMessage":
-                downloadToken = BackEnd.Instance.DnldEmailBodyCmd (abstrItem.AccountId, abstrItem.Id, true);
-                break;
-            case "McCalendar":
-                downloadToken = BackEnd.Instance.DnldCalBodyCmd (abstrItem.AccountId, abstrItem.Id);
-                break;
-            default:
-                var msg = String.Format ("unhandle abstract item type {0}", abstrItem.GetType ().Name);
-                throw new NcAssert.NachoDefaultCaseFailure (msg);
-            }
-                
-            // Success, or duplicate
-            if (null != downloadToken) {
-                BackEnd.Instance.Prioritize (abstrItem.AccountId, downloadToken);
-                spinner.StartAnimating ();
-                if (null != OnDownloadStart) {
-                    OnDownloadStart ();
-                }
-                return;
-            }
-
-            // Null might be that the body is alreday downloaded
-            var newBody = McBody.QueryById<McBody> (abstrItem.BodyId);
-            if (McAbstrFileDesc.IsComplete (newBody)) {
-                return;
-            }
-
-            // Nope, this null is an error
-            Log.Warn (Log.LOG_UI, "Fail to start download dnld for message {0} in account {1}", abstrItem.Id, abstrItem.AccountId);
-            ShowErrorMessage ();
-            return;
-        }
-
-        protected void ShowErrorMessage ()
-        {
-            spinner.StopAnimating ();
-            RenderPartialDownloadMessage ("[ Message preview only. Tap here to download. ]");
-            RenderTextString (abstrItem.GetBodyPreviewOrEmpty ());
-        }
-
-        public void OnDownloadMessage ()
-        {
-            StartDownload ();
-        }
-
-        public bool DownloadComplete (bool succeed, string token)
-        {
-            if (token != downloadToken) {
-                return false; // indication for a different message
-            }
-            abstrItem = ReRead ();
-            var body = McBody.QueryById<McBody> (abstrItem.BodyId);
-            NcAssert.NotNull (body);
-            if (!succeed) {
-                ShowErrorMessage ();
-            }
-            spinner.StopAnimating ();
-            return true;
-        }
-
-        public void Focus ()
-        {
-            if (null != downloadToken) {
-                // Possible to issue redundant prioritize requests which becomes no op
-                BackEnd.Instance.Prioritize (abstrItem.AccountId, downloadToken);
+            if (variableHeight && null == retryDownloadGestureRecognizer) {
+                errorMessage.UserInteractionEnabled = true;
+                retryDownloadGestureRecognizer = new UITapGestureRecognizer ();
+                retryDownloadGestureRecognizer.NumberOfTapsRequired = 1;
+                retryDownloadGestureRecognizerToken = retryDownloadGestureRecognizer.AddTarget (StartDownload);
+                retryDownloadGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
+                    return false;
+                };
+                errorMessage.AddGestureRecognizer (retryDownloadGestureRecognizer);
             }
         }
-
-        public string LayoutInfo ()
-        {
-            string desc = "\n";
-            desc += String.Format ("scrollView: offset={0}  frame={1}  content={2}\n",
-                Pretty.PointF (Frame.Location), Pretty.SizeF (Frame.Size), Pretty.SizeF (ContentSize));
-            desc += String.Format ("  messageView: offset={0}  frame={1}\n",
-                Pretty.PointF (messageView.Frame.Location), Pretty.SizeF (messageView.Frame.Size));
-            foreach (var subview in messageView.Subviews) {
-                if ((int)TagType.MESSAGE_PART_TAG != subview.Tag) {
-                    continue;
-                }
-                IBodyRender renderView = subview as IBodyRender;
-
-                desc += String.Format ("    {0}\n", renderView.LayoutInfo ());
-            }
-            return desc;
-        }
-
-        protected McAbstrItem ReRead ()
-        {
-            switch (abstrItem.GetType ().Name) {
-            case "McEmailMessage":
-                return McEmailMessage.QueryById<McEmailMessage> (abstrItem.Id);
-            case "McCalendar":
-                return McCalendar.QueryById<McCalendar> (abstrItem.Id);
-            default:
-                var msg = String.Format ("unhandle abstract item type {0}", abstrItem.GetType ().Name);
-                throw new NcAssert.NachoDefaultCaseFailure (msg);
-            }
-        }
-
-        public void ScrollTo (PointF contentOffset)
-        {
-            PointF subviewOffset = new PointF (contentOffset.X, contentOffset.Y);
-            IterateAllRenderSubViews ((UIView subview) => {
-                IBodyRender renderView = subview as IBodyRender;
-                NcAssert.True (null != renderView);
-                PointF clippedOffset = ClipContentOffset (subview, subviewOffset);
-                renderView.ScrollTo (clippedOffset);
-                subviewOffset.Y -= renderView.ContentSize.Height;
-                return true;
-            });
-        }
-
-        public static PointF ClipContentOffset (UIView view, PointF offset)
-        {
-            IBodyRender renderView = view as IBodyRender;
-            NcAssert.True (null != renderView);
-
-            float x = offset.X;
-            float y = offset.Y;
-            if (0.0f > x) {
-                x = 0.0f;
-            } else if (renderView.ContentSize.Width < x) {
-                x = renderView.ContentSize.Width;
-            }
-            if (0.0f > y) {
-                y = 0.0f;
-            } else if (renderView.ContentSize.Height < y) {
-                y = renderView.ContentSize.Height;
-            }
-            return new PointF (x, y);
-        }
-
     }
 }
 

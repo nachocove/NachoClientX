@@ -61,7 +61,6 @@ namespace NachoClient.iOS
 
         // Helper objects
         protected bool isRecurring = false;
-        protected RecursionCounter deferLayout;
 
         // UI-related constants, or pseudo-constants
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
@@ -130,6 +129,7 @@ namespace NachoClient.iOS
             scrollView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, View.Frame.Height - 54);
             scrollView.BackgroundColor = UIColor.White;
             scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
+            scrollView.Scrolled += ScrollViewScrolled;
 
             contentView.BackgroundColor = UIColor.White;
 
@@ -147,18 +147,8 @@ namespace NachoClient.iOS
             yOffset += 30;
 
             // Description, for which we use a BodyView.
-            descriptionView = new BodyView (
-                new RectangleF (0, yOffset, SCREEN_WIDTH - 2 * BodyView.BODYVIEW_INSET, 10),
-                contentView, 20, 20);
+            descriptionView = BodyView.VariableHeightBodyView (new PointF (20, yOffset), SCREEN_WIDTH - 20 - 2, scrollView.Frame.Size, LayoutView);
             descriptionView.Tag = (int)TagType.EVENT_DESCRIPTION_LABEL_TAG;
-            descriptionView.HorizontalScrollingEnabled = true;
-            descriptionView.VerticalScrollingEnabled = false;
-            descriptionView.OnRenderStart = () => {
-                deferLayout.Increment ();
-            };
-            descriptionView.OnRenderComplete = () => {
-                deferLayout.Decrement ();
-            };
             contentView.AddSubview (descriptionView);
 
             yOffset += 10 + 20;
@@ -558,16 +548,11 @@ namespace NachoClient.iOS
                 attachmentDetail.Frame = new RectangleF (SCREEN_WIDTH - attachmentDetail.Frame.Width - 34, 12.438f, attachmentDetail.Frame.Width, TEXT_LINE_HEIGHT);
             }
 
-            deferLayout = new RecursionCounter (() => {
-                LayoutView ();
-            });
-            deferLayout.Increment ();
-
             descriptionView.Configure (c);
 
             ConfigureRsvpBar ();
 
-            deferLayout.Decrement ();
+            LayoutView ();
         }
 
         protected override void Cleanup ()
@@ -587,6 +572,7 @@ namespace NachoClient.iOS
             eventNotesView.RemoveGestureRecognizer (notesTapGestureRecognizer);
 
             // Remove event handlers
+            scrollView.Scrolled -= ScrollViewScrolled;
             acceptButton.TouchUpInside -= AcceptButtonTouchUpInside;
             tentativeButton.TouchUpInside -= TentativeButtonTouchUpInside;
             declineButton.TouchUpInside -= DeclineButtonTouchUpInside;
@@ -758,7 +744,10 @@ namespace NachoClient.iOS
             AdjustViewLayout (TagType.EVENT_TITLE_LABEL_TAG, 25, ref yOffset, 20, SCREEN_WIDTH - 50);
 
             yOffset += 5;
-            descriptionView.Layout (0, yOffset, SCREEN_WIDTH - 2 * BodyView.BODYVIEW_INSET, 10, true);
+            if (yOffset != descriptionView.Frame.Y) {
+                ViewFramer.Create (descriptionView).Y (yOffset);
+            }
+            // descriptionView should already be layed out correctly. There is no need to call Layout() again.
             yOffset += descriptionView.Frame.Height;
 
             AdjustViewLayout (TagType.EVENT_LOCATION_TITLE_TAG, 23, ref yOffset, 10, SCREEN_WIDTH - 50);
@@ -795,8 +784,9 @@ namespace NachoClient.iOS
             AdjustViewLayout (line4, 23, ref yOffset, 0, line4.Frame.Width);
 
             float bottom = yOffset + 20;
-            contentView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, bottom);
-            scrollView.ContentSize = new SizeF (SCREEN_WIDTH, bottom);
+            float logicalWidth = Math.Max (SCREEN_WIDTH, descriptionView.Frame.Right);
+            contentView.Frame = new RectangleF (0, 0, logicalWidth, bottom);
+            scrollView.ContentSize = contentView.Frame.Size;
         }
 
         protected static void AdjustViewLayout (UIView view, float X, ref float Y, float extraY)
@@ -1294,6 +1284,14 @@ namespace NachoClient.iOS
         }
 
         // Event handlers
+
+        private void ScrollViewScrolled (object sender, EventArgs e)
+        {
+            // BodyView needs to know when scrolling happens, so it can do its magic and make sure
+            // the correct stuff is visible.
+            descriptionView.ScrollingAdjustment (new PointF (
+                scrollView.ContentOffset.X - descriptionView.Frame.X, scrollView.ContentOffset.Y - descriptionView.Frame.Y));
+        }
 
         private void AttendeeTapGestureRecognizerTap ()
         {
