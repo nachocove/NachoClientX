@@ -215,6 +215,15 @@ namespace Test.iOS
             conFolder.UpdateSet_AsSyncMetaToClientExpected (false);
             result = strat.CanAdvance (account.Id, 5);
             Assert.True (result);
+            // Add a McPending.
+            var pending = new McPending (account.Id) {
+                Operation = McPending.Operations.ContactDelete,
+                ParentId = conFolder.ServerId,
+                ServerId = "bogus",
+            };   
+            pending.Insert ();
+            result = strat.CanAdvance (account.Id, 5);
+            Assert.False (result);
         }
 
         private static bool StatusIndCalled;
@@ -849,6 +858,10 @@ namespace Test.iOS
                 x => useremail.ServerId == x.ParentId &&
                 McPending.Operations.EmailMarkRead == x.Operation));
             var pfContact = result.PerFolders.Single (x => "contact" == x.Folder.ServerId);
+            Assert.AreEqual (0, pfContact.Commands.Count);
+            contact.UpdateSet_AsSyncMetaToClientExpected (false);
+            result = strat.GenSyncKit (account.Id, context.ProtocolState, false, false);
+            pfContact = result.PerFolders.Single (x => "contact" == x.Folder.ServerId);
             Assert.AreEqual (1, pfContact.Commands.Count);
             Assert.AreEqual (1, pfContact.Commands.Count (
                 x => contact.ServerId == x.ParentId &&
