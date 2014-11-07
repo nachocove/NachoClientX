@@ -1161,6 +1161,9 @@
     <Compile Include="NachoUI.iOS\AddAttachmentViewController.designer.cs">
       <DependentUpon>AddAttachmentViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\TelemetryAWS.cs">
+      <Link>NachoCore\Utils\TelemetryAWS.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -1687,6 +1690,10 @@
     <ProjectReference Include="..\..\SwipeViewBinding\SwipeViewBinding\SwipeViewBinding\SwipeViewBinding.csproj">
       <Project>{6239F5E9-9EA2-4B50-8CCE-241ED8E1F0B7}</Project>
       <Name>SwipeViewBinding</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\aws-sdk-xamarin\AWS.XamarinSDK\AWSSDK.iOS\AWSSDK_iOS.csproj">
+      <Project>{2509D641-F08E-4DED-A12D-855B056BE831}</Project>
+      <Name>AWSSDK_iOS</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

@@ -255,7 +255,7 @@ namespace NachoClient.iOS
                     });
                 }
                 // Telemetry is in AppDelegate because the implementation is iOS-only right now.
-                Telemetry.SharedInstance.Start<TelemetryBEParse> ();
+                Telemetry.SharedInstance.Start<TelemetryBEAWS> ();
             };
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: NcApplication Class4LateShowEvent registered");
