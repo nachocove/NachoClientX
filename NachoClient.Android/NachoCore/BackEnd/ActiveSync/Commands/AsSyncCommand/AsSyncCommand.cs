@@ -21,6 +21,7 @@ namespace NachoCore.ActiveSync
         private bool HadCalendarChanges;
         private bool HadTaskChanges;
         private bool HadNewUnreadEmailMessageInInbox;
+        private bool HadDeletes;
         private bool FolderSyncIsMandated;
         private Nullable<uint> Limit;
         private List<SyncKit.PerFolder> SyncKitList;
@@ -540,6 +541,13 @@ namespace NachoCore.ActiveSync
             if (HadTaskChanges) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_TaskChanged));
             }
+            if (HadDeletes) {
+                // We know that there will be updates to Deleted folder.
+                var deletedFolder = McFolder.GetDefaultDeletedFolder (BEContext.Account.Id);
+                if (null != deletedFolder) {
+                    deletedFolder.UpdateSet_AsSyncMetaToClientExpected (true);
+                }
+            }
             if (FolderSyncIsMandated) {
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "SYNCREFSYNC0");
             } else {
@@ -786,6 +794,7 @@ namespace NachoCore.ActiveSync
                     Log.Error (Log.LOG_AS, "ProcessImplicitResponses: Add command did not receive response.");
                 }
                 if (IsSyncDeleteCommand (pending.Operation)) {
+                    HadDeletes = true;
                     var pathElem = McPath.QueryByServerId (pending.AccountId, pending.ServerId);
                     if (null == pathElem) {
                         Log.Error (Log.LOG_AS, "ProcessImplicitResponses: McPath entry missing for Delete of {0}", pending.ServerId);

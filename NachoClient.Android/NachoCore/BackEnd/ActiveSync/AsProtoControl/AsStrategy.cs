@@ -225,6 +225,7 @@ namespace NachoCore.ActiveSync
                 return false;
             }
             var musts = Scope.RequiredToAdvance (rung);
+            // compute the set of folders that need !AsSyncMetaToClientExpected before we advance to next rung.
             var folders = new List<McFolder> ();
             foreach (var must in musts) {
                 switch (must) {
@@ -244,7 +245,21 @@ namespace NachoCore.ActiveSync
             }
             var stillExp = folders.Count (x => true == x.AsSyncMetaToClientExpected);
             Log.Info (Log.LOG_AS, "Strategy: CanAdvance: {0} folders with ToClientExpected.", stillExp);
-            return (0 == stillExp);
+            // If there are any AsSyncMetaToClientExpected, we know now that we can't advance.
+            if (0 != stillExp) {
+                return false;
+            }
+            // for each of those folders, now see if there are any associated McPending. If yes, we need
+            // to process those before we advance.
+            foreach (var folder in folders) {
+                var commands = EligibleForSync (accountId, folder);
+                if (0 != commands.Count) {
+                    Log.Info (Log.LOG_AS, "Strategy: CanAdvance: {0} still has {0} commands.", folder.ServerId, commands.Count);
+                    return false;
+                }
+            }
+            Log.Info (Log.LOG_AS, "Strategy: CanAdvance: true.");
+            return true;
         }
 
         public int AdvanceIfPossible (int accountId, int rung)
@@ -516,6 +531,12 @@ namespace NachoCore.ActiveSync
             };
         }
 
+        private static List<McPending> EligibleForSync (int accountId, McFolder folder)
+        {
+            var rawPendings = McPending.QueryEligibleByFolderServerId (accountId, folder.ServerId);
+            return rawPendings.Where (p => AsSyncCommand.IsSyncCommand (p.Operation)).ToList ();
+        }
+
         // Returns null if nothing to do.
         public SyncKit GenSyncKit (int accountId, McProtocolState protocolState, bool isNarrow, bool cantBeEmpty)
         {
@@ -558,12 +579,19 @@ namespace NachoCore.ActiveSync
                         getChanges = false;
                     }
                 }
-                // See if we can complete some McPending.
+                /* See if we can complete some McPending.
+                 * From MS-ASCMD:
+                 * If the client device has not yet synchronized a folder, there SHOULD be no client-side changes. 
+                 * The device MUST synchronize the full contents of a given folder, and then have its changes, 
+                 * additions, and deletions applied.
+                 * 
+                 * If we are in serial mode, we will issue no more pendings.
+                 */
                 commands = new List<McPending> ();
-                // If we are in serial mode, we will issue no more pendings.
-                if (McFolder.AsSyncKey_Initial != folder.AsSyncKey && !inSerialMode) {
-                    var rawPendings = McPending.QueryEligibleByFolderServerId (accountId, folder.ServerId);
-                    commands = rawPendings.Where (p => AsSyncCommand.IsSyncCommand (p.Operation)).ToList ();
+                if (!folder.AsSyncMetaToClientExpected && 
+                    McFolder.AsSyncKey_Initial != folder.AsSyncKey && 
+                    !inSerialMode) {
+                    commands = EligibleForSync (accountId, folder);
                     if (issuedAtLeast1) {
                         // If we have issuedAtLeast1, then we exclude any serial pendings.
                         commands = commands.Where (p => !p.DeferredSerialIssueOnly).ToList ();

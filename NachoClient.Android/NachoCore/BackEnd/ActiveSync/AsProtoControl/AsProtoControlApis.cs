@@ -939,6 +939,7 @@ namespace NachoCore.ActiveSync
             var folder = McFolder.Create (Account.Id,
                              false,
                              false,
+                             false,
                              destFldServerId,
                              serverId,
                              displayName,
@@ -973,8 +974,9 @@ namespace NachoCore.ActiveSync
         public override string DeleteFolderCmd (int folderId)
         {
             var folder = McAbstrObject.QueryById<McFolder> (folderId);
-            NcAssert.True (folder.IsClientOwned == false, "Should not delete folders in client-owned folders.");
-            NcAssert.True (!folder.IsAwaitingDelete, "Should not try to delete folder that has been already deleted.");
+            NcAssert.False (folder.IsDistinguished, "BackEnd must not delete distinguished folders");
+            NcAssert.False (folder.IsClientOwned, "BackEnd must not delete folders in client-owned folders.");
+            NcAssert.False (folder.IsAwaitingDelete, "BackEnd must not try to delete folder that has been already deleted.");
 
             var delFolder = new McPending (Account.Id) {
                 Operation = McPending.Operations.FolderDelete,
@@ -1008,8 +1010,9 @@ namespace NachoCore.ActiveSync
         {
             var folder = McAbstrObject.QueryById<McFolder> (folderId);
             var destFolder = McAbstrObject.QueryById<McFolder> (destFolderId);
-            NcAssert.True (folder.IsClientOwned == false, "BackEnd should not move client-owned folders");
-            NcAssert.True (destFolder.IsClientOwned == false, "BackEnd should not modify client-owned folders");
+            NcAssert.False (folder.IsDistinguished, "BackEnd must not move distinguished folders");
+            NcAssert.False (folder.IsClientOwned, "BackEnd must not move client-owned folders");
+            NcAssert.False (destFolder.IsClientOwned, "BackEnd must not modify client-owned folders");
 
             folder = folder.UpdateSet_ParentId (destFolder.ServerId);
 
@@ -1040,7 +1043,8 @@ namespace NachoCore.ActiveSync
         public override string RenameFolderCmd (int folderId, string displayName)
         {
             var folder = McAbstrObject.QueryById<McFolder> (folderId);
-            NcAssert.True (folder.IsClientOwned == false, "BackEnd cannot modify client-owned folders");
+            NcAssert.False (folder.IsDistinguished, "BackEnd must not delete distinguished folders");
+            NcAssert.False (folder.IsClientOwned, "BackEnd must not modify client-owned folders");
 
             folder = folder.UpdateSet_DisplayName (displayName);
 
