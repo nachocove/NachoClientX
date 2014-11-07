@@ -230,6 +230,10 @@ namespace NachoClient.iOS
             UIBarButtonItem.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes, UIControlState.Normal);
             UIApplication.SharedApplication.RegisterForRemoteNotificationTypes (
                 UIRemoteNotificationType.NewsstandContentAvailability | UIRemoteNotificationType.Sound);
+            if (application.RespondsToSelector (new Selector ("registerUserNotificationSettings:"))) {
+                var settings = UIUserNotificationSettings.GetSettingsForTypes (UIUserNotificationType.Alert | UIUserNotificationType.Badge | UIUserNotificationType.Sound, new NSSet ());
+                application.RegisterUserNotificationSettings (settings);
+            }
             UIApplication.SharedApplication.SetMinimumBackgroundFetchInterval (UIApplication.BackgroundFetchIntervalMinimum);
             // Set up webview to handle html with embedded custom types (curtesy of Exchange)
             NSUrlProtocol.RegisterClass (new MonoTouch.ObjCRuntime.Class (typeof(CidImageProtocol)));
@@ -256,18 +260,22 @@ namespace NachoClient.iOS
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: NcApplication Class4LateShowEvent registered");
 
+            // If launch options is set with the local notification key, that means the app has been started
+            // by a local notification.  ReceivedLocalNotification will be called and it wants to know if the
+            // app has just be started of if it was already running. We set flags so ReceivedLocalNotification
+            // knows that the app has just been started.
             if (launchOptions != null && launchOptions.ContainsKey (UIApplication.LaunchOptionsLocalNotificationKey)) {
                 Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: LaunchOptionsLocalNotificationKey");
-                var localNotification = launchOptions [UIApplication.LaunchOptionsLocalNotificationKey] as UILocalNotification;
-                var emailDictResult = localNotification.UserInfo.ObjectForKey (NoteKey);
-                if (null != emailDictResult) {
-                    var emailMessageId = ((NSNumber)emailDictResult).IntValue;
-                    Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: from local notification: McEmailMessage.Id is {0}.", emailMessageId);
+                var localNotification = (UILocalNotification)launchOptions [UIApplication.LaunchOptionsLocalNotificationKey];
+                var emailNotificationDictionary = localNotification.UserInfo.ObjectForKey (EmailNotificationKey);
+                if (null != emailNotificationDictionary) {
+                    var emailMessageId = ((NSNumber)emailNotificationDictionary).IntValue;
+                    SaveNotification ("FinishedLaunching", EmailNotificationKey, emailMessageId);
                 }
-                var eventDictResult = localNotification.UserInfo.ObjectForKey (EventKey);
-                if (null != eventDictResult) {
-                    var eventId = ((NSNumber)eventDictResult).IntValue;
-                    Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: from local notification: eventId is {0}.", eventId);
+                var eventNotificationDictionary = localNotification.UserInfo.ObjectForKey (EventNotificationKey);
+                if (null != eventNotificationDictionary) {
+                    var eventId = ((NSNumber)eventNotificationDictionary).IntValue;
+                    SaveNotification ("FinishedLaunching", EventNotificationKey, eventId);
                 }
                 if (localNotification != null) {
                     // reset badge
@@ -325,7 +333,7 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_LIFECYCLE, "BeginBackgroundTask: Callback exit");
             });
 
-            if (LoginHelpers.IsCurrentAccountSet () && LoginHelpers.HasFirstSyncCompleted(LoginHelpers.GetCurrentAccountId())) {
+            if (LoginHelpers.IsCurrentAccountSet () && LoginHelpers.HasFirstSyncCompleted (LoginHelpers.GetCurrentAccountId ())) {
                 BackEndAutoDStateEnum backEndState = BackEnd.Instance.AutoDState (LoginHelpers.GetCurrentAccountId ());
 
                 switch (backEndState) {
@@ -338,7 +346,7 @@ namespace NachoClient.iOS
                     Log.Info (Log.LOG_STATE, "OnActived: CREDCALLBACK ");
                     break;
                 case BackEndAutoDStateEnum.ServerConfWait:
-                    ServConfReqCallback(LoginHelpers.GetCurrentAccountId());
+                    ServConfReqCallback (LoginHelpers.GetCurrentAccountId ());
                     Log.Info (Log.LOG_STATE, "OnActived: SERVCONFCALLBACK ");
                     break;
                 default:
@@ -411,7 +419,7 @@ namespace NachoClient.iOS
             var timeRemaining = application.BackgroundTimeRemaining;
             Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground: time remaining: {0}", timeRemaining);
             // XAMMIT: sometimes BackgroundTimeRemaining reads as MAXFLOAT.
-            if (25.0 > timeRemaining || 60*10 < timeRemaining) {
+            if (25.0 > timeRemaining || 60 * 10 < timeRemaining) {
                 FinalShutdown (null);
             } else {
                 var secs = timeRemaining - 20.0;
@@ -530,25 +538,73 @@ namespace NachoClient.iOS
             NcApplication.Instance.QuickSync (KPerformFetchTimeoutSeconds);
         }
 
+        protected void SaveNotification (string traceMessage, string key, int id)
+        {
+            Log.Info (Log.LOG_LIFECYCLE, "{0}: {1} id is {2}.", traceMessage, key, id);
+
+            var devAccountId = McAccount.GetDeviceAccount ().Id;
+            McMutables.Set (devAccountId, key, Account.Id.ToString (), id.ToString ());
+        }
+
         public override void ReceivedLocalNotification (UIApplication application, UILocalNotification notification)
         {
-            // Overwrite stuff  if we are "woken up"  from a LocalNotificaton out 
-            Log.Info (Log.LOG_LIFECYCLE, "ReceivedLocalNotification called.");
-            var value = (NSNumber)notification.UserInfo.ObjectForKey (NoteKey);
-            if (null != value) {
-                var emailMessageId = value.IntValue;
-                Log.Info (Log.LOG_LIFECYCLE, "ReceivedLocalNotification: from local notification: McEmailMessage.Id is {0}.", emailMessageId);
-            }
-                
-            value = (NSNumber)notification.UserInfo.ObjectForKey (EventKey);
-            if (null != value) {
-                var eventId = value.IntValue;
-                var devAccountId = McAccount.GetDeviceAccount ().Id;
-                McMutables.Set (devAccountId, "EventNotif", Account.Id.ToString (), eventId.ToString ());
+            var emailMutables = McMutables.Get (McAccount.GetDeviceAccount ().Id, NachoClient.iOS.AppDelegate.EmailNotificationKey);
+            var eventMutables = McMutables.Get (McAccount.GetDeviceAccount ().Id, NachoClient.iOS.AppDelegate.EventNotificationKey);
 
-                Log.Info (Log.LOG_LIFECYCLE, "ReceivedLocalNotification: set value: {0}.", 
-                    McMutables.Get (devAccountId, "EventNotif", Account.Id.ToString ()));
-                Log.Info (Log.LOG_LIFECYCLE, "ReceivedLocalNotification: from local notification: NotifiOS.handle is {0}.", eventId);
+            var emailNotification = (NSNumber)notification.UserInfo.ObjectForKey (EmailNotificationKey);
+            var eventNotification = (NSNumber)notification.UserInfo.ObjectForKey (EventNotificationKey);
+
+            // The app is 'active' if it is already running when the local notification
+            // arrives or if the app is started when a local notification is delivered.
+            // When the app is started by a notification, FinishedLauching adds mutables.
+            if (UIApplicationState.Active == UIApplication.SharedApplication.ApplicationState) {
+                // If the app is started by FinishedLaunching, it adds some mutables
+                if ((0 == emailMutables.Count) && (0 == eventMutables.Count)) {
+                    // Now we know that the app was already running.  In this case,
+                    // we notify the user of the upcoming event with an alert view.
+                    if (null != eventNotification) {
+                        var eventId = eventNotification.IntValue;
+                        var eventItem = McEvent.QueryById<McEvent> (eventId);
+                        if (null != eventItem) {
+                            var calendarItem = McCalendar.QueryById<McCalendar> (eventItem.CalendarId);
+                            if (null != calendarItem) {
+                                var subject = Pretty.SubjectString (calendarItem.Subject);
+                                if (!String.IsNullOrEmpty (subject)) {
+                                    subject += " ";
+                                } else {
+                                    subject = "Event at ";
+                                }
+                                var msg = subject + Pretty.FullDateTimeString (eventItem.StartTime);
+                                UIAlertView alert = new UIAlertView ("Reminder", msg, null, "OK", null);
+
+                                alert.Show ();
+                            }
+                        }
+                    }
+                    return;
+                }
+            }
+
+            // When the app is started by a local notification, the tab bar controller won't
+            // be set up yet when this code executes.  NachoTabBarController has code to look
+            // for notifications too, and it deals with them when it starts up.
+            var nachoTabBarController = Window.RootViewController as NachoTabBarController;
+                
+            if (null != emailNotification) {
+                var emailMessageId = emailNotification.IntValue;
+                SaveNotification ("ReceivedLocalNotification", EmailNotificationKey, emailMessageId);
+                if (null != nachoTabBarController) {
+                    nachoTabBarController.SwitchToNachoNow ();
+                }
+            }
+            if (null != eventNotification) {
+                var eventId = eventNotification.IntValue;
+                SaveNotification ("ReceivedLocalNotification", EventNotificationKey, eventId);
+                nachoTabBarController.SwitchToNachoNow ();
+
+            }
+            if ((null == emailNotification) && (null == eventNotification)) {
+                Log.Error (Log.LOG_LIFECYCLE, "ReceivedLocalNotification: received unknown notification");
             }
         }
 
@@ -617,11 +673,11 @@ namespace NachoClient.iOS
                     if (b.ButtonIndex == 0) {
 
                         Util.GetActiveTabBar ().SetSettingsBadge (false);
-                        LoginHelpers.SetDoesBackEndHaveIssues(LoginHelpers.GetCurrentAccountId(), false);
+                        LoginHelpers.SetDoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId (), false);
 
                         var txt = parent.GetTextField (0).Text;
                         // FIXME need to scan string to make sure it is of right format (regex).
-                        if (txt != null && NachoCore.Utils.Uri_Helpers.IsValidHost(txt)) {
+                        if (txt != null && NachoCore.Utils.Uri_Helpers.IsValidHost (txt)) {
                             Log.Info (Log.LOG_LIFECYCLE, " New Server Name = " + txt);
                             NcModel.Instance.RunInTransaction (() => {
                                 var tmpServer = McServer.QueryByAccountId<McServer> (accountId).SingleOrDefault ();
@@ -698,8 +754,8 @@ namespace NachoClient.iOS
          *     after we left the active state.
          * NOTE: This code will need to get a little smarter when we are doing many types of notification.
          */
-        static NSString NoteKey = new NSString ("McEmailMessage.Id");
-        static NSString EventKey = new NSString ("NotifiOS.handle");
+        static public NSString EmailNotificationKey = new NSString ("McEmailMessage.Id");
+        static public NSString EventNotificationKey = new NSString ("NotifiOS.handle");
 
         private bool BadgeNotifAllowed = false;
 
@@ -736,19 +792,21 @@ namespace NachoClient.iOS
                     // Notify once.
                     continue;
                 }
-                var fromAddr = message.GetFromAddress ();
-                if (null != fromAddr && null != fromAddr.CanonicalEmailAddress) {
-                    if (fromAddr.CanonicalEmailAddress == Account.EmailAddr) {
-                        // Don't notify or count in badge number from-me messages.
-                        Log.Info (Log.LOG_UI, "Not notifying on to-{0} message.", Account.EmailAddr);
-                        --badgeCount;
-                        continue;
-                    }
+                if (String.IsNullOrEmpty (message.From)) {
+                    // Don't notify or count in badge number from-me messages.
+                    Log.Info (Log.LOG_UI, "Not notifying on to-{0} message.", Account.EmailAddr);
+                    --badgeCount;
+                    continue;
+                }
+                var fromString = Pretty.SenderString (message.From);
+                var subjectString = Pretty.SubjectString (message.Subject);
+                if (!String.IsNullOrEmpty (subjectString)) {
+                    subjectString += " ";
                 }
                 var notif = new UILocalNotification () {
-                    AlertAction = "Nacho Mail",
-                    AlertBody = ((null == message.Subject) ? "(No Subject)" : message.Subject) + ", From " + message.From,
-                    UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (message.Id), NoteKey),
+                    AlertAction = null,
+                    AlertBody = subjectString + "From " + fromString,
+                    UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (message.Id), EmailNotificationKey),
                 };
                 if (!soundExpressed) {
                     notif.SoundName = UILocalNotification.DefaultSoundName;
@@ -765,6 +823,36 @@ namespace NachoClient.iOS
             }
 
             UIApplication.SharedApplication.ApplicationIconBadgeNumber = badgeCount;
+        }
+
+        public static void TestScheduleEmailNotification ()
+        {
+            var list = NcEmailManager.PriorityInbox ();
+            var thread = list.GetEmailThread (0);
+            var message = thread.GetEmailMessage (0);
+            var notif = new UILocalNotification () {
+                AlertAction = null,
+                AlertBody = ((null == message.Subject) ? "(No Subject)" : message.Subject) + ", From " + message.From,
+                UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (message.Id), EmailNotificationKey),
+                FireDate = NSDate.FromTimeIntervalSinceNow (15),
+            };
+            notif.SoundName = UILocalNotification.DefaultSoundName;
+            UIApplication.SharedApplication.ScheduleLocalNotification (notif);
+        }
+
+
+        public static void TestScheduleCalendarNotification ()
+        {
+            var e = NcModel.Instance.Db.Table<McEvent> ().Last ();
+            var c = McCalendar.QueryById<McCalendar> (e.CalendarId);
+            var notif = new UILocalNotification () {
+                AlertAction = null,
+                AlertBody = c.Subject + Pretty.FormatAlert (7),
+                UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (c.Id), EventNotificationKey),
+                FireDate = NSDate.FromTimeIntervalSinceNow (15),
+            };
+            notif.SoundName = UILocalNotification.DefaultSoundName;
+            UIApplication.SharedApplication.ScheduleLocalNotification (notif);
         }
 
         public override void ReceiveMemoryWarning (UIApplication application)

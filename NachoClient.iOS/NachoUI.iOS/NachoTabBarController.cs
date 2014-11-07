@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 
+using NachoCore.Model;
+
 namespace NachoClient.iOS
 {
     public partial class NachoTabBarController : UITabBarController
@@ -15,6 +17,8 @@ namespace NachoClient.iOS
         public NachoTabBarController (IntPtr handle) : base (handle)
         {
         }
+
+        protected UITabBarItem nachoNowItem;
 
         public override void ViewDidLoad ()
         {
@@ -30,7 +34,7 @@ namespace NachoClient.iOS
 
             RestoreCustomTabBarOrder ();
 
-            SetTabBarItem ("NachoClient.iOS.NachoNowViewController", "Now", "nav-nachonow", "nav-nachonow-active"); // Done
+            nachoNowItem = SetTabBarItem ("NachoClient.iOS.NachoNowViewController", "Now", "nav-nachonow", "nav-nachonow-active"); // Done
             SetTabBarItem ("NachoClient.iOS.CalendarViewController", "Calendar", "nav-calendar", "nav-calendar-active"); // Done
             SetTabBarItem ("NachoClient.iOS.ContactListViewController", "Contacts", "nav-contacts", "nav-contacts-active"); // Done
             SetTabBarItem ("NachoClient.iOS.InboxViewController", "Inbox", "nav-mail", "nav-mail-active"); // Done
@@ -44,6 +48,47 @@ namespace NachoClient.iOS
             FinishedCustomizingViewControllers += (object sender, UITabBarCustomizeChangeEventArgs e) => {
                 SaveCustomTabBarOrder (e);
             };
+                
+        }
+           
+        // Fires only when app starts; not on all fg events
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+
+            var accountId = LoginHelpers.GetCurrentAccountId ();
+
+            var emailMessageIdString = McMutables.Get (McAccount.GetDeviceAccount ().Id, NachoClient.iOS.AppDelegate.EmailNotificationKey, accountId.ToString ());
+            if (!String.IsNullOrEmpty (emailMessageIdString)) {
+                SwitchToNachoNow ();
+            }
+
+            var eventMessageString = McMutables.Get (McAccount.GetDeviceAccount ().Id, NachoClient.iOS.AppDelegate.EventNotificationKey, accountId.ToString ());
+            if (!String.IsNullOrEmpty (eventMessageString)) {
+                SwitchToNachoNow ();
+            }
+        }
+
+        protected UINavigationController SelectTabRoot (UITabBarItem item)
+        {
+            int i = 0;
+            foreach (var viewController in ViewControllers) {
+                if (item == viewController.TabBarItem) {
+                    var vc = (UINavigationController)viewController;
+                    vc.PopToRootViewController (false);
+                    this.SelectedIndex = i;
+                    return vc;
+                }
+                i = i + 1;
+            }
+            return null;
+        }
+
+        public void SwitchToNachoNow()
+        {
+            var navigationController = SelectTabRoot (nachoNowItem);
+            var nachoNowViewController = (NachoNowViewController)navigationController.TopViewController;
+            nachoNowViewController.HandleNotifications ();
         }
 
         protected string GetTabBarItemTypeName (UIViewController vc)
@@ -92,24 +137,26 @@ namespace NachoClient.iOS
             ViewControllers = orderedList.ToArray ();
         }
 
-        protected void SetTabBarItem (string typeName, string title, string imageName, string selectedImageName)
+        protected UITabBarItem SetTabBarItem (string typeName, string title, string imageName, string selectedImageName)
         {
             foreach (var vc in ViewControllers) {
                 if (typeName == GetTabBarItemTypeName (vc)) {
-                    using (var image = UIImage.FromBundle (imageName).ImageWithRenderingMode(UIImageRenderingMode.AlwaysTemplate)) {
-                        using (var selectedImage = UIImage.FromBundle (selectedImageName).ImageWithRenderingMode(UIImageRenderingMode.AlwaysTemplate)) {
+                    using (var image = UIImage.FromBundle (imageName).ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate)) {
+                        using (var selectedImage = UIImage.FromBundle (selectedImageName).ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate)) {
                             var item = new UITabBarItem (title, image, selectedImage);
                             vc.TabBarItem = item;
+                            return item;
                         }
                     }
                 }
             }
+            return null;
         }
 
-        public void SetSettingsBadge(bool isDirty)
+        public void SetSettingsBadge (bool isDirty)
         {
             for (int i = 0; i < ViewControllers.Length; i++) {
-                if (ViewControllers [i].GetType() == typeof(GeneralSettingsViewController)) {
+                if (ViewControllers [i].GetType () == typeof(GeneralSettingsViewController)) {
                     ViewControllers [i].TabBarItem.BadgeValue = (isDirty ? @"!" : null);
                     if (i > (TabBar.Items.Length - 2) && isDirty) {
                         MoreNavigationController.TabBarItem.BadgeValue = @"!";

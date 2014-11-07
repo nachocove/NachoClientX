@@ -100,6 +100,44 @@ namespace NachoClient.iOS
             MaybeRefreshPriorityInbox ();
         }
 
+        public override void ViewDidAppear (bool animated)
+        {
+            base.ViewDidAppear (animated);
+        }
+
+        // Called from NachoTabBarController
+        // if we need to handle a notification.
+        public void HandleNotifications ()
+        {
+            // If we have a pending notification, bring up the event detail view
+            var eventNotifications = McMutables.Get (McAccount.GetDeviceAccount ().Id, NachoClient.iOS.AppDelegate.EventNotificationKey);
+            var eventNotification = eventNotifications.FirstOrDefault ();
+            if (null != eventNotification) {
+                // TODO: Multi-account switch
+                // var accountId = int.Parse(notification.Key);
+                var eventId = int.Parse (eventNotification.Value);
+                var e = McEvent.QueryById<McEvent> (eventId);
+                eventNotification.Delete ();
+                if (null != e) {
+                    PerformSegue ("NachoNowToEventView", new SegueHolder (e));
+                }
+            }
+            var emailNotifications = McMutables.Get (McAccount.GetDeviceAccount ().Id, NachoClient.iOS.AppDelegate.EmailNotificationKey);
+            var emailNotification = emailNotifications.FirstOrDefault ();
+            if (null != emailNotification) {
+                // TODO: Multi-account switch
+                // var accountId = int.Parse (emailNotification.Key);
+                var messageId = int.Parse (emailNotification.Value);
+                emailNotification.Delete ();
+                var t = new McEmailMessageThread ();
+                var m = new NcEmailMessageIndex ();
+                m.Id = messageId;
+                t.Add (m);
+                PerformSegue ("NachoNowToMessageView", new SegueHolder (t));
+                return;
+            }
+        }
+
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
@@ -182,7 +220,6 @@ namespace NachoClient.iOS
         public void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
-            Console.WriteLine ("NOW: {0}", s.Status.SubKind);
             if (NcResult.SubKindEnum.Info_EmailMessageSetChanged == s.Status.SubKind) {
                 RefreshPriorityInboxIfVisible ();
 

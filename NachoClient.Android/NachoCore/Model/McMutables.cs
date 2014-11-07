@@ -2,6 +2,7 @@
 //
 using System;
 using System.Linq;
+using System.Collections.Generic;
 using System.Collections.Concurrent;
 using NachoCore.Utils;
 
@@ -20,7 +21,9 @@ namespace NachoCore.Model
 
         // Use a class name as the Module name to avoid conflict.
         public string Module { set; get; }
+
         public string Key { set; get; }
+
         public string Value { set; get; }
 
         public McMutables ()
@@ -48,8 +51,8 @@ namespace NachoCore.Model
         {
             var exists = NcModel.Instance.Db.Table<McMutables> ().Where (x =>
                 x.AccountId == accountId &&
-                x.Key == key && 
-                x.Module == module).SingleOrDefault ();
+                         x.Key == key &&
+                         x.Module == module).SingleOrDefault ();
             if (null == exists) {
                 exists = new McMutables (accountId);
                 exists.Module = module;
@@ -86,20 +89,26 @@ namespace NachoCore.Model
         {
             var exists = NcModel.Instance.Db.Table<McMutables> ().Where (x =>
                 x.AccountId == accountId &&
-                x.Key == key && 
-                x.Module == module).SingleOrDefault ();
+                         x.Key == key &&
+                         x.Module == module).SingleOrDefault ();
             if (null == exists) {
                 return null;
             }
             return exists.Value;
         }
 
+        public static List<McMutables> Get (int accountId, string module)
+        {
+            return NcModel.Instance.Db.Table<McMutables> ().Where (x =>
+                x.AccountId == accountId && x.Module == module).ToList ();
+        }
+
         public static void Delete (int accountId, string module, string key)
         {
             var exists = NcModel.Instance.Db.Table<McMutables> ().Where (x =>
                 x.AccountId == accountId &&
-                x.Key == key && 
-                x.Module == module).SingleOrDefault ();
+                         x.Key == key &&
+                         x.Module == module).SingleOrDefault ();
             if (null != exists) {
                 exists.Delete ();
             }
@@ -115,7 +124,8 @@ namespace NachoCore.Model
             }
         }
 
-        public static void SetBool (int accountId, string module, string key, bool value){
+        public static void SetBool (int accountId, string module, string key, bool value)
+        {
             if (true == value) {
                 Set (accountId, module, key, "1");
             } else {

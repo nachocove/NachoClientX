@@ -28,14 +28,12 @@ namespace NachoPlatform
                 return instance;
             }
         }
-
-        static NSString NoteKey = new NSString ("NotifiOS.handle");
-
+            
         public UILocalNotification FindNotif (int handle)
         {
             foreach (var notif in UIApplication.SharedApplication.ScheduledLocalNotifications) {
                 if (null != notif.UserInfo) {
-                    var value = notif.UserInfo.ValueForKey (NoteKey);
+                    var value = notif.UserInfo.ValueForKey (NachoClient.iOS.AppDelegate.EventNotificationKey);
                     if (null != value && value is NSNumber && handle == ((NSNumber)value).IntValue) {
                         return notif;
                     }
@@ -52,7 +50,7 @@ namespace NachoPlatform
                 notif = new UILocalNotification () {
                     AlertAction = "Nacho Mail",
                     AlertBody = message,
-                    UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (handle), NoteKey),
+                    UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (handle), NachoClient.iOS.AppDelegate.EventNotificationKey),
                     SoundName = UILocalNotification.DefaultSoundName,
                     FireDate = when.ToNSDate (),
                     //Commented out timezone because:
