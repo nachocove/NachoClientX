@@ -223,10 +223,10 @@ namespace NachoClient.iOS
         {
             float movePercentage = 0.0f;
             if (0 > screenDelta) {
-                movePercentage = screenDelta / maxLeftDelta;
+                movePercentage = 0 != maxLeftDelta ? screenDelta / maxLeftDelta : 0.0f;
             }
             if (0 < screenDelta) {
-                movePercentage = screenDelta / maxRightDelta;
+                movePercentage = 0 != maxRightDelta ? screenDelta / maxRightDelta : 0.0f;
             }
             movePercentage += BaseMovePercentage;
             return movePercentage;
