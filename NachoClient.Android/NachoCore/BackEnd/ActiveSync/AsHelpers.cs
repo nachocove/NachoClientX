@@ -173,7 +173,7 @@ namespace NachoCore.ActiveSync
                 var body = McBody.QueryById<McBody> (cal.BodyId);
                 NcAssert.True (null != body);
                 xmlAppData.Add (new XElement (AirSyncBaseNs + Xml.AirSyncBase.Body,
-                    new XElement (AirSyncBaseNs + Xml.AirSyncBase.Type, body.BodyType),
+                    new XElement (AirSyncBaseNs + Xml.AirSyncBase.Type, (uint)body.BodyType),
                     new XElement (AirSyncBaseNs + Xml.AirSyncBase.Data, body.GetContentsString ())));
             }
 
