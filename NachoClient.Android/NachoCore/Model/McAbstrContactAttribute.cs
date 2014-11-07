@@ -19,6 +19,9 @@ namespace NachoCore.Model
         /// Values are created & displayed in a certain order
         public int Order { get; set; }
 
+        // User-defined default contact attribute
+        public bool IsDefault { get; set; }
+
         /// Field name
         public string Name { get; set; }
 
