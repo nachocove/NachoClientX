@@ -173,7 +173,7 @@ namespace NachoClient.iOS
         {
             UITableViewCell cell = null;
             cell = tableView.DequeueReusableCell (FileCell);
-            if (cell == null) {
+            if (null == cell) {
                 cell = CreateCell (tableView, FileCell);
             }
             NcAssert.True (null != cell);

@@ -703,7 +703,7 @@ namespace NachoClient.iOS
 
             if (segue.Identifier.Equals ("EventToAttachment")) {
                 var dc = (EventAttachmentViewController)segue.DestinationViewController;
-                dc.SetOwner (null, c.attachments, c, false);
+                dc.SetOwner (null, c.attachments, c);
                 return;
             }
 

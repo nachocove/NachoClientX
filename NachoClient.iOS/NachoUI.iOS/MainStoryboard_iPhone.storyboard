@@ -835,6 +835,8 @@
                         <segue destination="cXD-rq-iSl" kind="push" identifier="EditEventToCalendarChooser" id="7sK-rg-HQL"/>
                         <segue destination="rp9-J1-cgU" kind="push" identifier="EditEventToEventAttendees" id="w67-dy-XSq"/>
                         <segue destination="Nbe-45-5AM" kind="push" identifier="EditEventToAttachment" id="peA-r2-tjq"/>
+                        <segue destination="SX4-pu-5YA" kind="modal" identifier="SegueToAddAttachment" modalTransitionStyle="crossDissolve" id="Kr2-7H-kbB"/>
+                        <segue destination="1pE-rh-uML" kind="modal" identifier="SegueToAttachments" id="g8B-SL-7oa"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="O99-IW-kIW" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -991,7 +993,7 @@
                         <outlet property="EventAttachmentsTableView" destination="fhu-bP-xWZ" id="jdL-IM-bML"/>
                         <outlet property="addAttachmentButton" destination="N2c-Hs-Cv9" id="QHy-9U-koS"/>
                         <segue destination="1pE-rh-uML" kind="modal" identifier="EventAttachmentToFiles" id="GKm-A3-njZ"/>
-                        <segue destination="SX4-pu-5YA" kind="modal" identifier="EventAttachmentsToAddAttachment" modalTransitionStyle="crossDissolve" id="Zgo-Hx-sjv"/>
+                        <segue destination="SX4-pu-5YA" kind="modal" identifier="SegueToAddAttachment" modalTransitionStyle="crossDissolve" id="Zgo-Hx-sjv"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="2A8-Nn-b9g" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1031,9 +1033,9 @@
                         <segue destination="OCr-PO-3nH" kind="push" identifier="ComposeToNachoNow" id="tkk-6o-6oa"/>
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="SegueToMessagePriority" modalTransitionStyle="crossDissolve" id="DDa-hb-SgY"/>
                         <segue destination="ErX-HX-Xxl" kind="modal" identifier="SegueToIntentSelection" modalPresentationStyle="fullScreen" modalTransitionStyle="crossDissolve" id="5qs-bm-OYT"/>
-                        <segue destination="1pE-rh-uML" kind="modal" identifier="ComposeToFiles" id="84g-IQ-Iaw"/>
+                        <segue destination="1pE-rh-uML" kind="modal" identifier="SegueToAttachments" id="84g-IQ-Iaw"/>
                         <segue destination="q23-o6-SFp" kind="modal" identifier="SegueToQuickResponse" modalTransitionStyle="crossDissolve" id="tsd-Qf-0s2"/>
-                        <segue destination="SX4-pu-5YA" kind="modal" identifier="ComposeToAddAttachment" id="zby-Sy-Y3J"/>
+                        <segue destination="SX4-pu-5YA" kind="modal" identifier="SegueToAddAttachment" modalTransitionStyle="crossDissolve" id="zby-Sy-Y3J"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="K96-0O-l77" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1711,33 +1713,33 @@
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="xrp-ey-B0j"/>
-        <segue reference="p7w-hx-Y70"/>
-        <segue reference="bIh-V3-UrL"/>
-        <segue reference="Zgo-Hx-sjv"/>
-        <segue reference="peA-r2-tjq"/>
-        <segue reference="uqv-uq-oCq"/>
-        <segue reference="szv-KC-TId"/>
-        <segue reference="tQS-oL-XNh"/>
         <segue reference="4z2-t5-9Cd"/>
         <segue reference="g4G-tD-G9H"/>
         <segue reference="iqA-wd-xqD"/>
         <segue reference="XQg-JR-vxA"/>
         <segue reference="Eb2-K0-nI3"/>
+        <segue reference="tQS-oL-XNh"/>
+        <segue reference="rEt-DF-c51"/>
+        <segue reference="szv-KC-TId"/>
+        <segue reference="zOx-eF-clw"/>
+        <segue reference="c79-xS-Npa"/>
         <segue reference="TEI-cG-N0R"/>
         <segue reference="wZy-ga-YEb"/>
-        <segue reference="zOx-eF-clw"/>
-        <segue reference="rEt-DF-c51"/>
-        <segue reference="c79-xS-Npa"/>
-        <segue reference="w67-dy-XSq"/>
-        <segue reference="m2D-2n-RiV"/>
-        <segue reference="7sK-rg-HQL"/>
+        <segue reference="xrp-ey-B0j"/>
+        <segue reference="p7w-hx-Y70"/>
+        <segue reference="84g-IQ-Iaw"/>
         <segue reference="KnL-e9-HQR"/>
-        <segue reference="tkk-6o-6oa"/>
-        <segue reference="Kmd-x6-iCJ"/>
+        <segue reference="zby-Sy-Y3J"/>
         <segue reference="eUJ-3D-Pjk"/>
         <segue reference="B5b-jg-ZNg"/>
         <segue reference="dAf-rc-Hh3"/>
+        <segue reference="Kmd-x6-iCJ"/>
+        <segue reference="s9j-Ih-SWz"/>
+        <segue reference="k2t-Pj-AhS"/>
+        <segue reference="w67-dy-XSq"/>
+        <segue reference="m2D-2n-RiV"/>
+        <segue reference="7sK-rg-HQL"/>
+        <segue reference="peA-r2-tjq"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>
