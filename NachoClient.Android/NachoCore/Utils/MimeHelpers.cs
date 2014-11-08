@@ -194,6 +194,10 @@ namespace NachoCore.Utils
                 return null;
             }
 
+            if (McAbstrFileDesc.BodyTypeEnum.None == body.BodyType) {
+                return "";
+            }
+
             if (McAbstrFileDesc.BodyTypeEnum.PlainText_1 == body.BodyType) {
                 return body.GetContentsString ();
             }
