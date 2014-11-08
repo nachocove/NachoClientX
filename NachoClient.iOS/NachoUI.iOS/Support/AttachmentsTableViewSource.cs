@@ -853,17 +853,14 @@ namespace NachoClient.iOS
 
         public bool UpdateSearchResults (int forSearchOption, string forSearchString)
         {
-            new System.Threading.Thread (new System.Threading.ThreadStart (() => {
-                NachoClient.Util.HighPriority ();
-                var results = SearchByString (forSearchString);
-                NachoClient.Util.RegularPriority ();
-                InvokeOnMainThread (() => {
-                    var searchResults = results;
-                    SetSearchResults (searchResults);
-                    UpdateSearchResultsCallback ();
-                });
-            })).Start ();
-
+            NachoClient.Util.HighPriority ();
+            var results = SearchByString (forSearchString);
+            NachoClient.Util.RegularPriority ();
+            InvokeOnMainThread (() => {
+                var searchResults = results;
+                SetSearchResults (searchResults);
+                UpdateSearchResultsCallback ();
+            });
             return false;
         }
 

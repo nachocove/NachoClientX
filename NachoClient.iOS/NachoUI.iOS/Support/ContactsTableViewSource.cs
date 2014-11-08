@@ -614,16 +614,14 @@ namespace NachoClient.iOS
         /// <param name="forSearchString">The prefix string to search for.</param>
         public bool UpdateSearchResults (int forSearchOption, string forSearchString)
         {
-            new System.Threading.Thread (new System.Threading.ThreadStart (() => {
-                NachoClient.Util.HighPriority ();
-                var results = McContact.SearchAllContactItems (forSearchString);
-                NachoClient.Util.RegularPriority ();
-                InvokeOnMainThread (() => {
-                    var searchResults = results;
-                    SetSearchResults (searchResults);
-                    UpdateSearchResultsCallback ();
-                });
-            })).Start ();
+            NachoClient.Util.HighPriority ();
+            var results = McContact.SearchAllContactItems (forSearchString);
+            NachoClient.Util.RegularPriority ();
+            InvokeOnMainThread (() => {
+                var searchResults = results;
+                SetSearchResults (searchResults);
+                UpdateSearchResultsCallback ();
+            });
 
             return false;
         }

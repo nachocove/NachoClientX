@@ -213,15 +213,13 @@ namespace NachoClient.iOS
                 NachoClient.Util.RegularPriority ();
                 return;
             }
-            new System.Threading.Thread (new System.Threading.ThreadStart (() => {
-                var results = McContact.SearchAllContactItems (forSearchString);
-                InvokeOnMainThread (() => {
-                    searchResults = results;
-                    NachoClient.Util.HighPriority ();
-                    resultsTableView.ReloadData ();
-                    NachoClient.Util.RegularPriority ();
-                });
-            })).Start ();
+            var results = McContact.SearchAllContactItems (forSearchString);
+            InvokeOnMainThread (() => {
+                searchResults = results;
+                NachoClient.Util.HighPriority ();
+                resultsTableView.ReloadData ();
+                NachoClient.Util.RegularPriority ();
+            });
         }
 
         protected void KickoffSearchApi (int forSearchOption, string forSearchString)
