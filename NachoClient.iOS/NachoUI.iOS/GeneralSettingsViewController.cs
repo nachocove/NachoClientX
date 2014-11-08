@@ -336,13 +336,6 @@ namespace NachoClient.iOS
             }
         }
 
-        protected UIView AddHorizontalLine (float offset, float yVal, float width, UIColor color)
-        {
-            var lineUIView = new UIView (new RectangleF (offset, yVal, width, .5f));
-            lineUIView.BackgroundColor = color;
-            return lineUIView;
-        }
-
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             if (segue.Identifier.Equals ("GeneralSettingsToSettingsLegal")) {

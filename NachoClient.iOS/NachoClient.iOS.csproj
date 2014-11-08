@@ -1650,6 +1650,7 @@
     <BundleResource Include="Resources\contacts-icn-phone%402x.png" />
     <BundleResource Include="Resources\contacts-vip-checked%402x.png" />
     <BundleResource Include="Resources\contacts-vip%402x.png" />
+    <BundleResource Include="Resources\gen-delete-small%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

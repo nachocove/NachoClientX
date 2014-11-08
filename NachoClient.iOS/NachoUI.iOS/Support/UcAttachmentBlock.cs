@@ -15,39 +15,89 @@ namespace NachoClient.iOS
 
     public class UcAttachmentCell : UIView
     {
-        protected const float LINE_HEIGHT = 40;
+        protected const float LINE_HEIGHT = 60;
         protected const float LEFT_INDENT = 15;
         protected const float LEFT_ADDRESS_INDENT = 57;
+        protected UIColor CELL_COMPONENT_BG_COLOR = UIColor.White;
+        protected const int REMOVE_BUTTON_TAG = 1100;
 
         public McAttachment attachment;
 
         public UcAttachmentCell (McAttachment attachment, float parentWidth) : base (new RectangleF (0, 0, parentWidth, LINE_HEIGHT))
         {
             this.attachment = attachment;
-
             CreateView (parentWidth);
         }
 
         public void CreateView (float parentWidth)
         {
-            var hl = new UIView (new RectangleF (0, 0, parentWidth, 1));
-            hl.Layer.BorderColor = A.Color_NachoNowBackground.CGColor;
-            hl.Layer.BorderWidth = 1; 
+            //Remove icon
+            var removeButton = new UIButton ();
+            removeButton.Tag = REMOVE_BUTTON_TAG;
+            removeButton.SetImage (UIImage.FromBundle ("gen-delete-small"), UIControlState.Normal);
+            removeButton.Frame = new RectangleF (18, (LINE_HEIGHT / 2) - 8, 16, 16);
 
-            var icon = new UIImageView (new RectangleF (LEFT_INDENT, 7, 15, 15));
-            using (var image = UIImage.FromBundle ("icn-attach-files")) {
-                icon.Image = image;
+            //Cell icon
+            var cellIconImageView = new UIImageView (); 
+            cellIconImageView.BackgroundColor = CELL_COMPONENT_BG_COLOR;
+            cellIconImageView.Frame = new RectangleF (52, 18, 24, 24);
+
+            //Text label
+            var textLabel = new UILabel (); 
+            textLabel.Font = A.Font_AvenirNextDemiBold14;
+            textLabel.TextColor = A.Color_NachoDarkText;
+            textLabel.BackgroundColor = CELL_COMPONENT_BG_COLOR;
+            textLabel.Frame = new RectangleF (60 + 34, 11, parentWidth - 60 - 52, 19.5f);
+
+            //Detail text label
+            var detailTextlabel = new UILabel (); 
+            detailTextlabel.BackgroundColor = CELL_COMPONENT_BG_COLOR;
+            detailTextlabel.Font = A.Font_AvenirNextRegular14;
+            detailTextlabel.TextColor = A.Color_NachoTextGray;
+            detailTextlabel.Frame = new RectangleF (60 + 34, 11 + 19.5f, parentWidth - 60 - 52, 19.5f);
+
+            //Separator line
+            var separatorLine = Util.AddHorizontalLineView (60 + 34, 60, parentWidth - 60, A.Color_NachoBorderGray);
+
+            this.AddSubviews (new UIView[] {
+                removeButton,
+                cellIconImageView,
+                textLabel,
+                detailTextlabel,
+                separatorLine
+            });
+
+            ConfigureView (attachment, cellIconImageView, textLabel, detailTextlabel);
+        }
+
+        protected void ConfigureView (McAttachment attachment, UIImageView iconView, UILabel textLabel, UILabel detailTextLabel)
+        {
+            if (null != attachment) {
+
+                textLabel.Text = Path.GetFileNameWithoutExtension (attachment.DisplayName);
+
+                var detailText = "";
+                if (attachment.IsInline) {
+                    detailText += "Inline ";
+                }
+                string extension = Path.GetExtension (attachment.DisplayName).ToUpper ();
+                detailText += extension.Length > 1 ? extension.Substring (1) + " " : "Unrecognized "; // get rid of period and format
+                detailText += "file";
+                if (0 != attachment.FileSize) {
+                    detailText += " - " + Pretty.PrettyFileSize (attachment.FileSize);
+                } 
+                detailTextLabel.Text = detailText;
+
+                if (detailText.Contains ("JPG") || detailText.Contains ("JPEG")
+                    || detailText.Contains ("TIFF") || detailText.Contains ("PNG")
+                    || detailText.Contains ("GIF") || detailText.Contains ("RAW")) {
+                    iconView.Image = UIImage.FromBundle ("email-att-photos");
+                } else {
+                    iconView.Image = UIImage.FromBundle ("email-att-files");
+                }
+            } else {
+                textLabel.Text = "File no longer exists"; 
             }
-
-            var label = new UILabel ();
-            label.Font = A.Font_AvenirNextRegular14;
-            label.TextColor = A.Color_0B3239;
-            label.Text = attachment.DisplayName;
-            var labelSize = label.StringSize (label.Text, label.Font);
-            var yLabel = (LINE_HEIGHT / 2) - (labelSize.Height / 2);
-            label.Frame = new RectangleF (new PointF (LEFT_ADDRESS_INDENT, yLabel), labelSize);
-
-            this.AddSubviews (new UIView[] { hl, icon, label });
         }
     }
 
@@ -58,21 +108,25 @@ namespace NachoClient.iOS
         protected float parentWidth;
         protected List<UcAttachmentCell> list = new List<UcAttachmentCell> ();
 
-        protected const int LINE_HEIGHT = 40;
+        protected int CELL_HEIGHT;
+        protected const int LINE_HEIGHT = 60;
         protected const int LEFT_INDENT = 15;
         protected const int RIGHT_INDENT = 15;
+
+        protected const int REMOVE_BUTTON_TAG = 1100;
 
         bool isCompact;
         UIView contentView;
         UILabel mainLabel;
         UIButton chooserButton;
 
-        public UcAttachmentBlock (IUcAttachmentBlockDelegate owner, int accountId, float parentWidth)
+        public UcAttachmentBlock (IUcAttachmentBlockDelegate owner, int accountId, float parentWidth, int cellHeight)
         {
             this.owner = owner;
             this.accountId = accountId;
             this.parentWidth = parentWidth;
             this.BackgroundColor = UIColor.White;
+            this.CELL_HEIGHT = cellHeight;
 
             this.AutoresizingMask = UIViewAutoresizing.None;
             this.AutosizesSubviews = false;
@@ -102,16 +156,16 @@ namespace NachoClient.iOS
 
             mainLabel = new UILabel ();
             mainLabel.Text = "Attachments";
-            mainLabel.Font = A.Font_AvenirNextRegular14;
-            mainLabel.TextColor = A.Color_0B3239;
+            mainLabel.Font = A.Font_AvenirNextMedium14;
+            mainLabel.TextColor = A.Color_NachoDarkText;
 
             chooserButton = UIButton.FromType (UIButtonType.System);
             Util.SetOriginalImagesForButton (chooserButton, "email-add", "email-add-active");
             chooserButton.SizeToFit ();
-            chooserButton.Frame = new RectangleF (parentWidth - chooserButton.Frame.Width - RIGHT_INDENT, 0, chooserButton.Frame.Width, LINE_HEIGHT);
+            chooserButton.Frame = new RectangleF (parentWidth - chooserButton.Frame.Width - RIGHT_INDENT, 0, chooserButton.Frame.Width, CELL_HEIGHT);
             chooserButton.TouchUpInside += (object sender, EventArgs e) => {
                 if (null != owner) {
-                    PromptForAttachment();
+                    owner.PerformSegueForAttachmentBlock("SegueToAddAttachment", new SegueHolder (null));
                 }
             };
 
@@ -134,18 +188,20 @@ namespace NachoClient.iOS
 
             var tap = new UITapGestureRecognizer ();
             tap.AddTarget (() => {
-                AttachmentActionSheet (c);
+                if (null != owner) {
+                    owner.DisplayAttachmentForAttachmentBlock (c.attachment);
+                }
             });
             c.AddGestureRecognizer (tap);
 
+            var RemoveButton = c.ViewWithTag (REMOVE_BUTTON_TAG) as UIButton;
+            RemoveButton.TouchUpInside += (object sender, EventArgs e) => {
+                Remove (c);
+            };
+
             Layout ();
             ConfigureView ();
-        }
-
-        public void PromptForAttachment ()
-        {
-            AttachFileActionSheet ();
-        }
+        } 
 
         public void Remove (UcAttachmentCell c)
         {
@@ -159,7 +215,7 @@ namespace NachoClient.iOS
         /// Adjusts x & y on the top line of a view
         protected void AdjustXY (UIView view, float X, float Y)
         {
-            view.Center = new PointF (X + (view.Frame.Width / 2), LINE_HEIGHT / 2);
+            view.Center = new PointF (X + (view.Frame.Width / 2), CELL_HEIGHT / 2);
         }
 
         public void ConfigureView ()
@@ -183,7 +239,7 @@ namespace NachoClient.iOS
             mainLabel.Frame = new RectangleF (mainLabel.Frame.Location, mainLabelSize);
             AdjustXY (mainLabel, LEFT_INDENT, yOffset);
 
-            yOffset += LINE_HEIGHT;
+            yOffset += CELL_HEIGHT;
 
             foreach (var c in list) {
                 if (!c.Hidden) {
@@ -194,122 +250,6 @@ namespace NachoClient.iOS
 
             contentView.Frame = new RectangleF (0, 0, parentWidth, yOffset);
             this.Frame = new RectangleF (this.Frame.Location, contentView.Frame.Size);
-        }
-
-        protected void AttachFileActionSheet ()
-        {
-            var actionSheet = new UIActionSheet ();
-
-            actionSheet.Add ("Add Photo");
-            actionSheet.Add ("Add Attachment");
-            actionSheet.Add ("Cancel");
-            actionSheet.CancelButtonIndex = 2;
-
-            actionSheet.Clicked += delegate(object sender, UIButtonEventArgs b) {
-                switch (b.ButtonIndex) {
-                case 0:
-                    SetupPhotoPicker ();
-                    break; 
-                case 1:
-                    if (null != owner) {
-                        owner.PerformSegueForAttachmentBlock ("ComposeToFiles", new SegueHolder (null));
-                    }
-                    break;
-                case 2:
-
-                    break;// Cancel
-                default:
-                    NcAssert.CaseError ();
-                    break;
-                }
-            };
-            actionSheet.ShowInView (this);
-        }
-
-        void SetupPhotoPicker ()
-        {
-            var imagePicker = new UIImagePickerController ();
-
-            imagePicker.SourceType = UIImagePickerControllerSourceType.PhotoLibrary;
-
-            imagePicker.FinishedPickingMedia += Handle_FinishedPickingMedia;
-            imagePicker.Canceled += Handle_Canceled;
-
-            imagePicker.ModalPresentationStyle = UIModalPresentationStyle.CurrentContext;
-            owner.PresentViewControllerForAttachmentBlock (imagePicker, true, null);
-        }
-
-        void Handle_Canceled (object sender, EventArgs e)
-        {
-            var imagePicker = sender as UIImagePickerController;
-            imagePicker.DismissViewController (true, null);
-        }
-
-        protected void Handle_FinishedPickingMedia (object sender, UIImagePickerMediaPickedEventArgs e)
-        {
-            var imagePicker = sender as UIImagePickerController;
-
-            bool isImage = false;
-            switch (e.Info [UIImagePickerController.MediaType].ToString ()) {
-            case "public.image":
-                isImage = true;
-                break;
-            case "public.video":
-                // TODO: Implement videos
-                Log.Info (Log.LOG_UI, "video ignored");
-                break;
-            default:
-                // TODO: Implement videos
-                Log.Error (Log.LOG_UI, "unknown media type selected");
-                break;
-            }
-
-            if (isImage) {
-                var image = e.Info [UIImagePickerController.EditedImage] as UIImage;
-                if (null == image) {
-                    image = e.Info [UIImagePickerController.OriginalImage] as UIImage;
-                }
-                NcAssert.True (null != image);
-                var attachment = McAttachment.InsertFile (accountId, ((FileStream stream) => {
-                    using (var jpg = image.AsJPEG ().AsStream ()) {
-                        jpg.CopyTo (stream);
-                    }
-                }));
-                attachment.SetDisplayName (attachment.Id.ToString () + ".jpg");
-                attachment.UpdateSaveFinish ();
-                Append (attachment);
-            }
-
-            e.Info.Dispose ();
-            imagePicker.DismissViewController (true, null);
-        }
-
-        protected void AttachmentActionSheet (UcAttachmentCell c)
-        {
-            var actionSheet = new UIActionSheet ();
-
-            actionSheet.Add ("Remove Attachment");
-            actionSheet.Add ("Preview Attachment");
-            actionSheet.Add ("Cancel");
-            actionSheet.CancelButtonIndex = 2;
-
-            actionSheet.Clicked += delegate(object a, UIButtonEventArgs b) {
-                switch (b.ButtonIndex) {
-                case 0:
-                    Remove (c);
-                    break; 
-                case 1:
-                    if (null != owner) {
-                        owner.DisplayAttachmentForAttachmentBlock (c.attachment);
-                    }
-                    break;
-                case 2:
-                    break;// Cancel
-
-                }
-            };
-
-            actionSheet.ShowInView (this);
         }
     }
 }
