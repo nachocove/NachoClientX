@@ -306,24 +306,33 @@ namespace NachoClient.iOS
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
         {
             McContact contact = ContactFromIndexPath (tableView, indexPath);
-            var cell = CreateCell (contact, tableView);
-            ConfigureCell (cell, contact);
-            cell.Layer.CornerRadius = 15;
-            cell.Layer.MasksToBounds = true;
-            cell.SelectionStyle = UITableViewCellSelectionStyle.None;
 
+            UITableViewCell cell = null;
+            cell = tableView.DequeueReusableCell (ContactCellReuseIdentifier);
+            if (cell == null) {
+                cell = CreateCell (contact, tableView);
+            }
+            NcAssert.True (null != cell);
+
+            ConfigureCell (cell, contact);
             return cell;
         }
 
         public UITableViewCell CreateCell (McContact contact, UITableView tableView)
         {
-            var cell = new UITableViewCell (UITableViewCellStyle.Subtitle, ContactCellReuseIdentifier);
-            NcAssert.True (null != cell);
+            var cell = tableView.DequeueReusableCell (ContactCellReuseIdentifier);
+            if (null == cell) {
+                cell = new UITableViewCell (UITableViewCellStyle.Subtitle, ContactCellReuseIdentifier);
+            }
 
+            cell.Layer.CornerRadius = 15;
+            cell.Layer.MasksToBounds = true;
+            cell.SelectionStyle = UITableViewCellSelectionStyle.None;
+
+            NcAssert.True (null != cell);
             NcAssert.True (null == cell.ViewWithTag (TITLE_LABEL_TAG));
 
-            var cellFrame = new RectangleF (0, 0, cell.ContentView.Frame.Width, ROW_HEIGHT);
-            var view = new SwipeActionView (cellFrame);
+            var view = new SwipeActionView (new RectangleF (0, 0, cell.ContentView.Frame.Width, ROW_HEIGHT));
             view.BackgroundColor = UIColor.White;
             view.Tag = SWIPE_VIEW_TAG;
 
