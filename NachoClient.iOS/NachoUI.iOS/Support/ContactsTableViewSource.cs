@@ -309,7 +309,7 @@ namespace NachoClient.iOS
 
             UITableViewCell cell = null;
             cell = tableView.DequeueReusableCell (ContactCellReuseIdentifier);
-            if (cell == null) {
+            if (null == cell) {
                 cell = CreateCell (contact, tableView);
             }
             NcAssert.True (null != cell);
@@ -325,12 +325,12 @@ namespace NachoClient.iOS
                 cell = new UITableViewCell (UITableViewCellStyle.Subtitle, ContactCellReuseIdentifier);
             }
 
+            NcAssert.True (null != cell);
+            NcAssert.True (null == cell.ViewWithTag (TITLE_LABEL_TAG));
+
             cell.Layer.CornerRadius = 15;
             cell.Layer.MasksToBounds = true;
             cell.SelectionStyle = UITableViewCellSelectionStyle.None;
-
-            NcAssert.True (null != cell);
-            NcAssert.True (null == cell.ViewWithTag (TITLE_LABEL_TAG));
 
             var view = new SwipeActionView (new RectangleF (0, 0, cell.ContentView.Frame.Width, ROW_HEIGHT));
             view.BackgroundColor = UIColor.White;
