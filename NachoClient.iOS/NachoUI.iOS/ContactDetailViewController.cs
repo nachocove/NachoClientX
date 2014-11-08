@@ -83,7 +83,6 @@ namespace NachoClient.iOS
 
             }
             ConfigureView ();
-            UpdateVipButton ();
             Util.ConfigureNavBar (true, NavigationController);
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
@@ -364,6 +363,12 @@ namespace NachoClient.iOS
             contentView.Hidden = false;
             editNotes.Hidden = true;
 
+            if (null == contact) {
+                var unavailableTitle = contentView.ViewWithTag (TOP_USER_TITLE_TAG) as UILabel;
+                unavailableTitle.Text = "Contact is unavailable.";
+                return;
+            }
+
             if (0 == contact.EmailAddresses.Count) {
                 userBackgroundColor = Util.ColorForUser (Util.PickRandomColorForUser ());
             } else {
@@ -389,6 +394,8 @@ namespace NachoClient.iOS
 
             var topUserTitle = contentView.ViewWithTag (TOP_USER_TITLE_TAG) as UILabel;
             topUserTitle.Text = GetTitleFromContact ();
+
+            UpdateVipButton ();
 
             // Clean out old transient views
             for (;;) {

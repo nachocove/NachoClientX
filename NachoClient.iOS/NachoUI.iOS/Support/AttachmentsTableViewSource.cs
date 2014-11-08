@@ -855,13 +855,9 @@ namespace NachoClient.iOS
         {
             NachoClient.Util.HighPriority ();
             var results = SearchByString (forSearchString);
+            SetSearchResults (results);
             NachoClient.Util.RegularPriority ();
-            InvokeOnMainThread (() => {
-                var searchResults = results;
-                SetSearchResults (searchResults);
-                UpdateSearchResultsCallback ();
-            });
-            return false;
+            return true;
         }
 
         public List<NcFileIndex> SearchByString (string searchString)
@@ -873,17 +869,6 @@ namespace NachoClient.iOS
                 }
             }
             return results;
-        }
-
-        public void UpdateSearchResultsCallback ()
-        {
-            // Totally a dummy routines that exists to remind us how to trigger 
-            // the update after updating the searchResult list of attachments.
-            if (null != SearchDisplayController.SearchResultsTableView) {
-                NachoClient.Util.HighPriority ();
-                SearchDisplayController.SearchResultsTableView.ReloadData ();
-                NachoClient.Util.RegularPriority ();
-            }
         }
     }
 

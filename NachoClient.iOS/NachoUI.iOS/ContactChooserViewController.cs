@@ -198,9 +198,6 @@ namespace NachoClient.iOS
 
         /// <summary>
         /// Updates the search results.
-        /// Return false if an asynch update is triggers.
-        /// For async, the table and view should be updated in UpdateSearchResultsCallback.  
-        /// </summary>
         /// <returns><c>true</c>, if search results are updated, <c>false</c> otherwise.</returns>
         /// <param name="forSearchOption">Index of the selected tab.</param>
         /// <param name="forSearchString">The prefix string to search for.</param>
@@ -211,15 +208,12 @@ namespace NachoClient.iOS
                 NachoClient.Util.HighPriority ();
                 resultsTableView.ReloadData ();
                 NachoClient.Util.RegularPriority ();
-                return;
-            }
-            var results = McContact.SearchAllContactItems (forSearchString);
-            InvokeOnMainThread (() => {
-                searchResults = results;
+            } else {
+                searchResults = McContact.SearchAllContactItems (forSearchString);
                 NachoClient.Util.HighPriority ();
                 resultsTableView.ReloadData ();
                 NachoClient.Util.RegularPriority ();
-            });
+            }
         }
 
         protected void KickoffSearchApi (int forSearchOption, string forSearchString)
@@ -315,9 +309,13 @@ namespace NachoClient.iOS
 
             public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
             {
+                var cell = tableView.DequeueReusableCell (ContactCellReuseIdentifier);
+                if (null == cell) {
+                    cell = Owner.contactTableViewSource.CreateCell (tableView);
+
+                }
                 var contact = Owner.searchResults [indexPath.Row].GetContact ();
-                var cell = Owner.contactTableViewSource.CreateCell (contact, tableView);
-                Owner.contactTableViewSource.ConfigureCell (cell, contact);
+                Owner.contactTableViewSource.ConfigureCell (tableView, cell, contact);
                 return cell;
             }
 
@@ -328,6 +326,12 @@ namespace NachoClient.iOS
                 contact = Owner.searchResults [indexPath.Row].GetContact ();
 
                 Owner.CancelSearchIfActive ();
+
+                if (null == contact) {
+                    Owner.CancelSelected ();
+                    Owner.owner = null;
+                    return;
+                }
 
                 // TODO: require phone numbers in contact chooser
                 NcAssert.True (0 == (Owner.contactType & NachoContactType.PhoneNumberRequired));

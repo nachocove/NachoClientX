@@ -302,31 +302,24 @@ namespace NachoClient.iOS
         protected const int USER_LABEL_TAG = 334;
         protected const int SUBTITLE1_LABEL_TAG = 335;
         protected const int SUBTITLE2_LABEL_TAG = 336;
+        protected const int SET_VIP_TAG = 337;
+        protected const int USER_PORTRAIT_TAG = 338;
 
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
         {
-            McContact contact = ContactFromIndexPath (tableView, indexPath);
-
             UITableViewCell cell = null;
             cell = tableView.DequeueReusableCell (ContactCellReuseIdentifier);
             if (null == cell) {
-                cell = CreateCell (contact, tableView);
+                cell = CreateCell (tableView);
             }
-            NcAssert.True (null != cell);
-
-            ConfigureCell (cell, contact);
+            var contact = ContactFromIndexPath (tableView, indexPath);
+            ConfigureCell (tableView, cell, contact);
             return cell;
         }
 
-        public UITableViewCell CreateCell (McContact contact, UITableView tableView)
+        public UITableViewCell CreateCell (UITableView tableView)
         {
-            var cell = tableView.DequeueReusableCell (ContactCellReuseIdentifier);
-            if (null == cell) {
-                cell = new UITableViewCell (UITableViewCellStyle.Subtitle, ContactCellReuseIdentifier);
-            }
-
-            NcAssert.True (null != cell);
-            NcAssert.True (null == cell.ViewWithTag (TITLE_LABEL_TAG));
+            var cell = new UITableViewCell (UITableViewCellStyle.Subtitle, ContactCellReuseIdentifier);
 
             cell.Layer.CornerRadius = 15;
             cell.Layer.MasksToBounds = true;
@@ -334,47 +327,14 @@ namespace NachoClient.iOS
 
             var view = new SwipeActionView (new RectangleF (0, 0, cell.ContentView.Frame.Width, ROW_HEIGHT));
             view.BackgroundColor = UIColor.White;
-            view.Tag = SWIPE_VIEW_TAG;
-
             view.SetAction (CALL_BUTTON, SwipeSide.RIGHT);
             view.SetAction (EMAIL_BUTTON, SwipeSide.RIGHT);
+            view.Tag = SWIPE_VIEW_TAG;
 
-            view.OnClick = (int tag) => {
-                switch (tag) {
-                case EMAIL_SWIPE_TAG:
-                    EmailSwipeHandler (contact);
-                    break;
-                case CALL_SWIPE_TAG:
-                    CallSwipeHandler (contact);
-                    break;
-                default:
-                    throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action tag {0}", tag));
-                }
-            };
-
-            view.OnSwipe = (SwipeActionView.SwipeState state) => {
-                switch (state) {
-                case SwipeActionView.SwipeState.SWIPE_BEGIN:
-                    tableView.ScrollEnabled = false;
-                    break;
-                case SwipeActionView.SwipeState.SWIPE_END_ALL_HIDDEN:
-                    tableView.ScrollEnabled = true;
-                    break;
-                case SwipeActionView.SwipeState.SWIPE_END_ALL_SHOWN:
-                    tableView.ScrollEnabled = false;
-                    break;
-                default:
-                    throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown swipe state {0}", (int)state));
-                }
-            };
             cell.ContentView.AddSubview (view);
 
-            UIButton toggleVipButton = new UIButton (new RectangleF(cell.ContentView.Frame.Right - 30, 10, 20, 20));
-            toggleVipButton.SetImage (UIImage.FromBundle(contact.IsVip ? "contacts-vip-checked" : "contacts-vip"), UIControlState.Normal); 
-            toggleVipButton.TouchUpInside += (object sender, EventArgs e) => {
-                contact.SetVIP (!contact.IsVip);
-                toggleVipButton.SetImage (UIImage.FromBundle(contact.IsVip ? "contacts-vip-checked" : "contacts-vip"), UIControlState.Normal);
-            };
+            UIButton toggleVipButton = new UIButton (new RectangleF (cell.ContentView.Frame.Right - 30, 10, 20, 20));
+            toggleVipButton.Tag = SET_VIP_TAG;
             view.AddSubview (toggleVipButton);
 
             var titleLabel = new UILabel (new RectangleF (HORIZONTAL_INDENT, 10, cell.Frame.Width - 15 - HORIZONTAL_INDENT - toggleVipButton.Frame.Width - 8, 20));
@@ -397,29 +357,28 @@ namespace NachoClient.iOS
             view.AddSubview (subtitle2Label);
 
             // User userLabelView view, if no image
-            if (0 == contact.PortraitId) {
-                var userLabelView = new UILabel (new RectangleF (15, 10, 40, 40));
-                userLabelView.Font = A.Font_AvenirNextRegular24;
-                userLabelView.TextColor = UIColor.White;
-                userLabelView.TextAlignment = UITextAlignment.Center;
-                userLabelView.LineBreakMode = UILineBreakMode.Clip;
-                userLabelView.Layer.CornerRadius = 20;
-                userLabelView.Layer.MasksToBounds = true;
-                userLabelView.Tag = USER_LABEL_TAG;
-                view.AddSubview (userLabelView);
-            } else {
-                var userImageView = new UIImageView (new RectangleF (15, 10, 40, 40));
-                userImageView.Layer.CornerRadius = 20;
-                userImageView.Layer.MasksToBounds = true;
-                userImageView.Tag = USER_LABEL_TAG;
-                view.AddSubview (userImageView);
-            }
+            var userLabelView = new UILabel (new RectangleF (15, 10, 40, 40));
+            userLabelView.Font = A.Font_AvenirNextRegular24;
+            userLabelView.TextColor = UIColor.White;
+            userLabelView.TextAlignment = UITextAlignment.Center;
+            userLabelView.LineBreakMode = UILineBreakMode.Clip;
+            userLabelView.Layer.CornerRadius = 20;
+            userLabelView.Layer.MasksToBounds = true;
+            userLabelView.Tag = USER_LABEL_TAG;
+            view.AddSubview (userLabelView);
+
+            var userImageView = new UIImageView (new RectangleF (15, 10, 40, 40));
+            userImageView.Layer.CornerRadius = 20;
+            userImageView.Layer.MasksToBounds = true;
+            userImageView.Tag = USER_PORTRAIT_TAG;
+            view.AddSubview (userImageView);
+
             return cell;
         }
 
         protected void CallSwipeHandler (McContact contact)
         {
-            SwipedCall (contact.GetPhoneNumber());
+            SwipedCall (contact.GetPhoneNumber ());
             return;
 //            if (contact.PhoneNumbers.Count == 0) {
 //                //TODO: Display a 'enter phone number' for the contact. 
@@ -453,7 +412,7 @@ namespace NachoClient.iOS
 
         protected void EmailSwipeHandler (McContact contact)
         {
-            SwipedEmail (contact.GetEmailAddress());
+            SwipedEmail (contact.GetEmailAddress ());
             return;
 
 //            if (contact.EmailAddresses.Count == 0) {
@@ -486,18 +445,23 @@ namespace NachoClient.iOS
 //            }
         }
 
-        public void ConfigureCell (UITableViewCell cell, McContact contact)
+        public void ConfigureCell (UITableView tableView, UITableViewCell cell, McContact contact)
         {
-            var titleLabel = cell.ViewWithTag (TITLE_LABEL_TAG) as UILabel;
-            var subtitle1Label = cell.ViewWithTag (SUBTITLE1_LABEL_TAG) as UILabel;
-            var subtitle2Label = cell.ViewWithTag (SUBTITLE2_LABEL_TAG) as UILabel;
-            var labelView = cell.ViewWithTag (USER_LABEL_TAG) as UILabel;
+            var titleLabel = (UILabel)cell.ViewWithTag (TITLE_LABEL_TAG);
+            var subtitle1Label = (UILabel)cell.ViewWithTag (SUBTITLE1_LABEL_TAG);
+            var subtitle2Label = (UILabel)cell.ViewWithTag (SUBTITLE2_LABEL_TAG);
+            var labelView = (UILabel)cell.ViewWithTag (USER_LABEL_TAG);
+            var portraitView = (UIImageView)cell.ViewWithTag (USER_PORTRAIT_TAG);
+
+            labelView.Hidden = true;
+            portraitView.Hidden = true;
 
             if (null == contact) {
                 titleLabel.Text = "This contact is unavailable";
                 titleLabel.TextColor = UIColor.LightGray;
                 titleLabel.Font = A.Font_AvenirNextRegular14;
-                labelView.Hidden = true;
+                subtitle1Label.Text = "";
+                subtitle2Label.Text = "";
                 return;
             }
 
@@ -552,12 +516,51 @@ namespace NachoClient.iOS
             subtitle2Label.Text = displaySubtitle2;
             subtitle2Label.TextColor = displaySubtitle2Color;
 
-            if (null != labelView) {
+            if (0 == contact.PortraitId) {
                 ConfigureLabelView (labelView, displayTitle, colorIndex);
+                labelView.Hidden = false;
             } else {
-                var imageView = cell.ViewWithTag (USER_LABEL_TAG) as UIImageView;
-                imageView.Image = Util.ImageOfContact (contact);
+                portraitView.Image = Util.ImageOfContact (contact);
+                portraitView.Hidden = false;
             }
+
+            var view = (SwipeActionView)cell.ViewWithTag (SWIPE_VIEW_TAG);
+            view.OnClick = (int tag) => {
+                switch (tag) {
+                case EMAIL_SWIPE_TAG:
+                    EmailSwipeHandler (contact);
+                    break;
+                case CALL_SWIPE_TAG:
+                    CallSwipeHandler (contact);
+                    break;
+                default:
+                    throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action tag {0}", tag));
+                }
+            };
+            view.OnSwipe = (SwipeActionView.SwipeState state) => {
+                switch (state) {
+                case SwipeActionView.SwipeState.SWIPE_BEGIN:
+                    tableView.ScrollEnabled = false;
+                    break;
+                case SwipeActionView.SwipeState.SWIPE_END_ALL_HIDDEN:
+                    tableView.ScrollEnabled = true;
+                    break;
+                case SwipeActionView.SwipeState.SWIPE_END_ALL_SHOWN:
+                    tableView.ScrollEnabled = false;
+                    break;
+                default:
+                    throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown swipe state {0}", (int)state));
+                }
+            };
+
+// Using += in Configure will keep adding new handler for each call to Configure, making lots of people become VIPs on a single click
+// Using += in Create (with a contact) will always use the original contact when the button is clicked.
+//            var toggleVipButton = (UIButton)view.ViewWithTag (SET_VIP_TAG); 
+//            toggleVipButton.SetImage (UIImage.FromBundle (contact.IsVip ? "contacts-vip-checked" : "contacts-vip"), UIControlState.Normal); 
+//            toggleVipButton.TouchUpInside += (object sender, EventArgs e) => {
+//                contact.SetVIP (!contact.IsVip);
+//                toggleVipButton.SetImage (UIImage.FromBundle (contact.IsVip ? "contacts-vip-checked" : "contacts-vip"), UIControlState.Normal);
+//            };
         }
 
         protected void ConfigureLabelView (UILabel labelView, string labelText, int colorIndex)
@@ -616,32 +619,17 @@ namespace NachoClient.iOS
         {
             NachoClient.Util.HighPriority ();
             var results = McContact.SearchAllContactItems (forSearchString);
+            SetSearchResults (results);
             NachoClient.Util.RegularPriority ();
-            InvokeOnMainThread (() => {
-                var searchResults = results;
-                SetSearchResults (searchResults);
-                UpdateSearchResultsCallback ();
-            });
-
-            return false;
-        }
-
-        /// <summary>
-        /// Updates the search results async.
-        /// </summary>
-        public void UpdateSearchResultsCallback ()
-        {
-            // Totally a dummy routines that exists to remind us how to trigger 
-            // the update after updating the searchResult list of contacts.
-            if (null != SearchDisplayController.SearchResultsTableView) {
-                NachoClient.Util.HighPriority ();
-                SearchDisplayController.SearchResultsTableView.ReloadData ();
-                NachoClient.Util.RegularPriority ();
-            }
+            return true;
         }
 
         protected void DumpInfo (McContact contact)
         {
+            if (null == contact) {
+                Log.Debug (Log.LOG_UI, "contact is null");
+                return;
+            }
             foreach (var a in contact.EmailAddresses) {
                 var e = McEmailAddress.QueryById<McEmailAddress> (a.EmailAddress);
                 Log.Debug (Log.LOG_UI, "contact Id={0} emailAddressId={1} email={2} score={3}", contact.Id, e.Id, e.CanonicalEmailAddress, e.Score);

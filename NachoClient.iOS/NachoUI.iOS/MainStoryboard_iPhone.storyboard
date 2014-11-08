@@ -352,49 +352,6 @@
                                 <outlet property="delegate" destination="HJp-il-GU9" id="a0H-aQ-58Y"/>
                             </connections>
                         </searchBar>
-                        <prototypes>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="Basic" textLabel="uZg-ZA-5Zk" style="IBUITableViewCellStyleDefault" id="sVo-oj-aEo">
-                                <rect key="frame" x="0.0" y="66" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="sVo-oj-aEo" id="Wmz-Zx-aLM">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                    <subviews>
-                                        <label opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="left" text="Title" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="uZg-ZA-5Zk">
-                                            <rect key="frame" x="15" y="0.0" width="290" height="43"/>
-                                            <autoresizingMask key="autoresizingMask"/>
-                                            <fontDescription key="fontDescription" type="system" pointSize="18"/>
-                                            <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
-                                            <nil key="highlightedColor"/>
-                                        </label>
-                                    </subviews>
-                                </tableViewCellContentView>
-                            </tableViewCell>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="Subtitle" textLabel="itG-Sw-3fJ" detailTextLabel="Bcb-Tt-kST" style="IBUITableViewCellStyleSubtitle" id="cxC-UM-lPo">
-                                <rect key="frame" x="0.0" y="110" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="cxC-UM-lPo" id="f87-dG-2jG">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                    <subviews>
-                                        <label opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="left" text="Title" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="itG-Sw-3fJ">
-                                            <rect key="frame" x="15" y="3" width="34" height="22"/>
-                                            <autoresizingMask key="autoresizingMask"/>
-                                            <fontDescription key="fontDescription" type="system" pointSize="18"/>
-                                            <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
-                                            <nil key="highlightedColor"/>
-                                        </label>
-                                        <label opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="left" text="Subtitle" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="Bcb-Tt-kST">
-                                            <rect key="frame" x="15" y="25" width="43" height="15"/>
-                                            <autoresizingMask key="autoresizingMask"/>
-                                            <fontDescription key="fontDescription" type="system" pointSize="12"/>
-                                            <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
-                                            <nil key="highlightedColor"/>
-                                        </label>
-                                    </subviews>
-                                </tableViewCellContentView>
-                            </tableViewCell>
-                        </prototypes>
                         <connections>
                             <outlet property="dataSource" destination="HJp-il-GU9" id="LPl-WA-Ev3"/>
                             <outlet property="delegate" destination="HJp-il-GU9" id="Qlr-7k-Qht"/>
@@ -1713,33 +1670,33 @@
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
+        <segue reference="gkM-dU-I3K"/>
+        <segue reference="szv-KC-TId"/>
+        <segue reference="FD7-0T-FGT"/>
+        <segue reference="rEt-DF-c51"/>
+        <segue reference="zOx-eF-clw"/>
+        <segue reference="hxO-14-opZ"/>
+        <segue reference="c79-xS-Npa"/>
+        <segue reference="uqv-uq-oCq"/>
+        <segue reference="Sbt-au-uDg"/>
+        <segue reference="B5b-jg-ZNg"/>
+        <segue reference="w67-dy-XSq"/>
+        <segue reference="peA-r2-tjq"/>
+        <segue reference="m2D-2n-RiV"/>
+        <segue reference="7sK-rg-HQL"/>
+        <segue reference="84g-IQ-Iaw"/>
+        <segue reference="xrp-ey-B0j"/>
+        <segue reference="zby-Sy-Y3J"/>
+        <segue reference="KnL-e9-HQR"/>
+        <segue reference="dAf-rc-Hh3"/>
+        <segue reference="Kmd-x6-iCJ"/>
         <segue reference="4z2-t5-9Cd"/>
         <segue reference="g4G-tD-G9H"/>
         <segue reference="iqA-wd-xqD"/>
-        <segue reference="XQg-JR-vxA"/>
         <segue reference="Eb2-K0-nI3"/>
-        <segue reference="tQS-oL-XNh"/>
-        <segue reference="rEt-DF-c51"/>
-        <segue reference="szv-KC-TId"/>
-        <segue reference="zOx-eF-clw"/>
-        <segue reference="c79-xS-Npa"/>
+        <segue reference="XQg-JR-vxA"/>
         <segue reference="TEI-cG-N0R"/>
         <segue reference="wZy-ga-YEb"/>
-        <segue reference="xrp-ey-B0j"/>
-        <segue reference="p7w-hx-Y70"/>
-        <segue reference="84g-IQ-Iaw"/>
-        <segue reference="KnL-e9-HQR"/>
-        <segue reference="zby-Sy-Y3J"/>
-        <segue reference="eUJ-3D-Pjk"/>
-        <segue reference="B5b-jg-ZNg"/>
-        <segue reference="dAf-rc-Hh3"/>
-        <segue reference="Kmd-x6-iCJ"/>
-        <segue reference="s9j-Ih-SWz"/>
-        <segue reference="k2t-Pj-AhS"/>
-        <segue reference="w67-dy-XSq"/>
-        <segue reference="m2D-2n-RiV"/>
-        <segue reference="7sK-rg-HQL"/>
-        <segue reference="peA-r2-tjq"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>

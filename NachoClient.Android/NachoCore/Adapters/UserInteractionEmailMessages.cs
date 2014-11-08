@@ -23,8 +23,10 @@ namespace NachoCore
             Refresh ();
         }
 
-        protected static McFolder InboxFolder ()
+        // FIXME: Be smarter about getting Inbox
+        protected static McFolder InboxFolder (int accountId)
         {
+            NcAssert.True (0 != accountId);
             var emailFolders = new NachoFolders (NachoFolders.FilterForEmail);
             for (int i = 0; i < emailFolders.Count (); i++) {
                 McFolder f = emailFolders.GetFolder (i);
@@ -37,9 +39,16 @@ namespace NachoCore
 
         public bool Refresh ()
         {
-            //FIXME what account id? This method below could result in null.
-            var folder = InboxFolder ();
-            var list = McEmailMessage.QueryInteractions (folder.AccountId, contact);
+            if (null == contact) {
+                threadList = new List<McEmailMessageThread> ();
+                return true;
+            }
+            var folder = InboxFolder (contact.AccountId);
+            if (null == folder) {
+                threadList = new List<McEmailMessageThread> ();
+                return true;
+            }
+            var list = McEmailMessage.QueryInteractions (contact.AccountId, contact);
             if (!NcMessageThreads.AreDifferent (threadList, list)) {
                 return false;
             }
