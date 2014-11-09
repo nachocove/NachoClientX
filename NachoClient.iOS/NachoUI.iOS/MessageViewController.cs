@@ -40,6 +40,7 @@ namespace NachoClient.iOS
         protected UcAddressBlock ccView;
         protected BodyView bodyView;
         protected UIBlockMenu blockMenu;
+        protected MessageToolbar messageToolbar;
         protected UITapGestureRecognizer singleTapGesture;
         protected UITapGestureRecognizer.Token singleTapGestureHandlerToken;
 
@@ -47,8 +48,6 @@ namespace NachoClient.iOS
         protected UIBarButtonItem moveButton;
         protected UIBarButtonItem deferButton;
         protected UIBarButtonItem blockMenuButton;
-        protected UIActionSheet replyActionSheet;
-        protected UIActionSheet deadlineActionSheet;
 
         // UI related constants (or pseudo constants)
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
@@ -57,7 +56,6 @@ namespace NachoClient.iOS
         #if DEBUG_UI
         const int VIEW_INSET = 4;
         const int ATTACHMENTVIEW_INSET = 10;
-        
 #else
         const int VIEW_INSET = 2;
         const int ATTACHMENTVIEW_INSET = 15;
@@ -96,26 +94,37 @@ namespace NachoClient.iOS
 
         protected override void CreateViewHierarchy ()
         {
-            // Navigation controls
+            ViewFramer.Create (scrollView).Height (scrollView.Frame.Height - 44);
 
-            Util.SetAutomaticImageForButton (replyButton, "toolbar-icn-reply");
-            replyButton.TintColor = A.Color_NachoGreen;
+            // Toolbar controls
 
-            Util.SetAutomaticImageForButton (archiveButton, "email-archive-gray");
-            archiveButton.TintColor = A.Color_NachoGreen;
-
-            Util.SetAutomaticImageForButton (deleteButton, "email-delete-gray");
-            deleteButton.TintColor = A.Color_NachoGreen;
-
-            fixedSpaceButton.Width = 10;
-
-            ToolbarItems = new UIBarButtonItem[] {
-                replyButton,
-                flexibleSpaceButton,
-                archiveButton,
-                fixedSpaceButton,
-                deleteButton,
+            messageToolbar = new MessageToolbar (new RectangleF (0, scrollView.Frame.Bottom, View.Frame.Width, 44));
+            messageToolbar.OnClick = (object sender, EventArgs e) => {
+                var toolbarEventArgs = (MessageToolbarEventArgs)e;
+                switch (toolbarEventArgs.Action) {
+                case MessageToolbar.ActionType.REPLY:
+                    onReplyButtonClicked (MessageComposeViewController.REPLY_ACTION);
+                    break;
+                case MessageToolbar.ActionType.REPLY_ALL:
+                    onReplyButtonClicked (MessageComposeViewController.REPLY_ALL_ACTION);
+                    break;
+                case MessageToolbar.ActionType.FORWARD:
+                    onReplyButtonClicked (MessageComposeViewController.FORWARD_ACTION);
+                    break;
+                case MessageToolbar.ActionType.ARCHIVE:
+                    onArchiveButtonClicked ();
+                    break;
+                case MessageToolbar.ActionType.DELETE:
+                    onDeleteButtonClicked ();
+                    break;
+                default:
+                    throw new NcAssert.NachoDefaultCaseFailure (String.Format ("unknown toolbar action {0}",
+                        (int)toolbarEventArgs.Action));
+                }
             };
+            View.AddSubview (messageToolbar);
+
+            // Navigation controls
 
             blockMenuButton = new UIBarButtonItem ();
             Util.SetAutomaticImageForButton (blockMenuButton, "gen-more");
@@ -132,9 +141,6 @@ namespace NachoClient.iOS
 
             moveButton.Clicked += MoveButtonClicked;
             blockMenuButton.Clicked += BlockMenuButtonClicked;
-            replyButton.Clicked += ReplyButtonClicked;
-            archiveButton.Clicked += ArchiveButtonClicked;
-            deleteButton.Clicked += DeleteButtonClicked;
             deferButton.Clicked += DeferButtonClicked;
 
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
@@ -404,9 +410,7 @@ namespace NachoClient.iOS
                 chiliImageView.Hidden = true;
                 chiliX = View.Frame.Width;
             }
-
-            ConfigureToolbar ();
-
+                
             var fromLabelView = View.ViewWithTag ((int)TagType.FROM_TAG) as UILabel;
             ViewFramer.Create (fromLabelView).Width (chiliX - 10 - 16 - 65);
             fromLabelView.Text = Pretty.SenderString (message.From);
@@ -428,24 +432,16 @@ namespace NachoClient.iOS
             scrollView.Scrolled -= ScrollViewScrolled;
             moveButton.Clicked -= MoveButtonClicked;
             blockMenuButton.Clicked -= BlockMenuButtonClicked;
-            replyButton.Clicked -= ReplyButtonClicked;
-            archiveButton.Clicked -= ArchiveButtonClicked;
-            deleteButton.Clicked -= DeleteButtonClicked;
             deferButton.Clicked -= DeferButtonClicked;
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
 
             blockMenu.Cleanup ();
+            messageToolbar.Cleanup ();
 
-            archiveButton = null;
-            deleteButton = null;
-            fixedSpaceButton = null;
-            flexibleSpaceButton = null;
-            forwardButton = null;
             moveButton = null;
-            replyAllButton = null;
-            replyButton = null;
             scrollView = null;
             blockMenu = null;
+            messageToolbar = null;
 
             headerView = null;
             attachmentListView = null;
@@ -454,8 +450,6 @@ namespace NachoClient.iOS
             bodyView = null;
             deferButton = null;
             blockMenuButton = null;
-            replyActionSheet = null;
-            deadlineActionSheet = null;
         }
 
         protected void LayoutView (bool animated)
@@ -503,17 +497,11 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-            if (null != this.NavigationController) {
-                this.NavigationController.ToolbarHidden = false;
-            }
         }
 
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
-            if (null != this.NavigationController) {
-                this.NavigationController.ToolbarHidden = true;
-            }
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
@@ -605,22 +593,6 @@ namespace NachoClient.iOS
                 }
                 return yOffset;
             }
-        }
-
-        protected void ShowReplyActionSheet ()
-        {
-            replyActionSheet = new UIActionSheet ();
-            replyActionSheet.Add ("Reply");
-            replyActionSheet.Add ("Reply All");
-            replyActionSheet.Add ("Forward");
-            replyActionSheet.Add ("Cancel");
-            replyActionSheet.CancelButtonIndex = 3;
-            replyActionSheet.Clicked += ReplyActionSheetClicked;
-            replyActionSheet.ShowFromToolbar (NavigationController.Toolbar);
-        }
-
-        protected void ConfigureToolbar ()
-        {
         }
 
         protected void ConfigureAttachments ()
@@ -768,21 +740,21 @@ namespace NachoClient.iOS
             blockMenu.MenuTapped ();
         }
 
-        private void ReplyButtonClicked (object sender, EventArgs e)
+        private void onDeleteButtonClicked ()
         {
-            ShowReplyActionSheet ();
+            DeleteThisMessage ();
+            NavigationController.PopViewControllerAnimated (true);
         }
 
-        private void ArchiveButtonClicked (object sender, EventArgs e)
+        private void onArchiveButtonClicked ()
         {
             ArchiveThisMessage ();
             NavigationController.PopViewControllerAnimated (true);
         }
 
-        private void DeleteButtonClicked (object sender, EventArgs e)
+        private void onReplyButtonClicked (string action)
         {
-            DeleteThisMessage ();
-            NavigationController.PopViewControllerAnimated (true);
+            PerformSegue ("MessageViewToCompose", new SegueHolder (action));
         }
 
         private void DeferButtonClicked (object sender, EventArgs e)
@@ -818,43 +790,7 @@ namespace NachoClient.iOS
                 return;
             }
         }
-
-        private void ReplyActionSheetClicked (object sender, UIButtonEventArgs b)
-        {
-            switch (b.ButtonIndex) {
-            case 0:
-                PerformSegue ("MessageViewToCompose", new SegueHolder (MessageComposeViewController.REPLY_ACTION));
-                break;
-            case 1:
-                PerformSegue ("MessageViewToCompose", new SegueHolder (MessageComposeViewController.REPLY_ALL_ACTION));
-                break;
-            case 2:
-                PerformSegue ("MessageViewToCompose", new SegueHolder (MessageComposeViewController.FORWARD_ACTION));
-                break;
-            case 3:
-                break; // Cancel
-            }
-            replyActionSheet.Clicked -= ReplyActionSheetClicked;
-            replyActionSheet = null;
-        }
-
-        private void DeadlineActionSheetClicked (object sender, UIButtonEventArgs b)
-        {
-            switch (b.ButtonIndex) {
-            case 0:
-                PerformSegue ("SegueToDatePicker", new SegueHolder (null));
-                break;
-            case 1:
-                var c = CalendarHelper.CreateMeeting (thread.SingleMessageSpecialCase ());
-                PerformSegue ("SegueToEditEvent", new SegueHolder (c));
-                break;
-            case 2:
-                break; // Cancel
-            }
-            deadlineActionSheet.Clicked -= DeadlineActionSheetClicked;
-            deadlineActionSheet = null;
-        }
-
+            
         // IUcAddressBlockDelegate implementation
 
         public void AddressBlockNeedsLayout (UcAddressBlock view)
