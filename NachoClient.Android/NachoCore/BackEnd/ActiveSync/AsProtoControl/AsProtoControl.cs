@@ -822,7 +822,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.PkWait,
                         },
                         On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDrive, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDrive, ActSetsState = true },
                         }
                     },
                 }

@@ -63,6 +63,8 @@ namespace NachoCore.Utils
         public Cb Act { set; get; }
 
         public uint Event { set; get; }
+
+        public bool ActSetsState { set; get; }
     }
 
     public class Event
@@ -247,13 +249,20 @@ namespace NachoCore.Utils
                         goto PossiblyLeave;
                     }
                     var hotTrans = hotNode.On.Where (x => FireEventCode == x.Event).Single ();
-                    Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => S={4}",
-                        NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic, StateName (hotTrans.State)), Message));
+                    if (!hotTrans.ActSetsState) {
+                        Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => S={4}",
+                            NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic, StateName (hotTrans.State)), Message));
+                    }
                     Action = hotTrans.Act;
                     NextState = hotTrans.State;
-                    Action ();
                     var oldState = State;
-                    State = NextState;
+                    Action ();
+                    if (hotTrans.ActSetsState) {
+                        Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => S={4}",
+                            NameAndId (), StateName (oldState), EventName [FireEventCode], fireEvent.Mnemonic, StateName (State)), Message));
+                    } else {
+                        State = NextState;
+                    }
                     if (oldState != State && null != StateChangeIndication) {
                         StateChangeIndication ();
                     }
