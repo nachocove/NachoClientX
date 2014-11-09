@@ -216,17 +216,16 @@ namespace NachoClient.iOS
                 return;
             }
             if (segue.Identifier == "NachoNowToMessagePriority") {
-                var vc = (MessagePriorityViewController)segue.DestinationViewController;
                 var holder = (SegueHolder)sender;
-                vc.thread = holder.value as McEmailMessageThread;
-                vc.SetOwner (this);
+                var thread = (McEmailMessageThread)holder.value;
+                var vc = (INachoDateController)segue.DestinationViewController;
+                vc.Setup (this, thread, DateControllerType.Defer);
                 return;
             }
             if (segue.Identifier == "MessageListToFolders") {
-                var vc = (FoldersViewController)segue.DestinationViewController;
-                vc.SetModal (true);
+                var vc = (INachoFolderChooser)segue.DestinationViewController;
                 var h = sender as SegueHolder;
-                vc.SetOwner (this, h);
+                vc.SetOwner (this, true, h);
                 return;
             }
             if (segue.Identifier == "NachoNowToEditEvent") {
@@ -270,7 +269,7 @@ namespace NachoClient.iOS
 
         public void DismissChildDateController (INachoDateController vc)
         {
-            vc.SetOwner (null);
+            vc.Setup (null, null, DateControllerType.None);
             vc.DimissDateController (false, null);
         }
 
@@ -313,7 +312,7 @@ namespace NachoClient.iOS
         /// </summary>
         public void DismissChildFolderChooser (INachoFolderChooser vc)
         {
-            vc.SetOwner (null, null);
+            vc.SetOwner (null, false, null);
             vc.DismissFolderChooser (false, null);
         }
 

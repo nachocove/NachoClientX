@@ -7,14 +7,15 @@ using NachoCore.Model;
 namespace NachoClient.iOS
 {
     public enum DateControllerType {
+        None,
         Defer,
         Intent,
     }
 
     public interface INachoDateController
     {
-        void SetOwner (INachoDateControllerParent o);
-        void SetDateControllerType (DateControllerType type);
+        void Setup (INachoDateControllerParent owner, McEmailMessageThread thread, DateControllerType dateControllerType);
+        void SetIntentSelector (IntentSelectionViewController selector);
         void DimissDateController (bool animated, NSAction action);
     }
 

@@ -300,11 +300,6 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("ComposeToNachoNow")) {
                 return;
             }
-            if (segue.Identifier == "SegueToMessagePriority") {
-                var vc = (MessagePriorityViewController)segue.DestinationViewController;
-                vc.SetOwner (this);
-                return;
-            }
             if (segue.Identifier == "SegueToQuickResponse") {
                 var vc = (QuickResponseViewController)segue.DestinationViewController;
                 vc.SetOwner (this);
@@ -653,16 +648,16 @@ namespace NachoClient.iOS
                 yOffset += subjectLabelHR.Frame.Height;
 
                 // Intent subviews
-                CenterY(intentLabel, LEFT_INDENT, 0, intentLabel.Frame.Width, LINE_HEIGHT);
+                CenterY (intentLabel, LEFT_INDENT, 0, intentLabel.Frame.Width, LINE_HEIGHT);
    
                 var intentDisplayStart = intentLabel.Frame.Right + 4;
                 var intentDisplayWidth = View.Frame.Width - intentDisplayStart - intentArrowAccessory.Frame.Width - RIGHT_INDENT;
-                CenterY(intentDisplayLabel, intentDisplayStart, 0, intentDisplayWidth, LINE_HEIGHT);
+                CenterY (intentDisplayLabel, intentDisplayStart, 0, intentDisplayWidth, LINE_HEIGHT);
 
                 var intentArrowStart = View.Frame.Width - intentArrowAccessory.Frame.Width - RIGHT_INDENT;
-                CenterY(intentArrowAccessory, intentArrowStart, 0, intentArrowAccessory.Frame.Width, LINE_HEIGHT);
+                CenterY (intentArrowAccessory, intentArrowStart, 0, intentArrowAccessory.Frame.Width, LINE_HEIGHT);
 
-                intentView.Frame = new RectangleF(0, yOffset, View.Frame.Width, LINE_HEIGHT);
+                intentView.Frame = new RectangleF (0, yOffset, View.Frame.Width, LINE_HEIGHT);
 
                 yOffset += LINE_HEIGHT;
 
@@ -1086,7 +1081,7 @@ namespace NachoClient.iOS
 
         public void DismissChildDateController (INachoDateController vc)
         {
-            vc.SetOwner (null);
+            vc.Setup (null, null, DateControllerType.None);
             vc.DimissDateController (false, null);
         }
 

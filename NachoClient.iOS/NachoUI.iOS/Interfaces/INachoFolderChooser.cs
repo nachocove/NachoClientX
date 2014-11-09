@@ -8,7 +8,7 @@ namespace NachoClient.iOS
 {
     public interface INachoFolderChooser
     {
-        void SetOwner (INachoFolderChooserParent owner, object cookie);
+        void SetOwner (INachoFolderChooserParent owner, bool modal, object cookie);
 
         void DismissFolderChooser (bool animated, NSAction action);
     }

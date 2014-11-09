@@ -28,9 +28,6 @@ namespace NachoClient.iOS
 		MonoTouch.UIKit.UIBarButtonItem forwardButton { get; set; }
 
 		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem quickReplyButton { get; set; }
-
-		[Outlet]
 		MonoTouch.UIKit.UIBarButtonItem replyAllButton { get; set; }
 
 		[Outlet]
@@ -67,11 +64,6 @@ namespace NachoClient.iOS
 			if (forwardButton != null) {
 				forwardButton.Dispose ();
 				forwardButton = null;
-			}
-
-			if (quickReplyButton != null) {
-				quickReplyButton.Dispose ();
-				quickReplyButton = null;
 			}
 
 			if (replyAllButton != null) {

@@ -813,9 +813,10 @@ namespace NachoClient.iOS
         protected bool modal;
         protected INachoFolderChooserParent owner;
 
-        public void SetOwner (INachoFolderChooserParent owner, object cookie)
+        public void SetOwner (INachoFolderChooserParent owner, bool modal, object cookie)
         {
             this.owner = owner;
+            this.modal = modal;
             this.cookie = cookie;
         }
 
@@ -829,11 +830,6 @@ namespace NachoClient.iOS
         public void FolderSelected (McFolder folder)
         {
             owner.FolderSelected (this, folder, cookie);
-        }
-
-        public void SetModal (bool modal)
-        {
-            this.modal = modal;
         }
             
     }

@@ -44,7 +44,8 @@ namespace NachoClient.iOS
         protected UITapGestureRecognizer.Token singleTapGestureHandlerToken;
 
         // UI elements for the navigation bar
-        protected UIBarButtonItem deadlineButton;
+        protected UIBarButtonItem moveButton;
+        protected UIBarButtonItem deferButton;
         protected UIBarButtonItem blockMenuButton;
         protected UIActionSheet replyActionSheet;
         protected UIActionSheet deadlineActionSheet;
@@ -56,7 +57,8 @@ namespace NachoClient.iOS
         #if DEBUG_UI
         const int VIEW_INSET = 4;
         const int ATTACHMENTVIEW_INSET = 10;
-        #else
+        
+#else
         const int VIEW_INSET = 2;
         const int ATTACHMENTVIEW_INSET = 15;
         #endif
@@ -117,22 +119,23 @@ namespace NachoClient.iOS
 
             blockMenuButton = new UIBarButtonItem ();
             Util.SetAutomaticImageForButton (blockMenuButton, "gen-more");
-            deadlineButton = new UIBarButtonItem ();
-            Util.SetAutomaticImageForButton (deadlineButton, "email-calendartime");
-            Util.SetAutomaticImageForButton (quickReplyButton, "contact-quickemail");
+            deferButton = new UIBarButtonItem ();
+            Util.SetAutomaticImageForButton (deferButton, "email-defer");
+            moveButton = new UIBarButtonItem ();
+            Util.SetAutomaticImageForButton (moveButton, "folder-move");
 
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
                 blockMenuButton,
-                deadlineButton,
-                quickReplyButton,
+                deferButton,
+                moveButton,
             };
 
-            quickReplyButton.Clicked += QuickReplyButtonClicked;
+            moveButton.Clicked += MoveButtonClicked;
             blockMenuButton.Clicked += BlockMenuButtonClicked;
             replyButton.Clicked += ReplyButtonClicked;
             archiveButton.Clicked += ArchiveButtonClicked;
             deleteButton.Clicked += DeleteButtonClicked;
-            deadlineButton.Clicked += DeadlineButtonClicked;
+            deferButton.Clicked += DeferButtonClicked;
 
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
 
@@ -423,12 +426,12 @@ namespace NachoClient.iOS
             singleTapGesture.ShouldRecognizeSimultaneously = null;
             headerView.RemoveGestureRecognizer (singleTapGesture);
             scrollView.Scrolled -= ScrollViewScrolled;
-            quickReplyButton.Clicked -= QuickReplyButtonClicked;
+            moveButton.Clicked -= MoveButtonClicked;
             blockMenuButton.Clicked -= BlockMenuButtonClicked;
             replyButton.Clicked -= ReplyButtonClicked;
             archiveButton.Clicked -= ArchiveButtonClicked;
             deleteButton.Clicked -= DeleteButtonClicked;
-            deadlineButton.Clicked -= DeadlineButtonClicked;
+            deferButton.Clicked -= DeferButtonClicked;
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
 
             blockMenu.Cleanup ();
@@ -438,7 +441,7 @@ namespace NachoClient.iOS
             fixedSpaceButton = null;
             flexibleSpaceButton = null;
             forwardButton = null;
-            quickReplyButton = null;
+            moveButton = null;
             replyAllButton = null;
             replyButton = null;
             scrollView = null;
@@ -449,7 +452,7 @@ namespace NachoClient.iOS
             toView = null;
             ccView = null;
             bodyView = null;
-            deadlineButton = null;
+            deferButton = null;
             blockMenuButton = null;
             replyActionSheet = null;
             deadlineActionSheet = null;
@@ -475,7 +478,7 @@ namespace NachoClient.iOS
 
             ViewFramer.Create (attachmentListView).Y (separator1YOffset + 1.0f);
 
-            ViewFramer.Create(bodyView).Y(separator2YOffset + 1);
+            ViewFramer.Create (bodyView).Y (separator2YOffset + 1);
             scrollView.ContentSize = new SizeF (Math.Max (headerView.Frame.Width, bodyView.Frame.Width) + 2 * VIEW_INSET, bodyView.Frame.Bottom);
 
             // MarkAsRead() will change the message from unread to read only if the body has been
@@ -521,15 +524,13 @@ namespace NachoClient.iOS
             }
 
             if (segue.Identifier == "MessageViewToMessagePriority") {
-                var vc = (MessagePriorityViewController)segue.DestinationViewController;
-                vc.thread = thread;
-                vc.SetOwner (this);
+                var vc = (INachoDateController)segue.DestinationViewController;
+                vc.Setup (this, thread, DateControllerType.Defer);
                 return;
             }
             if (segue.Identifier == "MessageViewToFolders") {
-                var vc = (FoldersViewController)segue.DestinationViewController;
-                vc.SetModal (true);
-                vc.SetOwner (this, thread);
+                var vc = (INachoFolderChooser)segue.DestinationViewController;
+                vc.SetOwner (this, true, thread);
                 return;
             }
             if (segue.Identifier == "MessageViewToCompose") {
@@ -618,17 +619,6 @@ namespace NachoClient.iOS
             replyActionSheet.ShowFromToolbar (NavigationController.Toolbar);
         }
 
-        protected void ShowDeadlineActionSheet ()
-        {
-            deadlineActionSheet = new UIActionSheet ();
-            deadlineActionSheet.Add ("Set Deadline");
-            deadlineActionSheet.Add ("Create Meeting");
-            deadlineActionSheet.Add ("Cancel");
-            deadlineActionSheet.CancelButtonIndex = 2;
-            deadlineActionSheet.Clicked += DeadlineActionSheetClicked;
-            deadlineActionSheet.ShowFrom (deadlineButton, true);
-        }
-
         protected void ConfigureToolbar ()
         {
         }
@@ -697,7 +687,7 @@ namespace NachoClient.iOS
 
         public void DismissChildDateController (INachoDateController vc)
         {
-            vc.SetOwner (null);
+            vc.Setup (null, null, DateControllerType.None);
             vc.DimissDateController (false, new NSAction (delegate {
                 NavigationController.PopViewControllerAnimated (true);
             }));
@@ -731,7 +721,7 @@ namespace NachoClient.iOS
         public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
         {
             MoveThisMessage (folder);
-            vc.SetOwner (null, null);
+            vc.SetOwner (null, false, null);
             vc.DismissFolderChooser (false, new NSAction (delegate {
                 NavigationController.PopViewControllerAnimated (true);
             }));
@@ -767,10 +757,9 @@ namespace NachoClient.iOS
             }
         }
 
-        private void QuickReplyButtonClicked (object sender, EventArgs e)
+        private void MoveButtonClicked (object sender, EventArgs e)
         {
-            PerformSegue ("MessageViewToCompose", new SegueHolder (
-                MessageComposeViewController.REPLY_ACTION, NcQuickResponse.QRTypeEnum.Reply));
+            PerformSegue ("MessageViewToFolders", new SegueHolder (null));
         }
 
         private void BlockMenuButtonClicked (object sender, EventArgs e)
@@ -796,9 +785,9 @@ namespace NachoClient.iOS
             NavigationController.PopViewControllerAnimated (true);
         }
 
-        private void DeadlineButtonClicked (object sender, EventArgs e)
+        private void DeferButtonClicked (object sender, EventArgs e)
         {
-            ShowDeadlineActionSheet ();
+            PerformSegue ("MessageViewToMessagePriority", new SegueHolder (null));
         }
 
         private bool SingleTapGestureRecognizer (UIGestureRecognizer a, UIGestureRecognizer b)
