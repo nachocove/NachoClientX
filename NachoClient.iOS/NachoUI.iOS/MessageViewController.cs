@@ -433,6 +433,7 @@ namespace NachoClient.iOS
             moveButton.Clicked -= MoveButtonClicked;
             blockMenuButton.Clicked -= BlockMenuButtonClicked;
             deferButton.Clicked -= DeferButtonClicked;
+            messageToolbar.OnClick = null;
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
 
             blockMenu.Cleanup ();
