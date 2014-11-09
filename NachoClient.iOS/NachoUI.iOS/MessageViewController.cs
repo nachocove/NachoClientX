@@ -495,16 +495,6 @@ namespace NachoClient.iOS
             }
         }
 
-        public override void ViewWillAppear (bool animated)
-        {
-            base.ViewWillAppear (animated);
-        }
-
-        public override void ViewWillDisappear (bool animated)
-        {
-            base.ViewWillDisappear (animated);
-        }
-
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             var blurry = segue.DestinationViewController as BlurryViewController;
