@@ -41,6 +41,31 @@ namespace NachoClient.iOS
 
         static UIColor BUTTON_COLOR = A.Color_NachoGreen;
 
+        private void ReplyButtonClicked (object sender, EventArgs e)
+        {
+            OnClick (sender, new MessageToolbarEventArgs (ActionType.REPLY));
+        }
+
+        private void ReplyAllButtonClicked (object sender, EventArgs e)
+        {
+            OnClick (sender, new MessageToolbarEventArgs (ActionType.REPLY_ALL));
+        }
+
+        private void ForwardButtonClicked (object sender, EventArgs e)
+        {
+            OnClick (sender, new MessageToolbarEventArgs (ActionType.FORWARD));
+        }
+
+        private void ArchiveButtonClicked (object sender, EventArgs e)
+        {
+            OnClick (sender, new MessageToolbarEventArgs (ActionType.ARCHIVE));
+        }
+
+        private void DeleteButtonClicked (object sender, EventArgs e)
+        {
+            OnClick (sender, new MessageToolbarEventArgs(ActionType.DELETE));
+        }
+
         public MessageToolbar (RectangleF frame) : base (frame)
         {
             Translucent = false;
@@ -49,30 +74,22 @@ namespace NachoClient.iOS
             replyButton = new UIBarButtonItem ();
             replyButton.TintColor = BUTTON_COLOR;
             Util.SetAutomaticImageForButton (replyButton, "toolbar-icn-reply");
-            replyButton.Clicked += (object sender, EventArgs e) => {
-                OnClick (sender, new MessageToolbarEventArgs (ActionType.REPLY));
-            };
+            replyButton.Clicked += ReplyButtonClicked;
 
             replyAllButton = new UIBarButtonItem ();
             replyAllButton.TintColor = BUTTON_COLOR;
             Util.SetAutomaticImageForButton (replyAllButton, "toolbar-icn-reply-all");
-            replyAllButton.Clicked += (object sender, EventArgs e) => {
-                OnClick (sender, new MessageToolbarEventArgs (ActionType.REPLY_ALL));
-            };
+            replyAllButton.Clicked += ReplyAllButtonClicked;
 
             forwardButton = new UIBarButtonItem ();
             forwardButton.TintColor = BUTTON_COLOR;
             Util.SetAutomaticImageForButton (forwardButton, "toolbar-icn-fwd");
-            forwardButton.Clicked += (object sender, EventArgs e) => {
-                OnClick (sender, new MessageToolbarEventArgs (ActionType.FORWARD));
-            };
+            forwardButton.Clicked += ForwardButtonClicked;
 
             archiveButton = new UIBarButtonItem ();
             archiveButton.TintColor = BUTTON_COLOR;
             Util.SetAutomaticImageForButton (archiveButton, "email-archive-gray");
-            archiveButton.Clicked += (object sender, EventArgs e) => {
-                OnClick (sender, new MessageToolbarEventArgs (ActionType.ARCHIVE));
-            };
+            archiveButton.Clicked += ArchiveButtonClicked;
 
             flexibleSpace = new UIBarButtonItem (UIBarButtonSystemItem.FlexibleSpace);
 
@@ -82,9 +99,7 @@ namespace NachoClient.iOS
             deleteButton = new UIBarButtonItem ();
             deleteButton.TintColor = BUTTON_COLOR;
             Util.SetAutomaticImageForButton (deleteButton, "email-delete-gray");
-            deleteButton.Clicked += (object sender, EventArgs e) => {
-                OnClick (sender, new MessageToolbarEventArgs(ActionType.DELETE));
-            };
+            deleteButton.Clicked += DeleteButtonClicked;
 
             SetItems (new UIBarButtonItem[] {
                 replyButton,
@@ -97,6 +112,21 @@ namespace NachoClient.iOS
                 fixedSpace,
                 deleteButton
             }, false);
+        }
+
+        public void Cleanup()
+        {
+            replyButton.Clicked -= ReplyButtonClicked;
+            replyAllButton.Clicked -= ReplyAllButtonClicked;
+            forwardButton.Clicked -= ForwardButtonClicked;
+            archiveButton.Clicked -= ArchiveButtonClicked;
+            deleteButton.Clicked -= DeleteButtonClicked;
+
+            replyButton = null;
+            replyAllButton = null;
+            forwardButton = null;
+            archiveButton = null;
+            deleteButton = null;
         }
     }
 }

@@ -528,12 +528,12 @@
             <objects>
                 <viewController storyboardIdentifier="MessageViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="96Q-f8-PuZ" customClass="MessageViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="1rs-zQ-j9D">
-                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="C3K-cn-kde">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="460"/>
-                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                 <gestureRecognizers/>
                             </scrollView>
                         </subviews>
@@ -543,16 +543,8 @@
                     <extendedEdge key="edgesForExtendedLayout"/>
                     <navigationItem key="navigationItem" id="9RR-VH-nzx"/>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
-                    <simulatedToolbarMetrics key="simulatedBottomBarMetrics" translucent="NO"/>
+                    <nil key="simulatedBottomBarMetrics"/>
                     <connections>
-                        <outlet property="archiveButton" destination="lwU-bJ-z6E" id="Ads-ZI-Vvl"/>
-                        <outlet property="deleteButton" destination="PNM-D1-huA" id="QKl-7t-grl"/>
-                        <outlet property="fixedSpaceButton" destination="UsM-1P-89h" id="8E5-Jv-pXr"/>
-                        <outlet property="flexibleSpaceButton" destination="hYC-KD-Xk0" id="ekc-yV-Qi3"/>
-                        <outlet property="forwardButton" destination="mmY-Kk-Ld8" id="yz0-CK-zzG"/>
-                        <outlet property="replyAllButton" destination="R7P-Ye-Fgq" id="tgo-VQ-ORd"/>
-                        <outlet property="replyButton" destination="l45-TG-u6H" id="mS9-Up-jCu"/>
-                        <outlet property="saveButton" destination="Tcg-BD-64n" id="s4a-tn-WDz"/>
                         <outlet property="scrollView" destination="C3K-cn-kde" id="6w9-Au-3zp"/>
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="MessageViewToMessagePriority" modalTransitionStyle="crossDissolve" id="qB9-ce-7gT"/>
                         <segue destination="tAw-fh-hJX" kind="push" identifier="MessageViewToCompose" id="RHB-Or-A5o"/>
@@ -562,20 +554,6 @@
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageViewToFolders" id="c2Q-C8-ZgX"/>
                     </connections>
                 </viewController>
-                <toolbar opaque="NO" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" id="5C3-Gh-DbC">
-                    <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
-                    <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
-                    <items>
-                        <barButtonItem image="toolbar-icn-reply.png" id="l45-TG-u6H" userLabel="Bar Button Item - Reply"/>
-                        <barButtonItem image="toolbar-icn-reply-all.png" id="R7P-Ye-Fgq" userLabel="Bar Button Item - Reply All"/>
-                        <barButtonItem image="toolbar-icn-fwd.png" id="mmY-Kk-Ld8" userLabel="Bar Button Item - Forward"/>
-                        <barButtonItem style="plain" systemItem="flexibleSpace" id="hYC-KD-Xk0"/>
-                        <barButtonItem image="icn-archive.png" id="lwU-bJ-z6E" userLabel="Bar Button Item - Archive"/>
-                        <barButtonItem width="25" style="plain" systemItem="fixedSpace" id="UsM-1P-89h"/>
-                        <barButtonItem image="toolbar-icn-move.png" id="Tcg-BD-64n" userLabel="Bar Button Item - Save"/>
-                        <barButtonItem image="toolbar-icn-delete.png" id="PNM-D1-huA" userLabel="Bar Button Item - Delete"/>
-                    </items>
-                </toolbar>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="LjP-vQ-4le" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-3195" y="1217"/>
@@ -1653,13 +1631,7 @@
         </scene>
     </scenes>
     <resources>
-        <image name="icn-archive.png" width="24" height="24"/>
         <image name="navbar-icn-close.png" width="17" height="17"/>
-        <image name="toolbar-icn-delete.png" width="19" height="21"/>
-        <image name="toolbar-icn-fwd.png" width="24" height="24"/>
-        <image name="toolbar-icn-move.png" width="24" height="20"/>
-        <image name="toolbar-icn-reply-all.png" width="24" height="24"/>
-        <image name="toolbar-icn-reply.png" width="24" height="24"/>
     </resources>
     <simulatedMetricsContainer key="defaultSimulatedMetrics">
         <simulatedStatusBarMetrics key="statusBar"/>

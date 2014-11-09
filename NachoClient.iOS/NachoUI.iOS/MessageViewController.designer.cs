@@ -13,74 +13,10 @@ namespace NachoClient.iOS
 	partial class MessageViewController
 	{
 		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem archiveButton { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem deleteButton { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem fixedSpaceButton { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem flexibleSpaceButton { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem forwardButton { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem replyAllButton { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem replyButton { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem saveButton { get; set; }
-
-		[Outlet]
 		MonoTouch.UIKit.UIScrollView scrollView { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
-			if (archiveButton != null) {
-				archiveButton.Dispose ();
-				archiveButton = null;
-			}
-
-			if (deleteButton != null) {
-				deleteButton.Dispose ();
-				deleteButton = null;
-			}
-
-			if (fixedSpaceButton != null) {
-				fixedSpaceButton.Dispose ();
-				fixedSpaceButton = null;
-			}
-
-			if (flexibleSpaceButton != null) {
-				flexibleSpaceButton.Dispose ();
-				flexibleSpaceButton = null;
-			}
-
-			if (forwardButton != null) {
-				forwardButton.Dispose ();
-				forwardButton = null;
-			}
-
-			if (replyAllButton != null) {
-				replyAllButton.Dispose ();
-				replyAllButton = null;
-			}
-
-			if (replyButton != null) {
-				replyButton.Dispose ();
-				replyButton = null;
-			}
-
-			if (saveButton != null) {
-				saveButton.Dispose ();
-				saveButton = null;
-			}
-
 			if (scrollView != null) {
 				scrollView.Dispose ();
 				scrollView = null;
