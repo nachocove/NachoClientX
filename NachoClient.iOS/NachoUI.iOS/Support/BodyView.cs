@@ -448,7 +448,7 @@ namespace NachoClient.iOS
         private void RenderHtmlString (string html)
         {
             var webView = new BodyWebView (
-                yOffset, Frame.Width, LayoutAndNotifyParent,
+                yOffset, preferredWidth, visibleArea.Height, LayoutAndNotifyParent,
                 html, NSUrl.FromString (string.Format ("cid://{0}", item.BodyId)));
             AddSubview (webView);
             childViews.Add (webView);

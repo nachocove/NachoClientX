@@ -26,8 +26,8 @@ namespace NachoClient.iOS
         private const string dispableJavaScript = "<meta http-equiv=\"Content-Security-Policy\" content=\"script-src 'none'\">";
         private const string wrapPre = "<style>pre { white-space: pre-wrap;}</style>";
 
-        public BodyWebView (float Y, float preferredWidth, Action sizeChangedCallback, string html, NSUrl baseUrl)
-            : base (new RectangleF(0, Y, preferredWidth, 1))
+        public BodyWebView (float Y, float preferredWidth, float initialHeight, Action sizeChangedCallback, string html, NSUrl baseUrl)
+            : base (new RectangleF(0, Y, preferredWidth, initialHeight))
         {
             this.preferredWidth = preferredWidth;
             this.sizeChangedCallback = sizeChangedCallback;
