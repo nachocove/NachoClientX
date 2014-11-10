@@ -6,6 +6,7 @@ using DnDns.Records;
 using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -659,7 +660,7 @@ namespace NachoCore.ActiveSync
                 throw new Exception ("We should not be getting this (HTTP 451) while doing autodiscovery.");
             }
 
-            public virtual bool SafeToMime (AsHttpOperation Sender, out StreamContent mime)
+            public virtual bool SafeToMime (AsHttpOperation Sender, out Stream mime)
             {
                 // We don't generate MIME.
                 mime = null;
