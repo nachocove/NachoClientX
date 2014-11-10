@@ -427,7 +427,7 @@ namespace NachoClient.iOS
 
             intentView.AddSubviews (new UIView[] { intentLabel, intentDisplayLabel, intentArrowAccessory });
 
-            attachmentView = new UcAttachmentBlock (this, account.Id, View.Frame.Width, 40);
+            attachmentView = new UcAttachmentBlock (this, account.Id, View.Frame.Width, 40, true);
 
             bodyTextView = new UITextView ();
             bodyTextView.Font = labelFont;

@@ -23,49 +23,50 @@ namespace NachoClient.iOS
 
         public McAttachment attachment;
 
-        public UcAttachmentCell (McAttachment attachment, float parentWidth) : base (new RectangleF (0, 0, parentWidth, LINE_HEIGHT))
+        public UcAttachmentCell (McAttachment attachment, float parentWidth, bool editable) : base (new RectangleF (0, 0, parentWidth, LINE_HEIGHT))
         {
             this.attachment = attachment;
-            CreateView (parentWidth);
+            CreateView (parentWidth, editable);
         }
 
-        public void CreateView (float parentWidth)
+        public void CreateView (float parentWidth, bool editable)
         {
-            //Remove icon
-            var removeButton = new UIButton ();
-            removeButton.Tag = REMOVE_BUTTON_TAG;
-            removeButton.SetImage (UIImage.FromBundle ("gen-delete-small"), UIControlState.Normal);
-            removeButton.Frame = new RectangleF (18, (LINE_HEIGHT / 2) - 8, 16, 16);
+            var xOffset = 0;
+            if (editable) {
+                //Remove icon
+                var removeButton = new UIButton ();
+                removeButton.Tag = REMOVE_BUTTON_TAG;
+                removeButton.SetImage (UIImage.FromBundle ("gen-delete-small"), UIControlState.Normal);
+                removeButton.Frame = new RectangleF (18, (LINE_HEIGHT / 2) - 8, 16, 16);
+                this.AddSubview (removeButton);
+                xOffset += 34;
+            }
 
             //Cell icon
             var cellIconImageView = new UIImageView (); 
             cellIconImageView.BackgroundColor = CELL_COMPONENT_BG_COLOR;
-            cellIconImageView.Frame = new RectangleF (52, 18, 24, 24);
+            cellIconImageView.Frame = new RectangleF (xOffset + 18, 18, 24, 24);
+            this.AddSubview (cellIconImageView);
 
             //Text label
             var textLabel = new UILabel (); 
             textLabel.Font = A.Font_AvenirNextDemiBold14;
             textLabel.TextColor = A.Color_NachoDarkText;
             textLabel.BackgroundColor = CELL_COMPONENT_BG_COLOR;
-            textLabel.Frame = new RectangleF (60 + 34, 11, parentWidth - 60 - 52, 19.5f);
+            textLabel.Frame = new RectangleF (xOffset + 60, 11, parentWidth - 60 - 52, 19.5f);
+            this.AddSubview (textLabel);
 
             //Detail text label
             var detailTextlabel = new UILabel (); 
             detailTextlabel.BackgroundColor = CELL_COMPONENT_BG_COLOR;
             detailTextlabel.Font = A.Font_AvenirNextRegular14;
             detailTextlabel.TextColor = A.Color_NachoTextGray;
-            detailTextlabel.Frame = new RectangleF (60 + 34, 11 + 19.5f, parentWidth - 60 - 52, 19.5f);
+            detailTextlabel.Frame = new RectangleF (xOffset + 60, 11 + 19.5f, parentWidth - 60 - 52, 19.5f);
+            this.AddSubview (detailTextlabel);
 
             //Separator line
-            var separatorLine = Util.AddHorizontalLineView (60 + 34, 60, parentWidth - 60, A.Color_NachoBorderGray);
-
-            this.AddSubviews (new UIView[] {
-                removeButton,
-                cellIconImageView,
-                textLabel,
-                detailTextlabel,
-                separatorLine
-            });
+            var separatorLine = Util.AddHorizontalLineView (xOffset + 60, 60, parentWidth - 60, A.Color_NachoBorderGray);
+            this.AddSubview (separatorLine);
 
             ConfigureView (attachment, cellIconImageView, textLabel, detailTextlabel);
         }
@@ -116,17 +117,19 @@ namespace NachoClient.iOS
         protected const int REMOVE_BUTTON_TAG = 1100;
 
         bool isCompact;
+        bool editable;
         UIView contentView;
         UILabel mainLabel;
         UIButton chooserButton;
 
-        public UcAttachmentBlock (IUcAttachmentBlockDelegate owner, int accountId, float parentWidth, int cellHeight)
+        public UcAttachmentBlock (IUcAttachmentBlockDelegate owner, int accountId, float parentWidth, int cellHeight, bool editable)
         {
             this.owner = owner;
             this.accountId = accountId;
             this.parentWidth = parentWidth;
             this.BackgroundColor = UIColor.White;
             this.CELL_HEIGHT = cellHeight;
+            this.editable = editable;
 
             this.AutoresizingMask = UIViewAutoresizing.None;
             this.AutosizesSubviews = false;
@@ -182,7 +185,7 @@ namespace NachoClient.iOS
 
         public void Append (McAttachment attachment)
         {
-            var c = new UcAttachmentCell (attachment, parentWidth);
+            var c = new UcAttachmentCell (attachment, parentWidth, editable);
             contentView.AddSubview (c);
             list.Add (c);
 
@@ -194,10 +197,12 @@ namespace NachoClient.iOS
             });
             c.AddGestureRecognizer (tap);
 
-            var RemoveButton = c.ViewWithTag (REMOVE_BUTTON_TAG) as UIButton;
-            RemoveButton.TouchUpInside += (object sender, EventArgs e) => {
-                Remove (c);
-            };
+            if (editable) {
+                var RemoveButton = c.ViewWithTag (REMOVE_BUTTON_TAG) as UIButton;
+                RemoveButton.TouchUpInside += (object sender, EventArgs e) => {
+                    Remove (c);
+                };
+            }
 
             Layout ();
             ConfigureView ();
