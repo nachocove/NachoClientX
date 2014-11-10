@@ -404,13 +404,7 @@ namespace NachoClient.iOS
 
             var durationLabel = View.ViewWithTag ((int)TagType.EVENT_WHEN_DURATION_TAG) as UILabel;
             if (c.AllDayEvent) {
-                // TODO Does this handle time zones correctly?
-                if (e.StartTime.DayOfYear == e.EndTime.DayOfYear) {
-                    durationLabel.Text = "all day event";
-                } else {
-                    durationLabel.Text = string.Format ("from {0} until {1}",
-                        Pretty.FullDateString (e.StartTime), Pretty.FullDateString (e.EndTime));
-                }
+                durationLabel.Text = "all day event";
             } else {
                 if (e.StartTime.LocalT ().DayOfYear == e.EndTime.LocalT ().DayOfYear) {
                     durationLabel.Text = string.Format ("from {0} until {1}",

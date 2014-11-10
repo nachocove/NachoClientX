@@ -426,7 +426,11 @@ namespace NachoCore.Utils
                 return;
             }
 
-            if (part is TextPart) {
+            // The conversion from TNEF to MIME will sometimes create a TextPart
+            // with a null ContentObject, which will result in a NullReferenceException
+            // when accessing the Text property.  Render all TextParts, except
+            // for those bogus ones.
+            if (part is TextPart && null != part.ContentObject) {
                 list.Add (part);
                 return;
             }

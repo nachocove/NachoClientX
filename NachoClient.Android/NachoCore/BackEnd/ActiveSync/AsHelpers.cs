@@ -386,6 +386,7 @@ namespace NachoCore.ActiveSync
                     break;
                 case Xml.Calendar.Recurrence.DayOfWeek:
                     r.DayOfWeek = child.Value.ToEnum<NcDayOfWeek> ();
+                    r.DayOfWeekIsSet = true;
                     break;
                 case Xml.Calendar.Recurrence.FirstDayOfWeek:
                     r.FirstDayOfWeek = child.Value.ToInt ();
