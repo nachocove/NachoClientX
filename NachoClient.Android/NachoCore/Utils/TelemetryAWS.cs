@@ -1,12 +1,16 @@
 ﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
+//#define AWS_DEBUG
 using System;
+using System.IO;
 
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DocumentModel;
 using Amazon.Runtime;
 using Amazon.SecurityToken;
 using Amazon.Util;
+using Amazon.CognitoIdentity;
+using Amazon;
 
 using NachoClient.Build;
 
@@ -24,17 +28,56 @@ namespace NachoCore.Utils
         private static Table UiTable;
         private static Table WbxmlTable;
 
+        private static string ClientId;
+
         public TelemetryBEAWS ()
         {
-            BasicAWSCredentials cred = new BasicAWSCredentials ("dynamodb_local", "dynamodb_local");
-
-            // FIXME
             var config = new AmazonDynamoDBConfig();
-            config.ServiceURL = "http://localhost:8000";
-            config.UseHttp = true;
-            config.Timeout = new TimeSpan (0, 0, 5);
-            config.AuthenticationRegion = "localhost";
-            Client = new AmazonDynamoDBClient (cred, config);
+            config.UseHttp = false;
+            config.AuthenticationRegion = "us-west-2";
+            config.ServiceURL = "https://dynamodb.us-west-2.amazonaws.com";
+
+            #if AWS_DEBUG
+            BasicAWSCredentials credentials =
+                new BasicAWSCredentials("ACCESS KEY", "SECRET ACCESS KEY");
+            #else
+            CognitoAWSCredentials credentials = new CognitoAWSCredentials(
+                "610813048224",
+                "us-east-1:0d40f2cf-bf6c-4875-a917-38f8867b59ef",
+                "arn:aws:iam::610813048224:role/Cognito_dev_telemetryUnauth_DefaultRole",
+                "NO PUBLIC AUTHENTICATION",
+                RegionEndpoint.USEast1
+            );
+            Console.WriteLine (">>>>>>>> Cognito Id = {0}", credentials.GetIdentityId ());
+
+            // We get a different Cognito id each time it runs because unauthenticated
+            // identities (that we use) are anonymous. But doing so would mean it is
+            // really hard to track a client's activity. So, we look for Documents/client_id.
+            // If it does not exist, we save the current Cognito id into the file. After
+            // the 1st time, we use the id in the file as the client id. Note that we 
+            // still need to talk to Cognito in order to get the session token.
+            var documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+            var clientIdFile = Path.Combine (documents, "client_id");
+            if (File.Exists(clientIdFile)) {
+                // Get the client id from the file
+                using (var stream = new FileStream (clientIdFile, FileMode.Open, FileAccess.Read)) {
+                    using (var reader = new StreamReader (stream)) {
+                        ClientId = reader.ReadLine ();
+                    }
+                }
+            } else {
+                // Save the current Cognito id as client id
+                ClientId = credentials.GetIdentityId ();
+                using (var stream = new FileStream (clientIdFile, FileMode.Create, FileAccess.Write)) {
+                    using (var writer = new StreamWriter (stream)) {
+                        writer.WriteLine(ClientId);
+                    }
+                }
+            }
+            Console.WriteLine(">>>>>>>>> ClientId = {0}", ClientId);
+            #endif
+
+            Client = new AmazonDynamoDBClient (credentials, config);
 
             LogTable = Table.LoadTable (Client, TableName ("log"));
             SupportTable = Table.LoadTable (Client, TableName ("support"));
@@ -51,7 +94,7 @@ namespace NachoCore.Utils
 
         public string GetUserName ()
         {
-            return "HardCodedClientId";
+            return ClientId;
         }
 
         public bool SendEvent (TelemetryEvent tEvent)
@@ -98,7 +141,7 @@ namespace NachoCore.Utils
             var anEvent = new Document ();
             // Client and timeestamp are the only common fields for all event tables.
             // They are also the primary keys.
-            anEvent ["id"] = Guid.NewGuid ().ToString ().Replace ("-", "");
+            anEvent ["id"] = ClientId;
             anEvent ["client"] = GetUserName ();
             anEvent ["timestamp"] = tEvent.Timestamp.Ticks;
             return anEvent;
