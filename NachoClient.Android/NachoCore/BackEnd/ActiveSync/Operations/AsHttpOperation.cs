@@ -537,10 +537,9 @@ namespace NachoCore.ActiveSync
                     result.Value = new Tuple<int,Uri> (credDaysLeft, credUri);
                     Owner.StatusInd (result);
                 }
-                if (0 > ContentData.Length) {
-                    // We have seen this, but we've never see doc stating why possible.
-                    return Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPZORNEG");
-                } else if (0 < ContentData.Length) {
+                if (0 < ContentData.Length ||
+                    (response.Headers.TransferEncodingChunked.HasValue && 
+                        (bool)response.Headers.TransferEncodingChunked)) {
                     switch (ContentType) {
                     case ContentTypeWbxml:
                         var decoder = new ASWBXML (cToken);
