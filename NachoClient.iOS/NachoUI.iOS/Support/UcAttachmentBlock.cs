@@ -37,7 +37,7 @@ namespace NachoClient.iOS
                 var removeButton = new UIButton ();
                 removeButton.Tag = REMOVE_BUTTON_TAG;
                 removeButton.SetImage (UIImage.FromBundle ("gen-delete-small"), UIControlState.Normal);
-                removeButton.Frame = new RectangleF (18, (LINE_HEIGHT / 2) - 8, 16, 16);
+                removeButton.Frame = new RectangleF (9, (LINE_HEIGHT / 2) - 17, 34, 34);
                 this.AddSubview (removeButton);
                 xOffset += 34;
             }
@@ -165,7 +165,7 @@ namespace NachoClient.iOS
             chooserButton = UIButton.FromType (UIButtonType.System);
             Util.SetOriginalImagesForButton (chooserButton, "email-add", "email-add-active");
             chooserButton.SizeToFit ();
-            chooserButton.Frame = new RectangleF (parentWidth - chooserButton.Frame.Width - RIGHT_INDENT, 0, chooserButton.Frame.Width, CELL_HEIGHT);
+            chooserButton.Frame = new RectangleF (parentWidth - 43, 0, 40, CELL_HEIGHT);
             chooserButton.TouchUpInside += (object sender, EventArgs e) => {
                 if (null != owner) {
                     owner.PerformSegueForAttachmentBlock("SegueToAddAttachment", new SegueHolder (null));
