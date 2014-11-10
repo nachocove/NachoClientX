@@ -158,6 +158,7 @@ namespace NachoClient.iOS
             this.AddSubview (contentView);
 
             mainLabel = new UILabel ();
+            AdjustXY (mainLabel, LEFT_INDENT, 0);
             mainLabel.Text = "Attachments";
             mainLabel.Font = A.Font_AvenirNextMedium14;
             mainLabel.TextColor = A.Color_NachoDarkText;

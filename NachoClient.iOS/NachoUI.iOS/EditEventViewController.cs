@@ -721,6 +721,7 @@ namespace NachoClient.iOS
 
             //Attachments
             attachmentView = new UcAttachmentBlock (this, account.Id, SCREEN_WIDTH, 44, true);
+            attachmentView.Frame = new RectangleF (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 7) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT);
 
             attachmentBGView = new UIView (new RectangleF (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 7) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT * 2));
             attachmentBGView.BackgroundColor = CELL_COMPONENT_BG_COLOR;
