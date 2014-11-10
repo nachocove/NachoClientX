@@ -49,6 +49,11 @@ namespace NachoCore.ActiveSync
                         case Xml.FolderHierarchy.Add:
                             HadFolderChanges = true;
                             serverId = change.Element (m_ns + Xml.FolderHierarchy.ServerId).Value;
+                            if (McServer.GMail_Host == BEContext.Server.Host &&
+                                McFolder.GMail_All_ServerId == serverId) {
+                                Log.Info (Log.LOG_AS, "Ignoring GMail folder {0}.", serverId);
+                                break;
+                            }
                             parentId = change.Element (m_ns + Xml.FolderHierarchy.ParentId).Value;
                             pathElem = new McPath (BEContext.Account.Id);
                             pathElem.ServerId = serverId;

@@ -53,6 +53,8 @@ namespace NachoCore.Model
         public const string ClientOwned_DeviceContacts = "DEVCONTACTS";
         public const string ClientOwned_DeviceCalendars = "DEVCALENDARS";
 
+        public const string GMail_All_ServerId = "Mail:^all";
+
         public override string ToString ()
         {
             return "NcFolder: sid=" + ServerId + " pid=" + ParentId + " skey=" + AsSyncKey + " dn=" + DisplayName + " type=" + Type.ToString ();
