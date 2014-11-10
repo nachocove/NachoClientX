@@ -785,7 +785,7 @@ namespace NachoCore.Utils
                 return FindDayWithinMonthByRule (new DateTime (current.Year + interval, r.MonthOfYear, 1, current.Hour, current.Minute, current.Second, current.Millisecond), r.WeekOfMonth, r.DayOfWeek);
 
             default:
-                NcAssert.CaseError ("Unsopported recurrence type, which should have been caught earlier.");
+                NcAssert.CaseError ("Unsupported recurrence type, which should have been caught earlier.");
                 return DateTime.MaxValue;
             }
         }
