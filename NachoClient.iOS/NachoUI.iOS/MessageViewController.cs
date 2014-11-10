@@ -94,7 +94,7 @@ namespace NachoClient.iOS
 
         protected override void CreateViewHierarchy ()
         {
-            ViewFramer.Create (scrollView).Height (scrollView.Frame.Height - 44);
+            ViewFramer.Create (scrollView).Height (View.Frame.Height - 44 - 64);
 
             // Toolbar controls
 
@@ -324,6 +324,13 @@ namespace NachoClient.iOS
         protected override void ConfigureAndLayout ()
         {
             var message = thread.SingleMessageSpecialCase ();
+
+            if (null == message) {
+                // TODO: Unavailable message
+                NavigationController.PopViewControllerAnimated (true);
+                return;
+            }
+
             attachments = McAttachment.QueryByItemId (message);
 
             var userImageView = headerView.ViewWithTag ((int)TagType.USER_IMAGE_TAG) as UIImageView;
