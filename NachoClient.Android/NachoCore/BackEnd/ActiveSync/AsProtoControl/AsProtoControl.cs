@@ -802,6 +802,11 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.UiSetServConf,
                             (uint)CtlEvt.E.PendQ,
                             (uint)CtlEvt.E.PendQHot,
+                            (uint)CtlEvt.E.PkPing,
+                            (uint)CtlEvt.E.PkQOp,
+                            (uint)CtlEvt.E.PkHotQOp,
+                            (uint)CtlEvt.E.PkFetch,
+                            (uint)CtlEvt.E.PkWait,
                             (uint)CtlEvt.E.Park,
                         },
                         Invalid = new [] {
@@ -815,11 +820,6 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.GetServConf,
                             (uint)CtlEvt.E.GetCertOk,
                             (uint)CtlEvt.E.ReFSync,
-                            (uint)CtlEvt.E.PkPing,
-                            (uint)CtlEvt.E.PkQOp,
-                            (uint)CtlEvt.E.PkHotQOp,
-                            (uint)CtlEvt.E.PkFetch,
-                            (uint)CtlEvt.E.PkWait,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDrive, ActSetsState = true },
