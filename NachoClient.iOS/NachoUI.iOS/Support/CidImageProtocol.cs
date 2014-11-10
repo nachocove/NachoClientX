@@ -57,17 +57,28 @@ namespace NachoClient.iOS
 
         public override void StartLoading ()
         {
-            var value = Request.Url.ResourceSpecifier;
-            using (var image = PlatformHelpers.RenderContentId (value)) {
+            var url = Request.Url;
+            if (null == url) {
+                Log.Error (Log.LOG_UI, "CidImageProtocol: Url is null for {0}", Request);
+                Client.FinishedLoading (this);
+                return;
+            }
+            var resourceSpecifier = url.ResourceSpecifier;
+            if (null == resourceSpecifier) {
+                Log.Error (Log.LOG_UI, "CidImageProtocol: ResourceSpecifier is null for {0}", Request);
+                Client.FinishedLoading (this);
+                return;
+            }
+            using (var image = PlatformHelpers.RenderContentId (resourceSpecifier)) {
                 if (null == image) {
-                    Log.Error (Log.LOG_UI, "CidImageProtocol: RenderContentId returned null {0}", value);
+                    Log.Error (Log.LOG_UI, "CidImageProtocol: RenderContentId returned null {0}", url);
                     Client.FinishedLoading (this);
                 } else {
-                    if (Request.Url.RelativeString.EndsWith (".png")) {
+                    if (Request.Url.RelativeString.EndsWith (".png", StringComparison.OrdinalIgnoreCase)) {
                         using (var data = image.AsPNG ()) {
                             FinishLoading (data, "image/png");
                         }
-                    } else if (Request.Url.RelativeString.EndsWith (".jpg")) {
+                    } else if (Request.Url.RelativeString.EndsWith (".jpg", StringComparison.OrdinalIgnoreCase)) {
                         using (var data = image.AsJPEG ()) {
                             FinishLoading (data, "image/jpeg");
                         }
