@@ -2,6 +2,7 @@
 //
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net.Http;
 using System.Xml.Linq;
 using NachoCore.Utils;
@@ -17,7 +18,7 @@ namespace NachoCore.ActiveSync
         void PostProcessEvent (Event evt);
         Event ProcessTopLevelStatus (AsHttpOperation Sender, uint status);
         bool SafeToXDocument (AsHttpOperation Sender, out XDocument doc);
-        bool SafeToMime (AsHttpOperation Sender, out StreamContent mime);
+        bool SafeToMime (AsHttpOperation Sender, out Stream mime);
         Uri ServerUri (AsHttpOperation Sender);
         void ServerUriChanged (Uri ServerUri, AsHttpOperation Sender);
         HttpMethod Method (AsHttpOperation Sender);

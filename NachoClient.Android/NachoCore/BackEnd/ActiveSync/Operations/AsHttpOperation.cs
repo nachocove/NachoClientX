@@ -361,12 +361,14 @@ namespace NachoCore.ActiveSync
                     request.Content = new StringContent (xmlText, UTF8Encoding.UTF8, ContentTypeXml);
                 }
             }
-            StreamContent mime;
+            Stream mime;
             if (!Owner.SafeToMime (this, out mime)) {
                 return false;
             }
             if (null != mime) {
-                request.Content = mime;
+                request.Content = new StreamContent (mime);
+                request.Content.Headers.Add ("Content-Length", mime.Length.ToString ());
+                request.Content.Headers.Add ("Content-Type", ContentTypeMail);
             }
             request.Headers.Add ("User-Agent", Device.Instance.UserAgent ());
             if (Owner.DoSendPolicyKey (this)) {
