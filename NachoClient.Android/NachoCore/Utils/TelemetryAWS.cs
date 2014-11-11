@@ -141,7 +141,7 @@ namespace NachoCore.Utils
             var anEvent = new Document ();
             // Client and timeestamp are the only common fields for all event tables.
             // They are also the primary keys.
-            anEvent ["id"] = ClientId;
+            anEvent ["id"] = Guid.NewGuid ().ToString ().Replace ("-", "");
             anEvent ["client"] = GetUserName ();
             anEvent ["timestamp"] = tEvent.Timestamp.Ticks;
             return anEvent;
@@ -151,6 +151,7 @@ namespace NachoCore.Utils
         {
             try {
                 // FIXME - Add cancellation token
+                eventItem ["uploaded_at"] = DateTime.UtcNow.Ticks;
                 var task = eventTable.PutItemAsync (eventItem);
                 task.Wait ();
             }
@@ -250,7 +251,7 @@ namespace NachoCore.Utils
             var anEvent = InitializeEvent (tEvent);
             switch (tEvent.Type) {
             case TelemetryEventType.WBXML_REQUEST:
-                anEvent ["event_type"] = "WBXML_REQUST";
+                anEvent ["event_type"] = "WBXML_REQUEST";
                 break;
             case TelemetryEventType.WBXML_RESPONSE:
                 anEvent ["event_type"] = "WBXML_RESPONSE";
@@ -259,6 +260,7 @@ namespace NachoCore.Utils
                 var msg = String.Format ("unknown wbxml event type {0}", (int)tEvent.Type);
                 throw new NcAssert.NachoDefaultCaseFailure (msg);
             }
+            anEvent ["wbxml"] = tEvent.Wbxml;
             return anEvent;
         }
     }

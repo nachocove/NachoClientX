@@ -155,19 +155,6 @@ namespace NachoCore.Utils
             }
         }
 
-        // Average
-        private uint _Average;
-
-        public uint Average {
-            get {
-                return _Average;
-            }
-            set {
-                NcAssert.True (IsCaptureEvent ());
-                _Average = value;
-            }
-        }
-
         // Capture Min
         private uint _Min;
 
@@ -194,16 +181,29 @@ namespace NachoCore.Utils
             }
         }
 
-        // Capture Std. Dev
-        private uint _StdDev;
+        // Capture sum
+        private ulong _Sum;
 
-        public uint StdDev {
+        public ulong Sum {
             get {
-                return _StdDev;
+                return _Sum;
             }
             set {
                 NcAssert.True (IsCaptureEvent ());
-                _StdDev = value;
+                _Sum = value;
+            }
+        }
+
+        // Capture sum of squares
+        private ulong _Sum2;
+
+        public ulong Sum2 {
+            get {
+                return _Sum2;
+            }
+            set {
+                NcAssert.True (IsCaptureEvent ());
+                _Sum2 = value;
             }
         }
 
@@ -357,10 +357,10 @@ namespace NachoCore.Utils
             _CounterStart = new DateTime ();
             _CounterEnd = new DateTime ();
             _CaptureName = null;
-            _Average = 0;
             _Min = 0;
             _Max = 0;
-            _StdDev = 0;
+            _Sum = 0;
+            _Sum2 = 0;
             _UiType = null;
             _UiObject = null;
             _UiString = null;
@@ -524,7 +524,7 @@ namespace NachoCore.Utils
             RecordRawEvent (tEvent);
         }
 
-        public static void RecordCapture (string name, uint count, uint average, uint min, uint max, uint stddev)
+        public static void RecordCapture (string name, uint count, uint min, uint max, ulong sum, ulong sum2)
         {
             if (!ENABLED) {
                 return;
@@ -534,10 +534,10 @@ namespace NachoCore.Utils
 
             tEvent.CaptureName = name;
             tEvent.Count = count;
-            tEvent.Average = average;
             tEvent.Min = min;
             tEvent.Max = max;
-            tEvent.StdDev = stddev;
+            tEvent.Sum = sum;
+            tEvent.Sum2 = sum2;
 
             RecordRawEvent (tEvent);
         }
