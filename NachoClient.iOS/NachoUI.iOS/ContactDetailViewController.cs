@@ -42,6 +42,7 @@ namespace NachoClient.iOS
         protected const int HEADER_CALL_VIEW_TAG = 103;
         protected const int HEADER_EMAIL_VIEW_TAG = 104;
         protected const int HEADER_VIP_BUTTON_TAG = 105;
+        protected const int HEADER_PORTRAIT_TAG = 106;
 
         protected const int SEGMENTED_CONTROL_TAG = 200;
         protected const int SEGMENTED_VIEW_HOLDER_TAG = 201;
@@ -215,6 +216,15 @@ namespace NachoClient.iOS
             initialsCircleLabel.Layer.BorderWidth = 1;
             initialsCircleLabel.Tag = HEADER_INITIALS_CIRCLE_TAG;
             headerView.AddSubview (initialsCircleLabel);
+
+            UIImageView userImageView = new UIImageView (new RectangleF (PADDING, VERTICAL_PADDING, 60, 60));
+            userImageView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
+            userImageView.Layer.BorderWidth = 1;
+            userImageView.Layer.CornerRadius = 30;
+            userImageView.Layer.MasksToBounds = true;
+            userImageView.Tag = HEADER_PORTRAIT_TAG;
+            userImageView.Hidden = true;
+            headerView.AddSubview (userImageView);
 
             UILabel nameLabel = new UILabel (new RectangleF (initialsCircleLabel.Frame.Right + 16, 31, 150, 20));
             nameLabel.Font = A.Font_AvenirNextDemiBold17;
@@ -393,8 +403,20 @@ namespace NachoClient.iOS
             }
 
             UILabel headerInitialsLabel = (UILabel)View.ViewWithTag (HEADER_INITIALS_CIRCLE_TAG);
-            headerInitialsLabel.BackgroundColor = LighterColor (userBackgroundColor);
-            headerInitialsLabel.Text = GetInitials ();
+            UIImageView headerPortraitImageView = (UIImageView)View.ViewWithTag (HEADER_PORTRAIT_TAG);
+
+            headerInitialsLabel.Hidden = true;
+            headerPortraitImageView.Hidden = true;
+
+            if (0 == contact.PortraitId) {
+                headerInitialsLabel.BackgroundColor = LighterColor (userBackgroundColor);
+                headerInitialsLabel.Text = NachoCore.Utils.string_Helpers.GetInitials (contact);
+                headerInitialsLabel.Hidden = false;
+
+            } else {
+                headerPortraitImageView.Image = Util.ImageOfContact (contact);
+                headerPortraitImageView.Hidden = false;
+            }
 
             UILabel headerNameLabel = (UILabel)View.ViewWithTag (HEADER_NAME_TAG);
             headerNameLabel.Text = contact.GetDisplayNameOrEmailAddress ();
@@ -609,7 +631,7 @@ namespace NachoClient.iOS
                 emailView.AddSubview (defaultEmailIcon);
             }
 
-            var emailTextView = new UITextView (new RectangleF (emailLabel.Frame.X - 5, emailLabel.Frame.Bottom - 1, emailView.Frame.Width - 75, 30));
+            var emailTextView = new UITextView (new RectangleF (emailLabel.Frame.X - 5, emailLabel.Frame.Bottom - 1, emailView.Frame.Width - 60, 30));
             emailTextView.Font = A.Font_AvenirNextMedium14;
             emailTextView.TextColor = A.Color_NachoGreen;
             emailTextView.Text = canonicalEmail;
@@ -726,31 +748,6 @@ namespace NachoClient.iOS
             var frame = view.Frame;
             frame.Height = height;
             view.Frame = frame;
-        }
-
-        protected string GetInitials ()
-        {
-            string initials = "";
-            if (!String.IsNullOrEmpty (contact.FirstName)) {
-                initials += Char.ToUpper (contact.FirstName [0]);
-            }
-            if (!String.IsNullOrEmpty (contact.LastName)) {
-                initials += Char.ToUpper (contact.LastName [0]);
-            }
-            // Or, failing that, the first char
-            if (String.IsNullOrEmpty (initials)) {
-                if (0 != contact.EmailAddresses.Count) {
-                    var emailAddressAttribute = contact.EmailAddresses [0];
-                    var emailAddress = McEmailAddress.QueryById<McEmailAddress> (emailAddressAttribute.EmailAddress);
-                    foreach (char c in emailAddress.CanonicalEmailAddress) {
-                        if (Char.IsLetterOrDigit (c)) {
-                            initials += Char.ToUpper (c);
-                            break;
-                        }
-                    }
-                }
-            }
-            return initials;
         }
 
         /// Return email address iff display name is set

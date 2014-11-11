@@ -517,7 +517,7 @@ namespace NachoClient.iOS
             subtitle2Label.TextColor = displaySubtitle2Color;
 
             if (0 == contact.PortraitId) {
-                ConfigureLabelView (labelView, displayTitle, colorIndex);
+                ConfigureLabelView (labelView, contact, colorIndex);
                 labelView.Hidden = false;
             } else {
                 portraitView.Image = Util.ImageOfContact (contact);
@@ -563,10 +563,10 @@ namespace NachoClient.iOS
 //            };
         }
 
-        protected void ConfigureLabelView (UILabel labelView, string labelText, int colorIndex)
+        protected void ConfigureLabelView (UILabel labelView, McContact contact, int colorIndex)
         {
             labelView.Hidden = false;
-            labelView.Text = Util.NameToLetters (labelText);
+            labelView.Text = NachoCore.Utils.string_Helpers.GetInitials (contact);
             labelView.BackgroundColor = Util.ColorForUser (colorIndex);
         }
 
