@@ -42,6 +42,7 @@ namespace NachoClient.iOS
         protected UIColor separatorColor;
         protected UIColor cellBGColor;
         protected UIColor scrollViewBGColor;
+        protected UIColor borderColor;
 
         protected UIImage folderIcon;
         protected UIImage moreIcon;
@@ -152,7 +153,9 @@ namespace NachoClient.iOS
             float marginPadding = 15f;
 
             topView = new UIView (new RectangleF (marginPadding / 2, yOffset, View.Frame.Width - marginPadding, 44));
-            topView.Layer.CornerRadius = 4;
+            topView.Layer.CornerRadius = 6;
+            topView.Layer.BorderColor = borderColor.CGColor;
+            topView.Layer.BorderWidth = .5f;
             topView.BackgroundColor = cellBGColor;
             yOffset += topView.Frame.Height;
 
@@ -166,7 +169,9 @@ namespace NachoClient.iOS
 
             yOffset += 15;
             recentView = new UIView (new RectangleF (marginPadding / 2, yOffset, View.Frame.Width - marginPadding, 44));
-            recentView.Layer.CornerRadius = 4;
+            recentView.Layer.CornerRadius = 6;
+            recentView.Layer.BorderColor = borderColor.CGColor;
+            recentView.Layer.BorderWidth = .5f;
             recentView.BackgroundColor = cellBGColor;
             recentView.Hidden = true;
             yOffset += recentView.Frame.Height;
@@ -180,7 +185,9 @@ namespace NachoClient.iOS
 
             yOffset += 5;
             defaultsView = new UIView (new RectangleF (marginPadding / 2, yOffset, View.Frame.Width - marginPadding, 44));
-            defaultsView.Layer.CornerRadius = 4;
+            defaultsView.Layer.CornerRadius = 6;
+            defaultsView.Layer.BorderColor = borderColor.CGColor;
+            defaultsView.Layer.BorderWidth = .5f;
             defaultsView.BackgroundColor = cellBGColor;
             yOffset += defaultsView.Frame.Height;
 
@@ -193,7 +200,9 @@ namespace NachoClient.iOS
 
             yOffset += 5;
             yourFoldersView = new UIView (new RectangleF (marginPadding / 2, yOffset, View.Frame.Width - marginPadding, 44));
-            yourFoldersView.Layer.CornerRadius = 4;
+            yourFoldersView.Layer.CornerRadius = 6;
+            yourFoldersView.Layer.BorderColor = borderColor.CGColor;
+            yourFoldersView.Layer.BorderWidth = .5f;
             yourFoldersView.BackgroundColor = cellBGColor;
             yOffset += yourFoldersView.Frame.Height;
 
@@ -222,6 +231,7 @@ namespace NachoClient.iOS
                 separatorColor = UIColor.LightGray.ColorWithAlpha (.6f);
                 cellBGColor = A.Color_NachoGreen;
                 scrollViewBGColor = A.Color_NachoGreen;
+                borderColor = UIColor.Clear;
                 folderIcon = UIImage.FromBundle ("modal-folder");
                 moreIcon = UIImage.FromBundle ("modal-readmore");
                 moreIconSelected = UIImage.FromBundle ("modal-readmore-active");
@@ -231,6 +241,7 @@ namespace NachoClient.iOS
                 separatorColor = A.Color_NachoBorderGray;
                 cellBGColor = UIColor.White;
                 scrollViewBGColor = A.Color_NachoBackgroundGray;
+                borderColor = A.Color_NachoBorderGray;
                 folderIcon = UIImage.FromBundle ("folder-folder");
                 moreIcon = UIImage.FromBundle ("gen-readmore");
                 moreIconSelected = UIImage.FromBundle ("gen-readmore-active");

@@ -128,7 +128,7 @@ namespace NachoClient.iOS
             view.BackgroundColor = UIColor.White;
             view.AutoresizingMask = UIViewAutoresizing.None;
             view.ContentMode = UIViewContentMode.Center;
-            view.Layer.CornerRadius = 5;
+            view.Layer.CornerRadius = 6;
             view.Layer.MasksToBounds = true;
             view.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
             view.Layer.BorderWidth = .5f;
@@ -406,10 +406,10 @@ namespace NachoClient.iOS
                 v.Tag = PLACEHOLDER_TAG;
                 v.ContentMode = UIViewContentMode.Center;
                 v.BackgroundColor = UIColor.Blue;
-                v.Layer.CornerRadius = 5;
+                v.Layer.CornerRadius = 6;
                 v.Layer.MasksToBounds = true;
-                v.Layer.BorderColor = UIColor.DarkGray.CGColor;
-                v.Layer.BorderWidth = 1;
+                v.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
+                v.Layer.BorderWidth = .5f;
                 var l = new UILabel (v.Bounds);
                 l.BackgroundColor = UIColor.White;
                 l.TextAlignment = UITextAlignment.Center;
@@ -421,6 +421,8 @@ namespace NachoClient.iOS
             NcAssert.True (PLACEHOLDER_TAG == view.Tag);
             var label = (UILabel)view.ViewWithTag (1);
             label.Text = "No hot items!";
+            label.Font = A.Font_AvenirNextDemiBold17;
+            label.TextColor = A.Color_NachoBorderGray;
             return view;
         }
     }
