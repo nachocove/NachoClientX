@@ -30,7 +30,6 @@ namespace NachoClient.iOS
     {
         // Model data
         public McEmailMessageThread thread;
-        protected McAccount account;
         protected List<McAttachment> attachments;
 
         // UI elements for the main view
@@ -89,7 +88,6 @@ namespace NachoClient.iOS
         public MessageViewController (IntPtr handle)
             : base (handle)
         {
-            account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
         }
 
         protected override void CreateViewHierarchy ()
@@ -342,7 +340,7 @@ namespace NachoClient.iOS
                 userLabelView.Hidden = true;
             } else {
                 userLabelView.Hidden = false;
-                if (string.IsNullOrEmpty (message.cachedFromLetters) || 2 <= message.cachedFromColor) {
+                if (string.IsNullOrEmpty (message.cachedFromLetters) || (2 > message.cachedFromColor)) {
                     Util.CacheUserMessageFields (message);
                 }
                 userLabelView.Text = message.cachedFromLetters;
