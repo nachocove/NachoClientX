@@ -173,12 +173,16 @@ namespace NachoClient.iOS
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
             statusIndicatorIsRegistered = false;
 
-            Configure (RefreshItem ());
+            var refreshedItem = RefreshItem ();
+            if (null != refreshedItem) {
 
-            // Configure() normally doesn't call the parent view's callback. But because
-            // the download completed in the background, that callback needs to be called.
-            if (null != sizeChangedCallback) {
-                sizeChangedCallback ();
+                Configure (refreshedItem);
+
+                // Configure() normally doesn't call the parent view's callback. But because
+                // the download completed in the background, that callback needs to be called.
+                if (null != sizeChangedCallback) {
+                    sizeChangedCallback ();
+                }
             }
         }
 
@@ -203,13 +207,24 @@ namespace NachoClient.iOS
                 // There is a race condition where the download of the body could complete
                 // in between checking the FilePresence value and calling DnldEmailBodyCmd.
                 // Refresh the item and the body to see if that is the case.
-                item = RefreshItem ();
-                var body = McBody.QueryById<McBody> (item.BodyId);
-                if (null != body && McAbstrFileDesc.FilePresenceEnum.Complete == body.FilePresence) {
-                    // It was a race condition. We're good.
-                    Reconfigure ();
+                var refreshedItem = RefreshItem ();
+                if (null != refreshedItem) {
+                    item = refreshedItem;
+                    var body = McBody.QueryById<McBody> (item.BodyId);
+                    if (null != body && McAbstrFileDesc.FilePresenceEnum.Complete == body.FilePresence) {
+                        // It was a race condition. We're good.
+                        Reconfigure ();
+                    } else {
+                        Log.Warn (Log.LOG_UI, "Failed to start body download for message {0} in account {1}", item.Id, item.AccountId);
+                        NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+                        statusIndicatorIsRegistered = false;
+                        ShowErrorMessage ();
+                    }
                 } else {
-                    Log.Warn (Log.LOG_UI, "Failed to start body download for message {0} in account {1}", item.Id, item.AccountId);
+                    // The item seems to have been deleted from the database.  The best we
+                    // can do is to show an error message, even though tapping to retry the
+                    // download won't do any good.
+                    Log.Warn (Log.LOG_UI, "Failed to start body download for message {0} in account {1}, and it looks like the message has been deleted.", item.Id, item.AccountId);
                     NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
                     statusIndicatorIsRegistered = false;
                     ShowErrorMessage ();
