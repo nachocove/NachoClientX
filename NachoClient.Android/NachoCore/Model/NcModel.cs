@@ -27,10 +27,11 @@ namespace NachoCore.Model
 
         public string TeleDbFileName { set; get; }
 
-        public enum AutoVacuumEnum {
+        public enum AutoVacuumEnum
+        {
             NONE = 0,
             FULL = 1,
-            INCREMENTAL = 2
+            INCREMENTAL = 2,
         };
 
         public AutoVacuumEnum AutoVacuum { set; get; }
@@ -397,8 +398,12 @@ namespace NachoCore.Model
                 var siea = (StatusIndEventArgs)ea;
                 if (siea.Status.SubKind == NcResult.SubKindEnum.Info_BackgroundAbateStarted) {
                     RateLimiter.Enabled = true;
+                    var deliveryTime = NachoCore.Utils.NcAbate.DeliveryTime (siea);
+                    NachoCore.Utils.Log.Info (NachoCore.Utils.Log.LOG_UI, "EngageRateLimiter received Info_BackgroundAbateStarted {0} seconds", deliveryTime.ToString ());
                 } else if (siea.Status.SubKind == NcResult.SubKindEnum.Info_BackgroundAbateStopped) {
                     RateLimiter.Enabled = false;
+                    var deliveryTime = NachoCore.Utils.NcAbate.DeliveryTime (siea);
+                    NachoCore.Utils.Log.Info (NachoCore.Utils.Log.LOG_UI, "EngageRateLimiter received Info_BackgroundAbateStopped {0} seconds", deliveryTime.ToString ());
                 }
             };
         }

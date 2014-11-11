@@ -554,7 +554,7 @@ namespace NachoClient.iOS
                 return;
             }
 
-            Log.Debug (Log.LOG_UI, "ExtendTableViewUntil:  old={0} new={1} actual={2}", len1, len2, NumberOfSections(tableView));
+            Log.Debug (Log.LOG_UI, "ExtendTableViewUntil:  old={0} new={1} actual={2}", len1, len2, NumberOfSections (tableView));
 
             NSMutableIndexSet set = new NSMutableIndexSet ();
             for (int i = len1; i < len2; i++) {
@@ -571,7 +571,7 @@ namespace NachoClient.iOS
             int item;
             int section;
             if (calendar.FindEventNearestTo (date, out item, out section)) {
-                NcAssert.True (section < NumberOfSections(tableView));
+                NcAssert.True (section < NumberOfSections (tableView));
                 NcAssert.True (item < RowsInSection (tableView, section));
                 var p = NSIndexPath.FromItemSection (item, section);
                 tableView.ScrollToRow (p, UITableViewScrollPosition.Top, false);
@@ -581,7 +581,7 @@ namespace NachoClient.iOS
         public void ScrollToDate (UITableView tableView, DateTime date)
         {
             // Make sure there are enough rows to fill the table
-            ExtendTableViewUntil (tableView, date.AddDays(7));
+            ExtendTableViewUntil (tableView, date.AddDays (7));
             var i = calendar.IndexOfDate (date);
             if (0 <= i) {
                 var p = NSIndexPath.FromItemSection (NSRange.NotFound, i);
@@ -589,7 +589,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public void MaybeExtendTableView(UITableView tableView)
+        public void MaybeExtendTableView (UITableView tableView)
         {
             var visibleRows = tableView.IndexPathsForVisibleRows;
             if ((null == visibleRows) || (0 == visibleRows.Length)) {
@@ -606,42 +606,30 @@ namespace NachoClient.iOS
             }
             if (30 > (finalDayInList - displayedDate).Days) {
                 Log.Info (Log.LOG_UI, "Calendar: extending until {0}", finalDayInList.AddDays (30));
-                ExtendTableViewUntil(tableView, finalDayInList.AddDays (30));
+                ExtendTableViewUntil (tableView, finalDayInList.AddDays (30));
             }
         }
 
         public override void DraggingStarted (UIScrollView scrollView)
         {
-            Log.Info (Log.LOG_UI, "DraggingStarted");
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStarted),
-                Account = ConstMcAccount.NotAccountSpecific,
-            });
+            NachoCore.Utils.NcAbate.HighPriority ("CalendarTableViewSource DraggingStarted");
         }
 
         public override void DecelerationEnded (UIScrollView scrollView)
         {
-            Log.Info (Log.LOG_UI, "DecelerationEnded");
             if (null != owner) {
                 owner.CalendarTableViewScrollingEnded ();
             }
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStopped),
-                Account = ConstMcAccount.NotAccountSpecific,
-            });
+            NachoCore.Utils.NcAbate.RegularPriority ("CalendarTableViewSource DecelerationEnded");
         }
 
         public override void DraggingEnded (UIScrollView scrollView, bool willDecelerate)
         {
             if (!willDecelerate) {
-                Log.Info (Log.LOG_UI, "DraggingEnded");
                 if (null != owner) {
                     owner.CalendarTableViewScrollingEnded ();
                 }
-                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStopped),
-                    Account = ConstMcAccount.NotAccountSpecific,
-                });
+                NachoCore.Utils.NcAbate.RegularPriority ("CalendarTableViewSource DraggingEnded");
             }
         }
     }

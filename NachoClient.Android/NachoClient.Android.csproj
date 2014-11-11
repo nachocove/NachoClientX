@@ -352,6 +352,7 @@
     <Compile Include="NachoPlatform.Android\KeychainAndroid.cs" />
     <Compile Include="NachoCore\Utils\ContactsHelpers.cs" />
     <Compile Include="NachoCore\Utils\CertificateHelper.cs" />
+    <Compile Include="NachoCore\Utils\NcAbate.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

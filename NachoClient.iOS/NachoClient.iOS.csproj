@@ -1161,6 +1161,9 @@
     <Compile Include="NachoUI.iOS\AddAttachmentViewController.designer.cs">
       <DependentUpon>AddAttachmentViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcAbate.cs">
+      <Link>NachoCore\Utils\NcAbate.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

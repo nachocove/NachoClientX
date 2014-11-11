@@ -853,10 +853,10 @@ namespace NachoClient.iOS
 
         public bool UpdateSearchResults (int forSearchOption, string forSearchString)
         {
-            NachoClient.Util.HighPriority ();
+            NachoCore.Utils.NcAbate.HighPriority ("AttachmentsTableViewSource UpdateSearchResults");
             var results = SearchByString (forSearchString);
             SetSearchResults (results);
-            NachoClient.Util.RegularPriority ();
+            NachoCore.Utils.NcAbate.RegularPriority ("AttachmentsTableViewSource UpdateSearchResults");
             return true;
         }
 

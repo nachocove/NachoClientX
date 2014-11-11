@@ -71,9 +71,9 @@ namespace NachoClient.iOS
                 this.NavigationController.ToolbarHidden = true;
             }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
-            NachoClient.Util.HighPriority ();
+            NachoCore.Utils.NcAbate.HighPriority ("ContactChooser ViewWillAppear");
             resultsTableView.ReloadData ();
-            NachoClient.Util.RegularPriority ();
+            NachoCore.Utils.NcAbate.RegularPriority ("ContactChooser ViewWillAppear");
             if (HandlesKeyboardNotifications) {
                 NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
                 NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
@@ -205,14 +205,14 @@ namespace NachoClient.iOS
         {
             if (null == forSearchString) {
                 searchResults = null;
-                NachoClient.Util.HighPriority ();
+                NachoCore.Utils.NcAbate.HighPriority ("ContactChooser UpdateAutocompleteResults");
                 resultsTableView.ReloadData ();
-                NachoClient.Util.RegularPriority ();
+                NachoCore.Utils.NcAbate.RegularPriority ("ContactChooser UpdateAutocompleteResults");
             } else {
                 searchResults = McContact.SearchAllContactItems (forSearchString);
-                NachoClient.Util.HighPriority ();
+                NachoCore.Utils.NcAbate.HighPriority ("ContactChooser UpdateAutocompleteResults with string");
                 resultsTableView.ReloadData ();
-                NachoClient.Util.RegularPriority ();
+                NachoCore.Utils.NcAbate.RegularPriority ("ContactChooser UpdateAutocompleteResults with string");
             }
         }
 

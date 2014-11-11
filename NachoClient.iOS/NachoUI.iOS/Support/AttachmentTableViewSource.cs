@@ -260,30 +260,18 @@ namespace NachoClient.iOS
 
         public override void DraggingStarted (UIScrollView scrollView)
         {
-            Log.Info (Log.LOG_UI, "DraggingStarted");
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStarted),
-                Account = ConstMcAccount.NotAccountSpecific,
-            });
+            NachoCore.Utils.NcAbate.HighPriority ("AttachmentTableViewSource DraggingStarted");
         }
 
         public override void DecelerationEnded (UIScrollView scrollView)
         {
-            Log.Info (Log.LOG_UI, "DecelerationEnded");
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStopped),
-                Account = ConstMcAccount.NotAccountSpecific,
-            });
+            NachoCore.Utils.NcAbate.RegularPriority ("AttachmentTableViewSource DecelerationEnded");
         }
 
         public override void DraggingEnded (UIScrollView scrollView, bool willDecelerate)
         {
             if (!willDecelerate) {
-                Log.Info (Log.LOG_UI, "DraggingEnded");
-                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStopped),
-                    Account = ConstMcAccount.NotAccountSpecific,
-                });
+                NachoCore.Utils.NcAbate.RegularPriority ("AttachmentTableViewSource DraggingEnded");
             }
         }
         

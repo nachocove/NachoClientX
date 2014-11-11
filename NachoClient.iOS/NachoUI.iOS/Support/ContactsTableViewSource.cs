@@ -580,30 +580,18 @@ namespace NachoClient.iOS
 
         public override void DraggingStarted (UIScrollView scrollView)
         {
-            Log.Info (Log.LOG_UI, "DraggingStarted");
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStarted),
-                Account = ConstMcAccount.NotAccountSpecific,
-            });
+            NachoCore.Utils.NcAbate.HighPriority ("ContactsTableView DraggingStarted");
         }
 
         public override void DecelerationEnded (UIScrollView scrollView)
         {
-            Log.Info (Log.LOG_UI, "DecelerationEnded");
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStopped),
-                Account = ConstMcAccount.NotAccountSpecific,
-            });
+            NachoCore.Utils.NcAbate.RegularPriority ("ContactsTableView DecelerationEnded");
         }
 
         public override void DraggingEnded (UIScrollView scrollView, bool willDecelerate)
         {
             if (!willDecelerate) {
-                Log.Info (Log.LOG_UI, "DraggingEnded");
-                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStopped),
-                    Account = ConstMcAccount.NotAccountSpecific,
-                });
+                NachoCore.Utils.NcAbate.RegularPriority ("ContactsTableView DraggingEnded");
             }
         }
 
@@ -617,10 +605,10 @@ namespace NachoClient.iOS
         /// <param name="forSearchString">The prefix string to search for.</param>
         public bool UpdateSearchResults (int forSearchOption, string forSearchString)
         {
-            NachoClient.Util.HighPriority ();
+            NachoCore.Utils.NcAbate.HighPriority ("ContactTableViewSource UpdateSearchResults");
             var results = McContact.SearchAllContactItems (forSearchString);
             SetSearchResults (results);
-            NachoClient.Util.RegularPriority ();
+            NachoCore.Utils.NcAbate.RegularPriority ("ContactTableViewSource UpdateSearchResults");
             return true;
         }
 

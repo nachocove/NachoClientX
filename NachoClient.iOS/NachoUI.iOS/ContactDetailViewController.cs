@@ -736,10 +736,10 @@ namespace NachoClient.iOS
 
         public void RefreshData ()
         {
-            NachoClient.Util.HighPriority ();
+            NachoCore.Utils.NcAbate.HighPriority ("ContactDetailViewController RefreshData");
             messageSource.RefreshEmailMessages ();
             InteractionsTable.ReloadData ();
-            NachoClient.Util.RegularPriority ();
+            NachoCore.Utils.NcAbate.RegularPriority ("ContactDetailViewController RefreshData");
         }
 
         public void DateSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)

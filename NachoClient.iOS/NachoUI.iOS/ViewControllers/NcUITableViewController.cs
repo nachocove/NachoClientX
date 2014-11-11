@@ -29,7 +29,7 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-            NachoClient.Util.HighPriority ();
+            NachoCore.Utils.NcAbate.HighPriority ("NcUITableViewController ViewDidLoad");
         }
 
         public override void ViewWillAppear (bool animated)
@@ -43,7 +43,7 @@ namespace NachoClient.iOS
         {
             Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDAPPEAR + "_BEGIN");
             base.ViewDidAppear (animated);
-            NachoClient.Util.RegularPriority ();
+            NachoCore.Utils.NcAbate.RegularPriority ("NcUITableViewController ViewDidAppear");
             Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_DIDAPPEAR + "_END");
         }
 
@@ -54,7 +54,7 @@ namespace NachoClient.iOS
             if (null != ViewDisappearing) {
                 ViewDisappearing (this, EventArgs.Empty);
             }
-            NachoClient.Util.RegularPriority ();
+            NachoCore.Utils.NcAbate.RegularPriority ("NcUITableViewController ViewWillDisappear");
             Telemetry.RecordUiViewController (ClassName, TelemetryEvent.UIVIEW_WILLDISAPPEAR + "_END");
         }
 

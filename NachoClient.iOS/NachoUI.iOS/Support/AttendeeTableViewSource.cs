@@ -56,7 +56,7 @@ namespace NachoClient.iOS
         {
             return this.AttendeeList;
         }
-            
+
         /// <summary>
         /// Tableview delegate
         /// </summary>
@@ -414,30 +414,18 @@ namespace NachoClient.iOS
 
         public override void DraggingStarted (UIScrollView scrollView)
         {
-            Log.Info (Log.LOG_UI, "DraggingStarted");
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStarted),
-                Account = ConstMcAccount.NotAccountSpecific,
-            });
+            NachoCore.Utils.NcAbate.HighPriority ("AttendeeTableViewSource DraggingStarted");
         }
 
         public override void DecelerationEnded (UIScrollView scrollView)
         {
-            Log.Info (Log.LOG_UI, "DecelerationEnded");
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStopped),
-                Account = ConstMcAccount.NotAccountSpecific,
-            });
+            NachoCore.Utils.NcAbate.RegularPriority ("AttendeeTableViewSource DecelerationEnded");
         }
 
         public override void DraggingEnded (UIScrollView scrollView, bool willDecelerate)
         {
             if (!willDecelerate) {
-                Log.Info (Log.LOG_UI, "DraggingEnded");
-                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStopped),
-                    Account = ConstMcAccount.NotAccountSpecific,
-                });
+                NachoCore.Utils.NcAbate.RegularPriority ("AttendeeTableViewSource Draggingended");
             }
         }
     }

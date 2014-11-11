@@ -85,6 +85,7 @@ namespace NachoCore
         public event EventHandler StatusIndEvent;
         // when true, everything in the background needs to chill.
         public bool IsBackgroundAbateRequired { get; set; }
+
         public bool TestOnlyInvokeUseCurrentThread { get; set; }
 
         private bool IsXammit (Exception ex)
@@ -150,10 +151,15 @@ namespace NachoCore
 
             StatusIndEvent += (object sender, EventArgs ea) => {
                 var siea = (StatusIndEventArgs)ea;
+
                 if (siea.Status.SubKind == NcResult.SubKindEnum.Info_BackgroundAbateStarted) {
                     IsBackgroundAbateRequired = true;
+                    var deliveryTime = NachoCore.Utils.NcAbate.DeliveryTime (siea);
+                    NachoCore.Utils.Log.Info (NachoCore.Utils.Log.LOG_UI, "NcApplication received Info_BackgroundAbateStarted {0} seconds", deliveryTime.ToString ());
                 } else if (siea.Status.SubKind == NcResult.SubKindEnum.Info_BackgroundAbateStopped) {
                     IsBackgroundAbateRequired = false;
+                    var deliveryTime = NachoCore.Utils.NcAbate.DeliveryTime (siea);
+                    NachoCore.Utils.Log.Info (NachoCore.Utils.Log.LOG_UI, "NcApplication received Info_BackgroundAbateStopped {0} seconds", deliveryTime.ToString ());
                 }
             };
         }

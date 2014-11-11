@@ -108,12 +108,12 @@ namespace NachoClient.iOS
 
         public void LoadAttendees ()
         {
-            NachoClient.Util.HighPriority ();
+            NachoCore.Utils.NcAbate.HighPriority ("EventAttendeeViewController LoadAttendees");
             attendeeSource.SetAttendeeList (this.AttendeeList);
             attendeeSource.SetEditing (editing);
             attendeeSource.SetAccount (account);
             EventAttendeesTableView.ReloadData ();
-            NachoClient.Util.RegularPriority ();
+            NachoCore.Utils.NcAbate.RegularPriority ("EventAttendeeViewController LoadAttendees");
         }
 
         public void SetAttendeeList (List<McAttendee> attendees)

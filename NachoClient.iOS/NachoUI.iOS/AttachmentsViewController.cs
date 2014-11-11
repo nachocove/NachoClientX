@@ -95,7 +95,7 @@ namespace NachoClient.iOS
             base.ViewWillDisappear (animated);
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
             // In case we exit during scrolling
-            NachoClient.Util.RegularPriority ();
+            NachoCore.Utils.NcAbate.RegularPriority ("AttachmentsViewController ViewWillDisappear");
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)

@@ -80,11 +80,11 @@ namespace NachoClient.iOS
 
         protected void LoadContacts ()
         {
-            NachoClient.Util.HighPriority ();
+            NachoCore.Utils.NcAbate.HighPriority ("ContactSearchViewController LoadContacts");
             var contacts = McContact.AllContactsSortedByName ();
             contactTableViewSource.SetContacts (null, contacts, false);
             TableView.ReloadData ();
-            NachoClient.Util.RegularPriority ();
+            NachoCore.Utils.NcAbate.RegularPriority ("ContactSearchViewController LoadContacts");
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)

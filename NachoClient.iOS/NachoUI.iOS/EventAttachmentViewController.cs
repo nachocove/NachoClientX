@@ -113,13 +113,13 @@ namespace NachoClient.iOS
 
         public void LoadAttachments ()
         {
-            NachoClient.Util.HighPriority ();
+            NachoCore.Utils.NcAbate.HighPriority ("EventAttachmentViewController LoadAttachments");
             attachmentSource.SetAttachmentList (this.AttachmentsList);
             attachmentSource.SetAccount (account);
             attachmentSource.SetEditing (editing);
             attachmentSource.SetVC (this);
             tableView.ReloadData ();
-            NachoClient.Util.RegularPriority ();
+            NachoCore.Utils.NcAbate.RegularPriority ("EventAttachmentViewController LoadAttachments");
         }
 
         public void SetAttachmentsList (List<McAttachment> attachments)

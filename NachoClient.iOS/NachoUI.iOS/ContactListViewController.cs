@@ -163,12 +163,12 @@ namespace NachoClient.iOS
 
         protected void LoadContacts ()
         {
-            NachoClient.Util.HighPriority ();
+            NachoCore.Utils.NcAbate.HighPriority ("ContactListViewController LoadContacs");
             var recents = McContact.RicContactsSortedByRank (account.Id, 5);
             var contacts = McContact.AllContactsSortedByName ();
             contactTableViewSource.SetContacts (recents, contacts, true);
             TableView.ReloadData ();
-            NachoClient.Util.RegularPriority ();
+            NachoCore.Utils.NcAbate.RegularPriority ("ContactListViewController LoadContacs");
         }
 
         /// IContactsTableViewSourceDelegate

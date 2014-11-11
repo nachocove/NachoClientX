@@ -146,13 +146,13 @@ namespace NachoClient.iOS
 
         public void ReloadDataMaintainingPosition ()
         {
-            NachoClient.Util.HighPriority ();
+            NachoCore.Utils.NcAbate.HighPriority ("MessageListViewController ReloadDataMaintainingPosition");
             if (messageSource.RefreshEmailMessages ()) {
                 ReloadCapture.Start ();
                 TableView.ReloadData ();
                 ReloadCapture.Stop ();
             }
-            NachoClient.Util.RegularPriority ();
+            NachoCore.Utils.NcAbate.RegularPriority ("MessageListViewController ReloadDataMaintainingPosition");
         }
 
         public override void ViewWillAppear (bool animated)
@@ -173,7 +173,7 @@ namespace NachoClient.iOS
             base.ViewWillDisappear (animated);
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
             // In case we exit during scrolling
-            NachoClient.Util.RegularPriority ();
+            NachoCore.Utils.NcAbate.RegularPriority ("MessageListViewController ViewWillDisappear");
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)

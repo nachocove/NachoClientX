@@ -484,14 +484,12 @@ namespace NachoClient.iOS
 
         public override void CarouselWillBeginDragging (iCarousel carousel)
         {
-            Log.Info (Log.LOG_UI, "DraggingStarted");
-            NachoClient.Util.HighPriority ();
+            NachoCore.Utils.NcAbate.HighPriority ("HotListCarouselDataSource CarouselWillBeginDragging");
         }
 
         public override void CarouselDidEndDragging (iCarousel carousel, bool decelerate)
         {
-            Log.Info (Log.LOG_UI, "DraggingEnded");
-            NachoClient.Util.RegularPriority ();
+            NachoCore.Utils.NcAbate.RegularPriority ("HotListCarouselDataSource CarouselWillBeginDragging");
         }
 
         public override void CarouselCurrentItemIndexDidChange (iCarousel carousel)

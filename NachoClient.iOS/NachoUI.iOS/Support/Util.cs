@@ -472,24 +472,6 @@ namespace NachoClient
             return null;
         }
 
-        public static void HighPriority ()
-        {
-            NachoCore.Utils.Log.Info (NachoCore.Utils.Log.LOG_UI, "HighPriority");
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStarted),
-                Account = ConstMcAccount.NotAccountSpecific,
-            });
-        }
-
-        public static void RegularPriority ()
-        {
-            NachoCore.Utils.Log.Info (NachoCore.Utils.Log.LOG_UI, "RegularPriority");
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStopped),
-                Account = ConstMcAccount.NotAccountSpecific,
-            });
-        }
-
         public static void PerformAction (string action, string number)
         {
             UIApplication.SharedApplication.OpenUrl (new Uri (String.Format ("{0}:{1}", action, number)));
