@@ -132,12 +132,23 @@ namespace NachoClient.iOS
             if (NoMessageThreads ()) {
                 return NORMAL_ROW_HEIGHT;
             }
+
+            McEmailMessage message;
             var messageThread = messageThreads.GetEmailThread (indexPath.Row);
+
             if (null == messageThread) {
                 return NORMAL_ROW_HEIGHT;
             }
-            var message = messageThread.SingleMessageSpecialCase ();
-            messageCache [message.Id] = message;
+
+            // Avoid looking up msg twice in quick succession (see ConfigureMessageCell)
+            var messageIndex = messageThread.SingleMessageSpecialCaseIndex ();
+            if (messageCache.TryGetValue (messageIndex, out message)) {
+                messageCache.Remove (messageIndex);
+            } else {
+                message = messageThread.SingleMessageSpecialCase ();
+                messageCache [messageIndex] = message;
+            }
+                
             return HeightForMessage (message);
         }
 
@@ -425,9 +436,10 @@ namespace NachoClient.iOS
             // Avoid looking up msg twice in quick succession (see GetHeight)
             var messageIndex = messageThread.SingleMessageSpecialCaseIndex ();
             if (messageCache.TryGetValue (messageIndex, out message)) {
-                messageCache.Remove (messageThreadIndex);
+                messageCache.Remove (messageIndex);
             } else {
                 message = messageThread.SingleMessageSpecialCase ();
+                messageCache [messageIndex] = message;
             }
 
             if (null == message) {
