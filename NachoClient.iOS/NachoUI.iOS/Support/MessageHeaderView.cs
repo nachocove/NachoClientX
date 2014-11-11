@@ -42,12 +42,14 @@ namespace NachoClient.iOS
         public void CreateView ()
         {
             float leftMargin = 0;
-            float rightMargin = 0;
+            float rightMargin = 15;
             float parentWidth = this.Frame.Width;
+
+            float yOffset = 15;
 
             // From label shares a line with the chili
             var fromLabelWidth = parentWidth - CHILI_WIDTH - CHILI_PADDING - rightMargin;
-            var fromLabelView = new UILabel (new RectangleF (leftMargin, 0, fromLabelWidth, 20));
+            var fromLabelView = new UILabel (new RectangleF (leftMargin, yOffset, fromLabelWidth, 20));
             fromLabelView.Font = A.Font_AvenirNextDemiBold17;
             fromLabelView.TextColor = A.Color_0F424C;
             fromLabelView.Tag = FROM_TAG;
@@ -55,7 +57,7 @@ namespace NachoClient.iOS
 
             // Chili image view, to the far right of From
             var chiliX = parentWidth - rightMargin - CHILI_WIDTH;
-            var chiliImageView = new UIImageView (new RectangleF (chiliX, 0, CHILI_WIDTH, CHILI_WIDTH));
+            var chiliImageView = new UIImageView (new RectangleF (chiliX, yOffset, CHILI_WIDTH, CHILI_WIDTH));
             chiliImageView.Tag = USER_CHILI_TAG;
             this.AddSubview (chiliImageView);
 
@@ -68,21 +70,26 @@ namespace NachoClient.iOS
             };
             chiliTapGestureRecognizer.CancelsTouchesInView = true; // Prevents item from being selected
 
-            var chiliHitBox = new UIView (new RectangleF (chiliX - 20, 0, 40, 40));
-            chiliHitBox.BackgroundColor = UIColor.Clear;
+            // Make the chili touch area kind of biggish
+            var chiliHitBox = new UIView (new RectangleF (chiliX - 20, 0, parentWidth - chiliX + 20, chiliImageView.Frame.Bottom + 20));
             chiliHitBox.AddGestureRecognizer (chiliTapGestureRecognizer);
+            chiliHitBox.BackgroundColor = UIColor.Clear;
             this.AddSubview (chiliHitBox);
 
+            yOffset += 20;
+
             // Subject label view has a line to itself
-            var subjectLabelView = new UILabel (new RectangleF (leftMargin, 20, parentWidth - leftMargin - rightMargin, 20));
+            var subjectLabelView = new UILabel (new RectangleF (leftMargin, yOffset, parentWidth - leftMargin - rightMargin, 20));
             subjectLabelView.LineBreakMode = UILineBreakMode.TailTruncation;
             subjectLabelView.Font = A.Font_AvenirNextMedium14;
             subjectLabelView.TextColor = A.Color_0F424C;
             subjectLabelView.Tag = SUBJECT_TAG;
             this.AddSubview (subjectLabelView);
 
+            yOffset += 20;
+
             // Received label view shares a line with the attachment clip
-            var receivedLabelView = new UILabel (new RectangleF (leftMargin, 40, parentWidth - leftMargin - rightMargin, 20));
+            var receivedLabelView = new UILabel (new RectangleF (leftMargin, yOffset, parentWidth - leftMargin - rightMargin, 20));
             receivedLabelView.Font = A.Font_AvenirNextRegular14;
             receivedLabelView.TextColor = A.Color_9B9B9B;
             receivedLabelView.Tag = RECEIVED_DATE_TAG;
@@ -90,9 +97,11 @@ namespace NachoClient.iOS
 
             // Attachment image view goes near the received label
             var attachmentX = parentWidth - rightMargin - ATTACHMENT_WIDTH;
-            var attachmentImageView = new UIImageView (new RectangleF (attachmentX, 42, 16, 16));
+            var attachmentImageView = new UIImageView (new RectangleF (attachmentX, yOffset + 2, 16, 16));
             attachmentImageView.Tag = ATTACHMENT_TAG;
             this.AddSubview (attachmentImageView);
+
+            this.BringSubviewToFront (chiliHitBox);
         }
 
         public void ConfigureView (McEmailMessage message)

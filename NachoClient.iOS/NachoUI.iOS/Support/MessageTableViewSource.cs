@@ -354,7 +354,7 @@ namespace NachoClient.iOS
                 multiSelectTap.CancelsTouchesInView = true; // prevents the row from being selected
                 imageViews.AddGestureRecognizer (multiSelectTap);
 
-                var messageHeaderView = new MessageHeaderView (new RectangleF (65, 15, cellWidth - 65 - 15, 60));
+                var messageHeaderView = new MessageHeaderView (new RectangleF (65, 0, cellWidth - 65, 75));
                 messageHeaderView.CreateView ();
                 messageHeaderView.Tag = MESSAGE_HEADER_TAG;
                 messageHeaderView.SetAllBackgroundColors (UIColor.White);

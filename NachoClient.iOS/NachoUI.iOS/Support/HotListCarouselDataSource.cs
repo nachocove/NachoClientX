@@ -160,12 +160,11 @@ namespace NachoClient.iOS
             userLabelView.Tag = USER_LABEL_TAG;
             view.AddSubview (userLabelView);
 
-            var messageHeaderView = new MessageHeaderView (new RectangleF (65, 15, viewWidth - 65 - 15, 60));
+            var messageHeaderView = new MessageHeaderView (new RectangleF (65, 0, viewWidth - 65, 75));
             messageHeaderView.CreateView ();
             messageHeaderView.Tag = MESSAGE_HEADER_TAG;
             messageHeaderView.SetAllBackgroundColors (UIColor.White);
             view.AddSubview (messageHeaderView);
-
             // Reminder image view
             var reminderImageView = new UIImageView (new RectangleF (65, 75 + 4, 12, 12));
             reminderImageView.Image = UIImage.FromBundle ("inbox-icn-deadline");
