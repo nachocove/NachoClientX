@@ -175,11 +175,6 @@ namespace NachoClient.iOS
             PerformSegue ("AddAttachmentToAttachments", this);
         }
 
-        protected void DismissVC (bool animated)
-        {
-            DismissViewController (animated, null);
-        }
-
         protected override void ConfigureAndLayout ()
         {
         }
