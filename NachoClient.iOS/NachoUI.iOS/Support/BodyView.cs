@@ -263,14 +263,21 @@ namespace NachoClient.iOS
             return Math.Min (Math.Min (a, b), Math.Min (c, d));
         }
 
+        private static bool AreClose (float a, float b)
+        {
+            float ratio = a / b;
+            return 0.99f < ratio && ratio < 1.01f;
+        }
+
         private bool LayoutAndDetectSizeChange ()
         {
             SizeF oldSize = Frame.Size;
+            float zoomScale = ViewHelper.ZoomScale (this);
 
-            float screenTop = contentOffset.Y;
-            float screenBottom = contentOffset.Y + visibleArea.Height;
+            float screenTop = contentOffset.Y / zoomScale;
+            float screenBottom = (contentOffset.Y + visibleArea.Height) / zoomScale;
 
-            float subviewX = Math.Max (0f, contentOffset.X);
+            float subviewX = Math.Max (0f, contentOffset.X / zoomScale);
             float subviewY = 0;
             if (!errorMessage.Hidden) {
                 subviewY = errorMessage.Frame.Bottom;
@@ -294,11 +301,11 @@ namespace NachoClient.iOS
                     if (viewTop < screenBottom && screenTop < viewBottom) {
                         // Part of the view should be visible on the screen.
                         float newX = Math.Max (0f, Math.Min (subviewX, size.Width - preferredWidth));
-                        float newWidth = Math.Max (preferredWidth, Math.Min (size.Width - subviewX, visibleArea.Width));
+                        float newWidth = Math.Max (preferredWidth, Math.Min (size.Width - subviewX, visibleArea.Width / zoomScale));
                         float newXOffset = newX;
 
                         float newY = Math.Max (viewTop, screenTop);
-                        float newHeight = Min4 (viewBottom - screenTop, screenBottom - viewTop, size.Height, visibleArea.Height);
+                        float newHeight = Min4 (viewBottom - screenTop, screenBottom - viewTop, size.Height, visibleArea.Height / zoomScale);
                         float newYOffset = newY - viewTop;
 
                         subview.ScrollingAdjustment (new RectangleF (newX, newY, newWidth, newHeight), new PointF (newXOffset, newYOffset));
@@ -313,9 +320,9 @@ namespace NachoClient.iOS
                 maxWidth = Math.Max (maxWidth, size.Width);
             }
 
-            bool sizeChanged = oldSize.Width != maxWidth || oldSize.Height != subviewY;
+            bool sizeChanged = !AreClose (oldSize.Width, maxWidth * zoomScale) || !AreClose (oldSize.Height, subviewY * zoomScale);
             if (sizeChanged && variableHeight) {
-                ViewFramer.Create (this).Width (maxWidth).Height (subviewY);
+                ViewFramer.Create (this).Width (maxWidth * zoomScale).Height (subviewY * zoomScale);
             }
 
             return sizeChanged;

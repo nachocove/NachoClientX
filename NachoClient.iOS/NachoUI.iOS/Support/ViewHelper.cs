@@ -75,6 +75,32 @@ namespace NachoClient.iOS
             return InnerFrameWithInset (outerFrame, inset, InsetMode.BOTH, InsetMode.BOTH);
         }
 
+        public static bool IsZoomed (UIView view)
+        {
+            if (view.Transform.IsIdentity) {
+                return false;
+            }
+            var tx = view.Transform;
+            if (0 != tx.xy || 0 != tx.x0 || 0 != tx.yx || 0 != tx.y0) {
+                // A transformation other than zooming.
+                return false;
+            }
+            float ratio = tx.xx / tx.yy;
+            if (0.98f > ratio || 1.02f < ratio) {
+                // The x-scale and y-scale are not the same.
+                return false;
+            }
+            return true;
+        }
+
+        public static float ZoomScale (UIView view)
+        {
+            if (!IsZoomed (view)) {
+                return 1.0f;
+            }
+            return view.Transform.xx;
+        }
+
         private static string ViewInfo (UIView view, string tagName)
         {
             string result = view.GetType ().Name;
@@ -87,6 +113,9 @@ namespace NachoClient.iOS
                 var scroll = (UIScrollView)view;
                 result += string.Format (" Scrollable content: Offset {0} Size {1} ZoomScale {2}",
                     Pretty.PointF (scroll.ContentOffset), Pretty.SizeF (scroll.ContentSize), scroll.ZoomScale);
+            }
+            if (!view.Transform.IsIdentity) {
+                result += string.Format (" Transform {0}", view.Transform.ToString ());
             }
             return result;
         }
