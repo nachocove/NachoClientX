@@ -162,18 +162,20 @@ namespace NachoClient.iOS
             mainLabel.Text = "Attachments";
             mainLabel.Font = A.Font_AvenirNextMedium14;
             mainLabel.TextColor = A.Color_NachoDarkText;
+            contentView.AddSubview (mainLabel);
 
-            chooserButton = UIButton.FromType (UIButtonType.System);
-            Util.SetOriginalImagesForButton (chooserButton, "email-add", "email-add-active");
-            chooserButton.SizeToFit ();
-            chooserButton.Frame = new RectangleF (parentWidth - 43, 0, 40, CELL_HEIGHT);
-            chooserButton.TouchUpInside += (object sender, EventArgs e) => {
-                if (null != owner) {
-                    owner.PerformSegueForAttachmentBlock("SegueToAddAttachment", new SegueHolder (null));
-                }
-            };
-
-            contentView.AddSubviews (new UIView[] { mainLabel, chooserButton });
+            if (editable) {
+                chooserButton = UIButton.FromType (UIButtonType.System);
+                Util.SetOriginalImagesForButton (chooserButton, "email-add", "email-add-active");
+                chooserButton.SizeToFit ();
+                chooserButton.Frame = new RectangleF (parentWidth - 43, 0, 40, CELL_HEIGHT);
+                chooserButton.TouchUpInside += (object sender, EventArgs e) => {
+                    if (null != owner) {
+                        owner.PerformSegueForAttachmentBlock ("SegueToAddAttachment", new SegueHolder (null));
+                    }
+                };
+                contentView.AddSubview (chooserButton);
+            }
 
             // Enabled & disable 'compact view' with a tap
             var tap = new UITapGestureRecognizer ();
