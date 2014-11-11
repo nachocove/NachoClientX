@@ -213,13 +213,13 @@ namespace NachoClient.iOS
             initialsCircleLabel.Layer.CornerRadius = 30;
             initialsCircleLabel.Layer.MasksToBounds = true;
             initialsCircleLabel.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
-            initialsCircleLabel.Layer.BorderWidth = 1;
+            initialsCircleLabel.Layer.BorderWidth = .5f;
             initialsCircleLabel.Tag = HEADER_INITIALS_CIRCLE_TAG;
             headerView.AddSubview (initialsCircleLabel);
 
             UIImageView userImageView = new UIImageView (new RectangleF (PADDING, VERTICAL_PADDING, 60, 60));
             userImageView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
-            userImageView.Layer.BorderWidth = 1;
+            userImageView.Layer.BorderWidth = .5f;
             userImageView.Layer.CornerRadius = 30;
             userImageView.Layer.MasksToBounds = true;
             userImageView.Tag = HEADER_PORTRAIT_TAG;
