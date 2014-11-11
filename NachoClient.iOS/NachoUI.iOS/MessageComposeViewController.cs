@@ -422,12 +422,11 @@ namespace NachoClient.iOS
             intentView.AddGestureRecognizer (intentTap);
             intentView.UserInteractionEnabled = true;
 
-            intentArrowAccessory = new UIImageView (new RectangleF (0, 0, 12, 12));
-            intentArrowAccessory.Image = UIImage.FromBundle ("icn-rightarrow");
+            Util.AddArrowAccessory (contentView.Frame.Width - 15 - 12, 14, 12, intentView);
 
-            intentView.AddSubviews (new UIView[] { intentLabel, intentDisplayLabel, intentArrowAccessory });
+            intentView.AddSubviews (new UIView[] { intentLabel, intentDisplayLabel });
 
-            attachmentView = new UcAttachmentBlock (this, account.Id, View.Frame.Width, 40);
+            attachmentView = new UcAttachmentBlock (this, account.Id, View.Frame.Width, 40, true);
 
             bodyTextView = new UITextView ();
             bodyTextView.Font = labelFont;
@@ -651,11 +650,8 @@ namespace NachoClient.iOS
                 CenterY (intentLabel, LEFT_INDENT, 0, intentLabel.Frame.Width, LINE_HEIGHT);
    
                 var intentDisplayStart = intentLabel.Frame.Right + 4;
-                var intentDisplayWidth = View.Frame.Width - intentDisplayStart - intentArrowAccessory.Frame.Width - RIGHT_INDENT;
+                var intentDisplayWidth = View.Frame.Width - intentDisplayStart - 12 - RIGHT_INDENT;
                 CenterY (intentDisplayLabel, intentDisplayStart, 0, intentDisplayWidth, LINE_HEIGHT);
-
-                var intentArrowStart = View.Frame.Width - intentArrowAccessory.Frame.Width - RIGHT_INDENT;
-                CenterY (intentArrowAccessory, intentArrowStart, 0, intentArrowAccessory.Frame.Width, LINE_HEIGHT);
 
                 intentView.Frame = new RectangleF (0, yOffset, View.Frame.Width, LINE_HEIGHT);
 
