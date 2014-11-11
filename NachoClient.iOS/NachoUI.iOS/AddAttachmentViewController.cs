@@ -94,8 +94,8 @@ namespace NachoClient.iOS
             yOffset = sectionSeparator.Frame.Bottom + 60;
 
             buttonInfoList = new List<ButtonInfo> (new ButtonInfo[] {
-                new ButtonInfo ("Add Photo", "modal-later-today", () => SetupPhotoPicker ()),
-                new ButtonInfo ("Take Photo", "modal-later-today", () => DismissVC (true)),
+                new ButtonInfo ("Add Photo", "modal-later-today", () => SetupPhotoPicker (false)),
+                new ButtonInfo ("Take Photo", "modal-later-today", () => SetupPhotoPicker (true)),
                 new ButtonInfo ("Add File", "modal-later-today", () => SetupAttachmentChooser ()),
                 null,
             });
@@ -184,14 +184,24 @@ namespace NachoClient.iOS
         {
         }
 
-        public void SetupPhotoPicker ()
+        //source is true if using camera
+        //source is false if using photo library
+        public void SetupPhotoPicker (bool source)
         {
             var imagePicker = new UIImagePickerController ();
             imagePicker.NavigationBar.Translucent = false;
             imagePicker.NavigationBar.BarTintColor = A.Color_NachoGreen;
             imagePicker.NavigationBar.TintColor = A.Color_NachoBlue;
 
-            imagePicker.SourceType = UIImagePickerControllerSourceType.PhotoLibrary;
+            if (source) {
+                if (UIImagePickerController.IsSourceTypeAvailable (UIImagePickerControllerSourceType.Camera)) {
+                    imagePicker.SourceType = UIImagePickerControllerSourceType.Camera;
+                } else {
+                    Util.ComplainAbout ("Error", "Your device does not have a camera");
+                }
+            } else {
+                imagePicker.SourceType = UIImagePickerControllerSourceType.PhotoLibrary;
+            }
 
             imagePicker.FinishedPickingMedia += HandleFinishedPickingMedia;
             imagePicker.Canceled += HandleCanceled;
@@ -199,7 +209,6 @@ namespace NachoClient.iOS
             imagePicker.ModalPresentationStyle = UIModalPresentationStyle.CurrentContext;
             this.PresentViewController (imagePicker, true, null);
             MaintainLightStyleStatusBar ();
-
         }
 
         protected void HandleCanceled (object sender, EventArgs e)
