@@ -278,6 +278,21 @@ namespace NachoCore.Model
                 dupRef = null;
                 return false;
 
+            case Operations.AttachmentDownload:
+                // TODO: take Operation out of query API.
+                var sameAttachmentId = McPending.QueryByOperationAndAttId (AccountId, McPending.Operations.AttachmentDownload, AttachmentId)
+                    .Where (x => x.State != StateEnum.Failed);
+                foreach (var pending in sameAttachmentId) {
+                    if (pending.Operation == Operation &&
+                        pending.ServerId == ServerId &&
+                        pending.AttachmentId == AttachmentId) {
+                        dupRef = pending;
+                        return true;
+                    }
+                }
+                dupRef = null;
+                return false;
+
             default:
                 // TODO: implement additional cases as we care about them.
                 NcAssert.True (false);

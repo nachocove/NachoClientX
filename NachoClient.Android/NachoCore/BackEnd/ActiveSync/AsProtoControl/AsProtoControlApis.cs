@@ -498,17 +498,19 @@ namespace NachoCore.ActiveSync
                 return null;
             }
 
-            // Check for command already in the Q.
-            var pendings = McPending.QueryByOperationAndAttId (Account.Id, McPending.Operations.AttachmentDownload, attId);
-            if (0 != pendings.Count ()) {
-                return pendings.First ().Token;
-            }
-
             var pending = new McPending (Account.Id) {
                 Operation = McPending.Operations.AttachmentDownload,
                 ServerId = emailMessage.ServerId,
                 AttachmentId = attId,
             };
+
+            McPending dup;
+            if (pending.IsDuplicate (out dup)) {
+                // TODO: Insert but have the result of the 1st duplicate trigger the same result events for all duplicates.
+                Log.Info (Log.LOG_AS, "DnldAttCmd: IsDuplicate of Id/Token {0}/{1}", dup.Id, dup.Token);
+                return dup.Token;
+            }
+
             if (doNotDefer) {
                 pending.DoNotDelay ();
             }
