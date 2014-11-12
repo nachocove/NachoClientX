@@ -1657,6 +1657,9 @@
     <BundleResource Include="Resources\email-defer-active%402x.png" />
     <BundleResource Include="Resources\folder-move-active%402x.png" />
     <BundleResource Include="Resources\folder-move%402x.png" />
+    <BundleResource Include="Resources\contacts-call-active%402x.png" />
+    <BundleResource Include="Resources\contacts-email-active%402x.png" />
+    <BundleResource Include="Resources\contacts-marker%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

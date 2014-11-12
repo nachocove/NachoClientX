@@ -17,61 +17,72 @@ using System.Text.RegularExpressions;
 
 namespace NachoClient.iOS
 {
-    public partial class ContactDetailViewController : NcUIViewController, IMessageTableViewSourceDelegate, INachoMessageEditorParent, INachoCalendarItemEditorParent, INachoFolderChooserParent, INachoNotesControllerParent, INachoDateControllerParent
+    public partial class ContactDetailViewController : NcUIViewControllerNoLeaks, IMessageTableViewSourceDelegate, INachoMessageEditorParent, INachoCalendarItemEditorParent, INachoFolderChooserParent, INachoNotesControllerParent, INachoDateControllerParent
     {
         public McContact contact;
 
-        protected float startingY;
-
         protected UIColor originalBarTintColor;
-
-        protected UIBarButtonItem vipButton;
+        protected UIBarButtonItem editContact;
 
         protected const string UICellReuseIdentifier = "UICell";
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
-        MessageTableViewSource messageSource;
+        protected MessageTableViewSource messageSource;
         protected HashSet<int> MultiSelect = null;
-        protected UITableView InteractionsTable;
-        protected UIScrollView notesScrollView;
-        protected UIView notesView;
-        protected UITextView notesTextView;
-        protected UIButton editNotes;
 
         protected int selectedSegment = 0;
+        protected int remainingContactDetails = 0;
+
+        protected const float PADDING = 18f;
+        protected const float VERTICAL_PADDING = 20f;
+        protected const float SEGMENTED_CONTROL_HEIGHT = 30f;
+
+        protected const int HEADER_INITIALS_CIRCLE_TAG = 100;
+        protected const int HEADER_NAME_TAG = 101;
+        protected const int HEADER_TITLE_TAG = 102;
+        protected const int HEADER_CALL_VIEW_TAG = 103;
+        protected const int HEADER_EMAIL_VIEW_TAG = 104;
+        protected const int HEADER_VIP_BUTTON_TAG = 105;
+        protected const int HEADER_PORTRAIT_TAG = 106;
+
+        protected const int SEGMENTED_CONTROL_TAG = 200;
+        protected const int SEGMENTED_VIEW_HOLDER_TAG = 201;
+
+        protected const int CONTACT_INFO_VIEW_TAG = 300;
+        protected const int TRANSIENT_TAG_INITIAL_VALUE = 301;
+        protected int variableTransientTag = TRANSIENT_TAG_INITIAL_VALUE;
+
+        protected const int INTERACTIONS_TABLE_VIEW_TAG = 400;
+
+        protected const int NOTES_VIEW_TAG = 500;
+        protected const int NOTES_TEXT_VIEW_TAG = 501;
+        protected const int NOTES_EDIT_BUTTON_TAG = 502;
+
+        protected UITapGestureRecognizer headerCallViewGestureTapGesture;
+        protected UITapGestureRecognizer.Token headerCallViewGestureTapGestureHandlerToken;
+
+        protected UITapGestureRecognizer headerEmailViewTapGesture;
+        protected UITapGestureRecognizer.Token headerEmailViewTapGestureHandlerToken;
+
+        protected class TapGesturePair
+        {
+            public UITapGestureRecognizer recognizer;
+            public UITapGestureRecognizer.Token token;
+            public int viewTag;
+
+            public TapGesturePair (UITapGestureRecognizer recognizer, UITapGestureRecognizer.Token token, int viewTag)
+            {
+                this.recognizer = recognizer;
+                this.token = token;
+                this.viewTag = viewTag;
+            }
+        }
+
+        protected List<TapGesturePair> tapGestures = new List<TapGesturePair> ();
 
         public ContactDetailViewController (IntPtr handle) : base (handle)
         {
             messageSource = new MessageTableViewSource ();
             MultiSelect = new HashSet<int> ();
-        }
-
-        public override void ViewDidLoad ()
-        {
-            base.ViewDidLoad ();
-
-//            Beta 1 -- No editing
-//            var editButton = new UIBarButtonItem (UIBarButtonSystemItem.Edit);
-//            NavigationItem.RightBarButtonItem = editButton;
-//
-//            editButton.Clicked += (object sender, EventArgs e) => {
-//                PerformSegue ("ContactToContactEdit", new SegueHolder (contact));
-//            };
-
-            vipButton = new UIBarButtonItem ();
-            NavigationItem.RightBarButtonItem = vipButton;
-
-            vipButton.Clicked += (object sender, EventArgs e) => {
-                ToggleVipStatus ();
-            };
-
-            messageSource.owner = this;
-            InteractionsTable = new UITableView ();
-            InteractionsTable.Source = messageSource;
-            MultiSelectToggle (messageSource, false);
-            SetEmailMessages (new UserInteractionEmailMessages (contact));
-
-            CreateView ();
-
         }
 
         public override void ViewWillAppear (bool animated)
@@ -80,10 +91,9 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
                 originalBarTintColor = this.NavigationController.NavigationBar.BarTintColor;
-
             }
-            ConfigureView ();
-            Util.ConfigureNavBar (true, NavigationController);
+
+            Util.ConfigureNavBar (false, NavigationController);
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
             var SegmentedControl = (UISegmentedControl)View.ViewWithTag (SEGMENTED_CONTROL_TAG);
@@ -121,16 +131,13 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("ContactToNotes")) {
                 var dc = (NotesViewController)segue.DestinationViewController;
                 dc.SetOwner (this);
-                dc.ViewDisappearing += (object s, EventArgs e) => {
-                    DisplayContactInfo ();
-                };
                 return;
             }
 
             if (segue.Identifier.Equals ("ContactToEmailCompose")) {
                 var dc = (MessageComposeViewController)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                var address = holder.value as string;
+                var holder = (SegueHolder)sender;
+                var address = (string)holder.value;
                 dc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, address));
                 if (null != holder.value2) {
                     dc.SetQRType (NcQuickResponse.QRTypeEnum.Compose);
@@ -149,20 +156,20 @@ namespace NachoClient.iOS
             }
             if (segue.Identifier == "MessageListToFolders") {
                 var vc = (INachoFolderChooser)segue.DestinationViewController;
-                var h = sender as SegueHolder;
+                var h = (SegueHolder)sender;
                 vc.SetOwner (this, true, h);
                 return;
             }
             if (segue.Identifier == "NachoNowToMessageView") {
                 var vc = (MessageViewController)segue.DestinationViewController;
                 var holder = (SegueHolder)sender;
-                vc.thread = holder.value as McEmailMessageThread;                
+                vc.thread = (McEmailMessageThread)holder.value;           
                 return;
             }
             if (segue.Identifier == "NachoNowToEditEvent") {
                 var vc = (EditEventViewController)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                var c = holder.value as McCalendar;
+                var holder = (SegueHolder)sender;
+                var c = (McCalendar)holder.value;
                 vc.SetCalendarItem (c);
                 vc.SetOwner (this);
                 return;
@@ -171,203 +178,217 @@ namespace NachoClient.iOS
             NcAssert.CaseError ();
         }
 
-        const int TOP_IMAGE_TAG = 101;
-        const int TOP_EMAIL_BUTTON_TAG = 102;
-        const int TOP_CALL_BUTTON_TAG = 103;
-        const int TOP_USER_IMAGE_TAG = 104;
-        const int TOP_USER_LABEL_TAG = 105;
-        const int TOP_USER_NAME_TAG = 106;
-        const int TOP_USER_TITLE_TAG = 107;
-        const int SEGMENTED_CONTROL_TAG = 108;
-        const int SEGMENTED_CONTROL_HL_TAG = 109;
-        const int TRANSIENT_TAG = 300;
-        const int NOTES_TEXT_VIEW_TAG = 400;
-        const int EDIT_NOTES_BUTTON_TAG = 500;
-
-        const int FOO_SIZE = 64;
-        const float TEXT_LINE_HEIGHT = 19.124f;
-
-        protected void CreateView ()
+        protected override void CreateViewHierarchy ()
         {
-            Util.SetBackButton (NavigationController, NavigationItem, UIColor.White);
+            contentView.BackgroundColor = A.Color_NachoBackgroundGray;
+            View.BackgroundColor = A.Color_NachoBackgroundGray;
 
-            var topImage = new UIView (new RectangleF (0, -FOO_SIZE, View.Frame.Width, 216));
-            topImage.Tag = TOP_IMAGE_TAG;
-            contentView.AddSubview (topImage);
+            Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
+            NavigationItem.Title = "Contacts";
 
-            var topEmailButton = UIButton.FromType (UIButtonType.RoundedRect);
-            topEmailButton.Frame = new RectangleF (0, 0, 40, 40);
-            topEmailButton.Center = new PointF (62, (216 / 2));
-            topEmailButton.Layer.CornerRadius = 20;
-            topEmailButton.Layer.MasksToBounds = true;
-            topEmailButton.TintColor = UIColor.White;
-            topEmailButton.SetImage (UIImage.FromBundle ("icn-contact-quickemail"), UIControlState.Normal);
-            topEmailButton.TouchUpInside += (sender, e) => {
-                TouchedEmailButton (contact.GetEmailAddress ());
-            };
-            topEmailButton.Tag = TOP_EMAIL_BUTTON_TAG;
-            topImage.AddSubview (topEmailButton);
+            editContact = new UIBarButtonItem ();
+            editContact.Image = UIImage.FromBundle ("gen-edit");
+            NavigationItem.SetRightBarButtonItem (editContact, true); 
 
-            var topCallButton = UIButton.FromType (UIButtonType.RoundedRect);
-            topCallButton.Frame = new RectangleF (0, 0, 40, 40);
-            topCallButton.Center = new PointF (View.Frame.Width - 62, (216 / 2));
-            topCallButton.Layer.CornerRadius = 20;
-            topCallButton.Layer.MasksToBounds = true;
-            topCallButton.TintColor = UIColor.White;
-            topCallButton.SetImage (UIImage.FromBundle ("icn-contact-quickcall"), UIControlState.Normal);
-            topCallButton.TouchUpInside += (sender, e) => {
-                TouchedCallButton (contact.GetPhoneNumber ());
-            };
-            topCallButton.Tag = TOP_CALL_BUTTON_TAG;
-            topImage.AddSubview (topCallButton);
+            //CONTACT HEADER SECTION
+            UIView headerView = new UIView (new RectangleF (15, VERTICAL_PADDING, View.Frame.Width - 30, 147));
+            headerView.Layer.CornerRadius = 6.0f;
+            headerView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
+            headerView.Layer.BorderWidth = 1.0f;
+            headerView.BackgroundColor = UIColor.White;
+            View.AddSubview (headerView);
 
-            var topUserLabel = new UILabel (new RectangleF (0, 0, 72, 72));
-            topUserLabel.Center = new PointF (View.Frame.Width / 2, (216 / 2));
-            topUserLabel.Font = A.Font_AvenirNextRegular24;
-            topUserLabel.TextColor = UIColor.White;
-            topUserLabel.TextAlignment = UITextAlignment.Center;
-            topUserLabel.LineBreakMode = UILineBreakMode.Clip;
-            topUserLabel.Layer.CornerRadius = 36;
-            topUserLabel.Layer.MasksToBounds = true;
-            topUserLabel.Layer.BorderColor = UIColor.White.CGColor;
-            topUserLabel.Layer.BorderWidth = 2;
-            topUserLabel.Tag = TOP_USER_LABEL_TAG;
-            topImage.AddSubview (topUserLabel);
+            UIButton vipButton = new UIButton (new RectangleF (headerView.Frame.Right - 48, 10, VERTICAL_PADDING, VERTICAL_PADDING));
+            vipButton.Tag = HEADER_VIP_BUTTON_TAG;
+            vipButton.SetImage (UIImage.FromBundle ("contacts-vip"), UIControlState.Normal);
+            vipButton.TouchUpInside += VipButtonTouchUpInside;
+            headerView.AddSubview (vipButton);
 
-            var topUserNameLabel = new UILabel (new RectangleF (0, 0, View.Frame.Width, 24));
-            topUserNameLabel.Center = new PointF (View.Frame.Width / 2, topUserLabel.Center.Y + 60);
-            topUserNameLabel.ContentMode = UIViewContentMode.Center;
-            topUserNameLabel.Font = A.Font_AvenirNextDemiBold17;
-            topUserNameLabel.TextColor = UIColor.White;
-            topUserNameLabel.TextAlignment = UITextAlignment.Center;
-            topUserNameLabel.LineBreakMode = UILineBreakMode.Clip;
-            topUserNameLabel.BackgroundColor = UIColor.Clear;
-            topUserNameLabel.Tag = TOP_USER_NAME_TAG;
-            topImage.AddSubview (topUserNameLabel);
+            UILabel initialsCircleLabel = new UILabel (new RectangleF (PADDING, VERTICAL_PADDING, 60, 60));
+            initialsCircleLabel.Font = A.Font_AvenirNextRegular24;
+            initialsCircleLabel.BackgroundColor = A.Color_NachoLightText;
+            initialsCircleLabel.TextColor = UIColor.White;
+            initialsCircleLabel.TextAlignment = UITextAlignment.Center;
+            initialsCircleLabel.LineBreakMode = UILineBreakMode.Clip;
+            initialsCircleLabel.Layer.CornerRadius = 30;
+            initialsCircleLabel.Layer.MasksToBounds = true;
+            initialsCircleLabel.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
+            initialsCircleLabel.Layer.BorderWidth = .5f;
+            initialsCircleLabel.Tag = HEADER_INITIALS_CIRCLE_TAG;
+            headerView.AddSubview (initialsCircleLabel);
 
-            var topUserTitleLabel = new UILabel (new RectangleF (0, 0, View.Frame.Width, 24));
-            topUserTitleLabel.Center = new PointF (View.Frame.Width / 2, topUserNameLabel.Center.Y + 24);
-            topUserTitleLabel.ContentMode = UIViewContentMode.Center;
-            topUserTitleLabel.Font = A.Font_AvenirNextDemiBold14;
-            topUserTitleLabel.TextColor = UIColor.White;
-            topUserTitleLabel.TextAlignment = UITextAlignment.Center;
-            topUserTitleLabel.LineBreakMode = UILineBreakMode.Clip;
-            topUserTitleLabel.BackgroundColor = UIColor.Clear;
-            topUserTitleLabel.Tag = TOP_USER_TITLE_TAG;
-            topImage.AddSubview (topUserTitleLabel);
+            UIImageView userImageView = new UIImageView (new RectangleF (PADDING, VERTICAL_PADDING, 60, 60));
+            userImageView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
+            userImageView.Layer.BorderWidth = .5f;
+            userImageView.Layer.CornerRadius = 30;
+            userImageView.Layer.MasksToBounds = true;
+            userImageView.Tag = HEADER_PORTRAIT_TAG;
+            userImageView.Hidden = true;
+            headerView.AddSubview (userImageView);
 
-            float yOffset = 216 - FOO_SIZE;
-         
-            yOffset += 6;
+            UILabel nameLabel = new UILabel (new RectangleF (initialsCircleLabel.Frame.Right + 16, 31, 190, 20));
+            nameLabel.Font = A.Font_AvenirNextDemiBold17;
+            nameLabel.TextColor = A.Color_NachoGreen;
+            nameLabel.TextAlignment = UITextAlignment.Left;
+            nameLabel.BackgroundColor = UIColor.White;
+            nameLabel.Tag = HEADER_NAME_TAG;
+            headerView.AddSubview (nameLabel);
 
+            UILabel titleLabel = new UILabel (new RectangleF (nameLabel.Frame.X, nameLabel.Frame.Bottom + 6, nameLabel.Frame.Width, nameLabel.Frame.Height - 5));
+            titleLabel.Font = A.Font_AvenirNextMedium14;
+            titleLabel.TextColor = A.Color_NachoTextGray;
+            titleLabel.Tag = HEADER_TITLE_TAG;
+            headerView.AddSubview (titleLabel);
+
+            Util.AddHorizontalLine (0, initialsCircleLabel.Frame.Bottom + PADDING, headerView.Frame.Width, A.Color_NachoBorderGray, headerView);
+            Util.AddVerticalLine (headerView.Frame.Width / 2, initialsCircleLabel.Frame.Bottom + PADDING, headerView.Frame.Height - (initialsCircleLabel.Frame.Bottom + PADDING), A.Color_NachoBorderGray, headerView);
+
+            UIView callView = new UIView (new RectangleF (0, initialsCircleLabel.Frame.Bottom + PADDING, headerView.Frame.Width / 2, headerView.Frame.Height - (initialsCircleLabel.Frame.Bottom + PADDING)));
+            callView.Tag = HEADER_CALL_VIEW_TAG;
+            callView.BackgroundColor = UIColor.Clear;
+            headerCallViewGestureTapGesture = new UITapGestureRecognizer ();
+            headerCallViewGestureTapGestureHandlerToken = headerCallViewGestureTapGesture.AddTarget (DefaultCallTapHandler);
+            callView.AddGestureRecognizer (headerCallViewGestureTapGesture);
+            headerView.AddSubview (callView);
+
+            UIImageView callIcon;
+            using (var image = UIImage.FromBundle ("contacts-call")) {
+                callIcon = new UIImageView (image);
+            }
+            callIcon.Frame = new RectangleF (40, 11, callIcon.Frame.Height, callIcon.Frame.Width);
+            callView.AddSubview (callIcon);
+
+            UILabel callLabel = new UILabel (new RectangleF (callIcon.Frame.Right + 10, 15, 50, 15));
+            callLabel.TextColor = A.Color_NachoGreen;
+            callLabel.Font = A.Font_AvenirNextMedium14;
+            callLabel.Text = "Call";
+            callLabel.TextAlignment = UITextAlignment.Left;
+            callLabel.SizeToFit ();
+            callView.AddSubview (callLabel);
+
+            UIView emailView = new UIView (new RectangleF (headerView.Frame.Width / 2, initialsCircleLabel.Frame.Bottom + PADDING, headerView.Frame.Width, headerView.Frame.Height - (initialsCircleLabel.Frame.Bottom + PADDING)));
+            emailView.Tag = HEADER_EMAIL_VIEW_TAG;
+            emailView.BackgroundColor = UIColor.Clear;
+            headerEmailViewTapGesture = new UITapGestureRecognizer ();
+            headerEmailViewTapGestureHandlerToken = headerEmailViewTapGesture.AddTarget (DefaultEmailTapHandler);
+            emailView.AddGestureRecognizer (headerEmailViewTapGesture);
+            headerView.AddSubview (emailView);
+
+            UIImageView emailIcon;
+            using (var image = UIImage.FromBundle ("contacts-email")) {
+                emailIcon = new UIImageView (image);
+            }
+            emailIcon.Frame = new RectangleF (35, 11, emailIcon.Frame.Height, emailIcon.Frame.Width);
+            emailView.AddSubview (emailIcon);
+
+            UILabel emailLabel = new UILabel (new RectangleF (emailIcon.Frame.Right + 10, 15, 50, 15));
+            emailLabel.TextColor = A.Color_NachoGreen;
+            emailLabel.Font = A.Font_AvenirNextMedium14;
+            emailLabel.Text = "Email";
+            emailLabel.TextAlignment = UITextAlignment.Left;
+            emailLabel.SizeToFit ();
+            emailView.AddSubview (emailLabel);
+
+            float yOffset = headerView.Frame.Bottom + 12;
+
+            UIView segmentedViewHolder = new UIView (new RectangleF (15, yOffset, View.Frame.Width - 30, 100));
+            segmentedViewHolder.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
+            segmentedViewHolder.Layer.BorderWidth = 1.0f;
+            segmentedViewHolder.Layer.CornerRadius = 6.0f;
+            segmentedViewHolder.Tag = SEGMENTED_VIEW_HOLDER_TAG;
+            segmentedViewHolder.BackgroundColor = UIColor.White;
+            View.AddSubview (segmentedViewHolder);
+
+            //SEGMENTED CONTROL
             var segmentedControl = new UISegmentedControl ();
-            segmentedControl.Frame = new RectangleF (6, yOffset, View.Frame.Width - 12, 30);
-            segmentedControl.TintColor = A.Color_NachoIconGray;
-            segmentedControl.InsertSegment ("Contact Info", 0, false);
+            segmentedControl.Frame = new RectangleF (PADDING, VERTICAL_PADDING, segmentedViewHolder.Frame.Width - (PADDING * 2), SEGMENTED_CONTROL_HEIGHT);
+            segmentedControl.TintColor = A.Color_NachoGreen;
+            segmentedControl.InsertSegment ("Contact", 0, false);
             segmentedControl.InsertSegment ("Interactions", 1, false);
             segmentedControl.InsertSegment ("Notes", 2, false);
             segmentedControl.SelectedSegment = 0;
 
-            var segmentedControlTextAttributes = new UITextAttributes ();
-            segmentedControlTextAttributes.Font = A.Font_AvenirNextRegular14;
-            segmentedControlTextAttributes.TextColor = A.Color_NachoIconGray;
-            segmentedControl.SetTitleTextAttributes (segmentedControlTextAttributes, UIControlState.Normal);
+            var segmentedControlTextNormal = new UITextAttributes ();
+            segmentedControlTextNormal.Font = A.Font_AvenirNextDemiBold14;
+            segmentedControlTextNormal.TextColor = A.Color_NachoGreen;
 
-            segmentedControl.ValueChanged += (sender, e) => {
-                var selectedSegmentId = (sender as UISegmentedControl).SelectedSegment;
-                switch (selectedSegmentId) {
-                case 0:
-                    InteractionsTable.Hidden = true;
-                    notesScrollView.Hidden = true;
-                    contentView.Hidden = false;
-                    editNotes.Hidden = true;
-                    break;
-                case 1:
-                    InteractionsTable.Hidden = false;
-                    notesScrollView.Hidden = true;
-                    editNotes.Hidden = true;
-                    RefreshData ();
-                    break;
-                case 2:
-                    InteractionsTable.Hidden = true;
-                    notesScrollView.Hidden = false;
-                    editNotes.Hidden = false;
-                    break;
-                default:
-                    NcAssert.CaseError ();
-                    break;
-                }
-            };
-
+            var segmentedControlTextSelected = new UITextAttributes ();
+            segmentedControlTextSelected.Font = A.Font_AvenirNextDemiBold14;
+            segmentedControlTextSelected.TextColor = UIColor.White;
+            segmentedControl.ValueChanged += SegmentedControlHandler;
             segmentedControl.Tag = SEGMENTED_CONTROL_TAG;
-            contentView.AddSubview (segmentedControl);
+            segmentedControl.SetTitleTextAttributes (segmentedControlTextNormal, UIControlState.Normal);
+            segmentedControl.SetTitleTextAttributes (segmentedControlTextSelected, UIControlState.Selected);
+            segmentedViewHolder.AddSubview (segmentedControl);
 
-            yOffset += 30;
-            yOffset += 6;
+            //CONTACT INFO
+            UIScrollView contactInfoScrollView = new UIScrollView (new RectangleF (PADDING, segmentedControl.Frame.Bottom + 5, segmentedViewHolder.Frame.Width - (PADDING * 2), View.Frame.Height - segmentedViewHolder.Frame.Top - 80 - 64));
+            contactInfoScrollView.BackgroundColor = UIColor.White;
+            contactInfoScrollView.Tag = CONTACT_INFO_VIEW_TAG;
+            segmentedViewHolder.AddSubview (contactInfoScrollView);
 
-            // Segmented Control
-            var segmentedControlHL = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 1));
-            segmentedControlHL.BackgroundColor = A.Color_NachoIconGray;
-            segmentedControlHL.Tag = SEGMENTED_CONTROL_HL_TAG;
-            contentView.AddSubview (segmentedControlHL);
+            //INTERACTIONS
+            UITableView interactionsTableView = new UITableView (new RectangleF (0, segmentedControl.Frame.Bottom + 4, segmentedViewHolder.Frame.Width, View.Frame.Height - segmentedViewHolder.Frame.Top - 80 - 64));
+            interactionsTableView.Tag = INTERACTIONS_TABLE_VIEW_TAG;
+            interactionsTableView.Hidden = true;
+            interactionsTableView.BackgroundColor = UIColor.White;
+            segmentedViewHolder.AddSubview (interactionsTableView);
 
-            // Interactions Table
-            InteractionsTable.Frame = new RectangleF (0, yOffset + 6 + 60, View.Frame.Width, 300);
-            InteractionsTable.Hidden = true;
-            InteractionsTable.BackgroundColor = UIColor.White;
-            View.AddSubview (InteractionsTable);
-
-            // Notes
-            notesScrollView = new UIScrollView (new RectangleF (0, yOffset + 66, View.Frame.Width, 300));
-            notesView = new UIView (new RectangleF (0, 0, View.Frame.Width, 309 - 40));
-            notesView.BackgroundColor = UIColor.White;
-            notesTextView = new UITextView (new RectangleF (15, 0, View.Frame.Width - 30, 309 - 40));
+            //NOTES
+            UIView notesView = new UIView (new RectangleF (PADDING, segmentedControl.Frame.Bottom, segmentedViewHolder.Frame.Width - (PADDING * 2), View.Frame.Height - segmentedViewHolder.Frame.Top - 80 - 64));
+            notesView.Tag = NOTES_VIEW_TAG;
+            UITextView notesTextView = new UITextView (new RectangleF (0, 5, notesView.Frame.Width, notesView.Frame.Height - 45));
             notesTextView.Font = A.Font_AvenirNextRegular14;
             notesTextView.Editable = false;
             notesTextView.TextColor = A.Color_NachoBlack;
             notesTextView.BackgroundColor = UIColor.White;
             notesTextView.Tag = NOTES_TEXT_VIEW_TAG;
+            notesTextView.ScrollEnabled = true;
+            notesView.AddSubview (notesTextView);
 
-            // Notes Scroll View
-            notesView.Add (notesTextView);
-            notesScrollView.Add (notesView);
-            notesScrollView.Frame = new RectangleF (0, yOffset + 65, View.Frame.Width, 309 - 40);
-            notesScrollView.Hidden = true;
+            UIButton editNotesButton = new UIButton (UIButtonType.RoundedRect);
+            editNotesButton.Tag = NOTES_EDIT_BUTTON_TAG;
+            editNotesButton.TintColor = A.Color_NachoGreen;
+            editNotesButton.Frame = new RectangleF (notesView.Frame.Right - 50, notesTextView.Frame.Bottom, 50, 50);
+            editNotesButton.SetImage (UIImage.FromBundle ("email-add"), UIControlState.Normal);
+            editNotesButton.SetImage (UIImage.FromBundle ("email-add-active"), UIControlState.Highlighted);
+            editNotesButton.TouchUpInside += EditNotesButtonTouchUpInside; 
 
-            View.AddSubview (notesScrollView);
-
-            editNotes = new UIButton (UIButtonType.RoundedRect);
-            editNotes.Tag = EDIT_NOTES_BUTTON_TAG;
-            editNotes.TintColor = A.Color_NachoBlue;
-            editNotes.BackgroundColor = A.Color_NachoNowBackground;
-            editNotes.Font = A.Font_AvenirNextMedium14;
-            editNotes.SizeToFit ();
-            editNotes.Hidden = true;
-            editNotes.Frame = new RectangleF (0, View.Frame.Height - editNotes.Frame.Height, View.Frame.Width, 40);
-            editNotes.TouchUpInside += (sender, e) => {
-                PerformSegue ("ContactToNotes", new SegueHolder (contact));
-            };
-            View.Add (editNotes);
-
-            yOffset += 6;
-
-            startingY = yOffset;
+            notesView.AddSubview (editNotesButton);
+            segmentedViewHolder.AddSubview (notesView);
         }
 
-        protected void ConfigureView ()
+        protected void LayoutView ()
         {
+            UIView segmentedViewHolder = (UIView)View.ViewWithTag (SEGMENTED_VIEW_HOLDER_TAG);
+            UIScrollView contactInfoScrollView = (UIScrollView)View.ViewWithTag (CONTACT_INFO_VIEW_TAG);
+            UITableView interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
+            UIView notesView = (UIView)View.ViewWithTag (NOTES_VIEW_TAG);
+
+            switch (selectedSegment) {
+            case 0:
+                SetViewHeight (segmentedViewHolder, VERTICAL_PADDING + SEGMENTED_CONTROL_HEIGHT + contactInfoScrollView.Frame.Height + VERTICAL_PADDING / 2);
+                break;
+            case 1:
+                SetViewHeight (segmentedViewHolder, VERTICAL_PADDING + SEGMENTED_CONTROL_HEIGHT + interactionsTableView.Frame.Height + VERTICAL_PADDING / 2);
+                break;
+            case 2:
+                SetViewHeight (segmentedViewHolder, VERTICAL_PADDING + SEGMENTED_CONTROL_HEIGHT + notesView.Frame.Height + VERTICAL_PADDING / 2);
+                break;
+            }
+        }
+
+        protected override void ConfigureAndLayout ()
+        {
+            UpdateVipButton ();
+
             UIColor userBackgroundColor;
-            InteractionsTable.Hidden = true;
-            notesScrollView.Hidden = true;
-            contentView.Hidden = false;
-            editNotes.Hidden = true;
 
             if (null == contact) {
-                var unavailableTitle = contentView.ViewWithTag (TOP_USER_TITLE_TAG) as UILabel;
+                var unavailableTitle = (UILabel)View.ViewWithTag (HEADER_TITLE_TAG);
                 unavailableTitle.Text = "Contact is unavailable.";
                 return;
             }
-
             if (0 == contact.EmailAddresses.Count) {
                 userBackgroundColor = Util.ColorForUser (Util.PickRandomColorForUser ());
             } else {
@@ -376,84 +397,90 @@ namespace NachoClient.iOS
                 userBackgroundColor = Util.ColorForUser (emailAddress.ColorIndex);
             }
 
-            var topImage = contentView.ViewWithTag (TOP_IMAGE_TAG) as UIView;
-            topImage.BackgroundColor = LighterColor (userBackgroundColor);
+            UILabel headerInitialsLabel = (UILabel)View.ViewWithTag (HEADER_INITIALS_CIRCLE_TAG);
+            UIImageView headerPortraitImageView = (UIImageView)View.ViewWithTag (HEADER_PORTRAIT_TAG);
 
-            var topEmailButton = contentView.ViewWithTag (TOP_EMAIL_BUTTON_TAG) as UIButton;
-            topEmailButton.BackgroundColor = userBackgroundColor;
+            headerInitialsLabel.Hidden = true;
+            headerPortraitImageView.Hidden = true;
 
-            var topCallButton = contentView.ViewWithTag (TOP_CALL_BUTTON_TAG) as UIButton;
-            topCallButton.BackgroundColor = userBackgroundColor;
+            if (0 == contact.PortraitId) {
+                headerInitialsLabel.BackgroundColor = userBackgroundColor; 
+                headerInitialsLabel.Text = NachoCore.Utils.ContactsHelper.GetInitials (contact);
+                headerInitialsLabel.Hidden = false;
 
-            var topUserLabel = contentView.ViewWithTag (TOP_USER_LABEL_TAG) as UILabel;
-            topUserLabel.Text = GetInitials ();
+            } else {
+                headerPortraitImageView.Image = Util.ImageOfContact (contact);
+                headerPortraitImageView.Hidden = false;
+            }
 
-            var topUserName = contentView.ViewWithTag (TOP_USER_NAME_TAG) as UILabel;
-            topUserName.Text = contact.GetDisplayNameOrEmailAddress ();
+            UILabel headerNameLabel = (UILabel)View.ViewWithTag (HEADER_NAME_TAG);
+            headerNameLabel.Text = contact.GetDisplayNameOrEmailAddress ();
 
-            var topUserTitle = contentView.ViewWithTag (TOP_USER_TITLE_TAG) as UILabel;
-            topUserTitle.Text = GetTitleFromContact ();
+            UILabel headerTitleLabel = (UILabel)View.ViewWithTag (HEADER_TITLE_TAG);
+            headerTitleLabel.Text = GetTitleFromContact ();
 
-            UpdateVipButton ();
-
-            // Clean out old transient views
-            for (;;) {
-                UIView view;
-                if (null == (view = contentView.ViewWithTag (TRANSIENT_TAG))) {
-                    break;
+            if (tapGestures.Count > 0) {
+                foreach (var v in tapGestures.ToList()) {
+                    UIView view;
+                    if (null == (view = View.ViewWithTag (v.viewTag))) {
+                        break;
+                    }
+                    v.recognizer.RemoveTarget (v.token);
+                    view.RemoveFromSuperview ();
+                    tapGestures.Remove (v);
                 }
-                view.RemoveFromSuperview ();
+                variableTransientTag = TRANSIENT_TAG_INITIAL_VALUE;
             }
 
-            var yOffset = startingY;
+            //CONFIGURE CONTACT INFO VIEW
+            UIScrollView contactInfoScrollView = (UIScrollView)View.ViewWithTag (CONTACT_INFO_VIEW_TAG);
 
-            if (0 == contact.EmailAddresses.Count) {
-                goto skippedEmail;
+            float contactInfoHeight = 13;
+
+            remainingContactDetails = contact.EmailAddresses.Count () + contact.PhoneNumbers.Count ();
+
+            if (contact.EmailAddresses.Count > 0) {
+                contactInfoHeight += AddEmailAddress (contact.EmailAddresses.FirstOrDefault (), contactInfoHeight, contactInfoScrollView, true);
             }
 
-//            yOffset += AddHeader ("Email", yOffset);
-
-            foreach (var emailAddressAttributes in contact.EmailAddresses) {
-                yOffset += AddEmailAddress (emailAddressAttributes, yOffset);
+            if (contact.PhoneNumbers.Count > 0) {
+                contactInfoHeight += AddPhoneNumber (contact.PhoneNumbers.FirstOrDefault (), contactInfoHeight, contactInfoScrollView, true);
             }
 
-            yOffset += 3;
-
-            var emailSectionSeparator = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 1));
-            emailSectionSeparator.BackgroundColor = A.Color_NachoBorderGray;
-            emailSectionSeparator.Tag = TRANSIENT_TAG;
-            ;
-            contentView.AddSubview (emailSectionSeparator);
-
-            yOffset += 6;
-
-            skippedEmail:
-
-            if (0 == contact.PhoneNumbers.Count) {
-                goto skippedPhones;
+            if (contact.EmailAddresses.Count > 1) {
+                bool skippedFirst = false;
+                foreach (var emailAddressAttributes in contact.EmailAddresses) {
+                    if (skippedFirst) {
+                        contactInfoHeight += AddEmailAddress (emailAddressAttributes, contactInfoHeight, contactInfoScrollView, false);
+                    }
+                    skippedFirst = true;
+                }
             }
 
-//            yOffset += AddHeader ("Phone", yOffset);
-
-            foreach (var phoneNumberAttribute in contact.PhoneNumbers) {
-                yOffset += AddPhoneNumber (phoneNumberAttribute, yOffset);
+            if (contact.PhoneNumbers.Count > 1) {
+                bool skippedFirst = false;
+                foreach (var phoneNumberAttribute in contact.PhoneNumbers) {
+                    if (skippedFirst) {
+                        contactInfoHeight += AddPhoneNumber (phoneNumberAttribute, contactInfoHeight, contactInfoScrollView, false);
+                    }
+                    skippedFirst = true;
+                }
             }
 
-            yOffset += 3;
+            if (contactInfoHeight < contactInfoScrollView.Frame.Height) {
+                SetViewHeight (contactInfoScrollView, contactInfoHeight);
+            }
+            contactInfoScrollView.ContentSize = new SizeF(contactInfoScrollView.Frame.Width, contactInfoHeight);
 
-            var phoneSectionSeparator = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 1));
-            phoneSectionSeparator.BackgroundColor = A.Color_NachoBorderGray;
-            phoneSectionSeparator.Tag = TRANSIENT_TAG;
-            ;
-            contentView.AddSubview (phoneSectionSeparator);
+            //CONFIGURE INTERACTIONS VIEW
+            UITableView interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
+            messageSource.owner = this;
+            interactionsTableView.Source = messageSource;
+            MultiSelectToggle (messageSource, false);
+            SetEmailMessages (new UserInteractionEmailMessages (contact));
 
-            skippedPhones:
-
-            contentView.Frame = new RectangleF (0, 0, View.Frame.Width, yOffset);
-            scrollView.ContentSize = contentView.Frame.Size;
-
-            // Notes
-            var notesTextView = notesScrollView.ViewWithTag (NOTES_TEXT_VIEW_TAG) as UITextView;
+            // CONFIGURE NOTES VIEW
+            var notesTextView = (UITextView)View.ViewWithTag (NOTES_TEXT_VIEW_TAG);
 
             McBody contactBody = McBody.QueryById<McBody> (contact.BodyId);
             if (null != contactBody) {
@@ -464,143 +491,244 @@ namespace NachoClient.iOS
                 notesTextView.Text = "This contact has not been synced. Adding or editing notes is disabled.";
             }
 
-            notesScrollView.ContentSize = notesTextView.ContentSize;
-
-            var editNotesButton = View.ViewWithTag (EDIT_NOTES_BUTTON_TAG) as UIButton;
-            if ("" == notesTextView.Text) {
-                editNotesButton.SetTitle ("Add Note", UIControlState.Normal);
-                editNotesButton.SizeToFit ();
-            } else {
-                editNotesButton.SetTitle ("Edit Note", UIControlState.Normal);
-                editNotesButton.SizeToFit ();
-            }
-
+            var editNotesButton = (UIButton)View.ViewWithTag (NOTES_EDIT_BUTTON_TAG);
             if (contact.Source != McAbstrItem.ItemSource.ActiveSync) {
                 editNotesButton.Enabled = false;
             } else {
                 editNotesButton.Enabled = true;
             }
-            editNotes.Frame = new RectangleF (0, UIScreen.MainScreen.Bounds.Height - 40, View.Frame.Width, 40);
+
+            LayoutView ();
         }
 
-        protected float AddHeader (string header, float yOffset)
+        protected void SegmentedControlHandler (Object sender, EventArgs e)
         {
-            var label = new UILabel (new RectangleF (15, yOffset, View.Frame.Width - 15, 20));
-            label.Font = A.Font_AvenirNextDemiBold17;
-            label.TextColor = A.Color_0B3239;
-            label.Text = header;
-            label.Tag = TRANSIENT_TAG;
-            contentView.AddSubview (label);
+            UIView contactInfoScrollView = (UIView)View.ViewWithTag (CONTACT_INFO_VIEW_TAG);
+            UITableView interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
+            UIView notesView = (UIView)View.ViewWithTag (NOTES_VIEW_TAG);
 
-            return 25;
+            selectedSegment = ((UISegmentedControl)sender).SelectedSegment;
+            switch (selectedSegment) {
+            case 0:
+                contactInfoScrollView.Hidden = false;
+                interactionsTableView.Hidden = true;
+                notesView.Hidden = true;
+                break;
+            case 1:
+                contactInfoScrollView.Hidden = true;
+                interactionsTableView.Hidden = false;
+                notesView.Hidden = true;
+                RefreshData ();
+                break;
+            case 2:
+                interactionsTableView.Hidden = true;
+                contactInfoScrollView.Hidden = true;
+                notesView.Hidden = false;
+                break;
+            default:
+                NcAssert.CaseError ();
+                break;
+            }
+            LayoutView ();
         }
 
-        protected float AddEmailAddress (McContactEmailAddressAttribute email, float yOffset)
+        protected void ContactInfoTapHandler (bool isEmail, string contactInfo)
         {
-            var view = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 40));
-            view.Tag = TRANSIENT_TAG;
-            contentView.AddSubview (view);
+            if (isEmail) {
+                TouchedEmailButton (contactInfo);
+            } else {
+                TouchedCallButton (contactInfo);
+            }
+        }
 
-            var emailAddress = McEmailAddress.QueryById<McEmailAddress> (email.EmailAddress);
-            var labelLabel = new UILabel (new RectangleF (15, 0, 45, 20));
-            labelLabel.Font = A.Font_AvenirNextRegular14;
-            labelLabel.TextColor = A.Color_0B3239;
-            labelLabel.Text = "Email Address";
-            labelLabel.SizeToFit ();
-            labelLabel.Tag = TRANSIENT_TAG;
-            view.AddSubview (labelLabel);
+        protected void EditNotesButtonTouchUpInside (object sender, EventArgs e)
+        {
+            PerformSegue ("ContactToNotes", new SegueHolder (contact));
+        }
 
-            var imageView = new UIImageView (new RectangleF (View.Frame.Width - 24 - 15, 10, 24, 24));
-            imageView.Image = UIImage.FromBundle ("contact-quickemail-gray");
-            view.AddSubview (imageView);
+        protected override void Cleanup ()
+        {
+            UIButton vipButton = (UIButton)View.ViewWithTag (HEADER_VIP_BUTTON_TAG);
+            vipButton.TouchUpInside -= VipButtonTouchUpInside;
+            vipButton = null;
 
-            var tap = new UITapGestureRecognizer ((UITapGestureRecognizer obj) => {
-                TouchedQROption (email.Value);
-            });
-            view.AddGestureRecognizer (tap);
-            view.UserInteractionEnabled = true;
+            UIView callView = (UIView)View.ViewWithTag (HEADER_CALL_VIEW_TAG);
+            headerCallViewGestureTapGesture.RemoveTarget (headerCallViewGestureTapGestureHandlerToken);
+            callView.RemoveGestureRecognizer (headerCallViewGestureTapGesture);
 
-            var valueLabel = new UILabel (new RectangleF (35, 20, View.Frame.Width - 75, 20));
-            valueLabel.Font = A.Font_AvenirNextRegular14;
-            valueLabel.TextColor = A.Color_808080;
-            valueLabel.Text = emailAddress.CanonicalEmailAddress;
-            valueLabel.SizeToFit ();
-            view.AddSubview (valueLabel);
+            UIView emailView = (UIView)View.ViewWithTag (HEADER_EMAIL_VIEW_TAG);
+            headerCallViewGestureTapGesture.RemoveTarget (headerEmailViewTapGestureHandlerToken);
+            emailView.RemoveGestureRecognizer (headerEmailViewTapGesture);
 
-            return 40;
+            foreach (var v in tapGestures.ToList()) {
+                UIView view;
+                if (null == (view = View.ViewWithTag (v.viewTag))) {
+                    break;
+                }
+                v.recognizer.RemoveTarget (v.token);
+                view.RemoveFromSuperview ();
+                tapGestures.Remove (v);
+            }
+            variableTransientTag = TRANSIENT_TAG_INITIAL_VALUE;
+
+            UIButton editNotesButton = (UIButton)View.ViewWithTag (NOTES_EDIT_BUTTON_TAG);
+            editNotesButton.TouchUpInside -= EditNotesButtonTouchUpInside;
+            editNotesButton = null;
+        }
+
+        protected void DefaultEmailTapHandler ()
+        {
+            //TODO: Use default
+            TouchedEmailButton (contact.GetEmailAddress ());
+        }
+
+        protected void DefaultCallTapHandler ()
+        {
+            //TODO: Use default
+            TouchedCallButton (contact.GetPhoneNumber ());
+        }
+
+        protected float AddEmailAddress (McContactEmailAddressAttribute email, float yOffset, UIView contactInfoScrollView, bool isFirstEmail) /*TODO Remove isFirstEmail once we're settings defaults */
+        {
+            remainingContactDetails--;
+            UIView segmentedControllerHolderView = (UIView)View.ViewWithTag (SEGMENTED_VIEW_HOLDER_TAG);
+
+            var emailView = new UIView (new RectangleF (0, yOffset, contactInfoScrollView.Frame.Width, 40));
+            emailView.Tag = variableTransientTag;
+            contactInfoScrollView.AddSubview (emailView);
+
+            UIImageView emailIcon = new UIImageView (UIImage.FromBundle ("contacts-icn-email"));
+            emailIcon.Frame = new RectangleF (0, 0, emailIcon.Frame.Width, emailIcon.Frame.Height);
+            emailView.AddSubview (emailIcon);
+
+            var emailLabel = new UILabel (new RectangleF (emailIcon.Frame.Right + 8, 0, 45, 15));
+            emailLabel.Font = A.Font_AvenirNextMedium10;
+            emailLabel.TextColor = UIColor.DarkGray;
+            emailLabel.Text = "EMAIL";
+            emailLabel.SizeToFit ();
+            emailView.AddSubview (emailLabel);
+
+            var emailComposeIcon = new UIImageView (UIImage.FromBundle ("contacts-email"));
+            emailComposeIcon.Frame = new RectangleF (emailView.Frame.Width - emailComposeIcon.Frame.Width, 0, emailComposeIcon.Frame.Width, emailComposeIcon.Frame.Height);
+            emailView.UserInteractionEnabled = true;
+            emailView.AddSubview (emailComposeIcon);
+
+            string canonicalEmail = McEmailAddress.QueryById <McEmailAddress> (email.EmailAddress).CanonicalEmailAddress;
+
+            UITapGestureRecognizer emailTap = new UITapGestureRecognizer ();
+            UITapGestureRecognizer.Token emailTapToken = emailTap.AddTarget (() => ContactInfoTapHandler (true, canonicalEmail));
+            emailView.AddGestureRecognizer (emailTap);
+
+            tapGestures.Add (new TapGesturePair (emailTap, emailTapToken, variableTransientTag));
+            variableTransientTag++;
+
+            if (isFirstEmail /*TODO email.IsDefault */) {
+                UIImageView defaultEmailIcon = new UIImageView (UIImage.FromBundle ("contacts-marker"));
+                defaultEmailIcon.Frame = new RectangleF (0, emailLabel.Frame.Bottom + 10, defaultEmailIcon.Frame.Width, defaultEmailIcon.Frame.Height);
+                emailView.AddSubview (defaultEmailIcon);
+            }
+
+            var emailTextView = new UITextView (new RectangleF (emailLabel.Frame.X - 5, emailLabel.Frame.Bottom - 1, emailView.Frame.Width - 60, 30));
+            emailTextView.Font = A.Font_AvenirNextMedium14;
+            emailTextView.TextColor = A.Color_NachoGreen;
+            emailTextView.Text = canonicalEmail;
+            emailTextView.KeyboardType = UIKeyboardType.EmailAddress;
+            emailTextView.UserInteractionEnabled = true;
+            emailTextView.Editable = false;
+            emailTextView.ScrollEnabled = false;
+            emailTextView.SizeToFit ();
+            emailView.AddSubview (emailTextView);
+
+            if (remainingContactDetails > 0) {
+                Util.AddHorizontalLine (emailLabel.Frame.X, emailTextView.Frame.Bottom + 10, segmentedControllerHolderView.Frame.Width - contactInfoScrollView.Frame.X - emailLabel.Frame.X, A.Color_NachoBorderGray, emailView);
+                return emailTextView.Frame.Bottom + 10 + PADDING;
+            } else {
+                return emailTextView.Frame.Bottom + 10;
+            }
+        }
+
+        protected float AddPhoneNumber (McContactStringAttribute phone, float yOffset, UIView contactInfoScrollView, bool isFirstPhone) /*TODO Remove isFirstEmail once we're settings defaults */
+        {
+            remainingContactDetails--;
+            UIView segmentedControllerHolderView = (UIView)View.ViewWithTag (SEGMENTED_VIEW_HOLDER_TAG);
+
+            var phoneView = new UIView (new RectangleF (0, yOffset, contactInfoScrollView.Frame.Width, 40));
+            phoneView.Tag = variableTransientTag;
+            phoneView.UserInteractionEnabled = true;
+            contactInfoScrollView.AddSubview (phoneView);
+
+            UIImageView phoneIcon = new UIImageView (UIImage.FromBundle ("contacts-icn-phone"));
+            phoneIcon.Frame = new RectangleF (0, 0, phoneIcon.Frame.Width, phoneIcon.Frame.Height);
+
+            phoneView.AddSubview (phoneIcon);
+
+            string phoneLabelText = "";
+
+            if (NachoCore.ActiveSync.Xml.Contacts.MobilePhoneNumber == phone.Name) {
+                phoneLabelText = "MOBILE";
+            } else if (NachoCore.ActiveSync.Xml.Contacts.BusinessPhoneNumber == phone.Name) {
+                phoneLabelText = "BUSINESS";
+            } else if (NachoCore.ActiveSync.Xml.Contacts.HomePhoneNumber == phone.Name) {
+                phoneLabelText = "HOME";
+            } else if (NachoCore.ActiveSync.Xml.Contacts.AssistantPhoneNumber == phone.Name) {
+                phoneLabelText = "ASSISTANT";
+            } else {
+                phoneLabelText = "PHONE";
+            }
+
+            var phoneLabel = new UILabel (new RectangleF (phoneIcon.Frame.Right + 8, 0, 45, 10));
+            phoneLabel.Font = A.Font_AvenirNextMedium10;
+            phoneLabel.TextColor = UIColor.DarkGray;
+            phoneLabel.Text = phoneLabelText;
+            phoneLabel.SizeToFit ();
+            phoneView.AddSubview (phoneLabel);
+
+            var callIcon = new UIImageView (UIImage.FromBundle ("contacts-call"));
+            callIcon.Frame = new RectangleF (phoneView.Frame.Width - callIcon.Frame.Width, 0, callIcon.Frame.Width, callIcon.Frame.Height);
+            phoneView.AddSubview (callIcon);
+
+            UITapGestureRecognizer phoneTap = new UITapGestureRecognizer ();
+            UITapGestureRecognizer.Token phoneTapToken = phoneTap.AddTarget (() => ContactInfoTapHandler (false, phone.Value));
+            phoneView.AddGestureRecognizer (phoneTap);
+
+            tapGestures.Add (new TapGesturePair (phoneTap, phoneTapToken, variableTransientTag));
+            variableTransientTag++;
+
+            if (isFirstPhone /*TODO phone.IsDefault */) {
+                UIImageView defaultPhoneIcon = new UIImageView (UIImage.FromBundle ("contacts-marker"));
+                defaultPhoneIcon.Frame = new RectangleF (0, phoneLabel.Frame.Bottom + 10, defaultPhoneIcon.Frame.Width, defaultPhoneIcon.Frame.Height);
+                phoneView.AddSubview (defaultPhoneIcon);
+            }
+
+            var phoneNumberTextView = new UITextView (new RectangleF (phoneLabel.Frame.X - 5, phoneLabel.Frame.Bottom - 1, View.Frame.Width - 75, 16));
+            phoneNumberTextView.Font = A.Font_AvenirNextMedium14;
+            phoneNumberTextView.TextColor = A.Color_NachoGreen;
+            phoneNumberTextView.Text = phone.Value;
+            phoneNumberTextView.Editable = false;
+            phoneNumberTextView.ScrollEnabled = false;
+            phoneNumberTextView.SizeToFit ();
+            phoneView.AddSubview (phoneNumberTextView);
+
+            if (remainingContactDetails > 0) {
+                Util.AddHorizontalLine (phoneLabel.Frame.X, phoneNumberTextView.Frame.Bottom + 10, segmentedControllerHolderView.Frame.Width - contactInfoScrollView.Frame.X - phoneLabel.Frame.X, A.Color_NachoBorderGray, phoneView);
+                return phoneNumberTextView.Frame.Bottom + 10 + PADDING;
+            } else {
+                return phoneNumberTextView.Frame.Bottom + 10;
+            }
+        }
+
+        public bool ShouldRecognizeSimultaneously (UIGestureRecognizer gestureRecognizer, UIGestureRecognizer otherGestureRecognizer)
+        {
+            return true;
         }
 
         public void TouchedQROption (string emailAddress)
         {
-            Log.Info (Log.LOG_UI, "TouchedEmailButton");
-
             if (string.IsNullOrEmpty (emailAddress)) {
                 ComplainAbout ("No email address", "You've selected a contact who does not have an email address");
                 return;
             }
             PerformSegue ("ContactToEmailCompose", new SegueHolder (emailAddress, true));
-        }
-
-        protected float AddPhoneNumber (McContactStringAttribute phone, float yOffset)
-        {
-            var view = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 40));
-            view.Tag = TRANSIENT_TAG;
-            contentView.AddSubview (view);
-
-            string phoneLabel = "";
-
-            if (NachoCore.ActiveSync.Xml.Contacts.MobilePhoneNumber == phone.Name) {
-                phoneLabel = "Mobile Phone Number";
-            } else if (NachoCore.ActiveSync.Xml.Contacts.BusinessPhoneNumber == phone.Name) {
-                phoneLabel = "Business Phone Number";
-            } else if (NachoCore.ActiveSync.Xml.Contacts.HomePhoneNumber == phone.Name) {
-                phoneLabel = "Home Phone Number";
-            } else if (NachoCore.ActiveSync.Xml.Contacts.AssistantPhoneNumber == phone.Name) {
-                phoneLabel = "Assistant Phone Number";
-            } else {
-                phoneLabel = "Phone Number";
-            }
-
-            var labelLabel = new UILabel (new RectangleF (15, 0, 45, 20));
-            labelLabel.Font = A.Font_AvenirNextRegular14;
-            labelLabel.TextColor = A.Color_0B3239;
-            labelLabel.Text = phoneLabel;
-            labelLabel.SizeToFit ();
-            labelLabel.Tag = TRANSIENT_TAG;
-            view.AddSubview (labelLabel);
-
-            var phoneButton = UIButton.FromType (UIButtonType.RoundedRect);
-            phoneButton.Frame = new RectangleF (View.Frame.Width - 24 - 15, 10, 24, 24);
-            phoneButton.SetImage (UIImage.FromBundle ("icn-mtng-phone"), UIControlState.Normal);
-            phoneButton.TouchUpInside += (sender, e) => {
-                TouchedCallButton (phone.Value);
-            };
-            view.AddSubview (phoneButton);
-
-            var smsButton = UIButton.FromType (UIButtonType.RoundedRect);
-            smsButton.Frame = new RectangleF (View.Frame.Width - 24 - 15 - 24 - 15, 10, 24, 24);
-            smsButton.SetImage (UIImage.FromBundle ("icn-sms"), UIControlState.Normal);
-            smsButton.TouchUpInside += (sender, e) => {
-                TouchedSmsButton (phone.Value);
-            };
-            view.AddSubview (smsButton);
-
-            yOffset += 20;
-
-            var valueLabel = new UILabel (new RectangleF (35, 20, View.Frame.Width - 75, 20));
-            valueLabel.Font = A.Font_AvenirNextRegular14;
-            valueLabel.TextColor = A.Color_808080;
-            valueLabel.Text = phone.Value;
-            valueLabel.SizeToFit ();
-            view.AddSubview (valueLabel);
-
-            return 40;
-        }
-
-        protected void DisplayContactInfo ()
-        {
-            var segmentedController = contentView.ViewWithTag (SEGMENTED_CONTROL_TAG) as UISegmentedControl;
-            segmentedController.SelectedSegment = 0;
         }
 
         protected UIColor LighterColor (UIColor color)
@@ -610,29 +738,11 @@ namespace NachoClient.iOS
             return UIColor.FromHSBA (hue, saturation, Math.Min (brightness * 1.3f, 1.0f), alpha);
         }
 
-        protected string GetInitials ()
+        protected void SetViewHeight (UIView view, float height)
         {
-            string initials = "";
-            if (!String.IsNullOrEmpty (contact.FirstName)) {
-                initials += Char.ToUpper (contact.FirstName [0]);
-            }
-            if (!String.IsNullOrEmpty (contact.LastName)) {
-                initials += Char.ToUpper (contact.LastName [0]);
-            }
-            // Or, failing that, the first char
-            if (String.IsNullOrEmpty (initials)) {
-                if (0 != contact.EmailAddresses.Count) {
-                    var emailAddressAttribute = contact.EmailAddresses [0];
-                    var emailAddress = McEmailAddress.QueryById<McEmailAddress> (emailAddressAttribute.EmailAddress);
-                    foreach (char c in emailAddress.CanonicalEmailAddress) {
-                        if (Char.IsLetterOrDigit (c)) {
-                            initials += Char.ToUpper (c);
-                            break;
-                        }
-                    }
-                }
-            }
-            return initials;
+            var frame = view.Frame;
+            frame.Height = height;
+            view.Frame = frame;
         }
 
         /// Return email address iff display name is set
@@ -650,8 +760,6 @@ namespace NachoClient.iOS
 
         protected void TouchedEmailButton (string address)
         {
-            Log.Info (Log.LOG_UI, "TouchedEmailButton");
-
             if (string.IsNullOrEmpty (address)) {
                 ComplainAbout ("No email address", "You've selected a contact who does not have an email address");
                 return;
@@ -661,24 +769,11 @@ namespace NachoClient.iOS
 
         protected void TouchedCallButton (string number)
         {
-            Log.Info (Log.LOG_UI, "TouchedCallButton");
-
             if (string.IsNullOrEmpty (number)) {
                 ComplainAbout ("No phone number", "You've selected a contact who does not have a phone number");
                 return;
             }
             PerformAction ("tel", number);
-        }
-
-        protected void TouchedSmsButton (string number)
-        {
-            Log.Info (Log.LOG_UI, "TouchedSmsButton");
-
-            if (null == number) {
-                ComplainAbout ("No phone number", "You've selected a contact who does not have a phone number");
-                return;
-            }
-            PerformAction ("sms", number);
         }
 
         protected void PerformAction (string action, string number)
@@ -692,7 +787,7 @@ namespace NachoClient.iOS
             alert.Show ();
         }
 
-        protected void ToggleVipStatus ()
+        protected void VipButtonTouchUpInside (object sender, EventArgs e)
         {
             contact.SetVIP (!contact.IsVip);
             UpdateVipButton ();
@@ -700,11 +795,12 @@ namespace NachoClient.iOS
 
         protected void UpdateVipButton ()
         {
-            var vipImageName = (contact.IsVip ? "icn-contact-vip" : "icn-vip");
+            UIButton vipButton = (UIButton)View.ViewWithTag (HEADER_VIP_BUTTON_TAG);
+            var vipImageName = (contact.IsVip ? "contacts-vip-checked" : "contacts-vip");
 
             using (var rawImage = UIImage.FromBundle (vipImageName)) {
                 var image = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal);
-                vipButton.Image = image;
+                vipButton.SetImage (image, UIControlState.Normal);
             }
         }
 
@@ -736,9 +832,11 @@ namespace NachoClient.iOS
 
         public void RefreshData ()
         {
+            UITableView interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
+
             NachoCore.Utils.NcAbate.HighPriority ("ContactDetailViewController RefreshData");
             messageSource.RefreshEmailMessages ();
-            InteractionsTable.ReloadData ();
+            interactionsTableView.ReloadData ();
             NachoCore.Utils.NcAbate.RegularPriority ("ContactDetailViewController RefreshData");
         }
 

@@ -1,4 +1,5 @@
 using System;
+using NachoCore.Model;
 
 namespace NachoCore.Utils
 {
