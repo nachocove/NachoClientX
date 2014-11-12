@@ -198,7 +198,7 @@ namespace NachoClient.iOS
             headerView.BackgroundColor = UIColor.White;
             View.AddSubview (headerView);
 
-            UIButton vipButton = new UIButton (new RectangleF (headerView.Frame.Right - 50, 12, VERTICAL_PADDING, VERTICAL_PADDING));
+            UIButton vipButton = new UIButton (new RectangleF (headerView.Frame.Right - 48, 10, VERTICAL_PADDING, VERTICAL_PADDING));
             vipButton.Tag = HEADER_VIP_BUTTON_TAG;
             vipButton.SetImage (UIImage.FromBundle ("contacts-vip"), UIControlState.Normal);
             vipButton.TouchUpInside += VipButtonTouchUpInside;
@@ -226,7 +226,7 @@ namespace NachoClient.iOS
             userImageView.Hidden = true;
             headerView.AddSubview (userImageView);
 
-            UILabel nameLabel = new UILabel (new RectangleF (initialsCircleLabel.Frame.Right + 16, 31, 150, 20));
+            UILabel nameLabel = new UILabel (new RectangleF (initialsCircleLabel.Frame.Right + 16, 31, 190, 20));
             nameLabel.Font = A.Font_AvenirNextDemiBold17;
             nameLabel.TextColor = A.Color_NachoGreen;
             nameLabel.TextAlignment = UITextAlignment.Left;
