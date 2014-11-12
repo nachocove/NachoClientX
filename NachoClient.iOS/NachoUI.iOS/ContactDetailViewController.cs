@@ -136,8 +136,8 @@ namespace NachoClient.iOS
 
             if (segue.Identifier.Equals ("ContactToEmailCompose")) {
                 var dc = (MessageComposeViewController)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                var address = holder.value as string;
+                var holder = (SegueHolder)sender;
+                var address = (string)holder.value;
                 dc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, address));
                 if (null != holder.value2) {
                     dc.SetQRType (NcQuickResponse.QRTypeEnum.Compose);
@@ -156,20 +156,20 @@ namespace NachoClient.iOS
             }
             if (segue.Identifier == "MessageListToFolders") {
                 var vc = (INachoFolderChooser)segue.DestinationViewController;
-                var h = sender as SegueHolder;
+                var h = (SegueHolder)sender;
                 vc.SetOwner (this, true, h);
                 return;
             }
             if (segue.Identifier == "NachoNowToMessageView") {
                 var vc = (MessageViewController)segue.DestinationViewController;
                 var holder = (SegueHolder)sender;
-                vc.thread = holder.value as McEmailMessageThread;                
+                vc.thread = (McEmailMessageThread)holder.value;           
                 return;
             }
             if (segue.Identifier == "NachoNowToEditEvent") {
                 var vc = (EditEventViewController)segue.DestinationViewController;
-                var holder = sender as SegueHolder;
-                var c = holder.value as McCalendar;
+                var holder = (SegueHolder)sender;
+                var c = (McCalendar)holder.value;
                 vc.SetCalendarItem (c);
                 vc.SetOwner (this);
                 return;
@@ -385,7 +385,7 @@ namespace NachoClient.iOS
             UIColor userBackgroundColor;
 
             if (null == contact) {
-                var unavailableTitle = View.ViewWithTag (HEADER_TITLE_TAG) as UILabel;
+                var unavailableTitle = (UILabel)View.ViewWithTag (HEADER_TITLE_TAG);
                 unavailableTitle.Text = "Contact is unavailable.";
                 return;
             }
@@ -405,7 +405,7 @@ namespace NachoClient.iOS
 
             if (0 == contact.PortraitId) {
                 headerInitialsLabel.BackgroundColor = userBackgroundColor; 
-                headerInitialsLabel.Text = NachoCore.Utils.string_Helpers.GetInitials (contact);
+                headerInitialsLabel.Text = NachoCore.Utils.ContactsHelper.GetInitials (contact);
                 headerInitialsLabel.Hidden = false;
 
             } else {
@@ -480,7 +480,7 @@ namespace NachoClient.iOS
             SetEmailMessages (new UserInteractionEmailMessages (contact));
 
             // CONFIGURE NOTES VIEW
-            var notesTextView = View.ViewWithTag (NOTES_TEXT_VIEW_TAG) as UITextView;
+            var notesTextView = (UITextView)View.ViewWithTag (NOTES_TEXT_VIEW_TAG);
 
             McBody contactBody = McBody.QueryById<McBody> (contact.BodyId);
             if (null != contactBody) {
@@ -491,7 +491,7 @@ namespace NachoClient.iOS
                 notesTextView.Text = "This contact has not been synced. Adding or editing notes is disabled.";
             }
 
-            var editNotesButton = View.ViewWithTag (NOTES_EDIT_BUTTON_TAG) as UIButton;
+            var editNotesButton = (UIButton)View.ViewWithTag (NOTES_EDIT_BUTTON_TAG);
             if (contact.Source != McAbstrItem.ItemSource.ActiveSync) {
                 editNotesButton.Enabled = false;
             } else {
@@ -507,7 +507,7 @@ namespace NachoClient.iOS
             UITableView interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
             UIView notesView = (UIView)View.ViewWithTag (NOTES_VIEW_TAG);
 
-            selectedSegment = (sender as UISegmentedControl).SelectedSegment;
+            selectedSegment = ((UISegmentedControl)sender).SelectedSegment;
             switch (selectedSegment) {
             case 0:
                 contactInfoScrollView.Hidden = false;

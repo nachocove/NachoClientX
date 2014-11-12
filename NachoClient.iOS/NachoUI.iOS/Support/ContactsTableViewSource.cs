@@ -566,7 +566,7 @@ namespace NachoClient.iOS
         protected void ConfigureLabelView (UILabel labelView, McContact contact, int colorIndex)
         {
             labelView.Hidden = false;
-            labelView.Text = NachoCore.Utils.string_Helpers.GetInitials (contact);
+            labelView.Text = NachoCore.Utils.ContactsHelper.GetInitials (contact);
             labelView.BackgroundColor = Util.ColorForUser (colorIndex);
         }
 
