@@ -180,6 +180,9 @@ namespace NachoClient.iOS
 
         protected override void CreateViewHierarchy ()
         {
+            contentView.BackgroundColor = A.Color_NachoBackgroundGray;
+            View.BackgroundColor = A.Color_NachoBackgroundGray;
+
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
             NavigationItem.Title = "Contacts";
 
@@ -187,16 +190,13 @@ namespace NachoClient.iOS
             editContact.Image = UIImage.FromBundle ("gen-edit");
             NavigationItem.SetRightBarButtonItem (editContact, true); 
 
-            contentView.BackgroundColor = A.Color_NachoBackgroundGray;
-            scrollView.BackgroundColor = A.Color_NachoBackgroundGray;
-
             //CONTACT HEADER SECTION
             UIView headerView = new UIView (new RectangleF (15, VERTICAL_PADDING, View.Frame.Width - 30, 147));
             headerView.Layer.CornerRadius = 6.0f;
             headerView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
             headerView.Layer.BorderWidth = 1.0f;
             headerView.BackgroundColor = UIColor.White;
-            contentView.AddSubview (headerView);
+            View.AddSubview (headerView);
 
             UIButton vipButton = new UIButton (new RectangleF (headerView.Frame.Right - 50, 12, VERTICAL_PADDING, VERTICAL_PADDING));
             vipButton.Tag = HEADER_VIP_BUTTON_TAG;
@@ -297,7 +297,7 @@ namespace NachoClient.iOS
             segmentedViewHolder.Layer.CornerRadius = 6.0f;
             segmentedViewHolder.Tag = SEGMENTED_VIEW_HOLDER_TAG;
             segmentedViewHolder.BackgroundColor = UIColor.White;
-            contentView.AddSubview (segmentedViewHolder);
+            View.AddSubview (segmentedViewHolder);
 
             //SEGMENTED CONTROL
             var segmentedControl = new UISegmentedControl ();
@@ -322,20 +322,20 @@ namespace NachoClient.iOS
             segmentedViewHolder.AddSubview (segmentedControl);
 
             //CONTACT INFO
-            UIView contactInfoView = new UIView (new RectangleF (PADDING, segmentedControl.Frame.Bottom + PADDING, segmentedViewHolder.Frame.Width - (PADDING * 2), 50));
+            UIScrollView contactInfoView = new UIScrollView (new RectangleF (PADDING, segmentedControl.Frame.Bottom + 5, segmentedViewHolder.Frame.Width - (PADDING * 2), View.Frame.Height - segmentedViewHolder.Frame.Top - 80 - 64));
             contactInfoView.BackgroundColor = UIColor.White;
             contactInfoView.Tag = CONTACT_INFO_VIEW_TAG;
             segmentedViewHolder.AddSubview (contactInfoView);
 
             //INTERACTIONS
-            UITableView interactionsTableView = new UITableView (new RectangleF (0, segmentedControl.Frame.Bottom + 4, segmentedViewHolder.Frame.Width, View.Frame.Height - headerView.Frame.Height));
+            UITableView interactionsTableView = new UITableView (new RectangleF (0, segmentedControl.Frame.Bottom + 4, segmentedViewHolder.Frame.Width, View.Frame.Height - segmentedViewHolder.Frame.Top - 80 - 64));
             interactionsTableView.Tag = INTERACTIONS_TABLE_VIEW_TAG;
             interactionsTableView.Hidden = true;
             interactionsTableView.BackgroundColor = UIColor.White;
             segmentedViewHolder.AddSubview (interactionsTableView);
 
             //NOTES
-            UIView notesView = new UIView (new RectangleF (PADDING, segmentedControl.Frame.Bottom, segmentedViewHolder.Frame.Width - (PADDING * 2), View.Frame.Height - segmentedViewHolder.Frame.Top - 90 - 64));
+            UIView notesView = new UIView (new RectangleF (PADDING, segmentedControl.Frame.Bottom, segmentedViewHolder.Frame.Width - (PADDING * 2), View.Frame.Height - segmentedViewHolder.Frame.Top - 80 - 64));
             notesView.Tag = NOTES_VIEW_TAG;
             UITextView notesTextView = new UITextView (new RectangleF (0, 5, notesView.Frame.Width, notesView.Frame.Height - 45));
             notesTextView.Font = A.Font_AvenirNextRegular14;
@@ -361,26 +361,21 @@ namespace NachoClient.iOS
         protected void LayoutView ()
         {
             UIView segmentedViewHolder = (UIView)View.ViewWithTag (SEGMENTED_VIEW_HOLDER_TAG);
-            UIView contactInfoView = (UIView)View.ViewWithTag (CONTACT_INFO_VIEW_TAG);
+            UIScrollView contactInfoView = (UIScrollView)View.ViewWithTag (CONTACT_INFO_VIEW_TAG);
             UITableView interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
             UIView notesView = (UIView)View.ViewWithTag (NOTES_VIEW_TAG);
 
             switch (selectedSegment) {
             case 0:
-                SetViewHeight (segmentedViewHolder, VERTICAL_PADDING + SEGMENTED_CONTROL_HEIGHT + contactInfoView.Frame.Height + VERTICAL_PADDING);
+                SetViewHeight (segmentedViewHolder, VERTICAL_PADDING + SEGMENTED_CONTROL_HEIGHT + contactInfoView.Frame.Height + VERTICAL_PADDING / 2);
                 break;
             case 1:
-                SetViewHeight (segmentedViewHolder, VERTICAL_PADDING + SEGMENTED_CONTROL_HEIGHT + interactionsTableView.Frame.Height + VERTICAL_PADDING);
+                SetViewHeight (segmentedViewHolder, VERTICAL_PADDING + SEGMENTED_CONTROL_HEIGHT + interactionsTableView.Frame.Height + VERTICAL_PADDING / 2);
                 break;
             case 2:
                 SetViewHeight (segmentedViewHolder, VERTICAL_PADDING + SEGMENTED_CONTROL_HEIGHT + notesView.Frame.Height + VERTICAL_PADDING / 2);
                 break;
             }
-
-            float yOffset = VERTICAL_PADDING + 150 + 12 + segmentedViewHolder.Frame.Height + PADDING;
-
-            contentView.Frame = new RectangleF (0, 0, View.Frame.Width, yOffset);
-            scrollView.ContentSize = contentView.Frame.Size;
         }
 
         protected override void ConfigureAndLayout ()
@@ -390,7 +385,7 @@ namespace NachoClient.iOS
             UIColor userBackgroundColor;
 
             if (null == contact) {
-                var unavailableTitle = contentView.ViewWithTag (HEADER_TITLE_TAG) as UILabel;
+                var unavailableTitle = View.ViewWithTag (HEADER_TITLE_TAG) as UILabel;
                 unavailableTitle.Text = "Contact is unavailable.";
                 return;
             }
@@ -409,7 +404,7 @@ namespace NachoClient.iOS
             headerPortraitImageView.Hidden = true;
 
             if (0 == contact.PortraitId) {
-                headerInitialsLabel.BackgroundColor = LighterColor (userBackgroundColor);
+                headerInitialsLabel.BackgroundColor = userBackgroundColor; 
                 headerInitialsLabel.Text = NachoCore.Utils.string_Helpers.GetInitials (contact);
                 headerInitialsLabel.Hidden = false;
 
@@ -437,11 +432,10 @@ namespace NachoClient.iOS
                 variableTransientTag = TRANSIENT_TAG_INITIAL_VALUE;
             }
 
-
             //CONFIGURE CONTACT INFO VIEW
-            UIView contactInfoView = (UIView)View.ViewWithTag (CONTACT_INFO_VIEW_TAG);
+            UIScrollView contactInfoView = (UIScrollView)View.ViewWithTag (CONTACT_INFO_VIEW_TAG);
 
-            float contactInfoHeight = 0;
+            float contactInfoHeight = 13;
 
             remainingContactDetails = contact.EmailAddresses.Count () + contact.PhoneNumbers.Count ();
 
@@ -473,7 +467,10 @@ namespace NachoClient.iOS
                 }
             }
 
-            SetViewHeight (contactInfoView, contactInfoHeight);
+            if (contactInfoHeight < contactInfoView.Frame.Height) {
+                SetViewHeight (contactInfoView, contactInfoHeight);
+            }
+            contactInfoView.ContentSize = new SizeF(contactInfoView.Frame.Width, contactInfoHeight);
 
             //CONFIGURE INTERACTIONS VIEW
             UITableView interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
@@ -727,8 +724,6 @@ namespace NachoClient.iOS
 
         public void TouchedQROption (string emailAddress)
         {
-            Log.Info (Log.LOG_UI, "TouchedEmailButton");
-
             if (string.IsNullOrEmpty (emailAddress)) {
                 ComplainAbout ("No email address", "You've selected a contact who does not have an email address");
                 return;
@@ -765,8 +760,6 @@ namespace NachoClient.iOS
 
         protected void TouchedEmailButton (string address)
         {
-            Log.Info (Log.LOG_UI, "TouchedEmailButton");
-
             if (string.IsNullOrEmpty (address)) {
                 ComplainAbout ("No email address", "You've selected a contact who does not have an email address");
                 return;
@@ -776,8 +769,6 @@ namespace NachoClient.iOS
 
         protected void TouchedCallButton (string number)
         {
-            Log.Info (Log.LOG_UI, "TouchedCallButton");
-
             if (string.IsNullOrEmpty (number)) {
                 ComplainAbout ("No phone number", "You've selected a contact who does not have a phone number");
                 return;
