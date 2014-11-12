@@ -726,9 +726,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\Telemetry.cs">
       <Link>NachoCore\Utils\Telemetry.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\TelemetryParse.cs">
-      <Link>NachoCore\Utils\TelemetryParse.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcQueue.cs">
       <Link>NachoCore\Utils\NcQueue.cs</Link>
     </Compile>
