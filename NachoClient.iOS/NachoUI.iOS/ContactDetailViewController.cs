@@ -674,13 +674,13 @@ namespace NachoClient.iOS
             } else if (NachoCore.ActiveSync.Xml.Contacts.AssistantPhoneNumber == phone.Name) {
                 phoneLabelText = "ASSISTANT";
             } else if (NachoCore.ActiveSync.Xml.Contacts.Business2PhoneNumber == phone.Name) {
-                phoneLabelText = "SECOND BUSINESS";
+                phoneLabelText = "BUSINESS";
             } else if (NachoCore.ActiveSync.Xml.Contacts.CarPhoneNumber == phone.Name) {
                 phoneLabelText = "CAR";
             } else if (NachoCore.ActiveSync.Xml.Contacts.RadioPhoneNumber == phone.Name) {
                 phoneLabelText = "RADIO";
             }else if (NachoCore.ActiveSync.Xml.Contacts.Home2PhoneNumber == phone.Name) {
-                phoneLabelText = "SECOND HOME";
+                phoneLabelText = "HOME";
             } else {
                 phoneLabelText = "PHONE";
             }
