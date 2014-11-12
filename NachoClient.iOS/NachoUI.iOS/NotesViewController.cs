@@ -32,6 +32,9 @@ namespace NachoClient.iOS
         protected float NOTES_OFFSET = 0f;
         protected float keyboardHeight;
 
+        protected string originalNote;
+        protected string embeddedDateString;
+
         UIColor solidTextColor = A.Color_NachoBlack;
 
         protected int DATE_DETAIL_TAG = 100;
@@ -57,6 +60,8 @@ namespace NachoClient.iOS
                 this.NavigationController.ToolbarHidden = true;
             }
 
+            originalNote = Owner.GetNoteText ();
+            embeddedDateString = DateTime.Now.ToShortDateString () + "\n" + "\n" + "\n";
             ConfigureNotesView ();
         }
 
@@ -69,7 +74,9 @@ namespace NachoClient.iOS
         {
             base.ViewWillDisappear (animated);
 
-            Owner.SaveNote (account.Id, notesTextView.Text);
+            if ((embeddedDateString + originalNote) != notesTextView.Text) {
+                Owner.SaveNote (account.Id, notesTextView.Text);
+            }
         }
 
         public void SetOwner (INachoNotesControllerParent owner)
@@ -125,7 +132,8 @@ namespace NachoClient.iOS
 
         public void ConfigureNotesView ()
         {
-            notesTextView.Text = Owner.GetNoteText ();
+            notesTextView.Text = embeddedDateString + Owner.GetNoteText ();
+            notesTextView.SelectedRange = new NSRange (DateTime.Now.ToShortDateString().Length + 1, 0);
 
             //date
             var dateDetailLabel = contentView.ViewWithTag (DATE_DETAIL_TAG) as UILabel;

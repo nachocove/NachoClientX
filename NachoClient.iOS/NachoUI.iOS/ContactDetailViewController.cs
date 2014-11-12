@@ -188,6 +188,7 @@ namespace NachoClient.iOS
 
             editContact = new UIBarButtonItem ();
             editContact.Image = UIImage.FromBundle ("gen-edit");
+            editContact.Clicked += EditButtonClicked;
             NavigationItem.SetRightBarButtonItem (editContact, true); 
 
             //CONTACT HEADER SECTION
@@ -346,16 +347,22 @@ namespace NachoClient.iOS
             notesTextView.ScrollEnabled = true;
             notesView.AddSubview (notesTextView);
 
-            UIButton editNotesButton = new UIButton (UIButtonType.RoundedRect);
-            editNotesButton.Tag = NOTES_EDIT_BUTTON_TAG;
-            editNotesButton.TintColor = A.Color_NachoGreen;
-            editNotesButton.Frame = new RectangleF (notesView.Frame.Right - 50, notesTextView.Frame.Bottom, 50, 50);
-            editNotesButton.SetImage (UIImage.FromBundle ("email-add"), UIControlState.Normal);
-            editNotesButton.SetImage (UIImage.FromBundle ("email-add-active"), UIControlState.Highlighted);
-            editNotesButton.TouchUpInside += EditNotesButtonTouchUpInside; 
-
-            notesView.AddSubview (editNotesButton);
             segmentedViewHolder.AddSubview (notesView);
+        }
+
+        protected void EditButtonClicked (object sender, EventArgs e)
+        {
+            switch (selectedSegment) {
+            case 0:
+                //TODO: Edit Contacts
+                break;
+            case 1:
+                //TODO: Multi-Select
+                break;
+            case 2:
+                PerformSegue ("ContactToNotes", new SegueHolder (contact));
+                break;
+            }
         }
 
         protected void LayoutView ()
@@ -491,13 +498,6 @@ namespace NachoClient.iOS
                 notesTextView.Text = "This contact has not been synced. Adding or editing notes is disabled.";
             }
 
-            var editNotesButton = (UIButton)View.ViewWithTag (NOTES_EDIT_BUTTON_TAG);
-            if (contact.Source != McAbstrItem.ItemSource.ActiveSync) {
-                editNotesButton.Enabled = false;
-            } else {
-                editNotesButton.Enabled = true;
-            }
-
             LayoutView ();
         }
 
@@ -510,11 +510,13 @@ namespace NachoClient.iOS
             selectedSegment = ((UISegmentedControl)sender).SelectedSegment;
             switch (selectedSegment) {
             case 0:
+                editContact.Enabled = true;
                 contactInfoScrollView.Hidden = false;
                 interactionsTableView.Hidden = true;
                 notesView.Hidden = true;
                 break;
             case 1:
+                editContact.Enabled = true;
                 contactInfoScrollView.Hidden = true;
                 interactionsTableView.Hidden = false;
                 notesView.Hidden = true;
@@ -524,6 +526,11 @@ namespace NachoClient.iOS
                 interactionsTableView.Hidden = true;
                 contactInfoScrollView.Hidden = true;
                 notesView.Hidden = false;
+                if (contact.Source != McAbstrItem.ItemSource.ActiveSync) {
+                    editContact.Enabled = false;
+                } else {
+                    editContact.Enabled = true;
+                }
                 break;
             default:
                 NcAssert.CaseError ();
@@ -539,11 +546,6 @@ namespace NachoClient.iOS
             } else {
                 TouchedCallButton (contactInfo);
             }
-        }
-
-        protected void EditNotesButtonTouchUpInside (object sender, EventArgs e)
-        {
-            PerformSegue ("ContactToNotes", new SegueHolder (contact));
         }
 
         protected override void Cleanup ()
@@ -571,9 +573,8 @@ namespace NachoClient.iOS
             }
             variableTransientTag = TRANSIENT_TAG_INITIAL_VALUE;
 
-            UIButton editNotesButton = (UIButton)View.ViewWithTag (NOTES_EDIT_BUTTON_TAG);
-            editNotesButton.TouchUpInside -= EditNotesButtonTouchUpInside;
-            editNotesButton = null;
+            editContact.Clicked -= EditButtonClicked;
+            editContact = null;
         }
 
         protected void DefaultEmailTapHandler ()
@@ -672,6 +673,14 @@ namespace NachoClient.iOS
                 phoneLabelText = "HOME";
             } else if (NachoCore.ActiveSync.Xml.Contacts.AssistantPhoneNumber == phone.Name) {
                 phoneLabelText = "ASSISTANT";
+            } else if (NachoCore.ActiveSync.Xml.Contacts.Business2PhoneNumber == phone.Name) {
+                phoneLabelText = "BUSINESS";
+            } else if (NachoCore.ActiveSync.Xml.Contacts.CarPhoneNumber == phone.Name) {
+                phoneLabelText = "CAR";
+            } else if (NachoCore.ActiveSync.Xml.Contacts.RadioPhoneNumber == phone.Name) {
+                phoneLabelText = "RADIO";
+            }else if (NachoCore.ActiveSync.Xml.Contacts.Home2PhoneNumber == phone.Name) {
+                phoneLabelText = "HOME";
             } else {
                 phoneLabelText = "PHONE";
             }
