@@ -54,6 +54,7 @@ namespace NachoClient.iOS
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
         protected const int TOVIEW_LEFT_MARGIN = 20;
         protected const int CCVIEW_LEFT_MARGIN = 20;
+        protected const int CHILI_ICON_WIDTH = 20;
         #if DEBUG_UI
         const int VIEW_INSET = 4;
         const int ATTACHMENTVIEW_INSET = 10;
@@ -204,11 +205,10 @@ namespace NachoClient.iOS
 
             // "From" label. Font will be bold or regular, depending on isRead.
             // Sizes will be recalculated after the text is known.
-            var fromLabelView = new UILabel (new RectangleF (65, yOffset, 150, 20));
+            var fromLabelView = new UILabel (new RectangleF (65, yOffset, headerView.Frame.Width - CHILI_ICON_WIDTH - 65 - 10, 20));
             fromLabelView.Font = A.Font_AvenirNextDemiBold17;
             fromLabelView.TextColor = A.Color_0F424C;
             fromLabelView.Tag = (int)TagType.FROM_TAG;
-            fromLabelView.UserInteractionEnabled = true;
             headerView.AddSubview (fromLabelView);
 
             yOffset += 20;
@@ -275,8 +275,7 @@ namespace NachoClient.iOS
             headerView.AddSubview (reminderLabelView);
 
             // Chili image
-            var chiliImageView = new UIImageView (new RectangleF (View.Frame.Width - 20 - 15, 14, 20, 20));
-            chiliImageView.Image = UIImage.FromBundle ("icn-red-chili-small");
+            var chiliImageView = new UIImageView (new RectangleF (fromLabelView.Frame.Right, 14, 20, 20));
             chiliImageView.Tag = (int)TagType.USER_CHILI_TAG;
             headerView.AddSubview (chiliImageView);
 
@@ -421,19 +420,11 @@ namespace NachoClient.iOS
 
             var separator1View = View.ViewWithTag ((int)TagType.SEPARATOR1_TAG);
             separator1View.Frame = new RectangleF (0, compactSeparatorYOffset, headerView.Frame.Width, 1);
+           
+            // Chili image view
+            ConfigureChili (message);
 
-            var chiliImageView = View.ViewWithTag ((int)TagType.USER_CHILI_TAG) as UIImageView;
-            float chiliX;
-            if (message.isHot ()) {
-                chiliImageView.Hidden = false;
-                chiliX = chiliImageView.Frame.X;
-            } else {
-                chiliImageView.Hidden = true;
-                chiliX = View.Frame.Width;
-            }
-                
             var fromLabelView = View.ViewWithTag ((int)TagType.FROM_TAG) as UILabel;
-            ViewFramer.Create (fromLabelView).Width (chiliX - 10 - 16 - 65);
             fromLabelView.Text = Pretty.SenderString (message.From);
             fromLabelView.Font = (message.IsRead ? A.Font_AvenirNextDemiBold17 : A.Font_AvenirNextRegular17);
 
@@ -442,6 +433,16 @@ namespace NachoClient.iOS
             bodyView.Configure (message);
 
             LayoutView ();
+        }
+
+        protected void ConfigureChili (McEmailMessage message)
+        {
+            var chiliImageView = View.ViewWithTag ((int)TagType.USER_CHILI_TAG) as UIImageView;
+            var chiliImageIcon = (message.isHot () ? "email-hot" : "email-not-hot");
+            using (var image = UIImage.FromBundle (chiliImageIcon)) {
+                chiliImageView.Image = image;
+            }
+            chiliImageView.Hidden = false;
         }
 
         protected override void Cleanup ()
@@ -753,7 +754,14 @@ namespace NachoClient.iOS
             var gesture = sender as UIGestureRecognizer;
             if (null != gesture) {
                 PointF touch = gesture.LocationInView (headerView);
-                if (touch.Y <= separator1YOffset) {
+                // In the chili zone?
+                if ((touch.X > View.Frame.Width - 50) && (touch.Y < 50)) {
+                    var message = thread.SingleMessageSpecialCase ();
+                    if (null != message) {
+                        NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
+                        ConfigureChili (message);
+                    }
+                } else if (touch.Y <= separator1YOffset) {
                     expandedHeader = !expandedHeader;
                     LayoutView (true);
                 }
