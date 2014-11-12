@@ -923,7 +923,7 @@ namespace NachoCore.ActiveSync
                     }
                     var xmlName = xmlServer.ElementAnyNs (Xml.Autodisco.Name);
                     if (null != xmlName) {
-                        Log.Warn (Log.LOG_AS, "ProcessXmlSettings: missing Name: {0}", xmlServer.Value);
+                        Log.Warn (Log.LOG_AS, "ProcessXmlSettings: missing Name: {0}", xmlServer.ToString ());
                         // We should have gotten our server info from Url.
                     }
                     var xmlServerData = xmlServer.ElementAnyNs (Xml.Autodisco.ServerData);

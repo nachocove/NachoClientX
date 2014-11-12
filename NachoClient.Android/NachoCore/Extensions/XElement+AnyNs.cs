@@ -17,8 +17,7 @@ namespace NachoCore.Utils
 
         public static XElement ElementAnyNs (this XElement elem, string name)
         {
-            var elems = ElementsAnyNs (elem, name);
-            return (elems.Any ()) ? elems.First () : null;
+            return ElementsAnyNs (elem, name).FirstOrDefault ();
         }
     }
 }
