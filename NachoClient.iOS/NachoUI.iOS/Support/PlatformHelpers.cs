@@ -146,6 +146,10 @@ namespace NachoClient
 
         public static string DownloadAttachment (McAttachment attachment)
         {
+            if (McAbstrFileDesc.FilePresenceEnum.Error == attachment.FilePresence) {
+                // Clear the error code so the download will be attempted again.
+                attachment.DeleteFile ();
+            }
             if (McAbstrFileDesc.FilePresenceEnum.None == attachment.FilePresence) {
                 return BackEnd.Instance.DnldAttCmd (attachment.AccountId, attachment.Id, true);
             } else if (McAbstrFileDesc.FilePresenceEnum.Partial == attachment.FilePresence) {

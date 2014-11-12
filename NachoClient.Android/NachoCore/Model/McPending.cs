@@ -492,6 +492,74 @@ namespace NachoCore.Model
             ResolveAsCancelled (true);
         }
 
+        private void EmailBodyError (int accountId, string serverId)
+        {
+            var email = McEmailMessage.QueryByServerId<McEmailMessage> (accountId, serverId);
+            if (null == email) {
+                Log.Error (Log.LOG_AS, "ResolveAsHardFail: can't find McEmailMessage with ServerId {0}", serverId);
+                return;
+            }
+            McBody body = null;
+            if (0 != email.BodyId) {
+                body = McBody.QueryById<McBody> (email.BodyId);
+                if (null == body) {
+                    Log.Error (Log.LOG_AS, "ResolveAsHardFail: BodyId {0} has no body", email.BodyId);
+                }
+            }
+            if (null == body) {
+                body = McBody.InsertError (accountId);
+                email.BodyId = body.Id;
+                email.Update ();
+            } else {
+                body.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Error);
+                body.Update ();
+                // We are trying to track down why so many message bodies are having download failures.
+                // Use an error message to make this situation more visible.  Remove this error once
+                // the problem has been solved.
+                Log.Error (Log.LOG_AS, "Pending:ResolveAsHardFail: E-mail ({0} {1}) body download failed: {2} {3}",
+                    serverId, email.Subject, ResultSubKind.ToString (), ResultWhy.ToString ());
+            }
+        }
+
+        private void EmailBodyClear (int accountId, string serverId)
+        {
+            var email = McEmailMessage.QueryByServerId<McEmailMessage> (accountId, serverId);
+            if (null == email) {
+                Log.Error (Log.LOG_AS, "ResolveAsHardFail: can't find McEmailMessage with ServerId {0}", serverId);
+                return;
+            }
+            if (0 == email.BodyId) {
+                return;
+            }
+            McBody body = McBody.QueryById<McBody> (email.BodyId);
+            if (null == body) {
+                Log.Error (Log.LOG_AS, "ResolveAsHardFail: BodyId {0} has no body", email.BodyId);
+                return;
+            }
+            body.DeleteFile (); // Sets FilePresence to None and Updates the item
+        }
+
+        private void AttachmentError (int attachmentId)
+        {
+            var attachment = McAttachment.QueryById<McAttachment> (attachmentId);
+            if (null == attachment) {
+                Log.Error (Log.LOG_AS, "ResolveAsHardFail: Attachment {0} does not exist", attachmentId);
+                return;
+            }
+            attachment.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Error);
+            attachment.Update ();
+        }
+
+        private void AttachmentClear (int attachmentId)
+        {
+            var attachment = McAttachment.QueryById<McAttachment> (attachmentId);
+            if (null == attachment) {
+                Log.Error(Log.LOG_AS,"ResolveAsHardFail: Attachment {0} does not exist", attachmentId);
+                return;
+            }
+            attachment.DeleteFile (); // Sets FilePresence to None and Updates the item
+        }
+
         public void ResolveAsHardFail (ProtoControl control, NcResult result)
         {
             // This is the designated ResolveAsHardFail.
@@ -504,42 +572,24 @@ namespace NachoCore.Model
             State = StateEnum.Failed;
             NcModel.Instance.RunInTransaction (() => {
                 Update ();
-                // You're not human if the code below doesn't make you want to throw up.
                 if (McPending.Operations.EmailBodyDownload == Operation) {
-                    var email = McEmailMessage.QueryByServerId<McEmailMessage> (AccountId, ServerId);
-                    if (null == email) {
-                        Log.Error (Log.LOG_AS, "ResolveAsHardFail: can't find McEmailMessage with ServerId {0}", ServerId);
+                    if (NcResult.WhyEnum.InterruptedByAppExit == ResultWhy) {
+                        EmailBodyClear (AccountId, ServerId);
                     } else {
-                        McBody body = null;
-                        if (0 == email.BodyId) {
-                            body = McBody.InsertError (AccountId);
-                        } else {
-                            body = McBody.QueryById<McBody> (email.BodyId);
-                            if (null == body) {
-                                Log.Error (Log.LOG_AS, "ResolveAsHardFail: BodyId {0} has no body", email.BodyId);
-                                body = McBody.InsertError (AccountId);
-                            } else {
-                                body.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Error);
-                                body.Update ();
-                            }
-                        }
-                        email.BodyId = body.Id;
-                        email.Update ();
+                        EmailBodyError (AccountId, ServerId);
                     }
                 } else if (McPending.Operations.AttachmentDownload == Operation) {
-                    var att = McAttachment.QueryById<McAttachment> (AttachmentId);
-                    if (null == att) {
-                        Log.Error (Log.LOG_AS, "ResolveAsHardFail: AttachmentId {0} finds no attachment", AttachmentId);
+                    if (NcResult.WhyEnum.InterruptedByAppExit == ResultWhy) {
+                        AttachmentClear (AttachmentId);
                     } else {
-                        att.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Error);
-                        att.Update ();
+                        AttachmentError (AttachmentId);
                     }
                 }
                 // TODO: Status-ind for successors as well.
                 UnblockSuccessors (StateEnum.Failed);
             });
             control.StatusInd (result, new [] { Token });
-            Log.Info (Log.LOG_SYNC, "Pending:ResolveAsHardFail:{0}:{1}", Id, Token);
+            Log.Info (Log.LOG_SYNC, "Pending:ResolveAsHardFail:{0}:{1} Reason:{2}:{3}", Id, Token, ResultSubKind.ToString (), ResultWhy.ToString ());
         }
 
         private NcResult.SubKindEnum DefaultErrorSubKind ()
@@ -762,7 +812,7 @@ namespace NachoCore.Model
                 .Where (rec =>
                     rec.AccountId == accountId &&
             rec.State == StateEnum.Dispatched).All (y => {
-                y.ResolveAsDeferredForce (control);
+                y.ResolveAsDeferred (control, DateTime.UtcNow, NcResult.WhyEnum.InterruptedByAppExit);
                 return true;
             });
         }
