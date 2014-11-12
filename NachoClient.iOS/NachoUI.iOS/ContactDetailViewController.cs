@@ -322,10 +322,10 @@ namespace NachoClient.iOS
             segmentedViewHolder.AddSubview (segmentedControl);
 
             //CONTACT INFO
-            UIScrollView contactInfoView = new UIScrollView (new RectangleF (PADDING, segmentedControl.Frame.Bottom + 5, segmentedViewHolder.Frame.Width - (PADDING * 2), View.Frame.Height - segmentedViewHolder.Frame.Top - 80 - 64));
-            contactInfoView.BackgroundColor = UIColor.White;
-            contactInfoView.Tag = CONTACT_INFO_VIEW_TAG;
-            segmentedViewHolder.AddSubview (contactInfoView);
+            UIScrollView contactInfoScrollView = new UIScrollView (new RectangleF (PADDING, segmentedControl.Frame.Bottom + 5, segmentedViewHolder.Frame.Width - (PADDING * 2), View.Frame.Height - segmentedViewHolder.Frame.Top - 80 - 64));
+            contactInfoScrollView.BackgroundColor = UIColor.White;
+            contactInfoScrollView.Tag = CONTACT_INFO_VIEW_TAG;
+            segmentedViewHolder.AddSubview (contactInfoScrollView);
 
             //INTERACTIONS
             UITableView interactionsTableView = new UITableView (new RectangleF (0, segmentedControl.Frame.Bottom + 4, segmentedViewHolder.Frame.Width, View.Frame.Height - segmentedViewHolder.Frame.Top - 80 - 64));
@@ -361,13 +361,13 @@ namespace NachoClient.iOS
         protected void LayoutView ()
         {
             UIView segmentedViewHolder = (UIView)View.ViewWithTag (SEGMENTED_VIEW_HOLDER_TAG);
-            UIScrollView contactInfoView = (UIScrollView)View.ViewWithTag (CONTACT_INFO_VIEW_TAG);
+            UIScrollView contactInfoScrollView = (UIScrollView)View.ViewWithTag (CONTACT_INFO_VIEW_TAG);
             UITableView interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
             UIView notesView = (UIView)View.ViewWithTag (NOTES_VIEW_TAG);
 
             switch (selectedSegment) {
             case 0:
-                SetViewHeight (segmentedViewHolder, VERTICAL_PADDING + SEGMENTED_CONTROL_HEIGHT + contactInfoView.Frame.Height + VERTICAL_PADDING / 2);
+                SetViewHeight (segmentedViewHolder, VERTICAL_PADDING + SEGMENTED_CONTROL_HEIGHT + contactInfoScrollView.Frame.Height + VERTICAL_PADDING / 2);
                 break;
             case 1:
                 SetViewHeight (segmentedViewHolder, VERTICAL_PADDING + SEGMENTED_CONTROL_HEIGHT + interactionsTableView.Frame.Height + VERTICAL_PADDING / 2);
@@ -433,25 +433,25 @@ namespace NachoClient.iOS
             }
 
             //CONFIGURE CONTACT INFO VIEW
-            UIScrollView contactInfoView = (UIScrollView)View.ViewWithTag (CONTACT_INFO_VIEW_TAG);
+            UIScrollView contactInfoScrollView = (UIScrollView)View.ViewWithTag (CONTACT_INFO_VIEW_TAG);
 
             float contactInfoHeight = 13;
 
             remainingContactDetails = contact.EmailAddresses.Count () + contact.PhoneNumbers.Count ();
 
             if (contact.EmailAddresses.Count > 0) {
-                contactInfoHeight += AddEmailAddress (contact.EmailAddresses.FirstOrDefault (), contactInfoHeight, contactInfoView, true);
+                contactInfoHeight += AddEmailAddress (contact.EmailAddresses.FirstOrDefault (), contactInfoHeight, contactInfoScrollView, true);
             }
 
             if (contact.PhoneNumbers.Count > 0) {
-                contactInfoHeight += AddPhoneNumber (contact.PhoneNumbers.FirstOrDefault (), contactInfoHeight, contactInfoView, true);
+                contactInfoHeight += AddPhoneNumber (contact.PhoneNumbers.FirstOrDefault (), contactInfoHeight, contactInfoScrollView, true);
             }
 
             if (contact.EmailAddresses.Count > 1) {
                 bool skippedFirst = false;
                 foreach (var emailAddressAttributes in contact.EmailAddresses) {
                     if (skippedFirst) {
-                        contactInfoHeight += AddEmailAddress (emailAddressAttributes, contactInfoHeight, contactInfoView, false);
+                        contactInfoHeight += AddEmailAddress (emailAddressAttributes, contactInfoHeight, contactInfoScrollView, false);
                     }
                     skippedFirst = true;
                 }
@@ -461,16 +461,16 @@ namespace NachoClient.iOS
                 bool skippedFirst = false;
                 foreach (var phoneNumberAttribute in contact.PhoneNumbers) {
                     if (skippedFirst) {
-                        contactInfoHeight += AddPhoneNumber (phoneNumberAttribute, contactInfoHeight, contactInfoView, false);
+                        contactInfoHeight += AddPhoneNumber (phoneNumberAttribute, contactInfoHeight, contactInfoScrollView, false);
                     }
                     skippedFirst = true;
                 }
             }
 
-            if (contactInfoHeight < contactInfoView.Frame.Height) {
-                SetViewHeight (contactInfoView, contactInfoHeight);
+            if (contactInfoHeight < contactInfoScrollView.Frame.Height) {
+                SetViewHeight (contactInfoScrollView, contactInfoHeight);
             }
-            contactInfoView.ContentSize = new SizeF(contactInfoView.Frame.Width, contactInfoHeight);
+            contactInfoScrollView.ContentSize = new SizeF(contactInfoScrollView.Frame.Width, contactInfoHeight);
 
             //CONFIGURE INTERACTIONS VIEW
             UITableView interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
@@ -503,26 +503,26 @@ namespace NachoClient.iOS
 
         protected void SegmentedControlHandler (Object sender, EventArgs e)
         {
-            UIView contactInfoView = (UIView)View.ViewWithTag (CONTACT_INFO_VIEW_TAG);
+            UIView contactInfoScrollView = (UIView)View.ViewWithTag (CONTACT_INFO_VIEW_TAG);
             UITableView interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
             UIView notesView = (UIView)View.ViewWithTag (NOTES_VIEW_TAG);
 
             selectedSegment = (sender as UISegmentedControl).SelectedSegment;
             switch (selectedSegment) {
             case 0:
-                contactInfoView.Hidden = false;
+                contactInfoScrollView.Hidden = false;
                 interactionsTableView.Hidden = true;
                 notesView.Hidden = true;
                 break;
             case 1:
-                contactInfoView.Hidden = true;
+                contactInfoScrollView.Hidden = true;
                 interactionsTableView.Hidden = false;
                 notesView.Hidden = true;
                 RefreshData ();
                 break;
             case 2:
                 interactionsTableView.Hidden = true;
-                contactInfoView.Hidden = true;
+                contactInfoScrollView.Hidden = true;
                 notesView.Hidden = false;
                 break;
             default:
@@ -588,14 +588,14 @@ namespace NachoClient.iOS
             TouchedCallButton (contact.GetPhoneNumber ());
         }
 
-        protected float AddEmailAddress (McContactEmailAddressAttribute email, float yOffset, UIView contactInfoView, bool isFirstEmail) /*TODO Remove isFirstEmail once we're settings defaults */
+        protected float AddEmailAddress (McContactEmailAddressAttribute email, float yOffset, UIView contactInfoScrollView, bool isFirstEmail) /*TODO Remove isFirstEmail once we're settings defaults */
         {
             remainingContactDetails--;
             UIView segmentedControllerHolderView = (UIView)View.ViewWithTag (SEGMENTED_VIEW_HOLDER_TAG);
 
-            var emailView = new UIView (new RectangleF (0, yOffset, contactInfoView.Frame.Width, 40));
+            var emailView = new UIView (new RectangleF (0, yOffset, contactInfoScrollView.Frame.Width, 40));
             emailView.Tag = variableTransientTag;
-            contactInfoView.AddSubview (emailView);
+            contactInfoScrollView.AddSubview (emailView);
 
             UIImageView emailIcon = new UIImageView (UIImage.FromBundle ("contacts-icn-email"));
             emailIcon.Frame = new RectangleF (0, 0, emailIcon.Frame.Width, emailIcon.Frame.Height);
@@ -640,22 +640,22 @@ namespace NachoClient.iOS
             emailView.AddSubview (emailTextView);
 
             if (remainingContactDetails > 0) {
-                Util.AddHorizontalLine (emailLabel.Frame.X, emailTextView.Frame.Bottom + 10, segmentedControllerHolderView.Frame.Width - contactInfoView.Frame.X - emailLabel.Frame.X, A.Color_NachoBorderGray, emailView);
+                Util.AddHorizontalLine (emailLabel.Frame.X, emailTextView.Frame.Bottom + 10, segmentedControllerHolderView.Frame.Width - contactInfoScrollView.Frame.X - emailLabel.Frame.X, A.Color_NachoBorderGray, emailView);
                 return emailTextView.Frame.Bottom + 10 + PADDING;
             } else {
                 return emailTextView.Frame.Bottom + 10;
             }
         }
 
-        protected float AddPhoneNumber (McContactStringAttribute phone, float yOffset, UIView contactInfoView, bool isFirstPhone) /*TODO Remove isFirstEmail once we're settings defaults */
+        protected float AddPhoneNumber (McContactStringAttribute phone, float yOffset, UIView contactInfoScrollView, bool isFirstPhone) /*TODO Remove isFirstEmail once we're settings defaults */
         {
             remainingContactDetails--;
             UIView segmentedControllerHolderView = (UIView)View.ViewWithTag (SEGMENTED_VIEW_HOLDER_TAG);
 
-            var phoneView = new UIView (new RectangleF (0, yOffset, contactInfoView.Frame.Width, 40));
+            var phoneView = new UIView (new RectangleF (0, yOffset, contactInfoScrollView.Frame.Width, 40));
             phoneView.Tag = variableTransientTag;
             phoneView.UserInteractionEnabled = true;
-            contactInfoView.AddSubview (phoneView);
+            contactInfoScrollView.AddSubview (phoneView);
 
             UIImageView phoneIcon = new UIImageView (UIImage.FromBundle ("contacts-icn-phone"));
             phoneIcon.Frame = new RectangleF (0, 0, phoneIcon.Frame.Width, phoneIcon.Frame.Height);
@@ -710,7 +710,7 @@ namespace NachoClient.iOS
             phoneView.AddSubview (phoneNumberTextView);
 
             if (remainingContactDetails > 0) {
-                Util.AddHorizontalLine (phoneLabel.Frame.X, phoneNumberTextView.Frame.Bottom + 10, segmentedControllerHolderView.Frame.Width - contactInfoView.Frame.X - phoneLabel.Frame.X, A.Color_NachoBorderGray, phoneView);
+                Util.AddHorizontalLine (phoneLabel.Frame.X, phoneNumberTextView.Frame.Bottom + 10, segmentedControllerHolderView.Frame.Width - contactInfoScrollView.Frame.X - phoneLabel.Frame.X, A.Color_NachoBorderGray, phoneView);
                 return phoneNumberTextView.Frame.Bottom + 10 + PADDING;
             } else {
                 return phoneNumberTextView.Frame.Bottom + 10;
