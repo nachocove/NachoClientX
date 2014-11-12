@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
+using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
@@ -15,7 +16,16 @@ namespace NachoClient.iOS
         {
             // if you want to use a different Application Delegate class from "AppDelegate"
             // you can specify it here.
-            UIApplication.Main (args, null, "AppDelegate");
+            try {
+                UIApplication.Main (args, null, "AppDelegate");
+            } catch (Exception ex) {
+                // Look for XAMMITs. We can't recover here, but we can know via telemetry rather than crashdump.
+                if (ex is System.IO.IOException && ex.Message.Contains ("Tls.RecordProtocol.BeginSendRecord")) {
+                    Log.Error (Log.LOG_SYS, "XAMMIT AggregateException: IOException with Tls.RecordProtocol.BeginSendRecord");
+                } else {
+                    throw;
+                }
+            }
         }
     }
 }
