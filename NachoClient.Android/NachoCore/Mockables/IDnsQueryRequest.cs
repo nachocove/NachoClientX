@@ -11,6 +11,7 @@ namespace NachoCore.Utils
 {
     public interface IDnsQueryRequest
     {
+        int Timeout { get; set; }
         UdpClient UdpClient { get; }
         Task<DnsQueryResponse> ResolveAsync (string host, NsType dnsType, NsClass dnsClass, ProtocolType pType);
     }

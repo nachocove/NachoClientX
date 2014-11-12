@@ -38,7 +38,8 @@ namespace NachoCore.ActiveSync
         {
             DnsQueryResponse response;
             Request = (IDnsQueryRequest)Activator.CreateInstance (DnsQueryRequestType);
-            TimeoutTimer = new NcTimer ("AsDnsOperation", TimerCallback, null, Convert.ToInt32 (Timeout.TotalSeconds),
+            Request.Timeout = (int)Timeout.TotalMilliseconds;
+            TimeoutTimer = new NcTimer ("AsDnsOperation", TimerCallback, null, (int)Timeout.TotalMilliseconds,
                 System.Threading.Timeout.Infinite);
             try {
                 try {

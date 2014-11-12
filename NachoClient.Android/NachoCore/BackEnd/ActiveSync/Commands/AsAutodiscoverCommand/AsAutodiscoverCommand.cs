@@ -480,11 +480,13 @@ namespace NachoCore.ActiveSync
             AddAndStartRobot (StepRobot.Steps.S2, Domain);
             AddAndStartRobot (StepRobot.Steps.S3, Domain);
             AddAndStartRobot (StepRobot.Steps.S4, Domain);
+            AddAndStartRobot (StepRobot.Steps.S5, Domain);
             if (BaseDomain != Domain) {
                 AddAndStartRobot (StepRobot.Steps.S1, BaseDomain);
                 AddAndStartRobot (StepRobot.Steps.S2, BaseDomain);
                 AddAndStartRobot (StepRobot.Steps.S3, BaseDomain);
                 AddAndStartRobot (StepRobot.Steps.S4, BaseDomain);
+                AddAndStartRobot (StepRobot.Steps.S5, BaseDomain);
             }
         }
 

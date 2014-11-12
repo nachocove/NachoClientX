@@ -32,7 +32,8 @@ namespace NachoCore.ActiveSync
             {
                 PostWait = (St.Last + 1),
                 GetWait,
-                DnsWait,
+                SrvDnsWait,
+                MxDnsWait,
                 CertWait,
                 OkWait,
                 ReDirWait,
@@ -59,6 +60,8 @@ namespace NachoCore.ActiveSync
                 S2,
                 S3,
                 S4,
+                // S5 - isn't in the MSFT doc. It is us looking at MX records to check for Google Apps.
+                S5,
             };
 
             public Steps Step;
@@ -109,11 +112,15 @@ namespace NachoCore.ActiveSync
                 switch (step) {
                 case Steps.S1:
                 case Steps.S2:
-                case Steps.S4: // After DNS, will use HTTP/POST on resolved host.
+                    // After DNS, will use HTTP/POST on resolved host.
+                case Steps.S4:
                     MethodToUse = HttpMethod.Post;
                     break;
                 case Steps.S3:
                     MethodToUse = HttpMethod.Get;
+                    break;
+                case Steps.S5:
+                    // After DNS, if there is a match, then there is no HTTP/S access to follow.
                     break;
                 default:
                     throw new Exception ("Invalid step value.");
@@ -126,7 +133,8 @@ namespace NachoCore.ActiveSync
                     /* NOTE: There are three start states:
                      * PostWait - used for S1/S2,
                      * GetWait - used for S3,
-                     * DnsWait - used for S4.
+                     * SrvDnsWait - used for S4.
+                     * MxDnsWait - used for S5.
                      */
                     Name = "SR",
                     LocalEventType = typeof(RobotEvt),
@@ -240,7 +248,7 @@ namespace NachoCore.ActiveSync
                             }
                         },
 
-                        new Node {State = (uint)RobotLst.DnsWait,
+                        new Node {State = (uint)RobotLst.SrvDnsWait,
                             Invalid = new [] {(uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
                                 (uint)AsProtoControl.AsEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY,
                                 (uint)RobotEvt.E.ReDir, (uint)RobotEvt.E.NullCode
@@ -249,7 +257,7 @@ namespace NachoCore.ActiveSync
                                 new Trans {
                                     Event = (uint)SmEvt.E.Launch,
                                     Act = DoRobotDns,
-                                    State = (uint)RobotLst.DnsWait
+                                    State = (uint)RobotLst.SrvDnsWait
                                 },
                                 new Trans {
                                     Event = (uint)SmEvt.E.Success,
@@ -259,7 +267,37 @@ namespace NachoCore.ActiveSync
                                 new Trans {
                                     Event = (uint)SmEvt.E.TempFail,
                                     Act = DoRobotDns,
-                                    State = (uint)RobotLst.DnsWait
+                                    State = (uint)RobotLst.SrvDnsWait
+                                },
+                                new Trans {
+                                    Event = (uint)SmEvt.E.HardFail,
+                                    Act = DoRobotHardFail,
+                                    State = (uint)St.Stop
+                                },
+                                new Trans { Event = (uint)RobotEvt.E.Cancel, Act = DoCancel, State = (uint)St.Stop },
+                            }
+                        },
+
+                        new Node {State = (uint)RobotLst.MxDnsWait,
+                            Invalid = new [] {(uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
+                                (uint)AsProtoControl.AsEvt.E.AuthFail, (uint)SharedEvt.E.ReStart, (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY,
+                                (uint)RobotEvt.E.ReDir, (uint)RobotEvt.E.NullCode
+                            },
+                            On = new[] {
+                                new Trans {
+                                    Event = (uint)SmEvt.E.Launch,
+                                    Act = DoRobotDns,
+                                    State = (uint)RobotLst.MxDnsWait
+                                },
+                                new Trans {
+                                    Event = (uint)SmEvt.E.Success,
+                                    Act = DoRobotMxDnsSuccess,
+                                    State = (uint)St.Stop
+                                },
+                                new Trans {
+                                    Event = (uint)SmEvt.E.TempFail,
+                                    Act = DoRobotDns,
+                                    State = (uint)RobotLst.MxDnsWait
                                 },
                                 new Trans {
                                     Event = (uint)SmEvt.E.HardFail,
@@ -401,7 +439,10 @@ namespace NachoCore.ActiveSync
                     StepSm.Start ((uint)RobotLst.GetWait);
                     break;
                 case Steps.S4:
-                    StepSm.Start ((uint)RobotLst.DnsWait);
+                    StepSm.Start ((uint)RobotLst.SrvDnsWait);
+                    break;
+                case Steps.S5:
+                    StepSm.Start ((uint)RobotLst.MxDnsWait);
                     break;
                 default:
                     throw new Exception ("Unknown Step value.");
@@ -483,6 +524,7 @@ namespace NachoCore.ActiveSync
                 if (0 < RetriesLeft--) {
                     DnsOp = new AsDnsOperation (this) {
                         DnsQueryRequestType = DnsQueryRequestType,
+                        Timeout = new TimeSpan(0, 0, 300),
                     };
                     DnsOp.Execute (StepSm);
                 } else {
@@ -596,6 +638,12 @@ namespace NachoCore.ActiveSync
             private void DoRobotPostSuccess ()
             {
                 Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: POST succeeded: {1}.", Step, LastUri);
+                DoRobotSuccess ();
+            }
+
+            private void DoRobotMxDnsSuccess ()
+            {
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: MX DNS succeeded: {1}.", Step, LastUri);
                 DoRobotSuccess ();
             }
 
@@ -947,12 +995,28 @@ namespace NachoCore.ActiveSync
 
             public string DnsHost (AsDnsOperation Sender)
             {
-                return "_autodiscover._tcp." + SrDomain;
+                switch (Step) {
+                case Steps.S4:
+                    return "_autodiscover._tcp." + SrDomain;
+                case Steps.S5:
+                    return SrDomain;
+                default:
+                    NcAssert.CaseError (string.Format ("DnsHost with Step {0}", Step.ToString ()));
+                    return "_autodiscover._tcp." + SrDomain;
+                }
             }
 
             public NsType DnsType (AsDnsOperation Sender)
             {
-                return NsType.SRV;
+                switch (Step) {
+                case Steps.S4:
+                    return NsType.SRV;
+                case Steps.S5:
+                    return NsType.MX;
+                default:
+                    NcAssert.CaseError (string.Format ("DnsType with Step {0}", Step.ToString ()));
+                    return NsType.SRV;
+                }
             }
 
             public NsClass DnsClass (AsDnsOperation Sender)
@@ -967,18 +1031,41 @@ namespace NachoCore.ActiveSync
                 if (null == response) {
                     return Event.Create ((uint)SmEvt.E.HardFail, "SRPR2NULL");
                 }
-                if (RCode.NoError == response.RCode &&
-                    0 < response.AnswerRRs &&
-                    NsType.SRV == response.NsType) {
-                    var aBest = (SrvRecord)response.Answers.OrderBy (r1 => ((SrvRecord)r1).Priority).ThenByDescending (r2 => ((SrvRecord)r2).Weight).First ();
-                    var bestRecs = response.Answers.Where (r1 => aBest.Priority == ((SrvRecord)r1).Priority &&
-                                   aBest.Weight == ((SrvRecord)r1).Weight).ToArray ();
-                    var index = (1 == bestRecs.Length) ? 0 : picker.Next (bestRecs.Length - 1);
-                    var chosen = (SrvRecord)bestRecs [index];
-                    SrDomain = chosen.HostName;
-                    return Event.Create ((uint)SmEvt.E.Success, "SRPR2SUCCESS");
-                } else {
-                    return Event.Create ((uint)SmEvt.E.HardFail, "SRPR2HARD");
+                switch (Step) {
+                case Steps.S4:
+                    if (RCode.NoError == response.RCode &&
+                        0 < response.AnswerRRs &&
+                        NsType.SRV == response.NsType) {
+                        var aBest = (SrvRecord)response.Answers.OrderBy (r1 => ((SrvRecord)r1).Priority).ThenByDescending (r2 => ((SrvRecord)r2).Weight).First ();
+                        var bestRecs = response.Answers.Where (r1 => aBest.Priority == ((SrvRecord)r1).Priority &&
+                                       aBest.Weight == ((SrvRecord)r1).Weight).ToArray ();
+                        var index = (1 == bestRecs.Length) ? 0 : picker.Next (bestRecs.Length - 1);
+                        var chosen = (SrvRecord)bestRecs [index];
+                        SrDomain = chosen.HostName;
+                        return Event.Create ((uint)SmEvt.E.Success, "SRPR2SUCCESS");
+                    } else {
+                        return Event.Create ((uint)SmEvt.E.HardFail, "SRPR2HARD");
+                    }
+
+                case Steps.S5:
+                    if (RCode.NoError == response.RCode &&
+                        0 < response.AnswerRRs &&
+                        NsType.MX == response.NsType) {
+                        var aBest = (MxRecord)response.Answers.OrderBy (r1 => ((MxRecord)r1).Preference).First ();
+                        if (aBest.MailExchange.EndsWith (McServer.GMail_MX_Suffix, StringComparison.OrdinalIgnoreCase)) {
+                            SrDomain = McServer.GMail_Host;
+                            return Event.Create ((uint)SmEvt.E.Success, "SRPRMXSUCCESS");
+                        } else {
+                            return Event.Create ((uint)SmEvt.E.HardFail, "SRPRMXHARD1");
+                        }
+
+                    } else {
+                        return Event.Create ((uint)SmEvt.E.HardFail, "SRPRMXHARD2");
+                    }
+
+                default:
+                    NcAssert.CaseError (string.Format ("ProcessResponse with Step {0}", Step.ToString ()));
+                    return null;
                 }
             }
         }
