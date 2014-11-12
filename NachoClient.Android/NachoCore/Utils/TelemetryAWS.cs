@@ -12,6 +12,7 @@ using Amazon.Util;
 using Amazon.CognitoIdentity;
 using Amazon;
 
+using NachoPlatform;
 using NachoClient.Build;
 
 namespace NachoCore.Utils
@@ -21,6 +22,7 @@ namespace NachoCore.Utils
         private static bool Initialized = false;
 
         private static AmazonDynamoDBClient Client;
+        private static Table DeviceInfoTable;
         private static Table LogTable;
         private static Table SupportTable;
         private static Table CounterTable;
@@ -48,7 +50,6 @@ namespace NachoCore.Utils
                 "NO PUBLIC AUTHENTICATION",
                 RegionEndpoint.USEast1
             );
-            Console.WriteLine (">>>>>>>> Cognito Id = {0}", credentials.GetIdentityId ());
 
             // We get a different Cognito id each time it runs because unauthenticated
             // identities (that we use) are anonymous. But doing so would mean it is
@@ -74,11 +75,11 @@ namespace NachoCore.Utils
                     }
                 }
             }
-            Console.WriteLine(">>>>>>>>> ClientId = {0}", ClientId);
             #endif
 
             Client = new AmazonDynamoDBClient (credentials, config);
 
+            DeviceInfoTable = Table.LoadTable (Client, TableName ("device_info"));
             LogTable = Table.LoadTable (Client, TableName ("log"));
             SupportTable = Table.LoadTable (Client, TableName ("support"));
             CounterTable = Table.LoadTable (Client, TableName ("counter"));
@@ -100,7 +101,9 @@ namespace NachoCore.Utils
         public bool SendEvent (TelemetryEvent tEvent)
         {
             if (!Initialized) {
-                SendDeviceInfo ();
+                if (!SendDeviceInfo ()) {
+                    return false;
+                }
                 Initialized = true;
             }
 
@@ -133,7 +136,7 @@ namespace NachoCore.Utils
 
         private string TableName (string name)
         {
-            return BuildInfo.ProjectPrefix + ".telemetry." + name;
+            return BuildInfo.AwsPrefix + ".telemetry." + name;
         }
 
         private Document InitializeEvent (TelemetryEvent tEvent)
@@ -162,9 +165,19 @@ namespace NachoCore.Utils
             return true;
         }
 
-        private void SendDeviceInfo ()
+        private bool SendDeviceInfo ()
         {
+            var anEvent = new Document ();
+            anEvent ["id"] = Guid.NewGuid ().ToString ().Replace ("-", "");
+            anEvent ["client"] = GetUserName ();
+            anEvent ["timestamp"] = DateTime.UtcNow.Ticks;
+            anEvent ["os_type"] = Device.Instance.OsType ();
+            anEvent ["os_version"] = Device.Instance.OsVersion ();
+            anEvent ["device_model"] = Device.Instance.Model ();
+            anEvent ["build_version"] = BuildInfo.Version;
+            anEvent ["build_number"] = BuildInfo.BuildNumber;
 
+            return AwsSendEvent (DeviceInfoTable, anEvent);
         }
 
         private Document LogEvent (TelemetryEvent tEvent)
@@ -215,10 +228,10 @@ namespace NachoCore.Utils
             var anEvent = InitializeEvent (tEvent);
             anEvent ["capture_name"] = tEvent.CaptureName;
             anEvent ["count"] = tEvent.Count;
-            anEvent ["average"] = tEvent.Average;
             anEvent ["min"] = tEvent.Min;
             anEvent ["max"] = tEvent.Max;
-            anEvent ["stddev"] = tEvent.StdDev;
+            anEvent ["sum"] = tEvent.Sum;
+            anEvent ["sum2"] = tEvent.Sum2;
             return anEvent;
         }
 
