@@ -42,6 +42,8 @@ namespace NachoClient.iOS
         protected MessageToolbar messageToolbar;
         protected UITapGestureRecognizer singleTapGesture;
         protected UITapGestureRecognizer.Token singleTapGestureHandlerToken;
+        protected UITapGestureRecognizer doubleTapGesture;
+        protected UITapGestureRecognizer.Token doubleTapGestureHandlerToken;
 
         // UI elements for the navigation bar
         protected UIBarButtonItem moveButton;
@@ -55,7 +57,7 @@ namespace NachoClient.iOS
         #if DEBUG_UI
         const int VIEW_INSET = 4;
         const int ATTACHMENTVIEW_INSET = 10;
-#else
+        #else
         const int VIEW_INSET = 2;
         const int ATTACHMENTVIEW_INSET = 15;
         #endif
@@ -93,6 +95,20 @@ namespace NachoClient.iOS
         protected override void CreateViewHierarchy ()
         {
             ViewFramer.Create (scrollView).Height (View.Frame.Height - 44 - 64);
+
+            // Turn on zooming
+            scrollView.MinimumZoomScale = 0.2f;
+            scrollView.MaximumZoomScale = 5.0f;
+            scrollView.ZoomingEnded += ScrollViewZoomingEnded;
+            scrollView.ViewForZoomingInScrollView = ViewForZooming;
+            doubleTapGesture = new UITapGestureRecognizer ();
+            doubleTapGesture.NumberOfTapsRequired = 2;
+            doubleTapGesture.NumberOfTouchesRequired = 1;
+            doubleTapGesture.ShouldRecognizeSimultaneously = ((UIGestureRecognizer gestureRecognizer, UIGestureRecognizer otherGestureRecognizer) => {
+                return true;
+            });
+            doubleTapGestureHandlerToken = doubleTapGesture.AddTarget (ZoomingDoubleTapGesture);
+            scrollView.AddGestureRecognizer (doubleTapGesture);
 
             // Toolbar controls
 
@@ -430,11 +446,18 @@ namespace NachoClient.iOS
 
         protected override void Cleanup ()
         {
-            // Remove all callbacks and handlers.
+            // Clean up gesture recognizers.
             singleTapGesture.RemoveTarget (singleTapGestureHandlerToken);
             singleTapGesture.ShouldRecognizeSimultaneously = null;
             headerView.RemoveGestureRecognizer (singleTapGesture);
+            doubleTapGesture.RemoveTarget (doubleTapGestureHandlerToken);
+            doubleTapGesture.ShouldRecognizeSimultaneously = null;
+            scrollView.RemoveGestureRecognizer (doubleTapGesture);
+
+            // Remove all callbacks and handlegs.
             scrollView.Scrolled -= ScrollViewScrolled;
+            scrollView.ZoomingEnded -= ScrollViewZoomingEnded;
+            scrollView.ViewForZoomingInScrollView = null;
             moveButton.Clicked -= MoveButtonClicked;
             blockMenuButton.Clicked -= BlockMenuButtonClicked;
             deferButton.Clicked -= DeferButtonClicked;
@@ -478,7 +501,13 @@ namespace NachoClient.iOS
 
             ViewFramer.Create (attachmentListView).Y (separator1YOffset + 1.0f);
 
+            bool bodyNeedsLayout = bodyView.Frame.Y > separator2YOffset + 1;
             ViewFramer.Create (bodyView).Y (separator2YOffset + 1);
+            if (bodyNeedsLayout) {
+                // The body view was moved up on the screen, making more of it visible.
+                // Make sure that newly visible part is showing the right contents.
+                LayoutBody ();
+            }
             scrollView.ContentSize = new SizeF (Math.Max (headerView.Frame.Width, bodyView.Frame.Width) + 2 * VIEW_INSET, bodyView.Frame.Bottom);
 
             // MarkAsRead() will change the message from unread to read only if the body has been
@@ -490,6 +519,12 @@ namespace NachoClient.iOS
             #if (DEBUG_UI)
             ViewHelper.DumpViews<TagType> (scrollView);
             #endif
+        }
+
+        protected void LayoutBody ()
+        {
+            // Force the BodyView to redo its layout.
+            ScrollViewScrolled (null, null);
         }
 
         public override void ViewWillLayoutSubviews ()
@@ -785,6 +820,56 @@ namespace NachoClient.iOS
                 ConfigureAttachments ();
                 return;
             }
+        }
+
+        private void ScrollViewZoomingEnded (object sender, EventArgs e)
+        {
+            // The body view needs to redo its layout to account for the new
+            // apparent screen size.
+            LayoutBody ();
+            // iOS messes up the scroll view's ContentSize when zooming.
+            scrollView.ContentSize = new SizeF (Math.Max (headerView.Frame.Width, bodyView.Frame.Width) + 2 * VIEW_INSET, bodyView.Frame.Bottom);
+        }
+
+        private UIView ViewForZooming (UIScrollView sv)
+        {
+            // The body view zooms.  The message header doesn't.
+            return bodyView;
+        }
+
+        private void ZoomingDoubleTapGesture (NSObject sender)
+        {
+            var recognizer = (UIGestureRecognizer)sender;
+            // Cycle between 2x, 1x, and small enough to fit the width of the screen.
+            // If 1x is small enough to fit on the screen, then only cycle between
+            // 2x and 1x.
+            float currentZoom = scrollView.ZoomScale;
+            float zoomScaleToFit = (scrollView.Frame.Width - 2 * VIEW_INSET) / (scrollView.ContentSize.Width / currentZoom);
+            // If the zoom scale necessary to fit on the screen is bigger than 1x
+            // or close to 1x, ignore it.
+            if (0.95f < zoomScaleToFit) {
+                zoomScaleToFit = 1.0f;
+            }
+            if (zoomScaleToFit < scrollView.MinimumZoomScale) {
+                zoomScaleToFit = scrollView.MinimumZoomScale;
+            }
+            float targetZoomScale;
+            if (1.0f > zoomScaleToFit && Math.Sqrt (zoomScaleToFit) < currentZoom && currentZoom < Math.Sqrt (2)) {
+                targetZoomScale = zoomScaleToFit;
+            } else if (currentZoom < Math.Sqrt (2)) {
+                targetZoomScale = 2.0f;
+            } else {
+                targetZoomScale = 1.0f;
+            }
+            // Attempt to center the resulting view on the location where the user tapped.
+            var touchPoint = recognizer.LocationInView (bodyView);
+            var zoomToRect = new RectangleF (
+                touchPoint.X - ((scrollView.Frame.Width / targetZoomScale) / 2.0f),
+                touchPoint.Y - ((scrollView.Frame.Height / targetZoomScale) / 2.0f),
+                scrollView.Frame.Width / targetZoomScale,
+                scrollView.Frame.Height / targetZoomScale);
+            scrollView.ZoomToRect(zoomToRect, true);
+            LayoutBody ();
         }
             
         // IUcAddressBlockDelegate implementation

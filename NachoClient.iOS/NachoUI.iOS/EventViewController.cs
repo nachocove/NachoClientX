@@ -130,6 +130,10 @@ namespace NachoClient.iOS
             scrollView.BackgroundColor = UIColor.White;
             scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
             scrollView.Scrolled += ScrollViewScrolled;
+            scrollView.MinimumZoomScale = 0.2f;
+            scrollView.MaximumZoomScale = 5.0f;
+            scrollView.ZoomingEnded += ScrollViewZoomingEnded;
+            scrollView.ViewForZoomingInScrollView = ViewForZooming;
 
             contentView.BackgroundColor = UIColor.White;
 
@@ -567,6 +571,8 @@ namespace NachoClient.iOS
 
             // Remove event handlers
             scrollView.Scrolled -= ScrollViewScrolled;
+            scrollView.ZoomingEnded -= ScrollViewZoomingEnded;
+            scrollView.ViewForZoomingInScrollView = null;
             acceptButton.TouchUpInside -= AcceptButtonTouchUpInside;
             tentativeButton.TouchUpInside -= TentativeButtonTouchUpInside;
             declineButton.TouchUpInside -= DeclineButtonTouchUpInside;
@@ -1338,6 +1344,22 @@ namespace NachoClient.iOS
         private void ExtraAttendeesTouchUpInside (object sender, EventArgs e)
         {
             PerformSegue ("EventToEventAttendees", this);
+        }
+
+        private void ScrollViewZoomingEnded (object sender, EventArgs e)
+        {
+            // The body view needs to redo its layout to account for the new
+            // apparent screen size.
+            ScrollViewScrolled (null, null);
+            // iOS messes up the scroll view's ContentSize when zooming.
+            // Unfortunately, we have to re-layout the entire view to fix it.
+            LayoutView ();
+        }
+
+        private UIView ViewForZooming (UIScrollView sv)
+        {
+            // The description is the only thing that zooms.
+            return descriptionView;
         }
     }
 }
