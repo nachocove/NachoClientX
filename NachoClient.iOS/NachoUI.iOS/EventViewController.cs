@@ -70,6 +70,10 @@ namespace NachoClient.iOS
 
         // Helper objects
         protected bool isRecurring = false;
+        protected bool hasLocation = false;
+        protected bool hasDescription = false;
+        protected bool hasAttachments = false;
+        protected bool hasAttendees = false;
 
         // UI-related constants, or pseudo-constants
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
@@ -354,8 +358,8 @@ namespace NachoClient.iOS
             eventNotesTextView.TextColor = textColor;
             eventNotesTextView.Tag = (int)TagType.EVENT_NOTES_TEXT_VIEW_TAG;
 
-            eventNotesTextView.Started += notesEditingStarted;
-            eventNotesTextView.Changed += notesChanged;
+            eventNotesTextView.Started += NotesEditingStarted;
+            eventNotesTextView.Changed += NotesChanged;
             eventCardView.AddSubview (eventNotesTextView);
             eventCardView.Frame = new RectangleF (15, 60, contentView.Frame.Width - 30, yOffset + 20);
 
@@ -397,16 +401,6 @@ namespace NachoClient.iOS
             titleLabel.LineBreakMode = UILineBreakMode.WordWrap;
             titleLabel.SizeToFit ();
 
-            var locationLabel = View.ViewWithTag ((int)TagType.EVENT_LOCATION_DETAIL_LABEL_TAG) as UILabel;
-            if (string.IsNullOrEmpty (c.Location)) {
-                locationLabel.Text = "Not specified";
-            } else {
-                locationLabel.Text = c.Location;
-            }
-            locationLabel.Lines = 0;
-            locationLabel.LineBreakMode = UILineBreakMode.WordWrap;
-            locationLabel.SizeToFit ();
-
             var whenLabel = View.ViewWithTag ((int)TagType.EVENT_WHEN_DETAIL_LABEL_TAG) as UILabel;
             whenLabel.Text = Pretty.ExtendedDateString (e.StartTime);
 
@@ -431,12 +425,28 @@ namespace NachoClient.iOS
                 recurrenceLabel.SizeToFit ();
             }
 
+            var locationLabel = View.ViewWithTag ((int)TagType.EVENT_LOCATION_DETAIL_LABEL_TAG) as UILabel;
+            if (string.IsNullOrEmpty (c.Location)) {
+                hasLocation = false;
+                View.ViewWithTag ((int)TagType.EVENT_LOCATION_TITLE_TAG).Hidden = true;
+                locationLabel.Hidden = true;
+            } else {
+                hasLocation = true;
+                View.ViewWithTag ((int)TagType.EVENT_LOCATION_TITLE_TAG).Hidden = false;
+                locationLabel.Hidden = false;
+                locationLabel.Text = c.Location;
+                locationLabel.Lines = 0;
+                locationLabel.LineBreakMode = UILineBreakMode.WordWrap;
+                locationLabel.SizeToFit ();
+            }
+
             // Phone disabled for now.
             #if PHONE_UI
             var phoneButton = View.ViewWithTag ((int)TagType.EVENT_PHONE_DETAIL_BUTTON_TAG) as UIButton;
             phoneButton.SetTitle ("Not available", UIControlState.Normal);
             phoneButton.Enabled = false;
             #endif
+            descriptionView.Configure (c);
 
             var alertDetailLabel = View.ViewWithTag ((int)TagType.ALERT_DETAIL_TAG) as UILabel;
             alertDetailLabel.Text = Pretty.ReminderString (c.ReminderIsSet, c.Reminder);
@@ -446,11 +456,14 @@ namespace NachoClient.iOS
             attachmentView.Hidden = false;
             var attachmentDetail = View.ViewWithTag ((int)TagType.EVENT_ATTACHMENT_DETAIL_TAG) as UILabel;
             if (0 == c.attachments.Count) {
-                attachmentDetail.Text = "None";
+                hasAttachments = false;
+                attachmentView.Hidden = true;
             } else {
+                hasAttachments = true;
+                attachmentView.Hidden = false;
                 attachmentDetail.Text = string.Format ("({0})", c.attachments.Count);
+                attachmentDetail.SizeToFit ();
             }
-            attachmentDetail.SizeToFit ();
 
             // Attendees
             if (null != extraAttendeesButton) {
@@ -463,14 +476,19 @@ namespace NachoClient.iOS
             var iconPadding = (iconSpace - (attendeeImageDiameter * 5)) / 4;
             if (0 == c.attendees.Count) {
                 // Disable the attendees view.
+                hasAttendees = false;
                 View.ViewWithTag ((int)TagType.EVENT_ATTENDEES_TITLE_TAG).Hidden = true;
                 View.ViewWithTag ((int)TagType.EVENT_ATTENDING_TITLE_TAG).Hidden = true;
                 eventAttendeeView.Hidden = true;
                 line1.Hidden = true;
                 line2.Hidden = true;
             } else {
+                hasAttendees = true;
                 View.ViewWithTag ((int)TagType.EVENT_ATTENDEES_TITLE_TAG).Hidden = false;
+                View.ViewWithTag ((int)TagType.EVENT_ATTENDING_TITLE_TAG).Hidden = false;
                 eventAttendeeView.Hidden = false;
+                line1.Hidden = false;
+                line2.Hidden = false;
                 float spacing = 0;
                 int attendeeNum = 0;
                 foreach (var attendee in c.attendees) {
@@ -553,7 +571,6 @@ namespace NachoClient.iOS
             eventNotesTextView.Text = GetNoteText ();
             eventNotesTextView.SizeToFit ();
             notesInitialHeight = eventNotesTextView.Frame.Height;
-            descriptionView.Configure (c);
 
             ConfigureRsvpBar ();
 
@@ -582,8 +599,8 @@ namespace NachoClient.iOS
             declineButton.TouchUpInside -= DeclineButtonTouchUpInside;
             changeResponseButton.TouchUpInside -= ChangeResponseTouchUpInside;
             editEventButton.Clicked -= EditButtonClicked;
-            eventNotesTextView.Changed -= notesChanged;
-            eventNotesTextView.Started -= notesEditingStarted;
+            eventNotesTextView.Changed -= NotesChanged;
+            eventNotesTextView.Started -= NotesEditingStarted;
             if (null != extraAttendeesButton) {
                 extraAttendeesButton.TouchUpInside -= ExtraAttendeesTouchUpInside;
             }
@@ -771,8 +788,10 @@ namespace NachoClient.iOS
                 AdjustViewLayout (TagType.EVENT_WHEN_RECURRENCE_TAG, 42, ref internalYOffset, 0);
             }
 
-            AdjustViewLayout (TagType.EVENT_LOCATION_TITLE_TAG, 0, ref internalYOffset, 18, EVENT_CARD_WIDTH - 100);
-            AdjustViewLayout (TagType.EVENT_LOCATION_DETAIL_LABEL_TAG, 42, ref internalYOffset, 5, EVENT_CARD_WIDTH - 60);
+            if (hasLocation) {
+                AdjustViewLayout (TagType.EVENT_LOCATION_TITLE_TAG, 0, ref internalYOffset, 18, EVENT_CARD_WIDTH - 100);
+                AdjustViewLayout (TagType.EVENT_LOCATION_DETAIL_LABEL_TAG, 42, ref internalYOffset, 5, EVENT_CARD_WIDTH - 60);
+            }
 
             AdjustViewLayout (TagType.EVENT_DESCRIPTION_TITLE_TAG, 0, ref internalYOffset, 18, EVENT_CARD_WIDTH - 100);
             if (yOffset != descriptionView.Frame.Y) {
@@ -787,16 +806,19 @@ namespace NachoClient.iOS
             #endif
 
             AdjustViewLayout (TagType.EVENT_ALERTS_VIEW_TAG, 0, ref internalYOffset, 18);
-            AdjustViewLayout (TagType.EVENT_ATTACHMENTS_VIEW_TAG, 0, ref internalYOffset, 18);
 
-            if (0 != c.attendees.Count) {
+            if (hasAttachments) {
+                AdjustViewLayout (TagType.EVENT_ATTACHMENTS_VIEW_TAG, 0, ref internalYOffset, 18);
+            }
+
+            if (hasAttendees) {
                 AdjustViewLayout (TagType.EVENT_ATTENDEES_TITLE_TAG, 0, ref internalYOffset, 20, EVENT_CARD_WIDTH - 100);
                 AdjustY (line1, internalYOffset + 12.5f);
                 AdjustViewLayout (TagType.EVENT_ATTENDING_TITLE_TAG, 0, ref internalYOffset, 5, EVENT_CARD_WIDTH - 100);
                 AdjustViewLayout (TagType.EVENT_ATTENDEE_VIEW_TAG, 0, ref internalYOffset, 0);
+                AdjustY (line2, internalYOffset);
             }
 
-            AdjustY (line2, internalYOffset);
             AdjustViewLayout (TagType.EVENT_NOTE_TITLE_TAG, 0, ref internalYOffset, 18);
             internalYOffset += 6;
             if (30 < (notesInitialHeight + NOTE_OFFSET)) {
@@ -1471,12 +1493,12 @@ namespace NachoClient.iOS
             return descriptionView;
         }
 
-        private void notesEditingStarted (object sender, EventArgs e)
+        private void NotesEditingStarted (object sender, EventArgs e)
         {
             scrollView.SetContentOffset (new PointF (0, contentView.Frame.Height - scrollView.Frame.Height), true);
         }
 
-        private void notesChanged (object sender, EventArgs e)
+        private void NotesChanged (object sender, EventArgs e)
         {
             SelectionChanged (eventNotesTextView);
             scrollView.SetContentOffset (new PointF (0, contentView.Frame.Height - scrollView.Frame.Height), true);
