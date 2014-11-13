@@ -1164,6 +1164,10 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcAbate.cs">
       <Link>NachoCore\Utils\NcAbate.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\ContactDefaultSelectionViewController.cs" />
+    <Compile Include="NachoUI.iOS\ContactDefaultSelectionViewController.designer.cs">
+      <DependentUpon>ContactDefaultSelectionViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -1662,6 +1666,8 @@
     <BundleResource Include="Resources\contacts-marker%402x.png" />
     <BundleResource Include="Resources\contacts-icn-address%402x.png" />
     <BundleResource Include="Resources\contacts-icn-bday%402x.png" />
+    <BundleResource Include="Resources\contacts-call-swipe%402x.png" />
+    <BundleResource Include="Resources\contacts-email-swipe%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
