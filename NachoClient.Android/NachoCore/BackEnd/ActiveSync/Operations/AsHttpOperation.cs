@@ -361,12 +361,14 @@ namespace NachoCore.ActiveSync
                     request.Content = new StringContent (xmlText, UTF8Encoding.UTF8, ContentTypeXml);
                 }
             }
-            StreamContent mime;
+            Stream mime;
             if (!Owner.SafeToMime (this, out mime)) {
                 return false;
             }
             if (null != mime) {
-                request.Content = mime;
+                request.Content = new StreamContent (mime);
+                request.Content.Headers.Add ("Content-Length", mime.Length.ToString ());
+                request.Content.Headers.Add ("Content-Type", ContentTypeMail);
             }
             request.Headers.Add ("User-Agent", Device.Instance.UserAgent ());
             if (Owner.DoSendPolicyKey (this)) {
@@ -537,10 +539,9 @@ namespace NachoCore.ActiveSync
                     result.Value = new Tuple<int,Uri> (credDaysLeft, credUri);
                     Owner.StatusInd (result);
                 }
-                if (0 > ContentData.Length) {
-                    // We have seen this, but we've never see doc stating why possible.
-                    return Event.Create ((uint)SmEvt.E.TempFail, "HTTPOPZORNEG");
-                } else if (0 < ContentData.Length) {
+                if (0 < ContentData.Length ||
+                    (response.Headers.TransferEncodingChunked.HasValue && 
+                        (bool)response.Headers.TransferEncodingChunked)) {
                     switch (ContentType) {
                     case ContentTypeWbxml:
                         var decoder = new ASWBXML (cToken);

@@ -43,7 +43,7 @@ namespace NachoCore.Utils
         /// Return the starting time for the event in UTC, without triggering the DDay.iCal
         /// time zone code that would cause the app to crash.
         /// </summary>
-        public static DateTime EventStartTime(DDay.iCal.Event evt, McCalendar c)
+        public static DateTime EventStartTime (DDay.iCal.Event evt, McCalendar c)
         {
             if (null != c) {
                 return c.StartTime;
@@ -62,7 +62,7 @@ namespace NachoCore.Utils
         /// Return the ending time for the event in UTC, without triggering the DDay.iCal
         /// time zone code that would cause the app to crash.
         /// </summary>
-        public static DateTime EventEndTime(DDay.iCal.Event evt, McCalendar c)
+        public static DateTime EventEndTime (DDay.iCal.Event evt, McCalendar c)
         {
             if (null != c) {
                 return c.EndTime;
@@ -84,7 +84,7 @@ namespace NachoCore.Utils
         /// </summary>
         private static DateTime TimeZoneAdjustment (IICalendar iCal, string tzid, DateTime time)
         {
-            if (null == iCal || string.IsNullOrEmpty(tzid)) {
+            if (null == iCal || string.IsNullOrEmpty (tzid)) {
                 return time;
             }
             bool isDaylight = DateTime.SpecifyKind (time, DateTimeKind.Unspecified).IsDaylightSavingTime ();
@@ -501,513 +501,332 @@ namespace NachoCore.Utils
             return DefaultTask ();
         }
 
-        // Type element is set to zero (0), meaning a daily occurrence.
-        // If the DayOfWeek element is not set, the recurrence is a daily occurrence,
-        // occurring n days apart, where n is the value of the Interval element.
-        protected static DateTime GenerateEveryIntervalDays (McCalendar c, McRecurrence r, DateTime previousEntryInDatabase, DateTime generateAtLeastUntil)
+        protected class RecurrenceValidationException : Exception
         {
-            NcAssert.True (0 == r.DayOfWeek);
+            public RecurrenceValidationException (string message)
+                : base (message)
+            {
+            }
+        }
 
-            int occurrance = 0;
-
-            DateTime eventStart = c.StartTime;
-            DateTime eventEnd = c.EndTime;
-
-            int daysToIncrement = (r.IntervalIsSet ? r.Interval : 1);
-
-            while (!r.OccurencesIsSet || (occurrance <= r.Occurences)) {
-                if ((DateTime.MinValue != r.Until) && (eventStart > r.Until)) {
-                    return DateTime.MaxValue;
+        /// <summary>
+        /// Validate a meeting recurrence structure.  The server has probably done any necessary
+        /// validation already, so it is not expected that this will ever find an error.  But we
+        /// still want this function because anything that comes from the server is, technically,
+        /// user input, which means we don't want to crash if it is malformed.  Doing all of
+        /// these checks up front means we don't need any checks in the code that calculates the
+        /// recurrences.
+        /// </summary>
+        /// <returns><c>true</c>, if recurrence is valid and supported, <c>false</c> otherwise.</returns>
+        protected static bool ValidateRecurrence (McCalendar c, McRecurrence r)
+        {
+            try {
+                if (r.IntervalIsSet && (0 > r.Interval || 999 < r.Interval)) {
+                    throw new RecurrenceValidationException (string.Format (
+                        "The Interval field has an invalid value of {0}. It must be 0 <= Interval <= 999.", r.Interval));
                 }
-                if (eventStart > previousEntryInDatabase) {
-                    if (r.OccurencesIsSet) {
-                        CreateEventRecord (c, eventStart, eventEnd);
-                    } else {
-                        CreateEventRecord (c, eventStart, eventEnd);
+                if (r.CalendarTypeIsSet && (NcCalendarType.Default != r.CalendarType && NcCalendarType.Gregorian != r.CalendarType)) {
+                    throw new RecurrenceValidationException (string.Format (
+                        "Unsupported calendar type: {0}. Only the Gregorian calendar is supported.", r.CalendarType));
+                }
+                switch (r.Type) {
+                case NcRecurrenceType.Daily:
+                    // Nothing else to check.
+                    break;
+                case NcRecurrenceType.Weekly:
+                    if (!r.DayOfWeekIsSet) {
+                        Log.Info (Log.LOG_CALENDAR, "DayOfWeekIsSet is false for weekly recurring event {0}. A reinstall of the app is needed to correct this.", c.Subject);
+                        //throw new RecurrenceValidationException("The DayOfWeek field must be set in a weekly recurrence.");
+                    }
+                    if (1 > (int)r.DayOfWeek || 127 < (int)r.DayOfWeek) {
+                        throw new RecurrenceValidationException (string.Format (
+                            "The DayOfWeek field has an invalid value for a weekly recurrence: {0}. It must be 1 <= DayOfWeek <= 127.", (int)r.DayOfWeek));
+                    }
+                    if (r.FirstDayOfWeekIsSet && (0 > r.FirstDayOfWeek || 6 < r.FirstDayOfWeek)) {
+                        throw new RecurrenceValidationException (string.Format (
+                            "The FirstDayOfWeek field has an invalid value of {0}. It must be 0 <= FirstDayOfWeek <= 6.", r.FirstDayOfWeek));
+                    }
+                    break;
+                case NcRecurrenceType.Monthly:
+                    if (1 > r.DayOfMonth || 31 < r.DayOfMonth) {
+                        throw new RecurrenceValidationException (string.Format (
+                            "The DayOfMonth field has an invalid value of {0}. It must be 1 <= DayOfMonth <= 31.", r.DayOfMonth));
+                    }
+                    break;
+                case NcRecurrenceType.Yearly:
+                    if (1 > r.DayOfMonth || 31 < r.DayOfMonth) {
+                        throw new RecurrenceValidationException (string.Format (
+                            "The DayOfMonth field has an invalid value of {0}. It must be 1 <= DayOfMonth <= 31.", r.DayOfMonth));
+                    }
+                    if (1 > r.MonthOfYear || 12 < r.MonthOfYear) {
+                        throw new RecurrenceValidationException (string.Format (
+                            "The MonthOfYear field has an invalid value of {0}. It must be 1 <= MonthOfYear <= 12.", r.MonthOfYear));
+                    }
+                    break;
+                case NcRecurrenceType.MonthlyOnDay:
+                    if (1 > r.WeekOfMonth || 5 < r.WeekOfMonth) {
+                        throw new RecurrenceValidationException (string.Format (
+                            "The WeekOfMonth field has an invalid value of {0}. It must be 1 <= WeekOfMonth <= 5.", r.WeekOfMonth));
+                    }
+                    if (!r.DayOfWeekIsSet) {
+                        Log.Info(Log.LOG_CALENDAR,"DayOfWeekIsSet is false for monthly recurring event {0}. A reinstall of the app is needed to correct this.", c.Subject);
+                        // throw new RecurrenceValidationException("The DayOfWeek field must be set in a weekly recurrence.");
+                    }
+                    if (NcDayOfWeek.Sunday != r.DayOfWeek && NcDayOfWeek.Monday != r.DayOfWeek && NcDayOfWeek.Tuesday != r.DayOfWeek && NcDayOfWeek.Wednesday != r.DayOfWeek &&
+                        NcDayOfWeek.Thursday != r.DayOfWeek && NcDayOfWeek.Friday != r.DayOfWeek && NcDayOfWeek.Weekdays != r.DayOfWeek && NcDayOfWeek.WeekendDays != r.DayOfWeek &&
+                        NcDayOfWeek.LastDayOfTheMonth != r.DayOfWeek) {
+                        throw new RecurrenceValidationException (string.Format (
+                            "The DayOfWeek field has an invalid value of {0} for a monthly recurrence. It must be one of: 1, 2, 4, 8, 16, 32, 62, 64, 65, 127.", (int)r.DayOfWeek));
+                    }
+                    if (NcDayOfWeek.LastDayOfTheMonth == r.DayOfWeek && 5 != r.WeekOfMonth) {
+                        throw new RecurrenceValidationException (
+                            "When the DayOfWeek field is 127, meaning the last day of the month, then the WeekOfMonth field must be 5.");
+                    }
+                    break;
+                case NcRecurrenceType.YearlyOnDay:
+                    if (1 > r.MonthOfYear || 12 < r.MonthOfYear) {
+                        throw new RecurrenceValidationException (string.Format (
+                            "The MonthOfYear field has an invalid value of {0}. It must be 1 <= MonthOfYear <= 12.", r.MonthOfYear));
+                    }
+                    if (1 > r.WeekOfMonth || 5 < r.WeekOfMonth) {
+                        throw new RecurrenceValidationException (string.Format (
+                            "The WeekOfMonth field has an invalid value of {0}. It must be 1 <= WeekOfMonth <= 5.", r.WeekOfMonth));
+                    }
+                    if (!r.DayOfWeekIsSet) {
+                        Log.Info (Log.LOG_CALENDAR, "DayOfWeekIsSet is false for yearly recurring event {0}. A reinstall of the app is needed to correct this.", c.Subject);
+                        // throw new RecurrenceValidationException("The DayOfWeek field must be set in a weekly recurrence.");
+                    }
+                    if (NcDayOfWeek.Sunday != r.DayOfWeek && NcDayOfWeek.Monday != r.DayOfWeek && NcDayOfWeek.Tuesday != r.DayOfWeek && NcDayOfWeek.Wednesday != r.DayOfWeek &&
+                        NcDayOfWeek.Thursday != r.DayOfWeek && NcDayOfWeek.Friday != r.DayOfWeek && NcDayOfWeek.Weekdays != r.DayOfWeek && NcDayOfWeek.WeekendDays != r.DayOfWeek &&
+                        NcDayOfWeek.LastDayOfTheMonth != r.DayOfWeek) {
+                        throw new RecurrenceValidationException (string.Format (
+                            "The DayOfWeek field has an invalid value of {0} for a monthly recurrence. It must be one of: 1, 2, 4, 8, 16, 32, 62, 64, 65, 127.", (int)r.DayOfWeek));
+                    }
+                    if (NcDayOfWeek.LastDayOfTheMonth == r.DayOfWeek && 5 != r.WeekOfMonth) {
+                        throw new RecurrenceValidationException (
+                            "When the DayOfWeek field is 127, meaning the last day of the month, then the WeekOfMonth field must be 5.");
+                    }
+                    break;
+                default:
+                    throw new RecurrenceValidationException (string.Format ("Unsupported recurrence type: {0}", (int)r.Type));
+                }
+                return true;
+            } catch (RecurrenceValidationException e) {
+                Log.Error (Log.LOG_CALENDAR, 
+                    "Invalid or unsupported recurrence for event {0}. Recurrences will not be generated for this event.: {1}", 
+                    c.Subject, e.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Convert from the "FirstDayOfWeek" field in a recurrence to a C# DayOfWeek value.
+        /// </summary>
+        protected static DayOfWeek ToCSharpDayOfWeek (int firstDayOfWeek)
+        {
+            switch (firstDayOfWeek) {
+            case 0:
+                return DayOfWeek.Sunday;
+            case 1:
+                return DayOfWeek.Monday;
+            case 2:
+                return DayOfWeek.Tuesday;
+            case 3:
+                return DayOfWeek.Wednesday;
+            case 4:
+                return DayOfWeek.Thursday;
+            case 5:
+                return DayOfWeek.Friday;
+            case 6:
+                return DayOfWeek.Saturday;
+            default:
+                NcAssert.CaseError (string.Format ("Unrecognized valued for McRecurrence.FirstDayOfWeek: {0}", firstDayOfWeek));
+                return DayOfWeek.Sunday;
+            }
+        }
+
+        /// <summary>
+        /// Convert from a C# DayOfWeek value to the DayOfWeek field within a recurrence.
+        /// </summary>
+        protected static NcDayOfWeek ToNcDayOfWeek (DayOfWeek day)
+        {
+            switch (day) {
+            case DayOfWeek.Sunday:
+                return NcDayOfWeek.Sunday;
+            case DayOfWeek.Monday:
+                return NcDayOfWeek.Monday;
+            case DayOfWeek.Tuesday:
+                return NcDayOfWeek.Tuesday;
+            case DayOfWeek.Wednesday:
+                return NcDayOfWeek.Wednesday;
+            case DayOfWeek.Thursday:
+                return NcDayOfWeek.Thursday;
+            case DayOfWeek.Friday:
+                return NcDayOfWeek.Friday;
+            case DayOfWeek.Saturday:
+                return NcDayOfWeek.Saturday;
+            default:
+                return NcDayOfWeek.LastDayOfTheMonth;
+            }
+        }
+
+        /// <summary>
+        /// Is the given day of the week selected in the recurrence's DayOfWeek field?
+        /// </summary>
+        protected static bool IsSelected (DayOfWeek day, NcDayOfWeek selectedDays)
+        {
+            return ((int)selectedDays & (int)ToNcDayOfWeek (day)) != 0;
+        }
+
+        /// <summary>
+        /// Convert the given date/time to the same time on the last day of the month.
+        /// </summary>
+        protected static DateTime EndOfMonth (DateTime date)
+        {
+            return new DateTime (date.Year, date.Month, DateTime.DaysInMonth (date.Year, date.Month),
+                date.Hour, date.Minute, date.Second, date.Millisecond);
+        }
+
+        /// <summary>
+        /// Convert the given date/time to the same time on the first day of the month.
+        /// </summary>
+        protected static DateTime BeginningOfMonth (DateTime date)
+        {
+            return new DateTime (date.Year, date.Month, 1, date.Hour, date.Minute, date.Second, date.Millisecond);
+        }
+
+        /// <summary>
+        /// Find the desired day within the month using the "weekOfMonth" and "selectedDays"
+        /// rules.  For example, "the 4th Thursday".  The "month" argument can be any day
+        /// within the month.  The year, month, and time of day are preserved.  Only the day
+        /// of the month is changed.
+        /// </summary>
+        protected static DateTime FindDayWithinMonthByRule (DateTime month, int weekOfMonth, NcDayOfWeek selectedDays)
+        {
+            if (5 == weekOfMonth) {
+                // Start at the end of the month and go backwards, looking for the
+                // first day that matches.
+                DateTime day = EndOfMonth (month);
+                while (!IsSelected (day.DayOfWeek, selectedDays)) {
+                    day = day.AddDays (-1);
+                }
+                return day;
+            } else {
+                // Start at the beginning of the month and go forwards, looking for
+                // the nth matching day.
+                DateTime day = BeginningOfMonth (month).AddDays (-1);
+                int count = 0;
+                while (count < weekOfMonth) {
+                    day = day.AddDays (1);
+                    if (IsSelected (day.DayOfWeek, selectedDays)) {
+                        ++count;
                     }
                 }
-                if (eventStart >= generateAtLeastUntil) {
-                    return eventStart;
-                }
-                occurrance += 1;
-                eventStart = eventStart.AddDays (daysToIncrement);
-                eventEnd = eventEnd.AddDays (daysToIncrement);
+                return day;
             }
-            // Generated all occurences
-            return DateTime.MaxValue;
         }
 
-        protected static bool DayInDayOfWeek (NcDayOfWeek a, NcDayOfWeek b)
+        /// <summary>
+        /// Given a recurrence rule and an existing occurrence, calculate and return
+        /// the next occurrence in the series.
+        /// </summary>
+        protected static DateTime NextEvent (McRecurrence r, DateTime current)
         {
-            return (0 != (((int)a) & ((int)b)));
-        }
+            int interval = r.IntervalIsSet && 0 != r.Interval ? r.Interval : 1;
 
-        // The type element is set to 0:
-        // If the DayOfWeek element is set, the recurrence is a weekly occurrence,
-        // occurring on the day specified by the DayOfWeek element, and the value
-        // of the Interval element indicates the number of weeks between occurrences.
-        // Or the Type element is set to 1, meaning a weekly occurrence.
-        protected static DateTime GenerateEveryIntervalWeeks (McCalendar c, McRecurrence r, DateTime previousEntryInDatabase, DateTime generateAtLeastUntil)
-        {
-            int occurrance = 0;
+            DateTime next;
 
-            DateTime eventStart = c.StartTime;
-            DateTime eventEnd = c.EndTime;
+            switch (r.Type) {
 
-            // Interval of 0 is really 1
-            int weeksToIncrement = (r.IntervalIsSet ? Math.Max (1, r.Interval) : 1);
+            case NcRecurrenceType.Daily:
+                return current.AddDays (interval);
 
-            while (true) {
-                for (int i = 0; i < 7; i++) {
-                    if (r.OccurencesIsSet && (occurrance > r.Occurences)) {
-                        return DateTime.MaxValue;
+            case NcRecurrenceType.Weekly:
+                DayOfWeek firstDayOfWeek = r.FirstDayOfWeekIsSet ? ToCSharpDayOfWeek (r.FirstDayOfWeek) : DayOfWeek.Sunday;
+                next = current;
+                for (int infiniteLoopGuard = 0; infiniteLoopGuard < 10; ++infiniteLoopGuard) {
+                    next = next.AddDays (1);
+                    if (1 < interval && next.DayOfWeek == firstDayOfWeek) {
+                        // Reached the end of the week. Jump ahead some number of weeks.
+                        next = next.AddDays (7 * (interval - 1));
                     }
-                    if ((DateTime.MinValue != r.Until) && (eventStart > r.Until)) {
-                        return DateTime.MaxValue;
+                    if (IsSelected (next.DayOfWeek, r.DayOfWeek)) {
+                        return next;
                     }
-                    // Is eventStart a candidate date?
-                    var shouldWe = false;
-                    var dayOfWeek = eventStart.DayOfWeek;
-                    if ((System.DayOfWeek.Sunday == dayOfWeek) && (DayInDayOfWeek (NcDayOfWeek.Sunday, r.DayOfWeek))) {
-                        shouldWe = true;
-                    }
-                    if ((System.DayOfWeek.Monday == dayOfWeek) && (DayInDayOfWeek (NcDayOfWeek.Monday, r.DayOfWeek))) {
-                        shouldWe = true;
-                    }
-                    if ((System.DayOfWeek.Tuesday == dayOfWeek) && (DayInDayOfWeek (NcDayOfWeek.Tuesday, r.DayOfWeek))) {
-                        shouldWe = true;
-                    }
-                    if ((System.DayOfWeek.Wednesday == dayOfWeek) && (DayInDayOfWeek (NcDayOfWeek.Wednesday, r.DayOfWeek))) {
-                        shouldWe = true;
-                    }
-                    if ((System.DayOfWeek.Thursday == dayOfWeek) && (DayInDayOfWeek (NcDayOfWeek.Thursday, r.DayOfWeek))) {
-                        shouldWe = true;
-                    }
-                    if ((System.DayOfWeek.Friday == dayOfWeek) && (DayInDayOfWeek (NcDayOfWeek.Friday, r.DayOfWeek))) {
-                        shouldWe = true;
-                    }
-                    if ((System.DayOfWeek.Saturday == dayOfWeek) && (DayInDayOfWeek (NcDayOfWeek.Saturday, r.DayOfWeek))) {
-                        shouldWe = true;
-                    }
-                    if (shouldWe) {
-                        if (eventStart > previousEntryInDatabase) {
-                            if (r.OccurencesIsSet) {
-                                CreateEventRecord (c, eventStart, eventEnd);
-                            } else {
-                                CreateEventRecord (c, eventStart, eventEnd);
-                            }
-                        }
-                        occurrance += 1;
-                    }
-                    if (eventStart >= generateAtLeastUntil) {
-                        return eventStart;
-                    }
-                    eventStart = eventStart.AddDays (1);
-                    eventEnd = eventEnd.AddDays (1);
                 }
-                // Already incremented by a week
-                NcAssert.True (0 < weeksToIncrement);
-                eventStart = eventStart.AddDays (7 * (weeksToIncrement - 1));
-                eventEnd = eventEnd.AddDays (7 * (weeksToIncrement - 1));
+                // Should never get here. A matching day should always be found within seven times
+                // through the loop above.
+                NcAssert.CaseError ("Failed to find the next occurrence for a weekly meeting.");
+                return next;
+
+            case NcRecurrenceType.Monthly:
+                next = current.AddMonths (interval);
+                // Calculations can get messed up if the day of the month is the 29th or later.
+                if (next.Day != r.DayOfMonth) {
+                    next = new DateTime (
+                        next.Year, next.Month,
+                        Math.Min (r.DayOfMonth, DateTime.DaysInMonth (next.Year, next.Month)),
+                        next.Hour, next.Minute, next.Second, next.Millisecond);
+                }
+                return next;
+
+            case NcRecurrenceType.Yearly:
+                // Handle the case where the event is scheduled for Leap Day.
+                int nextYear = current.Year + interval;
+                return new DateTime (
+                    nextYear, r.MonthOfYear,
+                    Math.Min (r.DayOfMonth, DateTime.DaysInMonth (nextYear, r.MonthOfYear)),
+                    current.Hour, current.Minute, current.Second, current.Millisecond);
+
+            case NcRecurrenceType.MonthlyOnDay:
+                return FindDayWithinMonthByRule (current.AddMonths (interval), r.WeekOfMonth, r.DayOfWeek);
+
+            case NcRecurrenceType.YearlyOnDay:
+                return FindDayWithinMonthByRule (new DateTime (current.Year + interval, r.MonthOfYear, 1, current.Hour, current.Minute, current.Second, current.Millisecond), r.WeekOfMonth, r.DayOfWeek);
+
+            default:
+                NcAssert.CaseError ("Unsupported recurrence type, which should have been caught earlier.");
+                return DateTime.MaxValue;
             }
         }
-
-        // The Type element is set to 2, meaning a monthly occurrence,
-        protected static DateTime GenerateEveryIntervalMonths (McCalendar c, McRecurrence r, DateTime previousEntryInDatabase, DateTime generateAtLeastUntil)
-        {
-            int occurrance = 0;
-
-            DateTime eventStart = c.StartTime;
-            DateTime eventEnd = c.EndTime;
-
-            if (eventStart.Day != r.DayOfMonth) {
-                Log.Error (Log.LOG_CALENDAR, "GenerateEveryIntervalMonths eventStart={0}, DayOfMonth={1}", eventStart.Day, r.DayOfMonth);
-            }
-
-            // Interval of 0 is really 1
-            int Interval = (r.IntervalIsSet ? Math.Max (1, r.Interval) : 1);
-
-            while (true) {
-                if (r.OccurencesIsSet && (occurrance > r.Occurences)) {
-                    return DateTime.MaxValue;
-                }
-                if ((DateTime.MinValue != r.Until) && (eventStart > r.Until)) {
-                    return DateTime.MaxValue;
-                }
-                if (eventStart > previousEntryInDatabase) {
-                    CreateEventRecord (c, eventStart, eventEnd);
-                }
-                occurrance += 1;
-                if (eventStart >= generateAtLeastUntil) {
-                    return eventStart;
-                }
-                NcAssert.True (0 < Interval);
-                eventStart = eventStart.AddMonths (Interval);
-                eventEnd = eventEnd.AddMonths (Interval);
-            }
-        }
-
-        // The Type element is set to 5, meaning a yearly occurrence,
-        protected static DateTime GenerateEveryIntervalYears (McCalendar c, McRecurrence r, DateTime previousEntryInDatabase, DateTime generateAtLeastUntil)
-        {
-            int occurrance = 0;
-
-            DateTime eventStart = c.StartTime;
-            DateTime eventEnd = c.EndTime;
-
-            if (eventStart.Day != r.DayOfMonth) {
-                Log.Error (Log.LOG_CALENDAR, "GenerateEveryIntervalYears eventStart={0}, DayOfMonth={1}", eventStart.Day, r.DayOfMonth);
-            }
-            if (eventStart.Month != r.MonthOfYear) {
-                Log.Error (Log.LOG_CALENDAR, "GenerateEveryIntervalYears eventStart={0}, MonthOfYear={1}", eventStart.Month, r.MonthOfYear);
-            }
-
-            // Interval of 0 is really 1
-            int Interval = (r.IntervalIsSet ? Math.Max (1, r.Interval) : 1);
-
-            while (true) {
-                if (r.OccurencesIsSet && (occurrance > r.Occurences)) {
-                    return DateTime.MaxValue;
-                }
-                if ((DateTime.MinValue != r.Until) && (eventStart > r.Until)) {
-                    return DateTime.MaxValue;
-                }
-                if (eventStart > previousEntryInDatabase) {
-                    CreateEventRecord (c, eventStart, eventEnd);
-                }
-                occurrance += 1;
-                if (eventStart >= generateAtLeastUntil) {
-                    return eventStart;
-                }
-                NcAssert.True (0 < Interval);
-                eventStart = eventStart.AddYears (Interval);
-                eventEnd = eventEnd.AddYears (Interval);
-            }
-        }
-
-        protected static DateTime ReplaceDayOfMonth (DateTime dt, int newDayOfMonth)
-        {
-            return new DateTime (
-                dt.Year,
-                dt.Month,
-                newDayOfMonth,
-                dt.Hour,
-                dt.Minute,
-                dt.Second,
-                dt.Millisecond,
-                dt.Kind);
-        }
-
-        // Type element set to 3.  Subcase:
-        // If the DayOfWeek element is set to 127, the WeekOfMonth
-        // element indicates the day of the month that the event occurs.
-        protected static DateTime GenerateEveryNthDateOfMonth (McCalendar c, McRecurrence r, DateTime previousEntryInDatabase, DateTime generateAtLeastUntil)
-        {
-            int occurrance = 0;
-
-            DateTime eventStart = c.StartTime;
-            DateTime eventEnd = c.EndTime;
-
-            NcAssert.True (127 == (int)r.DayOfWeek);
-
-            // Interval of 0 is really 1
-            int Interval = (r.IntervalIsSet ? Math.Max (1, r.Interval) : 1);
-
-            while (true) {
-                if (r.OccurencesIsSet && (occurrance > r.Occurences)) {
-                    return DateTime.MaxValue;
-                }
-                if ((DateTime.MinValue != r.Until) && (eventStart > r.Until)) {
-                    return DateTime.MaxValue;
-                }
-                if (eventStart > previousEntryInDatabase) {
-                    var actualEventStart = ReplaceDayOfMonth (eventStart, r.WeekOfMonth);
-                    var actualEventEnd = actualEventStart + (eventEnd - eventStart);
-                    CreateEventRecord (c, actualEventStart, actualEventEnd);
-                }
-                occurrance += 1;
-                if (eventStart >= generateAtLeastUntil) {
-                    return eventStart;
-                }
-                NcAssert.True (0 < Interval);
-                eventStart = eventStart.AddMonths (Interval);
-                eventEnd = eventEnd.AddMonths (Interval);
-            }
-        }
-
-        protected static DateTime ReplaceDayOfMonthWithNthWeekday (DateTime dt, int nthWeekday)
-        {
-            var t = new DateTime (dt.Year, dt.Month, 1);
-
-            int newDayOfMonth = 0;
-
-            while (nthWeekday > 0) {
-                newDayOfMonth += 1;
-                if (!((DayOfWeek.Saturday == t.DayOfWeek) || (DayOfWeek.Sunday == t.DayOfWeek))) {
-                    nthWeekday -= 1;
-                }
-            }
-
-            return new DateTime (
-                dt.Year,
-                dt.Month,
-                newDayOfMonth,
-                dt.Hour,
-                dt.Minute,
-                dt.Second,
-                dt.Millisecond,
-                dt.Kind);
-        }
-
-        protected static DateTime ReplaceDayOfMonthWithNthWeekendDay (DateTime dt, int nthWeekendDay)
-        {
-            var t = new DateTime (dt.Year, dt.Month, 1);
-
-            int newDayOfMonth = 0;
-
-            while (nthWeekendDay > 0) {
-                newDayOfMonth += 1;
-                if (!((DayOfWeek.Saturday == t.DayOfWeek) || (DayOfWeek.Sunday == t.DayOfWeek))) {
-                    nthWeekendDay -= 1;
-                }
-            }
-
-            return new DateTime (
-                dt.Year,
-                dt.Month,
-                newDayOfMonth,
-                dt.Hour,
-                dt.Minute,
-                dt.Second,
-                dt.Millisecond,
-                dt.Kind);
-        }
-
-        // Type element set to 3.  Subcase:
-        // If the DayOfWeek element is set to 62, to specify weekdays,
-        // the WeekOfMonth element indicates the nth weekday of the month,
-        // where n is the value of WeekOfMonth element.
-        protected static DateTime GenerateEveryNthWeekdayOfMonth (McCalendar c, McRecurrence r, DateTime previousEntryInDatabase, DateTime generateAtLeastUntil)
-        {
-            int occurrance = 0;
-
-            DateTime eventStart = c.StartTime;
-            DateTime eventEnd = c.EndTime;
-
-            NcAssert.True (62 == (int)r.DayOfWeek);
-
-            // Interval of 0 is really 1
-            int Interval = (r.IntervalIsSet ? Math.Max (1, r.Interval) : 1);
-
-            while (true) {
-                if (r.OccurencesIsSet && (occurrance > r.Occurences)) {
-                    return DateTime.MaxValue;
-                }
-                if ((DateTime.MinValue != r.Until) && (eventStart > r.Until)) {
-                    return DateTime.MaxValue;
-                }
-                if (eventStart > previousEntryInDatabase) {
-                    var actualEventStart = ReplaceDayOfMonthWithNthWeekday (eventStart, r.WeekOfMonth);
-                    var actualEventEnd = actualEventStart + (eventEnd - eventStart);
-                    CreateEventRecord (c, actualEventStart, actualEventEnd);
-                }
-                occurrance += 1;
-                if (eventStart >= generateAtLeastUntil) {
-                    return eventStart;
-                }
-                NcAssert.True (0 < Interval);
-                eventStart = eventStart.AddMonths (Interval);
-                eventEnd = eventEnd.AddMonths (Interval);
-            }
-        }
-
-
-        // Type element set to 3.  Subcase:
-        // If the DayOfWeek element is set to 65, to specify weekends,
-        // the WeekOfMonth element indicates the nth weekend day of the month,
-        // where n is the value of WeekOfMonth element.
-        protected static DateTime GenerateEveryNthWeekendDayOfMonth (McCalendar c, McRecurrence r, DateTime previousEntryInDatabase, DateTime generateAtLeastUntil)
-        {
-            int occurrance = 0;
-
-            DateTime eventStart = c.StartTime;
-            DateTime eventEnd = c.EndTime;
-
-            NcAssert.True (65 == (int)r.DayOfWeek);
-
-            // Interval of 0 is really 1
-            int Interval = (r.IntervalIsSet ? Math.Max (1, r.Interval) : 1);
-
-            while (true) {
-                if (r.OccurencesIsSet && (occurrance > r.Occurences)) {
-                    return DateTime.MaxValue;
-                }
-                if ((DateTime.MinValue != r.Until) && (eventStart > r.Until)) {
-                    return DateTime.MaxValue;
-                }
-                if (eventStart > previousEntryInDatabase) {
-                    var actualEventStart = ReplaceDayOfMonthWithNthWeekendDay (eventStart, r.WeekOfMonth);
-                    var actualEventEnd = actualEventStart + (eventEnd - eventStart);
-                    CreateEventRecord (c, actualEventStart, actualEventEnd);
-                }
-                occurrance += 1;
-                if (eventStart >= generateAtLeastUntil) {
-                    return eventStart;
-                }
-                NcAssert.True (0 < Interval);
-                eventStart = eventStart.AddMonths (Interval);
-                eventEnd = eventEnd.AddMonths (Interval);
-            }
-        }
-
-        protected static bool IsDayInDayOfWeek (System.DayOfWeek systemDOW, NcDayOfWeek ncDOW)
-        {
-            int shift = (int)systemDOW;
-            NcAssert.True ((0 <= shift) && (6 >= shift));
-            return (0 != ((1 << shift) & ((int)ncDOW)));
-        }
-
-        protected static DateTime ReplaceDayOfMonthWithNthDay (DateTime dt, NcDayOfWeek DayOfWeek, int WeekOfMonth)
-        {
-            var t = new DateTime (dt.Year, dt.Month, 1);
-
-            // System.DayOfWeek 0..6
-            // DayOfWeek 1,2,4,8,...
-            while (!IsDayInDayOfWeek (t.DayOfWeek, DayOfWeek)) {
-                t = t.AddDays (1);
-            }
-
-            NcAssert.True ((0 < WeekOfMonth) && (5 >= WeekOfMonth));
-            t = t.AddDays (7 * (WeekOfMonth - 1));
-            while (t.Month != dt.Month) {
-                t = t.AddDays (-7);
-            }
-
-            return new DateTime (
-                dt.Year,
-                dt.Month,
-                t.Day,
-                dt.Hour,
-                dt.Minute,
-                dt.Second,
-                dt.Millisecond,
-                dt.Kind);
-        }
-
-        // Type element set to 3.  Subcase:
-        // Or, by default, the Nth DayOfWeek, where nth is WeekOfMonth,
-        // and WeekOfMonth is 1..5, where 5 is the last week of the month.
-        // Like every 3rd Tuesday or the last Thursday of the month.
-        protected static DateTime GenerateEveryNthDayOfMonth (McCalendar c, McRecurrence r, DateTime previousEntryInDatabase, DateTime generateAtLeastUntil)
-        {
-            int occurrance = 0;
-
-            DateTime eventStart = c.StartTime;
-            DateTime eventEnd = c.EndTime;
-
-            // Interval of 0 is really 1
-            int Interval = (r.IntervalIsSet ? Math.Max (1, r.Interval) : 1);
-
-            while (true) {
-                if (r.OccurencesIsSet && (occurrance > r.Occurences)) {
-                    return DateTime.MaxValue;
-                }
-                if ((DateTime.MinValue != r.Until) && (eventStart > r.Until)) {
-                    return DateTime.MaxValue;
-                }
-                if (eventStart > previousEntryInDatabase) {
-                    var actualEventStart = ReplaceDayOfMonthWithNthDay (eventStart, r.DayOfWeek, r.WeekOfMonth);
-                    var actualEventEnd = actualEventStart + (eventEnd - eventStart);
-                    CreateEventRecord (c, actualEventStart, actualEventEnd);
-                }
-                occurrance += 1;
-                if (eventStart >= generateAtLeastUntil) {
-                    return eventStart;
-                }
-                NcAssert.True (0 < Interval);
-                eventStart = eventStart.AddMonths (Interval);
-                eventEnd = eventEnd.AddMonths (Interval);
-            }
-        }
-
 
         protected static DateTime ExpandRecurrences (McCalendar c, McRecurrence r, DateTime startingTime, DateTime endingTime)
         {
-            if (NcRecurrenceType.Daily == r.Type) {
-                if (0 == r.DayOfWeek) {
-                    // Every 'interval' days
-                    return GenerateEveryIntervalDays (c, r, startingTime, endingTime);
-                } else {
-                    // Every 'interval' weeks on R.DayOfWeek'
-                    return GenerateEveryIntervalWeeks (c, r, startingTime, endingTime);
+            if (!ValidateRecurrence (c, r)) {
+                return DateTime.MinValue;
+            }
+            // All date/time calculations must be done in the event's original time zone.
+            TimeZoneInfo timeZone = new AsTimeZone (c.TimeZone).ConvertToSystemTimeZone ();
+            DateTime eventStart = TimeZoneInfo.ConvertTimeFromUtc (c.StartTime, timeZone);
+            DateTime eventEnd = TimeZoneInfo.ConvertTimeFromUtc (c.EndTime, timeZone);
+            var duration = eventEnd - eventStart;
+
+            int maxOccurrences = r.OccurencesIsSet ? r.Occurences : int.MaxValue;
+            DateTime lastOccurence = r.Until == default(DateTime) ? DateTime.MaxValue : TimeZoneInfo.ConvertTimeFromUtc (r.Until, timeZone);
+
+            int occurrence = 0;
+
+            while (occurrence < maxOccurrences && eventStart <= lastOccurence) {
+                DateTime eventStartUtc = TimeZoneInfo.ConvertTimeToUtc (eventStart, timeZone);
+                if (eventStartUtc > startingTime) {
+                    DateTime eventEndUtc = TimeZoneInfo.ConvertTimeToUtc (eventStart + duration, timeZone);
+                    if (c.AllDayEvent) {
+                        ExpandAllDayEvent (c, eventStartUtc, eventEndUtc);
+                    } else {
+                        CreateEventRecord (c, eventStartUtc, eventEndUtc);
+                    }
                 }
-            }
-            if (NcRecurrenceType.Weekly == r.Type) {
-                NcAssert.True (0 != r.DayOfWeek);
-                // Every 'interval' weeks on R.DayOfWeek
-                return GenerateEveryIntervalWeeks (c, r, startingTime, endingTime);
-            }
-            if (NcRecurrenceType.Monthly == r.Type) {
-                NcAssert.True (0 != r.DayOfMonth);
-                // Every 'interval' months on r.DayOfMonth
-                return GenerateEveryIntervalMonths (c, r, startingTime, endingTime);
-            }
-            if (NcRecurrenceType.Yearly == r.Type) {
-                // Every 'interval' years on the MonthOfYear & DayOfMonth
-                return GenerateEveryIntervalYears (c, r, startingTime, endingTime);
+                if (eventStartUtc >= endingTime) {
+                    return eventStartUtc;
+                }
+                eventStart = NextEvent (r, eventStart);
+                ++occurrence;
             }
 
-            if (NcRecurrenceType.MonthlyOnDay == r.Type) {
-                // If the DayOfWeek element is set to 127, the WeekOfMonth
-                // element indicates the day of the month that the event occurs.
-                if (127 == (int)r.DayOfWeek) {
-                    return GenerateEveryNthDateOfMonth (c, r, startingTime, endingTime);
-                }
-                // If the DayOfWeek element is set to 62, to specify weekdays,
-                // the WeekOfMonth element indicates the nth weekday of the month,
-                // where n is the value of WeekOfMonth element.
-                if (62 == (int)r.DayOfWeek) {
-                    return GenerateEveryNthWeekdayOfMonth (c, r, startingTime, endingTime);
-                }
-                // If the DayOfWeek element is set to 65, to specify weekends,
-                // the WeekOfMonth element indicates the nth weekend day of the month,
-                // where n is the value of WeekOfMonth element.
-                if (65 == (int)r.DayOfWeek) {
-                    return GenerateEveryNthWeekendDayOfMonth (c, r, startingTime, endingTime);
-                }
-                // Or, by default, the Nth DayOfWeek, where nth is WeekOfMonth,
-                // and WeekOfMonth is 1..5, where 5 is the last week of the month.
-                // Like every 3rd Tuesday or the last Thursday of the month.
-                return GenerateEveryNthDayOfMonth (c, r, startingTime, endingTime);
-            }
-
-            Log.Error (Log.LOG_CALENDAR, "Unhandled recurrence type {0} c.Id={1} r.Id={2}", r.Type, c.Id, r.Id);
-            return DateTime.MinValue;
-
-
-//            if (NcRecurrenceType.Yearly == r.Type) {
-//                // Every 'interval' years on the MonthOfYear & DayOfMonth.
-//                return;
-//            }
-//            if (NcRecurrenceType.YearlyOnDay == r.Type) {
-//                // Every 'interval' years
-//                // In month MonthOfYear
-//                if (127 == (int)r.DayOfWeek) {
-//                    // on day WeekOfMonth
-//                    return;
-//                }
-//                if (62 == (int)r.DayOfWeek) {
-//                    // on the r.WeeksOfMonth day
-//                    return;
-//                }
-//                if (65 == (int)r.DayOfWeek) {
-//                    // on the r.WeekOfMonth weekend day of the month.
-//                }
-//                return;
-//            }
+            return DateTime.MaxValue;
         }
 
-        protected static void ExpandAllDayEvent (McCalendar c)
+        protected static void ExpandAllDayEvent (McCalendar c, DateTime start, DateTime end)
         {
             // Create local events for an all-day calendar item.  Figure out the starting
             // day of the event in the organizer's time zone.  Create a local event that
@@ -1015,9 +834,9 @@ namespace NachoCore.Utils
             // more than one day long, repeat for subsequent days.
 
             TimeZoneInfo timeZone = new AsTimeZone (c.TimeZone).ConvertToSystemTimeZone ();
-            DateTime organizersTime = TimeZoneInfo.ConvertTimeFromUtc (c.StartTime, timeZone);
+            DateTime organizersTime = TimeZoneInfo.ConvertTimeFromUtc (start, timeZone);
             DateTime localStartTime = new DateTime (organizersTime.Year, organizersTime.Month, organizersTime.Day, 0, 0, 0, DateTimeKind.Local);
-            double days = (c.EndTime - c.StartTime).TotalDays;
+            double days = (end - start).TotalDays;
             // Use a do/while loop so we will always create at least one event, even if
             // the original item is improperly less than one day long.  If the all-day
             // event spans the transition from daylight saving time to standard time,
@@ -1059,7 +878,7 @@ namespace NachoCore.Utils
                 // Just add entries that don't have recurrences
                 if (0 == calendarItem.recurrences.Count) {
                     if (calendarItem.AllDayEvent) {
-                        ExpandAllDayEvent (calendarItem);
+                        ExpandAllDayEvent (calendarItem, calendarItem.StartTime, calendarItem.EndTime);
                     } else {
                         CreateEventRecord (calendarItem, calendarItem.StartTime, calendarItem.EndTime);
                     }
@@ -1118,8 +937,10 @@ namespace NachoCore.Utils
             var notifier = NachoPlatform.Notif.Instance;
             notifier.CancelNotif (e.Id);
             var notificationTime = e.StartTime.AddMinutes (-reminder);
+            var calendarItem = e.GetCalendarItemforEvent ();
+            var message = Pretty.Join (Pretty.SubjectString (calendarItem.Subject), Pretty.FormatAlert (reminder));
             if (DateTime.UtcNow < notificationTime) {
-                notifier.ScheduleNotif (e.Id, e.StartTime.AddMinutes (-reminder), Pretty.FormatAlert (reminder));
+                notifier.ScheduleNotif (e.Id, e.StartTime.AddMinutes (-reminder), message);
             }
         }
 
@@ -1155,7 +976,7 @@ namespace NachoCore.Utils
                 // the effective ranges of the rules. So we also look for an adjustment rule that will
                 // be applicable within the near future.
                 if (now < adjustment.DateStart && (adjustment.DateStart - now).TotalDays < 365 &&
-                        (null == currentAdjustment || adjustment.DateStart < currentAdjustment.DateStart)) {
+                    (null == currentAdjustment || adjustment.DateStart < currentAdjustment.DateStart)) {
                     currentAdjustment = adjustment;
                 }
             }
@@ -1178,7 +999,7 @@ namespace NachoCore.Utils
             return TimeZoneInfo.CreateCustomTimeZone (
                 local.Id, local.BaseUtcOffset, local.DisplayName, local.StandardName, local.DaylightName,
                 new TimeZoneInfo.AdjustmentRule[] { TimeZoneInfo.AdjustmentRule.CreateAdjustmentRule (
-                    DateTime.MinValue.Date, DateTime.MaxValue.Date, currentAdjustment.DaylightDelta, dstStart, dstEnd)
+                        DateTime.MinValue.Date, DateTime.MaxValue.Date, currentAdjustment.DaylightDelta, dstStart, dstEnd)
                 });
         }
 

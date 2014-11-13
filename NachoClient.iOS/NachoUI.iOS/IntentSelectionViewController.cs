@@ -95,10 +95,9 @@ namespace NachoClient.iOS
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             if (segue.Identifier == "SegueToMessagePriority") {
-                var vc = (MessagePriorityViewController)segue.DestinationViewController;
-                vc.SetOwner (dateOwner);
+                var vc = (INachoDateController)segue.DestinationViewController;
+                vc.Setup (dateOwner, null, DateControllerType.Intent);
                 vc.SetIntentSelector (this);
-                vc.SetDateControllerType (DateControllerType.Intent);
                 return;
             }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);

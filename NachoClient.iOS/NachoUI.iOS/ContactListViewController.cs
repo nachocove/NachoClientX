@@ -40,7 +40,7 @@ namespace NachoClient.iOS
             account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
 
             swipeView = new SwipeView ();
-            swipeView.Frame = new RectangleF (15, 0, View.Frame.Width - 30, 55);
+            swipeView.Frame = new RectangleF (10, 0, View.Frame.Width - 20, 55);
             swipeView.BackgroundColor = UIColor.White;
 
             View.AddSubview (swipeView);
@@ -221,7 +221,7 @@ namespace NachoClient.iOS
             {
                 this.owner = owner;
                 viewList = new UIView[28];
-                viewList[0] = CreateImageView(0);
+                viewList[0] = CreateImageView (0);
                 const string letters = "!ABCDEFGHIJKLMNOPQRSTUVWXYZ#";
                 for (int i = 1; i < 28; i++) {
                     viewList [i] = CreateLetterView (i, letters[i]);
@@ -239,12 +239,11 @@ namespace NachoClient.iOS
                     var b = (UIButton)v.Subviews [0];
                     if (b.Selected) {
                         b.Selected = false;
-                        b.BackgroundColor = A.Color_NachoLightGrayBackground;
+                        b.BackgroundColor = UIColor.Clear;
                     }
                 }
                 button.Selected = true;
-                button.BackgroundColor = A.Color_NachoLightGrayBackground;
-                button.BackgroundColor = A.Color_FEBA32;
+                button.BackgroundColor = A.Color_NachoGreen;
             }
 
             public void SelectButton (int section)
@@ -264,12 +263,14 @@ namespace NachoClient.iOS
                 button.Layer.CornerRadius = 18;
                 button.Layer.MasksToBounds = true;
                 button.TintColor = UIColor.Clear;
-                button.BackgroundColor = A.Color_NachoLightGrayBackground;
+                button.BackgroundColor = UIColor.Clear;
+                button.HorizontalAlignment = UIControlContentHorizontalAlignment.Center;
+                button.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
+                button.Layer.BorderWidth = 1f;
                 button.SetTitle (title, UIControlState.Normal);
                 button.SetTitle (title, UIControlState.Selected);
-                button.SetTitleColor (A.Color_114645, UIControlState.Normal);
+                button.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
                 button.SetTitleColor (UIColor.White, UIControlState.Selected);
-                button.SetTitleColor (UIColor.White, UIControlState.Disabled);
                 button.Font = A.Font_AvenirNextDemiBold17;
                 button.TouchUpInside += (object sender, EventArgs e) => {
                     SelectButton ((UIButton)sender);
@@ -277,7 +278,6 @@ namespace NachoClient.iOS
                         owner.SelectSection (index);
                     }
                 };
-                button.UserInteractionEnabled = false;
                 view.AddSubview (button);
                 return view;
             }
@@ -285,6 +285,8 @@ namespace NachoClient.iOS
             protected UIView CreateImageView(int index)
             {
                 var button = UIButton.FromType (UIButtonType.Custom);
+                button.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
+                button.Layer.BorderWidth = 1.0f;
                 button.Frame = new RectangleF (7, 7, 36, 36);
                 button.Layer.CornerRadius = 18;
                 button.Layer.MasksToBounds = true;
@@ -292,7 +294,7 @@ namespace NachoClient.iOS
                     button.SetImage (image, UIControlState.Normal);
                 }
                 using (var image = UIImage.FromBundle ("contacts-recent-active")) {
-                    button.SetImage (image, UIControlState.Disabled);
+                    button.SetImage (image, UIControlState.Selected);
                 }
                 button.TouchUpInside += (object sender, EventArgs e) => {
                     SelectButton ((UIButton)sender);
@@ -300,7 +302,6 @@ namespace NachoClient.iOS
                         owner.SelectSection (index);
                     }
                 };
-                button.UserInteractionEnabled = false;
                 var view = new UIView (new RectangleF (0, 0, 50, 50));
                 view.AddSubview (button);
                 return view;

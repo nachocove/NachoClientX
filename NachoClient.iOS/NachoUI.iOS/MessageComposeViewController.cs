@@ -79,6 +79,8 @@ namespace NachoClient.iOS
         // If this is a reply or forward, keep track of the quoted text that is inserted.
         // This makes it possible to check later if the user changed the text.
         private string initialQuotedText = null;
+        protected UIFont labelFont = A.Font_AvenirNextMedium14;
+        protected UIColor labelColor = A.Color_NachoDarkText;
 
         protected float LINE_HEIGHT = 40;
         protected float LEFT_INDENT = 15;
@@ -275,6 +277,12 @@ namespace NachoClient.iOS
             get { return true; }
         }
 
+        public override bool HidesBottomBarWhenPushed {
+            get {
+                return this.NavigationController.TopViewController == this;
+            }
+        }
+
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             var blurry = segue.DestinationViewController as BlurryViewController;
@@ -289,18 +297,7 @@ namespace NachoClient.iOS
                 dc.SetOwner (this, address, NachoContactType.EmailRequired);
                 return;
             }
-            if (segue.Identifier.Equals ("ComposeToFiles")) {
-                var dc = (AttachmentsViewController)segue.DestinationViewController;
-                dc.SetOwner (this);
-                dc.SetModal (true);
-                return;
-            }
             if (segue.Identifier.Equals ("ComposeToNachoNow")) {
-                return;
-            }
-            if (segue.Identifier == "SegueToMessagePriority") {
-                var vc = (MessagePriorityViewController)segue.DestinationViewController;
-                vc.SetOwner (this);
                 return;
             }
             if (segue.Identifier == "SegueToQuickResponse") {
@@ -321,6 +318,13 @@ namespace NachoClient.iOS
 
                 return;
             }
+
+            if (segue.Identifier.Equals ("SegueToAddAttachment")) {
+                var dc = (AddAttachmentViewController)segue.DestinationViewController;
+                dc.SetOwner (this);
+                return;
+            }
+
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }
@@ -384,13 +388,13 @@ namespace NachoClient.iOS
 
             subjectLabel = new UILabel ();
             subjectLabel.Text = "Subject: ";
-            subjectLabel.Font = A.Font_AvenirNextRegular14;
-            subjectLabel.TextColor = A.Color_0B3239;
+            subjectLabel.Font = labelFont;
+            subjectLabel.TextColor = labelColor;
             subjectLabel.SizeToFit ();
 
             subjectField = new UITextField ();
-            subjectField.Font = A.Font_AvenirNextRegular14;
-            subjectField.TextColor = A.Color_808080;
+            subjectField.Font = labelFont;
+            subjectField.TextColor = labelColor;
             subjectField.Placeholder = "No subject";
             if (PresetSubject != null) {
                 subjectField.Text += PresetSubject;
@@ -401,13 +405,13 @@ namespace NachoClient.iOS
 
             intentLabel = new UILabel ();
             intentLabel.Text = "Intent:";
-            intentLabel.Font = A.Font_AvenirNextRegular14;
-            intentLabel.TextColor = A.Color_0B3239;
+            intentLabel.Font = labelFont;
+            intentLabel.TextColor = labelColor;
             intentLabel.SizeToFit ();
 
             intentDisplayLabel = new UILabel ();
-            intentDisplayLabel.Font = A.Font_AvenirNextRegular14;
-            intentDisplayLabel.TextColor = A.Color_808080;
+            intentDisplayLabel.Font = labelFont;
+            intentDisplayLabel.TextColor = labelColor;
             intentDisplayLabel.Text = "NONE";
             intentDisplayLabel.SizeToFit ();
 
@@ -423,11 +427,11 @@ namespace NachoClient.iOS
 
             intentView.AddSubviews (new UIView[] { intentLabel, intentDisplayLabel, intentArrowAccessory });
 
-            attachmentView = new UcAttachmentBlock (this, account.Id, View.Frame.Width);
+            attachmentView = new UcAttachmentBlock (this, account.Id, View.Frame.Width, 40);
 
             bodyTextView = new UITextView ();
-            bodyTextView.Font = A.Font_AvenirNextRegular14;
-            bodyTextView.TextColor = A.Color_NachoDarkText;
+            bodyTextView.Font = labelFont;
+            bodyTextView.TextColor = labelColor;
             bodyTextView.BackgroundColor = UIColor.White;
             if (EmailTemplate != null) {
                 bodyTextView.InsertText (EmailTemplate);
@@ -644,16 +648,16 @@ namespace NachoClient.iOS
                 yOffset += subjectLabelHR.Frame.Height;
 
                 // Intent subviews
-                CenterY(intentLabel, LEFT_INDENT, 0, intentLabel.Frame.Width, LINE_HEIGHT);
+                CenterY (intentLabel, LEFT_INDENT, 0, intentLabel.Frame.Width, LINE_HEIGHT);
    
                 var intentDisplayStart = intentLabel.Frame.Right + 4;
                 var intentDisplayWidth = View.Frame.Width - intentDisplayStart - intentArrowAccessory.Frame.Width - RIGHT_INDENT;
-                CenterY(intentDisplayLabel, intentDisplayStart, 0, intentDisplayWidth, LINE_HEIGHT);
+                CenterY (intentDisplayLabel, intentDisplayStart, 0, intentDisplayWidth, LINE_HEIGHT);
 
                 var intentArrowStart = View.Frame.Width - intentArrowAccessory.Frame.Width - RIGHT_INDENT;
-                CenterY(intentArrowAccessory, intentArrowStart, 0, intentArrowAccessory.Frame.Width, LINE_HEIGHT);
+                CenterY (intentArrowAccessory, intentArrowStart, 0, intentArrowAccessory.Frame.Width, LINE_HEIGHT);
 
-                intentView.Frame = new RectangleF(0, yOffset, View.Frame.Width, LINE_HEIGHT);
+                intentView.Frame = new RectangleF (0, yOffset, View.Frame.Width, LINE_HEIGHT);
 
                 yOffset += LINE_HEIGHT;
 
@@ -1040,7 +1044,7 @@ namespace NachoClient.iOS
             var a = obj as McAttachment;
             if (null != a) {
                 attachmentView.Append (a);
-                vc.DismissFileChooser (true, null);
+                this.DismissViewController (true, null);
                 return;
             }
 
@@ -1051,7 +1055,7 @@ namespace NachoClient.iOS
                 attachment.IsInline = true;
                 attachment.UpdateFileCopy (file.GetFilePath ());
                 attachmentView.Append (attachment);
-                vc.DismissFileChooser (true, null);
+                this.DismissViewController (true, null);
                 return;
             }
 
@@ -1062,7 +1066,7 @@ namespace NachoClient.iOS
                 attachment.IsInline = true;
                 attachment.UpdateData (note.noteContent);
                 attachmentView.Append (attachment);
-                vc.DismissFileChooser (true, null);
+                this.DismissViewController (true, null);
                 return;
             }
 
@@ -1077,7 +1081,7 @@ namespace NachoClient.iOS
 
         public void DismissChildDateController (INachoDateController vc)
         {
-            vc.SetOwner (null);
+            vc.Setup (null, null, DateControllerType.None);
             vc.DimissDateController (false, null);
         }
 
@@ -1087,6 +1091,22 @@ namespace NachoClient.iOS
         public void DismissChildFileChooser (INachoFileChooser vc)
         {
             vc.DismissFileChooser (true, null);
+        }
+
+        /// <summary>
+        /// INachoFileChooserParent delegate
+        /// </summary>
+        public void Append (McAttachment attachment)
+        {
+            attachmentView.Append (attachment);
+        }
+
+        /// <summary>
+        /// INachoFileChooserParent delegate
+        /// </summary>
+        public void DismissPhotoPicker ()
+        {
+            this.DismissViewController (true, null);
         }
 
         public void SetAction (McEmailMessageThread thread, string actionString)

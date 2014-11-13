@@ -26,21 +26,13 @@ namespace NachoClient.iOS
         protected const string AttachmentCellReuseIdentifier = "AttachmentCell";
 
         protected UIColor CELL_COMPONENT_BG_COLOR = UIColor.White;
+        protected const int VIEW_TAG = 99100;
 
-        protected const int SWIPE_TAG = 99100;
-        private const int OPEN_IN_TAG = 2000;
-        private const int REMOVE_TAG = 3000;
-
+        protected static int REMOVE_BUTTON_TAG = 100;
         protected static int ICON_TAG = 150;
         protected static int TEXT_LABEL_TAG = 300;
         protected static int DETAIL_TEXT_LABEL_TAG = 400;
-
-        private static SwipeActionDescriptor DELETE_BUTTON =
-            new SwipeActionDescriptor (REMOVE_TAG, 0.25f, UIImage.FromBundle (""),
-                "Remove", A.Color_NachoSwipeActionRed);
-        private static SwipeActionDescriptor OPEN_IN_BUTTON =
-            new SwipeActionDescriptor (OPEN_IN_TAG, 0.25f, UIImage.FromBundle (""),
-                "", A.Color_NachoLightGrayBackground);
+        protected static int SEPARATOR_LINE_TAG = 500;
 
         public AttachmentTableViewSource ()
         {
@@ -131,13 +123,18 @@ namespace NachoClient.iOS
             var cellWidth = tableView.Frame.Width;
 
             var frame = new RectangleF (0, 0, tableView.Frame.Width, 60);
-            var view = new SwipeActionView (frame);
-            view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
-            view.SetAction (OPEN_IN_BUTTON, SwipeSide.LEFT);
+            var view = new UIView (frame);
 
             cell.AddSubview (view);
-            view.Tag = SWIPE_TAG;
+            view.Tag = VIEW_TAG;
             view.BackgroundColor = CELL_COMPONENT_BG_COLOR;
+
+            //Remove icon
+            var removeButton = new UIButton ();
+            removeButton.Tag = REMOVE_BUTTON_TAG;
+            removeButton.Frame = new RectangleF (18, (view.Frame.Height / 2) - 8, 16, 16);
+            removeButton.Hidden = true;
+            view.AddSubview (removeButton);
 
             //Cell icon
             var cellIconImageView = new UIImageView (); 
@@ -164,6 +161,11 @@ namespace NachoClient.iOS
             detailTextlabel.Frame = new RectangleF (60, 11 + 19.5f, cell.Frame.Width - 60 - 52, 19.5f);
             view.AddSubview (detailTextlabel);
 
+            //Separator line
+            var separatorLine = Util.AddHorizontalLineView (60, 60, cell.Frame.Width - 60, A.Color_NachoBorderGray);
+            separatorLine.Tag = SEPARATOR_LINE_TAG;
+            view.AddSubview (separatorLine);
+
             cell.AddSubview (view);
             return cell;
         }
@@ -171,56 +173,46 @@ namespace NachoClient.iOS
         public void ConfigureCell (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath, McAttachment attachment)
         {
             float yOffset = 10.5f;
+            float xOffset = 0f;
 
-            //Swipe view
-            var view = cell.ViewWithTag (SWIPE_TAG) as SwipeActionView;
+            var view = cell.ViewWithTag (VIEW_TAG);
+
+            //Remove icon
+            var RemoveButton = view.ViewWithTag (REMOVE_BUTTON_TAG) as UIButton;
             if (editing) {
-                view.EnableSwipe ();
+                xOffset = 34;
+                RemoveButton.Hidden = false;
+                RemoveButton.SetImage (UIImage.FromBundle ("gen-delete-small"), UIControlState.Normal);
+                RemoveButton.TouchUpInside += (object sender, EventArgs e) => {
+                    RemoveAttachment(attachment);
+                };
             } else {
-                view.DisableSwipe ();
+                RemoveButton.Hidden = true;
+                xOffset = 0;
             }
-
-            view.OnClick = (int tag) => {
-                switch (tag) {
-                case OPEN_IN_TAG:
-
-                    break;
-                case REMOVE_TAG:
-                    RemoveAttachment (attachment);
-                    break;
-                default:
-                    throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action tag {0}", tag));
-                }
-            };
-            view.OnSwipe = (SwipeActionView.SwipeState state) => {
-                switch (state) {
-                case SwipeActionView.SwipeState.SWIPE_BEGIN:
-                    tableView.ScrollEnabled = false;
-                    break;
-                case SwipeActionView.SwipeState.SWIPE_END_ALL_HIDDEN:
-                    tableView.ScrollEnabled = true;
-                    break;
-                case SwipeActionView.SwipeState.SWIPE_END_ALL_SHOWN:
-                    tableView.ScrollEnabled = false;
-                    break;
-                default:
-                    throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown swipe state {0}", (int)state));
-                }
-            };
 
             //Cell icon
             var cellIconImageView = view.ViewWithTag (ICON_TAG) as UIImageView;
-            cellIconImageView.Frame = new RectangleF (18, 18, 24, 24);
+            cellIconImageView.Frame = new RectangleF (xOffset + 18, 18, 24, 24);
 
             //Text label
             var textLabel = view.ViewWithTag (TEXT_LABEL_TAG) as UILabel; 
-            textLabel.Frame = new RectangleF (60, yOffset, cell.Frame.Width - 112, 19.5f);
+            textLabel.Frame = new RectangleF (xOffset + 60, yOffset, cell.Frame.Width - 112 - xOffset, 19.5f);
             yOffset += textLabel.Frame.Height;
 
             //Detail text label
             var detailTextlabel = view.ViewWithTag (DETAIL_TEXT_LABEL_TAG) as UILabel;  
-            detailTextlabel.Frame = new RectangleF (60, yOffset, cell.Frame.Width - 112, 19.5f);
+            detailTextlabel.Frame = new RectangleF (xOffset + 60, yOffset, cell.Frame.Width - 112 - xOffset, 19.5f);
             yOffset += detailTextlabel.Frame.Height;
+
+            //Separator line
+            var separatorLine = view.ViewWithTag (SEPARATOR_LINE_TAG);
+            var totalRow = tableView.NumberOfRowsInSection (indexPath.Section);
+            if (totalRow - 1 == indexPath.Row) {
+                separatorLine.Frame = new RectangleF (0, 59.5f, cell.Frame.Width, .5f);
+            } else {
+                separatorLine.Frame = new RectangleF (60 + xOffset, 59.5f, cell.Frame.Width - 60 - xOffset, .5f);
+            }
 
             ConfigureAttachmentView (cell, attachment, cellIconImageView, textLabel, detailTextlabel);
         }
@@ -259,16 +251,6 @@ namespace NachoClient.iOS
             } else {
                 textLabel.Text = "File no longer exists"; 
             }
-        }
-
-        public override UIView GetViewForHeader (UITableView tableView, int section)
-        {
-            return new UIView (new RectangleF (0, 0, 0, 0));
-        }
-
-        public override UIView GetViewForFooter (UITableView tableView, int section)
-        {
-            return new UIView (new RectangleF (0, 0, 0, 0));
         }
 
         public void RemoveAttachment (McAttachment attachment)

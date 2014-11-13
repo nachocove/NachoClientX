@@ -352,49 +352,6 @@
                                 <outlet property="delegate" destination="HJp-il-GU9" id="a0H-aQ-58Y"/>
                             </connections>
                         </searchBar>
-                        <prototypes>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="Basic" textLabel="uZg-ZA-5Zk" style="IBUITableViewCellStyleDefault" id="sVo-oj-aEo">
-                                <rect key="frame" x="0.0" y="66" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="sVo-oj-aEo" id="Wmz-Zx-aLM">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                    <subviews>
-                                        <label opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="left" text="Title" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="uZg-ZA-5Zk">
-                                            <rect key="frame" x="15" y="0.0" width="290" height="43"/>
-                                            <autoresizingMask key="autoresizingMask"/>
-                                            <fontDescription key="fontDescription" type="system" pointSize="18"/>
-                                            <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
-                                            <nil key="highlightedColor"/>
-                                        </label>
-                                    </subviews>
-                                </tableViewCellContentView>
-                            </tableViewCell>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="Subtitle" textLabel="itG-Sw-3fJ" detailTextLabel="Bcb-Tt-kST" style="IBUITableViewCellStyleSubtitle" id="cxC-UM-lPo">
-                                <rect key="frame" x="0.0" y="110" width="320" height="44"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="cxC-UM-lPo" id="f87-dG-2jG">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="43"/>
-                                    <autoresizingMask key="autoresizingMask"/>
-                                    <subviews>
-                                        <label opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="left" text="Title" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="itG-Sw-3fJ">
-                                            <rect key="frame" x="15" y="3" width="34" height="22"/>
-                                            <autoresizingMask key="autoresizingMask"/>
-                                            <fontDescription key="fontDescription" type="system" pointSize="18"/>
-                                            <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
-                                            <nil key="highlightedColor"/>
-                                        </label>
-                                        <label opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="left" text="Subtitle" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="Bcb-Tt-kST">
-                                            <rect key="frame" x="15" y="25" width="43" height="15"/>
-                                            <autoresizingMask key="autoresizingMask"/>
-                                            <fontDescription key="fontDescription" type="system" pointSize="12"/>
-                                            <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
-                                            <nil key="highlightedColor"/>
-                                        </label>
-                                    </subviews>
-                                </tableViewCellContentView>
-                            </tableViewCell>
-                        </prototypes>
                         <connections>
                             <outlet property="dataSource" destination="HJp-il-GU9" id="LPl-WA-Ev3"/>
                             <outlet property="delegate" destination="HJp-il-GU9" id="Qlr-7k-Qht"/>
@@ -518,7 +475,7 @@
             <objects>
                 <tableViewController storyboardIdentifier="MessageListViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="kq1-eO-X0p" customClass="MessageListViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="PBw-9w-NMN">
-                        <rect key="frame" x="0.0" y="64" width="320" height="455"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <connections>
@@ -571,12 +528,12 @@
             <objects>
                 <viewController storyboardIdentifier="MessageViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="96Q-f8-PuZ" customClass="MessageViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="1rs-zQ-j9D">
-                        <rect key="frame" x="0.0" y="64" width="320" height="460"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" id="C3K-cn-kde">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="460"/>
-                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="504"/>
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                 <gestureRecognizers/>
                             </scrollView>
                         </subviews>
@@ -586,17 +543,8 @@
                     <extendedEdge key="edgesForExtendedLayout"/>
                     <navigationItem key="navigationItem" id="9RR-VH-nzx"/>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
-                    <simulatedToolbarMetrics key="simulatedBottomBarMetrics" translucent="NO"/>
+                    <nil key="simulatedBottomBarMetrics"/>
                     <connections>
-                        <outlet property="archiveButton" destination="lwU-bJ-z6E" id="Ads-ZI-Vvl"/>
-                        <outlet property="deleteButton" destination="PNM-D1-huA" id="QKl-7t-grl"/>
-                        <outlet property="fixedSpaceButton" destination="UsM-1P-89h" id="8E5-Jv-pXr"/>
-                        <outlet property="flexibleSpaceButton" destination="hYC-KD-Xk0" id="ekc-yV-Qi3"/>
-                        <outlet property="forwardButton" destination="mmY-Kk-Ld8" id="yz0-CK-zzG"/>
-                        <outlet property="quickReplyButton" destination="AWp-LH-tHp" id="6MW-Mf-t6t"/>
-                        <outlet property="replyAllButton" destination="R7P-Ye-Fgq" id="tgo-VQ-ORd"/>
-                        <outlet property="replyButton" destination="l45-TG-u6H" id="mS9-Up-jCu"/>
-                        <outlet property="saveButton" destination="Tcg-BD-64n" id="s4a-tn-WDz"/>
                         <outlet property="scrollView" destination="C3K-cn-kde" id="6w9-Au-3zp"/>
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="MessageViewToMessagePriority" modalTransitionStyle="crossDissolve" id="qB9-ce-7gT"/>
                         <segue destination="tAw-fh-hJX" kind="push" identifier="MessageViewToCompose" id="RHB-Or-A5o"/>
@@ -606,21 +554,6 @@
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageViewToFolders" id="c2Q-C8-ZgX"/>
                     </connections>
                 </viewController>
-                <toolbar opaque="NO" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" id="5C3-Gh-DbC">
-                    <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
-                    <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
-                    <items>
-                        <barButtonItem image="toolbar-icn-reply.png" id="l45-TG-u6H" userLabel="Bar Button Item - Reply"/>
-                        <barButtonItem image="toolbar-icn-reply-all.png" id="R7P-Ye-Fgq" userLabel="Bar Button Item - Reply All"/>
-                        <barButtonItem image="toolbar-icn-fwd.png" id="mmY-Kk-Ld8" userLabel="Bar Button Item - Forward"/>
-                        <barButtonItem style="plain" systemItem="flexibleSpace" id="hYC-KD-Xk0"/>
-                        <barButtonItem image="icn-archive.png" id="lwU-bJ-z6E" userLabel="Bar Button Item - Archive"/>
-                        <barButtonItem width="25" style="plain" systemItem="fixedSpace" id="UsM-1P-89h"/>
-                        <barButtonItem image="toolbar-icn-move.png" id="Tcg-BD-64n" userLabel="Bar Button Item - Save"/>
-                        <barButtonItem image="toolbar-icn-delete.png" id="PNM-D1-huA" userLabel="Bar Button Item - Delete"/>
-                    </items>
-                </toolbar>
-                <barButtonItem image="icn-quick-message.png" id="AWp-LH-tHp" userLabel="Bar Button Item - Quick Reply"/>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="LjP-vQ-4le" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-3195" y="1217"/>
@@ -835,6 +768,8 @@
                         <segue destination="cXD-rq-iSl" kind="push" identifier="EditEventToCalendarChooser" id="7sK-rg-HQL"/>
                         <segue destination="rp9-J1-cgU" kind="push" identifier="EditEventToEventAttendees" id="w67-dy-XSq"/>
                         <segue destination="Nbe-45-5AM" kind="push" identifier="EditEventToAttachment" id="peA-r2-tjq"/>
+                        <segue destination="SX4-pu-5YA" kind="modal" identifier="SegueToAddAttachment" modalTransitionStyle="crossDissolve" id="Kr2-7H-kbB"/>
+                        <segue destination="1pE-rh-uML" kind="modal" identifier="SegueToAttachments" id="g8B-SL-7oa"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="O99-IW-kIW" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -991,7 +926,7 @@
                         <outlet property="EventAttachmentsTableView" destination="fhu-bP-xWZ" id="jdL-IM-bML"/>
                         <outlet property="addAttachmentButton" destination="N2c-Hs-Cv9" id="QHy-9U-koS"/>
                         <segue destination="1pE-rh-uML" kind="modal" identifier="EventAttachmentToFiles" id="GKm-A3-njZ"/>
-                        <segue destination="SX4-pu-5YA" kind="modal" identifier="EventAttachmentsToAddAttachment" modalTransitionStyle="crossDissolve" id="Zgo-Hx-sjv"/>
+                        <segue destination="SX4-pu-5YA" kind="modal" identifier="SegueToAddAttachment" modalTransitionStyle="crossDissolve" id="Zgo-Hx-sjv"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="2A8-Nn-b9g" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1031,9 +966,9 @@
                         <segue destination="OCr-PO-3nH" kind="push" identifier="ComposeToNachoNow" id="tkk-6o-6oa"/>
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="SegueToMessagePriority" modalTransitionStyle="crossDissolve" id="DDa-hb-SgY"/>
                         <segue destination="ErX-HX-Xxl" kind="modal" identifier="SegueToIntentSelection" modalPresentationStyle="fullScreen" modalTransitionStyle="crossDissolve" id="5qs-bm-OYT"/>
-                        <segue destination="1pE-rh-uML" kind="modal" identifier="ComposeToFiles" id="84g-IQ-Iaw"/>
+                        <segue destination="1pE-rh-uML" kind="modal" identifier="SegueToAttachments" id="84g-IQ-Iaw"/>
                         <segue destination="q23-o6-SFp" kind="modal" identifier="SegueToQuickResponse" modalTransitionStyle="crossDissolve" id="tsd-Qf-0s2"/>
-                        <segue destination="SX4-pu-5YA" kind="modal" identifier="ComposeToAddAttachment" id="zby-Sy-Y3J"/>
+                        <segue destination="SX4-pu-5YA" kind="modal" identifier="SegueToAddAttachment" modalTransitionStyle="crossDissolve" id="zby-Sy-Y3J"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="K96-0O-l77" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1696,14 +1631,7 @@
         </scene>
     </scenes>
     <resources>
-        <image name="icn-archive.png" width="24" height="24"/>
-        <image name="icn-quick-message.png" width="24" height="24"/>
         <image name="navbar-icn-close.png" width="17" height="17"/>
-        <image name="toolbar-icn-delete.png" width="19" height="21"/>
-        <image name="toolbar-icn-fwd.png" width="24" height="24"/>
-        <image name="toolbar-icn-move.png" width="24" height="20"/>
-        <image name="toolbar-icn-reply-all.png" width="24" height="24"/>
-        <image name="toolbar-icn-reply.png" width="24" height="24"/>
     </resources>
     <simulatedMetricsContainer key="defaultSimulatedMetrics">
         <simulatedStatusBarMetrics key="statusBar"/>
@@ -1711,33 +1639,33 @@
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="xrp-ey-B0j"/>
-        <segue reference="p7w-hx-Y70"/>
-        <segue reference="bIh-V3-UrL"/>
-        <segue reference="Zgo-Hx-sjv"/>
-        <segue reference="peA-r2-tjq"/>
-        <segue reference="uqv-uq-oCq"/>
-        <segue reference="szv-KC-TId"/>
-        <segue reference="tQS-oL-XNh"/>
+        <segue reference="TEI-cG-N0R"/>
         <segue reference="4z2-t5-9Cd"/>
         <segue reference="g4G-tD-G9H"/>
         <segue reference="iqA-wd-xqD"/>
-        <segue reference="XQg-JR-vxA"/>
         <segue reference="Eb2-K0-nI3"/>
-        <segue reference="TEI-cG-N0R"/>
+        <segue reference="XQg-JR-vxA"/>
         <segue reference="wZy-ga-YEb"/>
-        <segue reference="zOx-eF-clw"/>
-        <segue reference="rEt-DF-c51"/>
+        <segue reference="gkM-dU-I3K"/>
+        <segue reference="szv-KC-TId"/>
+        <segue reference="c2Q-C8-ZgX"/>
         <segue reference="c79-xS-Npa"/>
+        <segue reference="vUs-ft-xdy"/>
+        <segue reference="qB9-ce-7gT"/>
+        <segue reference="RHB-Or-A5o"/>
+        <segue reference="twQ-jE-jZd"/>
+        <segue reference="zby-Sy-Y3J"/>
+        <segue reference="xrp-ey-B0j"/>
+        <segue reference="84g-IQ-Iaw"/>
+        <segue reference="dAf-rc-Hh3"/>
+        <segue reference="KnL-e9-HQR"/>
         <segue reference="w67-dy-XSq"/>
+        <segue reference="peA-r2-tjq"/>
         <segue reference="m2D-2n-RiV"/>
         <segue reference="7sK-rg-HQL"/>
-        <segue reference="KnL-e9-HQR"/>
-        <segue reference="tkk-6o-6oa"/>
+        <segue reference="zOx-eF-clw"/>
+        <segue reference="rEt-DF-c51"/>
         <segue reference="Kmd-x6-iCJ"/>
-        <segue reference="eUJ-3D-Pjk"/>
-        <segue reference="B5b-jg-ZNg"/>
-        <segue reference="dAf-rc-Hh3"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>

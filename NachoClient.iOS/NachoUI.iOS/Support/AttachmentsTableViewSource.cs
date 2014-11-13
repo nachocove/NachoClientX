@@ -173,7 +173,7 @@ namespace NachoClient.iOS
         {
             UITableViewCell cell = null;
             cell = tableView.DequeueReusableCell (FileCell);
-            if (cell == null) {
+            if (null == cell) {
                 cell = CreateCell (tableView, FileCell);
             }
             NcAssert.True (null != cell);
@@ -853,18 +853,11 @@ namespace NachoClient.iOS
 
         public bool UpdateSearchResults (int forSearchOption, string forSearchString)
         {
-            new System.Threading.Thread (new System.Threading.ThreadStart (() => {
-                NachoClient.Util.HighPriority ();
-                var results = SearchByString (forSearchString);
-                NachoClient.Util.RegularPriority ();
-                InvokeOnMainThread (() => {
-                    var searchResults = results;
-                    SetSearchResults (searchResults);
-                    UpdateSearchResultsCallback ();
-                });
-            })).Start ();
-
-            return false;
+            NachoClient.Util.HighPriority ();
+            var results = SearchByString (forSearchString);
+            SetSearchResults (results);
+            NachoClient.Util.RegularPriority ();
+            return true;
         }
 
         public List<NcFileIndex> SearchByString (string searchString)
@@ -876,17 +869,6 @@ namespace NachoClient.iOS
                 }
             }
             return results;
-        }
-
-        public void UpdateSearchResultsCallback ()
-        {
-            // Totally a dummy routines that exists to remind us how to trigger 
-            // the update after updating the searchResult list of attachments.
-            if (null != SearchDisplayController.SearchResultsTableView) {
-                NachoClient.Util.HighPriority ();
-                SearchDisplayController.SearchResultsTableView.ReloadData ();
-                NachoClient.Util.RegularPriority ();
-            }
         }
     }
 

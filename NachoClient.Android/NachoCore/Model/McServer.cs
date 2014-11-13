@@ -17,6 +17,9 @@ namespace NachoCore.Model
 
         public string Host { get; set; }
 
+        public const string GMail_Host = "m.google.com";
+        public const string HotMail_Host = "s.outlook.com";
+
         public string Path { get; set; }
 
         public string Scheme { get; set; }

@@ -28,27 +28,26 @@ namespace NachoClient.iOS
         INachoMessageEditorParent, INachoFolderChooserParent, INachoCalendarItemEditorParent, 
         INcDatePickerDelegate, IUcAddressBlockDelegate, INachoDateControllerParent
     {
-
         // Model data
         public McEmailMessageThread thread;
         protected McAccount account;
         protected List<McAttachment> attachments;
 
         // UI elements for the main view
-        protected UIView view;
+        protected UIView headerView;
         protected AttachmentListView attachmentListView;
         protected UcAddressBlock toView;
         protected UcAddressBlock ccView;
         protected BodyView bodyView;
         protected UIBlockMenu blockMenu;
+        protected MessageToolbar messageToolbar;
         protected UITapGestureRecognizer singleTapGesture;
         protected UITapGestureRecognizer.Token singleTapGestureHandlerToken;
 
         // UI elements for the navigation bar
-        protected UIBarButtonItem deadlineButton;
+        protected UIBarButtonItem moveButton;
+        protected UIBarButtonItem deferButton;
         protected UIBarButtonItem blockMenuButton;
-        protected UIActionSheet replyActionSheet;
-        protected UIActionSheet deadlineActionSheet;
 
         // UI related constants (or pseudo constants)
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
@@ -57,14 +56,12 @@ namespace NachoClient.iOS
         #if DEBUG_UI
         const int VIEW_INSET = 4;
         const int ATTACHMENTVIEW_INSET = 10;
-        
 #else
         const int VIEW_INSET = 2;
         const int ATTACHMENTVIEW_INSET = 15;
         #endif
 
         // UI helper objects
-        protected RecursionCounter deferLayout;
         protected bool expandedHeader = false;
         protected float expandedSeparatorYOffset;
         protected float compactSeparatorYOffset;
@@ -80,15 +77,12 @@ namespace NachoClient.iOS
             RECEIVED_DATE_TAG = 107,
             SEPARATOR1_TAG = 108,
             SEPARATOR2_TAG = 112,
-            SPINNER_TAG = BodyView.TagType.SPINNER_TAG,
             USER_LABEL_TAG = 110,
             USER_CHILI_TAG = 111,
-            MESSAGE_PART_TAG = BodyView.TagType.MESSAGE_PART_TAG,
-            CALENDAR_PART_TAG = BodyCalendarView.CALENDAR_PART_TAG,
+            BLANK_VIEW_TAG = 113,
             ATTACHMENT_VIEW_TAG = 301,
             ATTACHMENT_NAME_TAG = 302,
             ATTACHMENT_STATUS_TAG = 303,
-            DOWNLOAD_TAG = BodyView.TagType.DOWNLOAD_TAG,
             BLOCK_MENU_TAG = 1000,
         }
 
@@ -100,61 +94,67 @@ namespace NachoClient.iOS
 
         protected override void CreateViewHierarchy ()
         {
-            // Navigation controls
+            ViewFramer.Create (scrollView).Height (View.Frame.Height - 44 - 64);
 
-            Util.SetAutomaticImageForButton (replyButton, "toolbar-icn-reply");
-            replyButton.TintColor = A.Color_NachoGreen;
+            // Toolbar controls
 
-            Util.SetAutomaticImageForButton (archiveButton, "email-archive-gray");
-            archiveButton.TintColor = A.Color_NachoGreen;
-
-            Util.SetAutomaticImageForButton (deleteButton, "email-delete-gray");
-            deleteButton.TintColor = A.Color_NachoGreen;
-
-            fixedSpaceButton.Width = 10;
-
-            ToolbarItems = new UIBarButtonItem[] {
-                replyButton,
-                flexibleSpaceButton,
-                archiveButton,
-                fixedSpaceButton,
-                deleteButton,
+            messageToolbar = new MessageToolbar (new RectangleF (0, scrollView.Frame.Bottom, View.Frame.Width, 44));
+            messageToolbar.OnClick = (object sender, EventArgs e) => {
+                var toolbarEventArgs = (MessageToolbarEventArgs)e;
+                switch (toolbarEventArgs.Action) {
+                case MessageToolbar.ActionType.REPLY:
+                    onReplyButtonClicked (MessageComposeViewController.REPLY_ACTION);
+                    break;
+                case MessageToolbar.ActionType.REPLY_ALL:
+                    onReplyButtonClicked (MessageComposeViewController.REPLY_ALL_ACTION);
+                    break;
+                case MessageToolbar.ActionType.FORWARD:
+                    onReplyButtonClicked (MessageComposeViewController.FORWARD_ACTION);
+                    break;
+                case MessageToolbar.ActionType.ARCHIVE:
+                    onArchiveButtonClicked ();
+                    break;
+                case MessageToolbar.ActionType.DELETE:
+                    onDeleteButtonClicked ();
+                    break;
+                default:
+                    throw new NcAssert.NachoDefaultCaseFailure (String.Format ("unknown toolbar action {0}",
+                        (int)toolbarEventArgs.Action));
+                }
             };
+            View.AddSubview (messageToolbar);
+
+            // Navigation controls
 
             blockMenuButton = new UIBarButtonItem ();
             Util.SetAutomaticImageForButton (blockMenuButton, "gen-more");
-            deadlineButton = new UIBarButtonItem ();
-            Util.SetAutomaticImageForButton (deadlineButton, "email-calendartime");
-            Util.SetAutomaticImageForButton (quickReplyButton, "contact-quickemail");
+            deferButton = new UIBarButtonItem ();
+            Util.SetAutomaticImageForButton (deferButton, "email-defer");
+            moveButton = new UIBarButtonItem ();
+            Util.SetAutomaticImageForButton (moveButton, "folder-move");
 
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
                 blockMenuButton,
-                deadlineButton,
-                quickReplyButton,
+                deferButton,
+                moveButton,
             };
 
-            quickReplyButton.Clicked += QuickReplyButtonClicked;
+            moveButton.Clicked += MoveButtonClicked;
             blockMenuButton.Clicked += BlockMenuButtonClicked;
-            replyButton.Clicked += ReplyButtonClicked;
-            archiveButton.Clicked += ArchiveButtonClicked;
-            deleteButton.Clicked += DeleteButtonClicked;
-            deadlineButton.Clicked += DeadlineButtonClicked;
+            deferButton.Clicked += DeferButtonClicked;
 
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
 
             // Main view
 
-            view = new UIView (ViewHelper.InnerFrameWithInset (View.Frame, VIEW_INSET));
-            scrollView.AddSubview (view);
+            headerView = new UIView (new RectangleF (VIEW_INSET, 0, View.Frame.Width - 2 * VIEW_INSET, View.Frame.Height));
+            scrollView.AddSubview (headerView);
 
             #if DEBUG_UI
-            view.BackgroundColor = A.Color_NachoRed;
+            headerView.BackgroundColor = A.Color_NachoRed;
             scrollView.BackgroundColor = A.Color_NachoTeal;
             #endif
 
-            scrollView.DidZoom += ScrollViewDidZoom;
-            scrollView.MinimumZoomScale = 1.0f;
-            scrollView.MaximumZoomScale = 1.0f;
             scrollView.Bounces = false;
             scrollView.Scrolled += ScrollViewScrolled;
 
@@ -164,14 +164,14 @@ namespace NachoClient.iOS
             singleTapGesture.NumberOfTapsRequired = 1;
             singleTapGestureHandlerToken = singleTapGesture.AddTarget (HeaderSingleTapHandler);
             singleTapGesture.ShouldRecognizeSimultaneously = SingleTapGestureRecognizer;
-            view.AddGestureRecognizer (singleTapGesture);
+            headerView.AddGestureRecognizer (singleTapGesture);
 
             // User image
             var userImageView = new UIImageView (new RectangleF (15, 15, 40, 40));
             userImageView.Layer.CornerRadius = 20;
             userImageView.Layer.MasksToBounds = true;
             userImageView.Tag = (int)TagType.USER_IMAGE_TAG;
-            view.AddSubview (userImageView);
+            headerView.AddSubview (userImageView);
 
             // User label, to be used if no image is available
             var userLabelView = new UILabel (new RectangleF (15, 15, 40, 40));
@@ -182,7 +182,7 @@ namespace NachoClient.iOS
             userLabelView.Layer.CornerRadius = 20;
             userLabelView.Layer.MasksToBounds = true;
             userLabelView.Tag = (int)TagType.USER_LABEL_TAG;
-            view.AddSubview (userLabelView);
+            headerView.AddSubview (userLabelView);
 
             // Initial Y offsets for various elements. These will be adjusted when the
             // final layout is done.
@@ -195,7 +195,7 @@ namespace NachoClient.iOS
             fromLabelView.TextColor = A.Color_0F424C;
             fromLabelView.Tag = (int)TagType.FROM_TAG;
             fromLabelView.UserInteractionEnabled = true;
-            view.AddSubview (fromLabelView);
+            headerView.AddSubview (fromLabelView);
 
             yOffset += 20;
 
@@ -205,7 +205,7 @@ namespace NachoClient.iOS
             subjectLabelView.Font = A.Font_AvenirNextMedium14;
             subjectLabelView.TextColor = A.Color_0F424C;
             subjectLabelView.Tag = (int)TagType.SUBJECT_TAG;
-            view.AddSubview (subjectLabelView);
+            headerView.AddSubview (subjectLabelView);
 
             yOffset += 20;
 
@@ -215,12 +215,12 @@ namespace NachoClient.iOS
             receivedLabelView.TextColor = A.Color_9B9B9B;
             receivedLabelView.TextAlignment = UITextAlignment.Left;
             receivedLabelView.Tag = (int)TagType.RECEIVED_DATE_TAG;
-            view.AddSubview (receivedLabelView);
+            headerView.AddSubview (receivedLabelView);
 
             yOffset += 20;
 
             // "To" label
-            float blockWidth = view.Frame.Width - TOVIEW_LEFT_MARGIN;
+            float blockWidth = headerView.Frame.Width - TOVIEW_LEFT_MARGIN;
             toView = new UcAddressBlock (this, "To:", blockWidth);
             toView.SetCompact (false, -1);
             toView.SetEditable (false);
@@ -231,10 +231,10 @@ namespace NachoClient.iOS
                 .Y (yOffset)
                 .Width (blockWidth)
                 .Height (0);
-            view.AddSubview (toView);
+            headerView.AddSubview (toView);
 
             // "cc" label
-            blockWidth = view.Frame.Width - CCVIEW_LEFT_MARGIN;
+            blockWidth = headerView.Frame.Width - CCVIEW_LEFT_MARGIN;
             ccView = new UcAddressBlock (this, "Cc:", blockWidth);
             ccView.SetCompact (false, -1);
             ccView.SetEditable (false);
@@ -245,68 +245,61 @@ namespace NachoClient.iOS
                 .Y (yOffset)
                 .Width (blockWidth)
                 .Height (0);
-            view.AddSubview (ccView);
+            headerView.AddSubview (ccView);
 
             // Reminder image
             var reminderImageView = new UIImageView (new RectangleF (65, yOffset + 4, 12, 12));
             reminderImageView.Image = UIImage.FromBundle ("inbox-icn-deadline");
             reminderImageView.Tag = (int)TagType.REMINDER_ICON_TAG;
-            view.AddSubview (reminderImageView);
+            headerView.AddSubview (reminderImageView);
 
             // Reminder label
             var reminderLabelView = new UILabel (new RectangleF (87, yOffset, 230, 20));
             reminderLabelView.Font = A.Font_AvenirNextRegular14;
             reminderLabelView.TextColor = A.Color_9B9B9B;
             reminderLabelView.Tag = (int)TagType.REMINDER_TEXT_TAG;
-            view.AddSubview (reminderLabelView);
+            headerView.AddSubview (reminderLabelView);
 
             // Chili image
             var chiliImageView = new UIImageView (new RectangleF (View.Frame.Width - 20 - 15, 14, 20, 20));
             chiliImageView.Image = UIImage.FromBundle ("icn-red-chili-small");
             chiliImageView.Tag = (int)TagType.USER_CHILI_TAG;
-            view.AddSubview (chiliImageView);
+            headerView.AddSubview (chiliImageView);
+
+            // A blank view below separator2, which covers up the To and CC fields
+            // when the headers are colapsed.  (The To and CC fields are often
+            // covered by the attachments view or the message body. But not always.)
+            var blankView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 0));
+            blankView.BackgroundColor = UIColor.White;
+            blankView.Tag = (int)TagType.BLANK_VIEW_TAG;
+            headerView.AddSubview (blankView);
 
             // Separator 1
             var separator1View = new UIView (new RectangleF (0, yOffset, 320, 1));
             separator1View.BackgroundColor = A.Color_NachoBorderGray;
             separator1View.Tag = (int)TagType.SEPARATOR1_TAG;
-            view.AddSubview (separator1View);
+            headerView.AddSubview (separator1View);
 
             // Attachments
             attachmentListView = new AttachmentListView (new RectangleF (
                 ATTACHMENTVIEW_INSET, yOffset + 1.0f,
-                view.Frame.Width - ATTACHMENTVIEW_INSET, 50));
+                headerView.Frame.Width - ATTACHMENTVIEW_INSET, 50));
             attachmentListView.OnAttachmentSelected = AttachmentsOnSelected;
             attachmentListView.OnStateChanged = AttachmentsOnStateChange;
             attachmentListView.Tag = (int)TagType.ATTACHMENT_VIEW_TAG;
-            view.AddSubview (attachmentListView);
+            headerView.AddSubview (attachmentListView);
 
             // Separater 2
             var separator2View = new UIView (new RectangleF (0, yOffset, 320, 1));
             separator2View.BackgroundColor = A.Color_NachoBorderGray;
             separator2View.Tag = (int)TagType.SEPARATOR2_TAG;
-            view.AddSubview (separator2View);
+            headerView.AddSubview (separator2View);
 
             yOffset += 1;
 
-            // Message body
-            bodyView = new BodyView (new RectangleF (
-                BodyView.BODYVIEW_INSET, yOffset,
-                view.Frame.Width - 2 * BodyView.BODYVIEW_INSET, view.Frame.Height - BodyView.BODYVIEW_INSET),
-                view);
-            bodyView.VerticalScrollingEnabled = false;
-            bodyView.HorizontalScrollingEnabled = false;
-            bodyView.SpinnerCenteredOnParentFrame = true;
-            bodyView.OnRenderStart = BodyViewOnRenderStart;
-            bodyView.OnRenderComplete = BodyViewOnRenderComplete;
-            view.AddSubview (bodyView);
-
-            // Spinner
-            var spinner = new UIActivityIndicatorView (UIActivityIndicatorViewStyle.Gray);
-            spinner.Center = View.Center;
-            spinner.HidesWhenStopped = true;
-            spinner.Tag = (int)TagType.SPINNER_TAG;
-            view.AddSubview (spinner);
+            // Message body, which is added to the scroll view, not the header view.
+            bodyView = BodyView.VariableHeightBodyView (new PointF (VIEW_INSET, yOffset), scrollView.Frame.Width - 2 * VIEW_INSET, scrollView.Frame.Size, LayoutView);
+            scrollView.AddSubview (bodyView);
 
             blockMenu = new UIBlockMenu (this, new List<UIBlockMenu.Block> () {
                 new UIBlockMenu.Block ("contact-quickemail", "Quick Reply", () => {
@@ -331,10 +324,17 @@ namespace NachoClient.iOS
         protected override void ConfigureAndLayout ()
         {
             var message = thread.SingleMessageSpecialCase ();
+
+            if (null == message) {
+                // TODO: Unavailable message
+                NavigationController.PopViewControllerAnimated (true);
+                return;
+            }
+
             attachments = McAttachment.QueryByItemId (message);
 
-            var userImageView = view.ViewWithTag ((int)TagType.USER_IMAGE_TAG) as UIImageView;
-            var userLabelView = view.ViewWithTag ((int)TagType.USER_LABEL_TAG) as UILabel;
+            var userImageView = headerView.ViewWithTag ((int)TagType.USER_IMAGE_TAG) as UIImageView;
+            var userLabelView = headerView.ViewWithTag ((int)TagType.USER_LABEL_TAG) as UILabel;
             var userImage = Util.ImageOfSender (message.AccountId, Pretty.EmailString (message.From));
             if (null != userImage) {
                 userImageView.Hidden = false;
@@ -352,7 +352,7 @@ namespace NachoClient.iOS
 
             attachmentListView.Hidden = !HasAttachments;
 
-            var cursor = new VerticalLayoutCursor (view);
+            var cursor = new VerticalLayoutCursor (headerView);
             cursor.AddSpace (35); // for From and top inset
 
             var subjectLabelView = View.ViewWithTag ((int)TagType.SUBJECT_TAG) as UILabel;
@@ -364,7 +364,7 @@ namespace NachoClient.iOS
             cursor.LayoutView (subjectLabelView);
 
             var receivedLabelView = View.ViewWithTag ((int)TagType.RECEIVED_DATE_TAG) as UILabel;
-            receivedLabelView.Text = Pretty.FullDateString (message.DateReceived);
+            receivedLabelView.Text = Pretty.FullDateTimeString (message.DateReceived);
             cursor.LayoutView (receivedLabelView);
 
             // Reminder image view and label
@@ -402,8 +402,11 @@ namespace NachoClient.iOS
 
             expandedSeparatorYOffset = cursor.TotalHeight;
 
+            var blankView = View.ViewWithTag ((int)TagType.BLANK_VIEW_TAG);
+            ViewFramer.Create (blankView).Y (separator1YOffset).Height (expandedSeparatorYOffset - compactSeparatorYOffset);
+
             var separator1View = View.ViewWithTag ((int)TagType.SEPARATOR1_TAG);
-            separator1View.Frame = new RectangleF (0, compactSeparatorYOffset, view.Frame.Width, 1);
+            separator1View.Frame = new RectangleF (0, compactSeparatorYOffset, headerView.Frame.Width, 1);
 
             var chiliImageView = View.ViewWithTag ((int)TagType.USER_CHILI_TAG) as UIImageView;
             float chiliX;
@@ -414,26 +417,17 @@ namespace NachoClient.iOS
                 chiliImageView.Hidden = true;
                 chiliX = View.Frame.Width;
             }
-
-            ConfigureToolbar ();
-
+                
             var fromLabelView = View.ViewWithTag ((int)TagType.FROM_TAG) as UILabel;
             ViewFramer.Create (fromLabelView).Width (chiliX - 10 - 16 - 65);
             fromLabelView.Text = Pretty.SenderString (message.From);
             fromLabelView.Font = (message.IsRead ? A.Font_AvenirNextDemiBold17 : A.Font_AvenirNextRegular17);
 
-            deferLayout = new RecursionCounter (() => {
-                LayoutView ();
-            });
-            deferLayout.Increment ();
-
             ConfigureAttachments ();
 
-            if (bodyView.Configure (message)) {
-                MarkAsRead ();
-            }
+            bodyView.Configure (message);
 
-            deferLayout.Decrement ();
+            LayoutView ();
         }
 
         protected override void Cleanup ()
@@ -441,39 +435,29 @@ namespace NachoClient.iOS
             // Remove all callbacks and handlers.
             singleTapGesture.RemoveTarget (singleTapGestureHandlerToken);
             singleTapGesture.ShouldRecognizeSimultaneously = null;
-            view.RemoveGestureRecognizer (singleTapGesture);
+            headerView.RemoveGestureRecognizer (singleTapGesture);
             scrollView.Scrolled -= ScrollViewScrolled;
-            quickReplyButton.Clicked -= QuickReplyButtonClicked;
+            moveButton.Clicked -= MoveButtonClicked;
             blockMenuButton.Clicked -= BlockMenuButtonClicked;
-            replyButton.Clicked -= ReplyButtonClicked;
-            archiveButton.Clicked -= ArchiveButtonClicked;
-            deleteButton.Clicked -= DeleteButtonClicked;
-            deadlineButton.Clicked -= DeadlineButtonClicked;
-            scrollView.DidZoom -= ScrollViewDidZoom;
+            deferButton.Clicked -= DeferButtonClicked;
+            messageToolbar.OnClick = null;
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
 
             blockMenu.Cleanup ();
+            messageToolbar.Cleanup ();
 
-            archiveButton = null;
-            deleteButton = null;
-            fixedSpaceButton = null;
-            flexibleSpaceButton = null;
-            forwardButton = null;
-            quickReplyButton = null;
-            replyAllButton = null;
-            replyButton = null;
+            moveButton = null;
             scrollView = null;
             blockMenu = null;
+            messageToolbar = null;
 
-            view = null;
+            headerView = null;
             attachmentListView = null;
             toView = null;
             ccView = null;
             bodyView = null;
-            deadlineButton = null;
+            deferButton = null;
             blockMenuButton = null;
-            replyActionSheet = null;
-            deadlineActionSheet = null;
         }
 
         protected void LayoutView (bool animated)
@@ -487,34 +471,23 @@ namespace NachoClient.iOS
 
         protected void LayoutView ()
         {
-            var separator1View = view.ViewWithTag ((int)TagType.SEPARATOR1_TAG);
+            var separator1View = headerView.ViewWithTag ((int)TagType.SEPARATOR1_TAG);
             ViewFramer.Create (separator1View).Y (separator1YOffset);
-            var separator2View = view.ViewWithTag ((int)TagType.SEPARATOR2_TAG);
+            var separator2View = headerView.ViewWithTag ((int)TagType.SEPARATOR2_TAG);
             ViewFramer.Create (separator2View).Y (separator2YOffset);
+            var blankView = headerView.ViewWithTag ((int)TagType.BLANK_VIEW_TAG);
+            ViewFramer.Create (blankView).Y (separator1YOffset);
 
             ViewFramer.Create (attachmentListView).Y (separator1YOffset + 1.0f);
 
-            // When setting the upper left corner, account for the X content offset
-            // in "view", and the Y content offset in "bodyView".
+            ViewFramer.Create (bodyView).Y (separator2YOffset + 1);
+            scrollView.ContentSize = new SizeF (Math.Max (headerView.Frame.Width, bodyView.Frame.Width) + 2 * VIEW_INSET, bodyView.Frame.Bottom);
 
-            float bodyHeight = View.Frame.Height;
-            bodyHeight -= 2 * BodyView.BODYVIEW_INSET;
-            bodyHeight -= separator2View.Frame.Bottom;
-            bodyHeight -= attachmentListView.Frame.Height;
-            float bodyY = Math.Max (scrollView.ContentOffset.Y, separator2YOffset + 1);
-            bodyView.Layout (VIEW_INSET, bodyY, view.Frame.Width - 2 * BodyView.BODYVIEW_INSET, bodyHeight);
-
-            float viewWidth = scrollView.Frame.Width - 2 * VIEW_INSET;
-            float viewHeight = separator2YOffset;
-            viewHeight += bodyView.Frame.Height;
-            viewHeight += 2 * VIEW_INSET;
-            viewHeight = Math.Max (viewHeight, scrollView.Frame.Height);
-            view.Frame = new RectangleF (
-                VIEW_INSET + scrollView.ContentOffset.X, VIEW_INSET,
-                viewWidth, viewHeight);
-            scrollView.ContentSize = new SizeF (
-                Math.Max (view.Frame.Width, bodyView.ContentSize.Width + 12.0f),
-                separator2YOffset + bodyView.ContentSize.Height);
+            // MarkAsRead() will change the message from unread to read only if the body has been
+            // completely downloaded, so it is safe to call it unconditionally.  We put the call
+            // here, rather than in ConfigureAndLayout(), to handle the case where the body is
+            // downloaded long after the message view has been opened.
+            MarkAsRead ();
 
             #if (DEBUG_UI)
             ViewHelper.DumpViews<TagType> (scrollView);
@@ -529,22 +502,6 @@ namespace NachoClient.iOS
             }
         }
 
-        public override void ViewWillAppear (bool animated)
-        {
-            base.ViewWillAppear (animated);
-            if (null != this.NavigationController) {
-                this.NavigationController.ToolbarHidden = false;
-            }
-        }
-
-        public override void ViewWillDisappear (bool animated)
-        {
-            base.ViewWillDisappear (animated);
-            if (null != this.NavigationController) {
-                this.NavigationController.ToolbarHidden = true;
-            }
-        }
-
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             var blurry = segue.DestinationViewController as BlurryViewController;
@@ -553,15 +510,13 @@ namespace NachoClient.iOS
             }
 
             if (segue.Identifier == "MessageViewToMessagePriority") {
-                var vc = (MessagePriorityViewController)segue.DestinationViewController;
-                vc.thread = thread;
-                vc.SetOwner (this);
+                var vc = (INachoDateController)segue.DestinationViewController;
+                vc.Setup (this, thread, DateControllerType.Defer);
                 return;
             }
             if (segue.Identifier == "MessageViewToFolders") {
-                var vc = (FoldersViewController)segue.DestinationViewController;
-                vc.SetModal (true);
-                vc.SetOwner (this, thread);
+                var vc = (INachoFolderChooser)segue.DestinationViewController;
+                vc.SetOwner (this, true, thread);
                 return;
             }
             if (segue.Identifier == "MessageViewToCompose") {
@@ -638,33 +593,6 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void ShowReplyActionSheet ()
-        {
-            replyActionSheet = new UIActionSheet ();
-            replyActionSheet.Add ("Reply");
-            replyActionSheet.Add ("Reply All");
-            replyActionSheet.Add ("Forward");
-            replyActionSheet.Add ("Cancel");
-            replyActionSheet.CancelButtonIndex = 3;
-            replyActionSheet.Clicked += ReplyActionSheetClicked;
-            replyActionSheet.ShowFromToolbar (NavigationController.Toolbar);
-        }
-
-        protected void ShowDeadlineActionSheet ()
-        {
-            deadlineActionSheet = new UIActionSheet ();
-            deadlineActionSheet.Add ("Set Deadline");
-            deadlineActionSheet.Add ("Create Meeting");
-            deadlineActionSheet.Add ("Cancel");
-            deadlineActionSheet.CancelButtonIndex = 2;
-            deadlineActionSheet.Clicked += DeadlineActionSheetClicked;
-            deadlineActionSheet.ShowFrom (deadlineButton, true);
-        }
-
-        protected void ConfigureToolbar ()
-        {
-        }
-
         protected void ConfigureAttachments ()
         {
             attachmentListView.Reset ();
@@ -729,7 +657,7 @@ namespace NachoClient.iOS
 
         public void DismissChildDateController (INachoDateController vc)
         {
-            vc.SetOwner (null);
+            vc.Setup (null, null, DateControllerType.None);
             vc.DimissDateController (false, new NSAction (delegate {
                 NavigationController.PopViewControllerAnimated (true);
             }));
@@ -763,7 +691,7 @@ namespace NachoClient.iOS
         public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
         {
             MoveThisMessage (folder);
-            vc.SetOwner (null, null);
+            vc.SetOwner (null, false, null);
             vc.DismissFolderChooser (false, new NSAction (delegate {
                 NavigationController.PopViewControllerAnimated (true);
             }));
@@ -778,28 +706,20 @@ namespace NachoClient.iOS
 
         private void ScrollViewScrolled (object sender, EventArgs e)
         {
+            // When scrolling horizontally, keep the header on screen.
+            ViewFramer.Create (headerView).X (scrollView.ContentOffset.X + VIEW_INSET);
 
-            // Process vertical scrolling
-            PointF bodyViewOffset = new PointF (scrollView.ContentOffset.X, scrollView.ContentOffset.Y);
-            bodyViewOffset.Y -= separator2YOffset;
-            ViewFramer framer = ViewFramer.Create (bodyView);
-            if (0 < bodyViewOffset.Y) {
-                framer.Y (1.0f + separator2YOffset + bodyViewOffset.Y);
-            } else {
-                framer.Y (1.0f + separator2YOffset);
-            }
-            bodyView.ScrollTo (bodyViewOffset);
-
-            // Process horizontal scrolling
-            framer = ViewFramer.Create (view);
-            framer.X (scrollView.ContentOffset.X);
+            // Let the body view do its magic to keep the right stuff visible.
+            // Adjust the offsets from scrollView's coordinates to bodyView's coordinates.
+            bodyView.ScrollingAdjustment (new PointF (
+                scrollView.ContentOffset.X - bodyView.Frame.X, scrollView.ContentOffset.Y - bodyView.Frame.Y));
         }
 
         private void HeaderSingleTapHandler (NSObject sender)
         {
             var gesture = sender as UIGestureRecognizer;
             if (null != gesture) {
-                PointF touch = gesture.LocationInView (view);
+                PointF touch = gesture.LocationInView (headerView);
                 if (touch.Y <= separator1YOffset) {
                     expandedHeader = !expandedHeader;
                     LayoutView (true);
@@ -807,10 +727,9 @@ namespace NachoClient.iOS
             }
         }
 
-        private void QuickReplyButtonClicked (object sender, EventArgs e)
+        private void MoveButtonClicked (object sender, EventArgs e)
         {
-            PerformSegue ("MessageViewToCompose", new SegueHolder (
-                MessageComposeViewController.REPLY_ACTION, NcQuickResponse.QRTypeEnum.Reply));
+            PerformSegue ("MessageViewToFolders", new SegueHolder (null));
         }
 
         private void BlockMenuButtonClicked (object sender, EventArgs e)
@@ -819,31 +738,26 @@ namespace NachoClient.iOS
             blockMenu.MenuTapped ();
         }
 
-        private void ReplyButtonClicked (object sender, EventArgs e)
-        {
-            ShowReplyActionSheet ();
-        }
-
-        private void ArchiveButtonClicked (object sender, EventArgs e)
-        {
-            ArchiveThisMessage ();
-            NavigationController.PopViewControllerAnimated (true);
-        }
-
-        private void DeleteButtonClicked (object sender, EventArgs e)
+        private void onDeleteButtonClicked ()
         {
             DeleteThisMessage ();
             NavigationController.PopViewControllerAnimated (true);
         }
 
-        private void DeadlineButtonClicked (object sender, EventArgs e)
+        private void onArchiveButtonClicked ()
         {
-            ShowDeadlineActionSheet ();
+            ArchiveThisMessage ();
+            NavigationController.PopViewControllerAnimated (true);
         }
 
-        private void ScrollViewDidZoom (object sender, EventArgs e)
+        private void onReplyButtonClicked (string action)
         {
-            Log.Info (Log.LOG_UI, "vertical scrollview did zoom");
+            PerformSegue ("MessageViewToCompose", new SegueHolder (action));
+        }
+
+        private void DeferButtonClicked (object sender, EventArgs e)
+        {
+            PerformSegue ("MessageViewToMessagePriority", new SegueHolder (null));
         }
 
         private bool SingleTapGestureRecognizer (UIGestureRecognizer a, UIGestureRecognizer b)
@@ -865,16 +779,6 @@ namespace NachoClient.iOS
             LayoutView (true);
         }
 
-        private void BodyViewOnRenderStart ()
-        {
-            deferLayout.Increment ();
-        }
-
-        private void BodyViewOnRenderComplete ()
-        {
-            deferLayout.Decrement ();
-        }
-
         private void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var statusEvent = (StatusIndEventArgs)e;
@@ -883,59 +787,8 @@ namespace NachoClient.iOS
                 ConfigureAttachments ();
                 return;
             }
-            if (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded == statusEvent.Status.SubKind) {
-                var token = statusEvent.Tokens.FirstOrDefault ();
-                Log.Info (Log.LOG_EMAIL, "EmailMessageBodyDownloadSucceeded {0}", token);
-                if (bodyView.DownloadComplete (true, token)) {
-                    ConfigureAndLayout ();
-                    MarkAsRead ();
-                }
-            }
-            if (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed == statusEvent.Status.SubKind) {
-                var token = statusEvent.Tokens.FirstOrDefault ();
-                Log.Info (Log.LOG_EMAIL, "EmailMessageBodyDownloadFailed {0}", token);
-                if (bodyView.DownloadComplete (false, token)) {
-                    ConfigureAndLayout ();
-                }
-            }
         }
-
-        private void ReplyActionSheetClicked (object sender, UIButtonEventArgs b)
-        {
-            switch (b.ButtonIndex) {
-            case 0:
-                PerformSegue ("MessageViewToCompose", new SegueHolder (MessageComposeViewController.REPLY_ACTION));
-                break;
-            case 1:
-                PerformSegue ("MessageViewToCompose", new SegueHolder (MessageComposeViewController.REPLY_ALL_ACTION));
-                break;
-            case 2:
-                PerformSegue ("MessageViewToCompose", new SegueHolder (MessageComposeViewController.FORWARD_ACTION));
-                break;
-            case 3:
-                break; // Cancel
-            }
-            replyActionSheet.Clicked -= ReplyActionSheetClicked;
-            replyActionSheet = null;
-        }
-
-        private void DeadlineActionSheetClicked (object sender, UIButtonEventArgs b)
-        {
-            switch (b.ButtonIndex) {
-            case 0:
-                PerformSegue ("SegueToDatePicker", new SegueHolder (null));
-                break;
-            case 1:
-                var c = CalendarHelper.CreateMeeting (thread.SingleMessageSpecialCase ());
-                PerformSegue ("SegueToEditEvent", new SegueHolder (c));
-                break;
-            case 2:
-                break; // Cancel
-            }
-            deadlineActionSheet.Clicked -= DeadlineActionSheetClicked;
-            deadlineActionSheet = null;
-        }
-
+            
         // IUcAddressBlockDelegate implementation
 
         public void AddressBlockNeedsLayout (UcAddressBlock view)

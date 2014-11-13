@@ -24,7 +24,7 @@ namespace NachoClient.iOS
         INachoFileChooserParent Owner;
         protected McAccount account;
         AttachmentsTableViewSource AttachmentsSource;
-
+         
         string Token;
 
         protected McNote selectedNote;
@@ -67,7 +67,6 @@ namespace NachoClient.iOS
         /// </summary>
         public void DismissFileChooser (bool animated, NSAction action)
         {
-            DismissViewController (true, null);
             Owner = null;
         }
 

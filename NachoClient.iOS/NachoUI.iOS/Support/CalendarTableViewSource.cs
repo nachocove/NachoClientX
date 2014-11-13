@@ -554,12 +554,14 @@ namespace NachoClient.iOS
                 return;
             }
 
+            Log.Debug (Log.LOG_UI, "ExtendTableViewUntil:  old={0} new={1} actual={2}", len1, len2, NumberOfSections(tableView));
+
             NSMutableIndexSet set = new NSMutableIndexSet ();
             for (int i = len1; i < len2; i++) {
                 set.Add ((uint)i);
             }
             tableView.BeginUpdates ();
-            tableView.InsertSections (set, UITableViewRowAnimation.Automatic);
+            tableView.InsertSections (set, UITableViewRowAnimation.None);
             tableView.EndUpdates ();
         }
 
@@ -569,6 +571,8 @@ namespace NachoClient.iOS
             int item;
             int section;
             if (calendar.FindEventNearestTo (date, out item, out section)) {
+                NcAssert.True (section < NumberOfSections(tableView));
+                NcAssert.True (item < RowsInSection (tableView, section));
                 var p = NSIndexPath.FromItemSection (item, section);
                 tableView.ScrollToRow (p, UITableViewScrollPosition.Top, false);
             }
@@ -576,7 +580,8 @@ namespace NachoClient.iOS
 
         public void ScrollToDate (UITableView tableView, DateTime date)
         {
-            ExtendTableViewUntil (tableView, date);
+            // Make sure there are enough rows to fill the table
+            ExtendTableViewUntil (tableView, date.AddDays(7));
             var i = calendar.IndexOfDate (date);
             if (0 <= i) {
                 var p = NSIndexPath.FromItemSection (NSRange.NotFound, i);

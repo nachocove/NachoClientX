@@ -205,7 +205,7 @@ namespace NachoCore.ActiveSync
             return null;
         }
 
-        public virtual bool SafeToMime (AsHttpOperation Sender, out StreamContent mime)
+        public virtual bool SafeToMime (AsHttpOperation Sender, out Stream mime)
         {
             lock (PendingResolveLockObj) {
                 if (RequiresPending () && null == PendingSingle && 0 == PendingList.Count) {
@@ -217,7 +217,7 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        protected virtual StreamContent ToMime (AsHttpOperation Sender)
+        protected virtual Stream ToMime (AsHttpOperation Sender)
         {
             return null;
         }

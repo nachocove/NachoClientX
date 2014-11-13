@@ -12,51 +12,35 @@ namespace NachoClient.iOS
 {
     public class BodyImageView : UIImageView, IBodyRender
     {
-        protected SizeF _contentSize;
+        public BodyImageView (float Y, float preferredWidth, UIImage image)
+            : base (new RectangleF(0, Y, preferredWidth, 1))
+        {
+            if (image.Size.Width > preferredWidth) {
+                // Shrink the image so it fits in the given width
+                float newHeight = image.Size.Height * (preferredWidth / image.Size.Width);
+                Image = image.Scale (new SizeF (preferredWidth, newHeight));
+            } else {
+                Image = image;
+            }
+            ViewFramer.Create (this).Width (Image.Size.Width).Height (Image.Size.Height);
+        }
+
+        public UIView uiView ()
+        {
+            return this;
+        }
+
         public SizeF ContentSize {
             get {
-                return _contentSize;
+                return Image.Size;
             }
         }
 
-        public BodyImageView (IntPtr ptr) : base (ptr)
+        public void ScrollingAdjustment (RectangleF frame, PointF contentOffset)
         {
-        }
-
-        public BodyImageView (RectangleF frame) : base (frame)
-        {
-            ViewHelper.SetDebugBorder (this, UIColor.Orange);
-
-            Tag = (int)BodyView.TagType.MESSAGE_PART_TAG;
-        }
-
-        public void Configure (MimePart part)
-        {
-            using (var image = PlatformHelpers.RenderImage (part)) {
-
-                if (null == image) {
-                    Log.Error (Log.LOG_UI, "Unable to render {0}", part.ContentType);
-                    // TODO - maybe put a bad image icon here?
-                    return;
-                }
-
-                float width = Frame.Width;
-                float height = image.Size.Height * (width / image.Size.Width);
-                Image = image.Scale (new SizeF (width, height));
-
-                _contentSize = new SizeF (width, height);
-            }
-        }
-
-        public void ScrollTo (PointF upperLeft)
-        {
-            // Image view is not scrollable
-        }
-
-        public string LayoutInfo ()
-        {
-            return String.Format ("BodyImageView: offset=({0},{1})  frame=({2},{3})  content=({4},{5})",
-                Frame.X, Frame.Y, Frame.Width, Frame.Height, ContentSize.Width, ContentSize.Height);
+            // Image does not scroll or resize.
+            // The only thing that can be adjusted is the view's origin.
+            ViewFramer.Create (this).X (frame.X - contentOffset.X).Y (frame.Y - contentOffset.Y);
         }
     }
 }

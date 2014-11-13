@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
@@ -87,7 +88,7 @@ namespace Test.iOS
             return true;
         }
 
-        public virtual bool SafeToMime (AsHttpOperation sender, out StreamContent mime)
+        public virtual bool SafeToMime (AsHttpOperation sender, out Stream mime)
         {
             mime = null;
             return true;

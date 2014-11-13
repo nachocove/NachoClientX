@@ -371,6 +371,15 @@ namespace NachoCore.Utils
         {
             return String.Format ("({0},{1})", s.Width, s.Height);
         }
+
+        public static string Join(String one, String two)
+        {
+            if (String.IsNullOrEmpty (one)) {
+                return two;
+            } else {
+                return one + " " + two;
+            }
+        }
     }
 }
 

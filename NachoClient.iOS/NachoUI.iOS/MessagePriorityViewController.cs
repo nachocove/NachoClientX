@@ -14,10 +14,10 @@ namespace NachoClient.iOS
 {
     public partial class MessagePriorityViewController : BlurryViewController, INcDatePickerDelegate, INachoDateController
     {
-        public McEmailMessageThread thread;
+        protected McEmailMessageThread thread;
         protected INachoDateControllerParent owner;
         protected IntentSelectionViewController intentSelector;
-        protected DateControllerType dateControllerType = DateControllerType.Defer;
+        protected DateControllerType dateControllerType = DateControllerType.None;
 
         const float BUTTON_SIZE = 64;
         const float BUTTON_LABEL_HEIGHT = 40;
@@ -34,9 +34,11 @@ namespace NachoClient.iOS
             CreateView ();
         }
 
-        public void SetDateControllerType (DateControllerType type)
+        public void Setup (INachoDateControllerParent owner, McEmailMessageThread thread, DateControllerType dateControllerType)
         {
-            this.dateControllerType = type;
+            this.owner = owner;
+            this.thread = thread;
+            this.dateControllerType = dateControllerType;
         }
 
         public void SetIntentSelector (IntentSelectionViewController selector)
@@ -91,7 +93,8 @@ namespace NachoClient.iOS
 
             List<ButtonInfo> buttonInfoList;
 
-            if (DateControllerType.Defer == dateControllerType) {
+            switch(dateControllerType) {
+            case DateControllerType.Defer:
                 buttonInfoList = new List<ButtonInfo> (new ButtonInfo[] {
                     new ButtonInfo ("Later Today", "modal-later-today", () => DateSelected (MessageDeferralType.Later, DateTime.MinValue)),
                     new ButtonInfo ("Tonight", "modal-tonight", () => DateSelected (MessageDeferralType.Tonight, DateTime.MinValue)),
@@ -105,7 +108,8 @@ namespace NachoClient.iOS
                     new ButtonInfo ("Pick Date", "modal-pick-date", () => PerformSegue ("MessagePriorityToDatePicker", this)),
                     null,
                 });
-            } else {
+                break;
+            case DateControllerType.Intent:
                 buttonInfoList = new List<ButtonInfo> (new ButtonInfo[] {
                     new ButtonInfo ("One hour", "modal-later-today", () => DateSelected (MessageDeferralType.OneHour, DateTime.MinValue)),
                     new ButtonInfo ("Two hours", "modal-later-today", () => DateSelected (MessageDeferralType.TwoHours, DateTime.MinValue)),
@@ -119,6 +123,11 @@ namespace NachoClient.iOS
                     new ButtonInfo ("Pick Date", "modal-pick-date", () => PerformSegue ("MessagePriorityToDatePicker", this)),
                     null,
                 });
+                break;
+            default:
+                buttonInfoList = null;
+                NcAssert.CaseError ();
+                break;
             }
 
             var center = priorityView.Center;
@@ -167,12 +176,6 @@ namespace NachoClient.iOS
 
             View.AddSubview (priorityView);
         }
-
-        public void SetOwner (INachoDateControllerParent o)
-        {
-            owner = o;
-        }
-
 
         public void DimissDateController (bool animated, NSAction action)
         {

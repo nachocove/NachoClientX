@@ -802,6 +802,11 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.UiSetServConf,
                             (uint)CtlEvt.E.PendQ,
                             (uint)CtlEvt.E.PendQHot,
+                            (uint)CtlEvt.E.PkPing,
+                            (uint)CtlEvt.E.PkQOp,
+                            (uint)CtlEvt.E.PkHotQOp,
+                            (uint)CtlEvt.E.PkFetch,
+                            (uint)CtlEvt.E.PkWait,
                             (uint)CtlEvt.E.Park,
                         },
                         Invalid = new [] {
@@ -815,14 +820,9 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.GetServConf,
                             (uint)CtlEvt.E.GetCertOk,
                             (uint)CtlEvt.E.ReFSync,
-                            (uint)CtlEvt.E.PkPing,
-                            (uint)CtlEvt.E.PkQOp,
-                            (uint)CtlEvt.E.PkHotQOp,
-                            (uint)CtlEvt.E.PkFetch,
-                            (uint)CtlEvt.E.PkWait,
                         },
                         On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDrive, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDrive, ActSetsState = true },
                         }
                     },
                 }
@@ -861,7 +861,7 @@ namespace NachoCore.ActiveSync
             McFolder freshMade;
             NcModel.Instance.RunInTransaction (() => {
                 if (null == McFolder.GetOutboxFolder (AccountId)) {
-                    freshMade = McFolder.Create (AccountId, true, false, "0",
+                    freshMade = McFolder.Create (AccountId, true, false, true, "0",
                         McFolder.ClientOwned_Outbox, "On-Device Outbox",
                         Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
                     freshMade.Insert ();
@@ -869,7 +869,7 @@ namespace NachoCore.ActiveSync
             });
             NcModel.Instance.RunInTransaction (() => {
                 if (null == McFolder.GetOutboxFolder (AccountId)) {
-                    freshMade = McFolder.Create (AccountId, true, false, "0",
+                    freshMade = McFolder.Create (AccountId, true, false, true, "0",
                         McFolder.ClientOwned_EmailDrafts, "On-Device Email Drafts",
                         Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
                     freshMade.Insert ();
@@ -877,7 +877,7 @@ namespace NachoCore.ActiveSync
             });
             NcModel.Instance.RunInTransaction (() => {
                 if (null == McFolder.GetOutboxFolder (AccountId)) {
-                    freshMade = McFolder.Create (AccountId, true, false, "0",
+                    freshMade = McFolder.Create (AccountId, true, false, true, "0",
                         McFolder.ClientOwned_CalDrafts, "On-Device Calendar Drafts",
                         Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
                     freshMade.Insert ();
@@ -885,7 +885,7 @@ namespace NachoCore.ActiveSync
             });
             NcModel.Instance.RunInTransaction (() => {
                 if (null == McFolder.GetGalCacheFolder (AccountId)) {
-                    freshMade = McFolder.Create (AccountId, true, true, "0",
+                    freshMade = McFolder.Create (AccountId, true, true, true, "0",
                         McFolder.ClientOwned_GalCache, string.Empty,
                         Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
                     freshMade.Insert ();
@@ -893,7 +893,7 @@ namespace NachoCore.ActiveSync
             });
             NcModel.Instance.RunInTransaction (() => {
                 if (null == McFolder.GetGleanedFolder (AccountId)) {
-                    freshMade = McFolder.Create (AccountId, true, true, "0",
+                    freshMade = McFolder.Create (AccountId, true, true, true, "0",
                         McFolder.ClientOwned_Gleaned, string.Empty,
                         Xml.FolderHierarchy.TypeCode.UserCreatedContacts_14);
                     freshMade.Insert ();
@@ -901,7 +901,7 @@ namespace NachoCore.ActiveSync
             });
             NcModel.Instance.RunInTransaction (() => {
                 if (null == McFolder.GetLostAndFoundFolder (AccountId)) {
-                    freshMade = McFolder.Create (AccountId, true, true, "0",
+                    freshMade = McFolder.Create (AccountId, true, true, true, "0",
                         McFolder.ClientOwned_LostAndFound, string.Empty,
                         Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1);
                     freshMade.Insert ();

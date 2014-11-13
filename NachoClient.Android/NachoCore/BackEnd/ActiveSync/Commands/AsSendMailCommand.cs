@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Xml.Linq;
@@ -51,7 +52,7 @@ namespace NachoCore.ActiveSync
             return doc;
         }
 
-        protected override StreamContent ToMime (AsHttpOperation Sender)
+        protected override Stream ToMime (AsHttpOperation Sender)
         {
             if (14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
                 return EmailMessage.ToMime ();
@@ -64,7 +65,13 @@ namespace NachoCore.ActiveSync
             PendingResolveApply ((pending) => {
                 pending.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSendSucceeded));
             });
+
             EmailMessage.Delete ();
+
+            var sentFolder = McFolder.GetDefaultSentFolder (BEContext.Account.Id);
+            if (null != sentFolder) {
+                sentFolder.UpdateSet_AsSyncMetaToClientExpected (true);
+            }
             return Event.Create ((uint)SmEvt.E.Success, "SMSUCCESS");
         }
 

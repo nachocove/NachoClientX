@@ -246,7 +246,7 @@ namespace NachoCore.Model
         }
 
         /// TODO: Support other types besides mime!
-        public StreamContent ToMime ()
+        public Stream ToMime ()
         {
             var bodyPath = MimePath ();
             if (null == bodyPath) {
@@ -257,7 +257,7 @@ namespace NachoCore.Model
                 Log.Error (Log.LOG_EMAIL, "BodyPath {0} doesn't find a file.", bodyPath);
                 return null;
             }
-            return new StreamContent (fileStream);
+            return fileStream;
         }
 
         public string MimePath ()

@@ -40,6 +40,8 @@ namespace NachoCore.Model
 
         public int DisplayColor { get; set; }
 
+        public bool IsDistinguished { get; set; }
+
         public Xml.FolderHierarchy.TypeCode Type { get; set; }
         // Client-owned distinguised folders.
         public const string ClientOwned_Outbox = "Outbox2";
@@ -51,6 +53,8 @@ namespace NachoCore.Model
         public const string ClientOwned_DeviceContacts = "DEVCONTACTS";
         public const string ClientOwned_DeviceCalendars = "DEVCALENDARS";
 
+        public const string GMail_All_ServerId = "Mail:^all";
+
         public override string ToString ()
         {
             return "NcFolder: sid=" + ServerId + " pid=" + ParentId + " skey=" + AsSyncKey + " dn=" + DisplayName + " type=" + Type.ToString ();
@@ -59,6 +63,7 @@ namespace NachoCore.Model
         public static McFolder Create (int accountId, 
                                        bool isClientOwned,
                                        bool isHidden,
+                                       bool isDistinguished,
                                        string parentId,
                                        string serverId,
                                        string displayName,
@@ -82,6 +87,7 @@ namespace NachoCore.Model
                 AccountId = accountId,
                 IsClientOwned = isClientOwned,
                 IsHidden = isHidden,
+                IsDistinguished = isDistinguished,
                 ParentId = parentId,
                 ServerId = serverId,
                 DisplayName = displayName,
@@ -219,6 +225,11 @@ namespace NachoCore.Model
             return GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultTasks_7);
         }
 
+        public static McFolder GetDefaultSentFolder (int accountId)
+        {
+            return GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultSent_5);
+        }
+
         public static List<McFolder> QueryByParentId (int accountId, string parentId)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
@@ -305,8 +316,11 @@ namespace NachoCore.Model
             var potentialFolder = ServerEndQueryByServerId (accountId, serverId);
             NcAssert.NotNull (potentialFolder, "Server to move should exist");
 
-            NcAssert.True (potentialFolder.IsClientOwned == false, "Folder to be moved should be synced");
+            NcAssert.False (potentialFolder.IsClientOwned, "Folder to be moved should be synced");
+            NcAssert.False (potentialFolder.IsDistinguished, "Folder to be moved must not be distinguished");
 
+            // TODO: we should also give new ServerId values to everything. It should not matter.
+            // But a bug that makes it matter would be hard to fix!
             potentialFolder = potentialFolder.UpdateWithOCApply<McFolder> ((record) => {
                 var target = (McFolder)record;
                 target.IsClientOwned = true;

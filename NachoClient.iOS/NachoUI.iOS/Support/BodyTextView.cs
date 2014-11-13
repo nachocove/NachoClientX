@@ -12,68 +12,44 @@ namespace NachoClient.iOS
 {
     public class BodyTextView : UITextView, IBodyRender
     {
-        // No need to implement ContentSize (for IBodyRender). Re-use UITextView's
-        // ContentSize (from its parent UIScrollView)
-
-        public BodyTextView (IntPtr ptr) : base (ptr)
+        public BodyTextView (float Y, float preferredWidth, NSAttributedString text)
+            : base (new RectangleF(0, Y, preferredWidth, 1))
         {
-        }
-
-        public BodyTextView (RectangleF frame) : base (frame)
-        {
-            ViewHelper.SetDebugBorder (this, UIColor.Blue);
-
             Editable = false;
-            Font = A.Font_AvenirNextRegular17;
-            Tag = (int)BodyView.TagType.MESSAGE_PART_TAG;
-            // TODO - In UIWebView, setting ScrollEnabled = false results in disabling the scroll bar
-            // interactively but still allows it to function programmatically. This is required for
-            // implementing ScrollTo(). But in UITextView, this technique does not seem to work.
-            //
-            // So, the current solution is to re-enable scrolling but disable user interaction. The
-            // body view scroll view has been disabled. So, including the view controller's, there are
-            // only two of them. So, this should be ok.
+            AttributedText = text;
+            base.ContentSize = SizeThatFits (Frame.Size);
+
+            // Workaround a bug.  UITextView, which is a kind of UIScrollView, only allows
+            // scrolling programatically if ScrollEnabled is true.  If ScrollEnabled is
+            // false, then setting ContentOffset has no effect (or the wrong effect). To
+            // work around this, set ScrollEnabled to true but UserInteraction to false.
+            // This allows scrolling programatically but doesn't intercept any of the
+            // scroll gestures.
             ScrollEnabled = true;
             UserInteractionEnabled = false;
             ShowsHorizontalScrollIndicator = false;
             ShowsVerticalScrollIndicator = false;
-            // We are using double tap for zoom toggling. So, we want to disable 
-            // double tap to select action. A long tap can still select text.
-            foreach (var gr in GestureRecognizers) {
-                var tapGr = gr as UITapGestureRecognizer;
-                if (null == tapGr) {
-                    continue;
-                }
-                if ((1 == tapGr.NumberOfTouchesRequired) && (2 == tapGr.NumberOfTapsRequired)) {
-                    tapGr.Enabled = false;
-                }
+
+            // Render at most one screenful of text at a time.
+            ViewFramer.Create (this)
+                .Height (Math.Min (ContentSize.Height, UIScreen.MainScreen.Bounds.Height));
+        }
+
+        public UIView uiView ()
+        {
+            return this;
+        }
+
+        public new SizeF ContentSize {
+            get {
+                return base.ContentSize;
             }
         }
 
-        public override void SizeToFit ()
+        public void ScrollingAdjustment (RectangleF frame, PointF contentOffset)
         {
-            // Intentionally disable SizeToFit(). By allowing the base class SizeToFit() to
-            // take effect, it will create a UITextView with its frame equal to the content size
-            // for large text email, it will consume a lot of memory. And ViewHelper.LayoutCursor
-            // always call SizeToFit(). So, we need to disable it.
-            base.ContentSize = SizeThatFits (Frame.Size);
-        }
-
-        public void Configure (NSAttributedString attributedString)
-        {
-            AttributedText = attributedString;
-            base.ContentSize = SizeThatFits (Frame.Size);
-        }
-
-        public void ScrollTo (PointF upperLeft)
-        {
-            SetContentOffset (upperLeft, false);
-        }
-
-        public string LayoutInfo ()
-        {
-            return String.Format ("BodyTextView: offset={0}  frame={1}  content={2}",
-                Pretty.PointF (Frame.Location), Pretty.SizeF (Frame.Size), Pretty.SizeF (ContentSize));
+            this.Frame = frame;
+            this.ContentOffset = contentOffset;
         }
     }
 }

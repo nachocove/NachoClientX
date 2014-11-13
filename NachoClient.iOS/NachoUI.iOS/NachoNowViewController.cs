@@ -200,17 +200,16 @@ namespace NachoClient.iOS
                 return;
             }
             if (segue.Identifier == "NachoNowToMessagePriority") {
-                var vc = (MessagePriorityViewController)segue.DestinationViewController;
                 var holder = (SegueHolder)sender;
-                vc.thread = holder.value as McEmailMessageThread;
-                vc.SetOwner (this);
+                var thread = (McEmailMessageThread)holder.value;
+                var vc = (INachoDateController)segue.DestinationViewController;
+                vc.Setup (this, thread, DateControllerType.Defer);
                 return;
             }
             if (segue.Identifier == "NachoNowToFolders") {
-                var vc = (FoldersViewController)segue.DestinationViewController;
+                var vc = (INachoFolderChooser)segue.DestinationViewController;
                 var h = sender as SegueHolder;
-                vc.SetModal (true);
-                vc.SetOwner (this, h);
+                vc.SetOwner (this, true, h);
                 return;
             }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
@@ -229,16 +228,6 @@ namespace NachoClient.iOS
             }
             if (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated == s.Status.SubKind) {
                 RefreshPriorityInboxIfVisible ();
-            }
-            if (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded == s.Status.SubKind) {
-                var token = s.Tokens.FirstOrDefault ();
-                Log.Info (Log.LOG_UI, "NachoNowViewController: mailMessageBodyDownloadSucceeded {0}", token.ToString ());
-                ProcessDownloadComplete (true, token);
-            }
-            if (NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed == s.Status.SubKind) {
-                var token = s.Tokens.FirstOrDefault ();
-                Log.Error (Log.LOG_UI, "NachoNowViewController: mailMessageBodyDownloadFailed {0}", token.ToString ());
-                ProcessDownloadComplete (false, token);
             }
         }
 
@@ -276,33 +265,6 @@ namespace NachoClient.iOS
                 calendarNeedsRefresh = false;
                 calendarSource.Refresh ();
                 calendarTableView.ReloadData ();
-            }
-        }
-
-        private void ProcessDownloadComplete (bool succeed, string token)
-        {
-            var visibleIndices = carouselView.IndexesForVisibleItems;
-            foreach (NSNumber nsIndex in visibleIndices) {
-                int index = nsIndex.IntValue;
-                // Ignore placeholders
-                if ((0 > index) || (carouselView.NumberOfItems <= index)) {
-                    continue;
-                }
-                var currentView = carouselView.ItemViewAtIndex (index);
-                if (null == currentView) {
-                    continue;
-                }
-                if (HotListCarouselDataSource.PLACEHOLDER_TAG == currentView.Tag) {
-                    continue;
-                }
-                var bodyView = (BodyView)currentView.ViewWithTag (HotListCarouselDataSource.PREVIEW_TAG);
-                NcAssert.True (null != bodyView);
-                // To avoid unnecessary reload, we only reload if the current item was downloading
-                // and the body is now completely downloaded.
-                if (!bodyView.DownloadComplete (succeed, token)) {
-                    continue;
-                }
-                carouselView.ReloadItemAtIndex (index, true);
             }
         }
 
@@ -387,7 +349,7 @@ namespace NachoClient.iOS
 
         public void DismissChildDateController (INachoDateController vc)
         {
-            vc.SetOwner (null);
+            vc.Setup (null, null, DateControllerType.None);
             vc.DimissDateController (false, null);
         }
 
@@ -421,7 +383,7 @@ namespace NachoClient.iOS
         /// </summary>
         public void DismissChildFolderChooser (INachoFolderChooser vc)
         {
-            vc.SetOwner (null, null);
+            vc.SetOwner (null, false, null);
             vc.DismissFolderChooser (false, null);
         }
 

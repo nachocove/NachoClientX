@@ -194,6 +194,10 @@ namespace NachoCore.Utils
                 return null;
             }
 
+            if (McAbstrFileDesc.BodyTypeEnum.None == body.BodyType) {
+                return "";
+            }
+
             if (McAbstrFileDesc.BodyTypeEnum.PlainText_1 == body.BodyType) {
                 return body.GetContentsString ();
             }
@@ -399,6 +403,15 @@ namespace NachoCore.Utils
                     MimeBestAlternativeDisplayList (multipart, ref list);
                     return;
                 }
+                if (multipart.ContentType.Matches ("multipart", "related") && 0 < multipart.Count) {
+                    // See https://tools.ietf.org/html/rfc2387
+                    // This isn't entirely correct. The multipart/related could have a "start"
+                    // parameter that points to the root entity that is not the first one.
+                    // But it is hard to write code to handle that without having a real life
+                    // message to test with.
+                    MimeEntityDisplayList (multipart [0], ref list);
+                    return;
+                }
                 foreach (var subpart in multipart) {
                     MimeEntityDisplayList (subpart, ref list);
                 }
@@ -413,7 +426,11 @@ namespace NachoCore.Utils
                 return;
             }
 
-            if (part is TextPart) {
+            // The conversion from TNEF to MIME will sometimes create a TextPart
+            // with a null ContentObject, which will result in a NullReferenceException
+            // when accessing the Text property.  Render all TextParts, except
+            // for those bogus ones.
+            if (part is TextPart && null != part.ContentObject) {
                 list.Add (part);
                 return;
             }
@@ -500,6 +517,30 @@ namespace NachoCore.Utils
                     mixed.Add (alternative);
                 }
             }
+        }
+
+        public static MimePart EntityWithContentId (MimeMessage message, string contentId)
+        {
+            return EntityWithContentId (message.Body, contentId);
+        }
+
+        public static MimePart EntityWithContentId (MimeEntity root, string contentId)
+        {
+            if (null == root) {
+                return null;
+            }
+            if (root is MimePart && root.ContentId == contentId) {
+                return (MimePart)root;
+            }
+            if (root is Multipart) {
+                foreach (var subentity in (Multipart)root) {
+                    var match = EntityWithContentId (subentity, contentId);
+                    if (null != match) {
+                        return match;
+                    }
+                }
+            }
+            return null;
         }
 
         /// <summary>
