@@ -48,6 +48,8 @@ namespace Test.iOS
 
         public UdpClient UdpClient { set; get; }
 
+        public int Timeout { set; get; }
+
         public Task<DnsQueryResponse> ResolveAsync (string host, NsType dnsType, NsClass dnsClass, ProtocolType pType)
         {
             return Task.Run<DnsQueryResponse> (delegate {
