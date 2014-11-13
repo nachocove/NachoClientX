@@ -66,7 +66,6 @@ namespace NachoCore.ActiveSync
         public AsCommand (string commandName, IBEContext beContext)
         {
             DnsQueryRequestType = typeof(MockableDnsQueryRequest);
-            HttpClientType = typeof(MockableHttpClient);
             Timeout = TimeSpan.Zero;
             CommandName = commandName;
             BEContext = beContext;
@@ -77,7 +76,6 @@ namespace NachoCore.ActiveSync
         protected virtual void Execute (NcStateMachine sm, ref AsHttpOperation opRef)
         {
             Op = new AsHttpOperation (CommandName, this, BEContext) {
-                HttpClientType = HttpClientType,
                 DontReportCommResult = DontReportCommResult,
             };
             if (TimeSpan.Zero != Timeout) {

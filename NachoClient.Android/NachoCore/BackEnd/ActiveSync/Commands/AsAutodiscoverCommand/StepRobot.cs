@@ -499,7 +499,6 @@ namespace NachoCore.ActiveSync
             private AsHttpOperation HttpOpFactory ()
             {
                 return new AsHttpOperation (Command.CommandName, this, Command.BEContext) {
-                    HttpClientType = HttpClientType,
                     Allow451Follow = false,
                     DontReportCommResult = true,
                     TriesLeft = 3,
