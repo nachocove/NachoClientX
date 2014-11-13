@@ -726,9 +726,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\Telemetry.cs">
       <Link>NachoCore\Utils\Telemetry.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Utils\TelemetryParse.cs">
-      <Link>NachoCore\Utils\TelemetryParse.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcQueue.cs">
       <Link>NachoCore\Utils\NcQueue.cs</Link>
     </Compile>
@@ -1163,6 +1160,9 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\NcAbate.cs">
       <Link>NachoCore\Utils\NcAbate.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\TelemetryAWS.cs">
+      <Link>NachoCore\Utils\TelemetryAWS.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\ContactDefaultSelectionViewController.cs" />
     <Compile Include="NachoUI.iOS\ContactDefaultSelectionViewController.designer.cs">
@@ -1666,6 +1666,20 @@
     <BundleResource Include="Resources\contacts-marker%402x.png" />
     <BundleResource Include="Resources\contacts-icn-address%402x.png" />
     <BundleResource Include="Resources\contacts-icn-bday%402x.png" />
+    <BundleResource Include="Resources\event-attend-active%402x.png" />
+    <BundleResource Include="Resources\event-attend%402x.png" />
+    <BundleResource Include="Resources\event-attendees%402x.png" />
+    <BundleResource Include="Resources\event-decline-active%402x.png" />
+    <BundleResource Include="Resources\event-decline%402x.png" />
+    <BundleResource Include="Resources\event-description%402x.png" />
+    <BundleResource Include="Resources\event-location%402x.png" />
+    <BundleResource Include="Resources\event-maybe-active%402x.png" />
+    <BundleResource Include="Resources\event-maybe%402x.png" />
+    <BundleResource Include="Resources\event-organizer%402x.png" />
+    <BundleResource Include="Resources\event-phone%402x.png" />
+    <BundleResource Include="Resources\event-reminder%402x.png" />
+    <BundleResource Include="Resources\event-when%402x.png" />
+    <BundleResource Include="Resources\email-icn-attachment%402x.png" />
     <BundleResource Include="Resources\contacts-call-swipe%402x.png" />
     <BundleResource Include="Resources\contacts-email-swipe%402x.png" />
   </ItemGroup>
@@ -1709,6 +1723,10 @@
     <ProjectReference Include="..\..\SwipeViewBinding\SwipeViewBinding\SwipeViewBinding\SwipeViewBinding.csproj">
       <Project>{6239F5E9-9EA2-4B50-8CCE-241ED8E1F0B7}</Project>
       <Name>SwipeViewBinding</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\aws-sdk-xamarin\AWS.XamarinSDK\AWSSDK.iOS\AWSSDK_iOS.csproj">
+      <Project>{2509D641-F08E-4DED-A12D-855B056BE831}</Project>
+      <Name>AWSSDK_iOS</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
