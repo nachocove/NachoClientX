@@ -258,6 +258,8 @@ namespace NachoCore.ActiveSync
             pending.Insert ();
 
             // Delete the actual item.
+            Log.Info (Log.LOG_AS, "DeleteEmailCmd: Id {0}/ServerId {1} => Token {2}",
+                emailMessage.Id, emailMessage.ServerId, pending.Token);
             emailMessage.Delete ();
 
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));

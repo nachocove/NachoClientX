@@ -47,6 +47,7 @@ namespace NachoCore.Model
         public override int Insert ()
         {
             var preExists = McPath.QueryByServerId (AccountId, ServerId);
+            Log.Info (Log.LOG_DB, "McPath:Insert ServerId {0}", ServerId);
             if (null != preExists) {
                 Log.Error (Log.LOG_DB, string.Format ("Duplicate McPath: old entry {0}/{1} replaced with {2}/{3} @ {4}.",
                     preExists.ParentId, preExists.ServerId,
@@ -59,6 +60,7 @@ namespace NachoCore.Model
         public override int Update ()
         {
             var preExists = McPath.QueryByServerId (AccountId, ServerId);
+            Log.Info (Log.LOG_DB, "McPath:Update ServerId {0}", ServerId);
             if (null != preExists && preExists.Id != Id) {
                 Log.Error (Log.LOG_DB, string.Format ("Duplicate McPath: old entry {0}/{1} replaced with {2}/{3} @ {4}.",
                     preExists.ParentId, preExists.ServerId,
@@ -71,7 +73,9 @@ namespace NachoCore.Model
         public override int Delete ()
         {
             var subs = QueryByParentId (AccountId, ServerId);
+            Log.Info (Log.LOG_DB, "McPath:Delete ServerId {0}", ServerId);
             foreach (var sub in subs) {
+                Log.Info (Log.LOG_DB, "McPath:Delete ServerId {0} (subordinate)", sub.ServerId);
                 sub.Delete ();
             }
             return base.Delete ();

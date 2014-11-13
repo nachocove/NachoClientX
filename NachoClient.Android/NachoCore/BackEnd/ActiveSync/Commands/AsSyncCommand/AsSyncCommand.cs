@@ -649,6 +649,7 @@ namespace NachoCore.ActiveSync
                 switch (command.Name.LocalName) {
                 case Xml.AirSync.Add:
                     var addServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value;
+                    Log.Info (Log.LOG_AS, "AsSyncCommand: Command Add {0} ServerId {1}", classCode, addServerId);
                     var pathElem = new McPath (BEContext.Account.Id);
                     pathElem.ServerId = addServerId;
                     pathElem.ParentId = folder.ServerId;
@@ -685,6 +686,7 @@ namespace NachoCore.ActiveSync
                     break;
                 case Xml.AirSync.Change:
                     var chgServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value;
+                    Log.Info (Log.LOG_AS, "AsSyncCommand: Command Change {0} ServerId {1}", classCode, chgServerId);
                     var applyChange = new ApplyItemChange (BEContext.Account.Id) {
                         ClassCode = classCode,
                         ServerId = chgServerId,
@@ -714,6 +716,7 @@ namespace NachoCore.ActiveSync
                 case Xml.AirSync.Delete:
                 case Xml.AirSync.SoftDelete:
                     var delServerId = command.Element (m_ns + Xml.AirSync.ServerId).Value;
+                    Log.Info (Log.LOG_AS, "AsSyncCommand: Command (Soft)Delete {0} ServerId {1}", classCode, delServerId);
                     pathElem = McPath.QueryByServerId (BEContext.Account.Id, delServerId);
                     if (null != pathElem) {
                         pathElem.Delete ();
@@ -787,6 +790,7 @@ namespace NachoCore.ActiveSync
         // The list MUST be a subset of the OBJECTs in the PendingList.
         private void ProcessImplicitResponses (IEnumerable<McPending> fromPendingList)
         {
+            Log.Info (Log.LOG_AS, "ProcessImplicitResponses: Start");
             var cachedFromPendingList = fromPendingList.ToList ();
             foreach (var pending in cachedFromPendingList) {
                 // For Adds we need to add to McPath, and for Deletes we need to delete from McPath.
@@ -805,6 +809,7 @@ namespace NachoCore.ActiveSync
                 pending.ResolveAsSuccess (BEContext.ProtoControl);
                 PendingList.RemoveAll (x => pending.Id == x.Id);
             }
+            Log.Info (Log.LOG_AS, "ProcessImplicitResponses: Finished");
         }
 
         private void ProcessCollectionAddResponse (McFolder folder, XElement xmlAdd, string classCode)
