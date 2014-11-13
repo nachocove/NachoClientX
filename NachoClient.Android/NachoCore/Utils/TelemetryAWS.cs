@@ -178,7 +178,11 @@ namespace NachoCore.Utils
                 return false;
             }
             catch (Exception e) {
+                // FIXME - An exception is thrown but the exception is null.
+                // This workaround simply catches everything and re-initializes
+                // the connection and tables.
                 Console.WriteLine ("Some exception {0}", e);
+                ReinitializeTables ();
                 return false;
             }
             return true;
