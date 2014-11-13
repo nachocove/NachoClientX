@@ -33,11 +33,13 @@ namespace NachoClient.iOS
         protected McAccount account;
 
         // UI elements
+        protected UIView eventCardView;
         protected BodyView descriptionView;
         protected UIView eventAttendeeView;
         protected UIView eventAlertsView;
         protected UIView eventAttachmentsView;
         protected UIView eventNotesView;
+        protected UIImageView organizerIcon;
         protected UILabel acceptLabel;
         protected UILabel tentativeLabel;
         protected UILabel declineLabel;
@@ -46,8 +48,15 @@ namespace NachoClient.iOS
         protected UIButton extraAttendeesButton;
         protected UIView line1;
         protected UIView line2;
-        protected UIView line3;
-        protected UIView line4;
+        protected UITextView eventNotesTextView;
+        protected UIBarButtonItem editEventButton;
+
+        // UI colors
+        protected UIColor textLabelColor = A.Color_NachoDarkText;
+        protected UIColor textColor = A.Color_NachoDarkText;
+        protected UIColor cellBGColor = UIColor.White;
+        protected UIColor contentViewBGColor = A.Color_NachoBackgroundGray;
+        protected UIColor borderColor = A.Color_NachoBorderGray;
 
         // UI Gesture recognizers
         protected UITapGestureRecognizer attendeeTapGestureRecognizer;
@@ -66,10 +75,15 @@ namespace NachoClient.iOS
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
         protected const int CELL_HEIGHT = 44;
         protected const float TEXT_LINE_HEIGHT = 19.124f;
+        protected static float EVENT_CARD_WIDTH = SCREEN_WIDTH - 30;
+        protected float NOTE_OFFSET = 0f;
+        protected float keyboardHeight;
+        protected float notesInitialHeight = 0f;
 
         public enum TagType
         {
             ALERT_DETAIL_TAG = 207,
+            EVENT_CARD_VIEW_TAG = 208,
 
             EVENT_TITLE_LABEL_TAG = 101,
             EVENT_DESCRIPTION_LABEL_TAG = 102,
@@ -83,18 +97,21 @@ namespace NachoClient.iOS
             EVENT_ATTENDEE_LABEL_TAG = 120,
             EVENT_ATTENDEE_VIEW_TAG = 1000,
             EVENT_ATTACHMENT_DETAIL_TAG = 121,
+            EVENT_NOTES_DETAIL_TAG = 122,
 
+            EVENT_DESCRIPTION_TITLE_TAG = 300,
             EVENT_LOCATION_TITLE_TAG = 301,
             EVENT_WHEN_TITLE_TAG = 302,
             EVENT_PHONE_TITLE_TAG = 303,
-            EVENT_ATTENDEE_TITLE_TAG = 308,
+            EVENT_ATTENDEES_TITLE_TAG = 308,
+            EVENT_ATTENDING_TITLE_TAG = 309,
             EVENT_ALERT_TITLE_TAG = 305,
             EVENT_ATTACHMENT_TITLE_TAG = 306,
             EVENT_NOTE_TITLE_TAG = 307,
 
             EVENT_ALERTS_VIEW_TAG = 700,
             EVENT_ATTACHMENTS_VIEW_TAG = 800,
-            EVENT_NOTES_VIEW_TAG = 900,
+            EVENT_NOTES_TEXT_VIEW_TAG = 900,
         }
 
         protected static TupleList<uint, string> minList = new TupleList<uint, string> {
@@ -118,16 +135,14 @@ namespace NachoClient.iOS
         protected override void CreateViewHierarchy ()
         {
             // Navigation controls
-
-            NavigationItem.Title = "Event Details";
             NavigationController.NavigationBar.Translucent = false;
 
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
 
             // Main view
 
-            scrollView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, View.Frame.Height - 54);
-            scrollView.BackgroundColor = UIColor.White;
+            scrollView.Frame = View.Frame;
+            scrollView.BackgroundColor = contentViewBGColor;
             scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
             scrollView.Scrolled += ScrollViewScrolled;
             scrollView.MinimumZoomScale = 0.2f;
@@ -135,43 +150,163 @@ namespace NachoClient.iOS
             scrollView.ZoomingEnded += ScrollViewZoomingEnded;
             scrollView.ViewForZoomingInScrollView = ViewForZooming;
 
-            contentView.BackgroundColor = UIColor.White;
+            contentView.BackgroundColor = contentViewBGColor;
 
             float yOffset = 20;
 
-            editButton.Clicked += EditButtonClicked;
+            editEventButton = new UIBarButtonItem ();
+            editEventButton.TintColor = A.Color_NachoBlue;
+            editEventButton.Image = UIImage.FromBundle ("gen-edit");
+            editEventButton.Clicked += EditButtonClicked;
 
             // Title label
-            var eventTitleLabel = new UILabel (new RectangleF (25, yOffset, SCREEN_WIDTH - 50, 20));
+            var eventTitleLabel = new UILabel (new RectangleF (15 + 18, yOffset, SCREEN_WIDTH - 50, 20));
             eventTitleLabel.Font = A.Font_AvenirNextDemiBold17;
             eventTitleLabel.TextColor = A.Color_NachoBlack;
             eventTitleLabel.Tag = (int)TagType.EVENT_TITLE_LABEL_TAG;
             contentView.AddSubview (eventTitleLabel);
 
-            yOffset += 30;
+            yOffset += 20;
 
-            // Description, for which we use a BodyView.
-            descriptionView = BodyView.VariableHeightBodyView (new PointF (20, yOffset), SCREEN_WIDTH - 20 - 2, scrollView.Frame.Size, LayoutView);
-            descriptionView.Tag = (int)TagType.EVENT_DESCRIPTION_LABEL_TAG;
-            contentView.AddSubview (descriptionView);
+            eventCardView = new UIView ();
+            eventCardView.Tag = (int)TagType.EVENT_CARD_VIEW_TAG;
+            eventCardView.BackgroundColor = cellBGColor;
+            eventCardView.Layer.CornerRadius = 6;
+            eventCardView.Layer.BorderColor = borderColor.CGColor;
+            eventCardView.Layer.BorderWidth = .5f;
+            contentView.AddSubview (eventCardView);
 
-            yOffset += 10 + 20;
+            // RSVP bar 
+            organizerIcon = new UIImageView (new RectangleF (18, 18, 24, 24));
+            organizerIcon.Image = UIImage.FromBundle ("event-organizer");
+            organizerIcon.Hidden = true;
+            eventCardView.AddSubview (organizerIcon);
 
-            // Location label, image, and detail
-            AddTextLabelWithImageView (45, yOffset, "Location", "icn-mtng-location", TagType.EVENT_LOCATION_TITLE_TAG, contentView);
-            yOffset += 20 + 5;
-            AddDetailTextLabel (45, yOffset, SCREEN_WIDTH - 90, 20, TagType.EVENT_LOCATION_DETAIL_LABEL_TAG, contentView);
-            yOffset += 20 + 20;
+            AddButtonImage (acceptButton, "event-attend", UIControlState.Normal);
+            AddButtonImage (acceptButton, "event-attend-active", UIControlState.Selected);
+            acceptButton.Frame = new RectangleF (18, 18, 24, 24);
+            acceptButton.TintColor = UIColor.Clear;
+            acceptButton.TouchUpInside += AcceptButtonTouchUpInside;
+            eventCardView.AddSubview (acceptButton);
+
+            AddButtonImage (tentativeButton, "event-maybe", UIControlState.Normal);
+            AddButtonImage (tentativeButton, "event-maybe-active", UIControlState.Selected);
+            tentativeButton.Frame = new RectangleF (acceptButton.Frame.X + 42 + 45, 18, 24, 24);
+            tentativeButton.TintColor = UIColor.Clear;
+            tentativeButton.TouchUpInside += TentativeButtonTouchUpInside;
+            eventCardView.AddSubview (tentativeButton);
+
+            AddButtonImage (declineButton, "event-decline", UIControlState.Normal);
+            AddButtonImage (declineButton, "event-decline-active", UIControlState.Selected);
+            declineButton.Frame = new RectangleF (tentativeButton.Frame.X + 38 + 45 + 6, 18, 24, 24);
+            declineButton.TintColor = UIColor.Clear;
+            declineButton.TouchUpInside += DeclineButtonTouchUpInside;
+            eventCardView.AddSubview (declineButton);
+
+            acceptLabel = new UILabel (new RectangleF (48, 20, 45, 20));
+            acceptLabel.TextColor = textColor;
+            acceptLabel.Font = A.Font_AvenirNextMedium14;
+            acceptLabel.Text = "Attend";
+            eventCardView.Add (acceptLabel);
+
+            tentativeLabel = new UILabel (new RectangleF (tentativeButton.Frame.X + 24 + 6, 20, 45, 20));
+            tentativeLabel.TextColor = textColor;
+            tentativeLabel.Font = A.Font_AvenirNextMedium14;
+            tentativeLabel.Text = "Maybe";
+            eventCardView.Add (tentativeLabel);
+
+            declineLabel = new UILabel (new RectangleF (declineButton.Frame.X + 24 + 6, 20, 50, 20));
+            declineLabel.TextColor = textColor;
+            declineLabel.Font = A.Font_AvenirNextMedium14;
+            declineLabel.Text = "Decline";
+            eventCardView.Add (declineLabel);
+
+            messageLabel = new UILabel (new RectangleF (18 + 24 + 6, 20, 100, 20));
+            messageLabel.TextColor = textColor;
+            messageLabel.TextAlignment = UITextAlignment.Left;
+            messageLabel.Font = A.Font_AvenirNextMedium14;
+            messageLabel.Hidden = true;
+            eventCardView.Add (messageLabel);
+
+            changeResponseButton = new UIButton (UIButtonType.RoundedRect);
+            changeResponseButton.SetTitle ("Change response", UIControlState.Normal);
+            changeResponseButton.Font = A.Font_AvenirNextMedium14;
+            changeResponseButton.SizeToFit ();
+            changeResponseButton.Frame = new RectangleF (EVENT_CARD_WIDTH - changeResponseButton.Frame.Width - 18, 20, changeResponseButton.Frame.Width, 20);
+            changeResponseButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
+            changeResponseButton.Hidden = true;
+            changeResponseButton.TouchUpInside += ChangeResponseTouchUpInside;
+            eventCardView.Add (changeResponseButton);
+
+            yOffset = 60;
+
+            Util.AddHorizontalLine (0, yOffset, EVENT_CARD_WIDTH, borderColor, eventCardView);
+
+            yOffset += 18;
 
             // When label, image, and detail
-            AddTextLabelWithImageView (45, yOffset, "When", "icn-mtng-time", TagType.EVENT_WHEN_TITLE_TAG, contentView);
-            yOffset += 20 + 5;
-            AddDetailTextLabel (45, yOffset, SCREEN_WIDTH - 50, 20, TagType.EVENT_WHEN_DETAIL_LABEL_TAG, contentView);
+            AddTextLabelWithImageView (yOffset, "WHEN", "event-when", TagType.EVENT_WHEN_TITLE_TAG, eventCardView);
+            yOffset += 16 + 6;
+            AddDetailTextLabel (42, yOffset, SCREEN_WIDTH - 50, 20, TagType.EVENT_WHEN_DETAIL_LABEL_TAG, eventCardView);
             yOffset += 20;
-            AddDetailTextLabel (45, yOffset, SCREEN_WIDTH - 50, 20, TagType.EVENT_WHEN_DURATION_TAG, contentView);
+            AddDetailTextLabel (42, yOffset, SCREEN_WIDTH - 50, 20, TagType.EVENT_WHEN_DURATION_TAG, eventCardView);
             yOffset += 20;
-            AddDetailTextLabel (45, yOffset, SCREEN_WIDTH - 90, 20, TagType.EVENT_WHEN_RECURRENCE_TAG, contentView);
+            AddDetailTextLabel (42, yOffset, SCREEN_WIDTH - 90, 20, TagType.EVENT_WHEN_RECURRENCE_TAG, eventCardView);
             yOffset += 20 + 20;
+
+            // Location label, image, and detail
+            AddTextLabelWithImageView (yOffset, "LOCATION", "event-location", TagType.EVENT_LOCATION_TITLE_TAG, eventCardView);
+            yOffset += 16 + 6;
+            AddDetailTextLabel (42, yOffset, SCREEN_WIDTH - 90, 20, TagType.EVENT_LOCATION_DETAIL_LABEL_TAG, eventCardView);
+            yOffset += 20 + 20;
+
+            // Description, for which we use a BodyView.
+            AddTextLabelWithImageView (yOffset, "DESCRIPTION", "event-description", TagType.EVENT_DESCRIPTION_TITLE_TAG, eventCardView);
+            yOffset += 16 + 6;
+            descriptionView = BodyView.VariableHeightBodyView (new PointF (42, yOffset), EVENT_CARD_WIDTH - 60, scrollView.Frame.Size, LayoutView);
+            descriptionView.Tag = (int)TagType.EVENT_DESCRIPTION_LABEL_TAG;
+            eventCardView.AddSubview (descriptionView);
+
+            if (20 >= descriptionView.Frame.Height) {
+                yOffset += 30;
+            } else {
+                yOffset += descriptionView.Frame.Height + 20;
+            }
+
+            // Reminder
+            eventAlertsView = new UIView (new RectangleF (0, yOffset, EVENT_CARD_WIDTH, CELL_HEIGHT));
+            eventAlertsView.Tag = (int)TagType.EVENT_ALERTS_VIEW_TAG;
+            eventAlertsView.BackgroundColor = cellBGColor;
+
+            Util.AddArrowAccessory (eventAlertsView.Frame.Width - 18 - 12, CELL_HEIGHT / 2 - 6, 12, eventAlertsView);
+
+            AddTextLabelWithImageView (0, "REMINDER", "event-reminder", TagType.EVENT_ALERT_TITLE_TAG, eventAlertsView);
+            AddDetailTextLabel (42, 22, EVENT_CARD_WIDTH - 84 - 18, 20, TagType.ALERT_DETAIL_TAG, eventAlertsView);
+
+            alertTapGestureRecognizer = new UITapGestureRecognizer ();
+            alertTapGestureRecognizerTapToken = alertTapGestureRecognizer.AddTarget (AlertTapGestureRecognizerTap);
+            eventAlertsView.AddGestureRecognizer (alertTapGestureRecognizer);
+            eventCardView.AddSubview (eventAlertsView);
+
+            yOffset += CELL_HEIGHT + 20;
+
+            // Attachments
+            eventAttachmentsView = new UIView (new RectangleF (0, yOffset, EVENT_CARD_WIDTH, CELL_HEIGHT));
+            eventAttachmentsView.Tag = (int)TagType.EVENT_ATTACHMENTS_VIEW_TAG;
+            eventAttachmentsView.BackgroundColor = cellBGColor;
+
+            Util.AddArrowAccessory (eventAlertsView.Frame.Width - 18 - 12, CELL_HEIGHT / 2 - 6, 12, eventAttachmentsView);
+
+            AddTextLabelWithImageView (0, "ATTACHMENTS", "email-icn-attachment", TagType.EVENT_ATTACHMENT_TITLE_TAG, eventAttachmentsView);
+            AddDetailTextLabel (42, 22, EVENT_CARD_WIDTH - 84 - 18, 20, TagType.EVENT_ATTACHMENT_DETAIL_TAG, eventAttachmentsView);
+
+            attachmentsTapGestureRecognizer = new UITapGestureRecognizer ();
+            attachmentsTapGestureRecognizerTapToken = attachmentsTapGestureRecognizer.AddTarget (AttachmentsTapGestureRecognizerTap);
+            eventAttachmentsView.AddGestureRecognizer (attachmentsTapGestureRecognizer);
+
+            eventCardView.AddSubview (eventAttachmentsView);
+
+            yOffset += CELL_HEIGHT + 20;
 
             // Phone label, image, and detail.  The phone field has been removed from the UI
             // until we figure out how to make it useful.
@@ -188,178 +323,45 @@ namespace NachoClient.iOS
             #endif
 
             // Attendees label, image, and detail
-            AddTextLabelWithImageView (45, yOffset, "Attendees", "icn-mtng-people", TagType.EVENT_ATTENDEE_TITLE_TAG, contentView);
-            yOffset += 20;
-            eventAttendeeView = new UIView (new RectangleF (8, yOffset, SCREEN_WIDTH, 96));
+            AddTextLabelWithImageView (yOffset, "ATTENDEES", "event-attendees", TagType.EVENT_ATTENDEES_TITLE_TAG, eventCardView);
+            yOffset += 16 + 12;
+            AddTextLabelWithImageView (yOffset, "ATTENDING", "", TagType.EVENT_ATTENDING_TITLE_TAG, eventCardView);
+            line1 = Util.AddHorizontalLineView (120, yOffset + 8, EVENT_CARD_WIDTH - 120 - 18, borderColor);
+            yOffset += 16;
+            eventAttendeeView = new UIView (new RectangleF (0, yOffset, EVENT_CARD_WIDTH, 96));
             eventAttendeeView.Tag = (int)TagType.EVENT_ATTENDEE_VIEW_TAG;
             attendeeTapGestureRecognizer = new UITapGestureRecognizer ();
             attendeeTapGestureRecognizerTapToken = attendeeTapGestureRecognizer.AddTarget (AttendeeTapGestureRecognizerTap);
             eventAttendeeView.AddGestureRecognizer (attendeeTapGestureRecognizer);
-            contentView.AddSubview (eventAttendeeView);
+            eventCardView.AddSubview (eventAttendeeView);
+            eventCardView.AddSubview (line1);
 
             yOffset += 96 + 20;
 
-            float bottomCellsYOffset = yOffset;
-
-            // Alerts
-            eventAlertsView = new UIView (new RectangleF (0, yOffset, SCREEN_WIDTH, CELL_HEIGHT));
-            eventAlertsView.Tag = (int)TagType.EVENT_ALERTS_VIEW_TAG;
-            eventAlertsView.BackgroundColor = UIColor.White;
-
-            Util.AddArrowAccessory (SCREEN_WIDTH - 23, CELL_HEIGHT / 2 - 6, 12, eventAlertsView);
-
-            AddTextLabelWithImageView (45, 12.438f, "Alerts", "icn-defer", TagType.EVENT_ALERT_TITLE_TAG, eventAlertsView);
-
-            var alertsDetail = new UILabel ();
-            alertsDetail.Text = "None";
-            alertsDetail.Tag = (int)TagType.ALERT_DETAIL_TAG;
-            alertsDetail.SizeToFit ();
-            alertsDetail.TextAlignment = UITextAlignment.Right;
-            alertsDetail.Frame = new RectangleF (
-                SCREEN_WIDTH - alertsDetail.Frame.Width - 34, 12.438f,
-                alertsDetail.Frame.Width, TEXT_LINE_HEIGHT);
-            alertsDetail.Font = A.Font_AvenirNextRegular14;
-            alertsDetail.TextColor = A.Color_808080;
-            eventAlertsView.AddSubview (alertsDetail);
-
-            alertTapGestureRecognizer = new UITapGestureRecognizer ();
-            alertTapGestureRecognizerTapToken = alertTapGestureRecognizer.AddTarget (AlertTapGestureRecognizerTap);
-            eventAlertsView.AddGestureRecognizer (alertTapGestureRecognizer);
-
-            contentView.AddSubview (eventAlertsView);
-
-            yOffset += CELL_HEIGHT;
-
-            // Attachments
-            eventAttachmentsView = new UIView (new RectangleF (0, yOffset, SCREEN_WIDTH, CELL_HEIGHT));
-            eventAttachmentsView.Tag = (int)TagType.EVENT_ATTACHMENTS_VIEW_TAG;
-            eventAttachmentsView.BackgroundColor = UIColor.White;
-
-            Util.AddArrowAccessory (SCREEN_WIDTH - 23, CELL_HEIGHT / 2 - 6, 12, eventAttachmentsView);
-
-            AddTextLabelWithImageView (45, 12.438f, "Attachments", "icn-attachedfile", TagType.EVENT_ATTACHMENT_TITLE_TAG, eventAttachmentsView);
-
-            var attachmentDetail = new UILabel ();
-            attachmentDetail.Text = "(0)";
-            attachmentDetail.Tag = (int)TagType.EVENT_ATTACHMENT_DETAIL_TAG;
-            attachmentDetail.SizeToFit ();
-            attachmentDetail.TextAlignment = UITextAlignment.Right;
-            attachmentDetail.Frame = new RectangleF (
-                SCREEN_WIDTH - attachmentDetail.Frame.Width - 34, 12.438f,
-                attachmentDetail.Frame.Width, TEXT_LINE_HEIGHT);
-            attachmentDetail.Font = A.Font_AvenirNextRegular14;
-            attachmentDetail.TextColor = A.Color_808080;
-            eventAttachmentsView.AddSubview (attachmentDetail);
-
-            attachmentsTapGestureRecognizer = new UITapGestureRecognizer ();
-            attachmentsTapGestureRecognizerTapToken = attachmentsTapGestureRecognizer.AddTarget (AttachmentsTapGestureRecognizerTap);
-            eventAttachmentsView.AddGestureRecognizer (attachmentsTapGestureRecognizer);
-
-            contentView.AddSubview (eventAttachmentsView);
-
-            yOffset += CELL_HEIGHT;
+            line2 = Util.AddHorizontalLineView (42, yOffset, EVENT_CARD_WIDTH - 42 - 18, borderColor);
+            eventCardView.AddSubview (line2);
 
             // Notes
-            eventNotesView = new UIView (new RectangleF (0, yOffset, SCREEN_WIDTH, CELL_HEIGHT));
-            eventNotesView.Tag = (int)TagType.EVENT_NOTES_VIEW_TAG;
-            eventNotesView.BackgroundColor = UIColor.White;
+            eventNotesView = new UIView (new RectangleF (0, yOffset, EVENT_CARD_WIDTH, CELL_HEIGHT));
+            eventNotesView.Tag = (int)TagType.EVENT_NOTES_TEXT_VIEW_TAG;
+            eventNotesView.BackgroundColor = UIColor.Clear;
 
-            Util.AddArrowAccessory (SCREEN_WIDTH - 23, CELL_HEIGHT / 2 - 6, 12, eventNotesView);
+            AddTextLabelWithImageView (yOffset, "NOTES", "", TagType.EVENT_NOTE_TITLE_TAG, eventCardView);
+            yOffset += 16 + 6;
 
-            AddTextLabelWithImageView (45, 12.438f, "Notes", "icn-notes", TagType.EVENT_NOTE_TITLE_TAG, eventNotesView);
+            eventNotesTextView = new UITextView (new RectangleF (42, yOffset, EVENT_CARD_WIDTH - 60, 30));
+            eventNotesTextView.Font = A.Font_AvenirNextRegular14;
+            eventNotesTextView.TextColor = textColor;
+            eventNotesTextView.Tag = (int)TagType.EVENT_NOTES_TEXT_VIEW_TAG;
 
-            var notesDetail = new UILabel ();
-            notesDetail.SizeToFit ();
-            notesDetail.TextAlignment = UITextAlignment.Right;
-            notesDetail.Frame = new RectangleF (SCREEN_WIDTH - notesDetail.Frame.Width - 34, 12.438f, notesDetail.Frame.Width, TEXT_LINE_HEIGHT);
-            notesDetail.Font = A.Font_AvenirNextRegular14;
-            notesDetail.TextColor = A.Color_808080;
-            eventNotesView.AddSubview (notesDetail);
+            eventNotesTextView.Started += notesEditingStarted;
+            eventNotesTextView.Changed += notesChanged;
+            eventCardView.AddSubview (eventNotesTextView);
+            eventCardView.Frame = new RectangleF (15, 60, contentView.Frame.Width - 30, yOffset + 20);
 
-            notesTapGestureRecognizer = new UITapGestureRecognizer ();
-            notesTapGestureRecognizerTapToken = notesTapGestureRecognizer.AddTarget (NotesTapGestureRecognizerTap);
-            eventNotesView.AddGestureRecognizer (notesTapGestureRecognizer);
+            yOffset += 20;
 
-            contentView.AddSubview (eventNotesView);
-
-            yOffset += CELL_HEIGHT;
-
-            line1 = Util.AddHorizontalLineView (23, bottomCellsYOffset, SCREEN_WIDTH - 23, A.Color_NachoBorderGray);
-            line2 = Util.AddHorizontalLineView (23, bottomCellsYOffset + CELL_HEIGHT, SCREEN_WIDTH - 23, A.Color_NachoBorderGray);
-            line3 = Util.AddHorizontalLineView (23, bottomCellsYOffset + CELL_HEIGHT * 2, SCREEN_WIDTH - 23, A.Color_NachoBorderGray);
-            line4 = Util.AddHorizontalLineView (23, bottomCellsYOffset + CELL_HEIGHT * 3, SCREEN_WIDTH - 23, A.Color_NachoBorderGray);
-            contentView.AddSubviews (new UIView[] {
-                line1, line2, line3, line4
-            });
-
-            scrollView.ContentSize = new SizeF (SCREEN_WIDTH, yOffset + 20);
-
-            // RSVP bar at the bottom of the screen
-
-            var rsvpBar = new UIView (new RectangleF (0, View.Frame.Height - 118, SCREEN_WIDTH, 54));
-            rsvpBar.BackgroundColor = A.Color_NachoBlack;
-
-            AddButtonImage (acceptButton, "btn-mtng-accept", UIControlState.Normal);
-            AddButtonImage (acceptButton, "btn-mtng-accept-pressed", UIControlState.Selected);
-            acceptButton.Frame = new RectangleF (25, 10, 24, 24);
-            acceptButton.TintColor = UIColor.Clear;
-            acceptButton.TouchUpInside += AcceptButtonTouchUpInside;
-            rsvpBar.AddSubview (acceptButton);
-
-            AddButtonImage (tentativeButton, "btn-mtng-tenative", UIControlState.Normal);
-            AddButtonImage (tentativeButton, "btn-mtng-tenative-pressed", UIControlState.Selected);
-            tentativeButton.Frame = new RectangleF (SCREEN_WIDTH / 2 - 12, 10, 24, 24);
-            tentativeButton.TintColor = UIColor.Clear;
-            tentativeButton.TouchUpInside += TentativeButtonTouchUpInside;
-            rsvpBar.AddSubview (tentativeButton);
-
-            AddButtonImage (declineButton, "btn-mtng-decline", UIControlState.Normal);
-            AddButtonImage (declineButton, "btn-mtng-decline-pressed", UIControlState.Selected);
-            declineButton.Frame = new RectangleF (SCREEN_WIDTH - 24 - 25, 10, 24, 24);
-            declineButton.TintColor = UIColor.Clear;
-            declineButton.TouchUpInside += DeclineButtonTouchUpInside;
-            rsvpBar.AddSubview (declineButton);
-
-            acceptLabel = new UILabel (new RectangleF (15, 36, 44, 10));
-            acceptLabel.TextColor = UIColor.White;
-            acceptLabel.TextAlignment = UITextAlignment.Center;
-            acceptLabel.Font = A.Font_AvenirNextRegular10;
-            acceptLabel.Text = "Accept";
-            rsvpBar.Add (acceptLabel);
-
-            tentativeLabel = new UILabel (new RectangleF ((SCREEN_WIDTH / 2) - 22, 36, 44, 10));
-            tentativeLabel.TextColor = UIColor.White;
-            tentativeLabel.TextAlignment = UITextAlignment.Center;
-            tentativeLabel.Font = A.Font_AvenirNextRegular10;
-            tentativeLabel.Text = "Tentative";
-            rsvpBar.Add (tentativeLabel);
-
-            declineLabel = new UILabel (new RectangleF (SCREEN_WIDTH - 24 - 35, 36, 44, 10));
-            declineLabel.TextColor = UIColor.White;
-            declineLabel.TextAlignment = UITextAlignment.Center;
-            declineLabel.Font = A.Font_AvenirNextRegular10;
-            declineLabel.Text = "Decline";
-            rsvpBar.Add (declineLabel);
-
-            messageLabel = new UILabel (new RectangleF (25 + 24 + 10, 15, 100, 24));
-            messageLabel.TextColor = UIColor.White;
-            messageLabel.TextAlignment = UITextAlignment.Left;
-            messageLabel.Font = A.Font_AvenirNextRegular12;
-            messageLabel.Hidden = true;
-            rsvpBar.Add (messageLabel);
-
-            changeResponseButton = new UIButton (UIButtonType.RoundedRect);
-            changeResponseButton.SetTitle ("Change response", UIControlState.Normal);
-            changeResponseButton.Font = A.Font_AvenirNextRegular12;
-            changeResponseButton.SizeToFit ();
-            changeResponseButton.Frame = new RectangleF (SCREEN_WIDTH - changeResponseButton.Frame.Width - 25, 16, changeResponseButton.Frame.Width, 24);
-            changeResponseButton.SetTitleColor (A.Color_NachoBlue, UIControlState.Normal);
-            changeResponseButton.Hidden = true;
-            changeResponseButton.TouchUpInside += ChangeResponseTouchUpInside;
-            rsvpBar.Add (changeResponseButton);
-
-            // The RSVP bar doesn't scroll with the rest of the view, so it gets added to the main View element, not the contentView.
-            View.AddSubview (rsvpBar);
+            scrollView.ContentSize = new SizeF (SCREEN_WIDTH, eventCardView.Frame.Bottom + 15);
         }
 
         protected override void ConfigureAndLayout ()
@@ -384,8 +386,10 @@ namespace NachoClient.iOS
 
             bool isOrganizer = account.EmailAddr == root.OrganizerEmail && account.Id == c.AccountId;
             if (isOrganizer) {
-                NavigationItem.RightBarButtonItem = editButton;
+                NavigationItem.RightBarButtonItem = editEventButton;
             }
+
+            NavigationItem.Title = e.StartTime.ToString ("Y");
 
             var titleLabel = View.ViewWithTag ((int)TagType.EVENT_TITLE_LABEL_TAG) as UILabel;
             titleLabel.Text = c.Subject;
@@ -437,30 +441,44 @@ namespace NachoClient.iOS
             var alertDetailLabel = View.ViewWithTag ((int)TagType.ALERT_DETAIL_TAG) as UILabel;
             alertDetailLabel.Text = Pretty.ReminderString (c.ReminderIsSet, c.Reminder);
             alertDetailLabel.SizeToFit ();
-            alertDetailLabel.Frame = new RectangleF (SCREEN_WIDTH - alertDetailLabel.Frame.Width - 34, 12.438f, alertDetailLabel.Frame.Width, TEXT_LINE_HEIGHT);
+
+            var attachmentView = View.ViewWithTag ((int)TagType.EVENT_ATTACHMENTS_VIEW_TAG) as UIView;
+            attachmentView.Hidden = false;
+            var attachmentDetail = View.ViewWithTag ((int)TagType.EVENT_ATTACHMENT_DETAIL_TAG) as UILabel;
+            if (0 == c.attachments.Count) {
+                attachmentDetail.Text = "None";
+            } else {
+                attachmentDetail.Text = string.Format ("({0})", c.attachments.Count);
+            }
+            attachmentDetail.SizeToFit ();
 
             // Attendees
-
             if (null != extraAttendeesButton) {
                 extraAttendeesButton.TouchUpInside -= ExtraAttendeesTouchUpInside;
             }
             ClearView (eventAttendeeView);
             extraAttendeesButton = null;
+            var attendeeImageDiameter = 40;
+            var iconSpace = EVENT_CARD_WIDTH - 60;
+            var iconPadding = (iconSpace - (attendeeImageDiameter * 5)) / 4;
             if (0 == c.attendees.Count) {
                 // Disable the attendees view.
-                View.ViewWithTag ((int)TagType.EVENT_ATTENDEE_TITLE_TAG).Hidden = true;
+                View.ViewWithTag ((int)TagType.EVENT_ATTENDEES_TITLE_TAG).Hidden = true;
+                View.ViewWithTag ((int)TagType.EVENT_ATTENDING_TITLE_TAG).Hidden = true;
                 eventAttendeeView.Hidden = true;
+                line1.Hidden = true;
+                line2.Hidden = true;
             } else {
-                View.ViewWithTag ((int)TagType.EVENT_ATTENDEE_TITLE_TAG).Hidden = false;
+                View.ViewWithTag ((int)TagType.EVENT_ATTENDEES_TITLE_TAG).Hidden = false;
                 eventAttendeeView.Hidden = false;
                 float spacing = 0;
                 int attendeeNum = 0;
                 foreach (var attendee in c.attendees) {
 
                     var attendeeButton = UIButton.FromType (UIButtonType.RoundedRect);
-                    attendeeButton.Layer.CornerRadius = 45 / 2;
+                    attendeeButton.Layer.CornerRadius = attendeeImageDiameter / 2;
                     attendeeButton.Layer.MasksToBounds = true;
-                    attendeeButton.Frame = new RectangleF (23 + spacing, 10, 45, 45);
+                    attendeeButton.Frame = new RectangleF (42 + spacing, 10, attendeeImageDiameter, attendeeImageDiameter);
                     attendeeButton.Font = A.Font_AvenirNextRegular24;
                     attendeeButton.ShowsTouchWhenHighlighted = true;
                     attendeeButton.SetTitleColor (UIColor.White, UIControlState.Normal);
@@ -473,7 +491,7 @@ namespace NachoClient.iOS
                     attendeeButton.UserInteractionEnabled = false;
                     eventAttendeeView.AddSubview (attendeeButton);
 
-                    var attendeeName = new UILabel (new RectangleF (23 + spacing, 65, 45, 15));
+                    var attendeeName = new UILabel (new RectangleF (42 + spacing, 65, attendeeImageDiameter, 15));
                     attendeeName.Font = A.Font_AvenirNextRegular14;
                     attendeeName.TextColor = UIColor.LightGray;
                     attendeeName.Tag = (int)TagType.EVENT_ATTENDEE_LABEL_TAG + attendeeNum;
@@ -486,7 +504,7 @@ namespace NachoClient.iOS
                     // can be displayed.  If the user is not the organizer, then the attendees'
                     // status is not known, so we don't want to display a blank circle.
                     if (isOrganizer) {
-                        var responseView = new UIView (new RectangleF (23 + spacing + 27, 37, 20, 20));
+                        var responseView = new UIView (new RectangleF (42 + spacing + 27, 37, 20, 20));
                         responseView.Tag = (int)TagType.EVENT_ATTENDEE_LABEL_TAG + attendeeNum + 200;
                         responseView.BackgroundColor = UIColor.White;
                         responseView.Layer.CornerRadius = 10;
@@ -507,9 +525,9 @@ namespace NachoClient.iOS
                         responseView.AddSubview (responseImageView);
                     }
 
-                    spacing += 55;
+                    spacing += (attendeeImageDiameter + iconPadding);
                     if (4 <= ++attendeeNum && 5 < c.attendees.Count) {
-                        // There is room for five attendees in the view.  If the meeting
+                        // There is room for four attendees in the view.  If the meeting
                         // has more than five attendees, only show four of them and save
                         // the last slot for showing the number of extra attendees.
                         break;
@@ -517,35 +535,24 @@ namespace NachoClient.iOS
                 }
                 if (4 < c.attendees.Count) {
                     extraAttendeesButton = UIButton.FromType (UIButtonType.RoundedRect);
-                    extraAttendeesButton.Layer.CornerRadius = 45 / 2;
+                    extraAttendeesButton.Layer.CornerRadius = attendeeImageDiameter / 2;
                     extraAttendeesButton.Layer.MasksToBounds = true;
-                    extraAttendeesButton.Layer.BorderColor = A.Color_NachoBlack.CGColor;
+                    extraAttendeesButton.Layer.BorderColor = A.Color_NachoIconGray.CGColor;
                     extraAttendeesButton.Layer.BorderWidth = 1;
-                    extraAttendeesButton.Frame = new RectangleF (243, 10, 45, 45);
+                    extraAttendeesButton.Frame = new RectangleF (42 + iconSpace - 39, 10, attendeeImageDiameter, attendeeImageDiameter);
                     extraAttendeesButton.Font = A.Font_AvenirNextRegular14;
-                    extraAttendeesButton.SetTitleColor (A.Color_NachoBlack, UIControlState.Normal);
+                    extraAttendeesButton.SetTitleColor (A.Color_NachoIconGray, UIControlState.Normal);
                     extraAttendeesButton.SetTitleColor (UIColor.LightGray, UIControlState.Selected);
                     extraAttendeesButton.Tag = (int)TagType.EVENT_ATTENDEE_DETAIL_TAG;
                     extraAttendeesButton.SetTitle (string.Format ("+{0}", c.attendees.Count - 4), UIControlState.Normal);
                     extraAttendeesButton.TouchUpInside += ExtraAttendeesTouchUpInside;
                     eventAttendeeView.AddSubview (extraAttendeesButton);
                 }
-                Util.AddArrowAccessory (SCREEN_WIDTH - 23, 24.5f, 12, eventAttendeeView);
             }
 
-            var attachmentView = View.ViewWithTag ((int)TagType.EVENT_ATTACHMENTS_VIEW_TAG) as UIView;
-            if (0 == c.attachments.Count) {
-                attachmentView.Hidden = true;
-                line2.Hidden = true;
-            } else {
-                attachmentView.Hidden = false;
-                line2.Hidden = false;
-                var attachmentDetail = View.ViewWithTag ((int)TagType.EVENT_ATTACHMENT_DETAIL_TAG) as UILabel;
-                attachmentDetail.Text = string.Format ("({0})", c.attachments.Count);
-                attachmentDetail.SizeToFit ();
-                attachmentDetail.Frame = new RectangleF (SCREEN_WIDTH - attachmentDetail.Frame.Width - 34, 12.438f, attachmentDetail.Frame.Width, TEXT_LINE_HEIGHT);
-            }
-
+            eventNotesTextView.Text = GetNoteText ();
+            eventNotesTextView.SizeToFit ();
+            notesInitialHeight = eventNotesTextView.Frame.Height;
             descriptionView.Configure (c);
 
             ConfigureRsvpBar ();
@@ -566,9 +573,6 @@ namespace NachoClient.iOS
             attachmentsTapGestureRecognizer.RemoveTarget (attachmentsTapGestureRecognizerTapToken);
             eventAttachmentsView.RemoveGestureRecognizer (attachmentsTapGestureRecognizer);
 
-            notesTapGestureRecognizer.RemoveTarget (notesTapGestureRecognizerTapToken);
-            eventNotesView.RemoveGestureRecognizer (notesTapGestureRecognizer);
-
             // Remove event handlers
             scrollView.Scrolled -= ScrollViewScrolled;
             scrollView.ZoomingEnded -= ScrollViewZoomingEnded;
@@ -577,7 +581,9 @@ namespace NachoClient.iOS
             tentativeButton.TouchUpInside -= TentativeButtonTouchUpInside;
             declineButton.TouchUpInside -= DeclineButtonTouchUpInside;
             changeResponseButton.TouchUpInside -= ChangeResponseTouchUpInside;
-            editButton.Clicked -= EditButtonClicked;
+            editEventButton.Clicked -= EditButtonClicked;
+            eventNotesTextView.Changed -= notesChanged;
+            eventNotesTextView.Started -= notesEditingStarted;
             if (null != extraAttendeesButton) {
                 extraAttendeesButton.TouchUpInside -= ExtraAttendeesTouchUpInside;
             }
@@ -585,7 +591,7 @@ namespace NachoClient.iOS
             acceptButton = null;
             contentView = null;
             declineButton = null;
-            editButton = null;
+            editEventButton = null;
             scrollView = null;
             tentativeButton = null;
             descriptionView = null;
@@ -601,8 +607,6 @@ namespace NachoClient.iOS
             extraAttendeesButton = null;
             line1 = null;
             line2 = null;
-            line3 = null;
-            line4 = null;
             attendeeTapGestureRecognizer = null;
             alertTapGestureRecognizer = null;
             attachmentsTapGestureRecognizer = null;
@@ -624,13 +628,27 @@ namespace NachoClient.iOS
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
+            SaveNote (account.Id, eventNotesTextView.Text);
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+            if (HandlesKeyboardNotifications) {
+                NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillHideNotification);
+                NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillShowNotification);
+            }
         }
 
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+        }
+
+        public override void ViewDidAppear (bool animated)
+        {
+            base.ViewDidAppear (animated);
+            if (HandlesKeyboardNotifications) {
+                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
+                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
+            }
         }
 
         public override bool HidesBottomBarWhenPushed {
@@ -671,7 +689,7 @@ namespace NachoClient.iOS
                 dc.ViewDisappearing += (object s, EventArgs e) => {
                     uint reminder;
                     c.ReminderIsSet = dc.GetReminder (out reminder);
-                    if(c.ReminderIsSet) {
+                    if (c.ReminderIsSet) {
                         c.Reminder = reminder;
                     }
                     SyncMeetingRequest ();
@@ -741,52 +759,127 @@ namespace NachoClient.iOS
         {
             float yOffset = 0;
 
-            AdjustViewLayout (TagType.EVENT_TITLE_LABEL_TAG, 25, ref yOffset, 20, SCREEN_WIDTH - 50);
+            AdjustViewLayout (TagType.EVENT_TITLE_LABEL_TAG, 15 + 18, ref yOffset, 20, SCREEN_WIDTH - 66);
+            AdjustY (eventCardView, yOffset + 15);
 
-            yOffset += 5;
+            float internalYOffset = 60;
+
+            AdjustViewLayout (TagType.EVENT_WHEN_TITLE_TAG, 0, ref internalYOffset, 18, EVENT_CARD_WIDTH - 100);
+            AdjustViewLayout (TagType.EVENT_WHEN_DETAIL_LABEL_TAG, 42, ref internalYOffset, 5, EVENT_CARD_WIDTH - 60);
+            AdjustViewLayout (TagType.EVENT_WHEN_DURATION_TAG, 42, ref internalYOffset, 0);
+            if (isRecurring) {
+                AdjustViewLayout (TagType.EVENT_WHEN_RECURRENCE_TAG, 42, ref internalYOffset, 0);
+            }
+
+            AdjustViewLayout (TagType.EVENT_LOCATION_TITLE_TAG, 0, ref internalYOffset, 18, EVENT_CARD_WIDTH - 100);
+            AdjustViewLayout (TagType.EVENT_LOCATION_DETAIL_LABEL_TAG, 42, ref internalYOffset, 5, EVENT_CARD_WIDTH - 60);
+
+            AdjustViewLayout (TagType.EVENT_DESCRIPTION_TITLE_TAG, 0, ref internalYOffset, 18, EVENT_CARD_WIDTH - 100);
             if (yOffset != descriptionView.Frame.Y) {
-                ViewFramer.Create (descriptionView).Y (yOffset);
+                ViewFramer.Create (descriptionView).Y (internalYOffset);
             }
             // descriptionView should already be layed out correctly. There is no need to call Layout() again.
-            yOffset += descriptionView.Frame.Height;
-
-            AdjustViewLayout (TagType.EVENT_LOCATION_TITLE_TAG, 23, ref yOffset, 10, SCREEN_WIDTH - 50);
-            AdjustViewLayout (TagType.EVENT_LOCATION_DETAIL_LABEL_TAG, 45, ref yOffset, 5, SCREEN_WIDTH - 90);
-
-            AdjustViewLayout (TagType.EVENT_WHEN_TITLE_TAG, 23, ref yOffset, 20, SCREEN_WIDTH - 50);
-            AdjustViewLayout (TagType.EVENT_WHEN_DETAIL_LABEL_TAG, 45, ref yOffset, 5, SCREEN_WIDTH - 50);
-            AdjustViewLayout (TagType.EVENT_WHEN_DURATION_TAG, 45, ref yOffset, 0);
-            if (isRecurring) {
-                AdjustViewLayout (TagType.EVENT_WHEN_RECURRENCE_TAG, 45, ref yOffset, 0);
-            }
+            internalYOffset += descriptionView.Frame.Height;
 
             #if PHONE_UI
             AdjustViewLayout (TagType.EVENT_PHONE_TITLE_TAG, 23, ref yOffset, 20, SCREEN_WIDTH - 50);
             AdjustViewLayout (TagType.EVENT_PHONE_DETAIL_BUTTON_TAG, 45, ref yOffset, 5);
             #endif
 
+            AdjustViewLayout (TagType.EVENT_ALERTS_VIEW_TAG, 0, ref internalYOffset, 18);
+            AdjustViewLayout (TagType.EVENT_ATTACHMENTS_VIEW_TAG, 0, ref internalYOffset, 18);
+
             if (0 != c.attendees.Count) {
-                AdjustViewLayout (TagType.EVENT_ATTENDEE_TITLE_TAG, 23, ref yOffset, 20, SCREEN_WIDTH - 50);
-                AdjustViewLayout (TagType.EVENT_ATTENDEE_VIEW_TAG, 0, ref yOffset, 5);
+                AdjustViewLayout (TagType.EVENT_ATTENDEES_TITLE_TAG, 0, ref internalYOffset, 20, EVENT_CARD_WIDTH - 100);
+                AdjustY (line1, internalYOffset + 12.5f);
+                AdjustViewLayout (TagType.EVENT_ATTENDING_TITLE_TAG, 0, ref internalYOffset, 5, EVENT_CARD_WIDTH - 100);
+                AdjustViewLayout (TagType.EVENT_ATTENDEE_VIEW_TAG, 0, ref internalYOffset, 0);
             }
 
-            AdjustViewLayout (line1, 23, ref yOffset, 20, line1.Frame.Width);
-            AdjustViewLayout (TagType.EVENT_ALERTS_VIEW_TAG, 0, ref yOffset, 0);
-
-            if (0 != c.attachments.Count) {
-                AdjustViewLayout (line2, 23, ref yOffset, 0, line2.Frame.Width);
-                AdjustViewLayout (TagType.EVENT_ATTACHMENTS_VIEW_TAG, 0, ref yOffset, 0);
+            AdjustY (line2, internalYOffset);
+            AdjustViewLayout (TagType.EVENT_NOTE_TITLE_TAG, 0, ref internalYOffset, 18);
+            internalYOffset += 6;
+            if (30 < (notesInitialHeight + NOTE_OFFSET)) {
+                eventNotesTextView.Frame = new RectangleF (37, internalYOffset, EVENT_CARD_WIDTH - 60, notesInitialHeight + NOTE_OFFSET);
+            } else {
+                eventNotesTextView.Frame = new RectangleF (37, internalYOffset, EVENT_CARD_WIDTH - 60, 30);
             }
 
-            AdjustViewLayout (line3, 23, ref yOffset, 0, line3.Frame.Width);
-            AdjustViewLayout (TagType.EVENT_NOTES_VIEW_TAG, 0, ref yOffset, 0);
+            internalYOffset += eventNotesTextView.Frame.Height;
 
-            AdjustViewLayout (line4, 23, ref yOffset, 0, line4.Frame.Width);
-
-            float bottom = yOffset + 20;
             float logicalWidth = Math.Max (SCREEN_WIDTH, descriptionView.Frame.Right);
-            contentView.Frame = new RectangleF (0, 0, logicalWidth, bottom);
+            scrollView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, View.Frame.Height - keyboardHeight);
+            eventCardView.Frame = new RectangleF (15, eventCardView.Frame.Y, logicalWidth - 30, internalYOffset + 20);
+            contentView.Frame = new RectangleF (0, 0, logicalWidth, eventCardView.Frame.Bottom + 20);
             scrollView.ContentSize = contentView.Frame.Size;
+
+        }
+
+        public virtual bool HandlesKeyboardNotifications {
+            get { return true; }
+        }
+
+        private void OnKeyboardNotification (NSNotification notification)
+        {
+            if (IsViewLoaded) {
+                //Check if the keyboard is becoming visible
+                bool visible = notification.Name == UIKeyboard.WillShowNotification;
+                //Start an animation, using values from the keyboard
+                UIView.BeginAnimations ("AnimateForKeyboard");
+                UIView.SetAnimationBeginsFromCurrentState (true);
+                UIView.SetAnimationDuration (UIKeyboard.AnimationDurationFromNotification (notification));
+                UIView.SetAnimationCurve ((UIViewAnimationCurve)UIKeyboard.AnimationCurveFromNotification (notification));
+                //Pass the notification, calculating keyboard height, etc.
+                bool landscape = InterfaceOrientation == UIInterfaceOrientation.LandscapeLeft || InterfaceOrientation == UIInterfaceOrientation.LandscapeRight;
+                if (visible) {
+                    var keyboardFrame = UIKeyboard.FrameEndFromNotification (notification);
+                    OnKeyboardChanged (visible, landscape ? keyboardFrame.Width : keyboardFrame.Height);
+                } else {
+                    var keyboardFrame = UIKeyboard.FrameBeginFromNotification (notification);
+                    OnKeyboardChanged (visible, landscape ? keyboardFrame.Width : keyboardFrame.Height);
+                }
+                //Commit the animation
+                UIView.CommitAnimations (); 
+            }
+        }
+
+        protected virtual void OnKeyboardChanged (bool visible, float height)
+        {
+            var newHeight = (visible ? height : 0);
+
+            if (newHeight == keyboardHeight) {
+                return;
+            }
+            keyboardHeight = newHeight;
+
+            LayoutView ();
+        }
+
+        protected void SelectionChanged (UITextView textView)
+        {
+            // We want to scroll the caret rect into view
+            var caretRect = textView.GetCaretRectForPosition (textView.SelectedTextRange.End);
+            caretRect.Size = new SizeF (caretRect.Size.Width, caretRect.Size.Height + textView.TextContainerInset.Bottom);
+            // Make sure our textview is big enough to hold the text
+            var frame = textView.Frame;
+            var frameBefore = frame;
+            frame.Size = new SizeF (textView.ContentSize.Width, textView.ContentSize.Height);
+            var frameAfter = frame;
+            if (frameBefore.Height < frameAfter.Height) {
+                NOTE_OFFSET += TEXT_LINE_HEIGHT;
+                LayoutView ();
+            }
+            if (frameBefore.Height > frameAfter.Height) {
+                NOTE_OFFSET -= TEXT_LINE_HEIGHT;
+                LayoutView ();
+            }
+
+            textView.Frame = frame;
+            // And update our enclosing scrollview for the new content size
+            scrollView.ContentSize = contentView.Frame.Size;
+            // Adjust the caretRect to be in our enclosing scrollview, and then scroll it
+            caretRect.Y += textView.Frame.Y;
+            scrollView.ScrollRectToVisible (caretRect, true);
         }
 
         protected static void AdjustViewLayout (UIView view, float X, ref float Y, float extraY)
@@ -815,6 +908,13 @@ namespace NachoClient.iOS
             AdjustViewLayout (view, X, ref Y, extraY, width);
         }
 
+        protected void AdjustY (UIView view, float yOffset)
+        {
+            var frame = view.Frame;
+            frame.Y = yOffset;
+            view.Frame = frame;
+        }
+
         protected static void AddTextLabel (float xOffset, float yOffset, float width, float height, string text, UIView parentView)
         {
             var textLabel = new UILabel (new RectangleF (xOffset, yOffset, width, height));
@@ -824,18 +924,18 @@ namespace NachoClient.iOS
             parentView.AddSubview (textLabel);
         }
 
-        protected static void AddTextLabelWithImageView (float xOffset, float yOffset, string text, string imageName, TagType tag, UIView parentView)
+        protected static void AddTextLabelWithImageView (float yOffset, string text, string imageName, TagType tag, UIView parentView)
         {
-            var view = new UIView (new RectangleF (xOffset - 22, yOffset, SCREEN_WIDTH, 20));
+            var view = new UIView (new RectangleF (0, yOffset, EVENT_CARD_WIDTH, 16));
             view.Tag = (int)tag;
 
-            var textLabel = new UILabel (new RectangleF (22, 0, 100, 20));
+            var textLabel = new UILabel (new RectangleF (42, 0, 100, 16));
             textLabel.Text = text;
-            textLabel.Font = A.Font_AvenirNextRegular14;
+            textLabel.Font = A.Font_AvenirNextMedium12;
             textLabel.TextColor = A.Color_NachoLightText;
             view.AddSubview (textLabel);
 
-            var imageView = new UIImageView (new RectangleF (0, 0, 15, 15));
+            var imageView = new UIImageView (new RectangleF (18, 0, 16, 16));
             using (var image = UIImage.FromBundle (imageName)) {
                 imageView.Image = image;
             }
@@ -907,11 +1007,11 @@ namespace NachoClient.iOS
             if (account.EmailAddr == root.OrganizerEmail || (c.ResponseTypeIsSet && NcResponseType.Organizer == c.ResponseType)) {
                 messageLabel.Hidden = false;
                 messageLabel.Text = "You are the organizer";
-                messageLabel.Frame = new RectangleF (25 + 24 + 10, 15, 150, 24);
-                acceptButton.Hidden = false;
-                acceptButton.UserInteractionEnabled = false;
+                messageLabel.Frame = new RectangleF (18 + 24 + 12, 18, 150, 24);
+                acceptButton.Hidden = true;
+                organizerIcon.Hidden = false;
                 acceptButton.Selected = true;
-                acceptButton.Frame = new RectangleF (25, 15, 24, 24);
+                acceptButton.Frame = new RectangleF (18, 18, 24, 24);
                 acceptLabel.Hidden = true;
                 tentativeButton.Hidden = true;
                 tentativeLabel.Hidden = true;
@@ -924,43 +1024,43 @@ namespace NachoClient.iOS
 
                 case NcResponseType.Accepted:
                     acceptButton.Selected = true;
-                    messageLabel.Text = "You are going";
-                    messageLabel.Hidden = false;
-                    changeResponseButton.Hidden = false;
-                    acceptButton.Frame = new RectangleF (25, 15, 24, 24);
-                    acceptLabel.Hidden = true;
-                    tentativeButton.Hidden = true;
-                    declineButton.Hidden = true;
-                    tentativeLabel.Hidden = true;
-                    declineLabel.Hidden = true;
+                    //                    messageLabel.Text = "You are going";
+                    //                    messageLabel.Hidden = false;
+                    //                    changeResponseButton.Hidden = false;
+                    //                    acceptButton.Frame = new RectangleF (18, 18, 24, 24);
+                    //                    acceptLabel.Hidden = true;
+                    //                    tentativeButton.Hidden = true;
+                    //                    declineButton.Hidden = true;
+                    //                    tentativeLabel.Hidden = true;
+                    //                    declineLabel.Hidden = true;
                     acceptButton.UserInteractionEnabled = false;
                     break;
 
                 case NcResponseType.Tentative:
                     tentativeButton.Selected = true;
-                    messageLabel.Text = "Tentative";
-                    messageLabel.Hidden = false;
-                    changeResponseButton.Hidden = false;
-                    tentativeButton.Frame = new RectangleF (25, 15, 24, 24);
-                    acceptButton.Hidden = true;
-                    acceptLabel.Hidden = true;
-                    tentativeLabel.Hidden = true;
-                    declineButton.Hidden = true;
-                    declineLabel.Hidden = true;
+                    //                    messageLabel.Text = "Tentative";
+                    //                    messageLabel.Hidden = false;
+                    //                    changeResponseButton.Hidden = false;
+                    //                    tentativeButton.Frame = new RectangleF (18, 18, 24, 24);
+                    //                    acceptButton.Hidden = true;
+                    //                    acceptLabel.Hidden = true;
+                    //                    tentativeLabel.Hidden = true;
+                    //                    declineButton.Hidden = true;
+                    //                    declineLabel.Hidden = true;
                     tentativeButton.UserInteractionEnabled = false;
                     break;
 
                 case NcResponseType.Declined:
                     declineButton.Selected = true;
-                    messageLabel.Text = "You are not going to this meeting";
-                    messageLabel.Hidden = false;
-                    changeResponseButton.Hidden = false;
-                    declineButton.Frame = new RectangleF (25, 15, 24, 24);
-                    acceptButton.Hidden = true;
-                    acceptLabel.Hidden = true;
-                    tentativeButton.Hidden = true;
-                    tentativeLabel.Hidden = true;
-                    declineLabel.Hidden = true;
+                    //                    messageLabel.Text = "You are not going to this meeting";
+                    //                    messageLabel.Hidden = false;
+                    //                    changeResponseButton.Hidden = false;
+                    //                    declineButton.Frame = new RectangleF (18, 18, 24, 24);
+                    //                    acceptButton.Hidden = true;
+                    //                    acceptLabel.Hidden = true;
+                    //                    tentativeButton.Hidden = true;
+                    //                    tentativeLabel.Hidden = true;
+                    //                    declineLabel.Hidden = true;
                     declineButton.UserInteractionEnabled = false;
                     break;
                 }
@@ -976,100 +1076,111 @@ namespace NachoClient.iOS
 
         protected void ToggleButtons (NcResponseType r)
         {
+            RestoreButtons ();
             if (NcResponseType.Accepted == r) {
                 acceptButton.Selected = true;
                 tentativeButton.Selected = false;
                 declineButton.Selected = false;
-                messageLabel.Text = "You are going";
-                messageLabel.Hidden = false;
-                messageLabel.Alpha = 0;
-                changeResponseButton.Hidden = false;
-                changeResponseButton.Alpha = 0;
 
-                UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
-                    () => {
-                        acceptLabel.Alpha = 0;
-                        tentativeButton.Alpha = 0;
-                        declineButton.Alpha = 0;
-                        tentativeLabel.Alpha = 0;
-                        declineLabel.Alpha = 0;
-                        messageLabel.Alpha = 1;
-                        changeResponseButton.Alpha = 1;
+                acceptButton.UserInteractionEnabled = false;
 
-                        acceptButton.Frame = new RectangleF (25, 15, 24, 24);
-                    },
-                    () => {
-                        acceptLabel.Hidden = true;
-                        tentativeButton.Hidden = true;
-                        declineButton.Hidden = true;
-                        tentativeLabel.Hidden = true;
-                        declineLabel.Hidden = true;
-                        acceptButton.UserInteractionEnabled = false;
-                    }
-                );
+                //                messageLabel.Text = "You are going";
+                //                messageLabel.Hidden = false;
+                //                messageLabel.Alpha = 0;
+                //                changeResponseButton.Hidden = false;
+                //                changeResponseButton.Alpha = 0;
+                //
+                //                UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
+                //                    () => {
+                //                        acceptLabel.Alpha = 0;
+                //                        tentativeButton.Alpha = 0;
+                //                        declineButton.Alpha = 0;
+                //                        tentativeLabel.Alpha = 0;
+                //                        declineLabel.Alpha = 0;
+                //                        messageLabel.Alpha = 1;
+                //                        changeResponseButton.Alpha = 1;
+                //
+                //                        acceptButton.Frame = new RectangleF (18, 18, 24, 24);
+                //                    },
+                //                    () => {
+                //                        acceptLabel.Hidden = true;
+                //                        tentativeButton.Hidden = true;
+                //                        declineButton.Hidden = true;
+                //                        tentativeLabel.Hidden = true;
+                //                        declineLabel.Hidden = true;
+                //                        acceptButton.UserInteractionEnabled = false;
+                //                    }
+                //                );
             } else if (NcResponseType.Tentative == r) {
                 acceptButton.Selected = false;
                 tentativeButton.Selected = true;
                 declineButton.Selected = false;
-                messageLabel.Text = "Tentative";
-                messageLabel.Hidden = false;
-                messageLabel.Alpha = 0;
-                changeResponseButton.Hidden = false;
-                changeResponseButton.Alpha = 0;
 
-                UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
-                    () => {
-                        acceptLabel.Alpha = 0;
-                        acceptButton.Alpha = 0;
-                        declineButton.Alpha = 0;
-                        tentativeLabel.Alpha = 0;
-                        declineLabel.Alpha = 0;
-                        messageLabel.Alpha = 1;
-                        changeResponseButton.Alpha = 1;
+                tentativeButton.UserInteractionEnabled = false;
 
-                        tentativeButton.Frame = new RectangleF (25, 15, 24, 24);
-                    },
-                    () => {
-                        acceptLabel.Hidden = true;
-                        acceptButton.Hidden = true;
-                        declineButton.Hidden = true;
-                        tentativeLabel.Hidden = true;
-                        declineLabel.Hidden = true;
-                        tentativeButton.UserInteractionEnabled = false;
-                    }
-                );
+                // Acompli style rsvp UX
+                //                messageLabel.Text = "Tentative";
+                //                messageLabel.Hidden = false;
+                //                messageLabel.Alpha = 0;
+                //                changeResponseButton.Hidden = false;
+                //                changeResponseButton.Alpha = 0;
+                //                UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
+                //                    () => {
+                //                        acceptLabel.Alpha = 0;
+                //                        acceptButton.Alpha = 0;
+                //                        declineButton.Alpha = 0;
+                //                        tentativeLabel.Alpha = 0;
+                //                        declineLabel.Alpha = 0;
+                //                        messageLabel.Alpha = 1;
+                //                        changeResponseButton.Alpha = 1;
+                //
+                //                        tentativeButton.Frame = new RectangleF (18, 18, 24, 24);
+                //                    },
+                //                    () => {
+                //                        acceptLabel.Hidden = true;
+                //                        acceptButton.Hidden = true;
+                //                        declineButton.Hidden = true;
+                //                        tentativeLabel.Hidden = true;
+                //                        declineLabel.Hidden = true;
+                //                        tentativeButton.UserInteractionEnabled = false;
+                //                    }
+                //                );
             } else {
                 acceptButton.Selected = false;
                 tentativeButton.Selected = false;
                 declineButton.Selected = true;
-                messageLabel.Text = "You are not going";
-                messageLabel.Hidden = false;
-                messageLabel.Alpha = 0;
-                changeResponseButton.Hidden = false;
-                changeResponseButton.Alpha = 0;
 
-                UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
-                    () => {
-                        acceptLabel.Alpha = 0;
-                        acceptButton.Alpha = 0;
-                        tentativeButton.Alpha = 0;
-                        tentativeLabel.Alpha = 0;
-                        declineLabel.Alpha = 0;
-                        messageLabel.Alpha = 1;
-                        changeResponseButton.Alpha = 1;
+                declineButton.UserInteractionEnabled = false;
 
-                        declineButton.Frame = new RectangleF (25, 15, 24, 24);
-                    },
-                    () => {
-                        acceptLabel.Hidden = true;
-                        acceptButton.Hidden = true;
-                        tentativeButton.Hidden = true;
-                        tentativeLabel.Hidden = true;
-                        declineLabel.Hidden = true;
-                        declineButton.UserInteractionEnabled = false;
 
-                    }
-                );
+                //                messageLabel.Text = "You are not going";
+                //                messageLabel.Hidden = false;
+                //                messageLabel.Alpha = 0;
+                //                changeResponseButton.Hidden = false;
+                //                changeResponseButton.Alpha = 0;
+                //
+                //                UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
+                //                    () => {
+                //                        acceptLabel.Alpha = 0;
+                //                        acceptButton.Alpha = 0;
+                //                        tentativeButton.Alpha = 0;
+                //                        tentativeLabel.Alpha = 0;
+                //                        declineLabel.Alpha = 0;
+                //                        messageLabel.Alpha = 1;
+                //                        changeResponseButton.Alpha = 1;
+                //
+                //                        declineButton.Frame = new RectangleF (18, 18, 24, 24);
+                //                    },
+                //                    () => {
+                //                        acceptLabel.Hidden = true;
+                //                        acceptButton.Hidden = true;
+                //                        tentativeButton.Hidden = true;
+                //                        tentativeLabel.Hidden = true;
+                //                        declineLabel.Hidden = true;
+                //                        declineButton.UserInteractionEnabled = false;
+                //
+                //                    }
+                //                );
             }
         }
 
@@ -1088,31 +1199,29 @@ namespace NachoClient.iOS
             acceptButton.UserInteractionEnabled = true;
             tentativeButton.UserInteractionEnabled = true;
             declineButton.UserInteractionEnabled = true;
-
-            UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
-                () => {
-
-                    acceptButton.Alpha = 1;
-                    tentativeButton.Alpha = 1;
-                    declineButton.Alpha = 1;
-                    acceptLabel.Alpha = 1;
-                    tentativeLabel.Alpha = 1;
-                    declineLabel.Alpha = 1;
-
-                    messageLabel.Alpha = 0;
-                    changeResponseButton.Alpha = 0;
-
-                    acceptButton.Frame = new RectangleF (25, 10, 24, 24);
-                    tentativeButton.Frame = new RectangleF ((SCREEN_WIDTH / 2) - 12, 10, 24, 24);
-                    declineButton.Frame = new RectangleF (SCREEN_WIDTH - 24 - 25, 10, 24, 24);
-                },
-                () => {
-
-                    messageLabel.Hidden = true;
-                    changeResponseButton.Hidden = true;
-
-                }
-            );
+            //
+            //            UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
+            //                () => {
+            //
+            //                    acceptButton.Alpha = 1;
+            //                    tentativeButton.Alpha = 1;
+            //                    declineButton.Alpha = 1;
+            //                    acceptLabel.Alpha = 1;
+            //                    tentativeLabel.Alpha = 1;
+            //                    declineLabel.Alpha = 1;
+            //
+            //                    messageLabel.Alpha = 0;
+            //                    changeResponseButton.Alpha = 0;
+            //
+            //                    acceptButton.Frame = new RectangleF (18, 18, 24, 24);
+            //                    tentativeButton.Frame = new RectangleF (acceptButton.Frame.X + 42 + 45, 18, 24, 24);
+            //                    declineButton.Frame = new RectangleF (tentativeButton.Frame.X + 38 + 45 + 6, 18, 24, 24);
+            //                },
+            //                () => {
+            //                    messageLabel.Hidden = true;
+            //                    changeResponseButton.Hidden = true;
+            //                }
+            //            );
 
         }
 
@@ -1227,7 +1336,7 @@ namespace NachoClient.iOS
             }
             if ("YearlyOnDay" == rPattern.Type.ToString ()) {
                 return "repeats every year on the " + Util.AddOrdinalSuffix ((Int32)rPattern.WeekOfMonth) + " " + rPattern.DayOfWeek.ToString ()
-                + " of " + rPattern.MonthOfYear.ToString ();
+                    + " of " + rPattern.MonthOfYear.ToString ();
             }
             return "Case error: " + rPattern.Type.ToString ();
         }
@@ -1360,6 +1469,17 @@ namespace NachoClient.iOS
         {
             // The description is the only thing that zooms.
             return descriptionView;
+        }
+
+        private void notesEditingStarted (object sender, EventArgs e)
+        {
+            scrollView.SetContentOffset (new PointF (0, contentView.Frame.Height - scrollView.Frame.Height), true);
+        }
+
+        private void notesChanged (object sender, EventArgs e)
+        {
+            SelectionChanged (eventNotesTextView);
+            scrollView.SetContentOffset (new PointF (0, contentView.Frame.Height - scrollView.Frame.Height), true);
         }
     }
 }
