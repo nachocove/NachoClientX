@@ -353,7 +353,6 @@
     <Compile Include="NachoCore\Utils\ContactsHelpers.cs" />
     <Compile Include="NachoCore\Utils\CertificateHelper.cs" />
     <Compile Include="NachoCore\Utils\NcAbate.cs" />
-    <Compile Include="NachoCore\Utils\TelemetryAWS.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
