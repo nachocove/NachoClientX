@@ -407,9 +407,7 @@ namespace NachoClient.iOS
 
                 dateTextLabel.Text = DateToString (item.CreatedAt);
 
-                if (detailText.Contains ("JPG") || detailText.Contains ("JPEG")
-                    || detailText.Contains ("TIFF") || detailText.Contains ("PNG")
-                    || detailText.Contains ("GIF") || detailText.Contains ("RAW")) {
+                if(Pretty.TreatLikeAPhoto(item.DisplayName)) {
                     iconView.Image = UIImage.FromBundle ("email-att-photos");
                 } else {
                     iconView.Image = UIImage.FromBundle ("email-att-files");

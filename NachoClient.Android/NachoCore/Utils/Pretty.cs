@@ -372,13 +372,34 @@ namespace NachoCore.Utils
             return String.Format ("({0},{1})", s.Width, s.Height);
         }
 
-        public static string Join(String one, String two)
+        public static string Join (String one, String two)
         {
             if (String.IsNullOrEmpty (one)) {
                 return two;
             } else {
                 return one + " " + two;
             }
+        }
+
+        public static bool TreatLikeAPhoto (string path)
+        {
+            string[] ext = {
+                "tiff",
+                "jpeg",
+                "jpg",
+                "gif",
+                "png",
+                "raw",
+            };
+            if (null == path) {
+                return false;
+            }
+            foreach (var s in ext) {
+                if (path.EndsWith (s, StringComparison.OrdinalIgnoreCase)) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }

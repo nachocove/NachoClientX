@@ -12,10 +12,12 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public enum TagType {
+    public enum TagType
+    {
         ATTACHMENT_VIEW_TAG = 301,
         ATTACHMENT_LABEL_TAG = 302,
         ATTACHMENT_NUMBER_TAG = 303,
+        // prevent duplicate tag #s with AttachmentView
         ATTACHMENT_IMAGE_TAG = AttachmentView.TagType.ATTACHMENT_IMAGE_TAG,
         ATTACHMENT_NAME_TAG = AttachmentView.TagType.ATTACHMENT_NAME_TAG,
     };
@@ -24,40 +26,42 @@ namespace NachoClient.iOS
     {
         const float TOP_MARGIN = 5.0f;
         const float BOTTOM_MARGIN = 5.0f;
-        const float LINE_HEIGHT = 20.0f;
 
         public AttachmentView.AttachmentSelectedCallback OnAttachmentSelected;
 
         protected List<AttachmentView> attachmentViews;
-        protected UILabel attachmentLabel; // the string "Attachment"
-        protected UILabel numberLabel; // # of attachment
+        protected UILabel attachmentLabel;
+        // the string "Attachment"
+        protected UILabel numberLabel;
+        // # of attachment
+
+        private float CenterY;
 
         public AttachmentListView (RectangleF frame) : base (frame, false)
         {
+            CenterY = frame.Height / 2;
             BackgroundColor = UIColor.White;
 
             attachmentViews = new List<AttachmentView> ();
 
-            // Adjust down the expand button
-            ViewFramer.Create (expandedButton).AdjustY (TOP_MARGIN);
-
-            attachmentLabel = new UILabel (new RectangleF (0, TOP_MARGIN, 1, 1));
+            attachmentLabel = new UILabel (new RectangleF (0, 0, 1, 1));
             attachmentLabel.BackgroundColor = UIColor.White;
             attachmentLabel.Text = "Attachments";
-            attachmentLabel.TextColor = A.Color_NachoLightText;
+            attachmentLabel.TextColor = A.Color_NachoTextGray;
             attachmentLabel.Font = A.Font_AvenirNextRegular17;
             attachmentLabel.SizeToFit ();
+            ViewFramer.Create (attachmentLabel).Y (CenterY - (attachmentLabel.Frame.Height / 2));
             AddSubview (attachmentLabel);
 
             numberLabel = new UILabel (new RectangleF (attachmentLabel.Frame.Width + 10, TOP_MARGIN, 1, 1));
-            numberLabel.BackgroundColor = A.Color_NachoTeal;
+            numberLabel.BackgroundColor = A.Color_909090;
             numberLabel.TextColor = UIColor.White;
-            numberLabel.Font = A.Font_AvenirNextDemiBold17;
+            numberLabel.Font = A.Font_AvenirNextDemiBold14;
             numberLabel.SizeToFit ();
             UpdateNumber ();
             AddSubview (numberLabel);
 
-            CollapsedHeight = TOP_MARGIN + LINE_HEIGHT + BOTTOM_MARGIN;
+            CollapsedHeight = frame.Height;
             Reset ();
         }
 
@@ -87,11 +91,12 @@ namespace NachoClient.iOS
 
         protected void UpdateNumber ()
         {
-            const float cornerSize = 7.0f;
+            const float cornerSize = 6.0f;
             numberLabel.Text = attachmentViews.Count.ToString ();
             numberLabel.TextAlignment = UITextAlignment.Center;
             numberLabel.SizeToFit ();
             ViewFramer.Create (numberLabel).Height (20).AdjustWidth (2 * cornerSize);
+            ViewFramer.Create (numberLabel).Y (CenterY- (numberLabel.Frame.Height / 2));
             numberLabel.Layer.CornerRadius = cornerSize;
             numberLabel.ClipsToBounds = true;
             ExpandedHeight += AttachmentView.VIEW_HEIGHT;

@@ -89,9 +89,7 @@ namespace NachoClient.iOS
                 } 
                 detailTextLabel.Text = detailText;
 
-                if (detailText.Contains ("JPG") || detailText.Contains ("JPEG")
-                    || detailText.Contains ("TIFF") || detailText.Contains ("PNG")
-                    || detailText.Contains ("GIF") || detailText.Contains ("RAW")) {
+                if (Pretty.TreatLikeAPhoto(attachment.DisplayName)) {
                     iconView.Image = UIImage.FromBundle ("email-att-photos");
                 } else {
                     iconView.Image = UIImage.FromBundle ("email-att-files");

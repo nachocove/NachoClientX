@@ -27,6 +27,7 @@ namespace NachoClient.iOS
         protected static UIFont _Font_AvenirNextUltraLight32 = null;
         protected static UIFont _Font_AvenirNextUltraLight24 = null;
         protected static UIColor _Color_999999 = null;
+        protected static UIColor _Color_909090 = null;
         protected static UIColor _Color_0F424C = null;
         protected static UIColor _Color_9B9B9B = null;
         protected static UIColor _Color_FFFFFF = null;
@@ -234,6 +235,15 @@ namespace NachoClient.iOS
                     _Color_999999 = UIColor.FromRGB (0x99, 0x99, 0x99);
                 }
                 return _Color_999999;
+            }
+        }
+
+        public static UIColor Color_909090 {
+            get {
+                if (null == _Color_909090) {
+                    _Color_909090 = UIColor.FromRGB (0x90, 0x90, 0x90);
+                }
+                return _Color_909090;
             }
         }
 
