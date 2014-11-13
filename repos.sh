@@ -23,4 +23,5 @@ MimeKit
 DnDns
 DDay-iCal-Xamarin
 Telemetry
+aws-sdk-xamarin
 "
