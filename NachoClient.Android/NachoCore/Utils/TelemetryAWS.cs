@@ -34,6 +34,11 @@ namespace NachoCore.Utils
 
         public TelemetryBEAWS ()
         {
+            InitializeTables ();
+        }
+
+        private void InitializeTables ()
+        {
             var config = new AmazonDynamoDBConfig();
             config.UseHttp = false;
             config.AuthenticationRegion = "us-west-2";
@@ -86,6 +91,12 @@ namespace NachoCore.Utils
             CaptureTable = Table.LoadTable (Client, TableName ("capture"));
             UiTable = Table.LoadTable (Client, TableName ("ui"));
             WbxmlTable = Table.LoadTable (Client, TableName ("wbxml"));
+        }
+
+        public void ReinitializeTables ()
+        {
+            Client.Dispose ();
+            InitializeTables ();
         }
 
         public bool IsUseable ()
@@ -153,13 +164,21 @@ namespace NachoCore.Utils
         private bool AwsSendEvent (Table eventTable, Document eventItem)
         {
             try {
-                // FIXME - Add cancellation token
                 eventItem ["uploaded_at"] = DateTime.UtcNow.Ticks;
                 var task = eventTable.PutItemAsync (eventItem);
-                task.Wait ();
+                task.Wait (NcTask.Cts.Token);
+            }
+            catch (AmazonDynamoDBException e) {
+                Console.WriteLine ("AWS DynamoDB exception {0}", e);
+                ReinitializeTables ();
+                return false;
             }
             catch (AmazonServiceException e) {
                 Console.WriteLine ("AWS exception {0}", e);
+                return false;
+            }
+            catch (Exception e) {
+                Console.WriteLine ("Some exception {0}", e);
                 return false;
             }
             return true;
@@ -201,13 +220,14 @@ namespace NachoCore.Utils
                 throw new NcAssert.NachoDefaultCaseFailure (msg);
             }
             anEvent ["message"] = tEvent.Message;
-            // FIXME - Add thread id and subsystem
+            anEvent ["thread_id"] = tEvent.ThreadId;
             return anEvent;
         }
 
         private Document SupportEvent (TelemetryEvent tEvent)
         {
             var anEvent = InitializeEvent (tEvent);
+            anEvent ["event_type"] = "SUPPORT";
             anEvent ["client"] = GetUserName ();
             anEvent ["support"] = tEvent.Support;
             return anEvent;
@@ -216,16 +236,18 @@ namespace NachoCore.Utils
         private Document CounterEvent (TelemetryEvent tEvent)
         {
             var anEvent = InitializeEvent (tEvent);
+            anEvent ["event_type"] = "COUNTER";
             anEvent ["counter_name"] = tEvent.CounterName;
             anEvent ["count"] = tEvent.Count;
-            anEvent ["counter_start"] = tEvent.CounterStart;
-            anEvent ["counter_end"] = tEvent.CounterEnd;
+            anEvent ["counter_start"] = tEvent.CounterStart.Ticks;
+            anEvent ["counter_end"] = tEvent.CounterEnd.Ticks;
             return anEvent;
         }
 
         private Document CaptureEvent (TelemetryEvent tEvent)
         {
             var anEvent = InitializeEvent (tEvent);
+            anEvent ["event_type"] = "CAPTURE";
             anEvent ["capture_name"] = tEvent.CaptureName;
             anEvent ["count"] = tEvent.Count;
             anEvent ["min"] = tEvent.Min;
@@ -238,7 +260,13 @@ namespace NachoCore.Utils
         private Document UiEvent (TelemetryEvent tEvent)
         {
             var anEvent = InitializeEvent (tEvent);
+            anEvent ["event_type"] = "UI";
             anEvent ["ui_type"] = tEvent.UiType;
+            if (null == tEvent.UiObject) {
+                anEvent ["ui_object"] = "(unknown)";
+            } else {
+                anEvent ["ui_object"] = tEvent.UiObject;
+            }
             switch (tEvent.UiType) {
             case TelemetryEvent.UIDATEPICKER:
                 anEvent ["ui_string"] = tEvent.UiString;

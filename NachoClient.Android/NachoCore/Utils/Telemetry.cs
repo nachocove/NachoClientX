@@ -63,6 +63,19 @@ namespace NachoCore.Utils
             }
         }
 
+        // Thread id of a log message
+        private int _ThreadId;
+
+        public int ThreadId {
+            get {
+                return _ThreadId;
+            }
+            set {
+                NcAssert.True (IsLogEvent ());
+                _ThreadId = value;
+            }
+        }
+
         // The format string of a log message.
         private string _Message;
 
@@ -206,7 +219,6 @@ namespace NachoCore.Utils
                 _Sum2 = value;
             }
         }
-
 
         // UI event fields
         // UI type is the type of objects - UIButton, UILabel and etc
@@ -477,6 +489,7 @@ namespace NachoCore.Utils
                 tEvent.Message = tEvent.Message.Substring (0, MAX_PARSE_LEN - 4);
                 tEvent.Message += " ...";
             }
+            tEvent.ThreadId = Thread.CurrentThread.ManagedThreadId;
 
             RecordRawEvent (tEvent);
         }
