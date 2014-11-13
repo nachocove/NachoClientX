@@ -1660,6 +1660,8 @@
     <BundleResource Include="Resources\contacts-call-active%402x.png" />
     <BundleResource Include="Resources\contacts-email-active%402x.png" />
     <BundleResource Include="Resources\contacts-marker%402x.png" />
+    <BundleResource Include="Resources\contacts-icn-address%402x.png" />
+    <BundleResource Include="Resources\contacts-icn-bday%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

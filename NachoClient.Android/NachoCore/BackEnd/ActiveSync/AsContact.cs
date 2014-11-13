@@ -492,10 +492,10 @@ namespace NachoCore.ActiveSync
             c.NickName = NickName;
 
             if (DateTime.MinValue != Anniversary) {
-                c.AddDateAttribute (AccountId, "Anniversary", null, Anniversary);
+                c.AddDateAttribute (AccountId, "Anniversary", "Anniversary", Anniversary);
             }
             if (DateTime.MinValue != Birthday) {
-                c.AddDateAttribute (AccountId, "Birthday", null, Birthday);
+                c.AddDateAttribute (AccountId, "Birthday", "Birthday", Birthday);
             }
             if (null != Email1Address) {
                 c.AddEmailAddressAttribute (AccountId, "Email1Address", null, Email1Address);
@@ -507,40 +507,40 @@ namespace NachoCore.ActiveSync
                 c.AddEmailAddressAttribute (AccountId, "Email3Address", null, Email3Address);
             }
             if (null != AssistantPhoneNumber) {
-                c.AddPhoneNumberAttribute (AccountId, "AssistantPhoneNumber", null, AssistantPhoneNumber);
+                c.AddPhoneNumberAttribute (AccountId, "AssistantPhoneNumber", "Assisstant", AssistantPhoneNumber);
             }
             if (null != BusinessFaxNumber) {
                 c.AddPhoneNumberAttribute (AccountId, "BusinessFaxNumber", null, BusinessFaxNumber);
             }
             if (null != BusinessPhoneNumber) {
-                c.AddPhoneNumberAttribute (AccountId, "BusinessPhoneNumber", null, BusinessPhoneNumber);
+                c.AddPhoneNumberAttribute (AccountId, "BusinessPhoneNumber", "Work", BusinessPhoneNumber);
             }
             if (null != Business2PhoneNumber) {
-                c.AddPhoneNumberAttribute (AccountId, "Business2PhoneNumber", null, Business2PhoneNumber);
+                c.AddPhoneNumberAttribute (AccountId, "Business2PhoneNumber", "Work", Business2PhoneNumber);
             }
             if (null != CarPhoneNumber) {
-                c.AddPhoneNumberAttribute (AccountId, "CarPhoneNumber", null, CarPhoneNumber);
+                c.AddPhoneNumberAttribute (AccountId, "CarPhoneNumber", "Car", CarPhoneNumber);
             }
             if (null != HomeFaxNumber) {
                 c.AddPhoneNumberAttribute (AccountId, "HomeFaxNumber", null, HomeFaxNumber);
             }
             if (null != HomePhoneNumber) {
-                c.AddPhoneNumberAttribute (AccountId, "HomePhoneNumber", null, HomePhoneNumber);
+                c.AddPhoneNumberAttribute (AccountId, "HomePhoneNumber", "Home", HomePhoneNumber);
             }
             if (null != Home2PhoneNumber) {
-                c.AddPhoneNumberAttribute (AccountId, "Home2PhoneNumber", null, Home2PhoneNumber);
+                c.AddPhoneNumberAttribute (AccountId, "Home2PhoneNumber", "Home", Home2PhoneNumber);
             }
             if (null != MobilePhoneNumber) {
-                c.AddPhoneNumberAttribute (AccountId, "MobilePhoneNumber", null, MobilePhoneNumber);
+                c.AddPhoneNumberAttribute (AccountId, "MobilePhoneNumber", "Mobile", MobilePhoneNumber);
             }
             if (null != PagerNumber) {
-                c.AddPhoneNumberAttribute (AccountId, "PagerNumber", null, PagerNumber);
+                c.AddPhoneNumberAttribute (AccountId, "PagerNumber", "Pager", PagerNumber);
             }
             if (null != RadioPhoneNumber) {
-                c.AddPhoneNumberAttribute (AccountId, "RadioPhoneNumber", null, RadioPhoneNumber);
+                c.AddPhoneNumberAttribute (AccountId, "RadioPhoneNumber", "Radio", RadioPhoneNumber);
             }
             if (null != CompanyMainPhone) {
-                c.AddPhoneNumberAttribute (AccountId, "CompanyMainPhone", null, CompanyMainPhone);
+                c.AddPhoneNumberAttribute (AccountId, "CompanyMainPhone", "Company Main", CompanyMainPhone);
             }
             if (null != IMAddress) {
                 c.AddIMAddressAttribute (AccountId, "IMAddress", null, IMAddress);

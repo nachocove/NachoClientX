@@ -14,6 +14,7 @@ using NachoCore.Utils;
 using MimeKit;
 using NachoCore.Brain;
 using System.Text.RegularExpressions;
+using NachoCore.ActiveSync;
 
 namespace NachoClient.iOS
 {
@@ -30,8 +31,9 @@ namespace NachoClient.iOS
         protected HashSet<int> MultiSelect = null;
 
         protected int selectedSegment = 0;
-        protected int remainingContactDetails = 0;
+        protected bool isFirstInfoItem = true;
 
+        protected const float ROW_SPACER = 15f;
         protected const float PADDING = 18f;
         protected const float VERTICAL_PADDING = 20f;
         protected const float SEGMENTED_CONTROL_HEIGHT = 30f;
@@ -387,6 +389,7 @@ namespace NachoClient.iOS
 
         protected override void ConfigureAndLayout ()
         {
+            isFirstInfoItem = true;
             UpdateVipButton ();
 
             UIColor userBackgroundColor;
@@ -424,7 +427,13 @@ namespace NachoClient.iOS
             headerNameLabel.Text = contact.GetDisplayNameOrEmailAddress ();
 
             UILabel headerTitleLabel = (UILabel)View.ViewWithTag (HEADER_TITLE_TAG);
-            headerTitleLabel.Text = GetTitleFromContact ();
+            if (!string.IsNullOrEmpty (contact.JobTitle)) {
+                headerTitleLabel.Text = contact.JobTitle;
+            } else if (!string.IsNullOrEmpty (contact.Title)) {
+                headerTitleLabel.Text = contact.Title;
+            } else {
+                headerTitleLabel.Text = GetTitleFromContact ();
+            }
 
             if (tapGestures.Count > 0) {
                 foreach (var v in tapGestures.ToList()) {
@@ -442,9 +451,7 @@ namespace NachoClient.iOS
             //CONFIGURE CONTACT INFO VIEW
             UIScrollView contactInfoScrollView = (UIScrollView)View.ViewWithTag (CONTACT_INFO_VIEW_TAG);
 
-            float contactInfoHeight = 13;
-
-            remainingContactDetails = contact.EmailAddresses.Count () + contact.PhoneNumbers.Count ();
+            float contactInfoHeight = 0;
 
             if (contact.EmailAddresses.Count > 0) {
                 contactInfoHeight += AddEmailAddress (contact.EmailAddresses.FirstOrDefault (), contactInfoHeight, contactInfoScrollView, true);
@@ -472,6 +479,45 @@ namespace NachoClient.iOS
                     }
                     skippedFirst = true;
                 }
+            }
+
+            if (!string.IsNullOrEmpty (contact.WebPage)) {
+                contactInfoHeight += AddMiscInfo (Xml.Contacts.WebPage, contactInfoHeight, contactInfoScrollView);
+            }
+
+            if (contact.Addresses.Count > 0) {
+                foreach (var a in contact.Addresses) {
+                    contactInfoHeight += AddMiscInfo (a.Name, contactInfoHeight, contactInfoScrollView);
+                }
+            }
+
+            if(DateTime.MinValue != contact.GetDateAttribute(Xml.Contacts.Birthday)){
+                contactInfoHeight += AddMiscInfo (Xml.Contacts.Birthday, contactInfoHeight, contactInfoScrollView);
+            }
+
+            if(DateTime.MinValue != contact.GetDateAttribute(Xml.Contacts.Anniversary)){
+                contactInfoHeight += AddMiscInfo (Xml.Contacts.Anniversary, contactInfoHeight, contactInfoScrollView);
+            }
+
+            if (contact.Relationships.Count > 0) {
+                foreach (var c in contact.Relationships) {
+                    if (c.Name == Xml.Contacts.Child) {
+                        contactInfoHeight += AddMiscInfo (Xml.Contacts.Children, contactInfoHeight, contactInfoScrollView);
+                        break;
+                    }
+                }
+            }
+
+            if (contact.Relationships.Count > 0) {
+                foreach (var c in contact.Relationships) {
+                    if (c.Name != Xml.Contacts.Child) {
+                        contactInfoHeight += AddMiscInfo (c.Name, contactInfoHeight, contactInfoScrollView);
+                    }
+                }
+            }
+
+            if (!string.IsNullOrEmpty (contact.OfficeLocation)) {
+                contactInfoHeight += AddMiscInfo (Xml.Contacts.OfficeLocation, contactInfoHeight, contactInfoScrollView);
             }
 
             if (contactInfoHeight < contactInfoScrollView.Frame.Height) {
@@ -591,7 +637,6 @@ namespace NachoClient.iOS
 
         protected float AddEmailAddress (McContactEmailAddressAttribute email, float yOffset, UIView contactInfoScrollView, bool isFirstEmail) /*TODO Remove isFirstEmail once we're settings defaults */
         {
-            remainingContactDetails--;
             UIView segmentedControllerHolderView = (UIView)View.ViewWithTag (SEGMENTED_VIEW_HOLDER_TAG);
 
             var emailView = new UIView (new RectangleF (0, yOffset, contactInfoScrollView.Frame.Width, 40));
@@ -599,10 +644,10 @@ namespace NachoClient.iOS
             contactInfoScrollView.AddSubview (emailView);
 
             UIImageView emailIcon = new UIImageView (UIImage.FromBundle ("contacts-icn-email"));
-            emailIcon.Frame = new RectangleF (0, 0, emailIcon.Frame.Width, emailIcon.Frame.Height);
+            emailIcon.Frame = new RectangleF (0, ROW_SPACER, emailIcon.Frame.Width, emailIcon.Frame.Height);
             emailView.AddSubview (emailIcon);
 
-            var emailLabel = new UILabel (new RectangleF (emailIcon.Frame.Right + 8, 0, 45, 15));
+            var emailLabel = new UILabel (new RectangleF (emailIcon.Frame.Right + 8, ROW_SPACER, 45, 15));
             emailLabel.Font = A.Font_AvenirNextMedium10;
             emailLabel.TextColor = UIColor.DarkGray;
             emailLabel.Text = "EMAIL";
@@ -610,7 +655,7 @@ namespace NachoClient.iOS
             emailView.AddSubview (emailLabel);
 
             var emailComposeIcon = new UIImageView (UIImage.FromBundle ("contacts-email"));
-            emailComposeIcon.Frame = new RectangleF (emailView.Frame.Width - emailComposeIcon.Frame.Width, 0, emailComposeIcon.Frame.Width, emailComposeIcon.Frame.Height);
+            emailComposeIcon.Frame = new RectangleF (emailView.Frame.Width - emailComposeIcon.Frame.Width, ROW_SPACER, emailComposeIcon.Frame.Width, emailComposeIcon.Frame.Height);
             emailView.UserInteractionEnabled = true;
             emailView.AddSubview (emailComposeIcon);
 
@@ -640,17 +685,16 @@ namespace NachoClient.iOS
             emailTextView.SizeToFit ();
             emailView.AddSubview (emailTextView);
 
-            if (remainingContactDetails > 0) {
-                Util.AddHorizontalLine (emailLabel.Frame.X, emailTextView.Frame.Bottom + 10, segmentedControllerHolderView.Frame.Width - contactInfoScrollView.Frame.X - emailLabel.Frame.X, A.Color_NachoBorderGray, emailView);
-                return emailTextView.Frame.Bottom + 10 + PADDING;
-            } else {
-                return emailTextView.Frame.Bottom + 10;
+            if (!isFirstInfoItem) {
+                Util.AddHorizontalLine (emailLabel.Frame.X, 0, segmentedControllerHolderView.Frame.Width - contactInfoScrollView.Frame.X - emailLabel.Frame.X, A.Color_NachoBorderGray, emailView);
             }
+            isFirstInfoItem = false;
+
+            return emailTextView.Frame.Bottom + 5;
         }
 
         protected float AddPhoneNumber (McContactStringAttribute phone, float yOffset, UIView contactInfoScrollView, bool isFirstPhone) /*TODO Remove isFirstEmail once we're settings defaults */
         {
-            remainingContactDetails--;
             UIView segmentedControllerHolderView = (UIView)View.ViewWithTag (SEGMENTED_VIEW_HOLDER_TAG);
 
             var phoneView = new UIView (new RectangleF (0, yOffset, contactInfoScrollView.Frame.Width, 40));
@@ -659,33 +703,19 @@ namespace NachoClient.iOS
             contactInfoScrollView.AddSubview (phoneView);
 
             UIImageView phoneIcon = new UIImageView (UIImage.FromBundle ("contacts-icn-phone"));
-            phoneIcon.Frame = new RectangleF (0, 0, phoneIcon.Frame.Width, phoneIcon.Frame.Height);
+            phoneIcon.Frame = new RectangleF (0, ROW_SPACER, phoneIcon.Frame.Width, phoneIcon.Frame.Height);
 
             phoneView.AddSubview (phoneIcon);
 
             string phoneLabelText = "";
 
-            if (NachoCore.ActiveSync.Xml.Contacts.MobilePhoneNumber == phone.Name) {
-                phoneLabelText = "MOBILE";
-            } else if (NachoCore.ActiveSync.Xml.Contacts.BusinessPhoneNumber == phone.Name) {
-                phoneLabelText = "BUSINESS";
-            } else if (NachoCore.ActiveSync.Xml.Contacts.HomePhoneNumber == phone.Name) {
-                phoneLabelText = "HOME";
-            } else if (NachoCore.ActiveSync.Xml.Contacts.AssistantPhoneNumber == phone.Name) {
-                phoneLabelText = "ASSISTANT";
-            } else if (NachoCore.ActiveSync.Xml.Contacts.Business2PhoneNumber == phone.Name) {
-                phoneLabelText = "BUSINESS";
-            } else if (NachoCore.ActiveSync.Xml.Contacts.CarPhoneNumber == phone.Name) {
-                phoneLabelText = "CAR";
-            } else if (NachoCore.ActiveSync.Xml.Contacts.RadioPhoneNumber == phone.Name) {
-                phoneLabelText = "RADIO";
-            }else if (NachoCore.ActiveSync.Xml.Contacts.Home2PhoneNumber == phone.Name) {
-                phoneLabelText = "HOME";
+            if (!string.IsNullOrEmpty (phone.Label)) {
+                phoneLabelText = phone.Label.ToUpper ();
             } else {
                 phoneLabelText = "PHONE";
             }
 
-            var phoneLabel = new UILabel (new RectangleF (phoneIcon.Frame.Right + 8, 0, 45, 10));
+            var phoneLabel = new UILabel (new RectangleF (phoneIcon.Frame.Right + 8, ROW_SPACER, 45, 10));
             phoneLabel.Font = A.Font_AvenirNextMedium10;
             phoneLabel.TextColor = UIColor.DarkGray;
             phoneLabel.Text = phoneLabelText;
@@ -693,7 +723,7 @@ namespace NachoClient.iOS
             phoneView.AddSubview (phoneLabel);
 
             var callIcon = new UIImageView (UIImage.FromBundle ("contacts-call"));
-            callIcon.Frame = new RectangleF (phoneView.Frame.Width - callIcon.Frame.Width, 0, callIcon.Frame.Width, callIcon.Frame.Height);
+            callIcon.Frame = new RectangleF (phoneView.Frame.Width - callIcon.Frame.Width, ROW_SPACER, callIcon.Frame.Width, callIcon.Frame.Height);
             phoneView.AddSubview (callIcon);
 
             UITapGestureRecognizer phoneTap = new UITapGestureRecognizer ();
@@ -718,11 +748,132 @@ namespace NachoClient.iOS
             phoneNumberTextView.SizeToFit ();
             phoneView.AddSubview (phoneNumberTextView);
 
-            if (remainingContactDetails > 0) {
-                Util.AddHorizontalLine (phoneLabel.Frame.X, phoneNumberTextView.Frame.Bottom + 10, segmentedControllerHolderView.Frame.Width - contactInfoScrollView.Frame.X - phoneLabel.Frame.X, A.Color_NachoBorderGray, phoneView);
-                return phoneNumberTextView.Frame.Bottom + 10 + PADDING;
-            } else {
-                return phoneNumberTextView.Frame.Bottom + 10;
+            if (!isFirstInfoItem) {
+                Util.AddHorizontalLine (phoneLabel.Frame.X, 0, segmentedControllerHolderView.Frame.Width - contactInfoScrollView.Frame.X - phoneLabel.Frame.X, A.Color_NachoBorderGray, phoneView);
+            }
+            isFirstInfoItem = false;
+            return phoneNumberTextView.Frame.Bottom + 5;
+        }
+
+        protected float AddMiscInfo(string whatInfo, float yOffset, UIView contactInfoScrollView)
+        {
+            UIView segmentedControllerHolderView = (UIView)View.ViewWithTag (SEGMENTED_VIEW_HOLDER_TAG);
+
+            var miscInfoView = new UIView (new RectangleF (0, yOffset, contactInfoScrollView.Frame.Width, 40));
+            contactInfoScrollView.AddSubview (miscInfoView);
+
+            string label = "";
+            string iconName = "";
+            string value = "";
+
+            SetViewProperties (whatInfo, ref label, ref value, ref iconName);
+
+            UIImageView viewIcon = new UIImageView (UIImage.FromBundle (iconName));
+            viewIcon.Frame = new RectangleF (0, ROW_SPACER, viewIcon.Frame.Width, viewIcon.Frame.Height);
+
+            miscInfoView.AddSubview (viewIcon);
+
+            var viewLabel = new UILabel (new RectangleF (viewIcon.Frame.Right + 8, ROW_SPACER, 45, 10));
+            viewLabel.Font = A.Font_AvenirNextMedium10;
+            viewLabel.TextColor = UIColor.DarkGray;
+            viewLabel.Text = label;
+            viewLabel.SizeToFit ();
+            miscInfoView.AddSubview (viewLabel);
+
+            var viewTextView = new UITextView (new RectangleF (viewLabel.Frame.X - 5, viewLabel.Frame.Bottom - 1, View.Frame.Width - 75, 16));
+            viewTextView.Font = A.Font_AvenirNextMedium14;
+            viewTextView.TextColor = A.Color_NachoGreen;
+            viewTextView.Text = value;
+            viewTextView.Editable = false;
+            viewTextView.ScrollEnabled = false;
+            viewTextView.SizeToFit ();
+            miscInfoView.AddSubview (viewTextView);
+
+            if (!isFirstInfoItem) {
+                Util.AddHorizontalLine (viewLabel.Frame.X, 0, segmentedControllerHolderView.Frame.Width - contactInfoScrollView.Frame.X - viewLabel.Frame.X, A.Color_NachoBorderGray, miscInfoView);
+            }
+            isFirstInfoItem = false;
+
+            return viewTextView.Frame.Bottom + 5;
+        }
+
+        protected void SetViewProperties (string whatType, ref string label, ref string value, ref string icon)
+        {
+            switch (whatType) {
+            //Address names
+            case "Other":
+            case "Home":
+            case "Business":
+                var address = contact.GetAddressAttribute (whatType);
+                label = whatType.ToUpper ();
+                value = address.Street + " " + address.City + " " + address.State + " " + address.PostalCode + " " + address.Country;
+                icon = "contacts-icn-address";
+                break;
+            case Xml.Contacts.Birthday:
+                label = Xml.Contacts.Birthday.ToUpper();
+                value = contact.GetDateAttribute (whatType).ToLongDateString();
+                icon = "contacts-icn-bday";
+                break;
+            case Xml.Contacts.Anniversary:
+                label = Xml.Contacts.Anniversary.ToUpper();
+                value = contact.GetDateAttribute (whatType).ToLongDateString();
+                //FIXME: Add anniversary icon
+                icon = "contacts-icn-bday";
+                break;
+            case Xml.Contacts.Spouse:
+                label = "SPOUSE";
+                value = contact.GetRelationshipAttribute (whatType);
+                //FIXME: Add spouse icon
+                icon = "contacts-icn-bday";
+                break;
+            case Xml.Contacts.AssistantName:
+                label = "ASSISTANT";
+                value = contact.GetRelationshipAttribute (whatType);
+                //FIXME: Add Assistant icon
+                icon = "contacts-icn-bday";
+                break;
+            case Xml.Contacts2.ManagerName:
+                label = "MANAGER";
+                value = contact.GetRelationshipAttribute (whatType);
+                //FIXME: Add manager icon
+                icon = "contacts-icn-bday";
+                break;
+            case Xml.Contacts.WebPage:
+                label = "WEB PAGE";
+                value = contact.WebPage;
+                //FIXME: Add web page icon
+                icon = "contacts-icn-bday";
+                break;
+            case Xml.Contacts.OfficeLocation:
+                label = "OFFICE LOCATION";
+                value = contact.OfficeLocation;
+                //FIXME: Add office location icon
+                icon = "contacts-icn-bday";
+                break;
+            case Xml.Contacts.Children:
+                string childrenString = "";
+                label = Xml.Contacts.Children.ToUpper ();
+
+                int remainingChildren = 0;
+                foreach (var c in contact.Relationships) {
+                    if (c.Name == Xml.Contacts.Child) {
+                        remainingChildren++;
+                    }
+                }
+
+                foreach (var c in contact.Relationships) {
+                    if (c.Name == Xml.Contacts.Child) {
+                        remainingChildren--;
+                        childrenString += c.Value;
+                        if (remainingChildren > 0) {
+                            childrenString += ", ";
+                        }
+                    }
+                }
+                value = childrenString;
+                //FIXME: Add children icon
+                icon = "contacts-icn-bday";
+                break;
             }
         }
 
