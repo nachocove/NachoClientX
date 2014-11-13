@@ -77,6 +77,7 @@ namespace NachoClient.iOS
         protected static float EVENT_CARD_WIDTH = SCREEN_WIDTH - 30;
         protected float NOTE_OFFSET = 0f;
         protected float keyboardHeight;
+        protected float notesInitialHeight = 0f;
 
         public enum TagType
         {
@@ -544,6 +545,8 @@ namespace NachoClient.iOS
             }
 
             eventNotesTextView.Text = GetNoteText ();
+            eventNotesTextView.SizeToFit ();
+            notesInitialHeight = eventNotesTextView.Frame.Height;
             descriptionView.Configure (c);
 
             ConfigureRsvpBar ();
@@ -790,7 +793,11 @@ namespace NachoClient.iOS
             AdjustY (line2, internalYOffset);
             AdjustViewLayout (TagType.EVENT_NOTE_TITLE_TAG, 0, ref internalYOffset, 18);
             internalYOffset += 6;
-            eventNotesTextView.Frame = new RectangleF (37, internalYOffset, EVENT_CARD_WIDTH - 60, 30 + NOTE_OFFSET);
+            if (30 < (notesInitialHeight + NOTE_OFFSET)) {
+                eventNotesTextView.Frame = new RectangleF (37, internalYOffset, EVENT_CARD_WIDTH - 60, notesInitialHeight + NOTE_OFFSET);
+            } else {
+                eventNotesTextView.Frame = new RectangleF (37, internalYOffset, EVENT_CARD_WIDTH - 60, 30);
+            }
 
             internalYOffset += eventNotesTextView.Frame.Height;
 
