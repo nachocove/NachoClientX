@@ -67,6 +67,13 @@ namespace NachoClient.iOS
                     break;
                 }
             }
+
+            if (-1 == hit) {
+                count = 0;
+                index = contacts.Count;
+                return;
+            }
+
             index = hit;
             count = 0;
             while ((hit < contacts.Count) && (uppercaseTarget == contacts [hit].FirstLetter [0])) {
