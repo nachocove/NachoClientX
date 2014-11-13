@@ -1662,6 +1662,20 @@
     <BundleResource Include="Resources\contacts-marker%402x.png" />
     <BundleResource Include="Resources\contacts-icn-address%402x.png" />
     <BundleResource Include="Resources\contacts-icn-bday%402x.png" />
+    <BundleResource Include="Resources\event-attend-active%402x.png" />
+    <BundleResource Include="Resources\event-attend%402x.png" />
+    <BundleResource Include="Resources\event-attendees%402x.png" />
+    <BundleResource Include="Resources\event-decline-active%402x.png" />
+    <BundleResource Include="Resources\event-decline%402x.png" />
+    <BundleResource Include="Resources\event-description%402x.png" />
+    <BundleResource Include="Resources\event-location%402x.png" />
+    <BundleResource Include="Resources\event-maybe-active%402x.png" />
+    <BundleResource Include="Resources\event-maybe%402x.png" />
+    <BundleResource Include="Resources\event-organizer%402x.png" />
+    <BundleResource Include="Resources\event-phone%402x.png" />
+    <BundleResource Include="Resources\event-reminder%402x.png" />
+    <BundleResource Include="Resources\event-when%402x.png" />
+    <BundleResource Include="Resources\email-icn-attachment%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
