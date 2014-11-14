@@ -149,6 +149,10 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("ContactToContactEdit")) {
                 return;
             }
+            if (segue.Identifier.Equals ("SegueToContactDefaultSelection")) {
+                return;
+            }
+
             if (segue.Identifier == "NachoNowToMessagePriority") {
                 var holder = (SegueHolder)sender;
                 var thread = (McEmailMessageThread)holder.value;
@@ -194,10 +198,10 @@ namespace NachoClient.iOS
             NavigationItem.SetRightBarButtonItem (editContact, true); 
 
             //CONTACT HEADER SECTION
-            UIView headerView = new UIView (new RectangleF (15, VERTICAL_PADDING, View.Frame.Width - 30, 147));
-            headerView.Layer.CornerRadius = 6.0f;
-            headerView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
-            headerView.Layer.BorderWidth = 1.0f;
+            UIView headerView = new UIView (new RectangleF (A.Card_Horizontal_Indent, A.Card_Vertical_Indent, View.Frame.Width - (A.Card_Horizontal_Indent * 2), 147));
+            headerView.Layer.CornerRadius = A.Card_Corner_Radius;
+            headerView.Layer.BorderColor = A.Card_Border_Color;
+            headerView.Layer.BorderWidth = A.Card_Border_Width;
             headerView.BackgroundColor = UIColor.White;
             View.AddSubview (headerView);
 
@@ -215,14 +219,14 @@ namespace NachoClient.iOS
             initialsCircleLabel.LineBreakMode = UILineBreakMode.Clip;
             initialsCircleLabel.Layer.CornerRadius = 30;
             initialsCircleLabel.Layer.MasksToBounds = true;
-            initialsCircleLabel.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
-            initialsCircleLabel.Layer.BorderWidth = .5f;
+            initialsCircleLabel.Layer.BorderColor = A.Card_Border_Color;
+            initialsCircleLabel.Layer.BorderWidth = A.Card_Border_Width;
             initialsCircleLabel.Tag = HEADER_INITIALS_CIRCLE_TAG;
             headerView.AddSubview (initialsCircleLabel);
 
             UIImageView userImageView = new UIImageView (new RectangleF (PADDING, VERTICAL_PADDING, 60, 60));
-            userImageView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
-            userImageView.Layer.BorderWidth = .5f;
+            userImageView.Layer.BorderColor = A.Card_Border_Color;
+            userImageView.Layer.BorderWidth = A.Card_Border_Width;
             userImageView.Layer.CornerRadius = 30;
             userImageView.Layer.MasksToBounds = true;
             userImageView.Tag = HEADER_PORTRAIT_TAG;
@@ -294,10 +298,10 @@ namespace NachoClient.iOS
 
             float yOffset = headerView.Frame.Bottom + 12;
 
-            UIView segmentedViewHolder = new UIView (new RectangleF (15, yOffset, View.Frame.Width - 30, 100));
-            segmentedViewHolder.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
-            segmentedViewHolder.Layer.BorderWidth = 1.0f;
-            segmentedViewHolder.Layer.CornerRadius = 6.0f;
+            UIView segmentedViewHolder = new UIView (new RectangleF (A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), 100));
+            segmentedViewHolder.Layer.BorderColor = A.Card_Border_Color;
+            segmentedViewHolder.Layer.BorderWidth = A.Card_Border_Width;
+            segmentedViewHolder.Layer.CornerRadius = A.Card_Corner_Radius;
             segmentedViewHolder.Tag = SEGMENTED_VIEW_HOLDER_TAG;
             segmentedViewHolder.BackgroundColor = UIColor.White;
             View.AddSubview (segmentedViewHolder);

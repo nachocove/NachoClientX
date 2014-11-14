@@ -12,7 +12,6 @@ namespace NachoClient.iOS
 {
     public partial class SupportViewController : NcUIViewControllerNoLeaks
     {
-        protected const float HORIZONTAL_PADDING = 12;
         protected const float INDENT = 18;
 
         protected UITapGestureRecognizer messageTapGesture;
@@ -37,11 +36,11 @@ namespace NachoClient.iOS
         {
             View.BackgroundColor = A.Color_NachoBackgroundGray;
 
-            UIView supportView = new UIView (new RectangleF (HORIZONTAL_PADDING, 20, View.Frame.Width - HORIZONTAL_PADDING * 2, View.Frame.Height - 24 - 120));
+            UIView supportView = new UIView (new RectangleF (A.Card_Horizontal_Indent, A.Card_Vertical_Indent, View.Frame.Width - A.Card_Horizontal_Indent * 2, View.Frame.Height - 24 - 120));
             supportView.BackgroundColor = UIColor.White;
-            supportView.Layer.CornerRadius = 4f;
-            supportView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
-            supportView.Layer.BorderWidth = 1f;
+            supportView.Layer.CornerRadius = A.Card_Corner_Radius;
+            supportView.Layer.BorderColor = A.Card_Border_Color;
+            supportView.Layer.BorderWidth = A.Card_Border_Width;
 
             float yOffset = INDENT;
 
