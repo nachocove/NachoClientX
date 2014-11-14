@@ -24,7 +24,6 @@ using NachoClient.iOS;
 using SQLite;
 using NachoCore.Wbxml;
 using MonoTouch.ObjCRuntime;
-using ParseBinding;
 using NachoClient.Build;
 using HockeyApp;
 using NachoUIMonitorBinding;
