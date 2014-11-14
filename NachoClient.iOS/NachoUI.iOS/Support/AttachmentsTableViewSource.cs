@@ -336,7 +336,7 @@ namespace NachoClient.iOS
 
             //Download image view
             var downloadImageView = view.ViewWithTag (DOWNLOAD_IMAGEVIEW_TAG) as UIImageView;
-            downloadImageView.Image = UIImage.FromFile (DownloadIcon);
+            downloadImageView.Image = UIImage.FromBundle (DownloadIcon);
 
             //Separator line
             var separatorLine = view.ViewWithTag (SEPARATOR_LINE_TAG);
@@ -371,7 +371,7 @@ namespace NachoClient.iOS
                 switch (attachment.FilePresence) {
                 case McAbstrFileDesc.FilePresenceEnum.Complete:
                     downloaded = true;
-                    downloadImageView.Image = UIImage.FromFile (DownloadIcon);
+                    downloadImageView.Image = UIImage.FromBundle (DownloadIcon);
                     downloadImageView.Hidden = true;
                     view.EnableSwipe ();
                     break;
@@ -381,7 +381,7 @@ namespace NachoClient.iOS
                     break;
                 default:
                     (downloadImageView.Superview).BringSubviewToFront (downloadImageView);
-                    downloadImageView.Image = UIImage.FromFile (DownloadIcon);
+                    downloadImageView.Image = UIImage.FromBundle (DownloadIcon);
                     downloadImageView.Hidden = false;
                     view.DisableSwipe ();
                     break;

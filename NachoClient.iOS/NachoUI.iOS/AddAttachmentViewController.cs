@@ -94,9 +94,9 @@ namespace NachoClient.iOS
             yOffset = sectionSeparator.Frame.Bottom + 60;
 
             buttonInfoList = new List<ButtonInfo> (new ButtonInfo[] {
-                new ButtonInfo ("Add Photo", "modal-later-today", () => SetupPhotoPicker (false)),
-                new ButtonInfo ("Take Photo", "modal-later-today", () => SetupPhotoPicker (true)),
-                new ButtonInfo ("Add File", "modal-later-today", () => SetupAttachmentChooser ()),
+                new ButtonInfo ("Add Photo", "calendar-add-photo", () => SetupPhotoPicker (false)),
+                new ButtonInfo ("Take Photo", "calendar-take-photo", () => SetupPhotoPicker (true)),
+                new ButtonInfo ("Add File", "calendar-add-files", () => SetupAttachmentChooser ()),
                 null,
             });
 
