@@ -492,18 +492,30 @@ namespace NachoClient.iOS
                 float spacing = 0;
                 int attendeeNum = 0;
                 foreach (var attendee in c.attendees) {
-
                     var attendeeButton = UIButton.FromType (UIButtonType.RoundedRect);
                     attendeeButton.Layer.CornerRadius = attendeeImageDiameter / 2;
                     attendeeButton.Layer.MasksToBounds = true;
                     attendeeButton.Frame = new RectangleF (42 + spacing, 10, attendeeImageDiameter, attendeeImageDiameter);
-                    attendeeButton.Font = A.Font_AvenirNextRegular24;
-                    attendeeButton.ShowsTouchWhenHighlighted = true;
-                    attendeeButton.SetTitleColor (UIColor.White, UIControlState.Normal);
-                    attendeeButton.SetTitleColor (UIColor.LightGray, UIControlState.Selected);
-                    attendeeButton.Tag = (int)TagType.EVENT_ATTENDEE_TAG + attendeeNum;
-                    attendeeButton.SetTitle (Util.NameToLetters (attendee.DisplayName), UIControlState.Normal);
-                    attendeeButton.Layer.BackgroundColor = GetCircleColorForEmail (attendee.Email).CGColor;
+                    var userImage = Util.ImageOfSender (account.Id, attendee.Email);
+
+                    if (null != userImage) {
+                        using (var rawImage = userImage) {
+                            using (var originalImage = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
+                                attendeeButton.SetImage (originalImage, UIControlState.Normal);
+                            }
+                        }
+                        attendeeButton.Layer.BorderWidth = .25f;
+                        attendeeButton.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
+                    } else {
+                        attendeeButton.Font = A.Font_AvenirNextRegular24;
+                        attendeeButton.ShowsTouchWhenHighlighted = true;
+                        attendeeButton.SetTitleColor (UIColor.White, UIControlState.Normal);
+                        attendeeButton.SetTitleColor (UIColor.LightGray, UIControlState.Selected);
+                        attendeeButton.Tag = (int)TagType.EVENT_ATTENDEE_TAG + attendeeNum;
+                        attendeeButton.SetTitle (Util.NameToLetters (attendee.DisplayName), UIControlState.Normal);
+                        attendeeButton.Layer.BackgroundColor = GetCircleColorForEmail (attendee.Email).CGColor;
+                    }
+
                     // There are future plans to do something with these buttons, but right now
                     // they don't have any behavior.  So pass their events to the parent view.
                     attendeeButton.UserInteractionEnabled = false;
@@ -1358,7 +1370,7 @@ namespace NachoClient.iOS
             }
             if ("YearlyOnDay" == rPattern.Type.ToString ()) {
                 return "repeats every year on the " + Util.AddOrdinalSuffix ((Int32)rPattern.WeekOfMonth) + " " + rPattern.DayOfWeek.ToString ()
-                    + " of " + rPattern.MonthOfYear.ToString ();
+                + " of " + rPattern.MonthOfYear.ToString ();
             }
             return "Case error: " + rPattern.Type.ToString ();
         }
