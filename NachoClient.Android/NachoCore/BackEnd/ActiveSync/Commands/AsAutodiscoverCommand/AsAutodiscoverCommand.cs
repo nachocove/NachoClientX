@@ -399,10 +399,7 @@ namespace NachoCore.ActiveSync
         // UTILITY METHODS.
         private void AddAndStartRobot (StepRobot.Steps step, string domain)
         {
-            var robot = new StepRobot (this, step, BEContext.Account.EmailAddr, domain) {
-                DnsQueryRequestType = DnsQueryRequestType,
-                HttpClientType = HttpClientType,
-            };
+            var robot = new StepRobot (this, step, BEContext.Account.EmailAddr, domain);
             Robots.Add (robot);
             robot.Execute ();
         }
