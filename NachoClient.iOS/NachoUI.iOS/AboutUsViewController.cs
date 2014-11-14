@@ -10,7 +10,6 @@ namespace NachoClient.iOS
 {
     public partial class AboutUsViewController : NcUIViewControllerNoLeaks
 	{
-        protected const float HORIZONTAL_PADDING = 12;
         protected const float INDENT = 18;
         protected const float CELL_HEIGHT = 44;
 
@@ -49,11 +48,11 @@ namespace NachoClient.iOS
 
             View.BackgroundColor = A.Color_NachoBackgroundGray;
 
-            UIView aboutUsView = new UIView (new RectangleF (HORIZONTAL_PADDING, 20, View.Frame.Width - HORIZONTAL_PADDING * 2, View.Frame.Height - 24 - 120 - 75));
+            UIView aboutUsView = new UIView (new RectangleF (A.Card_Horizontal_Indent, A.Card_Vertical_Indent, View.Frame.Width - A.Card_Horizontal_Indent * 2, View.Frame.Height - 24 - 120 - 75));
             aboutUsView.BackgroundColor = UIColor.White;
-            aboutUsView.Layer.CornerRadius = GeneralSettingsViewController.VIEW_CORNER_RADIUS;
-            aboutUsView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
-            aboutUsView.Layer.BorderWidth = 1f;
+            aboutUsView.Layer.CornerRadius = A.Card_Corner_Radius;
+            aboutUsView.Layer.BorderColor = A.Card_Border_Color;
+            aboutUsView.Layer.BorderWidth = A.Card_Border_Width;
 
             float yOffset = INDENT;
 
@@ -92,11 +91,11 @@ namespace NachoClient.iOS
 
             yOffset = aboutUsView.Frame.Bottom + 12;
 
-            UIView buttonsView = new UIView (new RectangleF(HORIZONTAL_PADDING, yOffset, View.Frame.Width - (HORIZONTAL_PADDING * 2), CELL_HEIGHT * 2));
+            UIView buttonsView = new UIView (new RectangleF(A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), CELL_HEIGHT * 2));
             buttonsView.BackgroundColor = UIColor.White;
-            buttonsView.Layer.CornerRadius = GeneralSettingsViewController.VIEW_CORNER_RADIUS;
-            buttonsView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
-            buttonsView.Layer.BorderWidth = 1f;
+            buttonsView.Layer.CornerRadius = A.Card_Corner_Radius;
+            buttonsView.Layer.BorderColor = A.Card_Border_Color;
+            buttonsView.Layer.BorderWidth = A.Card_Border_Width;
 
             UILabel licenseAgreementLabel = new UILabel (new RectangleF (INDENT, 12, 200, 20));
             licenseAgreementLabel.Font = A.Font_AvenirNextMedium14;

@@ -16,11 +16,11 @@ namespace NachoClient.iOS
     {
         public static string PRIVACY_POLICY_KEY = "PRIVACY_POLICY";
         public static string LICENSE_AGREEMENT_KEY = "LICENSE_AGREEMENT";
-        public static float VIEW_CORNER_RADIUS = 6f;
 
         protected const float CELL_HEIGHT = 44f;
-        protected const float INSET = 15f;
         protected const float TEXT_LINE_HEIGHT = 19.124f;
+
+        float s = A.Card_Horizontal_Indent;
 
         protected float yOffset;
 
@@ -74,13 +74,13 @@ namespace NachoClient.iOS
             NavigationController.NavigationBar.Translucent = false;
             NavigationController.NavigationBar.TintColor = A.Color_NachoBlue;
 
-            yOffset = INSET;
+            yOffset = A.Card_Vertical_Indent;
 
-            UIView accountSettingsView = new UIView (new RectangleF (INSET, yOffset, contentView.Frame.Width - (INSET * 2), 80));
+            UIView accountSettingsView = new UIView (new RectangleF (A.Card_Horizontal_Indent, yOffset, contentView.Frame.Width - (A.Card_Horizontal_Indent * 2), 80));
             accountSettingsView.BackgroundColor = UIColor.White;
-            accountSettingsView.Layer.CornerRadius = VIEW_CORNER_RADIUS;
-            accountSettingsView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
-            accountSettingsView.Layer.BorderWidth = .5f;
+            accountSettingsView.Layer.CornerRadius = A.Card_Corner_Radius;
+            accountSettingsView.Layer.BorderColor = A.Card_Border_Color;
+            accountSettingsView.Layer.BorderWidth = A.Card_Border_Width;
             accountSettingsView.Tag = ACCOUNT_SETTINGS_VIEW_TAG;
             accountSettingsTapGesture = new UITapGestureRecognizer ();
             accountSettingsTapGestureHandlerToken = accountSettingsTapGesture.AddTarget (AccountSettingsTapHandler);
@@ -144,13 +144,13 @@ namespace NachoClient.iOS
 
             yOffset = accountSettingsView.Frame.Bottom + 30;
 
-            UIView buttonsView = new UIView (new RectangleF(INSET, yOffset, View.Frame.Width - (INSET * 2), CELL_HEIGHT * 2));
+            UIView buttonsView = new UIView (new RectangleF(A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), CELL_HEIGHT * 2));
             buttonsView.BackgroundColor = UIColor.White;
-            buttonsView.Layer.CornerRadius = VIEW_CORNER_RADIUS;
-            buttonsView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
-            buttonsView.Layer.BorderWidth = .5f;
+            buttonsView.Layer.CornerRadius = A.Card_Corner_Radius;
+            buttonsView.Layer.BorderColor = A.Card_Border_Color;
+            buttonsView.Layer.BorderWidth = A.Card_Border_Width;
 
-            UILabel aboutUsLabel = new UILabel (new RectangleF (INSET, 12, 200, 20));
+            UILabel aboutUsLabel = new UILabel (new RectangleF (A.Card_Horizontal_Indent, 12, 200, 20));
             aboutUsLabel.Font = A.Font_AvenirNextDemiBold14;
             aboutUsLabel.TextColor = A.Color_NachoGreen;
             aboutUsLabel.Text = "About Us";
@@ -167,7 +167,7 @@ namespace NachoClient.iOS
 
             Util.AddHorizontalLine (0, CELL_HEIGHT, buttonsView.Frame.Width, A.Color_NachoBorderGray, buttonsView);
 
-            UILabel privacyPolicyLabel = new UILabel (new RectangleF (INSET, CELL_HEIGHT + 11, 200, 20));
+            UILabel privacyPolicyLabel = new UILabel (new RectangleF (A.Card_Horizontal_Indent, CELL_HEIGHT + 11, 200, 20));
             privacyPolicyLabel.Font = A.Font_AvenirNextDemiBold14;
             privacyPolicyLabel.TextColor = A.Color_NachoGreen;
             privacyPolicyLabel.Text = "Privacy Policy";
@@ -187,7 +187,7 @@ namespace NachoClient.iOS
 
             View.AddSubview (buttonsView);
 
-            UILabel dirtyBackEndLabel = new UILabel (new RectangleF (INSET, yOffset, View.Frame.Width - (INSET * 2), CELL_HEIGHT));
+            UILabel dirtyBackEndLabel = new UILabel (new RectangleF (A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), CELL_HEIGHT));
             dirtyBackEndLabel.Text = "There is an issue with your account that is preventing you from sending or receiving messages.";
             dirtyBackEndLabel.Font = A.Font_AvenirNextRegular12;
             dirtyBackEndLabel.TextAlignment = UITextAlignment.Center;
@@ -201,7 +201,7 @@ namespace NachoClient.iOS
 
             yOffset = dirtyBackEndLabel.Frame.Bottom + 5;
 
-            UIButton DirtyBackEnd = new UIButton (new RectangleF (INSET, yOffset, View.Frame.Width - (INSET * 2), CELL_HEIGHT));
+            UIButton DirtyBackEnd = new UIButton (new RectangleF (A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), CELL_HEIGHT));
             DirtyBackEnd.Layer.CornerRadius = 4.0f;
             DirtyBackEnd.BackgroundColor = A.Color_NachoRed;
             DirtyBackEnd.TitleLabel.Font = A.Font_AvenirNextDemiBold14;

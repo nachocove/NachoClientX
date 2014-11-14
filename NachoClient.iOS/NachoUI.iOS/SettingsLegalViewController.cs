@@ -61,13 +61,13 @@ namespace NachoClient.iOS
 
             View.BackgroundColor = A.Color_NachoBackgroundGray;
 
-            yOffset = 20;
+            yOffset = A.Card_Vertical_Indent;
 
-            UIView interiorView = new UIView (new RectangleF (12, yOffset, View.Frame.Width - 24, View.Frame.Height - 100));
+            UIView interiorView = new UIView (new RectangleF (A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), View.Frame.Height - 100));
             interiorView.BackgroundColor = UIColor.White;
-            interiorView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
-            interiorView.Layer.BorderWidth = 1.0f;
-            interiorView.Layer.CornerRadius = GeneralSettingsViewController.VIEW_CORNER_RADIUS;
+            interiorView.Layer.BorderColor = A.Card_Border_Color;
+            interiorView.Layer.BorderWidth = A.Card_Border_Width;
+            interiorView.Layer.CornerRadius = A.Card_Corner_Radius;
             interiorView.Tag = INTERIOR_VIEW_TAG;
             UIImageView nachoLogoImageView;
             using (var nachoLogo = UIImage.FromBundle ("Bootscreen-1")) {
