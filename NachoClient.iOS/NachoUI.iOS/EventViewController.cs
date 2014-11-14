@@ -419,7 +419,7 @@ namespace NachoClient.iOS
 
             if (isRecurring) {
                 var recurrenceLabel = View.ViewWithTag ((int)TagType.EVENT_WHEN_RECURRENCE_TAG) as UILabel;
-                recurrenceLabel.Text = MakeRecurrenceString (root.recurrences);
+                recurrenceLabel.Text = Pretty.MakeRecurrenceString (root.recurrences);
                 recurrenceLabel.Lines = 0;
                 recurrenceLabel.LineBreakMode = UILineBreakMode.WordWrap;
                 recurrenceLabel.SizeToFit ();
@@ -1253,114 +1253,6 @@ namespace NachoClient.iOS
             {
                 Add (new Tuple<T1, T2> (item, item2));
             }
-        }
-
-        public string UIntToString (uint min)
-        {
-            string time = "None";
-            foreach (var pair in minList) {
-                if (pair.Item1 == min) {
-                    time = pair.Item2;
-                }
-            }
-            return time;
-        }
-
-        protected string MakeRecurrenceString (List<McRecurrence> r)
-        {
-            McRecurrence rPattern = r.ElementAt (0);
-            if (0 == rPattern.Type) { 
-                if (1 < rPattern.Interval) {
-                    return "repeats every " + rPattern.Interval.ToString ().ToLower () + " days";
-                }
-                return "repeats " + rPattern.Type.ToString ().ToLower ();
-            }
-            if ("Weekly" == rPattern.Type.ToString ()) { 
-                bool hasInterval = false;
-                string weekRecurrenceString = "repeats every ";
-                if (1 < rPattern.Interval) {
-                    weekRecurrenceString += rPattern.Interval.ToString ().ToLower () + " weeks";
-                    hasInterval = true;
-                }
-                if (0 != rPattern.DayOfWeek) {
-                    var dayValue = (byte)rPattern.DayOfWeek;
-                    if (127 == dayValue) {
-                        return "repeats at the end of every month";
-                    }
-                    if (62 == dayValue) {
-                        return "repeats weekly on workdays";
-                    }
-                    if (65 == dayValue) {
-                        return "repeats weekly on weekends";
-                    }
-                    bool isSunday = (dayValue & (1 << 0)) != 0;
-                    bool isMonday = (dayValue & (1 << 1)) != 0;
-                    bool isTuesday = (dayValue & (1 << 2)) != 0;
-                    bool isWednesday = (dayValue & (1 << 3)) != 0;
-                    bool isThursday = (dayValue & (1 << 4)) != 0;
-                    bool isFriday = (dayValue & (1 << 5)) != 0;
-                    bool isSaturday = (dayValue & (1 << 6)) != 0;
-                    var s = new List<string> ();
-                    if (isSunday) {
-                        s.Add ("Sun");
-                    }
-                    if (isMonday) {
-                        s.Add ("Mon");
-                    }
-                    if (isTuesday) {
-                        s.Add ("Tue");
-                    }
-                    if (isWednesday) {
-                        s.Add ("Wed");
-                    }
-                    if (isThursday) {
-                        s.Add ("Thu");
-                    }
-                    if (isFriday) {
-                        s.Add ("Fri");
-                    }
-                    if (isSaturday) {
-                        s.Add ("Sat");
-                    }
-                    if (1 == s.Count) {
-                        if (hasInterval) {
-                            return weekRecurrenceString;
-                        } else {
-                            return "repeats weekly";
-                        }
-                    } else if (hasInterval) {
-                        weekRecurrenceString += " on " + Util.MakeCommaSeparatedList (s);
-                    } else {
-                        weekRecurrenceString += "week on " + Util.MakeCommaSeparatedList (s);
-                    }
-                    return weekRecurrenceString;
-
-                }
-                return "repeats " + rPattern.Type.ToString ().ToLower ();
-            }
-            if ("Monthly" == rPattern.Type.ToString ()) {
-                if (1 < rPattern.Interval) {
-                    return "repeats every " + rPattern.Interval.ToString ().ToLower () + " months";
-                }
-                return "repeats " + rPattern.Type.ToString ().ToLower ();
-            }
-            if ("MonthlyOnDay" == rPattern.Type.ToString ()) {
-                if (1 < rPattern.Interval) {
-                    return "repeats every " + rPattern.Interval.ToString ().ToLower () + " months";
-                }
-                return "repeats on the " + Util.AddOrdinalSuffix ((Int32)rPattern.WeekOfMonth) + " " + rPattern.DayOfWeek.ToString () + " of every month";
-            }
-            if ("Yearly" == rPattern.Type.ToString ()) {
-                if (1 < rPattern.Interval) {
-                    return "repeats every " + rPattern.Interval.ToString ().ToLower () + " years";
-                }
-                return "repeats " + rPattern.Type.ToString ().ToLower ();
-            }
-            if ("YearlyOnDay" == rPattern.Type.ToString ()) {
-                return "repeats every year on the " + Util.AddOrdinalSuffix ((Int32)rPattern.WeekOfMonth) + " " + rPattern.DayOfWeek.ToString ()
-                    + " of " + rPattern.MonthOfYear.ToString ();
-            }
-            return "Case error: " + rPattern.Type.ToString ();
         }
 
         protected void SyncMeetingRequest ()
