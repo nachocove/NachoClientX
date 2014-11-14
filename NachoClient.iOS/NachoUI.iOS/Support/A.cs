@@ -3,6 +3,7 @@
 using System;
 using MonoTouch.UIKit;
 using MonoTouch.Foundation;
+using MonoTouch.CoreGraphics;
 
 namespace NachoClient.iOS
 {
@@ -62,6 +63,13 @@ namespace NachoClient.iOS
         protected static UIColor _Color_NachoSwipeActionGreen = null;
         protected static UIColor _Color_NachoSwipeActionBlue = null;
         protected static UIColor _Color_NachoSwipeActionYellow = null;
+
+        //UI constants 
+        public static float Card_Horizontal_Indent = 15f;
+        public static float Card_Vertical_Indent = 20f;
+        public static float Card_Border_Width = .5f;
+        public static float Card_Corner_Radius = 6f;
+        public static CGColor Card_Border_Color = Color_NachoBorderGray.CGColor;
 
         public A ()
         {

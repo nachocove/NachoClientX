@@ -175,9 +175,9 @@ namespace NachoClient.iOS
             eventCardView = new UIView ();
             eventCardView.Tag = (int)TagType.EVENT_CARD_VIEW_TAG;
             eventCardView.BackgroundColor = cellBGColor;
-            eventCardView.Layer.CornerRadius = 6;
-            eventCardView.Layer.BorderColor = borderColor.CGColor;
-            eventCardView.Layer.BorderWidth = .5f;
+            eventCardView.Layer.CornerRadius = A.Card_Corner_Radius;
+            eventCardView.Layer.BorderColor = A.Card_Border_Color;
+            eventCardView.Layer.BorderWidth = A.Card_Border_Width;
             contentView.AddSubview (eventCardView);
 
             // RSVP bar 
@@ -361,7 +361,7 @@ namespace NachoClient.iOS
             eventNotesTextView.Started += NotesEditingStarted;
             eventNotesTextView.Changed += NotesChanged;
             eventCardView.AddSubview (eventNotesTextView);
-            eventCardView.Frame = new RectangleF (15, 60, contentView.Frame.Width - 30, yOffset + 20);
+            eventCardView.Frame = new RectangleF (A.Card_Horizontal_Indent, 60, contentView.Frame.Width - 30, yOffset + A.Card_Vertical_Indent);
 
             yOffset += 20;
 
