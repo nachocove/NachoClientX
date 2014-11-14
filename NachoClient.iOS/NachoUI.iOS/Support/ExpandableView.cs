@@ -96,7 +96,7 @@ namespace NachoClient.iOS
             });
         }
 
-        protected void Cleanup ()
+        public void Cleanup ()
         {
             // Clean up gesture recognizers.
             singleTapGesture.RemoveTarget (singleTapGestureHandlerToken);

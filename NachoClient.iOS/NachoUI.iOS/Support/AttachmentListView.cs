@@ -76,7 +76,7 @@ namespace NachoClient.iOS
 
         public void AddAttachment (McAttachment attachment)
         {
-            var frame = new RectangleF (0, ExpandedHeight + 1.0f, Frame.Width, 20.0f);
+            var frame = new RectangleF (0, ExpandedHeight + 1.0f, Frame.Width, AttachmentView.VIEW_HEIGHT);
             var attachmentView = new AttachmentView (frame, attachment);
             attachmentView.OnAttachmentSelected = OnAttachmentSelected;
             attachmentViews.Add (attachmentView);
@@ -100,6 +100,19 @@ namespace NachoClient.iOS
             numberLabel.Layer.CornerRadius = cornerSize;
             numberLabel.ClipsToBounds = true;
             ExpandedHeight += AttachmentView.VIEW_HEIGHT;
+        }
+
+        protected new void Cleanup()
+        {
+            base.Cleanup ();
+
+            attachmentLabel = null;
+            numberLabel = null;
+
+            foreach (var av in attachmentViews) {
+                av.Cleanup ();
+            }
+            attachmentViews.Clear ();
         }
     }
 }
