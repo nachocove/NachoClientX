@@ -20,8 +20,6 @@ namespace NachoClient.iOS
         protected const float CELL_HEIGHT = 44f;
         protected const float TEXT_LINE_HEIGHT = 19.124f;
 
-        float s = A.Card_Horizontal_Indent;
-
         protected float yOffset;
 
         protected const int NAME_LABEL_TAG = 100;
