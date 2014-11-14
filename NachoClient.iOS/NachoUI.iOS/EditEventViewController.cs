@@ -57,7 +57,7 @@ namespace NachoClient.iOS
 
         UIView calendarView;
 
-        UIButton deleteButton;
+        UIView deleteView;
 
         DateTime startDate;
         DateTime endDate;
@@ -793,7 +793,7 @@ namespace NachoClient.iOS
 
             //Calendar
             calendarView = new UIView (new RectangleF (0, (LINE_OFFSET * 5) + (CELL_HEIGHT * 10) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
-            calendarView.BackgroundColor = UIColor.White;
+            calendarView.BackgroundColor = CELL_COMPONENT_BG_COLOR;
 
             UILabel calendarLabel = new UILabel (new RectangleF (15, 12.438f, 70, TEXT_LINE_HEIGHT));
             calendarLabel.Text = "Calendar";
@@ -819,15 +819,23 @@ namespace NachoClient.iOS
             });
             calendarView.AddGestureRecognizer (calTap);
 
-            deleteButton = UIButton.FromType (UIButtonType.RoundedRect);
-            deleteButton.SetTitle ("Delete Event", UIControlState.Normal);
-            deleteButton.Font = labelFont;
-            deleteButton.Layer.CornerRadius = 4;
-            deleteButton.Layer.MasksToBounds = true;
-            deleteButton.BackgroundColor = A.Color_NachoRed;
-            deleteButton.SetTitleColor (UIColor.White, UIControlState.Normal);
-            deleteButton.Frame = new RectangleF (18, (LINE_OFFSET * 6) + (CELL_HEIGHT * 11) + TEXT_LINE_HEIGHT, 284, CELL_HEIGHT);
-            deleteButton.TouchUpInside += (sender, e) => {
+            deleteView = new UIView(new RectangleF (0, (LINE_OFFSET * 6) + (CELL_HEIGHT * 11) + TEXT_LINE_HEIGHT, View.Frame.Width, CELL_HEIGHT));
+            deleteView.Layer.BorderColor = separatorColor.CGColor;
+            deleteView.Layer.BorderWidth = .5f;
+            deleteView.BackgroundColor = CELL_COMPONENT_BG_COLOR;
+
+            UILabel deleteLabel = new UILabel (new RectangleF (25 + 24, 12.438f, 120, TEXT_LINE_HEIGHT));
+            deleteLabel.Text = "Delete Event";
+            deleteLabel.Font = labelFont;
+            deleteLabel.TextColor = solidTextColor;
+            deleteView.AddSubview (deleteLabel);
+
+            UIImageView deleteIcon = new UIImageView (new RectangleF (15, (CELL_HEIGHT / 2) - 12, 24, 24));
+            deleteIcon.Image = UIImage.FromBundle ("email-delete-two");
+            deleteView.AddSubview (deleteIcon);
+
+            var deleteTap = new UITapGestureRecognizer ();
+            deleteTap.AddTarget (() => {
                 var actionSheet = new UIActionSheet ();
                 actionSheet.Add ("Delete Event");
                 actionSheet.Add ("Cancel");
@@ -847,8 +855,10 @@ namespace NachoClient.iOS
                     }
                 };
                 actionSheet.ShowInView (View);
-            };
-            deleteButton.Hidden = true;
+            });
+            deleteView.AddGestureRecognizer (deleteTap);
+
+            deleteView.Hidden = true;
 
             //Content View
             contentView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, (LINE_OFFSET * 9) + (CELL_HEIGHT * 12) + TEXT_LINE_HEIGHT);
@@ -866,7 +876,7 @@ namespace NachoClient.iOS
                 peopleView,
                 alertsView,
                 calendarView,
-                deleteButton
+                deleteView
             }); 
             //LO
             line1 = Util.AddHorizontalLineView (0, LINE_OFFSET, SCREEN_WIDTH, separatorColor);
@@ -923,10 +933,10 @@ namespace NachoClient.iOS
         {
             if (action == CalendarItemEditorAction.create) {
                 NavigationItem.Title = "New Event";
-                deleteButton.Hidden = true;
+                deleteView.Hidden = true;
             } else {
                 NavigationItem.Title = "Edit Event";
-                deleteButton.Hidden = false;
+                deleteView.Hidden = false;
             }
 
             //title
@@ -1155,8 +1165,8 @@ namespace NachoClient.iOS
                 yOffset += LINE_OFFSET;
 
                 if (action == CalendarItemEditorAction.edit) {
-                    AdjustY (deleteButton, yOffset);
-                    yOffset += deleteButton.Frame.Height + LINE_OFFSET;
+                    AdjustY (deleteView, yOffset);
+                    yOffset += deleteView.Frame.Height + LINE_OFFSET;
                 }
                 scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
                 contentView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, yOffset);
