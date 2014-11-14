@@ -59,7 +59,6 @@ namespace NachoClient.iOS
         UIView intentView;
         UILabel intentLabel;
         UILabel intentDisplayLabel;
-        UIImageView intentArrowAccessory;
 
         UITextView bodyTextView;
 
