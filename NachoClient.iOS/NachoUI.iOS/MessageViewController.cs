@@ -330,8 +330,6 @@ namespace NachoClient.iOS
             View.AddSubview (blockMenu);
 
             Util.HideBlackNavigationControllerLine (NavigationController.NavigationBar);
-
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 
         protected override void ConfigureAndLayout ()
@@ -463,10 +461,10 @@ namespace NachoClient.iOS
             blockMenuButton.Clicked -= BlockMenuButtonClicked;
             deferButton.Clicked -= DeferButtonClicked;
             messageToolbar.OnClick = null;
-            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
 
             blockMenu.Cleanup ();
             messageToolbar.Cleanup ();
+            attachmentListView.Cleanup ();
 
             moveButton = null;
             scrollView = null;
@@ -603,11 +601,6 @@ namespace NachoClient.iOS
             get {
                 return 0 < attachments.Count;
             }
-        }
-
-        protected void FetchAttachments ()
-        {
-            attachments = McAttachment.QueryByItemId (thread.SingleMessageSpecialCase ());
         }
 
         protected float separator1YOffset {
@@ -810,24 +803,12 @@ namespace NachoClient.iOS
         {
             if (McAbstrFileDesc.FilePresenceEnum.Complete == attachment.FilePresence) {
                 PlatformHelpers.DisplayAttachment (this, attachment);
-            } else {
-                PlatformHelpers.DownloadAttachment (attachment);
             }
         }
 
         private void AttachmentsOnStateChange (bool isExpanded)
         {
             LayoutView (true);
-        }
-
-        private void StatusIndicatorCallback (object sender, EventArgs e)
-        {
-            var statusEvent = (StatusIndEventArgs)e;
-            if (NcResult.SubKindEnum.Info_AttDownloadUpdate == statusEvent.Status.SubKind || NcResult.SubKindEnum.Error_AttDownloadFailed == statusEvent.Status.SubKind) {
-                FetchAttachments ();
-                ConfigureAttachments ();
-                return;
-            }
         }
 
         private void ScrollViewZoomingEnded (object sender, EventArgs e)
