@@ -286,6 +286,10 @@
     <Compile Include="..\NachoClient.Android\NachoCore\NcEnforcer.cs">
       <Link>NachoCore\NcEnforcer.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\LabelSelectionViewController.cs" />
+    <Compile Include="NachoUI.iOS\LabelSelectionViewController.designer.cs" />
+      <DependentUpon>LabelSelectionViewController.cs</DependentUpon>
+    </Compile>
     <Compile Include="NachoUI.iOS\ContactChooserViewController.cs" />
     <Compile Include="NachoUI.iOS\ContactChooserViewController.designer.cs">
       <DependentUpon>ContactChooserViewController.cs</DependentUpon>
@@ -1685,6 +1689,9 @@
     <BundleResource Include="Resources\calendar-add-files%402x.png" />
     <BundleResource Include="Resources\calendar-add-photo%402x.png" />
     <BundleResource Include="Resources\calendar-take-photo%402x.png" />
+    <BundleResource Include="Resources\contacts-default-active%402x.png" />
+    <BundleResource Include="Resources\contacts-default%402x.png" />
+    <BundleResource Include="Resources\now-newemail%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
