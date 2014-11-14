@@ -1685,6 +1685,9 @@
     <BundleResource Include="Resources\calendar-add-files%402x.png" />
     <BundleResource Include="Resources\calendar-add-photo%402x.png" />
     <BundleResource Include="Resources\calendar-take-photo%402x.png" />
+    <BundleResource Include="Resources\files-forward-swipe%402x.png" />
+    <BundleResource Include="Resources\files-open-app-swipe%402x.png" />
+    <BundleResource Include="Resources\email-delete-swipe%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
