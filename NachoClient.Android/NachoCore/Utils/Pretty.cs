@@ -6,7 +6,6 @@ using NachoCore;
 using NachoCore.Model;
 using MimeKit;
 using System.Collections.Generic;
-using NachoClient;
 
 namespace NachoCore.Utils
 {
@@ -445,7 +444,7 @@ namespace NachoCore.Utils
                 if (0 != (dow & NcDayOfWeek.Saturday)) {
                     dayList.Add ("Sat");
                 }
-                return Util.MakeCommaSeparatedList (dayList);
+                return MakeCommaSeparatedList (dayList);
             }
         }
 
@@ -468,7 +467,7 @@ namespace NachoCore.Utils
             if (5 == week) {
                 return "last";
             }
-            return Util.AddOrdinalSuffix (week);
+            return AddOrdinalSuffix (week);
         }
 
         public static string MakeRecurrenceString (List<McRecurrence> recurrences)
@@ -509,9 +508,9 @@ namespace NachoCore.Utils
 
             case NcRecurrenceType.Monthly:
                 if (1 == interval) {
-                    return string.Format ("repeats monthly on the {0}", Util.AddOrdinalSuffix (r.DayOfMonth));
+                    return string.Format ("repeats monthly on the {0}", AddOrdinalSuffix (r.DayOfMonth));
                 }
-                return string.Format ("repeats every {0} months on the {1}", interval, Util.AddOrdinalSuffix (r.DayOfMonth));
+                return string.Format ("repeats every {0} months on the {1}", interval, AddOrdinalSuffix (r.DayOfMonth));
 
             case NcRecurrenceType.Yearly:
                 string dateString;
@@ -529,22 +528,56 @@ namespace NachoCore.Utils
                 if (1 == interval) {
                     return string.Format ("repeats monthly on the {0} {1} of the month", WeekOfMonth (r.WeekOfMonth), DayOfWeekMonthly (r.DayOfWeek));
                 }
-                return string.Format("repeats every {0} months on the {1} {2} of the month", interval, WeekOfMonth (r.WeekOfMonth), DayOfWeekMonthly (r.DayOfWeek));
+                return string.Format ("repeats every {0} months on the {1} {2} of the month", interval, WeekOfMonth (r.WeekOfMonth), DayOfWeekMonthly (r.DayOfWeek));
 
             case NcRecurrenceType.YearlyOnDay:
                 string monthName;
                 try {
                     monthName = new DateTime (2000, r.MonthOfYear, 1).ToString ("MMMM");
                 } catch (ArgumentOutOfRangeException) {
-                    monthName = string.Format ("the {0} month", Util.AddOrdinalSuffix (r.MonthOfYear));
+                    monthName = string.Format ("the {0} month", AddOrdinalSuffix (r.MonthOfYear));
                 }
                 if (1 == interval) {
                     return string.Format ("repeats yearly on the {0} {1} of {2}", WeekOfMonth (r.WeekOfMonth), DayOfWeekMonthly (r.DayOfWeek), monthName);
                 }
-                return string.Format("repeats every {0} years on the {1} {2} of {3}", interval, WeekOfMonth (r.WeekOfMonth), DayOfWeekMonthly (r.DayOfWeek), monthName);
+                return string.Format ("repeats every {0} years on the {1} {2} of {3}", interval, WeekOfMonth (r.WeekOfMonth), DayOfWeekMonthly (r.DayOfWeek), monthName);
 
             default:
                 return "repeats with an unknown frequency";
+            }
+        }
+
+        public static string MakeCommaSeparatedList (List<string> stringList)
+        {
+
+            var endString = " and " + stringList [stringList.Count - 1];
+            stringList.RemoveAt (stringList.Count - 1);
+            var stringArray = stringList.ToArray ();
+            var commaSeparatedString = String.Join (", ", stringArray);
+            return commaSeparatedString + endString;
+        }
+
+        public static string AddOrdinalSuffix (int num)
+        {
+            if (num <= 0)
+                return num.ToString ();
+
+            switch (num % 100) {
+            case 11:
+            case 12:
+            case 13:
+                return num + "th";
+            }
+
+            switch (num % 10) {
+            case 1:
+                return num + "st";
+            case 2:
+                return num + "nd";
+            case 3:
+                return num + "rd";
+            default:
+                return num + "th";
             }
         }
     }
