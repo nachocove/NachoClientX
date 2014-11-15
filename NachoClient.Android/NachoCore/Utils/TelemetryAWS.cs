@@ -169,7 +169,7 @@ namespace NachoCore.Utils
                 var task = eventTable.PutItemAsync (eventItem);
                 task.Wait (NcTask.Cts.Token);
             }
-            catch (OperationCanceledException e) {
+            catch (OperationCanceledException) {
                 // Since we are catching Exception below, we must catch and re-throw
                 // or this exception will be swallowed and telemetry task will not exit.
                 throw;
