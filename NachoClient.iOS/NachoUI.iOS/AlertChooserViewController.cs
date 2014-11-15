@@ -34,7 +34,6 @@ namespace NachoClient.iOS
         protected override void CreateViewHierarchy ()
         {
             tableView = new UITableView (View.Frame, UITableViewStyle.Grouped);
-            tableView.ScrollEnabled = false;
             source = new AlertChoicesSource (this);
             tableView.Source = source;
 
@@ -48,7 +47,6 @@ namespace NachoClient.iOS
         {
             base.ViewWillAppear (animated);
             var index = source.IndexOfSelection ();
-            tableView.SelectRow (NSIndexPath.FromRowSection (index, 0), false, UITableViewScrollPosition.None);
         }
 
         protected override void ConfigureAndLayout ()
@@ -139,11 +137,14 @@ namespace NachoClient.iOS
                 var cell = tableView.DequeueReusableCell (cellId);
                 if (null == cell) {
                     cell = new UITableViewCell (UITableViewCellStyle.Default, cellId);
-                    using (var image = UIImage.FromBundle ("gen-checkbox")) {
-                        cell.ImageView.Image = image;
-                    }
-                    using (var highlightedImage = UIImage.FromBundle ("gen-checkbox-checked")) {
-                        cell.ImageView.HighlightedImage = highlightedImage;
+                    if (indexPath.Row == IndexOfSelection()) {
+                        using (var image = UIImage.FromBundle ("gen-checkbox-checked")) {
+                            cell.ImageView.Image = image;
+                        }
+                    } else {
+                        using (var image = UIImage.FromBundle ("gen-checkbox")) {
+                            cell.ImageView.Image = image;
+                        }
                     }
                     cell.TextLabel.TextColor = A.Color_NachoDarkText;
                     cell.TextLabel.Font = A.Font_AvenirNextMedium14;

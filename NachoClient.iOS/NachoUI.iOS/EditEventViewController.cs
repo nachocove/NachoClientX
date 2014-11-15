@@ -371,7 +371,7 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("EditEventToCalendarChooser")) {
                 var dc = (ChooseCalendarViewController)segue.DestinationViewController;
                 dc.SetCalendars (calendars);
-                ExtractValues ();
+                dc.SetSelectedCalIndex (calendarIndex);
                 dc.ViewDisappearing += (object s, EventArgs e) => {
                     calendarIndex = dc.GetCalIndex ();
                     ConfigureEditEventView ();
@@ -761,7 +761,7 @@ namespace NachoClient.iOS
             Util.AddArrowAccessory (SCREEN_WIDTH - 15 - 12, CELL_HEIGHT / 2 - 6, 12, alertsView);
 
             UILabel alertsLabel = new UILabel (new RectangleF (15, 12.438f, 70, TEXT_LINE_HEIGHT));
-            alertsLabel.Text = "Add Alert";
+            alertsLabel.Text = "Reminder";
             alertsLabel.Font = labelFont;
             alertsLabel.TextColor = solidTextColor;
             alertsView.AddSubview (alertsLabel);
@@ -795,11 +795,8 @@ namespace NachoClient.iOS
             Util.AddArrowAccessory (SCREEN_WIDTH - 15 - 12, CELL_HEIGHT / 2 - 6, 12, calendarView);
 
             UILabel calendarDetailLabel = new UILabel ();
-            calendarDetailLabel.Text = "Calendar";
             calendarDetailLabel.Tag = CAL_DETAIL_TAG;
-            calendarDetailLabel.SizeToFit ();
             calendarDetailLabel.TextAlignment = UITextAlignment.Right;
-            calendarDetailLabel.Frame = new RectangleF (SCREEN_WIDTH - calendarDetailLabel.Frame.Width - 34, 12.438f, calendarDetailLabel.Frame.Width, TEXT_LINE_HEIGHT);
             calendarDetailLabel.Font = labelFont;
             calendarDetailLabel.TextColor = A.Color_808080;
             calendarView.AddSubview (calendarDetailLabel);
@@ -984,6 +981,12 @@ namespace NachoClient.iOS
             phoneDetailLabelView.Text = TempPhone;
             phoneDetailLabelView.SizeToFit ();
             phoneDetailLabelView.Frame = new RectangleF (SCREEN_WIDTH - phoneDetailLabelView.Frame.Width - 34, 12.438f, phoneDetailLabelView.Frame.Width, TEXT_LINE_HEIGHT);
+
+            //calendar view
+            var calendarDetailLabelView = contentView.ViewWithTag (CAL_DETAIL_TAG) as UILabel;
+            calendarDetailLabelView.Text = (calendars.GetFolder (calendarIndex)).DisplayName;
+            calendarDetailLabelView.SizeToFit ();
+            calendarDetailLabelView.Frame = new RectangleF (SCREEN_WIDTH - calendarDetailLabelView.Frame.Width - 34, 12.438f, calendarDetailLabelView.Frame.Width, TEXT_LINE_HEIGHT);
         }
 
         protected void ConfigureDateView (string command)
