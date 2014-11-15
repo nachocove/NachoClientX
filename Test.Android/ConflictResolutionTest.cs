@@ -56,8 +56,8 @@ namespace Test.iOS
             public static AsFolderSyncCommand CreateFolderSyncCmd (MockContext context)
             {
                 var folderCmd = new AsFolderSyncCommand (context);
-                folderCmd.HttpClientType = typeof(MockHttpClient);
-                folderCmd.DnsQueryRequestType = typeof(MockDnsQueryRequest);
+                AsHttpOperation.HttpClientType = typeof(MockHttpClient);
+                AsDnsOperation.DnsQueryRequestType = typeof(MockDnsQueryRequest);
                 return folderCmd;
             }
 

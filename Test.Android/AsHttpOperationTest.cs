@@ -759,7 +759,7 @@ namespace Test.iOS
 
             var mockCommStatusInstance = MockNcCommStatus.Instance;
             op.NcCommStatusSingleton = mockCommStatusInstance;
-            op.HttpClientType = typeof (MockHttpClient);
+            AsHttpOperation.HttpClientType = typeof (MockHttpClient);
             owner.ProcessResponseStandin = (sender, response, doc) => {
                 Assert.AreSame (op, sender, "Owner's sender and AsHttpOperation should match when response is processed");
                 return Event.Create ((uint)SmEvt.E.Success, "BasicPhonyPingSuccess");

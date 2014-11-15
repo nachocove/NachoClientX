@@ -524,7 +524,6 @@ namespace NachoCore.ActiveSync
         {
             DoCancel ();
             OptCmd = new AsOptionsCommand (this) {
-                HttpClientType = HttpClientType,
                 DontReportCommResult = true,
                 Timeout = new TimeSpan (0, 0, 15),
                 MaxRetries = 1,

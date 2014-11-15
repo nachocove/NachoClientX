@@ -165,7 +165,6 @@ namespace NachoCore.ActiveSync
         public AsHttpOperation (string commandName, IAsHttpOperationOwner owner, IBEContext beContext)
         {
             NcCapture.AddKind (KToXML);
-            HttpClientType = typeof(MockableHttpClient);
             NcCommStatusSingleton = NcCommStatus.Instance;
             BEContext = beContext;
             var timeoutSeconds = McMutables.GetOrCreate (BEContext.Account.Id, "HTTPOP", "TimeoutSeconds", KDefaultTimeoutSeconds);

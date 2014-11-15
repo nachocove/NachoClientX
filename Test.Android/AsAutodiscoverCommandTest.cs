@@ -679,8 +679,8 @@ namespace Test.iOS
             };
 
             var autod = new AsAutodiscoverCommand (mockContext);
-            autod.DnsQueryRequestType = typeof(MockDnsQueryRequest);
-            autod.HttpClientType = typeof(MockHttpClient);
+            AsDnsOperation.DnsQueryRequestType = typeof(MockDnsQueryRequest);
+            AsHttpOperation.HttpClientType = typeof(MockHttpClient);
 
             autodCommand = autod;
 
