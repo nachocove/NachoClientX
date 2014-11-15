@@ -3,6 +3,7 @@
 //#define AWS_DEBUG
 using System;
 using System.IO;
+using System.Threading.Tasks;
 
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DocumentModel;
@@ -167,6 +168,11 @@ namespace NachoCore.Utils
                 eventItem ["uploaded_at"] = DateTime.UtcNow.Ticks;
                 var task = eventTable.PutItemAsync (eventItem);
                 task.Wait (NcTask.Cts.Token);
+            }
+            catch (OperationCanceledException e) {
+                // Since we are catching Exception below, we must catch and re-throw
+                // or this exception will be swallowed and telemetry task will not exit.
+                throw;
             }
             catch (AmazonDynamoDBException e) {
                 Console.WriteLine ("AWS DynamoDB exception {0}", e);
