@@ -13,7 +13,7 @@ namespace NachoCore.Utils
 
     public class NcQueue<T> where T : NcQueueElement
     {
-        private Queue<T> _Queue;
+        private List<T> _Queue;
         private object Lock;
         private SemaphoreSlim ProducedCount;
 
@@ -63,7 +63,7 @@ namespace NachoCore.Utils
 
         public NcQueue ()
         {
-            _Queue = new Queue<T> ();
+            _Queue = new List<T> ();
             Lock = new object ();
             ProducedCount = new SemaphoreSlim (0, Int32.MaxValue);
             _NumEnqueue = 0;
@@ -74,33 +74,49 @@ namespace NachoCore.Utils
             _MaxNumQueuedBytes = 0;
         }
 
+        private void UpdateEnqueueStats (T obj)
+        {
+            _NumEnqueueBytes += obj.GetSize ();
+            NcAssert.True (_NumEnqueueBytes >= _NumDequeueBytes);
+            ulong numBytes = _NumEnqueueBytes - _NumDequeueBytes;
+            if (numBytes > _MaxNumQueuedBytes) {
+                _MaxNumQueuedBytes = numBytes;
+            }
+
+            _NumEnqueue++;
+            NcAssert.True (_NumEnqueue >= _NumDequeue);
+            ulong numElements = _NumEnqueue - _NumDequeue;
+            if (numElements > _MaxNumQueued) {
+                _MaxNumQueued = numElements;
+            }
+        }
+
         public void Enqueue (T obj)
         {
             lock (Lock) {
-                _NumEnqueueBytes += obj.GetSize ();
-                NcAssert.True (_NumEnqueueBytes >= _NumDequeueBytes);
-                ulong numBytes = _NumEnqueueBytes - _NumDequeueBytes;
-                if (numBytes > _MaxNumQueuedBytes) {
-                    _MaxNumQueuedBytes = numBytes;
-                }
+                UpdateEnqueueStats (obj);
+                _Queue.Add (obj);
+            }
+            ProducedCount.Release ();
+        }
 
-                _NumEnqueue++;
-                NcAssert.True (_NumEnqueue >= _NumDequeue);
-                ulong numElements = _NumEnqueue - _NumDequeue;
-                if (numElements > _MaxNumQueued) {
-                    _MaxNumQueued = numElements;
-                }
-
-                _Queue.Enqueue (obj);
+        public void Undequeue (T obj)
+        {
+            lock (Lock) {
+                UpdateEnqueueStats (obj);
+                _Queue.Insert (0, obj);
             }
             ProducedCount.Release ();
         }
 
         public T Dequeue ()
         {
+            Token.ThrowIfCancellationRequested ();
             ProducedCount.Wait (Token);
             lock (Lock) {
-                T obj = (T)_Queue.Dequeue ();
+                NcAssert.True (0 < _Queue.Count);
+                T obj = _Queue [0];
+                _Queue.RemoveAt (0);
                 _NumDequeueBytes += obj.GetSize ();
                 _NumDequeue++;
                 return obj;
