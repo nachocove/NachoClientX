@@ -59,13 +59,13 @@ namespace NachoClient.iOS
         UIView intentView;
         UILabel intentLabel;
         UILabel intentDisplayLabel;
+        bool alwaysShowIntent;
 
         UITextView bodyTextView;
 
         UIView toViewHR;
         UIView ccViewHR;
         UIView bccViewHR;
-        UIView headerViewHR;
         UIView subjectLabelHR;
         UIView intentLabelHR;
         UIView attachmentViewHR;
@@ -81,7 +81,7 @@ namespace NachoClient.iOS
         protected UIFont labelFont = A.Font_AvenirNextMedium14;
         protected UIColor labelColor = A.Color_NachoDarkText;
 
-        protected float LINE_HEIGHT = 40;
+        protected float LINE_HEIGHT = 42;
         protected float LEFT_INDENT = 15;
         protected float RIGHT_INDENT = 15;
         protected float BODY_LEFT_MARGIN = 10;
@@ -155,13 +155,15 @@ namespace NachoClient.iOS
             if (IsForwardOrReplyAction ()) {
                 InitializeMessageForAction ();
             }
-
+                
             if (IsReplyAction ()) {
                 bodyTextView.BecomeFirstResponder ();
                 bodyTextView.SelectedRange = new NSRange (0, 0);
             } else {
                 toView.SetEditFieldAsFirstResponder ();
             }
+
+            ConfigureToView (false);
         }
 
         public override void ViewWillAppear (bool animated)
@@ -172,8 +174,10 @@ namespace NachoClient.iOS
                     this.NavigationController.InteractivePopGestureRecognizer.Enabled = false;
                 }
             }
-                
-            ConfigureFullView ();
+            if (HandlesKeyboardNotifications) {
+                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
+                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
+            }
 
             if (NcQuickResponse.QRTypeEnum.None != QRType) {
                 ShowQuickResponses ();
@@ -247,10 +251,7 @@ namespace NachoClient.iOS
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
-            if (HandlesKeyboardNotifications) {
-                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
-                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
-            }
+
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -357,8 +358,12 @@ namespace NachoClient.iOS
         {
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
 
+            View.BackgroundColor = UIColor.White;
             scrollView.BackgroundColor = UIColor.White;
+
             contentView.BackgroundColor = UIColor.White;
+            contentView.Layer.CornerRadius = 6;
+            contentView.Layer.MasksToBounds = true;
 
             toView = new UcAddressBlock (this, "To:", View.Frame.Width);
             ccView = new UcAddressBlock (this, "Cc:", View.Frame.Width);
@@ -373,13 +378,10 @@ namespace NachoClient.iOS
             bccViewHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 1));
             bccViewHR.BackgroundColor = A.Color_NachoNowBackground;
 
-            headerViewHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 2));
-            headerViewHR.BackgroundColor = A.Color_NachoNowBackground;
-
             subjectLabelHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 1));
             subjectLabelHR.BackgroundColor = A.Color_NachoNowBackground;
 
-            intentLabelHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 3));
+            intentLabelHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 1));
             intentLabelHR.BackgroundColor = A.Color_NachoNowBackground;
 
             attachmentViewHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 1));
@@ -394,19 +396,21 @@ namespace NachoClient.iOS
             subjectField = new UITextField ();
             subjectField.Font = labelFont;
             subjectField.TextColor = labelColor;
-            subjectField.Placeholder = "No subject";
+            subjectField.Placeholder = "";
             if (PresetSubject != null) {
                 subjectField.Text += PresetSubject;
             }
             subjectField.SizeToFit ();
 
             intentView = new UIView ();
+            intentView.BackgroundColor = UIColor.White;
 
             intentLabel = new UILabel ();
             intentLabel.Text = "Intent:";
             intentLabel.Font = labelFont;
             intentLabel.TextColor = labelColor;
             intentLabel.SizeToFit ();
+            alwaysShowIntent = false;
 
             intentDisplayLabel = new UILabel ();
             intentDisplayLabel.Font = labelFont;
@@ -443,8 +447,6 @@ namespace NachoClient.iOS
             //Need to be able to inserthtml here, but for now will do simple text input
             //bodyTextView.InsertText ("<html><head></head><body>This message sent by <a href='http://www.nachocove.com'>NachoMail</a></body></html>");
 
-            View.BackgroundColor = UIColor.White;
-
             contentView.AddSubviews (new UIView[] {
                 toView,
                 toViewHR,
@@ -452,7 +454,6 @@ namespace NachoClient.iOS
                 ccViewHR,
                 bccView,
                 bccViewHR,
-                headerViewHR,
                 subjectLabel,
                 subjectLabelHR,
                 subjectField,
@@ -492,7 +493,41 @@ namespace NachoClient.iOS
 //            View.BackgroundColor = UIColor.Cyan;
         }
 
-        protected void ConfigureFullView ()
+        protected void ConfigureToView (bool animate)
+        {
+            toView.Hidden = false;
+            ccView.Hidden = false;
+            bccView.Hidden = true;
+            attachmentView.Hidden = false;
+
+            toView.SetCompact (false, -1);
+            ccView.SetCompact (false, -1);
+            bccView.SetCompact (false, -1);
+            attachmentView.SetCompact (false);
+
+            toViewHR.Hidden = false;
+            ccViewHR.Hidden = false;
+            bccViewHR.Hidden = true;
+            attachmentViewHR.Hidden = false;
+
+            intentView.Hidden = !alwaysShowIntent;
+            intentLabelHR.Hidden = !alwaysShowIntent;
+
+            suppressLayout = true;
+            toView.ConfigureView ();
+            ccView.ConfigureView ();
+            bccView.ConfigureView ();
+            attachmentView.ConfigureView ();
+            suppressLayout = false;
+
+            if (animate) {
+                LayoutView ();
+            } else {
+                LayoutWithoutAnimation ();
+            }
+        }
+
+        protected void ConfigureCcView ()
         {
             toView.Hidden = false;
             ccView.Hidden = false;
@@ -507,8 +542,10 @@ namespace NachoClient.iOS
             toViewHR.Hidden = false;
             ccViewHR.Hidden = false;
             bccViewHR.Hidden = false;
-            headerViewHR.Hidden = false;
             attachmentViewHR.Hidden = false;
+
+            intentView.Hidden = !alwaysShowIntent;
+            intentLabelHR.Hidden = !alwaysShowIntent;
 
             suppressLayout = true;
             toView.ConfigureView ();
@@ -526,7 +563,8 @@ namespace NachoClient.iOS
             toView.Hidden = false;
             toViewHR.Hidden = false;
             // ccView.Hidden = false;
-            // bccView.Hidden = false;
+            bccView.Hidden = true;
+            bccViewHR.Hidden = true;
 
             toView.SetCompact (true, -1);
             ccView.SetCompact (true, -1);
@@ -539,6 +577,10 @@ namespace NachoClient.iOS
             bccView.ConfigureView ();
             attachmentView.ConfigureView ();
             suppressLayout = false;
+
+            alwaysShowIntent = true;
+            intentView.Hidden = false;
+            intentLabelHR.Hidden = false;
 
             LayoutView ();
         }
@@ -556,7 +598,6 @@ namespace NachoClient.iOS
             toViewHR.Hidden = false;
             ccViewHR.Hidden = true;
             bccViewHR.Hidden = true;
-            headerViewHR.Hidden = false;
             attachmentViewHR.Hidden = true;
 
             suppressLayout = true;
@@ -588,7 +629,11 @@ namespace NachoClient.iOS
 
         public void AddressBlockWillBecomeActive (UcAddressBlock view)
         {
-            ConfigureFullView ();
+            if (view == toView) {
+                ConfigureToView (true);
+            } else {
+                ConfigureCcView ();
+            }
         }
 
         public void AddressBlockWillBecomeInactive (UcAddressBlock view)
@@ -600,84 +645,83 @@ namespace NachoClient.iOS
             if (suppressLayout) {
                 return;
             }
-
             UIView.Animate (0.2, () => {
-                toView.Layout ();
-                ccView.Layout ();
-                bccView.Layout ();
-                attachmentView.Layout ();
-
-                float yOffset = 0;
-
-                if (!toView.Hidden) {
-                    AdjustY (toView, yOffset);
-                    yOffset += toView.Frame.Height;
-                    AdjustY (toViewHR, yOffset);
-                    yOffset += toViewHR.Frame.Height;
-                }
-
-                if (!ccView.Hidden) {
-                    AdjustY (ccView, yOffset);
-                    yOffset += ccView.Frame.Height;
-                    AdjustY (ccViewHR, yOffset);
-                    yOffset += ccViewHR.Frame.Height;
-                }
-
-                if (!bccView.Hidden) {
-                    AdjustY (bccView, yOffset);
-                    yOffset += bccView.Frame.Height;
-                    AdjustY (bccViewHR, yOffset);
-                    yOffset += bccViewHR.Frame.Height;
-                }
-
-                if (!headerViewHR.Hidden) {
-                    AdjustY (headerViewHR, yOffset);
-                    yOffset += headerViewHR.Frame.Height;
-                }
-
-                CenterY (subjectLabel, LEFT_INDENT, yOffset, subjectLabel.Frame.Width, LINE_HEIGHT);
-
-                var subjectFieldStart = subjectLabel.Frame.X + subjectLabel.Frame.Width;
-                var subjectFieldWidth = View.Frame.Width - subjectField.Frame.X;
-                CenterY (subjectField, subjectFieldStart, yOffset, subjectFieldWidth, LINE_HEIGHT);
-                yOffset += LINE_HEIGHT;
-
-                AdjustY (subjectLabelHR, yOffset);
-                yOffset += subjectLabelHR.Frame.Height;
-
-                // Intent subviews
-                CenterY (intentLabel, LEFT_INDENT, 0, intentLabel.Frame.Width, LINE_HEIGHT);
-   
-                var intentDisplayStart = intentLabel.Frame.Right + 4;
-                var intentDisplayWidth = View.Frame.Width - intentDisplayStart - 12 - RIGHT_INDENT;
-                CenterY (intentDisplayLabel, intentDisplayStart, 0, intentDisplayWidth, LINE_HEIGHT);
-
-                intentView.Frame = new RectangleF (0, yOffset, View.Frame.Width, LINE_HEIGHT);
-
-                yOffset += LINE_HEIGHT;
-
-                AdjustY (intentLabelHR, yOffset);
-                yOffset += intentLabelHR.Frame.Height;
-
-                if (!attachmentView.Hidden) {
-                    AdjustY (attachmentView, yOffset);
-                    yOffset += attachmentView.Frame.Height;
-                    AdjustY (attachmentViewHR, yOffset);
-                    yOffset += attachmentViewHR.Frame.Height;
-                }
-
-                var bodyTextViewHeight = View.Frame.Height - keyboardHeight;
-                bodyTextView.Frame = new RectangleF (BODY_LEFT_MARGIN, yOffset,
-                    View.Frame.Width - BODY_LEFT_MARGIN - BODY_RIGHT_MARGIN, bodyTextViewHeight);
-                yOffset += bodyTextViewHeight;
-                bodyTextView.ScrollEnabled = true;
-
-                scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
-
-                var contentFrame = new RectangleF (0, 0, View.Frame.Width, yOffset);
-                contentView.Frame = contentFrame;
-                scrollView.ContentSize = contentFrame.Size;
+            LayoutWithoutAnimation ();
             });
+        }
+
+        protected void LayoutWithoutAnimation ()
+        {
+            toView.Layout ();
+            ccView.Layout ();
+            bccView.Layout ();
+            attachmentView.Layout ();
+
+            float yOffset = 0;
+
+            AdjustY (toView, yOffset);
+            AdjustY (toViewHR, yOffset + toView.Frame.Height);
+            if (!toView.Hidden) {
+                yOffset = toViewHR.Frame.Bottom;
+            }
+
+            AdjustY (ccView, yOffset);
+            AdjustY (ccViewHR, yOffset + ccView.Frame.Height);
+            if (!ccView.Hidden) {
+                yOffset = ccViewHR.Frame.Bottom;
+
+            }
+
+            AdjustY (bccView, yOffset);
+            AdjustY (bccViewHR, yOffset + bccView.Frame.Height);
+            if (!bccView.Hidden) {
+                yOffset = bccViewHR.Frame.Bottom;
+            }
+
+            CenterY (subjectLabel, LEFT_INDENT, yOffset, subjectLabel.Frame.Width, LINE_HEIGHT);
+
+            var subjectFieldStart = subjectLabel.Frame.X + subjectLabel.Frame.Width;
+            var subjectFieldWidth = View.Frame.Width - subjectField.Frame.X;
+            CenterY (subjectField, subjectFieldStart, yOffset, subjectFieldWidth, LINE_HEIGHT);
+            yOffset += LINE_HEIGHT;
+
+            AdjustY (subjectLabelHR, yOffset);
+            yOffset += subjectLabelHR.Frame.Height;
+
+            // Intent subviews
+            CenterY (intentLabel, LEFT_INDENT, 0, intentLabel.Frame.Width, LINE_HEIGHT);
+   
+            var intentDisplayStart = intentLabel.Frame.Right + 4;
+            var intentDisplayWidth = View.Frame.Width - intentDisplayStart - 12 - RIGHT_INDENT;
+            CenterY (intentDisplayLabel, intentDisplayStart, 0, intentDisplayWidth, LINE_HEIGHT);
+
+            intentView.Frame = new RectangleF (0, yOffset, View.Frame.Width, LINE_HEIGHT);
+            AdjustY (intentLabelHR, intentView.Frame.Bottom);
+
+            if (!intentView.Hidden) {
+                yOffset = intentLabelHR.Frame.Bottom;
+            }
+
+            if (!attachmentView.Hidden) {
+                AdjustY (attachmentView, yOffset);
+                yOffset += attachmentView.Frame.Height;
+                AdjustY (attachmentViewHR, yOffset);
+                yOffset += attachmentViewHR.Frame.Height;
+            }
+
+            var bodyTextViewHeight = View.Frame.Height - keyboardHeight;
+            bodyTextView.Frame = new RectangleF (BODY_LEFT_MARGIN, yOffset,
+                View.Frame.Width - BODY_LEFT_MARGIN - BODY_RIGHT_MARGIN, bodyTextViewHeight);
+            yOffset += bodyTextViewHeight;
+            bodyTextView.ScrollEnabled = true;
+            scrollView.DelaysContentTouches = true;
+
+            scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight - 50);
+
+            var contentFrame = new RectangleF (0, 0, View.Frame.Width, yOffset);
+            contentView.Frame = contentFrame;
+
+            scrollView.ContentSize = contentFrame.Size;
         }
 
         protected void AdjustY (UIView view, float yOffset)
@@ -746,12 +790,14 @@ namespace NachoClient.iOS
             // We want to scroll the caret rect into view
             var caretRect = textView.GetCaretRectForPosition (textView.SelectedTextRange.End);
             caretRect.Size = new SizeF (caretRect.Size.Width, caretRect.Size.Height + textView.TextContainerInset.Bottom);
+
             // Make sure our textview is big enough to hold the text
             var frame = textView.Frame;
             frame.Size = new SizeF (textView.ContentSize.Width, textView.ContentSize.Height + 40);
             textView.Frame = frame;
             // And update our enclosing scrollview for the new content size
             scrollView.ContentSize = new SizeF (scrollView.ContentSize.Width, textView.Frame.Y + textView.Frame.Height);
+
             // Adjust the caretRect to be in our enclosing scrollview, and then scroll it
             caretRect.Y += textView.Frame.Y;
             scrollView.ScrollRectToVisible (caretRect, true);
