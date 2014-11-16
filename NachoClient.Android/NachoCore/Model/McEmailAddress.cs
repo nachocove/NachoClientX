@@ -11,6 +11,16 @@ namespace NachoCore.Model
 {
     public partial class McEmailAddress : McAbstrObjectPerAcc
     {
+        private static object _LockObj;
+        private static object LockObj {
+            get {
+                if (null == _LockObj) {
+                    _LockObj = new object();
+                }
+                return _LockObj;
+            }
+        }
+
         public McEmailAddress ()
         {
         }
@@ -51,14 +61,16 @@ namespace NachoCore.Model
         public static bool Get (int accountId, MailboxAddress mailboxAddress, out McEmailAddress emailAddress)
         {
             // Does this email address exist, and if not, let's create it
-            var query = "SELECT * from McEmailAddress WHERE CanonicalEmailAddress = ?";
-            emailAddress = NcModel.Instance.Db.Query<McEmailAddress> (query, mailboxAddress.Address).SingleOrDefault ();
-            if (null == emailAddress) {
-                emailAddress = new McEmailAddress (accountId, mailboxAddress.Address);
-                emailAddress.ColorIndex = NachoPlatform.PlatformUserColorIndex.PickRandomColorForUser ();
-                emailAddress.Insert ();
+            lock (LockObj) {
+                var query = "SELECT * from McEmailAddress WHERE CanonicalEmailAddress = ?";
+                emailAddress = NcModel.Instance.Db.Query<McEmailAddress> (query, mailboxAddress.Address).SingleOrDefault ();
+                if (null == emailAddress) {
+                    emailAddress = new McEmailAddress (accountId, mailboxAddress.Address);
+                    emailAddress.ColorIndex = NachoPlatform.PlatformUserColorIndex.PickRandomColorForUser ();
+                    emailAddress.Insert ();
+                }
+                return true;
             }
-            return true;
         }
     }
 }
