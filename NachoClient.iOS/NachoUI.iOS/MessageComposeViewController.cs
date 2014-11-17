@@ -107,6 +107,7 @@ namespace NachoClient.iOS
         {
             this.QRType = QRType;
         }
+
         // Can be called by owner to set a pre-existing To: address, subject, email template and/or attachment
         public void SetEmailPresetFields (NcEmailAddress toAddress = null, string subject = null, string emailTemplate = null, List<McAttachment> attachmentList = null, bool isQR = false)
         {
@@ -114,14 +115,6 @@ namespace NachoClient.iOS
             PresetSubject = subject;
             EmailTemplate = emailTemplate;
             PresetAttachmentList = attachmentList;
-        }
-
-        public override void ViewWillLayoutSubviews ()
-        {
-            base.ViewWillLayoutSubviews ();
-            if (null != TabBarController) {
-                ViewFramer.Create (View).AdjustHeight (TabBarController.TabBar.Frame.Height);
-            }
         }
 
         public override void ViewDidLoad ()
@@ -144,7 +137,6 @@ namespace NachoClient.iOS
             sendButton.Clicked += (object sender, EventArgs e) => {
                 if (OkToSend ()) {
                     SendMessage ();
-                    // Done with the view.
                     owner = null;
                     NavigationController.PopViewControllerAnimated (true);
                 }
@@ -196,64 +188,6 @@ namespace NachoClient.iOS
             };
         }
 
-        protected void ShowQuickResponses ()
-        {
-            switch (QRType) {
-            case NcQuickResponse.QRTypeEnum.Compose:
-                mcMessage.BodyId = McBody.InsertFile (account.Id, McAbstrFileDesc.BodyTypeEnum.PlainText_1, "").Id;
-                break;
-            case NcQuickResponse.QRTypeEnum.Reply:
-                mcMessage.BodyId = McBody.InsertFile (account.Id, McAbstrFileDesc.BodyTypeEnum.PlainText_1, bodyTextView.Text).Id;
-                break;
-            case NcQuickResponse.QRTypeEnum.Forward:
-                mcMessage.BodyId = McBody.InsertFile (account.Id, McAbstrFileDesc.BodyTypeEnum.PlainText_1, bodyTextView.Text).Id;
-                break;
-            case NcQuickResponse.QRTypeEnum.None:
-                break;
-            default:
-                NcAssert.CaseError ("This type is not supported");
-                break;
-            }
-
-            mcMessage.Subject = subjectField.Text;
-            PerformSegue ("SegueToQuickResponse", this);
-        }
-
-        public void PopulateMessageFromQR (NcQuickResponse.QRTypeEnum whichType)
-        {
-            switch (whichType) {
-            case NcQuickResponse.QRTypeEnum.Compose:
-                subjectField.Text = mcMessage.Subject;
-                bodyTextView.Text = McBody.GetContentsString (mcMessage.BodyId);
-                break;
-            case NcQuickResponse.QRTypeEnum.Reply:
-                bodyTextView.Text = McBody.GetContentsString (mcMessage.BodyId);
-                break;
-            case NcQuickResponse.QRTypeEnum.Forward:
-                bodyTextView.Text = McBody.GetContentsString (mcMessage.BodyId);
-                break;
-            default:
-                break;
-            }
-
-            bodyTextView.BecomeFirstResponder ();
-            if (bodyTextView.Text.Contains ("\n")) {
-                bodyTextView.SelectedRange = new NSRange (bodyTextView.Text.IndexOf ("\n"), 0);
-            }
-        }
-
-        public void PopulateMessageFromSelectedIntent (MessageDeferralType intentDateTypeEnum)
-        {
-            intentDateType = intentDateTypeEnum;
-            intentDisplayLabel.Text = NcMessageIntent.GetIntentString (intentDateTypeEnum, mcMessage);
-        }
-
-        public override void ViewDidAppear (bool animated)
-        {
-            base.ViewDidAppear (animated);
-
-        }
-
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
@@ -266,11 +200,6 @@ namespace NachoClient.iOS
             }
 
             QRType = NcQuickResponse.QRTypeEnum.None;
-        }
-
-        public override void ViewDidDisappear (bool animated)
-        {
-            base.ViewDidDisappear (animated);
         }
 
         public virtual bool HandlesKeyboardNotifications {
@@ -327,31 +256,6 @@ namespace NachoClient.iOS
 
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
-        }
-
-        public void SelectMessageIntent (NcMessageIntent.MessageIntent intent)
-        {
-            messageIntent.SetType (intent);
-            messageIntent.SetMessageIntent (ref mcMessage);
-            PopulateMessageFromSelectedIntent (MessageDeferralType.None);
-        }
-
-        /// IUcAttachmentBlock delegate
-        public void PerformSegueForAttachmentBlock (string identifier, SegueHolder segueHolder)
-        {
-            PerformSegue (identifier, segueHolder);
-        }
-
-        /// IUcAttachmentBlock delegate
-        public void DisplayAttachmentForAttachmentBlock (McAttachment attachment)
-        {
-            PlatformHelpers.DisplayAttachment (this, attachment);
-        }
-
-        /// IUcAttachmentBlock delegate
-        public void PresentViewControllerForAttachmentBlock (UIViewController viewControllerToPresent, bool animated, NSAction completionHandler)
-        {
-            this.PresentViewController (viewControllerToPresent, animated, completionHandler);
         }
 
         protected void CreateView ()
@@ -646,7 +550,7 @@ namespace NachoClient.iOS
                 return;
             }
             UIView.Animate (0.2, () => {
-            LayoutWithoutAnimation ();
+                LayoutWithoutAnimation ();
             });
         }
 
@@ -716,7 +620,7 @@ namespace NachoClient.iOS
             bodyTextView.ScrollEnabled = true;
             scrollView.DelaysContentTouches = true;
 
-            scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight - 50);
+            scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
 
             var contentFrame = new RectangleF (0, 0, View.Frame.Width, yOffset);
             contentView.Frame = contentFrame;
@@ -791,10 +695,10 @@ namespace NachoClient.iOS
             var caretRect = textView.GetCaretRectForPosition (textView.SelectedTextRange.End);
             caretRect.Size = new SizeF (caretRect.Size.Width, caretRect.Size.Height + textView.TextContainerInset.Bottom);
 
-            // Make sure our textview is big enough to hold the text
-            var frame = textView.Frame;
-            frame.Size = new SizeF (textView.ContentSize.Width, textView.ContentSize.Height + 40);
-            textView.Frame = frame;
+//            // Make sure our textview is big enough to hold the text
+//            var frame = textView.Frame;
+//            frame.Size = new SizeF (textView.ContentSize.Width, textView.ContentSize.Height);
+//            textView.Frame = frame;
             // And update our enclosing scrollview for the new content size
             scrollView.ContentSize = new SizeF (scrollView.ContentSize.Width, textView.Frame.Y + textView.Frame.Height);
 
@@ -827,6 +731,84 @@ namespace NachoClient.iOS
         {
             NcAssert.CaseError ();
         }
+
+        protected void ShowQuickResponses ()
+        {
+            switch (QRType) {
+            case NcQuickResponse.QRTypeEnum.Compose:
+                mcMessage.BodyId = McBody.InsertFile (account.Id, McAbstrFileDesc.BodyTypeEnum.PlainText_1, "").Id;
+                break;
+            case NcQuickResponse.QRTypeEnum.Reply:
+                mcMessage.BodyId = McBody.InsertFile (account.Id, McAbstrFileDesc.BodyTypeEnum.PlainText_1, bodyTextView.Text).Id;
+                break;
+            case NcQuickResponse.QRTypeEnum.Forward:
+                mcMessage.BodyId = McBody.InsertFile (account.Id, McAbstrFileDesc.BodyTypeEnum.PlainText_1, bodyTextView.Text).Id;
+                break;
+            case NcQuickResponse.QRTypeEnum.None:
+                break;
+            default:
+                NcAssert.CaseError ("This type is not supported");
+                break;
+            }
+
+            mcMessage.Subject = subjectField.Text;
+            PerformSegue ("SegueToQuickResponse", this);
+        }
+
+        public void PopulateMessageFromQR (NcQuickResponse.QRTypeEnum whichType)
+        {
+            switch (whichType) {
+            case NcQuickResponse.QRTypeEnum.Compose:
+                subjectField.Text = mcMessage.Subject;
+                bodyTextView.Text = McBody.GetContentsString (mcMessage.BodyId);
+                break;
+            case NcQuickResponse.QRTypeEnum.Reply:
+                bodyTextView.Text = McBody.GetContentsString (mcMessage.BodyId);
+                break;
+            case NcQuickResponse.QRTypeEnum.Forward:
+                bodyTextView.Text = McBody.GetContentsString (mcMessage.BodyId);
+                break;
+            default:
+                break;
+            }
+
+            bodyTextView.BecomeFirstResponder ();
+            if (bodyTextView.Text.Contains ("\n")) {
+                bodyTextView.SelectedRange = new NSRange (bodyTextView.Text.IndexOf ("\n"), 0);
+            }
+        }
+
+        public void PopulateMessageFromSelectedIntent (MessageDeferralType intentDateTypeEnum)
+        {
+            intentDateType = intentDateTypeEnum;
+            intentDisplayLabel.Text = NcMessageIntent.GetIntentString (intentDateTypeEnum, mcMessage);
+        }
+
+        public void SelectMessageIntent (NcMessageIntent.MessageIntent intent)
+        {
+            messageIntent.SetType (intent);
+            messageIntent.SetMessageIntent (ref mcMessage);
+            PopulateMessageFromSelectedIntent (MessageDeferralType.None);
+        }
+
+        /// IUcAttachmentBlock delegate
+        public void PerformSegueForAttachmentBlock (string identifier, SegueHolder segueHolder)
+        {
+            PerformSegue (identifier, segueHolder);
+        }
+
+        /// IUcAttachmentBlock delegate
+        public void DisplayAttachmentForAttachmentBlock (McAttachment attachment)
+        {
+            PlatformHelpers.DisplayAttachment (this, attachment);
+        }
+
+        /// IUcAttachmentBlock delegate
+        public void PresentViewControllerForAttachmentBlock (UIViewController viewControllerToPresent, bool animated, NSAction completionHandler)
+        {
+            this.PresentViewController (viewControllerToPresent, animated, completionHandler);
+        }
+
 
         /// <summary>
         /// INachoContactChooser callback
