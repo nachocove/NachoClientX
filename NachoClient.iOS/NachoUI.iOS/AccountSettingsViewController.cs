@@ -670,8 +670,8 @@ namespace NachoClient.iOS
         protected void SaveAnywayClicked (object sender, UIButtonEventArgs b)
         {
             if (b.ButtonIndex == 0) {
-                ToggleEditing ();
                 SaveAccountSettings ();
+                ToggleEditing ();
                 DismissViewController (true, null);
             }
         }
@@ -703,8 +703,8 @@ namespace NachoClient.iOS
                 alertViewMessage = "User name is incorrect. No emails can be sent or received. Save anyway?";
                 break;
             case AccountIssue.None:
-                ToggleEditing ();
                 SaveAccountSettings ();
+                ToggleEditing ();
                 DismissViewController (true, null);
                 return;
             default:
@@ -738,6 +738,7 @@ namespace NachoClient.iOS
 
         protected void SaveAccountSettings ()
         {
+            View.EndEditing (true);
             if (DidUserEditAccount ()) {
                 var nameTextField = (UITextField)View.ViewWithTag (NAME_TAG);
                 var usernameTextField = (UITextField)View.ViewWithTag (USERNAME_TAG);
