@@ -46,7 +46,6 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-            var index = source.IndexOfSelection ();
         }
 
         protected override void ConfigureAndLayout ()

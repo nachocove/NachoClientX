@@ -8,7 +8,7 @@ namespace NachoClient.iOS
 {
     public interface INachoNotesController
     {
-        void SetOwner (INachoNotesControllerParent o);
+        void SetOwner (INachoNotesControllerParent o, bool supressAutoDate);
     }
 
     public interface INachoNotesControllerParent

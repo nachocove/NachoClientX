@@ -48,7 +48,8 @@ namespace NachoClient.iOS
         protected UIButton extraAttendeesButton;
         protected UIView line1;
         protected UIView line2;
-        protected UITextView eventNotesTextView;
+//        protected UITextView eventNotesTextView;
+//        protected UILabel eventNotesText;
         protected UIBarButtonItem editEventButton;
 
         // UI colors
@@ -74,6 +75,7 @@ namespace NachoClient.iOS
         protected bool hasDescription = false;
         protected bool hasAttachments = false;
         protected bool hasAttendees = false;
+        protected bool hasNotes = false;
 
         // UI-related constants, or pseudo-constants
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
@@ -101,7 +103,7 @@ namespace NachoClient.iOS
             EVENT_ATTENDEE_LABEL_TAG = 120,
             EVENT_ATTENDEE_VIEW_TAG = 1000,
             EVENT_ATTACHMENT_DETAIL_TAG = 121,
-            EVENT_NOTES_DETAIL_TAG = 122,
+            EVENT_NOTES_DETAIL_TAG = 222,
 
             EVENT_DESCRIPTION_TITLE_TAG = 300,
             EVENT_LOCATION_TITLE_TAG = 301,
@@ -144,7 +146,6 @@ namespace NachoClient.iOS
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
 
             // Main view
-
             scrollView.Frame = View.Frame;
             scrollView.BackgroundColor = contentViewBGColor;
             scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
@@ -282,7 +283,7 @@ namespace NachoClient.iOS
             eventAlertsView.Tag = (int)TagType.EVENT_ALERTS_VIEW_TAG;
             eventAlertsView.BackgroundColor = cellBGColor;
 
-            Util.AddArrowAccessory (eventAlertsView.Frame.Width - 18 - 12, CELL_HEIGHT / 2 - 6, 12, eventAlertsView);
+            Util.AddArrowAccessory (eventAlertsView.Frame.Width - 18 - 12, 2, 12, eventAlertsView);
 
             AddTextLabelWithImageView (0, "REMINDER", "event-reminder", TagType.EVENT_ALERT_TITLE_TAG, eventAlertsView);
             AddDetailTextLabel (42, 22, EVENT_CARD_WIDTH - 84 - 18, 20, TagType.ALERT_DETAIL_TAG, eventAlertsView);
@@ -348,19 +349,26 @@ namespace NachoClient.iOS
             // Notes
             eventNotesView = new UIView (new RectangleF (0, yOffset, EVENT_CARD_WIDTH, CELL_HEIGHT));
             eventNotesView.Tag = (int)TagType.EVENT_NOTES_TEXT_VIEW_TAG;
-            eventNotesView.BackgroundColor = UIColor.Clear;
+            eventNotesView.BackgroundColor = cellBGColor;
+            Util.AddArrowAccessory (eventNotesView.Frame.Width - 18 - 12, 2, 12, eventNotesView);
 
-            AddTextLabelWithImageView (yOffset, "NOTES", "", TagType.EVENT_NOTE_TITLE_TAG, eventCardView);
-            yOffset += 16 + 6;
+            notesTapGestureRecognizer = new UITapGestureRecognizer ();
+            notesTapGestureRecognizerTapToken = notesTapGestureRecognizer.AddTarget (NotesTapGestureRecognizerTap);
+            eventNotesView.AddGestureRecognizer (notesTapGestureRecognizer);
+            eventCardView.AddSubview (eventNotesView);
 
-            eventNotesTextView = new UITextView (new RectangleF (42, yOffset, EVENT_CARD_WIDTH - 60, 30));
-            eventNotesTextView.Font = A.Font_AvenirNextRegular14;
-            eventNotesTextView.TextColor = textColor;
-            eventNotesTextView.Tag = (int)TagType.EVENT_NOTES_TEXT_VIEW_TAG;
+            AddTextLabelWithImageView (0, "NOTES", "", TagType.EVENT_NOTE_TITLE_TAG, eventNotesView);
+            AddDetailTextLabel (42, 22, SCREEN_WIDTH - 90, 20, TagType.EVENT_NOTES_DETAIL_TAG, eventNotesView);
 
-            eventNotesTextView.Started += NotesEditingStarted;
-            eventNotesTextView.Changed += NotesChanged;
-            eventCardView.AddSubview (eventNotesTextView);
+            // Leaving in case we want to go back to inline notes
+//            eventNotesTextView = new UITextView (new RectangleF (42, yOffset, EVENT_CARD_WIDTH - 60, 30));
+//            eventNotesTextView.Font = A.Font_AvenirNextRegular14;
+//            eventNotesTextView.TextColor = textColor;
+//            eventNotesTextView.Tag = (int)TagType.EVENT_NOTES_TEXT_VIEW_TAG;
+//
+//            eventNotesTextView.Started += NotesEditingStarted;
+//            eventNotesTextView.Changed += NotesChanged;
+            //eventCardView.AddSubview (eventNotesTextView);
             eventCardView.Frame = new RectangleF (A.Card_Horizontal_Indent, 60, contentView.Frame.Width - 30, yOffset + A.Card_Vertical_Indent);
 
             yOffset += 20;
@@ -580,9 +588,13 @@ namespace NachoClient.iOS
                 }
             }
 
-            eventNotesTextView.Text = GetNoteText ();
-            eventNotesTextView.SizeToFit ();
-            notesInitialHeight = eventNotesTextView.Frame.Height;
+            var eventNotes = View.ViewWithTag ((int)TagType.EVENT_NOTES_DETAIL_TAG) as UILabel;
+            hasNotes = ("" == GetNoteText () ? false : true);
+            eventNotes.Text = GetNoteText ();
+            eventNotes.Lines = 0;
+            eventNotes.LineBreakMode = UILineBreakMode.WordWrap;
+            eventNotes.Frame = new RectangleF (42, 22, EVENT_CARD_WIDTH - 60, 0);
+            eventNotes.SizeToFit ();
 
             ConfigureRsvpBar ();
 
@@ -602,6 +614,9 @@ namespace NachoClient.iOS
             attachmentsTapGestureRecognizer.RemoveTarget (attachmentsTapGestureRecognizerTapToken);
             eventAttachmentsView.RemoveGestureRecognizer (attachmentsTapGestureRecognizer);
 
+            notesTapGestureRecognizer.RemoveTarget (notesTapGestureRecognizerTapToken);
+            eventNotesView.RemoveGestureRecognizer (notesTapGestureRecognizer);
+
             // Remove event handlers
             scrollView.Scrolled -= ScrollViewScrolled;
             scrollView.ZoomingEnded -= ScrollViewZoomingEnded;
@@ -611,8 +626,8 @@ namespace NachoClient.iOS
             declineButton.TouchUpInside -= DeclineButtonTouchUpInside;
             changeResponseButton.TouchUpInside -= ChangeResponseTouchUpInside;
             editEventButton.Clicked -= EditButtonClicked;
-            eventNotesTextView.Changed -= NotesChanged;
-            eventNotesTextView.Started -= NotesEditingStarted;
+            //eventNotesTextView.Changed -= NotesChanged;
+            //eventNotesTextView.Started -= NotesEditingStarted;
             if (null != extraAttendeesButton) {
                 extraAttendeesButton.TouchUpInside -= ExtraAttendeesTouchUpInside;
             }
@@ -657,7 +672,7 @@ namespace NachoClient.iOS
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
-            SaveNote (account.Id, eventNotesTextView.Text);
+            //SaveNote (account.Id, eventNotesTextView.Text);
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
             if (HandlesKeyboardNotifications) {
                 NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillHideNotification);
@@ -756,7 +771,7 @@ namespace NachoClient.iOS
 
             if (segue.Identifier.Equals ("EventToNotes")) {
                 var dc = (NotesViewController)segue.DestinationViewController;
-                dc.SetOwner (this);
+                dc.SetOwner (this, true);
                 return;
             }
 
@@ -831,15 +846,14 @@ namespace NachoClient.iOS
                 AdjustY (line2, internalYOffset);
             }
 
-            AdjustViewLayout (TagType.EVENT_NOTE_TITLE_TAG, 0, ref internalYOffset, 18);
-            internalYOffset += 6;
-            if (30 < (notesInitialHeight + NOTE_OFFSET)) {
-                eventNotesTextView.Frame = new RectangleF (37, internalYOffset, EVENT_CARD_WIDTH - 60, notesInitialHeight + NOTE_OFFSET);
-            } else {
-                eventNotesTextView.Frame = new RectangleF (37, internalYOffset, EVENT_CARD_WIDTH - 60, 30);
-            }
+            internalYOffset += 18;
 
-            internalYOffset += eventNotesTextView.Frame.Height;
+            var eventNotesViewHeight = (float)CELL_HEIGHT;
+            if (hasNotes) {
+                eventNotesViewHeight = (View.ViewWithTag ((int)TagType.EVENT_NOTES_DETAIL_TAG).Frame.Height + View.ViewWithTag((int)TagType.EVENT_NOTE_TITLE_TAG).Frame.Height + 6);
+            }
+            View.ViewWithTag ((int)TagType.EVENT_NOTES_TEXT_VIEW_TAG).Frame = new RectangleF (0, internalYOffset, EVENT_CARD_WIDTH, eventNotesViewHeight);
+            internalYOffset += eventNotesViewHeight;
 
             float logicalWidth = Math.Max (SCREEN_WIDTH, descriptionView.Frame.Right);
             scrollView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, View.Frame.Height - keyboardHeight);
@@ -1404,7 +1418,7 @@ namespace NachoClient.iOS
 
         private void NotesChanged (object sender, EventArgs e)
         {
-            SelectionChanged (eventNotesTextView);
+            //SelectionChanged (eventNotesTextView);
             scrollView.SetContentOffset (new PointF (0, contentView.Frame.Height - scrollView.Frame.Height), true);
         }
     }
