@@ -84,12 +84,18 @@ namespace NachoCore.Brain
 
         public static void StopService ()
         {
-            NcBrain.SharedInstance.Enqueue (new NcBrainEvent (NcBrainEventType.TERMINATE));
+            NcBrain.SharedInstance.SignalTermination ();
         }
 
         public void Enqueue (NcBrainEvent brainEvent)
         {
             EventQueue.Enqueue (brainEvent);
+        }
+
+        public void SignalTermination ()
+        {
+            var brainEvent = new NcBrainEvent (NcBrainEventType.TERMINATE);
+            EventQueue.Undequeue (brainEvent);
         }
 
         public bool IsQueueEmpty ()
