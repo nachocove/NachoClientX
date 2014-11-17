@@ -43,17 +43,20 @@ namespace Test.iOS
 
     public class MockDnsQueryRequest : IDnsQueryRequest
     {
-        public delegate DnsQueryResponse ProvideDnsQueryResponseMessageDelegate ();
+        public delegate DnsQueryResponse ProvideDnsQueryResponseMessageDelegate (MockDnsQueryRequest dnsRequest);
         public static ProvideDnsQueryResponseMessageDelegate ProvideDnsQueryResponseMessage { set; get; }
 
         public UdpClient UdpClient { set; get; }
 
         public int Timeout { set; get; }
 
+        public NsType DnsType { set; get; }
+
         public Task<DnsQueryResponse> ResolveAsync (string host, NsType dnsType, NsClass dnsClass, ProtocolType pType)
         {
+            DnsType = dnsType;
             return Task.Run<DnsQueryResponse> (delegate {
-                return ProvideDnsQueryResponseMessage ();
+                return ProvideDnsQueryResponseMessage (this);
             });
         }
     }
@@ -108,8 +111,8 @@ namespace Test.iOS
                 PerformAutoDiscoveryWithSettings (true, sm => {}, request => {
                     MockSteps robotType = DetermineRobotType (request);
                     return XMLForRobotType (request, robotType, step, xml);
-                }, provideDnsResponse => {
-                    if (step == MockSteps.S4) {
+                }, (dnsRequest, provideDnsResponse) => {
+                    if (step == MockSteps.S4 && MockSteps.S4 == DetermineRobotType (dnsRequest)) {
                         provideDnsResponse.ParseResponse (dnsByteArray);
                         step = MockSteps.S1; // S4 resolves to POST after DNS lookup
                     }
@@ -170,7 +173,7 @@ namespace Test.iOS
                 }, request => {
                     MockSteps robotType = DetermineRobotType (request);
                     return XMLForRobotType (request, robotType, step, xml);
-                }, provideDnsResponse => {
+                }, (dnsRequest, provideDnsResponse) => {
                 }, (httpRequest, httpResponse) => {
                     // provide valid redirection headers if needed
                     if (ShouldRedirect (httpRequest, step)) {
@@ -223,7 +226,7 @@ namespace Test.iOS
                 }, request => {
                     MockSteps robotType = DetermineRobotType (request);
                     return XMLForRobotType (request, robotType, step, xml);
-                }, provideDnsResponse => {
+                }, (dnsRequest, provideDnsResponse) => {
                 }, (httpRequest, httpResponse) => {
                     MockSteps robotType = DetermineRobotType (httpRequest);
                     httpResponse.StatusCode = AssignStatusCode (httpRequest, robotType, step);
@@ -282,8 +285,8 @@ namespace Test.iOS
                 }, request => {
                     MockSteps robotType = DetermineRobotType (request);
                     return XMLForRobotType (request, robotType, step, xml, optionsXml: optionsXml);
-                }, provideDnsResponse => {
-                    if (step == MockSteps.S4) {
+                }, (dnsRequest, provideDnsResponse) => {
+                    if (step == MockSteps.S4 && MockSteps.S4 == DetermineRobotType (dnsRequest)) {
                         provideDnsResponse.ParseResponse (dnsByteArray);
                     }
                 }, (httpRequest, httpResponse) => {
@@ -344,7 +347,7 @@ namespace Test.iOS
                 }, request => {
                     MockSteps robotType = DetermineRobotType (request);
                     return XMLForRobotType (request, robotType, step, xml, optionsXml: optionsXml);
-                }, provideDnsResponse => {
+                }, (dnsRequest, provideDnsResponse) => {
                 }, (httpRequest, httpResponse) => {
                     // provide valid redirection headers if needed
                     if (ShouldRedirect (httpRequest, step)) {
@@ -445,8 +448,8 @@ namespace Test.iOS
                 PerformAutoDiscoveryWithSettings (true, sm => {}, request => {
                     MockSteps robotType = DetermineRobotType (request, isSubDomain: isSubDomain);
                     return XMLForRobotType (request, robotType, step, xml);
-                }, provideDnsResponse => {
-                    if (step == MockSteps.S4) {
+                }, (dnsRequest, provideDnsResponse) => {
+                    if (step == MockSteps.S4 && MockSteps.S4 == DetermineRobotType (dnsRequest)) {
                         if (!hasTimedOutOnce) {
                             System.Threading.Thread.Sleep (TimeoutTime);
                             hasTimedOutOnce = true;
@@ -604,6 +607,21 @@ namespace Test.iOS
             Assert.AreEqual ("12.0", protocolVersion, "MS-ASProtocolVersion should be set to the correct version by AsHttpOperation");
         }
 
+        public MockSteps DetermineRobotType (MockDnsQueryRequest request)
+        {
+            switch (request.DnsType) {
+            case NsType.SRV:
+                return MockSteps.S4;
+
+            case NsType.MX:
+                return MockSteps.S5;
+
+            default:
+                Assert.True (false, "Internal error - unexpected DNS request type.");
+                return MockSteps.Other;
+            }
+        }
+
         public MockSteps DetermineRobotType (HttpRequestMessage request, bool isSubDomain = false)
         {
             string requestUri = request.RequestUri.ToString ();
@@ -639,19 +657,24 @@ namespace Test.iOS
         }
 
         public void PerformAutoDiscoveryWithSettings (bool hasCert, Action<NcStateMachine> provideSm, Func<HttpRequestMessage, string> provideXml,
-            Action<DnsQueryResponse> exposeDnsResponse, Action<HttpRequestMessage, HttpResponseMessage> exposeHttpMessage)
+            Action<MockDnsQueryRequest, DnsQueryResponse> exposeDnsResponse, Action<HttpRequestMessage, HttpResponseMessage> exposeHttpMessage)
         {
             var autoResetEvent = new AutoResetEvent(false);
-
-            NcStateMachine sm = CreatePhonySM (() => {
-                autoResetEvent.Set ();
-            });
+            bool smFail = false;
+            NcStateMachine sm = CreatePhonySM (
+                () => {
+                    autoResetEvent.Set ();
+                },
+                () => {
+                    smFail = true; 
+                }
+            );
 
             provideSm (sm);
 
-            MockDnsQueryRequest.ProvideDnsQueryResponseMessage = () => {
+            MockDnsQueryRequest.ProvideDnsQueryResponseMessage = (dnsRequest) => {
                 var mockDnsQueryResponse = new DnsQueryResponse () {};
-                exposeDnsResponse (mockDnsQueryResponse);
+                exposeDnsResponse (dnsRequest, mockDnsQueryResponse);
                 return mockDnsQueryResponse;
             };
 
@@ -678,9 +701,9 @@ namespace Test.iOS
                 return hasCert;
             };
 
-            var autod = new AsAutodiscoverCommand (mockContext);
             AsDnsOperation.DnsQueryRequestType = typeof(MockDnsQueryRequest);
             AsHttpOperation.HttpClientType = typeof(MockHttpClient);
+            var autod = new AsAutodiscoverCommand (mockContext);
 
             autodCommand = autod;
 
@@ -688,6 +711,7 @@ namespace Test.iOS
 
             bool didFinish = autoResetEvent.WaitOne (8000);
             Assert.IsTrue (didFinish, "Operation did not finish");
+            Assert.False (smFail);
         }
 
         private void ServerTrueAssertions (McServer expected, McServer actual)
@@ -708,7 +732,7 @@ namespace Test.iOS
             Assert.AreNotEqual (expected.UsedBefore, actual.UsedBefore, "Stored server used before flag should not equal flag in context");
         }
 
-        private NcStateMachine CreatePhonySM (Action action)
+        private NcStateMachine CreatePhonySM (Action action, Action failed)
         {
             var sm = new NcStateMachine ("PHONY") {
                 Name = "BasicPhonyPing",
@@ -739,7 +763,7 @@ namespace Test.iOS
                             new Trans {
                                 Event = (uint)AsProtoControl.CtlEvt.E.GetServConf,
                                 Act = delegate () {
-                                    Assert.Fail ("Received an unexpected command in top level state machine");
+                                    failed ();
                                 },
                                 State = (uint)St.Start },
                         }
