@@ -7,12 +7,21 @@ using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 
 using NachoCore.Model;
+using NachoCore.Utils;
+using System.Drawing;
 
 namespace NachoClient.iOS
 {
     public partial class NachoTabBarController : UITabBarController
     {
         protected static string TabBarOrderKey = "TabBarOrder";
+
+        // UI elements needed to customize the "More" tab.
+        protected UILabel accountNameLabel;
+        protected UILabel emailAddressLabel;
+        protected UILabel initialsCircle;
+        protected UIView existingTableView;
+        protected static NachoTabBarController instance;
 
         public NachoTabBarController (IntPtr handle) : base (handle)
         {
@@ -23,6 +32,10 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+
+            instance = this;
+
+            ViewControllerSelected += ViewControllerSelectedHandler;
 
             TabBar.BarTintColor = UIColor.White;
             TabBar.TintColor = A.Color_NachoIconGray;
@@ -48,7 +61,8 @@ namespace NachoClient.iOS
             FinishedCustomizingViewControllers += (object sender, UITabBarCustomizeChangeEventArgs e) => {
                 SaveCustomTabBarOrder (e);
             };
-                
+
+            InsertAccountInfoIntoMoreTab ();
         }
            
         // Fires only when app starts; not on all fg events
@@ -166,6 +180,113 @@ namespace NachoClient.iOS
                 }
             }
         }
+
+        protected void InsertAccountInfoIntoMoreTab ()
+        {
+            var moreTabController = MoreNavigationController.ViewControllers [0];
+
+            existingTableView = moreTabController.View;
+            existingTableView.TintColor = A.Color_NachoGreen;
+
+            var newView = new UIView (existingTableView.Frame);
+            newView.BackgroundColor = A.Color_NachoBackgroundGray;
+
+            var accountInfoView = new UIView (new RectangleF (
+                A.Card_Horizontal_Indent, A.Card_Vertical_Indent,
+                newView.Frame.Width - 2 * A.Card_Horizontal_Indent, 100));
+            accountInfoView.BackgroundColor = UIColor.White;
+            accountInfoView.Layer.CornerRadius = A.Card_Corner_Radius;
+            accountInfoView.Layer.MasksToBounds = true;
+            accountInfoView.Layer.BorderWidth = A.Card_Border_Width;
+            accountInfoView.Layer.BorderColor = A.Card_Border_Color;
+
+            initialsCircle = new UILabel (new RectangleF (18, 20, 60, 60));
+            initialsCircle.Font = A.Font_AvenirNextRegular24;
+            initialsCircle.TextColor = UIColor.White;
+            initialsCircle.TextAlignment = UITextAlignment.Center;
+            initialsCircle.LineBreakMode = UILineBreakMode.Clip;
+            initialsCircle.Layer.CornerRadius = 30;
+            initialsCircle.Layer.MasksToBounds = true;
+            initialsCircle.Layer.BorderColor = A.Card_Border_Color;
+            initialsCircle.Layer.BorderWidth = A.Card_Border_Width;
+            accountInfoView.AddSubview (initialsCircle);
+
+            accountNameLabel = new UILabel (new RectangleF (initialsCircle.Frame.Right + 16, 31, accountInfoView.Frame.Width - (initialsCircle.Frame.Right + 26), 20));
+            accountNameLabel.TextAlignment = UITextAlignment.Left;
+            accountInfoView.AddSubview (accountNameLabel);
+
+            emailAddressLabel = new UILabel (new RectangleF (accountNameLabel.Frame.X, accountNameLabel.Frame.Bottom + 6, accountNameLabel.Frame.Width, accountNameLabel.Frame.Height - 5));
+            emailAddressLabel.Font = A.Font_AvenirNextMedium14;
+            accountInfoView.AddSubview (emailAddressLabel);
+
+            existingTableView.Frame = new RectangleF (
+                A.Card_Horizontal_Indent, accountInfoView.Frame.Bottom + A.Card_Vertical_Indent,
+                newView.Frame.Width - 2 * A.Card_Horizontal_Indent, newView.Frame.Height - accountInfoView.Frame.Bottom - 2 * A.Card_Vertical_Indent);
+            existingTableView.Layer.CornerRadius = A.Card_Corner_Radius;
+            existingTableView.Layer.MasksToBounds = true;
+            existingTableView.Layer.BorderWidth = A.Card_Border_Width;
+            existingTableView.Layer.BorderColor = A.Card_Border_Color;
+
+            newView.AddSubview (accountInfoView);
+            newView.AddSubview (existingTableView);
+            moreTabController.View = newView;
+
+            ConfigureAccountInfo ();
+
+        }
+
+        public void ConfigureAccountInfo ()
+        {
+            var account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
+
+            if (!string.IsNullOrEmpty (account.DisplayName)) {
+                initialsCircle.Text = Util.NameToLetters (account.DisplayName);
+            } else if (!string.IsNullOrEmpty (account.EmailAddr)) {
+                initialsCircle.Text = Util.NameToLetters (account.EmailAddr);
+            } else {
+                initialsCircle.Text = "?";
+            }
+
+            McEmailAddress address;
+            bool validAddress = McEmailAddress.Get (account.Id, account.EmailAddr, out address);
+            initialsCircle.BackgroundColor = Util.ColorForUser (validAddress ? address.ColorIndex : Util.PickRandomColorForUser());
+
+            if (string.IsNullOrEmpty (account.DisplayName)) {
+                accountNameLabel.Text = "Account name";
+                accountNameLabel.Font = A.Font_AvenirNextRegular14;
+                accountNameLabel.TextColor = UIColor.LightGray;
+                emailAddressLabel.TextColor = A.Color_NachoGreen;
+            } else {
+                accountNameLabel.Text = account.DisplayName;
+                accountNameLabel.Font = A.Font_AvenirNextDemiBold17;
+                accountNameLabel.TextColor = A.Color_NachoGreen;
+                emailAddressLabel.TextColor = A.Color_NachoTextGray;
+            }
+
+            emailAddressLabel.Text = account.EmailAddr;
+        }
+
+        public static void ReconfigureMoreTab ()
+        {
+            instance.ConfigureAccountInfo ();
+        }
+
+        protected void ViewControllerSelectedHandler (object sender, UITabBarSelectionEventArgs e)
+        {
+            if (e.ViewController == MoreNavigationController) {
+                // The user has tapped on the "More" tab in the tab bar. Do what we can to
+                // make sure the "More" view is up to date.
+                ConfigureAccountInfo ();
+                // Tweak the table cells to be closer to what we want.  We would like to
+                // make other changes, but this event is triggered at the wrong time, so
+                // those other changes won't stick.  The one change that does seem to stick
+                // is to hide the arrow on the right side of the cell.
+                foreach (var cell in ((UITableView)existingTableView).VisibleCells) {
+                    if (3 == cell.Subviews.Length && cell.Subviews [2] is UIButton) {
+                        cell.Subviews [2].Hidden = true;
+                    }
+                }
+            }
+        }
     }
 }
-                      
