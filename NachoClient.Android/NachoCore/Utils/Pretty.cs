@@ -5,6 +5,7 @@ using System.Drawing;
 using NachoCore;
 using NachoCore.Model;
 using MimeKit;
+using System.Collections.Generic;
 
 namespace NachoCore.Utils
 {
@@ -400,6 +401,184 @@ namespace NachoCore.Utils
                 }
             }
             return false;
+        }
+
+        protected static string DayOfWeekAsString (NcDayOfWeek dow)
+        {
+            switch (dow) {
+            case NcDayOfWeek.Sunday:
+                return "Sunday";
+            case NcDayOfWeek.Monday:
+                return "Monday";
+            case NcDayOfWeek.Tuesday:
+                return "Tuesday";
+            case NcDayOfWeek.Wednesday:
+                return "Wednesday";
+            case NcDayOfWeek.Thursday:
+                return "Thursday";
+            case NcDayOfWeek.Friday:
+                return "Friday";
+            case NcDayOfWeek.Saturday:
+                return "Saturday";
+            default:
+                // A combination of days.
+                var dayList = new List<string> ();
+                if (0 != (dow & NcDayOfWeek.Sunday)) {
+                    dayList.Add ("Sun");
+                }
+                if (0 != (dow & NcDayOfWeek.Monday)) {
+                    dayList.Add ("Mon");
+                }
+                if (0 != (dow & NcDayOfWeek.Tuesday)) {
+                    dayList.Add ("Tue");
+                }
+                if (0 != (dow & NcDayOfWeek.Wednesday)) {
+                    dayList.Add ("Wed");
+                }
+                if (0 != (dow & NcDayOfWeek.Thursday)) {
+                    dayList.Add ("Thu");
+                }
+                if (0 != (dow & NcDayOfWeek.Friday)) {
+                    dayList.Add ("Fri");
+                }
+                if (0 != (dow & NcDayOfWeek.Saturday)) {
+                    dayList.Add ("Sat");
+                }
+                return MakeCommaSeparatedList (dayList);
+            }
+        }
+
+        protected static string DayOfWeekMonthly (NcDayOfWeek dow)
+        {
+            switch (dow) {
+            case NcDayOfWeek.LastDayOfTheMonth:
+                return "day";
+            case NcDayOfWeek.Weekdays:
+                return "weekday";
+            case NcDayOfWeek.WeekendDays:
+                return "weekend day";
+            default:
+                return DayOfWeekAsString (dow);
+            }
+        }
+
+        protected static string WeekOfMonth (int week)
+        {
+            if (5 == week) {
+                return "last";
+            }
+            return AddOrdinalSuffix (week);
+        }
+
+        public static string MakeRecurrenceString (List<McRecurrence> recurrences)
+        {
+            if (0 == recurrences.Count) {
+                return "does not repeat";
+            }
+            McRecurrence r = recurrences [0];
+
+            int interval = r.IntervalIsSet && 1 < r.Interval ? r.Interval : 1;
+
+            switch (r.Type) {
+
+            case NcRecurrenceType.Daily:
+                if (1 == interval) {
+                    return "repeats daily";
+                }
+                return string.Format ("repeats every {0} days", interval);
+
+            case NcRecurrenceType.Weekly:
+                if (1 == interval) {
+                    if (NcDayOfWeek.LastDayOfTheMonth == r.DayOfWeek) {
+                        // Repeats weekly on every day of the week, which is the same as daily.
+                        return "repeats daily";
+                    }
+                    if (NcDayOfWeek.Weekdays == r.DayOfWeek) {
+                        return "repeats weekly on weekdays";
+                    }
+                    if (NcDayOfWeek.WeekendDays == r.DayOfWeek) {
+                        return "repeats weekly on weekends";
+                    }
+                    return string.Format ("repeats weekly on {0}", DayOfWeekAsString (r.DayOfWeek));
+                }
+                if (NcDayOfWeek.Weekdays == r.DayOfWeek) {
+                    return string.Format ("repeats every {0} weeks on weekdays", interval);
+                }
+                return string.Format ("repeats every {0} weeks on {1}", interval, DayOfWeekAsString (r.DayOfWeek));
+
+            case NcRecurrenceType.Monthly:
+                if (1 == interval) {
+                    return string.Format ("repeats monthly on the {0}", AddOrdinalSuffix (r.DayOfMonth));
+                }
+                return string.Format ("repeats every {0} months on the {1}", interval, AddOrdinalSuffix (r.DayOfMonth));
+
+            case NcRecurrenceType.Yearly:
+                string dateString;
+                try {
+                    dateString = new DateTime (2004, r.MonthOfYear, r.DayOfMonth).ToString ("MMM d");
+                } catch (ArgumentOutOfRangeException) {
+                    dateString = string.Format ("{0}/{1}", r.MonthOfYear, r.DayOfMonth);
+                }
+                if (1 == interval) {
+                    return string.Format ("repeats yearly on {0}", dateString);
+                }
+                return string.Format ("repeats every {0} years on {1}", dateString);
+
+            case NcRecurrenceType.MonthlyOnDay:
+                if (1 == interval) {
+                    return string.Format ("repeats monthly on the {0} {1} of the month", WeekOfMonth (r.WeekOfMonth), DayOfWeekMonthly (r.DayOfWeek));
+                }
+                return string.Format ("repeats every {0} months on the {1} {2} of the month", interval, WeekOfMonth (r.WeekOfMonth), DayOfWeekMonthly (r.DayOfWeek));
+
+            case NcRecurrenceType.YearlyOnDay:
+                string monthName;
+                try {
+                    monthName = new DateTime (2000, r.MonthOfYear, 1).ToString ("MMMM");
+                } catch (ArgumentOutOfRangeException) {
+                    monthName = string.Format ("the {0} month", AddOrdinalSuffix (r.MonthOfYear));
+                }
+                if (1 == interval) {
+                    return string.Format ("repeats yearly on the {0} {1} of {2}", WeekOfMonth (r.WeekOfMonth), DayOfWeekMonthly (r.DayOfWeek), monthName);
+                }
+                return string.Format ("repeats every {0} years on the {1} {2} of {3}", interval, WeekOfMonth (r.WeekOfMonth), DayOfWeekMonthly (r.DayOfWeek), monthName);
+
+            default:
+                return "repeats with an unknown frequency";
+            }
+        }
+
+        public static string MakeCommaSeparatedList (List<string> stringList)
+        {
+
+            var endString = " and " + stringList [stringList.Count - 1];
+            stringList.RemoveAt (stringList.Count - 1);
+            var stringArray = stringList.ToArray ();
+            var commaSeparatedString = String.Join (", ", stringArray);
+            return commaSeparatedString + endString;
+        }
+
+        public static string AddOrdinalSuffix (int num)
+        {
+            if (num <= 0)
+                return num.ToString ();
+
+            switch (num % 100) {
+            case 11:
+            case 12:
+            case 13:
+                return num + "th";
+            }
+
+            switch (num % 10) {
+            case 1:
+                return num + "st";
+            case 2:
+                return num + "nd";
+            case 3:
+                return num + "rd";
+            default:
+                return num + "th";
+            }
         }
     }
 }

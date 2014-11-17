@@ -59,7 +59,7 @@ namespace NachoClient.iOS
 
         protected List<UcAddressField> list;
 
-        protected float LINE_HEIGHT = 35;
+        protected float LINE_HEIGHT = 42;
         protected float LEFT_LABEL_INDENT = 15;
         protected float LEFT_ADDRESS_INDENT = 57;
         protected float RIGHT_INDENT = 15;

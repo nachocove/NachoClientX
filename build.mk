@@ -14,7 +14,6 @@ all:
 	make -C ../MimeKit -f ../NachoClientX/MimeKit.mk
 	make -C ../DnDns/SourceCode/DnDns -f ../../../NachoClientX/DnDns.mk
 	make -C ../DDay-iCal-Xamarin
-	make -C ../ModernHttpClient
 	make -C native.iOS
 	make -C native.Android
 	make
