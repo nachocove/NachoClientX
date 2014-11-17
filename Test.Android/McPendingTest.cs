@@ -1139,7 +1139,7 @@ namespace Test.iOS
                 Assert.False (second.IsDuplicate ());
                 second.ParentId = first.ParentId;
                 Assert.True (second.IsDuplicate ());
-                second.Operation = Operations.AttachmentDownload;
+                second.Operation = Operations.CalBodyDownload;
                 try {
                     second.IsDuplicate ();
                     Assert.True(false);
