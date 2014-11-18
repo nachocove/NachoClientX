@@ -270,9 +270,9 @@ namespace NachoClient.iOS
             contentView.Layer.CornerRadius = 6;
             contentView.Layer.MasksToBounds = true;
 
-            toView = new UcAddressBlock (this, "To:", View.Frame.Width);
-            ccView = new UcAddressBlock (this, "Cc:", View.Frame.Width);
-            bccView = new UcAddressBlock (this, "Bcc:", View.Frame.Width);
+            toView = new UcAddressBlock (this, "To:", null, View.Frame.Width);
+            ccView = new UcAddressBlock (this, "Cc:", "Cc/Bcc:", View.Frame.Width);
+            bccView = new UcAddressBlock (this, "Bcc:", null, View.Frame.Width);
 
             toViewHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 1));
             toViewHR.BackgroundColor = A.Color_NachoNowBackground;
@@ -410,8 +410,8 @@ namespace NachoClient.iOS
             attachmentView.Hidden = false;
 
             toView.SetCompact (false, -1);
-            ccView.SetCompact (false, -1);
-            bccView.SetCompact (false, -1);
+            ccView.SetCompact (true, -1);
+            bccView.SetCompact (true, -1);
             attachmentView.SetCompact (false);
 
             toViewHR.Hidden = false;
@@ -468,7 +468,7 @@ namespace NachoClient.iOS
 
         protected void ConfigureSubjectEditView ()
         {
-            // If ccView & bccView are hidden,leave them that way.
+            // If ccView is hidden,leave it that way.
             toView.Hidden = false;
             toViewHR.Hidden = false;
             // ccView.Hidden = false;
@@ -738,7 +738,7 @@ namespace NachoClient.iOS
         /// </summary>
         protected void SelectionChanged (UITextView textView)
         {
-            var newHeight = OldAdjustToFittingHeight (textView);
+            OldAdjustToFittingHeight (textView);
 
             // We want to scroll the caret rect into view
             var caretRect = textView.GetCaretRectForPosition (textView.SelectedTextRange.Start);

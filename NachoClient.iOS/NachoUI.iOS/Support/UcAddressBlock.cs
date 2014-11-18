@@ -48,7 +48,8 @@ namespace NachoClient.iOS
         protected bool isEditable;
 
         protected float parentWidth;
-        protected string topLeftString;
+        protected string openTopLeftString;
+        protected string closedTopLeftString;
         protected IUcAddressBlockDelegate owner;
 
         protected int suppliedCount;
@@ -66,7 +67,8 @@ namespace NachoClient.iOS
 
         protected UcAddressField currentAddressField;
 
-        public enum TagType {
+        public enum TagType
+        {
             TEXT_FIELD_TAG = UcAddressField.TEXT_FIELD,
             GAP_FIELD_TAG = UcAddressField.GAP_FIELD,
             ENTRY_FIELD_TAG = UcAddressField.ENTRY_FIELD,
@@ -75,10 +77,11 @@ namespace NachoClient.iOS
             CHOOSER_BUTTON_TAG,
         };
 
-        public UcAddressBlock (IUcAddressBlockDelegate owner, string label, float width)
+        public UcAddressBlock (IUcAddressBlockDelegate owner, string openLabel, string closedLabel, float width)
         {
             this.owner = owner;
-            this.topLeftString = label;
+            this.openTopLeftString = openLabel;
+            this.closedTopLeftString = closedLabel;
             this.parentWidth = width;
             this.BackgroundColor = UIColor.White;
             this.list = new List<UcAddressField> ();
@@ -260,8 +263,13 @@ namespace NachoClient.iOS
 
         public void ConfigureView ()
         {
-            topLeftLabel.Text = topLeftString;
-            var topLeftLabelSize = topLeftLabel.StringSize (topLeftString, topLeftLabel.Font);
+            var topLeftLabelString = openTopLeftString;
+            if (isCompact && (null != closedTopLeftString)) {
+                topLeftLabelString = closedTopLeftString;
+            }
+
+            topLeftLabel.Text = topLeftLabelString;
+            var topLeftLabelSize = topLeftLabel.StringSize (topLeftLabelString, topLeftLabel.Font);
             topLeftLabel.Frame = new RectangleF (topLeftLabel.Frame.Location, topLeftLabelSize);
 
             if (null != owner) {
@@ -269,7 +277,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public void SetEditFieldAsFirstResponder()
+        public void SetEditFieldAsFirstResponder ()
         {
             this.entryTextField.BecomeFirstResponder ();
         }
@@ -295,7 +303,7 @@ namespace NachoClient.iOS
             float xOffset = 15;
             float xLimit = parentWidth;
 
-            if (null == topLeftString) {
+            if (null == openTopLeftString) {
                 topLeftLabel.Hidden = true;
             } else {
                 topLeftLabel.Hidden = false;
@@ -309,7 +317,8 @@ namespace NachoClient.iOS
                 list [i].Hidden = true;
             }
 
-            xOffset = LEFT_ADDRESS_INDENT;
+            // accommodate long labels
+            xOffset = Math.Max(xOffset, LEFT_ADDRESS_INDENT);
 
             if (0 < list.Count) {
                 NcAssert.True (1 < list.Count); // must have at least 2 since the first one is a gap
@@ -358,7 +367,7 @@ namespace NachoClient.iOS
            
             moreLabel.Hidden = true;
 
-            if (null == topLeftString) {
+            if (null == openTopLeftString) {
                 topLeftLabel.Hidden = true;
             } else {
                 topLeftLabel.Hidden = false;
@@ -436,7 +445,7 @@ namespace NachoClient.iOS
         public UcAddressField AddressFieldPredecessor (UcAddressField addressField)
         {
             if (entryTextField == addressField) {
-                return (0 < list.Count ? list[list.Count - 1]: null);
+                return (0 < list.Count ? list [list.Count - 1] : null);
             }
             var index = list.IndexOf (addressField);
             if (-1 == index) {

@@ -235,7 +235,7 @@ namespace NachoClient.iOS
 
             // "To" label
             float blockWidth = headerView.Frame.Width - TOVIEW_LEFT_MARGIN;
-            toView = new UcAddressBlock (this, "To:", blockWidth);
+            toView = new UcAddressBlock (this, "To:", null, blockWidth);
             toView.SetCompact (false, -1);
             toView.SetEditable (false);
             toView.SetLineHeight (20);
@@ -249,7 +249,7 @@ namespace NachoClient.iOS
 
             // "cc" label
             blockWidth = headerView.Frame.Width - CCVIEW_LEFT_MARGIN;
-            ccView = new UcAddressBlock (this, "Cc:", blockWidth);
+            ccView = new UcAddressBlock (this, "Cc:", null, blockWidth);
             ccView.SetCompact (false, -1);
             ccView.SetEditable (false);
             ccView.SetLineHeight (20);
