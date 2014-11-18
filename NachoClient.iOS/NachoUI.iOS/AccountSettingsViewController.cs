@@ -763,6 +763,8 @@ namespace NachoClient.iOS
                 theServer.Update ();
                 theCred.Update ();
                 theConference.Update ();
+
+                NachoTabBarController.ReconfigureMoreTab ();
             }
         }
 
