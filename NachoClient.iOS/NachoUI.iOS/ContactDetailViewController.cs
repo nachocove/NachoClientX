@@ -132,7 +132,7 @@ namespace NachoClient.iOS
         {
             if (segue.Identifier.Equals ("ContactToNotes")) {
                 var dc = (NotesViewController)segue.DestinationViewController;
-                dc.SetOwner (this);
+                dc.SetOwner (this, false);
                 return;
             }
 

@@ -13,53 +13,30 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public partial class EventAttachmentViewController : NcUIViewController, IAttachmentTableViewSourceDelegate, INachoAttachmentListChooser, INachoFileChooserParent
+    public partial class EventAttachmentViewController : NcUIViewController
     {
         public EventAttachmentViewController (IntPtr handle) : base (handle)
         {
         }
 
         protected AttachmentTableViewSource attachmentSource;
-        protected McAccount account;
-        protected McAbstrCalendarRoot c;
         protected UITableView tableView;
-        protected bool editing;
-        protected INachoAttachmentListChooserDelegate owner;
         List<McAttachment> AttachmentsList = new List<McAttachment> ();
 
         UILabel attachedLabel;
-        UIButton addAttachmentsButton;
-        UIView addButtonView;
         UIView addAttachmentView;
 
-        const int ADD_BUTTON_VIEW_TAG = 101;
-        const int ATTACHED_LABEL_TAG = 102;
-        const int ATTACHMENTS_TABLE_TAG = 103;
-        const int ADD_ATTACHMENT_BUTTON_TAG = 104;
-
-        protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
-
-        public void SetOwner (INachoAttachmentListChooserDelegate owner, List<McAttachment> attachments, McAbstrCalendarRoot c)
+        public void SetAttachments (List<McAttachment> attachments)
         {
-            this.owner = owner;
             this.AttachmentsList = attachments;
-            this.c = c;
-            //this.editing = editing;
         }
 
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-
-            account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
             attachmentSource = new AttachmentTableViewSource ();
-            attachmentSource.SetOwner (this);
 
             CreateEventAttachmentView ();
-
-            if ((0 == this.AttachmentsList.Count) && editing) {
-                PerformSegue ("EventAttachmentsToAddAttachment", this);
-            }
         }
 
         public override void ViewWillAppear (bool animated)
@@ -68,7 +45,6 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
-            LoadAttachments ();
             ConfigureEventAttachmentView ();
         }
 
@@ -81,9 +57,6 @@ namespace NachoClient.iOS
         public override void ViewWillDisappear (bool animated)
         {
             base.ViewWillDisappear (animated);
-            if (editing && null != owner) {
-                owner.UpdateAttachmentList (this.AttachmentsList);
-            }
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
         }
 
@@ -91,48 +64,6 @@ namespace NachoClient.iOS
             get {
                 return this.NavigationController.TopViewController == this;
             }
-        }
-
-        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
-        {
-            if (segue.Identifier.Equals ("EventAttachmentToFiles")) {
-                var dc = (AttachmentsViewController)segue.DestinationViewController;
-                dc.SetOwner (this);
-                dc.SetModal (true);
-                return;
-            }
-
-            if (segue.Identifier.Equals ("EventAttachmentsToAddAttachment")) {
-                var dc = (AddAttachmentViewController)segue.DestinationViewController;
-                return;
-            }
-                
-            Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
-            NcAssert.CaseError ();
-        }
-
-        public void LoadAttachments ()
-        {
-            NachoCore.Utils.NcAbate.HighPriority ("EventAttachmentViewController LoadAttachments");
-            attachmentSource.SetAttachmentList (this.AttachmentsList);
-            attachmentSource.SetAccount (account);
-            attachmentSource.SetEditing (editing);
-            attachmentSource.SetVC (this);
-            tableView.ReloadData ();
-            NachoCore.Utils.NcAbate.RegularPriority ("EventAttachmentViewController LoadAttachments");
-        }
-
-        public void SetAttachmentsList (List<McAttachment> attachments)
-        {
-            this.AttachmentsList = new List<McAttachment> ();
-            foreach (var attachment in attachments) {
-                this.AttachmentsList.Add (attachment);
-            }
-        }
-
-        public List<McAttachment> GetAttachmentsList ()
-        {
-            return this.AttachmentsList;
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
@@ -148,304 +79,36 @@ namespace NachoClient.iOS
         {
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
 
-            float yOffset = 0f;
-
-            addAttachmentView = new UIView (new RectangleF (15, 20, View.Frame.Width - 30, 50));
-            addAttachmentView.Tag = ADD_BUTTON_VIEW_TAG;
+            addAttachmentView = new UIView (new RectangleF (A.Card_Horizontal_Indent, A.Card_Vertical_Indent, View.Frame.Width - 30, View.Frame.Height - (2 * A.Card_Vertical_Indent) - 64));
             addAttachmentView.BackgroundColor = UIColor.White;
-            addAttachmentView.Layer.CornerRadius = 6;
+            addAttachmentView.Layer.CornerRadius = A.Card_Corner_Radius;
+            addAttachmentView.Layer.BorderColor = A.Card_Border_Color;
+            addAttachmentView.Layer.BorderWidth = A.Card_Border_Width;
             View.AddSubview (addAttachmentView);
 
             attachedLabel = new UILabel (new RectangleF (15, 12, 100, 20));
-            attachedLabel.Tag = ATTACHED_LABEL_TAG;
-            attachedLabel.Text = "Attachments:";
+            attachedLabel.Text = "Attached:";
             attachedLabel.Font = A.Font_AvenirNextMedium14;
             attachedLabel.TextColor = A.Color_NachoTextGray;
             addAttachmentView.AddSubview (attachedLabel);
 
-            addAttachmentsButton = new UIButton (UIButtonType.System);
-            Util.SetOriginalImagesForButton (addAttachmentsButton, "email-add", "email-add-active");
-            addAttachmentsButton.SizeToFit ();
-            addAttachmentsButton.TouchUpInside += attachmentButtonClicked;
-            addAttachmentsButton.Tag = ADD_ATTACHMENT_BUTTON_TAG;
-            addAttachmentsButton.Frame = new RectangleF (addAttachmentView.Frame.Width - addAttachmentsButton.Frame.Width - 15, 0, addAttachmentsButton.Frame.Width, 44);
-            addAttachmentsButton.Hidden = true;
-            addAttachmentView.AddSubview (addAttachmentsButton);
-
             Util.AddHorizontalLine (0, 43, addAttachmentView.Frame.Width, A.Color_NachoBorderGray, addAttachmentView);
 
-
-            addButtonView = new UIView (new RectangleF (15, 210, View.Frame.Width - 30, 44));
-            addButtonView.Tag = ADD_BUTTON_VIEW_TAG;
-            addButtonView.BackgroundColor = UIColor.White;
-            addButtonView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
-            addButtonView.Layer.BorderWidth = .5f;
-            addButtonView.Layer.CornerRadius = 6;
-            addButtonView.Hidden = true;
-
-            UIButton addPhotoButton = new UIButton (UIButtonType.RoundedRect);
-            addPhotoButton.TintColor = A.Color_NachoIconGray;
-            addPhotoButton.TouchUpInside += (object sender, EventArgs e) => {
-                SetupPhotoPicker ();
-            };
-            addPhotoButton.SetTitle ("+", UIControlState.Normal);
-            addPhotoButton.TitleEdgeInsets = new UIEdgeInsets (-2f, -52f, 0f, 0f);
-            addPhotoButton.SetImage (UIImage.FromBundle ("icn-photos"), UIControlState.Normal);
-
-            addPhotoButton.Frame = new RectangleF (0, 0, View.Frame.Width / 2, 44);
-            addButtonView.AddSubview (addPhotoButton);
-
-            UIButton addAttachmentButton = new UIButton (UIButtonType.RoundedRect);
-            addAttachmentButton.TintColor = A.Color_NachoIconGray;
-            addAttachmentButton.TouchUpInside += (object sender, EventArgs e) => {
-                PerformSegue ("EventAttachmentToFiles", this);
-            };
-            addAttachmentButton.SetTitle ("+", UIControlState.Normal);
-            addAttachmentButton.TitleEdgeInsets = new UIEdgeInsets (-2f, -52f, 0f, 0f);
-            addAttachmentButton.SetImage (UIImage.FromBundle ("icn-attach-files"), UIControlState.Normal);
-            addAttachmentButton.Frame = new RectangleF (addButtonView.Frame.Width / 2, 0, View.Frame.Width / 2, 44);
-            addButtonView.AddSubview (addAttachmentButton);
-
-            Util.AddVerticalLine (addButtonView.Frame.Width / 2, 6, 32, A.Color_NachoBorderGray, addButtonView);
-
-            tableView = new UITableView (new RectangleF (15, 64, View.Frame.Width - 30, View.Frame.Height - yOffset), UITableViewStyle.Plain);
+            tableView = new UITableView (new RectangleF (16, 64, View.Frame.Width - 32, addAttachmentView.Frame.Height - 48), UITableViewStyle.Plain);
             tableView.SeparatorColor = UIColor.Clear;
             tableView.BackgroundColor = UIColor.White;
-            tableView.Tag = ATTACHMENTS_TABLE_TAG;
             tableView.Source = attachmentSource;
             View.AddSubview (tableView);
 
             View.BackgroundColor = A.Color_NachoBackgroundGray;
-
-            //View.AddSubview (addButtonView);
-
         }
 
         protected void ConfigureEventAttachmentView ()
         {
-            if (editing) {
-                addButtonView.Hidden = false;
-                attachedLabel.Hidden = false;
-                addAttachmentsButton.Hidden = false;
-
-
-            } 
-            NavigationItem.Title = "";
+            NavigationItem.Title = "Attachments";
             attachmentSource.SetAttachmentList (this.AttachmentsList);
+            attachmentSource.SetVC (this);
             tableView.ReloadData ();
-
-            LayoutView ();
         }
-
-        protected void LayoutView ()
-        {
-            //var yOffset = 0f;
-
-//            if (editing) {
-//                yOffset += 20;
-//                var abv = View.ViewWithTag (ADD_BUTTON_VIEW_TAG) as UIView;
-//                abv.Frame = new RectangleF (15, yOffset, View.Frame.Width - 30, 44);
-//                yOffset += abv.Frame.Height;
-//                yOffset += 20;
-//
-//                var al = View.ViewWithTag (ATTACHED_LABEL_TAG) as UILabel;
-//                al.Frame = new RectangleF (15, yOffset, 160, al.Frame.Height);
-//                yOffset += al.Frame.Height;
-//                yOffset += 9;
-//            }
-//
-//            var at = View.ViewWithTag (ATTACHMENTS_TABLE_TAG) as UITableView;
-//            at.Frame = new RectangleF (0, yOffset, View.Frame.Width, View.Frame.Height - yOffset);
-        }
-
-        protected void attachmentButtonClicked (object sender, EventArgs e)
-        {
-            PerformSegue ("EventAttachmentToFiles", this);
-            //PerformSegue ("EventAttachmentsToAddAttachment", this);
-        }
-
-        protected void AttachFileActionSheet ()
-        {
-            var actionSheet = new UIActionSheet ();
-            actionSheet.Add ("Add Photo");
-            actionSheet.Add ("Add Attachment");
-            actionSheet.Add ("Cancel");
-            actionSheet.CancelButtonIndex = 2;
-
-            actionSheet.Clicked += delegate(object sender, UIButtonEventArgs b) {
-                switch (b.ButtonIndex) {
-                case 0:
-                    SetupPhotoPicker ();
-                    break; 
-                case 1:
-                    if (null != owner) {
-                        PerformSegue ("EventAttachmentToFiles", this);
-                    }
-                    break;
-                case 2:
-
-                    break;// Cancel
-                default:
-                    NcAssert.CaseError ();
-                    break;
-                }
-            };
-            actionSheet.ShowInView (View);
-        }
-
-        public void SetupPhotoPicker ()
-        {
-            var imagePicker = new UIImagePickerController ();
-            imagePicker.SourceType = UIImagePickerControllerSourceType.PhotoLibrary;
-            imagePicker.FinishedPickingMedia += Handle_FinishedPickingMedia;
-            imagePicker.Canceled += Handle_Canceled;
-            imagePicker.ModalPresentationStyle = UIModalPresentationStyle.CurrentContext;
-            this.PresentViewController (imagePicker, true, null);
-        }
-
-        protected void Handle_Canceled (object sender, EventArgs e)
-        {
-            var imagePicker = sender as UIImagePickerController;
-            imagePicker.DismissViewController (true, null);
-        }
-
-        protected void Handle_FinishedPickingMedia (object sender, UIImagePickerMediaPickedEventArgs e)
-        {
-            var imagePicker = sender as UIImagePickerController;
-
-            bool isImage = false;
-            switch (e.Info [UIImagePickerController.MediaType].ToString ()) {
-            case "public.image":
-                isImage = true;
-                break;
-            case "public.video":
-                // TODO: Implement videos
-                Log.Info (Log.LOG_UI, "video ignored");
-                break;
-            default:
-                // TODO: Implement videos
-                Log.Error (Log.LOG_UI, "unknown media type selected");
-                break;
-            }
-
-            if (isImage) {
-                var image = e.Info [UIImagePickerController.EditedImage] as UIImage;
-                if (null == image) {
-                    image = e.Info [UIImagePickerController.OriginalImage] as UIImage;
-                }
-                NcAssert.True (null != image);
-                var attachment = McAttachment.InsertFile (account.Id, ((FileStream stream) => {
-                    using (var jpg = image.AsJPEG ().AsStream ()) {
-                        jpg.CopyTo (stream);
-                    }
-                }));
-                attachment.SetDisplayName (attachment.Id.ToString () + ".jpg");
-                attachment.UpdateSaveFinish ();
-                AttachmentsList.Add (attachment);
-            }
-
-            e.Info.Dispose ();
-            imagePicker.DismissViewController (true, null);
-        }
-
-        public void RemoveAttachment (McAttachment attachment)
-        {
-            List<McAttachment> tempList = new List<McAttachment> ();
-            foreach (var a in AttachmentsList) {
-                if (a.Id != attachment.Id) {
-                    tempList.Add (a);
-                }
-            }
-            AttachmentsList = tempList;
-            ConfigureEventAttachmentView ();
-        }
-
-        public void DeleteEmailAddress (NcEmailAddress address)
-        {
-            NcAssert.CaseError ();
-        }
-
-        public void DismissINachoContactChooser (INachoContactChooser vc)
-        {
-            NcAssert.CaseError ();
-        }
-
-        /// IContactsTableViewSourceDelegate
-        public void PerformSegueForDelegate (string identifier, NSObject sender)
-        {
-            PerformSegue (identifier, sender);
-        }
-
-        /// IContactsTableViewSourceDelegate
-        public void ContactSelectedCallback (McContact contact)
-        {
-            PerformSegue ("ContactsToContactDetail", new SegueHolder (contact));
-        }
-
-        /// <summary>
-        /// INachoFileChooserParent delegate
-        /// </summary>
-        public void SelectFile (INachoFileChooser vc, McAbstrObject obj)
-        {
-            var a = obj as McAttachment;
-            if (null != a) {
-                AttachmentsList.Add (a);
-                vc.DismissFileChooser (true, null);
-                ConfigureEventAttachmentView ();
-                return;
-            }
-
-            var file = obj as McDocument;
-            if (null != file) {
-                var attachment = McAttachment.InsertSaveStart (account.Id);
-                attachment.SetDisplayName (file.DisplayName);
-                attachment.IsInline = true;
-                attachment.UpdateFileCopy (file.GetFilePath ());
-                AttachmentsList.Add (attachment);
-                vc.DismissFileChooser (true, null);
-                ConfigureEventAttachmentView ();
-                return;
-            }
-
-            var note = obj as McNote;
-            if (null != note) {
-                var attachment = McAttachment.InsertSaveStart (account.Id);
-                attachment.SetDisplayName (note.DisplayName + ".txt");
-                attachment.IsInline = true;
-                attachment.UpdateData (note.noteContent);
-                AttachmentsList.Add (attachment);
-                vc.DismissFileChooser (true, null);
-                ConfigureEventAttachmentView ();
-                return;
-            }
-
-            NcAssert.CaseError ();
-        }
-
-        /// <summary>
-        /// INachoFileChooserParent delegate
-        /// </summary>
-        public void DismissChildFileChooser (INachoFileChooser vc)
-        {
-            vc.DismissFileChooser (true, null);
-        }
-
-        /// <summary>
-        /// INachoFileChooserParent delegate
-        /// </summary>
-        public void Append (McAttachment attachment)
-        {
-
-        }
-
-        /// <summary>
-        /// INachoFileChooserParent delegate
-        /// </summary>
-        public void DismissPhotoPicker ()
-        {
-
-        }
-
     }
-
 }

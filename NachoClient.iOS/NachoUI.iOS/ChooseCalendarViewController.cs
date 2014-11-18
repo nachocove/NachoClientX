@@ -10,21 +10,16 @@ using System.Drawing;
 using System.Collections.Generic;
 
 using NachoCore;
+using NachoCore.Model;
 
 namespace NachoClient.iOS
 {
-    public partial class ChooseCalendarViewController : NcUIViewController
+    public partial class ChooseCalendarViewController : NcUIViewControllerNoLeaks
     {
 
         protected NachoFolders Calendars;
         protected int selectedCalIndex = 0;
-
-        UIColor separatorColor = A.Color_NachoBorderGray;
-        protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
-        protected int LINE_OFFSET = 30;
-        protected int CELL_HEIGHT = 44;
-        protected float TEXT_LINE_HEIGHT = 19.124f;
-        UIColor solidTextColor = A.Color_NachoBlack;
+        List<McFolder> calFolderList = new List<McFolder>(); 
 
         public ChooseCalendarViewController (IntPtr handle) : base (handle)
         {
@@ -33,6 +28,12 @@ namespace NachoClient.iOS
         public void SetCalendars (NachoFolders calendars)
         {
             this.Calendars = calendars;
+            int i = 0;
+            while (i < this.Calendars.Count ()) {
+                McFolder c = Calendars.GetFolder (i);
+                calFolderList.Add (c);
+                i++;
+            }
         }
 
         public int GetCalIndex ()
@@ -40,13 +41,9 @@ namespace NachoClient.iOS
             return this.selectedCalIndex;
         }
 
-        public override void ViewDidLoad ()
+        public void SetSelectedCalIndex (int selectedIndex)
         {
-            base.ViewDidLoad ();
-
-            CreateCalendarView ();
-            ConfigureCalendarView ();
-
+            this.selectedCalIndex = selectedIndex;
         }
 
         public override bool HidesBottomBarWhenPushed {
@@ -54,87 +51,102 @@ namespace NachoClient.iOS
                 return this.NavigationController.TopViewController == this;
             }
         }
-            
-        protected void CreateCalendarView ()
-        {
 
+        UITableView tableView;
+        CalendarChoicesSource source;
+
+        public override void ViewDidLoad ()
+        {
+            base.ViewDidLoad ();
+            CreateViewHierarchy ();
+        }
+
+        protected override void CreateViewHierarchy ()
+        {
             NavigationItem.Title = "Calendars";
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
 
-            AddCalLine (0, LINE_OFFSET, SCREEN_WIDTH, separatorColor);
-            int i = 0;
-            while (i < Calendars.Count ()) {
-                var c = Calendars.GetFolder (i);
-                // TODO: Get color from calendar
-                MakeCalCheckCell (100 + i, c.DisplayName, 0f, LINE_OFFSET + (CELL_HEIGHT * i), SCREEN_WIDTH, CELL_HEIGHT);
-                AddCalLine (0, LINE_OFFSET + (CELL_HEIGHT * i), SCREEN_WIDTH, separatorColor);
-                i++;
+            tableView = new UITableView (View.Frame, UITableViewStyle.Grouped);
+            tableView.ScrollEnabled = true;
+            source = new CalendarChoicesSource (this, calFolderList);
+            tableView.Source = source;
+
+            View.Add (tableView);
+        }
+
+        public override void ViewWillAppear (bool animated)
+        {
+            base.ViewWillAppear (animated);
+        }
+
+        protected override void ConfigureAndLayout ()
+        {
+        }
+
+        protected override void Cleanup ()
+        {
+            tableView.Source = null;
+            tableView.Dispose ();
+            tableView = null;
+            source = null;
+        }
+
+        public void Done ()
+        {
+            NavigationController.PopViewControllerAnimated (true);
+        }
+
+        protected class CalendarChoicesSource : UITableViewSource
+        {
+            ChooseCalendarViewController owner;
+            List<McFolder> calFolderList = new List<McFolder>(); 
+
+            public CalendarChoicesSource (ChooseCalendarViewController owner, List<McFolder> calFolderList)
+            {
+                this.owner = owner;
+                this.calFolderList = calFolderList;
             }
 
-            //Content View
-            contentView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, (LINE_OFFSET * 3) + (CELL_HEIGHT * (Calendars.Count () + 1)));
-            contentView.BackgroundColor = A.Color_NachoNowBackground;
+            public override int NumberOfSections (UITableView tableView)
+            {
+                return 1;
+            }
 
-            //Scroll View
-            scrollView.BackgroundColor = A.Color_NachoNowBackground;
-            scrollView.ContentSize = new SizeF (SCREEN_WIDTH, (LINE_OFFSET * 3) + (CELL_HEIGHT * (Calendars.Count () + 1)));
+            public override int RowsInSection (UITableView tableview, int section)
+            {
+                return this.calFolderList.Count;
+            }
 
-        }
+            public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
+            {
+                const string cellId = "Choice";
 
-        protected void ConfigureCalendarView ()
-        {
-            contentView.ViewWithTag (100 + selectedCalIndex).ViewWithTag (200 + selectedCalIndex).Hidden = false;
-        }
+                var cell = tableView.DequeueReusableCell (cellId);
+                if (null == cell) {
+                    cell = new UITableViewCell (UITableViewCellStyle.Default, cellId);
+                    if (indexPath.Row == owner.selectedCalIndex) {
+                        using (var image = UIImage.FromBundle ("gen-checkbox-checked")) {
+                            cell.ImageView.Image = image;
+                        }
+                    } else {
+                        using (var image = UIImage.FromBundle ("gen-checkbox")) {
+                            cell.ImageView.Image = image;
+                        }
+                    }
+                    cell.TextLabel.TextColor = A.Color_NachoDarkText;
+                    cell.TextLabel.Font = A.Font_AvenirNextMedium14;
+                    cell.SelectionStyle = UITableViewCellSelectionStyle.Default;
+                }
+                cell.TextLabel.Text = calFolderList[indexPath.Row].DisplayName;
+                return cell;
+            }
 
-        public void AddCalLine (float offset, float yVal, float width, UIColor color)
-        {
-            var lineUIView = new UIView (new RectangleF (offset, yVal, width, .5f));
-            lineUIView.BackgroundColor = color;
-            contentView.AddSubview (lineUIView);
-        }
-
-        public void MakeCalCheckCell (int tag, string label, float X, float Y, float Width, float Height)
-        {
-            UIView CheckCell = new UIView (new RectangleF (X, Y, Width, Height));
-            CheckCell.BackgroundColor = UIColor.White;
-
-
-            UILabel textLabel = new UILabel (new RectangleF (15, 12.438f, SCREEN_WIDTH / 2, TEXT_LINE_HEIGHT));
-            textLabel.Text = label;
-            textLabel.Font = A.Font_AvenirNextRegular14;
-            textLabel.TextColor = solidTextColor;
-            CheckCell.AddSubview (textLabel);
-
-            UIImageView cellImage = new UIImageView (new RectangleF (SCREEN_WIDTH - 30, 14.5f, 15, 15));
-            cellImage.Image = Util.MakeCheckmark (A.Color_NachoBlue);
-            CheckCell.AddSubview (cellImage);
-            cellImage.Tag = tag + 100;
-            CheckCell.Tag = tag;
-
-            var Tap = new UITapGestureRecognizer ();
-            Tap.AddTarget (() => {
-                if (cellImage.Hidden) {
-                    ToggleChecks ();
-                    cellImage.Hidden = false;
-                    selectedCalIndex = CheckCell.Tag - 100;
-                } 
-                NavigationController.PopViewControllerAnimated (true);
-            });
-            CheckCell.AddGestureRecognizer (Tap);
-            cellImage.Hidden = true;
-
-            contentView.AddSubview (CheckCell);
-        }
-
-        public void ToggleChecks ()
-        {
-            int i = 0;
-            while (i < Calendars.Count()) {
-                contentView.ViewWithTag (100 + i).ViewWithTag (200 + i).Hidden = true;
-                i++;
+            public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
+            {
+                owner.SetSelectedCalIndex (indexPath.Row);
+                tableView.DeselectRow (indexPath, true);
+                owner.Done ();
             }
         }
-            
     }
 }
-

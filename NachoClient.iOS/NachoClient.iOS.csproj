@@ -1429,7 +1429,6 @@
     <BundleResource Include="Resources\email-archive%402x.png" />
     <BundleResource Include="Resources\email-calendartime%402x.png" />
     <BundleResource Include="Resources\email-defer%402x.png" />
-    <BundleResource Include="Resources\email-delete%402x.png" />
     <BundleResource Include="Resources\email-fileinfolder%402x.png" />
     <BundleResource Include="Resources\email-folder%402x.png" />
     <BundleResource Include="Resources\email-putintofolder%402x.png" />

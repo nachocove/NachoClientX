@@ -328,7 +328,7 @@ namespace NachoClient.iOS
                 var holder = sender as SegueHolder;
                 selectedNote = (McNote)holder.value;
 
-                dc.SetOwner (this);
+                dc.SetOwner (this, true);
                 return;
             }
 

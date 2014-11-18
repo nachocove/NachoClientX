@@ -18,9 +18,6 @@ namespace NachoClient.iOS
     public class AttachmentTableViewSource : UITableViewSource
     {
         List<McAttachment> AttachmentsList = new List<McAttachment> ();
-        protected McAccount Account;
-        protected bool editing = false;
-        public IAttachmentTableViewSourceDelegate owner;
         public UIViewController vc;
 
         protected const string AttachmentCellReuseIdentifier = "AttachmentCell";
@@ -28,7 +25,6 @@ namespace NachoClient.iOS
         protected UIColor CELL_COMPONENT_BG_COLOR = UIColor.White;
         protected const int VIEW_TAG = 99100;
 
-        protected static int REMOVE_BUTTON_TAG = 100;
         protected static int ICON_TAG = 150;
         protected static int TEXT_LABEL_TAG = 300;
         protected static int DETAIL_TEXT_LABEL_TAG = 400;
@@ -36,12 +32,6 @@ namespace NachoClient.iOS
 
         public AttachmentTableViewSource ()
         {
-            owner = null;
-        }
-
-        public void SetOwner (IAttachmentTableViewSourceDelegate owner)
-        {
-            this.owner = owner;
         }
 
         public void SetVC (UIViewController vc)
@@ -55,21 +45,6 @@ namespace NachoClient.iOS
             foreach (var attachment in attachments) {
                 this.AttachmentsList.Add (attachment);
             }
-        }
-
-        public void SetAccount (McAccount account)
-        {
-            this.Account = account;
-        }
-
-        public void SetEditing (bool editing)
-        {
-            this.editing = editing;
-        }
-
-        public List<McAttachment> GetAttachmentList ()
-        {
-            return this.AttachmentsList;
         }
 
         /// <summary>
@@ -129,13 +104,6 @@ namespace NachoClient.iOS
             view.Tag = VIEW_TAG;
             view.BackgroundColor = CELL_COMPONENT_BG_COLOR;
 
-            //Remove icon
-            var removeButton = new UIButton ();
-            removeButton.Tag = REMOVE_BUTTON_TAG;
-            removeButton.Frame = new RectangleF (18, (view.Frame.Height / 2) - 8, 16, 16);
-            removeButton.Hidden = true;
-            view.AddSubview (removeButton);
-
             //Cell icon
             var cellIconImageView = new UIImageView (); 
             cellIconImageView.Tag = ICON_TAG;
@@ -176,20 +144,6 @@ namespace NachoClient.iOS
             float xOffset = 0f;
 
             var view = cell.ViewWithTag (VIEW_TAG);
-
-            //Remove icon
-            var RemoveButton = view.ViewWithTag (REMOVE_BUTTON_TAG) as UIButton;
-            if (editing) {
-                xOffset = 34;
-                RemoveButton.Hidden = false;
-                RemoveButton.SetImage (UIImage.FromBundle ("gen-delete-small"), UIControlState.Normal);
-                RemoveButton.TouchUpInside += (object sender, EventArgs e) => {
-                    RemoveAttachment(attachment);
-                };
-            } else {
-                RemoveButton.Hidden = true;
-                xOffset = 0;
-            }
 
             //Cell icon
             var cellIconImageView = view.ViewWithTag (ICON_TAG) as UIImageView;
@@ -241,7 +195,7 @@ namespace NachoClient.iOS
                 } 
                 detailTextLabel.Text = detailText;
 
-                if (Pretty.TreatLikeAPhoto(attachment.DisplayName)) {
+                if (Pretty.TreatLikeAPhoto (attachment.DisplayName)) {
                     iconView.Image = UIImage.FromBundle ("email-att-photos");
                 } else {
                     iconView.Image = UIImage.FromBundle ("email-att-files");
@@ -249,11 +203,6 @@ namespace NachoClient.iOS
             } else {
                 textLabel.Text = "File no longer exists"; 
             }
-        }
-
-        public void RemoveAttachment (McAttachment attachment)
-        {
-            owner.RemoveAttachment (attachment);
         }
 
         public override void DraggingStarted (UIScrollView scrollView)

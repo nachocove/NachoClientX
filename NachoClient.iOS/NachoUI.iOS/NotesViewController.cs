@@ -22,6 +22,7 @@ namespace NachoClient.iOS
         }
 
         protected INachoNotesControllerParent Owner;
+        protected bool SupressAutoDate;
         protected McAccount account;
         UIColor separatorColor = A.Color_NachoBorderGray;
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
@@ -74,14 +75,19 @@ namespace NachoClient.iOS
         {
             base.ViewWillDisappear (animated);
 
-            if ((embeddedDateString + originalNote) != notesTextView.Text) {
+            if (SupressAutoDate) {
                 Owner.SaveNote (account.Id, notesTextView.Text);
+            } else {
+                if ((embeddedDateString + originalNote) != notesTextView.Text) {
+                    Owner.SaveNote (account.Id, notesTextView.Text);
+                }
             }
         }
 
-        public void SetOwner (INachoNotesControllerParent owner)
+        public void SetOwner (INachoNotesControllerParent owner, bool supressAutoDate)
         {
             this.Owner = owner;
+            this.SupressAutoDate = supressAutoDate;
         }
 
         protected void CreateNotesView ()
@@ -132,8 +138,12 @@ namespace NachoClient.iOS
 
         public void ConfigureNotesView ()
         {
-            notesTextView.Text = embeddedDateString + Owner.GetNoteText ();
-            notesTextView.SelectedRange = new NSRange (DateTime.Now.ToShortDateString().Length + 1, 0);
+            if (SupressAutoDate) {
+                notesTextView.Text = Owner.GetNoteText ();
+            } else {
+                notesTextView.Text = embeddedDateString + Owner.GetNoteText ();
+                notesTextView.SelectedRange = new NSRange (DateTime.Now.ToShortDateString ().Length + 1, 0);
+            }
 
             //date
             var dateDetailLabel = contentView.ViewWithTag (DATE_DETAIL_TAG) as UILabel;

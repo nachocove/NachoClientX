@@ -33,8 +33,7 @@ namespace NachoClient.iOS
 
         protected override void CreateViewHierarchy ()
         {
-            tableView = new UITableView (View.Frame, UITableViewStyle.Plain);
-            tableView.ScrollEnabled = false;
+            tableView = new UITableView (View.Frame, UITableViewStyle.Grouped);
             source = new AlertChoicesSource (this);
             tableView.Source = source;
 
@@ -47,8 +46,6 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-            var index = source.IndexOfSelection ();
-            tableView.SelectRow (NSIndexPath.FromRowSection (index, 0), false, UITableViewScrollPosition.None);
         }
 
         protected override void ConfigureAndLayout ()
@@ -113,13 +110,18 @@ namespace NachoClient.iOS
                 if (!owner.reminderIsSet) {
                     return 0;
                 }
-                for (var i = 0; i < choices.Count; i++) {
+                for (var i = 1; i < choices.Count; i++) {
                     if (owner.reminder == choices [i]) {
                         return i;
                     }
                 }
                 NcAssert.CaseError ();
                 return 0;
+            }
+
+            public override int NumberOfSections (UITableView tableView)
+            {
+                return 1;
             }
 
             public override int RowsInSection (UITableView tableview, int section)
@@ -134,13 +136,17 @@ namespace NachoClient.iOS
                 var cell = tableView.DequeueReusableCell (cellId);
                 if (null == cell) {
                     cell = new UITableViewCell (UITableViewCellStyle.Default, cellId);
-                    using (var image = UIImage.FromBundle ("gen-checkbox")) {
-                        cell.ImageView.Image = image;
+                    if (indexPath.Row == IndexOfSelection()) {
+                        using (var image = UIImage.FromBundle ("gen-checkbox-checked")) {
+                            cell.ImageView.Image = image;
+                        }
+                    } else {
+                        using (var image = UIImage.FromBundle ("gen-checkbox")) {
+                            cell.ImageView.Image = image;
+                        }
                     }
-                    using (var highlightedImage = UIImage.FromBundle ("gen-checkbox-checked")) {
-                        cell.ImageView.HighlightedImage = highlightedImage;
-                    }
-                    cell.TextLabel.TextColor = UIColor.Black;
+                    cell.TextLabel.TextColor = A.Color_NachoDarkText;
+                    cell.TextLabel.Font = A.Font_AvenirNextMedium14;
                     cell.SelectionStyle = UITableViewCellSelectionStyle.Default;
                 }
                 cell.TextLabel.Text = Pretty.ReminderString (0 != indexPath.Row, choices [indexPath.Row]);

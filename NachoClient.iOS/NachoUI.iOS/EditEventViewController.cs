@@ -371,7 +371,7 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("EditEventToCalendarChooser")) {
                 var dc = (ChooseCalendarViewController)segue.DestinationViewController;
                 dc.SetCalendars (calendars);
-                ExtractValues ();
+                dc.SetSelectedCalIndex (calendarIndex);
                 dc.ViewDisappearing += (object s, EventArgs e) => {
                     calendarIndex = dc.GetCalIndex ();
                     ConfigureEditEventView ();
@@ -673,7 +673,7 @@ namespace NachoClient.iOS
             locationView = new UIView (new RectangleF (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 5) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
             locationView.BackgroundColor = UIColor.White;
 
-            locationField = new UITextField (new RectangleF (15, 12.438f, SCREEN_WIDTH - 52, TEXT_LINE_HEIGHT));
+            locationField = new UITextField (new RectangleF (15, 12.438f, SCREEN_WIDTH - 24, TEXT_LINE_HEIGHT));
             locationField.Font = labelFont;
             locationField.TextColor = solidTextColor;
             locationField.Tag = EVENT_LOCATION_DETAIL_LABEL_TAG;
@@ -730,8 +730,9 @@ namespace NachoClient.iOS
             peopleView = new UIView (new RectangleF (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 8) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
             peopleView.BackgroundColor = CELL_COMPONENT_BG_COLOR;
 
-            UILabel peopleLabel = new UILabel (new RectangleF (15, 12.438f, 75, TEXT_LINE_HEIGHT));
-            peopleLabel.Text = "Attendees";
+            UILabel peopleLabel = new UILabel (new RectangleF (15, 12.438f, 200, TEXT_LINE_HEIGHT));
+            peopleLabel.Text = "Attendees (0)";
+            peopleLabel.Tag = PEOPLE_DETAIL_TAG;
             peopleLabel.Font = labelFont;
             peopleLabel.TextColor = solidTextColor;
             peopleView.AddSubview (peopleLabel);
@@ -742,19 +743,9 @@ namespace NachoClient.iOS
             addPeopleButton.TouchUpInside += (object sender, EventArgs e) => {
                 PerformSegue ("EditEventToEventAttendees", this);
             };
-            //addAttachmentsButton.Tag = ADD_ATTACHMENT_BUTTON_TAG;
+
             addPeopleButton.Frame = new RectangleF (peopleView.Frame.Width - addPeopleButton.Frame.Width - 15, 0, addPeopleButton.Frame.Width, 44);
             peopleView.AddSubview (addPeopleButton);
-
-//            UILabel peopleDetailLabel = new UILabel ();
-//            peopleDetailLabel.Text = "(" + c.attendees.Count + ")";
-//            peopleDetailLabel.Tag = PEOPLE_DETAIL_TAG;
-//            peopleDetailLabel.SizeToFit ();
-//            peopleDetailLabel.TextAlignment = UITextAlignment.Right;
-//            peopleDetailLabel.Frame = new RectangleF (SCREEN_WIDTH - peopleDetailLabel.Frame.Width - 34, 12.438f, peopleDetailLabel.Frame.Width, TEXT_LINE_HEIGHT);
-//            peopleDetailLabel.Font = labelFont;
-//            peopleDetailLabel.TextColor = A.Color_808080;
-//            peopleView.AddSubview (peopleDetailLabel);
 
             var peopleTap = new UITapGestureRecognizer ();
             peopleTap.AddTarget (() => {
@@ -770,7 +761,7 @@ namespace NachoClient.iOS
             Util.AddArrowAccessory (SCREEN_WIDTH - 15 - 12, CELL_HEIGHT / 2 - 6, 12, alertsView);
 
             UILabel alertsLabel = new UILabel (new RectangleF (15, 12.438f, 70, TEXT_LINE_HEIGHT));
-            alertsLabel.Text = "Add Alert";
+            alertsLabel.Text = "Reminder";
             alertsLabel.Font = labelFont;
             alertsLabel.TextColor = solidTextColor;
             alertsView.AddSubview (alertsLabel);
@@ -804,11 +795,8 @@ namespace NachoClient.iOS
             Util.AddArrowAccessory (SCREEN_WIDTH - 15 - 12, CELL_HEIGHT / 2 - 6, 12, calendarView);
 
             UILabel calendarDetailLabel = new UILabel ();
-            calendarDetailLabel.Text = "Calendar";
-            calendarDetailLabel.Tag = PEOPLE_DETAIL_TAG;
-            calendarDetailLabel.SizeToFit ();
+            calendarDetailLabel.Tag = CAL_DETAIL_TAG;
             calendarDetailLabel.TextAlignment = UITextAlignment.Right;
-            calendarDetailLabel.Frame = new RectangleF (SCREEN_WIDTH - calendarDetailLabel.Frame.Width - 34, 12.438f, calendarDetailLabel.Frame.Width, TEXT_LINE_HEIGHT);
             calendarDetailLabel.Font = labelFont;
             calendarDetailLabel.TextColor = A.Color_808080;
             calendarView.AddSubview (calendarDetailLabel);
@@ -978,9 +966,9 @@ namespace NachoClient.iOS
             attachmentView.Hidden = false;
 
             //TODO
-//            //people view
-//            var peopleDetailLabelView = contentView.ViewWithTag (PEOPLE_DETAIL_TAG) as UILabel;
-//            peopleDetailLabelView.Text = "(" + c.attendees.Count () + ")";
+            //people view
+            var peopleDetailLabelView = contentView.ViewWithTag (PEOPLE_DETAIL_TAG) as UILabel;
+            peopleDetailLabelView.Text = "Attendees (" + c.attendees.Count () + ")";
 
             //alert view
             var alertDetailLabelView = contentView.ViewWithTag (ALERT_DETAIL_TAG) as UILabel;
@@ -993,6 +981,12 @@ namespace NachoClient.iOS
             phoneDetailLabelView.Text = TempPhone;
             phoneDetailLabelView.SizeToFit ();
             phoneDetailLabelView.Frame = new RectangleF (SCREEN_WIDTH - phoneDetailLabelView.Frame.Width - 34, 12.438f, phoneDetailLabelView.Frame.Width, TEXT_LINE_HEIGHT);
+
+            //calendar view
+            var calendarDetailLabelView = contentView.ViewWithTag (CAL_DETAIL_TAG) as UILabel;
+            calendarDetailLabelView.Text = (calendars.GetFolder (calendarIndex)).DisplayName;
+            calendarDetailLabelView.SizeToFit ();
+            calendarDetailLabelView.Frame = new RectangleF (SCREEN_WIDTH - calendarDetailLabelView.Frame.Width - 34, 12.438f, calendarDetailLabelView.Frame.Width, TEXT_LINE_HEIGHT);
         }
 
         protected void ConfigureDateView (string command)
