@@ -17,6 +17,8 @@ namespace NachoClient.iOS
     public partial class ContactDefaultSelectionViewController : NcUIViewControllerNoLeaks
     {
         public ContactListViewController owner;
+
+        protected RegexUtilities regexUtil = new RegexUtilities();
         protected const float X_INDENT = 30;
 
         protected const int ADD_NEW_DEFAULT_EMAIL_BUTTON_TAG = 10;
@@ -452,18 +454,26 @@ namespace NachoClient.iOS
         private void SaveAndCompose (object sender, EventArgs e)
         {
             UITextField emailTextField = (UITextField)View.ViewWithTag (EMAIL_TEXTFIELD_TAG);
-            contact.AddEmailAddressAttribute (LoginHelpers.GetCurrentAccountId (), Xml.Contacts.Email1Address, null, emailTextField.Text);
-            contact.Update ();
-            DismissViewController (true, null);
-            owner.PerformSegue ("ContactsToMessageCompose", new SegueHolder (emailTextField.Text));
+            if (regexUtil.IsValidEmail (emailTextField.Text)) {
+                contact.AddEmailAddressAttribute (LoginHelpers.GetCurrentAccountId (), Xml.Contacts.Email1Address, null, emailTextField.Text);
+                contact.Update ();
+                DismissViewController (true, null);
+                owner.PerformSegue ("ContactsToMessageCompose", new SegueHolder (emailTextField.Text));
+            } else {
+                emailTextField.TextColor = A.Color_NachoRed;
+            }
         }
 
         private void AddDefaultEmailAndClose (object sender, EventArgs e)
         {
             UITextField emailTextField = (UITextField)View.ViewWithTag (EMAIL_TEXTFIELD_TAG);
-            contact.AddDefaultEmailAddressAttribute (LoginHelpers.GetCurrentAccountId (), Xml.Contacts.Email1Address, null, emailTextField.Text);
-            contact.Update ();
-            DismissViewController (true, null);
+            if(regexUtil.IsValidEmail(emailTextField.Text)){
+                contact.AddDefaultEmailAddressAttribute (LoginHelpers.GetCurrentAccountId (), Xml.Contacts.Email1Address, null, emailTextField.Text);
+                contact.Update ();
+                DismissViewController (true, null);
+            } else {
+                emailTextField.TextColor = A.Color_NachoRed;
+            }
         }
 
         private void AddDefaultPhoneAndClose (object sender, EventArgs e)
