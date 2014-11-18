@@ -226,7 +226,11 @@ namespace NachoClient.iOS
 
         public void ConfigureView ()
         {
-            mainLabel.Text = String.Format ("Attachments ({0})", list.Count);
+            if (0 == list.Count) {
+                mainLabel.Text = String.Format ("Attachments:", list.Count);
+            } else {
+                mainLabel.Text = String.Format ("Attachments ({0})", list.Count);
+            }
 
             foreach (var c in list) {
                 c.Hidden = isCompact;
