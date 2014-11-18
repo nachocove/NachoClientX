@@ -254,8 +254,6 @@ namespace NachoCore.Model
                 var threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
                 if (50 < threadId) {
                     Log.Error (Log.LOG_DB, "CheckPointTimer: thread {0}", threadId);
-                } else {
-                    Log.Info (Log.LOG_DB, "CheckPointTimer: thread {0}", threadId);
                 }
                 foreach (var db in new List<SQLiteConnection> { Db, TeleDb }) {
                     var thisDb = db;
