@@ -260,6 +260,8 @@ namespace NachoCore.ActiveSync
             OwnerSm = sm;
             HttpOpSm.Name = OwnerSm.Name + ":HTTPOP";
             ServerUri = Owner.ServerUri (this);
+            var servicePoint = ServicePointManager.FindServicePoint (ServerUri);
+            servicePoint.ConnectionLimit = 25;
             HttpOpSm.PostEvent ((uint)SmEvt.E.Launch, "HTTPOPEXE");
         }
 
@@ -740,6 +742,8 @@ namespace NachoCore.ActiveSync
                         var dummy = McServer.Create (BEContext.Account.Id, redirUri);
                         var query = (string.Empty == redirUri.Query) ? ServerUri.Query : redirUri.Query;
                         ServerUri = new Uri (AsCommand.BaseUri (dummy), query);
+                        var servicePoint = ServicePointManager.FindServicePoint (ServerUri);
+                        servicePoint.ConnectionLimit = 25;
                         return Event.Create ((uint)SmEvt.E.Launch, "HTTPOP451C");
                     } catch (Exception ex) {
                         Log.Info (Log.LOG_HTTP, "ProcessHttpResponse {0} {1}: exception {2}", ex, ServerUri, ex.Message);

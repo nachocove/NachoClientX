@@ -83,7 +83,7 @@ namespace NachoCore
         private BackEnd ()
         {
             // Adjust system settings.
-            ServicePointManager.DefaultConnectionLimit = 8;
+            ServicePointManager.DefaultConnectionLimit = 25;
 
             Services = new ConcurrentDictionary<int, ProtoControl> ();
         }
