@@ -172,6 +172,11 @@ namespace NachoCore.ActiveSync
                                 body.Update ();
                             }
                         }
+                        // We are trying to track down why so many message bodies are having download failures.
+                        // Use an error message to make this situation more visible.  Remove this error once
+                        // the problem has been solved.
+                        Log.Error(Log.LOG_AS, "MaybeErrorFileDesc: E-mail ({0} {1}) body download failed. (But we don't know why.)",
+                            xmlServerId.Value, item.Subject);
                     }
                 });
             } else {
