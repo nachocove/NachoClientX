@@ -254,6 +254,7 @@ namespace NachoCore.Utils
             anEvent ["device_model"] = Device.Instance.Model ();
             anEvent ["build_version"] = BuildInfo.Version;
             anEvent ["build_number"] = BuildInfo.BuildNumber;
+            anEvent ["device_id"] = Device.Instance.Identity ();
 
             return AwsSendOneEvent (DeviceInfoTable, anEvent);
         }
