@@ -4,6 +4,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DocumentModel;
@@ -110,7 +111,7 @@ namespace NachoCore.Utils
             return ClientId;
         }
 
-        public bool SendEvent (TelemetryEvent tEvent)
+        public bool SendEvents (List<TelemetryEvent> tEvents)
         {
             if (!Initialized) {
                 if (!SendDeviceInfo ()) {
@@ -119,31 +120,48 @@ namespace NachoCore.Utils
                 Initialized = true;
             }
 
-            Table eventTable = null;
-            Document eventItem = null;
+            var writeDict = new Dictionary<Table, DocumentBatchWrite> ();
+            foreach (var tEvent in tEvents) {
+                Table eventTable = null;
+                Document eventItem = null;
 
-            if (tEvent.IsLogEvent ()) {
-                eventItem = LogEvent (tEvent);
-                eventTable = LogTable;
-            } else if (tEvent.IsSupportEvent ()) {
-                eventItem = SupportEvent (tEvent);
-                eventTable = SupportTable;
-            } else if (tEvent.IsCounterEvent ()) {
-                eventItem = CounterEvent (tEvent);
-                eventTable = CounterTable;
-            } else if (tEvent.IsCaptureEvent ()) {
-                eventItem = CaptureEvent (tEvent);
-                eventTable = CaptureTable;
-            } else if (tEvent.IsUiEvent ()) {
-                eventItem = UiEvent (tEvent);
-                eventTable = UiTable;
-            } else if (tEvent.IsWbxmlEvent()) {
-                eventItem = WbxmlEvent (tEvent);
-                eventTable = WbxmlTable;
-            } else {
-                NcAssert.True (false);
+                if (tEvent.IsLogEvent ()) {
+                    eventItem = LogEvent (tEvent);
+                    eventTable = LogTable;
+                } else if (tEvent.IsSupportEvent ()) {
+                    eventItem = SupportEvent (tEvent);
+                    eventTable = SupportTable;
+                } else if (tEvent.IsCounterEvent ()) {
+                    eventItem = CounterEvent (tEvent);
+                    eventTable = CounterTable;
+                } else if (tEvent.IsCaptureEvent ()) {
+                    eventItem = CaptureEvent (tEvent);
+                    eventTable = CaptureTable;
+                } else if (tEvent.IsUiEvent ()) {
+                    eventItem = UiEvent (tEvent);
+                    eventTable = UiTable;
+                } else if (tEvent.IsWbxmlEvent ()) {
+                    eventItem = WbxmlEvent (tEvent);
+                    eventTable = WbxmlTable;
+                } else {
+                    NcAssert.True (false);
+                }
+
+                // Get the table batch write. Create one if it doesn't exist
+                DocumentBatchWrite batchWrite;
+                if (!writeDict.TryGetValue (eventTable, out batchWrite)) {
+                    batchWrite = new DocumentBatchWrite (eventTable);
+                    writeDict.Add (eventTable, batchWrite);
+                }
+                eventItem ["uploaded_at"] = DateTime.UtcNow.Ticks;
+                batchWrite.AddDocumentToPut (eventItem);
             }
-            return AwsSendEvent (eventTable, eventItem);
+
+            var multiBatchWrite = new MultiTableDocumentBatchWrite ();
+            foreach (var batchWrite in writeDict.Values) {
+                multiBatchWrite.AddBatch (batchWrite);
+            }
+            return AwsSendBatchEvents (multiBatchWrite);
         }
 
         private string TableName (string name)
@@ -162,11 +180,42 @@ namespace NachoCore.Utils
             return anEvent;
         }
 
-        private bool AwsSendEvent (Table eventTable, Document eventItem)
+        private bool AwsSendOneEvent (Table eventTable, Document eventItem)
         {
             try {
                 eventItem ["uploaded_at"] = DateTime.UtcNow.Ticks;
                 var task = eventTable.PutItemAsync (eventItem);
+                task.Wait (NcTask.Cts.Token);
+            }
+            catch (OperationCanceledException) {
+                // Since we are catching Exception below, we must catch and re-throw
+                // or this exception will be swallowed and telemetry task will not exit.
+                throw;
+            }
+            catch (AmazonDynamoDBException e) {
+                Console.WriteLine ("AWS DynamoDB exception {0}", e);
+                ReinitializeTables ();
+                return false;
+            }
+            catch (AmazonServiceException e) {
+                Console.WriteLine ("AWS exception {0}", e);
+                return false;
+            }
+            catch (Exception e) {
+                // FIXME - An exception is thrown but the exception is null.
+                // This workaround simply catches everything and re-initializes
+                // the connection and tables.
+                Console.WriteLine ("Some exception {0}", e);
+                ReinitializeTables ();
+                return false;
+            }
+            return true;
+        }
+
+        private bool AwsSendBatchEvents (MultiTableDocumentBatchWrite multiBatchWrite)
+        {
+            try {
+                var task = multiBatchWrite.ExecuteAsync (NcTask.Cts.Token);
                 task.Wait (NcTask.Cts.Token);
             }
             catch (OperationCanceledException) {
@@ -206,7 +255,7 @@ namespace NachoCore.Utils
             anEvent ["build_version"] = BuildInfo.Version;
             anEvent ["build_number"] = BuildInfo.BuildNumber;
 
-            return AwsSendEvent (DeviceInfoTable, anEvent);
+            return AwsSendOneEvent (DeviceInfoTable, anEvent);
         }
 
         private Document LogEvent (TelemetryEvent tEvent)

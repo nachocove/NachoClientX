@@ -63,14 +63,16 @@ namespace NachoCore.Model
         {
             MemoryStream binaryStream = new MemoryStream (Data);
             BinaryFormatter serializer = new BinaryFormatter ();
-            return (TelemetryEvent)serializer.Deserialize (binaryStream);
+            var tEvent = (TelemetryEvent)serializer.Deserialize (binaryStream);
+            tEvent.dbId = Id;
+            return tEvent;
         }
 
-        public static McTelemetryEvent QueryOne ()
+        public static List<McTelemetryEvent> QueryMultiple (int numItems)
         {
             try {
                 return NcModel.Instance.TeleDb.Query<McTelemetryEvent> (
-                    "SELECT * FROM McTelemetryEvent ORDER BY Id LIMIT 1;").SingleOrDefault ();
+                    "SELECT * FROM McTelemetryEvent ORDER BY Id LIMIT ?;", numItems);
             }
             catch (SQLiteException e) {
                 if (SQLite3.Result.Corrupt == e.Result) {
@@ -133,11 +135,16 @@ namespace NachoCore.Model
         {
         }
 
-        public new static McTelemetryEvent QueryOne ()
+        public static List<McTelemetryEvent> QueryOne ()
         {
             try {
-                return (McTelemetryEvent)NcModel.Instance.TeleDb.Query<McTelemetrySupportEvent> (
+                var dbEvent = (McTelemetryEvent)NcModel.Instance.TeleDb.Query<McTelemetrySupportEvent> (
                     "SELECT * FROM McTelemetrySupportEvent ORDER BY Id ASC LIMIT 1;").SingleOrDefault ();
+                var dbEventList = new List<McTelemetryEvent> ();
+                if (null != dbEvent) {
+                    dbEventList.Add (dbEvent);
+                }
+                return dbEventList;
             }
             catch (SQLiteException e) {
                 if (SQLite3.Result.Corrupt == e.Result) {

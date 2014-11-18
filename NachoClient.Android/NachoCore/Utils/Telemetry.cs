@@ -53,6 +53,8 @@ namespace NachoCore.Utils
         public const string UIVIEW_WILLDISAPPEAR = "WILL_DISAPPEAR";
         public const string UIVIEW_DIDDISAPPEAR = "DID_DISAPPEAR";
 
+        public Int64 dbId;
+
         public DateTime Timestamp { set; get; }
 
         private TelemetryEventType _Type;
@@ -389,12 +391,12 @@ namespace NachoCore.Utils
     public class Telemetry
     {
         public static bool ENABLED = true;
-        private static bool PERSISTED = true;
         // Parse has a maximum data size of 128K for PFObject. But the
         // exact definition of data size of an object with multiple
         // fields is not clear. So, we just limit the log messages and
         // redacted WBXML to 120 KB to leave some headroom for other fields.
         private const int MAX_PARSE_LEN = 120 * 1024;
+        private const int MAX_QUERY_ITEMS = 10;
 
         private static Telemetry _SharedInstance;
 
@@ -408,7 +410,7 @@ namespace NachoCore.Utils
             }
         }
 
-        private NcQueue<TelemetryEvent> EventQueue;
+        public CancellationToken Token;
 
         private AutoResetEvent DbUpdated;
 
@@ -419,7 +421,6 @@ namespace NachoCore.Utils
 
         public Telemetry ()
         {
-            EventQueue = new NcQueue<TelemetryEvent> ();
             BackEnd = null;
             DbUpdated = new AutoResetEvent (false);
             Counters = new NcCounter[(int)TelemetryEventType.MAX_TELEMETRY_EVENT_TYPE];
@@ -459,18 +460,14 @@ namespace NachoCore.Utils
         private static void RecordRawEvent (TelemetryEvent tEvent)
         {
             SharedInstance.Counters [(int)tEvent.Type].Click ();
-            if (!PERSISTED) {
-                SharedInstance.EventQueue.Enqueue (tEvent);
+            if (tEvent.IsSupportEvent ()) {
+                McTelemetrySupportEvent dbEvent = new McTelemetrySupportEvent (tEvent);
+                dbEvent.Insert ();
             } else {
-                if (tEvent.IsSupportEvent ()) {
-                    McTelemetrySupportEvent dbEvent = new McTelemetrySupportEvent (tEvent);
-                    dbEvent.Insert ();
-                } else {
-                    McTelemetryEvent dbEvent = new McTelemetryEvent (tEvent);
-                    dbEvent.Insert ();
-                }
-                Telemetry.SharedInstance.DbUpdated.Set ();
+                McTelemetryEvent dbEvent = new McTelemetryEvent (tEvent);
+                dbEvent.Insert ();
             }
+            Telemetry.SharedInstance.DbUpdated.Set ();
         }
 
         public static void RecordLogEvent (TelemetryEventType type, string fmt, params object[] list)
@@ -708,9 +705,9 @@ namespace NachoCore.Utils
             if (!ENABLED) {
                 return;
             }
-            if (EventQueue.Token != NcTask.Cts.Token) {
+            if (Token != NcTask.Cts.Token) {
                 NcTask.Run (() => {
-                    EventQueue.Token = NcTask.Cts.Token;
+                    Token = NcTask.Cts.Token;
                     Process<T> ();
                 }, "Telemetry");
             }
@@ -753,46 +750,46 @@ namespace NachoCore.Utils
                     Console.WriteLine ("Telemetry heartbeat {0}", heartBeat);
                 }
                 NcAssert.True (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId);
-                TelemetryEvent tEvent = null;
-                McTelemetryEvent dbEvent = null;
-                if (!PERSISTED) {
-                    tEvent = EventQueue.Dequeue ();
-                } else {
-                    // Always check for support event first
-                    dbEvent = McTelemetrySupportEvent.QueryOne ();
-                    if (null == dbEvent) {
-                        // If doesn't have any, check for other events
-                        dbEvent = McTelemetryEvent.QueryOne ();
-                    }
-                    if (null == dbEvent) {
-                        // No pending event. Wait for one.
-                        DateTime then = DateTime.Now;
-                        while (!DbUpdated.WaitOne (NcTask.MaxCancellationTestInterval)) {
-                            NcTask.Cts.Token.ThrowIfCancellationRequested ();
-                            if (30 < (DateTime.Now - then).TotalSeconds) {
-                                Console.WriteLine ("Telemetry has no event for more than 30 seconds");
-                            }
-                        }
-                        continue;
-                    } else {
+                List<TelemetryEvent> tEvents = null;
+                List<McTelemetryEvent> dbEvents = null;
+                // Always check for support event first
+                dbEvents = McTelemetrySupportEvent.QueryOne();
+                if (0 == dbEvents.Count) {
+                    // If doesn't have any, check for other events
+                    dbEvents = McTelemetryEvent.QueryMultiple (MAX_QUERY_ITEMS);
+                }
+                if (0 == dbEvents.Count) {
+                    // No pending event. Wait for one.
+                    DateTime then = DateTime.Now;
+                    while (!DbUpdated.WaitOne (NcTask.MaxCancellationTestInterval)) {
                         NcTask.Cts.Token.ThrowIfCancellationRequested ();
+                        if (30 < (DateTime.Now - then).TotalSeconds) {
+                            Console.WriteLine ("Telemetry has no event for more than 30 seconds");
+                        }
                     }
-                    tEvent = dbEvent.GetTelemetryEvent ();
+                    continue;
+                } else {
+                    NcTask.Cts.Token.ThrowIfCancellationRequested ();
+                }
+                tEvents = new List<TelemetryEvent> ();
+                foreach (var dbEvent in dbEvents) {
+                    tEvents.Add (dbEvent.GetTelemetryEvent ());
                 }
 
                 // Send it to the telemetry server
                 transactionTime.Start ();
-                bool succeed = BackEnd.SendEvent (tEvent);
+                bool succeed = BackEnd.SendEvents (tEvents);
                 transactionTime.Stop ();
                 transactionTime.Reset ();
 
                 if (succeed) {
                     // If it is a support, make the callback.
-                    if (tEvent.IsSupportEvent () && (null != tEvent.Callback)) {
-                        InvokeOnUIThread.Instance.Invoke (tEvent.Callback);
+                    if ((1 == tEvents.Count) && (tEvents [0].IsSupportEvent ()) && (null != tEvents [0].Callback)) {
+                        InvokeOnUIThread.Instance.Invoke (tEvents [0].Callback);
                     }
 
-                    if (null != dbEvent) {
+                    // Delete the ones that are sent
+                    foreach (var dbEvent in dbEvents) {
                         var rowsDeleted = dbEvent.Delete ();
                         if (1 != rowsDeleted) {
                             Log.Error (Log.LOG_UTILS, "Telemetry fails to delete event. (rowsDeleted={0}, id={1})",
@@ -804,6 +801,14 @@ namespace NachoCore.Utils
                             // 4K events deleted. Try to vacuum
                             NcModel.MayIncrementallyVacuum (NcModel.Instance.TeleDb, 256);
                         }
+                    }
+
+                    if (MAX_QUERY_ITEMS > dbEvents.Count) {
+                        // We have completely caught up. Don't want to continue
+                        // to the next message immediately because we want to
+                        // send multiple messages at a time. This leads to a more
+                        // efficient utilization of write capacity.
+                        Token.WaitHandle.WaitOne (5000);
                     }
                 } else {
                     // Log only to console. Logging telemetry failures to telemetry is
@@ -831,6 +836,6 @@ namespace NachoCore.Utils
 
         string GetUserName ();
 
-        bool SendEvent (TelemetryEvent tEvent);
+        bool SendEvents (List<TelemetryEvent> tEvents);
     }
 }
