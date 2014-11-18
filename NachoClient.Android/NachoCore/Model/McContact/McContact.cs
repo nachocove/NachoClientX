@@ -383,6 +383,22 @@ namespace NachoCore.Model
             Addresses.Add (f);
         }
 
+        public void AddDefaultEmailAddressAttribute (int accountId, string name, string label, string value)
+        {
+            var f = new McContactEmailAddressAttribute ();
+            f.AccountId = accountId;
+            f.Name = name;
+            f.Label = label;
+            f.Value = value;
+            f.IsDefault = true;
+            f.ContactId = this.Id;
+            McEmailAddress emailAddress;
+            if (McEmailAddress.Get (AccountId, value, out emailAddress)) {
+                f.EmailAddress = emailAddress.Id;
+            }
+            EmailAddresses.Add (f);
+        }
+
         public void AddEmailAddressAttribute (int accountId, string name, string label, string value)
         {
             var f = new McContactEmailAddressAttribute ();
@@ -410,10 +426,29 @@ namespace NachoCore.Model
             list.Add (f);
         }
 
+        protected void AddDefaultStringAttribute (ref List<McContactStringAttribute> list, int accountId, McContactStringType type, string name, string label, string value)
+        {
+            var f = new McContactStringAttribute ();
+            f.AccountId = accountId;
+            f.Name = name;
+            f.Type = type;
+            f.Label = label;
+            f.Value = value;
+            f.IsDefault = true;
+            f.ContactId = this.Id;
+            list.Add (f);
+        }
+
         public void AddPhoneNumberAttribute (int accountId, string name, string label, string value)
         {
             ReadAncillaryData ();
             AddStringAttribute (ref DbPhoneNumbers, accountId, McContactStringType.PhoneNumber, name, label, value);
+        }
+
+        public void AddDefaultPhoneNumberAttribute (int accountId, string name, string label, string value)
+        {
+            ReadAncillaryData ();
+            AddDefaultStringAttribute (ref DbPhoneNumbers, accountId, McContactStringType.PhoneNumber, name, label, value);
         }
 
         public void AddOrUpdatePhoneNumberAttribute (int accountId, string name, string label, string value)

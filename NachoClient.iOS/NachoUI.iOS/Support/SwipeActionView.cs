@@ -40,7 +40,7 @@ namespace NachoClient.iOS
 
         public SwipeActionDescriptor (int tag, float widthDelta, UIImage image, string text, UIColor color = null)
         {
-            NcAssert.True (0.3 >= widthDelta); // max width check
+            NcAssert.True (0.9 >= widthDelta); // FIXME: max width check, dependent on # of items per side 
             WidthDelta = widthDelta;
             Image = image;
             Text = text;
@@ -58,6 +58,7 @@ namespace NachoClient.iOS
             Tag = (int)SwipeActionViewTagType.SWIPE_ACTION_BUTTON;
             Config = descriptor;
             SetTitle (Config.Text, UIControlState.Normal);
+            Font = A.Font_AvenirNextDemiBold14;
             BackgroundColor = Config.Color;
             Enabled = true;
             UserInteractionEnabled = true;
