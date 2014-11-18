@@ -86,6 +86,7 @@ namespace NachoClient.iOS
         protected float RIGHT_INDENT = 15;
         protected float BODY_LEFT_MARGIN = 10;
         protected float BODY_RIGHT_MARGIN = 10;
+        protected float BODY_BOTTOM_MARGIN = 10;
 
         protected NcQuickResponse.QRTypeEnum QRType = NcQuickResponse.QRTypeEnum.None;
 
@@ -335,10 +336,13 @@ namespace NachoClient.iOS
 
             attachmentView = new UcAttachmentBlock (this, account.Id, View.Frame.Width, 40, true);
 
-            bodyTextView = new UITextView ();
+            bodyTextView = new UITextView (new RectangleF (0, 0, View.Frame.Width, 0));
             bodyTextView.Font = labelFont;
             bodyTextView.TextColor = labelColor;
             bodyTextView.BackgroundColor = UIColor.White;
+            bodyTextView.TextContainerInset = new UIEdgeInsets (0, BODY_LEFT_MARGIN, BODY_BOTTOM_MARGIN, BODY_RIGHT_MARGIN);
+            bodyTextView.ScrollEnabled = false;
+
             if (EmailTemplate != null) {
                 bodyTextView.InsertText (EmailTemplate);
             }
@@ -365,8 +369,9 @@ namespace NachoClient.iOS
                 intentLabelHR,
                 attachmentView,
                 attachmentViewHR,
-                bodyTextView
-            }); 
+            });
+
+            scrollView.AddSubview (bodyTextView);
 
             subjectField.EditingDidBegin += (object sender, EventArgs e) => {
                 ConfigureSubjectEditView ();
@@ -613,19 +618,16 @@ namespace NachoClient.iOS
                 yOffset += attachmentViewHR.Frame.Height;
             }
 
-            var bodyTextViewHeight = View.Frame.Height - keyboardHeight;
-            bodyTextView.Frame = new RectangleF (BODY_LEFT_MARGIN, yOffset,
-                View.Frame.Width - BODY_LEFT_MARGIN - BODY_RIGHT_MARGIN, bodyTextViewHeight);
-            yOffset += bodyTextViewHeight;
-            bodyTextView.ScrollEnabled = true;
-            scrollView.DelaysContentTouches = true;
-
             scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
 
             var contentFrame = new RectangleF (0, 0, View.Frame.Width, yOffset);
             contentView.Frame = contentFrame;
 
-            scrollView.ContentSize = contentFrame.Size;
+            ViewFramer.Create (bodyTextView).Y (contentFrame.Bottom);
+
+            // Sets the size of bodyTextView and
+            // adjusts the scrollview content size.
+            SelectionChanged (bodyTextView);
         }
 
         protected void AdjustY (UIView view, float yOffset)
@@ -687,24 +689,72 @@ namespace NachoClient.iOS
         }
 
         /// <summary>
-        ///  Called when a key is pressed (or other changes) in body text view
+        /// Requires iOS 7
+        /// </summary>
+        public static float AdjustToFittingHeight (UITextView textView)
+        {
+            if (textView == null) {
+                return 0;
+            }
+
+            // Using simply ContentSize does not work on iOS7. The dimensions are calculated lazily.
+            // Enforce the layout of the text container to get correct measurements.
+            textView.LayoutManager.EnsureLayoutForTextContainer (textView.TextContainer);
+
+            // Get container size from the layout manager.
+            var containerSize = textView.LayoutManager.GetUsedRectForTextContainer (textView.TextContainer).Size;
+
+            // Take insets into consideration.
+            float height = (float)Math.Ceiling (containerSize.Height + textView.TextContainerInset.Top + textView.TextContainerInset.Bottom);
+
+            // Adjust frame but only alter height.
+            textView.Frame = new RectangleF (textView.Frame.X, textView.Frame.Y, textView.Frame.Width, height);
+
+            // Return the height for convenient access.
+            return height;
+        }
+
+        /// <summary>
+        /// iOS 6 and before
+        /// </summary>
+        public static float OldAdjustToFittingHeight (UITextView textView)
+        {
+            if (textView == null) {
+                return 0;
+            }
+
+            // Get the size that'll hold this text.
+            var sz = textView.SizeThatFits (new SizeF (textView.Frame.Width, float.MaxValue));
+
+            // Adjust frame but only alter height.
+            textView.Frame = new RectangleF (textView.Frame.X, textView.Frame.Y, textView.Frame.Width, sz.Height);
+
+            return sz.Height;
+        }
+
+        /// <summary>
+        /// Called when a key is pressed (or other changes) in body text view.
+        /// CAREFUL:  Also called from Layout to set body and scrollview sizes. 
         /// </summary>
         protected void SelectionChanged (UITextView textView)
         {
+            var newHeight = OldAdjustToFittingHeight (textView);
+
             // We want to scroll the caret rect into view
-            var caretRect = textView.GetCaretRectForPosition (textView.SelectedTextRange.End);
+            var caretRect = textView.GetCaretRectForPosition (textView.SelectedTextRange.Start);
             caretRect.Size = new SizeF (caretRect.Size.Width, caretRect.Size.Height + textView.TextContainerInset.Bottom);
 
-//            // Make sure our textview is big enough to hold the text
-//            var frame = textView.Frame;
-//            frame.Size = new SizeF (textView.ContentSize.Width, textView.ContentSize.Height);
-//            textView.Frame = frame;
-            // And update our enclosing scrollview for the new content size
-            scrollView.ContentSize = new SizeF (scrollView.ContentSize.Width, textView.Frame.Y + textView.Frame.Height);
+            if (!textView.Frame.Size.Equals (textView.ContentSize)) {
+                textView.ContentSize = textView.Frame.Size;
+            }
+            var scrollViewContentSize = new SizeF (textView.ContentSize.Width, textView.Frame.Y + textView.Frame.Height);
+            if (!scrollView.ContentSize.Equals (scrollViewContentSize)) {
+                scrollView.ContentSize = scrollViewContentSize;
+            }
 
-            // Adjust the caretRect to be in our enclosing scrollview, and then scroll it
-            caretRect.Y += textView.Frame.Y;
-            scrollView.ScrollRectToVisible (caretRect, true);
+            var targetRect = caretRect;
+            targetRect.Y += textView.Frame.Y;
+            scrollView.ScrollRectToVisible (targetRect, true);
         }
 
         /// IUcAddressBlock delegate
