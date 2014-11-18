@@ -163,13 +163,12 @@ namespace NachoClient.iOS
 
         protected override void Cleanup ()
         {
-            //TODO
             UIButton dismissViewButton = (UIButton)View.ViewWithTag (DISMISS_VIEW_BUTTON_TAG);
             dismissViewButton.TouchUpInside -= DismissViewTouchUpInside;
             dismissViewButton = null;
 
             for (int i = 0; i < View.Subviews.Length; i++) {
-                if (View.Subviews [i].GetType == UIButton) {
+                if (View.Subviews [i].GetType() == typeof(UIButton)) {
                     if (View.Subviews [i].Tag >= SELECTION_BUTTON_STARTING_TAG) {
                         UIButton selectionButton = (UIButton)View.Subviews [i];
                         selectionButton.TouchUpInside -= SelectionButtonClicked;
