@@ -902,18 +902,14 @@ namespace NachoClient.iOS
                 View.ViewWithTag ((int)TagType.EVENT_ATTACHMENTS_CONTAINER_TAG).Frame = new RectangleF (0, internalYOffset, EVENT_CARD_WIDTH, CELL_HEIGHT + drawerHeight);
                 AdjustViewLayout (TagType.EVENT_ATTACHMENTS_CONTAINER_TAG, 0, ref internalYOffset, 18);
 
-                if (attachmentsDrawerOpen) {
-                    int attachmentNum = 0;
-                    foreach (var attachment in c.attachments) {
+                int attachmentNum = 0;
+                foreach (var attachment in c.attachments) {
+                    if (attachmentsDrawerOpen) {
                         View.ViewWithTag ((int)TagType.EVENT_ATTACHMENT_TAG + attachmentNum).Frame = new RectangleF (42, (attachmentNum + 1) * AttachmentView.VIEW_HEIGHT, EVENT_CARD_WIDTH - 60, AttachmentView.VIEW_HEIGHT);
-                        attachmentNum++;
-                    }
-                } else {
-                    int attachmentNum = 0;
-                    foreach (var attachment in c.attachments) {
+                    } else {
                         AdjustY (View.ViewWithTag ((int)TagType.EVENT_ATTACHMENT_TAG + attachmentNum), (View.ViewWithTag ((int)TagType.EVENT_ATTACHMENTS_VIEW_TAG).Frame.Y));
-                        attachmentNum++;
                     }
+                    attachmentNum++;
                 }
             }
 
