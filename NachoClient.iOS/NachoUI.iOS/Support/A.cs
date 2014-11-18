@@ -63,6 +63,9 @@ namespace NachoClient.iOS
         protected static UIColor _Color_NachoSwipeActionGreen = null;
         protected static UIColor _Color_NachoSwipeActionBlue = null;
         protected static UIColor _Color_NachoSwipeActionYellow = null;
+        protected static UIColor _Color_NachoSwipeActionOrange = null;
+        protected static UIColor _Color_NachoSwipeActionMatteBlack = null;
+
 
         //UI constants 
         public static float Card_Horizontal_Indent = 15f;
@@ -540,6 +543,24 @@ namespace NachoClient.iOS
                     _Color_NachoSwipeActionYellow = UIColor.FromRGB (254, 217, 56);
                 }
                 return _Color_NachoSwipeActionYellow;
+            }
+        }
+
+        public static UIColor Color_NachoSwipeActionOrange {
+            get {
+                if (null == _Color_NachoSwipeActionOrange) {
+                    _Color_NachoSwipeActionOrange = UIColor.FromRGB (245, 152, 39);
+                }
+                return _Color_NachoSwipeActionOrange;
+            }
+        }
+
+        public static UIColor Color_NachoSwipeActionMatteBlack {
+            get {
+                if (null == _Color_NachoSwipeActionMatteBlack) {
+                    _Color_NachoSwipeActionMatteBlack = UIColor.FromRGB (79, 100, 109);
+                }
+                return _Color_NachoSwipeActionMatteBlack;
             }
         }
     }

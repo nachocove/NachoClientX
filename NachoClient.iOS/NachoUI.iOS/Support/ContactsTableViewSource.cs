@@ -24,11 +24,11 @@ namespace NachoClient.iOS
         protected const float ROW_HEIGHT = 80;
 
         private static SwipeActionDescriptor CALL_BUTTON =
-            new SwipeActionDescriptor (CALL_SWIPE_TAG, 0.25f, UIImage.FromBundle ("email-putintofolder-gray"),
-                "Dial", A.Color_NachoSwipeActionGreen);
+            new SwipeActionDescriptor (CALL_SWIPE_TAG, 0.8f, UIImage.FromBundle ("contacts-call-swipe"),
+                "Dial", A.Color_NachoSwipeActionOrange);
         private static SwipeActionDescriptor EMAIL_BUTTON =
-            new SwipeActionDescriptor (EMAIL_SWIPE_TAG, 0.25f, UIImage.FromBundle ("email-putintofolder-gray"),
-                "Email", A.Color_NachoSwipeActionRed);
+            new SwipeActionDescriptor (EMAIL_SWIPE_TAG, 0.8f, UIImage.FromBundle ("contacts-email-swipe"),
+                "Email", A.Color_NachoSwipeActionMatteBlack);
 
         bool multipleSections;
         int[] sectionStart;
@@ -334,7 +334,7 @@ namespace NachoClient.iOS
 
             var view = new SwipeActionView (new RectangleF (0, 0, cell.ContentView.Frame.Width, ROW_HEIGHT));
             view.BackgroundColor = UIColor.White;
-            view.SetAction (CALL_BUTTON, SwipeSide.RIGHT);
+            view.SetAction (CALL_BUTTON, SwipeSide.LEFT);
             view.SetAction (EMAIL_BUTTON, SwipeSide.RIGHT);
             view.Tag = SWIPE_VIEW_TAG;
 
@@ -385,71 +385,36 @@ namespace NachoClient.iOS
 
         protected void CallSwipeHandler (McContact contact)
         {
-            SwipedCall (contact.GetPhoneNumber ());
-            return;
-//            if (contact.PhoneNumbers.Count == 0) {
-//                //TODO: Display a 'enter phone number' for the contact. 
-//                SwipedCall (contact.GetPhoneNumber());
-//                return;
-//            }
-//
-//            if (contact.PhoneNumbers.Count == 1) {
-//                if (!contact.PhoneNumbers.FirstOrDefault ().IsDefault) {
-//                    contact.PhoneNumbers.FirstOrDefault ().IsDefault = true;
-//                    contact.Update ();
-//                }
-//                SwipedCall (contact.GetPhoneNumber());
-//                return;
-//            }
-//
-//            if (contact.PhoneNumbers.Count > 1) {
-//                foreach (var e in contact.PhoneNumbers) {
-//                    if (e.IsDefault) {
-//                        SwipedCall (e.Value);
-//                        return;
-//                    }
-//                }
-//                //TODO: Display a 'default-phone chooser' for the contact
-//                contact.PhoneNumbers.FirstOrDefault ().IsDefault = true;
-//                contact.Update ();
-//                SwipedCall (contact.GetPhoneNumber());
-//                return;
-//            }
+            if (0 == contact.PhoneNumbers.Count) {
+                owner.PerformSegueForDelegate ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.PhoneNumberAdder));
+            } else if (1 == contact.PhoneNumbers.Count) {
+                Util.PerformAction ("tel", contact.GetPhoneNumber());
+            } else {
+                foreach (var p in contact.PhoneNumbers) {
+                    if (p.IsDefault) {
+                        Util.PerformAction ("tel", p.Value);
+                        return;
+                    }
+                }
+                owner.PerformSegueForDelegate ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultPhoneSelector));
+            }
         }
 
         protected void EmailSwipeHandler (McContact contact)
         {
-            SwipedEmail (contact.GetEmailAddress ());
-            return;
-
-//            if (contact.EmailAddresses.Count == 0) {
-//                //TODO: Display a 'enter email address' for the contact. 
-//                SwipedEmail (contact.GetEmailAddress());
-//                return;
-//            }
-//
-//            if (contact.EmailAddresses.Count == 1) {
-//                if (!contact.EmailAddresses.FirstOrDefault ().IsDefault) {
-//                    contact.EmailAddresses.FirstOrDefault ().IsDefault = true;
-//                    contact.Update ();
-//                }
-//                SwipedEmail (contact.GetEmailAddress());
-//                return;
-//            }
-//
-//            if (contact.EmailAddresses.Count > 1) {
-//                foreach (var e in contact.EmailAddresses) {
-//                    if (e.IsDefault) {
-//                        SwipedEmail (e.Value);
-//                        return;
-//                    }
-//                }
-//                //TODO: Display a 'default-email chooser' for the contact
-//                contact.EmailAddresses.FirstOrDefault ().IsDefault = true;
-//                contact.Update ();
-//                SwipedEmail (contact.GetEmailAddress());
-//                return;
-//            }
+            if (0 == contact.EmailAddresses.Count) {
+                owner.PerformSegueForDelegate ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder));
+            } else if (1 == contact.EmailAddresses.Count) {
+                owner.PerformSegueForDelegate ("ContactsToMessageCompose", new SegueHolder (contact.GetEmailAddress()));
+            } else {
+                foreach (var e in contact.EmailAddresses) {
+                    if (e.IsDefault) {
+                        owner.PerformSegueForDelegate ("ContactsToMessageCompose", new SegueHolder (e.Value));
+                        return;
+                    }
+                }
+                owner.PerformSegueForDelegate ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultEmailSelector));
+            }
         }
 
         public void ConfigureCell (UITableView tableView, UITableViewCell cell, McContact contact)

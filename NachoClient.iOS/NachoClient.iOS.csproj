@@ -1694,6 +1694,8 @@
     <BundleResource Include="Resources\contacts-default-active%402x.png" />
     <BundleResource Include="Resources\contacts-default%402x.png" />
     <BundleResource Include="Resources\now-newemail%402x.png" />
+    <BundleResource Include="Resources\modal-checkbox-checked%402x.png" />
+    <BundleResource Include="Resources\modal-checkbox%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

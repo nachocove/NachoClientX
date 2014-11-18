@@ -139,6 +139,16 @@ namespace NachoClient.iOS
                 destinationController.contact = c;
                 return;
             }
+            if (segue.Identifier.Equals ("SegueToContactDefaultSelection")) {
+                var h = sender as SegueHolder;
+                var c = (McContact)h.value;
+                var type = (ContactDefaultSelectionViewController.DefaultSelectionType)h.value2;
+                ContactDefaultSelectionViewController destinationController = (ContactDefaultSelectionViewController)segue.DestinationViewController;
+                destinationController.SetContact (c);
+                destinationController.viewType = type;
+				destinationController.owner = this;
+                return;
+            }
             if (segue.Identifier.Equals ("ContactsToContactEdit")) {
                 return;
             }
