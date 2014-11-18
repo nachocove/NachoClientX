@@ -385,9 +385,9 @@ namespace NachoClient.iOS
 
         protected void CallSwipeHandler (McContact contact)
         {
-            if (contact.PhoneNumbers.Count == 0) {
+            if (0 == contact.PhoneNumbers.Count) {
                 owner.PerformSegueForDelegate ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.PhoneNumberAdder));
-            } else if (contact.PhoneNumbers.Count == 1) {
+            } else if (1 == contact.PhoneNumbers.Count) {
                 Util.PerformAction ("tel", contact.GetPhoneNumber());
             } else {
                 foreach (var p in contact.PhoneNumbers) {
@@ -402,9 +402,9 @@ namespace NachoClient.iOS
 
         protected void EmailSwipeHandler (McContact contact)
         {
-            if (contact.EmailAddresses.Count == 0) {
+            if (0 == contact.EmailAddresses.Count) {
                 owner.PerformSegueForDelegate ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder));
-            } else if (contact.EmailAddresses.Count == 1) {
+            } else if (1 == contact.EmailAddresses.Count) {
                 owner.PerformSegueForDelegate ("ContactsToMessageCompose", new SegueHolder (contact.GetEmailAddress()));
             } else {
                 foreach (var e in contact.EmailAddresses) {
