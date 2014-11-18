@@ -78,7 +78,6 @@ namespace NachoClient.iOS
             filenameView.Tag = (int)TagType.ATTACHMENT_NAME_TAG;
             filenameView.Text = Path.GetFileNameWithoutExtension (attachment.DisplayName);
             filenameView.UserInteractionEnabled = false;
-            filenameView.SizeToFit ();
             ViewFramer.Create (filenameView).Height (LINE_HEIGHT);
             AddSubview (filenameView);
 
