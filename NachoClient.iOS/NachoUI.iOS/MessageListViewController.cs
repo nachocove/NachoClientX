@@ -92,8 +92,9 @@ namespace NachoClient.iOS
             blockMenu.Tag = BLOCK_MENU_TAG;
             View.AddSubview (blockMenu);
 
-            blockMenu.MenuWillDisappear += (object sender, EventArgs e) => {
+            blockMenu.MenuDidDisappear += (object sender, EventArgs e) => {
                 TableView.ScrollEnabled = true;
+                MultiSelectToggle(messageSource, messageSource.MultiSelectActive());
             };
 
             TableView.SeparatorColor = A.Color_NachoBorderGray;

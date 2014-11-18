@@ -14,9 +14,9 @@ namespace NachoClient.iOS
     public class UIBlockMenu : UIView
     {
 
-        public event EventHandler MenuWillDisappear;
+        public event EventHandler MenuDidDisappear;
 
-        protected float ViewWidth; 
+        protected float ViewWidth;
 
         protected const int ROW_HEIGHT = 100;
         protected const int SEPARATOR_LENGTH = 64;
@@ -55,7 +55,7 @@ namespace NachoClient.iOS
             float blockYVal = 0;
 
             for (int i = 0; i < 6; i++) {
-                FrameGrid.Add(new RectangleF (blockXVal, blockYVal, BLOCK_WIDTH, ROW_HEIGHT));
+                FrameGrid.Add (new RectangleF (blockXVal, blockYVal, BLOCK_WIDTH, ROW_HEIGHT));
                 blockXVal += BLOCK_WIDTH;
                 if (2 == i) {
                     blockXVal = 0;
@@ -85,7 +85,7 @@ namespace NachoClient.iOS
             this.BackgroundColor = UIColor.Clear;
             this.Alpha = 0.0f;
 
-            menuView = new UIView(new RectangleF (ViewWidth - width, -height, width, height));
+            menuView = new UIView (new RectangleF (ViewWidth - width, -height, width, height));
             menuView.BackgroundColor = A.Color_NachoGreen;
             this.AddSubview (menuView);
 
@@ -98,7 +98,7 @@ namespace NachoClient.iOS
             menuButton.Clicked += MenuButtonClicked;
 
             UIView tapCoverView = new UIView (new RectangleF (0, height, ViewWidth, this.Frame.Height - height));
-            UITapGestureRecognizer tap = new UITapGestureRecognizer (() => this.MenuTapped());
+            UITapGestureRecognizer tap = new UITapGestureRecognizer (() => this.MenuTapped ());
             tapCoverView.AddGestureRecognizer (tap);
             this.AddSubview (tapCoverView);
 
@@ -154,12 +154,12 @@ namespace NachoClient.iOS
 
         public void MenuTapped ()
         {
-            MenuTapped(this.Frame);
+            MenuTapped (this.Frame);
         }
 
         private void MenuButtonClicked (object sender, EventArgs e)
         {
-            MenuTapped();
+            MenuTapped ();
         }
 
         public void MenuTapped (RectangleF rect)
@@ -172,7 +172,10 @@ namespace NachoClient.iOS
                 navControllerTitle = owner.NavigationController.Title;
 
                 owner.NavigationItem.SetRightBarButtonItems (new UIBarButtonItem[]{ menuButton }, true);
-                owner.NavigationItem.SetLeftBarButtonItems (new UIBarButtonItem[]{new UIBarButtonItem(new UIView()), new UIBarButtonItem(new UIView())}, true);
+                owner.NavigationItem.SetLeftBarButtonItems (new UIBarButtonItem[] {
+                    new UIBarButtonItem (new UIView ()),
+                    new UIBarButtonItem (new UIView ())
+                }, true);
                 SetNavigationTitle ("");
 
                 UIView.Animate (.3, () => {
@@ -196,12 +199,13 @@ namespace NachoClient.iOS
                 UIView.Animate (.3, () => {
                     this.Alpha = 0.0f;
                     menuView.Frame = new RectangleF (menuView.Frame.X, menuView.Frame.Y - menuView.Frame.Height, menuView.Frame.Width, menuView.Frame.Height);
-                });
-
-                var handler = MenuWillDisappear;
-                if (null != handler) {
-                    handler (this, null);
-                }
+                },
+                    () => {
+                        var handler = MenuDidDisappear;
+                        if (null != handler) {
+                            handler (this, null);
+                        }
+                    });
             }
         }
 
@@ -232,7 +236,7 @@ namespace NachoClient.iOS
 
             yOffset = blockIconImageView.Frame.Bottom + 5;
 
-            UILabel iconLabel = new UILabel (new RectangleF (10, yOffset, button.Frame.Width - 20, (FormatBlockLabel (block.blockLabel).Contains("\n") ? 40 : 30)));
+            UILabel iconLabel = new UILabel (new RectangleF (10, yOffset, button.Frame.Width - 20, (FormatBlockLabel (block.blockLabel).Contains ("\n") ? 40 : 30)));
             iconLabel.Font = A.Font_AvenirNextMedium12;
             iconLabel.LineBreakMode = UILineBreakMode.WordWrap;
             iconLabel.Lines = 2;
@@ -253,7 +257,7 @@ namespace NachoClient.iOS
         protected string FormatBlockLabel (string label)
         {
             label = label.Trim ();
-            string[] tokens = label.Split (" ".ToCharArray());
+            string[] tokens = label.Split (" ".ToCharArray ());
 
             if (tokens.Length < 2) {
                 return label;
@@ -324,7 +328,7 @@ namespace NachoClient.iOS
             public Block (string blockImage, string blockLabel, Action blockAction)
             {
                 this.blockImage = blockImage;
-                this.blockLabel =  blockLabel;
+                this.blockLabel = blockLabel;
                 this.blockAction = blockAction;
             }
         }

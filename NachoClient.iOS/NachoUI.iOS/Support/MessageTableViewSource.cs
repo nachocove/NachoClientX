@@ -266,7 +266,7 @@ namespace NachoClient.iOS
             }
         }
 
-        protected bool MultiSelectActive ()
+        public bool MultiSelectActive ()
         {
             return (MultiSelect.Count > 0);
         }
