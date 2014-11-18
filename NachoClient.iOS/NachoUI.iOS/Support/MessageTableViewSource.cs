@@ -208,10 +208,16 @@ namespace NachoClient.iOS
 
         protected void ConfigureMultiSelectCell (UITableViewCell cell)
         {
+            if (MultiSelectActive ()) {
+                cell.SelectionStyle = UITableViewCellSelectionStyle.None;
+            } else {
+                cell.SelectionStyle = UITableViewCellSelectionStyle.Default;
+            }
+
             var threadIndex = cell.ContentView.Tag;
             var userCheckmarkView = cell.ContentView.ViewWithTag (USER_CHECKMARK_TAG) as UIImageView;
 
-            if (false == allowMultiSelect) {
+            if (!allowMultiSelect) {
                 userCheckmarkView.Hidden = true;
                 return;
             }
