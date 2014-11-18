@@ -82,9 +82,6 @@ namespace NachoCore.ActiveSync
             public bool IsReDir;
             public Uri ReDirUri;
 
-            public Type DnsQueryRequestType { set; get; }
-
-            public Type HttpClientType { set; get; }
 
             private TimeSpan CertTimeout;
             private ConcurrentBag<object> DisposedJunk;
@@ -499,7 +496,6 @@ namespace NachoCore.ActiveSync
             private AsHttpOperation HttpOpFactory ()
             {
                 return new AsHttpOperation (Command.CommandName, this, Command.BEContext) {
-                    HttpClientType = HttpClientType,
                     Allow451Follow = false,
                     DontReportCommResult = true,
                     TriesLeft = 3,
@@ -523,7 +519,6 @@ namespace NachoCore.ActiveSync
             {
                 if (0 < RetriesLeft--) {
                     DnsOp = new AsDnsOperation (this) {
-                        DnsQueryRequestType = DnsQueryRequestType,
                         Timeout = new TimeSpan(0, 0, 300),
                     };
                     DnsOp.Execute (StepSm);
@@ -586,7 +581,7 @@ namespace NachoCore.ActiveSync
                 if (0 < RetriesLeft--) {
                     ServerCertificate = null;
                     var handler = new HttpClientHandler () { AllowAutoRedirect = false };
-                    var client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler);
+                    var client = (IHttpClient)Activator.CreateInstance (AsHttpOperation.HttpClientType, handler);
                     client.Timeout = CertTimeout;
                     ServerCertificatePeek.Instance.ValidationEvent += ServerCertificateEventHandler;
                     try {

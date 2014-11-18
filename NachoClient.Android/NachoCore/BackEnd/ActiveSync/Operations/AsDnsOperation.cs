@@ -16,8 +16,6 @@ namespace NachoCore.ActiveSync
 
         public TimeSpan Timeout { set; get; }
 
-        public Type DnsQueryRequestType { set; get; }
-
         private bool wasKilledByTimer;
         private bool wasCancelled;
         private IAsDnsOperationOwner m_owner;
@@ -25,12 +23,13 @@ namespace NachoCore.ActiveSync
         private IDnsQueryRequest Request;
         private object LockObj;
 
+        public static Type DnsQueryRequestType = typeof(MockableDnsQueryRequest);
+
         public AsDnsOperation (IAsDnsOperationOwner owner)
         {
             LockObj = new object ();
             var timeoutSeconds = McMutables.GetOrCreate (McAccount.GetDeviceAccount ().Id, "DNSOP", "TimeoutSeconds", KDefaultTimeoutSeconds);
             Timeout = new TimeSpan (0, 0, timeoutSeconds.ToInt ());
-            DnsQueryRequestType = typeof(MockableDnsQueryRequest);
             m_owner = owner;
         }
 

@@ -74,32 +74,37 @@ namespace NachoCore.ActiveSync
         private const string KDefaultDelaySeconds = "5";
         private const string KDefaultThrottleDelaySeconds = "60";
         private const string KMaxDelaySeconds = "30";
+        private const int KMaxTimeoutSeconds = 100;
         private const string KDefaultTimeoutSeconds = "20";
         private const string KDefaultTimeoutExpander = "1.2";
         private const string KDefaultRetries = "8";
         private const int KConsec401ThenReDisc = 5;
         private const string KToXML = "ToXML";
         private string CommandName;
+
+        // HttpClient factory stuff.
+        private static object LockObj = new object ();
+        public static Type HttpClientType = typeof(MockableHttpClient);
+        private static HttpClientHandler EncryptedClientHandler;
+        private static IHttpClient EncryptedClient;
+        private static string LastUsername;
+        private static string LastPassword;
+        private static IHttpClient ClearClient;
+
         private IBEContext BEContext;
         private IAsHttpOperationOwner Owner;
         private CancellationTokenSource Cts;
         private NcTimer DelayTimer;
         private NcTimer TimeoutTimer;
-        // The OldXxxTimer lists is used to avoid eliminating a reference while still in a callback (can cause timer crash).
-        // Also to avoid God knows what kind of bad GC interaction with HttpClient that won't cancel, etc.
-        // They don't leak - they are freed when this AsHttpOperation object is freed.
-        // Yes - if it isn't enough to hold onto these objects until then, we'd need a longer-term persistence plan.
         private NcStateMachine HttpOpSm;
         private NcStateMachine OwnerSm;
-        private IHttpClient Client;
         private Uri ServerUri;
         private bool ServerUriBeingTested;
         private Stream ContentData;
         private string ContentType;
         private uint ConsecThrottlePriorDelaySecs;
+
         // Properties.
-        // Used for mocking.
-        public Type HttpClientType { set; get; }
         // User for mocking.
         public INcCommStatus NcCommStatusSingleton { set; get; }
         // Timer for timing out a single access.
@@ -113,10 +118,53 @@ namespace NachoCore.ActiveSync
 
         public bool DontReportCommResult { set; get; }
 
+
+        private static IHttpClient GetEncryptedClient (string username, string password)
+        {
+            lock (LockObj) {
+                if (null == LastUsername || null == LastPassword ||
+                LastUsername != username || LastPassword != password ||
+                null == EncryptedClient) {
+                    var handler = new HttpClientHandler () {
+                        AllowAutoRedirect = false,
+                        PreAuthenticate = true,
+                    };
+                    LastUsername = username;
+                    LastPassword = password;
+                    handler.Credentials = new NetworkCredential (username, password);
+                    var client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler);
+                    client.Timeout = new TimeSpan (0, 0, KMaxTimeoutSeconds);
+                    if (null != EncryptedClient) {
+                        EncryptedClient.Dispose ();
+                    }
+                    if (null != EncryptedClientHandler) {
+                        EncryptedClientHandler.Dispose ();
+                    }
+                    EncryptedClient = client;
+                    EncryptedClientHandler = handler;
+                }
+                return EncryptedClient;
+            }
+        }
+
+        private static IHttpClient GetClearClient ()
+        {
+            lock (LockObj) {
+                if (null == ClearClient) {
+                    var handler = new HttpClientHandler () {
+                        AllowAutoRedirect = false,
+                    };
+                    var client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler);
+                    client.Timeout = new TimeSpan (0, 0, KMaxTimeoutSeconds);
+                    ClearClient = client;
+                }
+                return ClearClient;
+            }
+        }
+
         public AsHttpOperation (string commandName, IAsHttpOperationOwner owner, IBEContext beContext)
         {
             NcCapture.AddKind (KToXML);
-            HttpClientType = typeof(MockableHttpClient);
             NcCommStatusSingleton = NcCommStatus.Instance;
             BEContext = beContext;
             var timeoutSeconds = McMutables.GetOrCreate (BEContext.Account.Id, "HTTPOP", "TimeoutSeconds", KDefaultTimeoutSeconds);
@@ -259,11 +307,8 @@ namespace NachoCore.ActiveSync
                 if (!Cts.IsCancellationRequested) {
                     Cts.Cancel ();
                 }
+                // Let GC handle the Dispose(). Thread join not worth the pain.
                 Cts = null;
-            }
-            if (null != Client) {
-                Client.Dispose ();
-                Client = null;
             }
         }
 
@@ -301,7 +346,7 @@ namespace NachoCore.ActiveSync
 
         private void TimeoutTimerCallback (object State)
         {
-            if ((IHttpClient)State == Client) {
+            if (!((CancellationToken)State).IsCancellationRequested) {
                 HttpOpSm.PostEvent ((uint)HttpOpEvt.E.Timeout, "ASHTTPTTC", null, string.Format ("Uri: {0}", ServerUri));
             }
         }
@@ -380,19 +425,16 @@ namespace NachoCore.ActiveSync
 
         private async void AttemptHttp ()
         {
+            IHttpClient client;
             Cts = new CancellationTokenSource ();
             var cToken = Cts.Token;
 
-            var handler = new HttpClientHandler () {
-                AllowAutoRedirect = false,
-                PreAuthenticate = true
-            };
             if (ServerUri.IsHttps ()) {
                 // Never send password over unencrypted channel.
-                handler.Credentials = new NetworkCredential (BEContext.Cred.Username, BEContext.Cred.GetPassword ());
+                client = GetEncryptedClient (BEContext.Cred.Username, BEContext.Cred.GetPassword ());
+            } else {
+                client = GetClearClient ();
             }
-            Client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler);
-            Client.Timeout = this.Timeout;
 
             HttpRequestMessage request = null;
             if (!CreateHttpRequest (out request, cToken)) {
@@ -404,28 +446,25 @@ namespace NachoCore.ActiveSync
 
             try {
                 // HttpClient doesn't respect Timeout sometimes (DNS and TCP connection establishment for sure).
-                // If the instance of HttpClient known to the callback (myClient) doesn't match the IVar, then 
-                // assume the IHttpClient instance has been abandoned.
-                var myClient = Client;
-                TimeoutTimer = new NcTimer ("AsHttpOperation:Timeout", TimeoutTimerCallback, myClient, Timeout, 
+                // Even worse, you can only set one timeout value for all concurrent requests, and you can't 
+                // change the value once you start using the client. So we use our own per-request timeout.
+                TimeoutTimer = new NcTimer ("AsHttpOperation:Timeout", TimeoutTimerCallback, cToken, Timeout, 
                     System.Threading.Timeout.InfiniteTimeSpan);
                 try {
                     Log.Info (Log.LOG_HTTP, "HTTPOP:URL:{0}", request.RequestUri.ToString ());
-                    response = await myClient.SendAsync (request, HttpCompletionOption.ResponseHeadersRead, cToken).ConfigureAwait (false);
+                    response = await client.SendAsync (request, HttpCompletionOption.ResponseHeadersRead, cToken).ConfigureAwait (false);
                 } catch (OperationCanceledException ex) {
                     Log.Info (Log.LOG_HTTP, "AttempHttp OperationCanceledException {0}: exception {1}", ServerUri, ex.Message);
-                    if (myClient == Client) {
-                        CancelTimeoutTimer ();
-                        if (!cToken.IsCancellationRequested) {
-                            // See http://stackoverflow.com/questions/12666922/distinguish-timeout-from-user-cancellation
-                            ReportCommResult (ServerUri.Host, true);
-                            HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", ServerUri));
-                        }
+                    CancelTimeoutTimer ();
+                    if (!cToken.IsCancellationRequested) {
+                        // See http://stackoverflow.com/questions/12666922/distinguish-timeout-from-user-cancellation
+                        ReportCommResult (ServerUri.Host, true);
+                        HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", ServerUri));
                     }
                     return;
                 } catch (WebException ex) {
                     Log.Info (Log.LOG_HTTP, "AttempHttp WebException {0}: exception {1}", ServerUri, ex.Message);
-                    if (myClient == Client) {
+                    if (!cToken.IsCancellationRequested) {
                         CancelTimeoutTimer ();
                         ReportCommResult (ServerUri.Host, true);
                         // Some of the causes of WebException could be better characterized as HardFail. Not dividing now.
@@ -436,14 +475,14 @@ namespace NachoCore.ActiveSync
                 } catch (NullReferenceException ex) {
                     Log.Info (Log.LOG_HTTP, "AttempHttp NullReferenceException {0}: exception {1}", ServerUri, ex.Message);
                     // As best I can tell, this may be driven by bug(s) in the Mono stack.
-                    if (myClient == Client) {
+                    if (!cToken.IsCancellationRequested) {
                         CancelTimeoutTimer ();
                         HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", ServerUri));
                     }
                     return;
                 } catch (Exception ex) {
                     // We've seen HttpClient barf due to Cancel().
-                    if (myClient == Client) {
+                    if (!cToken.IsCancellationRequested) {
                         CancelTimeoutTimer ();
                         Log.Error (Log.LOG_HTTP, "Exception: {0}", ex.ToString ());
                         HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPFU", null, string.Format ("E, Uri: {0}", ServerUri));
@@ -451,7 +490,7 @@ namespace NachoCore.ActiveSync
                     return;
                 }
 
-                if (myClient == Client) {
+                if (!cToken.IsCancellationRequested) {
                     CancelTimeoutTimer ();
                     var contentType = response.Content.Headers.ContentType;
                     ContentType = (null == contentType) ? null : contentType.MediaType.ToLower ();
