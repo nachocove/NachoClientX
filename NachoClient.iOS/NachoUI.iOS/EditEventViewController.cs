@@ -85,6 +85,7 @@ namespace NachoClient.iOS
         protected bool allDayEvent = false;
         protected bool eventEditStarted = false;
         protected bool isRecurring = false;
+        protected bool attachmentsInitialized = false;
 
         protected UIView line1;
         protected UIView line2;
@@ -962,13 +963,18 @@ namespace NachoClient.iOS
             locationFieldView.Text = c.Location;
 
             //attachments view
+            if (!attachmentsInitialized && null != this.item) {
+                foreach (var attachment in this.item.attachments) {
+                    attachmentView.Append (attachment);
+                }
+                attachmentsInitialized = true;
+            }
             attachmentView.ConfigureView ();
             attachmentView.Hidden = false;
 
-            //TODO
             //people view
             var peopleDetailLabelView = contentView.ViewWithTag (PEOPLE_DETAIL_TAG) as UILabel;
-            peopleDetailLabelView.Text = "Attendees (" + c.attendees.Count () + ")";
+            peopleDetailLabelView.Text = (0 != c.attendees.Count () ? "Attendees: (" + c.attendees.Count () + ")" : "Attendees:");
 
             //alert view
             var alertDetailLabelView = contentView.ViewWithTag (ALERT_DETAIL_TAG) as UILabel;

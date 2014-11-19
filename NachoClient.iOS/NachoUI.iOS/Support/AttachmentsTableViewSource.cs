@@ -352,10 +352,10 @@ namespace NachoClient.iOS
                 ConfigureAttachmentView (view, cell, McAttachment.QueryById<McAttachment> (item.Id), item, cellIconImageView, textLabel, detailTextlabel, dateTextlabel, downloadImageView);
                 break;
             case 1:
-                ConfigureNoteView (item, cellIconImageView, textLabel, detailTextlabel, dateTextlabel);
+                ConfigureNoteView (item, cellIconImageView, textLabel, detailTextlabel, dateTextlabel, downloadImageView);
                 break;
             case 2:
-                ConfigureDocumentView (McDocument.QueryById<McDocument> (item.Id), item, cellIconImageView, textLabel, detailTextlabel, dateTextlabel);
+                ConfigureDocumentView (McDocument.QueryById<McDocument> (item.Id), item, cellIconImageView, textLabel, detailTextlabel, dateTextlabel, downloadImageView);
                 break;
             }
 
@@ -418,20 +418,22 @@ namespace NachoClient.iOS
 
         }
 
-        protected void ConfigureNoteView (NcFileIndex item, UIImageView iconView, UILabel textLabel, UILabel detailTextLabel, UILabel dateTextLabel)
+        protected void ConfigureNoteView (NcFileIndex item, UIImageView iconView, UILabel textLabel, UILabel detailTextLabel, UILabel dateTextLabel, UIImageView downloadImageView)
         {
             textLabel.Text = Path.GetFileNameWithoutExtension (item.DisplayName);
             detailTextLabel.Text = "Note";
             dateTextLabel.Text = DateToString (item.CreatedAt);
             iconView.Image = UIImage.FromBundle ("email-att-files");
+            downloadImageView.Hidden = true;
         }
 
-        protected void ConfigureDocumentView (McDocument document, NcFileIndex item, UIImageView iconView, UILabel textLabel, UILabel detailTextLabel, UILabel dateTextLabel)
+        protected void ConfigureDocumentView (McDocument document, NcFileIndex item, UIImageView iconView, UILabel textLabel, UILabel detailTextLabel, UILabel dateTextLabel, UIImageView downloadImageView)
         {
             textLabel.Text = Path.GetFileNameWithoutExtension (item.DisplayName);
             detailTextLabel.Text = "Document";
             dateTextLabel.Text = DateToString (item.CreatedAt);
             iconView.Image = UIImage.FromBundle ("email-att-files");
+            downloadImageView.Hidden = true;
         }
 
         private string DateToString (DateTime date)

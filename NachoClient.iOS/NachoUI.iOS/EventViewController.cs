@@ -38,6 +38,7 @@ namespace NachoClient.iOS
         protected UIView eventAttendeeView;
         protected UIView eventAlertsView;
         protected UIView eventAttachmentsView;
+        protected UIView eventAttachmentsContainer;
         protected UIView eventNotesView;
         protected UIImageView organizerIcon;
         protected UILabel acceptLabel;
@@ -48,8 +49,8 @@ namespace NachoClient.iOS
         protected UIButton extraAttendeesButton;
         protected UIView line1;
         protected UIView line2;
-//        protected UITextView eventNotesTextView;
-//        protected UILabel eventNotesText;
+        //        protected UITextView eventNotesTextView;
+        //        protected UILabel eventNotesText;
         protected UIBarButtonItem editEventButton;
 
         // UI colors
@@ -76,6 +77,7 @@ namespace NachoClient.iOS
         protected bool hasAttachments = false;
         protected bool hasAttendees = false;
         protected bool hasNotes = false;
+        protected bool attachmentsDrawerOpen = false;
 
         // UI-related constants, or pseudo-constants
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
@@ -101,9 +103,10 @@ namespace NachoClient.iOS
             EVENT_ATTENDEE_TAG = 106,
             EVENT_ATTENDEE_DETAIL_TAG = 110,
             EVENT_ATTENDEE_LABEL_TAG = 120,
-            EVENT_ATTENDEE_VIEW_TAG = 1000,
-            EVENT_ATTACHMENT_DETAIL_TAG = 121,
-            EVENT_NOTES_DETAIL_TAG = 222,
+            EVENT_ATTENDEE_VIEW_TAG = 2000,
+            EVENT_ATTACHMENT_DETAIL_TAG = 221,
+            EVENT_ATTACHMENT_MORE_TAG = 222,
+            EVENT_NOTES_DETAIL_TAG = 223,
 
             EVENT_DESCRIPTION_TITLE_TAG = 300,
             EVENT_LOCATION_TITLE_TAG = 301,
@@ -116,8 +119,11 @@ namespace NachoClient.iOS
             EVENT_NOTE_TITLE_TAG = 307,
 
             EVENT_ALERTS_VIEW_TAG = 700,
+            EVENT_ATTACHMENTS_CONTAINER_TAG = 750,
             EVENT_ATTACHMENTS_VIEW_TAG = 800,
             EVENT_NOTES_TEXT_VIEW_TAG = 900,
+
+            EVENT_ATTACHMENT_TAG = 1000
         }
 
         protected static TupleList<uint, string> minList = new TupleList<uint, string> {
@@ -296,20 +302,11 @@ namespace NachoClient.iOS
             yOffset += CELL_HEIGHT + 20;
 
             // Attachments
-            eventAttachmentsView = new UIView (new RectangleF (0, yOffset, EVENT_CARD_WIDTH, CELL_HEIGHT));
-            eventAttachmentsView.Tag = (int)TagType.EVENT_ATTACHMENTS_VIEW_TAG;
-            eventAttachmentsView.BackgroundColor = cellBGColor;
+            eventAttachmentsContainer = new UIView (new RectangleF (0, yOffset, EVENT_CARD_WIDTH, CELL_HEIGHT));
+            eventAttachmentsContainer.Tag = (int)TagType.EVENT_ATTACHMENTS_CONTAINER_TAG;
+            eventAttachmentsContainer.BackgroundColor = cellBGColor;
 
-            Util.AddArrowAccessory (eventAlertsView.Frame.Width - 18 - 12, CELL_HEIGHT / 2 - 6, 12, eventAttachmentsView);
-
-            AddTextLabelWithImageView (0, "ATTACHMENTS", "email-icn-attachment", TagType.EVENT_ATTACHMENT_TITLE_TAG, eventAttachmentsView);
-            AddDetailTextLabel (42, 22, EVENT_CARD_WIDTH - 84 - 18, 20, TagType.EVENT_ATTACHMENT_DETAIL_TAG, eventAttachmentsView);
-
-            attachmentsTapGestureRecognizer = new UITapGestureRecognizer ();
-            attachmentsTapGestureRecognizerTapToken = attachmentsTapGestureRecognizer.AddTarget (AttachmentsTapGestureRecognizerTap);
-            eventAttachmentsView.AddGestureRecognizer (attachmentsTapGestureRecognizer);
-
-            eventCardView.AddSubview (eventAttachmentsView);
+            eventCardView.AddSubview (eventAttachmentsContainer);
 
             yOffset += CELL_HEIGHT + 20;
 
@@ -460,24 +457,49 @@ namespace NachoClient.iOS
             alertDetailLabel.Text = Pretty.ReminderString (c.ReminderIsSet, c.Reminder);
             alertDetailLabel.SizeToFit ();
 
-            var attachmentView = View.ViewWithTag ((int)TagType.EVENT_ATTACHMENTS_VIEW_TAG) as UIView;
-            attachmentView.Hidden = false;
-            var attachmentDetail = View.ViewWithTag ((int)TagType.EVENT_ATTACHMENT_DETAIL_TAG) as UILabel;
-            if (0 == c.attachments.Count) {
-                hasAttachments = false;
+            var attachmentsContainer = View.ViewWithTag ((int)TagType.EVENT_ATTACHMENTS_CONTAINER_TAG) as UIView;
+            int attachmentNum = 0;
+            ClearView (attachmentsContainer);
+            eventAttachmentsView = new UIView (new RectangleF (0, 0, EVENT_CARD_WIDTH, CELL_HEIGHT));
+            eventAttachmentsView.Tag = (int)TagType.EVENT_ATTACHMENTS_VIEW_TAG;
+            eventAttachmentsView.BackgroundColor = cellBGColor;
+
+            var moreImage = new UIImageView (new RectangleF (eventAlertsView.Frame.Width - 18 - 16, 0, 16, 16));
+            moreImage.Tag = (int)TagType.EVENT_ATTACHMENT_MORE_TAG;
+            eventAttachmentsView.AddSubview (moreImage);
+
+            AddTextLabelWithImageView (0, "ATTACHMENTS", "email-icn-attachment", TagType.EVENT_ATTACHMENT_TITLE_TAG, eventAttachmentsView);
+            AddDetailTextLabel (42, 22, EVENT_CARD_WIDTH - 84 - 18, 20, TagType.EVENT_ATTACHMENT_DETAIL_TAG, eventAttachmentsView);
+
+            attachmentsTapGestureRecognizer = new UITapGestureRecognizer ();
+            attachmentsTapGestureRecognizerTapToken = attachmentsTapGestureRecognizer.AddTarget (AttachmentsTapGestureRecognizerTap);
+            eventAttachmentsView.AddGestureRecognizer (attachmentsTapGestureRecognizer);
+
+            eventAttachmentsContainer.AddSubview (eventAttachmentsView);
+            foreach (var attachment in c.attachments) {
+                var frame = new RectangleF (42, 0, EVENT_CARD_WIDTH - 60, CELL_HEIGHT);
+                var attachmentView = new AttachmentView (frame, attachment);
                 attachmentView.Hidden = true;
-            } else {
-                hasAttachments = true;
-                attachmentView.Hidden = false;
-                attachmentDetail.Text = string.Format ("({0})", c.attachments.Count);
-                attachmentDetail.SizeToFit ();
+                attachmentView.Tag = (int)TagType.EVENT_ATTACHMENT_TAG + attachmentNum;
+                attachmentView.BackgroundColor = cellBGColor;
+
+                attachmentView.OnAttachmentSelected = OnAttachmentSelected;
+                attachmentsContainer.AddSubview (attachmentView);
+                attachmentsContainer.SendSubviewToBack (attachmentView);
+                attachmentsContainer.BackgroundColor = cellBGColor;
+                attachmentNum++;
+                if (c.attachments.Count () != attachmentNum) {
+                    Util.AddHorizontalLine (34, AttachmentView.VIEW_HEIGHT, EVENT_CARD_WIDTH - 60 - 34, A.Color_NachoBorderGray, attachmentView);
+                } 
             }
+            ConfigureAttachmentViewer (false);
 
             // Attendees
             if (null != extraAttendeesButton) {
                 extraAttendeesButton.TouchUpInside -= ExtraAttendeesTouchUpInside;
             }
             ClearView (eventAttendeeView);
+            eventAttendeeView.BackgroundColor = cellBGColor;
             extraAttendeesButton = null;
             var attendeeImageDiameter = 40;
             var iconSpace = EVENT_CARD_WIDTH - 60;
@@ -641,6 +663,7 @@ namespace NachoClient.iOS
             descriptionView = null;
             eventAttendeeView = null;
             eventAlertsView = null;
+            eventAttachmentsContainer = null;
             eventAttachmentsView = null;
             eventNotesView = null;
             acceptLabel = null;
@@ -655,6 +678,13 @@ namespace NachoClient.iOS
             alertTapGestureRecognizer = null;
             attachmentsTapGestureRecognizer = null;
             notesTapGestureRecognizer = null;
+
+            // Attachment Cells
+            int attachmentNum = 0;
+            while (attachmentNum < c.attachments.Count ()) {
+                (View.ViewWithTag ((int)TagType.EVENT_ATTACHMENT_TAG + attachmentNum) as AttachmentView).Cleanup ();
+                attachmentNum++;
+            }
         }
 
         protected static void AddButtonImage (UIButton button, string imageName, UIControlState buttonState)
@@ -799,6 +829,39 @@ namespace NachoClient.iOS
             titleLabelView.SizeToFit ();
         }
 
+        protected void ConfigureAttachmentViewer (bool suppressEarlyHide)
+        {
+            var attachmentContainer = View.ViewWithTag ((int)TagType.EVENT_ATTACHMENTS_CONTAINER_TAG) as UIView;
+            attachmentContainer.Hidden = false;
+            var moreIconView = View.ViewWithTag ((int)TagType.EVENT_ATTACHMENT_MORE_TAG) as UIImageView;
+            var attachmentDetail = View.ViewWithTag ((int)TagType.EVENT_ATTACHMENT_DETAIL_TAG) as UILabel;
+            if (0 == c.attachments.Count) {
+                hasAttachments = false;
+                attachmentContainer.Hidden = true;
+            } else {
+                moreIconView.Image = (attachmentsDrawerOpen ? UIImage.FromBundle ("gen-readmore-active") : UIImage.FromBundle ("gen-readmore"));
+                hasAttachments = true;
+                moreIconView.Hidden = false;
+                attachmentDetail.Hidden = false;
+                attachmentDetail.Text = string.Format ("({0})", c.attachments.Count);
+                attachmentDetail.SizeToFit ();
+                if (attachmentsDrawerOpen) {
+                    HideAttachmentCells (false);
+                } else {
+                    if (!suppressEarlyHide) {
+                        HideAttachmentCells (true);
+                    }
+                }
+            }
+        }
+
+        private void OnAttachmentSelected (McAttachment attachment)
+        {
+            if (McAbstrFileDesc.FilePresenceEnum.Complete == attachment.FilePresence) {
+                PlatformHelpers.DisplayAttachment (this, attachment);
+            }
+        }
+
         public void LayoutView ()
         {
             float yOffset = 0;
@@ -835,7 +898,19 @@ namespace NachoClient.iOS
             AdjustViewLayout (TagType.EVENT_ALERTS_VIEW_TAG, 0, ref internalYOffset, 18);
 
             if (hasAttachments) {
-                AdjustViewLayout (TagType.EVENT_ATTACHMENTS_VIEW_TAG, 0, ref internalYOffset, 18);
+                var drawerHeight = (attachmentsDrawerOpen ? AttachmentView.VIEW_HEIGHT * c.attachments.Count () : 0);
+                View.ViewWithTag ((int)TagType.EVENT_ATTACHMENTS_CONTAINER_TAG).Frame = new RectangleF (0, internalYOffset, EVENT_CARD_WIDTH, CELL_HEIGHT + drawerHeight);
+                AdjustViewLayout (TagType.EVENT_ATTACHMENTS_CONTAINER_TAG, 0, ref internalYOffset, 18);
+
+                int attachmentNum = 0;
+                foreach (var attachment in c.attachments) {
+                    if (attachmentsDrawerOpen) {
+                        View.ViewWithTag ((int)TagType.EVENT_ATTACHMENT_TAG + attachmentNum).Frame = new RectangleF (42, (attachmentNum + 1) * AttachmentView.VIEW_HEIGHT, EVENT_CARD_WIDTH - 60, AttachmentView.VIEW_HEIGHT);
+                    } else {
+                        AdjustY (View.ViewWithTag ((int)TagType.EVENT_ATTACHMENT_TAG + attachmentNum), (View.ViewWithTag ((int)TagType.EVENT_ATTACHMENTS_VIEW_TAG).Frame.Y));
+                    }
+                    attachmentNum++;
+                }
             }
 
             if (hasAttendees) {
@@ -850,7 +925,7 @@ namespace NachoClient.iOS
 
             var eventNotesViewHeight = (float)CELL_HEIGHT;
             if (hasNotes) {
-                eventNotesViewHeight = (View.ViewWithTag ((int)TagType.EVENT_NOTES_DETAIL_TAG).Frame.Height + View.ViewWithTag((int)TagType.EVENT_NOTE_TITLE_TAG).Frame.Height + 6);
+                eventNotesViewHeight = (View.ViewWithTag ((int)TagType.EVENT_NOTES_DETAIL_TAG).Frame.Height + View.ViewWithTag ((int)TagType.EVENT_NOTE_TITLE_TAG).Frame.Height + 6);
             }
             View.ViewWithTag ((int)TagType.EVENT_NOTES_TEXT_VIEW_TAG).Frame = new RectangleF (0, internalYOffset, EVENT_CARD_WIDTH, eventNotesViewHeight);
             internalYOffset += eventNotesViewHeight;
@@ -903,32 +978,33 @@ namespace NachoClient.iOS
             LayoutView ();
         }
 
-        protected void SelectionChanged (UITextView textView)
-        {
-            // We want to scroll the caret rect into view
-            var caretRect = textView.GetCaretRectForPosition (textView.SelectedTextRange.End);
-            caretRect.Size = new SizeF (caretRect.Size.Width, caretRect.Size.Height + textView.TextContainerInset.Bottom);
-            // Make sure our textview is big enough to hold the text
-            var frame = textView.Frame;
-            var frameBefore = frame;
-            frame.Size = new SizeF (textView.ContentSize.Width, textView.ContentSize.Height);
-            var frameAfter = frame;
-            if (frameBefore.Height < frameAfter.Height) {
-                NOTE_OFFSET += TEXT_LINE_HEIGHT;
-                LayoutView ();
-            }
-            if (frameBefore.Height > frameAfter.Height) {
-                NOTE_OFFSET -= TEXT_LINE_HEIGHT;
-                LayoutView ();
-            }
-
-            textView.Frame = frame;
-            // And update our enclosing scrollview for the new content size
-            scrollView.ContentSize = contentView.Frame.Size;
-            // Adjust the caretRect to be in our enclosing scrollview, and then scroll it
-            caretRect.Y += textView.Frame.Y;
-            scrollView.ScrollRectToVisible (caretRect, true);
-        }
+        // In case we want inline notes
+        //        protected void SelectionChanged (UITextView textView)
+        //        {
+        //            // We want to scroll the caret rect into view
+        //            var caretRect = textView.GetCaretRectForPosition (textView.SelectedTextRange.End);
+        //            caretRect.Size = new SizeF (caretRect.Size.Width, caretRect.Size.Height + textView.TextContainerInset.Bottom);
+        //            // Make sure our textview is big enough to hold the text
+        //            var frame = textView.Frame;
+        //            var frameBefore = frame;
+        //            frame.Size = new SizeF (textView.ContentSize.Width, textView.ContentSize.Height);
+        //            var frameAfter = frame;
+        //            if (frameBefore.Height < frameAfter.Height) {
+        //                NOTE_OFFSET += TEXT_LINE_HEIGHT;
+        //                LayoutView ();
+        //            }
+        //            if (frameBefore.Height > frameAfter.Height) {
+        //                NOTE_OFFSET -= TEXT_LINE_HEIGHT;
+        //                LayoutView ();
+        //            }
+        //
+        //            textView.Frame = frame;
+        //            // And update our enclosing scrollview for the new content size
+        //            scrollView.ContentSize = contentView.Frame.Size;
+        //            // Adjust the caretRect to be in our enclosing scrollview, and then scroll it
+        //            caretRect.Y += textView.Frame.Y;
+        //            scrollView.ScrollRectToVisible (caretRect, true);
+        //        }
 
         protected static void AdjustViewLayout (UIView view, float X, ref float Y, float extraY)
         {
@@ -1354,7 +1430,29 @@ namespace NachoClient.iOS
 
         private void AttachmentsTapGestureRecognizerTap ()
         {
-            PerformSegue ("EventToAttachment", this);
+            attachmentsDrawerOpen = !attachmentsDrawerOpen;
+            ConfigureAttachmentViewer (true);
+            UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
+                () => {
+                    LayoutView ();
+                },
+                () => {
+                    if (!attachmentsDrawerOpen) {
+                        HideAttachmentCells (true);
+                    }
+                }
+            );
+
+            // PerformSegue ("EventToAttachment", this);
+        }
+
+        public void HideAttachmentCells (bool hidden)
+        {
+            int attachmentNum = 0;
+            while (attachmentNum < c.attachments.Count ()) {
+                View.ViewWithTag ((int)TagType.EVENT_ATTACHMENT_TAG + attachmentNum).Hidden = hidden;
+                attachmentNum++;
+            }
         }
 
         private void NotesTapGestureRecognizerTap ()
