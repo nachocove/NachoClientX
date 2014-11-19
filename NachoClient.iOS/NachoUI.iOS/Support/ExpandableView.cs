@@ -12,9 +12,9 @@ namespace NachoClient.iOS
 {
     public class ExpandableView : UIView
     {
-        const float EXPAND_INSET = 5.0f;
-        public const float EXPAND_BUTTON_WIDTH = 30.0f;
-        public const float EXPAND_BUTTON_HEIGHT = 20.0f;
+        const float EXPAND_INSET = 16.0f;
+        public const float EXPAND_BUTTON_WIDTH = 16.0f;
+        public const float EXPAND_BUTTON_HEIGHT = 16.0f;
 
         private bool isExpanded;
         private UIView gestureView;
