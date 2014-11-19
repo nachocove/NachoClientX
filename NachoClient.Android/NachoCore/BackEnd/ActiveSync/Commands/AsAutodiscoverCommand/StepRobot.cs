@@ -500,6 +500,7 @@ namespace NachoCore.ActiveSync
                     DontReportCommResult = true,
                     TriesLeft = 3,
                     TimeoutExpander = KDefaultTimeoutExpander,
+                    DontReUseHttpClient = true,
                 };
             }
 

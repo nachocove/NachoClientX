@@ -118,13 +118,14 @@ namespace NachoCore.ActiveSync
 
         public bool DontReportCommResult { set; get; }
 
+        public bool DontReUseHttpClient { set; get; }
 
-        private static IHttpClient GetEncryptedClient (string username, string password)
+        private IHttpClient GetEncryptedClient (string username, string password)
         {
             lock (LockObj) {
-                if (null == LastUsername || null == LastPassword ||
-                LastUsername != username || LastPassword != password ||
-                null == EncryptedClient) {
+                if (DontReUseHttpClient || null == EncryptedClient ||
+                    null == LastUsername || null == LastPassword ||
+                    LastUsername != username || LastPassword != password) {
                     var handler = new HttpClientHandler () {
                         AllowAutoRedirect = false,
                         PreAuthenticate = true,
@@ -147,10 +148,10 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private static IHttpClient GetClearClient ()
+        private IHttpClient GetClearClient ()
         {
             lock (LockObj) {
-                if (null == ClearClient) {
+                if (DontReUseHttpClient || null == ClearClient) {
                     var handler = new HttpClientHandler () {
                         AllowAutoRedirect = false,
                     };
