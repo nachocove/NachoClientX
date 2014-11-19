@@ -107,8 +107,8 @@ namespace NachoClient.iOS
             if (!string.IsNullOrEmpty (tagName)) {
                 result += string.Format (" [{0}]", tagName);
             }
-            result += string.Format (": Origin {0} Size {1}",
-                Pretty.PointF (view.Frame.Location), Pretty.SizeF (view.Frame.Size));
+            result += string.Format (": Origin {0} Size {1} Tag {2}",
+                Pretty.PointF (view.Frame.Location), Pretty.SizeF (view.Frame.Size), view.Tag);
             if (view is UIScrollView) {
                 var scroll = (UIScrollView)view;
                 result += string.Format (" Scrollable content: Offset {0} Size {1} ZoomScale {2}",
