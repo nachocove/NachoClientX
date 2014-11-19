@@ -227,6 +227,13 @@ namespace NachoClient.iOS
                 dc.SetOwner (this, address, NachoContactType.EmailRequired);
                 return;
             }
+            if (segue.Identifier.Equals ("ComposeToContactSearch")) {
+                var dc = (ContactSearchViewController)segue.DestinationViewController;
+                var holder = sender as SegueHolder;
+                var address = (NcEmailAddress)holder.value;
+                dc.SetOwner (this, address, NachoContactType.EmailRequired);
+                return;
+            }
             if (segue.Identifier.Equals ("ComposeToNachoNow")) {
                 return;
             }
@@ -386,7 +393,7 @@ namespace NachoClient.iOS
             };
 
             if (PresetToAddress != null) {
-                UpdateEmailAddress (PresetToAddress);
+                UpdateEmailAddress (null, PresetToAddress);
             }
 
             if (PresetAttachmentList != null) {
@@ -757,8 +764,7 @@ namespace NachoClient.iOS
             scrollView.ScrollRectToVisible (targetRect, true);
         }
 
-        /// IUcAddressBlock delegate
-        public void AddressBlockAddContactClicked (UcAddressBlock view, string prefix)
+        public void AddressBlockClicked (UcAddressBlock view, string prefix, string segue)
         {
             NcEmailAddress.Kind kind = NcEmailAddress.Kind.Unknown;
 
@@ -774,12 +780,25 @@ namespace NachoClient.iOS
             var e = new NcEmailAddress (kind);
             e.action = NcEmailAddress.Action.create;
             e.address = prefix;
-            PerformSegue ("ComposeToContactChooser", new SegueHolder (e));
+            PerformSegue (segue, new SegueHolder (e));
+        }
+
+        /// IUcAddressBlock delegate
+        public void AddressBlockAutoCompleteContactClicked (UcAddressBlock view, string prefix)
+        {
+            AddressBlockClicked (view, prefix, "ComposeToContactChooser");
+        }
+
+        /// IUcAddressBlock delegate
+        public void AddressBlockSearchContactClicked (UcAddressBlock view, string prefix)
+        {
+            AddressBlockClicked (view, prefix, "ComposeToContactSearch");
         }
 
         public void DismissINachoContactChooser (INachoContactChooser vc)
         {
-            NcAssert.CaseError ();
+            vc.Cleanup ();
+            NavigationController.PopToViewController (this, true);
         }
 
         protected void ShowQuickResponses ()
@@ -863,7 +882,7 @@ namespace NachoClient.iOS
         /// <summary>
         /// INachoContactChooser callback
         /// </summary>
-        public void UpdateEmailAddress (NcEmailAddress address)
+        public void UpdateEmailAddress (INachoContactChooser vc, NcEmailAddress address)
         {
             NcAssert.True (null != address);
 
@@ -886,7 +905,7 @@ namespace NachoClient.iOS
         /// <summary>
         /// Callback
         /// </summary>
-        public void DeleteEmailAddress (NcEmailAddress address)
+        public void DeleteEmailAddress (INachoContactChooser vc, NcEmailAddress address)
         {
             // Chooser returned an empty stirng; ignore it.
         }

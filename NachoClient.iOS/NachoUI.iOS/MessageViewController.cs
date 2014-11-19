@@ -58,9 +58,11 @@ namespace NachoClient.iOS
         #if DEBUG_UI
         const int VIEW_INSET = 4;
         const int ATTACHMENTVIEW_INSET = 10;
+        float HEADER_TOP_MARGIN = 0;
         #else
-        const int VIEW_INSET = 2;
+        const int VIEW_INSET = 0;
         const int ATTACHMENTVIEW_INSET = 15;
+        float HEADER_TOP_MARGIN = 0;
         #endif
 
         // UI helper objects
@@ -162,8 +164,15 @@ namespace NachoClient.iOS
 
             // Main view
 
-            headerView = new UIView (new RectangleF (VIEW_INSET, 0, View.Frame.Width - 2 * VIEW_INSET, View.Frame.Height));
+            HEADER_TOP_MARGIN = A.Card_Vertical_Indent;
+
+            headerView = new UIView (new RectangleF (VIEW_INSET, HEADER_TOP_MARGIN, View.Frame.Width - 2 * VIEW_INSET, View.Frame.Height));
             scrollView.AddSubview (headerView);
+
+            headerView.BackgroundColor = UIColor.White;
+            headerView.Layer.CornerRadius = A.Card_Edge_To_Edge_Corner_Radius;
+            headerView.Layer.MasksToBounds = true;
+            scrollView.BackgroundColor = A.Color_NachoBackgroundGray;
 
             #if DEBUG_UI
             headerView.BackgroundColor = A.Color_NachoRed;
@@ -500,8 +509,10 @@ namespace NachoClient.iOS
 
             ViewFramer.Create (attachmentListView).Y (separator1YOffset + 1.0f);
 
-            bool bodyNeedsLayout = bodyView.Frame.Y > separator2YOffset + 1;
-            ViewFramer.Create (bodyView).Y (separator2YOffset + 1);
+            var bodyViewLocation = separator2YOffset + HEADER_TOP_MARGIN;
+
+            bool bodyNeedsLayout = bodyView.Frame.Y > bodyViewLocation + 1;
+            ViewFramer.Create (bodyView).Y (bodyViewLocation + 1);
             if (bodyNeedsLayout) {
                 // The body view was moved up on the screen, making more of it visible.
                 // Make sure that newly visible part is showing the right contents.
@@ -876,7 +887,11 @@ namespace NachoClient.iOS
         {
         }
 
-        public void AddressBlockAddContactClicked (UcAddressBlock view, string prefix)
+        public void AddressBlockAutoCompleteContactClicked (UcAddressBlock view, string prefix)
+        {
+        }
+
+        public void AddressBlockSearchContactClicked (UcAddressBlock view, string prefix)
         {
         }
     }

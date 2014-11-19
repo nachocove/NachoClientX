@@ -18,7 +18,7 @@ namespace NachoClient.iOS
     {
         public ContactListViewController owner;
 
-        protected RegexUtilities regexUtil = new RegexUtilities();
+        protected RegexUtilities regexUtil = new RegexUtilities ();
         protected const float X_INDENT = 30;
 
         protected const int ADD_NEW_DEFAULT_EMAIL_BUTTON_TAG = 10;
@@ -33,9 +33,6 @@ namespace NachoClient.iOS
 
         protected const int SELECTED_BUTTON_IMAGE_TAG = 88;
         protected const int NOT_SELECTED_BUTTON_IMAGE_TAG = 99;
-
-        protected const int DISMISS_VIEW_BUTTON_TAG = 100;
-        protected const int HEADER_LABEL_TAG = 101;
 
         protected const int ADD_EMAIL_VIEW_TAG = 200;
         protected const int EMAIL_TEXTFIELD_TAG = 201;
@@ -60,6 +57,9 @@ namespace NachoClient.iOS
 
         protected List<string> contactEmailList = new List<string> ();
         protected string selectedEmailType;
+
+        UIBarButtonItem dismissButton;
+        UINavigationItem navItem;
 
         protected McContact contact;
 
@@ -88,20 +88,23 @@ namespace NachoClient.iOS
         {
             View.BackgroundColor = A.Color_NachoGreen;
 
-            UIButton dismissViewButton = new UIButton (new RectangleF (X_INDENT, X_INDENT, 25, 25));
-            dismissViewButton.SetImage (UIImage.FromBundle ("modal-close"), UIControlState.Normal);
-            dismissViewButton.TouchUpInside += DismissViewTouchUpInside;
-            dismissViewButton.Tag = DISMISS_VIEW_BUTTON_TAG;
-            View.AddSubview (dismissViewButton);    
+            var navBar = new UINavigationBar (new RectangleF (0, 20, View.Frame.Width, 44));
+            navBar.BarStyle = UIBarStyle.Default;
+            navBar.Opaque = true;
+            navBar.Translucent = false;
 
-            UILabel headerLabel = new UILabel (new RectangleF (View.Frame.Width / 2 - 75, X_INDENT, 150, 25));
-            headerLabel.TextAlignment = UITextAlignment.Center;
-            headerLabel.Font = A.Font_AvenirNextDemiBold17;
-            headerLabel.TextColor = UIColor.White;
-            headerLabel.Tag = HEADER_LABEL_TAG;
-            View.AddSubview (headerLabel);
+            navItem = new UINavigationItem ();
+            using (var image = UIImage.FromBundle ("modal-close")) {
+                dismissButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
+                dismissButton.Clicked += DismissViewTouchUpInside;
+                navItem.LeftBarButtonItem = dismissButton;
+            }
+            navBar.Items = new UINavigationItem[] { navItem };
 
-            float yOffset = headerLabel.Frame.Bottom + 16;
+            View.AddSubview (navBar);
+            float yOffset = 64;
+            float topOffset = 64;
+
             Util.AddHorizontalLine (0, yOffset, View.Frame.Width, UIColor.LightGray, View);
             yOffset += 15;
 
@@ -158,7 +161,7 @@ namespace NachoClient.iOS
 //////////////ADD PHONE VIEW
 //////////////ADD PHONE VIEW
 //////////////ADD PHONE VIEW
-            yOffset = headerLabel.Frame.Bottom + 16 + 15;
+            yOffset = topOffset + 16 + 15;
 
             UIView addPhoneView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, View.Frame.Height - yOffset));
             addPhoneView.BackgroundColor = A.Color_NachoGreen;
@@ -230,7 +233,7 @@ namespace NachoClient.iOS
 ////////////MULTI PHONE SELECTOR VIEW
 ////////////MULTI PHONE SELECTOR VIEW
 ////////////MULTI PHONE SELECTOR VIEW
-            yOffset = headerLabel.Frame.Bottom + 17;
+            yOffset = topOffset + 17;
 
             UIView selectPhoneView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, View.Frame.Height - yOffset));
             selectPhoneView.BackgroundColor = A.Color_NachoGreen;
@@ -267,7 +270,7 @@ namespace NachoClient.iOS
 ////////////MULTI EMAIL SELECTOR VIEW
 ////////////MULTI EMAIL SELECTOR VIEW
 ////////////MULTI EMAIL SELECTOR VIEW
-            yOffset = headerLabel.Frame.Bottom + 17;
+            yOffset = topOffset + 17;
             UIView selectEmailView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, View.Frame.Height - yOffset));
             selectEmailView.BackgroundColor = A.Color_NachoGreen;
             selectEmailView.Tag = SELECT_EMAIL_VIEW_TAG;
@@ -363,8 +366,7 @@ namespace NachoClient.iOS
 
         protected override void Cleanup ()
         {
-            UIButton dismissButton = (UIButton)View.ViewWithTag (DISMISS_VIEW_BUTTON_TAG);
-            dismissButton.TouchUpInside -= DismissViewTouchUpInside;
+            dismissButton.Clicked -= DismissViewTouchUpInside;
             dismissButton = null;
 
             UIButton selectLabelButton = (UIButton)View.ViewWithTag (SELECT_PHONELABEL_BUTTON_TAG);
@@ -401,26 +403,24 @@ namespace NachoClient.iOS
 
         protected override void ConfigureAndLayout ()
         {
-            UILabel headerLabel = (UILabel)View.ViewWithTag (HEADER_LABEL_TAG);
-
             switch (viewType) {
             case DefaultSelectionType.EmailAdder:
-                headerLabel.Text = "Add New Email";
+                navItem.Title = "Add New Email";
                 UIView emailAddView = (UIView)View.ViewWithTag (ADD_EMAIL_VIEW_TAG);
                 emailAddView.Hidden = false;
                 break;
             case DefaultSelectionType.PhoneNumberAdder:
-                headerLabel.Text = "Add New Number";
+                navItem.Title = "Add New Number";
                 UIView phoneAddView = (UIView)View.ViewWithTag (PHONE_ADD_VIEW_TAG);
                 phoneAddView.Hidden = false;
                 break;
             case DefaultSelectionType.DefaultPhoneSelector:
-                headerLabel.Text = "Select a Phone";
+                navItem.Title = "Select a Phone";
                 UIView phoneSelectView = (UIView)View.ViewWithTag (SELECT_PHONE_VIEW_TAG);
                 phoneSelectView.Hidden = false;
                 break;
             case DefaultSelectionType.DefaultEmailSelector:
-                headerLabel.Text = "Select an Email";
+                navItem.Title = "Select an Email";
                 UIView emailSelectView = (UIView)View.ViewWithTag (SELECT_EMAIL_VIEW_TAG);
                 emailSelectView.Hidden = false;
                 break;
@@ -467,7 +467,7 @@ namespace NachoClient.iOS
         private void AddDefaultEmailAndClose (object sender, EventArgs e)
         {
             UITextField emailTextField = (UITextField)View.ViewWithTag (EMAIL_TEXTFIELD_TAG);
-            if(regexUtil.IsValidEmail(emailTextField.Text)){
+            if (regexUtil.IsValidEmail (emailTextField.Text)) {
                 contact.AddDefaultEmailAddressAttribute (LoginHelpers.GetCurrentAccountId (), Xml.Contacts.Email1Address, null, emailTextField.Text);
                 contact.Update ();
                 DismissViewController (true, null);

@@ -27,6 +27,8 @@ namespace NachoClient.iOS
         List<McAttachment> AttachmentsList = new List<McAttachment> ();
         List<ButtonInfo> buttonInfoList;
 
+        UIBarButtonItem DismissButton;
+
         public AddAttachmentViewController (IntPtr handle) : base (handle)
         {
         }
@@ -70,28 +72,26 @@ namespace NachoClient.iOS
             priorityView.ClipsToBounds = true;
             priorityView.BackgroundColor = A.Color_NachoGreen;
 
-            float yOffset = 40;
+            var navBar = new UINavigationBar (new RectangleF (0, 20, View.Frame.Width, 44));
+            navBar.BarStyle = UIBarStyle.Default;
+            navBar.Opaque = true;
+            navBar.Translucent = false;
 
-            UIButton dismissButton = new UIButton (new RectangleF (30, yOffset, 25, 25));
-            dismissButton.SetImage (UIImage.FromBundle ("modal-close"), UIControlState.Normal);
-            dismissButton.TouchUpInside += dismissClicked;
-            dismissButton.Tag = DISMISS_TAG;
-            priorityView.Add (dismissButton);
+            var navItem = new UINavigationItem ("Add Attachment");
+            using (var image = UIImage.FromBundle ("modal-close")) {
+                DismissButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
+                DismissButton.Clicked += dismissClicked;
+                navItem.LeftBarButtonItem = DismissButton;
+            }
+            navBar.Items = new UINavigationItem[] { navItem };
 
-            UILabel viewTitle = new UILabel (new RectangleF (priorityView.Frame.Width / 2 - 75, yOffset, 150, 25));
-            viewTitle.Text = "Add Attachment";
-            viewTitle.Font = A.Font_AvenirNextDemiBold17;
-            viewTitle.TextColor = UIColor.White;
-            viewTitle.TextAlignment = UITextAlignment.Center;
-            priorityView.Add (viewTitle);
+            priorityView.AddSubview (navBar);
+            float yOffset = 64;
 
-            yOffset = viewTitle.Frame.Bottom + 20;
+            Util.AddHorizontalLine (0, yOffset, View.Frame.Width, UIColor.LightGray, priorityView);
+            yOffset += 2;
 
-            UIView sectionSeparator = new UIView (new RectangleF (0, yOffset, View.Frame.Width, .5f));
-            sectionSeparator.BackgroundColor = UIColor.LightGray.ColorWithAlpha (.6f);
-            priorityView.AddSubview (sectionSeparator);
-
-            yOffset = sectionSeparator.Frame.Bottom + 60;
+            yOffset += 60;
 
             buttonInfoList = new List<ButtonInfo> (new ButtonInfo[] {
                 new ButtonInfo ("Add Photo", "calendar-add-photo", () => SetupPhotoPicker (false)),
@@ -157,8 +157,7 @@ namespace NachoClient.iOS
 
         protected override void Cleanup ()
         {
-            UIButton DismissButton = (UIButton)View.ViewWithTag (DISMISS_TAG);
-            DismissButton.TouchUpInside -= dismissClicked;
+            DismissButton.Clicked -= dismissClicked;
             DismissButton = null;
 
             //TODO
