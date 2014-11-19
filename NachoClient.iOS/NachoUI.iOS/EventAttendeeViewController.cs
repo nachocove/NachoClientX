@@ -312,7 +312,8 @@ namespace NachoClient.iOS
             UpdateLists ();
         }
 
-        public void UpdateEmailAddress (NcEmailAddress address)
+        // INachoContactChooser delegate
+        public void UpdateEmailAddress (INachoContactChooser vc, NcEmailAddress address)
         {
             NcAssert.True (null != address);
 
@@ -351,14 +352,17 @@ namespace NachoClient.iOS
             UpdateLists ();
         }
 
-        public void DeleteEmailAddress (NcEmailAddress address)
+        // INachoContactChooser delegate
+        public void DeleteEmailAddress (INachoContactChooser vc, NcEmailAddress address)
         {
             NcAssert.CaseError ();
         }
 
+        // INachoContactChooser delegate
         public void DismissINachoContactChooser (INachoContactChooser vc)
         {
-            NcAssert.CaseError ();
+            vc.Cleanup ();
+            NavigationController.PopToViewController (this, true);
         }
 
         public void UpdateLists ()

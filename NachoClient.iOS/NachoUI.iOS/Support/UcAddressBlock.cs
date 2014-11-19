@@ -228,7 +228,7 @@ namespace NachoClient.iOS
             chooserButton.Hidden = !isEditable;
             chooserButton.TouchUpInside += (object sender, EventArgs e) => {
                 if (null != owner) {
-                    owner.AddressBlockAddContactClicked (this, null);
+                    owner.AddressBlockSearchContactClicked (this, null);
                 }
             };
 
@@ -509,17 +509,17 @@ namespace NachoClient.iOS
                 switch (addressField.type) {
                 case UcAddressField.ENTRY_FIELD:
                     if (null != outer.owner) {
-                        outer.owner.AddressBlockAddContactClicked (outer, replacementString);
+                        outer.owner.AddressBlockAutoCompleteContactClicked (outer, replacementString);
                     }
                     break;
                 case UcAddressField.GAP_FIELD:
                     if (null != outer.owner) {
-                        outer.owner.AddressBlockAddContactClicked (outer, replacementString);
+                        outer.owner.AddressBlockAutoCompleteContactClicked (outer, replacementString);
                     }
                     break;
                 case UcAddressField.TEXT_FIELD:
                     if (null != outer.owner) {
-                        outer.owner.AddressBlockAddContactClicked (outer, replacementString);
+                        outer.owner.AddressBlockAutoCompleteContactClicked (outer, replacementString);
                     }
                     break;
                 default:

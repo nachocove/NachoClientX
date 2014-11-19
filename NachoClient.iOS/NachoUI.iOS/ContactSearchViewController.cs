@@ -21,16 +21,29 @@ namespace NachoClient.iOS
     /// Handles search in an INachoContacts.
     /// Handles async search too.
     /// </summary>
-    public partial class ContactSearchViewController : NcUITableViewController, IContactsTableViewSourceDelegate
+    public partial class ContactSearchViewController : NcUITableViewController, IContactsTableViewSourceDelegate, INachoContactChooser
     {
         // Interface
-        public ContactChooserViewController owner;
-        public string initialSearchString;
+        protected INachoContactChooserDelegate owner;
+        protected NcEmailAddress address;
+        protected string initialSearchString;
         // Internal state
         ContactsTableViewSource contactTableViewSource;
 
         public ContactSearchViewController (IntPtr handle) : base (handle)
         {
+        }
+
+        public void SetOwner (INachoContactChooserDelegate owner, NcEmailAddress address, NachoContactType type)
+        {
+            this.owner = owner;
+            this.address = address;
+            this.initialSearchString = "";
+        }
+
+        public void Cleanup ()
+        {
+            this.owner = null;
         }
 
         public override void ViewDidLoad ()
@@ -43,10 +56,6 @@ namespace NachoClient.iOS
 
             TableView.Source = contactTableViewSource;
             SearchDisplayController.SearchResultsTableView.Source = contactTableViewSource;
-
-            // Let's be ready to search!
-            SearchDisplayController.Active = true;
-            SearchDisplayController.SearchBar.BecomeFirstResponder ();
 
             if ((null != initialSearchString) && (0 != initialSearchString.Length)) {
                 SearchDisplayController.SearchBar.Text = initialSearchString;
@@ -109,7 +118,11 @@ namespace NachoClient.iOS
         /// IContactsTableViewSourceDelegate
         public void ContactSelectedCallback (McContact contact)
         {
-            owner.DoublePop (this, contact);
+            address.contact = contact;
+            owner.UpdateEmailAddress (this, address);
+            if (null != owner) {
+                owner.DismissINachoContactChooser (this);
+            }
         }
  
     }

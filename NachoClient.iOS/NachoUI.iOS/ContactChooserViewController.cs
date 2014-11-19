@@ -16,7 +16,7 @@ using MCSwipeTableViewCellBinding;
 
 namespace NachoClient.iOS
 {
-    public partial class ContactChooserViewController : NcUIViewController, IUITableViewDelegate, IUITextFieldDelegate, INachoContactChooser
+    public partial class ContactChooserViewController : NcUIViewController, IUITableViewDelegate, IUITextFieldDelegate, INachoContactChooser, INachoContactChooserDelegate
     {
         // Interface
         protected McAccount account;
@@ -40,6 +40,11 @@ namespace NachoClient.iOS
             this.owner = owner;
             this.address = address;
             this.contactType = contactType;
+        }
+
+        public void Cleanup ()
+        {
+            this.owner = null;
         }
 
         public ContactChooserViewController (IntPtr handle) : base (handle)
@@ -161,9 +166,8 @@ namespace NachoClient.iOS
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             if (segue.Identifier.Equals ("ContactChooserToContactSearch")) {
-                ContactSearchViewController destinationController = (ContactSearchViewController)segue.DestinationViewController;
-                destinationController.owner = this;
-                destinationController.initialSearchString = autoCompleteTextField.Text;
+                var dvc = (INachoContactChooser)segue.DestinationViewController;
+                dvc.SetOwner (this, address, NachoContactType.EmailRequired);
                 return;
             }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
@@ -174,7 +178,8 @@ namespace NachoClient.iOS
         {
             this.address.contact = contact;
             this.address.address = address;
-            owner.UpdateEmailAddress (this.address);
+            owner.UpdateEmailAddress (this, this.address);
+            owner.DismissINachoContactChooser (this);
         }
 
         /// <summary>
@@ -183,17 +188,16 @@ namespace NachoClient.iOS
         public void DoneSelected (UITextField textField)
         {
             if ((null == textField.Text) || (0 == textField.Text.Length)) {
-                owner.DeleteEmailAddress (address);
+                owner.DeleteEmailAddress (this, address);
+                owner.DismissINachoContactChooser (this);
             } else {
                 UpdateEmailAddress (null, textField.Text);
             }
-            owner = null;
-            NavigationController.PopViewControllerAnimated (true);
         }
 
         public void CancelSelected ()
         {
-            NavigationController.PopViewControllerAnimated (true);
+            owner.DismissINachoContactChooser (this);
         }
 
         /// <summary>
@@ -225,14 +229,26 @@ namespace NachoClient.iOS
             }
         }
 
-        public void DoublePop (ContactSearchViewController vc, McContact contact)
+        // INachoContactChooser delegate
+        public void UpdateEmailAddress (INachoContactChooser vc, NcEmailAddress address)
         {
-            UpdateEmailAddress (contact, contact.GetEmailAddress ());
-            vc.owner = null;
-            vc.NavigationController.PopViewControllerAnimated (false);
-            NavigationController.PopViewControllerAnimated (true);
+            vc.Cleanup ();
+            owner.UpdateEmailAddress (this, address);
+            owner.DismissINachoContactChooser (this);
         }
 
+        // INachoContactChooser delegate
+        public void DeleteEmailAddress (INachoContactChooser vc, NcEmailAddress address)
+        {
+            NcAssert.CaseError ();
+        }
+
+        // INachoContactChooser delegate
+        public void DismissINachoContactChooser (INachoContactChooser vc)
+        {
+            vc.Cleanup ();
+            owner.DismissINachoContactChooser (this);
+        }
 
         private void OnKeyboardNotification (NSNotification notification)
         {
@@ -344,9 +360,6 @@ namespace NachoClient.iOS
                 }
 
                 Owner.UpdateEmailAddress (contact, contact.GetEmailAddress ());
-
-                Owner.owner = null;
-                Owner.NavigationController.PopViewControllerAnimated (true);
             }
 
         }

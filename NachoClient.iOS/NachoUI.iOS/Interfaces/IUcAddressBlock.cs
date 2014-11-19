@@ -19,7 +19,9 @@ namespace NachoClient.iOS
 
         void AddressBlockWillBecomeInactive (UcAddressBlock view);
 
-        void AddressBlockAddContactClicked(UcAddressBlock view, string prefix);
+        void AddressBlockAutoCompleteContactClicked(UcAddressBlock view, string prefix);
+
+        void AddressBlockSearchContactClicked(UcAddressBlock view, string prefix);
     }
 }
 

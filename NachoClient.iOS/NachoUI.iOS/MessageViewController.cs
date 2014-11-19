@@ -876,7 +876,11 @@ namespace NachoClient.iOS
         {
         }
 
-        public void AddressBlockAddContactClicked (UcAddressBlock view, string prefix)
+        public void AddressBlockAutoCompleteContactClicked (UcAddressBlock view, string prefix)
+        {
+        }
+
+        public void AddressBlockSearchContactClicked (UcAddressBlock view, string prefix)
         {
         }
     }

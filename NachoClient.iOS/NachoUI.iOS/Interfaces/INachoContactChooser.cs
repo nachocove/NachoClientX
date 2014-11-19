@@ -15,14 +15,14 @@ namespace NachoClient.iOS
 
     public interface INachoContactChooser
     {
+        void Cleanup();
         void SetOwner (INachoContactChooserDelegate owner, NcEmailAddress address, NachoContactType type);
-        void DismissViewController (bool animated, NSAction action);
     }
 
     public interface INachoContactChooserDelegate
     {
-        void UpdateEmailAddress (NcEmailAddress address);
-        void DeleteEmailAddress (NcEmailAddress address);
+        void UpdateEmailAddress (INachoContactChooser vc, NcEmailAddress address);
+        void DeleteEmailAddress (INachoContactChooser vc, NcEmailAddress address);
         void DismissINachoContactChooser (INachoContactChooser vc);
     }
 }
