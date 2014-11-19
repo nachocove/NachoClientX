@@ -187,6 +187,14 @@ namespace NachoCore.Utils
                 var task = eventTable.PutItemAsync (eventItem);
                 task.Wait (NcTask.Cts.Token);
             }
+            catch (TaskCanceledException e) {
+                if (NcTask.Cts.Token.IsCancellationRequested) {
+                    throw;
+                }
+                // Otherwise, most likely HTTP client timeout
+                Console.WriteLine ("Task canceled exception {0}", e);
+                return false;
+            }
             catch (OperationCanceledException) {
                 // Since we are catching Exception below, we must catch and re-throw
                 // or this exception will be swallowed and telemetry task will not exit.
@@ -217,6 +225,14 @@ namespace NachoCore.Utils
             try {
                 var task = multiBatchWrite.ExecuteAsync (NcTask.Cts.Token);
                 task.Wait (NcTask.Cts.Token);
+            }
+            catch (TaskCanceledException e) {
+                if (NcTask.Cts.Token.IsCancellationRequested) {
+                    throw;
+                }
+                // Otherwise, most likely HTTP client timeout
+                Console.WriteLine ("Task canceled exception {0}", e);
+                return false;
             }
             catch (OperationCanceledException) {
                 // Since we are catching Exception below, we must catch and re-throw
