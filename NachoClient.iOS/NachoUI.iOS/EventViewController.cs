@@ -90,40 +90,44 @@ namespace NachoClient.iOS
 
         public enum TagType
         {
-            ALERT_DETAIL_TAG = 207,
-            EVENT_CARD_VIEW_TAG = 208,
+            EVENT_CARD_VIEW_TAG = 101,
+            EVENT_TITLE_LABEL_TAG = 102,
 
-            EVENT_TITLE_LABEL_TAG = 101,
-            EVENT_DESCRIPTION_LABEL_TAG = 102,
-            EVENT_LOCATION_DETAIL_LABEL_TAG = 103,
+            EVENT_WHEN_TITLE_TAG = 103,
             EVENT_WHEN_DETAIL_LABEL_TAG = 104,
-            EVENT_WHEN_DURATION_TAG = 500,
-            EVENT_WHEN_RECURRENCE_TAG = 601,
-            EVENT_PHONE_DETAIL_BUTTON_TAG = 105,
-            EVENT_ATTENDEE_TAG = 106,
-            EVENT_ATTENDEE_DETAIL_TAG = 110,
-            EVENT_ATTENDEE_LABEL_TAG = 120,
+            EVENT_WHEN_DURATION_TAG = 105,
+            EVENT_WHEN_RECURRENCE_TAG = 106,
+
+            EVENT_LOCATION_TITLE_TAG = 107,
+            EVENT_LOCATION_DETAIL_LABEL_TAG = 108,
+
+            EVENT_PHONE_TITLE_TAG = 109,
+            EVENT_PHONE_DETAIL_BUTTON_TAG = 110,
+
+            EVENT_DESCRIPTION_TITLE_TAG = 111,
+            EVENT_DESCRIPTION_LABEL_TAG = 112,
+
+            EVENT_ALERTS_VIEW_TAG = 113,
+            EVENT_ALERT_TITLE_TAG = 114,
+            EVENT_ALERT_DETAIL_TAG = 115,
+
+            EVENT_ATTACHMENTS_CONTAINER_TAG = 1000,
+            EVENT_ATTACHMENTS_VIEW_TAG = 1001,
+            EVENT_ATTACHMENT_TITLE_TAG = 1002,
+            EVENT_ATTACHMENT_DETAIL_TAG = 1003,
+            EVENT_ATTACHMENT_MORE_TAG = 1004,
+            EVENT_ATTACHMENT_TAG = 1010,
+
             EVENT_ATTENDEE_VIEW_TAG = 2000,
-            EVENT_ATTACHMENT_DETAIL_TAG = 221,
-            EVENT_ATTACHMENT_MORE_TAG = 222,
-            EVENT_NOTES_DETAIL_TAG = 223,
+            EVENT_ATTENDEES_TITLE_TAG = 2001,
+            EVENT_ATTENDING_TITLE_TAG = 2002,
+            EVENT_ATTENDEE_DETAIL_TAG = 2003,
+            EVENT_ATTENDEE_TAG = 2010,
+            EVENT_ATTENDEE_LABEL_TAG = 2020,
 
-            EVENT_DESCRIPTION_TITLE_TAG = 300,
-            EVENT_LOCATION_TITLE_TAG = 301,
-            EVENT_WHEN_TITLE_TAG = 302,
-            EVENT_PHONE_TITLE_TAG = 303,
-            EVENT_ATTENDEES_TITLE_TAG = 308,
-            EVENT_ATTENDING_TITLE_TAG = 309,
-            EVENT_ALERT_TITLE_TAG = 305,
-            EVENT_ATTACHMENT_TITLE_TAG = 306,
-            EVENT_NOTE_TITLE_TAG = 307,
-
-            EVENT_ALERTS_VIEW_TAG = 700,
-            EVENT_ATTACHMENTS_CONTAINER_TAG = 750,
-            EVENT_ATTACHMENTS_VIEW_TAG = 800,
-            EVENT_NOTES_TEXT_VIEW_TAG = 900,
-
-            EVENT_ATTACHMENT_TAG = 1000
+            EVENT_NOTES_TEXT_VIEW_TAG = 116,
+            EVENT_NOTE_TITLE_TAG = 117,
+            EVENT_NOTES_DETAIL_TAG = 118,
         }
 
         protected static TupleList<uint, string> minList = new TupleList<uint, string> {
@@ -292,7 +296,7 @@ namespace NachoClient.iOS
             Util.AddArrowAccessory (eventAlertsView.Frame.Width - 18 - 12, 2, 12, eventAlertsView);
 
             AddTextLabelWithImageView (0, "REMINDER", "event-reminder", TagType.EVENT_ALERT_TITLE_TAG, eventAlertsView);
-            AddDetailTextLabel (42, 22, EVENT_CARD_WIDTH - 84 - 18, 20, TagType.ALERT_DETAIL_TAG, eventAlertsView);
+            AddDetailTextLabel (42, 22, EVENT_CARD_WIDTH - 84 - 18, 20, TagType.EVENT_ALERT_DETAIL_TAG, eventAlertsView);
 
             alertTapGestureRecognizer = new UITapGestureRecognizer ();
             alertTapGestureRecognizerTapToken = alertTapGestureRecognizer.AddTarget (AlertTapGestureRecognizerTap);
@@ -453,7 +457,7 @@ namespace NachoClient.iOS
             #endif
             descriptionView.Configure (c);
 
-            var alertDetailLabel = View.ViewWithTag ((int)TagType.ALERT_DETAIL_TAG) as UILabel;
+            var alertDetailLabel = View.ViewWithTag ((int)TagType.EVENT_ALERT_DETAIL_TAG) as UILabel;
             alertDetailLabel.Text = Pretty.ReminderString (c.ReminderIsSet, c.Reminder);
             alertDetailLabel.SizeToFit ();
 
