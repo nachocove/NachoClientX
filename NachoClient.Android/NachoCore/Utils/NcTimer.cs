@@ -215,7 +215,9 @@ namespace NachoCore.Utils
                 }
             }
             lock (InstanceLockObj) {
-                Timer.Dispose ();
+                if (null == Timer) {
+                    Timer.Dispose ();
+                }
                 callback = null;
             }
             Log.Info (Log.LOG_TIMER, "NcTimer {0}/{1} disposed", Id, Who);
