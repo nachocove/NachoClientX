@@ -17,6 +17,21 @@ namespace NachoCore.Utils
 
         public static void StartService ()
         {
+            if (null != TaskMap) {
+                foreach (var pair in TaskMap) {
+                    try {
+                        var taskRef = pair.Key;
+                        if (!taskRef.IsAlive) {
+                            continue;
+                        }
+                        if (!((Task)taskRef.Target).IsCompleted) {
+                            Log.Error (Log.LOG_SYS, "Task {0} survives across shutdown", pair.Value);
+                        }
+                    } catch {
+                        // tasks may be going away as we iterate.
+                    }
+                }
+            }
             TaskMap = new ConcurrentDictionary<WeakReference, string> ();
             Cts = new CancellationTokenSource ();
         }
@@ -83,7 +98,7 @@ namespace NachoCore.Utils
                     var taskRef = pair.Key;
                     if (taskRef.IsAlive) {
                         if (!((Task)taskRef.Target).IsCompleted) {
-                            Log.Error (Log.LOG_SYS, "Task {0} still running", pair.Value);
+                            Log.Warn (Log.LOG_SYS, "Task {0} still running", pair.Value);
                         }
                         if (!((Task)taskRef.Target).IsCanceled) {
                             Log.Info (Log.LOG_SYS, "Task {0} cancelled", pair.Value);
