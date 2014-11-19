@@ -52,27 +52,29 @@ namespace NachoClient.iOS
             priorityView.ClipsToBounds = true;
             priorityView.BackgroundColor = A.Color_NachoGreen;
 
-            float yOffset = 40;
+            var navBar = new UINavigationBar (new RectangleF (0, 20, View.Frame.Width, 44));
+            navBar.BarStyle = UIBarStyle.Default;
+            navBar.Opaque = true;
+            navBar.Translucent = false;
 
-            UIButton dismissButton = new UIButton (new RectangleF (30, yOffset, 25, 25));
-            dismissButton.SetImage (UIImage.FromBundle ("modal-close"), UIControlState.Normal);
-            dismissButton.TouchUpInside += (object sender, EventArgs e) => {
-                DismissViewController (true, null);
-            };
-            priorityView.Add (dismissButton);
-
-            UILabel viewTitle = new UILabel (new RectangleF (priorityView.Frame.Width / 2 - 75, yOffset, 150, 25));
+            var navItem = new UINavigationItem ();
             if (DateControllerType.Defer == dateControllerType) {
-                viewTitle.Text = "Defer Message";
+                navItem.Title = "Defer Message";
             } else {
-                viewTitle.Text = "Set Deadline";
+                navItem.Title = "Set Deadline";
             }
-            viewTitle.Font = A.Font_AvenirNextDemiBold17;
-            viewTitle.TextColor = UIColor.White;
-            viewTitle.TextAlignment = UITextAlignment.Center;
-            priorityView.Add (viewTitle);
+            using (var image = UIImage.FromBundle ("modal-close")) {
+                var dismissButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
+                dismissButton.Clicked += (object sender, EventArgs e) => {
+                    DateSelected (MessageDeferralType.None, DateTime.MinValue);
+                };
+                navItem.LeftBarButtonItem = dismissButton;
+            }
+            navBar.Items = new UINavigationItem[] { navItem };
 
-            yOffset = viewTitle.Frame.Bottom + 20;
+            priorityView.AddSubview (navBar);
+
+            float yOffset = 64;
 
             UIView sectionSeparator = new UIView (new RectangleF (0, yOffset, View.Frame.Width, .5f));
             sectionSeparator.BackgroundColor = UIColor.LightGray.ColorWithAlpha (.6f);
@@ -93,7 +95,7 @@ namespace NachoClient.iOS
 
             List<ButtonInfo> buttonInfoList;
 
-            switch(dateControllerType) {
+            switch (dateControllerType) {
             case DateControllerType.Defer:
                 buttonInfoList = new List<ButtonInfo> (new ButtonInfo[] {
                     new ButtonInfo ("Later Today", "modal-later-today", () => DateSelected (MessageDeferralType.Later, DateTime.MinValue)),

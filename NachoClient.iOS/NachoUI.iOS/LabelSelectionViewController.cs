@@ -15,28 +15,28 @@ using NachoCore.Utils;
 namespace NachoClient.iOS
 {
     public partial class LabelSelectionViewController : NcUIViewControllerNoLeaks
-	{
+    {
         protected const float X_INDENT = 30;
 
         protected List<PhoneLabel> phoneLabels = new List<PhoneLabel> ();
-        public PhoneLabel selectedPhoneLabel; 
+        public PhoneLabel selectedPhoneLabel;
         protected McContact contact;
 
         protected const int SELECTED_BUTTON_IMAGE_TAG = 88;
         protected const int NOT_SELECTED_BUTTON_IMAGE_TAG = 99;
 
-        protected const int DISMISS_VIEW_BUTTON_TAG = 100;
-
         protected const int SELECTION_BUTTON_STARTING_TAG = 1000;
 
         protected int selectedButtonTag = SELECTION_BUTTON_STARTING_TAG;
 
-        public ContactDefaultSelectionViewController owner; 
+        public ContactDefaultSelectionViewController owner;
 
-		public LabelSelectionViewController (IntPtr handle) : base (handle)
-		{
+        UIBarButtonItem DismissButton;
 
-		}
+        public LabelSelectionViewController (IntPtr handle) : base (handle)
+        {
+
+        }
 
         public override void ViewDidLoad ()
         {
@@ -48,20 +48,22 @@ namespace NachoClient.iOS
         {
             View.BackgroundColor = A.Color_NachoGreen;
 
-            UIButton dismissViewButton = new UIButton (new RectangleF (X_INDENT, X_INDENT, 25, 25));
-            dismissViewButton.SetImage (UIImage.FromBundle ("modal-close"), UIControlState.Normal);
-            dismissViewButton.TouchUpInside += DismissViewTouchUpInside;
-            dismissViewButton.Tag = DISMISS_VIEW_BUTTON_TAG;
-            View.AddSubview (dismissViewButton);    
+            var navBar = new UINavigationBar (new RectangleF (0, 20, View.Frame.Width, 44));
+            navBar.BarStyle = UIBarStyle.Default;
+            navBar.Opaque = true;
+            navBar.Translucent = false;
 
-            UILabel headerLabel = new UILabel (new RectangleF (View.Frame.Width / 2 - 75, X_INDENT, 150, 25));
-            headerLabel.TextAlignment = UITextAlignment.Center;
-            headerLabel.Font = A.Font_AvenirNextDemiBold17;
-            headerLabel.TextColor = UIColor.White;
-            headerLabel.Text = "Choose a Label";
-            View.AddSubview (headerLabel);
+            var navItem = new UINavigationItem ("Choose a Label");
+            using (var image = UIImage.FromBundle ("modal-close")) {
+                DismissButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
+                DismissButton.Clicked += DismissViewTouchUpInside;
+                navItem.LeftBarButtonItem = DismissButton;
+            }
+            navBar.Items = new UINavigationItem[] { navItem };
 
-            float yOffset = headerLabel.Frame.Bottom + 16;
+            View.AddSubview (navBar);
+            float yOffset = 64;
+
             Util.AddHorizontalLine (0, yOffset, View.Frame.Width, UIColor.LightGray, View);
             yOffset += 1;
 
@@ -99,12 +101,12 @@ namespace NachoClient.iOS
             selectedPhoneLabel = phoneLabels [selectedButtonTag - 1000];
         }
 
-        public class PhoneLabel 
+        public class PhoneLabel
         {
             public string type;
             public string label;
 
-            public PhoneLabel(string type, string label)
+            public PhoneLabel (string type, string label)
             {
                 this.type = type;
                 this.label = label;
@@ -122,7 +124,7 @@ namespace NachoClient.iOS
                 this.tag = tag;
             }
 
-            public UIButton GetButton(UIView parentView, float yOffset)
+            public UIButton GetButton (UIView parentView, float yOffset)
             {
                 UIButton selectionButton = new UIButton (new RectangleF (0, yOffset, parentView.Frame.Width, 58));
                 selectionButton.Tag = tag;
@@ -163,12 +165,11 @@ namespace NachoClient.iOS
 
         protected override void Cleanup ()
         {
-            UIButton dismissViewButton = (UIButton)View.ViewWithTag (DISMISS_VIEW_BUTTON_TAG);
-            dismissViewButton.TouchUpInside -= DismissViewTouchUpInside;
-            dismissViewButton = null;
+            DismissButton.Clicked -= DismissViewTouchUpInside;
+            DismissButton = null;
 
             for (int i = 0; i < View.Subviews.Length; i++) {
-                if (View.Subviews [i].GetType() == typeof(UIButton)) {
+                if (View.Subviews [i].GetType () == typeof(UIButton)) {
                     if (View.Subviews [i].Tag >= SELECTION_BUTTON_STARTING_TAG) {
                         UIButton selectionButton = (UIButton)View.Subviews [i];
                         selectionButton.TouchUpInside -= SelectionButtonClicked;
@@ -194,5 +195,5 @@ namespace NachoClient.iOS
             owner.SetPhoneLabel ();
             DismissViewController (true, null);
         }
-	}
+    }
 }

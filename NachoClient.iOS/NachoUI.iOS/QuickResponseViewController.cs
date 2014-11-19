@@ -54,26 +54,26 @@ namespace NachoClient.iOS
             UIView qrView = new UIView (View.Frame);
             qrView.BackgroundColor = A.Color_NachoGreen;
 
-            yOffset = 30;
+            var navBar = new UINavigationBar (new RectangleF (0, 20, View.Frame.Width, 44));
+            navBar.BarStyle = UIBarStyle.Default;
+            navBar.Opaque = true;
+            navBar.Translucent = false;
 
-            UILabel quickMessageLabel = new UILabel (new RectangleF (qrView.Frame.Width / 2 - 75, yOffset, 150, 25));
-            quickMessageLabel.Text = "Quick Messages";
-            quickMessageLabel.TextAlignment = UITextAlignment.Center;
-            quickMessageLabel.Font = A.Font_AvenirNextDemiBold17;
-            quickMessageLabel.TextColor = UIColor.White;
-            qrView.Add (quickMessageLabel);
+            var navItem = new UINavigationItem ("Quick Messages");
+            using (var image = UIImage.FromBundle ("modal-close")) {
+                var dismissButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
+                dismissButton.Clicked += (object sender, EventArgs e) => {
+                    DismissViewController(true, null);
+                };
+                navItem.LeftBarButtonItem = dismissButton;
+            }
+            navBar.Items = new UINavigationItem[] { navItem };
 
-            UIButton dismissView = new UIButton (new RectangleF (X_INDENT, yOffset, 25, 25));
-            dismissView.SetImage (UIImage.FromBundle ("modal-close"), UIControlState.Normal);
-            dismissView.TouchUpInside += (object sender, EventArgs e) => {
-                DismissViewController (true, null);
-            };
-            qrView.Add (dismissView);
+            qrView.AddSubview (navBar);
 
-            yOffset = quickMessageLabel.Frame.Bottom + 16;
+            yOffset = 64;
 
             Util.AddHorizontalLine (0, yOffset, qrView.Frame.Width, UIColor.LightGray, qrView);
-
             yOffset += 2;
 
             int curItem = 0;

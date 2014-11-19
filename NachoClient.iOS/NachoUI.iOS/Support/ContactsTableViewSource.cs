@@ -34,6 +34,8 @@ namespace NachoClient.iOS
         int[] sectionStart;
         int[] sectionLength;
 
+        bool allowSwiping;
+
         List<NcContactIndex> recent;
         List<NcContactIndex> contacts;
         List<McContactEmailAddressAttribute> searchResults = null;
@@ -47,11 +49,13 @@ namespace NachoClient.iOS
         public ContactsTableViewSource ()
         {
             owner = null;
+            allowSwiping = false;
         }
 
-        public void SetOwner (IContactsTableViewSourceDelegate owner, UISearchDisplayController SearchDisplayController)
+        public void SetOwner (IContactsTableViewSourceDelegate owner, bool allowSwiping, UISearchDisplayController SearchDisplayController)
         {
             this.owner = owner;
+            this.allowSwiping = allowSwiping;
             this.SearchDisplayController = SearchDisplayController;
             SearchDisplayController.Delegate = new SearchDisplayDelegate (this);
         }
@@ -337,6 +341,9 @@ namespace NachoClient.iOS
             view.SetAction (CALL_BUTTON, SwipeSide.LEFT);
             view.SetAction (EMAIL_BUTTON, SwipeSide.RIGHT);
             view.Tag = SWIPE_VIEW_TAG;
+            if (!allowSwiping) {
+                view.DisableSwipe ();
+            }
 
             cell.ContentView.AddSubview (view);
 
@@ -388,7 +395,7 @@ namespace NachoClient.iOS
             if (0 == contact.PhoneNumbers.Count) {
                 owner.PerformSegueForDelegate ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.PhoneNumberAdder));
             } else if (1 == contact.PhoneNumbers.Count) {
-                Util.PerformAction ("tel", contact.GetPhoneNumber());
+                Util.PerformAction ("tel", contact.GetPhoneNumber ());
             } else {
                 foreach (var p in contact.PhoneNumbers) {
                     if (p.IsDefault) {
@@ -405,7 +412,7 @@ namespace NachoClient.iOS
             if (0 == contact.EmailAddresses.Count) {
                 owner.PerformSegueForDelegate ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder));
             } else if (1 == contact.EmailAddresses.Count) {
-                owner.PerformSegueForDelegate ("ContactsToMessageCompose", new SegueHolder (contact.GetEmailAddress()));
+                owner.PerformSegueForDelegate ("ContactsToMessageCompose", new SegueHolder (contact.GetEmailAddress ()));
             } else {
                 foreach (var e in contact.EmailAddresses) {
                     if (e.IsDefault) {

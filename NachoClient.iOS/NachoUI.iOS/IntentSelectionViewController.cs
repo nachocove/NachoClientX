@@ -48,26 +48,25 @@ namespace NachoClient.iOS
             UIView contentView = new UIView (View.Frame);
             contentView.BackgroundColor = A.Color_NachoGreen;
 
-            float yOffset = 30;
+            var navBar = new UINavigationBar (new RectangleF (0, 20, View.Frame.Width, 44));
+            navBar.BarStyle = UIBarStyle.Default;
+            navBar.Opaque = true;
+            navBar.Translucent = false;
 
-            UILabel headerLabel = new UILabel (new RectangleF (contentView.Frame.Width / 2 - 75, yOffset, 150, 25));
-            headerLabel.Text = "Message Intent";
-            headerLabel.TextAlignment = UITextAlignment.Center;
-            headerLabel.Font = A.Font_AvenirNextDemiBold17;
-            headerLabel.TextColor = UIColor.White;
-            contentView.Add (headerLabel);
+            var navItem = new UINavigationItem ("Message Intent");
+            using (var image = UIImage.FromBundle ("modal-close")) {
+                var dismissButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
+                dismissButton.Clicked += (object sender, EventArgs e) => {
+                    DismissViewController(true, null);
+                };
+                navItem.LeftBarButtonItem = dismissButton;
+            }
+            navBar.Items = new UINavigationItem[] { navItem };
 
-            UIButton dismissView = new UIButton (new RectangleF (X_INDENT, yOffset, 25, 25));
-            dismissView.SetImage (UIImage.FromBundle ("modal-close"), UIControlState.Normal);
-            dismissView.TouchUpInside += (object sender, EventArgs e) => {
-                DismissViewController (true, null);
-            };
-            contentView.Add (dismissView);
-
-            yOffset = headerLabel.Frame.Bottom + 16;
+            contentView.AddSubview (navBar);
+            var yOffset = 64;
 
             Util.AddHorizontalLine (0, yOffset, contentView.Frame.Width, UIColor.LightGray, contentView);
-
             yOffset += 2;
 
             var messageIntentList = NcMessageIntent.GetIntentList ();

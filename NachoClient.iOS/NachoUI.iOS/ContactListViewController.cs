@@ -62,7 +62,7 @@ namespace NachoClient.iOS
 
             // Manages the search bar & auto-complete table.
             contactTableViewSource = new ContactsTableViewSource ();
-            contactTableViewSource.SetOwner (this, SearchDisplayController);
+            contactTableViewSource.SetOwner (this, true, SearchDisplayController);
 
             TableView.Source = contactTableViewSource;
 
