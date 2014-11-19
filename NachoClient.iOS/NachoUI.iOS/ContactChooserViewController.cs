@@ -96,6 +96,12 @@ namespace NachoClient.iOS
             }
         }
 
+        public override void ViewDidAppear (bool animated)
+        {
+            base.ViewDidAppear (animated);
+            autoCompleteTextField.BecomeFirstResponder ();
+        }
+
         public virtual bool HandlesKeyboardNotifications {
             get { return true; }
         }
@@ -146,7 +152,6 @@ namespace NachoClient.iOS
             autoCompleteTextField.Text = address.address;
             UpdateAutocompleteResults (0, address.address);
 
-            autoCompleteTextField.BecomeFirstResponder ();
             textInputView.Add (autoCompleteTextField);
             inputView.Add (textInputView);
 
