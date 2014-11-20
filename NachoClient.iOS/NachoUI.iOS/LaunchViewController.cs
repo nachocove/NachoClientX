@@ -186,7 +186,7 @@ namespace NachoClient.iOS
             yOffset = passwordBox.Frame.Bottom + 40f;
 
             submitButton = new UIButton (new System.Drawing.RectangleF (25, yOffset, View.Frame.Width - 50, 46));
-            submitButton.BackgroundColor = A.Color_NachoBlue;
+            submitButton.BackgroundColor = A.Color_NachoSubmitButton;
             submitButton.TitleLabel.TextAlignment = UITextAlignment.Center;
             submitButton.SetTitle ("Submit", UIControlState.Normal);
             submitButton.TitleLabel.TextColor = UIColor.White;

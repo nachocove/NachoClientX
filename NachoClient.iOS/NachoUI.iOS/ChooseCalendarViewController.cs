@@ -70,6 +70,7 @@ namespace NachoClient.iOS
             tableView.ScrollEnabled = true;
             source = new CalendarChoicesSource (this, calFolderList);
             tableView.Source = source;
+            tableView.BackgroundColor = A.Color_NachoBackgroundGray;
 
             View.Add (tableView);
         }

@@ -30,7 +30,7 @@
             <objects>
                 <viewController storyboardIdentifier="NachoNowViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="ygr-ff-C2f" customClass="NachoNowViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="BSK-Fb-RSa">
-                        <rect key="frame" x="0.0" y="64" width="320" height="455"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -330,6 +330,7 @@
                         <segue destination="kq1-eO-X0p" kind="push" identifier="FoldersToMessageList" id="szv-KC-TId"/>
                         <segue destination="SnS-WJ-KWp" kind="push" identifier="SegueToDeferredList" id="rEt-DF-c51"/>
                         <segue destination="S8F-Mj-kVD" kind="push" identifier="SegueToHotList" id="zOx-eF-clw"/>
+                        <segue destination="tAw-fh-hJX" kind="push" identifier="SegueToCompose" id="urW-p2-x1h"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="r4s-hq-KID" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1676,7 +1677,8 @@
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="zOx-eF-clw"/>
+        <segue reference="tkk-6o-6oa"/>
+        <segue reference="urW-p2-x1h"/>
         <segue reference="ZzH-qS-KOm"/>
         <segue reference="Aba-pv-mzB"/>
         <segue reference="4z2-t5-9Cd"/>
@@ -1685,26 +1687,25 @@
         <segue reference="XQg-JR-vxA"/>
         <segue reference="Eb2-K0-nI3"/>
         <segue reference="wZy-ga-YEb"/>
+        <segue reference="6J3-c2-bz5"/>
         <segue reference="mLY-u0-R5O"/>
         <segue reference="alQ-9Z-W4y"/>
         <segue reference="kYM-OY-NE0"/>
-        <segue reference="r1y-34-GvV"/>
-        <segue reference="6J3-c2-bz5"/>
-        <segue reference="DcC-EH-FAx"/>
-        <segue reference="m2D-2n-RiV"/>
-        <segue reference="w67-dy-XSq"/>
-        <segue reference="7sK-rg-HQL"/>
-        <segue reference="peA-r2-tjq"/>
-        <segue reference="tkk-6o-6oa"/>
-        <segue reference="zby-Sy-Y3J"/>
-        <segue reference="xrp-ey-B0j"/>
-        <segue reference="ay2-o2-R8l"/>
-        <segue reference="DDa-hb-SgY"/>
-        <segue reference="84g-IQ-Iaw"/>
-        <segue reference="Kmd-x6-iCJ"/>
         <segue reference="vUs-ft-xdy"/>
-        <segue reference="szv-KC-TId"/>
+        <segue reference="DcC-EH-FAx"/>
+        <segue reference="7sK-rg-HQL"/>
+        <segue reference="w67-dy-XSq"/>
+        <segue reference="m2D-2n-RiV"/>
+        <segue reference="peA-r2-tjq"/>
         <segue reference="rEt-DF-c51"/>
+        <segue reference="szv-KC-TId"/>
+        <segue reference="zOx-eF-clw"/>
+        <segue reference="zby-Sy-Y3J"/>
+        <segue reference="ay2-o2-R8l"/>
+        <segue reference="xrp-ey-B0j"/>
+        <segue reference="84g-IQ-Iaw"/>
+        <segue reference="DDa-hb-SgY"/>
+        <segue reference="Kmd-x6-iCJ"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>

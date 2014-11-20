@@ -32,17 +32,17 @@ namespace NachoClient.iOS
 
         // Pre-made swipe action descriptors
         private static SwipeActionDescriptor ARCHIVE_BUTTON =
-            new SwipeActionDescriptor (ARCHIVE_TAG, 0.25f, UIImage.FromBundle ("email-archive-gray"),
-                "Archive", A.Color_NachoSwipeActionGreen);
+            new SwipeActionDescriptor (ARCHIVE_TAG, 0.25f, UIImage.FromBundle (A.File_NachoSwipeEmailArchive),
+                "Archive", A.Color_NachoSwipeEmailArchive);
         private static SwipeActionDescriptor SAVE_BUTTON =
-            new SwipeActionDescriptor (SAVE_TAG, 0.25f, UIImage.FromBundle ("email-putintofolder-gray"),
-                "Save", A.Color_NachoSwipeActionBlue);
+            new SwipeActionDescriptor (SAVE_TAG, 0.25f, UIImage.FromBundle (A.File_NachoSwipeEmailMove),
+                "Move", A.Color_NachoSwipeEmailMove);
         private static SwipeActionDescriptor DELETE_BUTTON =
-            new SwipeActionDescriptor (DELETE_TAG, 0.25f, UIImage.FromBundle ("email-delete-gray"),
-                "Delete", A.Color_NachoSwipeActionRed);
+            new SwipeActionDescriptor (DELETE_TAG, 0.25f, UIImage.FromBundle (A.File_NachoSwipeEmailDelete),
+                "Delete", A.Color_NachoSwipeEmailDelete);
         private static SwipeActionDescriptor DEFER_BUTTON =
-            new SwipeActionDescriptor (DEFER_TAG, 0.25f, UIImage.FromBundle ("email-defer-gray"),
-                "Defer", A.Color_NachoSwipeActionYellow);
+            new SwipeActionDescriptor (DEFER_TAG, 0.25f, UIImage.FromBundle (A.File_NachoSwipeEmailDefer),
+                "Defer", A.Color_NachoSwipeEmailDefer);
 
         // Short-term cache from GetHeight to GetCell
         private Dictionary<int, McEmailMessage> messageCache;
