@@ -215,7 +215,7 @@ namespace NachoCore.Utils
                 }
             }
             lock (InstanceLockObj) {
-                if (null == Timer) {
+                if (null != Timer) {
                     Timer.Dispose ();
                 }
                 callback = null;
