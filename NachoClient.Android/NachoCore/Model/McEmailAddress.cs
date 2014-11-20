@@ -50,14 +50,18 @@ namespace NachoCore.Model
 
         public static bool Get (int accountId, MailboxAddress mailboxAddress, out McEmailAddress emailAddress)
         {
-            // Does this email address exist, and if not, let's create it
-            var query = "SELECT * from McEmailAddress WHERE CanonicalEmailAddress = ?";
-            emailAddress = NcModel.Instance.Db.Query<McEmailAddress> (query, mailboxAddress.Address).SingleOrDefault ();
-            if (null == emailAddress) {
-                emailAddress = new McEmailAddress (accountId, mailboxAddress.Address);
-                emailAddress.ColorIndex = NachoPlatform.PlatformUserColorIndex.PickRandomColorForUser ();
-                emailAddress.Insert ();
-            }
+            McEmailAddress retval = null; // need a local variable for lambda
+            NcModel.Instance.RunInTransaction (() => {
+                // Does this email address exist, and if not, let's create it
+                var query = "SELECT * from McEmailAddress WHERE CanonicalEmailAddress = ?";
+                retval = NcModel.Instance.Db.Query<McEmailAddress> (query, mailboxAddress.Address).SingleOrDefault ();
+                if (null == retval) {
+                    retval = new McEmailAddress (accountId, mailboxAddress.Address);
+                    retval.ColorIndex = NachoPlatform.PlatformUserColorIndex.PickRandomColorForUser ();
+                    retval.Insert ();
+                }
+            });
+            emailAddress = retval;
             return true;
         }
     }
