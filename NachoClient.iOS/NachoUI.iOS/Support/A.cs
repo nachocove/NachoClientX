@@ -65,15 +65,25 @@ namespace NachoClient.iOS
         protected static UIColor _Color_NachoSwipeActionYellow = null;
         protected static UIColor _Color_NachoSwipeActionOrange = null;
         protected static UIColor _Color_NachoSwipeActionMatteBlack = null;
+        protected static UIColor _Color_NachoSubmitButton = null;
 
-
-        //UI constants 
+        // UI constants
         public static float Card_Horizontal_Indent = 15f;
         public static float Card_Vertical_Indent = 20f;
         public static float Card_Border_Width = .5f;
         public static float Card_Corner_Radius = 6f;
         public static float Card_Edge_To_Edge_Corner_Radius = 12f;
         public static CGColor Card_Border_Color = Color_NachoBorderGray.CGColor;
+
+        // Email Swipe Colors and Icons
+        public static UIColor Color_NachoSwipeEmailArchive = UIColor.FromRGB (0x2b, 0xd9, 0xb2);
+        public static UIColor Color_NachoSwipeEmailDelete = UIColor.FromRGB (0xff, 0x3f, 0x20);
+        public static UIColor Color_NachoSwipeEmailDefer = UIColor.FromRGB (0xff, 0xbb, 0x33);
+        public static UIColor Color_NachoSwipeEmailMove = UIColor.FromRGB (0x90, 0x90, 0x90);
+        public static string File_NachoSwipeEmailArchive = "email-archive-swipe";
+        public static string File_NachoSwipeEmailDelete = "email-delete-swipe";
+        public static string File_NachoSwipeEmailDefer = "email-defer-swipe";
+        public static string File_NachoSwipeEmailMove = "email-move-swipe";
 
         public A ()
         {
@@ -562,6 +572,16 @@ namespace NachoClient.iOS
                     _Color_NachoSwipeActionMatteBlack = UIColor.FromRGB (79, 100, 109);
                 }
                 return _Color_NachoSwipeActionMatteBlack;
+            }
+        }
+
+
+        public static UIColor Color_NachoSubmitButton {
+            get {
+                if (null == _Color_NachoSubmitButton) {
+                    _Color_NachoSubmitButton = UIColor.FromRGB (0x00, 0xd0, 0xc3);
+                }
+                return _Color_NachoSubmitButton;
             }
         }
     }

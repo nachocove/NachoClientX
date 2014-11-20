@@ -1696,6 +1696,21 @@
     <BundleResource Include="Resources\now-newemail%402x.png" />
     <BundleResource Include="Resources\modal-checkbox-checked%402x.png" />
     <BundleResource Include="Resources\modal-checkbox%402x.png" />
+    <BundleResource Include="Resources\email-archive-swipe%402x.png" />
+    <BundleResource Include="Resources\email-archive-swipe%403x.png" />
+    <BundleResource Include="Resources\email-archive-swipe%404x.png" />
+    <BundleResource Include="Resources\email-archive-swipe%406x.png" />
+    <BundleResource Include="Resources\email-defer-swipe%402x.png" />
+    <BundleResource Include="Resources\email-defer-swipe%403x.png" />
+    <BundleResource Include="Resources\email-defer-swipe%404x.png" />
+    <BundleResource Include="Resources\email-defer-swipe%406x.png" />
+    <BundleResource Include="Resources\email-delete-swipe%403x.png" />
+    <BundleResource Include="Resources\email-delete-swipe%404x.png" />
+    <BundleResource Include="Resources\email-delete-swipe%406x.png" />
+    <BundleResource Include="Resources\email-move-swipe%402x.png" />
+    <BundleResource Include="Resources\email-move-swipe%403x.png" />
+    <BundleResource Include="Resources\email-move-swipe%404x.png" />
+    <BundleResource Include="Resources\email-move-swipe%406x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
