@@ -16,7 +16,7 @@ using NachoCore.ActiveSync;
 
 namespace NachoClient.iOS
 {
-    public partial class FoldersViewController : UIViewController, INachoFolderChooser
+    public partial class FoldersViewController : UIViewController, INachoFolderChooser, INachoMessageEditorParent
     {
         public FoldersViewController (IntPtr handle) : base (handle)
         {
@@ -47,6 +47,7 @@ namespace NachoClient.iOS
         protected UIImage folderIcon;
         protected UIImage moreIcon;
         protected UIImage moreIconSelected;
+        protected UIBarButtonItem composeButton;
 
         public override void ViewDidLoad ()
         {
@@ -101,6 +102,12 @@ namespace NachoClient.iOS
             if ("SegueToDeferredList" == segue.Identifier) {
                 return;
             }
+            if (segue.Identifier == "SegueToCompose") {
+                var vc = (MessageComposeViewController)segue.DestinationViewController;
+                vc.SetAction (null, null);
+                vc.SetOwner (this);
+                return;
+            }
 
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
@@ -148,6 +155,13 @@ namespace NachoClient.iOS
             } else {
                 NavigationItem.Title = "Mail";
                 NavigationController.NavigationBar.Translucent = false;
+
+                var composeButton = new UIBarButtonItem ();
+                Util.SetAutomaticImageForButton (composeButton, "contact-newemail");
+                composeButton.Clicked += (object sender, EventArgs e) => {
+                    PerformSegue ("SegueToCompose", new SegueHolder (null));
+                };
+                NavigationItem.RightBarButtonItem = composeButton;
             }
 
             float marginPadding = 15f;
@@ -841,6 +855,25 @@ namespace NachoClient.iOS
         public void FolderSelected (McFolder folder)
         {
             owner.FolderSelected (this, folder, cookie);
+        }
+
+        // INachoMessageEditorParent
+        public void DismissChildMessageEditor (INachoMessageEditor vc)
+        {
+            NcAssert.CaseError ();
+        }
+
+        // INachoMessageEditorParent
+        public void CreateTaskForEmailMessage (INachoMessageEditor vc, McEmailMessageThread thread)
+        {
+            NcAssert.CaseError ();
+        }
+
+        // INachoMessageEditorParent
+        public void CreateMeetingEmailForMessage (INachoMessageEditor vc, McEmailMessageThread thread)
+        {
+            vc.SetOwner (null);
+            vc.DismissMessageEditor (false, null);
         }
             
     }
