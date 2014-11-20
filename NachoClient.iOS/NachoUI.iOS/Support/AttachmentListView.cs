@@ -26,6 +26,7 @@ namespace NachoClient.iOS
     {
         const float TOP_MARGIN = 5.0f;
         const float BOTTOM_MARGIN = 5.0f;
+        protected float attachmentCellIndent = 0f;
 
         public AttachmentView.AttachmentSelectedCallback OnAttachmentSelected;
 
@@ -43,24 +44,6 @@ namespace NachoClient.iOS
             BackgroundColor = UIColor.White;
 
             attachmentViews = new List<AttachmentView> ();
-
-            attachmentLabel = new UILabel (new RectangleF (0, 0, 1, 1));
-            attachmentLabel.BackgroundColor = UIColor.White;
-            attachmentLabel.Text = "Attachments";
-            attachmentLabel.TextColor = A.Color_NachoTextGray;
-            attachmentLabel.Font = A.Font_AvenirNextRegular17;
-            attachmentLabel.SizeToFit ();
-            ViewFramer.Create (attachmentLabel).Y (CenterY - (attachmentLabel.Frame.Height / 2));
-            AddSubview (attachmentLabel);
-
-            numberLabel = new UILabel (new RectangleF (attachmentLabel.Frame.Width + 10, TOP_MARGIN, 1, 1));
-            numberLabel.BackgroundColor = A.Color_909090;
-            numberLabel.TextColor = UIColor.White;
-            numberLabel.Font = A.Font_AvenirNextDemiBold14;
-            numberLabel.SizeToFit ();
-            UpdateNumber ();
-            AddSubview (numberLabel);
-
             CollapsedHeight = frame.Height;
             Reset ();
         }
@@ -76,12 +59,42 @@ namespace NachoClient.iOS
 
         public void AddAttachment (McAttachment attachment)
         {
-            var frame = new RectangleF (0, ExpandedHeight + 1.0f, Frame.Width, AttachmentView.VIEW_HEIGHT);
+            var frame = new RectangleF (attachmentCellIndent, ExpandedHeight + 1.0f, Frame.Width - attachmentCellIndent, AttachmentView.VIEW_HEIGHT);
             var attachmentView = new AttachmentView (frame, attachment);
             attachmentView.OnAttachmentSelected = OnAttachmentSelected;
             attachmentViews.Add (attachmentView);
             AddSubview (attachmentView);
             UpdateNumber ();
+        }
+
+        public void SetHeader (string text, UIFont font, UIColor textColor, UIImageView iconImage, UIFont numberFont, UIColor numberTextColor, UIColor numberBGColor, float numberOffset)
+        {
+            attachmentLabel = new UILabel (new RectangleF (0, 0, 1, 1));
+            attachmentLabel.BackgroundColor = UIColor.White;
+            attachmentLabel.Text = text;
+            attachmentLabel.TextColor = textColor;
+            attachmentLabel.Font = font;
+            attachmentLabel.SizeToFit ();
+            ViewFramer.Create (attachmentLabel).Y (CenterY - (attachmentLabel.Frame.Height / 2));
+            AddSubview (attachmentLabel);
+            if (null != iconImage) {
+                ViewFramer.Create (attachmentLabel).X (42);
+                iconImage.Frame = new RectangleF (18, CenterY - 8, 16, 16);
+                AddSubview (iconImage);
+            } 
+
+            numberLabel = new UILabel (new RectangleF (attachmentLabel.Frame.X + attachmentLabel.Frame.Width + numberOffset, TOP_MARGIN - 1, 1, 1));
+            numberLabel.BackgroundColor = numberBGColor;
+            numberLabel.TextColor = numberTextColor;
+            numberLabel.Font = numberFont;
+            numberLabel.SizeToFit ();
+            UpdateNumber ();
+            AddSubview (numberLabel);
+        }
+
+        public void SetAttachmentCellIndent (float indent)
+        {
+            this.attachmentCellIndent = indent;
         }
 
         public AttachmentView LastAttachmentView ()
@@ -96,13 +109,13 @@ namespace NachoClient.iOS
             numberLabel.TextAlignment = UITextAlignment.Center;
             numberLabel.SizeToFit ();
             ViewFramer.Create (numberLabel).Height (20).AdjustWidth (2 * cornerSize);
-            ViewFramer.Create (numberLabel).Y (CenterY- (numberLabel.Frame.Height / 2));
+            ViewFramer.Create (numberLabel).Y (CenterY - (numberLabel.Frame.Height / 2));
             numberLabel.Layer.CornerRadius = cornerSize;
             numberLabel.ClipsToBounds = true;
             ExpandedHeight += AttachmentView.VIEW_HEIGHT;
         }
 
-        protected new void Cleanup()
+        protected new void Cleanup ()
         {
             base.Cleanup ();
 
