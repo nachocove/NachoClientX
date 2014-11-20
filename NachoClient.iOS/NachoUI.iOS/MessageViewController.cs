@@ -306,6 +306,7 @@ namespace NachoClient.iOS
             attachmentListView = new AttachmentListView (new RectangleF (
                 ATTACHMENTVIEW_INSET, yOffset + 1.0f,
                 headerView.Frame.Width - ATTACHMENTVIEW_INSET, 50));
+            attachmentListView.SetHeader ("Attachments", A.Font_AvenirNextRegular17, A.Color_NachoTextGray, null, A.Font_AvenirNextDemiBold14, UIColor.White, A.Color_909090, 10f);
             attachmentListView.OnAttachmentSelected = AttachmentsOnSelected;
             attachmentListView.OnStateChanged = AttachmentsOnStateChange;
             attachmentListView.Tag = (int)TagType.ATTACHMENT_VIEW_TAG;
