@@ -517,7 +517,7 @@ namespace NachoCore.Model
             // We are trying to track down why so many message bodies are having download failures.
             // Use an error message to make this situation more visible.  Remove this error once
             // the problem has been solved.
-            Log.Error (Log.LOG_AS, "Pending:ResolveAsHardFail: E-mail ({0} {1}) body download failed: {2} {3}",
+            Log.Error (Log.LOG_AS, "Pending:ResolveAsHardFail: {3} E-mail ({0} {1}) body download failed: {2}",
                 serverId, email.Subject, ResultSubKind.ToString (), ResultWhy.ToString ());
         }
 
