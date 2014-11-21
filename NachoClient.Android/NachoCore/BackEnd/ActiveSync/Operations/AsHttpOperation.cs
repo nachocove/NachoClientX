@@ -133,14 +133,11 @@ namespace NachoCore.ActiveSync
                     LastUsername = username;
                     LastPassword = password;
                     handler.Credentials = new NetworkCredential (username, password);
-                    var client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler);
+                    var client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler, true);
                     client.Timeout = new TimeSpan (0, 0, KMaxTimeoutSeconds);
-                    if (null != EncryptedClient) {
-                        EncryptedClient.Dispose ();
-                    }
-                    if (null != EncryptedClientHandler) {
-                        EncryptedClientHandler.Dispose ();
-                    }
+                    // Don't Dispose () HttpClient nor HttpClientHandler. We don't have
+                    // a ref-count to know when we CAN Dispose(). As we are almost always
+                    // re-using, this should not be an issue.
                     EncryptedClient = client;
                     EncryptedClientHandler = handler;
                 }
@@ -155,7 +152,7 @@ namespace NachoCore.ActiveSync
                     var handler = new HttpClientHandler () {
                         AllowAutoRedirect = false,
                     };
-                    var client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler);
+                    var client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler, true);
                     client.Timeout = new TimeSpan (0, 0, KMaxTimeoutSeconds);
                     ClearClient = client;
                 }
@@ -261,8 +258,6 @@ namespace NachoCore.ActiveSync
             OwnerSm = sm;
             HttpOpSm.Name = OwnerSm.Name + ":HTTPOP";
             ServerUri = Owner.ServerUri (this);
-            var servicePoint = ServicePointManager.FindServicePoint (ServerUri);
-            servicePoint.ConnectionLimit = 25;
             HttpOpSm.PostEvent ((uint)SmEvt.E.Launch, "HTTPOPEXE");
         }
 
@@ -448,6 +443,7 @@ namespace NachoCore.ActiveSync
             HttpResponseMessage response = null;
 
             try {
+                ServicePointManager.FindServicePoint(request.RequestUri).ConnectionLimit = 25;
                 // HttpClient doesn't respect Timeout sometimes (DNS and TCP connection establishment for sure).
                 // Even worse, you can only set one timeout value for all concurrent requests, and you can't 
                 // change the value once you start using the client. So we use our own per-request timeout.
@@ -743,8 +739,6 @@ namespace NachoCore.ActiveSync
                         var dummy = McServer.Create (BEContext.Account.Id, redirUri);
                         var query = (string.Empty == redirUri.Query) ? ServerUri.Query : redirUri.Query;
                         ServerUri = new Uri (AsCommand.BaseUri (dummy), query);
-                        var servicePoint = ServicePointManager.FindServicePoint (ServerUri);
-                        servicePoint.ConnectionLimit = 25;
                         return Event.Create ((uint)SmEvt.E.Launch, "HTTPOP451C");
                     } catch (Exception ex) {
                         Log.Info (Log.LOG_HTTP, "ProcessHttpResponse {0} {1}: exception {2}", ex, ServerUri, ex.Message);

@@ -11,6 +11,10 @@ namespace NachoCore.Utils
         public MockableHttpClient (HttpClientHandler handler) : base (handler)
         {
         }
+
+        public MockableHttpClient (HttpClientHandler handler, bool disposeHandler) : base (handler, disposeHandler)
+        {
+        }
     }
 }
 
