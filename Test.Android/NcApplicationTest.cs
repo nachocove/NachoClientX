@@ -48,9 +48,12 @@ namespace Test.Common
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                     Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStarted),
                     Account = ConstMcAccount.NotAccountSpecific,
+                    Tokens = new string[1] {
+                        DateTime.Now.ToString()
+                    }
                 });
             });
-            Assert.True (task.Wait (1000));
+            Assert.True (task.Wait (10 * 1000));
             while (!NcModel.Instance.RateLimiter.Enabled) {
                 ;
             }
@@ -82,9 +85,12 @@ namespace Test.Common
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                     Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_BackgroundAbateStopped),
                     Account = ConstMcAccount.NotAccountSpecific,
+                    Tokens = new string[1] {
+                        DateTime.Now.ToString()
+                    }
                 });
             });
-            Assert.True (task.Wait (1000));
+            Assert.True (task.Wait (10 * 1000));
             while (NcModel.Instance.RateLimiter.Enabled) {
                 ;
             }

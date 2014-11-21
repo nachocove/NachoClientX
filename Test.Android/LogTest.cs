@@ -19,19 +19,32 @@ namespace Test.iOS
     [TestFixture]
     public class LogTest
     {
+        Logger OriginalLogger;
+
         private void CheckOutput (string expected)
         {
             Assert.AreEqual (expected, MockConsole.Output);
+        }
+
+        [SetUp]
+        public void SetUp ()
+        {
+            // Save the original logger and swap it out with a test instance
+            OriginalLogger = Log.SharedInstance;
+            Log.SetLogger (new Logger ());
+        }
+
+        [TearDown]
+        public void TearDown ()
+        {
+            // Restore the original logger
+            Log.SetLogger (OriginalLogger);
         }
 
         [Test]
         public void LoggingToConsole ()
         {
             string threadId = Thread.CurrentThread.ManagedThreadId.ToString ();
-
-            // Save the original logger and swap it out with a test instance
-            Logger save = Log.SharedInstance;
-            Log.SetLogger (new Logger ());
 
             // Disable all telemetry
             Log.SharedInstance.WriteLine = MockConsole.WriteLine;
@@ -51,6 +64,12 @@ namespace Test.iOS
 
             // In Test.Android and Test.iOS, LogSettings.cs is not part of the build.
             // So, the default is to log all subsystems.
+
+            // There may be some logs in IndirectQ. So, we need to flush them out
+            while (!Log.IndirectQ.IsEmpty) {
+                LogElement dummy;
+                Log.IndirectQ.TryDequeue (out dummy);
+            }
 
             // Error
 
@@ -76,7 +95,7 @@ namespace Test.iOS
             settings.Error.CallerInfo = true;
             Log.Error (Log.LOG_CALENDAR, "Test caller info");
             #if (DEBUG)
-            CheckOutput (String.Format ("Error:{0}: [LogTest.cs:77, LogTest.LoggingToConsole()]: Test caller info", threadId));
+            CheckOutput (String.Format ("Error:{0}: [LogTest.cs:96, LogTest.LoggingToConsole()]: Test caller info", threadId));
             #else
             CheckOutput (String.Format ("Error:{0}: [LogTest.LoggingToConsole()]: Test caller info", threadId));
             #endif
@@ -106,7 +125,7 @@ namespace Test.iOS
             settings.Warn.CallerInfo = true;
             Log.Warn (Log.LOG_CALENDAR, "Test caller info");
             #if (DEBUG)
-            CheckOutput (String.Format ("Warn:{0}: [LogTest.cs:107, LogTest.LoggingToConsole()]: Test caller info", threadId));
+            CheckOutput (String.Format ("Warn:{0}: [LogTest.cs:126, LogTest.LoggingToConsole()]: Test caller info", threadId));
             #else
             CheckOutput (String.Format ("Warn:{0}: [LogTest.LoggingToConsole()]: Test caller info", threadId));
             #endif
@@ -136,7 +155,7 @@ namespace Test.iOS
             settings.Info.CallerInfo = true;
             Log.Info (Log.LOG_CALENDAR, "Test caller info");
             #if (DEBUG)
-            CheckOutput (String.Format ("Info:{0}: [LogTest.cs:137, LogTest.LoggingToConsole()]: Test caller info", threadId));
+            CheckOutput (String.Format ("Info:{0}: [LogTest.cs:156, LogTest.LoggingToConsole()]: Test caller info", threadId));
             #else
             CheckOutput (String.Format ("Info:{0}: [LogTest.LoggingToConsole()]: Test caller info", threadId));
             #endif
@@ -166,14 +185,10 @@ namespace Test.iOS
             settings.Debug.CallerInfo = true;
             Log.Debug (Log.LOG_CALENDAR, "Test caller info");
             #if (DEBUG)
-            CheckOutput (String.Format ("Debug:{0}: [LogTest.cs:167, LogTest.LoggingToConsole()]: Test caller info", threadId));
+            CheckOutput (String.Format ("Debug:{0}: [LogTest.cs:186, LogTest.LoggingToConsole()]: Test caller info", threadId));
             #else
             CheckOutput (String.Format ("Debug:{0}: [LogTest.LoggingToConsole()]: Test caller info", threadId));
             #endif
-
-
-            // Restore the original logger
-            Log.SetLogger (save);
         }
     }
 }
