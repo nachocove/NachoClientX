@@ -150,6 +150,19 @@ namespace NachoClient.iOS
             }
         }
 
+        public UIColor FindSolidBackgroundColor(UIView v)
+        {
+            if (null == v) {
+                return UIColor.White;
+            }
+            if (null != v.BackgroundColor) {
+                if (1 == v.BackgroundColor.CGColor.Alpha) {
+                    return v.BackgroundColor;
+                }
+            }
+            return FindSolidBackgroundColor (v.Superview);
+        }
+
         public SwipeActionSwipingView (SwipeActionView view,
                                        SwipeActionButtonList leftButtons, SwipeActionButtonList rightButtons,
                                        Action onClear) : base (view.Frame)
@@ -165,6 +178,8 @@ namespace NachoClient.iOS
 
             // Take a snapshot of the original view
             snapshotView = view.SnapshotView (false);
+            snapshotView.BackgroundColor = FindSolidBackgroundColor (view);
+
             AddSubview (snapshotView);
 
             // Stack the buttons on top of the image view
@@ -438,7 +453,7 @@ namespace NachoClient.iOS
         /// gesture recognizer in the table view and restore those functionalities
         /// when swiping ends.
         /// </summary>
-        public delegate void SwipeCallback (SwipeState state);
+        public delegate void SwipeCallback (SwipeActionView activeView, SwipeState state);
 
         public float SnapAllShownThreshold = 0.5f;
 
@@ -493,7 +508,7 @@ namespace NachoClient.iOS
             switch (obj.State) {
             case UIGestureRecognizerState.Began:
                 {
-                    OnSwipe (SwipeState.SWIPE_BEGIN);
+                    OnSwipe (this, SwipeState.SWIPE_BEGIN);
 
                     // Create a swiping view
                     if (null == swipingView) {
@@ -502,7 +517,7 @@ namespace NachoClient.iOS
                             () => {
                                 swipingView.SnapToAllButtonsHidden (() => {
                                     RemoveSwipingView ();
-                                    OnSwipe (SwipeState.SWIPE_END_ALL_HIDDEN);
+                                    OnSwipe (this, SwipeState.SWIPE_END_ALL_HIDDEN);
                                 });
                             });
                         AddSubview (swipingView);
@@ -565,7 +580,7 @@ namespace NachoClient.iOS
                 newButton.TouchUpInside += (object sender, EventArgs e) => {
                     int tag = newButton.Config.Tag;
                     RemoveSwipingView ();
-                    OnSwipe (SwipeState.SWIPE_END_ALL_HIDDEN);
+                    OnSwipe (this, SwipeState.SWIPE_END_ALL_HIDDEN);
                     OnClick (tag);
                 };
             }
@@ -605,11 +620,16 @@ namespace NachoClient.iOS
             if (SnapAllShownThreshold > Math.Abs (swipingView.LastMovePercentage)) {
                 swipingView.SnapToAllButtonsHidden (() => {
                     RemoveSwipingView ();
-                    OnSwipe (SwipeState.SWIPE_END_ALL_HIDDEN);
+                    OnSwipe (this, SwipeState.SWIPE_END_ALL_HIDDEN);
                 });
                 return true;
             }
             return false;
+        }
+
+        public void EnableSwipe(bool enabled)
+        {
+            swipeRecognizer.Enabled = enabled;
         }
 
         public void EnableSwipe ()
@@ -630,7 +650,7 @@ namespace NachoClient.iOS
                         return;
                     }
                     swipingView.EndSwipe ();
-                    OnSwipe (SwipeState.SWIPE_END_ALL_SHOWN);
+                    OnSwipe (this, SwipeState.SWIPE_END_ALL_SHOWN);
                 });
             }
         }

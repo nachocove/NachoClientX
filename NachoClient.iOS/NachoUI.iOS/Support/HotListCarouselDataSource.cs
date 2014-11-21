@@ -106,7 +106,7 @@ namespace NachoClient.iOS
                     throw new NcAssert.NachoDefaultCaseFailure (message);
                 }
             };
-            view.OnSwipe = (SwipeActionView.SwipeState state) => {
+            view.OnSwipe = (SwipeActionView activeView, SwipeActionView.SwipeState state) => {
                 switch (state) {
                 case SwipeActionView.SwipeState.SWIPE_BEGIN:
                     owner.carouselView.ScrollEnabled = false;
@@ -334,8 +334,8 @@ namespace NachoClient.iOS
             var viewWidth = view.Frame.Width;
 
             // User image view
-            var userImageView = (UIImageView) view.ViewWithTag (USER_IMAGE_TAG);
-            var userLabelView = (UILabel) view.ViewWithTag (USER_LABEL_TAG);
+            var userImageView = (UIImageView)view.ViewWithTag (USER_IMAGE_TAG);
+            var userLabelView = (UILabel)view.ViewWithTag (USER_LABEL_TAG);
             userImageView.Hidden = true;
             userLabelView.Hidden = true;
 
