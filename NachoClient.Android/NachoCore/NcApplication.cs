@@ -354,15 +354,15 @@ namespace NachoCore
             });
         }
 
-        public void QuickSync (uint seconds)
+        public void QuickSync ()
         {
             if (ExecutionContextEnum.QuickSync != ExecutionContext) {
                 ExecutionContext = ExecutionContextEnum.QuickSync;
             }
-            // Needs Class-3 Services up. Cause accounts to do a quick check for new messages.
-            // If start is called while wating for the QuickCheck, the system keeps going after the QuickCheck completes.
-            BackEnd.Instance.QuickSync (seconds);
+            // Class 3 services must have already been set up.
+            BackEnd.Instance.QuickSync ();
         }
+
         // method can be used to post to StatusIndEvent from outside NcApplication.
         public void InvokeStatusIndEvent (StatusIndEventArgs e)
         {
