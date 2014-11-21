@@ -94,6 +94,9 @@
     <Reference Include="antlr.runtime.Android">
       <HintPath>..\..\DDay-iCal-Xamarin\antlr.runtime.Android\obj\Debug\antlr.runtime.Android.dll</HintPath>
     </Reference>
+    <Reference Include="ModernHttpClient">
+      <HintPath>..\..\ModernHttpClient\build\MonoAndroid\ModernHttpClient.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Resources\Resource.designer.cs" />
