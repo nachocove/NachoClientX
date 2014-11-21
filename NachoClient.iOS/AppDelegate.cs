@@ -441,7 +441,9 @@ namespace NachoClient.iOS
         public override void WillEnterForeground (UIApplication application)
         {
             Log.Info (Log.LOG_LIFECYCLE, "WillEnterForeground: Called");
-            UnhookFetchStatusHandler ();
+            if (doingPerformFetch) {
+                CompletePerformFetchWithoutShutdown ();
+            }
             ++ShutdownCounter;
             if (null != ShutdownTimer) {
                 ShutdownTimer.Dispose ();
@@ -473,13 +475,10 @@ namespace NachoClient.iOS
         /// <summary>
         /// Code to implement iOS-7 background-fetch.
         /// </summary>/
-        private Action<UIBackgroundFetchResult> CompletionHandler;
-        private UIBackgroundFetchResult FetchResult;
-
-        private void UnhookFetchStatusHandler ()
-        {
-            NcApplication.Instance.StatusIndEvent -= FetchStatusHandler;
-        }
+        private bool doingPerformFetch = false;
+        private Action<UIBackgroundFetchResult> CompletionHandler = null;
+        private UIBackgroundFetchResult fetchResult;
+        private Timer performFetchTimer = null;
 
         private void FetchStatusHandler (object sender, EventArgs e)
         {
@@ -488,53 +487,70 @@ namespace NachoClient.iOS
             switch (statusEvent.Status.SubKind) {
             case NcResult.SubKindEnum.Info_NewUnreadEmailMessageInInbox:
                 Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_NewUnreadEmailMessageInInbox");
-                FetchResult = UIBackgroundFetchResult.NewData;
+                fetchResult = UIBackgroundFetchResult.NewData;
                 break;
 
             case NcResult.SubKindEnum.Info_SyncSucceeded:
                 Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Info_SyncSucceeded");
-                if (UIBackgroundFetchResult.Failed == FetchResult) {
-                    FetchResult = UIBackgroundFetchResult.NoData;
-                }
-                // We rely on the fact that Info_NewUnreadEmailMessageInInbox will
-                // preceed Info_SyncSucceeded.
-                BackEnd.Instance.Stop ();
-                UnhookFetchStatusHandler ();
-                BadgeNotifUpdate ();
-                FinalShutdown (null);
-                CompletionHandler (FetchResult);
+                CompletePerformFetch ();
                 break;
 
             case NcResult.SubKindEnum.Error_SyncFailed:
                 Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Error_SyncFailed");
-                BackEnd.Instance.Stop ();
-                UnhookFetchStatusHandler ();
-                FinalShutdown (null);
-                CompletionHandler (FetchResult);
+                fetchResult = UIBackgroundFetchResult.Failed;
+                CompletePerformFetch ();
                 break;
 
             case NcResult.SubKindEnum.Error_SyncFailedToComplete:
                 Log.Info (Log.LOG_LIFECYCLE, "FetchStatusHandler:Error_SyncFailedToComplete");
-                // BE calls Stop () itself.
-                UnhookFetchStatusHandler ();
-                FinalShutdown (null);
-                CompletionHandler (FetchResult);
+                CompletePerformFetch ();
                 break;
             }
+        }
+
+        protected void CompletePerformFetchWithoutShutdown()
+        {
+            performFetchTimer.Dispose ();
+            performFetchTimer = null;
+            NcApplication.Instance.StatusIndEvent -= FetchStatusHandler;
+            CompletionHandler (fetchResult);
+            doingPerformFetch = false;
+        }
+
+        protected void CompletePerformFetch ()
+        {
+            CompletePerformFetchWithoutShutdown ();
+            FinalShutdown (null);
         }
 
         public override void PerformFetch (UIApplication application, Action<UIBackgroundFetchResult> completionHandler)
         {
             Log.Info (Log.LOG_LIFECYCLE, "PerformFetch called.");
+            if (doingPerformFetch) {
+                Log.Error (Log.LOG_LIFECYCLE, "PerformFetch was called while a previous PerformFetch was still running. This shouldn't happen.");
+                CompletePerformFetchWithoutShutdown ();
+            }
+            CompletionHandler = completionHandler;
+            fetchResult = UIBackgroundFetchResult.NoData;
             // Need to set ExecutionContext before Start of BE so that strategy can see it.
             NcApplication.Instance.ExecutionContext = NcApplication.ExecutionContextEnum.QuickSync;
             if (FinalShutdownHasHappened) {
                 ReverseFinalShutdown ();
             }
-            CompletionHandler = completionHandler;
-            FetchResult = UIBackgroundFetchResult.Failed;
             NcApplication.Instance.StatusIndEvent += FetchStatusHandler;
-            NcApplication.Instance.QuickSync (KPerformFetchTimeoutSeconds);
+            NcApplication.Instance.QuickSync ();
+
+            // iOS only allows a limited amount of time to fetch data in the background.
+            // Set a timer to force everything to shut down before iOS kills the app.
+            performFetchTimer = new Timer (((object state) => {
+                // When the timer expires, just fire an event.  The status callback will take
+                // care of shutting everything down.
+                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                    Account = this.Account,
+                    Status = NcResult.Error (NcResult.SubKindEnum.Error_SyncFailedToComplete)
+                });
+            }), null, KPerformFetchTimeoutSeconds * 1000, Timeout.Infinite);
+            doingPerformFetch = true;
         }
 
         protected void SaveNotification (string traceMessage, string key, int id)
@@ -610,16 +626,10 @@ namespace NachoClient.iOS
         public void BgStatusIndReceiver (object sender, EventArgs e)
         {
             StatusIndEventArgs ea = (StatusIndEventArgs)e;
-            var accountId = ea.Account.Id;
-            var status = ea.Status;
-            switch (status.SubKind) {
-            case NcResult.SubKindEnum.Info_SyncSucceeded:
-                // We use Info_SyncSucceeded rather than Info_NewUnreadEmailMessageInInbox because we want
-                // To also act when the server marks a message as read (we remove the notif).
-                if (accountId == Account.Id) {
-                    BadgeNotifUpdate ();
-                }
-                break;
+            // Use Info_SyncSucceeded rather than Info_NewUnreadEmailMessageInInbox because
+            // we want to remove a notification if the server marks a message as read.
+            if (NcResult.SubKindEnum.Info_SyncSucceeded == ea.Status.SubKind && null != ea.Account && ea.Account.Id == Account.Id) {
+                BadgeNotifUpdate ();
             }
         }
 
