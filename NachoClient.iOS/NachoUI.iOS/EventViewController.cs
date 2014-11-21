@@ -46,7 +46,6 @@ namespace NachoClient.iOS
         protected UILabel messageLabel;
         protected UIButton changeResponseButton;
         protected UIButton extraAttendeesButton;
-        protected UIView line1;
         protected UIView line2;
         //        protected UITextView eventNotesTextView;
         //        protected UILabel eventNotesText;
@@ -112,8 +111,7 @@ namespace NachoClient.iOS
 
             EVENT_ATTENDEE_VIEW_TAG = 2000,
             EVENT_ATTENDEES_TITLE_TAG = 2001,
-            EVENT_ATTENDING_TITLE_TAG = 2002,
-            EVENT_ATTENDEE_DETAIL_TAG = 2003,
+            EVENT_ATTENDEE_DETAIL_TAG = 2002,
             EVENT_ATTENDEE_TAG = 2010,
             EVENT_ATTENDEE_LABEL_TAG = 2020,
 
@@ -328,22 +326,17 @@ namespace NachoClient.iOS
             #endif
 
             // Attendees label, image, and detail
-            AddTextLabelWithImageView (yOffset, "ATTENDEES", "event-attendees", TagType.EVENT_ATTENDEES_TITLE_TAG, eventCardView);
-            yOffset += 16 + 12;
-            AddTextLabelWithImageView (yOffset, "ATTENDING", "", TagType.EVENT_ATTENDING_TITLE_TAG, eventCardView);
-            line1 = Util.AddHorizontalLineView (120, yOffset + 8, EVENT_CARD_WIDTH - 120 - 18, borderColor);
-            yOffset += 16;
-            eventAttendeeView = new UIView (new RectangleF (0, yOffset, EVENT_CARD_WIDTH, 96));
+            eventAttendeeView = new UIView (new RectangleF (0, yOffset, EVENT_CARD_WIDTH, 96 + 16));
             eventAttendeeView.Tag = (int)TagType.EVENT_ATTENDEE_VIEW_TAG;
             attendeeTapGestureRecognizer = new UITapGestureRecognizer ();
             attendeeTapGestureRecognizerTapToken = attendeeTapGestureRecognizer.AddTarget (AttendeeTapGestureRecognizerTap);
             eventAttendeeView.AddGestureRecognizer (attendeeTapGestureRecognizer);
+            AddTextLabelWithImageView (0, "ATTENDEES", "event-attendees", TagType.EVENT_ATTENDEES_TITLE_TAG, eventAttendeeView);
             eventCardView.AddSubview (eventAttendeeView);
-            eventCardView.AddSubview (line1);
 
             yOffset += 96 + 20;
 
-            line2 = Util.AddHorizontalLineView (42, yOffset, EVENT_CARD_WIDTH - 42 - 18, borderColor);
+            line2 = Util.AddHorizontalLineView (0, yOffset, EVENT_CARD_WIDTH, borderColor);
             eventCardView.AddSubview (line2);
 
             // Notes
@@ -472,7 +465,10 @@ namespace NachoClient.iOS
             }
             ClearView (eventAttendeeView);
             eventAttendeeView.BackgroundColor = cellBGColor;
+            AddTextLabelWithImageView (0, "ATTENDEES", "event-attendees", TagType.EVENT_ATTENDEES_TITLE_TAG, eventAttendeeView);
+            Util.AddArrowAccessory (eventAttendeeView.Frame.Width - 18 - 12, 2, 12, eventAttendeeView);
             extraAttendeesButton = null;
+            var titleOffset = 16;
             var attendeeImageDiameter = 40;
             var iconSpace = EVENT_CARD_WIDTH - 60;
             var iconPadding = (iconSpace - (attendeeImageDiameter * 5)) / 4;
@@ -480,16 +476,12 @@ namespace NachoClient.iOS
                 // Disable the attendees view.
                 hasAttendees = false;
                 View.ViewWithTag ((int)TagType.EVENT_ATTENDEES_TITLE_TAG).Hidden = true;
-                View.ViewWithTag ((int)TagType.EVENT_ATTENDING_TITLE_TAG).Hidden = true;
                 eventAttendeeView.Hidden = true;
-                line1.Hidden = true;
                 line2.Hidden = true;
             } else {
                 hasAttendees = true;
                 View.ViewWithTag ((int)TagType.EVENT_ATTENDEES_TITLE_TAG).Hidden = false;
-                View.ViewWithTag ((int)TagType.EVENT_ATTENDING_TITLE_TAG).Hidden = false;
                 eventAttendeeView.Hidden = false;
-                line1.Hidden = false;
                 line2.Hidden = false;
                 float spacing = 0;
                 int attendeeNum = 0;
@@ -497,7 +489,7 @@ namespace NachoClient.iOS
                     var attendeeButton = UIButton.FromType (UIButtonType.RoundedRect);
                     attendeeButton.Layer.CornerRadius = attendeeImageDiameter / 2;
                     attendeeButton.Layer.MasksToBounds = true;
-                    attendeeButton.Frame = new RectangleF (42 + spacing, 10, attendeeImageDiameter, attendeeImageDiameter);
+                    attendeeButton.Frame = new RectangleF (42 + spacing, 10 + titleOffset, attendeeImageDiameter, attendeeImageDiameter);
                     var userImage = Util.ImageOfSender (account.Id, attendee.Email);
 
                     if (null != userImage) {
@@ -523,7 +515,7 @@ namespace NachoClient.iOS
                     attendeeButton.UserInteractionEnabled = false;
                     eventAttendeeView.AddSubview (attendeeButton);
 
-                    var attendeeName = new UILabel (new RectangleF (42 + spacing, 65, attendeeImageDiameter, 15));
+                    var attendeeName = new UILabel (new RectangleF (42 + spacing, 65 + titleOffset, attendeeImageDiameter, 15));
                     attendeeName.Font = A.Font_AvenirNextRegular14;
                     attendeeName.TextColor = UIColor.LightGray;
                     attendeeName.Tag = (int)TagType.EVENT_ATTENDEE_LABEL_TAG + attendeeNum;
@@ -536,7 +528,7 @@ namespace NachoClient.iOS
                     // can be displayed.  If the user is not the organizer, then the attendees'
                     // status is not known, so we don't want to display a blank circle.
                     if (isOrganizer) {
-                        var responseView = new UIView (new RectangleF (42 + spacing + 27, 37, 20, 20));
+                        var responseView = new UIView (new RectangleF (42 + spacing + 27, 37 + titleOffset, 20, 20));
                         responseView.Tag = (int)TagType.EVENT_ATTENDEE_LABEL_TAG + attendeeNum + 200;
                         responseView.BackgroundColor = UIColor.White;
                         responseView.Layer.CornerRadius = 10;
@@ -571,7 +563,7 @@ namespace NachoClient.iOS
                     extraAttendeesButton.Layer.MasksToBounds = true;
                     extraAttendeesButton.Layer.BorderColor = A.Color_NachoIconGray.CGColor;
                     extraAttendeesButton.Layer.BorderWidth = 1;
-                    extraAttendeesButton.Frame = new RectangleF (42 + iconSpace - 39, 10, attendeeImageDiameter, attendeeImageDiameter);
+                    extraAttendeesButton.Frame = new RectangleF (42 + iconSpace - 39, 10 + titleOffset, attendeeImageDiameter, attendeeImageDiameter);
                     extraAttendeesButton.Font = A.Font_AvenirNextRegular14;
                     extraAttendeesButton.SetTitleColor (A.Color_NachoIconGray, UIControlState.Normal);
                     extraAttendeesButton.SetTitleColor (UIColor.LightGray, UIControlState.Selected);
@@ -641,7 +633,6 @@ namespace NachoClient.iOS
             messageLabel = null;
             changeResponseButton = null;
             extraAttendeesButton = null;
-            line1 = null;
             line2 = null;
             attendeeTapGestureRecognizer = null;
             alertTapGestureRecognizer = null;
@@ -839,7 +830,7 @@ namespace NachoClient.iOS
 
             AdjustViewLayout (TagType.EVENT_ALERTS_VIEW_TAG, 0, ref internalYOffset, 18);
 
-            var padding = 20;
+            var padding = 18;
             if (hasAttachments) {
                 AdjustY (attachmentListView, internalYOffset);
                 internalYOffset += attachmentListView.Frame.Height;
@@ -849,10 +840,7 @@ namespace NachoClient.iOS
             }
 
             if (hasAttendees) {
-                AdjustViewLayout (TagType.EVENT_ATTENDEES_TITLE_TAG, 0, ref internalYOffset, padding, EVENT_CARD_WIDTH - 100);
-                AdjustY (line1, internalYOffset + 12.5f);
-                AdjustViewLayout (TagType.EVENT_ATTENDING_TITLE_TAG, 0, ref internalYOffset, 5, EVENT_CARD_WIDTH - 100);
-                AdjustViewLayout (TagType.EVENT_ATTENDEE_VIEW_TAG, 0, ref internalYOffset, 0);
+                AdjustViewLayout (TagType.EVENT_ATTENDEE_VIEW_TAG, 0, ref internalYOffset, padding);
                 AdjustY (line2, internalYOffset);
             }
 

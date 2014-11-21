@@ -60,7 +60,6 @@ namespace NachoCore
         };
 
         private ConcurrentDictionary<int,ProtoControl> Services;
-        private NcTimer QuickTimeoutTimer;
 
         public IBackEndOwner Owner { set; private get; }
 
@@ -101,10 +100,6 @@ namespace NachoCore
         public void Start ()
         {
             Log.Info (Log.LOG_LIFECYCLE, "BackEnd.Start() called");
-            if (null != QuickTimeoutTimer) {
-                QuickTimeoutTimer.Dispose ();
-                QuickTimeoutTimer = null;
-            }
             // The callee does Task.Run.
             var accounts = NcModel.Instance.Db.Table<McAccount> ();
             foreach (var account in accounts) {
@@ -117,10 +112,6 @@ namespace NachoCore
         // return without waiting.
         public void Stop ()
         {
-            if (null != QuickTimeoutTimer) {
-                QuickTimeoutTimer.Dispose ();
-                QuickTimeoutTimer = null;
-            }
             var accounts = NcModel.Instance.Db.Table<McAccount> ();
             foreach (var account in accounts) {
                 Stop (account.Id);
@@ -136,27 +127,9 @@ namespace NachoCore
             service.ForceStop ();
         }
 
-        public void QuickSync (uint seconds)
+        public void QuickSync ()
         {
             var accounts = NcModel.Instance.Db.Table<McAccount> ();
-
-            QuickTimeoutTimer = new NcTimer ("BackEnd",
-                (object state) => { 
-                    var result = NcResult.Error (NcResult.SubKindEnum.Error_SyncFailedToComplete);
-                    foreach (var account in accounts) {
-                        // TODO: need to report account-by-account. Some accounts may have
-                        // returned result already. need a scoreboard.
-                        InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                            Account = account,
-                            Status = result,
-                        });
-                        Stop (account.Id);
-                    }
-                }, 
-                null, 
-                new TimeSpan (0, 0, (int)seconds),
-                System.Threading.Timeout.InfiniteTimeSpan);
-
             foreach (var account in accounts) {
                 if (!HasServiceFromAccountId (account.Id)) {
                     EstablishService (account.Id);
