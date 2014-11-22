@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Schema;
+using ModernHttpClient;
 using NachoCore.Model;
 using NachoCore.Wbxml;
 using NachoCore.Utils;
@@ -126,7 +127,7 @@ namespace NachoCore.ActiveSync
                 if (DontReUseHttpClient || null == EncryptedClient ||
                     null == LastUsername || null == LastPassword ||
                     LastUsername != username || LastPassword != password) {
-                    var handler = new HttpClientHandler () {
+                    var handler = new NativeMessageHandler () {
                         AllowAutoRedirect = false,
                         PreAuthenticate = true,
                     };
@@ -149,7 +150,7 @@ namespace NachoCore.ActiveSync
         {
             lock (LockObj) {
                 if (DontReUseHttpClient || null == ClearClient) {
-                    var handler = new HttpClientHandler () {
+                    var handler = new NativeMessageHandler () {
                         AllowAutoRedirect = false,
                     };
                     var client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler, true);
@@ -577,7 +578,8 @@ namespace NachoCore.ActiveSync
                     result.Value = new Tuple<int,Uri> (credDaysLeft, credUri);
                     Owner.StatusInd (result);
                 }
-                if (0 < ContentData.Length ||
+                if ((0 < ContentData.Length ||
+                    (null != response.Content.Headers.ContentLength && 0 < response.Content.Headers.ContentLength)) ||
                     (response.Headers.TransferEncodingChunked.HasValue && 
                         (bool)response.Headers.TransferEncodingChunked)) {
                     switch (ContentType) {

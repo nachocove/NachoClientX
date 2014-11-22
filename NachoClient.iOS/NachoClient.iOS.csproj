@@ -197,7 +197,7 @@
       <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\MonoTouch\BouncyCastle.dll</HintPath>
     </Reference>
     <Reference Include="ModernHttpClient">
-      <HintPath>..\..\ModernHttpClient\build\MonoAndroid\ModernHttpClient.dll</HintPath>
+      <HintPath>..\..\ModernHttpClient\build\MonoTouch\ModernHttpClient.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

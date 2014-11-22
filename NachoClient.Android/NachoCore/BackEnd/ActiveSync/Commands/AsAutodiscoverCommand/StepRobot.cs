@@ -16,6 +16,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using ModernHttpClient;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoPlatform;
@@ -581,7 +582,7 @@ namespace NachoCore.ActiveSync
                 }
                 if (0 < RetriesLeft--) {
                     ServerCertificate = null;
-                    var handler = new HttpClientHandler () { AllowAutoRedirect = false };
+                    var handler = new NativeMessageHandler () { AllowAutoRedirect = false };
                     var client = (IHttpClient)Activator.CreateInstance (AsHttpOperation.HttpClientType, handler);
                     client.Timeout = CertTimeout;
                     ServerCertificatePeek.Instance.ValidationEvent += ServerCertificateEventHandler;
