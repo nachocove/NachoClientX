@@ -785,6 +785,34 @@ namespace NachoClient
             return null;
         }
 
+        /// <summary>
+        /// Finds the outermost enclosing view, ideally
+        /// it is the view that covers the whole screen.
+        /// </summary>
+        public static UIView FindOutermostView (UIView view)
+        {
+            if (null == view) {
+                return null;
+            }
+            if (null == view.Superview) {
+                return view;
+            }
+            return FindOutermostView (view.Superview);
+        }
+
+        public static UIColor FindSolidBackgroundColor (UIView v)
+        {
+            if (null == v) {
+                return UIColor.White;
+            }
+            if (null != v.BackgroundColor) {
+                if (1 == v.BackgroundColor.CGColor.Alpha) {
+                    return v.BackgroundColor;
+                }
+            }
+            return FindSolidBackgroundColor (v.Superview);
+        }
+
         public static Stream GenerateStreamFromString (string s)
         {
             MemoryStream stream = new MemoryStream ();

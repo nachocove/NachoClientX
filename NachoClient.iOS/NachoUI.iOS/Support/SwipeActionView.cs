@@ -150,19 +150,6 @@ namespace NachoClient.iOS
             }
         }
 
-        public UIColor FindSolidBackgroundColor(UIView v)
-        {
-            if (null == v) {
-                return UIColor.White;
-            }
-            if (null != v.BackgroundColor) {
-                if (1 == v.BackgroundColor.CGColor.Alpha) {
-                    return v.BackgroundColor;
-                }
-            }
-            return FindSolidBackgroundColor (v.Superview);
-        }
-
         public SwipeActionSwipingView (SwipeActionView view,
                                        SwipeActionButtonList leftButtons, SwipeActionButtonList rightButtons,
                                        Action onClear) : base (view.Frame)
@@ -178,7 +165,7 @@ namespace NachoClient.iOS
 
             // Take a snapshot of the original view
             snapshotView = view.SnapshotView (false);
-            snapshotView.BackgroundColor = FindSolidBackgroundColor (view);
+            snapshotView.BackgroundColor = Util.FindSolidBackgroundColor (view);
 
             AddSubview (snapshotView);
 
@@ -386,6 +373,29 @@ namespace NachoClient.iOS
     }
 
     /// <summary>
+    /// Cover view create a view that intended to cover
+    /// an area (like the whole screen) but to create a
+    /// hole to let events pass throught.
+    /// </summary>
+    public class CoverView : UIView
+    {
+        RectangleF hole;
+
+        public CoverView (UIView view, RectangleF hole) : base (view.Frame)
+        {
+            this.hole = hole;
+            this.UserInteractionEnabled = true;
+            this.BackgroundColor = UIColor.Clear;
+            // this.BackgroundColor = UIColor.FromWhiteAlpha (0.3f, 0.3f); // DEBUG
+        }
+
+        public override bool PointInside (PointF point, UIEvent uievent)
+        {
+            return !hole.Contains (point);
+        }
+    }
+
+    /// <summary>
     /// Swipe view is meant for a base class for all views that require swipe actions.
     /// It tracks horizontal swipe action on the view and provides configureable slide out
     /// action buttons. Swiping halfway across the element results in showing of the
@@ -443,9 +453,8 @@ namespace NachoClient.iOS
         {
             SWIPE_BEGIN,
             SWIPE_END_ALL_HIDDEN,
-            SWIPE_END_ALL_SHOWN}
-
-        ;
+            SWIPE_END_ALL_SHOWN,
+        };
 
         /// <summary>
         /// Callback function for notifying when swiping is beginning or ending.
@@ -464,8 +473,10 @@ namespace NachoClient.iOS
 
         public SwipeActionButtonList RightSwipeActionButtons { get; protected set; }
 
+        protected UITapGestureRecognizer coverRecognizer;
         protected UIPanGestureRecognizer swipeRecognizer;
         protected SwipeActionSwipingView swipingView;
+        protected UIView coverView;
 
         public SwipeActionView (RectangleF frame) : base (frame)
         {
@@ -520,7 +531,20 @@ namespace NachoClient.iOS
                                     OnSwipe (this, SwipeState.SWIPE_END_ALL_HIDDEN);
                                 });
                             });
-                        AddSubview (swipingView);
+                        // Where is swiping view on the  screen?
+                        var topView = Util.FindOutermostView (this);
+                        var screenLocation = this.ConvertPointToView (this.Frame.Location, null);
+                        var adjustedFrame = new RectangleF (screenLocation.X, screenLocation.Y, this.Frame.Width, this.Frame.Height);
+                        coverView = new CoverView (topView, adjustedFrame);
+                        topView.AddSubview (coverView);
+                        this.AddSubview (swipingView);
+                        coverRecognizer = new UITapGestureRecognizer ((UITapGestureRecognizer tap) => {
+                            swipingView.SnapToAllButtonsHidden (() => {
+                                RemoveSwipingView ();
+                                OnSwipe (this, SwipeState.SWIPE_END_ALL_HIDDEN);
+                            });
+                        });
+                        coverView.AddGestureRecognizer (coverRecognizer);
                     }
                     break;
                 }
@@ -627,7 +651,7 @@ namespace NachoClient.iOS
             return false;
         }
 
-        public void EnableSwipe(bool enabled)
+        public void EnableSwipe (bool enabled)
         {
             swipeRecognizer.Enabled = enabled;
         }
@@ -662,6 +686,9 @@ namespace NachoClient.iOS
             }
             swipingView.RemoveFromSuperview ();
             swipingView = null;
+
+            coverView.RemoveFromSuperview ();
+            coverView = null;
 
             foreach (var button in LeftSwipeActionButtons) {
                 button.RemoveFromSuperview ();

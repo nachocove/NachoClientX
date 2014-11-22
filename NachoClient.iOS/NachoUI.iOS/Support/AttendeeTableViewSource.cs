@@ -308,7 +308,7 @@ namespace NachoClient.iOS
                     throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action tag {0}", tag));
                 }
             };
-            view.OnSwipe = (SwipeActionView.SwipeState state) => {
+            view.OnSwipe = (SwipeActionView actionView, SwipeActionView.SwipeState state) => {
                 switch (state) {
                 case SwipeActionView.SwipeState.SWIPE_BEGIN:
                     tableView.ScrollEnabled = false;
