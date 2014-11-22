@@ -29,7 +29,6 @@ namespace NachoCore.Utils
                 c.StartTime = new DateTime (start.Year, start.Month, start.Day, start.Hour, 0, 0, DateTimeKind.Utc);
             }
             c.EndTime = c.StartTime.AddMinutes (60.0);
-
             return c;
         }
 
@@ -487,8 +486,14 @@ namespace NachoCore.Utils
             var c = DefaultMeeting ();
             c.AccountId = message.AccountId;
             c.Subject = message.Subject;
-            var dupBody = McBody.InsertDuplicate (message.AccountId, message.BodyId);
-            c.BodyId = dupBody.Id;
+//            var dupBody = McBody.InsertDuplicate (message.AccountId, message.BodyId);
+//            c.BodyId = dupBody.Id;
+
+            //Instead of grabbing the whole body from the email message, only the
+            //text part (if there exists one) is added to the event description.
+            if (null != MimeHelpers.ExtractTextPart (message.GetBody ())) {
+                c.Description = MimeHelpers.ExtractTextPart (message.GetBody ());
+            }
             c.attendees = new System.Collections.Generic.List<McAttendee> ();
             c.attendees.AddRange (CreateAttendeeList (message.AccountId, message.From, NcAttendeeType.Required));
             c.attendees.AddRange (CreateAttendeeList (message.AccountId, message.To, NcAttendeeType.Required));

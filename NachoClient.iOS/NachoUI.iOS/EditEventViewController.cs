@@ -210,9 +210,13 @@ namespace NachoClient.iOS
                 this.action = CalendarItemEditorAction.create;
                 return;
             }
+
             if (0 == c.Id) {
-                c.Insert ();
+                this.item = c;
+                this.action = CalendarItemEditorAction.create;
+                return;
             }
+
             this.item = c;
             this.action = CalendarItemEditorAction.edit;
         }
@@ -808,7 +812,7 @@ namespace NachoClient.iOS
             });
             calendarView.AddGestureRecognizer (calTap);
 
-            deleteView = new UIView(new RectangleF (0, (LINE_OFFSET * 6) + (CELL_HEIGHT * 11) + TEXT_LINE_HEIGHT, View.Frame.Width, CELL_HEIGHT));
+            deleteView = new UIView (new RectangleF (0, (LINE_OFFSET * 6) + (CELL_HEIGHT * 11) + TEXT_LINE_HEIGHT, View.Frame.Width, CELL_HEIGHT));
             deleteView.Layer.BorderColor = separatorColor.CGColor;
             deleteView.Layer.BorderWidth = .5f;
             deleteView.BackgroundColor = CELL_COMPONENT_BG_COLOR;
@@ -1206,7 +1210,7 @@ namespace NachoClient.iOS
                 c.StartTime = startDate;
                 c.EndTime = endDate;
             }
-            // c.attendees is already set via PullAttendees
+            //c.attendees is already set via PullAttendees
             //c.Phone = phoneDetailLabel.Text;
             c.Location = locationField.Text;
             c.attachments.Clear ();
