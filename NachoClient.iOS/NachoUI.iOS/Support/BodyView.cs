@@ -417,9 +417,8 @@ namespace NachoClient.iOS
 
         private void StatusIndicatorCallback (object sender, EventArgs e)
         {
-            if (null == downloadToken) {
-                return;
-            }
+            NcAssert.NotNull (downloadToken, "BodyView's StatusIndicatorCallback was called while the downloadToken was null.");
+
             var statusEvent = (StatusIndEventArgs)e;
             if (null != statusEvent.Tokens && statusEvent.Tokens.FirstOrDefault () == downloadToken) {
                 switch (statusEvent.Status.SubKind) {
