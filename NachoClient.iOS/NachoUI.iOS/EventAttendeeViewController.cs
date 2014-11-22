@@ -15,12 +15,21 @@ namespace NachoClient.iOS
     public partial class EventAttendeeViewController : NcUIViewController, IAttendeeTableViewSourceDelegate, INachoContactChooserDelegate, INachoAttendeeListChooser
     {
 
-        protected AttendeeTableViewSource attendeeSource;
+        protected AttendeeTableViewSource AttendeeSource;
         protected McAccount account;
         protected McAbstrCalendarRoot c;
+
         protected bool editing;
+
+        UIBarButtonItem multiSelectButton;
+        UIBarButtonItem multiResendButton;
+        UIBarButtonItem multiRemoveButton;
+        UIBarButtonItem multiCancelButton;
+        public bool isMultiSelecting;
+
         protected INachoAttendeeListChooserDelegate owner;
         protected UISegmentedControl segmentedControl;
+        protected UIView segmentedControlView;
         List<McAttendee> AttendeeList = new List<McAttendee> ();
         List<McAttendee> RequiredList = new List<McAttendee> ();
         List<McAttendee> OptionalList = new List<McAttendee> ();
@@ -47,13 +56,12 @@ namespace NachoClient.iOS
             base.ViewDidLoad ();
 
             EventAttendeesTableView.Frame = new RectangleF (0, 40, SCREEN_WIDTH, View.Frame.Height - 40);
-            EventAttendeesTableView.SeparatorColor = A.Color_NachoBorderGray;
+            EventAttendeesTableView.SeparatorColor = UIColor.Clear;
 
             account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
-            attendeeSource = new AttendeeTableViewSource ();
-            attendeeSource.SetOwner (this);
+            AttendeeSource = new AttendeeTableViewSource (this, this);
 
-            EventAttendeesTableView.Source = attendeeSource;
+            EventAttendeesTableView.Source = AttendeeSource;
 
             EventAttendeesTableView.ReloadData ();
             CreateEventAttendeeView ();
@@ -109,9 +117,9 @@ namespace NachoClient.iOS
         public void LoadAttendees ()
         {
             NachoCore.Utils.NcAbate.HighPriority ("EventAttendeeViewController LoadAttendees");
-            attendeeSource.SetAttendeeList (this.AttendeeList);
-            attendeeSource.SetEditing (editing);
-            attendeeSource.SetAccount (account);
+            AttendeeSource.SetAttendeeList (this.AttendeeList);
+            AttendeeSource.SetEditing (editing);
+            AttendeeSource.SetAccount (account);
             EventAttendeesTableView.ReloadData ();
             NachoCore.Utils.NcAbate.RegularPriority ("EventAttendeeViewController LoadAttendees");
         }
@@ -142,18 +150,33 @@ namespace NachoClient.iOS
         protected void CreateEventAttendeeView ()
         {
             NavigationItem.Title = "Attendees";
-            Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
 
-            if (editing) {
-                NavigationItem.RightBarButtonItem = addAttendeeButton;
-                addAttendeeButton.Clicked += (object sender, EventArgs e) => {
-                    var address = new NcEmailAddress (NcEmailAddress.Kind.Required);
-                    address.action = NcEmailAddress.Action.create;
-                    PerformSegue ("EventAttendeesToContactChooser", new SegueHolder (address));
-                };
-            } else {
-                NavigationItem.RightBarButtonItem = null;
-            }
+            multiSelectButton = new UIBarButtonItem ();
+            multiSelectButton.TintColor = A.Color_NachoBlue;
+            multiSelectButton.Image = UIImage.FromBundle ("folder-edit");
+            multiSelectButton.Clicked += multiClicked;
+
+            multiRemoveButton = new UIBarButtonItem ();
+            multiRemoveButton.TintColor = A.Color_NachoBlue;
+            multiRemoveButton.Image = UIImage.FromBundle ("gen-delete-all");
+            multiRemoveButton.Clicked += removeClicked;
+
+            multiResendButton = new UIBarButtonItem ();
+            multiResendButton.TintColor = A.Color_NachoBlue;
+            multiResendButton.Image = UIImage.FromBundle ("beer");
+            multiResendButton.Clicked += resendClicked;
+
+            multiCancelButton = new UIBarButtonItem ();
+            multiCancelButton.TintColor = A.Color_NachoBlue;
+            multiCancelButton.Image = UIImage.FromBundle ("gen-close");
+            multiCancelButton.Clicked += cancelClicked;
+
+            addAttendeeButton.Clicked += (object sender, EventArgs e) => {
+                var address = new NcEmailAddress (NcEmailAddress.Kind.Required);
+                address.action = NcEmailAddress.Action.create;
+                PerformSegue ("EventAttendeesToContactChooser", new SegueHolder (address));
+            };
+            
             emptyListLabel = new UILabel (new RectangleF (80, 80, 160, 20));
             emptyListLabel.TextAlignment = UITextAlignment.Center;
             emptyListLabel.Font = A.Font_AvenirNextDemiBold14;
@@ -163,7 +186,7 @@ namespace NachoClient.iOS
             emptyListLabel.Hidden = true;
             View.AddSubview (emptyListLabel);
 
-            var segmentedControlView = new UIView (new RectangleF (0, 0, View.Frame.Width, 40));
+            segmentedControlView = new UIView (new RectangleF (0, 0, View.Frame.Width, 40));
             segmentedControlView.BackgroundColor = UIColor.White;
 
             segmentedControl = new UISegmentedControl ();
@@ -202,6 +225,115 @@ namespace NachoClient.iOS
             View.AddSubview (segmentedControlView);
         }
 
+        private void multiClicked (object sender, EventArgs e)
+        {
+            ToggleMultiSelect (true);
+        }
+
+        private void removeClicked (object sender, EventArgs e)
+        {
+            foreach (var item in AttendeeSource.MultiSelect) {
+                AttendeeSource.RemoveAttendee (item.Value);
+            }
+            EndMultiSelect ();
+        }
+
+        private void resendClicked (object sender, EventArgs e)
+        {
+            EndMultiSelect ();
+        }
+
+        private void cancelClicked (object sender, EventArgs e)
+        {
+            EndMultiSelect ();
+        }
+
+        private void EndMultiSelect ()
+        {
+            AttendeeSource.MultiSelect.Clear ();
+            ToggleMultiSelect (false);
+        }
+
+        private void ToggleMultiSelect (bool isMultiSelect)
+        {
+            if (isMultiSelect) {
+                NavigationItem.Title = "";
+                isMultiSelecting = true;
+                AttendeeSource.IsMultiSelecting = true;
+                ConfigureNavBar (0);
+                UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
+                    () => {
+                        segmentedControlView.Center = new PointF (segmentedControlView.Center.X, segmentedControlView.Center.Y - segmentedControlView.Frame.Height);
+                        EventAttendeesTableView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height);
+                        ConfigureVisibleCells ();
+                    },
+                    () => {
+                    }
+                );
+
+            } else {
+                NavigationItem.Title = "Attendees";
+                isMultiSelecting = false;
+                AttendeeSource.IsMultiSelecting = false;
+                ConfigureNavBar (0);
+                UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
+                    () => {
+                        segmentedControlView.Center = new PointF (segmentedControlView.Center.X, segmentedControlView.Center.Y + segmentedControlView.Frame.Height);
+                        EventAttendeesTableView.Frame = new RectangleF (0, segmentedControlView.Frame.Height, View.Frame.Width, View.Frame.Height - segmentedControlView.Frame.Height);
+                        ConfigureVisibleCells ();
+                    },
+                    () => {
+
+                    }
+                );
+            }
+        }
+
+        public void ConfigureVisibleCells ()
+        {
+            foreach (var path in EventAttendeesTableView.IndexPathsForVisibleRows) {
+                AttendeeSource.ConfigureCell (EventAttendeesTableView, EventAttendeesTableView.CellAt (path), path);
+            }
+        }
+
+        public void ConfigureNavBar (int multiCount)
+        {
+            NavigationItem.LeftBarButtonItem = null;
+            NavigationItem.RightBarButtonItem = null;
+
+            if (editing) {
+                if (0 != AttendeeList.Count) {
+                    if (isMultiSelecting) {
+                        NavigationItem.LeftBarButtonItem = multiCancelButton;
+                        NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
+                            multiRemoveButton,
+                            multiResendButton
+                        };
+                        if (0 == multiCount) {
+                            multiRemoveButton.Enabled = false;
+                            multiResendButton.Enabled = false;
+                        } else {
+                            multiRemoveButton.Enabled = true;
+                            multiResendButton.Enabled = true;
+                        }
+                    } else {
+                        Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
+                        NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
+                            //multiSelectButton,
+                            addAttendeeButton
+                        };
+                    }
+                } else {
+                    Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
+                    NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
+                        addAttendeeButton
+                    };
+                }
+            } else {
+                Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
+            }
+        }
+
         string addMessage = "Add attendees with the \"+\" button";
 
         protected void ConfigureEventAttendeesView ()
@@ -220,11 +352,13 @@ namespace NachoClient.iOS
                     emptyListLabel.Frame = new RectangleF (80, 80, 160, 20);
                 }
             } else {
-                attendeeSource.SetAttendeeList (this.AttendeeList);
+                AttendeeSource.SetAttendeeList (this.AttendeeList);
                 EventAttendeesTableView.ReloadData ();
                 EventAttendeesTableView.Hidden = false;
                 emptyListLabel.Hidden = true;
             }
+
+            ConfigureNavBar (0);
         }
 
         protected void ConfigureRequiredList ()
@@ -247,7 +381,7 @@ namespace NachoClient.iOS
                     emptyListLabel.Frame = new RectangleF (0, 80, SCREEN_WIDTH, 20);
                 }
             } else {
-                attendeeSource.SetAttendeeList (this.RequiredList);
+                AttendeeSource.SetAttendeeList (this.RequiredList);
                 EventAttendeesTableView.ReloadData ();
                 EventAttendeesTableView.Hidden = false;
                 emptyListLabel.Hidden = true;
@@ -274,7 +408,7 @@ namespace NachoClient.iOS
                     emptyListLabel.Frame = new RectangleF (0, 80, SCREEN_WIDTH, 20);
                 }
             } else {
-                attendeeSource.SetAttendeeList (this.OptionalList);
+                AttendeeSource.SetAttendeeList (this.OptionalList);
                 EventAttendeesTableView.ReloadData ();
                 EventAttendeesTableView.Hidden = false;
                 emptyListLabel.Hidden = true;
@@ -394,7 +528,10 @@ namespace NachoClient.iOS
         /// IContactsTableViewSourceDelegate
         public void SendAttendeeInvite (McAttendee attendee)
         {
-            NcAssert.CaseError ();
+//            var iCalPart = CalendarHelper.iCalToMimePart (account, c);
+//            var mimeBody = CalendarHelper.CreateMime (c.Description, iCalPart, c.attachments);
+//
+//            CalendarHelper.SendInvite (account, c, attendee, mimeBody);
         }
 
 

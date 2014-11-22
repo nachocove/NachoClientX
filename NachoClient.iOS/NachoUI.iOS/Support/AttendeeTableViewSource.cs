@@ -20,18 +20,57 @@ namespace NachoClient.iOS
         protected McAccount Account;
         protected bool editing = false;
         public IAttendeeTableViewSourceDelegate owner;
+        protected bool isMultiSelecting;
+        protected Dictionary<NSIndexPath,McAttendee> multiSelect = null;
+        EventAttendeeViewController vc;
 
-        protected const string UICellReuseIdentifier = "UICell";
+        const string AttendeeCell = "AttendeeCell";
+
+        protected UIColor CELL_COMPONENT_BG_COLOR = UIColor.White;
+
+        protected const int SWIPE_TAG = 99100;
+        protected const int CELL_VIEW_TAG = 99200;
+        protected const int MULTI_SELECT_CELL_VIEW_TAG = 99300;
+
+        protected static int MULTI_ICON_TAG = 175;
+        protected static int SEPARATOR_LINE_TAG = 600;
+
+        private const int RESEND_INVITE_TAG = 1000;
+        private const int MAKE_REQUIRED_TAG = 2000;
+        private const int MAKE_OPTIONAL_TAG = 3000;
+        private const int DELETE_TAG = 4000;
+
         protected const string AttendeeCellReuseIdentifier = "AttendeeCell";
 
-        public AttendeeTableViewSource ()
-        {
-            owner = null;
+        // Pre-made swipe action descriptors
+        private static SwipeActionDescriptor RESEND_INVITE_BUTTON =
+            new SwipeActionDescriptor (RESEND_INVITE_TAG, 0.25f, UIImage.FromBundle ("files-forward-swipe"),
+                "Send Invite", A.Color_NachoSwipeActionGreen);
+        private static SwipeActionDescriptor MAKE_REQUIRED_BUTTON =
+            new SwipeActionDescriptor (MAKE_REQUIRED_TAG, 0.25f, UIImage.FromBundle ("files-open-app-swipe"),
+                "Required", A.Color_NachoSwipeActionBlue);
+        //        private static SwipeActionDescriptor MAKE_OPTIONAL_BUTTON =
+        //            new SwipeActionDescriptor (MAKE_OPTIONAL_TAG, 0.25f, UIImage.FromBundle ("files-open-app-swipe"),
+        //                "Optional", A.Color_NachoSwipeActionBlue);
+        private static SwipeActionDescriptor DELETE_BUTTON =
+            new SwipeActionDescriptor (DELETE_TAG, 0.25f, UIImage.FromBundle ("email-delete-swipe"),
+                "Remove", A.Color_NachoSwipeActionRed);
+
+        public Dictionary<NSIndexPath, McAttendee> MultiSelect {
+            get { return multiSelect; }
+            set { multiSelect = value; }
         }
 
-        public void SetOwner (IAttendeeTableViewSourceDelegate owner)
+        public bool IsMultiSelecting {
+            get { return isMultiSelecting; }
+            set { isMultiSelecting = value; }
+        }
+
+        public AttendeeTableViewSource (IAttendeeTableViewSourceDelegate owner, EventAttendeeViewController vc)
         {
+            this.multiSelect = new Dictionary<NSIndexPath,McAttendee> ();
             this.owner = owner;
+            this.vc = vc;
         }
 
         public void SetAttendeeList (List<McAttendee> attendees)
@@ -119,142 +158,120 @@ namespace NachoClient.iOS
 
         public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
         {
-            return 69;
+            return 80;
         }
 
         protected const int USER_NAME_TAG = 333;
         protected const int USER_LABEL_TAG = 334;
         protected const int USER_EMAIL_TAG = 335;
         protected const int USER_RESPONSE_TAG = 336;
-        protected const int USER_IMAGE_TAG = 337;
+        protected const int USER_RESPONSE_VIEW_TAG = 337;
+        protected const int USER_IMAGE_TAG = 338;
 
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
         {
-            McAttendee attendee;
-            attendee = AttendeeList [indexPath.Row];
-
-            var cell = CreateCell ();
-            ConfigureCell (cell, attendee);
-
-            return cell;
-        }
-
-        void ConfigureSwipes (MCSwipeTableViewCell cell, McAttendee attendee)
-        {
-            cell.FirstTrigger = 0.20f;
-            cell.SecondTrigger = 0.50f;
-
-            UIView resendView = null;
-            UIColor blueColor = null;
-            UIView crossView = null;
-            UIColor redColor = null;
-            UIView typeView = null;
-            UIColor yellowColor = null;
-            UIView deleteView = null;
-            UIColor brownColor = null;
-
-            try { 
-                resendView = ViewWithLabel ("resend invite", "left");
-                blueColor = new UIColor (A.Color_NachoBlue.CGColor);
-                cell.SetSwipeGestureWithView (resendView, blueColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State1, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                    ResendInvite (attendee);
-                });
-                crossView = ViewWithLabel ("resend invite", "left");
-                cell.SetSwipeGestureWithView (crossView, blueColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State2, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                    ResendInvite (attendee);
-                });
-                if (NcAttendeeType.Optional == attendee.AttendeeType) {
-                    typeView = ViewWithLabel ("attendee required", "right");
-                    yellowColor = new UIColor (A.Color_NachoGreen.CGColor);
-                }
-                if (NcAttendeeType.Required == attendee.AttendeeType) {
-                    typeView = ViewWithLabel ("attendee optional", "right");
-                    yellowColor = new UIColor (A.Color_NachoYellow.CGColor);
-                }
-                cell.SetSwipeGestureWithView (typeView, yellowColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State3, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                    ChangeAttendeeType (cell, attendee);
-                });
-                deleteView = ViewWithLabel ("remove attendee", "right");
-                redColor = new UIColor (A.Color_NachoRed.CGColor);
-                cell.SetSwipeGestureWithView (deleteView, redColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State4, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                    RemoveAttendee (attendee);
-                });
-            } finally {
-                if (null != resendView) {
-                    resendView.Dispose ();
-                }
-                if (null != blueColor) {
-                    blueColor.Dispose ();
-                }
-                if (null != crossView) {
-                    crossView.Dispose ();
-                }
-                if (null != redColor) {
-                    redColor.Dispose ();
-                }
-                if (null != typeView) {
-                    typeView.Dispose ();
-                }
-                if (null != yellowColor) {
-                    yellowColor.Dispose ();
-                }
-                if (null != deleteView) {
-                    deleteView.Dispose ();
-                }
-                if (null != brownColor) {
-                    brownColor.Dispose ();
-                }
+            UITableViewCell cell = null;
+            cell = tableView.DequeueReusableCell (AttendeeCell);
+            if (null == cell) {
+                cell = CreateCell (tableView, AttendeeCell);
             }
-        }
-
-        public MCSwipeTableViewCell CreateCell ()
-        {
-            var cell = new MCSwipeTableViewCell (UITableViewCellStyle.Subtitle, AttendeeCellReuseIdentifier);
             NcAssert.True (null != cell);
 
-            if (null == cell.ViewWithTag (USER_NAME_TAG)) {
-                var userNameView = new UILabel (new RectangleF (70, 22 - 2.5f, 320 - 15 - 65, 20));
-                userNameView.LineBreakMode = UILineBreakMode.TailTruncation;
-                userNameView.Tag = USER_NAME_TAG;
-                cell.ContentView.AddSubview (userNameView);
-                var userEmailView = new UILabel (new RectangleF (70, 40 - 2.5f, 320 - 15 - 65, 20));
-                userEmailView.LineBreakMode = UILineBreakMode.TailTruncation;
-                userEmailView.Tag = USER_EMAIL_TAG;
-                cell.ContentView.AddSubview (userEmailView);
+            ConfigureCell (tableView, cell, indexPath);
 
-                // User image
-                var userImageView = new UIImageView (new RectangleF (15, 15 - 2.5f, 45, 45));
-                userImageView.Layer.CornerRadius = (45.0f / 2.0f);
-                userImageView.Layer.MasksToBounds = true;
-                userImageView.Tag = USER_IMAGE_TAG;
-                cell.ContentView.AddSubview (userImageView);
-
-                // User userLabelView view, if no image
-                var userLabelView = new UILabel (new RectangleF (15, 15 - 2.5f, 45, 45));
-                userLabelView.Font = A.Font_AvenirNextRegular24;
-                userLabelView.TextColor = UIColor.White;
-                userLabelView.TextAlignment = UITextAlignment.Center;
-                userLabelView.LineBreakMode = UILineBreakMode.Clip;
-                userLabelView.Layer.CornerRadius = (45 / 2);
-                userLabelView.Layer.MasksToBounds = true;
-                userLabelView.Tag = USER_LABEL_TAG;
-                cell.ContentView.AddSubview (userLabelView);
-
-                var attendeeResponseView = new UIView (new RectangleF (15 + 27, 42 - 2.5f, 20, 20));
-                attendeeResponseView.BackgroundColor = UIColor.White;
-                attendeeResponseView.Layer.CornerRadius = 10;
-                MakeEmptyCircle (attendeeResponseView);
-                UIImageView responseImageView = new UIImageView (new RectangleF (2.5f, 2.5f, 15, 15));
-                responseImageView.Tag = USER_RESPONSE_TAG;
-                attendeeResponseView.Add (responseImageView);
-
-                cell.ContentView.AddSubview (attendeeResponseView);
-            }
             return cell;
         }
 
-        public void ConfigureCell (MCSwipeTableViewCell cell, McAttendee attendee)
+        protected UITableViewCell CreateCell (UITableView tableView, string identifier)
         {
+            var cell = tableView.DequeueReusableCell (identifier);
+            if (null == cell) {
+                cell = new UITableViewCell (UITableViewCellStyle.Default, identifier);
+            }
+            if (cell.RespondsToSelector (new MonoTouch.ObjCRuntime.Selector ("setSeparatorInset:"))) {
+                cell.SeparatorInset = UIEdgeInsets.Zero;
+            }
+            cell.SelectionStyle = UITableViewCellSelectionStyle.Default;
+            cell.ContentView.BackgroundColor = CELL_COMPONENT_BG_COLOR;
+
+            var cellWidth = tableView.Frame.Width;
+
+            var frame = new RectangleF (0, 0, tableView.Frame.Width, 80);
+            var view = new SwipeActionView (frame);
+            view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
+            view.SetAction (MAKE_REQUIRED_BUTTON, SwipeSide.LEFT);
+            view.SetAction (RESEND_INVITE_BUTTON, SwipeSide.LEFT);
+
+            cell.AddSubview (view);
+            view.Tag = SWIPE_TAG;
+            view.BackgroundColor = CELL_COMPONENT_BG_COLOR;
+
+            //Multi select icon
+            var multiSelectImageView = new UIImageView ();
+            multiSelectImageView.Tag = MULTI_ICON_TAG;
+            multiSelectImageView.BackgroundColor = CELL_COMPONENT_BG_COLOR;
+            multiSelectImageView.Frame = new RectangleF (18, (view.Frame.Height / 2) - 8, 16, 16);
+            multiSelectImageView.Hidden = true;
+            view.AddSubview (multiSelectImageView);
+
+            //User Name
+            var userNameLabel = new UILabel (new RectangleF (70, 22 - 2.5f, 320 - 15 - 65, 20));
+            userNameLabel.LineBreakMode = UILineBreakMode.TailTruncation;
+            userNameLabel.Tag = USER_NAME_TAG;
+            view.AddSubview (userNameLabel);
+
+            //User Email
+            var userEmailView = new UILabel (new RectangleF (70, 40 - 2.5f, 320 - 15 - 65, 20));
+            userEmailView.LineBreakMode = UILineBreakMode.TailTruncation;
+            userEmailView.Tag = USER_EMAIL_TAG;
+            view.AddSubview (userEmailView);
+
+            // User image
+            var userImageView = new UIImageView (new RectangleF (15, 15 - 2.5f, 45, 45));
+            userImageView.Layer.CornerRadius = (45.0f / 2.0f);
+            userImageView.Layer.MasksToBounds = true;
+            userImageView.Tag = USER_IMAGE_TAG;
+            view.AddSubview (userImageView);
+
+            // User userLabelView view, if no image
+            var userLabelView = new UILabel (new RectangleF (15, 15 - 2.5f, 45, 45));
+            userLabelView.Font = A.Font_AvenirNextRegular24;
+            userLabelView.TextColor = CELL_COMPONENT_BG_COLOR;
+            userLabelView.TextAlignment = UITextAlignment.Center;
+            userLabelView.LineBreakMode = UILineBreakMode.Clip;
+            userLabelView.Layer.CornerRadius = (45 / 2);
+            userLabelView.Layer.MasksToBounds = true;
+            userLabelView.Tag = USER_LABEL_TAG;
+            view.AddSubview (userLabelView);
+
+            //User response indicator
+            var attendeeResponseView = new UIView (new RectangleF (15 + 27, 42 - 2.5f, 20, 20));
+            attendeeResponseView.BackgroundColor = CELL_COMPONENT_BG_COLOR;
+            attendeeResponseView.Layer.CornerRadius = 10;
+            attendeeResponseView.Tag = USER_RESPONSE_VIEW_TAG;
+            MakeEmptyCircle (attendeeResponseView);
+            UIImageView responseImageView = new UIImageView (new RectangleF (2.5f, 2.5f, 15, 15));
+                
+            responseImageView.Tag = USER_RESPONSE_TAG;
+            attendeeResponseView.Add (responseImageView);
+            view.AddSubview (attendeeResponseView);
+
+            //Separator line
+            var separatorLine = Util.AddHorizontalLineView (70, 80, cell.Frame.Width - 60, A.Color_NachoBorderGray);
+            separatorLine.Tag = SEPARATOR_LINE_TAG;
+            view.AddSubview (separatorLine);
+
+            cell.AddSubview (view);
+            return cell;
+        }
+
+        public void ConfigureCell (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
+        {
+            float xOffset = isMultiSelecting ? 34 : 0;
+
+            //Attendee
+            McAttendee attendee = AttendeeList [indexPath.Row];
+
             var displayName = attendee.DisplayName;
             var displayEmailAddress = attendee.Email;
 
@@ -267,39 +284,90 @@ namespace NachoClient.iOS
                     colorIndex = emailAddress.ColorIndex;
                 }
             }
-                
-            cell.TextLabel.Text = null;
-            cell.DetailTextLabel.Text = null;
 
-            ConfigureSwipes (cell, attendee);
+            //Swipe view
+            var view = cell.ViewWithTag (SWIPE_TAG) as SwipeActionView;
+            if (isMultiSelecting || !editing) {
+                view.DisableSwipe ();
+            } else {
+                view.EnableSwipe ();
+            }
 
-            var TextLabel = cell.ViewWithTag (USER_NAME_TAG) as UILabel;
-            var DetailTextLabel = cell.ViewWithTag (USER_EMAIL_TAG) as UILabel;
+            view.OnClick = (int tag) => {
+                switch (tag) {
+                case MAKE_REQUIRED_TAG:
+                    ChangeAttendeeType (cell, attendee);
+                    break;
+                case RESEND_INVITE_TAG:
+                    ResendInvite (attendee);
+                    break;
+                case DELETE_TAG:
+                    RemoveAttendee (attendee);
+                    break;
+                default:
+                    throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action tag {0}", tag));
+                }
+            };
+            view.OnSwipe = (SwipeActionView.SwipeState state) => {
+                switch (state) {
+                case SwipeActionView.SwipeState.SWIPE_BEGIN:
+                    tableView.ScrollEnabled = false;
+                    break;
+                case SwipeActionView.SwipeState.SWIPE_END_ALL_HIDDEN:
+                    tableView.ScrollEnabled = true;
+                    break;
+                case SwipeActionView.SwipeState.SWIPE_END_ALL_SHOWN:
+                    tableView.ScrollEnabled = false;
+                    break;
+                default:
+                    throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown swipe state {0}", (int)state));
+                }
+            };
+
+            //Multiselect icon
+            var multiSelectImageView = view.ViewWithTag (MULTI_ICON_TAG) as UIImageView;
+            multiSelectImageView.Hidden = isMultiSelecting ? false : true;
+            SetMultiSelectIcon (multiSelectImageView, indexPath);
+
+            var textLabel = cell.ViewWithTag (USER_NAME_TAG) as UILabel;
+            textLabel.Frame = new RectangleF (70 + xOffset, 22 - 2.5f, tableView.Frame.Width - 80 - xOffset, 20);
+
+            var detailTextLabel = cell.ViewWithTag (USER_EMAIL_TAG) as UILabel;
+            detailTextLabel.Frame = new RectangleF (70 + xOffset, 40 - 2.5f, tableView.Frame.Width - 80 - xOffset, 20);
+
             var labelView = cell.ViewWithTag (USER_LABEL_TAG) as UILabel;
+            labelView.Frame = new RectangleF (15 + xOffset, 15 - 2.5f, 45, 45);
+
             var imageView = cell.ViewWithTag (USER_IMAGE_TAG) as UIImageView;
+            imageView.Frame = new RectangleF (15 + xOffset, 15 - 2.5f, 45, 45);
             bool hasImage = false;
+
+            var responseCircle = cell.ViewWithTag (USER_RESPONSE_VIEW_TAG) as UIView;
+            responseCircle.Frame = new RectangleF (15 + 27 + xOffset, 42 - 2.5f, 20, 20);
 
             using (UIImage image = Util.ImageOfSender ((int)owner.GetAccountId (), attendee.Email)) {
                 if (null != image) {
                     imageView.Image = image;
+                    imageView.Layer.BorderWidth = .25f;
+                    imageView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
                     hasImage = true;
                 }
             }
 
             // Both empty
             if (String.IsNullOrEmpty (displayName) && String.IsNullOrEmpty (displayEmailAddress)) {
-                TextLabel.Text = "Contact has no name or email address";
-                TextLabel.TextColor = UIColor.LightGray;
-                TextLabel.Font = A.Font_AvenirNextRegular14;
+                textLabel.Text = "Contact has no name or email address";
+                textLabel.TextColor = UIColor.LightGray;
+                textLabel.Font = A.Font_AvenirNextRegular14;
                 labelView.Hidden = true;
                 return;
             }
 
             // Name empty
             if (String.IsNullOrEmpty (displayName)) {
-                TextLabel.Text = displayEmailAddress;
-                TextLabel.TextColor = A.Color_0B3239;
-                TextLabel.Font = A.Font_AvenirNextDemiBold17;
+                textLabel.Text = displayEmailAddress;
+                textLabel.TextColor = A.Color_0B3239;
+                textLabel.Font = A.Font_AvenirNextDemiBold17;
                 labelView.Hidden = hasImage;
                 labelView.Text = Util.NameToLetters (displayEmailAddress);
                 labelView.BackgroundColor = Util.ColorForUser (colorIndex);
@@ -308,12 +376,12 @@ namespace NachoClient.iOS
 
             // Email empty
             if (String.IsNullOrEmpty (displayEmailAddress)) {
-                TextLabel.Text = displayName;
-                DetailTextLabel.Text = "Contact has no email address";
-                TextLabel.TextColor = A.Color_0B3239;
-                TextLabel.Font = A.Font_AvenirNextDemiBold17;
-                DetailTextLabel.TextColor = UIColor.LightGray;
-                DetailTextLabel.Font = A.Font_AvenirNextRegular12;
+                textLabel.Text = displayName;
+                detailTextLabel.Text = "Contact has no email address";
+                textLabel.TextColor = A.Color_0B3239;
+                textLabel.Font = A.Font_AvenirNextDemiBold17;
+                detailTextLabel.TextColor = UIColor.LightGray;
+                detailTextLabel.Font = A.Font_AvenirNextRegular12;
                 labelView.Hidden = hasImage;
                 labelView.Text = Util.NameToLetters (displayName);
                 labelView.BackgroundColor = Util.ColorForUser (colorIndex);
@@ -321,12 +389,12 @@ namespace NachoClient.iOS
             }
 
             // Everything
-            TextLabel.Text = displayName;
-            DetailTextLabel.Text = displayEmailAddress;
-            TextLabel.TextColor = A.Color_0B3239;
-            TextLabel.Font = A.Font_AvenirNextDemiBold17;
-            DetailTextLabel.TextColor = A.Color_0B3239;
-            DetailTextLabel.Font = A.Font_AvenirNextRegular14;
+            textLabel.Text = displayName;
+            detailTextLabel.Text = displayEmailAddress;
+            textLabel.TextColor = A.Color_0B3239;
+            textLabel.Font = A.Font_AvenirNextDemiBold17;
+            detailTextLabel.TextColor = A.Color_0B3239;
+            detailTextLabel.Font = A.Font_AvenirNextRegular14;
 
             labelView.Hidden = hasImage;
             labelView.Text = Util.NameToLetters (displayName);
@@ -340,8 +408,54 @@ namespace NachoClient.iOS
                 attendeeResponseImageView.Hidden = true;
             }
 
-            if (!editing) {
-                cell.UserInteractionEnabled = false;
+            //Separator line
+            var separatorLine = view.ViewWithTag (SEPARATOR_LINE_TAG);
+            var totalRow = tableView.NumberOfRowsInSection (indexPath.Section);
+            if (totalRow - 1 == indexPath.Row) {
+                separatorLine.Frame = new RectangleF (0, 79.5f, cell.Frame.Width, .5f);
+            } else {
+                separatorLine.Frame = new RectangleF (70 + xOffset, 79.5f, cell.Frame.Width - 60 - xOffset, .5f);
+            }
+
+        }
+
+        protected void SetMultiSelectIcon (UIImageView iv, NSIndexPath indexPath)
+        {
+            if (multiSelect.ContainsKey (indexPath)) {
+                iv.Image = UIImage.FromBundle ("gen-checkbox-checked");
+                iv.UserInteractionEnabled = true;        
+            } else {
+                iv.Image = UIImage.FromBundle ("gen-checkbox");
+                iv.UserInteractionEnabled = false;
+            }
+        }
+
+        public override void RowSelected (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
+        {
+            UITableViewCell cell = tableView.CellAt (indexPath);
+            if (isMultiSelecting) {
+                var iv = cell.ViewWithTag (MULTI_ICON_TAG) as UIImageView;
+                ToggleMultiSelectIcon (iv);
+
+                var attendee = AttendeeList [indexPath.Row];
+                if (multiSelect.ContainsKey (indexPath)) {
+                    multiSelect.Remove (indexPath);
+                } else {
+                    multiSelect.Add (indexPath, attendee);
+                }
+                vc.ConfigureNavBar (multiSelect.Count);
+            } 
+            tableView.DeselectRow (indexPath, true);
+        }
+
+        protected void ToggleMultiSelectIcon (UIImageView iv)
+        {
+            if (iv.UserInteractionEnabled) {
+                iv.Image = UIImage.FromBundle ("gen-checkbox");
+                iv.UserInteractionEnabled = false;
+            } else {
+                iv.Image = UIImage.FromBundle ("gen-checkbox-checked");
+                iv.UserInteractionEnabled = true;
             }
         }
 
@@ -361,19 +475,19 @@ namespace NachoClient.iOS
             alert.Show ();
         }
 
-        public void ChangeAttendeeType (MCSwipeTableViewCell cell, McAttendee attendee)
+        public void ChangeAttendeeType (UITableViewCell cell, McAttendee attendee)
         {
             if (NcAttendeeType.Optional == attendee.AttendeeType) {
                 attendee.AttendeeType = NcAttendeeType.Required;
                 owner.UpdateLists ();
-                ConfigureCell (cell, attendee);
+                //ConfigureCell (cell, attendee);
                 owner.ConfigureAttendeeTable ();
                 return;
             }
             if (NcAttendeeType.Required == attendee.AttendeeType) {
                 attendee.AttendeeType = NcAttendeeType.Optional;
                 owner.UpdateLists ();
-                ConfigureCell (cell, attendee);
+                //ConfigureCell (cell, attendee);
                 owner.ConfigureAttendeeTable ();
                 return;
             }
