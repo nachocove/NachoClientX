@@ -231,6 +231,7 @@ namespace NachoCore.Model
         public void Prioritize ()
         {
             PriorityStamp = DateTime.UtcNow;
+            DelayNotAllowed = true;
             Update ();
         }
 
