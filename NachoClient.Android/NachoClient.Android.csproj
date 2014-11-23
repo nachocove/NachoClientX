@@ -353,6 +353,8 @@
     <Compile Include="NachoCore\Utils\ContactsHelpers.cs" />
     <Compile Include="NachoCore\Utils\CertificateHelper.cs" />
     <Compile Include="NachoCore\Utils\NcAbate.cs" />
+    <Compile Include="NachoCore\Index\Index.cs" />
+    <Compile Include="NachoCore\Index\IndexDocument.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -515,6 +517,7 @@
     <Folder Include="NachoCore\BackEnd\ActiveSync\AsXmlFilters\" />
     <Folder Include="NachoCore\Model\McContact\" />
     <Folder Include="NachoCore\Model\McEmailMessage\" />
+    <Folder Include="NachoCore\Index\" />
   </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\xsd\response\Ping.xsd" />
@@ -546,6 +549,10 @@
     <ProjectReference Include="..\..\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding.Android\NachoPlatformBinding.Android.csproj">
       <Project>{99266C8C-3B30-436D-83BB-88C3B54C1D02}</Project>
       <Name>NachoPlatformBinding.Android</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\lucene.net-3.0.3\Lucene.Net.Android\Lucene.Net.Android.csproj">
+      <Project>{B0F398CA-1CAA-45FD-94DC-15BBF1A93377}</Project>
+      <Name>Lucene.Net.Android</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>

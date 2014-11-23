@@ -224,6 +224,7 @@
     <Folder Include="NachoUI.iOS\ViewControllers\" />
     <Folder Include="NachoCore\Model\McContact\" />
     <Folder Include="NachoCore\Model\McEmailMessage\" />
+    <Folder Include="NachoCore\Index\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -1172,6 +1173,12 @@
     <Compile Include="NachoUI.iOS\ContactDefaultSelectionViewController.designer.cs">
       <DependentUpon>ContactDefaultSelectionViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Index\Index.cs">
+      <Link>NachoCore\Index\Index.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Index\IndexDocument.cs">
+      <Link>NachoCore\Index\IndexDocument.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -1752,6 +1759,14 @@
     <ProjectReference Include="..\..\aws-sdk-xamarin\AWS.XamarinSDK\AWSSDK.iOS\AWSSDK_iOS.csproj">
       <Project>{2509D641-F08E-4DED-A12D-855B056BE831}</Project>
       <Name>AWSSDK_iOS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\lucene.net-3.0.3\Lucene.Net.iOS\Lucene.Net.iOS.csproj">
+      <Project>{35BDE52C-1FAD-42BB-841B-9298F354AFE8}</Project>
+      <Name>Lucene.Net.iOS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\MimeKit\MimeKit\MimeKit.iOS.csproj">
+      <Project>{4C1288AD-12C8-4BF7-AED7-6C4DC539C856}</Project>
+      <Name>MimeKit.iOS</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
