@@ -3,8 +3,10 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.IO;
 using NachoCore.Utils;
 using NachoCore.Model;
+using NachoCore.Index;
 
 namespace NachoCore.Brain
 {
@@ -191,6 +193,53 @@ namespace NachoCore.Brain
             return numUpdated;
         }
 
+        private int IndexEmailMessages (int count)
+        {
+            if (0 == count) {
+                return 0;
+            }
+
+            int numIndexed = 0;
+            long bytesIndexed = 0;
+            List<McEmailMessage> emailMessages = McEmailMessage.QueryNeedsIndexing (count);
+            Dictionary<int, Index.Index> indexes = new Dictionary<int, Index.Index> ();
+            foreach (var emailMessage in emailMessages) {
+                // If we don't have an index for this account, open one
+                Index.Index index;
+                if (!indexes.TryGetValue (emailMessage.AccountId, out index)) {
+                    var indexPath = NcModel.Instance.GetFileDirPath (emailMessage.AccountId, "index");
+                    index = new Index.Index (indexPath);
+                    indexes.Add (emailMessage.AccountId, index);
+                    index.BeginAddTransaction ();
+                }
+
+                // Make sure the body is there
+                var messagePath = emailMessage.GetBody().GetFilePath();
+                if (!File.Exists (messagePath)) {
+                    Log.Warn (Log.LOG_BRAIN, "{0} does not exist", messagePath);
+                    continue;
+                }
+
+                // Index the document
+                bytesIndexed +=
+                    index.BatchAdd (messagePath, "message", emailMessage.Id.ToString ());
+                numIndexed += 1;
+
+                // Mark the email message indexed
+                emailMessage.IsIndexed = true;
+                emailMessage.UpdateByBrain ();
+            }
+
+            foreach (var index in indexes.Values) {
+                index.EndAddTransaction ();
+                index.Dispose ();
+            }
+            Log.Info (Log.LOG_BRAIN, "{0} email messages indexed", numIndexed);
+            Log.Info (Log.LOG_BRAIN, "{0:N0} bytes indexed", bytesIndexed);
+            indexes.Clear ();
+            return numIndexed;
+        }
+
         private void ProcessUIEvent (NcBrainUIEvent brainEvent)
         {
             switch (brainEvent.UIType) {  
@@ -308,6 +357,9 @@ namespace NachoCore.Brain
                 num_entries -= GleanContacts (num_entries);
                 num_entries -= UpdateEmailAddressScores (num_entries);
                 num_entries -= UpdateEmailMessageScores (num_entries);
+                #if INDEXING_ENABLED
+                num_entries -= IndexEmailMessages (num_entries);
+                #endif
                 break;
             case NcBrainEventType.STATE_MACHINE:
                 GleanContacts (int.MaxValue);
