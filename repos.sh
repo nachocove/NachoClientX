@@ -22,5 +22,5 @@ DnDns
 DDay-iCal-Xamarin
 Telemetry
 aws-sdk-xamarin
-lucene-3.0.3
+lucene.net-3.0.3
 "
