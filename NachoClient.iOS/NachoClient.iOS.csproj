@@ -1737,10 +1737,6 @@
       <Project>{E8EDAA21-69C1-4866-9037-28D83F0D4359}</Project>
       <Name>iCarouselBinding</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\MCSwipeTableViewCellBinding\MCSwipeTableViewCellBinding\MCSwipeTableViewCellBinding\MCSwipeTableViewCellBinding.csproj">
-      <Project>{E301B932-D165-4A65-8916-3E80C000B6AC}</Project>
-      <Name>MCSwipeTableViewCellBinding</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding.csproj">
       <Project>{70C6ECB5-6358-4DB8-915F-3ADC31C39E4E}</Project>
       <Name>NachoPlatformBinding</Name>

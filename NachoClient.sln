@@ -13,8 +13,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UIImageEffectsBinding", "..
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "iCarouselBinding", "..\iCarouselBinding\iCarouselBinding\iCarouselBinding\iCarouselBinding.csproj", "{E8EDAA21-69C1-4866-9037-28D83F0D4359}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MCSwipeTableViewCellBinding", "..\MCSwipeTableViewCellBinding\MCSwipeTableViewCellBinding\MCSwipeTableViewCellBinding\MCSwipeTableViewCellBinding.csproj", "{E301B932-D165-4A65-8916-3E80C000B6AC}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NachoPlatformBinding", "..\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding.csproj", "{70C6ECB5-6358-4DB8-915F-3ADC31C39E4E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DDay.iCal.iOS", "..\DDay-iCal-Xamarin\DDay.iCal.iOS\DDay.iCal.iOS.csproj", "{1B095A78-F50A-449F-A3C4-D5662AD32717}"
@@ -317,22 +315,6 @@ Global
 		{DBEE91B8-DF39-4008-9AC2-D7D1F3737449}.Release|iPhone.Build.0 = Release|Any CPU
 		{DBEE91B8-DF39-4008-9AC2-D7D1F3737449}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
 		{DBEE91B8-DF39-4008-9AC2-D7D1F3737449}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
-		{E301B932-D165-4A65-8916-3E80C000B6AC}.Ad-Hoc|iPhone.ActiveCfg = Release|Any CPU
-		{E301B932-D165-4A65-8916-3E80C000B6AC}.Ad-Hoc|iPhone.Build.0 = Release|Any CPU
-		{E301B932-D165-4A65-8916-3E80C000B6AC}.AppStore|iPhone.ActiveCfg = Release|Any CPU
-		{E301B932-D165-4A65-8916-3E80C000B6AC}.AppStore|iPhone.Build.0 = Release|Any CPU
-		{E301B932-D165-4A65-8916-3E80C000B6AC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E301B932-D165-4A65-8916-3E80C000B6AC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E301B932-D165-4A65-8916-3E80C000B6AC}.Debug|iPhone.ActiveCfg = Debug|Any CPU
-		{E301B932-D165-4A65-8916-3E80C000B6AC}.Debug|iPhone.Build.0 = Debug|Any CPU
-		{E301B932-D165-4A65-8916-3E80C000B6AC}.Debug|iPhoneSimulator.ActiveCfg = Debug|Any CPU
-		{E301B932-D165-4A65-8916-3E80C000B6AC}.Debug|iPhoneSimulator.Build.0 = Debug|Any CPU
-		{E301B932-D165-4A65-8916-3E80C000B6AC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E301B932-D165-4A65-8916-3E80C000B6AC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E301B932-D165-4A65-8916-3E80C000B6AC}.Release|iPhone.ActiveCfg = Release|Any CPU
-		{E301B932-D165-4A65-8916-3E80C000B6AC}.Release|iPhone.Build.0 = Release|Any CPU
-		{E301B932-D165-4A65-8916-3E80C000B6AC}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
-		{E301B932-D165-4A65-8916-3E80C000B6AC}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
 		{E8EDAA21-69C1-4866-9037-28D83F0D4359}.Ad-Hoc|iPhone.ActiveCfg = Release|Any CPU
 		{E8EDAA21-69C1-4866-9037-28D83F0D4359}.Ad-Hoc|iPhone.Build.0 = Release|Any CPU
 		{E8EDAA21-69C1-4866-9037-28D83F0D4359}.AppStore|iPhone.ActiveCfg = Release|Any CPU
