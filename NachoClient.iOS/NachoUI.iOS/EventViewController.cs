@@ -252,9 +252,9 @@ namespace NachoClient.iOS
             // When label, image, and detail
             AddTextLabelWithImageView (yOffset, "WHEN", "event-when", TagType.EVENT_WHEN_TITLE_TAG, eventCardView);
             yOffset += 16 + 6;
-            AddDetailTextLabel (42, yOffset, SCREEN_WIDTH - 50, 20, TagType.EVENT_WHEN_DETAIL_LABEL_TAG, eventCardView);
+            AddDetailTextLabel (42, yOffset, SCREEN_WIDTH - 90, 20, TagType.EVENT_WHEN_DETAIL_LABEL_TAG, eventCardView);
             yOffset += 20;
-            AddDetailTextLabel (42, yOffset, SCREEN_WIDTH - 50, 20, TagType.EVENT_WHEN_DURATION_TAG, eventCardView);
+            AddDetailTextLabel (42, yOffset, SCREEN_WIDTH - 90, 20, TagType.EVENT_WHEN_DURATION_TAG, eventCardView);
             yOffset += 20;
             AddDetailTextLabel (42, yOffset, SCREEN_WIDTH - 90, 20, TagType.EVENT_WHEN_RECURRENCE_TAG, eventCardView);
             yOffset += 20 + 20;
@@ -416,6 +416,9 @@ namespace NachoClient.iOS
                     durationLabel.Text = string.Format ("from {0} until {1}",
                         Pretty.FullTimeString (e.StartTime), Pretty.FullDateTimeString (e.EndTime));
                 }
+                durationLabel.Lines = 0;
+                durationLabel.LineBreakMode = UILineBreakMode.WordWrap;
+                durationLabel.SizeToFit ();
             }
 
             if (isRecurring) {
