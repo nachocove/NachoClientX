@@ -85,6 +85,16 @@ namespace NachoClient.iOS
         public static string File_NachoSwipeEmailDefer = "email-defer-swipe";
         public static string File_NachoSwipeEmailMove = "email-move-swipe";
 
+        // Calendar Swipe Colors and Icons
+        public static UIColor Color_NachoSwipeLate = UIColor.FromRGB(0xff, 0x47, 0x47);
+        public static UIColor Color_NachoeSwipeForward = UIColor.FromRGB(0x00, 0xBA, 0xD7);
+        public static UIColor Color_NachoSwipeDialIn = UIColor.FromRGB(0xff, 0x9b, 0x12);
+        public static UIColor Color_NachoSwipeNavigate = UIColor.FromRGB(0x00, 0x5c, 0x6c);
+        public static string File_NachoSwipeLate = "calendar-late-swipe";
+        public static string File_NachoSwipeForward = "calendar-forward-swipe";
+        public static string File_NachoSwipeDialIn = "calendar-dial-in";
+        public static string File_NachoSwipeNavigate = "calendar-navigate-to";
+
         public A ()
         {
         }

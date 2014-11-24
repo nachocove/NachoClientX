@@ -1172,6 +1172,7 @@
     <Compile Include="NachoUI.iOS\ContactDefaultSelectionViewController.designer.cs">
       <DependentUpon>ContactDefaultSelectionViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\HotEventView.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -1711,6 +1712,22 @@
     <BundleResource Include="Resources\email-move-swipe%403x.png" />
     <BundleResource Include="Resources\email-move-swipe%404x.png" />
     <BundleResource Include="Resources\email-move-swipe%406x.png" />
+    <BundleResource Include="Resources\calendar-dial-in%402x.png" />
+    <BundleResource Include="Resources\calendar-dial-in%403x.png" />
+    <BundleResource Include="Resources\calendar-dial-in%404x.png" />
+    <BundleResource Include="Resources\calendar-dial-in%406x.png" />
+    <BundleResource Include="Resources\calendar-forward-swipe%402x.png" />
+    <BundleResource Include="Resources\calendar-forward-swipe%403x.png" />
+    <BundleResource Include="Resources\calendar-forward-swipe%404x.png" />
+    <BundleResource Include="Resources\calendar-forward-swipe%406x.png" />
+    <BundleResource Include="Resources\calendar-late-swipe%402x.png" />
+    <BundleResource Include="Resources\calendar-late-swipe%403x.png" />
+    <BundleResource Include="Resources\calendar-late-swipe%404x.png" />
+    <BundleResource Include="Resources\calendar-late-swipe%406x.png" />
+    <BundleResource Include="Resources\calendar-navigate-to%402x.png" />
+    <BundleResource Include="Resources\calendar-navigate-to%403x.png" />
+    <BundleResource Include="Resources\calendar-navigate-to%404x.png" />
+    <BundleResource Include="Resources\calendar-navigate-to%406x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
