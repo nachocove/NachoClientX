@@ -37,6 +37,7 @@ namespace NachoClient.iOS
 
         UITextField titleField;
         UITextView descriptionTextView;
+        UILabel descriptionPlaceHolder;
 
         UIView titleView;
         UIView descriptionView;
@@ -375,6 +376,7 @@ namespace NachoClient.iOS
 
             if (segue.Identifier.Equals ("EditEventToCalendarChooser")) {
                 var dc = (ChooseCalendarViewController)segue.DestinationViewController;
+                ExtractValues ();
                 dc.SetCalendars (calendars);
                 dc.SetSelectedCalIndex (calendarIndex);
                 dc.ViewDisappearing += (object s, EventArgs e) => {
@@ -448,7 +450,7 @@ namespace NachoClient.iOS
             descriptionView = new UIView (new RectangleF (0, 74, SCREEN_WIDTH, CELL_HEIGHT + TEXT_LINE_HEIGHT));
             descriptionView.BackgroundColor = UIColor.White;
 
-            UILabel descriptionPlaceHolder = new UILabel (new RectangleF (15, 12.438f, SCREEN_WIDTH - 30, TEXT_LINE_HEIGHT));
+            descriptionPlaceHolder = new UILabel (new RectangleF (15, 12.438f, SCREEN_WIDTH - 30, TEXT_LINE_HEIGHT));
             descriptionPlaceHolder.Text = "Description";
             descriptionPlaceHolder.Font = labelFont;
             descriptionPlaceHolder.TextColor = new UIColor (.8f, .8f, .8f, 1f);
@@ -460,8 +462,7 @@ namespace NachoClient.iOS
             var beginningRange = new NSRange (0, 0);
             descriptionTextView.SelectedRange = beginningRange;
             descriptionTextView.ContentInset = new UIEdgeInsets (-7, -4, 0, 0);
-            descriptionTextView.Text = c.Description;
-            descriptionPlaceHolder.Hidden = descriptionTextView.HasText;
+            descriptionTextView.Tag = EVENT_DESCRIPTION_LABEL_TAG;
 
             descriptionTextView.Changed += (object sender, EventArgs e) => {
                 eventEditStarted = true;
@@ -742,15 +743,17 @@ namespace NachoClient.iOS
             peopleLabel.TextColor = solidTextColor;
             peopleView.AddSubview (peopleLabel);
 
-            UIButton addPeopleButton = new UIButton (UIButtonType.System);
-            Util.SetOriginalImagesForButton (addPeopleButton, "email-add", "email-add-active");
-            addPeopleButton.SizeToFit ();
-            addPeopleButton.TouchUpInside += (object sender, EventArgs e) => {
-                PerformSegue ("EditEventToEventAttendees", this);
-            };
+//            UIButton addPeopleButton = new UIButton (UIButtonType.System);
+//            Util.SetOriginalImagesForButton (addPeopleButton, "email-add", "email-add-active");
+//            addPeopleButton.SizeToFit ();
+//            addPeopleButton.TouchUpInside += (object sender, EventArgs e) => {
+//                PerformSegue ("EditEventToEventAttendees", this);
+//            };
+//
+//            addPeopleButton.Frame = new RectangleF (peopleView.Frame.Width - addPeopleButton.Frame.Width - 15, 0, addPeopleButton.Frame.Width, 44);
+//            peopleView.AddSubview (addPeopleButton);
 
-            addPeopleButton.Frame = new RectangleF (peopleView.Frame.Width - addPeopleButton.Frame.Width - 15, 0, addPeopleButton.Frame.Width, 44);
-            peopleView.AddSubview (addPeopleButton);
+            Util.AddArrowAccessory (SCREEN_WIDTH - 15 - 12, CELL_HEIGHT / 2 - 6, 12, peopleView);
 
             var peopleTap = new UITapGestureRecognizer ();
             peopleTap.AddTarget (() => {
@@ -936,6 +939,16 @@ namespace NachoClient.iOS
             var titleFieldView = contentView.ViewWithTag (EVENT_TITLE_LABEL_TAG) as UITextField;
             titleFieldView.Text = c.Subject;
 
+            //description
+            var descriptionTextView = contentView.ViewWithTag (EVENT_DESCRIPTION_LABEL_TAG) as UITextView;
+            descriptionTextView.Text = c.Description;
+            if (descriptionTextView.HasText) {
+                descriptionPlaceHolder.Hidden = true;
+                descriptionTextView.SizeToFit ();
+                descriptionTextView.Frame = new RectangleF (15, 12.438f, SCREEN_WIDTH - 30, descriptionTextView.Frame.Height);
+            }
+            DESCRIPTION_OFFSET = descriptionTextView.Frame.Height;
+
             //all day event
             var allDaySwitchView = contentView.ViewWithTag (ALL_DAY_SWITCH_TAG) as UISwitch;
             allDaySwitchView.SetState (c.AllDayEvent, false);
@@ -951,6 +964,8 @@ namespace NachoClient.iOS
             } else {
                 startDateLabelView.Text = Pretty.FullDateTimeString (c.StartTime);
             }
+            startDateLabelView.SizeToFit ();
+            startDateLabelView.Frame = new RectangleF (SCREEN_WIDTH - startDateLabel.Frame.Width - 15, 12.438f, startDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
 
             //end date
             var endDateLabelView = contentView.ViewWithTag (END_DATE_TAG) as UILabel;
@@ -958,9 +973,9 @@ namespace NachoClient.iOS
                 endDateLabelView.Text = Pretty.FullDateString (c.EndTime);
             } else {
                 endDateLabelView.Text = Pretty.FullDateTimeString (c.EndTime);
-                endDateLabelView.SizeToFit ();
-                endDateLabelView.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, 12.438f, endDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
             }
+            endDateLabelView.SizeToFit ();
+            endDateLabelView.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, 12.438f, endDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
 
             //location
             var locationFieldView = contentView.ViewWithTag (EVENT_LOCATION_DETAIL_LABEL_TAG) as UITextField;
@@ -1117,7 +1132,7 @@ namespace NachoClient.iOS
             UIView.Animate (0.2, () => {
             
                 yOffset += 74;
-                descriptionView.Frame = new RectangleF (0, yOffset, SCREEN_WIDTH, CELL_HEIGHT + TEXT_LINE_HEIGHT + DESCRIPTION_OFFSET);
+                descriptionView.Frame = new RectangleF (0, yOffset, SCREEN_WIDTH, CELL_HEIGHT + DESCRIPTION_OFFSET);
                 yOffset += descriptionView.Frame.Height;
 
                 AdjustY (line3, yOffset);
