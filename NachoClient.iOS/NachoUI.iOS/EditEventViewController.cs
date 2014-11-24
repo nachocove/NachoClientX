@@ -376,6 +376,7 @@ namespace NachoClient.iOS
 
             if (segue.Identifier.Equals ("EditEventToCalendarChooser")) {
                 var dc = (ChooseCalendarViewController)segue.DestinationViewController;
+                ExtractValues ();
                 dc.SetCalendars (calendars);
                 dc.SetSelectedCalIndex (calendarIndex);
                 dc.ViewDisappearing += (object s, EventArgs e) => {
@@ -742,15 +743,17 @@ namespace NachoClient.iOS
             peopleLabel.TextColor = solidTextColor;
             peopleView.AddSubview (peopleLabel);
 
-            UIButton addPeopleButton = new UIButton (UIButtonType.System);
-            Util.SetOriginalImagesForButton (addPeopleButton, "email-add", "email-add-active");
-            addPeopleButton.SizeToFit ();
-            addPeopleButton.TouchUpInside += (object sender, EventArgs e) => {
-                PerformSegue ("EditEventToEventAttendees", this);
-            };
+//            UIButton addPeopleButton = new UIButton (UIButtonType.System);
+//            Util.SetOriginalImagesForButton (addPeopleButton, "email-add", "email-add-active");
+//            addPeopleButton.SizeToFit ();
+//            addPeopleButton.TouchUpInside += (object sender, EventArgs e) => {
+//                PerformSegue ("EditEventToEventAttendees", this);
+//            };
+//
+//            addPeopleButton.Frame = new RectangleF (peopleView.Frame.Width - addPeopleButton.Frame.Width - 15, 0, addPeopleButton.Frame.Width, 44);
+//            peopleView.AddSubview (addPeopleButton);
 
-            addPeopleButton.Frame = new RectangleF (peopleView.Frame.Width - addPeopleButton.Frame.Width - 15, 0, addPeopleButton.Frame.Width, 44);
-            peopleView.AddSubview (addPeopleButton);
+            Util.AddArrowAccessory (SCREEN_WIDTH - 15 - 12, CELL_HEIGHT / 2 - 6, 12, peopleView);
 
             var peopleTap = new UITapGestureRecognizer ();
             peopleTap.AddTarget (() => {
