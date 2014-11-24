@@ -83,13 +83,16 @@ namespace NachoClient.iOS
             hotEventView.OnClick = ((int tag, int eventId) => {
                 switch (tag) {
                 case HotEventView.DIAL_IN_TAG:
+                    // FIXME
                     break;
                 case HotEventView.NAVIGATE_TO_TAG:
+                    // FIXME
                     break;
                 case HotEventView.LATE_TAG:
                     SendRunningLateMessage (eventId);
                     break;
                 case HotEventView.FORWARD_TAG:
+                    // FIXME
                     break;
                 case HotEventView.OPEN_TAG:
                     var e = McEvent.QueryById<McEvent> (eventId);

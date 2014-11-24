@@ -5,7 +5,6 @@ using System.Drawing;
 using MonoTouch.UIKit;
 using MonoTouch.Foundation;
 using System.Collections.Generic;
-using MCSwipeTableViewCellBinding;
 using NachoCore.Model;
 using NachoCore;
 using NachoCore.Utils;
@@ -16,10 +15,9 @@ namespace NachoClient.iOS
     {
         INcEventProvider calendar;
         public ICalendarTableViewSourceDelegate owner;
-        protected bool compactMode;
         static List<UIButton> preventAddButtonGC;
 
-        protected const string UICellReuseIdentifier = "UICell";
+        protected const string EmptyCellReuseIdentifier = "EmptyCell";
         protected const string CalendarEventReuseIdentifier = "CalendarEvent";
 
         public CalendarTableViewSource ()
@@ -30,11 +28,6 @@ namespace NachoClient.iOS
         public void SetCalendar (INcEventProvider calendar)
         {
             this.calendar = calendar;
-        }
-
-        public void SetCompactMode (bool compactMode)
-        {
-            this.compactMode = compactMode;
         }
 
         public void Refresh ()
@@ -75,9 +68,6 @@ namespace NachoClient.iOS
 
         protected float HeightForCalendarEvent (McAbstrCalendarRoot c)
         {
-            if (compactMode) {
-                return 69.0f;
-            }
             return 87.0f;
         }
 
@@ -95,9 +85,6 @@ namespace NachoClient.iOS
 
         public override float EstimatedHeight (UITableView tableView, NSIndexPath indexPath)
         {
-            if (compactMode) {
-                return 69.0f;
-            }
             return 87.0f;
         }
 
@@ -109,22 +96,40 @@ namespace NachoClient.iOS
             }
         }
 
+        public const int DIAL_IN_TAG = 1;
+        public const int NAVIGATE_TO_TAG = 2;
+        public const int LATE_TAG = 3;
+        public const int FORWARD_TAG = 4;
+        public const int OPEN_TAG = 5;
+
         protected const int SUBJECT_TAG = 99101;
         protected const int DURATION_TAG = 99102;
         protected const int LOCATION_ICON_TAG = 99103;
         protected const int LOCATION_TEXT_TAG = 99104;
-        protected const int COMPACT_SUBJECT_TAG = 99105;
-        protected const int COMPACT_ICON_TAG = 99106;
-        protected const int COMPACT_TEXT_TAG = 99107;
         protected const int LINE_TAG = 99108;
         protected const int DOT_TAG = 99109;
+        protected const int SWIPE_TAG = 99110;
+
+        // Pre-made swipe action descriptors
+        private static SwipeActionDescriptor DIAL_IN_BUTTON =
+            new SwipeActionDescriptor (DIAL_IN_TAG, 0.25f, UIImage.FromBundle (A.File_NachoSwipeDialIn),
+                "Dial In", A.Color_NachoSwipeDialIn);
+        private static SwipeActionDescriptor NAVIGATE_BUTTON =
+            new SwipeActionDescriptor (NAVIGATE_TO_TAG, 0.25f, UIImage.FromBundle (A.File_NachoSwipeNavigate),
+                "Navigate To", A.Color_NachoSwipeNavigate);
+        private static SwipeActionDescriptor LATE_BUTTON =
+            new SwipeActionDescriptor (LATE_TAG, 0.25f, UIImage.FromBundle (A.File_NachoSwipeLate),
+                "I'm Late", A.Color_NachoSwipeLate);
+        private static SwipeActionDescriptor FORWARD_BUTTON =
+            new SwipeActionDescriptor (FORWARD_TAG, 0.25f, UIImage.FromBundle (A.File_NachoSwipeForward),
+                "Forward", A.Color_NachoeSwipeForward);
 
         /// <summary>
         /// Create the views, not the values, of the cell.
         /// </summary>
         protected UITableViewCell CellWithReuseIdentifier (UITableView tableView, string identifier)
         {
-            if (identifier.Equals (UICellReuseIdentifier)) {
+            if (identifier.Equals (EmptyCellReuseIdentifier)) {
                 var cell = new UITableViewCell (UITableViewCellStyle.Default, identifier);
                 cell.TextLabel.TextAlignment = UITextAlignment.Center;
                 cell.TextLabel.TextColor = UIColor.FromRGB (0x0f, 0x42, 0x4c);
@@ -135,71 +140,62 @@ namespace NachoClient.iOS
             }
 
             if (identifier.Equals (CalendarEventReuseIdentifier)) {
-                var cell = new MCSwipeTableViewCell (UITableViewCellStyle.Default, identifier);
+                var cell = new UITableViewCell (UITableViewCellStyle.Default, identifier);
                 if (cell.RespondsToSelector (new MonoTouch.ObjCRuntime.Selector ("setSeparatorInset:"))) {
                     cell.SeparatorInset = UIEdgeInsets.Zero;
                 }
                 cell.SelectionStyle = UITableViewCellSelectionStyle.None;
                 cell.ContentView.BackgroundColor = UIColor.White;
-                cell.DefaultColor = UIColor.White;
 
                 var cellWidth = tableView.Frame.Width;
+
+                var frame = new RectangleF (0, 0, tableView.Frame.Width, 87);
+                var view = new SwipeActionView (frame);
+                view.Tag = SWIPE_TAG;
+
+                view.SetAction (NAVIGATE_BUTTON, SwipeSide.LEFT);
+                view.SetAction (DIAL_IN_BUTTON, SwipeSide.LEFT);
+                view.SetAction (LATE_BUTTON, SwipeSide.RIGHT);
+                view.SetAction (FORWARD_BUTTON, SwipeSide.RIGHT);
+               
+                cell.ContentView.AddSubview (view);
 
                 // Subject label view
                 var subjectLabelView = new UILabel (new RectangleF (65, 15, cellWidth - 65, 20));
                 subjectLabelView.Font = A.Font_AvenirNextDemiBold17;
                 subjectLabelView.TextColor = A.Color_NachoBlack;
                 subjectLabelView.Tag = SUBJECT_TAG;
-                cell.ContentView.AddSubview (subjectLabelView);
+                view.AddSubview (subjectLabelView);
 
                 // Duration label view
                 var durationLabelView = new UILabel (new RectangleF (65, 35, cellWidth - 65, 20));
                 durationLabelView.Font = A.Font_AvenirNextMedium14;
                 durationLabelView.TextColor = A.Color_NachoBlack;
                 durationLabelView.Tag = DURATION_TAG;
-                cell.ContentView.AddSubview (durationLabelView);
+                view.AddSubview (durationLabelView);
 
                 // Location image view
                 var locationIconView = new UIImageView (new RectangleF (65, 59, 12, 12));
                 locationIconView.Tag = LOCATION_ICON_TAG;
-                cell.ContentView.AddSubview (locationIconView);
+                view.AddSubview (locationIconView);
 
                 // Location label view
                 var locationLabelView = new UILabel (new RectangleF (80, 55, cellWidth - 80, 20));
                 locationLabelView.Font = A.Font_AvenirNextRegular14;
                 locationLabelView.TextColor = A.Color_NachoTextGray;
                 locationLabelView.Tag = LOCATION_TEXT_TAG;
-                cell.ContentView.AddSubview (locationLabelView);
+                view.AddSubview (locationLabelView);
 
                 // Vertical line
                 var lineView = new UIView (new RectangleF (35, 0, 1, 20));
                 lineView.BackgroundColor = A.Color_NachoLightBorderGray;
                 lineView.Tag = LINE_TAG;
-                cell.ContentView.AddSubview (lineView);
+                view.AddSubview (lineView);
 
                 // Dot image view
                 var dotView = new UIImageView (new RectangleF (29, 19, 12, 12));
                 dotView.Tag = DOT_TAG;
-                cell.ContentView.AddSubview (dotView);
-
-                // Subject label view
-                var compactSubjectLabelView = new UILabel (new RectangleF (56, 20, cellWidth - 56, 20));
-                compactSubjectLabelView.Font = A.Font_AvenirNextDemiBold17;
-                compactSubjectLabelView.TextColor = A.Color_114645;
-                compactSubjectLabelView.Tag = COMPACT_SUBJECT_TAG;
-                cell.ContentView.AddSubview (compactSubjectLabelView);
-
-                // Location image view
-                var compactIconView = new UIImageView (new RectangleF (56, 46, 12, 12));
-                compactIconView.Tag = COMPACT_ICON_TAG;
-                cell.ContentView.AddSubview (compactIconView);
-
-                // Location label view
-                var compactLabelView = new UILabel (new RectangleF (74, 40, cellWidth - 74, 20));
-                compactLabelView.Font = A.Font_AvenirNextRegular14;
-                compactLabelView.TextColor = A.Color_999999;
-                compactLabelView.Tag = COMPACT_TEXT_TAG;
-                cell.ContentView.AddSubview (compactLabelView);
+                view.AddSubview (dotView);
 
                 return cell;
             }
@@ -212,7 +208,7 @@ namespace NachoClient.iOS
         /// </summary>
         protected void ConfigureCell (UITableViewCell cell, NSIndexPath indexPath)
         {
-            if (cell.ReuseIdentifier.Equals (UICellReuseIdentifier)) {
+            if (cell.ReuseIdentifier.Equals (EmptyCellReuseIdentifier)) {
                 cell.TextLabel.Text = "No messages";
                 return;
             }
@@ -222,28 +218,6 @@ namespace NachoClient.iOS
                 return;
             }
             NcAssert.CaseError ();
-        }
-
-        protected UITableView FindEnclosingTableView (UIView view)
-        {
-            while (null != view) {
-                if (view is UITableView) {
-                    return (view as UITableView);
-                }
-                view = view.Superview;
-            }
-            return null;
-        }
-
-        protected UITableViewCell FindEnclosingTableViewCell (UIView view)
-        {
-            while (null != view) {
-                if (view is UITableViewCell) {
-                    return (view as UITableViewCell);
-                }
-                view = view.Superview;
-            }
-            return null;
         }
 
         /// <summary>
@@ -272,16 +246,10 @@ namespace NachoClient.iOS
 
             var dotView = cell.ContentView.ViewWithTag (DOT_TAG) as UIImageView;
             var subjectLabelView = cell.ContentView.ViewWithTag (SUBJECT_TAG) as UILabel;
-            var compactSubjectLabelView = cell.ContentView.ViewWithTag (COMPACT_SUBJECT_TAG) as UILabel;
-            compactSubjectLabelView.Hidden = !compactMode;
-            subjectLabelView.Hidden = compactMode;
-            if (compactMode) {
-                compactSubjectLabelView.Text = subject;
-                dotView.Frame = new RectangleF (30, 25, 9, 9);
-            } else {
-                subjectLabelView.Text = subject;
-                dotView.Frame = new RectangleF (30, 20, 9, 9);
-            }
+            subjectLabelView.Hidden = false;
+ 
+            subjectLabelView.Text = subject;
+            dotView.Frame = new RectangleF (30, 20, 9, 9);
             var size = new SizeF (10, 10);
             dotView.Image = Util.DrawCalDot (A.Color_CalDotBlue, size);
             dotView.Hidden = false;
@@ -290,14 +258,10 @@ namespace NachoClient.iOS
             var durationLabelView = cell.ContentView.ViewWithTag (DURATION_TAG) as UILabel;
             var locationLabelView = cell.ContentView.ViewWithTag (LOCATION_TEXT_TAG) as UILabel;
             var locationIconView = cell.ContentView.ViewWithTag (LOCATION_ICON_TAG) as UIImageView;
-            var compactIconView = cell.ContentView.ViewWithTag (COMPACT_ICON_TAG) as UIImageView;
-            var compactTextView = cell.ContentView.ViewWithTag (COMPACT_TEXT_TAG) as UILabel;
 
-            durationLabelView.Hidden = compactMode;
-            locationLabelView.Hidden = compactMode;
-            locationIconView.Hidden = compactMode;
-            compactIconView.Hidden = !compactMode;
-            compactTextView.Hidden = !compactMode;
+            durationLabelView.Hidden = false;
+            locationLabelView.Hidden = false;
+            locationIconView.Hidden = false;
 
             var durationString = "";
             if (c.AllDayEvent) {
@@ -314,41 +278,54 @@ namespace NachoClient.iOS
                 locationString = Pretty.SubjectString (c.Location);
             }
 
-            if (compactMode) {
-                var eventString = "";
-                if (String.IsNullOrEmpty (locationString)) {
-                    eventString = durationString;
-                } else {
-                    eventString = String.Join (" : ", new string[] { locationString, durationString });
-                }
-                if (String.IsNullOrEmpty (eventString)) {
-                    compactIconView.Hidden = true;
-                    compactTextView.Hidden = true;
-                } else {
-                    compactIconView.Image = UIImage.FromBundle ("cal-icn-pin");
-                    compactTextView.Text = eventString;
-                }
 
+            // Duration
+            durationLabelView.Text = durationString;
+            // Location view
+            if (String.IsNullOrEmpty (locationString)) {
+                locationIconView.Hidden = true;
+                locationLabelView.Hidden = true;
             } else {
-                // Duration
-                durationLabelView.Text = durationString;
-                // Location view
-                if (String.IsNullOrEmpty (locationString)) {
-                    locationIconView.Hidden = true;
-                    locationLabelView.Hidden = true;
-                } else {
-                    locationIconView.Image = UIImage.FromBundle ("cal-icn-pin");
-                    locationLabelView.Text = locationString;
-                }
+                locationIconView.Image = UIImage.FromBundle ("cal-icn-pin");
+                locationLabelView.Text = locationString;
             }
 
             var lineView = cell.ContentView.ViewWithTag (LINE_TAG);
-            lineView.Hidden = compactMode;
-            if (!compactMode) {
-                lineView.Frame = new RectangleF (34, 0, 1, HeightForCalendarEvent (c));
-            }
+            lineView.Hidden = false;
+            lineView.Frame = new RectangleF (34, 0, 1, HeightForCalendarEvent (c));
 
-            ConfigureSwipes (cell as MCSwipeTableViewCell, e.Id);
+            var view = (SwipeActionView)cell.ViewWithTag (SWIPE_TAG);
+
+            view.OnClick = (int tag) => {
+                switch (tag) {
+                case NAVIGATE_TO_TAG:
+                    // FIXME
+                    break;
+                case FORWARD_TAG:
+                    // FIXME
+                    break;
+                case DIAL_IN_TAG:
+                    // FIXME
+                    break;
+                case LATE_TAG:
+                    // FIXME
+                    break;
+                default:
+                    throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action tag {0}", tag));
+                }
+            };
+            view.OnSwipe = (SwipeActionView activeView, SwipeActionView.SwipeState state) => {
+                switch (state) {
+                case SwipeActionView.SwipeState.SWIPE_BEGIN:
+                    break;
+                case SwipeActionView.SwipeState.SWIPE_END_ALL_HIDDEN:
+                    break;
+                case SwipeActionView.SwipeState.SWIPE_END_ALL_SHOWN:
+                    break;
+                default:
+                    throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown swipe state {0}", (int)state));
+                }
+            };
         }
 
         UIView ViewWithLabel (string text, string side)
@@ -369,75 +346,9 @@ namespace NachoClient.iOS
             return labelView;
         }
 
-        /// <summary>
-        /// Configures the swipes.
-        /// </summary>
-        void ConfigureSwipes (MCSwipeTableViewCell cell, int eventId)
-        {
-            cell.FirstTrigger = 0.20f;
-            cell.SecondTrigger = 0.50f;
-
-            UIView checkView = null;
-            UIColor greenColor = null;
-            UIView crossView = null;
-            UIColor redColor = null;
-            UIView runningLateView = null;
-            UIColor yellowColor = null;
-            UIView listView = null;
-            UIColor brownColor = null;
-
-            try { 
-                checkView = ViewWithImageName ("cal-dialintomeeting-white");
-                greenColor = new UIColor (85.0f / 255.0f, 213.0f / 255.0f, 80.0f / 255.0f, 1.0f);
-                cell.SetSwipeGestureWithView (checkView, greenColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State1, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-
-                });
-                crossView = ViewWithImageName ("cal-forwardinvitation-white");
-                redColor = new UIColor (232.0f / 255.0f, 61.0f / 255.0f, 14.0f / 255.0f, 1.0f);
-                cell.SetSwipeGestureWithView (crossView, redColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State2, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-
-                });
-                runningLateView = ViewWithImageName ("contact-quickemail-white");
-                yellowColor = new UIColor (A.Color_NachoYellow.CGColor);
-                cell.SetSwipeGestureWithView (runningLateView, yellowColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State3, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                    RunningLate (eventId);
-                });
-                listView = ViewWithImageName ("cal-openmaptomeeting-white");
-                brownColor = new UIColor (206.0f / 255.0f, 149.0f / 255.0f, 98.0f / 255.0f, 1.0f);
-                cell.SetSwipeGestureWithView (listView, brownColor, MCSwipeTableViewCellMode.Switch, MCSwipeTableViewCellState.State4, delegate(MCSwipeTableViewCell c, MCSwipeTableViewCellState state, MCSwipeTableViewCellMode mode) {
-                    //                    PerformSegue ("MessageToMessageAction", new SegueHolder (messageThreadIndex));
-                });
-            } finally {
-                if (null != checkView) {
-                    checkView.Dispose ();
-                }
-                if (null != greenColor) {
-                    greenColor.Dispose ();
-                }
-                if (null != crossView) {
-                    crossView.Dispose ();
-                }
-                if (null != redColor) {
-                    redColor.Dispose ();
-                }
-                if (null != runningLateView) {
-                    runningLateView.Dispose ();
-                }
-                if (null != yellowColor) {
-                    yellowColor.Dispose ();
-                }
-                if (null != listView) {
-                    listView.Dispose ();
-                }
-                if (null != brownColor) {
-                    brownColor.Dispose ();
-                }
-            }
-        }
-
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
         {
-            string cellIdentifier = (NoCalendarEvents () ? UICellReuseIdentifier : CalendarEventReuseIdentifier);
+            string cellIdentifier = (NoCalendarEvents () ? EmptyCellReuseIdentifier : CalendarEventReuseIdentifier);
 
             var cell = tableView.DequeueReusableCell (cellIdentifier);
             if (null == cell) {
@@ -464,11 +375,7 @@ namespace NachoClient.iOS
 
         public override float GetHeightForHeader (UITableView tableView, int section)
         {
-            if (compactMode) {
-                return 0;
-            } else {
-                return 75;
-            }
+            return 75;
         }
 
         public override UIView GetViewForHeader (UITableView tableView, int section)
