@@ -961,6 +961,8 @@ namespace NachoClient.iOS
             } else {
                 startDateLabelView.Text = Pretty.FullDateTimeString (c.StartTime);
             }
+            startDateLabelView.SizeToFit ();
+            startDateLabelView.Frame = new RectangleF (SCREEN_WIDTH - startDateLabel.Frame.Width - 15, 12.438f, startDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
 
             //end date
             var endDateLabelView = contentView.ViewWithTag (END_DATE_TAG) as UILabel;
