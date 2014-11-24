@@ -11,7 +11,6 @@ using MonoTouch.UIKit;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore;
-using MCSwipeTableViewCellBinding;
 using NachoCore.Brain;
 
 namespace NachoClient.iOS

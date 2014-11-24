@@ -6,7 +6,6 @@ using System.Drawing;
 using MonoTouch.UIKit;
 using MonoTouch.Foundation;
 using System.Collections.Generic;
-using MCSwipeTableViewCellBinding;
 using NachoCore.Model;
 using NachoCore;
 using NachoCore.Utils;

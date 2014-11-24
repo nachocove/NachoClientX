@@ -1018,7 +1018,6 @@
     <Compile Include="NachoUI.iOS\EventAttachmentViewController.designer.cs">
       <DependentUpon>EventAttachmentViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="NachoUI.iOS\Support\WaitingView.cs" />
     <Compile Include="NachoUI.iOS\SupportMessageViewController.cs" />
     <Compile Include="NachoUI.iOS\SupportMessageViewController.designer.cs">
       <DependentUpon>SupportMessageViewController.cs</DependentUpon>
