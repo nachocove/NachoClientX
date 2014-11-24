@@ -57,6 +57,10 @@ namespace NachoCore.Index
             Doc.Add (GetIndexedField ("subject", message.Subject));
             BytesIndexed += message.Subject.Length;
 
+            var dateString = DateTools.DateToString (message.Date.DateTime, DateTools.Resolution.SECOND);
+            var dateField = GetExactMatchOnlyField ("received_date", dateString);
+            Doc.Add (dateField);
+
             // Index the addresses
             AddAddressList ("from", message.From);
             AddAddressList ("to", message.To);
