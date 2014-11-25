@@ -116,6 +116,9 @@ namespace NachoClient.iOS
             if (NcResult.SubKindEnum.Info_CalendarChanged == statusEvent.Status.SubKind) {
                 Configure ();
             }
+            if (NcResult.SubKindEnum.Info_EventSetChanged == statusEvent.Status.SubKind) {
+                Configure ();
+            }
         }
 
         private void SendClick (int tag)

@@ -1,10 +1,14 @@
 ﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
+//#define INDEXING_ENABLED
+
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.IO;
 using NachoCore.Utils;
 using NachoCore.Model;
+using NachoCoreLog = NachoCore.Index.Log;
 
 namespace NachoCore.Brain
 {
@@ -23,7 +27,8 @@ namespace NachoCore.Brain
             }
         }
 
-        public class OperationCounters {
+        public class OperationCounters
+        {
             private NcCounter Root;
             public NcCounter Insert;
             public NcCounter Delete;
@@ -75,6 +80,20 @@ namespace NachoCore.Brain
 
         public static void StartService ()
         {
+            // Set up the logging functions for IndexLib
+            NachoCoreLog.PlatformDebug = (fmt, args) => {
+                Log.Info (Log.LOG_BRAIN, fmt, args);
+            };
+            NachoCoreLog.PlatformInfo = (fmt, args) => {
+                Log.Info (Log.LOG_BRAIN, fmt, args);
+            };
+            NachoCoreLog.PlatformWarn = (fmt, args) => {
+                Log.Warn (Log.LOG_BRAIN, fmt, args);
+            };
+            NachoCoreLog.PlatformError = (fmt, args) => {
+                Log.Error (Log.LOG_BRAIN, fmt, args);
+            };
+
             NcBrain brain = NcBrain.SharedInstance;
             NcTask.Run (() => {
                 brain.EventQueue.Token = NcTask.Cts.Token;
@@ -175,7 +194,7 @@ namespace NachoCore.Brain
         private int UpdateEmailMessageScores (int count)
         {
             int numUpdated = 0;
-            while (numUpdated < count  && !NcApplication.Instance.IsBackgroundAbateRequired) {
+            while (numUpdated < count && !NcApplication.Instance.IsBackgroundAbateRequired) {
                 McEmailMessage emailMessage = McEmailMessage.QueryNeedUpdate ();
                 if (null == emailMessage) {
                     break;
@@ -189,6 +208,53 @@ namespace NachoCore.Brain
             }
             Log.Info (Log.LOG_BRAIN, "{0} email message scores updated", numUpdated);
             return numUpdated;
+        }
+
+        private int IndexEmailMessages (int count)
+        {
+            if (0 == count) {
+                return 0;
+            }
+
+            int numIndexed = 0;
+            long bytesIndexed = 0;
+            List<McEmailMessage> emailMessages = McEmailMessage.QueryNeedsIndexing (count);
+            Dictionary<int, Index.Index> indexes = new Dictionary<int, Index.Index> ();
+            foreach (var emailMessage in emailMessages) {
+                // If we don't have an index for this account, open one
+                Index.Index index;
+                if (!indexes.TryGetValue (emailMessage.AccountId, out index)) {
+                    var indexPath = NcModel.Instance.GetFileDirPath (emailMessage.AccountId, "index");
+                    index = new Index.Index (indexPath);
+                    indexes.Add (emailMessage.AccountId, index);
+                    index.BeginAddTransaction ();
+                }
+
+                // Make sure the body is there
+                var messagePath = emailMessage.GetBody ().GetFilePath ();
+                if (!File.Exists (messagePath)) {
+                    Log.Warn (Log.LOG_BRAIN, "{0} does not exist", messagePath);
+                    continue;
+                }
+
+                // Index the document
+                bytesIndexed +=
+                    index.BatchAdd (messagePath, "message", emailMessage.Id.ToString ());
+                numIndexed += 1;
+
+                // Mark the email message indexed
+                emailMessage.IsIndexed = true;
+                emailMessage.UpdateByBrain ();
+            }
+
+            foreach (var index in indexes.Values) {
+                index.EndAddTransaction ();
+                index.Dispose ();
+            }
+            Log.Info (Log.LOG_BRAIN, "{0} email messages indexed", numIndexed);
+            Log.Info (Log.LOG_BRAIN, "{0:N0} bytes indexed", bytesIndexed);
+            indexes.Clear ();
+            return numIndexed;
         }
 
         private void ProcessUIEvent (NcBrainUIEvent brainEvent)
@@ -308,6 +374,9 @@ namespace NachoCore.Brain
                 num_entries -= GleanContacts (num_entries);
                 num_entries -= UpdateEmailAddressScores (num_entries);
                 num_entries -= UpdateEmailMessageScores (num_entries);
+                #if INDEXING_ENABLED
+                num_entries -= IndexEmailMessages (num_entries);
+                #endif
                 break;
             case NcBrainEventType.STATE_MACHINE:
                 GleanContacts (int.MaxValue);
@@ -364,7 +433,7 @@ namespace NachoCore.Brain
                 StatusIndEventArgs e = new StatusIndEventArgs ();
                 e.Account = ConstMcAccount.NotAccountSpecific;
                 e.Status = NcResult.Info (type);
-                NcApplication.Instance.InvokeStatusIndEvent(e);
+                NcApplication.Instance.InvokeStatusIndEvent (e);
             }
         }
 
