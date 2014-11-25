@@ -46,7 +46,6 @@ namespace NachoClient.iOS
         protected UILabel messageLabel;
         protected UIButton changeResponseButton;
         protected UIButton extraAttendeesButton;
-        protected UIView line2;
         //        protected UITextView eventNotesTextView;
         //        protected UILabel eventNotesText;
         protected UIBarButtonItem editEventButton;
@@ -336,9 +335,6 @@ namespace NachoClient.iOS
 
             yOffset += 96 + 20;
 
-            line2 = Util.AddHorizontalLineView (0, yOffset, EVENT_CARD_WIDTH, borderColor);
-            eventCardView.AddSubview (line2);
-
             // Notes
             eventNotesView = new UIView (new RectangleF (0, yOffset, EVENT_CARD_WIDTH, CELL_HEIGHT));
             eventNotesView.Tag = (int)TagType.EVENT_NOTES_TEXT_VIEW_TAG;
@@ -350,7 +346,7 @@ namespace NachoClient.iOS
             eventNotesView.AddGestureRecognizer (notesTapGestureRecognizer);
             eventCardView.AddSubview (eventNotesView);
 
-            AddTextLabelWithImageView (0, "NOTES", "", TagType.EVENT_NOTE_TITLE_TAG, eventNotesView);
+            AddTextLabelWithImageView (0, "NOTES", "event-notes", TagType.EVENT_NOTE_TITLE_TAG, eventNotesView);
             AddDetailTextLabel (42, 22, SCREEN_WIDTH - 90, 20, TagType.EVENT_NOTES_DETAIL_TAG, eventNotesView);
 
             // Leaving in case we want to go back to inline notes
@@ -480,12 +476,10 @@ namespace NachoClient.iOS
                 hasAttendees = false;
                 View.ViewWithTag ((int)TagType.EVENT_ATTENDEES_TITLE_TAG).Hidden = true;
                 eventAttendeeView.Hidden = true;
-                line2.Hidden = true;
             } else {
                 hasAttendees = true;
                 View.ViewWithTag ((int)TagType.EVENT_ATTENDEES_TITLE_TAG).Hidden = false;
                 eventAttendeeView.Hidden = false;
-                line2.Hidden = false;
                 float spacing = 0;
                 int attendeeNum = 0;
                 foreach (var attendee in c.attendees) {
@@ -636,7 +630,6 @@ namespace NachoClient.iOS
             messageLabel = null;
             changeResponseButton = null;
             extraAttendeesButton = null;
-            line2 = null;
             attendeeTapGestureRecognizer = null;
             alertTapGestureRecognizer = null;
             attachmentsTapGestureRecognizer = null;
@@ -844,7 +837,6 @@ namespace NachoClient.iOS
 
             if (hasAttendees) {
                 AdjustViewLayout (TagType.EVENT_ATTENDEE_VIEW_TAG, 0, ref internalYOffset, padding);
-                AdjustY (line2, internalYOffset);
             }
 
             internalYOffset += 18;

@@ -1727,6 +1727,7 @@
     <BundleResource Include="Resources\calendar-navigate-to%403x.png" />
     <BundleResource Include="Resources\calendar-navigate-to%404x.png" />
     <BundleResource Include="Resources\calendar-navigate-to%406x.png" />
+    <BundleResource Include="Resources\event-notes%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
