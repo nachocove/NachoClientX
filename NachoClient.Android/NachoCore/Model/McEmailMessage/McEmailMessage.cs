@@ -233,6 +233,8 @@ namespace NachoCore.Model
 
         public DateTime FlagSubOrdinalDate { set; get; }
 
+        public bool IsIndexed { set; get; }
+
         ///
         /// </Flag> STUFF.
         ///
@@ -357,21 +359,6 @@ namespace NachoCore.Model
             }
         }
 
-        public static List<McEmailMessage> QueryActiveMessages (int accountId, int folderId)
-        {
-            return NcModel.Instance.Db.Query<McEmailMessage> (
-                "SELECT e.* FROM McEmailMessage AS e " +
-                " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
-                " WHERE " +
-                " e.AccountId = ? AND " +
-                " e.IsAwaitingDelete = 0 AND " +
-                " m.AccountId = ? AND " +
-                " m.ClassCode = ? AND " +
-                " m.FolderId = ? AND " +
-                " e.FlagUtcStartDate < ?",
-                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
-        }
-
         public static List<NcEmailMessageIndex> QueryActiveMessageItems (int accountId, int folderId)
         {
             return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
@@ -474,6 +461,16 @@ namespace NachoCore.Model
                 " e.FlagUtcStartDate > ? " +
                 " ORDER BY e.DateReceived DESC",
                 DateTime.UtcNow);
+        }
+
+        public static List<McEmailMessage> QueryNeedsIndexing (int maxMessages)
+        {
+            return NcModel.Instance.Db.Query<McEmailMessage> (
+                "SELECT * FROM McEmailMessage as e " +
+                " where e.IsIndexed = 0 AND e.BodyId != 0 " +
+                " ORDER BY e.DateReceived DESC LIMIT ?",
+                maxMessages
+            );
         }
 
         public static List<McEmailMessage> QueryByThreadTopic (int accountId, string topic)
