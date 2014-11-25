@@ -86,7 +86,6 @@ namespace NachoCore.ActiveSync
         // HttpClient factory stuff.
         private static object LockObj = new object ();
         public static Type HttpClientType = typeof(MockableHttpClient);
-        private static HttpClientHandler EncryptedClientHandler;
         private static IHttpClient EncryptedClient;
         private static string LastUsername;
         private static string LastPassword;
@@ -140,7 +139,6 @@ namespace NachoCore.ActiveSync
                     // a ref-count to know when we CAN Dispose(). As we are almost always
                     // re-using, this should not be an issue.
                     EncryptedClient = client;
-                    EncryptedClientHandler = handler;
                 }
                 return EncryptedClient;
             }
