@@ -114,6 +114,10 @@ namespace NachoClient.iOS
             childViews.Clear ();
             errorMessage.Hidden = true;
             downloadToken = null;
+            if (statusIndicatorIsRegistered) {
+                NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+                statusIndicatorIsRegistered = false;
+            }
 
             this.item = item;
 
@@ -417,7 +421,13 @@ namespace NachoClient.iOS
 
         private void StatusIndicatorCallback (object sender, EventArgs e)
         {
-            NcAssert.NotNull (downloadToken, "BodyView's StatusIndicatorCallback was called while the downloadToken was null.");
+            if (null == downloadToken) {
+                // This shouldn't happen normally.  But it can happen if a
+                // status event was queued up while this here function was
+                // running.  That event won't be delivered until StatusIndicatorCallback
+                // has been unregistered and downloadToken has been set to null.
+                return;
+            }
 
             var statusEvent = (StatusIndEventArgs)e;
             if (null != statusEvent.Tokens && statusEvent.Tokens.FirstOrDefault () == downloadToken) {
