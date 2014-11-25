@@ -495,7 +495,10 @@ namespace NachoCore.ActiveSync
                     var contentType = response.Content.Headers.ContentType;
                     ContentType = (null == contentType) ? null : contentType.MediaType.ToLower ();
                     try {
-                        ContentData = new BufferedStream (await response.Content.ReadAsStreamAsync ().ConfigureAwait (false));
+                        // Wrapping the content with BufferedStream was required to get things to work with
+                        // the Mono HttpClientHandler.
+                        // ContentData = new BufferedStream (await response.Content.ReadAsStreamAsync ().ConfigureAwait (false));
+                        ContentData = await response.Content.ReadAsStreamAsync ().ConfigureAwait (false);
                     } catch (Exception ex) {
                         // If we see this, it is most likely a bug in error processing above in AttemptHttp().
                         Log.Error (Log.LOG_HTTP, "AttempHttp {0} {1}: exception in ReadAsStreamAsync {2}\n{3}", ex, ServerUri, ex.Message, ex.StackTrace);
