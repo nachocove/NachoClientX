@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading;
 
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DocumentModel;
@@ -41,22 +42,18 @@ namespace NachoCore.Utils
 
         private void InitializeTables ()
         {
-            var config = new AmazonDynamoDBConfig();
+            var config = new AmazonDynamoDBConfig ();
             config.UseHttp = false;
             config.AuthenticationRegion = "us-west-2";
             config.ServiceURL = "https://dynamodb.us-west-2.amazonaws.com";
 
-            #if AWS_DEBUG
-            BasicAWSCredentials credentials =
-                new BasicAWSCredentials("ACCESS KEY", "SECRET ACCESS KEY");
-            #else
-            CognitoAWSCredentials credentials = new CognitoAWSCredentials(
-                "610813048224",
-                "us-east-1:0d40f2cf-bf6c-4875-a917-38f8867b59ef",
-                "arn:aws:iam::610813048224:role/Cognito_dev_telemetryUnauth_DefaultRole",
-                "NO PUBLIC AUTHENTICATION",
-                RegionEndpoint.USEast1
-            );
+            CognitoAWSCredentials credentials = new CognitoAWSCredentials (
+                                                    "610813048224",
+                                                    "us-east-1:0d40f2cf-bf6c-4875-a917-38f8867b59ef",
+                                                    "arn:aws:iam::610813048224:role/Cognito_dev_telemetryUnauth_DefaultRole",
+                                                    "NO PUBLIC AUTHENTICATION",
+                                                    RegionEndpoint.USEast1
+                                                );
 
             // We get a different Cognito id each time it runs because unauthenticated
             // identities (that we use) are anonymous. But doing so would mean it is
@@ -66,7 +63,7 @@ namespace NachoCore.Utils
             // still need to talk to Cognito in order to get the session token.
             var documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
             var clientIdFile = Path.Combine (documents, "client_id");
-            if (File.Exists(clientIdFile)) {
+            if (File.Exists (clientIdFile)) {
                 // Get the client id from the file
                 using (var stream = new FileStream (clientIdFile, FileMode.Open, FileAccess.Read)) {
                     using (var reader = new StreamReader (stream)) {
@@ -75,24 +72,47 @@ namespace NachoCore.Utils
                 }
             } else {
                 // Save the current Cognito id as client id
-                ClientId = credentials.GetIdentityId ();
+                Retry (() => {
+                    ClientId = credentials.GetIdentityId ();
+                });
                 using (var stream = new FileStream (clientIdFile, FileMode.Create, FileAccess.Write)) {
                     using (var writer = new StreamWriter (stream)) {
-                        writer.WriteLine(ClientId);
+                        writer.WriteLine (ClientId);
                     }
                 }
             }
-            #endif
 
-            Client = new AmazonDynamoDBClient (credentials, config);
+            Retry (() => {
+                Client = new AmazonDynamoDBClient (credentials, config);
 
-            DeviceInfoTable = Table.LoadTable (Client, TableName ("device_info"));
-            LogTable = Table.LoadTable (Client, TableName ("log"));
-            SupportTable = Table.LoadTable (Client, TableName ("support"));
-            CounterTable = Table.LoadTable (Client, TableName ("counter"));
-            CaptureTable = Table.LoadTable (Client, TableName ("capture"));
-            UiTable = Table.LoadTable (Client, TableName ("ui"));
-            WbxmlTable = Table.LoadTable (Client, TableName ("wbxml"));
+                DeviceInfoTable = Table.LoadTable (Client, TableName ("device_info"));
+                LogTable = Table.LoadTable (Client, TableName ("log"));
+                SupportTable = Table.LoadTable (Client, TableName ("support"));
+                CounterTable = Table.LoadTable (Client, TableName ("counter"));
+                CaptureTable = Table.LoadTable (Client, TableName ("capture"));
+                UiTable = Table.LoadTable (Client, TableName ("ui"));
+                WbxmlTable = Table.LoadTable (Client, TableName ("wbxml"));
+            });
+        }
+
+        private void Retry (Action action)
+        {
+            bool isDone = false;
+            while (!isDone) {
+                try {
+                    action ();
+                    isDone = true;
+                } catch (TaskCanceledException) {
+                    if (NcTask.Cts.Token.IsCancellationRequested) {
+                        throw;
+                    }
+                    // Otherwise, most likely HTTP client timeout
+                    Thread.Sleep (5000);
+                } catch (AmazonServiceException e) {
+                    Console.WriteLine ("AWS service exception {0}", e);
+                    Thread.Sleep (5000);
+                }
+            }
         }
 
         public void ReinitializeTables ()
@@ -186,30 +206,25 @@ namespace NachoCore.Utils
                 eventItem ["uploaded_at"] = DateTime.UtcNow.Ticks;
                 var task = eventTable.PutItemAsync (eventItem);
                 task.Wait (NcTask.Cts.Token);
-            }
-            catch (TaskCanceledException e) {
+            } catch (TaskCanceledException e) {
                 if (NcTask.Cts.Token.IsCancellationRequested) {
                     throw;
                 }
                 // Otherwise, most likely HTTP client timeout
                 Console.WriteLine ("Task canceled exception {0}", e);
                 return false;
-            }
-            catch (OperationCanceledException) {
+            } catch (OperationCanceledException) {
                 // Since we are catching Exception below, we must catch and re-throw
                 // or this exception will be swallowed and telemetry task will not exit.
                 throw;
-            }
-            catch (AmazonDynamoDBException e) {
+            } catch (AmazonDynamoDBException e) {
                 Console.WriteLine ("AWS DynamoDB exception {0}", e);
                 ReinitializeTables ();
                 return false;
-            }
-            catch (AmazonServiceException e) {
+            } catch (AmazonServiceException e) {
                 Console.WriteLine ("AWS exception {0}", e);
                 return false;
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 // FIXME - An exception is thrown but the exception is null.
                 // This workaround simply catches everything and re-initializes
                 // the connection and tables.
@@ -225,30 +240,25 @@ namespace NachoCore.Utils
             try {
                 var task = multiBatchWrite.ExecuteAsync (NcTask.Cts.Token);
                 task.Wait (NcTask.Cts.Token);
-            }
-            catch (TaskCanceledException e) {
+            } catch (TaskCanceledException e) {
                 if (NcTask.Cts.Token.IsCancellationRequested) {
                     throw;
                 }
                 // Otherwise, most likely HTTP client timeout
                 Console.WriteLine ("Task canceled exception {0}", e);
                 return false;
-            }
-            catch (OperationCanceledException) {
+            } catch (OperationCanceledException) {
                 // Since we are catching Exception below, we must catch and re-throw
                 // or this exception will be swallowed and telemetry task will not exit.
                 throw;
-            }
-            catch (AmazonDynamoDBException e) {
+            } catch (AmazonDynamoDBException e) {
                 Console.WriteLine ("AWS DynamoDB exception {0}", e);
                 ReinitializeTables ();
                 return false;
-            }
-            catch (AmazonServiceException e) {
+            } catch (AmazonServiceException e) {
                 Console.WriteLine ("AWS exception {0}", e);
                 return false;
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 // FIXME - An exception is thrown but the exception is null.
                 // This workaround simply catches everything and re-initializes
                 // the connection and tables.
@@ -357,7 +367,7 @@ namespace NachoCore.Utils
                 anEvent ["ui_string"] = tEvent.UiString;
                 break;
             case TelemetryEvent.UIVIEWCONTROLER:
-                anEvent["ui_string"] = tEvent.UiString;
+                anEvent ["ui_string"] = tEvent.UiString;
                 break;
             }
             return anEvent;
