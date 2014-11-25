@@ -582,7 +582,7 @@ namespace NachoCore.ActiveSync
                 }
                 if (0 < RetriesLeft--) {
                     ServerCertificate = null;
-                    var handler = new NativeMessageHandler () { AllowAutoRedirect = false };
+                    var handler = new HttpClientHandler () { AllowAutoRedirect = false };
                     var client = (IHttpClient)Activator.CreateInstance (AsHttpOperation.HttpClientType, handler);
                     client.Timeout = CertTimeout;
                     ServerCertificatePeek.Instance.ValidationEvent += ServerCertificateEventHandler;
