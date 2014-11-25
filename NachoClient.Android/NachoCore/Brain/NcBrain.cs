@@ -1,12 +1,14 @@
 ﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
+//#define INDEXING_ENABLED
+
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.IO;
 using NachoCore.Utils;
 using NachoCore.Model;
-using NachoCore.Index;
+using NachoCoreLog = NachoCore.Index.Log;
 
 namespace NachoCore.Brain
 {
@@ -25,7 +27,8 @@ namespace NachoCore.Brain
             }
         }
 
-        public class OperationCounters {
+        public class OperationCounters
+        {
             private NcCounter Root;
             public NcCounter Insert;
             public NcCounter Delete;
@@ -77,6 +80,20 @@ namespace NachoCore.Brain
 
         public static void StartService ()
         {
+            // Set up the logging functions for IndexLib
+            NachoCoreLog.PlatformDebug = (fmt, args) => {
+                Log.Info (Log.LOG_BRAIN, fmt, args);
+            };
+            NachoCoreLog.PlatformInfo = (fmt, args) => {
+                Log.Info (Log.LOG_BRAIN, fmt, args);
+            };
+            NachoCoreLog.PlatformWarn = (fmt, args) => {
+                Log.Warn (Log.LOG_BRAIN, fmt, args);
+            };
+            NachoCoreLog.PlatformError = (fmt, args) => {
+                Log.Error (Log.LOG_BRAIN, fmt, args);
+            };
+
             NcBrain brain = NcBrain.SharedInstance;
             NcTask.Run (() => {
                 brain.EventQueue.Token = NcTask.Cts.Token;
@@ -177,7 +194,7 @@ namespace NachoCore.Brain
         private int UpdateEmailMessageScores (int count)
         {
             int numUpdated = 0;
-            while (numUpdated < count  && !NcApplication.Instance.IsBackgroundAbateRequired) {
+            while (numUpdated < count && !NcApplication.Instance.IsBackgroundAbateRequired) {
                 McEmailMessage emailMessage = McEmailMessage.QueryNeedUpdate ();
                 if (null == emailMessage) {
                     break;
@@ -214,7 +231,7 @@ namespace NachoCore.Brain
                 }
 
                 // Make sure the body is there
-                var messagePath = emailMessage.GetBody().GetFilePath();
+                var messagePath = emailMessage.GetBody ().GetFilePath ();
                 if (!File.Exists (messagePath)) {
                     Log.Warn (Log.LOG_BRAIN, "{0} does not exist", messagePath);
                     continue;
@@ -416,7 +433,7 @@ namespace NachoCore.Brain
                 StatusIndEventArgs e = new StatusIndEventArgs ();
                 e.Account = ConstMcAccount.NotAccountSpecific;
                 e.Status = NcResult.Info (type);
-                NcApplication.Instance.InvokeStatusIndEvent(e);
+                NcApplication.Instance.InvokeStatusIndEvent (e);
             }
         }
 
