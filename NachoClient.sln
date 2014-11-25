@@ -13,8 +13,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UIImageEffectsBinding", "..
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "iCarouselBinding", "..\iCarouselBinding\iCarouselBinding\iCarouselBinding\iCarouselBinding.csproj", "{E8EDAA21-69C1-4866-9037-28D83F0D4359}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MCSwipeTableViewCellBinding", "..\MCSwipeTableViewCellBinding\MCSwipeTableViewCellBinding\MCSwipeTableViewCellBinding\MCSwipeTableViewCellBinding.csproj", "{E301B932-D165-4A65-8916-3E80C000B6AC}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NachoPlatformBinding", "..\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding.csproj", "{70C6ECB5-6358-4DB8-915F-3ADC31C39E4E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DDay.iCal.iOS", "..\DDay-iCal-Xamarin\DDay.iCal.iOS\DDay.iCal.iOS.csproj", "{1B095A78-F50A-449F-A3C4-D5662AD32717}"

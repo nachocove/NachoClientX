@@ -10,7 +10,6 @@ using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using System.Collections.Generic;
-using MCSwipeTableViewCellBinding;
 using MonoTouch.CoreAnimation;
 
 namespace NachoClient.iOS
