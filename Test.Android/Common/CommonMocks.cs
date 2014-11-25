@@ -96,6 +96,14 @@ namespace Test.iOS
         {
         }
 
+        public MockHttpClient (HttpClientHandler handler)
+        {
+        }
+
+        public MockHttpClient (HttpClientHandler handler, bool doDispose)
+        {
+        }
+
         public void Dispose ()
         {
         }
