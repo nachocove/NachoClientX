@@ -6,7 +6,6 @@ using System.Drawing;
 using System.Collections.Generic;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
-using iCarouselBinding;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -14,16 +13,15 @@ using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
-    public partial class NachoNowViewController : NcUIViewController, INachoMessageEditorParent, INachoFolderChooserParent, INachoCalendarItemEditorParent, ICalendarTableViewSourceDelegate, INachoDateControllerParent
+    public partial class NachoNowViewController : NcUIViewController, IMessageTableViewSourceDelegate, INachoMessageEditorParent, INachoFolderChooserParent, INachoCalendarItemEditorParent, ICalendarTableViewSourceDelegate, INachoDateControllerParent
     {
         public bool wrap = false;
         public bool Selectable = true;
         public INachoEmailMessages priorityInbox;
 
-        public iCarousel carouselView;
+        public UITableView hotListView;
         protected HotEventView hotEventView;
 
-        protected bool calendarNeedsRefresh;
         protected bool priorityInboxNeedsRefresh;
 
         public NachoNowViewController (IntPtr handle) : base (handle)
@@ -40,10 +38,7 @@ namespace NachoClient.iOS
 
             CreateView ();
 
-            // configure carousel
-            carouselView.ScrollSpeed = 0.5f;
-            carouselView.DataSource = new HotListCarouselDataSource (this);
-            carouselView.Delegate = new HotListCarouselDelegate (this);  
+            hotListView.Source = new HotListTableViewSource (this, priorityInbox);
         }
 
         protected void CreateView ()
@@ -65,17 +60,11 @@ namespace NachoClient.iOS
             NavigationItem.LeftBarButtonItem = null;
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, newMeetingButton };
 
-            carouselView = new iCarousel ();
-            carouselView.Frame = carouselNormalSize ();
-            carouselView.Type = iCarouselType.Linear;
-            carouselView.Vertical = true;
-            carouselView.ContentOffset = new SizeF (0f, 0f);
-            carouselView.BackgroundColor = UIColor.Clear;
-            carouselView.IgnorePerpendicularSwipes = true;
-            carouselView.PagingEnabled = false;
-            carouselView.StopAtItemBoundary = false;
-            carouselView.ScrollToItemBoundary = true;
-            View.AddSubview (carouselView);
+            hotListView = new UITableView (carouselNormalSize (), UITableViewStyle.Plain);
+            hotListView.BackgroundColor = A.Color_NachoBackgroundGray;
+            hotListView.TableFooterView = new UIView (new RectangleF (0, 0, 1, 20));
+            hotListView.TableFooterView.BackgroundColor = A.Color_NachoBackgroundGray;
+            View.AddSubview (hotListView);
 
             hotEventView = new HotEventView (new RectangleF (0, 0, View.Frame.Width, 69));
             View.AddSubview (hotEventView);
@@ -263,7 +252,7 @@ namespace NachoClient.iOS
             if (priorityInboxNeedsRefresh) {
                 priorityInboxNeedsRefresh = false;
                 if (priorityInbox.Refresh ()) {
-                    carouselView.ReloadData ();
+                    hotListView.ReloadData ();
                 }
             }
         }
@@ -273,10 +262,7 @@ namespace NachoClient.iOS
         /// </summary>
         protected void LayoutView ()
         {
-
-            carouselView.Frame = carouselNormalSize ();
-            carouselView.Alpha = 1.0f;
-            carouselView.ClipsToBounds = true;
+            hotListView.Frame = carouselNormalSize ();
         }
 
         public override void ViewDidLayoutSubviews ()
@@ -334,6 +320,11 @@ namespace NachoClient.iOS
         public void MessageThreadSelected (McEmailMessageThread messageThread)
         {
             PerformSegue ("NachoNowToMessageList", new SegueHolder (NcEmailManager.Inbox ()));
+        }
+
+        ///  IMessageTableViewSourceDelegate
+        public void MultiSelectToggle (MessageTableViewSource source, bool enabled)
+        {
         }
 
         /// <summary>
@@ -411,9 +402,5 @@ namespace NachoClient.iOS
             vc.DismissCalendarItemEditor (false, null);
         }
 
-        public void ReloadHotListData ()
-        {
-            carouselView.ReloadData ();
-        }
     }
 }

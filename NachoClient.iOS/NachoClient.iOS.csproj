@@ -1068,7 +1068,6 @@
     <Compile Include="NachoUI.iOS\Support\FadeCustomSegue.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INcDatePickerDelegate.cs" />
     <Compile Include="NachoUI.iOS\Support\WaitingScreen.cs" />
-    <Compile Include="NachoUI.iOS\Support\HotListCarouselDataSource.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsWaitCommand.cs">
       <Link>NachoCore\BackEnd\ActiveSync\Commands\AsWaitCommand.cs</Link>
     </Compile>
@@ -1179,6 +1178,7 @@
       <Link>NachoCore\Index\IndexDocument.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\HotEventView.cs" />
+    <Compile Include="NachoUI.iOS\Support\HotListTableViewSource.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -1740,10 +1740,6 @@
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
       <Project>{85087C0F-D924-46BE-B466-9D66F853472C}</Project>
       <Name>UIImageEffectsBinding</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\iCarouselBinding\iCarouselBinding\iCarouselBinding\iCarouselBinding.csproj">
-      <Project>{E8EDAA21-69C1-4866-9037-28D83F0D4359}</Project>
-      <Name>iCarouselBinding</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding.csproj">
       <Project>{70C6ECB5-6358-4DB8-915F-3ADC31C39E4E}</Project>
