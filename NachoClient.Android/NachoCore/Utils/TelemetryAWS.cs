@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading;
 
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DocumentModel;
@@ -106,8 +107,10 @@ namespace NachoCore.Utils
                         throw;
                     }
                     // Otherwise, most likely HTTP client timeout
+                    Thread.Sleep (5000);
                 } catch (AmazonServiceException e) {
                     Console.WriteLine ("AWS service exception {0}", e);
+                    Thread.Sleep (5000);
                 }
             }
         }
