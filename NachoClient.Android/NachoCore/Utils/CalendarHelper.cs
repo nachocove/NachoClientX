@@ -904,6 +904,13 @@ namespace NachoCore.Utils
 
             var el = NcModel.Instance.Db.Table<McEvent> ().ToList ();
             Log.Info (Log.LOG_CALENDAR, "Events in db: {0}", el.Count);
+
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EventSetChanged),
+                Account = NachoCore.Model.ConstMcAccount.NotAccountSpecific,
+                Tokens = new String[] { DateTime.Now.ToString () },
+            });
+
             return true;
         }
 
