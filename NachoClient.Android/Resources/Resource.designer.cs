@@ -30,6 +30,7 @@ namespace NachoClient.AndroidClient
 			global::DDay.Collections.Android.Resource.String.library_name = global::NachoClient.AndroidClient.Resource.String.library_name;
 			global::DDay.iCal.Android.Resource.String.library_name = global::NachoClient.AndroidClient.Resource.String.library_name;
 			global::antlr.runtime.Android.Resource.String.library_name = global::NachoClient.AndroidClient.Resource.String.library_name;
+			global::ModernHttpClient.Resource.String.library_name = global::NachoClient.AndroidClient.Resource.String.library_name;
 			global::NachoPlatformBinding.Android.Resource.String.library_name = global::NachoClient.AndroidClient.Resource.String.library_name;
 		}
 		
@@ -2124,7 +2125,7 @@ namespace NachoClient.AndroidClient
 					16843055,
 					16843056,
 					16843057,
-					16843754};
+					16843829};
 			
 			// aapt resource value: 4
 			public const int MenuView_android_headerBackground = 4;

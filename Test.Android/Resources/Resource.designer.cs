@@ -49,6 +49,7 @@ namespace Test.Android
 			global::Xamarin.Android.NUnitLite.Resource.Layout.test_result = global::Test.Android.Resource.Layout.test_result;
 			global::Xamarin.Android.NUnitLite.Resource.Layout.test_suite = global::Test.Android.Resource.Layout.test_suite;
 			global::DnDns.Resource.String.library_name = global::Test.Android.Resource.String.library_name;
+			global::ModernHttpClient.Resource.String.library_name = global::Test.Android.Resource.String.library_name;
 		}
 		
 		public partial class Animation
