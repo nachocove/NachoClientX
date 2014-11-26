@@ -206,7 +206,7 @@ namespace NachoClient.iOS
         /// <summary>
         /// Populate cells with data, adjust sizes and visibility.
         /// </summary>
-        protected void ConfigureCell (UITableViewCell cell, NSIndexPath indexPath)
+        protected void ConfigureCell (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
         {
             if (cell.ReuseIdentifier.Equals (EmptyCellReuseIdentifier)) {
                 cell.TextLabel.Text = "No messages";
@@ -214,7 +214,7 @@ namespace NachoClient.iOS
             }
 
             if (cell.ReuseIdentifier.Equals (CalendarEventReuseIdentifier)) {
-                ConfigureCalendarCell (cell, indexPath);
+                ConfigureCalendarCell (tableView, cell, indexPath);
                 return;
             }
             NcAssert.CaseError ();
@@ -223,7 +223,7 @@ namespace NachoClient.iOS
         /// <summary>
         /// Populate message cells with data, adjust sizes and visibility
         /// </summary>
-        protected void ConfigureCalendarCell (UITableViewCell cell, NSIndexPath indexPath)
+        protected void ConfigureCalendarCell (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
         {
             var e = calendar.GetEvent (indexPath.Section, indexPath.Row);
             var c = calendar.GetEventDetail (indexPath.Section, indexPath.Row);
@@ -317,10 +317,13 @@ namespace NachoClient.iOS
             view.OnSwipe = (SwipeActionView activeView, SwipeActionView.SwipeState state) => {
                 switch (state) {
                 case SwipeActionView.SwipeState.SWIPE_BEGIN:
+                    tableView.ScrollEnabled = false;
                     break;
                 case SwipeActionView.SwipeState.SWIPE_END_ALL_HIDDEN:
+                    tableView.ScrollEnabled = true;
                     break;
                 case SwipeActionView.SwipeState.SWIPE_END_ALL_SHOWN:
+                    tableView.ScrollEnabled = false;
                     break;
                 default:
                     throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown swipe state {0}", (int)state));
@@ -354,7 +357,7 @@ namespace NachoClient.iOS
             if (null == cell) {
                 cell = CellWithReuseIdentifier (tableView, cellIdentifier);
             }
-            ConfigureCell (cell, indexPath);
+            ConfigureCell (tableView, cell, indexPath);
             return cell;
 
         }
