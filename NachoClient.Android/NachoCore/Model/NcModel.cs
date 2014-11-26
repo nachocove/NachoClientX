@@ -13,6 +13,47 @@ using NachoPlatform;
 
 namespace NachoCore.Model
 {
+    public class NcSQLiteConnection : SQLiteConnection
+    {
+        private object LockObj;
+        private DateTime LastAccess;
+        private bool Disposed;
+
+        public NcSQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = false) :
+        base (databasePath, openFlags, storeDateTimeAsTicks)
+        {
+            LockObj = new object ();
+            LastAccess = DateTime.UtcNow;
+        }
+
+        public NcSQLiteConnection (string databasePath, bool storeDateTimeAsTicks = false) :
+        base (databasePath, storeDateTimeAsTicks)
+        {
+            LockObj = new object ();
+            LastAccess = DateTime.UtcNow;
+        }
+
+        public void Dispose ()
+        {
+            lock (LockObj) {
+                if (!Disposed) {
+                    Disposed = true;
+                    base.Dispose ();
+                }
+            }
+        }
+
+        public void SetLastAccess ()
+        {
+            // FIXME.
+        }
+
+        public void EliminateIfStale (Action Action)
+        {
+            // FIXME.
+        }
+    }
+
     public sealed class NcModel
     {
         private string Documents;
@@ -39,15 +80,16 @@ namespace NachoCore.Model
         public SQLiteConnection Db {
             get {
                 var threadId = Thread.CurrentThread.ManagedThreadId;
-                SQLiteConnection db = null;
+                NcSQLiteConnection db = null;
                 if (!DbConns.TryGetValue (threadId, out db)) {
-                    db = new SQLiteConnection (DbFileName, 
+                    db = new NcSQLiteConnection (DbFileName, 
                         SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.NoMutex, 
                         storeDateTimeAsTicks: true);
                     db.BusyTimeout = TimeSpan.FromSeconds (10.0);
                     db.TraceThreshold = 100;
                     NcAssert.True (DbConns.TryAdd (threadId, db));
                 }
+                db.SetLastAccess ();
                 return db;
             } 
         }
@@ -69,7 +111,7 @@ namespace NachoCore.Model
             }
         }
 
-        private ConcurrentDictionary<int, SQLiteConnection> DbConns;
+        private ConcurrentDictionary<int, NcSQLiteConnection> DbConns;
         private ConcurrentDictionary<int, int> TransDepth;
 
         private int walCheckpointCount = 0;
@@ -135,7 +177,7 @@ namespace NachoCore.Model
         private void InitializeDb ()
         {
             RateLimiter = new NcRateLimter (16, 0.250);
-            DbConns = new ConcurrentDictionary<int, SQLiteConnection> ();
+            DbConns = new ConcurrentDictionary<int, NcSQLiteConnection> ();
             TransDepth = new ConcurrentDictionary<int, int> ();
             AutoVacuum = AutoVacuumEnum.NONE;
             Db.CreateTable<McAccount> ();
