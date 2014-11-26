@@ -480,7 +480,7 @@ namespace NachoClient.iOS
             notesView.BackgroundColor = UIColor.White;
             contentView.AddSubview (notesView);
 
-            UILabel notesLabel = new UILabel (new RectangleF (25, 8, 100, 15));
+            UILabel notesLabel = new UILabel (new RectangleF (27, 8, 100, 15));
             notesLabel.Text = "Notes";
             notesLabel.TextColor = UIColor.DarkGray;
             notesLabel.Font = A.Font_AvenirNextMedium14;
@@ -488,27 +488,13 @@ namespace NachoClient.iOS
             notesView.AddSubview (notesLabel);
 
 
-            notesTextView = new UITextView (new RectangleF (23, 25, View.Frame.Width - 60, notesView.Frame.Height - 30));
+            notesTextView = new UITextView (new RectangleF (22, 25, View.Frame.Width - 60, notesView.Frame.Height - 30));
             notesTextView.Font = A.Font_AvenirNextMedium14;
             notesTextView.TextColor = A.Color_NachoGreen;
             notesTextView.TextAlignment = UITextAlignment.Left;
             notesTextView.AutocapitalizationType = UITextAutocapitalizationType.None;
             notesTextView.AutocorrectionType = UITextAutocorrectionType.No;
             notesTextView.Text = GetNotesText ();
-//            notesTextView.EditingDidEnd += (object sender, EventArgs e) => {
-//
-//                McBody contactBody = McBody.QueryById<McBody> (contactCopy.BodyId);
-//                if (null != contactBody) {
-//                    contactBody.UpdateData (notesTextView.Text);
-//                } else {
-//                    contactCopy.BodyId = McBody.InsertFile (LoginHelpers.GetCurrentAccountId()
-//                        ,McAbstrFileDesc.BodyTypeEnum.PlainText_1,
-//                        notesTextView.Text).Id;
-//                }
-//                contactCopy.Update ();
-//                NachoCore.BackEnd.Instance.UpdateContactCmd (contactCopy.AccountId, contactCopy.Id);
-//
-//            };
             notesView.AddSubview (notesTextView);
 
             yOffset = notesView.Frame.Bottom + CELL_HEIGHT;

@@ -356,7 +356,6 @@ namespace NachoClient.iOS
             cancelValidation.Tag = CANCEL_VALIDATION_BUTTON_TAG;
             statusView.AddSubview (cancelValidation);
 
-            //TODO: what's going on here
             UIAlertView userHitCancel = new UIAlertView ("Validation Cancelled", "Your settings have not been validated and therefore may not work correctly. Would you still like to save?", null, "Save", "Cancel");
             userHitCancel.Tag = CANCEL_VALIDATION_ALERT_VIEW_TAG;
             userHitCancel.Clicked += SaveAnywayClicked;
@@ -557,7 +556,6 @@ namespace NachoClient.iOS
             testCred.Username = (usernameTextField.Text);
 
             if (!BackEnd.Instance.ValidateConfig (LoginHelpers.GetCurrentAccountId (), testServer, testCred)) {
-                //FIXME - implement both buttons on UIAlertView
                 UIAlertView badNetworkConnection = new UIAlertView ("Network Error", "There is an issue with the network and we cannot validate your changes. Would you like to save anyway?", null, "Ok", "Cancel");
                 badNetworkConnection.Tag = BAD_NETWORK_ALERT_VIEW_TAG;
                 badNetworkConnection.Clicked += SaveAnywayClicked;

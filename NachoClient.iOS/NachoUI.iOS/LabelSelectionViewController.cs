@@ -225,7 +225,6 @@ namespace NachoClient.iOS
 
         private void DismissViewTouchUpInside (object sender, EventArgs e)
         {
-            //owner.PrepareForDismissal (selectedName);
             DismissViewController (true, null);
         }
 

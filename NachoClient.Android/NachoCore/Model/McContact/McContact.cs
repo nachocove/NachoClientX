@@ -471,12 +471,6 @@ namespace NachoCore.Model
             AddDefaultStringAttribute (ref DbPhoneNumbers, accountId, McContactStringType.PhoneNumber, name, label, value);
         }
 
-        public void AddOrUpdatePhoneNumberAttributeWithName (int accountId, string name, string newName, string label, string value)
-        {
-            ReadAncillaryData ();
-            AddOrUpdateStringAttributeWithName (ref DbPhoneNumbers, accountId, McContactStringType.PhoneNumber, name, newName, label, value);
-        }
-
         public void AddOrUpdatePhoneNumberAttribute (int accountId, string name, string label, string value)
         {
             ReadAncillaryData ();
@@ -505,25 +499,6 @@ namespace NachoCore.Model
         {
             ReadAncillaryData ();
             AddStringAttribute (ref DbCategories, accountId, McContactStringType.Category, name, null, null);
-        }
-
-        protected void AddOrUpdateStringAttributeWithName (ref List<McContactStringAttribute> list, int accountId, McContactStringType type, string name, string newName, string label, string value)
-        {
-            var existing = list.Where (attr => attr.Type.Equals (type) && attr.Name.Equals (name)).SingleOrDefault ();
-            if (null != existing) {
-                existing.Name = newName;
-                existing.Label = label;
-                existing.Value = value;
-            } else {
-                var newbie = new McContactStringAttribute ();
-                newbie.AccountId = accountId;
-                newbie.Name = newName;
-                newbie.Type = type;
-                newbie.Label = label;
-                newbie.Value = value;
-                newbie.ContactId = this.Id;
-                list.Add (newbie);
-            }
         }
 
         protected void AddOrUpdateStringAttribute (ref List<McContactStringAttribute> list, int accountId, McContactStringType type, string name, string label, string value)

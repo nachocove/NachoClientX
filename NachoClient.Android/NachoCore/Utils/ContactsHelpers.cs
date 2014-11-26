@@ -17,10 +17,10 @@ namespace NachoCore.Utils
         public List<string> PhoneNames = new List<string> () {
             Xml.Contacts.MobilePhoneNumber,
             Xml.Contacts.BusinessPhoneNumber,
-            Xml.Contacts.Business2PhoneNumber,
             Xml.Contacts.HomePhoneNumber,
-            Xml.Contacts.Home2PhoneNumber,
             Xml.Contacts.AssistantPhoneNumber,
+            Xml.Contacts.Business2PhoneNumber,
+            Xml.Contacts.Home2PhoneNumber,
             Xml.Contacts.CarPhoneNumber,
             Xml.Contacts.PagerNumber,
             Xml.Contacts.RadioPhoneNumber,
@@ -73,12 +73,6 @@ namespace NachoCore.Utils
             Xml.Contacts.Child,
         };
 
-        public Dictionary<string, string> EmailLabelDictionary = new Dictionary<string, string> () {
-            {Xml.Contacts.Email1Address, "Email"},
-            {Xml.Contacts.Email2Address, "Email Two"},
-            {Xml.Contacts.Email3Address, "Email Three"}
-        };
-
         public Dictionary<string, string> ExchangeLabelDictionary = new Dictionary<string, string> () {
             {Xml.Contacts.Email1Address, "Email"},
             {Xml.Contacts.Email2Address, "Email Two"},
@@ -88,8 +82,8 @@ namespace NachoCore.Utils
             {Xml.Contacts.Business2PhoneNumber, "Work Two"},
             {Xml.Contacts.BusinessFaxNumber, "Business Fax"},
             {Xml.Contacts.CarPhoneNumber, "Car"},
-            {Xml.Contacts.Home2PhoneNumber, "Home"},
-            {Xml.Contacts.HomePhoneNumber, "Home Two"},
+            {Xml.Contacts.Home2PhoneNumber, "Home Two"},
+            {Xml.Contacts.HomePhoneNumber, "Home"},
             {Xml.Contacts.HomeFaxNumber, "Home Fax"},
             {Xml.Contacts.MobilePhoneNumber, "Mobile"},
             {Xml.Contacts.PagerNumber, "Pager"},
@@ -100,8 +94,8 @@ namespace NachoCore.Utils
             {"Business", "Business"},
             {"Other", "Other"},
             {Xml.Contacts2.IMAddress, "Primary IM"},
-            {Xml.Contacts2.IMAddress2, "Secondary IM"},
-            {Xml.Contacts2.IMAddress3, "Tertiary IM"},
+            {Xml.Contacts2.IMAddress2, "Second IM"},
+            {Xml.Contacts2.IMAddress3, "Third IM"},
             {Xml.Contacts.Child, "Child"},
             {Xml.Contacts.Spouse, "Spouse"},
             {Xml.Contacts.AssistantName, "Assistant"},
@@ -145,116 +139,116 @@ namespace NachoCore.Utils
             return initials;
         }
 
-        public static void CopyContact (McContact c, ref McContact n)
+        public static void CopyContact (McContact orig, ref McContact copy)
         {
-            n.ServerId = c.ServerId;
+            copy.ServerId = orig.ServerId;
 
-            n.BodyId = c.BodyId;
-            n.NativeBodyType = c.NativeBodyType;
+            copy.BodyId = orig.BodyId;
+            copy.NativeBodyType = orig.NativeBodyType;
 
-            n.Alias = c.Alias;
-            n.CompanyName = c.CompanyName;
-            n.Department = c.Department;
-            n.FileAs = c.FileAs;
-            n.FirstName = c.FirstName;
-            n.JobTitle = c.JobTitle;
-            n.LastName = c.LastName;
-            n.MiddleName = c.MiddleName;
-            n.Suffix = c.Suffix;
-            n.Title = c.Title;
-            n.WebPage = c.WebPage;
-            n.WeightedRank = c.WeightedRank;
-            n.YomiCompanyName = c.YomiCompanyName;
-            n.YomiFirstName = c.YomiFirstName;
-            n.YomiLastName = c.YomiLastName;
-            n.AccountName = c.AccountName;
-            n.CustomerId = c.CustomerId;
-            n.GovernmentId = c.GovernmentId;
-            n.MMS = c.MMS;
-            n.NickName = c.NickName;
-            n.OfficeLocation = c.OfficeLocation;
+            copy.Alias = orig.Alias;
+            copy.CompanyName = orig.CompanyName;
+            copy.Department = orig.Department;
+            copy.FileAs = orig.FileAs;
+            copy.FirstName = orig.FirstName;
+            copy.JobTitle = orig.JobTitle;
+            copy.LastName = orig.LastName;
+            copy.MiddleName = orig.MiddleName;
+            copy.Suffix = orig.Suffix;
+            copy.Title = orig.Title;
+            copy.WebPage = orig.WebPage;
+            copy.WeightedRank = orig.WeightedRank;
+            copy.YomiCompanyName = orig.YomiCompanyName;
+            copy.YomiFirstName = orig.YomiFirstName;
+            copy.YomiLastName = orig.YomiLastName;
+            copy.AccountName = orig.AccountName;
+            copy.CustomerId = orig.CustomerId;
+            copy.GovernmentId = orig.GovernmentId;
+            copy.MMS = orig.MMS;
+            copy.NickName = orig.NickName;
+            copy.OfficeLocation = orig.OfficeLocation;
 
-            foreach (var p in n.PhoneNumbers) {
+            foreach (var p in copy.PhoneNumbers) {
                 p.Delete ();
             }
-            n.PhoneNumbers.Clear ();
+            copy.PhoneNumbers.Clear ();
 
-            foreach (var p in c.PhoneNumbers) {
+            foreach (var p in orig.PhoneNumbers) {
                 if (p.IsDefault) {
-                    n.AddDefaultPhoneNumberAttribute (c.AccountId,
+                    copy.AddDefaultPhoneNumberAttribute (orig.AccountId,
                         p.Name,
                         p.Label,
                         p.Value);
                 } else {
-                    n.AddOrUpdatePhoneNumberAttribute (c.AccountId,
+                    copy.AddOrUpdatePhoneNumberAttribute (orig.AccountId,
                         p.Name,
                         p.Label,
                         p.Value);
                 }
             }
 
-            foreach (var p in n.EmailAddresses) {
+            foreach (var p in copy.EmailAddresses) {
                 p.Delete ();
             }
-            n.EmailAddresses.Clear ();
+            copy.EmailAddresses.Clear ();
 
-            foreach (var e in c.EmailAddresses) {
+            foreach (var e in orig.EmailAddresses) {
                 if (e.IsDefault) {
-                    n.AddDefaultEmailAddressAttribute (c.AccountId,
+                    copy.AddDefaultEmailAddressAttribute (orig.AccountId,
                         e.Name,
                         e.Label,
                         e.Value);
                 } else {
-                    n.AddOrUpdateEmailAddressAttribute (c.AccountId,
+                    copy.AddOrUpdateEmailAddressAttribute (orig.AccountId,
                         e.Name,
                         e.Label,
                         e.Value);
                 }
             }
 
-            foreach (var p in n.Dates) {
+            foreach (var p in copy.Dates) {
                 p.Delete ();
             }
-            n.Dates.Clear ();
+            copy.Dates.Clear ();
 
-            foreach (var d in c.Dates) {
-                n.AddDateAttribute (c.AccountId,
+            foreach (var d in orig.Dates) {
+                copy.AddDateAttribute (orig.AccountId,
                     d.Name,
                     d.Label,
                     d.Value);
             }
 
-            foreach (var p in n.IMAddresses) {
+            foreach (var p in copy.IMAddresses) {
                 p.Delete ();
             }
-            n.IMAddresses.Clear ();
+            copy.IMAddresses.Clear ();
 
-            foreach (var im in c.IMAddresses) {
-                n.AddIMAddressAttribute (c.AccountId,
+            foreach (var im in orig.IMAddresses) {
+                copy.AddIMAddressAttribute (orig.AccountId,
                     im.Name,
                     im.Label,
                     im.Value);
             }
 
-            foreach (var p in n.Relationships) {
+            foreach (var p in copy.Relationships) {
                 p.Delete ();
             }
-            n.Relationships.Clear ();
+            copy.Relationships.Clear ();
 
-            foreach (var r in c.Relationships) {
-                n.AddRelationshipAttribute (c.AccountId,
+            foreach (var r in orig.Relationships) {
+                copy.AddRelationshipAttribute (orig.AccountId,
                     r.Name,
                     r.Label,
                     r.Value);
             }
 
-            foreach (var p in n.Addresses) {
+            foreach (var p in copy.Addresses) {
                 p.Delete ();
             }
-            n.Addresses.Clear ();
+            copy.Addresses.Clear ();
 
-            foreach (var a in c.Addresses) {
-                n.AddAddressAttribute (c.AccountId,
+            foreach (var a in orig.Addresses) {
+                copy.AddAddressAttribute (orig.AccountId,
                     a.Name,
                     a.Label,
                     a);
@@ -285,6 +279,52 @@ namespace NachoCore.Utils
 
             return EmailNames.Except (takenNames).ToList();
         }
+
+        public List<string> GetAvailableDateNames (McContact contact)
+        {
+            List<string> takenNames = new List<string> ();
+            foreach (var d in contact.Dates) {
+                takenNames.Add (d.Name);
+            }
+
+            return DateNames.Except (takenNames).ToList ();
+        }
+
+        public List<string> GetAvailableAddressNames (McContact contact)
+        {
+            List<string> takenNames = new List<string> ();
+            foreach (var a in contact.Addresses) {
+                takenNames.Add (a.Name);
+            }
+
+            return AddressNames.Except (takenNames).ToList ();
+        }
+
+        public List<string> GetAvailableIMAddressNames (McContact contact)
+        {
+            List<string> takenNames = new List<string> ();
+            foreach (var a in contact.IMAddresses) {
+                takenNames.Add (a.Name);
+            }
+            return IMAddressNames.Except (takenNames).ToList ();
+        }
+
+        public List<string> GetAvailableRelationshipNames (McContact contact)
+        {
+            List<string> takenNames = new List<string> ();
+            List<string> availableNames = new List<string>(RelationshipNames);
+            foreach (var a in contact.Relationships) {
+                takenNames.Add (a.Name);
+            }
+
+            foreach (var t in takenNames) {
+                if (t != Xml.Contacts.Child) {
+                    availableNames.Remove (t);
+                }
+            }
+            return availableNames;
+        }
+
 
         public List<string> GetTakenMiscNames (McContact contact)
         {
@@ -343,79 +383,8 @@ namespace NachoCore.Utils
 
         public List<string> GetAvailableMiscNames (List<string> takenNames)
         {
-            //List<string> takenNames = new List<string> (GetTakenMiscNames(contact));
-            List<string> availableNames = new List<string>(MiscNames);
-
-            foreach (var t in takenNames) {
-                availableNames.Remove (t);
-            }
-
-            return availableNames;
+            return MiscNames.Except (takenNames).ToList ();
         }
-
-        public List<string> GetAvailableDateNames (McContact contact)
-        {
-            List<string> takenNames = new List<string> ();
-            List<string> availableNames = new List<string>(DateNames);
-            foreach (var d in contact.Dates) {
-                takenNames.Add (d.Name);
-            }
-
-            foreach (var t in takenNames) {
-                availableNames.Remove (t);
-            }
-
-            return availableNames;
-        }
-
-        public List<string> GetAvailableAddressNames (McContact contact)
-        {
-            List<string> takenNames = new List<string> ();
-            List<string> availableNames = new List<string>(AddressNames);
-            foreach (var a in contact.Addresses) {
-                takenNames.Add (a.Name);
-            }
-
-            foreach (var t in takenNames) {
-                availableNames.Remove (t);
-            }
-
-            return availableNames;
-        }
-
-        public List<string> GetAvailableIMAddressNames (McContact contact)
-        {
-            List<string> takenNames = new List<string> ();
-            List<string> availableNames = new List<string>(IMAddressNames);
-            foreach (var a in contact.IMAddresses) {
-                takenNames.Add (a.Name);
-            }
-
-            foreach (var t in takenNames) {
-                availableNames.Remove (t);
-            }
-
-            return availableNames;
-        }
-
-        public List<string> GetAvailableRelationshipNames (McContact contact)
-        {
-            List<string> takenNames = new List<string> ();
-            List<string> availableNames = new List<string>(RelationshipNames);
-            foreach (var a in contact.Relationships) {
-                takenNames.Add (a.Name);
-            }
-
-            foreach (var t in takenNames) {
-                if (t != Xml.Contacts.Child) {
-                    availableNames.Remove (t);
-                }
-            }
-
-            return availableNames;
-        }
-
-
     }
 }
 
