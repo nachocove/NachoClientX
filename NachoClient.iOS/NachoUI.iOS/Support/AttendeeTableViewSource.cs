@@ -44,13 +44,13 @@ namespace NachoClient.iOS
         // Pre-made swipe action descriptors
         private static SwipeActionDescriptor RESEND_INVITE_BUTTON =
             new SwipeActionDescriptor (RESEND_INVITE_TAG, 0.25f, UIImage.FromBundle ("files-forward-swipe"),
-                "Send Invite", A.Color_NachoSwipeActionGreen);
+                "Send Invite", A.Color_NachoeSwipeForward);
         private static SwipeActionDescriptor MAKE_REQUIRED_BUTTON =
             new SwipeActionDescriptor (MAKE_REQUIRED_TAG, 0.25f, UIImage.FromBundle ("files-open-app-swipe"),
-                "Required", A.Color_NachoSwipeActionBlue);
-        //        private static SwipeActionDescriptor MAKE_OPTIONAL_BUTTON =
-        //            new SwipeActionDescriptor (MAKE_OPTIONAL_TAG, 0.25f, UIImage.FromBundle ("files-open-app-swipe"),
-        //                "Optional", A.Color_NachoSwipeActionBlue);
+                "Required", A.Color_NachoSwipeNavigate);
+        private static SwipeActionDescriptor MAKE_OPTIONAL_BUTTON =
+            new SwipeActionDescriptor (MAKE_OPTIONAL_TAG, 0.25f, UIImage.FromBundle ("files-open-app-swipe"),
+                "Optional", A.Color_NachoSwipeDialIn);
         private static SwipeActionDescriptor DELETE_BUTTON =
             new SwipeActionDescriptor (DELETE_TAG, 0.25f, UIImage.FromBundle ("email-delete-swipe"),
                 "Remove", A.Color_NachoSwipeActionRed);
@@ -197,9 +197,6 @@ namespace NachoClient.iOS
 
             var frame = new RectangleF (0, 0, tableView.Frame.Width, 80);
             var view = new SwipeActionView (frame);
-            view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
-            view.SetAction (MAKE_REQUIRED_BUTTON, SwipeSide.LEFT);
-            view.SetAction (RESEND_INVITE_BUTTON, SwipeSide.LEFT);
 
             cell.AddSubview (view);
             view.Tag = SWIPE_TAG;
@@ -286,6 +283,16 @@ namespace NachoClient.iOS
 
             //Swipe view
             var view = cell.ViewWithTag (SWIPE_TAG) as SwipeActionView;
+            view.LeftSwipeActionButtons.Clear ();
+            view.RightSwipeActionButtons.Clear ();
+            view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
+            if (NcAttendeeType.Required == attendee.AttendeeType) {
+                view.SetAction (MAKE_OPTIONAL_BUTTON, SwipeSide.LEFT);
+            } else {
+                view.SetAction (MAKE_REQUIRED_BUTTON, SwipeSide.LEFT);
+            }
+            view.SetAction (RESEND_INVITE_BUTTON, SwipeSide.LEFT);
+
             if (isMultiSelecting || !editing) {
                 view.DisableSwipe ();
             } else {
@@ -295,6 +302,9 @@ namespace NachoClient.iOS
             view.OnClick = (int tag) => {
                 switch (tag) {
                 case MAKE_REQUIRED_TAG:
+                    ChangeAttendeeType (cell, attendee);
+                    break;
+                case MAKE_OPTIONAL_TAG:
                     ChangeAttendeeType (cell, attendee);
                     break;
                 case RESEND_INVITE_TAG:
@@ -403,8 +413,9 @@ namespace NachoClient.iOS
             var attendeeResponseImageView = cell.ViewWithTag (USER_RESPONSE_TAG) as UIImageView;
             if (null != GetImageForAttendeeResponse (attendee)) {
                 attendeeResponseImageView.Image = GetImageForAttendeeResponse (attendee);
+                cell.ViewWithTag (USER_RESPONSE_VIEW_TAG).Hidden = false;
             } else {
-                attendeeResponseImageView.Hidden = true;
+                cell.ViewWithTag (USER_RESPONSE_VIEW_TAG).Hidden = true;
             }
 
             //Separator line

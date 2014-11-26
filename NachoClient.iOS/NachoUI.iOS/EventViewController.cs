@@ -452,7 +452,7 @@ namespace NachoClient.iOS
             alertDetailLabel.Text = Pretty.ReminderString (c.ReminderIsSet, c.Reminder);
             alertDetailLabel.SizeToFit ();
 
-            if (0 != c.attachments.Count()) {
+            if (0 != c.attachments.Count ()) {
                 hasAttachments = true;
             }
             attachmentListView.Hidden = !hasAttachments;
@@ -544,6 +544,7 @@ namespace NachoClient.iOS
                             }
                         }
                         responseView.AddSubview (responseImageView);
+                        responseView.Hidden = (null != responseImageView.Image ? false : true);
                     }
 
                     spacing += (attendeeImageDiameter + iconPadding);
