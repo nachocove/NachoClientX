@@ -114,19 +114,17 @@ namespace NachoClient.iOS
             childViews.Clear ();
             errorMessage.Hidden = true;
             downloadToken = null;
+            if (statusIndicatorIsRegistered) {
+                NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+                statusIndicatorIsRegistered = false;
+            }
 
             this.item = item;
 
             var body = McBody.QueryById<McBody> (item.BodyId);
 
             if (null == body || McAbstrFileDesc.FilePresenceEnum.Complete != body.FilePresence) {
-                if (null != body && McAbstrFileDesc.FilePresenceEnum.Error == body.FilePresence) {
-                    // A download has already been attempted and was unsuccessful. Don't retry
-                    // the download without explicit user interaction.
-                    ShowErrorMessage ();
-                } else {
-                    StartDownload ();
-                }
+                StartDownload ();
                 return;
             }
 
@@ -216,8 +214,6 @@ namespace NachoClient.iOS
                         Reconfigure ();
                     } else {
                         Log.Warn (Log.LOG_UI, "Failed to start body download for message {0} in account {1}", item.Id, item.AccountId);
-                        NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-                        statusIndicatorIsRegistered = false;
                         ShowErrorMessage ();
                     }
                 } else {
@@ -225,13 +221,16 @@ namespace NachoClient.iOS
                     // can do is to show an error message, even though tapping to retry the
                     // download won't do any good.
                     Log.Warn (Log.LOG_UI, "Failed to start body download for message {0} in account {1}, and it looks like the message has been deleted.", item.Id, item.AccountId);
-                    NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
-                    statusIndicatorIsRegistered = false;
                     ShowErrorMessage ();
                 }
             } else {
                 // The download has started.
-                BackEnd.Instance.Prioritize (item.AccountId, downloadToken);
+                if (variableHeight) {
+                    // A variable height view should always be visible. A fixed size
+                    // view might be off the screen. The Now view will call
+                    // PrioritizeBodyDownload() when the card becomes visible.
+                    BackEnd.Instance.Prioritize (item.AccountId, downloadToken);
+                }
                 ActivateSpinner ();
             }
         }
@@ -394,6 +393,8 @@ namespace NachoClient.iOS
 
         private void ShowErrorMessage ()
         {
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+            statusIndicatorIsRegistered = false;
             spinner.StopAnimating ();
             string preview = item.GetBodyPreviewOrEmpty ();
             bool hasPreview = !string.IsNullOrEmpty (preview);
@@ -421,18 +422,26 @@ namespace NachoClient.iOS
         private void StatusIndicatorCallback (object sender, EventArgs e)
         {
             if (null == downloadToken) {
+                // This shouldn't happen normally.  But it can happen if a
+                // status event was queued up while this here function was
+                // running.  That event won't be delivered until StatusIndicatorCallback
+                // has been unregistered and downloadToken has been set to null.
                 return;
             }
+
             var statusEvent = (StatusIndEventArgs)e;
-            if (NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded == statusEvent.Status.SubKind ||
-                NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed == statusEvent.Status.SubKind ||
-                NcResult.SubKindEnum.Info_CalendarBodyDownloadSucceeded == statusEvent.Status.SubKind ||
-                NcResult.SubKindEnum.Error_CalendarBodyDownloadFailed == statusEvent.Status.SubKind)
-            {
-                var token = statusEvent.Tokens.FirstOrDefault ();
-                if (token == downloadToken) {
-                    // The download request has completed. Reconfigure the BodyView.
+            if (null != statusEvent.Tokens && statusEvent.Tokens.FirstOrDefault () == downloadToken) {
+                switch (statusEvent.Status.SubKind) {
+
+                case NcResult.SubKindEnum.Info_EmailMessageBodyDownloadSucceeded:
+                case NcResult.SubKindEnum.Info_CalendarBodyDownloadSucceeded:
                     Reconfigure ();
+                    break;
+
+                case NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed:
+                case NcResult.SubKindEnum.Error_CalendarBodyDownloadFailed:
+                    ShowErrorMessage ();
+                    break;
                 }
             }
         }

@@ -227,6 +227,7 @@
     <Folder Include="NachoUI.iOS\ViewControllers\" />
     <Folder Include="NachoCore\Model\McContact\" />
     <Folder Include="NachoCore\Model\McEmailMessage\" />
+    <Folder Include="NachoCore\Index\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -1021,7 +1022,6 @@
     <Compile Include="NachoUI.iOS\EventAttachmentViewController.designer.cs">
       <DependentUpon>EventAttachmentViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="NachoUI.iOS\Support\WaitingView.cs" />
     <Compile Include="NachoUI.iOS\SupportMessageViewController.cs" />
     <Compile Include="NachoUI.iOS\SupportMessageViewController.designer.cs">
       <DependentUpon>SupportMessageViewController.cs</DependentUpon>
@@ -1071,7 +1071,6 @@
     <Compile Include="NachoUI.iOS\Support\FadeCustomSegue.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INcDatePickerDelegate.cs" />
     <Compile Include="NachoUI.iOS\Support\WaitingScreen.cs" />
-    <Compile Include="NachoUI.iOS\Support\HotListCarouselDataSource.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\Commands\AsWaitCommand.cs">
       <Link>NachoCore\BackEnd\ActiveSync\Commands\AsWaitCommand.cs</Link>
     </Compile>
@@ -1175,6 +1174,14 @@
     <Compile Include="NachoUI.iOS\ContactDefaultSelectionViewController.designer.cs">
       <DependentUpon>ContactDefaultSelectionViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Index\Index.cs">
+      <Link>NachoCore\Index\Index.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Index\IndexDocument.cs">
+      <Link>NachoCore\Index\IndexDocument.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Support\HotEventView.cs" />
+    <Compile Include="NachoUI.iOS\Support\HotListTableViewSource.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -1714,19 +1721,30 @@
     <BundleResource Include="Resources\email-move-swipe%403x.png" />
     <BundleResource Include="Resources\email-move-swipe%404x.png" />
     <BundleResource Include="Resources\email-move-swipe%406x.png" />
+    <BundleResource Include="Resources\calendar-dial-in%402x.png" />
+    <BundleResource Include="Resources\calendar-dial-in%403x.png" />
+    <BundleResource Include="Resources\calendar-dial-in%404x.png" />
+    <BundleResource Include="Resources\calendar-dial-in%406x.png" />
+    <BundleResource Include="Resources\calendar-forward-swipe%402x.png" />
+    <BundleResource Include="Resources\calendar-forward-swipe%403x.png" />
+    <BundleResource Include="Resources\calendar-forward-swipe%404x.png" />
+    <BundleResource Include="Resources\calendar-forward-swipe%406x.png" />
+    <BundleResource Include="Resources\calendar-late-swipe%402x.png" />
+    <BundleResource Include="Resources\calendar-late-swipe%403x.png" />
+    <BundleResource Include="Resources\calendar-late-swipe%404x.png" />
+    <BundleResource Include="Resources\calendar-late-swipe%406x.png" />
+    <BundleResource Include="Resources\calendar-navigate-to%402x.png" />
+    <BundleResource Include="Resources\calendar-navigate-to%403x.png" />
+    <BundleResource Include="Resources\calendar-navigate-to%404x.png" />
+    <BundleResource Include="Resources\calendar-navigate-to%406x.png" />
+    <BundleResource Include="Resources\event-notes%402x.png" />
+    <BundleResource Include="Resources\calendar-add-attendee-bottom%402x.png" />
+    <BundleResource Include="Resources\calendar-add-attendee%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
       <Project>{85087C0F-D924-46BE-B466-9D66F853472C}</Project>
       <Name>UIImageEffectsBinding</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\iCarouselBinding\iCarouselBinding\iCarouselBinding\iCarouselBinding.csproj">
-      <Project>{E8EDAA21-69C1-4866-9037-28D83F0D4359}</Project>
-      <Name>iCarouselBinding</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\MCSwipeTableViewCellBinding\MCSwipeTableViewCellBinding\MCSwipeTableViewCellBinding\MCSwipeTableViewCellBinding.csproj">
-      <Project>{E301B932-D165-4A65-8916-3E80C000B6AC}</Project>
-      <Name>MCSwipeTableViewCellBinding</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding.csproj">
       <Project>{70C6ECB5-6358-4DB8-915F-3ADC31C39E4E}</Project>
@@ -1755,6 +1773,14 @@
     <ProjectReference Include="..\..\aws-sdk-xamarin\AWS.XamarinSDK\AWSSDK.iOS\AWSSDK_iOS.csproj">
       <Project>{2509D641-F08E-4DED-A12D-855B056BE831}</Project>
       <Name>AWSSDK_iOS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\lucene.net-3.0.3\Lucene.Net.iOS\Lucene.Net.iOS.csproj">
+      <Project>{35BDE52C-1FAD-42BB-841B-9298F354AFE8}</Project>
+      <Name>Lucene.Net.iOS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\MimeKit\MimeKit\MimeKit.iOS.csproj">
+      <Project>{4C1288AD-12C8-4BF7-AED7-6C4DC539C856}</Project>
+      <Name>MimeKit.iOS</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

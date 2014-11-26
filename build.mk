@@ -1,8 +1,6 @@
 # Build / clean everything
 
 all:
-	make -C ../Parse
-	make -C ../Crashlytics
 	make -C ../iCarouselBinding
 	make -C ../SwipeViewBinding
 	make -C ../UIImageEffects
@@ -20,8 +18,6 @@ all:
 	make
 
 clean:
-	make -C ../Parse
-	make -C ../Crashlytics clean
 	make -C ../iCarouselBinding clean
 	make -C ../SwipeViewBinding clean
 	make -C ../UIImageEffects clean

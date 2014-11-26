@@ -55,6 +55,12 @@ namespace NachoCore.Model
                 return McCalendar.QueryById<McCalendar> (CalendarId);
             }
         }
+
+        public static McEvent GetCurrentOrNextEvent()
+        {
+            return NcModel.Instance.Db.Table<McEvent> ().Where (x => x.EndTime >= DateTime.UtcNow).OrderBy (x => x.StartTime).FirstOrDefault ();
+        }
+
     }
 }
 

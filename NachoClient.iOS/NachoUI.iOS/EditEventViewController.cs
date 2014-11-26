@@ -37,6 +37,7 @@ namespace NachoClient.iOS
 
         UITextField titleField;
         UITextView descriptionTextView;
+        UILabel descriptionPlaceHolder;
 
         UIView titleView;
         UIView descriptionView;
@@ -47,8 +48,8 @@ namespace NachoClient.iOS
 
         UIView locationView;
         UITextField locationField;
-        UIView phoneView;
-        UILabel phoneDetailLabel;
+        //UIView phoneView;
+        //UILabel phoneDetailLabel;
         UcAttachmentBlock attachmentView;
         UIView attachmentBGView;
         UIView peopleView;
@@ -112,7 +113,7 @@ namespace NachoClient.iOS
         const int START_DATE_TAG = 201;
         const int END_DATE_TAG = 202;
         const int LOCATION_DETAIL_TAG = 203;
-        const int PHONE_DETAIL_TAG = 204;
+        //const int PHONE_DETAIL_TAG = 204;
         const int ATTACHMENTS_DETAIL_TAG = 205;
         const int PEOPLE_DETAIL_TAG = 206;
         const int ALERT_DETAIL_TAG = 207;
@@ -122,7 +123,7 @@ namespace NachoClient.iOS
         const int EVENT_DESCRIPTION_LABEL_TAG = 102;
         const int EVENT_LOCATION_DETAIL_LABEL_TAG = 103;
         const int EVENT_WHEN_DETAIL_LABEL_TAG = 104;
-        const int EVENT_PHONE_DETAIL_BUTTON_TAG = 105;
+        //const int EVENT_PHONE_DETAIL_BUTTON_TAG = 105;
         const int EVENT_ATTENDEE_TAG = 106;
         const int EVENT_ATTENDEE_DETAIL_TAG = 110;
         const int EVENT_ATTENDEE_LABEL_TAG = 120;
@@ -210,9 +211,13 @@ namespace NachoClient.iOS
                 this.action = CalendarItemEditorAction.create;
                 return;
             }
+
             if (0 == c.Id) {
-                c.Insert ();
+                this.item = c;
+                this.action = CalendarItemEditorAction.create;
+                return;
             }
+
             this.item = c;
             this.action = CalendarItemEditorAction.edit;
         }
@@ -354,6 +359,7 @@ namespace NachoClient.iOS
 
             if (segue.Identifier.Equals ("SegueToAddAttachment")) {
                 var dc = (AddAttachmentViewController)segue.DestinationViewController;
+                ExtractValues ();
                 dc.SetOwner (this);
                 return;
             }
@@ -371,6 +377,7 @@ namespace NachoClient.iOS
 
             if (segue.Identifier.Equals ("EditEventToCalendarChooser")) {
                 var dc = (ChooseCalendarViewController)segue.DestinationViewController;
+                ExtractValues ();
                 dc.SetCalendars (calendars);
                 dc.SetSelectedCalIndex (calendarIndex);
                 dc.ViewDisappearing += (object s, EventArgs e) => {
@@ -444,7 +451,7 @@ namespace NachoClient.iOS
             descriptionView = new UIView (new RectangleF (0, 74, SCREEN_WIDTH, CELL_HEIGHT + TEXT_LINE_HEIGHT));
             descriptionView.BackgroundColor = UIColor.White;
 
-            UILabel descriptionPlaceHolder = new UILabel (new RectangleF (15, 12.438f, SCREEN_WIDTH - 30, TEXT_LINE_HEIGHT));
+            descriptionPlaceHolder = new UILabel (new RectangleF (15, 12.438f, SCREEN_WIDTH - 30, TEXT_LINE_HEIGHT));
             descriptionPlaceHolder.Text = "Description";
             descriptionPlaceHolder.Font = labelFont;
             descriptionPlaceHolder.TextColor = new UIColor (.8f, .8f, .8f, 1f);
@@ -456,8 +463,7 @@ namespace NachoClient.iOS
             var beginningRange = new NSRange (0, 0);
             descriptionTextView.SelectedRange = beginningRange;
             descriptionTextView.ContentInset = new UIEdgeInsets (-7, -4, 0, 0);
-            descriptionTextView.Text = c.Description;
-            descriptionPlaceHolder.Hidden = descriptionTextView.HasText;
+            descriptionTextView.Tag = EVENT_DESCRIPTION_LABEL_TAG;
 
             descriptionTextView.Changed += (object sender, EventArgs e) => {
                 eventEditStarted = true;
@@ -692,43 +698,43 @@ namespace NachoClient.iOS
 
 
             //Phone
-            phoneView = new UIView (new RectangleF (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 6) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
-            phoneView.BackgroundColor = UIColor.White;
-
-            UILabel phoneLabel = new UILabel (new RectangleF (15, 12.438f, 55, TEXT_LINE_HEIGHT));
-            phoneLabel.Text = "Phone";
-            phoneLabel.Font = labelFont;
-            phoneLabel.TextColor = solidTextColor;
-            phoneView.AddSubview (phoneLabel);
-
-            Util.AddArrowAccessory (SCREEN_WIDTH - 15 - 12, CELL_HEIGHT / 2 - 6, 12, phoneView);
-
-            phoneDetailLabel = new UILabel ();
-            phoneDetailLabel.Text = "";
-            phoneDetailLabel.Tag = PHONE_DETAIL_TAG;
-            phoneDetailLabel.SizeToFit ();
-            phoneDetailLabel.TextAlignment = UITextAlignment.Right;
-            phoneDetailLabel.Frame = new RectangleF (SCREEN_WIDTH - phoneDetailLabel.Frame.Width - 34, 12.438f, phoneDetailLabel.Frame.Width, TEXT_LINE_HEIGHT);
-            phoneDetailLabel.Font = labelFont;
-            phoneDetailLabel.TextColor = A.Color_808080;
-            phoneView.AddSubview (phoneDetailLabel);
-
-            var phoneTap = new UITapGestureRecognizer ();
-            phoneTap.AddTarget (() => {
-                PerformSegue ("EventToPhone", this);
-            });
-            //phoneView.AddGestureRecognizer (phoneTap);
+//            phoneView = new UIView (new RectangleF (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 6) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
+//            phoneView.BackgroundColor = UIColor.White;
+//
+//            UILabel phoneLabel = new UILabel (new RectangleF (15, 12.438f, 55, TEXT_LINE_HEIGHT));
+//            phoneLabel.Text = "Phone";
+//            phoneLabel.Font = labelFont;
+//            phoneLabel.TextColor = solidTextColor;
+//            phoneView.AddSubview (phoneLabel);
+//
+//            Util.AddArrowAccessory (SCREEN_WIDTH - 15 - 12, CELL_HEIGHT / 2 - 6, 12, phoneView);
+//
+//            phoneDetailLabel = new UILabel ();
+//            phoneDetailLabel.Text = "";
+//            phoneDetailLabel.Tag = PHONE_DETAIL_TAG;
+//            phoneDetailLabel.SizeToFit ();
+//            phoneDetailLabel.TextAlignment = UITextAlignment.Right;
+//            phoneDetailLabel.Frame = new RectangleF (SCREEN_WIDTH - phoneDetailLabel.Frame.Width - 34, 12.438f, phoneDetailLabel.Frame.Width, TEXT_LINE_HEIGHT);
+//            phoneDetailLabel.Font = labelFont;
+//            phoneDetailLabel.TextColor = A.Color_808080;
+//            phoneView.AddSubview (phoneDetailLabel);
+//
+//            var phoneTap = new UITapGestureRecognizer ();
+//            phoneTap.AddTarget (() => {
+//                PerformSegue ("EventToPhone", this);
+//            });
+//            //phoneView.AddGestureRecognizer (phoneTap);
 
 
             //Attachments
             attachmentView = new UcAttachmentBlock (this, account.Id, SCREEN_WIDTH, 44, true);
-            attachmentView.Frame = new RectangleF (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 7) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT);
+            attachmentView.Frame = new RectangleF (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 6) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT);
 
-            attachmentBGView = new UIView (new RectangleF (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 7) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT * 2));
+            attachmentBGView = new UIView (new RectangleF (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 6) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT * 2));
             attachmentBGView.BackgroundColor = CELL_COMPONENT_BG_COLOR;
 
             //People
-            peopleView = new UIView (new RectangleF (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 8) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
+            peopleView = new UIView (new RectangleF (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 7) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
             peopleView.BackgroundColor = CELL_COMPONENT_BG_COLOR;
 
             UILabel peopleLabel = new UILabel (new RectangleF (15, 12.438f, 200, TEXT_LINE_HEIGHT));
@@ -738,15 +744,17 @@ namespace NachoClient.iOS
             peopleLabel.TextColor = solidTextColor;
             peopleView.AddSubview (peopleLabel);
 
-            UIButton addPeopleButton = new UIButton (UIButtonType.System);
-            Util.SetOriginalImagesForButton (addPeopleButton, "email-add", "email-add-active");
-            addPeopleButton.SizeToFit ();
-            addPeopleButton.TouchUpInside += (object sender, EventArgs e) => {
-                PerformSegue ("EditEventToEventAttendees", this);
-            };
+//            UIButton addPeopleButton = new UIButton (UIButtonType.System);
+//            Util.SetOriginalImagesForButton (addPeopleButton, "email-add", "email-add-active");
+//            addPeopleButton.SizeToFit ();
+//            addPeopleButton.TouchUpInside += (object sender, EventArgs e) => {
+//                PerformSegue ("EditEventToEventAttendees", this);
+//            };
+//
+//            addPeopleButton.Frame = new RectangleF (peopleView.Frame.Width - addPeopleButton.Frame.Width - 15, 0, addPeopleButton.Frame.Width, 44);
+//            peopleView.AddSubview (addPeopleButton);
 
-            addPeopleButton.Frame = new RectangleF (peopleView.Frame.Width - addPeopleButton.Frame.Width - 15, 0, addPeopleButton.Frame.Width, 44);
-            peopleView.AddSubview (addPeopleButton);
+            Util.AddArrowAccessory (SCREEN_WIDTH - 15 - 12, CELL_HEIGHT / 2 - 6, 12, peopleView);
 
             var peopleTap = new UITapGestureRecognizer ();
             peopleTap.AddTarget (() => {
@@ -756,7 +764,7 @@ namespace NachoClient.iOS
 
 
             //Alerts
-            alertsView = new UIView (new RectangleF (0, (LINE_OFFSET * 4) + (CELL_HEIGHT * 9) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
+            alertsView = new UIView (new RectangleF (0, (LINE_OFFSET * 4) + (CELL_HEIGHT * 8) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
             alertsView.BackgroundColor = UIColor.White;
 
             Util.AddArrowAccessory (SCREEN_WIDTH - 15 - 12, CELL_HEIGHT / 2 - 6, 12, alertsView);
@@ -784,7 +792,7 @@ namespace NachoClient.iOS
             alertsView.AddGestureRecognizer (alertTap);
 
             //Calendar
-            calendarView = new UIView (new RectangleF (0, (LINE_OFFSET * 5) + (CELL_HEIGHT * 10) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
+            calendarView = new UIView (new RectangleF (0, (LINE_OFFSET * 5) + (CELL_HEIGHT * 9) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, CELL_HEIGHT));
             calendarView.BackgroundColor = CELL_COMPONENT_BG_COLOR;
 
             UILabel calendarLabel = new UILabel (new RectangleF (15, 12.438f, 70, TEXT_LINE_HEIGHT));
@@ -808,7 +816,7 @@ namespace NachoClient.iOS
             });
             calendarView.AddGestureRecognizer (calTap);
 
-            deleteView = new UIView(new RectangleF (0, (LINE_OFFSET * 6) + (CELL_HEIGHT * 11) + TEXT_LINE_HEIGHT, View.Frame.Width, CELL_HEIGHT));
+            deleteView = new UIView (new RectangleF (0, (LINE_OFFSET * 6) + (CELL_HEIGHT * 10) + TEXT_LINE_HEIGHT, View.Frame.Width, CELL_HEIGHT));
             deleteView.Layer.BorderColor = separatorColor.CGColor;
             deleteView.Layer.BorderWidth = .5f;
             deleteView.BackgroundColor = CELL_COMPONENT_BG_COLOR;
@@ -850,7 +858,7 @@ namespace NachoClient.iOS
             deleteView.Hidden = true;
 
             //Content View
-            contentView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, (LINE_OFFSET * 9) + (CELL_HEIGHT * 12) + TEXT_LINE_HEIGHT);
+            contentView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, (LINE_OFFSET * 9) + (CELL_HEIGHT * 11) + TEXT_LINE_HEIGHT);
             contentView.BackgroundColor = A.Color_NachoNowBackground;
             contentView.AddSubviews (new UIView[] {
                 titleView,
@@ -859,7 +867,7 @@ namespace NachoClient.iOS
                 startView,
                 endView,
                 locationView,
-                phoneView,
+                //phoneView,
                 attachmentBGView,
                 attachmentView,
                 peopleView,
@@ -879,15 +887,15 @@ namespace NachoClient.iOS
             //LO
             line8 = Util.AddHorizontalLineView (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 5) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
             line9 = Util.AddHorizontalLineView (15, (LINE_OFFSET * 3) + (CELL_HEIGHT * 6) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
-            line10 = Util.AddHorizontalLineView (15, (LINE_OFFSET * 3) + (CELL_HEIGHT * 7) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
-            line11 = Util.AddHorizontalLineView (15, (LINE_OFFSET * 3) + (CELL_HEIGHT * 8) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
-            line12 = Util.AddHorizontalLineView (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 9) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+            //line10 = Util.AddHorizontalLineView (15, (LINE_OFFSET * 3) + (CELL_HEIGHT * 7) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+            line11 = Util.AddHorizontalLineView (15, (LINE_OFFSET * 3) + (CELL_HEIGHT * 7) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+            line12 = Util.AddHorizontalLineView (0, (LINE_OFFSET * 3) + (CELL_HEIGHT * 8) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
             //LO
-            line13 = Util.AddHorizontalLineView (0, (LINE_OFFSET * 4) + (CELL_HEIGHT * 9) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
-            line14 = Util.AddHorizontalLineView (0, (LINE_OFFSET * 4) + (CELL_HEIGHT * 10) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+            line13 = Util.AddHorizontalLineView (0, (LINE_OFFSET * 4) + (CELL_HEIGHT * 8) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+            line14 = Util.AddHorizontalLineView (0, (LINE_OFFSET * 4) + (CELL_HEIGHT * 9) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
             //LO
-            line15 = Util.AddHorizontalLineView (0, (LINE_OFFSET * 5) + (CELL_HEIGHT * 10) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
-            line16 = Util.AddHorizontalLineView (0, (LINE_OFFSET * 5) + (CELL_HEIGHT * 11) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+            line15 = Util.AddHorizontalLineView (0, (LINE_OFFSET * 5) + (CELL_HEIGHT * 9) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
+            line16 = Util.AddHorizontalLineView (0, (LINE_OFFSET * 5) + (CELL_HEIGHT * 10) + TEXT_LINE_HEIGHT, SCREEN_WIDTH, separatorColor);
             //LO
             contentView.AddSubviews (new UIView[] {
                 line1,
@@ -899,7 +907,7 @@ namespace NachoClient.iOS
                 line7,
                 line8,
                 line9,
-                line10,
+                //line10,
                 line11,
                 line12,
                 line13,
@@ -932,6 +940,16 @@ namespace NachoClient.iOS
             var titleFieldView = contentView.ViewWithTag (EVENT_TITLE_LABEL_TAG) as UITextField;
             titleFieldView.Text = c.Subject;
 
+            //description
+            var descriptionTextView = contentView.ViewWithTag (EVENT_DESCRIPTION_LABEL_TAG) as UITextView;
+            descriptionTextView.Text = c.Description;
+            if (descriptionTextView.HasText) {
+                descriptionPlaceHolder.Hidden = true;
+                descriptionTextView.SizeToFit ();
+                descriptionTextView.Frame = new RectangleF (15, 12.438f, SCREEN_WIDTH - 30, descriptionTextView.Frame.Height);
+            }
+            DESCRIPTION_OFFSET = descriptionTextView.Frame.Height;
+
             //all day event
             var allDaySwitchView = contentView.ViewWithTag (ALL_DAY_SWITCH_TAG) as UISwitch;
             allDaySwitchView.SetState (c.AllDayEvent, false);
@@ -947,6 +965,8 @@ namespace NachoClient.iOS
             } else {
                 startDateLabelView.Text = Pretty.FullDateTimeString (c.StartTime);
             }
+            startDateLabelView.SizeToFit ();
+            startDateLabelView.Frame = new RectangleF (SCREEN_WIDTH - startDateLabel.Frame.Width - 15, 12.438f, startDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
 
             //end date
             var endDateLabelView = contentView.ViewWithTag (END_DATE_TAG) as UILabel;
@@ -954,9 +974,9 @@ namespace NachoClient.iOS
                 endDateLabelView.Text = Pretty.FullDateString (c.EndTime);
             } else {
                 endDateLabelView.Text = Pretty.FullDateTimeString (c.EndTime);
-                endDateLabelView.SizeToFit ();
-                endDateLabelView.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, 12.438f, endDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
             }
+            endDateLabelView.SizeToFit ();
+            endDateLabelView.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, 12.438f, endDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
 
             //location
             var locationFieldView = contentView.ViewWithTag (EVENT_LOCATION_DETAIL_LABEL_TAG) as UITextField;
@@ -983,10 +1003,10 @@ namespace NachoClient.iOS
             alertDetailLabelView.Frame = new RectangleF (SCREEN_WIDTH - alertDetailLabelView.Frame.Width - 34, 12.438f, alertDetailLabelView.Frame.Width, TEXT_LINE_HEIGHT);
 
             //phone view
-            var phoneDetailLabelView = contentView.ViewWithTag (PHONE_DETAIL_TAG) as UILabel;
-            phoneDetailLabelView.Text = TempPhone;
-            phoneDetailLabelView.SizeToFit ();
-            phoneDetailLabelView.Frame = new RectangleF (SCREEN_WIDTH - phoneDetailLabelView.Frame.Width - 34, 12.438f, phoneDetailLabelView.Frame.Width, TEXT_LINE_HEIGHT);
+//            var phoneDetailLabelView = contentView.ViewWithTag (PHONE_DETAIL_TAG) as UILabel;
+//            phoneDetailLabelView.Text = TempPhone;
+//            phoneDetailLabelView.SizeToFit ();
+//            phoneDetailLabelView.Frame = new RectangleF (SCREEN_WIDTH - phoneDetailLabelView.Frame.Width - 34, 12.438f, phoneDetailLabelView.Frame.Width, TEXT_LINE_HEIGHT);
 
             //calendar view
             var calendarDetailLabelView = contentView.ViewWithTag (CAL_DETAIL_TAG) as UILabel;
@@ -1113,7 +1133,7 @@ namespace NachoClient.iOS
             UIView.Animate (0.2, () => {
             
                 yOffset += 74;
-                descriptionView.Frame = new RectangleF (0, yOffset, SCREEN_WIDTH, CELL_HEIGHT + TEXT_LINE_HEIGHT + DESCRIPTION_OFFSET);
+                descriptionView.Frame = new RectangleF (0, yOffset, SCREEN_WIDTH, CELL_HEIGHT + DESCRIPTION_OFFSET);
                 yOffset += descriptionView.Frame.Height;
 
                 AdjustY (line3, yOffset);
@@ -1137,10 +1157,10 @@ namespace NachoClient.iOS
                 yOffset += locationView.Frame.Height;
 
                 AdjustY (line9, yOffset);
-                AdjustY (phoneView, yOffset);
-                yOffset += phoneView.Frame.Height;
-
-                AdjustY (line10, yOffset);
+//                AdjustY (phoneView, yOffset);
+//                yOffset += phoneView.Frame.Height;
+//
+//                AdjustY (line10, yOffset);
                 AdjustY (attachmentView, yOffset);
                 AdjustY (attachmentBGView, yOffset);
                 attachmentView.Layout ();
@@ -1206,7 +1226,7 @@ namespace NachoClient.iOS
                 c.StartTime = startDate;
                 c.EndTime = endDate;
             }
-            // c.attendees is already set via PullAttendees
+            //c.attendees is already set via PullAttendees
             //c.Phone = phoneDetailLabel.Text;
             c.Location = locationField.Text;
             c.attachments.Clear ();

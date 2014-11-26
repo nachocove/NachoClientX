@@ -310,6 +310,7 @@ namespace NachoClient.iOS
             subjectField.TextColor = labelColor;
             subjectField.Placeholder = "";
             if (PresetSubject != null) {
+                alwaysShowIntent = true;
                 subjectField.Text += PresetSubject;
             }
             subjectField.SizeToFit ();
@@ -515,6 +516,9 @@ namespace NachoClient.iOS
             ccViewHR.Hidden = true;
             bccViewHR.Hidden = true;
             attachmentViewHR.Hidden = true;
+
+            intentView.Hidden = !alwaysShowIntent;
+            intentLabelHR.Hidden = !alwaysShowIntent;
 
             suppressLayout = true;
             toView.ConfigureView ();
@@ -828,6 +832,7 @@ namespace NachoClient.iOS
         {
             switch (whichType) {
             case NcQuickResponse.QRTypeEnum.Compose:
+                alwaysShowIntent = true;
                 subjectField.Text = mcMessage.Subject;
                 bodyTextView.Text = McBody.GetContentsString (mcMessage.BodyId);
                 break;
@@ -1100,6 +1105,9 @@ namespace NachoClient.iOS
             }
 
             subjectField.Text = CreateInitialSubjectLine ();
+            if (string.IsNullOrEmpty (subjectField.Text)) {
+                alwaysShowIntent = true;
+            }
 
             // TODO: Setup message id, etc etc.
 
@@ -1174,7 +1182,7 @@ namespace NachoClient.iOS
         public void DismissChildDateController (INachoDateController vc)
         {
             vc.Setup (null, null, DateControllerType.None);
-            vc.DimissDateController (false, null);
+            vc.DismissDateController (false, null);
         }
 
         /// <summary>

@@ -30,7 +30,7 @@
             <objects>
                 <viewController storyboardIdentifier="NachoNowViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="ygr-ff-C2f" customClass="NachoNowViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="BSK-Fb-RSa">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="455"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -40,13 +40,14 @@
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <connections>
                         <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="ja3-Zu-g6R"/>
-                        <segue destination="MCC-ND-pIu" kind="modal" identifier="NachoNowToMessagePriority" id="RaB-9o-azo"/>
+                        <segue destination="MCC-ND-pIu" kind="modal" identifier="NachoNowToMessagePriority" modalTransitionStyle="crossDissolve" id="RaB-9o-azo"/>
                         <segue destination="tAw-fh-hJX" kind="push" identifier="NachoNowToCompose" id="Zli-hF-qvP"/>
                         <segue destination="15q-DA-GFk" kind="push" identifier="NachoNowToEditEventView" id="56g-2o-gUv"/>
                         <segue destination="em2-Kh-10O" kind="push" identifier="NachoNowToEventView" id="Kmd-x6-iCJ"/>
                         <segue destination="xfD-Vu-nBF" kind="custom" identifier="NachoNowToCalendar" customClass="FadeCustomSegue" id="Bq3-C6-QI6"/>
                         <segue destination="kq1-eO-X0p" kind="push" identifier="NachoNowToMessageList" id="rew-s7-VAQ"/>
-                        <segue destination="v8Y-11-4jc" kind="modal" identifier="NachoNowToFolders" id="UJW-GW-OZz"/>
+                        <segue destination="v8Y-11-4jc" kind="modal" identifier="NachoNowToFolders" modalTransitionStyle="crossDissolve" id="UJW-GW-OZz"/>
+                        <segue destination="tAw-fh-hJX" kind="push" identifier="CalendarToEmailCompose" id="SxL-6k-kbd"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="sh1-Qf-9vs" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -495,7 +496,7 @@
                         <segue destination="OCr-PO-3nH" kind="push" identifier="SegueToNachoNow" id="gkM-dU-I3K"/>
                         <segue destination="15q-DA-GFk" kind="push" identifier="NachoNowToEditEvent" id="uqv-uq-oCq"/>
                         <segue destination="tAw-fh-hJX" kind="push" identifier="MessageListToCompose" id="Sbt-au-uDg"/>
-                        <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="FD7-0T-FGT"/>
+                        <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" modalTransitionStyle="crossDissolve" id="FD7-0T-FGT"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="oEd-e8-ueO" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -585,9 +586,9 @@
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="MessageViewToMessagePriority" modalTransitionStyle="crossDissolve" id="qB9-ce-7gT"/>
                         <segue destination="tAw-fh-hJX" kind="push" identifier="MessageViewToCompose" id="RHB-Or-A5o"/>
                         <segue destination="15q-DA-GFk" kind="push" identifier="MessageViewToEditEvent" id="99V-JV-Y0L"/>
-                        <segue destination="zX3-wE-NUY" kind="modal" identifier="SegueToDatePicker" id="vUs-ft-xdy"/>
+                        <segue destination="zX3-wE-NUY" kind="modal" identifier="SegueToDatePicker" modalTransitionStyle="crossDissolve" id="vUs-ft-xdy"/>
                         <segue destination="15q-DA-GFk" kind="push" identifier="SegueToEditEvent" id="twQ-jE-jZd"/>
-                        <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageViewToFolders" id="c2Q-C8-ZgX"/>
+                        <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageViewToFolders" modalTransitionStyle="crossDissolve" id="c2Q-C8-ZgX"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="LjP-vQ-4le" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -909,11 +910,11 @@
                         <segue destination="xfD-Vu-nBF" kind="relationship" relationship="viewControllers" id="XQg-JR-vxA"/>
                         <segue destination="PGe-ip-eZd" kind="relationship" relationship="viewControllers" id="aB0-7O-hbe"/>
                         <segue destination="1pE-rh-uML" kind="relationship" relationship="viewControllers" id="L3g-YM-YjM"/>
+                        <segue destination="sL0-ex-8A8" kind="relationship" relationship="viewControllers" id="DQk-BA-wYt"/>
+                        <segue destination="bzq-xt-DVh" kind="relationship" relationship="viewControllers" id="b7c-1Z-ljK"/>
                         <segue destination="Dc9-zu-AZQ" kind="relationship" relationship="viewControllers" id="5QG-Sn-Ioi"/>
                         <segue destination="zEe-J0-xNV" kind="relationship" relationship="viewControllers" id="CgA-hJ-TPb"/>
                         <segue destination="MRl-Tp-bqC" kind="relationship" relationship="viewControllers" id="Eb2-K0-nI3"/>
-                        <segue destination="bzq-xt-DVh" kind="relationship" relationship="viewControllers" id="b7c-1Z-ljK"/>
-                        <segue destination="sL0-ex-8A8" kind="relationship" relationship="viewControllers" id="DQk-BA-wYt"/>
                     </connections>
                 </tabBarController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="o80-D6-q8C" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1677,35 +1678,35 @@
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="tkk-6o-6oa"/>
-        <segue reference="urW-p2-x1h"/>
-        <segue reference="ZzH-qS-KOm"/>
-        <segue reference="Aba-pv-mzB"/>
+        <segue reference="vUs-ft-xdy"/>
+        <segue reference="ja3-Zu-g6R"/>
+        <segue reference="HwV-au-Wta"/>
         <segue reference="4z2-t5-9Cd"/>
         <segue reference="g4G-tD-G9H"/>
         <segue reference="iqA-wd-xqD"/>
         <segue reference="XQg-JR-vxA"/>
+        <segue reference="L3g-YM-YjM"/>
         <segue reference="Eb2-K0-nI3"/>
         <segue reference="wZy-ga-YEb"/>
-        <segue reference="6J3-c2-bz5"/>
-        <segue reference="mLY-u0-R5O"/>
+        <segue reference="Aba-pv-mzB"/>
         <segue reference="alQ-9Z-W4y"/>
         <segue reference="kYM-OY-NE0"/>
-        <segue reference="vUs-ft-xdy"/>
-        <segue reference="DcC-EH-FAx"/>
-        <segue reference="7sK-rg-HQL"/>
-        <segue reference="w67-dy-XSq"/>
+        <segue reference="mLY-u0-R5O"/>
         <segue reference="m2D-2n-RiV"/>
+        <segue reference="7sK-rg-HQL"/>
         <segue reference="peA-r2-tjq"/>
-        <segue reference="rEt-DF-c51"/>
-        <segue reference="szv-KC-TId"/>
-        <segue reference="zOx-eF-clw"/>
+        <segue reference="w67-dy-XSq"/>
+        <segue reference="DcC-EH-FAx"/>
+        <segue reference="Kmd-x6-iCJ"/>
+        <segue reference="SxL-6k-kbd"/>
         <segue reference="zby-Sy-Y3J"/>
         <segue reference="ay2-o2-R8l"/>
         <segue reference="xrp-ey-B0j"/>
-        <segue reference="84g-IQ-Iaw"/>
-        <segue reference="DDa-hb-SgY"/>
-        <segue reference="Kmd-x6-iCJ"/>
+        <segue reference="FD7-0T-FGT"/>
+        <segue reference="szv-KC-TId"/>
+        <segue reference="hxO-14-opZ"/>
+        <segue reference="zOx-eF-clw"/>
+        <segue reference="rEt-DF-c51"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>

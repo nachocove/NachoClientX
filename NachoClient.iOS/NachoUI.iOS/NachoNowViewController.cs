@@ -6,7 +6,6 @@ using System.Drawing;
 using System.Collections.Generic;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
-using iCarouselBinding;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -14,17 +13,15 @@ using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
-    public partial class NachoNowViewController : NcUIViewController, INachoMessageEditorParent, INachoFolderChooserParent, INachoCalendarItemEditorParent, ICalendarTableViewSourceDelegate, INachoDateControllerParent
+    public partial class NachoNowViewController : NcUIViewController, IMessageTableViewSourceDelegate, INachoMessageEditorParent, INachoFolderChooserParent, INachoCalendarItemEditorParent, ICalendarTableViewSourceDelegate, INachoDateControllerParent
     {
         public bool wrap = false;
         public bool Selectable = true;
         public INachoEmailMessages priorityInbox;
-        protected CalendarTableViewSource calendarSource;
 
-        public iCarousel carouselView;
-        protected UITableView calendarTableView;
+        public UITableView hotListView;
+        protected HotEventView hotEventView;
 
-        protected bool calendarNeedsRefresh;
         protected bool priorityInboxNeedsRefresh;
 
         public NachoNowViewController (IntPtr handle) : base (handle)
@@ -39,16 +36,9 @@ namespace NachoClient.iOS
 
             priorityInbox = NcEmailManager.PriorityInbox ();
 
-            calendarSource = new CalendarTableViewSource ();
-            calendarSource.owner = this;
-            calendarSource.SetCalendar (NcEventManager.Instance);
-
             CreateView ();
 
-            // configure carousel
-            carouselView.ScrollSpeed = 0.5f;
-            carouselView.DataSource = new HotListCarouselDataSource (this);
-            carouselView.Delegate = new HotListCarouselDelegate (this);  
+            hotListView.Source = new HotListTableViewSource (this, priorityInbox);
         }
 
         protected void CreateView ()
@@ -70,22 +60,37 @@ namespace NachoClient.iOS
             NavigationItem.LeftBarButtonItem = null;
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, newMeetingButton };
 
-            carouselView = new iCarousel ();
-            carouselView.Frame = carouselNormalSize ();
-            carouselView.Type = iCarouselType.Linear;
-            carouselView.Vertical = true;
-            carouselView.ContentOffset = new SizeF (0f, 0f);
-            carouselView.BackgroundColor = UIColor.Clear;
-            carouselView.IgnorePerpendicularSwipes = true;
-            carouselView.PagingEnabled = false;
-            carouselView.StopAtItemBoundary = false;
-            carouselView.ScrollToItemBoundary = true;
-            View.AddSubview (carouselView);
+            hotListView = new UITableView (carouselNormalSize (), UITableViewStyle.Plain);
+            hotListView.BackgroundColor = A.Color_NachoBackgroundGray;
+            hotListView.TableFooterView = new UIView (new RectangleF (0, 0, 1, 20));
+            hotListView.TableFooterView.BackgroundColor = A.Color_NachoBackgroundGray;
+            View.AddSubview (hotListView);
 
-            calendarTableView = new UITableView ();
-            calendarTableView.SeparatorStyle = UITableViewCellSeparatorStyle.SingleLine;
-            calendarTableView.Source = calendarSource;
-            View.AddSubview (calendarTableView);
+            hotEventView = new HotEventView (new RectangleF (0, 0, View.Frame.Width, 69));
+            View.AddSubview (hotEventView);
+
+            hotEventView.OnClick = ((int tag, int eventId) => {
+                switch (tag) {
+                case HotEventView.DIAL_IN_TAG:
+                    // FIXME
+                    break;
+                case HotEventView.NAVIGATE_TO_TAG:
+                    // FIXME
+                    break;
+                case HotEventView.LATE_TAG:
+                    SendRunningLateMessage (eventId);
+                    break;
+                case HotEventView.FORWARD_TAG:
+                    // FIXME
+                    break;
+                case HotEventView.OPEN_TAG:
+                    var e = McEvent.QueryById<McEvent> (eventId);
+                    if (null != e) {
+                        PerformSegue ("NachoNowToEventView", new SegueHolder (e));
+                    }
+                    break;
+                }
+            });
 
             View.BackgroundColor = A.Color_NachoBackgroundGray;
         }
@@ -96,7 +101,6 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
-            MaybeRefreshCalendar ();
             MaybeRefreshPriorityInbox ();
         }
 
@@ -185,7 +189,13 @@ namespace NachoClient.iOS
                 vc.SetOwner (this);
                 return;
             }
-
+            if (segue.Identifier.Equals ("CalendarToEmailCompose")) {
+                var dc = (MessageComposeViewController)segue.DestinationViewController;
+                var holder = sender as SegueHolder;
+                var c = holder.value as McCalendar;
+                dc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, c.OrganizerEmail), c.Subject, "Running late");
+                return;
+            }
             if (segue.Identifier == "NachoNowToMessageList") {
                 var holder = (SegueHolder)sender;
                 var messageList = (INachoEmailMessages)holder.value;
@@ -223,9 +233,6 @@ namespace NachoClient.iOS
                 RefreshPriorityInboxIfVisible ();
 
             }
-            if (NcResult.SubKindEnum.Info_CalendarSetChanged == s.Status.SubKind) {
-                RefreshCalendarIfVisible ();
-            }
             if (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated == s.Status.SubKind) {
                 RefreshPriorityInboxIfVisible ();
             }
@@ -245,26 +252,8 @@ namespace NachoClient.iOS
             if (priorityInboxNeedsRefresh) {
                 priorityInboxNeedsRefresh = false;
                 if (priorityInbox.Refresh ()) {
-                    carouselView.ReloadData ();
+                    hotListView.ReloadData ();
                 }
-            }
-        }
-
-        protected void RefreshCalendarIfVisible ()
-        {
-            calendarNeedsRefresh = true;
-            if (!this.IsVisible ()) {
-                return;
-            }
-            MaybeRefreshCalendar ();
-        }
-
-        protected void MaybeRefreshCalendar ()
-        {
-            if (calendarNeedsRefresh) {
-                calendarNeedsRefresh = false;
-                calendarSource.Refresh ();
-                calendarTableView.ReloadData ();
             }
         }
 
@@ -273,15 +262,7 @@ namespace NachoClient.iOS
         /// </summary>
         protected void LayoutView ()
         {
-            calendarSource.SetCompactMode (true);
-            calendarTableView.ScrollEnabled = false;
-            calendarTableView.Frame = calendarSmallSize ();
-            calendarTableView.ReloadData ();
-            calendarSource.ScrollToNearestEvent (calendarTableView, DateTime.UtcNow, 7);
-
-            carouselView.Frame = carouselNormalSize ();
-            carouselView.Alpha = 1.0f;
-            carouselView.ClipsToBounds = true;
+            hotListView.Frame = carouselNormalSize ();
         }
 
         public override void ViewDidLayoutSubviews ()
@@ -317,9 +298,17 @@ namespace NachoClient.iOS
         }
 
         // ICalendarTableViewSourceDelegate
-        public void SendRunningLateMessage (int calendarIndex)
+        public void SendRunningLateMessage (int eventId)
         {
-            NcAssert.CaseError ();
+            var e = McEvent.QueryById<McEvent> (eventId);
+            if (null == e) {
+                return;  // may be deleted
+            }
+            var c = McCalendar.QueryById<McCalendar> (e.CalendarId);
+            if (null == c) {
+                return; // may be deleted
+            }
+            PerformSegue ("CalendarToEmailCompose", new SegueHolder (c));
         }
 
         // ICalendarTableViewSourceDelegate
@@ -331,6 +320,11 @@ namespace NachoClient.iOS
         public void MessageThreadSelected (McEmailMessageThread messageThread)
         {
             PerformSegue ("NachoNowToMessageList", new SegueHolder (NcEmailManager.Inbox ()));
+        }
+
+        ///  IMessageTableViewSourceDelegate
+        public void MultiSelectToggle (MessageTableViewSource source, bool enabled)
+        {
         }
 
         /// <summary>
@@ -350,7 +344,7 @@ namespace NachoClient.iOS
         public void DismissChildDateController (INachoDateController vc)
         {
             vc.Setup (null, null, DateControllerType.None);
-            vc.DimissDateController (false, null);
+            vc.DismissDateController (false, null);
         }
 
         /// <summary>
@@ -408,9 +402,5 @@ namespace NachoClient.iOS
             vc.DismissCalendarItemEditor (false, null);
         }
 
-        public void ReloadHotListData ()
-        {
-            carouselView.ReloadData ();
-        }
     }
 }

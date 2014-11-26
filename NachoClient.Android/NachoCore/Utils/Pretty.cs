@@ -288,6 +288,11 @@ namespace NachoCore.Utils
             return Date.LocalT ().ToString ("t");
         }
 
+        static public string ShortDayTimeString (DateTime Date)
+        {
+            return Date.LocalT ().ToString ("dddd") + " " + Date.LocalT ().ToString ("t");
+        }
+
         static public string DisplayNameForAccount (McAccount account)
         {
             if (null == account.DisplayName) {
@@ -373,13 +378,15 @@ namespace NachoCore.Utils
             return String.Format ("({0},{1})", s.Width, s.Height);
         }
 
-        public static string Join (String one, String two)
+        public static string Join (String one, String two, String separator = " ")
         {
             if (String.IsNullOrEmpty (one)) {
                 return two;
-            } else {
-                return one + " " + two;
             }
+            if (String.IsNullOrEmpty (two)) {
+                return one;
+            }
+            return one + separator + two;
         }
 
         public static bool TreatLikeAPhoto (string path)

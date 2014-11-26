@@ -212,25 +212,26 @@ namespace NachoClient.iOS
 
             yOffset = DirtyBackEnd.Frame.Bottom + 5;
 
-            var testEmailNotificationButton = new UIButton (UIButtonType.RoundedRect);
-            testEmailNotificationButton.SetTitle ("Test local email notification", UIControlState.Normal);
-            testEmailNotificationButton.BackgroundColor = UIColor.Red;
-            testEmailNotificationButton.Frame = new RectangleF (33, yOffset + 12, 284, 30);
-            View.AddSubview (testEmailNotificationButton);
-            testEmailNotificationButton.TouchUpInside += (object sender, EventArgs e) => {
-                AppDelegate.TestScheduleEmailNotification();
-            };
-            yOffset = testEmailNotificationButton.Frame.Bottom;
-
-            var testCalendarNotificationButton = new UIButton (UIButtonType.RoundedRect);
-            testCalendarNotificationButton.SetTitle ("Test local event notification", UIControlState.Normal);
-            testCalendarNotificationButton.BackgroundColor = UIColor.Red;
-            testCalendarNotificationButton.Frame = new RectangleF (33, yOffset + 12, 284, 30);
-            View.AddSubview (testCalendarNotificationButton);
-            testCalendarNotificationButton.TouchUpInside += (object sender, EventArgs e) => {
-                AppDelegate.TestScheduleCalendarNotification();
-            };
-            yOffset = testCalendarNotificationButton.Frame.Bottom;
+            // Test sending events
+//            var testEmailNotificationButton = new UIButton (UIButtonType.RoundedRect);
+//            testEmailNotificationButton.SetTitle ("Test local email notification", UIControlState.Normal);
+//            testEmailNotificationButton.BackgroundColor = UIColor.Red;
+//            testEmailNotificationButton.Frame = new RectangleF (33, yOffset + 12, 284, 30);
+//            View.AddSubview (testEmailNotificationButton);
+//            testEmailNotificationButton.TouchUpInside += (object sender, EventArgs e) => {
+//                AppDelegate.TestScheduleEmailNotification();
+//            };
+//            yOffset = testEmailNotificationButton.Frame.Bottom;
+//
+//            var testCalendarNotificationButton = new UIButton (UIButtonType.RoundedRect);
+//            testCalendarNotificationButton.SetTitle ("Test local event notification", UIControlState.Normal);
+//            testCalendarNotificationButton.BackgroundColor = UIColor.Red;
+//            testCalendarNotificationButton.Frame = new RectangleF (33, yOffset + 12, 284, 30);
+//            View.AddSubview (testCalendarNotificationButton);
+//            testCalendarNotificationButton.TouchUpInside += (object sender, EventArgs e) => {
+//                AppDelegate.TestScheduleCalendarNotification();
+//            };
+//            yOffset = testCalendarNotificationButton.Frame.Bottom;
         }
 
         protected override void ConfigureAndLayout ()

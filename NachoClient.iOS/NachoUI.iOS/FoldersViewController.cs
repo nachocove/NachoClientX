@@ -463,14 +463,20 @@ namespace NachoClient.iOS
 
             recentView.Add (cell);
         }
-
+            
         public void ClearViews ()
         {
-            foreach (var v in defaultsView.Subviews) {
-                v.RemoveFromSuperview ();
+            // Not sure how defaultsView can be null
+            // unless DidDisappear is called before ViewDidLoad.
+            if (null != defaultsView) {
+                foreach (var v in defaultsView.Subviews) {
+                    v.RemoveFromSuperview ();
+                }
             }
-            foreach (var v in yourFoldersView.Subviews) {
-                v.RemoveFromSuperview ();
+            if (null != yourFoldersView) {
+                foreach (var v in yourFoldersView.Subviews) {
+                    v.RemoveFromSuperview ();
+                }
             }
         }
 

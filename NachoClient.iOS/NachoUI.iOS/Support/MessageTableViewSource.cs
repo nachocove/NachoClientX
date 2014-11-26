@@ -18,6 +18,7 @@ namespace NachoClient.iOS
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
         protected HashSet<int> MultiSelect = null;
         protected bool allowMultiSelect;
+        protected bool swipingActive;
         public IMessageTableViewSourceDelegate owner;
 
         protected NcCapture ArchiveCaptureMessage;
@@ -159,6 +160,11 @@ namespace NachoClient.iOS
 
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
+            var cell = tableView.CellAt (indexPath);
+            if (null != cell) {
+                cell.SetSelected (false, true);
+            }
+
             if (NoMessageThreads ()) {
                 return;
             }
@@ -208,6 +214,11 @@ namespace NachoClient.iOS
 
         protected void ConfigureMultiSelectCell (UITableViewCell cell)
         {
+            var view = cell.ContentView.ViewWithTag (SWIPE_TAG) as SwipeActionView;
+            if (null != view) {
+                view.EnableSwipe (!MultiSelectActive ());
+            }
+
             if (MultiSelectActive ()) {
                 cell.SelectionStyle = UITableViewCellSelectionStyle.None;
             } else {
@@ -232,24 +243,6 @@ namespace NachoClient.iOS
         }
 
         /// <summary>
-        /// Disable swipes during multi-select
-        /// </summary>
-        protected void ConfigureMultiSelectSwipe (UITableViewCell cell)
-        {
-//            if (0 == MultiSelect.Count) {
-//                cell.ModeForState1 = MCSwipeTableViewCellMode.Switch;
-//                cell.ModeForState2 = MCSwipeTableViewCellMode.Switch;
-//                cell.ModeForState3 = MCSwipeTableViewCellMode.Switch;
-//                cell.ModeForState4 = MCSwipeTableViewCellMode.Switch;
-//            } else {
-//                cell.ModeForState1 = MCSwipeTableViewCellMode.None;
-//                cell.ModeForState2 = MCSwipeTableViewCellMode.None;
-//                cell.ModeForState3 = MCSwipeTableViewCellMode.None;
-//                cell.ModeForState4 = MCSwipeTableViewCellMode.None;
-//            }
-        }
-
-        /// <summary>
         /// Call when switching in to or out of multi select
         /// to reset cells and adjust nagivation bar buttons.
         /// </summary>
@@ -258,7 +251,6 @@ namespace NachoClient.iOS
             if (!NoMessageThreads ()) {
                 foreach (var cell in tableView.VisibleCells) {
                     ConfigureMultiSelectCell (cell);
-                    ConfigureMultiSelectSwipe (cell);
                 }
             }
             if (null != owner) {
@@ -284,6 +276,24 @@ namespace NachoClient.iOS
             }
             allowMultiSelect = enabled;
             MultiSelectCancel (tableView);
+        }
+
+        public void ToggleSwiping (UITableView tableView, SwipeActionView activeView, bool active)
+        {
+            swipingActive = active;
+            tableView.ScrollEnabled = !active;
+
+            if (!NoMessageThreads ()) {
+                foreach (var cell in tableView.VisibleCells) {
+                    var view = cell.ContentView.ViewWithTag (SWIPE_TAG) as SwipeActionView;
+                    if (view != activeView) {
+                        cell.UserInteractionEnabled = !active;
+                    } else {
+                        cell.UserInteractionEnabled = true;
+                    }
+                }
+            }
+
         }
 
         /// <summary>
@@ -479,16 +489,16 @@ namespace NachoClient.iOS
                     throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action tag {0}", tag));
                 }
             };
-            view.OnSwipe = (SwipeActionView.SwipeState state) => {
+            view.OnSwipe = (SwipeActionView activeView, SwipeActionView.SwipeState state) => {
                 switch (state) {
                 case SwipeActionView.SwipeState.SWIPE_BEGIN:
-                    tableView.ScrollEnabled = false;
+                    ToggleSwiping (tableView, activeView, true);
                     break;
                 case SwipeActionView.SwipeState.SWIPE_END_ALL_HIDDEN:
-                    tableView.ScrollEnabled = true;
+                    ToggleSwiping (tableView, activeView, false);
                     break;
                 case SwipeActionView.SwipeState.SWIPE_END_ALL_SHOWN:
-                    tableView.ScrollEnabled = false;
+                    ToggleSwiping (tableView, activeView, true);
                     break;
                 default:
                     throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown swipe state {0}", (int)state));
@@ -544,8 +554,6 @@ namespace NachoClient.iOS
                 reminderImageView.Hidden = true;
                 reminderLabelView.Hidden = true;
             }
-                
-            ConfigureMultiSelectSwipe (cell);
         }
 
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)

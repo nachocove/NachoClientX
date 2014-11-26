@@ -3,8 +3,6 @@
 # does not pull NachoClient.git.
 
 repos="
-Parse
-Crashlytics
 Reachability
 registered-domain-libs
 iCarousel
@@ -25,4 +23,5 @@ DDay-iCal-Xamarin
 Telemetry
 aws-sdk-xamarin
 ModernHttpClient
+lucene.net-3.0.3
 "

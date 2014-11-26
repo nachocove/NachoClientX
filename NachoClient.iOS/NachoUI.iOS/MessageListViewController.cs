@@ -11,7 +11,6 @@ using MonoTouch.UIKit;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore;
-using MCSwipeTableViewCellBinding;
 using NachoCore.Brain;
 
 namespace NachoClient.iOS
@@ -271,7 +270,7 @@ namespace NachoClient.iOS
         public void DismissChildDateController (INachoDateController vc)
         {
             vc.Setup (null, null, DateControllerType.None);
-            vc.DimissDateController (false, null);
+            vc.DismissDateController (false, null);
         }
 
         /// <summary>

@@ -66,7 +66,7 @@ namespace NachoClient.iOS
             using (var image = UIImage.FromBundle ("modal-close")) {
                 var dismissButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
                 dismissButton.Clicked += (object sender, EventArgs e) => {
-                    DateSelected (MessageDeferralType.None, DateTime.MinValue);
+                    DismissDateController(true, null);
                 };
                 navItem.LeftBarButtonItem = dismissButton;
             }
@@ -113,8 +113,8 @@ namespace NachoClient.iOS
                 break;
             case DateControllerType.Intent:
                 buttonInfoList = new List<ButtonInfo> (new ButtonInfo[] {
+                    new ButtonInfo ("None", "modal-none", () => DateSelected (MessageDeferralType.None, DateTime.MinValue)),
                     new ButtonInfo ("One hour", "modal-later-today", () => DateSelected (MessageDeferralType.OneHour, DateTime.MinValue)),
-                    new ButtonInfo ("Two hours", "modal-later-today", () => DateSelected (MessageDeferralType.TwoHours, DateTime.MinValue)),
                     new ButtonInfo ("Today", "modal-later-today", () => DateSelected (MessageDeferralType.EndOfDay, DateTime.MinValue)),
                     new ButtonInfo (null, null, null),
                     new ButtonInfo ("Tomorrow", "modal-tomorrow", () => DateSelected (MessageDeferralType.Tomorrow, DateTime.MinValue)),
@@ -179,7 +179,7 @@ namespace NachoClient.iOS
             View.AddSubview (priorityView);
         }
 
-        public void DimissDateController (bool animated, NSAction action)
+        public void DismissDateController (bool animated, NSAction action)
         {
             owner = null;
             DismissViewController (animated, action);

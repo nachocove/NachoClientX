@@ -46,7 +46,6 @@ namespace NachoClient.iOS
         protected UILabel messageLabel;
         protected UIButton changeResponseButton;
         protected UIButton extraAttendeesButton;
-        protected UIView line2;
         //        protected UITextView eventNotesTextView;
         //        protected UILabel eventNotesText;
         protected UIBarButtonItem editEventButton;
@@ -252,9 +251,9 @@ namespace NachoClient.iOS
             // When label, image, and detail
             AddTextLabelWithImageView (yOffset, "WHEN", "event-when", TagType.EVENT_WHEN_TITLE_TAG, eventCardView);
             yOffset += 16 + 6;
-            AddDetailTextLabel (42, yOffset, SCREEN_WIDTH - 50, 20, TagType.EVENT_WHEN_DETAIL_LABEL_TAG, eventCardView);
+            AddDetailTextLabel (42, yOffset, SCREEN_WIDTH - 90, 20, TagType.EVENT_WHEN_DETAIL_LABEL_TAG, eventCardView);
             yOffset += 20;
-            AddDetailTextLabel (42, yOffset, SCREEN_WIDTH - 50, 20, TagType.EVENT_WHEN_DURATION_TAG, eventCardView);
+            AddDetailTextLabel (42, yOffset, SCREEN_WIDTH - 90, 20, TagType.EVENT_WHEN_DURATION_TAG, eventCardView);
             yOffset += 20;
             AddDetailTextLabel (42, yOffset, SCREEN_WIDTH - 90, 20, TagType.EVENT_WHEN_RECURRENCE_TAG, eventCardView);
             yOffset += 20 + 20;
@@ -336,9 +335,6 @@ namespace NachoClient.iOS
 
             yOffset += 96 + 20;
 
-            line2 = Util.AddHorizontalLineView (0, yOffset, EVENT_CARD_WIDTH, borderColor);
-            eventCardView.AddSubview (line2);
-
             // Notes
             eventNotesView = new UIView (new RectangleF (0, yOffset, EVENT_CARD_WIDTH, CELL_HEIGHT));
             eventNotesView.Tag = (int)TagType.EVENT_NOTES_TEXT_VIEW_TAG;
@@ -350,7 +346,7 @@ namespace NachoClient.iOS
             eventNotesView.AddGestureRecognizer (notesTapGestureRecognizer);
             eventCardView.AddSubview (eventNotesView);
 
-            AddTextLabelWithImageView (0, "NOTES", "", TagType.EVENT_NOTE_TITLE_TAG, eventNotesView);
+            AddTextLabelWithImageView (0, "NOTES", "event-notes", TagType.EVENT_NOTE_TITLE_TAG, eventNotesView);
             AddDetailTextLabel (42, 22, SCREEN_WIDTH - 90, 20, TagType.EVENT_NOTES_DETAIL_TAG, eventNotesView);
 
             // Leaving in case we want to go back to inline notes
@@ -416,6 +412,9 @@ namespace NachoClient.iOS
                     durationLabel.Text = string.Format ("from {0} until {1}",
                         Pretty.FullTimeString (e.StartTime), Pretty.FullDateTimeString (e.EndTime));
                 }
+                durationLabel.Lines = 0;
+                durationLabel.LineBreakMode = UILineBreakMode.WordWrap;
+                durationLabel.SizeToFit ();
             }
 
             if (isRecurring) {
@@ -453,7 +452,7 @@ namespace NachoClient.iOS
             alertDetailLabel.Text = Pretty.ReminderString (c.ReminderIsSet, c.Reminder);
             alertDetailLabel.SizeToFit ();
 
-            if (0 != c.attachments.Count()) {
+            if (0 != c.attachments.Count ()) {
                 hasAttachments = true;
             }
             attachmentListView.Hidden = !hasAttachments;
@@ -477,12 +476,10 @@ namespace NachoClient.iOS
                 hasAttendees = false;
                 View.ViewWithTag ((int)TagType.EVENT_ATTENDEES_TITLE_TAG).Hidden = true;
                 eventAttendeeView.Hidden = true;
-                line2.Hidden = true;
             } else {
                 hasAttendees = true;
                 View.ViewWithTag ((int)TagType.EVENT_ATTENDEES_TITLE_TAG).Hidden = false;
                 eventAttendeeView.Hidden = false;
-                line2.Hidden = false;
                 float spacing = 0;
                 int attendeeNum = 0;
                 foreach (var attendee in c.attendees) {
@@ -547,6 +544,7 @@ namespace NachoClient.iOS
                             }
                         }
                         responseView.AddSubview (responseImageView);
+                        responseView.Hidden = (null != responseImageView.Image ? false : true);
                     }
 
                     spacing += (attendeeImageDiameter + iconPadding);
@@ -633,7 +631,6 @@ namespace NachoClient.iOS
             messageLabel = null;
             changeResponseButton = null;
             extraAttendeesButton = null;
-            line2 = null;
             attendeeTapGestureRecognizer = null;
             alertTapGestureRecognizer = null;
             attachmentsTapGestureRecognizer = null;
@@ -841,7 +838,6 @@ namespace NachoClient.iOS
 
             if (hasAttendees) {
                 AdjustViewLayout (TagType.EVENT_ATTENDEE_VIEW_TAG, 0, ref internalYOffset, padding);
-                AdjustY (line2, internalYOffset);
             }
 
             internalYOffset += 18;
