@@ -506,6 +506,7 @@ namespace NachoClient.iOS
             startLabel.TextColor = solidTextColor;
             startView.AddSubview (startLabel);
 
+
             startDateLabel = new UILabel ();
             startDate = c.StartTime;
             startDateLabel.Text = Pretty.FullDateTimeString (startDate);

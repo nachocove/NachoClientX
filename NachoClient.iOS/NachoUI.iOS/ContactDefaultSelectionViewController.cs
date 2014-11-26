@@ -11,10 +11,11 @@ using NachoCore.Brain;
 using NachoCore.Model;
 using NachoCore.ActiveSync;
 using NachoCore.Utils;
+using System.Linq;
 
 namespace NachoClient.iOS
 {
-    public partial class ContactDefaultSelectionViewController : NcUIViewControllerNoLeaks
+    public partial class ContactDefaultSelectionViewController : NcUIViewControllerNoLeaks, INachoLabelChooserParent
     {
         public ContactListViewController owner;
 
@@ -52,8 +53,9 @@ namespace NachoClient.iOS
         protected const int EMAIL_SELECTION_STARTING_BUTTON_TAG = 2000;
         protected int selectedEmailButtonTag = EMAIL_SELECTION_STARTING_BUTTON_TAG;
 
-        protected List<LabelSelectionViewController.PhoneLabel> possiblePhones = new List<LabelSelectionViewController.PhoneLabel> ();
-        public LabelSelectionViewController.PhoneLabel phoneLabel = new LabelSelectionViewController.PhoneLabel (Xml.Contacts.MobilePhoneNumber, "Mobile");
+        //FIXME don't use those anymore
+        protected List<LabelSelectionViewController.ExchangeLabel> possiblePhones = new List<LabelSelectionViewController.ExchangeLabel> ();
+        public LabelSelectionViewController.ExchangeLabel phoneLabel = new LabelSelectionViewController.ExchangeLabel (Xml.Contacts.MobilePhoneNumber, "Mobile");
 
         protected List<string> contactEmailList = new List<string> ();
         protected string selectedEmailType;
@@ -247,7 +249,7 @@ namespace NachoClient.iOS
                 LabelSelectionViewController.ListSelectionButton selectionButton = new LabelSelectionViewController.ListSelectionButton (p.Label, PHONE_SELECTION_STARTING_BUTTON_TAG + i);
                 UIButton button = selectionButton.GetButton (View, internalYOffset);
                 button.TouchUpInside += SelectionButtonClicked;
-                possiblePhones.Add (new LabelSelectionViewController.PhoneLabel (p.Name, p.Label));
+                possiblePhones.Add (new LabelSelectionViewController.ExchangeLabel (p.Name, p.Label));
                 selectPhoneView.AddSubview (button);
                 if (0 == i) {
                     if (viewType == DefaultSelectionType.DefaultPhoneSelector) {
@@ -536,10 +538,19 @@ namespace NachoClient.iOS
         {
             if (segue.Identifier.Equals ("SegueToLabelSelection")) {
                 LabelSelectionViewController destinationController = (LabelSelectionViewController)segue.DestinationViewController;
-                destinationController.selectedPhoneLabel = phoneLabel;
-                destinationController.owner = this;
+                ContactsHelper c = new ContactsHelper ();
+                destinationController.SetLabelList(c.GetAvailablePhoneNames(contact));
+                destinationController.SetSelectedName(c.GetAvailablePhoneNames (contact).First ());
+                destinationController.SetOwner (this);
                 return;
             }
+        }
+
+        public void PrepareForDismissal (string selectedName)
+        {
+            //phoneLabel = selectedLabel;
+
+            SetPhoneLabel ();
         }
 
         //TODO: Add interface for label selector, this method will override interface method
@@ -548,6 +559,5 @@ namespace NachoClient.iOS
             UILabel phoneLabelLabel = (UILabel)View.ViewWithTag (PHONE_LABEL_TAG);
             phoneLabelLabel.Text = phoneLabel.label;
         }
-
     }
 }

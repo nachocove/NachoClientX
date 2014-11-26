@@ -327,6 +327,26 @@ namespace NachoCore.Model
             return GetStringAttribute (PhoneNumbers, McContactStringType.PhoneNumber, name);
         }
 
+        public McContactStringAttribute GetEntirePhoneNumberAttribute (string name)
+        {
+            foreach (var l in PhoneNumbers) {
+                if (l.Name.Equals (name)) {
+                    return l;
+                }
+            }
+            return null;
+        }
+
+        public McContactEmailAddressAttribute GetEntireEmailAddressAttribute (string name)
+        {
+            foreach (var l in EmailAddresses) {
+                if (l.Name.Equals (name)) {
+                    return l;
+                }
+            }
+            return null;
+        }
+
         public string GetIMAddressAttribute (string name)
         {
             return GetStringAttribute (IMAddresses, McContactStringType.IMAddress, name);
@@ -451,10 +471,22 @@ namespace NachoCore.Model
             AddDefaultStringAttribute (ref DbPhoneNumbers, accountId, McContactStringType.PhoneNumber, name, label, value);
         }
 
+        public void AddOrUpdatePhoneNumberAttributeWithName (int accountId, string name, string newName, string label, string value)
+        {
+            ReadAncillaryData ();
+            AddOrUpdateStringAttributeWithName (ref DbPhoneNumbers, accountId, McContactStringType.PhoneNumber, name, newName, label, value);
+        }
+
         public void AddOrUpdatePhoneNumberAttribute (int accountId, string name, string label, string value)
         {
             ReadAncillaryData ();
             AddOrUpdateStringAttribute (ref DbPhoneNumbers, accountId, McContactStringType.PhoneNumber, name, label, value);
+        }
+
+        public void AddOrUpdatePhoneNumberAttribute (int accountId, string name, string label, string value, bool isDefault)
+        {
+            ReadAncillaryData ();
+            AddOrUpdateStringAttribute (ref DbPhoneNumbers, accountId, McContactStringType.PhoneNumber, name, label, value, isDefault);
         }
 
         public void AddIMAddressAttribute (int accountId, string name, string label, string value)
@@ -475,6 +507,25 @@ namespace NachoCore.Model
             AddStringAttribute (ref DbCategories, accountId, McContactStringType.Category, name, null, null);
         }
 
+        protected void AddOrUpdateStringAttributeWithName (ref List<McContactStringAttribute> list, int accountId, McContactStringType type, string name, string newName, string label, string value)
+        {
+            var existing = list.Where (attr => attr.Type.Equals (type) && attr.Name.Equals (name)).SingleOrDefault ();
+            if (null != existing) {
+                existing.Name = newName;
+                existing.Label = label;
+                existing.Value = value;
+            } else {
+                var newbie = new McContactStringAttribute ();
+                newbie.AccountId = accountId;
+                newbie.Name = newName;
+                newbie.Type = type;
+                newbie.Label = label;
+                newbie.Value = value;
+                newbie.ContactId = this.Id;
+                list.Add (newbie);
+            }
+        }
+
         protected void AddOrUpdateStringAttribute (ref List<McContactStringAttribute> list, int accountId, McContactStringType type, string name, string label, string value)
         {
             var existing = list.Where (attr => attr.Type.Equals (type) && attr.Name.Equals (name)).SingleOrDefault ();
@@ -490,6 +541,48 @@ namespace NachoCore.Model
                 newbie.Value = value;
                 newbie.ContactId = this.Id;
                 list.Add (newbie);
+            }
+        }
+
+        protected void AddOrUpdateStringAttribute (ref List<McContactStringAttribute> list, int accountId, McContactStringType type, string name, string label, string value, bool isDefault)
+        {
+            var existing = list.Where (attr => attr.Type.Equals (type) && attr.Name.Equals (name)).SingleOrDefault ();
+            if (null != existing) {
+                existing.Label = label;
+                existing.Value = value;
+                existing.IsDefault = isDefault;
+            } else {
+                var newbie = new McContactStringAttribute ();
+                newbie.AccountId = accountId;
+                newbie.Name = name;
+                newbie.Type = type;
+                newbie.Label = label;
+                newbie.Value = value;
+                newbie.ContactId = this.Id;
+                list.Add (newbie);
+            }
+        }
+
+        public void AddOrUpdateEmailAddressAttributeWithName (int accountId, string name, string newName, string label, string value)
+        {
+            ReadAncillaryData ();
+            var f = EmailAddresses.Where (attr => attr.Name.Equals (name)).SingleOrDefault ();
+            if (null != f) {
+                f.Name = newName;
+                f.Label = label;
+                f.Value = value;
+            } else {
+                f = new McContactEmailAddressAttribute ();
+                f.AccountId = accountId;
+                f.Name = name;
+                f.Label = label;
+                f.Value = value;
+                f.ContactId = this.Id;
+                EmailAddresses.Add (f);
+            }
+            McEmailAddress emailAddress;
+            if (McEmailAddress.Get (AccountId, value, out emailAddress)) {
+                f.EmailAddress = emailAddress.Id;
             }
         }
 
@@ -880,6 +973,11 @@ namespace NachoCore.Model
             ApplyRelationshipString (xmlAppData, Contacts2Ns, Xml.Contacts2.ManagerName);
 
             // FIXME - No child support yet ;-).
+
+//            var children = GetRelationshipAttributes (Xml.Contacts.Child);
+//            if (children.Count > 0) {
+//                ApplyRelationshipString (xmlAppData, ContactsNs, Xml.Contacts.Children);
+//            }
 
             var cats = GetCategoryAttributes ();
             if (0 < cats.Count) {

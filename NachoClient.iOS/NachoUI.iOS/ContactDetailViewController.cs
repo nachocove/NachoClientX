@@ -147,6 +147,8 @@ namespace NachoClient.iOS
                 return;
             }
             if (segue.Identifier.Equals ("ContactToContactEdit")) {
+                var destinationViewController = (ContactEditViewController)segue.DestinationViewController;
+                destinationViewController.contact = contact;
                 return;
             }
             if (segue.Identifier.Equals ("SegueToContactDefaultSelection")) {
@@ -360,7 +362,7 @@ namespace NachoClient.iOS
         {
             switch (selectedSegment) {
             case 0:
-                //TODO: Edit Contacts
+                PerformSegue ("ContactToContactEdit", this);
                 break;
             case 1:
                 //TODO: Multi-Select
@@ -560,7 +562,11 @@ namespace NachoClient.iOS
             selectedSegment = ((UISegmentedControl)sender).SelectedSegment;
             switch (selectedSegment) {
             case 0:
-                editContact.Enabled = true;
+                if (contact.Source != McAbstrItem.ItemSource.ActiveSync) {
+                    editContact.Enabled = false;
+                } else {
+                    editContact.Enabled = true;
+                }
                 contactInfoScrollView.Hidden = false;
                 interactionsTableView.Hidden = true;
                 notesView.Hidden = true;
@@ -1083,7 +1089,6 @@ namespace NachoClient.iOS
                 } else {
                     contact.BodyId = McBody.InsertFile (accountId, McAbstrFileDesc.BodyTypeEnum.PlainText_1, noteText).Id;
                 }
-
                 contact.Update ();
                 NachoCore.BackEnd.Instance.UpdateContactCmd (contact.AccountId, contact.Id);
             }
