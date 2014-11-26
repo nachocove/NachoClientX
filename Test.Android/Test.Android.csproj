@@ -64,6 +64,9 @@
     <Reference Include="DnDns.Android">
       <HintPath>..\..\DnDns\SourceCode\DnDns\DnDns.Android\bin\Release\DnDns.Android.dll</HintPath>
     </Reference>
+    <Reference Include="ModernHttpClient">
+      <HintPath>..\..\ModernHttpClient\build\MonoAndroid\ModernHttpClient.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MainActivity.cs" />

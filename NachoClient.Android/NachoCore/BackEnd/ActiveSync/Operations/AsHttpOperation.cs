@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Schema;
+using ModernHttpClient;
 using NachoCore.Model;
 using NachoCore.Wbxml;
 using NachoCore.Utils;
@@ -85,7 +86,6 @@ namespace NachoCore.ActiveSync
         // HttpClient factory stuff.
         private static object LockObj = new object ();
         public static Type HttpClientType = typeof(MockableHttpClient);
-        private static HttpClientHandler EncryptedClientHandler;
         private static IHttpClient EncryptedClient;
         private static string LastUsername;
         private static string LastPassword;
@@ -126,7 +126,7 @@ namespace NachoCore.ActiveSync
                 if (DontReUseHttpClient || null == EncryptedClient ||
                     null == LastUsername || null == LastPassword ||
                     LastUsername != username || LastPassword != password) {
-                    var handler = new HttpClientHandler () {
+                    var handler = new NativeMessageHandler () {
                         AllowAutoRedirect = false,
                         PreAuthenticate = true,
                     };
@@ -139,7 +139,6 @@ namespace NachoCore.ActiveSync
                     // a ref-count to know when we CAN Dispose(). As we are almost always
                     // re-using, this should not be an issue.
                     EncryptedClient = client;
-                    EncryptedClientHandler = handler;
                 }
                 return EncryptedClient;
             }
@@ -149,7 +148,7 @@ namespace NachoCore.ActiveSync
         {
             lock (LockObj) {
                 if (DontReUseHttpClient || null == ClearClient) {
-                    var handler = new HttpClientHandler () {
+                    var handler = new NativeMessageHandler () {
                         AllowAutoRedirect = false,
                     };
                     var client = (IHttpClient)Activator.CreateInstance (HttpClientType, handler, true);
@@ -268,7 +267,7 @@ namespace NachoCore.ActiveSync
 
         private void DoDelay ()
         {
-            CancelTimeoutTimer ();
+            CancelTimeoutTimer ("DoDelay");
             var secs = Convert.ToInt32 (HttpOpSm.Arg);
             Log.Info (Log.LOG_HTTP, "AsHttpOperation:Delay {0} seconds.", secs);
             DelayTimer = new NcTimer ("AsHttpOperation:Delay", DelayTimerCallback, null, secs * 1000, System.Threading.Timeout.Infinite);
@@ -299,7 +298,7 @@ namespace NachoCore.ActiveSync
 
         private void DoCancelHttp ()
         {
-            CancelTimeoutTimer ();
+            CancelTimeoutTimer ("DoCancelHttp");
             DoCancelDelayTimer ();
             if (null != Cts) {
                 if (!Cts.IsCancellationRequested) {
@@ -334,9 +333,10 @@ namespace NachoCore.ActiveSync
             HttpOpSm.PostEvent ((uint)SmEvt.E.Launch, "ASHTTPDTC");
         }
 
-        private void CancelTimeoutTimer ()
+        private void CancelTimeoutTimer (string mnemonic)
         {
             if (null != TimeoutTimer) {
+                Log.Info (Log.LOG_AS, "CancelTimeoutTimer:{0}", mnemonic);
                 TimeoutTimer.Dispose ();
                 TimeoutTimer = null;
             }
@@ -454,7 +454,7 @@ namespace NachoCore.ActiveSync
                     response = await client.SendAsync (request, HttpCompletionOption.ResponseHeadersRead, cToken).ConfigureAwait (false);
                 } catch (OperationCanceledException ex) {
                     Log.Info (Log.LOG_HTTP, "AttempHttp OperationCanceledException {0}: exception {1}", ServerUri, ex.Message);
-                    CancelTimeoutTimer ();
+                    CancelTimeoutTimer ("OperationCanceledException");
                     if (!cToken.IsCancellationRequested) {
                         // See http://stackoverflow.com/questions/12666922/distinguish-timeout-from-user-cancellation
                         ReportCommResult (ServerUri.Host, true);
@@ -464,7 +464,7 @@ namespace NachoCore.ActiveSync
                 } catch (WebException ex) {
                     Log.Info (Log.LOG_HTTP, "AttempHttp WebException {0}: exception {1}", ServerUri, ex.Message);
                     if (!cToken.IsCancellationRequested) {
-                        CancelTimeoutTimer ();
+                        CancelTimeoutTimer ("WebException");
                         ReportCommResult (ServerUri.Host, true);
                         // Some of the causes of WebException could be better characterized as HardFail. Not dividing now.
                         // TODO: I have seen an expired server cert get us here. We need to catch that case specifically, and alert user/admin.
@@ -475,14 +475,14 @@ namespace NachoCore.ActiveSync
                     Log.Info (Log.LOG_HTTP, "AttempHttp NullReferenceException {0}: exception {1}", ServerUri, ex.Message);
                     // As best I can tell, this may be driven by bug(s) in the Mono stack.
                     if (!cToken.IsCancellationRequested) {
-                        CancelTimeoutTimer ();
+                        CancelTimeoutTimer ("NullReferenceException");
                         HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", ServerUri));
                     }
                     return;
                 } catch (Exception ex) {
                     // We've seen HttpClient barf due to Cancel().
                     if (!cToken.IsCancellationRequested) {
-                        CancelTimeoutTimer ();
+                        CancelTimeoutTimer ("Exception");
                         Log.Error (Log.LOG_HTTP, "Exception: {0}", ex.ToString ());
                         HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPFU", null, string.Format ("E, Uri: {0}", ServerUri));
                     }
@@ -490,7 +490,7 @@ namespace NachoCore.ActiveSync
                 }
 
                 if (!cToken.IsCancellationRequested) {
-                    CancelTimeoutTimer ();
+                    CancelTimeoutTimer ("Success");
                     var contentType = response.Content.Headers.ContentType;
                     ContentType = (null == contentType) ? null : contentType.MediaType.ToLower ();
                     try {
@@ -577,7 +577,8 @@ namespace NachoCore.ActiveSync
                     result.Value = new Tuple<int,Uri> (credDaysLeft, credUri);
                     Owner.StatusInd (result);
                 }
-                if (0 < ContentData.Length ||
+                if ((0 < ContentData.Length ||
+                    (null != response.Content.Headers.ContentLength && 0 < response.Content.Headers.ContentLength)) ||
                     (response.Headers.TransferEncodingChunked.HasValue && 
                         (bool)response.Headers.TransferEncodingChunked)) {
                     switch (ContentType) {

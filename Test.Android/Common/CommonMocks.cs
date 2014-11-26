@@ -20,6 +20,7 @@ using System.Net.Security;
 using System.Net;
 using NUnit.Framework;
 using System.Collections.Generic;
+using ModernHttpClient;
 
 
 namespace Test.iOS
@@ -87,7 +88,19 @@ namespace Test.iOS
 
         public TimeSpan Timeout { get; set; }
 
+        public MockHttpClient (NativeMessageHandler handler)
+        {
+        }
+
+        public MockHttpClient (NativeMessageHandler handler, bool doDispose)
+        {
+        }
+
         public MockHttpClient (HttpClientHandler handler)
+        {
+        }
+
+        public MockHttpClient (HttpClientHandler handler, bool doDispose)
         {
         }
 
