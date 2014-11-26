@@ -22,6 +22,7 @@ namespace NachoCore.ActiveSync
         private NcTimer TimeoutTimer;
         private IDnsQueryRequest Request;
         private object LockObj;
+        private NcStateMachine Sm;
 
         public static Type DnsQueryRequestType = typeof(MockableDnsQueryRequest);
 
@@ -35,6 +36,7 @@ namespace NachoCore.ActiveSync
 
         public async void Execute (NcStateMachine sm)
         {
+            Sm = sm;
             DnsQueryResponse response;
             Request = (IDnsQueryRequest)Activator.CreateInstance (DnsQueryRequestType);
             Request.Timeout = (int)Timeout.TotalMilliseconds;
@@ -50,15 +52,15 @@ namespace NachoCore.ActiveSync
                     throw aex.InnerException;
                 }
                 CleanupTimeoutTimer ();
-                if (!wasCancelled) {
+                if (!wasCancelled && !wasKilledByTimer) {
                     var Event = m_owner.ProcessResponse (this, response);
-                    sm.PostEvent (Event);
+                    Sm.PostEvent (Event);
                 }
             } catch (Exception ex) {
                 if (ex is ObjectDisposedException || ex is SocketException) {
-                    if (wasKilledByTimer ||
+                    if (!wasKilledByTimer &&
                         (ex is SocketException && !wasCancelled)) {
-                        sm.PostEvent ((uint)SmEvt.E.TempFail, "DNSOPTEMP0");
+                        Sm.PostEvent ((uint)SmEvt.E.TempFail, "DNSOPTEMP0");
                     }
                 } else {
                     throw;
@@ -95,6 +97,7 @@ namespace NachoCore.ActiveSync
             wasKilledByTimer = true;
             CleanupTimeoutTimer ();
             Close ();
+            Sm.PostEvent ((uint)SmEvt.E.TempFail, "DNSOPTO");
         }
     }
 }

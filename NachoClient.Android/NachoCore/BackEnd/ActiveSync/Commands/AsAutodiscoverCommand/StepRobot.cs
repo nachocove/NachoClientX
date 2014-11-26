@@ -155,8 +155,8 @@ namespace NachoCore.ActiveSync
                                 },
                                 new Trans {
                                     Event = (uint)SmEvt.E.TempFail,
-                                    Act = DoRobotHttp,
-                                    State = (uint)RobotLst.PostWait
+                                    Act = DoRobotPostHardFail,
+                                    State = (uint)St.Stop
                                 },
                                 new Trans {
                                     Event = (uint)SmEvt.E.HardFail,
@@ -214,8 +214,8 @@ namespace NachoCore.ActiveSync
                                 }, 
                                 new Trans {
                                     Event = (uint)SmEvt.E.TempFail,
-                                    Act = DoRobotHttp,
-                                    State = (uint)RobotLst.GetWait
+                                    Act = DoRobotHardFail,
+                                    State = (uint)St.Stop
                                 },
                                 new Trans {
                                     Event = (uint)SmEvt.E.HardFail,
@@ -264,8 +264,8 @@ namespace NachoCore.ActiveSync
                                 },
                                 new Trans {
                                     Event = (uint)SmEvt.E.TempFail,
-                                    Act = DoRobotDns,
-                                    State = (uint)RobotLst.SrvDnsWait
+                                    Act = DoRobotHardFail,
+                                    State = (uint)St.Stop
                                 },
                                 new Trans {
                                     Event = (uint)SmEvt.E.HardFail,
@@ -294,8 +294,8 @@ namespace NachoCore.ActiveSync
                                 },
                                 new Trans {
                                     Event = (uint)SmEvt.E.TempFail,
-                                    Act = DoRobotDns,
-                                    State = (uint)RobotLst.MxDnsWait
+                                    Act = DoRobotHardFail,
+                                    State = (uint)St.Stop
                                 },
                                 new Trans {
                                     Event = (uint)SmEvt.E.HardFail,
@@ -324,8 +324,8 @@ namespace NachoCore.ActiveSync
                                 },
                                 new Trans {
                                     Event = (uint)SmEvt.E.TempFail,
-                                    Act = DoRobotGetServerCert,
-                                    State = (uint)RobotLst.CertWait
+                                    Act = DoRobotHardFail,
+                                    State = (uint)St.Stop
                                 },
                                 new Trans {
                                     Event = (uint)SmEvt.E.HardFail,
@@ -379,8 +379,8 @@ namespace NachoCore.ActiveSync
                                 },
                                 new Trans {
                                     Event = (uint)SmEvt.E.TempFail,
-                                    Act = DoRobotHttp,
-                                    State = (uint)RobotLst.ReDirWait
+                                    Act = DoRobotHardFail,
+                                    State = (uint)St.Stop
                                 },
                                 new Trans {
                                     Event = (uint)SmEvt.E.HardFail,
@@ -499,8 +499,9 @@ namespace NachoCore.ActiveSync
                 return new AsHttpOperation (Command.CommandName, this, Command.BEContext) {
                     Allow451Follow = false,
                     DontReportCommResult = true,
-                    TriesLeft = 3,
+                    TriesLeft = 1,
                     TimeoutExpander = KDefaultTimeoutExpander,
+                    Timeout = new TimeSpan (0, 0, 10),
                     DontReUseHttpClient = true,
                 };
             }
@@ -521,7 +522,7 @@ namespace NachoCore.ActiveSync
             {
                 if (0 < RetriesLeft--) {
                     DnsOp = new AsDnsOperation (this) {
-                        Timeout = new TimeSpan(0, 0, 300),
+                        Timeout = new TimeSpan(0, 0, 10),
                     };
                     DnsOp.Execute (StepSm);
                 } else {
