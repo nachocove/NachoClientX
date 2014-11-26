@@ -18,13 +18,13 @@ namespace NachoClient.iOS
         protected AttendeeTableViewSource AttendeeSource;
         protected McAccount account;
         protected McAbstrCalendarRoot c;
-
         protected bool editing;
 
         UIBarButtonItem multiSelectButton;
         UIBarButtonItem multiResendButton;
         UIBarButtonItem multiRemoveButton;
         UIBarButtonItem multiCancelButton;
+        UIBarButtonItem addAttendeesButton;
         public bool isMultiSelecting;
 
         protected INachoAttendeeListChooserDelegate owner;
@@ -34,7 +34,10 @@ namespace NachoClient.iOS
         List<McAttendee> RequiredList = new List<McAttendee> ();
         List<McAttendee> OptionalList = new List<McAttendee> ();
 
+        protected UITableView tableView;
         protected UILabel emptyListLabel;
+        protected UIView addAttendeeView;
+        protected UIImageView iconIv;
 
         protected static int SEGMENTED_CONTROL_TAG = 100;
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
@@ -55,15 +58,12 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            EventAttendeesTableView.Frame = new RectangleF (0, 40, SCREEN_WIDTH, View.Frame.Height - 40);
-            EventAttendeesTableView.SeparatorColor = UIColor.Clear;
+            //TODO remove from storyboard
+            EventAttendeesTableView.Hidden = true;
 
             account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
             AttendeeSource = new AttendeeTableViewSource (this, this);
 
-            EventAttendeesTableView.Source = AttendeeSource;
-
-            EventAttendeesTableView.ReloadData ();
             CreateEventAttendeeView ();
         }
 
@@ -81,7 +81,7 @@ namespace NachoClient.iOS
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
-            EventAttendeesTableView.ReloadData ();
+            tableView.ReloadData ();
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -120,7 +120,7 @@ namespace NachoClient.iOS
             AttendeeSource.SetAttendeeList (this.AttendeeList);
             AttendeeSource.SetEditing (editing);
             AttendeeSource.SetAccount (account);
-            EventAttendeesTableView.ReloadData ();
+            tableView.ReloadData ();
             NachoCore.Utils.NcAbate.RegularPriority ("EventAttendeeViewController LoadAttendees");
         }
 
@@ -143,12 +143,13 @@ namespace NachoClient.iOS
             var s = (StatusIndEventArgs)e;
             if (NcResult.SubKindEnum.Info_CalendarSetChanged == s.Status.SubKind) {
                 Log.Debug (Log.LOG_UI, "StatusIndicatorCallback");
-                EventAttendeesTableView.ReloadData ();
+                tableView.ReloadData ();
             }
         }
 
         protected void CreateEventAttendeeView ()
         {
+            var yOffset = 0f;
             NavigationItem.Title = "Attendees";
 
             multiSelectButton = new UIBarButtonItem ();
@@ -171,26 +172,21 @@ namespace NachoClient.iOS
             multiCancelButton.Image = UIImage.FromBundle ("gen-close");
             multiCancelButton.Clicked += cancelClicked;
 
-            addAttendeeButton.Clicked += (object sender, EventArgs e) => {
+            addAttendeesButton = new UIBarButtonItem ();
+            addAttendeesButton.TintColor = A.Color_NachoBlue;
+            addAttendeesButton.Image = UIImage.FromBundle ("calendar-add-attendee");
+
+            addAttendeesButton.Clicked += (object sender, EventArgs e) => {
                 var address = new NcEmailAddress (NcEmailAddress.Kind.Required);
                 address.action = NcEmailAddress.Action.create;
                 PerformSegue ("EventAttendeesToContactChooser", new SegueHolder (address));
             };
-            
-            emptyListLabel = new UILabel (new RectangleF (80, 80, 160, 20));
-            emptyListLabel.TextAlignment = UITextAlignment.Center;
-            emptyListLabel.Font = A.Font_AvenirNextDemiBold14;
-            emptyListLabel.TextColor = A.Color_NachoBorderGray;
-            emptyListLabel.Lines = 0;
-            emptyListLabel.LineBreakMode = UILineBreakMode.WordWrap;
-            emptyListLabel.Hidden = true;
-            View.AddSubview (emptyListLabel);
 
-            segmentedControlView = new UIView (new RectangleF (0, 0, View.Frame.Width, 40));
+            segmentedControlView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 40));
             segmentedControlView.BackgroundColor = UIColor.White;
 
             segmentedControl = new UISegmentedControl ();
-            segmentedControl.Frame = new RectangleF (6, 5, View.Frame.Width - 12, 30);
+            segmentedControl.Frame = new RectangleF (6, yOffset + 5, View.Frame.Width - 12, 30);
             segmentedControl.InsertSegment ("All", 0, false);
             segmentedControl.InsertSegment ("Required", 1, false);
             segmentedControl.InsertSegment ("Optional", 2, false);
@@ -218,11 +214,39 @@ namespace NachoClient.iOS
                     break;
                 }
             };
-
-            AddLine (0, 40, SCREEN_WIDTH, A.Color_NachoBorderGray, segmentedControlView);
+            yOffset += segmentedControlView.Frame.Height;
+            AddLine (0, yOffset, SCREEN_WIDTH, A.Color_NachoBorderGray, segmentedControlView);
             segmentedControl.Tag = SEGMENTED_CONTROL_TAG;
             segmentedControlView.Add (segmentedControl);
             View.AddSubview (segmentedControlView);
+
+            addAttendeeView = new UIView (new RectangleF (A.Card_Horizontal_Indent, A.Card_Vertical_Indent + 40, View.Frame.Width - (A.Card_Horizontal_Indent * 2), View.Frame.Height - (2 * A.Card_Vertical_Indent) - 104));
+            addAttendeeView.BackgroundColor = UIColor.White;
+            addAttendeeView.Layer.CornerRadius = A.Card_Corner_Radius;
+            addAttendeeView.Layer.BorderColor = A.Card_Border_Color;
+            addAttendeeView.Layer.BorderWidth = A.Card_Border_Width;
+            addAttendeeView.Hidden = true;
+            View.AddSubview (addAttendeeView);
+
+            emptyListLabel = new UILabel (new RectangleF (0, 80, addAttendeeView.Frame.Width, 20));
+            emptyListLabel.TextAlignment = UITextAlignment.Center;
+            emptyListLabel.Font = A.Font_AvenirNextDemiBold14;
+            emptyListLabel.TextColor = A.Color_NachoGreen;
+            emptyListLabel.Lines = 0;
+            emptyListLabel.LineBreakMode = UILineBreakMode.WordWrap;
+            addAttendeeView.AddSubview (emptyListLabel);
+
+            iconIv = new UIImageView (new RectangleF(0, 0, 16, 16));
+            iconIv.Image = UIImage.FromBundle ("calendar-add-attendee-bottom");
+            addAttendeeView.AddSubview (iconIv);
+
+            tableView = new UITableView (new RectangleF (0, 41, View.Frame.Width, View.Frame.Height - 40), UITableViewStyle.Plain);
+            tableView.SeparatorColor = UIColor.Clear;
+            tableView.BackgroundColor = A.Color_NachoBackgroundGray;
+            tableView.Source = AttendeeSource;
+            View.AddSubview (tableView);
+
+            View.BackgroundColor = A.Color_NachoBackgroundGray;
         }
 
         private void multiClicked (object sender, EventArgs e)
@@ -264,7 +288,7 @@ namespace NachoClient.iOS
                 UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
                     () => {
                         segmentedControlView.Center = new PointF (segmentedControlView.Center.X, segmentedControlView.Center.Y - segmentedControlView.Frame.Height);
-                        EventAttendeesTableView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height);
+                        tableView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height);
                         ConfigureVisibleCells ();
                     },
                     () => {
@@ -279,7 +303,7 @@ namespace NachoClient.iOS
                 UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
                     () => {
                         segmentedControlView.Center = new PointF (segmentedControlView.Center.X, segmentedControlView.Center.Y + segmentedControlView.Frame.Height);
-                        EventAttendeesTableView.Frame = new RectangleF (0, segmentedControlView.Frame.Height, View.Frame.Width, View.Frame.Height - segmentedControlView.Frame.Height);
+                        tableView.Frame = new RectangleF (0, segmentedControlView.Frame.Height, View.Frame.Width, View.Frame.Height - segmentedControlView.Frame.Height);
                         ConfigureVisibleCells ();
                     },
                     () => {
@@ -291,8 +315,8 @@ namespace NachoClient.iOS
 
         public void ConfigureVisibleCells ()
         {
-            foreach (var path in EventAttendeesTableView.IndexPathsForVisibleRows) {
-                AttendeeSource.ConfigureCell (EventAttendeesTableView, EventAttendeesTableView.CellAt (path), path);
+            foreach (var path in tableView.IndexPathsForVisibleRows) {
+                AttendeeSource.ConfigureCell (tableView, tableView.CellAt (path), path);
             }
         }
 
@@ -320,13 +344,13 @@ namespace NachoClient.iOS
                         Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
                         NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
                             //multiSelectButton,
-                            addAttendeeButton
+                            addAttendeesButton
                         };
                     }
                 } else {
                     Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
                     NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
-                        addAttendeeButton
+                        addAttendeesButton
                     };
                 }
             } else {
@@ -334,28 +358,27 @@ namespace NachoClient.iOS
             }
         }
 
-        string addMessage = "Add attendees with the \"+\" button";
+        string addMessage = "There are currently no attendees yet. \n \n Start adding attendees to your event by tapping on the        icon above.";
 
         protected void ConfigureEventAttendeesView ()
         {
             segmentedControl.SelectedSegment = 0;
             if (0 == AttendeeList.Count) {
-                EventAttendeesTableView.Hidden = true;
-                emptyListLabel.Hidden = false;
+                tableView.Hidden = true;
+                addAttendeeView.Hidden = false;
                 if (editing) {
                     emptyListLabel.Text = addMessage;
-                    emptyListLabel.SizeToFit ();
-                    emptyListLabel.Frame = new RectangleF (80, 80, 160, 40);
                 } else {
                     emptyListLabel.Text = "No attendees";
-                    emptyListLabel.SizeToFit ();
-                    emptyListLabel.Frame = new RectangleF (80, 80, 160, 20);
                 }
+                emptyListLabel.SizeToFit ();
+                emptyListLabel.Frame = new RectangleF (0, 0, addAttendeeView.Frame.Width, addAttendeeView.Frame.Height - 64);
+                iconIv.Frame = new RectangleF (emptyListLabel.Center.X + 4, emptyListLabel.Center.Y + 21, 16, 16);
             } else {
                 AttendeeSource.SetAttendeeList (this.AttendeeList);
-                EventAttendeesTableView.ReloadData ();
-                EventAttendeesTableView.Hidden = false;
-                emptyListLabel.Hidden = true;
+                tableView.ReloadData ();
+                tableView.Hidden = false;
+                addAttendeeView.Hidden = true;
             }
 
             ConfigureNavBar (0);
@@ -364,54 +387,48 @@ namespace NachoClient.iOS
         protected void ConfigureRequiredList ()
         {
             if (0 == RequiredList.Count) {
-                EventAttendeesTableView.Hidden = true;
-                emptyListLabel.Hidden = false;
+                tableView.Hidden = true;
+                addAttendeeView.Hidden = false;
                 if (0 == AttendeeList.Count) {
                     if (editing) {
                         emptyListLabel.Text = addMessage;
-                        emptyListLabel.SizeToFit ();
-                        emptyListLabel.Frame = new RectangleF (80, 80, 160, 40);
                     } else {
                         emptyListLabel.Text = "No required attendees";
-                        emptyListLabel.SizeToFit ();
-                        emptyListLabel.Frame = new RectangleF (80, 80, 160, 20);
                     }
                 } else {
                     emptyListLabel.Text = "No required attendees";
-                    emptyListLabel.Frame = new RectangleF (0, 80, SCREEN_WIDTH, 20);
                 }
+                emptyListLabel.SizeToFit ();
+                emptyListLabel.Frame = new RectangleF (0, 0, addAttendeeView.Frame.Width, addAttendeeView.Frame.Height - 64);
             } else {
                 AttendeeSource.SetAttendeeList (this.RequiredList);
-                EventAttendeesTableView.ReloadData ();
-                EventAttendeesTableView.Hidden = false;
-                emptyListLabel.Hidden = true;
+                tableView.ReloadData ();
+                tableView.Hidden = false;
+                addAttendeeView.Hidden = true;
             }
         }
 
         protected void ConfigureOptionalList ()
         {
             if (0 == OptionalList.Count) {
-                EventAttendeesTableView.Hidden = true;
-                emptyListLabel.Hidden = false;
+                tableView.Hidden = true;
+                addAttendeeView.Hidden = false;
                 if (0 == AttendeeList.Count) {
                     if (editing) {
                         emptyListLabel.Text = addMessage;
-                        emptyListLabel.SizeToFit ();
-                        emptyListLabel.Frame = new RectangleF (80, 80, 160, 40);
                     } else {
                         emptyListLabel.Text = "No optional attendees";
-                        emptyListLabel.SizeToFit ();
-                        emptyListLabel.Frame = new RectangleF (80, 80, 160, 20);
                     }
                 } else {
                     emptyListLabel.Text = "No optional attendees";
-                    emptyListLabel.Frame = new RectangleF (0, 80, SCREEN_WIDTH, 20);
                 }
+                emptyListLabel.SizeToFit ();
+                emptyListLabel.Frame = new RectangleF (0, 0, addAttendeeView.Frame.Width, addAttendeeView.Frame.Height - 64);
             } else {
                 AttendeeSource.SetAttendeeList (this.OptionalList);
-                EventAttendeesTableView.ReloadData ();
-                EventAttendeesTableView.Hidden = false;
-                emptyListLabel.Hidden = true;
+                tableView.ReloadData ();
+                tableView.Hidden = false;
+                addAttendeeView.Hidden = true;
             }
         }
 
