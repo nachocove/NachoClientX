@@ -267,7 +267,7 @@ namespace NachoCore.ActiveSync
 
         private void DoDelay ()
         {
-            CancelTimeoutTimer ();
+            CancelTimeoutTimer ("DoDelay");
             var secs = Convert.ToInt32 (HttpOpSm.Arg);
             Log.Info (Log.LOG_HTTP, "AsHttpOperation:Delay {0} seconds.", secs);
             DelayTimer = new NcTimer ("AsHttpOperation:Delay", DelayTimerCallback, null, secs * 1000, System.Threading.Timeout.Infinite);
@@ -298,7 +298,7 @@ namespace NachoCore.ActiveSync
 
         private void DoCancelHttp ()
         {
-            CancelTimeoutTimer ();
+            CancelTimeoutTimer ("DoCancelHttp");
             DoCancelDelayTimer ();
             if (null != Cts) {
                 if (!Cts.IsCancellationRequested) {
@@ -333,9 +333,10 @@ namespace NachoCore.ActiveSync
             HttpOpSm.PostEvent ((uint)SmEvt.E.Launch, "ASHTTPDTC");
         }
 
-        private void CancelTimeoutTimer ()
+        private void CancelTimeoutTimer (string mnemonic)
         {
             if (null != TimeoutTimer) {
+                Log.Info (Log.LOG_AS, "CancelTimeoutTimer:{0}", mnemonic);
                 TimeoutTimer.Dispose ();
                 TimeoutTimer = null;
             }
@@ -453,7 +454,7 @@ namespace NachoCore.ActiveSync
                     response = await client.SendAsync (request, HttpCompletionOption.ResponseHeadersRead, cToken).ConfigureAwait (false);
                 } catch (OperationCanceledException ex) {
                     Log.Info (Log.LOG_HTTP, "AttempHttp OperationCanceledException {0}: exception {1}", ServerUri, ex.Message);
-                    CancelTimeoutTimer ();
+                    CancelTimeoutTimer ("OperationCanceledException");
                     if (!cToken.IsCancellationRequested) {
                         // See http://stackoverflow.com/questions/12666922/distinguish-timeout-from-user-cancellation
                         ReportCommResult (ServerUri.Host, true);
@@ -463,7 +464,7 @@ namespace NachoCore.ActiveSync
                 } catch (WebException ex) {
                     Log.Info (Log.LOG_HTTP, "AttempHttp WebException {0}: exception {1}", ServerUri, ex.Message);
                     if (!cToken.IsCancellationRequested) {
-                        CancelTimeoutTimer ();
+                        CancelTimeoutTimer ("WebException");
                         ReportCommResult (ServerUri.Host, true);
                         // Some of the causes of WebException could be better characterized as HardFail. Not dividing now.
                         // TODO: I have seen an expired server cert get us here. We need to catch that case specifically, and alert user/admin.
@@ -474,14 +475,14 @@ namespace NachoCore.ActiveSync
                     Log.Info (Log.LOG_HTTP, "AttempHttp NullReferenceException {0}: exception {1}", ServerUri, ex.Message);
                     // As best I can tell, this may be driven by bug(s) in the Mono stack.
                     if (!cToken.IsCancellationRequested) {
-                        CancelTimeoutTimer ();
+                        CancelTimeoutTimer ("NullReferenceException");
                         HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPTO", null, string.Format ("Timeout, Uri: {0}", ServerUri));
                     }
                     return;
                 } catch (Exception ex) {
                     // We've seen HttpClient barf due to Cancel().
                     if (!cToken.IsCancellationRequested) {
-                        CancelTimeoutTimer ();
+                        CancelTimeoutTimer ("Exception");
                         Log.Error (Log.LOG_HTTP, "Exception: {0}", ex.ToString ());
                         HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPFU", null, string.Format ("E, Uri: {0}", ServerUri));
                     }
@@ -489,14 +490,11 @@ namespace NachoCore.ActiveSync
                 }
 
                 if (!cToken.IsCancellationRequested) {
-                    CancelTimeoutTimer ();
+                    CancelTimeoutTimer ("Success");
                     var contentType = response.Content.Headers.ContentType;
                     ContentType = (null == contentType) ? null : contentType.MediaType.ToLower ();
                     try {
-                        // Wrapping the content with BufferedStream was required to get things to work with
-                        // the Mono HttpClientHandler.
-                        // ContentData = new BufferedStream (await response.Content.ReadAsStreamAsync ().ConfigureAwait (false));
-                        ContentData = await response.Content.ReadAsStreamAsync ().ConfigureAwait (false);
+                        ContentData = new BufferedStream (await response.Content.ReadAsStreamAsync ().ConfigureAwait (false));
                     } catch (Exception ex) {
                         // If we see this, it is most likely a bug in error processing above in AttemptHttp().
                         Log.Error (Log.LOG_HTTP, "AttempHttp {0} {1}: exception in ReadAsStreamAsync {2}\n{3}", ex, ServerUri, ex.Message, ex.StackTrace);
