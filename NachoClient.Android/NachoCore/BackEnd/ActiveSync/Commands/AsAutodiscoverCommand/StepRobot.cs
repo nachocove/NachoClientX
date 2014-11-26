@@ -459,7 +459,7 @@ namespace NachoCore.ActiveSync
             // UTILITY METHODS.
             private void RefreshRetries ()
             {
-                RetriesLeft = 2;
+                RetriesLeft = 1;
             }
 
             private void ForTopLevel (Event Event)
@@ -499,7 +499,7 @@ namespace NachoCore.ActiveSync
                 return new AsHttpOperation (Command.CommandName, this, Command.BEContext) {
                     Allow451Follow = false,
                     DontReportCommResult = true,
-                    TriesLeft = 1,
+                    TriesLeft = 2,
                     TimeoutExpander = KDefaultTimeoutExpander,
                     Timeout = new TimeSpan (0, 0, 10),
                     DontReUseHttpClient = true,
