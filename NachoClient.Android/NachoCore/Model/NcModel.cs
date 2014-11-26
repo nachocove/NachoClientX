@@ -17,7 +17,7 @@ namespace NachoCore.Model
     {
         private object LockObj;
         private DateTime LastAccess;
-        private bool Disposed;
+        private bool DidDispose;
 
         public NcSQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = false) :
         base (databasePath, openFlags, storeDateTimeAsTicks)
@@ -33,24 +33,28 @@ namespace NachoCore.Model
             LastAccess = DateTime.UtcNow;
         }
 
-        public void Dispose ()
+        public bool SetLastAccess ()
         {
             lock (LockObj) {
-                if (!Disposed) {
-                    Disposed = true;
-                    base.Dispose ();
+                if (DidDispose) {
+                    Log.Info (Log.LOG_DB, "NcSQLiteConnection.SetLastAccess: found DidDispose");
+                    return false;
                 }
+                LastAccess = DateTime.UtcNow;
+                return true;
             }
         }
 
-        public void SetLastAccess ()
+        public void EliminateIfStale (Action action)
         {
-            // FIXME.
-        }
-
-        public void EliminateIfStale (Action Action)
-        {
-            // FIXME.
+            lock (LockObj) {
+                var wayBack = DateTime.UtcNow.AddMinutes (-2);
+                if (LastAccess < wayBack) {
+                    action ();
+                    Dispose ();
+                    DidDispose = true;
+                }
+            }
         }
     }
 
@@ -81,15 +85,19 @@ namespace NachoCore.Model
             get {
                 var threadId = Thread.CurrentThread.ManagedThreadId;
                 NcSQLiteConnection db = null;
-                if (!DbConns.TryGetValue (threadId, out db)) {
-                    db = new NcSQLiteConnection (DbFileName, 
-                        SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.NoMutex, 
-                        storeDateTimeAsTicks: true);
-                    db.BusyTimeout = TimeSpan.FromSeconds (10.0);
-                    db.TraceThreshold = 100;
-                    NcAssert.True (DbConns.TryAdd (threadId, db));
+                while (true) {
+                    if (!DbConns.TryGetValue (threadId, out db)) {
+                        db = new NcSQLiteConnection (DbFileName, 
+                            SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.NoMutex, 
+                            storeDateTimeAsTicks: true);
+                        db.BusyTimeout = TimeSpan.FromSeconds (10.0);
+                        db.TraceThreshold = 100;
+                        NcAssert.True (DbConns.TryAdd (threadId, db));
+                    }
+                    if (db.SetLastAccess ()) {
+                        break;
+                    }
                 }
-                db.SetLastAccess ();
                 return db;
             } 
         }
@@ -278,6 +286,7 @@ namespace NachoCore.Model
         }
 
         private NcTimer CheckPointTimer;
+        private NcTimer DbConnGCTimer;
 
         private class CheckpointResult
         {
@@ -291,6 +300,23 @@ namespace NachoCore.Model
 
         public void Start ()
         {
+            DbConnGCTimer = new NcTimer ("NcModel.DbConnGCTimer", state => {
+                foreach (var kvp in DbConns) {
+                    NcSQLiteConnection dummy;
+                    if (kvp.Key == NcApplication.Instance.UiThreadId) {
+                        continue;
+                    }
+                    kvp.Value.EliminateIfStale (() => {
+                        if (!DbConns.TryRemove (kvp.Key, out dummy)) {
+                            Log.Error (Log.LOG_DB, "DbConnGCTimer: unable to remove DbConn for thread {0}", kvp.Key);
+                        } else {
+                            Log.Info (Log.LOG_DB, "DbConnGCTimer: removed DbConn for thread {0}", kvp.Key);
+                        }
+                    });
+                }
+            }, null, 120 * 1000, 120 * 1000);
+            DbConnGCTimer.Stfu = true;
+
             CheckPointTimer = new NcTimer ("NcModel.CheckPointTimer", state => {
                 var checkpointCmd = "PRAGMA main.wal_checkpoint (PASSIVE);";
                 var threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
@@ -330,6 +356,10 @@ namespace NachoCore.Model
             if (null != CheckPointTimer) {
                 CheckPointTimer.Dispose ();
                 CheckPointTimer = null;
+            }
+            if (null != DbConnGCTimer) {
+                DbConnGCTimer.Dispose ();
+                DbConnGCTimer = null;
             }
         }
 
