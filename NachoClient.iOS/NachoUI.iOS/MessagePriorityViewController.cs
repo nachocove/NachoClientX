@@ -66,7 +66,7 @@ namespace NachoClient.iOS
             using (var image = UIImage.FromBundle ("modal-close")) {
                 var dismissButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
                 dismissButton.Clicked += (object sender, EventArgs e) => {
-                    DateSelected (MessageDeferralType.None, DateTime.MinValue);
+                    DismissDateController(true, null);
                 };
                 navItem.LeftBarButtonItem = dismissButton;
             }
@@ -179,7 +179,7 @@ namespace NachoClient.iOS
             View.AddSubview (priorityView);
         }
 
-        public void DimissDateController (bool animated, NSAction action)
+        public void DismissDateController (bool animated, NSAction action)
         {
             owner = null;
             DismissViewController (animated, action);

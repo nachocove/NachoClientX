@@ -16,7 +16,7 @@ namespace NachoClient.iOS
     {
         void Setup (INachoDateControllerParent owner, McEmailMessageThread thread, DateControllerType dateControllerType);
         void SetIntentSelector (IntentSelectionViewController selector);
-        void DimissDateController (bool animated, NSAction action);
+        void DismissDateController (bool animated, NSAction action);
     }
 
     public interface INachoDateControllerParent
