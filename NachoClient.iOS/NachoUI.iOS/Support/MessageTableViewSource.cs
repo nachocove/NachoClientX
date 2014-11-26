@@ -160,6 +160,11 @@ namespace NachoClient.iOS
 
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
+            var cell = tableView.CellAt (indexPath);
+            if (null != cell) {
+                cell.SetSelected (false, true);
+            }
+
             if (NoMessageThreads ()) {
                 return;
             }
