@@ -310,7 +310,7 @@ namespace NachoClient.iOS
                 userImageView.Image = userImage;
             } else {
                 userLabelView.Hidden = false;
-                if (String.IsNullOrEmpty (message.cachedFromLetters) || (2 <= message.cachedFromColor)) {
+                if (String.IsNullOrEmpty (message.cachedFromLetters) || (2 > message.cachedFromColor)) {
                     Util.CacheUserMessageFields (message);
                 }
                 userLabelView.Text = message.cachedFromLetters;
@@ -470,13 +470,13 @@ namespace NachoClient.iOS
         {
             NachoCore.Utils.NcAbate.RegularPriority ("MessageTableViewSource DecelerationEnded");
 
-            SquareUpCard (scrollView);
+//            SquareUpCard (scrollView);
         }
 
         public override void DraggingEnded (UIScrollView scrollView, bool willDecelerate)
         {
             if (!willDecelerate) {
-                SquareUpCard (scrollView);
+//                SquareUpCard (scrollView);
                 NachoCore.Utils.NcAbate.RegularPriority ("MessageTableViewSource DraggingEnded");
             }
         }
