@@ -1740,6 +1740,8 @@
     <BundleResource Include="Resources\event-notes%402x.png" />
     <BundleResource Include="Resources\calendar-add-attendee-bottom%402x.png" />
     <BundleResource Include="Resources\calendar-add-attendee%402x.png" />
+    <BundleResource Include="Resources\calendar-calendar-attendee-optional-swipe%402x.png" />
+    <BundleResource Include="Resources\calendar-calendar-attendee-required-swipe%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

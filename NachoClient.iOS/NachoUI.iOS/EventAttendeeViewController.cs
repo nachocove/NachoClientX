@@ -373,7 +373,7 @@ namespace NachoClient.iOS
                 }
                 emptyListLabel.SizeToFit ();
                 emptyListLabel.Frame = new RectangleF (0, 0, addAttendeeView.Frame.Width, addAttendeeView.Frame.Height - 64);
-                iconIv.Frame = new RectangleF (emptyListLabel.Center.X + 4, emptyListLabel.Center.Y + 21, 16, 16);
+                iconIv.Frame = new RectangleF (emptyListLabel.Center.X + 3, emptyListLabel.Center.Y + 21, 16, 16);
             } else {
                 AttendeeSource.SetAttendeeList (this.AttendeeList);
                 tableView.ReloadData ();
@@ -389,6 +389,7 @@ namespace NachoClient.iOS
             if (0 == RequiredList.Count) {
                 tableView.Hidden = true;
                 addAttendeeView.Hidden = false;
+                iconIv.Hidden = true;
                 if (0 == AttendeeList.Count) {
                     if (editing) {
                         emptyListLabel.Text = addMessage;
@@ -413,6 +414,7 @@ namespace NachoClient.iOS
             if (0 == OptionalList.Count) {
                 tableView.Hidden = true;
                 addAttendeeView.Hidden = false;
+                iconIv.Hidden = true;
                 if (0 == AttendeeList.Count) {
                     if (editing) {
                         emptyListLabel.Text = addMessage;
@@ -545,10 +547,11 @@ namespace NachoClient.iOS
         /// IContactsTableViewSourceDelegate
         public void SendAttendeeInvite (McAttendee attendee)
         {
-//            var iCalPart = CalendarHelper.iCalToMimePart (account, c);
-//            var mimeBody = CalendarHelper.CreateMime (c.Description, iCalPart, c.attachments);
-//
-//            CalendarHelper.SendInvite (account, c, attendee, mimeBody);
+            McCalendar item = (McCalendar)c;
+            var iCalPart = CalendarHelper.iCalToMimePart (account, item);
+            var mimeBody = CalendarHelper.CreateMime (item.Description, iCalPart, item.attachments);
+
+            CalendarHelper.SendInvite (account, item, attendee, mimeBody);
         }
 
 
