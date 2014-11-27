@@ -285,15 +285,17 @@ namespace NachoClient.iOS
             var view = cell.ViewWithTag (SWIPE_TAG) as SwipeActionView;
             view.LeftSwipeActionButtons.Clear ();
             view.RightSwipeActionButtons.Clear ();
-            view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
             if (NcAttendeeType.Required == attendee.AttendeeType) {
-                view.SetAction (MAKE_OPTIONAL_BUTTON, SwipeSide.LEFT);
+                view.SetAction (MAKE_OPTIONAL_BUTTON, SwipeSide.RIGHT);
             } else {
-                view.SetAction (MAKE_REQUIRED_BUTTON, SwipeSide.LEFT);
+                view.SetAction (MAKE_REQUIRED_BUTTON, SwipeSide.RIGHT);
+            }
+            if (editing) {
+                view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
             }
             view.SetAction (RESEND_INVITE_BUTTON, SwipeSide.LEFT);
 
-            if (isMultiSelecting || !editing) {
+            if (isMultiSelecting) {
                 view.DisableSwipe ();
             } else {
                 view.EnableSwipe ();
@@ -489,18 +491,15 @@ namespace NachoClient.iOS
         {
             if (NcAttendeeType.Optional == attendee.AttendeeType) {
                 attendee.AttendeeType = NcAttendeeType.Required;
-                owner.UpdateLists ();
-                //ConfigureCell (cell, attendee);
-                owner.ConfigureAttendeeTable ();
-                return;
-            }
-            if (NcAttendeeType.Required == attendee.AttendeeType) {
+            } else {
                 attendee.AttendeeType = NcAttendeeType.Optional;
-                owner.UpdateLists ();
-                //ConfigureCell (cell, attendee);
-                owner.ConfigureAttendeeTable ();
-                return;
             }
+            owner.UpdateLists ();
+            owner.ConfigureAttendeeTable ();
+            if (!editing) {
+                owner.SyncRequest ();
+            }
+            return;
         }
 
         public void RemoveAttendee (McAttendee attendee)

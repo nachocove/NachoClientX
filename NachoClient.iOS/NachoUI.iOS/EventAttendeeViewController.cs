@@ -236,7 +236,7 @@ namespace NachoClient.iOS
             emptyListLabel.LineBreakMode = UILineBreakMode.WordWrap;
             addAttendeeView.AddSubview (emptyListLabel);
 
-            iconIv = new UIImageView (new RectangleF(0, 0, 16, 16));
+            iconIv = new UIImageView (new RectangleF (0, 0, 16, 16));
             iconIv.Image = UIImage.FromBundle ("calendar-add-attendee-bottom");
             addAttendeeView.AddSubview (iconIv);
 
@@ -368,6 +368,7 @@ namespace NachoClient.iOS
                 addAttendeeView.Hidden = false;
                 if (editing) {
                     emptyListLabel.Text = addMessage;
+                    iconIv.Hidden = false;
                 } else {
                     emptyListLabel.Text = "No attendees";
                 }
@@ -393,6 +394,7 @@ namespace NachoClient.iOS
                 if (0 == AttendeeList.Count) {
                     if (editing) {
                         emptyListLabel.Text = addMessage;
+                        iconIv.Hidden = false;
                     } else {
                         emptyListLabel.Text = "No required attendees";
                     }
@@ -418,6 +420,7 @@ namespace NachoClient.iOS
                 if (0 == AttendeeList.Count) {
                     if (editing) {
                         emptyListLabel.Text = addMessage;
+                        iconIv.Hidden = false;
                     } else {
                         emptyListLabel.Text = "No optional attendees";
                     }
@@ -552,6 +555,16 @@ namespace NachoClient.iOS
             var mimeBody = CalendarHelper.CreateMime (item.Description, iCalPart, item.attachments);
 
             CalendarHelper.SendInvite (account, item, attendee, mimeBody);
+        }
+
+        public void SyncRequest ()
+        {
+            if (0 == c.Id) {
+                NcAssert.CaseError ();
+            } else {
+                c.Update ();
+                BackEnd.Instance.UpdateCalCmd (account.Id, c.Id);
+            }
         }
 
 
