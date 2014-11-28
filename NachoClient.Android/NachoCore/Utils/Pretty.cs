@@ -125,7 +125,7 @@ namespace NachoCore.Utils
         }
 
         /// <summary>
-        /// Full the date string: Saturday, March 1, 2014
+        /// Day, date and time string: Saturday, March 1 - 12:01 pm
         /// </summary>
         static public string FullDateTimeString (DateTime d)
         {
@@ -139,24 +139,45 @@ namespace NachoCore.Utils
             return d.LocalT ().ToString ("U");
         }
 
+        /// <summary>
+        /// Day and date: Sat, Mar 1
+        /// </summary>
         static public string FullDateString (DateTime d)
         {
             NcAssert.True (DateTimeKind.Local != d.Kind);
             return d.LocalT ().ToString ("ddd, MMM d");
         }
 
+        /// <summary>
+        /// Day, date and year: Sat, Mar 1, 2014
+        /// </summary>
+        static public string FullDateYearString (DateTime d)
+        {
+            NcAssert.True (DateTimeKind.Local != d.Kind);
+            return d.LocalT ().ToString ("ddd, MMM d, yyyy");
+        }
+
+        /// <summary>
+        /// Short date: 3/1/14
+        /// </summary>
         static public string ShortDateString (DateTime d)
         {
             NcAssert.True (DateTimeKind.Local != d.Kind);
             return d.LocalT ().ToString ("M/d/yy");
         }
 
+        /// <summary>
+        /// Full day and date string: Saturday, March 1
+        /// </summary>
         static public string ExtendedDateString (DateTime d)
         {
             NcAssert.True (DateTimeKind.Local != d.Kind);
             return d.LocalT ().ToString ("dddd, MMMM d");
         }
 
+        /// <summary>
+        /// Time: 3:00 pm
+        /// </summary>
         static public string FullTimeString (DateTime d)
         {
             NcAssert.True (DateTimeKind.Local != d.Kind);

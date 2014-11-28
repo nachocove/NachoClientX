@@ -46,11 +46,11 @@ namespace NachoClient.iOS
             new SwipeActionDescriptor (RESEND_INVITE_TAG, 0.25f, UIImage.FromBundle ("files-forward-swipe"),
                 "Send Invite", A.Color_NachoeSwipeForward);
         private static SwipeActionDescriptor MAKE_REQUIRED_BUTTON =
-            new SwipeActionDescriptor (MAKE_REQUIRED_TAG, 0.25f, UIImage.FromBundle ("files-open-app-swipe"),
-                "Required", A.Color_NachoSwipeNavigate);
+            new SwipeActionDescriptor (MAKE_REQUIRED_TAG, 0.25f, UIImage.FromBundle ("calendar-calendar-attendee-required-swipe"),
+                "Required", A.Color_NachoSwipeDialIn);
         private static SwipeActionDescriptor MAKE_OPTIONAL_BUTTON =
-            new SwipeActionDescriptor (MAKE_OPTIONAL_TAG, 0.25f, UIImage.FromBundle ("files-open-app-swipe"),
-                "Optional", A.Color_NachoSwipeDialIn);
+            new SwipeActionDescriptor (MAKE_OPTIONAL_TAG, 0.25f, UIImage.FromBundle ("calendar-calendar-attendee-optional-swipe"),
+                "Optional", A.Color_NachoSwipeEmailMove);
         private static SwipeActionDescriptor DELETE_BUTTON =
             new SwipeActionDescriptor (DELETE_TAG, 0.25f, UIImage.FromBundle ("email-delete-swipe"),
                 "Remove", A.Color_NachoSwipeActionRed);
@@ -285,15 +285,17 @@ namespace NachoClient.iOS
             var view = cell.ViewWithTag (SWIPE_TAG) as SwipeActionView;
             view.LeftSwipeActionButtons.Clear ();
             view.RightSwipeActionButtons.Clear ();
-            view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
             if (NcAttendeeType.Required == attendee.AttendeeType) {
-                view.SetAction (MAKE_OPTIONAL_BUTTON, SwipeSide.LEFT);
+                view.SetAction (MAKE_OPTIONAL_BUTTON, SwipeSide.RIGHT);
             } else {
-                view.SetAction (MAKE_REQUIRED_BUTTON, SwipeSide.LEFT);
+                view.SetAction (MAKE_REQUIRED_BUTTON, SwipeSide.RIGHT);
+            }
+            if (editing) {
+                view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
             }
             view.SetAction (RESEND_INVITE_BUTTON, SwipeSide.LEFT);
 
-            if (isMultiSelecting || !editing) {
+            if (isMultiSelecting) {
                 view.DisableSwipe ();
             } else {
                 view.EnableSwipe ();
@@ -489,18 +491,15 @@ namespace NachoClient.iOS
         {
             if (NcAttendeeType.Optional == attendee.AttendeeType) {
                 attendee.AttendeeType = NcAttendeeType.Required;
-                owner.UpdateLists ();
-                //ConfigureCell (cell, attendee);
-                owner.ConfigureAttendeeTable ();
-                return;
-            }
-            if (NcAttendeeType.Required == attendee.AttendeeType) {
+            } else {
                 attendee.AttendeeType = NcAttendeeType.Optional;
-                owner.UpdateLists ();
-                //ConfigureCell (cell, attendee);
-                owner.ConfigureAttendeeTable ();
-                return;
             }
+            owner.UpdateLists ();
+            owner.ConfigureAttendeeTable ();
+            if (!editing) {
+                owner.SyncRequest ();
+            }
+            return;
         }
 
         public void RemoveAttendee (McAttendee attendee)

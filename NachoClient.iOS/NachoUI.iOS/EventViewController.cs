@@ -404,6 +404,10 @@ namespace NachoClient.iOS
             var durationLabel = View.ViewWithTag ((int)TagType.EVENT_WHEN_DURATION_TAG) as UILabel;
             if (c.AllDayEvent) {
                 durationLabel.Text = "all day event";
+                if ((c.StartTime.LocalT ().DayOfYear) + 1 != c.EndTime.LocalT ().DayOfYear) {
+                    durationLabel.Text = string.Format ("All day from {0} \nuntil {1}",
+                        Pretty.FullDateYearString (c.StartTime), Pretty.FullDateYearString (c.EndTime));
+                }
             } else {
                 if (e.StartTime.LocalT ().DayOfYear == e.EndTime.LocalT ().DayOfYear) {
                     durationLabel.Text = string.Format ("from {0} until {1}",
@@ -412,10 +416,10 @@ namespace NachoClient.iOS
                     durationLabel.Text = string.Format ("from {0} until {1}",
                         Pretty.FullTimeString (e.StartTime), Pretty.FullDateTimeString (e.EndTime));
                 }
-                durationLabel.Lines = 0;
-                durationLabel.LineBreakMode = UILineBreakMode.WordWrap;
-                durationLabel.SizeToFit ();
             }
+            durationLabel.Lines = 0;
+            durationLabel.LineBreakMode = UILineBreakMode.WordWrap;
+            durationLabel.SizeToFit ();
 
             if (isRecurring) {
                 var recurrenceLabel = View.ViewWithTag ((int)TagType.EVENT_WHEN_RECURRENCE_TAG) as UILabel;
