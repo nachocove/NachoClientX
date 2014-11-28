@@ -74,6 +74,7 @@ namespace NachoClient.iOS
         string PresetSubject;
         string EmailTemplate;
         List<McAttachment> PresetAttachmentList;
+        bool startInSubjectField;
 
         // If this is a reply or forward, keep track of the quoted text that is inserted.
         // This makes it possible to check later if the user changed the text.
@@ -116,6 +117,7 @@ namespace NachoClient.iOS
             PresetSubject = subject;
             EmailTemplate = emailTemplate;
             PresetAttachmentList = attachmentList;
+            startInSubjectField = ((null != toAddress) && (null == subject));
         }
 
         public override void ViewDidLoad ()
@@ -143,20 +145,27 @@ namespace NachoClient.iOS
                 }
             };
 
+            suppressLayout = true;
+
             CreateView ();
 
             if (IsForwardOrReplyAction ()) {
                 InitializeMessageForAction ();
             }
+
+            suppressLayout = false;
                 
             if (IsReplyAction ()) {
+                ConfigureBodyEditView (false);
                 bodyTextView.BecomeFirstResponder ();
                 bodyTextView.SelectedRange = new NSRange (0, 0);
+            }else if(startInSubjectField) {
+                ConfigureSubjectEditView (false);
+                subjectField.BecomeFirstResponder ();
             } else {
+                ConfigureToView (false);
                 toView.SetEditFieldAsFirstResponder ();
             }
-
-            ConfigureToView (false);
         }
 
         public override void ViewWillAppear (bool animated)
@@ -309,7 +318,7 @@ namespace NachoClient.iOS
             subjectField.Font = labelFont;
             subjectField.TextColor = labelColor;
             subjectField.Placeholder = "";
-            if (PresetSubject != null) {
+            if (!String.IsNullOrEmpty (PresetSubject)) {
                 alwaysShowIntent = true;
                 subjectField.Text += PresetSubject;
             }
@@ -382,11 +391,11 @@ namespace NachoClient.iOS
             scrollView.AddSubview (bodyTextView);
 
             subjectField.EditingDidBegin += (object sender, EventArgs e) => {
-                ConfigureSubjectEditView ();
+                ConfigureSubjectEditView (true);
             };
                 
             bodyTextView.Started += (object sender, EventArgs e) => {
-                ConfigureBodyEditView ();
+                ConfigureBodyEditView (true);
             };
 
             bodyTextView.Changed += (object sender, EventArgs e) => {
@@ -444,7 +453,7 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void ConfigureCcView ()
+        protected void ConfigureCcView (bool animate)
         {
             toView.Hidden = false;
             ccView.Hidden = false;
@@ -471,10 +480,14 @@ namespace NachoClient.iOS
             attachmentView.ConfigureView ();
             suppressLayout = false;
 
-            LayoutView ();
+            if (animate) {
+                LayoutView ();
+            } else {
+                LayoutWithoutAnimation ();
+            }
         }
 
-        protected void ConfigureSubjectEditView ()
+        protected void ConfigureSubjectEditView (bool animate)
         {
             // If ccView is hidden,leave it that way.
             toView.Hidden = false;
@@ -499,10 +512,14 @@ namespace NachoClient.iOS
             intentView.Hidden = false;
             intentLabelHR.Hidden = false;
 
-            LayoutView ();
+            if (animate) {
+                LayoutView ();
+            } else {
+                LayoutWithoutAnimation ();
+            }
         }
 
-        protected void ConfigureBodyEditView ()
+        protected void ConfigureBodyEditView (bool animate)
         {
             // this might be the place that we set up our initializaiton text
             toView.SetCompact (true, -1);
@@ -527,7 +544,11 @@ namespace NachoClient.iOS
             attachmentView.ConfigureView ();
             suppressLayout = false;
 
-            LayoutView ();
+            if (animate) {
+                LayoutView ();
+            } else {
+                LayoutWithoutAnimation ();
+            }
         }
 
         /// IUcAttachmentBlock delegate
@@ -552,7 +573,7 @@ namespace NachoClient.iOS
             if (view == toView) {
                 ConfigureToView (true);
             } else {
-                ConfigureCcView ();
+                ConfigureCcView (true);
             }
         }
 
@@ -636,9 +657,7 @@ namespace NachoClient.iOS
 
             ViewFramer.Create (bodyTextView).Y (contentFrame.Bottom);
 
-            // Sets the size of bodyTextView and
-            // adjusts the scrollview content size.
-            SelectionChanged (bodyTextView);
+            SetBodyAndScrollViewSize (bodyTextView);
         }
 
         protected void AdjustY (UIView view, float yOffset)
@@ -743,17 +762,9 @@ namespace NachoClient.iOS
             return sz.Height;
         }
 
-        /// <summary>
-        /// Called when a key is pressed (or other changes) in body text view.
-        /// CAREFUL:  Also called from Layout to set body and scrollview sizes. 
-        /// </summary>
-        protected void SelectionChanged (UITextView textView)
+        protected void SetBodyAndScrollViewSize (UITextView textView)
         {
             OldAdjustToFittingHeight (textView);
-
-            // We want to scroll the caret rect into view
-            var caretRect = textView.GetCaretRectForPosition (textView.SelectedTextRange.Start);
-            caretRect.Size = new SizeF (caretRect.Size.Width, caretRect.Size.Height + textView.TextContainerInset.Bottom);
 
             if (!textView.Frame.Size.Equals (textView.ContentSize)) {
                 textView.ContentSize = textView.Frame.Size;
@@ -762,6 +773,19 @@ namespace NachoClient.iOS
             if (!scrollView.ContentSize.Equals (scrollViewContentSize)) {
                 scrollView.ContentSize = scrollViewContentSize;
             }
+        }
+
+        /// <summary>
+        /// Called when a key is pressed (or other changes) in body text view.
+        /// CAREFUL:  Also called from Layout to set body and scrollview sizes. 
+        /// </summary>
+        protected void SelectionChanged (UITextView textView)
+        {
+            SetBodyAndScrollViewSize (textView);
+
+            // We want to scroll the caret rect into view
+            var caretRect = textView.GetCaretRectForPosition (textView.SelectedTextRange.Start);
+            caretRect.Size = new SizeF (caretRect.Size.Width, caretRect.Size.Height + textView.TextContainerInset.Bottom);
 
             var targetRect = caretRect;
             targetRect.Y += textView.Frame.Y;
@@ -1105,7 +1129,7 @@ namespace NachoClient.iOS
             }
 
             subjectField.Text = CreateInitialSubjectLine ();
-            if (string.IsNullOrEmpty (subjectField.Text)) {
+            if (!string.IsNullOrEmpty (subjectField.Text)) {
                 alwaysShowIntent = true;
             }
 
