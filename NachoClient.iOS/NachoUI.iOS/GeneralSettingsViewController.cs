@@ -87,6 +87,7 @@ namespace NachoClient.iOS
             var userImageView = new UIImageView (new RectangleF (12, 15, 50, 50));
             userImageView.Center = new PointF (userImageView.Center.X, accountSettingsView.Frame.Height / 2);
             userImageView.Layer.CornerRadius = 25;
+            userImageView.Layer.MasksToBounds = true;
             userImageView.Hidden = true;
             userImageView.Tag = USER_IMAGE_VIEW_TAG;
             accountSettingsView.AddSubview (userImageView);
