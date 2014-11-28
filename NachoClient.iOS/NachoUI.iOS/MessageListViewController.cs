@@ -160,6 +160,7 @@ namespace NachoClient.iOS
             base.ViewWillAppear (animated);
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
+                Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
             }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
