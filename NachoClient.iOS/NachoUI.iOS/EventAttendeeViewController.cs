@@ -109,6 +109,13 @@ namespace NachoClient.iOS
                 return;
             }
 
+            if (segue.Identifier.Equals ("SegueToContactSearch")) {
+                var dc = (INachoContactChooser)segue.DestinationViewController;
+                var holder = sender as SegueHolder;
+                var address = (NcEmailAddress)holder.value;
+                dc.SetOwner (this, address, NachoContactType.EmailRequired);
+                return;
+            }
  
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
@@ -179,8 +186,8 @@ namespace NachoClient.iOS
             addAttendeesButton.Clicked += (object sender, EventArgs e) => {
                 var address = new NcEmailAddress (NcEmailAddress.Kind.Required);
                 address.action = NcEmailAddress.Action.create;
-                PerformSegue ("EventAttendeesToContactChooser", new SegueHolder (address));
-            };
+                PerformSegue ("SegueToContactSearch", new SegueHolder (address));
+            }; 
 
             segmentedControlView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 40));
             segmentedControlView.BackgroundColor = UIColor.White;
