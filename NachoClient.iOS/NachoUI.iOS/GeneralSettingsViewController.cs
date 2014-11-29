@@ -69,8 +69,11 @@ namespace NachoClient.iOS
         {
             View.BackgroundColor = A.Color_NachoNowBackground;
             contentView.BackgroundColor = A.Color_NachoNowBackground;
-            NavigationController.NavigationBar.Translucent = false;
-            NavigationController.NavigationBar.TintColor = A.Color_NachoBlue;
+
+            if (null != NavigationController.NavigationBar) {
+                NavigationController.NavigationBar.Translucent = false;
+                NavigationController.NavigationBar.TintColor = A.Color_NachoBlue;
+            }
 
             yOffset = A.Card_Vertical_Indent;
 
