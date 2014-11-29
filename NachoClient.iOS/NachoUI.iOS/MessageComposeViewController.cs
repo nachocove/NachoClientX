@@ -237,7 +237,7 @@ namespace NachoClient.iOS
                 return;
             }
             if (segue.Identifier.Equals ("ComposeToContactSearch")) {
-                var dc = (ContactSearchViewController)segue.DestinationViewController;
+                var dc = (INachoContactChooser)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
                 var address = (NcEmailAddress)holder.value;
                 dc.SetOwner (this, address, NachoContactType.EmailRequired);
