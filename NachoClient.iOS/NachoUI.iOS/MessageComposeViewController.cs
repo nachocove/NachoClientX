@@ -75,6 +75,7 @@ namespace NachoClient.iOS
         string EmailTemplate;
         List<McAttachment> PresetAttachmentList;
         bool startInSubjectField;
+        bool startInBodyField;
 
         // If this is a reply or forward, keep track of the quoted text that is inserted.
         // This makes it possible to check later if the user changed the text.
@@ -118,7 +119,9 @@ namespace NachoClient.iOS
             PresetSubject = subject;
             EmailTemplate = emailTemplate;
             PresetAttachmentList = attachmentList;
-            startInSubjectField = ((null != toAddress) && (null == subject));
+            alwaysShowIntent = !String.IsNullOrEmpty (PresetSubject);
+            startInSubjectField = (null != PresetToAddress) && String.IsNullOrEmpty (PresetSubject);
+            startInBodyField = (null != PresetToAddress) && !String.IsNullOrEmpty (PresetSubject) && !String.IsNullOrEmpty (emailTemplate);
         }
 
         public override void ViewDidLoad ()
@@ -161,7 +164,8 @@ namespace NachoClient.iOS
                 alert.Dismissed += (object alertSender, UIButtonEventArgs alertEvent) => {
                     if (1 == alertEvent.ButtonIndex) {
                         owner = null;
-                        NavigationController.PopViewControllerAnimated (true);                    }
+                        NavigationController.PopViewControllerAnimated (true);
+                    }
                 };
                 alert.Show ();
             };
@@ -183,6 +187,10 @@ namespace NachoClient.iOS
             } else if (startInSubjectField) {
                 ConfigureSubjectEditView (false);
                 subjectField.BecomeFirstResponder ();
+            } else if (startInBodyField) {
+                ConfigureBodyEditView (false);
+                bodyTextView.BecomeFirstResponder ();
+                bodyTextView.SelectedRange = new NSRange (EmailTemplate.Length, 0);
             } else {
                 ConfigureToView (false);
                 toView.SetEditFieldAsFirstResponder ();
