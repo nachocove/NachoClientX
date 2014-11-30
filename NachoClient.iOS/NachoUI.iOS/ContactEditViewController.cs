@@ -771,37 +771,6 @@ namespace NachoClient.iOS
             return "";
         }
 
-        protected void HeaderMoreButtonClicked (object sender, EventArgs e)
-        {
-            View.EndEditing (true);
-            UIView headerView = (UIView)View.ViewWithTag (HEADER_VIEW_TAG);
-            UIView headerNameEditView = (UIView)headerView.ViewWithTag (HEADER_NAME_EDIT_VIEW_TAG);
-            UILabel headerNameLabel = (UILabel)headerView.ViewWithTag (HEADER_NAME_TEXT_FIELD_TAG);
-
-            UIButton headerMoreButton = (UIButton)headerView.ViewWithTag (HEADER_MORE_BUTTON);
-            headerMoreButton.Selected = !headerMoreButton.Selected;
-            headerNameEditView.Hidden = !headerNameEditView.Hidden;
-
-            if (!headerNameEditView.Hidden) {
-                headerNameLabel.Alpha = .7f;
-            } else {
-                headerNameLabel.Alpha = 1;
-            }
-
-            var firstName = (UITextField)headerNameEditView.ViewWithTag (FIRST_NAME_TAG);
-            var middleName = (UITextField)headerNameEditView.ViewWithTag (MIDDLE_NAME_TAG);
-            var lastName = (UITextField)headerNameEditView.ViewWithTag (LAST_NAME_TAG);
-            var suffix = (UITextField)headerNameEditView.ViewWithTag (SUFFIX_TAG);
-
-            contactCopy.FirstName = firstName.Text;
-            contactCopy.MiddleName = middleName.Text;
-            contactCopy.LastName = lastName.Text;
-            contactCopy.Suffix = suffix.Text;
-            contactCopy.Update ();
-
-            ConfigureAndLayout ();
-        }
-
         protected void SetViewHeight (UIView view, float height)
         {
             var frame = view.Frame;
