@@ -70,9 +70,8 @@ namespace NachoClient.iOS
             View.BackgroundColor = A.Color_NachoNowBackground;
             contentView.BackgroundColor = A.Color_NachoNowBackground;
 
-            if (null != NavigationController.NavigationBar) {
-                NavigationController.NavigationBar.Translucent = false;
-                NavigationController.NavigationBar.TintColor = A.Color_NachoBlue;
+            if (null != NavigationItem) {
+                NavigationItem.SetHidesBackButton (true, false);
             }
 
             yOffset = A.Card_Vertical_Indent;
@@ -106,10 +105,10 @@ namespace NachoClient.iOS
             userLabelView.Tag = USER_LABEL_VIEW_TAG;
             accountSettingsView.AddSubview (userLabelView);
 
-            McAccount userAccount = McAccount.QueryById <McAccount>(LoginHelpers.GetCurrentAccountId ());
-            McContact userContact = McContact.QueryByEmailAddress (LoginHelpers.GetCurrentAccountId (), userAccount.EmailAddr).FirstOrDefault();
+            McAccount userAccount = McAccount.QueryById <McAccount> (LoginHelpers.GetCurrentAccountId ());
+            McContact userContact = McContact.QueryByEmailAddress (LoginHelpers.GetCurrentAccountId (), userAccount.EmailAddr).FirstOrDefault ();
 
-            var userImage = Util.ImageOfSender (LoginHelpers.GetCurrentAccountId(), userAccount.EmailAddr);
+            var userImage = Util.ImageOfSender (LoginHelpers.GetCurrentAccountId (), userAccount.EmailAddr);
 
             if (null != userImage) {
                 userImageView.Hidden = false;
@@ -118,7 +117,7 @@ namespace NachoClient.iOS
                 userLabelView.Hidden = false;
                 int ColorIndex;
                 string Initials;
-                Util.UserMessageField (userContact.GetEmailAddress(), LoginHelpers.GetCurrentAccountId(), out ColorIndex, out Initials);
+                Util.UserMessageField (userContact.GetEmailAddress (), LoginHelpers.GetCurrentAccountId (), out ColorIndex, out Initials);
                 userLabelView.Text = NachoCore.Utils.ContactsHelper.GetInitials (userContact);
                 userLabelView.BackgroundColor = Util.ColorForUser (ColorIndex);
             }
@@ -129,7 +128,7 @@ namespace NachoClient.iOS
             nameLabel.Tag = NAME_LABEL_TAG;
             accountSettingsView.AddSubview (nameLabel);
 
-            UILabel accountEmailAddress = new UILabel (new RectangleF (75, nameLabel.Frame.Bottom , 170, TEXT_LINE_HEIGHT));
+            UILabel accountEmailAddress = new UILabel (new RectangleF (75, nameLabel.Frame.Bottom, 170, TEXT_LINE_HEIGHT));
             accountEmailAddress.Tag = EMAIL_ADDRESS_LABEL_TAG;
             accountEmailAddress.Text = "";
             accountEmailAddress.Font = A.Font_AvenirNextRegular14;
@@ -146,7 +145,7 @@ namespace NachoClient.iOS
 
             yOffset = accountSettingsView.Frame.Bottom + 30;
 
-            UIView buttonsView = new UIView (new RectangleF(A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), CELL_HEIGHT * 2));
+            UIView buttonsView = new UIView (new RectangleF (A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), CELL_HEIGHT * 2));
             buttonsView.BackgroundColor = UIColor.White;
             buttonsView.Layer.CornerRadius = A.Card_Corner_Radius;
             buttonsView.Layer.BorderColor = A.Card_Border_Color;
@@ -212,7 +211,7 @@ namespace NachoClient.iOS
             DirtyBackEnd.TouchUpInside += FixBackEndButtonClicked; 
             DirtyBackEnd.Tag = FIX_BE_BUTTON_TAG;
             DirtyBackEnd.Hidden = true;
-            View.Add(DirtyBackEnd);
+            View.Add (DirtyBackEnd);
 
             yOffset = DirtyBackEnd.Frame.Bottom + 5;
 
@@ -243,7 +242,7 @@ namespace NachoClient.iOS
             var nameLabel = (UILabel)contentView.ViewWithTag (NAME_LABEL_TAG);
 
             McAccount userAccount = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
-            McContact userContact = McContact.QueryByEmailAddress (LoginHelpers.GetCurrentAccountId (), userAccount.EmailAddr).FirstOrDefault();
+            McContact userContact = McContact.QueryByEmailAddress (LoginHelpers.GetCurrentAccountId (), userAccount.EmailAddr).FirstOrDefault ();
             nameLabel.Text = userContact.FileAs;
 
             var emailLabel = (UILabel)contentView.ViewWithTag (EMAIL_ADDRESS_LABEL_TAG);
@@ -266,19 +265,19 @@ namespace NachoClient.iOS
 
             accountSettingsTapGesture.RemoveTarget (accountSettingsTapGestureHandlerToken);
             var accountSettingsView = (UIView)View.ViewWithTag (ACCOUNT_SETTINGS_VIEW_TAG);
-            if (null != accountSettingsView){
+            if (null != accountSettingsView) {
                 accountSettingsView.RemoveGestureRecognizer (accountSettingsTapGesture);
             }
 
             aboutUsTapGesture.RemoveTarget (aboutUsTapGestureHandlerToken);
             var aboutUsView = (UIView)View.ViewWithTag (ABOUT_US_VIEW_TAG);
-            if (null != aboutUsView){
+            if (null != aboutUsView) {
                 aboutUsView.RemoveGestureRecognizer (aboutUsTapGesture);
             }
 
             privacyPolicyTapGesture.RemoveTarget (privacyPolicyTapGestureHandlerToken);
             var privacyPolicyView = (UIView)View.ViewWithTag (PRIVACY_POLICY_VIEW_TAG);
-            if (null != privacyPolicyView){
+            if (null != privacyPolicyView) {
                 privacyPolicyView.RemoveGestureRecognizer (privacyPolicyTapGesture);
             }
         }
@@ -310,7 +309,7 @@ namespace NachoClient.iOS
                 if (BackEndAutoDStateEnum.CredWait == backEndState || BackEndAutoDStateEnum.CertAskWait == backEndState) {
                     UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
                     CredentialsAskViewController cvc = (CredentialsAskViewController)x.InstantiateViewController ("CredentialsAskViewController");
-                    cvc.SetTabBarController((NachoTabBarController)this.TabBarController);
+                    cvc.SetTabBarController ((NachoTabBarController)this.TabBarController);
                     this.PresentViewController (cvc, true, null);
                 }
 
@@ -343,7 +342,7 @@ namespace NachoClient.iOS
         {
             if (segue.Identifier.Equals ("GeneralSettingsToSettingsLegal")) {
                 var x = segue.DestinationViewController;
-                var settingsLegal = (SettingsLegalViewController)segue.DestinationViewController.ChildViewControllers[0];
+                var settingsLegal = (SettingsLegalViewController)segue.DestinationViewController.ChildViewControllers [0];
                 settingsLegal.SetProperties ("https://nachocove.com/privacy-policy-text/", "Privacy Policy", PRIVACY_POLICY_KEY, true);
                 return;
             }

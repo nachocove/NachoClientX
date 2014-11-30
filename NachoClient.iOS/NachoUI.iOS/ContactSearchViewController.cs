@@ -30,6 +30,8 @@ namespace NachoClient.iOS
         // Internal state
         ContactsTableViewSource contactTableViewSource;
 
+        UIBarButtonItem cancelButton;
+
         public ContactSearchViewController (IntPtr handle) : base (handle)
         {
         }
@@ -53,6 +55,15 @@ namespace NachoClient.iOS
             // Manages the search bar & auto-complete table.
             contactTableViewSource = new ContactsTableViewSource ();
             contactTableViewSource.SetOwner (this, false, SearchDisplayController);
+
+            cancelButton = new UIBarButtonItem ();
+            Util.SetAutomaticImageForButton (cancelButton, "icn-close");
+            NavigationItem.LeftBarButtonItem = cancelButton;
+
+            cancelButton.Clicked += (sender, e) => {
+                owner = null;
+                NavigationController.PopViewControllerAnimated (true); 
+            };
 
             TableView.Source = contactTableViewSource;
             SearchDisplayController.SearchResultsTableView.Source = contactTableViewSource;
