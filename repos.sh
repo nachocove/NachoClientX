@@ -12,8 +12,6 @@ SwipeViewBinding
 UIImageEffects
 SWRevealViewController
 SWRevealViewControllerBinding
-MCSwipeTableViewCell
-MCSwipeTableViewCellBinding
 NachoPlatformBinding
 NachoUIMonitorBinding
 bc-csharp
