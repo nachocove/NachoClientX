@@ -103,6 +103,8 @@ namespace NachoClient.iOS
                 SegmentedControl.SelectedSegment = selectedSegment;
                 SegmentedControl.SendActionForControlEvents (UIControlEvent.ValueChanged);
             }
+
+            ConfigureAndLayout ();
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -456,7 +458,9 @@ namespace NachoClient.iOS
 
             //CONFIGURE CONTACT INFO VIEW
             UIScrollView contactInfoScrollView = (UIScrollView)View.ViewWithTag (CONTACT_INFO_VIEW_TAG);
-
+            foreach (var v in contactInfoScrollView.Subviews) {
+                v.RemoveFromSuperview ();
+            }
             float contactInfoHeight = 0;
 
             if (contact.EmailAddresses.Count > 0) {
@@ -923,9 +927,15 @@ namespace NachoClient.iOS
             if (String.IsNullOrEmpty (name)) {
                 return "";
             }
-            var emailAddressAttribute = contact.EmailAddresses [0];
-            var emailAddress = McEmailAddress.QueryById<McEmailAddress> (emailAddressAttribute.EmailAddress);
-            return emailAddress.CanonicalEmailAddress;
+
+            if (contact.EmailAddresses.Count > 0) {
+                var emailAddressAttribute = contact.EmailAddresses [0];
+                var emailAddress = McEmailAddress.QueryById<McEmailAddress> (emailAddressAttribute.EmailAddress);
+                return emailAddress.CanonicalEmailAddress;
+            } else {
+                return "";
+            }
+
         }
 
         protected void TouchedEmailButton (string address)

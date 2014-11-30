@@ -143,7 +143,7 @@ namespace NachoCore.Utils
         {
             copy.ServerId = orig.ServerId;
 
-            copy.BodyId = orig.BodyId;
+            copy.PortraitId = orig.PortraitId;
             copy.NativeBodyType = orig.NativeBodyType;
 
             copy.Alias = orig.Alias;
@@ -168,60 +168,57 @@ namespace NachoCore.Utils
             copy.NickName = orig.NickName;
             copy.OfficeLocation = orig.OfficeLocation;
 
-            foreach (var p in copy.PhoneNumbers) {
-                p.Delete ();
+            string originalBodyString = "";
+
+            McBody originalContactBody = McBody.QueryById<McBody> (orig.BodyId);
+            if (null != originalContactBody) {
+                originalBodyString = originalContactBody.GetContentsString ();
             }
-            copy.PhoneNumbers.Clear ();
+
+            McBody copyContactBody = McBody.QueryById<McBody> (copy.BodyId);
+            if (null != copyContactBody) {
+                copyContactBody.UpdateData (originalBodyString);
+            } else {
+                copy.BodyId = McBody.InsertFile (copy.AccountId
+                    ,McAbstrFileDesc.BodyTypeEnum.PlainText_1,
+                    originalBodyString).Id;
+            }
+
 
             foreach (var p in orig.PhoneNumbers) {
                 if (p.IsDefault) {
-                    copy.AddDefaultPhoneNumberAttribute (orig.AccountId,
+                    copy.AddDefaultPhoneNumberAttribute (p.AccountId,
                         p.Name,
                         p.Label,
                         p.Value);
                 } else {
-                    copy.AddOrUpdatePhoneNumberAttribute (orig.AccountId,
+                    copy.AddOrUpdatePhoneNumberAttribute (p.AccountId,
                         p.Name,
                         p.Label,
                         p.Value);
                 }
             }
-
-            foreach (var p in copy.EmailAddresses) {
-                p.Delete ();
-            }
-            copy.EmailAddresses.Clear ();
 
             foreach (var e in orig.EmailAddresses) {
                 if (e.IsDefault) {
-                    copy.AddDefaultEmailAddressAttribute (orig.AccountId,
+                    copy.AddDefaultEmailAddressAttribute (e.AccountId,
                         e.Name,
                         e.Label,
                         e.Value);
                 } else {
-                    copy.AddOrUpdateEmailAddressAttribute (orig.AccountId,
+                    copy.AddOrUpdateEmailAddressAttribute (e.AccountId,
                         e.Name,
                         e.Label,
                         e.Value);
                 }
             }
 
-            foreach (var p in copy.Dates) {
-                p.Delete ();
-            }
-            copy.Dates.Clear ();
-
             foreach (var d in orig.Dates) {
-                copy.AddDateAttribute (orig.AccountId,
+                copy.AddDateAttribute (d.AccountId,
                     d.Name,
                     d.Label,
                     d.Value);
             }
-
-            foreach (var p in copy.IMAddresses) {
-                p.Delete ();
-            }
-            copy.IMAddresses.Clear ();
 
             foreach (var im in orig.IMAddresses) {
                 copy.AddIMAddressAttribute (orig.AccountId,
@@ -230,28 +227,22 @@ namespace NachoCore.Utils
                     im.Value);
             }
 
-            foreach (var p in copy.Relationships) {
-                p.Delete ();
-            }
-            copy.Relationships.Clear ();
-
             foreach (var r in orig.Relationships) {
-                copy.AddRelationshipAttribute (orig.AccountId,
+                copy.AddRelationshipAttribute (r.AccountId,
                     r.Name,
                     r.Label,
                     r.Value);
             }
 
-            foreach (var p in copy.Addresses) {
-                p.Delete ();
-            }
-            copy.Addresses.Clear ();
-
             foreach (var a in orig.Addresses) {
-                copy.AddAddressAttribute (orig.AccountId,
+                copy.AddAddressAttribute (a.AccountId,
                     a.Name,
                     a.Label,
                     a);
+            }
+
+            foreach (var cat in orig.Categories) {
+                copy.AddCategoryAttribute (cat.AccountId, cat.Name);
             }
         }
 

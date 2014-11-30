@@ -125,18 +125,6 @@ namespace NachoClient.iOS
 
         protected void SelectionButtonClicked (object sender, EventArgs e)
         {
-//            UIButton previouslySelectedButton = (UIButton)View.ViewWithTag (selectedButtonTag);
-//            UIImageView previouslySelectedButtonSelectedImageView = (UIImageView)previouslySelectedButton.ViewWithTag (SELECTED_BUTTON_IMAGE_TAG);
-//            UIImageView previouslySelectedButtonNotSelectedImageView = (UIImageView)previouslySelectedButton.ViewWithTag (NOT_SELECTED_BUTTON_IMAGE_TAG);
-//            previouslySelectedButtonSelectedImageView.Hidden = true;
-//            previouslySelectedButtonNotSelectedImageView.Hidden = false;
-//
-//            UIButton selectedButton = (UIButton)sender;
-//            UIImageView selectedButtonSelectedImageView = (UIImageView)selectedButton.ViewWithTag (SELECTED_BUTTON_IMAGE_TAG);
-//            UIImageView selectedButtonNotSelectedImageView = (UIImageView)selectedButton.ViewWithTag (NOT_SELECTED_BUTTON_IMAGE_TAG);
-//            selectedButtonSelectedImageView.Hidden = false;
-//            selectedButtonNotSelectedImageView.Hidden = true;
-//
             UIButton selectedButton = (UIButton)sender;
             selectedButtonTag = selectedButton.Tag;
             selectedName = labelList [selectedButtonTag - 1000];
