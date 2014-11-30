@@ -327,26 +327,6 @@ namespace NachoCore.Model
             return GetStringAttribute (PhoneNumbers, McContactStringType.PhoneNumber, name);
         }
 
-        public McContactStringAttribute GetEntirePhoneNumberAttribute (string name)
-        {
-            foreach (var l in PhoneNumbers) {
-                if (l.Name.Equals (name)) {
-                    return l;
-                }
-            }
-            return null;
-        }
-
-        public McContactEmailAddressAttribute GetEntireEmailAddressAttribute (string name)
-        {
-            foreach (var l in EmailAddresses) {
-                if (l.Name.Equals (name)) {
-                    return l;
-                }
-            }
-            return null;
-        }
-
         public string GetIMAddressAttribute (string name)
         {
             return GetStringAttribute (IMAddresses, McContactStringType.IMAddress, name);
@@ -936,11 +916,6 @@ namespace NachoCore.Model
             ApplyRelationshipString (xmlAppData, Contacts2Ns, Xml.Contacts2.ManagerName);
 
             // FIXME - No child support yet ;-).
-
-//            var children = GetRelationshipAttributes (Xml.Contacts.Child);
-//            if (children.Count > 0) {
-//                ApplyRelationshipString (xmlAppData, ContactsNs, Xml.Contacts.Children);
-//            }
 
             var cats = GetCategoryAttributes ();
             if (0 < cats.Count) {

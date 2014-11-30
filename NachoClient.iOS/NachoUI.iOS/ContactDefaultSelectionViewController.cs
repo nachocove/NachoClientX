@@ -548,8 +548,6 @@ namespace NachoClient.iOS
 
         public void PrepareForDismissal (string selectedName)
         {
-            //phoneLabel = selectedLabel;
-
             SetPhoneLabel ();
         }
 

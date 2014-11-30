@@ -1710,32 +1710,17 @@ namespace NachoClient.iOS
             switch (editingBlockType) {
             case BlockType.Phone:
                 editingPhoneCell.RemoveFromSuperview ();
-                var att = contactCopy.GetEntirePhoneNumberAttribute (editingPhoneCell.phoneAttribute.Name);
-                att.Delete ();
-                contactCopy.Update ();
-                var ccp = contactCopy.PhoneNumbers;
-
-                foreach (var p in ccp) {
-                    if (p.Name == editingPhoneCell.phoneAttribute.Name) {
-                        p.Delete ();
-                        ccp.Remove (p);
-                        break;
-                    }
-                }
-
-                contactCopy.PhoneNumbers = ccp;
+                contactCopy.PhoneNumbers.Remove (editingPhoneCell.phoneAttribute);
                 editingPhoneCell.phoneAttribute.Delete ();
-
+                contactCopy.Update ();
                 phoneCellList.Remove (editingPhoneCell);
                 LayoutView ();
                 break;
             case BlockType.Email:
                 editingEmailCell.RemoveFromSuperview ();
                 contactCopy.EmailAddresses.Remove (editingEmailCell.emailAttribute);
-
                 editingEmailCell.emailAttribute.Delete ();
                 emailCellList.Remove (editingEmailCell);
-
                 LayoutView ();
                 break;
             case BlockType.Address:
