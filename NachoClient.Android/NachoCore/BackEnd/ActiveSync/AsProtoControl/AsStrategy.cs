@@ -822,37 +822,7 @@ namespace NachoCore.ActiveSync
 
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt ||
                 NcApplication.ExecutionContextEnum.Background == exeCtxt) {
-                // <DEBUG>
-                if (null == NcCommStatus.Instance) {
-                    NcAssert.True (false, "null NcCommStatus.Instance");
-                }
-                if (null == BEContext) {
-                    NcAssert.True (false, "null BEContext");
-                }
-                if (null == BEContext.Server) {
-                    Log.Error (Log.LOG_AS, "null BEContext.Server");
-                    DumpAsState ();
-                    NcAssert.True (false);
-                }
-                // </DEBUG>
-                if (NcCommStatus.Instance.IsRateLimited (BEContext.Server.Id)) {
-                    // (FG, BG) If we are rate-limited, and we can execute a narrow Ping command at the 
-                    // current filter setting, execute a narrow Ping command.
-                    var rlPingKit = GenPingKit (accountId, protocolState, true);
-                    if (null != rlPingKit) {
-                        Log.Info (Log.LOG_AS, "Strategy:FG/BG,RL:Narrow Ping");
-                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping, 
-                            new AsPingCommand (BEContext.ProtoControl, rlPingKit));
-                    }
-                    // (FG, BG) If we are rate-limited, and we can’t execute a narrow Ping command
-                    // at the current filter setting, then wait.
-                    else {
-                        Log.Info (Log.LOG_AS, "Strategy:FG/BG,RL:Wait");
-                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Wait,
-                            new AsWaitCommand (BEContext.ProtoControl, 120, false));
-                    }
-                }
-                // I(FG, BG) If there are entries in the pending queue, execute the oldest.
+                // (FG, BG) If there are entries in the pending queue, execute the oldest.
                 var next = McPending.QueryEligible (accountId).FirstOrDefault ();
                 if (null != next) {
                     NcAssert.True (McPending.Operations.Last == McPending.Operations.AttachmentDownload);
@@ -923,6 +893,23 @@ namespace NachoCore.ActiveSync
                         break;
                     }
                     return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.QOop, cmd);
+                }
+                // (FG, BG) If we are rate-limited, and we can execute a narrow Ping command at the 
+                // current filter setting, execute a narrow Ping command.
+                if (NcCommStatus.Instance.IsRateLimited (BEContext.Server.Id)) {
+                    var rlPingKit = GenPingKit (accountId, protocolState, true);
+                    if (null != rlPingKit) {
+                        Log.Info (Log.LOG_AS, "Strategy:FG/BG,RL:Narrow Ping");
+                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping, 
+                            new AsPingCommand (BEContext.ProtoControl, rlPingKit));
+                    }
+                    // (FG, BG) If we are rate-limited, and we can’t execute a narrow Ping command
+                    // at the current filter setting, then wait.
+                    else {
+                        Log.Info (Log.LOG_AS, "Strategy:FG/BG,RL:Wait");
+                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Wait,
+                            new AsWaitCommand (BEContext.ProtoControl, 120, false));
+                    }
                 }
                 // (FG, BG) Choose eligible option by priority, split tie randomly...
                 if (Scope.FlagIsSet (Scope.StrategyRung (protocolState), Scope.FlagEnum.IgnorePower) ||

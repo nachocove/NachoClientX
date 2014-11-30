@@ -5,7 +5,6 @@ all:
 	make -C ../SwipeViewBinding
 	make -C ../UIImageEffects
 	make -C ../SWRevealViewControllerBinding
-	make -C ../MCSwipeTableViewCellBinding
 	make -C ../NachoPlatformBinding
 	make -C ../NachoUIMonitorBinding
 	make -C ../bc-csharp -f ../NachoClientX/bc-csharp.mk
@@ -22,7 +21,6 @@ clean:
 	make -C ../SwipeViewBinding clean
 	make -C ../UIImageEffects clean
 	make -C ../SWRevealViewControllerBinding clean
-	make -C ../MCSwipeTableViewCellBinding clean
 	make -C ../NachoPlatformBinding clean
 	make -C ../NachoUIMonitorBinding clean
 	make -C ../bc-csharp -f ../NachoClientX/bc-csharp.mk clean

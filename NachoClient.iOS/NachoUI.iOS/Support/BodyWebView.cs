@@ -68,8 +68,12 @@ namespace NachoClient.iOS
                 contentOffset.X -= expandWidthBy;
                 frame.Width += expandWidthBy;
             }
-            this.Frame = frame;
-            this.ScrollView.ContentOffset = contentOffset;
+            if (!this.Frame.Equals (frame)) {
+                this.Frame = frame;
+            }
+            if (!this.ScrollView.ContentOffset.Equals (contentOffset)) {
+                this.ScrollView.ContentOffset = contentOffset;
+            }
         }
 
         private void OnLoadFinished (object sender, EventArgs e)

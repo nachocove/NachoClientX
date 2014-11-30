@@ -64,6 +64,7 @@ namespace NachoClient.iOS
             hotListView.BackgroundColor = A.Color_NachoBackgroundGray;
             hotListView.TableFooterView = new UIView (new RectangleF (0, 0, 1, 20));
             hotListView.TableFooterView.BackgroundColor = A.Color_NachoBackgroundGray;
+            hotListView.DecelerationRate = UIScrollView.DecelerationRateFast;
             View.AddSubview (hotListView);
 
             hotEventView = new HotEventView (new RectangleF (0, 0, View.Frame.Width, 69));

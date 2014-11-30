@@ -109,6 +109,13 @@ namespace NachoClient.iOS
                 return;
             }
 
+            if (segue.Identifier.Equals ("SegueToContactSearch")) {
+                var dc = (INachoContactChooser)segue.DestinationViewController;
+                var holder = sender as SegueHolder;
+                var address = (NcEmailAddress)holder.value;
+                dc.SetOwner (this, address, NachoContactType.EmailRequired);
+                return;
+            }
  
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
@@ -179,8 +186,8 @@ namespace NachoClient.iOS
             addAttendeesButton.Clicked += (object sender, EventArgs e) => {
                 var address = new NcEmailAddress (NcEmailAddress.Kind.Required);
                 address.action = NcEmailAddress.Action.create;
-                PerformSegue ("EventAttendeesToContactChooser", new SegueHolder (address));
-            };
+                PerformSegue ("SegueToContactSearch", new SegueHolder (address));
+            }; 
 
             segmentedControlView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 40));
             segmentedControlView.BackgroundColor = UIColor.White;
@@ -236,7 +243,7 @@ namespace NachoClient.iOS
             emptyListLabel.LineBreakMode = UILineBreakMode.WordWrap;
             addAttendeeView.AddSubview (emptyListLabel);
 
-            iconIv = new UIImageView (new RectangleF(0, 0, 16, 16));
+            iconIv = new UIImageView (new RectangleF (0, 0, 16, 16));
             iconIv.Image = UIImage.FromBundle ("calendar-add-attendee-bottom");
             addAttendeeView.AddSubview (iconIv);
 
@@ -368,12 +375,13 @@ namespace NachoClient.iOS
                 addAttendeeView.Hidden = false;
                 if (editing) {
                     emptyListLabel.Text = addMessage;
+                    iconIv.Hidden = false;
                 } else {
                     emptyListLabel.Text = "No attendees";
                 }
                 emptyListLabel.SizeToFit ();
                 emptyListLabel.Frame = new RectangleF (0, 0, addAttendeeView.Frame.Width, addAttendeeView.Frame.Height - 64);
-                iconIv.Frame = new RectangleF (emptyListLabel.Center.X + 4, emptyListLabel.Center.Y + 21, 16, 16);
+                iconIv.Frame = new RectangleF (emptyListLabel.Center.X + 3, emptyListLabel.Center.Y + 21, 16, 16);
             } else {
                 AttendeeSource.SetAttendeeList (this.AttendeeList);
                 tableView.ReloadData ();
@@ -389,9 +397,11 @@ namespace NachoClient.iOS
             if (0 == RequiredList.Count) {
                 tableView.Hidden = true;
                 addAttendeeView.Hidden = false;
+                iconIv.Hidden = true;
                 if (0 == AttendeeList.Count) {
                     if (editing) {
                         emptyListLabel.Text = addMessage;
+                        iconIv.Hidden = false;
                     } else {
                         emptyListLabel.Text = "No required attendees";
                     }
@@ -413,9 +423,11 @@ namespace NachoClient.iOS
             if (0 == OptionalList.Count) {
                 tableView.Hidden = true;
                 addAttendeeView.Hidden = false;
+                iconIv.Hidden = true;
                 if (0 == AttendeeList.Count) {
                     if (editing) {
                         emptyListLabel.Text = addMessage;
+                        iconIv.Hidden = false;
                     } else {
                         emptyListLabel.Text = "No optional attendees";
                     }
@@ -545,10 +557,21 @@ namespace NachoClient.iOS
         /// IContactsTableViewSourceDelegate
         public void SendAttendeeInvite (McAttendee attendee)
         {
-//            var iCalPart = CalendarHelper.iCalToMimePart (account, c);
-//            var mimeBody = CalendarHelper.CreateMime (c.Description, iCalPart, c.attachments);
-//
-//            CalendarHelper.SendInvite (account, c, attendee, mimeBody);
+            McCalendar item = (McCalendar)c;
+            var iCalPart = CalendarHelper.iCalToMimePart (account, item);
+            var mimeBody = CalendarHelper.CreateMime (item.Description, iCalPart, item.attachments);
+
+            CalendarHelper.SendInvite (account, item, attendee, mimeBody);
+        }
+
+        public void SyncRequest ()
+        {
+            if (0 == c.Id) {
+                NcAssert.CaseError ();
+            } else {
+                c.Update ();
+                BackEnd.Instance.UpdateCalCmd (account.Id, c.Id);
+            }
         }
 
 

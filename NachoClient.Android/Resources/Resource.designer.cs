@@ -30,8 +30,9 @@ namespace NachoClient.AndroidClient
 			global::DDay.Collections.Android.Resource.String.library_name = global::NachoClient.AndroidClient.Resource.String.library_name;
 			global::DDay.iCal.Android.Resource.String.library_name = global::NachoClient.AndroidClient.Resource.String.library_name;
 			global::antlr.runtime.Android.Resource.String.library_name = global::NachoClient.AndroidClient.Resource.String.library_name;
-			global::ModernHttpClient.Resource.String.library_name = global::NachoClient.AndroidClient.Resource.String.library_name;
 			global::NachoPlatformBinding.Android.Resource.String.library_name = global::NachoClient.AndroidClient.Resource.String.library_name;
+			global::Lucene.Net.Android.Resource.String.library_name = global::NachoClient.AndroidClient.Resource.String.library_name;
+			global::ModernHttpClient.Resource.String.library_name = global::NachoClient.AndroidClient.Resource.String.library_name;
 		}
 		
 		public partial class Animation

@@ -364,6 +364,24 @@ namespace NachoCore.Utils
             mcMessage.Delete ();
         }
 
+        //Used to send a single invite to one attendee at a time rather than all attendees of an event
+        public static void SendInvite (McAccount account, McCalendar c, McAttendee a, MimeEntity mimeBody)
+        {
+            var mimeMessage = new MimeMessage ();
+
+            mimeMessage.From.Add (new MailboxAddress (Pretty.DisplayNameForAccount (account), account.EmailAddr));
+            mimeMessage.To.Add (new MailboxAddress (a.Name, a.Email));
+
+            mimeMessage.Subject = Pretty.SubjectString (c.Subject);
+            mimeMessage.Date = System.DateTime.UtcNow;
+            mimeMessage.Body = mimeBody;
+
+            var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
+            BackEnd.Instance.SendEmailCmd (mcMessage.AccountId, mcMessage.Id, c.Id);
+            mcMessage = McEmailMessage.QueryById<McEmailMessage> (mcMessage.Id);
+            mcMessage.Delete ();
+        }
+
         public static void SendMeetingResponse (McAccount account, McCalendar c, MimeEntity mimeBody, NcResponseType response)
         {
             var mimeMessage = new MimeMessage ();
@@ -574,7 +592,7 @@ namespace NachoCore.Utils
                             "The WeekOfMonth field has an invalid value of {0}. It must be 1 <= WeekOfMonth <= 5.", r.WeekOfMonth));
                     }
                     if (!r.DayOfWeekIsSet) {
-                        Log.Info(Log.LOG_CALENDAR,"DayOfWeekIsSet is false for monthly recurring event {0}. A reinstall of the app is needed to correct this.", c.Subject);
+                        Log.Info (Log.LOG_CALENDAR, "DayOfWeekIsSet is false for monthly recurring event {0}. A reinstall of the app is needed to correct this.", c.Subject);
                         // throw new RecurrenceValidationException("The DayOfWeek field must be set in a weekly recurrence.");
                     }
                     if (NcDayOfWeek.Sunday != r.DayOfWeek && NcDayOfWeek.Monday != r.DayOfWeek && NcDayOfWeek.Tuesday != r.DayOfWeek && NcDayOfWeek.Wednesday != r.DayOfWeek &&

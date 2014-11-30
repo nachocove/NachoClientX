@@ -69,8 +69,11 @@ namespace NachoClient.iOS
         {
             View.BackgroundColor = A.Color_NachoNowBackground;
             contentView.BackgroundColor = A.Color_NachoNowBackground;
-            NavigationController.NavigationBar.Translucent = false;
-            NavigationController.NavigationBar.TintColor = A.Color_NachoBlue;
+
+            if (null != NavigationController.NavigationBar) {
+                NavigationController.NavigationBar.Translucent = false;
+                NavigationController.NavigationBar.TintColor = A.Color_NachoBlue;
+            }
 
             yOffset = A.Card_Vertical_Indent;
 
@@ -87,6 +90,7 @@ namespace NachoClient.iOS
             var userImageView = new UIImageView (new RectangleF (12, 15, 50, 50));
             userImageView.Center = new PointF (userImageView.Center.X, accountSettingsView.Frame.Height / 2);
             userImageView.Layer.CornerRadius = 25;
+            userImageView.Layer.MasksToBounds = true;
             userImageView.Hidden = true;
             userImageView.Tag = USER_IMAGE_VIEW_TAG;
             accountSettingsView.AddSubview (userImageView);
