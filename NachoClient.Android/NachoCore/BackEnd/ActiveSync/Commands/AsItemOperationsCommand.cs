@@ -175,8 +175,7 @@ namespace NachoCore.ActiveSync
                         // We are trying to track down why so many message bodies are having download failures.
                         // Use an error message to make this situation more visible.  Remove this error once
                         // the problem has been solved.
-                        Log.Error(Log.LOG_AS, "MaybeErrorFileDesc: E-mail ({0} {1}) body download failed. (But we don't know why.)",
-                            xmlServerId.Value, item.Subject);
+                        Log.Error(Log.LOG_AS, "Body download failed: speculative download, reason for failure is not available.");
                     }
                 });
             } else {
@@ -211,6 +210,12 @@ namespace NachoCore.ActiveSync
                     var innerStatus = (Xml.ItemOperations.StatusCode)uint.Parse (xmlStatus.Value);
                     if (Xml.ItemOperations.StatusCode.Success_1 != innerStatus) {
                         Log.Warn (Log.LOG_AS, "ItemOperations: Status {0}", innerStatus);
+                    }
+                    if (Xml.ItemOperations.StatusCode.Success_1 != innerStatus && null != xmlServerId) {
+                        // We are trying to track down why so many message bodies are having download failures.
+                        // Use an error message to make this situation more visible.  Remove this error once
+                        // the problem has been solved.
+                        Log.Error (Log.LOG_AS, "Body download failed with error {0}", innerStatus.ToString ());
                     }
                     switch (innerStatus) {
                     case Xml.ItemOperations.StatusCode.Success_1:
