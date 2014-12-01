@@ -350,13 +350,18 @@ namespace NachoClient.iOS
             previewView.Resize (new RectangleF (12, 0 + previewViewAdjustment, previewView.Frame.Width, previewViewHeight));
         }
 
-
-        public void ReconfigureVisibleCells(UITableView tableView)
+        public void ReconfigureVisibleCells (UITableView tableView)
         {
-            foreach (var path in tableView.IndexPathsForVisibleRows) {
-                var cell = tableView.CellAt (path);
-                if (null != cell) {
-                    ConfigureCell (tableView, cell, path);
+            if (null == tableView) {
+                return;
+            }
+            var paths = tableView.IndexPathsForVisibleRows;
+            if (null != paths) {
+                foreach (var path in paths) {
+                    var cell = tableView.CellAt (path);
+                    if (null != cell) {
+                        ConfigureCell (tableView, cell, path);
+                    }
                 }
             }
         }
