@@ -170,7 +170,7 @@
                         <segue destination="2DH-ex-Jce" kind="modal" identifier="GeneralSettingsToSettings" id="AbJ-I5-x4b"/>
                         <segue destination="0HP-De-GcZ" kind="modal" identifier="GeneralSettingsToSettingsLegal" id="K8c-x2-hEf"/>
                         <segue destination="OCr-PO-3nH" kind="push" identifier="SegueToNachoNow" id="v9F-jf-qe1"/>
-                        <segue destination="3rW-o2-Ptb" kind="modal" identifier="SegueToAccountSettings" id="3TJ-PJ-REj"/>
+                        <segue destination="3rW-o2-Ptb" kind="push" identifier="SegueToAccountSettings" id="3TJ-PJ-REj"/>
                         <segue destination="KWh-cK-EXH" kind="modal" identifier="SegueToAboutUs" id="PD1-1A-eiQ"/>
                     </connections>
                 </viewController>
@@ -795,9 +795,7 @@
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <nil key="simulatedBottomBarMetrics"/>
                     <connections>
-                        <outlet property="cancelButton" destination="Dag-wd-pkU" id="H6E-C0-7a5"/>
                         <outlet property="contentView" destination="Gsy-wq-3TG" id="DxE-KR-TXr"/>
-                        <outlet property="doneButton" destination="eZZ-1I-eST" id="hwk-57-Gqb"/>
                         <outlet property="endDatePicker" destination="g6j-ou-jtx" id="54k-NH-PdE"/>
                         <outlet property="scrollView" destination="ur7-bo-IIh" id="exr-dy-EXm"/>
                         <outlet property="startDatePicker" destination="SN5-N4-3xJ" id="L24-7Y-NEp"/>
@@ -824,8 +822,6 @@
                         <!--2014-07-30 21:47:47 +0000-->
                     </date>
                 </datePicker>
-                <barButtonItem image="navbar-icn-close.png" id="Dag-wd-pkU" userLabel="Bar Button Item - cancelButton"/>
-                <barButtonItem systemItem="done" id="eZZ-1I-eST" userLabel="Bar Button Item - doneButton"/>
             </objects>
             <point key="canvasLocation" x="-3203" y="2687"/>
         </scene>
@@ -1315,6 +1311,7 @@
                         <outlet property="EventAttendeesTableView" destination="6N0-AD-VUt" id="MU5-3H-qDw"/>
                         <outlet property="addAttendeeButton" destination="4z6-Fd-6ku" id="dnv-oH-k1n"/>
                         <segue destination="Mow-Gy-F9N" kind="push" identifier="EventAttendeesToContactChooser" id="4M9-UI-9mt"/>
+                        <segue destination="HJp-il-GU9" kind="push" identifier="SegueToContactSearch" id="tt1-JW-EVV"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="wXN-oz-Khv" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1374,6 +1371,7 @@
         <scene sceneID="PrY-yy-Xez">
             <objects>
                 <navigationController id="3rW-o2-Ptb" sceneMemberID="viewController">
+                    <navigationItem key="navigationItem" id="tLa-dd-USc"/>
                     <navigationBar key="navigationBar" contentMode="scaleToFill" id="tra-uN-Dpy">
                         <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -1678,35 +1676,35 @@
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="vUs-ft-xdy"/>
-        <segue reference="ja3-Zu-g6R"/>
-        <segue reference="HwV-au-Wta"/>
         <segue reference="4z2-t5-9Cd"/>
         <segue reference="g4G-tD-G9H"/>
         <segue reference="iqA-wd-xqD"/>
-        <segue reference="XQg-JR-vxA"/>
-        <segue reference="L3g-YM-YjM"/>
         <segue reference="Eb2-K0-nI3"/>
-        <segue reference="wZy-ga-YEb"/>
+        <segue reference="XQg-JR-vxA"/>
         <segue reference="Aba-pv-mzB"/>
         <segue reference="alQ-9Z-W4y"/>
-        <segue reference="kYM-OY-NE0"/>
         <segue reference="mLY-u0-R5O"/>
+        <segue reference="kYM-OY-NE0"/>
+        <segue reference="DcC-EH-FAx"/>
+        <segue reference="Kr2-7H-kbB"/>
+        <segue reference="g8B-SL-7oa"/>
+        <segue reference="w67-dy-XSq"/>
         <segue reference="m2D-2n-RiV"/>
         <segue reference="7sK-rg-HQL"/>
         <segue reference="peA-r2-tjq"/>
-        <segue reference="w67-dy-XSq"/>
-        <segue reference="DcC-EH-FAx"/>
-        <segue reference="Kmd-x6-iCJ"/>
+        <segue reference="4M9-UI-9mt"/>
+        <segue reference="tt1-JW-EVV"/>
+        <segue reference="v9F-jf-qe1"/>
+        <segue reference="K8c-x2-hEf"/>
         <segue reference="SxL-6k-kbd"/>
-        <segue reference="zby-Sy-Y3J"/>
-        <segue reference="ay2-o2-R8l"/>
-        <segue reference="xrp-ey-B0j"/>
+        <segue reference="ja3-Zu-g6R"/>
+        <segue reference="Kmd-x6-iCJ"/>
+        <segue reference="vUs-ft-xdy"/>
         <segue reference="FD7-0T-FGT"/>
         <segue reference="szv-KC-TId"/>
         <segue reference="hxO-14-opZ"/>
-        <segue reference="zOx-eF-clw"/>
         <segue reference="rEt-DF-c51"/>
+        <segue reference="zOx-eF-clw"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>

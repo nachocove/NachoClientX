@@ -45,14 +45,18 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
+            if (null != NavigationItem) {
+                NavigationItem.SetHidesBackButton (true, false);
+            }
+
             var todayButton = new UIBarButtonItem ();
             Util.SetAutomaticImageForButton (todayButton, "nav-calendar-empty");
             todayButton.Clicked += (object sender, EventArgs e) => {
                 ReturnToToday ();
             };
 
-            var addEventButton = new UIBarButtonItem (UIBarButtonSystemItem.Add);
-            addEventButton.TintColor = A.Color_NachoBlue;
+            var addEventButton = new UIBarButtonItem ();
+            Util.SetAutomaticImageForButton (addEventButton, "cal-add");
             addEventButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("CalendarToEditEventView", new SegueHolder (null));
             };

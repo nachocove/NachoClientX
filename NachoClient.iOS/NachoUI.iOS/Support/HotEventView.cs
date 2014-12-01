@@ -139,11 +139,13 @@ namespace NachoClient.iOS
             var subjectLabelView = (UILabel)this.ViewWithTag (SUBJECT_TAG);
             var labelView = (UILabel)this.ViewWithTag (TEXT_TAG);
             var dotView = (UIImageView)this.ViewWithTag (DOT_TAG);
+            var iconView = (UIImageView)this.ViewWithTag (ICON_TAG);
 
             if (null == c) {
                 subjectLabelView.Text = "No upcoming events";
                 subjectLabelView.Hidden = false;
                 labelView.Hidden = true;
+                iconView.Hidden = true;
                 dotView.Hidden = true;
                 return;
             }
@@ -160,7 +162,7 @@ namespace NachoClient.iOS
             if (c.AllDayEvent) {
                 startString = "ALL DAY";
             } else {
-                if ((currentEvent.StartTime - DateTime.Now).Hours < 24) {
+                if ((currentEvent.StartTime - DateTime.UtcNow).TotalHours < 12) {
                     startString = Pretty.ShortTimeString (currentEvent.StartTime);
                 } else {
                     startString = Pretty.ShortDayTimeString (currentEvent.StartTime);
@@ -175,6 +177,7 @@ namespace NachoClient.iOS
             var eventString = "";
             eventString = Pretty.Join (startString, locationString, " : ");
 
+            iconView.Hidden = String.IsNullOrEmpty (eventString);
             labelView.Text = eventString;
             labelView.Hidden = false;
 

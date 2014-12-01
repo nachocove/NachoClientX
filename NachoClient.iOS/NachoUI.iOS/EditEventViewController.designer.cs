@@ -13,13 +13,7 @@ namespace NachoClient.iOS
 	partial class EditEventViewController
 	{
 		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem cancelButton { get; set; }
-
-		[Outlet]
 		MonoTouch.UIKit.UIView contentView { get; set; }
-
-		[Outlet]
-		MonoTouch.UIKit.UIBarButtonItem doneButton { get; set; }
 
 		[Outlet]
 		MonoTouch.UIKit.UIDatePicker endDatePicker { get; set; }
@@ -32,9 +26,9 @@ namespace NachoClient.iOS
 		
 		void ReleaseDesignerOutlets ()
 		{
-			if (startDatePicker != null) {
-				startDatePicker.Dispose ();
-				startDatePicker = null;
+			if (contentView != null) {
+				contentView.Dispose ();
+				contentView = null;
 			}
 
 			if (endDatePicker != null) {
@@ -42,24 +36,14 @@ namespace NachoClient.iOS
 				endDatePicker = null;
 			}
 
-			if (cancelButton != null) {
-				cancelButton.Dispose ();
-				cancelButton = null;
-			}
-
-			if (doneButton != null) {
-				doneButton.Dispose ();
-				doneButton = null;
-			}
-
 			if (scrollView != null) {
 				scrollView.Dispose ();
 				scrollView = null;
 			}
 
-			if (contentView != null) {
-				contentView.Dispose ();
-				contentView = null;
+			if (startDatePicker != null) {
+				startDatePicker.Dispose ();
+				startDatePicker = null;
 			}
 		}
 	}
