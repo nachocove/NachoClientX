@@ -55,8 +55,8 @@ namespace NachoClient.iOS
                 ReturnToToday ();
             };
 
-            var addEventButton = new UIBarButtonItem (UIBarButtonSystemItem.Add);
-            addEventButton.TintColor = A.Color_NachoBlue;
+            var addEventButton = new UIBarButtonItem ();
+            Util.SetAutomaticImageForButton (addEventButton, "cal-add");
             addEventButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("CalendarToEditEventView", new SegueHolder (null));
             };
