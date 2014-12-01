@@ -739,37 +739,6 @@ namespace NachoClient.iOS
             contactCopy.Update();
         }
 
-//        public string MiscContactAttributeNameToValue (string name)
-//        {
-//            switch (name) {
-//            case Xml.Contacts.Alias:
-//                return contactCopy.Alias;
-//            case Xml.Contacts.Department:
-//                return contactCopy.Department;
-//            case Xml.Contacts.FileAs:
-//                return contactCopy.FileAs;
-//            case Xml.Contacts.JobTitle:
-//                return contactCopy.JobTitle;
-//            case Xml.Contacts.OfficeLocation:
-//                return  contactCopy.OfficeLocation;
-//            case Xml.Contacts.Title:
-//                return contactCopy.Title;
-//            case Xml.Contacts.WebPage:
-//                return contactCopy.WebPage;
-//            case Xml.Contacts2.AccountName:
-//                return contactCopy.AccountName;
-//            case Xml.Contacts2.CustomerId:
-//                return contactCopy.CustomerId;
-//            case Xml.Contacts2.GovernmentId:
-//                return contactCopy.GovernmentId;
-//            case Xml.Contacts2.MMS:
-//                return contactCopy.MMS;
-//            case Xml.Contacts2.NickName:
-//                return contactCopy.NickName;
-//            }
-//            return "";
-//        }
-
         protected void SetViewHeight (UIView view, float height)
         {
             var frame = view.Frame;
