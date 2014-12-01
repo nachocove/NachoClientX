@@ -150,7 +150,7 @@ namespace NachoClient.iOS
         {
             base.ViewWillDisappear (animated);
         }
-            
+
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             if (segue.Identifier == "NachoNowToCalendar") {
@@ -243,12 +243,16 @@ namespace NachoClient.iOS
 
         protected void MaybeRefreshPriorityInbox ()
         {
+            bool callReconfigure = true;
+
             if (priorityInboxNeedsRefresh) {
                 priorityInboxNeedsRefresh = false;
                 if (priorityInbox.Refresh ()) {
                     hotListView.ReloadData ();
+                    callReconfigure = false;
                 }
-            } else {
+            }
+            if (callReconfigure) {
                 hotListSource.ReconfigureVisibleCells (hotListView);
             }
         }
