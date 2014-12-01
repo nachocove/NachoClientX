@@ -599,7 +599,9 @@ namespace NachoClient.iOS
             }
             foreach (var a in contact.EmailAddresses) {
                 var e = McEmailAddress.QueryById<McEmailAddress> (a.EmailAddress);
-                Log.Debug (Log.LOG_UI, "contact Id={0} emailAddressId={1} email={2} score={3}", contact.Id, e.Id, e.CanonicalEmailAddress, e.Score);
+                if(null != e){
+                    Log.Debug (Log.LOG_UI, "contact Id={0} emailAddressId={1} email={2} score={3}", contact.Id, e.Id, e.CanonicalEmailAddress, e.Score);
+                }
             }
         }
 

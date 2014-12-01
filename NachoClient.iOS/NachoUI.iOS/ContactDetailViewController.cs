@@ -673,7 +673,11 @@ namespace NachoClient.iOS
             emailView.UserInteractionEnabled = true;
             emailView.AddSubview (emailComposeIcon);
 
-            string canonicalEmail = McEmailAddress.QueryById <McEmailAddress> (email.EmailAddress).CanonicalEmailAddress;
+            var emailAddress = McEmailAddress.QueryById <McEmailAddress> (email.EmailAddress);
+            string canonicalEmail = "";
+            if (null != emailAddress) {
+                canonicalEmail = emailAddress.CanonicalEmailAddress;
+            }
 
             UITapGestureRecognizer emailTap = new UITapGestureRecognizer ();
             UITapGestureRecognizer.Token emailTapToken = emailTap.AddTarget (() => ContactInfoTapHandler (true, canonicalEmail));

@@ -1236,6 +1236,7 @@ namespace NachoClient.iOS
                 addressAttribute.Name,
                 addressAttribute.Label,
                 addressAttribute);
+            contactCopy.Update ();
 
             AddressCell addressCell = new AddressCell (addressCellList.Count * CELL_HEIGHT, this, addressAttribute);
             addressCellList.Add (addressCell);
