@@ -55,7 +55,9 @@ namespace NachoClient.iOS
 
         public override void ViewDidLoad ()
         {
-            labelList.Insert (0, selectedName);
+            if (!labelList.Contains (selectedName)) {
+                labelList.Insert (0, selectedName);
+            }
             base.ViewDidLoad ();
         }
 
