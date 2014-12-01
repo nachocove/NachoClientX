@@ -228,10 +228,17 @@ namespace NachoCore.Utils
             }
 
             foreach (var r in orig.Relationships) {
-                copy.AddRelationshipAttribute (r.AccountId,
-                    r.Name,
-                    r.Label,
-                    r.Value);
+                if (r.Name != Xml.Contacts.Child) {
+                    copy.AddRelationshipAttribute (r.AccountId,
+                        r.Name,
+                        r.Label,
+                        r.Value);
+                } else {
+                    copy.AddChildAttribute (r.AccountId,
+                        r.Name,
+                        r.Label,
+                        r.Value);
+                }
             }
 
             foreach (var a in orig.Addresses) {
@@ -370,6 +377,37 @@ namespace NachoCore.Utils
             }
 
             return takenNames;
+        }
+
+        public string MiscContactAttributeNameToValue (string name, McContact contact)
+        {
+            switch (name) {
+            case Xml.Contacts.Alias:
+                return contact.Alias;
+            case Xml.Contacts.Department:
+                return contact.Department;
+            case Xml.Contacts.FileAs:
+                return contact.FileAs;
+            case Xml.Contacts.JobTitle:
+                return contact.JobTitle;
+            case Xml.Contacts.OfficeLocation:
+                return  contact.OfficeLocation;
+            case Xml.Contacts.Title:
+                return contact.Title;
+            case Xml.Contacts.WebPage:
+                return contact.WebPage;
+            case Xml.Contacts2.AccountName:
+                return contact.AccountName;
+            case Xml.Contacts2.CustomerId:
+                return contact.CustomerId;
+            case Xml.Contacts2.GovernmentId:
+                return contact.GovernmentId;
+            case Xml.Contacts2.MMS:
+                return contact.MMS;
+            case Xml.Contacts2.NickName:
+                return contact.NickName;
+            }
+            return "";
         }
 
         public List<string> GetAvailableMiscNames (List<string> takenNames)

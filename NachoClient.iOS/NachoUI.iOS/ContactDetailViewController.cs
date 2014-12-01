@@ -27,6 +27,7 @@ namespace NachoClient.iOS
 
         protected const string UICellReuseIdentifier = "UICell";
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
+        protected ContactsHelper contactHelper = new ContactsHelper();
         protected MessageTableViewSource messageSource;
         protected HashSet<int> MultiSelect = null;
 
@@ -104,6 +105,7 @@ namespace NachoClient.iOS
                 SegmentedControl.SendActionForControlEvents (UIControlEvent.ValueChanged);
             }
 
+            contact = McContact.QueryById<McContact> (contact.Id);
             ConfigureAndLayout ();
         }
 
@@ -333,7 +335,7 @@ namespace NachoClient.iOS
             segmentedViewHolder.AddSubview (segmentedControl);
 
             //CONTACT INFO
-            UIScrollView contactInfoScrollView = new UIScrollView (new RectangleF (PADDING, segmentedControl.Frame.Bottom + 5, segmentedViewHolder.Frame.Width - (PADDING * 2), View.Frame.Height - segmentedViewHolder.Frame.Top - 80 - 64));
+            UIScrollView contactInfoScrollView = new UIScrollView (new RectangleF (0, segmentedControl.Frame.Bottom + 5, segmentedViewHolder.Frame.Width, View.Frame.Height - segmentedViewHolder.Frame.Top - 80 - 64));
             contactInfoScrollView.BackgroundColor = UIColor.White;
             contactInfoScrollView.Tag = CONTACT_INFO_VIEW_TAG;
             segmentedViewHolder.AddSubview (contactInfoScrollView);
@@ -491,10 +493,6 @@ namespace NachoClient.iOS
                 }
             }
 
-            if (!string.IsNullOrEmpty (contact.WebPage)) {
-                contactInfoHeight += AddMiscInfo (Xml.Contacts.WebPage, contactInfoHeight, contactInfoScrollView);
-            }
-
             if (contact.Addresses.Count > 0) {
                 foreach (var a in contact.Addresses) {
                     contactInfoHeight += AddMiscInfo (a.Name, contactInfoHeight, contactInfoScrollView);
@@ -526,8 +524,8 @@ namespace NachoClient.iOS
                 }
             }
 
-            if (!string.IsNullOrEmpty (contact.OfficeLocation)) {
-                contactInfoHeight += AddMiscInfo (Xml.Contacts.OfficeLocation, contactInfoHeight, contactInfoScrollView);
+            foreach (var t in contactHelper.GetTakenMiscNames(contact)) {
+                contactInfoHeight += AddMiscInfo (t, contactInfoHeight, contactInfoScrollView);
             }
 
             if (contactInfoHeight < contactInfoScrollView.Frame.Height) {
@@ -653,7 +651,7 @@ namespace NachoClient.iOS
         {
             UIView segmentedControllerHolderView = (UIView)View.ViewWithTag (SEGMENTED_VIEW_HOLDER_TAG);
 
-            var emailView = new UIView (new RectangleF (0, yOffset, contactInfoScrollView.Frame.Width, 40));
+            var emailView = new UIView (new RectangleF (PADDING, yOffset, contactInfoScrollView.Frame.Width - PADDING, 40));
             emailView.Tag = variableTransientTag;
             contactInfoScrollView.AddSubview (emailView);
 
@@ -669,7 +667,7 @@ namespace NachoClient.iOS
             emailView.AddSubview (emailLabel);
 
             var emailComposeIcon = new UIImageView (UIImage.FromBundle ("contacts-email"));
-            emailComposeIcon.Frame = new RectangleF (emailView.Frame.Width - emailComposeIcon.Frame.Width, ROW_SPACER, emailComposeIcon.Frame.Width, emailComposeIcon.Frame.Height);
+            emailComposeIcon.Frame = new RectangleF (emailView.Frame.Width - (emailComposeIcon.Frame.Width + PADDING), ROW_SPACER, emailComposeIcon.Frame.Width, emailComposeIcon.Frame.Height);
             emailView.UserInteractionEnabled = true;
             emailView.AddSubview (emailComposeIcon);
 
@@ -715,7 +713,7 @@ namespace NachoClient.iOS
         {
             UIView segmentedControllerHolderView = (UIView)View.ViewWithTag (SEGMENTED_VIEW_HOLDER_TAG);
 
-            var phoneView = new UIView (new RectangleF (0, yOffset, contactInfoScrollView.Frame.Width, 40));
+            var phoneView = new UIView (new RectangleF (PADDING, yOffset, contactInfoScrollView.Frame.Width - PADDING, 40));
             phoneView.Tag = variableTransientTag;
             phoneView.UserInteractionEnabled = true;
             contactInfoScrollView.AddSubview (phoneView);
@@ -741,7 +739,7 @@ namespace NachoClient.iOS
             phoneView.AddSubview (phoneLabel);
 
             var callIcon = new UIImageView (UIImage.FromBundle ("contacts-call"));
-            callIcon.Frame = new RectangleF (phoneView.Frame.Width - callIcon.Frame.Width, ROW_SPACER, callIcon.Frame.Width, callIcon.Frame.Height);
+            callIcon.Frame = new RectangleF (phoneView.Frame.Width - (callIcon.Frame.Width + PADDING), ROW_SPACER, callIcon.Frame.Width, callIcon.Frame.Height);
             phoneView.AddSubview (callIcon);
 
             UITapGestureRecognizer phoneTap = new UITapGestureRecognizer ();
@@ -777,7 +775,7 @@ namespace NachoClient.iOS
         {
             UIView segmentedControllerHolderView = (UIView)View.ViewWithTag (SEGMENTED_VIEW_HOLDER_TAG);
 
-            var miscInfoView = new UIView (new RectangleF (0, yOffset, contactInfoScrollView.Frame.Width, 40));
+            var miscInfoView = new UIView (new RectangleF (PADDING, yOffset, contactInfoScrollView.Frame.Width - PADDING, 40));
             contactInfoScrollView.AddSubview (miscInfoView);
 
             string label = "";
@@ -892,7 +890,13 @@ namespace NachoClient.iOS
                 //FIXME: Add children icon
                 icon = "contacts-icn-bday";
                 break;
+            default:
+                label = contactHelper.ExchangeNameToLabel (whatType).ToUpper ();
+                value = contactHelper.MiscContactAttributeNameToValue (whatType, contact);
+                icon = "contacts-icn-bday";
+                break;
             }
+
         }
 
         public bool ShouldRecognizeSimultaneously (UIGestureRecognizer gestureRecognizer, UIGestureRecognizer otherGestureRecognizer)

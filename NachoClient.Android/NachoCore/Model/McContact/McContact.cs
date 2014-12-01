@@ -481,6 +481,12 @@ namespace NachoCore.Model
             return AddOrUpdateStringAttribute (ref DbRelationships, accountId, McContactStringType.Relationship, name, label, value);
         }
 
+        public McContactStringAttribute AddChildAttribute (int accountId, string name, string label, string value)
+        {
+            ReadAncillaryData ();
+            return AddStringAttribute (ref DbRelationships, accountId, McContactStringType.Relationship, name, label, value);
+        }
+
         public McContactStringAttribute AddCategoryAttribute (int accountId, string name)
         {
             ReadAncillaryData ();
