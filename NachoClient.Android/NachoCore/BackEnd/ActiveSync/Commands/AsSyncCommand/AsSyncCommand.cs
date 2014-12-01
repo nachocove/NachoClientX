@@ -419,6 +419,13 @@ namespace NachoCore.ActiveSync
                             pending.ResolveAsSuccess (BEContext.ProtoControl);
                         }
                     }
+                    if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == folder.Type) {
+                        var protocolState = BEContext.ProtocolState;
+                        if (!protocolState.HasSyncedInbox) {
+                            protocolState.HasSyncedInbox = true;
+                            protocolState.Update ();
+                        }
+                    }
                     break;
 
                 case Xml.AirSync.StatusCode.ServerError_5:
