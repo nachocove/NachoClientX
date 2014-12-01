@@ -49,11 +49,21 @@ namespace NachoClient.iOS
                 NavigationItem.SetHidesBackButton (true, false);
             }
 
-            var todayButton = new UIBarButtonItem ();
-            Util.SetAutomaticImageForButton (todayButton, "nav-calendar-empty");
-            todayButton.Clicked += (object sender, EventArgs e) => {
+            var dateButton = UIButton.FromType (UIButtonType.Custom);
+            dateButton.Frame = new RectangleF (0, 0, 22, 22);
+            using (var image = UIImage.FromBundle ("nav-calendar-empty")) {
+                dateButton.SetBackgroundImage (image, UIControlState.Normal);
+            }
+            // The icon center is a little off so adjust the text downward.
+            dateButton.VerticalAlignment = UIControlContentVerticalAlignment.Bottom;
+            dateButton.SetTitle (DateTime.Today.Day.ToString (), UIControlState.Normal);
+            dateButton.SetTitleColor (A.Color_NachoBlue, UIControlState.Normal);
+            dateButton.Font = A.Font_AvenirNextRegular12;
+            dateButton.TouchUpInside += (object sender, EventArgs e) => {
                 ReturnToToday ();
             };
+                
+            var todayButton = new UIBarButtonItem (dateButton);
 
             var addEventButton = new UIBarButtonItem ();
             Util.SetAutomaticImageForButton (addEventButton, "cal-add");
@@ -77,8 +87,6 @@ namespace NachoClient.iOS
 
             CreateView ();
             ConfigureBasicView ();
-
-
         }
 
         public override void ViewWillAppear (bool animated)
@@ -117,7 +125,6 @@ namespace NachoClient.iOS
         /// <param name="sender">Typically the cell that was clicked.</param>
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
-
             if (segue.Identifier == "NachoNowToEventView") {
                 var vc = (EventViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
@@ -196,16 +203,8 @@ namespace NachoClient.iOS
 
             calendarTableView.SeparatorColor = A.Color_NachoBorderGray;
 
-            var todayButtonLabel = new UILabel (new RectangleF (108, 3, 23, 44));
-            todayButtonLabel.Text = DateTime.Today.Day.ToString ();
-            todayButtonLabel.TextColor = A.Color_NachoBlue;
-            todayButtonLabel.Font = A.Font_AvenirNextRegular14;
-            todayButtonLabel.TextAlignment = UITextAlignment.Center;
-            var titleView = new UIView (new RectangleF (0, 0, (dateBarHeight - 8), 44));
-            titleView.Add (todayButtonLabel);
             NavigationItem.Title = "Calendar";
 
-            //this.NavigationItem.TitleView = titleView;
             DateDotView.Frame = (new RectangleF (0, 0, View.Frame.Width, dateBarHeight));
             DateDotView.ClipsToBounds = true;
             DateDotView.BackgroundColor = UIColor.White;
