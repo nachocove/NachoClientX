@@ -1137,7 +1137,16 @@ namespace NachoCore.ActiveSync
 
         private void DoDrive ()
         {
-            Sm.State = ProtocolState.ProtoControlState;
+            switch (ProtocolState.ProtoControlState) {
+            case (uint)Lst.UiCertOkW:
+            case (uint)Lst.UiDCrdW:
+            case (uint)Lst.UiServConfW:
+                Sm.State = (uint)Lst.DiscW;
+                break;
+            default:
+                Sm.State = ProtocolState.ProtoControlState;
+                break;
+            }
             Sm.PostEvent ((uint)SmEvt.E.Launch, "DRIVE");
         }
 
