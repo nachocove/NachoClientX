@@ -296,7 +296,6 @@
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemChange.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\Commands\AsSyncCommand\ItemDelete.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsProtoControl\IAsStrategy.cs" />
-    <Compile Include="NachoCore\Adapters\NcFetchAssist.cs" />
     <Compile Include="NachoPlatform.Android\NotifAndroid.cs" />
     <Compile Include="NachoCore\BackEnd\ActiveSync\AsValidateConfig.cs" />
     <Compile Include="NachoCore\Model\McEmailAddress.cs" />

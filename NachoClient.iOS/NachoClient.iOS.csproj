@@ -854,9 +854,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsProtoControl\IAsStrategy.cs">
       <Link>NachoCore\BackEnd\ActiveSync\AsProtoControl\IAsStrategy.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcFetchAssist.cs">
-      <Link>NachoCore\Adapters\NcFetchAssist.cs</Link>
-    </Compile>
     <Compile Include="NachoPlatform.iOS\NotifiOS.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\ActiveSync\AsValidateConfig.cs">
       <Link>NachoCore\BackEnd\ActiveSync\AsValidateConfig.cs</Link>
