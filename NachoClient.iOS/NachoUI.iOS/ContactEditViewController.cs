@@ -503,7 +503,6 @@ namespace NachoClient.iOS
         protected void LayoutView ()
         {
             UIView headerView = (UIView)View.ViewWithTag (HEADER_VIEW_TAG);
-            UIView headerNameView = (UIView)headerView.ViewWithTag (HEADER_NAME_VIEW_TAG);
             UIView headerNameEditView = (UIView)headerView.ViewWithTag (HEADER_NAME_EDIT_VIEW_TAG);
             UIView headerCompanyView = (UIView)headerView.ViewWithTag (HEADER_COMPANY_VIEW_TAG);
 
