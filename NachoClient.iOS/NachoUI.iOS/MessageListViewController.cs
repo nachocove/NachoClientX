@@ -151,6 +151,8 @@ namespace NachoClient.iOS
                 ReloadCapture.Start ();
                 TableView.ReloadData ();
                 ReloadCapture.Stop ();
+            } else {
+                messageSource.ReconfigureVisibleCells (TableView);
             }
             NachoCore.Utils.NcAbate.RegularPriority ("MessageListViewController ReloadDataMaintainingPosition");
         }

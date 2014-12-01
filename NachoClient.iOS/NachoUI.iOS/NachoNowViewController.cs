@@ -15,14 +15,12 @@ namespace NachoClient.iOS
 {
     public partial class NachoNowViewController : NcUIViewController, IMessageTableViewSourceDelegate, INachoMessageEditorParent, INachoFolderChooserParent, INachoCalendarItemEditorParent, ICalendarTableViewSourceDelegate, INachoDateControllerParent
     {
-        public bool wrap = false;
-        public bool Selectable = true;
-        public INachoEmailMessages priorityInbox;
-
-        public UITableView hotListView;
-        protected HotEventView hotEventView;
-
         protected bool priorityInboxNeedsRefresh;
+        protected INachoEmailMessages priorityInbox;
+        protected HotListTableViewSource hotListSource;
+
+        protected UITableView hotListView;
+        protected HotEventView hotEventView;
 
         public NachoNowViewController (IntPtr handle) : base (handle)
         {
@@ -38,7 +36,8 @@ namespace NachoClient.iOS
 
             CreateView ();
 
-            hotListView.Source = new HotListTableViewSource (this, priorityInbox);
+            hotListSource = new HotListTableViewSource (this, priorityInbox);
+            hotListView.Source = hotListSource;
         }
 
         protected void CreateView ()
@@ -151,17 +150,7 @@ namespace NachoClient.iOS
         {
             base.ViewWillDisappear (animated);
         }
-
-        ///        NachoNowToCalendar(null)
-        ///        NachoNowToCalendarItem (index path)
-        ///        NachoNowToCompose (null)
-        ///        NachoNowToContacts (null)
-        ///        NachoNowToMessageAction (index path)
-        ///        NachoNowToMessageList (inbox folder)
-        ///        NachoNowToMessageList(deferred folder)
-        ///        NachoNowToMessagePriority  (index path)
-        ///        NachoNowToMessageView (index path)
-        ///
+            
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
             if (segue.Identifier == "NachoNowToCalendar") {
@@ -259,6 +248,8 @@ namespace NachoClient.iOS
                 if (priorityInbox.Refresh ()) {
                     hotListView.ReloadData ();
                 }
+            } else {
+                hotListSource.ReconfigureVisibleCells (hotListView);
             }
         }
 
