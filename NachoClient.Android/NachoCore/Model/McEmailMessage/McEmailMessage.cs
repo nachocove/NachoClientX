@@ -723,7 +723,7 @@ namespace NachoCore.Model
         // once the issue has been solved.
         private static string Duration(DateTime start, DateTime end)
         {
-            return string.Format ("{0}", (double)(end.Ticks - start.Ticks) / 10000.0);
+            return string.Format ("{0}", (end.Ticks - start.Ticks) / 10000);
         }
         private static int fastCount = 0;
         private static int slowCount = 0;
@@ -753,15 +753,15 @@ namespace NachoCore.Model
             });
             DateTime allDone = DateTime.UtcNow;
 
-            if (allDone.Ticks - start.Ticks > 1000000) {
-                // Update() took more than 100ms. Log an error message with split times
+            if (allDone.Ticks - start.Ticks > 5000000) {
+                // Update() took more than 500ms. Log an error message with split times
                 // and other interesting data, so we can hopefully figure out what is
                 // causing these delays.
                 ++slowCount;
-                Log.Error (Log.LOG_EMAIL, "McEmailMessage.Update(): [{8},{9}]{7} Total time {0} ms. Splits: {1} {2} {3} {4} {5} {6}",
+                Log.Error(Log.LOG_EMAIL, "Update: {0} = {1} {2} {3} {4} {5} {6} : +{7} [{8},{9}]",
                     Duration (start, allDone), Duration (start, txStart), Duration (txStart, baseDone), Duration (baseDone, readAncDone),
                     Duration (readAncDone, deleteAncDone), Duration (deleteAncDone, insertAncDone), Duration (insertAncDone, allDone),
-                    tryCount < 2 ? "" : string.Format (" ** {0} tries **", tryCount), slowCount, fastCount);
+                    tryCount, slowCount, fastCount);
             } else {
                 ++fastCount;
             }
