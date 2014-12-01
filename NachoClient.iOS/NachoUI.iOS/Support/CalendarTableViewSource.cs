@@ -278,7 +278,6 @@ namespace NachoClient.iOS
                 locationString = Pretty.SubjectString (c.Location);
             }
 
-
             // Duration
             durationLabelView.Text = durationString;
             // Location view
@@ -308,7 +307,7 @@ namespace NachoClient.iOS
                     // FIXME
                     break;
                 case LATE_TAG:
-                    // FIXME
+                    SendRunningLateMessage(indexPath);
                     break;
                 default:
                     throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action tag {0}", tag));
@@ -362,20 +361,6 @@ namespace NachoClient.iOS
 
         }
 
-        public void RunningLate (int eventId)
-        {
-            owner.SendRunningLateMessage (eventId);
-        }
-
-
-        UIView ViewWithImageName (string imageName)
-        {
-            var image = UIImage.FromBundle (imageName);
-            var imageView = new UIImageView (image);
-            imageView.ContentMode = UIViewContentMode.Center;
-            return imageView;
-        }
-
         public override float GetHeightForHeader (UITableView tableView, int section)
         {
             return 75;
@@ -425,26 +410,6 @@ namespace NachoClient.iOS
             bigNumberView.Text = date.Day.ToString ();
 
             return view;
-        }
-
-        public void MoveToFolder (UITableView tableView, McFolder folder, object cookie)
-        {
-           
-        }
-
-        public void MoveThisMessage (int messageThreadIndex, McFolder folder)
-        {
-
-        }
-
-        public void DeleteThisMessage (int messageThreadIndex)
-        {
-
-        }
-
-        public void ArchiveThisMessage (int messageThreadIndex)
-        {
-           
         }
 
         protected void ExtendTableViewUntil (UITableView tableView, DateTime date)
@@ -519,6 +484,17 @@ namespace NachoClient.iOS
                 ExtendTableViewUntil (tableView, finalDayInList.AddDays (30));
             }
         }
+
+        public void SendRunningLateMessage (NSIndexPath indexPath)
+        {
+            var e = calendar.GetEvent (indexPath.Section, indexPath.Row);
+            if (null != e) {
+                owner.SendRunningLateMessage (e.Id);
+            }
+        }
+
+
+
 
         public override void DraggingStarted (UIScrollView scrollView)
         {

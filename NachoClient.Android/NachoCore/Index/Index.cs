@@ -15,29 +15,29 @@ using Lucene.Net.Search.Payloads;
 
 namespace NachoCore.Index
 {
-	public class Index : IDisposable
+    public class Index : IDisposable
     {
         private StandardAnalyzer Analyzer;
         private FSDirectory IndexDirectory;
 
-		private Mutex Lock;
-		private IndexWriter Writer;
-		private IndexReader Reader;
+        private Mutex Lock;
+        private IndexWriter Writer;
+        private IndexReader Reader;
 
         public Index (string indexDirectoryPath)
         {
             Analyzer = new StandardAnalyzer (Lucene.Net.Util.Version.LUCENE_30);
             IndexDirectory = FSDirectory.Open (indexDirectoryPath);
-			Lock = new Mutex ();
+            Lock = new Mutex ();
         }
 
-		public void Dispose ()
-		{
-			Analyzer.Dispose ();
-			IndexDirectory.Dispose ();
-			Analyzer = null;
-			IndexDirectory = null;
-		}
+        public void Dispose ()
+        {
+            Analyzer.Dispose ();
+            IndexDirectory.Dispose ();
+            Analyzer = null;
+            IndexDirectory = null;
+        }
 
         private void Debug (string fmt, params object[] args)
         {
@@ -46,21 +46,21 @@ namespace NachoCore.Index
             #endif
         }
 
-		// Add() is significantly slower than BeginAddTransaction() + BatchAdd() + EndAddTransaction()
-		// So, if you are going to use more than one item, please use the later combination.
-		public long Add (string emailPath, string type, string id)
-		{
-			BeginAddTransaction ();
-			var bytesIndexed = BatchAdd (emailPath, type, id);
-			EndAddTransaction ();
-			return bytesIndexed;
-		}
+        // Add() is significantly slower than BeginAddTransaction() + BatchAdd() + EndAddTransaction()
+        // So, if you are going to use more than one item, please use the later combination.
+        public long Add (string emailPath, string type, string id)
+        {
+            BeginAddTransaction ();
+            var bytesIndexed = BatchAdd (emailPath, type, id);
+            EndAddTransaction ();
+            return bytesIndexed;
+        }
 
         public long BatchAdd (string emailPath, string type, string id)
         {
-			if (null == Writer) {
-				throw new ArgumentNullException ();
-			}
+            if (null == Writer) {
+                throw new ArgumentNullException ();
+            }
 
             // Create the document to be indexed
             IndexDocument doc;
@@ -79,40 +79,40 @@ namespace NachoCore.Index
             return doc.BytesIndexed;
         }
 
-		public void BeginAddTransaction ()
-		{
-			Lock.WaitOne ();
-			if (null != Writer) {
-				throw new ArgumentException ();
-			}
-			Writer = new IndexWriter (IndexDirectory, Analyzer, IndexWriter.MaxFieldLength.UNLIMITED);
-		}
+        public void BeginAddTransaction ()
+        {
+            Lock.WaitOne ();
+            if (null != Writer) {
+                throw new ArgumentException ();
+            }
+            Writer = new IndexWriter (IndexDirectory, Analyzer, IndexWriter.MaxFieldLength.UNLIMITED);
+        }
 
-		public void EndAddTransaction ()
-		{
-			Writer.Commit ();
-			Writer.Dispose ();
-			Writer = null;
-			Lock.ReleaseMutex ();
-		}
+        public void EndAddTransaction ()
+        {
+            Writer.Commit ();
+            Writer.Dispose ();
+            Writer = null;
+            Lock.ReleaseMutex ();
+        }
 
-		// Remove() is significantly slower than BeginRemoveTransaction() + BatchRemove() + EndRemoveTransaction()
-		// So, if you are going to remove more than one item, please use the later combination.
-		public bool Remove (string type, string id)
-		{
-			BeginRemoveTransaction ();
-			var isRemoved = BatchRemove (type, id);
-			EndRemoveTransaction ();
-			return isRemoved;
-		}
+        // Remove() is significantly slower than BeginRemoveTransaction() + BatchRemove() + EndRemoveTransaction()
+        // So, if you are going to remove more than one item, please use the later combination.
+        public bool Remove (string type, string id)
+        {
+            BeginRemoveTransaction ();
+            var isRemoved = BatchRemove (type, id);
+            EndRemoveTransaction ();
+            return isRemoved;
+        }
 
         public bool BatchRemove (string type, string id)
         {
-			if (null == Reader) {
-				throw new ArgumentNullException ();
-			}
+            if (null == Reader) {
+                throw new ArgumentNullException ();
+            }
             var parser = new QueryParser (Lucene.Net.Util.Version.LUCENE_30, "id", Analyzer);
-            var queryString = String.Format ("type:%s AND id:%s", type, id);
+            var queryString = String.Format ("type:{0} AND id:{1}", type, id);
             var query = parser.Parse (queryString);
             var searcher = new IndexSearcher (Reader);
             var matches = searcher.Search (query, 2);
@@ -122,28 +122,28 @@ namespace NachoCore.Index
                 } else if (0 == matches.TotalHits) {
                     Debug ("{0}:{1} not found", type, id);
                 }
-				return false;
+                return false;
             }
             Reader.DeleteDocument (matches.ScoreDocs [0].Doc);
-			return true;
+            return true;
         }
 
-		public void BeginRemoveTransaction ()
-		{
-			Lock.WaitOne ();
-			if (null != Reader) {
-				throw new ArgumentException ();
-			}
-			Reader = IndexReader.Open (IndexDirectory, false);
-		}
+        public void BeginRemoveTransaction ()
+        {
+            Lock.WaitOne ();
+            if (null != Reader) {
+                throw new ArgumentException ();
+            }
+            Reader = IndexReader.Open (IndexDirectory, false);
+        }
 
-		public void EndRemoveTransaction ()
-		{
-			Reader.Commit ();
-			Reader.Dispose ();
-			Reader = null;
-			Lock.ReleaseMutex ();
-		}
+        public void EndRemoveTransaction ()
+        {
+            Reader.Commit ();
+            Reader.Dispose ();
+            Reader = null;
+            Lock.ReleaseMutex ();
+        }
 
         public List<MatchedItem> Search (string queryString, int maxMatches = 1000)
         {

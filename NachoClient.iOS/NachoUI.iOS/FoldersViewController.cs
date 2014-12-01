@@ -52,6 +52,11 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+
+            if (null != NavigationItem) {
+                NavigationItem.SetHidesBackButton (true, false);
+            }
+
             account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
             CreateView ();
             ConfigureFolders ();

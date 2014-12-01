@@ -93,7 +93,7 @@ namespace NachoClient.iOS
 
             blockMenu.MenuDidDisappear += (object sender, EventArgs e) => {
                 TableView.ScrollEnabled = true;
-                MultiSelectToggle(messageSource, messageSource.MultiSelectActive());
+                MultiSelectToggle (messageSource, messageSource.MultiSelectActive ());
             };
 
             TableView.SeparatorColor = A.Color_NachoBorderGray;
@@ -151,6 +151,8 @@ namespace NachoClient.iOS
                 ReloadCapture.Start ();
                 TableView.ReloadData ();
                 ReloadCapture.Stop ();
+            } else {
+                messageSource.ReconfigureVisibleCells (TableView);
             }
             NachoCore.Utils.NcAbate.RegularPriority ("MessageListViewController ReloadDataMaintainingPosition");
         }

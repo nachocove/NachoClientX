@@ -75,6 +75,7 @@ namespace NachoClient.iOS
         string EmailTemplate;
         List<McAttachment> PresetAttachmentList;
         bool startInSubjectField;
+        bool startInBodyField;
 
         // If this is a reply or forward, keep track of the quoted text that is inserted.
         // This makes it possible to check later if the user changed the text.
@@ -92,6 +93,7 @@ namespace NachoClient.iOS
         protected NcQuickResponse.QRTypeEnum QRType = NcQuickResponse.QRTypeEnum.None;
 
         UIBarButtonItem sendButton;
+        UIBarButtonItem cancelButton;
         UIBarButtonItem quickResponseButton;
         public NcMessageIntent messageIntent;
         protected MessageDeferralType intentDateType;
@@ -117,7 +119,9 @@ namespace NachoClient.iOS
             PresetSubject = subject;
             EmailTemplate = emailTemplate;
             PresetAttachmentList = attachmentList;
-            startInSubjectField = ((null != toAddress) && (null == subject));
+            alwaysShowIntent = !String.IsNullOrEmpty (PresetSubject);
+            startInSubjectField = (null != PresetToAddress) && String.IsNullOrEmpty (PresetSubject);
+            startInBodyField = (null != PresetToAddress) && !String.IsNullOrEmpty (PresetSubject) && !String.IsNullOrEmpty (emailTemplate);
         }
 
         public override void ViewDidLoad ()
@@ -127,10 +131,14 @@ namespace NachoClient.iOS
             account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
 
             sendButton = new UIBarButtonItem ();
+            cancelButton = new UIBarButtonItem ();
             quickResponseButton = new UIBarButtonItem ();
 
             Util.SetAutomaticImageForButton (quickResponseButton, "contact-quickemail");
+            Util.SetAutomaticImageForButton (cancelButton, "icn-close");
             Util.SetAutomaticImageForButton (sendButton, "icn-send");
+
+            NavigationItem.LeftBarButtonItem = cancelButton;
 
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
                 sendButton,
@@ -143,6 +151,23 @@ namespace NachoClient.iOS
                     owner = null;
                     NavigationController.PopViewControllerAnimated (true);
                 }
+            };
+
+            cancelButton.Clicked += (sender, e) => {
+                View.EndEditing (true);
+                UIAlertView alert = new UIAlertView ();
+                alert.Title = "Are you sure?";
+                alert.Message = "This message will not be saved";
+                alert.AddButton ("Cancel");
+                alert.AddButton ("Yes");
+                alert.CancelButtonIndex = 0;
+                alert.Dismissed += (object alertSender, UIButtonEventArgs alertEvent) => {
+                    if (1 == alertEvent.ButtonIndex) {
+                        owner = null;
+                        NavigationController.PopViewControllerAnimated (true);
+                    }
+                };
+                alert.Show ();
             };
 
             suppressLayout = true;
@@ -159,9 +184,13 @@ namespace NachoClient.iOS
                 ConfigureBodyEditView (false);
                 bodyTextView.BecomeFirstResponder ();
                 bodyTextView.SelectedRange = new NSRange (0, 0);
-            }else if(startInSubjectField) {
+            } else if (startInSubjectField) {
                 ConfigureSubjectEditView (false);
                 subjectField.BecomeFirstResponder ();
+            } else if (startInBodyField) {
+                ConfigureBodyEditView (false);
+                bodyTextView.BecomeFirstResponder ();
+                bodyTextView.SelectedRange = new NSRange (EmailTemplate.Length, 0);
             } else {
                 ConfigureToView (false);
                 toView.SetEditFieldAsFirstResponder ();
@@ -277,8 +306,6 @@ namespace NachoClient.iOS
 
         protected void CreateView ()
         {
-            Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
-
             View.BackgroundColor = UIColor.White;
             scrollView.BackgroundColor = UIColor.White;
 

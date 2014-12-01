@@ -1279,6 +1279,10 @@ namespace NachoClient.iOS
                 c.Update ();
                 BackEnd.Instance.UpdateCalCmd (account.Id, c.Id);
             }
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged),
+                Account = NachoCore.Model.ConstMcAccount.NotAccountSpecific,
+            });
         }
 
         protected void DeleteEvent ()

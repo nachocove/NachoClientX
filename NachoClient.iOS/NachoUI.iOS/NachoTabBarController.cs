@@ -98,7 +98,7 @@ namespace NachoClient.iOS
             return null;
         }
 
-        public void SwitchToNachoNow()
+        public void SwitchToNachoNow ()
         {
             var navigationController = SelectTabRoot (nachoNowItem);
             var nachoNowViewController = (NachoNowViewController)navigationController.TopViewController;
@@ -192,8 +192,8 @@ namespace NachoClient.iOS
             newView.BackgroundColor = A.Color_NachoBackgroundGray;
 
             var accountInfoView = new UIView (new RectangleF (
-                A.Card_Horizontal_Indent, A.Card_Vertical_Indent,
-                newView.Frame.Width - 2 * A.Card_Horizontal_Indent, 100));
+                                      A.Card_Horizontal_Indent, A.Card_Vertical_Indent,
+                                      newView.Frame.Width - 2 * A.Card_Horizontal_Indent, 100));
             accountInfoView.BackgroundColor = UIColor.White;
             accountInfoView.Layer.CornerRadius = A.Card_Corner_Radius;
             accountInfoView.Layer.MasksToBounds = true;
@@ -233,6 +233,18 @@ namespace NachoClient.iOS
 
             ConfigureAccountInfo ();
 
+            var accountTapRecognizer = new UITapGestureRecognizer ();
+            accountTapRecognizer = new UITapGestureRecognizer ();
+            accountTapRecognizer.NumberOfTapsRequired = 1;
+            accountTapRecognizer.AddTarget (AccountTapHandler);
+            accountInfoView.AddGestureRecognizer (accountTapRecognizer);
+        }
+
+        private void AccountTapHandler (NSObject sender)
+        {
+            UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+            var vc = (AccountSettingsViewController)x.InstantiateViewController ("AccountSettingsViewController");
+            MoreNavigationController.PushViewController (vc, true);
         }
 
         public void ConfigureAccountInfo ()
@@ -249,7 +261,7 @@ namespace NachoClient.iOS
 
             McEmailAddress address;
             bool validAddress = McEmailAddress.Get (account.Id, account.EmailAddr, out address);
-            initialsCircle.BackgroundColor = Util.ColorForUser (validAddress ? address.ColorIndex : Util.PickRandomColorForUser());
+            initialsCircle.BackgroundColor = Util.ColorForUser (validAddress ? address.ColorIndex : Util.PickRandomColorForUser ());
 
             if (string.IsNullOrEmpty (account.DisplayName)) {
                 accountNameLabel.Text = "Account name";

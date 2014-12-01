@@ -609,7 +609,7 @@ namespace NachoClient.iOS
 
         protected void BackButtonClicked (object sender, EventArgs e)
         {
-            DismissViewController (true, null);
+            NavigationController.PopViewControllerAnimated (true);
         }
 
         protected void CancelButtonClicked (object sender, EventArgs e)
@@ -621,7 +621,6 @@ namespace NachoClient.iOS
                 dismissChanges.Show ();
             } else {
                 ToggleEditing ();
-                DismissViewController (true, null);
             }
         }
 
@@ -663,7 +662,6 @@ namespace NachoClient.iOS
         {
             if (b.ButtonIndex == 0) {
                 ToggleEditing ();
-                DismissViewController (true, null);
             }
         }
 
@@ -672,7 +670,6 @@ namespace NachoClient.iOS
             if (b.ButtonIndex == 0) {
                 SaveAccountSettings ();
                 ToggleEditing ();
-                DismissViewController (true, null);
             }
         }
 
@@ -705,7 +702,6 @@ namespace NachoClient.iOS
             case AccountIssue.None:
                 SaveAccountSettings ();
                 ToggleEditing ();
-                DismissViewController (true, null);
                 return;
             default:
                 break;
@@ -775,7 +771,7 @@ namespace NachoClient.iOS
                 NavigationItem.SetLeftBarButtonItem (cancelButton, true);
                 NavigationItem.SetRightBarButtonItem (saveButton, true);
                 UIView.Animate (1, () => {
-                    NavigationItem.Title = "";
+                    NavigationItem.Title = "Edit Account";
                 });
             } else {
                 NavigationItem.SetLeftBarButtonItem (backButton, true);

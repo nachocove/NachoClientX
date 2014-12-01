@@ -573,12 +573,20 @@ namespace NachoClient.iOS
             return cell;
         }
 
-        UIView ViewWithImageName (string imageName)
+        public void ReconfigureVisibleCells (UITableView tableView)
         {
-            var image = UIImage.FromBundle (imageName);
-            var imageView = new UIImageView (image);
-            imageView.ContentMode = UIViewContentMode.Center;
-            return imageView;
+            if (null == tableView) {
+                return;
+            }
+            var paths = tableView.IndexPathsForVisibleRows;
+            if (null != paths) {
+                foreach (var path in paths) {
+                    var cell = tableView.CellAt (path);
+                    if (null != cell) {
+                        ConfigureCell (tableView, cell, path);
+                    }
+                }
+            }
         }
 
         public void MoveToFolder (UITableView tableView, McFolder folder, object cookie)

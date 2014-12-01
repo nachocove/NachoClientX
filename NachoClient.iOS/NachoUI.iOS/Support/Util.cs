@@ -335,7 +335,9 @@ namespace NachoClient
             var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
 
             NachoTabBarController activeTabBar;
-            if (null != appDelegate.Window.RootViewController.PresentedViewController.TabBarController) {
+            if (appDelegate.Window.RootViewController is NachoTabBarController) {
+                activeTabBar = (NachoTabBarController)appDelegate.Window.RootViewController;
+            } else if (null != appDelegate.Window.RootViewController.PresentedViewController.TabBarController) {
                 activeTabBar = (NachoTabBarController)appDelegate.Window.RootViewController.PresentedViewController.TabBarController;
             } else {
                 activeTabBar = (NachoTabBarController)appDelegate.Window.RootViewController.PresentedViewController;
