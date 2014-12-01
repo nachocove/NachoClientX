@@ -93,7 +93,7 @@ namespace NachoClient.iOS
 
             blockMenu.MenuDidDisappear += (object sender, EventArgs e) => {
                 TableView.ScrollEnabled = true;
-                MultiSelectToggle(messageSource, messageSource.MultiSelectActive());
+                MultiSelectToggle (messageSource, messageSource.MultiSelectActive ());
             };
 
             TableView.SeparatorColor = A.Color_NachoBorderGray;
