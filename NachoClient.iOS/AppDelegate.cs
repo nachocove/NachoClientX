@@ -752,7 +752,7 @@ namespace NachoClient.iOS
             UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
             CredentialsAskViewController cvc = (CredentialsAskViewController)x.InstantiateViewController ("CredentialsAskViewController");
             cvc.SetTabBarController (Util.GetActiveTabBar ());
-            this.Window.RootViewController.PresentedViewController.PresentViewController (cvc, true, null);
+            this.Window.RootViewController.PresentViewController (cvc, true, null);
         }
 
         /* BADGE & NOTIFICATION LOGIC HERE.
