@@ -16,23 +16,28 @@ namespace NachoCore.Utils
         {
             bool IsTop;
             uint _Min;
+
             uint Min {
                 get {
                     return (0 == Count ? 0 : _Min);
                 }
             }
+
             uint _Max;
+
             uint Max {
                 get {
                     return (0 == Count ? 0 : _Max);
                 }
             }
+
             uint Average {
                 // Only compute average when asked to save some divide
                 get {
                     return (0 == Count ? 0 : (uint)(Total / Count));
                 }
             }
+
             uint StdDev {
                 get {
                     if (0 == Count) {
@@ -44,6 +49,7 @@ namespace NachoCore.Utils
                     return (uint)Math.Sqrt (variance);
                 }
             }
+
             uint Count;
             UInt64 Total;
             UInt64 Total2;
@@ -76,7 +82,7 @@ namespace NachoCore.Utils
                     }
                     foreach (var key in xtra.Keys) {
                         Summary summary;
-                        if (! Xtra.TryGetValue (key, out summary)) {
+                        if (!Xtra.TryGetValue (key, out summary)) {
                             summary = new Summary (false);
                             Xtra.Add (key, summary);
                         }
@@ -108,14 +114,14 @@ namespace NachoCore.Utils
             {
                 if (IsTop) {
                     var top = string.Format ("Count = {0}, Min = {1}ms, Max = {2}ms, Average = {3}ms, StdDev = {4}ms",
-                        Count, Min, Max, Average, StdDev);
+                                  Count, Min, Max, Average, StdDev);
                     if (null == Xtra) {
                         return top;
                     } else {
-                        StringBuilder sb = new StringBuilder(top);
+                        StringBuilder sb = new StringBuilder (top);
                         foreach (var key in Xtra.Keys) {
                             sb.Append (Environment.NewLine);
-                            sb.Append (string.Format("    Key: {0}", key));
+                            sb.Append (string.Format ("    Key: {0}", key));
                             sb.Append (Xtra [key].ToString ());
                         }
                         return sb.ToString ();
@@ -151,7 +157,7 @@ namespace NachoCore.Utils
 
             public void Add (NcCapture capture)
             {
-                CaptureList.Add(capture);
+                CaptureList.Add (capture);
             }
 
             public void Remove (NcCapture capture)
@@ -167,11 +173,13 @@ namespace NachoCore.Utils
         // to background, we need to stop the capture but remember that it
         // needs to restart when waking up.
         private bool _IsRunning;
+
         public bool IsRunning {
             get {
                 return _IsRunning;
             }
         }
+
         private static object ClassLockObj;
         private static Dictionary<string, NcCaptureKind> PerKind;
         public static Type StopwatchClass = typeof(PlatformStopwatch);
@@ -226,7 +234,7 @@ namespace NachoCore.Utils
         // production code! The ramification of allowing removal of kind dynamically
         // is that we need to lock up critical sections when summarizing and
         // reporting a Summary since now it may disappear during its being read.
-        public static bool RemoveKind(string kind)
+        public static bool RemoveKind (string kind)
         {
             lock (ClassLockObj) {
                 if (!PerKind.ContainsKey (kind)) {
@@ -250,7 +258,7 @@ namespace NachoCore.Utils
 
         public static string Summarize ()
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new StringBuilder ();
             lock (ClassLockObj) {
                 foreach (var key in PerKind.Keys) {
                     sb.Append (Summarize (key));
@@ -313,7 +321,7 @@ namespace NachoCore.Utils
 
         public static void ReportKind (string Kind)
         {
-            if (!PerKind.ContainsKey(Kind)) {
+            if (!PerKind.ContainsKey (Kind)) {
                 return;
             }
             Summary summary = PerKind [Kind].Summary;
@@ -342,6 +350,7 @@ namespace NachoCore.Utils
                 }
             }
         }
+
         public static void PauseKind (string Kind)
         {
             WalkCaptureList (Kind, cap => {
@@ -364,9 +373,9 @@ namespace NachoCore.Utils
         public static void ResumeAll ()
         {
             lock (ClassLockObj) {
-                const int reportPeriodMsec = 15 * 1000; // every 15 sec
+                const int reportPeriodMsec = 60 * 1000; // every 60 sec
                 if (null == SleepWatch) {
-                    SleepWatch = (IStopwatch) Activator.CreateInstance (StopwatchClass);
+                    SleepWatch = (IStopwatch)Activator.CreateInstance (StopwatchClass);
                 }
                 int dueTime = reportPeriodMsec;
                 if (reportPeriodMsec < SleepWatch.ElapsedMilliseconds) {
