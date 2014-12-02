@@ -69,6 +69,7 @@ namespace NachoClient.iOS
         UINavigationItem navItem;
 
         protected McContact contact;
+        protected string newPhoneString;
 
         public enum DefaultSelectionType
         {
@@ -508,6 +509,9 @@ namespace NachoClient.iOS
 
         private void SelectLabelTouchUpInside (object sender, EventArgs e)
         {
+            UITextField phoneTextField = (UITextField)View.ViewWithTag (PHONE_TEXTFIELD_TAG);
+            newPhoneString = phoneTextField.Text;
+
             PerformSegue ("SegueToLabelSelection", this);
         }
 
@@ -623,6 +627,9 @@ namespace NachoClient.iOS
         {
             UILabel phoneLabelLabel = (UILabel)View.ViewWithTag (PHONE_LABEL_TAG);
             phoneLabelLabel.Text = contactHelper.ExchangeNameToLabel (selectedName);
+
+            UITextField phoneTextField = (UITextField)View.ViewWithTag (PHONE_TEXTFIELD_TAG);
+            phoneTextField.Text = newPhoneString; 
         }
     }
 }
