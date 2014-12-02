@@ -1337,7 +1337,6 @@ namespace NachoClient.iOS
                 headerPortraitImageView.Hidden = false;
             }
 
-            var headerName = (UILabel)View.ViewWithTag (HEADER_NAME_TEXT_FIELD_TAG);
             var headerCompany = (UITextField)View.ViewWithTag (HEADER_COMPANY_TEXT_FIELD);
 
             headerLabel.Text = 
