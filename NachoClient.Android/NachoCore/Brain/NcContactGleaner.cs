@@ -110,6 +110,44 @@ namespace NachoCore.Brain
             }
         }
 
+        public static void GleanContact (string address, int accountId)
+        {
+            // Don't glean when scrolling
+            var contacts = McContact.QueryByEmailAddress (accountId, address);
+            var gleanedFolder = McFolder.GetGleanedFolder (accountId);
+            if (0 == contacts.Count && !DoNotGlean (address)) {
+                // Create a new gleaned contact.
+                var contact = new McContact () {
+                    AccountId = accountId,
+                    Source = McAbstrItem.ItemSource.Internal,
+                    RefCount = 1,
+                };
+
+                NcModel.Instance.Db.Insert (contact);
+                gleanedFolder.Link (contact);
+
+                McEmailAddress emailAddress;
+                McEmailAddress.Get (accountId, address, out emailAddress);
+
+                var strattr = new McContactEmailAddressAttribute () {
+                    Name = "Email1Address",
+                    Value = address,
+                    ContactId = contact.Id,
+                    EmailAddress = emailAddress.Id,
+                };
+
+                // TODO - Get the reply state
+                NcModel.Instance.Db.Insert (strattr);
+            } else {
+                // Update the refcount on the existing contact.
+                foreach (var contact in contacts) {
+                    // TODO: need update count using timestamp check.
+                    contact.RefCount += 1;
+                    NcModel.Instance.Db.Update (contact);
+                }
+            }
+        }
+
         public static void GleanContacts (int accountId, McEmailMessage emailMessage)
         {
             var gleanedFolder = McFolder.GetGleanedFolder (accountId);

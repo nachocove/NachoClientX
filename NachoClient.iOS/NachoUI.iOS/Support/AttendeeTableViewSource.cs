@@ -8,6 +8,7 @@ using MonoTouch.Foundation;
 using System.Collections.Generic;
 using NachoCore.Model;
 using NachoCore;
+using NachoCore.Brain;
 using NachoCore.Utils;
 using MonoTouch.CoreGraphics;
 
@@ -18,6 +19,7 @@ namespace NachoClient.iOS
         List<McAttendee> AttendeeList = new List<McAttendee> ();
         protected McAccount Account;
         protected bool editing = false;
+        protected bool organizer = false;
         public IAttendeeTableViewSourceDelegate owner;
         protected bool isMultiSelecting;
         protected Dictionary<NSIndexPath,McAttendee> multiSelect = null;
@@ -37,7 +39,11 @@ namespace NachoClient.iOS
         private const int RESEND_INVITE_TAG = 1000;
         private const int MAKE_REQUIRED_TAG = 2000;
         private const int MAKE_OPTIONAL_TAG = 3000;
+
         private const int DELETE_TAG = 4000;
+
+        private const int CALL_SWIPE_TAG = 5000;
+        private const int EMAIL_SWIPE_TAG = 6000;
 
         protected const string AttendeeCellReuseIdentifier = "AttendeeCell";
 
@@ -54,6 +60,13 @@ namespace NachoClient.iOS
         private static SwipeActionDescriptor DELETE_BUTTON =
             new SwipeActionDescriptor (DELETE_TAG, 0.25f, UIImage.FromBundle ("email-delete-swipe"),
                 "Remove", A.Color_NachoSwipeActionRed);
+
+        private static SwipeActionDescriptor CALL_BUTTON =
+            new SwipeActionDescriptor (CALL_SWIPE_TAG, 0.25f, UIImage.FromBundle ("contacts-call-swipe"),
+                "Dial", A.Color_NachoSwipeActionOrange);
+        private static SwipeActionDescriptor EMAIL_BUTTON =
+            new SwipeActionDescriptor (EMAIL_SWIPE_TAG, 0.25f, UIImage.FromBundle ("contacts-email-swipe"),
+                "Email", A.Color_NachoSwipeActionMatteBlack);
 
         public Dictionary<NSIndexPath, McAttendee> MultiSelect {
             get { return multiSelect; }
@@ -83,6 +96,11 @@ namespace NachoClient.iOS
         public void SetEditing (bool editing)
         {
             this.editing = editing;
+        }
+
+        public void SetOrganizer (bool organizer)
+        {
+            this.organizer = organizer;
         }
 
         public void SetAccount (McAccount account)
@@ -285,40 +303,74 @@ namespace NachoClient.iOS
             var view = cell.ViewWithTag (SWIPE_TAG) as SwipeActionView;
             view.LeftSwipeActionButtons.Clear ();
             view.RightSwipeActionButtons.Clear ();
-            if (NcAttendeeType.Required == attendee.AttendeeType) {
-                view.SetAction (MAKE_OPTIONAL_BUTTON, SwipeSide.RIGHT);
-            } else {
-                view.SetAction (MAKE_REQUIRED_BUTTON, SwipeSide.RIGHT);
-            }
-            if (editing) {
-                view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
-            }
-            view.SetAction (RESEND_INVITE_BUTTON, SwipeSide.LEFT);
-
-            if (isMultiSelecting) {
-                view.DisableSwipe ();
-            } else {
-                view.EnableSwipe ();
-            }
-
-            view.OnClick = (int tag) => {
-                switch (tag) {
-                case MAKE_REQUIRED_TAG:
-                    ChangeAttendeeType (cell, attendee);
-                    break;
-                case MAKE_OPTIONAL_TAG:
-                    ChangeAttendeeType (cell, attendee);
-                    break;
-                case RESEND_INVITE_TAG:
-                    ResendInvite (attendee);
-                    break;
-                case DELETE_TAG:
-                    RemoveAttendee (attendee);
-                    break;
-                default:
-                    throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action tag {0}", tag));
+            if (organizer) {
+                if (!editing) {
+                    view.SetAction (EMAIL_BUTTON, SwipeSide.RIGHT);
+                    view.SetAction (CALL_BUTTON, SwipeSide.LEFT);
                 }
-            };
+                if (NcAttendeeType.Required == attendee.AttendeeType) {
+                    view.SetAction (MAKE_OPTIONAL_BUTTON, SwipeSide.RIGHT);
+                } else {
+                    view.SetAction (MAKE_REQUIRED_BUTTON, SwipeSide.RIGHT);
+                }
+                if (editing) {
+                    view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
+                }
+                view.SetAction (RESEND_INVITE_BUTTON, SwipeSide.LEFT);
+
+                if (isMultiSelecting) {
+                    view.DisableSwipe ();
+                } else {
+                    view.EnableSwipe ();
+                }
+
+                view.OnClick = (int tag) => {
+                    switch (tag) {
+                    case MAKE_REQUIRED_TAG:
+                        ChangeAttendeeType (cell, attendee);
+                        break;
+                    case MAKE_OPTIONAL_TAG:
+                        ChangeAttendeeType (cell, attendee);
+                        break;
+                    case RESEND_INVITE_TAG:
+                        ResendInvite (attendee);
+                        break;
+                    case DELETE_TAG:
+                        RemoveAttendee (attendee);
+                        break;
+                    case CALL_SWIPE_TAG:
+                        CallSwipeHandler(attendee);
+                        break;
+                    case EMAIL_SWIPE_TAG:
+                        EmailSwipeHandler (attendee);
+                        break;
+                    default:
+                        throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action tag {0}", tag));
+                    }
+                };
+
+            } else {
+
+                view.SetAction (CALL_BUTTON, SwipeSide.LEFT);
+                //view.SetAction (RESEND_INVITE_BUTTON, SwipeSide.LEFT);
+                view.SetAction (EMAIL_BUTTON, SwipeSide.RIGHT);
+
+                view.OnClick = (int tag) => {
+                    switch (tag) {
+                    case CALL_SWIPE_TAG:
+                        CallSwipeHandler (attendee);
+                        break;
+                    case EMAIL_SWIPE_TAG:
+                        EmailSwipeHandler (attendee);
+                        break;
+//                    case RESEND_INVITE_TAG:
+//                        ResendInvite (attendee);
+//                        break;
+                    default:
+                        throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action tag {0}", tag));
+                    }
+                };
+            }
             view.OnSwipe = (SwipeActionView actionView, SwipeActionView.SwipeState state) => {
                 switch (state) {
                 case SwipeActionView.SwipeState.SWIPE_BEGIN:
@@ -485,6 +537,26 @@ namespace NachoClient.iOS
                 }
             };
             alert.Show ();
+        }
+
+        protected void CallSwipeHandler (McAttendee attendee)
+        {
+            McContact contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
+            if (null == contact) {
+                NcContactGleaner.GleanContact (attendee.Email, Account.Id);
+                contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
+            }
+            owner.CallSwipeHandler (contact);
+        }
+
+        protected void EmailSwipeHandler (McAttendee attendee)
+        {
+            McContact contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
+            if (null == contact) {
+                NcContactGleaner.GleanContact (attendee.Email, Account.Id);
+                contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
+            }
+            owner.EmailSwipeHandler (contact);
         }
 
         public void ChangeAttendeeType (UITableViewCell cell, McAttendee attendee)

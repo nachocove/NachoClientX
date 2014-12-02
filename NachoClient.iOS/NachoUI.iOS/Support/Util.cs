@@ -825,6 +825,40 @@ namespace NachoClient
             return stream;
         }
 
+        public static void CallSwipeHandler (McContact contact, NcUIViewController owner)
+        {
+            if (0 == contact.PhoneNumbers.Count) {
+                owner.PerformSegue ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.PhoneNumberAdder));
+            } else if (1 == contact.PhoneNumbers.Count) {
+                Util.PerformAction ("tel", contact.GetPhoneNumber ());
+            } else {
+                foreach (var p in contact.PhoneNumbers) {
+                    if (p.IsDefault) {
+                        Util.PerformAction ("tel", p.Value);
+                        return;
+                    }
+                }
+                owner.PerformSegue ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultPhoneSelector));
+            }
+        }
+
+        public static void EmailSwipeHandler (McContact contact, NcUIViewController owner)
+        {
+            if (0 == contact.EmailAddresses.Count) {
+                owner.PerformSegue ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder));
+            } else if (1 == contact.EmailAddresses.Count) {
+                owner.PerformSegue ("SegueToMessageCompose", new SegueHolder (contact.GetEmailAddress ()));
+            } else {
+                foreach (var e in contact.EmailAddresses) {
+                    if (e.IsDefault) {
+                        owner.PerformSegue ("SegueToMessageCompose", new SegueHolder (e.Value));
+                        return;
+                    }
+                }
+                owner.PerformSegue ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultEmailSelector));
+            }
+        }
+
         #endregion
     }
 }

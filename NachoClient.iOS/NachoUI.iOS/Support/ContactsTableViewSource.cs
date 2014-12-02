@@ -411,11 +411,11 @@ namespace NachoClient.iOS
             if (0 == contact.EmailAddresses.Count) {
                 owner.PerformSegueForDelegate ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder));
             } else if (1 == contact.EmailAddresses.Count) {
-                owner.PerformSegueForDelegate ("ContactsToMessageCompose", new SegueHolder (contact.GetEmailAddress ()));
+                owner.PerformSegueForDelegate ("SegueToMessageCompose", new SegueHolder (contact.GetEmailAddress ()));
             } else {
                 foreach (var e in contact.EmailAddresses) {
                     if (e.IsDefault) {
-                        owner.PerformSegueForDelegate ("ContactsToMessageCompose", new SegueHolder (e.Value));
+                        owner.PerformSegueForDelegate ("SegueToMessageCompose", new SegueHolder (e.Value));
                         return;
                     }
                 }

@@ -16,7 +16,7 @@ using SwipeViewBinding;
 namespace NachoClient.iOS
 {
 
-    public partial class ContactListViewController : NcUIViewController, IContactsTableViewSourceDelegate
+    public partial class ContactListViewController : NcUIViewController, IContactsTableViewSourceDelegate, INachoDefaultSelector
     {
         SwipeView swipeView;
         LettersSwipeViewDataSource swipeViewDateSource;
@@ -146,7 +146,7 @@ namespace NachoClient.iOS
                 ContactDefaultSelectionViewController destinationController = (ContactDefaultSelectionViewController)segue.DestinationViewController;
                 destinationController.SetContact (c);
                 destinationController.viewType = type;
-				destinationController.owner = this;
+                destinationController.owner = this;
                 return;
             }
             if (segue.Identifier.Equals ("ContactsToContactEdit")) {
@@ -161,7 +161,7 @@ namespace NachoClient.iOS
                 mcvc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, (string)h.value));
                 return;
             }
-            if (segue.Identifier.Equals ("ContactsToMessageCompose")) {
+            if (segue.Identifier.Equals ("SegueToMessageCompose")) {
                 var h = sender as SegueHolder;
                 MessageComposeViewController mcvc = (MessageComposeViewController)segue.DestinationViewController;
                 mcvc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, (string)h.value));
@@ -193,9 +193,26 @@ namespace NachoClient.iOS
             PerformSegue ("ContactsToContactDetail", new SegueHolder (contact));
         }
 
+        /// IContactsTableViewSourceDelegate
+        public void EmailSwipeHandler (McContact contact)
+        {
+            Util.EmailSwipeHandler (contact, this);
+        }
+
+        /// IContactsTableViewSourceDelegate
+        public void CallSwipeHandler (McContact contact)
+        {
+            Util.CallSwipeHandler (contact, this);
+        }
+
         public void SelectSection (int index)
         {
             contactTableViewSource.ScrollToSection (TableView, index);
+        }
+
+        public void PerformSegueForDefaultSelector (string identifier, NSObject sender)
+        {
+            PerformSegue (identifier, sender);
         }
 
         public class LettersSwipeViewDelegate : SwipeViewDelegate
@@ -231,10 +248,10 @@ namespace NachoClient.iOS
             {
                 this.owner = owner;
                 viewList = new UIView[28];
-                viewList[0] = CreateImageView (0);
+                viewList [0] = CreateImageView (0);
                 const string letters = "!ABCDEFGHIJKLMNOPQRSTUVWXYZ#";
                 for (int i = 1; i < 28; i++) {
-                    viewList [i] = CreateLetterView (i, letters[i]);
+                    viewList [i] = CreateLetterView (i, letters [i]);
                 }
             }
 
@@ -292,7 +309,7 @@ namespace NachoClient.iOS
                 return view;
             }
 
-            protected UIView CreateImageView(int index)
+            protected UIView CreateImageView (int index)
             {
                 var button = UIButton.FromType (UIButtonType.Custom);
                 button.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;

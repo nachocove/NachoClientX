@@ -104,6 +104,14 @@ namespace NachoCore.Utils
             return time;
         }
 
+        public static bool IsOrganizer (string organizerEmail, string userEmail)
+        {
+            if (organizerEmail == userEmail) {
+                return true;
+            }
+            return false;
+        }
+
         public static IICalendar iCalendarFromMcCalendarWithResponse (McAccount account, McCalendar c, NcResponseType response)
         {
             var iCal = iCalendarFromMcCalendarCommon (c);

@@ -30,7 +30,7 @@
             <objects>
                 <viewController storyboardIdentifier="NachoNowViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="ygr-ff-C2f" customClass="NachoNowViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="BSK-Fb-RSa">
-                        <rect key="frame" x="0.0" y="64" width="320" height="455"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -519,7 +519,7 @@
                         <segue destination="MG9-1p-N0l" kind="push" identifier="ContactsToContactDetail" id="Aba-pv-mzB"/>
                         <segue destination="vgr-FH-RtX" kind="push" identifier="ContactsToContactEdit" id="TEI-cG-N0R"/>
                         <segue destination="tAw-fh-hJX" kind="push" identifier="ContactsToQuickMessageCompose" id="RKu-FY-1IX"/>
-                        <segue destination="tAw-fh-hJX" kind="push" identifier="ContactsToMessageCompose" id="M29-IF-JzO"/>
+                        <segue destination="tAw-fh-hJX" kind="push" identifier="SegueToMessageCompose" id="M29-IF-JzO"/>
                         <segue destination="gut-8L-p8k" kind="modal" identifier="SegueToContactDefaultSelection" modalTransitionStyle="crossDissolve" id="VR8-PG-xAi"/>
                     </connections>
                 </viewController>
@@ -544,7 +544,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="UfH-96-Z9b" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="2244" y="1611"/>
+            <point key="canvasLocation" x="2263" y="1596"/>
         </scene>
         <!--Label Selection View Controller-->
         <scene sceneID="QNT-Vv-DeF">
@@ -1007,7 +1007,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="K96-0O-l77" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-2449" y="2296"/>
+            <point key="canvasLocation" x="2823" y="880"/>
         </scene>
         <!--Intent Selection View Controller-->
         <scene sceneID="mbi-5g-bbR">
@@ -1312,12 +1312,14 @@
                         <outlet property="addAttendeeButton" destination="4z6-Fd-6ku" id="dnv-oH-k1n"/>
                         <segue destination="Mow-Gy-F9N" kind="push" identifier="EventAttendeesToContactChooser" id="4M9-UI-9mt"/>
                         <segue destination="HJp-il-GU9" kind="push" identifier="SegueToContactSearch" id="tt1-JW-EVV"/>
+                        <segue destination="gut-8L-p8k" kind="modal" identifier="SegueToContactDefaultSelection" id="b2R-9j-Kqr"/>
+                        <segue destination="tAw-fh-hJX" kind="push" identifier="SegueToMessageCompose" id="Lyd-ot-Ei5"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="wXN-oz-Khv" userLabel="First Responder" sceneMemberID="firstResponder"/>
                 <barButtonItem systemItem="add" id="4z6-Fd-6ku" userLabel="Bar Button Item - Add"/>
             </objects>
-            <point key="canvasLocation" x="2071" y="-939"/>
+            <point key="canvasLocation" x="2263" y="885"/>
         </scene>
         <!--Navigation Controller-->
         <scene sceneID="gDa-f1-whh">
@@ -1676,33 +1678,34 @@
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
+        <segue reference="peA-r2-tjq"/>
+        <segue reference="kYM-OY-NE0"/>
+        <segue reference="Aba-pv-mzB"/>
         <segue reference="4z2-t5-9Cd"/>
         <segue reference="g4G-tD-G9H"/>
         <segue reference="iqA-wd-xqD"/>
-        <segue reference="Eb2-K0-nI3"/>
         <segue reference="XQg-JR-vxA"/>
-        <segue reference="Aba-pv-mzB"/>
-        <segue reference="alQ-9Z-W4y"/>
+        <segue reference="Eb2-K0-nI3"/>
+        <segue reference="K8c-x2-hEf"/>
         <segue reference="mLY-u0-R5O"/>
-        <segue reference="kYM-OY-NE0"/>
-        <segue reference="DcC-EH-FAx"/>
-        <segue reference="Kr2-7H-kbB"/>
-        <segue reference="g8B-SL-7oa"/>
+        <segue reference="alQ-9Z-W4y"/>
+        <segue reference="7sK-rg-HQL"/>
         <segue reference="w67-dy-XSq"/>
         <segue reference="m2D-2n-RiV"/>
-        <segue reference="7sK-rg-HQL"/>
-        <segue reference="peA-r2-tjq"/>
-        <segue reference="4M9-UI-9mt"/>
         <segue reference="tt1-JW-EVV"/>
-        <segue reference="v9F-jf-qe1"/>
-        <segue reference="K8c-x2-hEf"/>
-        <segue reference="SxL-6k-kbd"/>
-        <segue reference="ja3-Zu-g6R"/>
+        <segue reference="Lyd-ot-Ei5"/>
+        <segue reference="b2R-9j-Kqr"/>
+        <segue reference="4M9-UI-9mt"/>
+        <segue reference="DDa-hb-SgY"/>
+        <segue reference="84g-IQ-Iaw"/>
+        <segue reference="tkk-6o-6oa"/>
+        <segue reference="zby-Sy-Y3J"/>
         <segue reference="Kmd-x6-iCJ"/>
+        <segue reference="ja3-Zu-g6R"/>
         <segue reference="vUs-ft-xdy"/>
-        <segue reference="FD7-0T-FGT"/>
+        <segue reference="2D9-t9-ebv"/>
         <segue reference="szv-KC-TId"/>
-        <segue reference="hxO-14-opZ"/>
+        <segue reference="FD7-0T-FGT"/>
         <segue reference="rEt-DF-c51"/>
         <segue reference="zOx-eF-clw"/>
     </inferredMetricsTieBreakers>
