@@ -192,7 +192,7 @@ namespace NachoClient.iOS
             var n = section;
             if (null != recent) {
                 if (0 == section) {
-                    return "Recents";
+                    return "Recent";
                 }
                 n = n - 1;
             }
@@ -216,7 +216,6 @@ namespace NachoClient.iOS
             } else {
                 rows = ((null == contacts) ? 0 : contacts.Count);
             }
-            Console.WriteLine ("RowsInSection {0} = {1}", section, rows);
             return rows;
         }
 
