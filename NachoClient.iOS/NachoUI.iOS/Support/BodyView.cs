@@ -114,7 +114,6 @@ namespace NachoClient.iOS
 
             if (null != body && McAbstrFileDesc.FilePresenceEnum.Complete == body.FilePresence) {
                 if (isRefresh && (itemDateTime == body.LastModified)) {
-                    Log.Error (Log.LOG_UI, "Body {0} has not changed since {1}.", body.Id, body.LastModified);
                     return;
                 }
             }
