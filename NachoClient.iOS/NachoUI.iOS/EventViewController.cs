@@ -450,7 +450,7 @@ namespace NachoClient.iOS
             phoneButton.SetTitle ("Not available", UIControlState.Normal);
             phoneButton.Enabled = false;
             #endif
-            descriptionView.Configure (c);
+            descriptionView.Configure (c, false);
 
             var alertDetailLabel = View.ViewWithTag ((int)TagType.EVENT_ALERT_DETAIL_TAG) as UILabel;
             alertDetailLabel.Text = Pretty.ReminderString (c.ReminderIsSet, c.Reminder);

@@ -85,7 +85,7 @@ namespace NachoClient.iOS
             if (null == cell) {
                 cell = CreateCell (tableView);
             }
-            ConfigureCell (tableView, cell, indexPath);
+            ConfigureCell (tableView, cell, indexPath, false);
             return cell;
         }
 
@@ -208,7 +208,7 @@ namespace NachoClient.iOS
         /// <summary>
         /// Populate message cells with data, adjust sizes and visibility
         /// </summary>
-        protected void ConfigureCell (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
+        protected void ConfigureCell (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath, bool isRefresh)
         {
             if (NoMessageThreads ()) {
                 ConfigureAsNoMessages (cell);
@@ -346,8 +346,9 @@ namespace NachoClient.iOS
             previewViewHeight -= 16; // more button
 
             var previewView = view.ViewWithTag (PREVIEW_TAG) as BodyView;
-            previewView.Configure (message);
+            previewView.Configure (message, isRefresh);
             previewView.Resize (new RectangleF (12, 0 + previewViewAdjustment, previewView.Frame.Width, previewViewHeight));
+
         }
 
         public void ReconfigureVisibleCells (UITableView tableView)
@@ -360,7 +361,7 @@ namespace NachoClient.iOS
                 foreach (var path in paths) {
                     var cell = tableView.CellAt (path);
                     if (null != cell) {
-                        ConfigureCell (tableView, cell, path);
+                        ConfigureCell (tableView, cell, path, true);
                     }
                 }
             }

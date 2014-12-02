@@ -28,6 +28,9 @@ namespace NachoClient.iOS
         // The item whose body is being shown
         private McAbstrItem item = null;
 
+        // When refreshing, we want to know if the date changed
+        private DateTime itemDateTime = DateTime.MinValue;
+
         // Information about size and position
         private float preferredWidth;
         private float yOffset = 0;
@@ -103,8 +106,19 @@ namespace NachoClient.iOS
         /// Display the body of the given item. The current contents of the BodyView are discarded.
         /// </summary>
         /// <param name="item">The item whose body should be displayed.</param>
-        public void Configure (McAbstrItem item)
+        public void Configure (McAbstrItem item, bool isRefresh)
         {
+            this.item = item;
+
+            var body = McBody.QueryById<McBody> (item.BodyId);
+
+            if (null != body && McAbstrFileDesc.FilePresenceEnum.Complete == body.FilePresence) {
+                if (isRefresh && (itemDateTime == body.LastModified)) {
+                    Log.Error (Log.LOG_UI, "Body {0} has not changed since {1}.", body.Id, body.LastModified);
+                    return;
+                }
+            }
+                
             // Clear out the existing BodyView
             foreach (var subview in childViews) {
                 var view = subview.uiView ();
@@ -119,16 +133,14 @@ namespace NachoClient.iOS
                 statusIndicatorIsRegistered = false;
             }
 
-            this.item = item;
-
-            var body = McBody.QueryById<McBody> (item.BodyId);
-
             if (null == body || McAbstrFileDesc.FilePresenceEnum.Complete != body.FilePresence) {
                 StartDownload ();
                 return;
             }
 
             spinner.StopAnimating ();
+
+            itemDateTime = body.LastModified;
 
             switch (body.BodyType) {
             case McAbstrFileDesc.BodyTypeEnum.PlainText_1:
@@ -174,7 +186,7 @@ namespace NachoClient.iOS
             var refreshedItem = RefreshItem ();
             if (null != refreshedItem) {
 
-                Configure (refreshedItem);
+                Configure (refreshedItem, false);
 
                 // Configure() normally doesn't call the parent view's callback. But because
                 // the download completed in the background, that callback needs to be called.
