@@ -12,7 +12,7 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public partial class EventAttendeeViewController : NcUIViewController, IAttendeeTableViewSourceDelegate, INachoContactChooserDelegate, INachoAttendeeListChooser, INachoDefaultSelector
+    public partial class EventAttendeeViewController : NcUIViewController, IAttendeeTableViewSourceDelegate, INachoContactChooserDelegate, INachoAttendeeListChooser, INachoContactDefaultSelector
     {
 
         protected AttendeeTableViewSource AttendeeSource;
@@ -47,7 +47,7 @@ namespace NachoClient.iOS
         {
         }
 
-        public void SetOwner (INachoAttendeeListChooserDelegate owner, List<McAttendee> attendees, McAbstrCalendarRoot c, bool editing, bool organizer)
+        public void Setup (INachoAttendeeListChooserDelegate owner, List<McAttendee> attendees, McAbstrCalendarRoot c, bool editing, bool organizer)
         {
             this.owner = owner;
             this.AttendeeList = attendees;
@@ -551,12 +551,12 @@ namespace NachoClient.iOS
 
         public void EmailSwipeHandler (McContact contact)
         {
-            Util.EmailSwipeHandler (contact, this);
+            Util.EmailContact (contact, this);
         }
 
         public void CallSwipeHandler (McContact contact)
         {
-            Util.CallSwipeHandler (contact, this);
+            Util.CallContact (contact, this);
         }
 
         public void UpdateLists ()
@@ -612,7 +612,7 @@ namespace NachoClient.iOS
             PerformSegue ("ContactsToContactDetail", new SegueHolder (contact));
         }
 
-        public void PerformSegueForDefaultSelector (string identifier, NSObject sender)
+        public void PerformSegueForContactDefaultSelector (string identifier, NSObject sender)
         {
             PerformSegue (identifier, sender);
         }

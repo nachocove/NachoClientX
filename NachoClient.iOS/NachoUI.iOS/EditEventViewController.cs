@@ -341,7 +341,7 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("EditEventToEventAttendees")) {
                 var dc = (EventAttendeeViewController)segue.DestinationViewController;
                 ExtractValues ();
-                dc.SetOwner (this, c.attendees, c, true, CalendarHelper.IsOrganizer(c.OrganizerEmail, account.EmailAddr));
+                dc.Setup (this, c.attendees, c, true, CalendarHelper.IsOrganizer(c.OrganizerEmail, account.EmailAddr));
                 return;
             }
 

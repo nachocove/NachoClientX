@@ -1177,7 +1177,7 @@
     <Compile Include="NachoUI.iOS\Support\HotEventView.cs" />
     <Compile Include="NachoUI.iOS\Support\HotListTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoLabelChooser.cs" />
-    <Compile Include="NachoUI.iOS\Interfaces\INachoDefaultSelector.cs" />
+    <Compile Include="NachoUI.iOS\Interfaces\INachoContactDefaultSelector.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
