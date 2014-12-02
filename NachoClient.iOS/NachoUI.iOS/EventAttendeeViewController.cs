@@ -12,13 +12,14 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public partial class EventAttendeeViewController : NcUIViewController, IAttendeeTableViewSourceDelegate, INachoContactChooserDelegate, INachoAttendeeListChooser
+    public partial class EventAttendeeViewController : NcUIViewController, IAttendeeTableViewSourceDelegate, INachoContactChooserDelegate, INachoAttendeeListChooser, INachoDefaultSelector
     {
 
         protected AttendeeTableViewSource AttendeeSource;
         protected McAccount account;
         protected McAbstrCalendarRoot c;
         protected bool editing;
+        protected bool organizer;
 
         UIBarButtonItem multiSelectButton;
         UIBarButtonItem multiResendButton;
@@ -46,12 +47,13 @@ namespace NachoClient.iOS
         {
         }
 
-        public void SetOwner (INachoAttendeeListChooserDelegate owner, List<McAttendee> attendees, McAbstrCalendarRoot c, bool editing)
+        public void SetOwner (INachoAttendeeListChooserDelegate owner, List<McAttendee> attendees, McAbstrCalendarRoot c, bool editing, bool organizer)
         {
             this.owner = owner;
             this.AttendeeList = attendees;
             this.c = c;
             this.editing = editing;
+            this.organizer = organizer;
         }
 
         public override void ViewDidLoad ()
@@ -116,6 +118,24 @@ namespace NachoClient.iOS
                 dc.SetOwner (this, address, NachoContactType.EmailRequired);
                 return;
             }
+
+            if (segue.Identifier.Equals ("SegueToContactDefaultSelection")) {
+                var h = sender as SegueHolder;
+                var c = (McContact)h.value;
+                var type = (ContactDefaultSelectionViewController.DefaultSelectionType)h.value2;
+                ContactDefaultSelectionViewController destinationController = (ContactDefaultSelectionViewController)segue.DestinationViewController;
+                destinationController.SetContact (c);
+                destinationController.viewType = type;
+                destinationController.owner = this;
+                return;
+            }
+
+            if (segue.Identifier.Equals ("SegueToMessageCompose")) {
+                var h = sender as SegueHolder;
+                MessageComposeViewController mcvc = (MessageComposeViewController)segue.DestinationViewController;
+                mcvc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, (string)h.value));
+                return;
+            }
  
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
@@ -126,6 +146,7 @@ namespace NachoClient.iOS
             NachoCore.Utils.NcAbate.HighPriority ("EventAttendeeViewController LoadAttendees");
             AttendeeSource.SetAttendeeList (this.AttendeeList);
             AttendeeSource.SetEditing (editing);
+            AttendeeSource.SetOrganizer (organizer);
             AttendeeSource.SetAccount (account);
             tableView.ReloadData ();
             NachoCore.Utils.NcAbate.RegularPriority ("EventAttendeeViewController LoadAttendees");
@@ -247,7 +268,7 @@ namespace NachoClient.iOS
             iconIv.Image = UIImage.FromBundle ("calendar-add-attendee-bottom");
             addAttendeeView.AddSubview (iconIv);
 
-            tableView = new UITableView (new RectangleF (0, 41, View.Frame.Width, View.Frame.Height - 40), UITableViewStyle.Plain);
+            tableView = new UITableView (new RectangleF (0, 41, View.Frame.Width, View.Frame.Height - 40 - 64), UITableViewStyle.Plain);
             tableView.SeparatorColor = UIColor.Clear;
             tableView.BackgroundColor = A.Color_NachoBackgroundGray;
             tableView.Source = AttendeeSource;
@@ -528,6 +549,16 @@ namespace NachoClient.iOS
             NavigationController.PopToViewController (this, true);
         }
 
+        public void EmailSwipeHandler (McContact contact)
+        {
+            Util.EmailSwipeHandler (contact, this);
+        }
+
+        public void CallSwipeHandler (McContact contact)
+        {
+            Util.CallSwipeHandler (contact, this);
+        }
+
         public void UpdateLists ()
         {
             this.RequiredList.Clear ();
@@ -579,6 +610,11 @@ namespace NachoClient.iOS
         public void ContactSelectedCallback (McContact contact)
         {
             PerformSegue ("ContactsToContactDetail", new SegueHolder (contact));
+        }
+
+        public void PerformSegueForDefaultSelector (string identifier, NSObject sender)
+        {
+            PerformSegue (identifier, sender);
         }
 
     }

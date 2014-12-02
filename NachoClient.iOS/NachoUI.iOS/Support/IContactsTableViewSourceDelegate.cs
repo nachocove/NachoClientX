@@ -9,7 +9,8 @@ namespace NachoClient.iOS
     public interface IContactsTableViewSourceDelegate
     {
         void ContactSelectedCallback (McContact contact);
-
+        void EmailSwipeHandler (McContact contact);
+        void CallSwipeHandler (McContact contact);
         void PerformSegueForDelegate (string identifier, NSObject sender);
     }
 }

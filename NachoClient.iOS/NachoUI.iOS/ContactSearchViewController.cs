@@ -135,6 +135,18 @@ namespace NachoClient.iOS
                 owner.DismissINachoContactChooser (this);
             }
         }
+
+        /// IContactsTableViewSourceDelegate
+        public void EmailSwipeHandler (McContact contact)
+        {
+            NcAssert.CaseError ();
+        }
+
+        /// IContactsTableViewSourceDelegate
+        public void CallSwipeHandler (McContact contact)
+        {
+            NcAssert.CaseError ();
+        }
  
     }
 }

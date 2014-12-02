@@ -16,6 +16,8 @@ namespace NachoClient.iOS
         void RemoveAttendee(McAttendee attendee);
         void SyncRequest ();
         Int64 GetAccountId ();
+        void EmailSwipeHandler (McContact contact);
+        void CallSwipeHandler (McContact contact);
     }
 }
 

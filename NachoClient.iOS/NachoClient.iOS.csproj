@@ -1177,6 +1177,7 @@
     <Compile Include="NachoUI.iOS\Support\HotEventView.cs" />
     <Compile Include="NachoUI.iOS\Support\HotListTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoLabelChooser.cs" />
+    <Compile Include="NachoUI.iOS\Interfaces\INachoDefaultSelector.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -1743,6 +1744,8 @@
     <BundleResource Include="Resources\email-delete%402x.png" />
     <BundleResource Include="Resources\contacts-popup-arrow%402x.png" />
     <BundleResource Include="Resources\gen-edit-active%402x.png" />
+    <BundleResource Include="Resources\gen-download-swipe%402x.png" />
+    <BundleResource Include="Resources\gen-preview-swipe%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

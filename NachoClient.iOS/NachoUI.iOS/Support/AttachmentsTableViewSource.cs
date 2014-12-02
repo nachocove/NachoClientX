@@ -52,6 +52,8 @@ namespace NachoClient.iOS
         private const int EMAIL_ATTACH_TAG = 1000;
         private const int OPEN_IN_TAG = 2000;
         private const int DELETE_TAG = 3000;
+        private const int DOWNLOAD_TAG = 4000;
+        private const int PREVIEW_TAG = 5000;
 
         protected static int ICON_TAG = 150;
         protected static int MULTI_ICON_TAG = 175;
@@ -74,6 +76,13 @@ namespace NachoClient.iOS
         private static SwipeActionDescriptor DELETE_BUTTON =
             new SwipeActionDescriptor (DELETE_TAG, 0.25f, UIImage.FromBundle ("email-delete-swipe"),
                 "Delete", A.Color_NachoSwipeActionRed);
+
+        private static SwipeActionDescriptor DOWNLOAD_BUTTON =
+            new SwipeActionDescriptor (DOWNLOAD_TAG, 0.25f, UIImage.FromBundle ("gen-download-swipe"),
+                "Download", A.Color_NachoSwipeActionMatteBlack);
+        private static SwipeActionDescriptor PREVIEW_BUTTON =
+            new SwipeActionDescriptor (PREVIEW_TAG, 0.25f, UIImage.FromBundle ("gen-preview-swipe"),
+                "Preview", A.Color_NachoeSwipeForward);
 
         public List<NcFileIndex> Items {
             get { return items; }
@@ -198,9 +207,6 @@ namespace NachoClient.iOS
 
             var frame = new RectangleF (0, 0, tableView.Frame.Width, 80);
             var view = new SwipeActionView (frame);
-            view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
-            view.SetAction (EMAIL_ATTACH_BUTTON, SwipeSide.LEFT);
-            view.SetAction (OPEN_IN_BUTTON, SwipeSide.LEFT);
 
             cell.AddSubview (view);
             view.Tag = SWIPE_TAG;
@@ -273,11 +279,11 @@ namespace NachoClient.iOS
 
             //Swipe view
             var view = cell.ViewWithTag (SWIPE_TAG) as SwipeActionView;
-            if (isMultiSelecting) {
-                view.DisableSwipe ();
-            } else {
-                view.EnableSwipe ();
-            }
+            view.LeftSwipeActionButtons.Clear ();
+            view.RightSwipeActionButtons.Clear ();
+            view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
+            view.SetAction (EMAIL_ATTACH_BUTTON, SwipeSide.LEFT);
+            view.SetAction (OPEN_IN_BUTTON, SwipeSide.LEFT);
 
             view.OnClick = (int tag) => {
                 switch (tag) {
@@ -294,6 +300,13 @@ namespace NachoClient.iOS
                     throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action tag {0}", tag));
                 }
             };
+
+            if (isMultiSelecting) {
+                view.DisableSwipe ();
+            } else {
+                view.EnableSwipe ();
+            }
+                
             view.OnSwipe = (SwipeActionView activeView, SwipeActionView.SwipeState state) => {
                 switch (state) {
                 case SwipeActionView.SwipeState.SWIPE_BEGIN:
@@ -372,17 +385,73 @@ namespace NachoClient.iOS
                     downloaded = true;
                     downloadImageView.Image = UIImage.FromBundle (DownloadIcon);
                     downloadImageView.Hidden = true;
-                    view.EnableSwipe ();
+
+                    view.LeftSwipeActionButtons.Clear ();
+                    view.RightSwipeActionButtons.Clear ();
+                    view.SetAction (DELETE_BUTTON, SwipeSide.RIGHT);
+                    view.SetAction (EMAIL_ATTACH_BUTTON, SwipeSide.LEFT);
+                    view.SetAction (OPEN_IN_BUTTON, SwipeSide.LEFT);
+
+                    view.OnClick = (int tag) => {
+                        switch (tag) {
+                        case OPEN_IN_TAG:
+                            OpenFileIn (item, cell);
+                            break;
+                        case EMAIL_ATTACH_TAG:
+                            AttachFile (item, cell);
+                            break;
+                        case DELETE_TAG:
+                            DeleteFile (item);
+                            break;
+                        default:
+                            throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action tag {0}", tag));
+                        }
+                    };
+
                     break;
                 case McAbstrFileDesc.FilePresenceEnum.Partial:
                     vc.AttachmentAction (attachment.Id, cell);
-                    view.DisableSwipe ();
+                    view.LeftSwipeActionButtons.Clear ();
+                    view.RightSwipeActionButtons.Clear ();
+                    view.SetAction (DOWNLOAD_BUTTON, SwipeSide.RIGHT);
+                    view.SetAction (PREVIEW_BUTTON, SwipeSide.LEFT);
+
+                    view.OnClick = (int tag) => {
+                        switch (tag) {
+                        case DOWNLOAD_TAG:
+                            vc.DownloadAndDoAction(attachment.Id, cell, (a) => {
+                            });
+                            break;
+                        case PREVIEW_TAG:
+                            vc.AttachmentAction (attachment.Id, cell);
+                            break;
+                        default:
+                            throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action tag {0}", tag));
+                        }
+                    };
                     break;
                 default:
                     (downloadImageView.Superview).BringSubviewToFront (downloadImageView);
                     downloadImageView.Image = UIImage.FromBundle (DownloadIcon);
                     downloadImageView.Hidden = false;
-                    view.DisableSwipe ();
+                    view.LeftSwipeActionButtons.Clear ();
+                    view.RightSwipeActionButtons.Clear ();
+                    view.SetAction (DOWNLOAD_BUTTON, SwipeSide.RIGHT);
+                    view.SetAction (PREVIEW_BUTTON, SwipeSide.LEFT);
+
+                    view.OnClick = (int tag) => {
+                        switch (tag) {
+                        case DOWNLOAD_TAG:
+                            vc.DownloadAndDoAction(attachment.Id, cell, (a) => {
+                            });
+                            break;
+                        case PREVIEW_TAG:
+                            vc.AttachmentAction (attachment.Id, cell);
+                            break;
+                        default:
+                            throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action tag {0}", tag));
+                        }
+                    };
                     break;
                 }
 
@@ -406,7 +475,7 @@ namespace NachoClient.iOS
 
                 dateTextLabel.Text = DateToString (item.CreatedAt);
 
-                if(Pretty.TreatLikeAPhoto(item.DisplayName)) {
+                if (Pretty.TreatLikeAPhoto (item.DisplayName)) {
                     iconView.Image = UIImage.FromBundle ("email-att-photos");
                 } else {
                     iconView.Image = UIImage.FromBundle ("email-att-files");
