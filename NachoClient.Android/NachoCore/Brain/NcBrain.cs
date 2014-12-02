@@ -60,6 +60,8 @@ namespace NachoCore.Brain
         private DateTime LastPeriodicGlean;
         private DateTime LastPeriodicGleanRestart;
 
+        private object LockObj;
+
         public NcBrain ()
         {
             LastPeriodicGlean = new DateTime ();
@@ -76,6 +78,7 @@ namespace NachoCore.Brain
             RootCounter.ReportPeriod = 5 * 60; // report once every 5 min
 
             EventQueue = new NcQueue<NcBrainEvent> ();
+            LockObj = new object ();
         }
 
         public static void StartService ()
@@ -412,14 +415,16 @@ namespace NachoCore.Brain
                 NcApplication.Instance.StatusIndEvent += GenerateInitialContactScores;
                 NcApplication.Instance.StatusIndEvent += UIScrollingEnd;
             }
-            while (true) {
-                var brainEvent = EventQueue.Dequeue ();
-                if (NcBrainEventType.TERMINATE == brainEvent.Type) {
-                    Log.Info (Log.LOG_BRAIN, "NcBrain Task exits");
-                    return;
-                }
-                if (ENABLED) {
-                    ProcessEvent (brainEvent);
+            lock (LockObj) {
+                while (true) {
+                    var brainEvent = EventQueue.Dequeue ();
+                    if (NcBrainEventType.TERMINATE == brainEvent.Type) {
+                        Log.Info (Log.LOG_BRAIN, "NcBrain Task exits");
+                        return;
+                    }
+                    if (ENABLED) {
+                        ProcessEvent (brainEvent);
+                    }
                 }
             }
         }
