@@ -431,7 +431,13 @@ namespace NachoClient.iOS
             }
             var imageView = new UIImageView (Window.Frame);
             imageView.Tag = 653;    // Give some decent tagvalue or keep a reference of imageView in self
-            imageView.BackgroundColor = UIColor.Red;
+            /* As A security Measure we may do something like this here
+             * var imageView = new UIImageView(UIImage.FromBundle("Launch-BG.png"));
+             * to keep the email image from being cached and potentially readable by 
+             * others
+             * imageView.BackgroundColor = UIColor.Red;
+            */
+
             UIApplication.SharedApplication.KeyWindow.AddSubview (imageView);
             UIApplication.SharedApplication.KeyWindow.BringSubviewToFront (imageView);
             Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground: Exit");
