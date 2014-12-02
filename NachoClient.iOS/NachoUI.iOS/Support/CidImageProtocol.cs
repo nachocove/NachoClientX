@@ -40,6 +40,9 @@ namespace NachoClient.iOS
         [Export ("canInitWithRequest:")]
         public static bool canInitWithRequest (NSUrlRequest request)
         {
+            if ((null == request) || (null == request.Url)) {
+                return false;
+            }
             return request.Url.Scheme == "cid";
         }
 
@@ -57,12 +60,12 @@ namespace NachoClient.iOS
 
         public override void StartLoading ()
         {
-            var url = Request.Url;
-            if (null == url) {
+            if ((null == Request) || (null == Request.Url)) {
                 Log.Error (Log.LOG_UI, "CidImageProtocol: Url is null for {0}", Request);
                 Client.FinishedLoading (this);
                 return;
             }
+            var url = Request.Url;
             var resourceSpecifier = url.ResourceSpecifier;
             if (null == resourceSpecifier) {
                 Log.Error (Log.LOG_UI, "CidImageProtocol: ResourceSpecifier is null for {0}", Request);
