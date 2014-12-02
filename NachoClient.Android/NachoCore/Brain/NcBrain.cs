@@ -60,6 +60,8 @@ namespace NachoCore.Brain
         private DateTime LastPeriodicGlean;
         private DateTime LastPeriodicGleanRestart;
 
+        private object LockObj;
+
         public NcBrain ()
         {
             LastPeriodicGlean = new DateTime ();
@@ -76,6 +78,7 @@ namespace NachoCore.Brain
             RootCounter.ReportPeriod = 5 * 60; // report once every 5 min
 
             EventQueue = new NcQueue<NcBrainEvent> ();
+            LockObj = new object ();
         }
 
         public static void StartService ()
@@ -126,7 +129,8 @@ namespace NachoCore.Brain
         {
             // Look for a list of emails
             int numGleaned = 0;
-            while (numGleaned < count && !NcApplication.Instance.IsBackgroundAbateRequired) {
+            while (numGleaned < count && !NcApplication.Instance.IsBackgroundAbateRequired &&
+                   !EventQueue.Token.IsCancellationRequested) {
                 McEmailMessage emailMessage = McEmailMessage.QueryNeedGleaning ();
                 if (null == emailMessage) {
                     break;
@@ -144,7 +148,8 @@ namespace NachoCore.Brain
         private int AnalyzeEmailAddresses (int count)
         {
             int numAnalyzed = 0;
-            while (numAnalyzed < count && !NcApplication.Instance.IsBackgroundAbateRequired) {
+            while (numAnalyzed < count && !NcApplication.Instance.IsBackgroundAbateRequired &&
+                   !EventQueue.Token.IsCancellationRequested) {
                 McEmailAddress emailAddress = McEmailAddress.QueryNeedAnalysis ();
                 if (null == emailAddress) {
                     break;
@@ -162,7 +167,8 @@ namespace NachoCore.Brain
         private int AnalyzeEmails (int count)
         {
             int numAnalyzed = 0;
-            while (numAnalyzed < count && !NcApplication.Instance.IsBackgroundAbateRequired) {
+            while (numAnalyzed < count && !NcApplication.Instance.IsBackgroundAbateRequired &&
+                   !EventQueue.Token.IsCancellationRequested) {
                 McEmailMessage emailMessage = McEmailMessage.QueryNeedAnalysis ();
                 if (null == emailMessage) {
                     break;
@@ -180,7 +186,8 @@ namespace NachoCore.Brain
         private int UpdateEmailAddressScores (int count)
         {
             int numUpdated = 0;
-            while (numUpdated < count && !NcApplication.Instance.IsBackgroundAbateRequired) {
+            while (numUpdated < count && !NcApplication.Instance.IsBackgroundAbateRequired &&
+                   !EventQueue.Token.IsCancellationRequested) {
                 McEmailAddress emailAddress = McEmailAddress.QueryNeedUpdate ();
                 if (null == emailAddress) {
                     break;
@@ -202,7 +209,8 @@ namespace NachoCore.Brain
         private int UpdateEmailMessageScores (int count)
         {
             int numUpdated = 0;
-            while (numUpdated < count && !NcApplication.Instance.IsBackgroundAbateRequired) {
+            while (numUpdated < count && !NcApplication.Instance.IsBackgroundAbateRequired &&
+                   !EventQueue.Token.IsCancellationRequested) {
                 McEmailMessage emailMessage = McEmailMessage.QueryNeedUpdate ();
                 if (null == emailMessage) {
                     break;
@@ -231,6 +239,10 @@ namespace NachoCore.Brain
             List<McEmailMessage> emailMessages = McEmailMessage.QueryNeedsIndexing (count);
             Dictionary<int, Index.Index> indexes = new Dictionary<int, Index.Index> ();
             foreach (var emailMessage in emailMessages) {
+                if (EventQueue.Token.IsCancellationRequested) {
+                    break;
+                }
+
                 // If we don't have an index for this account, open one
                 Index.Index index;
                 if (!indexes.TryGetValue (emailMessage.AccountId, out index)) {
@@ -426,14 +438,16 @@ namespace NachoCore.Brain
                 NcApplication.Instance.StatusIndEvent += GenerateInitialContactScores;
                 NcApplication.Instance.StatusIndEvent += UIScrollingEnd;
             }
-            while (true) {
-                var brainEvent = EventQueue.Dequeue ();
-                if (NcBrainEventType.TERMINATE == brainEvent.Type) {
-                    Log.Info (Log.LOG_BRAIN, "NcBrain Task exits");
-                    return;
-                }
-                if (ENABLED) {
-                    ProcessEvent (brainEvent);
+            lock (LockObj) {
+                while (true) {
+                    var brainEvent = EventQueue.Dequeue ();
+                    if (NcBrainEventType.TERMINATE == brainEvent.Type) {
+                        Log.Info (Log.LOG_BRAIN, "NcBrain Task exits");
+                        return;
+                    }
+                    if (ENABLED) {
+                        ProcessEvent (brainEvent);
+                    }
                 }
             }
         }
