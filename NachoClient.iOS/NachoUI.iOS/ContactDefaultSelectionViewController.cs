@@ -234,7 +234,7 @@ namespace NachoClient.iOS
 ////////////MULTI PHONE SELECTOR VIEW
 ////////////MULTI PHONE SELECTOR VIEW
 ////////////MULTI PHONE SELECTOR VIEW
-            yOffset = topOffset +  1;// + 17;
+            yOffset = topOffset +  1;
 
             UIView selectPhoneView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, View.Frame.Height - yOffset));
             selectPhoneView.BackgroundColor = A.Color_NachoGreen;
