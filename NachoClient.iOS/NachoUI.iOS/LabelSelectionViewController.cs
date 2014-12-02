@@ -14,13 +14,13 @@ using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
-    public partial class LabelSelectionViewController : NcUIViewControllerNoLeaks
-    {
+    public partial class LabelSelectionViewController : NcUIViewControllerNoLeaks, INachoLabelChooser
+	{
         protected const float X_INDENT = 30;
 
-        protected List<PhoneLabel> phoneLabels = new List<PhoneLabel> ();
-        public PhoneLabel selectedPhoneLabel;
+        public string selectedName;
         protected McContact contact;
+        protected ContactsHelper contactHelper = new ContactsHelper();
 
         protected const int SELECTED_BUTTON_IMAGE_TAG = 88;
         protected const int NOT_SELECTED_BUTTON_IMAGE_TAG = 99;
@@ -29,19 +29,41 @@ namespace NachoClient.iOS
 
         protected int selectedButtonTag = SELECTION_BUTTON_STARTING_TAG;
 
-        public ContactDefaultSelectionViewController owner;
+        protected INachoLabelChooserParent owner;
+        protected List<string> labelList = new List<string>();
 
         UIBarButtonItem DismissButton;
 
+        UIScrollView scrollView = new UIScrollView ();
+        UIView contentView = new UIView();
+        float yOffset = 0;
+
+
         public LabelSelectionViewController (IntPtr handle) : base (handle)
         {
+        }
 
+        public void SetLabelList(List<string> labelList)
+        {
+            this.labelList = labelList;
+        }
+
+        public void SetSelectedName (string selectedName)
+        {
+            this.selectedName = selectedName;
         }
 
         public override void ViewDidLoad ()
         {
-            CreateLabelList ();
+            if (!labelList.Contains (selectedName)) {
+                labelList.Insert (0, selectedName);
+            }
             base.ViewDidLoad ();
+        }
+
+        public void SetOwner (INachoLabelChooserParent owner)
+        {
+            this.owner = owner;
         }
 
         protected override void CreateViewHierarchy ()
@@ -62,57 +84,57 @@ namespace NachoClient.iOS
             navBar.Items = new UINavigationItem[] { navItem };
 
             View.AddSubview (navBar);
-            float yOffset = 64;
+            yOffset = 64;
 
             Util.AddHorizontalLine (0, yOffset, View.Frame.Width, UIColor.LightGray, View);
-            yOffset += 1;
+            yOffset += 2;
+
+            scrollView.Frame = new RectangleF (0, yOffset, View.Frame.Width, View.Frame.Height);
+            contentView.Frame = new RectangleF (0, yOffset, View.Frame.Width, View.Frame.Height);
+
+            scrollView.AddSubview (contentView);
+            View.AddSubview (scrollView);
+
 
             int i = 0;
-            foreach (var p in phoneLabels) {
-                ListSelectionButton selectionButton = new ListSelectionButton (p.label, SELECTION_BUTTON_STARTING_TAG + i);
+            yOffset = 2;
+            foreach (string name in labelList) {
+                ListSelectionButton selectionButton = new ListSelectionButton (contactHelper.ExchangeNameToLabel(name), SELECTION_BUTTON_STARTING_TAG + i);
                 UIButton button = selectionButton.GetButton (View, yOffset);
                 button.TouchUpInside += SelectionButtonClicked;
-                View.AddSubview (button);
-                if (0 == i) {
-                    button.SendActionForControlEvents (UIControlEvent.TouchUpInside);
+                contentView.AddSubview (button);
+                if (name == selectedName) {
+                    UIImageView selectedButtonSelectedImageView = (UIImageView)button.ViewWithTag (SELECTED_BUTTON_IMAGE_TAG);
+                    UIImageView selectedButtonNotSelectedImageView = (UIImageView)button.ViewWithTag (NOT_SELECTED_BUTTON_IMAGE_TAG);
+                    selectedButtonSelectedImageView.Hidden = false;
+                    selectedButtonNotSelectedImageView.Hidden = true;
                 }
                 yOffset += 58;
-                Util.AddHorizontalLine (80, yOffset, View.Frame.Width - 80, UIColor.LightGray, View);
+                Util.AddHorizontalLine (80, yOffset, View.Frame.Width - 80, UIColor.LightGray, contentView);
                 yOffset += 1;
                 i++;
             }
+
+            LayoutView ();
+        }
+
+        protected void LayoutView ()
+        {
+            scrollView.Frame = new RectangleF (0, 66, View.Frame.Width, View.Frame.Height - 64);
+            contentView.Frame = new RectangleF (0, 0, View.Frame.Width, yOffset);
+            scrollView.ContentSize = contentView.Frame.Size;
         }
 
         protected void SelectionButtonClicked (object sender, EventArgs e)
         {
-            UIButton previouslySelectedButton = (UIButton)View.ViewWithTag (selectedButtonTag);
-            UIImageView previouslySelectedButtonSelectedImageView = (UIImageView)previouslySelectedButton.ViewWithTag (SELECTED_BUTTON_IMAGE_TAG);
-            UIImageView previouslySelectedButtonNotSelectedImageView = (UIImageView)previouslySelectedButton.ViewWithTag (NOT_SELECTED_BUTTON_IMAGE_TAG);
-            previouslySelectedButtonSelectedImageView.Hidden = true;
-            previouslySelectedButtonNotSelectedImageView.Hidden = false;
-
             UIButton selectedButton = (UIButton)sender;
-            UIImageView selectedButtonSelectedImageView = (UIImageView)selectedButton.ViewWithTag (SELECTED_BUTTON_IMAGE_TAG);
-            UIImageView selectedButtonNotSelectedImageView = (UIImageView)selectedButton.ViewWithTag (NOT_SELECTED_BUTTON_IMAGE_TAG);
-            selectedButtonSelectedImageView.Hidden = false;
-            selectedButtonNotSelectedImageView.Hidden = true;
-
             selectedButtonTag = selectedButton.Tag;
-            selectedPhoneLabel = phoneLabels [selectedButtonTag - 1000];
+            selectedName = labelList [selectedButtonTag - 1000];
+
+            owner.PrepareForDismissal (selectedName);
+            DismissViewController (true, null);
         }
-
-        public class PhoneLabel
-        {
-            public string type;
-            public string label;
-
-            public PhoneLabel (string type, string label)
-            {
-                this.type = type;
-                this.label = label;
-            }
-        }
-
+            
         public class ListSelectionButton
         {
             protected string label;
@@ -126,6 +148,7 @@ namespace NachoClient.iOS
 
             public UIButton GetButton (UIView parentView, float yOffset)
             {
+                //FIXME make this button either be selected or not, don't hide image views
                 UIButton selectionButton = new UIButton (new RectangleF (0, yOffset, parentView.Frame.Width, 58));
                 selectionButton.Tag = tag;
                 selectionButton.BackgroundColor = A.Color_NachoGreen;
@@ -152,15 +175,16 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void CreateLabelList ()
+        public class ExchangeLabel
         {
-            phoneLabels.Add (new PhoneLabel (Xml.Contacts.HomePhoneNumber, "Home"));
-            phoneLabels.Add (new PhoneLabel (Xml.Contacts.MobilePhoneNumber, "Mobile"));
-            phoneLabels.Add (new PhoneLabel (Xml.Contacts.BusinessPhoneNumber, "Work"));
-            phoneLabels.Add (new PhoneLabel (Xml.Contacts.CarPhoneNumber, "Car"));
-            phoneLabels.Add (new PhoneLabel (Xml.Contacts.AssistantPhoneNumber, "Assistant"));
-            phoneLabels.Add (new PhoneLabel (Xml.Contacts.RadioPhoneNumber, "Radio"));
-            phoneLabels.Add (new PhoneLabel (Xml.Contacts.PagerNumber, "Pager"));
+            public string type;
+            public string label;
+
+            public ExchangeLabel (string type, string label)
+            {
+                this.type = type;
+                this.label = label;
+            }
         }
 
         protected override void Cleanup ()
@@ -191,9 +215,8 @@ namespace NachoClient.iOS
 
         private void DismissViewTouchUpInside (object sender, EventArgs e)
         {
-            owner.phoneLabel = selectedPhoneLabel;
-            owner.SetPhoneLabel ();
             DismissViewController (true, null);
         }
-    }
+
+	}
 }

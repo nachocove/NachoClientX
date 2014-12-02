@@ -357,7 +357,7 @@ namespace NachoCore.Model
             return l;
         }
 
-        public void AddDateAttribute (int accountId, string name, string label, DateTime value)
+        public McContactDateAttribute AddDateAttribute (int accountId, string name, string label, DateTime value)
         {
             var f = new McContactDateAttribute ();
             f.AccountId = accountId;
@@ -366,9 +366,10 @@ namespace NachoCore.Model
             f.Value = value;
             f.ContactId = this.Id;
             Dates.Add (f);
+            return f;
         }
 
-        public void AddAddressAttribute (int accountId, string name, string label, McContactAddressAttribute value)
+        public McContactAddressAttribute AddAddressAttribute (int accountId, string name, string label, McContactAddressAttribute value)
         {
             var f = new McContactAddressAttribute ();
             f.AccountId = accountId;
@@ -381,9 +382,10 @@ namespace NachoCore.Model
             f.PostalCode = value.PostalCode;
             f.ContactId = this.Id;
             Addresses.Add (f);
+            return f;
         }
 
-        public void AddDefaultEmailAddressAttribute (int accountId, string name, string label, string value)
+        public McContactEmailAddressAttribute AddDefaultEmailAddressAttribute (int accountId, string name, string label, string value)
         {
             var f = new McContactEmailAddressAttribute ();
             f.AccountId = accountId;
@@ -397,9 +399,10 @@ namespace NachoCore.Model
                 f.EmailAddress = emailAddress.Id;
             }
             EmailAddresses.Add (f);
+            return f;
         }
 
-        public void AddEmailAddressAttribute (int accountId, string name, string label, string value)
+        public McContactEmailAddressAttribute AddEmailAddressAttribute (int accountId, string name, string label, string value)
         {
             var f = new McContactEmailAddressAttribute ();
             f.AccountId = accountId;
@@ -412,9 +415,10 @@ namespace NachoCore.Model
                 f.EmailAddress = emailAddress.Id;
             }
             EmailAddresses.Add (f);
+            return f;
         }
 
-        protected void AddStringAttribute (ref List<McContactStringAttribute> list, int accountId, McContactStringType type, string name, string label, string value)
+        protected McContactStringAttribute AddStringAttribute (ref List<McContactStringAttribute> list, int accountId, McContactStringType type, string name, string label, string value)
         {
             var f = new McContactStringAttribute ();
             f.AccountId = accountId;
@@ -424,9 +428,10 @@ namespace NachoCore.Model
             f.Value = value;
             f.ContactId = this.Id;
             list.Add (f);
+            return f;
         }
 
-        protected void AddDefaultStringAttribute (ref List<McContactStringAttribute> list, int accountId, McContactStringType type, string name, string label, string value)
+        protected McContactStringAttribute AddDefaultStringAttribute (ref List<McContactStringAttribute> list, int accountId, McContactStringType type, string name, string label, string value)
         {
             var f = new McContactStringAttribute ();
             f.AccountId = accountId;
@@ -437,50 +442,64 @@ namespace NachoCore.Model
             f.IsDefault = true;
             f.ContactId = this.Id;
             list.Add (f);
+            return f;
         }
 
-        public void AddPhoneNumberAttribute (int accountId, string name, string label, string value)
+        public McContactStringAttribute AddPhoneNumberAttribute (int accountId, string name, string label, string value)
         {
             ReadAncillaryData ();
-            AddStringAttribute (ref DbPhoneNumbers, accountId, McContactStringType.PhoneNumber, name, label, value);
+            return AddStringAttribute (ref DbPhoneNumbers, accountId, McContactStringType.PhoneNumber, name, label, value);
         }
 
-        public void AddDefaultPhoneNumberAttribute (int accountId, string name, string label, string value)
+        public McContactStringAttribute AddDefaultPhoneNumberAttribute (int accountId, string name, string label, string value)
         {
             ReadAncillaryData ();
-            AddDefaultStringAttribute (ref DbPhoneNumbers, accountId, McContactStringType.PhoneNumber, name, label, value);
+            return AddDefaultStringAttribute (ref DbPhoneNumbers, accountId, McContactStringType.PhoneNumber, name, label, value);
         }
 
-        public void AddOrUpdatePhoneNumberAttribute (int accountId, string name, string label, string value)
+        public McContactStringAttribute AddOrUpdatePhoneNumberAttribute (int accountId, string name, string label, string value)
         {
             ReadAncillaryData ();
-            AddOrUpdateStringAttribute (ref DbPhoneNumbers, accountId, McContactStringType.PhoneNumber, name, label, value);
+            return AddOrUpdateStringAttribute (ref DbPhoneNumbers, accountId, McContactStringType.PhoneNumber, name, label, value);
         }
 
-        public void AddIMAddressAttribute (int accountId, string name, string label, string value)
+        public McContactStringAttribute AddOrUpdatePhoneNumberAttribute (int accountId, string name, string label, string value, bool isDefault)
         {
             ReadAncillaryData ();
-            AddStringAttribute (ref DbIMAddresses, accountId, McContactStringType.IMAddress, name, label, value);
+            return AddOrUpdateStringAttribute (ref DbPhoneNumbers, accountId, McContactStringType.PhoneNumber, name, label, value, isDefault);
         }
 
-        public void AddRelationshipAttribute (int accountId, string name, string label, string value)
+        public McContactStringAttribute AddIMAddressAttribute (int accountId, string name, string label, string value)
         {
             ReadAncillaryData ();
-            AddStringAttribute (ref DbRelationships, accountId, McContactStringType.Relationship, name, label, value);
+            return AddOrUpdateStringAttribute (ref DbIMAddresses, accountId, McContactStringType.IMAddress, name, label, value);
         }
 
-        public void AddCategoryAttribute (int accountId, string name)
+        public McContactStringAttribute AddRelationshipAttribute (int accountId, string name, string label, string value)
         {
             ReadAncillaryData ();
-            AddStringAttribute (ref DbCategories, accountId, McContactStringType.Category, name, null, null);
+            return AddOrUpdateStringAttribute (ref DbRelationships, accountId, McContactStringType.Relationship, name, label, value);
         }
 
-        protected void AddOrUpdateStringAttribute (ref List<McContactStringAttribute> list, int accountId, McContactStringType type, string name, string label, string value)
+        public McContactStringAttribute AddChildAttribute (int accountId, string name, string label, string value)
+        {
+            ReadAncillaryData ();
+            return AddStringAttribute (ref DbRelationships, accountId, McContactStringType.Relationship, name, label, value);
+        }
+
+        public McContactStringAttribute AddCategoryAttribute (int accountId, string name)
+        {
+            ReadAncillaryData ();
+            return AddOrUpdateStringAttribute (ref DbCategories, accountId, McContactStringType.Category, name, null, null);
+        }
+
+        protected McContactStringAttribute AddOrUpdateStringAttribute (ref List<McContactStringAttribute> list, int accountId, McContactStringType type, string name, string label, string value)
         {
             var existing = list.Where (attr => attr.Type.Equals (type) && attr.Name.Equals (name)).SingleOrDefault ();
             if (null != existing) {
                 existing.Label = label;
                 existing.Value = value;
+                return existing;
             } else {
                 var newbie = new McContactStringAttribute ();
                 newbie.AccountId = accountId;
@@ -490,10 +509,32 @@ namespace NachoCore.Model
                 newbie.Value = value;
                 newbie.ContactId = this.Id;
                 list.Add (newbie);
+                return newbie;
             }
         }
 
-        public void AddOrUpdateEmailAddressAttribute (int accountId, string name, string label, string value)
+        protected McContactStringAttribute AddOrUpdateStringAttribute (ref List<McContactStringAttribute> list, int accountId, McContactStringType type, string name, string label, string value, bool isDefault)
+        {
+            var existing = list.Where (attr => attr.Type.Equals (type) && attr.Name.Equals (name)).SingleOrDefault ();
+            if (null != existing) {
+                existing.Label = label;
+                existing.Value = value;
+                existing.IsDefault = isDefault;
+                return existing;
+            } else {
+                var newbie = new McContactStringAttribute ();
+                newbie.AccountId = accountId;
+                newbie.Name = name;
+                newbie.Type = type;
+                newbie.Label = label;
+                newbie.Value = value;
+                newbie.ContactId = this.Id;
+                list.Add (newbie);
+                return newbie;
+            }
+        }
+
+        public McContactEmailAddressAttribute AddOrUpdateEmailAddressAttribute (int accountId, string name, string label, string value)
         {
             ReadAncillaryData ();
             var f = EmailAddresses.Where (attr => attr.Name.Equals (name)).SingleOrDefault ();
@@ -513,6 +554,7 @@ namespace NachoCore.Model
             if (McEmailAddress.Get (AccountId, value, out emailAddress)) {
                 f.EmailAddress = emailAddress.Id;
             }
+            return f;
         }
 
         /// <summary>

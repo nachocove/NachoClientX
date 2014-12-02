@@ -522,6 +522,7 @@ namespace NachoClient.iOS
             }
 
             theAccount.Credentials.UpdatePassword (passwordText.Text);
+            theAccount.Credentials.Update ();
             theAccount.Account.EmailAddr = emailText.Text;
             theAccount.Account.Update ();
         }

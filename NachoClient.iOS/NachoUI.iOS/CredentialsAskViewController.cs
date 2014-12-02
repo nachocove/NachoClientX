@@ -161,6 +161,7 @@ namespace NachoClient.iOS
                     McCred UsersCredentials = McCred.QueryByAccountId<McCred>(UsersAccount.Id).SingleOrDefault ();
                     UsersCredentials.Username = emailField.Text;
                     UsersCredentials.UpdatePassword (passwordField.Text);
+                    UsersCredentials.Update ();
                     BackEnd.Instance.CredResp(UsersAccount.Id);
                     View.EndEditing(true);
                     DismissViewController(true, null);

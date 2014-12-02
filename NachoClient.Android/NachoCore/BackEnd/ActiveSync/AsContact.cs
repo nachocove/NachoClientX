@@ -498,16 +498,16 @@ namespace NachoCore.ActiveSync
                 c.AddDateAttribute (AccountId, "Birthday", "Birthday", Birthday);
             }
             if (null != Email1Address) {
-                c.AddEmailAddressAttribute (AccountId, "Email1Address", null, Email1Address);
+                c.AddEmailAddressAttribute (AccountId, "Email1Address", "Email", Email1Address);
             }
             if (null != Email2Address) {
-                c.AddEmailAddressAttribute (AccountId, "Email2Address", null, Email2Address);
+                c.AddEmailAddressAttribute (AccountId, "Email2Address", "Email Two", Email2Address);
             }
             if (null != Email3Address) {
-                c.AddEmailAddressAttribute (AccountId, "Email3Address", null, Email3Address);
+                c.AddEmailAddressAttribute (AccountId, "Email3Address", "Email Three", Email3Address);
             }
             if (null != AssistantPhoneNumber) {
-                c.AddPhoneNumberAttribute (AccountId, "AssistantPhoneNumber", "Assisstant", AssistantPhoneNumber);
+                c.AddPhoneNumberAttribute (AccountId, "AssistantPhoneNumber", "Assistant", AssistantPhoneNumber);
             }
             if (null != BusinessFaxNumber) {
                 c.AddPhoneNumberAttribute (AccountId, "BusinessFaxNumber", null, BusinessFaxNumber);
@@ -647,7 +647,7 @@ namespace NachoCore.ActiveSync
                 c.AddRelationshipAttribute (AccountId, "Spouse", null, Spouse);
             }
             foreach (var s in Children) {
-                c.AddRelationshipAttribute (AccountId, "Child", null, s);
+                c.AddChildAttribute (AccountId, "Child", null, s);
             }
 
             return NcResult.OK (c);
