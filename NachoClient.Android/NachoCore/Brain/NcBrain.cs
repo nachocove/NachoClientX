@@ -135,7 +135,9 @@ namespace NachoCore.Brain
                 NcContactGleaner.GleanContacts (emailMessage.AccountId, emailMessage);
                 numGleaned++;
             }
-            Log.Info (Log.LOG_BRAIN, "{0} email message gleaned", numGleaned);
+            if (0 != numGleaned) {
+                Log.Info (Log.LOG_BRAIN, "{0} email message gleaned", numGleaned);
+            }
             return numGleaned;
         }
 
@@ -151,7 +153,9 @@ namespace NachoCore.Brain
                 emailAddress.ScoreObject ();
                 numAnalyzed++;
             }
-            Log.Info (Log.LOG_BRAIN, "{0} email addresses analyzed", numAnalyzed);
+            if (0 != numAnalyzed) {
+                Log.Info (Log.LOG_BRAIN, "{0} email addresses analyzed", numAnalyzed);
+            }
             return numAnalyzed;
         }
 
@@ -167,7 +171,9 @@ namespace NachoCore.Brain
                 emailMessage.ScoreObject ();
                 numAnalyzed++;
             }
-            Log.Info (Log.LOG_BRAIN, "{0} email messages analyzed", numAnalyzed);
+            if (0 != numAnalyzed) {
+                Log.Info (Log.LOG_BRAIN, "{0} email messages analyzed", numAnalyzed);
+            }
             return numAnalyzed;
         }
 
@@ -187,7 +193,9 @@ namespace NachoCore.Brain
 
                 numUpdated++;
             }
-            Log.Info (Log.LOG_BRAIN, "{0} email address scores updated", numUpdated);
+            if (0 != numUpdated) {
+                Log.Info (Log.LOG_BRAIN, "{0} email address scores updated", numUpdated);
+            }
             return numUpdated;
         }
 
@@ -206,7 +214,9 @@ namespace NachoCore.Brain
                 emailMessage.UpdateScoreAndNeedUpdate ();
                 numUpdated++;
             }
-            Log.Info (Log.LOG_BRAIN, "{0} email message scores updated", numUpdated);
+            if (0 != numUpdated) {
+                Log.Info (Log.LOG_BRAIN, "{0} email message scores updated", numUpdated);
+            }
             return numUpdated;
         }
 
@@ -251,8 +261,12 @@ namespace NachoCore.Brain
                 index.EndAddTransaction ();
                 index.Dispose ();
             }
-            Log.Info (Log.LOG_BRAIN, "{0} email messages indexed", numIndexed);
-            Log.Info (Log.LOG_BRAIN, "{0:N0} bytes indexed", bytesIndexed);
+            if (0 != numIndexed) {
+                Log.Info (Log.LOG_BRAIN, "{0} email messages indexed", numIndexed);
+            }
+            if (0 != bytesIndexed) {
+                Log.Info (Log.LOG_BRAIN, "{0:N0} bytes indexed", bytesIndexed);
+            }
             indexes.Clear ();
             return numIndexed;
         }
