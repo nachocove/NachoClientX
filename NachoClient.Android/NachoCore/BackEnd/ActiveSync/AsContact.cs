@@ -647,7 +647,7 @@ namespace NachoCore.ActiveSync
                 c.AddRelationshipAttribute (AccountId, "Spouse", null, Spouse);
             }
             foreach (var s in Children) {
-                c.AddRelationshipAttribute (AccountId, "Child", null, s);
+                c.AddChildAttribute (AccountId, "Child", null, s);
             }
 
             return NcResult.OK (c);
