@@ -500,16 +500,15 @@ namespace NachoClient.iOS
         public override void WillEndDragging (UIScrollView scrollView, PointF velocity, ref PointF targetContentOffset)
         {
             var tableView = (UITableView)scrollView;
-            var pathForTargetTopCell = tableView.IndexPathForRowAtPoint (new PointF (tableView.Frame.X / 2, targetContentOffset.Y));
+            var pathForTargetTopCell = tableView.IndexPathForRowAtPoint (new PointF (tableView.Frame.X / 2, targetContentOffset.Y + 10));
 
-            if (startingPoint.Y > targetContentOffset.Y) {
+            if (startingPoint.Y >= targetContentOffset.Y) {
                 targetContentOffset.Y = tableView.RectForRowAtIndexPath (pathForTargetTopCell).Location.Y - 10;
                 return;
             }
 
             var next = NSIndexPath.FromRowSection (pathForTargetTopCell.Row + 1, pathForTargetTopCell.Section);
             targetContentOffset.Y = tableView.RectForRowAtIndexPath (next).Location.Y - 10;
-
         }
 
         protected void SquareUpCard (UIScrollView scrollView)
