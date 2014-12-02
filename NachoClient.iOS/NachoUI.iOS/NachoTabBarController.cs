@@ -36,6 +36,7 @@ namespace NachoClient.iOS
             instance = this;
 
             ViewControllerSelected += ViewControllerSelectedHandler;
+            ShouldSelectViewController += ViewControllerShouldSelectHandler;
 
             TabBar.BarTintColor = UIColor.White;
             TabBar.TintColor = A.Color_NachoIconGray;
@@ -299,6 +300,16 @@ namespace NachoClient.iOS
                     }
                 }
             }
+        }
+
+        protected bool ViewControllerShouldSelectHandler (UITabBarController tabBarController, UIViewController viewController)
+        {
+            if (viewController == MoreNavigationController) {
+                // The user has tapped on the "More" tab in the tab bar.
+                // Pop all pushed subviews so the "More" menu is on top.
+                MoreNavigationController.PopToRootViewController (false);
+            }
+            return true;
         }
     }
 }
