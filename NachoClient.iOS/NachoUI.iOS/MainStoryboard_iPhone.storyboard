@@ -1230,6 +1230,7 @@
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="ZzH-qS-KOm"/>
                         <segue destination="Epo-ZI-KmC" kind="modal" identifier="SegueToLabelSelection" modalTransitionStyle="crossDissolve" id="Ar9-Nl-fq9"/>
                         <segue destination="gut-8L-p8k" kind="modal" identifier="SegueToContactDefaultSelector" modalTransitionStyle="crossDissolve" id="WNu-7Y-s9s"/>
+                        <segue destination="tAw-fh-hJX" kind="push" identifier="SegueToMessageCompose" id="jlp-70-Yjw"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="8i2-Mi-xrm" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1679,36 +1680,36 @@
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="Eb2-K0-nI3"/>
+        <segue reference="XQg-JR-vxA"/>
         <segue reference="4z2-t5-9Cd"/>
         <segue reference="g4G-tD-G9H"/>
         <segue reference="iqA-wd-xqD"/>
-        <segue reference="XQg-JR-vxA"/>
-        <segue reference="K8c-x2-hEf"/>
+        <segue reference="Eb2-K0-nI3"/>
         <segue reference="Aba-pv-mzB"/>
         <segue reference="mLY-u0-R5O"/>
         <segue reference="UJb-nL-M4Z"/>
-        <segue reference="r1y-34-GvV"/>
+        <segue reference="WNu-7Y-s9s"/>
         <segue reference="alQ-9Z-W4y"/>
         <segue reference="ZzH-qS-KOm"/>
         <segue reference="Ar9-Nl-fq9"/>
         <segue reference="kYM-OY-NE0"/>
         <segue reference="6J3-c2-bz5"/>
-        <segue reference="WNu-7Y-s9s"/>
-        <segue reference="zby-Sy-Y3J"/>
-        <segue reference="84g-IQ-Iaw"/>
-        <segue reference="tkk-6o-6oa"/>
-        <segue reference="Kmd-x6-iCJ"/>
+        <segue reference="jlp-70-Yjw"/>
         <segue reference="zOx-eF-clw"/>
         <segue reference="rEt-DF-c51"/>
         <segue reference="szv-KC-TId"/>
-        <segue reference="7sK-rg-HQL"/>
         <segue reference="w67-dy-XSq"/>
-        <segue reference="peA-r2-tjq"/>
         <segue reference="m2D-2n-RiV"/>
+        <segue reference="7sK-rg-HQL"/>
+        <segue reference="peA-r2-tjq"/>
         <segue reference="4M9-UI-9mt"/>
         <segue reference="tt1-JW-EVV"/>
         <segue reference="vUs-ft-xdy"/>
+        <segue reference="tkk-6o-6oa"/>
+        <segue reference="zby-Sy-Y3J"/>
+        <segue reference="84g-IQ-Iaw"/>
+        <segue reference="Kmd-x6-iCJ"/>
+        <segue reference="K8c-x2-hEf"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>
