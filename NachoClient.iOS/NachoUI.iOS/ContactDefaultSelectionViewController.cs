@@ -603,7 +603,7 @@ namespace NachoClient.iOS
             }
 
             foreach (var em in contact.EmailAddresses) {
-                if (em.Name == selectedEmailType) {
+                if (em.Name == selectedEmailName) {
                     owner.PerformSegueForContactDefaultSelector ("SegueToMessageCompose", new SegueHolder (em.Value));
                     DismissViewController (true, null);
                     return;
