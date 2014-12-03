@@ -551,12 +551,12 @@ namespace NachoClient.iOS
 
         public void EmailSwipeHandler (McContact contact)
         {
-            Util.EmailContact (contact, this);
+            Util.EmailContact ("SegueToContactDefaultSelection", contact, this);
         }
 
         public void CallSwipeHandler (McContact contact)
         {
-            Util.CallContact (contact, this);
+            Util.CallContact ("SegueToContactDefaultSelection", contact, this);
         }
 
         public void UpdateLists ()
