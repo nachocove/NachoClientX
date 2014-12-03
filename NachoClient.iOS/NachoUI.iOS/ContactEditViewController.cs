@@ -33,19 +33,7 @@ namespace NachoClient.iOS
         }
         protected BlockType editingBlockType;
 
-        protected Dictionary<string, int> PhonePriority = new Dictionary<string, int> () {
-            {Xml.Contacts.BusinessPhoneNumber, 1},
-            {Xml.Contacts.MobilePhoneNumber, 2},
-            {Xml.Contacts.HomePhoneNumber, 3},
-            {Xml.Contacts.AssistantPhoneNumber, 4},
-            {Xml.Contacts.Business2PhoneNumber, 5},
-            {Xml.Contacts.Home2PhoneNumber, 5},
-            {Xml.Contacts.CarPhoneNumber, 6},
-            {Xml.Contacts.PagerNumber, 7},
-            {Xml.Contacts.RadioPhoneNumber, 8},
-            {Xml.Contacts.BusinessFaxNumber, 9},
-            {Xml.Contacts.HomeFaxNumber, 10}
-        };
+
 
         protected const float MORE_BUTTON_INDENT = 280;
         protected float CELL_HEIGHT = 44;
@@ -1767,12 +1755,11 @@ namespace NachoClient.iOS
             }
 
             public int CompareTo(PhoneCell other){
-
                 string name = phoneAttribute.Name;
-                int phonePriority = owner.PhonePriority [name];
+                int phonePriority = ContactsHelper.PhonePriority [name];
 
                 string otherName = other.phoneAttribute.Name;
-                int otherPriority = owner.PhonePriority [otherName];
+                int otherPriority = ContactsHelper.PhonePriority [otherName];
 
                 return phonePriority.CompareTo (otherPriority);
             }

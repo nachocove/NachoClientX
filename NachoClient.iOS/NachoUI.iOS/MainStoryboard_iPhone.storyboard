@@ -30,7 +30,7 @@
             <objects>
                 <viewController storyboardIdentifier="NachoNowViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="ygr-ff-C2f" customClass="NachoNowViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="BSK-Fb-RSa">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="455"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -639,6 +639,7 @@
                         <segue destination="15q-DA-GFk" kind="push" identifier="EventToEditEvent" id="k2t-Pj-AhS"/>
                         <segue destination="rp9-J1-cgU" kind="push" identifier="EventToEventAttendees" id="HCr-Oa-UHV"/>
                         <segue destination="Nbe-45-5AM" kind="push" identifier="EventToAttachment" id="RR1-bJ-URL"/>
+                        <segue destination="MG9-1p-N0l" kind="push" identifier="SegueToContactDetail" id="udF-bU-cV6"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="jJS-cc-DzZ" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1221,7 +1222,6 @@
                     <connections>
                         <outlet property="contentView" destination="njj-ho-OMu" id="j6u-eh-quk"/>
                         <outlet property="scrollView" destination="RJq-gT-NuY" id="PRQ-NN-dgK"/>
-                        <segue destination="tAw-fh-hJX" kind="push" identifier="ContactToEmailCompose" id="r1y-34-GvV"/>
                         <segue destination="qAG-NA-NKz" kind="push" identifier="ContactToNotes" id="alQ-9Z-W4y"/>
                         <segue destination="vgr-FH-RtX" kind="custom" identifier="ContactToContactEdit" customClass="FadeCustomSegue" id="mLY-u0-R5O"/>
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="NachoNowToMessagePriority" modalTransitionStyle="crossDissolve" id="UJb-nL-M4Z"/>
@@ -1229,6 +1229,8 @@
                         <segue destination="96Q-f8-PuZ" kind="push" identifier="NachoNowToMessageView" id="6J3-c2-bz5"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageListToFolders" id="ZzH-qS-KOm"/>
                         <segue destination="Epo-ZI-KmC" kind="modal" identifier="SegueToLabelSelection" modalTransitionStyle="crossDissolve" id="Ar9-Nl-fq9"/>
+                        <segue destination="gut-8L-p8k" kind="modal" identifier="SegueToContactDefaultSelector" modalTransitionStyle="crossDissolve" id="WNu-7Y-s9s"/>
+                        <segue destination="tAw-fh-hJX" kind="push" identifier="SegueToMessageCompose" id="jlp-70-Yjw"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="8i2-Mi-xrm" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1314,7 +1316,6 @@
                         <segue destination="HJp-il-GU9" kind="push" identifier="SegueToContactSearch" id="tt1-JW-EVV"/>
                         <segue destination="gut-8L-p8k" kind="modal" identifier="SegueToContactDefaultSelection" id="b2R-9j-Kqr"/>
                         <segue destination="tAw-fh-hJX" kind="push" identifier="SegueToMessageCompose" id="Lyd-ot-Ei5"/>
-                        <segue destination="MG9-1p-N0l" kind="push" identifier="SegueToContactDetail" id="hJK-c8-kNY"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="wXN-oz-Khv" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1679,36 +1680,36 @@
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="XQg-JR-vxA"/>
-        <segue reference="4z2-t5-9Cd"/>
-        <segue reference="g4G-tD-G9H"/>
-        <segue reference="iqA-wd-xqD"/>
-        <segue reference="Eb2-K0-nI3"/>
-        <segue reference="K8c-x2-hEf"/>
-        <segue reference="FD7-0T-FGT"/>
+        <segue reference="jlp-70-Yjw"/>
+        <segue reference="udF-bU-cV6"/>
+        <segue reference="Kmd-x6-iCJ"/>
+        <segue reference="s9j-Ih-SWz"/>
+        <segue reference="tdu-G2-PEp"/>
+        <segue reference="k2t-Pj-AhS"/>
+        <segue reference="JTo-qU-j7O"/>
+        <segue reference="Tfk-Mt-BlS"/>
+        <segue reference="HCr-Oa-UHV"/>
+        <segue reference="RR1-bJ-URL"/>
+        <segue reference="4M9-UI-9mt"/>
+        <segue reference="tt1-JW-EVV"/>
+        <segue reference="6J3-c2-bz5"/>
+        <segue reference="Ar9-Nl-fq9"/>
+        <segue reference="UJb-nL-M4Z"/>
+        <segue reference="ZzH-qS-KOm"/>
+        <segue reference="WNu-7Y-s9s"/>
+        <segue reference="mLY-u0-R5O"/>
+        <segue reference="vUs-ft-xdy"/>
         <segue reference="szv-KC-TId"/>
         <segue reference="zOx-eF-clw"/>
         <segue reference="rEt-DF-c51"/>
-        <segue reference="Kmd-x6-iCJ"/>
-        <segue reference="tkk-6o-6oa"/>
-        <segue reference="Lyd-ot-Ei5"/>
-        <segue reference="w67-dy-XSq"/>
-        <segue reference="kYM-OY-NE0"/>
-        <segue reference="hJK-c8-kNY"/>
-        <segue reference="mLY-u0-R5O"/>
-        <segue reference="alQ-9Z-W4y"/>
-        <segue reference="7sK-rg-HQL"/>
-        <segue reference="peA-r2-tjq"/>
-        <segue reference="m2D-2n-RiV"/>
-        <segue reference="4M9-UI-9mt"/>
-        <segue reference="tt1-JW-EVV"/>
-        <segue reference="b2R-9j-Kqr"/>
-        <segue reference="2D9-t9-ebv"/>
-        <segue reference="zby-Sy-Y3J"/>
-        <segue reference="DDa-hb-SgY"/>
         <segue reference="84g-IQ-Iaw"/>
-        <segue reference="ja3-Zu-g6R"/>
-        <segue reference="vUs-ft-xdy"/>
+        <segue reference="zby-Sy-Y3J"/>
+        <segue reference="4z2-t5-9Cd"/>
+        <segue reference="g4G-tD-G9H"/>
+        <segue reference="iqA-wd-xqD"/>
+        <segue reference="XQg-JR-vxA"/>
+        <segue reference="Eb2-K0-nI3"/>
+        <segue reference="K8c-x2-hEf"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>

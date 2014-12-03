@@ -500,8 +500,16 @@ namespace NachoClient.iOS
 
         public override void WillEndDragging (UIScrollView scrollView, PointF velocity, ref PointF targetContentOffset)
         {
+            if (NoMessageThreads ()) {
+                return;
+            }
+
             var tableView = (UITableView)scrollView;
             var pathForTargetTopCell = tableView.IndexPathForRowAtPoint (new PointF (tableView.Frame.X / 2, targetContentOffset.Y + 10));
+
+            if (null == pathForTargetTopCell) {
+                return;
+            }
 
             if (startingPoint.Y >= targetContentOffset.Y) {
                 targetContentOffset.Y = tableView.RectForRowAtIndexPath (pathForTargetTopCell).Location.Y - 10;
@@ -509,6 +517,9 @@ namespace NachoClient.iOS
             }
 
             var next = NSIndexPath.FromRowSection (pathForTargetTopCell.Row + 1, pathForTargetTopCell.Section);
+            if (null == next) {
+                return;
+            }
             targetContentOffset.Y = tableView.RectForRowAtIndexPath (next).Location.Y - 10;
         }
 

@@ -141,14 +141,6 @@ namespace NachoClient.iOS
                 mcvc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, (string)h.value));
                 return;
             }
-
-            if (segue.Identifier.Equals ("SegueToContactDetail")) {
-                var h = sender as SegueHolder;
-                var c = (McContact)h.value;
-                ContactDetailViewController destinationController = (ContactDetailViewController)segue.DestinationViewController;
-                destinationController.contact = c;
-                return;
-            }
  
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
@@ -172,12 +164,6 @@ namespace NachoClient.iOS
                 this.AttendeeList.Add (attendee);
             }
             UpdateLists ();
-        }
-
-        public void SetOrganizer (string email, string name)
-        {
-            this.organizerEmail = email;
-            this.organizerName = name;
         }
 
         public List<McAttendee> GetAttendeeList ()
@@ -228,75 +214,6 @@ namespace NachoClient.iOS
                 address.action = NcEmailAddress.Action.create;
                 PerformSegue ("SegueToContactSearch", new SegueHolder (address));
             }; 
-
-            if (!organizer) {
-                organizerView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 80));
-                organizerView.BackgroundColor = UIColor.White;
-
-                //User Name
-                var userNameLabel = new UILabel (new RectangleF (70, 22, 320 - 15 - 65, 20));
-                userNameLabel.LineBreakMode = UILineBreakMode.TailTruncation;
-                userNameLabel.TextColor = A.Color_0B3239;
-                userNameLabel.Font = A.Font_AvenirNextDemiBold17;
-                userNameLabel.Text = organizerName;
-                organizerView.AddSubview (userNameLabel);
-
-                //User Email
-                var userEmailLabel = new UILabel (new RectangleF (70, 40, 320 - 15 - 65, 20));
-                userEmailLabel.LineBreakMode = UILineBreakMode.TailTruncation;
-                userEmailLabel.TextColor = A.Color_0B3239;
-                userEmailLabel.Font = A.Font_AvenirNextRegular14;
-                userEmailLabel.Text = organizerEmail;
-                organizerView.AddSubview (userEmailLabel);
-
-                var userImage = Util.ImageOfSender (account.Id, organizerEmail);
-
-                if (null != userImage) {
-                    using (var rawImage = userImage) {
-                        using (var originalImage = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
-                            // User image
-                            var userImageView = new UIImageView (new RectangleF (15, 15, 45, 45));
-                            userImageView.Layer.CornerRadius = (45.0f / 2.0f);
-                            userImageView.Layer.MasksToBounds = true;
-                            userImageView.Image = originalImage;
-                            userImageView.Layer.BorderWidth = 3f;
-                            userImageView.Layer.BorderColor = A.Color_NachoSwipeEmailDefer.CGColor;
-                            organizerView.AddSubview (userImageView);
-                        }
-                    }
-                } else {
-
-                    // User userLabelView view, if no image
-                    var userLabelView = new UILabel (new RectangleF (15, 15, 45, 45));
-                    userLabelView.Font = A.Font_AvenirNextRegular24;
-                    userLabelView.BackgroundColor = Util.GetCircleColorForEmail (organizerEmail, account.Id);
-                    userLabelView.TextColor = UIColor.White;
-                    userLabelView.TextAlignment = UITextAlignment.Center;
-                    userLabelView.LineBreakMode = UILineBreakMode.Clip;
-                    userLabelView.Layer.CornerRadius = (45 / 2);
-                    userLabelView.Layer.MasksToBounds = true;
-                    userLabelView.Text = Util.NameToLetters (organizerName);
-                    userLabelView.Layer.BorderWidth = 3f;
-                    userLabelView.Layer.BorderColor = A.Color_NachoSwipeEmailDefer.CGColor;
-                    organizerView.AddSubview (userLabelView);
-                }
-
-                var organizerIconImageView = new UIImageView (new RectangleF (46, 12.5f, 20, 20));
-                organizerIconImageView.Layer.CornerRadius = 10;
-                organizerIconImageView.Image = UIImage.FromBundle ("event-organizer");
-                organizerView.AddSubview (organizerIconImageView);
-
-                Util.AddArrowAccessory (organizerView.Frame.Width - 18 - 12, (organizerView.Frame.Height / 2) - 6, 12, organizerView);
-
-                var organizerTapGestureRecognizer = new UITapGestureRecognizer ();
-                organizerTapGestureRecognizer.AddTarget (OrganizerTapGestureRecognizerTap);
-                organizerView.AddGestureRecognizer (organizerTapGestureRecognizer);
-
-                View.AddSubview (organizerView);
-
-                yOffset += 80;
-
-            }
 
             segmentedControlView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 40));
             segmentedControlView.BackgroundColor = UIColor.White;
@@ -571,16 +488,6 @@ namespace NachoClient.iOS
             parentView.Add (lineUIView);
         }
 
-        private void OrganizerTapGestureRecognizerTap ()
-        {
-            McContact contact = McContact.QueryByEmailAddress (account.Id, organizerEmail).FirstOrDefault ();
-            if (null == contact) {
-                NcContactGleaner.GleanContact (organizerEmail, account.Id);
-                contact = McContact.QueryByEmailAddress (account.Id, organizerEmail).FirstOrDefault ();
-            }
-            PerformSegue ("SegueToContactDetail", new SegueHolder (contact));
-        }
-
         public void RemoveAttendee (McAttendee attendee)
         {
             List<McAttendee> tempList = new List<McAttendee> ();
@@ -649,12 +556,12 @@ namespace NachoClient.iOS
 
         public void EmailSwipeHandler (McContact contact)
         {
-            Util.EmailContact (contact, this);
+            Util.EmailContact ("SegueToContactDefaultSelection", contact, this);
         }
 
         public void CallSwipeHandler (McContact contact)
         {
-            Util.CallContact (contact, this);
+            Util.CallContact ("SegueToContactDefaultSelection", contact, this);
         }
 
         public void UpdateLists ()

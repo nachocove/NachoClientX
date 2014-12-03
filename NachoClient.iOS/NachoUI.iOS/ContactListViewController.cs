@@ -196,13 +196,13 @@ namespace NachoClient.iOS
         /// IContactsTableViewSourceDelegate
         public void EmailSwipeHandler (McContact contact)
         {
-            Util.EmailContact (contact, this);
+            Util.EmailContact ("SegueToContactDefaultSelection", contact, this);
         }
 
         /// IContactsTableViewSourceDelegate
         public void CallSwipeHandler (McContact contact)
         {
-            Util.CallContact (contact, this);
+            Util.CallContact ("SegueToContactDefaultSelection", contact, this);
         }
 
         public void SelectSection (int index)

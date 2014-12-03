@@ -190,7 +190,7 @@ namespace NachoCore.ActiveSync
                                 },
                                 new Trans {
                                     Event = (uint)RobotEvt.E.ReDir,
-                                    Act = DoRobot302,
+                                    Act = DoRobotPostReDir,
                                     State = (uint)RobotLst.ReDirWait
                                 },
                                 new Trans { Event = (uint)RobotEvt.E.Cancel, Act = DoCancel, State = (uint)St.Stop },
@@ -209,32 +209,32 @@ namespace NachoCore.ActiveSync
                                 },
                                 new Trans {
                                     Event = (uint)SmEvt.E.Success,
-                                    Act = DoRobotHardFail, // Only 302 is okay w/a GET.
+                                    Act = DoRobotGetHardFail, // Only 302 is okay w/a GET.
                                     State = (uint)St.Stop
                                 }, 
                                 new Trans {
                                     Event = (uint)SmEvt.E.TempFail,
-                                    Act = DoRobotHardFail,
+                                    Act = DoRobotGetHardFail,
                                     State = (uint)St.Stop
                                 },
                                 new Trans {
                                     Event = (uint)SmEvt.E.HardFail,
-                                    Act = DoRobotHardFail,
+                                    Act = DoRobotGetHardFail,
                                     State = (uint)St.Stop
                                 },
                                 new Trans {
                                     Event = (uint)AsProtoControl.AsEvt.E.ReDisc,
-                                    Act = DoRobotHardFail,
+                                    Act = DoRobotGetHardFail,
                                     State = (uint)St.Stop
                                 },
                                 new Trans {
                                     Event = (uint)AsProtoControl.AsEvt.E.ReProv,
-                                    Act = DoRobotHardFail,
+                                    Act = DoRobotGetHardFail,
                                     State = (uint)St.Stop
                                 },
                                 new Trans {
                                     Event = (uint)AsProtoControl.AsEvt.E.ReSync,
-                                    Act = DoRobotHardFail,
+                                    Act = DoRobotGetHardFail,
                                     State = (uint)St.Stop
                                 },
                                 new Trans {
@@ -264,12 +264,12 @@ namespace NachoCore.ActiveSync
                                 },
                                 new Trans {
                                     Event = (uint)SmEvt.E.TempFail,
-                                    Act = DoRobotHardFail,
+                                    Act = DoRobotDnsSrvHardFail,
                                     State = (uint)St.Stop
                                 },
                                 new Trans {
                                     Event = (uint)SmEvt.E.HardFail,
-                                    Act = DoRobotHardFail,
+                                    Act = DoRobotDnsSrvHardFail,
                                     State = (uint)St.Stop
                                 },
                                 new Trans { Event = (uint)RobotEvt.E.Cancel, Act = DoCancel, State = (uint)St.Stop },
@@ -294,12 +294,12 @@ namespace NachoCore.ActiveSync
                                 },
                                 new Trans {
                                     Event = (uint)SmEvt.E.TempFail,
-                                    Act = DoRobotHardFail,
+                                    Act = DoRobotDnsMxHardFail,
                                     State = (uint)St.Stop
                                 },
                                 new Trans {
                                     Event = (uint)SmEvt.E.HardFail,
-                                    Act = DoRobotHardFail,
+                                    Act = DoRobotDnsMxHardFail,
                                     State = (uint)St.Stop
                                 },
                                 new Trans { Event = (uint)RobotEvt.E.Cancel, Act = DoCancel, State = (uint)St.Stop },
@@ -324,12 +324,12 @@ namespace NachoCore.ActiveSync
                                 },
                                 new Trans {
                                     Event = (uint)SmEvt.E.TempFail,
-                                    Act = DoRobotHardFail,
+                                    Act = DoRobotGetCertHardFail,
                                     State = (uint)St.Stop
                                 },
                                 new Trans {
                                     Event = (uint)SmEvt.E.HardFail,
-                                    Act = DoRobotHardFail,
+                                    Act = DoRobotGetCertHardFail,
                                     State = (uint)St.Stop
                                 },
                                 new Trans { Event = (uint)RobotEvt.E.Cancel, Act = DoCancel, State = (uint)St.Stop },
@@ -355,7 +355,7 @@ namespace NachoCore.ActiveSync
                                 },
                                 new Trans {
                                     Event = (uint)SharedEvt.E.SrvCertN,
-                                    Act = DoRobotHardFail,
+                                    Act = DoRobotCertOkHardFail,
                                     State = (uint)St.Stop
                                 },
                                 new Trans { Event = (uint)RobotEvt.E.Cancel, Act = DoCancel, State = (uint)St.Stop },
@@ -379,27 +379,27 @@ namespace NachoCore.ActiveSync
                                 },
                                 new Trans {
                                     Event = (uint)SmEvt.E.TempFail,
-                                    Act = DoRobotHardFail,
+                                    Act = DoRobotReDirHardFail,
                                     State = (uint)St.Stop
                                 },
                                 new Trans {
                                     Event = (uint)SmEvt.E.HardFail,
-                                    Act = DoRobotHardFail,
+                                    Act = DoRobotReDirHardFail,
                                     State = (uint)St.Stop
                                 },
                                 new Trans {
                                     Event = (uint)AsProtoControl.AsEvt.E.ReDisc,
-                                    Act = DoRobotHardFail,
+                                    Act = DoRobotReDirHardFail,
                                     State = (uint)St.Stop
                                 },
                                 new Trans {
                                     Event = (uint)AsProtoControl.AsEvt.E.ReProv,
-                                    Act = DoRobotHardFail,
+                                    Act = DoRobotReDirHardFail,
                                     State = (uint)St.Stop
                                 },
                                 new Trans {
                                     Event = (uint)AsProtoControl.AsEvt.E.ReSync,
-                                    Act = DoRobotHardFail,
+                                    Act = DoRobotReDirHardFail,
                                     State = (uint)St.Stop
                                 },
                                 new Trans {
@@ -414,7 +414,7 @@ namespace NachoCore.ActiveSync
                                 },
                                 new Trans {
                                     Event = (uint)RobotEvt.E.ReDir,
-                                    Act = DoRobot302,
+                                    Act = DoRobotReDirAgain,
                                     State = (uint)RobotLst.ReDirWait
                                 },
                                 new Trans { Event = (uint)RobotEvt.E.Cancel, Act = DoCancel, State = (uint)St.Stop },
@@ -536,6 +536,18 @@ namespace NachoCore.ActiveSync
                 DoRobot302 ();
             }
 
+            private void DoRobotPostReDir ()
+            {
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: POST => 302: {1}.", Step, LastUri);
+                DoRobot302 ();
+            }
+
+            private void DoRobotReDirAgain ()
+            {
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: {1} => 302: {2}.", Step, MethodToUse, LastUri);
+                DoRobot302 ();
+            }
+
             private void DoRobot302 ()
             {
                 // NOTE: this handles the 302 case, NOT the <Redirect> in XML after 200 case.
@@ -654,6 +666,42 @@ namespace NachoCore.ActiveSync
             private void DoRobotPostHardFail ()
             {
                 Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: POST failed: {1}.", Step, LastUri);
+                DoRobotHardFail ();
+            }
+
+            private void DoRobotGetHardFail ()
+            {
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: GET failed: {1}.", Step, LastUri);
+                DoRobotHardFail ();
+            }
+
+            private void DoRobotDnsSrvHardFail ()
+            {
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: DNS SRV failed.", Step);
+                DoRobotHardFail ();
+            }
+
+            private void DoRobotDnsMxHardFail ()
+            {
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: DNS MX failed.", Step);
+                DoRobotHardFail ();
+            }
+
+            private void DoRobotGetCertHardFail ()
+            {
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: Could not retrieve sever SSL cert.", Step);
+                DoRobotHardFail ();
+            }
+
+            private void DoRobotCertOkHardFail ()
+            {
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: User rejected server SSL cert.", Step);
+                DoRobotHardFail ();
+            }
+
+            private void DoRobotReDirHardFail ()
+            {
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: {1} failed: {2}.", Step, MethodToUse, LastUri);
                 DoRobotHardFail ();
             }
 

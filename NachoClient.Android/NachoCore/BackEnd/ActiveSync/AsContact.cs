@@ -510,25 +510,25 @@ namespace NachoCore.ActiveSync
                 c.AddPhoneNumberAttribute (AccountId, "AssistantPhoneNumber", "Assistant", AssistantPhoneNumber);
             }
             if (null != BusinessFaxNumber) {
-                c.AddPhoneNumberAttribute (AccountId, "BusinessFaxNumber", null, BusinessFaxNumber);
+                c.AddPhoneNumberAttribute (AccountId, "BusinessFaxNumber", "Business Fax", BusinessFaxNumber);
             }
             if (null != BusinessPhoneNumber) {
                 c.AddPhoneNumberAttribute (AccountId, "BusinessPhoneNumber", "Work", BusinessPhoneNumber);
             }
             if (null != Business2PhoneNumber) {
-                c.AddPhoneNumberAttribute (AccountId, "Business2PhoneNumber", "Work", Business2PhoneNumber);
+                c.AddPhoneNumberAttribute (AccountId, "Business2PhoneNumber", "Work Two", Business2PhoneNumber);
             }
             if (null != CarPhoneNumber) {
                 c.AddPhoneNumberAttribute (AccountId, "CarPhoneNumber", "Car", CarPhoneNumber);
             }
             if (null != HomeFaxNumber) {
-                c.AddPhoneNumberAttribute (AccountId, "HomeFaxNumber", null, HomeFaxNumber);
+                c.AddPhoneNumberAttribute (AccountId, "HomeFaxNumber", "Home Fax", HomeFaxNumber);
             }
             if (null != HomePhoneNumber) {
                 c.AddPhoneNumberAttribute (AccountId, "HomePhoneNumber", "Home", HomePhoneNumber);
             }
             if (null != Home2PhoneNumber) {
-                c.AddPhoneNumberAttribute (AccountId, "Home2PhoneNumber", "Home", Home2PhoneNumber);
+                c.AddPhoneNumberAttribute (AccountId, "Home2PhoneNumber", "Home Two", Home2PhoneNumber);
             }
             if (null != MobilePhoneNumber) {
                 c.AddPhoneNumberAttribute (AccountId, "MobilePhoneNumber", "Mobile", MobilePhoneNumber);
