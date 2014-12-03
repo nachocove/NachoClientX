@@ -18,7 +18,7 @@ using NachoCore.ActiveSync;
 
 namespace NachoClient.iOS
 {
-    public partial class ContactDetailViewController : NcUIViewControllerNoLeaks, IMessageTableViewSourceDelegate, INachoMessageEditorParent, INachoCalendarItemEditorParent, INachoFolderChooserParent, INachoNotesControllerParent, INachoDateControllerParent
+    public partial class ContactDetailViewController : NcUIViewControllerNoLeaks, IMessageTableViewSourceDelegate, INachoMessageEditorParent, INachoCalendarItemEditorParent, INachoFolderChooserParent, INachoNotesControllerParent, INachoDateControllerParent, INachoContactDefaultSelector
     {
         public McContact contact;
 
@@ -134,28 +134,33 @@ namespace NachoClient.iOS
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
+            if (segue.Identifier.Equals ("SegueToContactDefaultSelector")) {
+                var h = sender as SegueHolder;
+                var c = (McContact)h.value;
+                var type = (ContactDefaultSelectionViewController.DefaultSelectionType)h.value2;
+                ContactDefaultSelectionViewController destinationController = (ContactDefaultSelectionViewController)segue.DestinationViewController;
+                destinationController.SetContact (c);
+                destinationController.viewType = type;
+                destinationController.owner = this;
+                return;
+            }
+
+            if (segue.Identifier.Equals ("SegueToMessageCompose")) {
+                var h = sender as SegueHolder;
+                MessageComposeViewController mcvc = (MessageComposeViewController)segue.DestinationViewController;
+                mcvc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, (string)h.value));
+                return;
+            }
+
             if (segue.Identifier.Equals ("ContactToNotes")) {
                 var dc = (NotesViewController)segue.DestinationViewController;
                 dc.SetOwner (this, false);
                 return;
             }
 
-            if (segue.Identifier.Equals ("ContactToEmailCompose")) {
-                var dc = (MessageComposeViewController)segue.DestinationViewController;
-                var holder = (SegueHolder)sender;
-                var address = (string)holder.value;
-                dc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, address));
-                if (null != holder.value2) {
-                    dc.SetQRType (NcQuickResponse.QRTypeEnum.Compose);
-                }
-                return;
-            }
             if (segue.Identifier.Equals ("ContactToContactEdit")) {
                 var destinationViewController = (ContactEditViewController)segue.DestinationViewController;
                 destinationViewController.contact = contact;
-                return;
-            }
-            if (segue.Identifier.Equals ("SegueToContactDefaultSelection")) {
                 return;
             }
 
@@ -637,14 +642,12 @@ namespace NachoClient.iOS
 
         protected void DefaultEmailTapHandler ()
         {
-            //TODO: Use default
-            TouchedEmailButton (contact.GetEmailAddress ());
+            Util.EmailContact ("SegueToContactDefaultSelector", contact, this);
         }
 
         protected void DefaultCallTapHandler ()
         {
-            //TODO: Use default
-            TouchedCallButton (contact.GetPhoneNumber ());
+            Util.CallContact ("SegueToContactDefaultSelector", contact, this);
         }
 
         protected float AddEmailAddress (McContactEmailAddressAttribute email, float yOffset, UIView contactInfoScrollView, bool isFirstEmail) /*TODO Remove isFirstEmail once we're settings defaults */
@@ -904,15 +907,6 @@ namespace NachoClient.iOS
             return true;
         }
 
-        public void TouchedQROption (string emailAddress)
-        {
-            if (string.IsNullOrEmpty (emailAddress)) {
-                ComplainAbout ("No email address", "You've selected a contact who does not have an email address");
-                return;
-            }
-            PerformSegue ("ContactToEmailCompose", new SegueHolder (emailAddress, true));
-        }
-
         protected UIColor LighterColor (UIColor color)
         {
             float hue, saturation, brightness, alpha;
@@ -952,7 +946,7 @@ namespace NachoClient.iOS
                 ComplainAbout ("No email address", "You've selected a contact who does not have an email address");
                 return;
             }
-            PerformSegue ("ContactToEmailCompose", new SegueHolder (address));
+            PerformSegue ("SegueToMessageCompose", new SegueHolder (address));
         }
 
         protected void TouchedCallButton (string number)
@@ -1125,6 +1119,11 @@ namespace NachoClient.iOS
                 }
                 return "";
             }
+        }
+
+        public void PerformSegueForContactDefaultSelector (string identifier, NSObject sender)
+        {
+            PerformSegue (identifier, sender);
         }
     }
 }

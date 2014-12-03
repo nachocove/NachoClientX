@@ -825,27 +825,27 @@ namespace NachoClient
             return stream;
         }
 
-        public static void CallContact (McContact contact, NcUIViewController owner)
+        public static void CallContact (string segueIdentifier, McContact contact, NcUIViewController owner)
         {
             if (0 == contact.PhoneNumbers.Count) {
-                owner.PerformSegue ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.PhoneNumberAdder));
+                owner.PerformSegue (segueIdentifier, new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.PhoneNumberAdder));
             } else if (1 == contact.PhoneNumbers.Count) {
                 Util.PerformAction ("tel", contact.GetPhoneNumber ());
             } else {
                 foreach (var p in contact.PhoneNumbers) {
                     if (p.IsDefault) {
                         Util.PerformAction ("tel", p.Value);
-                        return;
+                        return; 
                     }
                 }
-                owner.PerformSegue ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultPhoneSelector));
+                owner.PerformSegue (segueIdentifier, new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultPhoneSelector));
             }
         }
 
-        public static void EmailContact (McContact contact, NcUIViewController owner)
+        public static void EmailContact (string segueIdentifier, McContact contact, NcUIViewController owner)
         {
             if (0 == contact.EmailAddresses.Count) {
-                owner.PerformSegue ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder));
+                owner.PerformSegue (segueIdentifier, new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder));
             } else if (1 == contact.EmailAddresses.Count) {
                 owner.PerformSegue ("SegueToMessageCompose", new SegueHolder (contact.GetEmailAddress ()));
             } else {
@@ -855,7 +855,7 @@ namespace NachoClient
                         return;
                     }
                 }
-                owner.PerformSegue ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultEmailSelector));
+                owner.PerformSegue (segueIdentifier, new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultEmailSelector));
             }
         }
 
