@@ -16,7 +16,7 @@ using SwipeViewBinding;
 namespace NachoClient.iOS
 {
 
-    public partial class ContactListViewController : NcUIViewController, IContactsTableViewSourceDelegate, INachoDefaultSelector
+    public partial class ContactListViewController : NcUIViewController, IContactsTableViewSourceDelegate, INachoContactDefaultSelector
     {
         SwipeView swipeView;
         LettersSwipeViewDataSource swipeViewDateSource;
@@ -196,13 +196,13 @@ namespace NachoClient.iOS
         /// IContactsTableViewSourceDelegate
         public void EmailSwipeHandler (McContact contact)
         {
-            Util.EmailSwipeHandler (contact, this);
+            Util.EmailContact (contact, this);
         }
 
         /// IContactsTableViewSourceDelegate
         public void CallSwipeHandler (McContact contact)
         {
-            Util.CallSwipeHandler (contact, this);
+            Util.CallContact (contact, this);
         }
 
         public void SelectSection (int index)
@@ -210,7 +210,7 @@ namespace NachoClient.iOS
             contactTableViewSource.ScrollToSection (TableView, index);
         }
 
-        public void PerformSegueForDefaultSelector (string identifier, NSObject sender)
+        public void PerformSegueForContactDefaultSelector (string identifier, NSObject sender)
         {
             PerformSegue (identifier, sender);
         }

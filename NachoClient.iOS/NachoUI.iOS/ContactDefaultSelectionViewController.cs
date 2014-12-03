@@ -17,7 +17,7 @@ namespace NachoClient.iOS
 {
     public partial class ContactDefaultSelectionViewController : NcUIViewControllerNoLeaks, INachoLabelChooserParent
     {
-        public INachoDefaultSelector owner;
+        public INachoContactDefaultSelector owner;
 
         protected RegexUtilities regexUtil = new RegexUtilities ();
         protected const float X_INDENT = 30;
@@ -460,7 +460,7 @@ namespace NachoClient.iOS
                 contact.AddEmailAddressAttribute (LoginHelpers.GetCurrentAccountId (), Xml.Contacts.Email1Address, null, emailTextField.Text);
                 contact.Update ();
                 DismissViewController (true, null);
-                owner.PerformSegueForDefaultSelector ("SegueToMessageCompose", new SegueHolder (emailTextField.Text));
+                owner.PerformSegueForContactDefaultSelector ("SegueToMessageCompose", new SegueHolder (emailTextField.Text));
             } else {
                 emailTextField.TextColor = A.Color_NachoRed;
             }
@@ -527,7 +527,7 @@ namespace NachoClient.iOS
         {
             foreach (var em in contact.EmailAddresses) {
                 if (em.Name == selectedEmailType) {
-                    owner.PerformSegueForDefaultSelector ("SegueToMessageCompose", new SegueHolder (em.Value));
+                    owner.PerformSegueForContactDefaultSelector ("SegueToMessageCompose", new SegueHolder (em.Value));
                     DismissViewController (true, null);
                     return;
                 }
