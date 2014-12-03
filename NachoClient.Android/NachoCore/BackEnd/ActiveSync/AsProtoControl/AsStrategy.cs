@@ -789,23 +789,6 @@ namespace NachoCore.ActiveSync
                     return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.HotQOp, cmd);
                 }
             }
-            // (FG, BG) Unless one of these conditions are met, perform a narrow Sync Command...
-            if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt ||
-                NcApplication.ExecutionContextEnum.Background == exeCtxt) {
-                var needNarrowSyncMarker = DateTime.UtcNow.AddSeconds (-300);
-                if (Scope.FlagIsSet (Scope.StrategyRung (protocolState), Scope.FlagEnum.NarrowSyncOk) &&
-                    protocolState.LastNarrowSync < needNarrowSyncMarker &&
-                    (protocolState.LastPing < needNarrowSyncMarker ||
-                    !NarrowFoldersNoToClientExpected (accountId))) {
-                    Log.Info (Log.LOG_AS, "Strategy:FG/BG:Narrow Sync...");
-                    var nSyncKit = GenSyncKit (accountId, protocolState, true, false);
-                    if (null != nSyncKit) {
-                        Log.Info (Log.LOG_AS, "Strategy:FG/BG:...SyncKit");
-                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
-                            new AsSyncCommand (BEContext.ProtoControl, nSyncKit));
-                    }
-                }
-            }
             // (QS) If a narrow Sync hasn’t successfully completed in the last N seconds, 
             // perform a narrow Sync Command.
             if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
@@ -893,6 +876,20 @@ namespace NachoCore.ActiveSync
                         break;
                     }
                     return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.QOop, cmd);
+                }
+                // (FG, BG) Unless one of these conditions are met, perform a narrow Sync Command...
+                var needNarrowSyncMarker = DateTime.UtcNow.AddSeconds (-300);
+                if (Scope.FlagIsSet (Scope.StrategyRung (protocolState), Scope.FlagEnum.NarrowSyncOk) &&
+                    protocolState.LastNarrowSync < needNarrowSyncMarker &&
+                    (protocolState.LastPing < needNarrowSyncMarker ||
+                        !NarrowFoldersNoToClientExpected (accountId))) {
+                    Log.Info (Log.LOG_AS, "Strategy:FG/BG:Narrow Sync...");
+                    var nSyncKit = GenSyncKit (accountId, protocolState, true, false);
+                    if (null != nSyncKit) {
+                        Log.Info (Log.LOG_AS, "Strategy:FG/BG:...SyncKit");
+                        return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
+                            new AsSyncCommand (BEContext.ProtoControl, nSyncKit));
+                    }
                 }
                 // (FG, BG) If we are rate-limited, and we can execute a narrow Ping command at the 
                 // current filter setting, execute a narrow Ping command.
