@@ -24,10 +24,10 @@ namespace NachoClient.iOS
         protected const float ROW_HEIGHT = 80;
 
         private static SwipeActionDescriptor CALL_BUTTON =
-            new SwipeActionDescriptor (CALL_SWIPE_TAG, 0.8f, UIImage.FromBundle ("contacts-call-swipe"),
+            new SwipeActionDescriptor (CALL_SWIPE_TAG, 0.5f, UIImage.FromBundle ("contacts-call-swipe"),
                 "Dial", A.Color_NachoSwipeActionOrange);
         private static SwipeActionDescriptor EMAIL_BUTTON =
-            new SwipeActionDescriptor (EMAIL_SWIPE_TAG, 0.8f, UIImage.FromBundle ("contacts-email-swipe"),
+            new SwipeActionDescriptor (EMAIL_SWIPE_TAG, 0.5f, UIImage.FromBundle ("contacts-email-swipe"),
                 "Email", A.Color_NachoSwipeActionMatteBlack);
 
         bool multipleSections;
