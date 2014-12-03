@@ -8,9 +8,9 @@ using System.Collections.Generic;
 
 namespace NachoClient.iOS
 {
-    public interface INachoDefaultSelector
+    public interface INachoContactDefaultSelector
     {
-        void PerformSegueForDefaultSelector (string identifier, NSObject sender);
+        void PerformSegueForContactDefaultSelector (string identifier, NSObject sender);
     }
 }
 
