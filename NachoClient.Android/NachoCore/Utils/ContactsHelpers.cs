@@ -14,6 +14,20 @@ namespace NachoCore.Utils
         {
         }
 
+        public static Dictionary<string, int> PhonePriority = new Dictionary<string, int> () {
+            {Xml.Contacts.BusinessPhoneNumber, 1},
+            {Xml.Contacts.MobilePhoneNumber, 2},
+            {Xml.Contacts.HomePhoneNumber, 3},
+            {Xml.Contacts.AssistantPhoneNumber, 4},
+            {Xml.Contacts.Business2PhoneNumber, 5},
+            {Xml.Contacts.Home2PhoneNumber, 5},
+            {Xml.Contacts.CarPhoneNumber, 6},
+            {Xml.Contacts.PagerNumber, 7},
+            {Xml.Contacts.RadioPhoneNumber, 8},
+            {Xml.Contacts.BusinessFaxNumber, 9},
+            {Xml.Contacts.HomeFaxNumber, 10}
+        };
+
         public List<string> PhoneNames = new List<string> () {
             Xml.Contacts.MobilePhoneNumber,
             Xml.Contacts.BusinessPhoneNumber,

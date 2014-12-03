@@ -74,6 +74,15 @@ namespace NachoClient
         }
 
      
+        public class PhoneAttributeComparer: IComparer<McContactStringAttribute>
+        {
+            public int Compare (McContactStringAttribute x, McContactStringAttribute y){
+                int xPriority = ContactsHelper.PhonePriority [x.Name];
+                int yPriority = ContactsHelper.PhonePriority [y.Name];
+
+                return xPriority.CompareTo (yPriority);
+            }
+        }
 
         public static DateTime LastUpdate (string key)
         {

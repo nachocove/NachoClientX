@@ -471,30 +471,38 @@ namespace NachoClient.iOS
             float contactInfoHeight = 0;
 
             if (contact.EmailAddresses.Count > 0) {
-                contactInfoHeight += AddEmailAddress (contact.EmailAddresses.FirstOrDefault (), contactInfoHeight, contactInfoScrollView, true);
-            }
-
-            if (contact.PhoneNumbers.Count > 0) {
-                contactInfoHeight += AddPhoneNumber (contact.PhoneNumbers.FirstOrDefault (), contactInfoHeight, contactInfoScrollView, true);
-            }
-
-            if (contact.EmailAddresses.Count > 1) {
-                bool skippedFirst = false;
-                foreach (var emailAddressAttributes in contact.EmailAddresses) {
-                    if (skippedFirst) {
-                        contactInfoHeight += AddEmailAddress (emailAddressAttributes, contactInfoHeight, contactInfoScrollView, false);
+                foreach (var e in contact.EmailAddresses) {
+                    if (e.IsDefault) {
+                        contactInfoHeight += AddEmailAddress (e, contactInfoHeight, contactInfoScrollView, true);
+                        break;
                     }
-                    skippedFirst = true;
                 }
             }
 
-            if (contact.PhoneNumbers.Count > 1) {
-                bool skippedFirst = false;
+            contact.PhoneNumbers.Sort (new Util.PhoneAttributeComparer ());
+           
+            if (contact.PhoneNumbers.Count > 0) {
+                foreach (var p in contact.PhoneNumbers) {
+                    if (p.IsDefault) {
+                        contactInfoHeight += AddPhoneNumber (contact.PhoneNumbers.FirstOrDefault (), contactInfoHeight, contactInfoScrollView, true);
+                        break;
+                    }
+                }
+            }
+
+            if (contact.EmailAddresses.Count > 0) {
+                foreach (var emailAddressAttributes in contact.EmailAddresses) {
+                    if (!emailAddressAttributes.IsDefault) {
+                        contactInfoHeight += AddEmailAddress (emailAddressAttributes, contactInfoHeight, contactInfoScrollView, false);
+                    }
+                }
+            }
+
+            if (contact.PhoneNumbers.Count > 0) {
                 foreach (var phoneNumberAttribute in contact.PhoneNumbers) {
-                    if (skippedFirst) {
+                    if (!phoneNumberAttribute.IsDefault) {
                         contactInfoHeight += AddPhoneNumber (phoneNumberAttribute, contactInfoHeight, contactInfoScrollView, false);
                     }
-                    skippedFirst = true;
                 }
             }
 
