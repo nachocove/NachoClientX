@@ -28,6 +28,7 @@ namespace NachoClient.iOS
         }
 
         protected UITabBarItem nachoNowItem;
+        protected UITabBarItem foldersItem;
 
         public override void ViewDidLoad ()
         {
@@ -56,7 +57,7 @@ namespace NachoClient.iOS
             SetTabBarItem ("NachoClient.iOS.SupportViewController", "Support", "more-support", "more-support-active"); // Done
             SetTabBarItem ("NachoClient.iOS.HotListViewController", "Hot", "nav-mail", "nav-mail-active"); // Done
             SetTabBarItem ("NachoClient.iOS.DeferredViewController", "Deferred", "nav-mail", "nav-mail-active"); // Done
-            SetTabBarItem ("NachoClient.iOS.FoldersViewController", "Mail", "nav-mail", "nav-mail-active"); // Done
+            foldersItem = SetTabBarItem ("NachoClient.iOS.FoldersViewController", "Mail", "nav-mail", "nav-mail-active"); // Done
             SetTabBarItem ("NachoClient.iOS.AttachmentsViewController", "Files", "more-files", "more-files-active"); // Done
 
             FinishedCustomizingViewControllers += (object sender, UITabBarCustomizeChangeEventArgs e) => {
@@ -104,6 +105,11 @@ namespace NachoClient.iOS
             var navigationController = SelectTabRoot (nachoNowItem);
             var nachoNowViewController = (NachoNowViewController)navigationController.TopViewController;
             nachoNowViewController.HandleNotifications ();
+        }
+
+        public void SwitchToFolders ()
+        {
+            SelectTabRoot (foldersItem);
         }
 
         protected string GetTabBarItemTypeName (UIViewController vc)

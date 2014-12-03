@@ -14,5 +14,10 @@ namespace NachoClient.iOS
         {
             SetEmailMessages (NcEmailManager.Inbox());
         }
+
+        protected override void CustomizeBackButton ()
+        {
+            BackShouldSwitchToFolders ();
+        }
     }
 }

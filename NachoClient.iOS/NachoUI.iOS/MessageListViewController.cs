@@ -21,6 +21,7 @@ namespace NachoClient.iOS
         protected UIBarButtonItem composeMailButton;
         protected UIBarButtonItem cancelSelectedButton;
         protected UIBarButtonItem moreSelectedButton;
+        protected UIBarButtonItem backButton;
 
         protected const string UICellReuseIdentifier = "UICell";
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
@@ -109,9 +110,16 @@ namespace NachoClient.iOS
             messageSource.owner = this;
             TableView.Source = messageSource;
 
+            CustomizeBackButton ();
             MultiSelectToggle (messageSource, false);
 
             TableView.TableHeaderView = null; // beta 1
+
+            Util.ConfigureNavBar (false, this.NavigationController);
+        }
+
+        protected virtual void CustomizeBackButton ()
+        {
         }
 
         public void MultiSelectToggle (MessageTableViewSource source, bool enabled)
@@ -120,14 +128,18 @@ namespace NachoClient.iOS
                 NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
                     moreSelectedButton,
                 };
-                NavigationItem.SetLeftBarButtonItem (cancelSelectedButton, false);
                 NavigationItem.HidesBackButton = true;
-
+                NavigationItem.SetLeftBarButtonItem (cancelSelectedButton, false);
             } else {
                 NavigationItem.RightBarButtonItem = null;
-                NavigationItem.RightBarButtonItem = composeMailButton; /* beta 1 searchButton */ 
-                NavigationItem.LeftBarButtonItem = null;
-                NavigationItem.HidesBackButton = false;
+                NavigationItem.RightBarButtonItem = composeMailButton;
+                if (null == backButton) {
+                    NavigationItem.HidesBackButton = false;
+                    NavigationItem.LeftBarButtonItem = null;
+                } else {
+                    NavigationItem.HidesBackButton = true;
+                    NavigationItem.LeftBarButtonItem = backButton;
+                }
             }
         }
 
@@ -162,7 +174,6 @@ namespace NachoClient.iOS
             base.ViewWillAppear (animated);
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
-                Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
             }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
@@ -330,6 +341,17 @@ namespace NachoClient.iOS
             vc.DismissFolderChooser (true, null);
         }
 
+        protected void BackShouldSwitchToFolders ()
+        {
+            using (var image = UIImage.FromBundle ("nav-backarrow")) {
+                backButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, onClickBackButton);
+            }
+        }
+
+        protected void onClickBackButton (object sender, EventArgs e)
+        {
+            var nachoTabBar = Util.GetActiveTabBar ();
+            nachoTabBar.SwitchToFolders ();
+        }
     }
 }
- 
