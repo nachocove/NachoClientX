@@ -100,7 +100,6 @@ namespace NachoClient.iOS
             base.ViewDidAppear (animated);
         }
 
-
         private void HideMenu (NSNotification notification)
         {
             if (IsViewLoaded) {
@@ -112,7 +111,6 @@ namespace NachoClient.iOS
 
         public override void ViewWillAppear (bool animated)
         {
-
             base.ViewWillAppear (animated);
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
@@ -909,7 +907,7 @@ namespace NachoClient.iOS
             longPressData.containerView.Superview.BecomeFirstResponder ();
 
             UIMenuController copyMenu = UIMenuController.SharedMenuController;
-            copyMenu.SetTargetRect (new RectangleF (longPressData.containerView.Superview.Frame.Width / 2, longPressData.containerView.Frame.Y + 10, 0, 0), longPressData.containerView.Superview);
+            copyMenu.SetTargetRect (new RectangleF (longPressData.containerView.Superview.Frame.Width / 2, longPressData.containerView.Frame.Y + 7, 0, 0), longPressData.containerView.Superview);
             copyMenu.ArrowDirection = UIMenuControllerArrowDirection.Down;
 
             UIMenuItem copyMenuItem = new UIMenuItem ("Copy", new MonoTouch.ObjCRuntime.Selector ("DoCopy"));
