@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using MimeKit;
 
 using NachoCore.Model;
+using NachoCore.Brain;
 using NachoCore.Utils;
 using NachoPlatform;
 using System.Collections.ObjectModel;
@@ -37,6 +38,7 @@ namespace NachoClient.iOS
         protected BodyView descriptionView;
         protected UIView eventAttendeeView;
         protected UIView eventAlertsView;
+        protected UIView eventOrganizerView;
         protected AttachmentListView attachmentListView;
         protected UIView eventNotesView;
         protected UIImageView organizerIcon;
@@ -62,6 +64,8 @@ namespace NachoClient.iOS
         protected UIGestureRecognizer.Token attendeeTapGestureRecognizerTapToken;
         protected UITapGestureRecognizer alertTapGestureRecognizer;
         protected UIGestureRecognizer.Token alertTapGestureRecognizerTapToken;
+        protected UITapGestureRecognizer organizerTapGestureRecognizer;
+        protected UIGestureRecognizer.Token organizerTapGestureRecognizerTapToken;
         protected UITapGestureRecognizer attachmentsTapGestureRecognizer;
         protected UIGestureRecognizer.Token attachmentsTapGestureRecognizerTapToken;
         protected UITapGestureRecognizer notesTapGestureRecognizer;
@@ -108,15 +112,20 @@ namespace NachoClient.iOS
             EVENT_ALERT_TITLE_TAG = 114,
             EVENT_ALERT_DETAIL_TAG = 115,
 
+            EVENT_ORGANIZER_VIEW_TAG = 116,
+            EVENT_ORGANIZER_TITLE_TAG = 117,
+            EVENT_ORGANIZER_NAME_LABEL = 118,
+            EVENT_ORGANIZER_EMAIL_LABEL = 119,
+
             EVENT_ATTENDEE_VIEW_TAG = 2000,
             EVENT_ATTENDEES_TITLE_TAG = 2001,
             EVENT_ATTENDEE_DETAIL_TAG = 2002,
             EVENT_ATTENDEE_TAG = 2010,
             EVENT_ATTENDEE_LABEL_TAG = 2020,
 
-            EVENT_NOTES_TEXT_VIEW_TAG = 116,
-            EVENT_NOTE_TITLE_TAG = 117,
-            EVENT_NOTES_DETAIL_TAG = 118,
+            EVENT_NOTES_TEXT_VIEW_TAG = 120,
+            EVENT_NOTE_TITLE_TAG = 121,
+            EVENT_NOTES_DETAIL_TAG = 122,
         }
 
         protected static TupleList<uint, string> minList = new TupleList<uint, string> {
@@ -324,6 +333,39 @@ namespace NachoClient.iOS
             yOffset += 20 + 20;
             #endif
 
+            // Organizer
+            eventOrganizerView = new UIView (new RectangleF (0, yOffset, EVENT_CARD_WIDTH, CELL_HEIGHT + 16 + 16));
+            eventOrganizerView.Tag = (int)TagType.EVENT_ORGANIZER_VIEW_TAG;
+            eventOrganizerView.BackgroundColor = cellBGColor;
+            eventOrganizerView.Hidden = true;
+
+            Util.AddArrowAccessory (eventOrganizerView.Frame.Width - 18 - 12, 2, 12, eventOrganizerView);
+
+            AddTextLabelWithImageView (0, "ORGANIZER", "event-organizer", TagType.EVENT_ORGANIZER_TITLE_TAG, eventOrganizerView);
+
+            //User Name
+            var userNameLabel = new UILabel (new RectangleF (92, 16 + 10, eventOrganizerView.Frame.Width - 92 - 18, 20));
+            userNameLabel.LineBreakMode = UILineBreakMode.TailTruncation;
+            userNameLabel.TextColor = UIColor.LightGray;
+            userNameLabel.Font = A.Font_AvenirNextRegular14;
+            userNameLabel.Tag = (int)TagType.EVENT_ORGANIZER_NAME_LABEL;
+            eventOrganizerView.AddSubview (userNameLabel);
+
+            //User Email
+            var userEmailLabel = new UILabel (new RectangleF (92, 26 + 20, eventOrganizerView.Frame.Width - 92 - 18, 20));
+            userEmailLabel.LineBreakMode = UILineBreakMode.TailTruncation;
+            userEmailLabel.TextColor = UIColor.LightGray;
+            userEmailLabel.Font = A.Font_AvenirNextRegular14;
+            userEmailLabel.Tag = (int)TagType.EVENT_ORGANIZER_EMAIL_LABEL;
+            eventOrganizerView.AddSubview (userEmailLabel);
+
+            organizerTapGestureRecognizer = new UITapGestureRecognizer ();
+            organizerTapGestureRecognizerTapToken = organizerTapGestureRecognizer.AddTarget (OrganizerTapGestureRecognizerTap);
+            eventOrganizerView.AddGestureRecognizer (organizerTapGestureRecognizer);
+            eventCardView.AddSubview (eventOrganizerView);
+
+            yOffset += CELL_HEIGHT + 20;
+
             // Attendees label, image, and detail
             eventAttendeeView = new UIView (new RectangleF (0, yOffset, EVENT_CARD_WIDTH, 96 + 16));
             eventAttendeeView.Tag = (int)TagType.EVENT_ATTENDEE_VIEW_TAG;
@@ -462,6 +504,46 @@ namespace NachoClient.iOS
             attachmentListView.Hidden = !hasAttachments;
             ConfigureAttachments ();
 
+            // Organizer
+            if (!isOrganizer) {
+                var organizerNameLabel = View.ViewWithTag ((int)TagType.EVENT_ORGANIZER_NAME_LABEL) as UILabel;
+                organizerNameLabel.Text = root.OrganizerName;
+
+                var organizerEmailLabel = View.ViewWithTag ((int)TagType.EVENT_ORGANIZER_EMAIL_LABEL) as UILabel;
+                organizerEmailLabel.Text = root.OrganizerEmail;
+
+                var userImage = Util.ImageOfSender (account.Id, root.OrganizerEmail);
+
+                if (null != userImage) {
+                    using (var rawImage = userImage) {
+                        using (var originalImage = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
+                            // User image
+                            var userImageView = new UIImageView (new RectangleF (42, 10 + 16, 40, 40));
+                            userImageView.Layer.CornerRadius = (40.0f / 2.0f);
+                            userImageView.Layer.MasksToBounds = true;
+                            userImageView.Image = originalImage;
+                            userImageView.Layer.BorderWidth = .25f;
+                            userImageView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
+                            eventOrganizerView.AddSubview (userImageView);
+                        }
+                    }
+                } else {
+
+                    // User userLabelView view, if no image
+                    var userLabelView = new UILabel (new RectangleF (15, 15, 40, 40));
+                    userLabelView.Font = A.Font_AvenirNextRegular24;
+                    userLabelView.BackgroundColor = Util.GetCircleColorForEmail (root.OrganizerEmail, account.Id);
+                    userLabelView.TextColor = UIColor.White;
+                    userLabelView.TextAlignment = UITextAlignment.Center;
+                    userLabelView.LineBreakMode = UILineBreakMode.Clip;
+                    userLabelView.Layer.CornerRadius = (40 / 2);
+                    userLabelView.Layer.MasksToBounds = true;
+                    userLabelView.Text = Util.NameToLetters (root.OrganizerName);
+                    eventOrganizerView.AddSubview (userLabelView);
+                }
+                eventOrganizerView.Hidden = false;
+            }
+
             // Attendees
             if (null != extraAttendeesButton) {
                 extraAttendeesButton.TouchUpInside -= ExtraAttendeesTouchUpInside;
@@ -487,69 +569,8 @@ namespace NachoClient.iOS
                 float spacing = 0;
                 int attendeeNum = 0;
                 foreach (var attendee in c.attendees) {
-                    var attendeeButton = UIButton.FromType (UIButtonType.RoundedRect);
-                    attendeeButton.Layer.CornerRadius = attendeeImageDiameter / 2;
-                    attendeeButton.Layer.MasksToBounds = true;
-                    attendeeButton.Frame = new RectangleF (42 + spacing, 10 + titleOffset, attendeeImageDiameter, attendeeImageDiameter);
-                    var userImage = Util.ImageOfSender (account.Id, attendee.Email);
 
-                    if (null != userImage) {
-                        using (var rawImage = userImage) {
-                            using (var originalImage = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
-                                attendeeButton.SetImage (originalImage, UIControlState.Normal);
-                            }
-                        }
-                        attendeeButton.Layer.BorderWidth = .25f;
-                        attendeeButton.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
-                    } else {
-                        attendeeButton.Font = A.Font_AvenirNextRegular24;
-                        attendeeButton.ShowsTouchWhenHighlighted = true;
-                        attendeeButton.SetTitleColor (UIColor.White, UIControlState.Normal);
-                        attendeeButton.SetTitleColor (UIColor.LightGray, UIControlState.Selected);
-                        attendeeButton.Tag = (int)TagType.EVENT_ATTENDEE_TAG + attendeeNum;
-                        attendeeButton.SetTitle (Util.NameToLetters (attendee.DisplayName), UIControlState.Normal);
-                        attendeeButton.Layer.BackgroundColor = GetCircleColorForEmail (attendee.Email).CGColor;
-                    }
-
-                    // There are future plans to do something with these buttons, but right now
-                    // they don't have any behavior.  So pass their events to the parent view.
-                    attendeeButton.UserInteractionEnabled = false;
-                    eventAttendeeView.AddSubview (attendeeButton);
-
-                    var attendeeName = new UILabel (new RectangleF (42 + spacing, 65 + titleOffset, attendeeImageDiameter, 15));
-                    attendeeName.Font = A.Font_AvenirNextRegular14;
-                    attendeeName.TextColor = UIColor.LightGray;
-                    attendeeName.Tag = (int)TagType.EVENT_ATTENDEE_LABEL_TAG + attendeeNum;
-                    attendeeName.TextAlignment = UITextAlignment.Center;
-                    attendeeName.Text = Util.GetFirstName (attendee.DisplayName);
-                    eventAttendeeView.AddSubview (attendeeName);
-
-                    // If the current user is the organizer, then construct a little circle in the
-                    // lower right corner of the main attendee circle, where the attendee's status
-                    // can be displayed.  If the user is not the organizer, then the attendees'
-                    // status is not known, so we don't want to display a blank circle.
-                    if (isOrganizer) {
-                        var responseView = new UIView (new RectangleF (42 + spacing + 27, 37 + titleOffset, 20, 20));
-                        responseView.Tag = (int)TagType.EVENT_ATTENDEE_LABEL_TAG + attendeeNum + 200;
-                        responseView.BackgroundColor = UIColor.White;
-                        responseView.Layer.CornerRadius = 10;
-                        eventAttendeeView.AddSubview (responseView);
-                        var circleView = new UIView (new RectangleF (2.5f, 2.5f, 15, 15));
-                        circleView.BackgroundColor = UIColor.White;
-                        circleView.Layer.CornerRadius = 15 / 2;
-                        circleView.Layer.BorderColor = A.Color_NachoLightGrayBackground.CGColor;
-                        circleView.Layer.BorderWidth = 1;
-                        responseView.AddSubview (circleView);
-                        var responseImageView = new UIImageView (new RectangleF (2.5f, 2.5f, 15, 15));
-                        responseImageView.Tag = (int)TagType.EVENT_ATTENDEE_LABEL_TAG + attendeeNum + 100;
-                        using (var image = GetImageForAttendeeResponse (attendee.AttendeeStatus)) {
-                            if (null != image) {
-                                responseImageView.Image = image;
-                            }
-                        }
-                        responseView.AddSubview (responseImageView);
-                        responseView.Hidden = (null != responseImageView.Image ? false : true);
-                    }
+                    CreateAttendeeButton (attendeeImageDiameter, spacing, titleOffset, attendee, attendeeNum, isOrganizer);
 
                     spacing += (attendeeImageDiameter + iconPadding);
                     if (4 <= ++attendeeNum && 5 < c.attendees.Count) {
@@ -563,12 +584,11 @@ namespace NachoClient.iOS
                     extraAttendeesButton = UIButton.FromType (UIButtonType.RoundedRect);
                     extraAttendeesButton.Layer.CornerRadius = attendeeImageDiameter / 2;
                     extraAttendeesButton.Layer.MasksToBounds = true;
-                    extraAttendeesButton.Layer.BorderColor = A.Color_NachoIconGray.CGColor;
+                    extraAttendeesButton.Layer.BorderColor = A.Color_NachoGreen.CGColor;
                     extraAttendeesButton.Layer.BorderWidth = 1;
                     extraAttendeesButton.Frame = new RectangleF (42 + iconSpace - 39, 10 + titleOffset, attendeeImageDiameter, attendeeImageDiameter);
                     extraAttendeesButton.Font = A.Font_AvenirNextRegular14;
-                    extraAttendeesButton.SetTitleColor (A.Color_NachoIconGray, UIControlState.Normal);
-                    extraAttendeesButton.SetTitleColor (UIColor.LightGray, UIControlState.Selected);
+                    extraAttendeesButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
                     extraAttendeesButton.Tag = (int)TagType.EVENT_ATTENDEE_DETAIL_TAG;
                     extraAttendeesButton.SetTitle (string.Format ("+{0}", c.attendees.Count - 4), UIControlState.Normal);
                     extraAttendeesButton.TouchUpInside += ExtraAttendeesTouchUpInside;
@@ -589,6 +609,73 @@ namespace NachoClient.iOS
             LayoutView ();
         }
 
+        protected void CreateAttendeeButton (float attendeeImageDiameter, float spacing, float titleOffset, McAttendee attendee, int attendeeNum, bool isOrganizer)
+        {
+            var attendeeButton = UIButton.FromType (UIButtonType.RoundedRect);
+            attendeeButton.Layer.CornerRadius = attendeeImageDiameter / 2;
+            attendeeButton.Layer.MasksToBounds = true;
+            attendeeButton.Frame = new RectangleF (42 + spacing, 10 + titleOffset, attendeeImageDiameter, attendeeImageDiameter);
+            var userImage = Util.ImageOfSender (account.Id, attendee.Email);
+
+            if (null != userImage) {
+                using (var rawImage = userImage) {
+                    using (var originalImage = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
+                        attendeeButton.SetImage (originalImage, UIControlState.Normal);
+                    }
+                }
+                attendeeButton.Layer.BorderWidth = .25f;
+                attendeeButton.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
+            } else {
+                attendeeButton.Font = A.Font_AvenirNextRegular17;
+                attendeeButton.ShowsTouchWhenHighlighted = true;
+                attendeeButton.SetTitleColor (UIColor.White, UIControlState.Normal);
+                attendeeButton.SetTitleColor (UIColor.LightGray, UIControlState.Selected);
+                attendeeButton.Tag = (int)TagType.EVENT_ATTENDEE_TAG + attendeeNum;
+                attendeeButton.SetTitle (Util.NameToLetters (attendee.DisplayName), UIControlState.Normal);
+                attendeeButton.Layer.BackgroundColor = Util.GetCircleColorForEmail (attendee.Email, account.Id).CGColor;
+            }
+
+            // There are future plans to do something with these buttons, but right now
+            // they don't have any behavior.  So pass their events to the parent view.
+            attendeeButton.UserInteractionEnabled = false;
+            eventAttendeeView.AddSubview (attendeeButton);
+
+            var attendeeName = new UILabel (new RectangleF (42 + spacing, 65 + titleOffset, attendeeImageDiameter, 15));
+            attendeeName.Font = A.Font_AvenirNextRegular14;
+            attendeeName.TextColor = UIColor.LightGray;
+            attendeeName.Tag = (int)TagType.EVENT_ATTENDEE_LABEL_TAG + attendeeNum;
+            attendeeName.TextAlignment = UITextAlignment.Center;
+            attendeeName.Text = Util.GetFirstName (attendee.DisplayName);
+            eventAttendeeView.AddSubview (attendeeName);
+
+            // If the current user is the organizer, then construct a little circle in the
+            // lower right corner of the main attendee circle, where the attendee's status
+            // can be displayed.  If the user is not the organizer, then the attendees'
+            // status is not known, so we don't want to display a blank circle.
+            if (isOrganizer) {
+                var responseView = new UIView (new RectangleF (42 + spacing + 27, 37 + titleOffset, 20, 20));
+                responseView.Tag = (int)TagType.EVENT_ATTENDEE_LABEL_TAG + attendeeNum + 200;
+                responseView.BackgroundColor = UIColor.White;
+                responseView.Layer.CornerRadius = 10;
+                eventAttendeeView.AddSubview (responseView);
+                var circleView = new UIView (new RectangleF (2.5f, 2.5f, 15, 15));
+                circleView.BackgroundColor = UIColor.White;
+                circleView.Layer.CornerRadius = 15 / 2;
+                circleView.Layer.BorderColor = A.Color_NachoLightGrayBackground.CGColor;
+                circleView.Layer.BorderWidth = 1;
+                responseView.AddSubview (circleView);
+                var responseImageView = new UIImageView (new RectangleF (2.5f, 2.5f, 15, 15));
+                responseImageView.Tag = (int)TagType.EVENT_ATTENDEE_LABEL_TAG + attendeeNum + 100;
+                using (var image = GetImageForAttendeeResponse (attendee.AttendeeStatus)) {
+                    if (null != image) {
+                        responseImageView.Image = image;
+                    }
+                }
+                responseView.AddSubview (responseImageView);
+                responseView.Hidden = (null != responseImageView.Image ? false : true);
+            }
+        }
+
         protected override void Cleanup ()
         {
             // Cleanup gesture recognizers
@@ -598,6 +685,9 @@ namespace NachoClient.iOS
 
             alertTapGestureRecognizer.RemoveTarget (alertTapGestureRecognizerTapToken);
             eventAlertsView.RemoveGestureRecognizer (alertTapGestureRecognizer);
+
+            organizerTapGestureRecognizer.RemoveTarget (organizerTapGestureRecognizerTapToken);
+            eventOrganizerView.RemoveGestureRecognizer (organizerTapGestureRecognizer);
 
             notesTapGestureRecognizer.RemoveTarget (notesTapGestureRecognizerTapToken);
             eventNotesView.RemoveGestureRecognizer (notesTapGestureRecognizer);
@@ -627,6 +717,7 @@ namespace NachoClient.iOS
             descriptionView = null;
             eventAttendeeView = null;
             eventAlertsView = null;
+            eventOrganizerView = null;
             attachmentListView = null;
             eventNotesView = null;
             acceptLabel = null;
@@ -707,7 +798,7 @@ namespace NachoClient.iOS
         {
             if (segue.Identifier.Equals ("EventToEventAttendees")) {
                 var dc = (EventAttendeeViewController)segue.DestinationViewController;
-                dc.Setup (null, c.attendees, c, false, CalendarHelper.IsOrganizer(root.OrganizerEmail, account.EmailAddr));
+                dc.Setup (null, c.attendees, c, false, CalendarHelper.IsOrganizer (root.OrganizerEmail, account.EmailAddr));
                 return;
             }
 
@@ -762,6 +853,14 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("EventToEditEvent")) {
                 var dc = (EditEventViewController)segue.DestinationViewController;
                 dc.SetCalendarEvent (e, CalendarItemEditorAction.edit);
+                return;
+            }
+
+            if (segue.Identifier.Equals ("SegueToContactDetail")) {
+                var h = sender as SegueHolder;
+                var c = (McContact)h.value;
+                ContactDetailViewController destinationController = (ContactDetailViewController)segue.DestinationViewController;
+                destinationController.contact = c;
                 return;
             }
 
@@ -838,6 +937,10 @@ namespace NachoClient.iOS
                 if (!attachmentsDrawerOpen) {
                     padding = 5;
                 }
+            }
+
+            if (!(CalendarHelper.IsOrganizer (root.OrganizerEmail, account.EmailAddr))) {
+                AdjustViewLayout (TagType.EVENT_ORGANIZER_VIEW_TAG, 0, ref internalYOffset, padding);
             }
 
             if (hasAttendees) {
@@ -998,21 +1101,6 @@ namespace NachoClient.iOS
             textLabel.TextColor = A.Color_NachoDarkText;
             textLabel.Tag = (int)tag;
             parentView.AddSubview (textLabel);
-        }
-
-        public UIColor GetCircleColorForEmail (string displayEmailAddress)
-        {
-            int colorIndex = 1;
-
-            if (!String.IsNullOrEmpty (displayEmailAddress)) {
-                McEmailAddress emailAddress;
-                if (McEmailAddress.Get (account.Id, displayEmailAddress, out emailAddress)) {
-                    displayEmailAddress = emailAddress.CanonicalEmailAddress;
-                    colorIndex = emailAddress.ColorIndex;
-                }
-            }
-
-            return Util.ColorForUser (colorIndex);
         }
 
         /// <summary>
@@ -1349,6 +1437,17 @@ namespace NachoClient.iOS
         private void AlertTapGestureRecognizerTap ()
         {
             PerformSegue ("EventToAlert", this);
+        }
+
+        private void OrganizerTapGestureRecognizerTap ()
+        {
+            var organizerEmail = root.OrganizerEmail;
+            McContact contact = McContact.QueryByEmailAddress (account.Id, organizerEmail).FirstOrDefault ();
+            if (null == contact) {
+                NcContactGleaner.GleanContact (organizerEmail, account.Id);
+                contact = McContact.QueryByEmailAddress (account.Id, organizerEmail).FirstOrDefault ();
+            }
+            PerformSegue ("SegueToContactDetail", new SegueHolder (contact));
         }
 
         private void NotesTapGestureRecognizerTap ()

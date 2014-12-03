@@ -2,6 +2,7 @@
 
 using System;
 using System.Drawing;
+using System.Linq;
 using System.Collections.Generic;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
@@ -9,6 +10,7 @@ using MonoTouch.EventKit;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
@@ -20,6 +22,8 @@ namespace NachoClient.iOS
         protected McAbstrCalendarRoot c;
         protected bool editing;
         protected bool organizer;
+        protected string organizerName;
+        protected string organizerEmail;
 
         UIBarButtonItem multiSelectButton;
         UIBarButtonItem multiResendButton;
@@ -29,6 +33,7 @@ namespace NachoClient.iOS
         public bool isMultiSelecting;
 
         protected INachoAttendeeListChooserDelegate owner;
+        protected UIView organizerView;
         protected UISegmentedControl segmentedControl;
         protected UIView segmentedControlView;
         List<McAttendee> AttendeeList = new List<McAttendee> ();
@@ -214,7 +219,7 @@ namespace NachoClient.iOS
             segmentedControlView.BackgroundColor = UIColor.White;
 
             segmentedControl = new UISegmentedControl ();
-            segmentedControl.Frame = new RectangleF (6, yOffset + 5, View.Frame.Width - 12, 30);
+            segmentedControl.Frame = new RectangleF (6, 5, View.Frame.Width - 12, 30);
             segmentedControl.InsertSegment ("All", 0, false);
             segmentedControl.InsertSegment ("Required", 1, false);
             segmentedControl.InsertSegment ("Optional", 2, false);
@@ -268,7 +273,7 @@ namespace NachoClient.iOS
             iconIv.Image = UIImage.FromBundle ("calendar-add-attendee-bottom");
             addAttendeeView.AddSubview (iconIv);
 
-            tableView = new UITableView (new RectangleF (0, 41, View.Frame.Width, View.Frame.Height - 40 - 64), UITableViewStyle.Plain);
+            tableView = new UITableView (new RectangleF (0, yOffset + 1, View.Frame.Width, View.Frame.Height - yOffset - 1 - 64), UITableViewStyle.Plain);
             tableView.SeparatorColor = UIColor.Clear;
             tableView.BackgroundColor = A.Color_NachoBackgroundGray;
             tableView.Source = AttendeeSource;
