@@ -825,7 +825,7 @@ namespace NachoClient
             return stream;
         }
 
-        public static void CallSwipeHandler (McContact contact, NcUIViewController owner)
+        public static void CallContact (McContact contact, NcUIViewController owner)
         {
             if (0 == contact.PhoneNumbers.Count) {
                 owner.PerformSegue ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.PhoneNumberAdder));
@@ -842,7 +842,7 @@ namespace NachoClient
             }
         }
 
-        public static void EmailSwipeHandler (McContact contact, NcUIViewController owner)
+        public static void EmailContact (McContact contact, NcUIViewController owner)
         {
             if (0 == contact.EmailAddresses.Count) {
                 owner.PerformSegue ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder));

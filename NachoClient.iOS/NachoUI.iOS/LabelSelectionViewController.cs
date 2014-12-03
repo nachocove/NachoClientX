@@ -109,8 +109,8 @@ namespace NachoClient.iOS
                     selectedButtonSelectedImageView.Hidden = false;
                     selectedButtonNotSelectedImageView.Hidden = true;
                 }
-                yOffset += 58;
-                Util.AddHorizontalLine (80, yOffset, View.Frame.Width - 80, UIColor.LightGray, contentView);
+                yOffset += 44;
+                Util.AddHorizontalLine (62, yOffset, View.Frame.Width - 62, UIColor.LightGray, contentView);
                 yOffset += 1;
                 i++;
             }
@@ -149,23 +149,23 @@ namespace NachoClient.iOS
             public UIButton GetButton (UIView parentView, float yOffset)
             {
                 //FIXME make this button either be selected or not, don't hide image views
-                UIButton selectionButton = new UIButton (new RectangleF (0, yOffset, parentView.Frame.Width, 58));
+                UIButton selectionButton = new UIButton (new RectangleF (0, yOffset, parentView.Frame.Width, 44));
                 selectionButton.Tag = tag;
                 selectionButton.BackgroundColor = A.Color_NachoGreen;
 
                 UIImageView buttonSelectedImageView = new UIImageView (UIImage.FromBundle ("modal-checkbox-checked"));
-                buttonSelectedImageView.Frame = new RectangleF (30, 18, buttonSelectedImageView.Frame.Width, buttonSelectedImageView.Frame.Height);
+                buttonSelectedImageView.Frame = new RectangleF (20, 14, buttonSelectedImageView.Frame.Width, buttonSelectedImageView.Frame.Height);
                 buttonSelectedImageView.Tag = SELECTED_BUTTON_IMAGE_TAG;
                 buttonSelectedImageView.Hidden = true;
                 selectionButton.AddSubview (buttonSelectedImageView);
 
                 UIImageView buttonNotSelectedImageView = new UIImageView (UIImage.FromBundle ("modal-checkbox"));
-                buttonNotSelectedImageView.Frame = new RectangleF (30, 18, buttonNotSelectedImageView.Frame.Width, buttonNotSelectedImageView.Frame.Height);
+                buttonNotSelectedImageView.Frame = new RectangleF (20, 14, buttonNotSelectedImageView.Frame.Width, buttonNotSelectedImageView.Frame.Height);
                 buttonNotSelectedImageView.Tag = NOT_SELECTED_BUTTON_IMAGE_TAG;
                 buttonNotSelectedImageView.Hidden = false;
                 selectionButton.AddSubview (buttonNotSelectedImageView);
 
-                UILabel buttonLabel = new UILabel (new RectangleF (buttonSelectedImageView.Frame.Right + 34, buttonSelectedImageView.Frame.Y, 210, 20));
+                UILabel buttonLabel = new UILabel (new RectangleF (buttonSelectedImageView.Frame.Right + 26, 0, 210, 44));
                 buttonLabel.TextColor = UIColor.White;
                 buttonLabel.Font = A.Font_AvenirNextMedium14;
                 buttonLabel.Text = label;
