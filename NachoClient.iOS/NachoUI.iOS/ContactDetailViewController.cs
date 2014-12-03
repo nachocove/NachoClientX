@@ -764,7 +764,7 @@ namespace NachoClient.iOS
             UILongPressGestureRecognizer viewLongPress = new UILongPressGestureRecognizer ();
             UILongPressGestureRecognizer.Token viewLongPressToken = viewLongPress.AddTarget (() => {
                 longPressData = new LongPressCopyData (canonicalEmail, emailView);
-                CopyThis (viewLongPress);
+                CopyThis ();
             });
             longPressRecognizers.Add(new LongPressPair(viewLongPress, viewLongPressToken));
             emailView.AddGestureRecognizer (viewLongPress);
@@ -836,7 +836,7 @@ namespace NachoClient.iOS
             UILongPressGestureRecognizer viewLongPress = new UILongPressGestureRecognizer ();
             UILongPressGestureRecognizer.Token viewLongPressToken = viewLongPress.AddTarget (() => {
                 longPressData = new LongPressCopyData (phone.Value, phoneView);
-                CopyThis (viewLongPress);
+                CopyThis ();
             });
             longPressRecognizers.Add(new LongPressPair(viewLongPress, viewLongPressToken));
             phoneView.AddGestureRecognizer (viewLongPress);
@@ -889,7 +889,7 @@ namespace NachoClient.iOS
             UILongPressGestureRecognizer viewLongPress = new UILongPressGestureRecognizer ();
             UILongPressGestureRecognizer.Token viewLongPressToken = viewLongPress.AddTarget (() => {
                 longPressData = new LongPressCopyData (value, miscInfoView);
-                CopyThis (viewLongPress);
+                CopyThis ();
             });
             longPressRecognizers.Add(new LongPressPair(viewLongPress, viewLongPressToken));
             miscInfoView.AddGestureRecognizer (viewLongPress);
@@ -898,7 +898,7 @@ namespace NachoClient.iOS
             return miscInfoView.Frame.Height;
         }
 
-        protected void CopyThis(UILongPressGestureRecognizer recognizer)
+        protected void CopyThis()
         {
             copyCellView.Frame = new RectangleF (0, longPressData.containerView.Frame.Y, longPressData.containerView.Superview.Frame.Width, longPressData.containerView.Frame.Height + 1);
             copyCellView.BackgroundColor = UIColor.LightGray.ColorWithAlpha (.3f);
