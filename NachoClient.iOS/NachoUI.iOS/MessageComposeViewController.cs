@@ -1022,7 +1022,7 @@ namespace NachoClient.iOS
 
             bool originalEmailIsEmbedded = true;
             string bodyText = bodyTextView.Text;
-            if (initialQuotedText != null && bodyText.EndsWith (initialQuotedText)) {
+            if (initialQuotedText != null && 0 < initialQuotedText.Length && bodyText.EndsWith (initialQuotedText)) {
                 // This is a reply or forward, and the user didn't changed the quoted text.
                 // Strip the quoted text from the body of the message and instead have the
                 // server add in the original message.
