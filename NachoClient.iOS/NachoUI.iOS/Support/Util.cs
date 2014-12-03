@@ -859,6 +859,21 @@ namespace NachoClient
             }
         }
 
+        public static UIColor GetCircleColorForEmail (string displayEmailAddress, int accountId)
+        {
+            int colorIndex = 1;
+
+            if (!String.IsNullOrEmpty (displayEmailAddress)) {
+                McEmailAddress emailAddress;
+                if (McEmailAddress.Get (accountId, displayEmailAddress, out emailAddress)) {
+                    displayEmailAddress = emailAddress.CanonicalEmailAddress;
+                    colorIndex = emailAddress.ColorIndex;
+                }
+            }
+
+            return Util.ColorForUser (colorIndex);
+        }
+
         #endregion
     }
 }
