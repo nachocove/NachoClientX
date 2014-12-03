@@ -688,7 +688,7 @@ namespace NachoClient.iOS
             editContact = null;
 
             foreach (var lp in longPressRecognizers) {
-                lp.cleanup ();
+                lp.Cleanup ();
             }
         }
 
@@ -1257,7 +1257,7 @@ namespace NachoClient.iOS
                 this.longPressToken = longPressToken;
             }
 
-            public void cleanup ()
+            public void Cleanup ()
             {
                 longPress.RemoveTarget (longPressToken);
                 longPress.ShouldRecognizeSimultaneously = null;
