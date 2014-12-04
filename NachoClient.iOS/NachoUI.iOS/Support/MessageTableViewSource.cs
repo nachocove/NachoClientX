@@ -17,7 +17,8 @@ namespace NachoClient.iOS
         protected const string UICellReuseIdentifier = "UICell";
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
         protected HashSet<int> MultiSelect = null;
-        protected bool allowMultiSelect;
+        protected bool multiSelectAllowed;
+        protected bool multiSelectActive;
         protected bool swipingActive;
         public IMessageTableViewSourceDelegate owner;
 
@@ -51,7 +52,7 @@ namespace NachoClient.iOS
         public MessageTableViewSource ()
         {
             owner = null;
-            allowMultiSelect = true;
+            multiSelectAllowed = true;
             MultiSelect = new HashSet<int> ();
             ArchiveMessageCaptureName = "MessageTableViewSource.ArchiveMessage";
             NcCapture.AddKind (ArchiveMessageCaptureName);
@@ -168,48 +169,40 @@ namespace NachoClient.iOS
             if (NoMessageThreads ()) {
                 return;
             }
-            if (MultiSelectActive ()) {
-                return;
-            }
+
             var messageThread = messageThreads.GetEmailThread (indexPath.Row);
             if (null == messageThread) {
                 return;
             }
-            owner.MessageThreadSelected (messageThread);
-            DumpInfo (messageThread);
+
+            if (MultiSelectActive ()) {
+                var threadIndex = indexPath.Row;
+                if (MultiSelect.Contains (threadIndex)) {
+                    MultiSelect.Remove (threadIndex);
+                } else {
+                    MultiSelect.Add (threadIndex);
+                }
+                ConfigureMultiSelectCell (cell);
+                owner.MultiSelectChange (this, MultiSelect.Count);
+            } else {
+                owner.MessageThreadSelected (messageThread);
+                DumpInfo (messageThread);
+            }
         }
 
         protected const int SWIPE_TAG = 99100;
         protected const int USER_IMAGE_TAG = 99101;
         protected const int USER_LABEL_TAG = 99102;
-        protected const int USER_CHECKMARK_TAG = 99103;
+        protected const int MULTISELECT_IMAGE_TAG = 99103;
         protected const int PREVIEW_TAG = 99104;
         protected const int REMINDER_ICON_TAG = 99105;
         protected const int REMINDER_TEXT_TAG = 99106;
         protected const int MESSAGE_HEADER_TAG = 99107;
 
-        [MonoTouch.Foundation.Export ("MultiSelectTapSelector:")]
-        public void MultiSelectTapSelector (UIGestureRecognizer sender)
+        [MonoTouch.Foundation.Export ("ImageViewTapSelector:")]
+        public void ImageViewTapSelector (UIGestureRecognizer sender)
         {
-            var imageView = sender.View;
-            var swipeView = imageView.Superview;
-            var contentView = swipeView.Superview;
-            var threadIndex = contentView.Tag;
 
-            if (MultiSelect.Contains (threadIndex)) {
-                MultiSelect.Remove (threadIndex);
-            } else {
-                MultiSelect.Add (threadIndex);
-            }
-            // Skip the intermediate scroll view
-            var cell = Util.FindEnclosingTableViewCell (contentView);
-            ConfigureMultiSelectCell (cell);
-
-            // Did we just transition to or from multi-select?
-            if (1 >= MultiSelect.Count) {
-                var tableView = Util.FindEnclosingTableView (cell);
-                MultiSelectToggle (tableView);
-            }
         }
 
         protected void ConfigureMultiSelectCell (UITableViewCell cell)
@@ -226,19 +219,16 @@ namespace NachoClient.iOS
             }
 
             var threadIndex = cell.ContentView.Tag;
-            var userCheckmarkView = cell.ContentView.ViewWithTag (USER_CHECKMARK_TAG) as UIImageView;
+            var userCheckmarkView = (UIImageView)cell.ContentView.ViewWithTag (MULTISELECT_IMAGE_TAG);
 
-            if (!allowMultiSelect) {
+            if (!multiSelectAllowed || !multiSelectActive) {
                 userCheckmarkView.Hidden = true;
                 return;
             }
-
-            if (MultiSelect.Contains (threadIndex)) {
-                userCheckmarkView.Hidden = false;
-                userCheckmarkView.Image = UIImage.FromBundle ("inbox-multi-select-active");
-            } else {
-                userCheckmarkView.Hidden = true;
-                userCheckmarkView.Image = UIImage.FromBundle ("inbox-multi-select-default");
+            userCheckmarkView.Hidden = false;
+            var iconName = MultiSelect.Contains (threadIndex) ? "gen-checkbox-checked" : "gen-checkbox";
+            using (var image = UIImage.FromBundle (iconName)) {
+                userCheckmarkView.Image = image;
             }
         }
 
@@ -254,28 +244,28 @@ namespace NachoClient.iOS
                 }
             }
             if (null != owner) {
-                owner.MultiSelectToggle (this, allowMultiSelect && (0 != MultiSelect.Count));
+                owner.MultiSelectToggle (this, multiSelectAllowed && multiSelectActive);
+                owner.MultiSelectChange (this, MultiSelect.Count);
             }
         }
 
         public bool MultiSelectActive ()
         {
-            return (MultiSelect.Count > 0);
+            return multiSelectActive;
+        }
+
+        public void MultiSelectEnable (UITableView tableView)
+        {
+            MultiSelect.Clear ();
+            multiSelectActive = true;
+            MultiSelectToggle (tableView);
         }
 
         public void MultiSelectCancel (UITableView tableView)
         {
             MultiSelect.Clear ();
+            multiSelectActive = false;
             MultiSelectToggle (tableView);
-        }
-
-        public void MultiSelectEnable (UITableView tableView, bool enabled)
-        {
-            if (allowMultiSelect == enabled) {
-                return; // no change
-            }
-            allowMultiSelect = enabled;
-            MultiSelectCancel (tableView);
         }
 
         public void ToggleSwiping (UITableView tableView, SwipeActionView activeView, bool active)
@@ -356,19 +346,24 @@ namespace NachoClient.iOS
                 userLabelView.Layer.MasksToBounds = true;
                 userLabelView.Tag = USER_LABEL_TAG;
                 imageViews.AddSubview (userLabelView);
-
-                // Multi-select checkmark overlay
-                // Images are already cropped & transparent
-                var userCheckmarkView = new UIImageView (new RectangleF (9, 50, 20, 20));
-                userCheckmarkView.Tag = USER_CHECKMARK_TAG;
-                imageViews.AddSubview (userCheckmarkView);
+                userLabelView.BackgroundColor = UIColor.Yellow;
 
                 // Set up multi-select on checkmark
-                var multiSelectTap = new UITapGestureRecognizer ();
-                multiSelectTap.NumberOfTapsRequired = 1;
-                multiSelectTap.AddTarget (this, new MonoTouch.ObjCRuntime.Selector ("MultiSelectTapSelector:"));
-                multiSelectTap.CancelsTouchesInView = true; // prevents the row from being selected
-                imageViews.AddGestureRecognizer (multiSelectTap);
+                var imagesViewTap = new UITapGestureRecognizer ();
+                imagesViewTap.NumberOfTapsRequired = 1;
+                imagesViewTap.AddTarget (this, new MonoTouch.ObjCRuntime.Selector ("ImageViewTapSelector:"));
+                imagesViewTap.CancelsTouchesInView = true; // prevents the row from being selected
+                imageViews.AddGestureRecognizer (imagesViewTap);
+
+                //Multi select icon
+                var multiSelectImageView = new UIImageView ();
+                multiSelectImageView.Tag = MULTISELECT_IMAGE_TAG;
+                multiSelectImageView.BackgroundColor = UIColor.White;
+                multiSelectImageView.Frame = new RectangleF (15 + 20 - 8, 82, 16, 16); // Centered
+                // multiSelectImageView.Frame = new RectangleF (15 + 40 - 16, 80, 16, 16); // Right align with image
+                // multiSelectImageView.Frame = new RectangleF (15 + 20, 82, 16, 16); // Left align with image center
+                multiSelectImageView.Hidden = true;
+                view.AddSubview (multiSelectImageView);
 
                 var messageHeaderView = new MessageHeaderView (new RectangleF (65, 0, cellWidth - 65, 75));
                 messageHeaderView.CreateView ();
@@ -377,7 +372,7 @@ namespace NachoClient.iOS
                 view.AddSubview (messageHeaderView);
 
                 // Preview label view
-                var previewLabelView = new UILabel (new RectangleF (65, 70, cellWidth - 15 - 65, 60));
+                var previewLabelView = new UILabel (new RectangleF (65, 80, cellWidth - 15 - 65, 60));
                 previewLabelView.ContentMode = UIViewContentMode.TopLeft;
                 previewLabelView.Font = A.Font_AvenirNextRegular14;
                 previewLabelView.TextColor = A.Color_NachoDarkText;
@@ -542,6 +537,8 @@ namespace NachoClient.iOS
             var rawPreview = message.GetBodyPreviewOrEmpty ();
             var cookedPreview = System.Text.RegularExpressions.Regex.Replace (rawPreview, @"\s+", " ");
             previewLabelView.AttributedText = new NSAttributedString (cookedPreview);
+            previewLabelView.Frame = new RectangleF (65, 80, cellWidth - 15 - 65, 60);
+            previewLabelView.SizeToFit ();
 
             // Reminder image view and label
             var reminderImageView = cell.ContentView.ViewWithTag (REMINDER_ICON_TAG) as UIImageView;
@@ -642,8 +639,7 @@ namespace NachoClient.iOS
             foreach (var message in messageList) {
                 NcEmailArchiver.Delete (message);
             }
-            MultiSelect.Clear ();
-            MultiSelectToggle (tableView);
+            MultiSelectCancel (tableView);
         }
 
         public void MultiSelectMove (UITableView tableView, McFolder folder)
@@ -652,8 +648,7 @@ namespace NachoClient.iOS
             foreach (var message in messageList) {
                 NcEmailArchiver.Move (message, folder);
             }
-            MultiSelect.Clear ();
-            MultiSelectToggle (tableView);
+            MultiSelectCancel (tableView);
         }
 
         public void MultiSelectArchive (UITableView tableView)
@@ -662,8 +657,7 @@ namespace NachoClient.iOS
             foreach (var message in messageList) {
                 NcEmailArchiver.Archive (message);
             }
-            MultiSelect.Clear ();
-            MultiSelectToggle (tableView);
+            MultiSelectCancel (tableView);
         }
 
         /// <summary>

@@ -327,6 +327,11 @@ namespace NachoClient.iOS
         {
         }
 
+        ///  IMessageTableViewSourceDelegate
+        public void MultiSelectChange (MessageTableViewSource source, int count)
+        {
+        }
+
         /// <summary>
         /// INachoMessageControl delegate
         /// </summary>

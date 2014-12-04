@@ -14,6 +14,8 @@ namespace NachoClient.iOS
         void PerformSegueForDelegate (string identifier, NSObject sender);
 
         void MultiSelectToggle (MessageTableViewSource source, bool enabled);
+
+        void MultiSelectChange (MessageTableViewSource source, int count);
     }
 }
 

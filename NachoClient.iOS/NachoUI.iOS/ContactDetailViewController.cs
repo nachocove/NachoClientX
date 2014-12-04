@@ -1198,7 +1198,10 @@ namespace NachoClient.iOS
 
         public void MultiSelectToggle (MessageTableViewSource source, bool enabled)
         {
-            return;
+        }
+
+        public void MultiSelectChange (MessageTableViewSource source, int count)
+        {
         }
 
         public void SetEmailMessages (INachoEmailMessages messageThreads)
