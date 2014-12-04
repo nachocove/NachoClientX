@@ -1905,7 +1905,7 @@ namespace NachoClient.iOS
                 dateView.AddSubview (datePicker);
 
                 trashButton = new UIButton (new RectangleF (MORE_BUTTON_INDENT, 7, 30, 30));
-                UIImage x = UIImage.FromBundle ("email-delete").Scale(new SizeF(16,16));
+                UIImage x = UIImage.FromBundle ("gen-trash");
                 trashButton.SetImage (x, UIControlState.Normal);
                 trashButton.Tag = BUTTON_TAG + 3000;
                 trashButton.TouchUpInside += TrashButtonClicked;
@@ -2190,7 +2190,7 @@ namespace NachoClient.iOS
                 base.CreateView ();
 
                 imAddressAttribute.Type = McContactStringType.IMAddress;
-                UIImage x = UIImage.FromBundle ("email-delete").Scale(new SizeF(16,16));
+                UIImage x = UIImage.FromBundle ("gen-trash");
 
                 moreButton.SetImage (x, UIControlState.Normal);
 
@@ -2268,7 +2268,7 @@ namespace NachoClient.iOS
             {
                 base.CreateView ();
                 relationshipAttribute.Type = McContactStringType.Relationship;
-                UIImage x = UIImage.FromBundle ("email-delete").Scale(new SizeF(16,16));
+                UIImage x = UIImage.FromBundle ("gen-trash");
 
                 moreButton.SetImage (x, UIControlState.Normal);
 
@@ -2348,7 +2348,7 @@ namespace NachoClient.iOS
             {
                 base.CreateView ();
 
-                UIImage x = UIImage.FromBundle ("email-delete").Scale(new SizeF(16,16));
+                UIImage x = UIImage.FromBundle ("gen-trash");
                 moreButton.SetImage (x, UIControlState.Normal);
 
                 editField.KeyboardType = UIKeyboardType.Default;
