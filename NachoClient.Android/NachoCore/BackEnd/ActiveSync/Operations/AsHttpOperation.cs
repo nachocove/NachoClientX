@@ -335,10 +335,12 @@ namespace NachoCore.ActiveSync
 
         private void CancelTimeoutTimer (string mnemonic)
         {
-            if (null != TimeoutTimer) {
-                Log.Info (Log.LOG_AS, "CancelTimeoutTimer:{0}", mnemonic);
-                TimeoutTimer.Dispose ();
-                TimeoutTimer = null;
+            lock (LockObj) {
+                if (null != TimeoutTimer) {
+                    Log.Info (Log.LOG_AS, "CancelTimeoutTimer:{0}", mnemonic);
+                    TimeoutTimer.Dispose ();
+                    TimeoutTimer = null;
+                }
             }
         }
 

@@ -19,19 +19,18 @@ namespace NachoClient.iOS
     {
         MessageTableViewSource messageSource;
         protected UIBarButtonItem composeMailButton;
+        protected UIBarButtonItem multiSelectButton;
         protected UIBarButtonItem cancelSelectedButton;
-        protected UIBarButtonItem moreSelectedButton;
+        protected UIBarButtonItem archiveButton;
+        protected UIBarButtonItem deleteButton;
+        protected UIBarButtonItem moveButton;
         protected UIBarButtonItem backButton;
 
         protected const string UICellReuseIdentifier = "UICell";
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
 
-        protected HashSet<int> MultiSelect = null;
-
         protected NcCapture ReloadCapture;
         private string ReloadCaptureName;
-
-        protected const int BLOCK_MENU_TAG = 1000;
 
         public void SetEmailMessages (INachoEmailMessages messageThreads)
         {
@@ -40,7 +39,6 @@ namespace NachoClient.iOS
 
         public MessageListViewController (IntPtr handle) : base (handle)
         {
-            MultiSelect = new HashSet<int> ();
             messageSource = new MessageTableViewSource ();
         }
 
@@ -58,43 +56,35 @@ namespace NachoClient.iOS
                 PerformSegue ("MessageListToCompose", this);
             };
 
+            multiSelectButton = new UIBarButtonItem ();
+            Util.SetAutomaticImageForButton (multiSelectButton, "folder-edit");
+            multiSelectButton.Clicked += (object sender, EventArgs e) => {
+                messageSource.MultiSelectEnable (TableView);
+            };
+
             cancelSelectedButton = new UIBarButtonItem ();
             Util.SetAutomaticImageForButton (cancelSelectedButton, "gen-close");
             cancelSelectedButton.Clicked += (object sender, EventArgs e) => {
                 messageSource.MultiSelectCancel (TableView);
             };
 
-            moreSelectedButton = new UIBarButtonItem ();
-            Util.SetAutomaticImageForButton (moreSelectedButton, "gen-more");
-            moreSelectedButton.Clicked += (object sender, EventArgs e) => {
-                UIBlockMenu bm = (UIBlockMenu)View.ViewWithTag (BLOCK_MENU_TAG);
-                TableView.ScrollEnabled = false;
-                bm.MenuTapped (View.Bounds);
+            archiveButton = new UIBarButtonItem ();
+            Util.SetAutomaticImageForButton (archiveButton, "gen-archive");
+            archiveButton.Clicked += (object sender, EventArgs e) => {
+                messageSource.MultiSelectArchive (TableView);
             };
 
-            UIBlockMenu blockMenu = new UIBlockMenu (this, new List<UIBlockMenu.Block> () {
-                new UIBlockMenu.Block ("contact-quickemail", "Delete", () => {
-                    if (null != messageSource) {
-                        messageSource.MultiSelectDelete (TableView);
-                    }
-                }),
-                new UIBlockMenu.Block ("email-calendartime", "Move to folder", () => {
-                    var h = new SegueHolder (TableView);
-                    PerformSegue ("MessageListToFolders", h);
-                }),
-                new UIBlockMenu.Block ("now-addcalevent", "Archive", () => {
-                    if (null != messageSource) {
-                        messageSource.MultiSelectArchive (TableView);
-                    }
-                })
-            }, View.Frame.Width);
+            deleteButton = new UIBarButtonItem ();
+            Util.SetAutomaticImageForButton (deleteButton, "gen-delete-all");
+            deleteButton.Clicked += (object sender, EventArgs e) => {
+                messageSource.MultiSelectDelete (TableView);
+            };
 
-            blockMenu.Tag = BLOCK_MENU_TAG;
-            View.AddSubview (blockMenu);
-
-            blockMenu.MenuDidDisappear += (object sender, EventArgs e) => {
-                TableView.ScrollEnabled = true;
-                MultiSelectToggle (messageSource, messageSource.MultiSelectActive ());
+            moveButton = new UIBarButtonItem ();
+            Util.SetAutomaticImageForButton (moveButton, "folder-move");
+            moveButton.Clicked += (object sender, EventArgs e) => {
+                var h = new SegueHolder (TableView);
+                PerformSegue ("MessageListToFolders", h);
             };
 
             TableView.SeparatorColor = A.Color_NachoBorderGray;
@@ -126,13 +116,17 @@ namespace NachoClient.iOS
         {
             if (enabled) {
                 NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
-                    moreSelectedButton,
+                    deleteButton,
+                    moveButton,
+                    archiveButton,
                 };
                 NavigationItem.HidesBackButton = true;
                 NavigationItem.SetLeftBarButtonItem (cancelSelectedButton, false);
             } else {
-                NavigationItem.RightBarButtonItem = null;
-                NavigationItem.RightBarButtonItem = composeMailButton;
+                NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
+                    multiSelectButton,
+                    composeMailButton,
+                };
                 if (null == backButton) {
                     NavigationItem.HidesBackButton = false;
                     NavigationItem.LeftBarButtonItem = null;
@@ -141,6 +135,13 @@ namespace NachoClient.iOS
                     NavigationItem.LeftBarButtonItem = backButton;
                 }
             }
+        }
+
+        public void MultiSelectChange(MessageTableViewSource source, int count)
+        {
+            archiveButton.Enabled = (count != 0);
+            deleteButton.Enabled = (count != 0);
+            moveButton.Enabled = (count != 0);
         }
 
         public int GetFirstVisibleRow ()

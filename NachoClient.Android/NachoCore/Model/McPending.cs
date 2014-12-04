@@ -934,11 +934,15 @@ namespace NachoCore.Model
         }
 
         // Query APIs for any & all to call.
+
+        /// <summary>
+        /// All McPendings for an account, unordered.
+        /// </summary>
         public static List<McPending> Query (int accountId)
         {
             return NcModel.Instance.Db.Table<McPending> ()
                     .Where (x => x.AccountId == accountId)
-                .OrderBy (x => x.Priority).ToList ();
+                    .ToList ();
         }
 
         public static IEnumerable<McPending> QueryEligible (int accountId)

@@ -16,6 +16,11 @@ namespace NachoClient.iOS
         protected const int LICENSE_AGREEMENT_VIEW_TAG = 100;
         protected const int OPEN_SOURCE_VIEW_TAG = 101;
 
+        protected float yOffset;
+
+        protected UIView contentView;
+        protected UIScrollView scrollView;
+
         protected string url;
         protected string title;
         protected string key;
@@ -48,13 +53,21 @@ namespace NachoClient.iOS
 
             View.BackgroundColor = A.Color_NachoBackgroundGray;
 
-            UIView aboutUsView = new UIView (new RectangleF (A.Card_Horizontal_Indent, A.Card_Vertical_Indent, View.Frame.Width - A.Card_Horizontal_Indent * 2, View.Frame.Height - 24 - 120 - 75));
+            scrollView = new UIScrollView (new RectangleF (0, 0, View.Frame.Width, View.Frame.Height));
+            scrollView.BackgroundColor = A.Color_NachoBackgroundGray;
+            View.AddSubview (scrollView);
+
+            contentView = new UIView (new RectangleF (0, 0, View.Frame.Width, View.Frame.Height));
+            contentView.BackgroundColor = A.Color_NachoBackgroundGray;
+            scrollView.AddSubview (contentView);
+
+            UIView aboutUsView = new UIView (new RectangleF (A.Card_Horizontal_Indent, A.Card_Vertical_Indent, View.Frame.Width - A.Card_Horizontal_Indent * 2, 100));
             aboutUsView.BackgroundColor = UIColor.White;
             aboutUsView.Layer.CornerRadius = A.Card_Corner_Radius;
             aboutUsView.Layer.BorderColor = A.Card_Border_Color;
             aboutUsView.Layer.BorderWidth = A.Card_Border_Width;
 
-            float yOffset = INDENT;
+            yOffset = INDENT;
 
             UIImageView nachoLogoImageView;
             using (var nachoLogo = UIImage.FromBundle ("Bootscreen-1")) {
@@ -83,13 +96,17 @@ namespace NachoClient.iOS
             aboutUsDescriptionLabel.TextAlignment = UITextAlignment.Center;
             aboutUsDescriptionLabel.Lines = 5;
             aboutUsDescriptionLabel.LineBreakMode = UILineBreakMode.WordWrap;
-            aboutUsDescriptionLabel.Text = "In addition to being a great email client, your PIM software should actively help" +
-                " you achieve your goals, help you manage your time and reduce clutter that gets in your way.";
+            aboutUsDescriptionLabel.Text = "In addition to being a great email " +
+                "client, your PIM software should actively help you achieve your" +
+                " goals, help you manage your time and reduce clutter that gets " +
+                "in your way.";
             aboutUsView.AddSubview (aboutUsDescriptionLabel);
 
-            View.AddSubview (aboutUsView);
+            Util.SetViewHeight (aboutUsView, aboutUsDescriptionLabel.Frame.Bottom + 15);
 
-            yOffset = aboutUsView.Frame.Bottom + 12;
+            contentView.AddSubview (aboutUsView);
+
+            yOffset = aboutUsView.Frame.Bottom + A.Card_Vertical_Indent;
 
             UIView buttonsView = new UIView (new RectangleF(A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), CELL_HEIGHT * 2));
             buttonsView.BackgroundColor = UIColor.White;
@@ -130,8 +147,9 @@ namespace NachoClient.iOS
             openSourceTapGestureHandlerToken = openSourceTap.AddTarget (OpenSourceTapHandler);
             openSourceView.AddGestureRecognizer (openSourceTap);
             buttonsView.AddSubview (openSourceView);
+            contentView.AddSubview (buttonsView);
 
-            View.AddSubview (buttonsView);
+            yOffset = buttonsView.Frame.Bottom + A.Card_Vertical_Indent;
         }
 
         protected void BackButtonClicked (object sender, EventArgs e)
@@ -164,7 +182,9 @@ namespace NachoClient.iOS
 
         protected override void ConfigureAndLayout ()
         {
-
+            scrollView.Frame = new RectangleF (0, 0, View.Frame.Width,View.Frame.Height);
+            contentView.Frame = new RectangleF (0, 0, View.Frame.Width, yOffset);
+            scrollView.ContentSize = contentView.Frame.Size;
         }
 
         protected override void Cleanup ()

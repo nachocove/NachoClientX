@@ -229,7 +229,6 @@ namespace NachoClient.iOS
             quitLoadingAnimation = true;
             bottomHalfSpinner.Layer.RemoveAllAnimations ();
             topHalfSpinner.Layer.RemoveAllAnimations ();
-            owner.stopBeIfRunning ();
             owner.NavigationItem.Title = "Account Setup";
             Util.ConfigureNavBar (false, owner.NavigationController);
             owner.loadingCover.Hidden = true;

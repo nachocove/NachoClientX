@@ -647,6 +647,13 @@ namespace NachoClient
             }
         }
 
+        public static void SetViewHeight (UIView view, float height)
+        {
+            var frame = view.Frame;
+            frame.Height = height;
+            view.Frame = frame;
+        }
+
         public static string GlobalObjIdToUID (string GlobalObjId)
         {
             string UID;

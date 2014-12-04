@@ -1746,6 +1746,28 @@
     <BundleResource Include="Resources\gen-edit-active%402x.png" />
     <BundleResource Include="Resources\gen-download-swipe%402x.png" />
     <BundleResource Include="Resources\gen-preview-swipe%402x.png" />
+    <BundleResource Include="Resources\gen-trash%402x.png" />
+    <BundleResource Include="Resources\folder-move-active%403x.png" />
+    <BundleResource Include="Resources\folder-move-active%404x.png" />
+    <BundleResource Include="Resources\folder-move-active%406x.png" />
+    <BundleResource Include="Resources\folder-move%403x.png" />
+    <BundleResource Include="Resources\folder-move%404x.png" />
+    <BundleResource Include="Resources\folder-move%406x.png" />
+    <BundleResource Include="Resources\gen-archive-active%402x.png" />
+    <BundleResource Include="Resources\gen-archive-active%403x.png" />
+    <BundleResource Include="Resources\gen-archive-active%404x.png" />
+    <BundleResource Include="Resources\gen-archive-active%406x.png" />
+    <BundleResource Include="Resources\gen-archive%402x.png" />
+    <BundleResource Include="Resources\gen-archive%403x.png" />
+    <BundleResource Include="Resources\gen-archive%404x.png" />
+    <BundleResource Include="Resources\gen-archive%406x.png" />
+    <BundleResource Include="Resources\gen-delete-all-active%402x.png" />
+    <BundleResource Include="Resources\gen-delete-all-active%403x.png" />
+    <BundleResource Include="Resources\gen-delete-all-active%404x.png" />
+    <BundleResource Include="Resources\gen-delete-all-active%406x.png" />
+    <BundleResource Include="Resources\gen-delete-all%403x.png" />
+    <BundleResource Include="Resources\gen-delete-all%404x.png" />
+    <BundleResource Include="Resources\gen-delete-all%406x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

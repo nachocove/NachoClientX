@@ -418,7 +418,6 @@ namespace NachoClient.iOS
 
                 case BackEndAutoDStateEnum.CredWait:
                     Log.Info (Log.LOG_UI, "CredWait Auto-D-State-Enum On Page Load");
-                    stopBeIfRunning ();
                     ConfigureView (LoginStatus.BadCredentials);
                     return;
 
@@ -675,8 +674,14 @@ namespace NachoClient.iOS
 
         public void startBe ()
         {
-            BackEnd.Instance.Stop (LoginHelpers.GetCurrentAccountId ());
-            BackEnd.Instance.Start (LoginHelpers.GetCurrentAccountId ());
+            BackEndAutoDStateEnum backEndState = BackEnd.Instance.AutoDState (LoginHelpers.GetCurrentAccountId ());
+
+            if (BackEndAutoDStateEnum.CredWait == backEndState) {
+                BackEnd.Instance.CredResp (LoginHelpers.GetCurrentAccountId ());
+            } else {
+                BackEnd.Instance.Stop (LoginHelpers.GetCurrentAccountId ());
+                BackEnd.Instance.Start (LoginHelpers.GetCurrentAccountId ());
+            }
         }
 
         public virtual bool HandlesKeyboardNotifications {
@@ -776,7 +781,6 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_UI, "CredReqCallback Status Ind (Adv. View)");
                 ConfigureView (LoginStatus.BadCredentials);
                 waitScreen.DismissView ();
-                stopBeIfRunning ();
             }
             if (NcResult.SubKindEnum.Error_CertAskReqCallback == s.Status.SubKind) {
                 Log.Info (Log.LOG_UI, "CertAskCallback Status Ind");

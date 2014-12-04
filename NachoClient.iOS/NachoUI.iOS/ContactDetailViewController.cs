@@ -66,6 +66,10 @@ namespace NachoClient.iOS
         protected UITapGestureRecognizer headerEmailViewTapGesture;
         protected UITapGestureRecognizer.Token headerEmailViewTapGestureHandlerToken;
 
+        protected UIView copyCellView = new UIView();
+        protected List<LongPressPair> longPressRecognizers = new List<LongPressPair> ();
+        protected LongPressCopyData longPressData;
+
         protected class TapGesturePair
         {
             public UITapGestureRecognizer recognizer;
@@ -86,6 +90,23 @@ namespace NachoClient.iOS
         {
             messageSource = new MessageTableViewSource ();
             MultiSelect = new HashSet<int> ();
+        }
+
+        public override void ViewDidAppear (bool animated)
+        {
+            if (CanBecomeFirstResponder) {
+                NSNotificationCenter.DefaultCenter.AddObserver (UIMenuController.WillHideMenuNotification, HideMenu);
+            }
+            base.ViewDidAppear (animated);
+        }
+
+        private void HideMenu (NSNotification notification)
+        {
+            if (IsViewLoaded) {
+                if (!copyCellView.Hidden) {
+                    copyCellView.Hidden = true;
+                }
+            }
         }
 
         public override void ViewWillAppear (bool animated)
@@ -117,6 +138,11 @@ namespace NachoClient.iOS
                 this.NavigationController.NavigationBar.BarTintColor = originalBarTintColor;
 
             }
+
+            if (CanBecomeFirstResponder) {
+                NSNotificationCenter.DefaultCenter.RemoveObserver (UIMenuController.WillHideMenuNotification);
+            }
+
             Util.ConfigureNavBar (false, NavigationController);
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
 
@@ -129,6 +155,12 @@ namespace NachoClient.iOS
         public override bool HidesBottomBarWhenPushed {
             get {
                 return this.NavigationController.TopViewController == this;
+            }
+        }
+
+        public override bool CanBecomeFirstResponder {
+            get {
+                return true;
             }
         }
 
@@ -465,6 +497,7 @@ namespace NachoClient.iOS
 
             //CONFIGURE CONTACT INFO VIEW
             UIScrollView contactInfoScrollView = (UIScrollView)View.ViewWithTag (CONTACT_INFO_VIEW_TAG);
+
             foreach (var v in contactInfoScrollView.Subviews) {
                 v.RemoveFromSuperview ();
             }
@@ -541,8 +574,15 @@ namespace NachoClient.iOS
                 contactInfoHeight += AddMiscInfo (t, contactInfoHeight, contactInfoScrollView);
             }
 
-            if (contactInfoHeight < contactInfoScrollView.Frame.Height) {
+            copyCellView.Frame = new RectangleF (0, 0, contactInfoScrollView.Frame.Width, 50);
+            copyCellView.Hidden = true;
+            contactInfoScrollView.AddSubview (copyCellView);
+
+            UIView segmentedViewHolder = (UIView)View.ViewWithTag (SEGMENTED_VIEW_HOLDER_TAG);
+            if (contactInfoHeight <= contactInfoScrollView.Frame.Height) {
                 SetViewHeight (contactInfoScrollView, contactInfoHeight);
+            } else {
+                SetViewHeight (contactInfoScrollView, View.Frame.Height - segmentedViewHolder.Frame.Top - 80);
             }
             contactInfoScrollView.ContentSize = new SizeF(contactInfoScrollView.Frame.Width, contactInfoHeight);
 
@@ -555,10 +595,17 @@ namespace NachoClient.iOS
 
             // CONFIGURE NOTES VIEW
             var notesTextView = (UITextView)View.ViewWithTag (NOTES_TEXT_VIEW_TAG);
-
+            notesTextView.TextColor = A.Color_NachoGreen;
             McBody contactBody = McBody.QueryById<McBody> (contact.BodyId);
             if (null != contactBody) {
                 notesTextView.Text = contactBody.GetContentsString ();
+                if(string.IsNullOrEmpty(notesTextView.Text)){
+                    notesTextView.Text = "You have not entered any " +
+                        "notes for this contact. You can add and " +
+                        "edit notes by tapping the edit button in the top" +
+                        " right corner of this screen.";
+                    notesTextView.TextColor = UIColor.Gray;
+                }
             }
 
             if (contact.Source != McAbstrItem.ItemSource.ActiveSync) {
@@ -646,6 +693,10 @@ namespace NachoClient.iOS
 
             editContact.Clicked -= EditButtonClicked;
             editContact = null;
+
+            foreach (var lp in longPressRecognizers) {
+                lp.Cleanup ();
+            }
         }
 
         protected void DefaultEmailTapHandler ()
@@ -697,18 +748,16 @@ namespace NachoClient.iOS
 
             if (isFirstEmail /*TODO email.IsDefault */) {
                 UIImageView defaultEmailIcon = new UIImageView (UIImage.FromBundle ("contacts-marker"));
-                defaultEmailIcon.Frame = new RectangleF (0, emailLabel.Frame.Bottom + 10, defaultEmailIcon.Frame.Width, defaultEmailIcon.Frame.Height);
+                defaultEmailIcon.Frame = new RectangleF (0, emailLabel.Frame.Bottom + 14, defaultEmailIcon.Frame.Width, defaultEmailIcon.Frame.Height);
                 emailView.AddSubview (defaultEmailIcon);
             }
 
-            var emailTextView = new UITextView (new RectangleF (emailLabel.Frame.X - 5, emailLabel.Frame.Bottom - 1, emailView.Frame.Width - 60, 30));
+            var emailTextView = new UILabel (new RectangleF (emailLabel.Frame.X, emailLabel.Frame.Bottom + 10, emailView.Frame.Width - (emailLabel.Frame.X + 45), 16));
             emailTextView.Font = A.Font_AvenirNextMedium14;
             emailTextView.TextColor = A.Color_NachoGreen;
             emailTextView.Text = canonicalEmail;
-            emailTextView.KeyboardType = UIKeyboardType.EmailAddress;
-            emailTextView.UserInteractionEnabled = true;
-            emailTextView.Editable = false;
-            emailTextView.ScrollEnabled = false;
+            emailTextView.Lines = 2;
+            emailTextView.LineBreakMode = UILineBreakMode.CharacterWrap;
             emailTextView.SizeToFit ();
             emailView.AddSubview (emailTextView);
 
@@ -717,7 +766,18 @@ namespace NachoClient.iOS
             }
             isFirstInfoItem = false;
 
-            return emailTextView.Frame.Bottom + 5;
+            SetViewHeight (emailView, emailTextView.Frame.Bottom + 10);
+
+            UILongPressGestureRecognizer viewLongPress = new UILongPressGestureRecognizer ();
+            UILongPressGestureRecognizer.Token viewLongPressToken = viewLongPress.AddTarget (() => {
+                longPressData = new LongPressCopyData (canonicalEmail, emailView);
+                CopyThis ();
+            });
+            longPressRecognizers.Add(new LongPressPair(viewLongPress, viewLongPressToken));
+            emailView.AddGestureRecognizer (viewLongPress);
+            emailView.UserInteractionEnabled = true;
+
+            return emailView.Frame.Height;
         }
 
         protected float AddPhoneNumber (McContactStringAttribute phone, float yOffset, UIView contactInfoScrollView, bool isFirstPhone) /*TODO Remove isFirstEmail once we're settings defaults */
@@ -742,7 +802,7 @@ namespace NachoClient.iOS
                 phoneLabelText = "PHONE";
             }
 
-            var phoneLabel = new UILabel (new RectangleF (phoneIcon.Frame.Right + 8, ROW_SPACER, 45, 10));
+            var phoneLabel = new UILabel (new RectangleF (phoneIcon.Frame.Right + 8, ROW_SPACER, 45, 15));
             phoneLabel.Font = A.Font_AvenirNextMedium10;
             phoneLabel.TextColor = UIColor.DarkGray;
             phoneLabel.Text = phoneLabelText;
@@ -762,16 +822,14 @@ namespace NachoClient.iOS
 
             if (isFirstPhone /*TODO phone.IsDefault */) {
                 UIImageView defaultPhoneIcon = new UIImageView (UIImage.FromBundle ("contacts-marker"));
-                defaultPhoneIcon.Frame = new RectangleF (0, phoneLabel.Frame.Bottom + 10, defaultPhoneIcon.Frame.Width, defaultPhoneIcon.Frame.Height);
+                defaultPhoneIcon.Frame = new RectangleF (0, phoneLabel.Frame.Bottom + 13, defaultPhoneIcon.Frame.Width, defaultPhoneIcon.Frame.Height);
                 phoneView.AddSubview (defaultPhoneIcon);
             }
 
-            var phoneNumberTextView = new UITextView (new RectangleF (phoneLabel.Frame.X - 5, phoneLabel.Frame.Bottom - 1, View.Frame.Width - 75, 16));
+            var phoneNumberTextView = new UILabel (new RectangleF (phoneLabel.Frame.X, phoneLabel.Frame.Bottom + 10, View.Frame.Width - 75, 30));
             phoneNumberTextView.Font = A.Font_AvenirNextMedium14;
             phoneNumberTextView.TextColor = A.Color_NachoGreen;
             phoneNumberTextView.Text = phone.Value;
-            phoneNumberTextView.Editable = false;
-            phoneNumberTextView.ScrollEnabled = false;
             phoneNumberTextView.SizeToFit ();
             phoneView.AddSubview (phoneNumberTextView);
 
@@ -779,7 +837,19 @@ namespace NachoClient.iOS
                 Util.AddHorizontalLine (phoneLabel.Frame.X, 0, segmentedControllerHolderView.Frame.Width - contactInfoScrollView.Frame.X - phoneLabel.Frame.X, A.Color_NachoBorderGray, phoneView);
             }
             isFirstInfoItem = false;
-            return phoneNumberTextView.Frame.Bottom + 5;
+
+            SetViewHeight (phoneView, phoneNumberTextView.Frame.Bottom + 10);
+
+            UILongPressGestureRecognizer viewLongPress = new UILongPressGestureRecognizer ();
+            UILongPressGestureRecognizer.Token viewLongPressToken = viewLongPress.AddTarget (() => {
+                longPressData = new LongPressCopyData (phone.Value, phoneView);
+                CopyThis ();
+            });
+            longPressRecognizers.Add(new LongPressPair(viewLongPress, viewLongPressToken));
+            phoneView.AddGestureRecognizer (viewLongPress);
+            phoneView.UserInteractionEnabled = true;
+
+            return phoneView.Frame.Height;
         }
 
         protected float AddMiscInfo(string whatInfo, float yOffset, UIView contactInfoScrollView)
@@ -800,20 +870,20 @@ namespace NachoClient.iOS
 
             miscInfoView.AddSubview (viewIcon);
 
-            var viewLabel = new UILabel (new RectangleF (viewIcon.Frame.Right + 8, ROW_SPACER, 45, 10));
+            var viewLabel = new UILabel (new RectangleF (viewIcon.Frame.Right + 8, ROW_SPACER, 45, 15));
             viewLabel.Font = A.Font_AvenirNextMedium10;
             viewLabel.TextColor = UIColor.DarkGray;
             viewLabel.Text = label;
             viewLabel.SizeToFit ();
             miscInfoView.AddSubview (viewLabel);
 
-            var viewTextView = new UITextView (new RectangleF (viewLabel.Frame.X - 5, viewLabel.Frame.Bottom - 1, View.Frame.Width - 75, 16));
+            var viewTextView = new UILabel (new RectangleF (viewLabel.Frame.X, viewLabel.Frame.Bottom + 10, miscInfoView.Frame.Width - (viewLabel.Frame.X + 10), 40));
             viewTextView.Font = A.Font_AvenirNextMedium14;
             viewTextView.TextColor = A.Color_NachoGreen;
             viewTextView.Text = value;
-            viewTextView.Editable = false;
-            viewTextView.ScrollEnabled = false;
+            viewTextView.Lines = 2;
             viewTextView.SizeToFit ();
+            viewTextView.LineBreakMode = UILineBreakMode.WordWrap;
             miscInfoView.AddSubview (viewTextView);
 
             if (!isFirstInfoItem) {
@@ -821,7 +891,43 @@ namespace NachoClient.iOS
             }
             isFirstInfoItem = false;
 
-            return viewTextView.Frame.Bottom + 5;
+            SetViewHeight (miscInfoView, viewTextView.Frame.Bottom + 10);
+
+            UILongPressGestureRecognizer viewLongPress = new UILongPressGestureRecognizer ();
+            UILongPressGestureRecognizer.Token viewLongPressToken = viewLongPress.AddTarget (() => {
+                longPressData = new LongPressCopyData (value, miscInfoView);
+                CopyThis ();
+            });
+            longPressRecognizers.Add(new LongPressPair(viewLongPress, viewLongPressToken));
+            miscInfoView.AddGestureRecognizer (viewLongPress);
+            miscInfoView.UserInteractionEnabled = true;
+
+            return miscInfoView.Frame.Height;
+        }
+
+        protected void CopyThis()
+        {
+            copyCellView.Frame = new RectangleF (0, longPressData.containerView.Frame.Y, longPressData.containerView.Superview.Frame.Width, longPressData.containerView.Frame.Height + 1);
+            copyCellView.BackgroundColor = UIColor.LightGray.ColorWithAlpha (.3f);
+            copyCellView.Hidden = false;
+
+            longPressData.containerView.Superview.BecomeFirstResponder ();
+
+            UIMenuController copyMenu = UIMenuController.SharedMenuController;
+            copyMenu.SetTargetRect (new RectangleF (longPressData.containerView.Superview.Frame.Width / 2, longPressData.containerView.Frame.Y + 7, 0, 0), longPressData.containerView.Superview);
+            copyMenu.ArrowDirection = UIMenuControllerArrowDirection.Down;
+
+            UIMenuItem copyMenuItem = new UIMenuItem ("Copy", new MonoTouch.ObjCRuntime.Selector ("DoCopy"));
+            copyMenu.MenuItems = new UIMenuItem[] { copyMenuItem };
+            copyMenu.SetMenuVisible (true, true);
+        }       
+
+        [Export("DoCopy")]
+        protected void DoCopy ()
+        {
+            UIPasteboard pasteBoard = UIPasteboard.General;
+            pasteBoard.Persistent = true;
+            pasteBoard.String = longPressData.textToCopy;
         }
 
         protected void SetViewProperties (string whatType, ref string label, ref string value, ref string icon)
@@ -1092,7 +1198,10 @@ namespace NachoClient.iOS
 
         public void MultiSelectToggle (MessageTableViewSource source, bool enabled)
         {
-            return;
+        }
+
+        public void MultiSelectChange (MessageTableViewSource source, int count)
+        {
         }
 
         public void SetEmailMessages (INachoEmailMessages messageThreads)
@@ -1133,5 +1242,37 @@ namespace NachoClient.iOS
         {
             PerformSegue (identifier, sender);
         }
+
+        public class LongPressCopyData
+        {
+            public string textToCopy;
+            public UIView containerView;
+
+            public LongPressCopyData(string textToCopy, UIView containerView)
+            {
+                this.textToCopy = textToCopy;
+                this.containerView = containerView;
+            }
+        }
+
+        //Manage the LongPressGestureRecognizer for Copy better
+        public class LongPressPair
+        {
+            UILongPressGestureRecognizer longPress;
+            UILongPressGestureRecognizer.Token longPressToken;
+
+            public LongPressPair(UILongPressGestureRecognizer longPress, UILongPressGestureRecognizer.Token longPressToken)
+            {
+                this.longPress = longPress;
+                this.longPressToken = longPressToken;
+            }
+
+            public void Cleanup ()
+            {
+                longPress.RemoveTarget (longPressToken);
+                longPress.ShouldRecognizeSimultaneously = null;
+            }
+        }
+
     }
 }
