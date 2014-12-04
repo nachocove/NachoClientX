@@ -659,21 +659,24 @@ namespace NachoCore.Model
             McPendDep.DeleteAllSucc (Id);
             foreach (var succ in successors) {
                 var remaining = McPendDep.QueryBySuccId (succ.Id);
-                if (0 == remaining.Count ()) {
-                    Log.Info (Log.LOG_SYNC, "Pending:UnblockSuccessors:{0}/{1} => {2} now {3}", Id, Token, succ.Id, toState.ToString ());
-                    switch (toState) {
-                    case StateEnum.Eligible:
+                Log.Info (Log.LOG_SYNC, "Pending:UnblockSuccessors:{0}/{1} => {2} now {3}", Id, Token, succ.Id, toState.ToString ());
+                switch (toState) {
+                case StateEnum.Eligible:
+                    if (0 == remaining.Count ()) {
                         // Just enable execution.
                         succ.State = toState;
                         succ.Update ();
-                        break;
-                    case StateEnum.Failed:
-                        succ.ResolveAsHardFail (control, NcResult.WhyEnum.PredecessorFailed);
-                        break;
-                    default:
-                        NcAssert.CaseError (string.Format ("UnblockSuccessors: {0}", toState));
-                        break;
                     }
+                    break;
+                case StateEnum.Failed:
+                    foreach (var dep in remaining) {
+                        dep.Delete ();
+                    }
+                    succ.ResolveAsHardFail (control, NcResult.WhyEnum.PredecessorFailed);
+                    break;
+                default:
+                    NcAssert.CaseError (string.Format ("UnblockSuccessors: {0}", toState));
+                    break;
                 }
             }
             return (0 != successors.Count);
