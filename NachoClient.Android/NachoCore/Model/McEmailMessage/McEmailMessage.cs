@@ -722,9 +722,18 @@ namespace NachoCore.Model
 
         // Track how long it takes for Update() to run. This code should be removed
         // once the issue has been solved.
+        private static Random random = new Random();
+        private static string characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
         private static string Duration(DateTime start, DateTime end)
         {
-            return string.Format ("{0}", (end.Ticks - start.Ticks) / 10000);
+            long ms = (end.Ticks - start.Ticks) / 10000;
+            if (0 == ms) {
+                // Zeros are too common and are causing the telemetry summary to merge
+                // messages, preventing us from seeing useful data.  Print a random
+                // single character instead of 0.
+                return characters.Substring (random.Next (characters.Length), 1);
+            }
+            return string.Format ("{0}", ms);
         }
         private static int fastCount = 0;
         private static int slowCount = 0;
