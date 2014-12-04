@@ -169,6 +169,7 @@ namespace NachoCore.Utils
             ReplyNotAllowed,
             UnavoidableDelay,
             InterruptedByAppExit,
+            PredecessorFailed,
         };
 
         public KindEnum Kind { get; set; }
