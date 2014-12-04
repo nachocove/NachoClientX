@@ -595,10 +595,17 @@ namespace NachoClient.iOS
 
             // CONFIGURE NOTES VIEW
             var notesTextView = (UITextView)View.ViewWithTag (NOTES_TEXT_VIEW_TAG);
-
+            notesTextView.TextColor = A.Color_NachoGreen;
             McBody contactBody = McBody.QueryById<McBody> (contact.BodyId);
             if (null != contactBody) {
                 notesTextView.Text = contactBody.GetContentsString ();
+                if(string.IsNullOrEmpty(notesTextView.Text)){
+                    notesTextView.Text = "You have not entered any " +
+                        "notes for this contact. You can add and " +
+                        "edit notes by tapping the edit button in the top" +
+                        " right corner of this screen.";
+                    notesTextView.TextColor = UIColor.Gray;
+                }
             }
 
             if (contact.Source != McAbstrItem.ItemSource.ActiveSync) {
