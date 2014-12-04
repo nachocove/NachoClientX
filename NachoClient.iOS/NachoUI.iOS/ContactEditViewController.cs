@@ -36,6 +36,7 @@ namespace NachoClient.iOS
 
 
         protected const float MORE_BUTTON_INDENT = 280;
+        protected const float HORIZONTAL_INDENT = 30;
         protected float CELL_HEIGHT = 44;
 
         protected List<PhoneCell> phoneCellList = new List<PhoneCell> ();
@@ -72,7 +73,6 @@ namespace NachoClient.iOS
         protected const int HEADER_COMPANY_TEXT_FIELD = 104;
 
         protected const int HEADER_VIEW_TAG = 106;
-        protected const int HEADER_NAME_VIEW_TAG = 107;
         protected const int HEADER_COMPANY_VIEW_TAG = 108;
         protected const int HEADER_NAME_EDIT_VIEW_TAG = 109;
 
@@ -85,7 +85,7 @@ namespace NachoClient.iOS
         protected const int MORE_VIEW_DEFAULT_BUTTON_TAG = 1000;
         protected const int MORE_VIEW_DELETE_BUTTON_TAG = 2000;
 
-        protected UILabel headerLabel;
+        protected UILabel contactNameLabel;
         protected UITextField firstNameField;
         protected UITextField middleNameField;
         protected UITextField lastNameField;
@@ -205,6 +205,19 @@ namespace NachoClient.iOS
 
             yOffset = A.Card_Vertical_Indent;
 
+            contactNameLabel = new UILabel (new RectangleF (HORIZONTAL_INDENT, yOffset, View.Frame.Width - (HORIZONTAL_INDENT * 2), 16));
+            contactNameLabel.Font = A.Font_AvenirNextDemiBold17;
+            contactNameLabel.TextColor = A.Color_NachoBlack;
+            contactNameLabel.TextAlignment = UITextAlignment.Left;
+            contactNameLabel.Tag = HEADER_NAME_TEXT_FIELD_TAG;
+            contactNameLabel.Text = 
+                string.IsNullOrEmpty (contactCopy.GetDisplayName ()) ? 
+                "" : 
+                contactCopy.GetDisplayName () + " " + contactCopy.Suffix;
+            contentView.AddSubview (contactNameLabel);
+
+            yOffset = contactNameLabel.Frame.Bottom + 5;
+
             UIView headerView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 110));
             headerView.BackgroundColor = UIColor.White;
             headerView.Layer.BorderColor = A.Card_Border_Color;
@@ -212,47 +225,29 @@ namespace NachoClient.iOS
             headerView.Tag = HEADER_VIEW_TAG;
             contentView.AddSubview (headerView);
 
-            UILabel initialsCircleLabel = new UILabel (new RectangleF (30, 18, 60, 60));
+            UILabel initialsCircleLabel = new UILabel (new RectangleF (HORIZONTAL_INDENT, 18, 60, 60));
             initialsCircleLabel.Font = A.Font_AvenirNextRegular24;
             initialsCircleLabel.BackgroundColor = A.Color_NachoLightText;
             initialsCircleLabel.TextColor = UIColor.White;
             initialsCircleLabel.TextAlignment = UITextAlignment.Center;
             initialsCircleLabel.LineBreakMode = UILineBreakMode.Clip;
-            initialsCircleLabel.Layer.CornerRadius = 30;
+            initialsCircleLabel.Layer.CornerRadius = HORIZONTAL_INDENT;
             initialsCircleLabel.Layer.MasksToBounds = true;
             initialsCircleLabel.Layer.BorderColor = A.Card_Border_Color;
             initialsCircleLabel.Layer.BorderWidth = A.Card_Border_Width;
             initialsCircleLabel.Tag = HEADER_INITIALS_CIRCLE_TAG;
             headerView.AddSubview (initialsCircleLabel);
 
-            UIImageView userImageView = new UIImageView (new RectangleF (30, 18, 60, 60));
+            UIImageView userImageView = new UIImageView (new RectangleF (HORIZONTAL_INDENT, 18, 60, 60));
             userImageView.Layer.BorderColor = A.Card_Border_Color;
             userImageView.Layer.BorderWidth = A.Card_Border_Width;
-            userImageView.Layer.CornerRadius = 30;
+            userImageView.Layer.CornerRadius = HORIZONTAL_INDENT;
             userImageView.Layer.MasksToBounds = true;
             userImageView.Tag = HEADER_PORTRAIT_TAG;
             userImageView.Hidden = true;
             headerView.AddSubview (userImageView);
 
-            UIView headerNameView = new UIView (new RectangleF (initialsCircleLabel.Frame.Right + 26, 0, 204, 47));
-            headerNameView.Tag = HEADER_NAME_VIEW_TAG;
-            headerNameView.BackgroundColor = UIColor.White;
-            headerView.AddSubview (headerNameView);
-
-            headerLabel = new UILabel (new RectangleF (0, 20, 180, 16));
-            headerLabel.Font = A.Font_AvenirNextMedium14;
-            headerLabel.TextColor = UIColor.DarkGray.ColorWithAlpha(.6f);
-            headerLabel.TextAlignment = UITextAlignment.Left;
-            headerLabel.Tag = HEADER_NAME_TEXT_FIELD_TAG;
-            headerLabel.Text = 
-                string.IsNullOrEmpty (contactCopy.GetDisplayName ()) ? 
-                "First, Middle, Last, Suffix" : 
-                contactCopy.GetDisplayName () + " " + contactCopy.Suffix;
-            headerNameView.AddSubview (headerLabel);
-
-            Util.AddHorizontalLine (0, headerLabel.Frame.Bottom + 10, headerNameView.Frame.Width, A.Color_NachoBorderGray, headerNameView);
-
-            UIView headerNameEditView = new UIView(new RectangleF (initialsCircleLabel.Frame.Right + 26, headerNameView.Frame.Bottom, 204, (CELL_HEIGHT * 4)));
+            UIView headerNameEditView = new UIView(new RectangleF (initialsCircleLabel.Frame.Right + 26, 0, 204, (CELL_HEIGHT * 4)));
             headerNameEditView.BackgroundColor = UIColor.White;
             headerNameEditView.Tag = HEADER_NAME_EDIT_VIEW_TAG;
             headerNameEditView.Hidden = false;
@@ -268,7 +263,7 @@ namespace NachoClient.iOS
             firstNameField.ShouldReturn += NameFieldReturn;
             headerNameEditView.AddSubview (firstNameField);
 
-            Util.AddHorizontalLine (0, firstNameField.Frame.Bottom + 10, headerNameView.Frame.Width, A.Color_NachoBorderGray, headerNameEditView);
+            Util.AddHorizontalLine (0, firstNameField.Frame.Bottom + 10, headerNameEditView.Frame.Width, A.Color_NachoBorderGray, headerNameEditView);
 
             middleNameField = new UITextField (new RectangleF (0, firstNameField.Frame.Bottom + 28, headerNameEditView.Frame.Width, 16));
             middleNameField.Font = A.Font_AvenirNextMedium14;
@@ -281,7 +276,7 @@ namespace NachoClient.iOS
             middleNameField.ShouldReturn += NameFieldReturn;
             headerNameEditView.AddSubview (middleNameField);
 
-            Util.AddHorizontalLine (0, middleNameField.Frame.Bottom + 10, headerNameView.Frame.Width, A.Color_NachoBorderGray, headerNameEditView);
+            Util.AddHorizontalLine (0, middleNameField.Frame.Bottom + 10, headerNameEditView.Frame.Width, A.Color_NachoBorderGray, headerNameEditView);
 
             lastNameField = new UITextField (new RectangleF (0, middleNameField.Frame.Bottom + 28, headerNameEditView.Frame.Width, 16));
             lastNameField.Font = A.Font_AvenirNextMedium14;
@@ -293,7 +288,7 @@ namespace NachoClient.iOS
             lastNameField.EditingDidEnd += NameEditingEnded;
             lastNameField.ShouldReturn += NameFieldReturn;
             headerNameEditView.AddSubview (lastNameField);
-            Util.AddHorizontalLine (0, lastNameField.Frame.Bottom + 10, headerNameView.Frame.Width, A.Color_NachoBorderGray, headerNameEditView);
+            Util.AddHorizontalLine (0, lastNameField.Frame.Bottom + 10, headerNameEditView.Frame.Width, A.Color_NachoBorderGray, headerNameEditView);
 
             suffixField = new UITextField (new RectangleF (0, lastNameField.Frame.Bottom + 28, headerNameEditView.Frame.Width, 16));
             suffixField.Font = A.Font_AvenirNextMedium14;
@@ -306,11 +301,11 @@ namespace NachoClient.iOS
             suffixField.ShouldReturn += NameFieldReturn;
             headerNameEditView.AddSubview (suffixField);
 
-            Util.AddHorizontalLine (0, suffixField.Frame.Bottom + 8, headerNameView.Frame.Width, A.Color_NachoBorderGray, headerNameEditView);
+            Util.AddHorizontalLine (0, suffixField.Frame.Bottom + 8, headerNameEditView.Frame.Width, A.Color_NachoBorderGray, headerNameEditView);
 
             headerView.AddSubview (headerNameEditView);
 
-            UIView headerCompanyView = new UIView(new RectangleF(initialsCircleLabel.Frame.Right + 26, headerNameView.Frame.Bottom, 204, CELL_HEIGHT));
+            UIView headerCompanyView = new UIView(new RectangleF(initialsCircleLabel.Frame.Right + 26, headerNameEditView.Frame.Bottom, 204, CELL_HEIGHT));
             headerCompanyView.BackgroundColor = UIColor.White;
             headerCompanyView.Tag = HEADER_COMPANY_VIEW_TAG;
             headerView.AddSubview (headerCompanyView);
@@ -606,10 +601,10 @@ namespace NachoClient.iOS
 
         protected void NameEditingEnded (object sender, EventArgs e)
         {
-            contactCopy.FirstName = firstNameField.Text;
-            contactCopy.MiddleName = middleNameField.Text;
-            contactCopy.LastName = lastNameField.Text;
-            contactCopy.Suffix = suffixField.Text;
+            contactCopy.FirstName = firstNameField.Text.Trim();
+            contactCopy.MiddleName = middleNameField.Text.Trim();
+            contactCopy.LastName = lastNameField.Text.Trim();
+            contactCopy.Suffix = suffixField.Text.Trim();
             contactCopy.Update ();
             ConfigureAndLayout ();
         }
@@ -670,7 +665,7 @@ namespace NachoClient.iOS
                 }
                 break;
             }
-            headerLabel.Text = 
+            contactNameLabel.Text = 
                 firstName +
                 (middleName.Length > 0 ? " " : "") + 
                 middleName +
@@ -682,7 +677,7 @@ namespace NachoClient.iOS
 
         protected void NameFieldChanged (object sender, EventArgs e)
         {
-            headerLabel.Text = 
+            contactNameLabel.Text = 
                 firstNameField.Text +
             " " + middleNameField +
             " " + lastNameField +
@@ -1327,9 +1322,9 @@ namespace NachoClient.iOS
 
             var headerCompany = (UITextField)View.ViewWithTag (HEADER_COMPANY_TEXT_FIELD);
 
-            headerLabel.Text = 
+            contactNameLabel.Text = 
                 string.IsNullOrEmpty (contactCopy.GetDisplayName ()) ? 
-                "First, Middle, Last, Suffix" : 
+                "" : 
                 contactCopy.GetDisplayName () + " " + contactCopy.Suffix;
 
             headerCompany.Text = contactCopy.CompanyName;
@@ -2050,7 +2045,7 @@ namespace NachoClient.iOS
                 editAddressView.BackgroundColor = UIColor.White;
                 this.AddSubview (editAddressView);
 
-                streetTextField = owner.ConfigureAddressTextField(new RectangleF(30, 0, 250, owner.CELL_HEIGHT - 1), "Street");
+                streetTextField = owner.ConfigureAddressTextField(new RectangleF(HORIZONTAL_INDENT, 0, 250, owner.CELL_HEIGHT - 1), "Street");
                 streetTextField.EditingDidEnd += EditingEnded;
                 streetTextField.ShouldReturn += (textField) => {
                     cityTextField.BecomeFirstResponder();
@@ -2060,7 +2055,7 @@ namespace NachoClient.iOS
 
                 Util.AddHorizontalLine (28, streetTextField.Frame.Bottom, owner.View.Frame.Width - 28, A.Color_NachoBackgroundGray, editAddressView);
 
-                cityTextField = owner.ConfigureAddressTextField(new RectangleF(30, owner.CELL_HEIGHT, 250, owner.CELL_HEIGHT - 1), "City");
+                cityTextField = owner.ConfigureAddressTextField(new RectangleF(HORIZONTAL_INDENT, owner.CELL_HEIGHT, 250, owner.CELL_HEIGHT - 1), "City");
                 cityTextField.EditingDidEnd += EditingEnded;
                 cityTextField.ShouldReturn += (textField) => {
                     stateTextField.BecomeFirstResponder();
@@ -2070,7 +2065,7 @@ namespace NachoClient.iOS
 
                 Util.AddHorizontalLine (28, cityTextField.Frame.Bottom, owner.View.Frame.Width - 28, A.Color_NachoBackgroundGray, editAddressView);
 
-                stateTextField = owner.ConfigureAddressTextField(new RectangleF(30, (owner.CELL_HEIGHT * 2), 250, owner.CELL_HEIGHT - 1), "State");
+                stateTextField = owner.ConfigureAddressTextField(new RectangleF(HORIZONTAL_INDENT, (owner.CELL_HEIGHT * 2), 250, owner.CELL_HEIGHT - 1), "State");
                 stateTextField.EditingDidEnd += EditingEnded;
                 stateTextField.ShouldReturn += (textField) => {
                     zipTextField.BecomeFirstResponder();
@@ -2080,7 +2075,7 @@ namespace NachoClient.iOS
 
                 Util.AddHorizontalLine (28, stateTextField.Frame.Bottom, owner.View.Frame.Width - 28, A.Color_NachoBackgroundGray, editAddressView);
 
-                zipTextField = owner.ConfigureAddressTextField(new RectangleF(30, (owner.CELL_HEIGHT * 3), 250, owner.CELL_HEIGHT - 1), "Zip Code");
+                zipTextField = owner.ConfigureAddressTextField(new RectangleF(HORIZONTAL_INDENT, (owner.CELL_HEIGHT * 3), 250, owner.CELL_HEIGHT - 1), "Zip Code");
                 zipTextField.EditingDidEnd += EditingEnded;
                 zipTextField.ShouldReturn += (textField) => {
                     countryTextField.BecomeFirstResponder();
@@ -2090,7 +2085,7 @@ namespace NachoClient.iOS
 
                 Util.AddHorizontalLine (28, zipTextField.Frame.Bottom, owner.View.Frame.Width - 28, A.Color_NachoBackgroundGray, editAddressView);
 
-                countryTextField = owner.ConfigureAddressTextField(new RectangleF(30, (owner.CELL_HEIGHT * 4), 250, owner.CELL_HEIGHT - 1), "Country");
+                countryTextField = owner.ConfigureAddressTextField(new RectangleF(HORIZONTAL_INDENT, (owner.CELL_HEIGHT * 4), 250, owner.CELL_HEIGHT - 1), "Country");
                 countryTextField.EditingDidEnd += EditingEnded;
                 countryTextField.ShouldReturn += (textField) => {
                     owner.View.EndEditing(true);
