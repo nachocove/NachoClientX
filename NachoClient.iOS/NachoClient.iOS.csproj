@@ -1746,6 +1746,7 @@
     <BundleResource Include="Resources\gen-edit-active%402x.png" />
     <BundleResource Include="Resources\gen-download-swipe%402x.png" />
     <BundleResource Include="Resources\gen-preview-swipe%402x.png" />
+    <BundleResource Include="Resources\gen-trash%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
