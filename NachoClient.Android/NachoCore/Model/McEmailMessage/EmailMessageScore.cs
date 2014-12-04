@@ -26,7 +26,7 @@ namespace NachoCore.Model
         [Indexed] /// Time variance state machine type
         public int TimeVarianceType { get; set; }
 
-        /// Time variance state machine current state
+        /// This field is depracated and should not be used.
         public int TimeVarianceState { get; set; }
 
         [Indexed]
@@ -341,24 +341,6 @@ namespace NachoCore.Model
             return tvList;
         }
 
-        /// Return a list of time variance state machines that are still running.
-        /// Used for starting state machines and for determine time variance state
-        private List<NcTimeVariance> FilterTimeVariance (List<NcTimeVariance> tvList, DateTime now)
-        {
-            List<NcTimeVariance> newTvList = new List<NcTimeVariance> ();
-            if ((null == tvList) || (0 < tvList.Count)) {
-                return newTvList;
-            }
-            foreach (NcTimeVariance tv in tvList) {
-                DateTime lastEvent = tv.LastEventTime ();
-                if (lastEvent <= now) {
-                    continue;
-                }
-                newTvList.Add (tv);
-            }
-            return newTvList;
-        }
-
         /// <summary>
         /// Update the time variance state in memory. Note that the caller is responsible
         /// for calling Update() if this method returns true.
@@ -368,30 +350,21 @@ namespace NachoCore.Model
         /// <param name="now">A timestamp to be used for finding next state for all tv.</param>
         private bool UpdateTimeVarianceStates (NcTimeVariance.TimeVarianceList tvList, DateTime now)
         {
-            DateTime latestEvent = new DateTime (1, 1, 1, 0, 0, 0);
-            int latestType = (int)NcTimeVarianceType.DONE;
-            int latestState = 0;
+            // If the list of active time variances is empty, then the message's score is
+            // stable.  This is indicated by a TimeVarianceType value of DONE.
+            //
+            // TODO The TimeVarianceType field used to be used for something else.  It has
+            // been repurposed for now, and is used like a boolean field.  The repurposing
+            // was done to avoid changing the database table layout.  This should be cleaned
+            // up in the Brain 2.0 work.
 
-            foreach (NcTimeVariance tv in tvList) {
-                DateTime lastEvent = tv.LastEventTime ();
-                if (((int)NcTimeVariance.STATE_NONE == latestType) || (latestEvent < lastEvent)) {
-                    latestEvent = lastEvent;
-                    latestType = (int)tv.TimeVarianceType ();
-                    /// Note that we cannot just use tv.State because tv is not
-                    /// running if this function is called from TimerCallBack().
-                    /// So, we have to find the appropriate state.
-                    latestState = tv.FindNextState (now, -1);
-                }
-            }
-
-            /// Update db state only if there is a change
             bool updated = false;
-            if (latestType != TimeVarianceType) {
-                TimeVarianceType = latestType;
+            if (0 == tvList.Count && (int)NcTimeVarianceType.DONE != TimeVarianceType) {
+                TimeVarianceType = (int)NcTimeVarianceType.DONE;
                 updated = true;
             }
-            if (latestState != TimeVarianceState) {
-                TimeVarianceState = latestState;
+            if (0 < tvList.Count && (int)NcTimeVarianceType.DONE == TimeVarianceType) {
+                TimeVarianceType = (int)NcTimeVarianceType.NONE;
                 updated = true;
             }
             return updated;
@@ -479,21 +452,26 @@ namespace NachoCore.Model
                 return; // The object has been deleted
             }
 
-            /// Update time variance state if necessary
+            // Update time variance state if necessary
             DateTime now = DateTime.UtcNow;
             NcTimeVariance.TimeVarianceList tvList =
                 emailMessage.EvaluateTimeVariance ().FilterStillRunning (now);
-            bool updated = emailMessage.UpdateTimeVarianceStates (tvList, now);
+            bool fullUpdateNeeded = emailMessage.UpdateTimeVarianceStates (tvList, now);
 
-            /// Recompute a new score and update it in the cache
+            // Recompute a new score and update it in the cache
+            bool scoreChanged = false;
             double newScore = emailMessage.GetScore ();
             if (newScore != emailMessage.Score) {
                 emailMessage.Score = newScore;
-                updated = true;
+                scoreChanged = true;
             }
-            if (updated) {
+            if (fullUpdateNeeded || scoreChanged) {
                 emailMessage.NeedUpdate = false;
-                emailMessage.UpdateByBrain ();
+                if (fullUpdateNeeded) {
+                    emailMessage.UpdateByBrain ();
+                } else {
+                    emailMessage.UpdateScoreAndNeedUpdate ();
+                }
             }
         }
 
