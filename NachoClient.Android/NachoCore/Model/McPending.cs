@@ -470,8 +470,7 @@ namespace NachoCore.Model
             State = StateEnum.Deleted;
             Update ();
             Log.Info (Log.LOG_SYNC, "Pending:ResolveAsSuccess:{0}:{1}", Id, Token);
-            // TODO: Find a clean way to send UpdateQ event to TL SM.
-            UnblockSuccessors (StateEnum.Eligible);
+            UnblockSuccessors (control, StateEnum.Eligible);
             // Why update and then delete? I think we may want to defer deletion at some point.
             // If we do, then these are a good "log" of what has been done. So keep the records 
             // accurate.
@@ -482,8 +481,7 @@ namespace NachoCore.Model
         {
             NcAssert.True (StateEnum.Dispatched == State || !onlyDispatched);
             State = StateEnum.Deleted;
-            // TODO: Status-ind for successors as well.
-            UnblockSuccessors (StateEnum.Deleted);
+            UnblockSuccessors (null, StateEnum.Eligible);
             Log.Info (Log.LOG_SYNC, "Pending:ResolveAsCancelled:{0}:{1}", Id, Token);
             Delete ();
         }
@@ -563,8 +561,6 @@ namespace NachoCore.Model
         public void ResolveAsHardFail (ProtoControl control, NcResult result)
         {
             // This is the designated ResolveAsHardFail.
-            NcAssert.True (StateEnum.Dispatched == State || DelayNotAllowed,
-                string.Format ("State = {0}, DelayNotAllowed = {1}", State.ToString (), DelayNotAllowed));
             NcAssert.True (NcResult.KindEnum.Error == result.Kind);
             ResultKind = result.Kind;
             ResultSubKind = result.SubKind;
@@ -585,8 +581,7 @@ namespace NachoCore.Model
                         AttachmentError (AttachmentId);
                     }
                 }
-                // TODO: Status-ind for successors as well.
-                UnblockSuccessors (StateEnum.Failed);
+                UnblockSuccessors (control, DelayNotAllowed ? StateEnum.Eligible : StateEnum.Failed);
             });
             control.StatusInd (result, new [] { Token });
             Log.Info (Log.LOG_SYNC, "Pending:ResolveAsHardFail:{0}:{1} Reason:{2}:{3}", Id, Token, ResultSubKind.ToString (), ResultWhy.ToString ());
@@ -658,21 +653,30 @@ namespace NachoCore.Model
         }
 
         // PUBLIC FOR TEST USE ONLY. OTHERWISE CONSIDER IT PRIVATE.
-        public bool UnblockSuccessors (StateEnum toState)
+        public bool UnblockSuccessors (ProtoControl control, StateEnum toState)
         {
             var successors = QuerySuccessors (AccountId, Id);
             McPendDep.DeleteAllSucc (Id);
             foreach (var succ in successors) {
                 var remaining = McPendDep.QueryBySuccId (succ.Id);
-                if (0 == remaining.Count ()) {
-                    succ.State = toState;
-                    succ.Update ();
-                    Log.Info (Log.LOG_SYNC, "Pending:UnblockSuccessors:{0}/{1} => {2} now {3}", Id, Token, succ.Id, toState.ToString ());
-                    if (StateEnum.Deleted == toState) {
-                        // TODO: we need to status-ind for successor.
-                        Log.Info (Log.LOG_SYNC, "Pending:UnblockSuccessors: Deleting {0}/{1}", Id, Token);
-                        succ.Delete ();
+                Log.Info (Log.LOG_SYNC, "Pending:UnblockSuccessors:{0}/{1} => {2} now {3}", Id, Token, succ.Id, toState.ToString ());
+                switch (toState) {
+                case StateEnum.Eligible:
+                    if (0 == remaining.Count ()) {
+                        // Just enable execution.
+                        succ.State = toState;
+                        succ.Update ();
                     }
+                    break;
+                case StateEnum.Failed:
+                    foreach (var dep in remaining) {
+                        dep.Delete ();
+                    }
+                    succ.ResolveAsHardFail (control, NcResult.WhyEnum.PredecessorFailed);
+                    break;
+                default:
+                    NcAssert.CaseError (string.Format ("UnblockSuccessors: {0}", toState));
+                    break;
                 }
             }
             return (0 != successors.Count);
@@ -825,8 +829,8 @@ namespace NachoCore.Model
                 if (CanDepend ()) {
                     // Walk from the back toward the front of the Q looking for anything this pending might depend upon.
                     // If this gets to be expensive, we can implement a scoreboard (and possibly also RAM cache).
-                    // Note that items might get deleted out from under us.
-                    var pendq = Query (AccountId).OrderByDescending (x => x.Priority);
+                    var pendq = Query (AccountId).Where (y => StateEnum.Deleted != y.State && StateEnum.Failed != y.State)
+                        .OrderByDescending (x => x.Priority);
                     foreach (var elem in pendq) {
                         if (DependsUpon (elem)) {
                             predIds.Add (elem.Id);

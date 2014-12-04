@@ -85,6 +85,13 @@ namespace Test.iOS
     {
         public class TestDependencies : BaseMcPendingTest
         {
+            [SetUp]
+            public new void SetUp ()
+            {
+                base.SetUp ();
+                protoControl = ProtoOps.CreateProtoControl (accountId: defaultAccountId);
+            }
+
             [Test]
             public void BasicDependencyTest ()
             {
@@ -125,7 +132,7 @@ namespace Test.iOS
                 }
 
                 for (int i = 1; i < groupA.Length; ++i) {
-                    groupA [i - 1].UnblockSuccessors (StateEnum.Eligible); // unblock successors for groupA
+                    groupA [i - 1].UnblockSuccessors (null, StateEnum.Eligible); // unblock successors for groupA
                     var item = McPending.QueryById<McPending> (groupA [i].Id);
                     Assert.AreEqual (StateEnum.Eligible, item.State, "Unblocked group A successors should have Eligible state");
                 }
@@ -144,7 +151,7 @@ namespace Test.iOS
                 }
 
                 for (int i = 1; i < groupB.Length; ++i) {
-                    groupB [i - 1].UnblockSuccessors (StateEnum.Eligible); // unblock successors for groupB
+                    groupB [i - 1].UnblockSuccessors (null, StateEnum.Eligible); // unblock successors for groupB
                     var item = McPending.QueryById<McPending> (groupB [i].Id);
                     Assert.AreEqual (StateEnum.Eligible, item.State, "Unblocked group B successors should have Eligible state");
                 }
@@ -164,6 +171,17 @@ namespace Test.iOS
             }
 
             [Test]
+            public void FailedPredecessor ()
+            {
+                var pending1 = CreatePending (serverId: "Pending1", operation: Operations.CalCreate);
+                var successor1 = CreatePending (serverId: "Successor1", operation: Operations.FolderDelete); // delete always blocks
+                pending1.UnblockSuccessors (protoControl, StateEnum.Failed);
+                var retrieved = McPending.QueryById<McPending> (successor1.Id);
+                Assert.NotNull (retrieved);
+                Assert.AreEqual (StateEnum.Failed, retrieved.State);
+            }
+
+            [Test]
             public void SingleSuccessorDependency ()
             {
                 var pending1 = CreatePending (serverId: "FirstPending", operation: Operations.CalCreate);
@@ -173,7 +191,7 @@ namespace Test.iOS
                 var successor = CreatePending (serverId: "Successor", operation: Operations.FolderDelete); // delete always blocks
 
                 // UnblockSuccessors() on the 1st predecessor.
-                pending1.UnblockSuccessors (StateEnum.Eligible);
+                pending1.UnblockSuccessors (null, StateEnum.Eligible);
 
                 // Verify that the successor is still blocked.
                 var retrieved = McPending.QueryById<McPending> (successor.Id);
@@ -184,7 +202,7 @@ namespace Test.iOS
                 Assert.AreEqual (1, pendDeps.Count (), "Should only have one remaining McPendDep");
 
                 // UnblockSuccessors() on the 2nd predecessor.
-                pending2.UnblockSuccessors (StateEnum.Eligible);
+                pending2.UnblockSuccessors (null, StateEnum.Eligible);
 
                 // Verify that the successor is now marked Eligible.
                 retrieved = McPending.QueryById<McPending> (successor.Id);
@@ -436,16 +454,6 @@ namespace Test.iOS
 
         public class TestResolveAsHardFail : BaseMcPendingTest
         {
-            [Test]
-            public void ResolveAsHardFailNotDispatched ()
-            {
-                var pending = CreatePending ();
-
-                TestForNachoExceptionFailure (() => {
-                    pending.ResolveAsHardFail (protoControl, WhyEnum.AccessDeniedOrBlocked);
-                }, "Should not allow ResolveAsHardFail to be called on non-dispatched methods");
-            }
-
             [Test]
             public void TestResolveAsHardFailForResult ()
             {

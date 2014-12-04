@@ -49,7 +49,7 @@ namespace Test.Common
                 var pred = dep.First ();
                 Assert.True (createFolder.Id == pred.Id);
             }
-            createFolder.UnblockSuccessors (McPending.StateEnum.Eligible);
+            createFolder.UnblockSuccessors (null, McPending.StateEnum.Eligible);
             // Verify all aren't blocked.
             suc = McPending.QuerySuccessors (1, createFolder.Id);
             Assert.IsNotNull (suc);
