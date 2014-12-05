@@ -12,7 +12,7 @@ using NachoPlatform;
 
 namespace NachoClient.iOS
 {
-    public partial class SupportMessageViewController : NcUIViewController
+    public partial class SupportMessageViewController : NcUIViewControllerNoLeaks
     {
         protected float yOffset;
         protected static float CELL_HEIGHT = 44f;
@@ -29,6 +29,8 @@ namespace NachoClient.iOS
 
         protected const int GRAY_BACKGROUND_VIEW_TAG = 200;
         protected const int SENDING_SPINNER_TAG = 201;
+        protected const int CONFIRM_SENT_ALERT_TAG = 202;
+        protected const int CONFIRM_NOT_SENT_ALERT_TAG = 203;
         protected const double WAIT_TIMER_LENGTH = 10;
 
         protected NSTimer sendMessageTimer;
@@ -36,14 +38,6 @@ namespace NachoClient.iOS
 
         public SupportMessageViewController (IntPtr handle) : base (handle)
         {
-        }
-
-        public override void ViewDidLoad ()
-        {
-            base.ViewDidLoad ();
-            CreateView ();
-            LayoutView ();
-            ConfigureView ();
         }
 
         public override void ViewWillAppear (bool animated)
@@ -110,7 +104,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public void CreateView ()
+        protected override void CreateViewHierarchy ()
         {
             View.BackgroundColor = A.Color_NachoBackgroundGray;
             contentView.BackgroundColor = A.Color_NachoBackgroundGray;
@@ -325,10 +319,12 @@ namespace NachoClient.iOS
             scrollView.ContentSize = contentFrame.Size;
         }
 
-        protected void ConfigureView ()
+        protected override void ConfigureAndLayout ()
         {
             UITextField contactText = (UITextField)View.ViewWithTag (CONTACT_TEXTFIELD_TAG);
             contactText.Text = GetEmailAddress ();
+
+            LayoutView ();
         }
 
         protected string GetEmailAddress ()
@@ -365,23 +361,47 @@ namespace NachoClient.iOS
 
                 if (didSend) {
                     UIAlertView confirmSentAlert = new UIAlertView();
+                    View.AddSubview (confirmSentAlert);
                     confirmSentAlert.Title = "Message Successfully Sent";
                     confirmSentAlert.Message = "We have received your message and will respond as quickly as possible. Thank you for your feedback.";
                     confirmSentAlert.AddButton("Close");
-                    confirmSentAlert.Clicked += (object sender, UIButtonEventArgs e) => {
-                        this.DismissViewController (true, null);
-                    };
+                    confirmSentAlert.Clicked += DismissFromAlert;
+                    confirmSentAlert.Tag = CONFIRM_SENT_ALERT_TAG;
                     confirmSentAlert.Show ();
                 } else {
                     UIAlertView sendFailedAlert = new UIAlertView();
+                    View.AddSubview (sendFailedAlert);
                     sendFailedAlert.Title = "Message Was Not Sent";
                     sendFailedAlert.Message = "There was a delay in sending the message. We will continue trying to send the message in the background.";
                     sendFailedAlert.AddButton("Close");
-                    sendFailedAlert.Clicked += (object sender, UIButtonEventArgs e) => {
-                        this.DismissViewController (true, null);
-                    };
+                    sendFailedAlert.Tag = CONFIRM_NOT_SENT_ALERT_TAG;
+                    sendFailedAlert.Clicked += DismissFromAlert;
                     sendFailedAlert.Show ();
                 }
+            }
+        }
+
+        protected void DismissFromAlert (object sender, UIButtonEventArgs e)
+        {
+            this.DismissViewController (true, null);
+        }
+
+        protected override void Cleanup ()
+        {
+            sendButton.Clicked -= SendButtonClicked;
+            sendButton = null;
+
+            UIAlertView confirmSentAlert = (UIAlertView)View.ViewWithTag (CONFIRM_SENT_ALERT_TAG);
+            UIAlertView confirmNotSentAlert = (UIAlertView)View.ViewWithTag (CONFIRM_NOT_SENT_ALERT_TAG);
+
+            if (null != confirmSentAlert) {
+                confirmSentAlert.Clicked -= DismissFromAlert;
+                confirmSentAlert = null;
+            }
+
+            if (null != confirmNotSentAlert) {
+                confirmNotSentAlert.Clicked -= DismissFromAlert;
+                confirmNotSentAlert = null;
             }
         }
     }
