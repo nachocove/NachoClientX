@@ -974,8 +974,7 @@ namespace NachoClient.iOS
             case Xml.Contacts.WebPage:
                 label = "WEB PAGE";
                 value = contact.WebPage;
-                //FIXME: Add web page icon
-                icon = "contacts-icn-bday";
+                icon = "contacts-icn-url";
                 break;
             case Xml.Contacts.OfficeLocation:
                 label = "OFFICE LOCATION";
