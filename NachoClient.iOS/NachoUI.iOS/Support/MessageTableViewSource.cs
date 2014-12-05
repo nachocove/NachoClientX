@@ -748,7 +748,9 @@ namespace NachoClient.iOS
                 return;
             }
             var message = messageThread.SingleMessageSpecialCase ();
-            Log.Debug (Log.LOG_UI, "message Id={0} bodyId={1} Score={2}", message.Id, message.BodyId, message.Score);
+            if (null != message) {
+                Log.Debug (Log.LOG_UI, "message Id={0} bodyId={1} Score={2}", message.Id, message.BodyId, message.Score);
+            }
         }
     }
 }
