@@ -950,37 +950,34 @@ namespace NachoClient.iOS
             case Xml.Contacts.Anniversary:
                 label = Xml.Contacts.Anniversary.ToUpper();
                 value = contact.GetDateAttribute (whatType).ToLongDateString();
-                //FIXME: Add anniversary icon
                 icon = "contacts-icn-bday";
                 break;
             case Xml.Contacts.Spouse:
                 label = "SPOUSE";
                 value = contact.GetRelationshipAttribute (whatType);
-                //FIXME: Add spouse icon
+                //FIXME: Add relationship icon
                 icon = "contacts-icn-bday";
                 break;
             case Xml.Contacts.AssistantName:
                 label = "ASSISTANT";
                 value = contact.GetRelationshipAttribute (whatType);
-                //FIXME: Add Assistant icon
+                //FIXME: Add relationship icon
                 icon = "contacts-icn-bday";
                 break;
             case Xml.Contacts2.ManagerName:
                 label = "MANAGER";
                 value = contact.GetRelationshipAttribute (whatType);
-                //FIXME: Add manager icon
+                //FIXME: Add relationship icon
                 icon = "contacts-icn-bday";
                 break;
             case Xml.Contacts.WebPage:
                 label = "WEB PAGE";
                 value = contact.WebPage;
-                //FIXME: Add web page icon
-                icon = "contacts-icn-bday";
+                icon = "contacts-icn-url";
                 break;
             case Xml.Contacts.OfficeLocation:
                 label = "OFFICE LOCATION";
                 value = contact.OfficeLocation;
-                //FIXME: Add office location icon
                 icon = "contacts-icn-bday";
                 break;
             case Xml.Contacts.Children:

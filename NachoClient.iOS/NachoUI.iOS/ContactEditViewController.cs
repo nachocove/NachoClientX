@@ -1279,10 +1279,20 @@ namespace NachoClient.iOS
                 return;
             }
 
-            var relationshipAttribute = contactCopy.AddRelationshipAttribute (contactCopy.AccountId,
-                                            contactHelper.GetAvailableRelationshipNames (contactCopy).First (),
-                                            contactHelper.ExchangeNameToLabel (contactHelper.GetAvailableRelationshipNames (contactCopy).First ()),
-                                            "");
+            string nextRelationshipName = contactHelper.GetAvailableRelationshipNames (contactCopy).First ();
+            McContactStringAttribute relationshipAttribute; 
+
+            if (Xml.Contacts.Child != nextRelationshipName) {
+                relationshipAttribute = contactCopy.AddRelationshipAttribute (contactCopy.AccountId,
+                    nextRelationshipName,
+                    contactHelper.ExchangeNameToLabel (nextRelationshipName),
+                    "");
+            } else {
+                relationshipAttribute = contactCopy.AddChildAttribute (contactCopy.AccountId,
+                    nextRelationshipName,
+                    contactHelper.ExchangeNameToLabel (nextRelationshipName),
+                    "");
+            }
             contactCopy.Update ();
 
             RelationshipCell relationshipCell = new RelationshipCell (relationshipCellList.Count * CELL_HEIGHT, this, relationshipAttribute);
