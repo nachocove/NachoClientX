@@ -89,6 +89,7 @@ namespace NachoCore.ActiveSync
                 InsertExceptions (newItem);
                 NcAssert.True (0 < ir, "newItem.Insert");
                 folder.Link (newItem);
+                CalendarHelper.UpdateRecurrences (newItem);
                 return;
             }
 
