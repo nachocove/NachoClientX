@@ -84,11 +84,11 @@ namespace NachoClient.iOS
             return this.messageThreads.GetEmailThread (0);
         }
 
-        public bool RefreshEmailMessages ()
+        public bool RefreshEmailMessages (out List<int> deletes)
         {
             RefreshCapture.Start ();
             messageCache.Clear ();
-            var didRefresh = messageThreads.Refresh ();
+            var didRefresh = messageThreads.Refresh (out deletes);
             RefreshCapture.Stop ();
             return didRefresh;
         }
@@ -748,7 +748,9 @@ namespace NachoClient.iOS
                 return;
             }
             var message = messageThread.SingleMessageSpecialCase ();
-            Log.Debug (Log.LOG_UI, "message Id={0} bodyId={1} Score={2}", message.Id, message.BodyId, message.Score);
+            if (null != message) {
+                Log.Debug (Log.LOG_UI, "message Id={0} bodyId={1} Score={2}", message.Id, message.BodyId, message.Score);
+            }
         }
     }
 }

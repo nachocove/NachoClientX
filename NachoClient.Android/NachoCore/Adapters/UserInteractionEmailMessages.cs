@@ -20,7 +20,8 @@ namespace NachoCore
         {
             this.folder = new McFolder ();
             this.contact = contact;
-            Refresh ();
+            List<int> deletes;
+            Refresh (out deletes);
         }
 
         // FIXME: Be smarter about getting Inbox
@@ -37,8 +38,9 @@ namespace NachoCore
             return null;
         }
 
-        public bool Refresh ()
+        public bool Refresh (out List<int> deletes)
         {
+            deletes = null;
             if (null == contact) {
                 threadList = new List<McEmailMessageThread> ();
                 return true;
@@ -49,7 +51,7 @@ namespace NachoCore
                 return true;
             }
             var list = McEmailMessage.QueryInteractions (contact.AccountId, contact);
-            if (!NcMessageThreads.AreDifferent (threadList, list)) {
+            if (!NcMessageThreads.AreDifferent (threadList, list, out deletes)) {
                 return false;
             }
             threadList = NcMessageThreads.ThreadByConversation (list);

@@ -932,53 +932,44 @@ namespace NachoClient.iOS
 
         protected void SetViewProperties (string whatType, ref string label, ref string value, ref string icon)
         {
+            label = contactHelper.ExchangeNameToLabel (whatType).ToUpper ();
+
             switch (whatType) {
             //Address names
             case "Other":
             case "Home":
             case "Business":
                 var address = contact.GetAddressAttribute (whatType);
-                label = whatType.ToUpper ();
                 value = address.Street + " " + address.City + " " + address.State + " " + address.PostalCode + " " + address.Country;
                 icon = "contacts-icn-address";
                 break;
             case Xml.Contacts.Birthday:
-                label = Xml.Contacts.Birthday.ToUpper();
                 value = contact.GetDateAttribute (whatType).ToLongDateString();
                 icon = "contacts-icn-bday";
                 break;
             case Xml.Contacts.Anniversary:
-                label = Xml.Contacts.Anniversary.ToUpper();
                 value = contact.GetDateAttribute (whatType).ToLongDateString();
                 icon = "contacts-icn-bday";
                 break;
             case Xml.Contacts.Spouse:
-                label = "SPOUSE";
                 value = contact.GetRelationshipAttribute (whatType);
-                //FIXME: Add relationship icon
-                icon = "contacts-icn-bday";
+                icon = "contacts-attendees";
                 break;
             case Xml.Contacts.AssistantName:
-                label = "ASSISTANT";
                 value = contact.GetRelationshipAttribute (whatType);
-                //FIXME: Add relationship icon
-                icon = "contacts-icn-bday";
+                icon = "contacts-attendees";
                 break;
             case Xml.Contacts2.ManagerName:
-                label = "MANAGER";
                 value = contact.GetRelationshipAttribute (whatType);
-                //FIXME: Add relationship icon
-                icon = "contacts-icn-bday";
+                icon = "contacts-attendees";
                 break;
             case Xml.Contacts.WebPage:
-                label = "WEB PAGE";
                 value = contact.WebPage;
                 icon = "contacts-icn-url";
                 break;
             case Xml.Contacts.OfficeLocation:
-                label = "OFFICE LOCATION";
                 value = contact.OfficeLocation;
-                icon = "contacts-icn-bday";
+                icon = "contacts-icn-address";
                 break;
             case Xml.Contacts.Children:
                 string childrenString = "";
@@ -1001,13 +992,11 @@ namespace NachoClient.iOS
                     }
                 }
                 value = childrenString;
-                //FIXME: Add children icon
-                icon = "contacts-icn-bday";
+                icon = "contacts-attendees";
                 break;
             default:
-                label = contactHelper.ExchangeNameToLabel (whatType).ToUpper ();
                 value = contactHelper.MiscContactAttributeNameToValue (whatType, contact);
-                icon = "contacts-icn-bday";
+                icon = "contacts-description";
                 break;
             }
 
@@ -1128,7 +1117,8 @@ namespace NachoClient.iOS
             UITableView interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
 
             NachoCore.Utils.NcAbate.HighPriority ("ContactDetailViewController RefreshData");
-            messageSource.RefreshEmailMessages ();
+            List<int> deletes;
+            messageSource.RefreshEmailMessages (out deletes);
             interactionsTableView.ReloadData ();
             NachoCore.Utils.NcAbate.RegularPriority ("ContactDetailViewController RefreshData");
         }

@@ -12,6 +12,7 @@ using NachoCore.Utils;
 using System;
 using System.Linq;
 using Android.App;
+using System.Collections.Generic;
 
 namespace NachoClient.AndroidClient
 {
@@ -37,7 +38,8 @@ namespace NachoClient.AndroidClient
             NcApplication.Instance.StatusIndEvent += (object sender, EventArgs e) => {
                 var s = (StatusIndEventArgs)e;
                 if (NcResult.SubKindEnum.Info_EmailMessageSetChanged == s.Status.SubKind) {
-                    messages.Refresh ();
+                    List<int> deletes;
+                    messages.Refresh (out deletes);
                     adapter.NotifyDataSetChanged ();
                 }
             };

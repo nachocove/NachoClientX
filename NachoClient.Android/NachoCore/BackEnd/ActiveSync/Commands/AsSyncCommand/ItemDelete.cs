@@ -50,10 +50,13 @@ namespace NachoCore.ActiveSync
                 case McPending.Operations.ContactUpdate:
                 case McPending.Operations.TaskUpdate:
                     if (pending.ServerId == ServerId) {
+                        // Item may have already been deleted, but after this op was added to Q.
                         var item = pending.QueryItemUsingServerId ();
-                        McFolder.UnlinkAll (item);
-                        var laf = McFolder.GetLostAndFoundFolder (AccountId);
-                        laf.Link (item);
+                        if (null != item) {
+                            McFolder.UnlinkAll (item);
+                            var laf = McFolder.GetLostAndFoundFolder (AccountId);
+                            laf.Link (item);
+                        }
                         cancelCommand = true;
                         action = McPending.DbActionEnum.Delete;
                     } else {
