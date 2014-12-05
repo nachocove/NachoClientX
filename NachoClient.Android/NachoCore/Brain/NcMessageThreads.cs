@@ -25,21 +25,50 @@ namespace NachoCore.Brain
             return conversationList;
         }
 
-        public static bool AreDifferent (List<McEmailMessageThread> oldList, List<NcEmailMessageIndex> newList)
+        // Return true if lists differ. Return a list of deletions
+        public static bool AreDifferent (List<McEmailMessageThread> oldList, List<NcEmailMessageIndex> newList, out List<int> deletes)
         {
+            deletes = null;
             if (null == oldList) {
                 return (null != newList);
             }
-            if (oldList.Count != newList.Count) {
+            // New list has nore; we don't handle additions yet
+            if (oldList.Count < newList.Count) {
                 return true;
             }
-            for (int n = 0; n < oldList.Count; n++) {
-                var messageId = oldList [n].GetEmailMessageIndex (0);
-                if (messageId != newList [n].Id) {
-                    return true;
+            deletes = new List<int> ();
+            int oldListIndex = 0;
+            int newListIndex = 0;
+            while((oldListIndex < oldList.Count) && (newListIndex < newList.Count)) {
+                var messageId = oldList [oldListIndex].GetEmailMessageIndex (0);
+                if (messageId != newList [newListIndex].Id) {
+                    deletes.Add (oldListIndex);
+                } else {
+                    newListIndex += 1;
+                }
+                oldListIndex += 1;
+            }
+            // Delete the end of list, if any more
+            while (oldListIndex < oldList.Count) {
+                deletes.Add (oldListIndex);
+                oldListIndex += 1;
+            }
+            // Made it to the end of the lists with no deletes
+            if((newList.Count == newListIndex) && (oldList.Count == oldListIndex)) {
+                if (0 == deletes.Count) {
+                    deletes = null;
+                    return false;
                 }
             }
-            return false;
+            // Didn't get to the end of the new list, some adds at the end
+            if (newList.Count != newListIndex) {
+                deletes = null;
+            }
+            // Bug -- iOS crash is resulting list is empty
+            if (0 == newList.Count) {
+                deletes = null;
+            }
+            return true;
         }
     }
 }

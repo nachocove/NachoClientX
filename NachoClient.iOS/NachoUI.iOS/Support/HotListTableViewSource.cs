@@ -515,8 +515,13 @@ namespace NachoClient.iOS
                 targetContentOffset.Y = tableView.RectForRowAtIndexPath (pathForTargetTopCell).Location.Y - 10;
                 return;
             }
+                
+            var nextRow = pathForTargetTopCell.Row + 1;
+            if (nextRow >= RowsInSection (tableView, pathForTargetTopCell.Section)) {
+                return;
+            }
 
-            var next = NSIndexPath.FromRowSection (pathForTargetTopCell.Row + 1, pathForTargetTopCell.Section);
+            var next = NSIndexPath.FromRowSection (nextRow, pathForTargetTopCell.Section);
             if (null == next) {
                 return;
             }

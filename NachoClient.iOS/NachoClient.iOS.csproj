@@ -1768,6 +1768,7 @@
     <BundleResource Include="Resources\gen-delete-all%403x.png" />
     <BundleResource Include="Resources\gen-delete-all%404x.png" />
     <BundleResource Include="Resources\gen-delete-all%406x.png" />
+    <BundleResource Include="Resources\contacts-icn-url%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

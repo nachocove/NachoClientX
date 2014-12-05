@@ -247,8 +247,20 @@ namespace NachoClient.iOS
 
             if (priorityInboxNeedsRefresh) {
                 priorityInboxNeedsRefresh = false;
-                if (priorityInbox.Refresh ()) {
-                    hotListView.ReloadData ();
+                List<int> deletes;
+                if (priorityInbox.Refresh (out deletes)) {
+                    if (null == deletes) {
+                        hotListView.ReloadData ();
+                    } else {
+                        var deletePaths = new List<NSIndexPath> ();
+                        foreach (var i in deletes) {
+                            var path = NSIndexPath.FromItemSection (i, 0);
+                            deletePaths.Add (path);
+                        }
+                        hotListView.BeginUpdates ();
+                        hotListView.DeleteRows (deletePaths.ToArray (), UITableViewRowAnimation.Fade);
+                        hotListView.EndUpdates ();
+                    }
                     callReconfigure = false;
                 }
             }

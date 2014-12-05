@@ -84,7 +84,7 @@ namespace NachoClient.iOS
             aboutUsHeaderLabel.TextAlignment = UITextAlignment.Center;
             aboutUsHeaderLabel.Lines = 4;
             aboutUsHeaderLabel.LineBreakMode = UILineBreakMode.WordWrap;
-            aboutUsHeaderLabel.Text = "Nacho Core believes that productivity software is more than " +
+            aboutUsHeaderLabel.Text = "Nacho Cove believes that productivity software is more than " +
                 "just a great email app with contacts and calendar capability.";
             aboutUsView.AddSubview (aboutUsHeaderLabel);
 

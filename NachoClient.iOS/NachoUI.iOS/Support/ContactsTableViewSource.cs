@@ -348,6 +348,7 @@ namespace NachoClient.iOS
 
             UIButton toggleVipButton = new UIButton (new RectangleF (cell.ContentView.Frame.Right - 30, 10, 20, 20));
             toggleVipButton.Tag = SET_VIP_TAG;
+            toggleVipButton.TouchUpInside += VipButtonTouched;
             view.AddSubview (toggleVipButton);
 
             var titleLabel = new UILabel (new RectangleF (HORIZONTAL_INDENT, 10, cell.Frame.Width - 15 - HORIZONTAL_INDENT - toggleVipButton.Frame.Width - 8, 20));
@@ -387,6 +388,20 @@ namespace NachoClient.iOS
             view.AddSubview (userImageView);
 
             return cell;
+        }
+
+        protected void VipButtonTouched (object sender, EventArgs e)
+        {
+            UIButton vipButton = (UIButton)sender;
+            UITableViewCell containingCell = Util.FindEnclosingTableViewCell (vipButton);
+            UITableView containingTable = Util.FindEnclosingTableView (vipButton);
+            NSIndexPath cellIndexPath = containingTable.IndexPathForCell (containingCell);
+            McContact c = ContactFromIndexPath (containingTable, cellIndexPath);
+
+            c.SetVIP (!c.IsVip);
+            using (var image = UIImage.FromBundle (c.IsVip ? "contacts-vip-checked" : "contacts-vip")) {
+                vipButton.SetImage (image, UIControlState.Normal);
+            }
         }
 
         protected void CallSwipeHandler (McContact contact)
@@ -531,14 +546,10 @@ namespace NachoClient.iOS
                 }
             };
 
-// Using += in Configure will keep adding new handler for each call to Configure, making lots of people become VIPs on a single click
-// Using += in Create (with a contact) will always use the original contact when the button is clicked.
-//            var toggleVipButton = (UIButton)view.ViewWithTag (SET_VIP_TAG); 
-//            toggleVipButton.SetImage (UIImage.FromBundle (contact.IsVip ? "contacts-vip-checked" : "contacts-vip"), UIControlState.Normal); 
-//            toggleVipButton.TouchUpInside += (object sender, EventArgs e) => {
-//                contact.SetVIP (!contact.IsVip);
-//                toggleVipButton.SetImage (UIImage.FromBundle (contact.IsVip ? "contacts-vip-checked" : "contacts-vip"), UIControlState.Normal);
-//            };
+            var toggleVipButton = (UIButton)view.ViewWithTag (SET_VIP_TAG);
+            using (var image = UIImage.FromBundle (contact.IsVip ? "contacts-vip-checked" : "contacts-vip")) {
+                toggleVipButton.SetImage (image, UIControlState.Normal);
+            }
         }
 
         protected void ConfigureLabelView (UILabel labelView, McContact contact, int colorIndex)

@@ -137,7 +137,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public void MultiSelectChange(MessageTableViewSource source, int count)
+        public void MultiSelectChange (MessageTableViewSource source, int count)
         {
             archiveButton.Enabled = (count != 0);
             deleteButton.Enabled = (count != 0);
@@ -160,10 +160,22 @@ namespace NachoClient.iOS
         public void ReloadDataMaintainingPosition ()
         {
             NachoCore.Utils.NcAbate.HighPriority ("MessageListViewController ReloadDataMaintainingPosition");
-            if (messageSource.RefreshEmailMessages ()) {
-                ReloadCapture.Start ();
-                TableView.ReloadData ();
-                ReloadCapture.Stop ();
+            List<int> deletes;
+            if (messageSource.RefreshEmailMessages (out deletes)) {
+                if (null == deletes) {
+                    ReloadCapture.Start ();
+                    TableView.ReloadData ();
+                    ReloadCapture.Stop ();
+                } else {
+                    var deletePaths = new List<NSIndexPath> ();
+                    foreach (var i in deletes) {
+                        var path = NSIndexPath.FromItemSection (i, 0);
+                        deletePaths.Add (path);
+                    }
+                    TableView.BeginUpdates ();
+                    TableView.DeleteRows (deletePaths.ToArray (), UITableViewRowAnimation.Fade);
+                    TableView.EndUpdates ();
+                }
             } else {
                 messageSource.ReconfigureVisibleCells (TableView);
             }

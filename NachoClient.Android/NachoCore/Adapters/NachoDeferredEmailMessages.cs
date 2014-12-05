@@ -15,16 +15,17 @@ namespace NachoCore
 
         public NachoDeferredEmailMessages ()
         {
-            Refresh ();
+            List <int> deletes;
+            Refresh (out deletes);
         }
 
-        public bool Refresh ()
+        public bool Refresh (out List<int> deletes)
         {
             var list = McEmailMessage.QueryDeferredMessageItemsAllAccounts ();
             if (null == list) {
                 list = new List<NcEmailMessageIndex> ();
             }
-            if (!NcMessageThreads.AreDifferent (threadList, list)) {
+            if (!NcMessageThreads.AreDifferent (threadList, list, out deletes)) {
                 return false;
             }
             threadList = NcMessageThreads.ThreadByConversation (list);

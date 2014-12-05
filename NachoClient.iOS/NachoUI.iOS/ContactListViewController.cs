@@ -75,11 +75,11 @@ namespace NachoClient.iOS
             var addContactButton = new UIBarButtonItem (UIBarButtonSystemItem.Add);
             addContactButton.TintColor = A.Color_NachoBlue;
 
-            //TODO: Implement Add Contact
             NavigationItem.RightBarButtonItem = addContactButton;
             NavigationItem.LeftBarButtonItem = searchButton;
 
             NavigationController.NavigationBar.Translucent = false;
+            NavigationItem.Title = "Contacts";
 
             addContactButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("ContactsToContactEdit", new SegueHolder (null));
