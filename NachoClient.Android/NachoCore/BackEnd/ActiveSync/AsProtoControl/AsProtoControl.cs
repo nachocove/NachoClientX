@@ -714,7 +714,7 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.PkWait,
                         },
                         On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNopOrPick, ActSetsState = true },
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoPick, State = (uint)Lst.Pick },
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoPick, State = (uint)Lst.Pick },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoPick, State = (uint)Lst.Pick },
@@ -912,17 +912,19 @@ namespace NachoCore.ActiveSync
         }
 
         // Methods callable by the owner.
+        // Keep Execute() harmless if it is called while already executing.
         public override void Execute ()
         {
             if (NachoPlatform.NetStatusStatusEnum.Up != NcCommStatus.Instance.Status) {
                 Log.Warn (Log.LOG_AS, "Execute called while network is down.");
                 return;
             }
-            PendingOnTimeTimer = new NcTimer ("AsProtoControl", state => {
-                McPending.MakeEligibleOnTime (Account.Id);
-            }, null, 1000, 2000);
-            PendingOnTimeTimer.Stfu = true;
-
+            if (null == PendingOnTimeTimer) {
+                PendingOnTimeTimer = new NcTimer ("AsProtoControl", state => {
+                    McPending.MakeEligibleOnTime (Account.Id);
+                }, null, 1000, 2000);
+                PendingOnTimeTimer.Stfu = true;
+            }
             // All states are required to handle the Launch event gracefully.
             Sm.PostEvent ((uint)SmEvt.E.Launch, "ASPCEXE");
         }
@@ -1067,13 +1069,28 @@ namespace NachoCore.ActiveSync
             Cmd.Execute (Sm);
         }
 
+        private void DoNopOrPick ()
+        {
+            // If we are parked, the Cmd has been set to null.
+            // Otherwise, it has the last commaned executed (or still executing).
+            if (null == Cmd) {
+                // We are not running, go figure out what to do.
+                DoPick ();
+                Sm.State = (uint)Lst.Pick;
+            } else {
+                // We are running, ignore the Launch, stay in the current state.
+            }
+        }
+
         private void DoPick ()
         {
             // Due to threading race condition we must clear any event possibly posted
             // by a non-cancelled-in-time await.
             // TODO: find a way to detect already running op and log an error.
             // TODO: couple ClearEventQueue with PostEvent inside SM mutex.
-            SetCmd (null);
+            if (null != Cmd) {
+                Cmd.Cancel ();
+            }
             Sm.ClearEventQueue ();
             var pack = SyncStrategy.Pick ();
             var transition = pack.Item1;
