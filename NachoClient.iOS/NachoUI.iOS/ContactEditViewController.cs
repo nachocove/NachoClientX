@@ -31,9 +31,16 @@ namespace NachoClient.iOS
             IMAddress,
             Relationship,
         }
+
+        public enum ControllerType
+        {
+            Add,
+            Edit,
+        }
+
+        public ControllerType controllerType = ControllerType.Edit;
+
         protected BlockType editingBlockType;
-
-
 
         protected const float MORE_BUTTON_INDENT = 280;
         protected const float HORIZONTAL_INDENT = 30;
@@ -157,7 +164,15 @@ namespace NachoClient.iOS
 
         public override void ViewDidLoad ()
         {
-            CopyOriginalContact ();
+            switch (controllerType) {
+            case ControllerType.Edit:
+                CopyOriginalContact ();
+                break;
+            case ControllerType.Add:
+                CreateNewContact ();
+                break;
+            }
+
             base.ViewDidLoad ();
         }
 
@@ -170,8 +185,6 @@ namespace NachoClient.iOS
                 return this.NavigationController.TopViewController == this;
             }
         }
-
-
 
         protected override void CreateViewHierarchy ()
         {
@@ -186,7 +199,14 @@ namespace NachoClient.iOS
             backButton.TintColor = A.Color_NachoBlue;
             NavigationItem.SetLeftBarButtonItem (backButton, true);
 
-            NavigationItem.Title = "Edit Contact";
+            switch (controllerType) {
+            case ControllerType.Add:
+                NavigationItem.Title = "Add Contact";
+                break;
+            case ControllerType.Edit:
+                NavigationItem.Title = "Edit Contact";
+                break;
+            }
 
             doneButton.Title = "Save";
             doneButton.Clicked += DoneButtonClicked;
@@ -216,7 +236,7 @@ namespace NachoClient.iOS
                 contactCopy.GetDisplayName () + " " + contactCopy.Suffix;
             contentView.AddSubview (contactNameLabel);
 
-            yOffset = contactNameLabel.Frame.Bottom + 5;
+            yOffset = contactNameLabel.Frame.Bottom + 10;
 
             UIView headerView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 110));
             headerView.BackgroundColor = UIColor.White;
@@ -564,8 +584,10 @@ namespace NachoClient.iOS
             }
 
             if (null != deleteContactButton) {
-                AdjustY (deleteContactButton, yOffset);
-                yOffset = deleteContactButton.Frame.Bottom + 20;
+                if (!deleteContactButton.Hidden) {
+                    AdjustY (deleteContactButton, yOffset);
+                    yOffset = deleteContactButton.Frame.Bottom + 20;
+                }
             }
 
             scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
@@ -712,6 +734,13 @@ namespace NachoClient.iOS
             return addButton;
         }
 
+        protected void CreateNewContact ()
+        {
+            contactCopy = new McContact ();
+            contactCopy.AccountId = LoginHelpers.GetCurrentAccountId ();
+            contactCopy.Source = McAbstrItem.ItemSource.ActiveSync;
+            contactCopy.Insert ();
+        }
 
         protected void CopyOriginalContact ()
         {
@@ -901,6 +930,7 @@ namespace NachoClient.iOS
             alert.CancelButtonIndex = 0;
             alert.Dismissed += (object alertSender, UIButtonEventArgs alertEvent) => {
                 if (1 == alertEvent.ButtonIndex) {
+                    contactCopy.Delete();
                     NavigationController.PopViewControllerAnimated (true);
                 }
             };
@@ -911,24 +941,40 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
             if(UpdateContact()){
-                SaveNotesText ();
-                NcModel.Instance.RunInTransaction (() => {
-                    contact.DeleteAncillary ();
-                });
-                contact.Addresses.Clear ();
-                contact.Categories.Clear();
-                contact.EmailAddresses.Clear();
-                contact.Relationships.Clear();
-                contact.PhoneNumbers.Clear();
-                contact.IMAddresses.Clear();
-                contact.Dates.Clear();
-                contact.Update();    
-                ContactsHelper.CopyContact(contactCopy, ref contact);
-                contact.Update();
-                NachoCore.BackEnd.Instance.UpdateContactCmd (contact.AccountId, contact.Id);
-                contactCopy.Delete ();
+                switch (controllerType) {
+                case ControllerType.Edit:
+                    SaveNotesText ();
+                    NcModel.Instance.RunInTransaction (() => {
+                        contact.DeleteAncillary ();
+                    });
+                    contact.Addresses.Clear ();
+                    contact.Categories.Clear ();
+                    contact.EmailAddresses.Clear ();
+                    contact.Relationships.Clear ();
+                    contact.PhoneNumbers.Clear ();
+                    contact.IMAddresses.Clear ();
+                    contact.Dates.Clear ();
+                    contact.Update ();    
+                    ContactsHelper.CopyContact (contactCopy, ref contact);
+                    contact.Update ();
+                    NachoCore.BackEnd.Instance.UpdateContactCmd (contact.AccountId, contact.Id);
+                    contactCopy.Delete ();
+                    break;
+                case ControllerType.Add:
+                    SaveNotesText ();
+                    McFolder f = McFolder.GetDefaultContactFolder (contactCopy.AccountId);
+                    f.Link (contactCopy);
+                    NachoCore.BackEnd.Instance.CreateContactCmd (contactCopy.AccountId,
+                        contactCopy.Id, f.Id);
+                    break;
+                }
                 NavigationController.PopViewControllerAnimated (true);
             } else {
+                UIAlertView alert = new UIAlertView ();
+                alert.Title = "Email Entered Incorrectly";
+                alert.Message = "One (or more) of the email addresses you entered is not entered in a valid format.";
+                alert.AddButton ("Ok");
+                alert.Show ();
                 LayoutView();
             }
         }
@@ -943,6 +989,7 @@ namespace NachoClient.iOS
                     ,McAbstrFileDesc.BodyTypeEnum.PlainText_1,
                     notesTextView.Text).Id;
             }
+            contactCopy.Update ();
         }
 
         protected string GetNotesText ()
@@ -1343,6 +1390,10 @@ namespace NachoClient.iOS
             McBody contactBody = McBody.QueryById<McBody> (contactCopy.BodyId);
             if (null != contactBody) {
                 notesTextView.Text =  contactBody.GetContentsString ();
+            }
+
+            if ( ControllerType.Add == controllerType) {
+                deleteContactButton.Hidden = true;
             }
 
             LayoutView ();

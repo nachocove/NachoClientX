@@ -76,7 +76,7 @@ namespace NachoClient.iOS
             addContactButton.TintColor = A.Color_NachoBlue;
 
             //TODO: Implement Add Contact
-            //NavigationItem.RightBarButtonItem = addContactButton;
+            NavigationItem.RightBarButtonItem = addContactButton;
             NavigationItem.LeftBarButtonItem = searchButton;
 
             NavigationController.NavigationBar.Translucent = false;
@@ -151,6 +151,8 @@ namespace NachoClient.iOS
                 return;
             }
             if (segue.Identifier.Equals ("ContactsToContactEdit")) {
+                var destinationViewController = (ContactEditViewController)segue.DestinationViewController;
+                destinationViewController.controllerType = ContactEditViewController.ControllerType.Add;
                 return;
             }
             if (segue.Identifier.Equals ("SegueToNachoNow")) {
