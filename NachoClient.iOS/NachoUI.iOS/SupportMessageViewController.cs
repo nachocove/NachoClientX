@@ -29,8 +29,6 @@ namespace NachoClient.iOS
 
         protected const int GRAY_BACKGROUND_VIEW_TAG = 200;
         protected const int SENDING_SPINNER_TAG = 201;
-        protected const int CONFIRM_SENT_ALERT_TAG = 202;
-        protected const int CONFIRM_NOT_SENT_ALERT_TAG = 203;
         protected const double WAIT_TIMER_LENGTH = 12;
 
         protected NSTimer sendMessageTimer;
@@ -361,20 +359,16 @@ namespace NachoClient.iOS
 
                 if (didSend) {
                     UIAlertView confirmSentAlert = new UIAlertView();
-                    View.AddSubview (confirmSentAlert);
                     confirmSentAlert.Title = "Message Successfully Sent";
                     confirmSentAlert.Message = "We have received your message and will respond as quickly as possible. Thank you for your feedback.";
                     confirmSentAlert.AddButton("Close");
                     confirmSentAlert.Clicked += DismissFromAlert;
-                    confirmSentAlert.Tag = CONFIRM_SENT_ALERT_TAG;
                     confirmSentAlert.Show ();
                 } else {
                     UIAlertView sendFailedAlert = new UIAlertView();
-                    View.AddSubview (sendFailedAlert);
                     sendFailedAlert.Title = "Message Was Not Sent";
                     sendFailedAlert.Message = "There was a delay in sending the message. We will continue trying to send the message in the background.";
                     sendFailedAlert.AddButton("Close");
-                    sendFailedAlert.Tag = CONFIRM_NOT_SENT_ALERT_TAG;
                     sendFailedAlert.Clicked += DismissFromAlert;
                     sendFailedAlert.Show ();
                 }
@@ -384,25 +378,16 @@ namespace NachoClient.iOS
         protected void DismissFromAlert (object sender, UIButtonEventArgs e)
         {
             this.DismissViewController (true, null);
+
+            UIAlertView alert = (UIAlertView)sender;
+            alert.Clicked -= DismissFromAlert;
+            alert = null;
         }
 
         protected override void Cleanup ()
         {
             sendButton.Clicked -= SendButtonClicked;
             sendButton = null;
-
-            UIAlertView confirmSentAlert = (UIAlertView)View.ViewWithTag (CONFIRM_SENT_ALERT_TAG);
-            UIAlertView confirmNotSentAlert = (UIAlertView)View.ViewWithTag (CONFIRM_NOT_SENT_ALERT_TAG);
-
-            if (null != confirmSentAlert) {
-                confirmSentAlert.Clicked -= DismissFromAlert;
-                confirmSentAlert = null;
-            }
-
-            if (null != confirmNotSentAlert) {
-                confirmNotSentAlert.Clicked -= DismissFromAlert;
-                confirmNotSentAlert = null;
-            }
         }
     }
 }
