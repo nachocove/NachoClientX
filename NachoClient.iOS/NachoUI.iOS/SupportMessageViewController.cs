@@ -31,7 +31,7 @@ namespace NachoClient.iOS
         protected const int SENDING_SPINNER_TAG = 201;
         protected const int CONFIRM_SENT_ALERT_TAG = 202;
         protected const int CONFIRM_NOT_SENT_ALERT_TAG = 203;
-        protected const double WAIT_TIMER_LENGTH = 10;
+        protected const double WAIT_TIMER_LENGTH = 12;
 
         protected NSTimer sendMessageTimer;
         protected bool hasDisplayedStatusMessage = false;
