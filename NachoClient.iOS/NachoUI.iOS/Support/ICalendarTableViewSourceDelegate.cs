@@ -11,6 +11,8 @@ namespace NachoClient.iOS
 
         void SendRunningLateMessage (int calendarIndex);
 
+        void ForwardInvite (int calendarIndex);
+
         void CalendarTableViewScrollingEnded();
     }
 }

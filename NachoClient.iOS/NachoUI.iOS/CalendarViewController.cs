@@ -146,6 +146,16 @@ namespace NachoClient.iOS
                 return;
             }
 
+            /// Event Forward WIP
+//            if (segue.Identifier.Equals ("CalendarToEmailCompose")) {
+//                var dc = (MessageComposeViewController)segue.DestinationViewController;
+//                var holder = sender as SegueHolder;
+//                var c = holder.value as McCalendar;
+//                dc.SetCalendarInvite (c);
+//                dc.SetEmailPresetFields (null, "FWD: " + c.Subject, "");
+//                return;
+//            }
+
             if (segue.Identifier == "CalendarToEditEventView") {
                 var vc = (EditEventViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
@@ -892,15 +902,19 @@ namespace NachoClient.iOS
         // ICalendarTableViewSourceDelegate
         public void SendRunningLateMessage (int eventId)
         {
-            var e = McEvent.QueryById<McEvent> (eventId);
-            if (null == e) {
-                return;  // may be deleted
+            var c = CalendarHelper.GetMcCalendarRootForEvent (eventId);
+            if (null != c) {
+                PerformSegue ("CalendarToEmailCompose", new SegueHolder (c));
             }
-            var c = McCalendar.QueryById<McCalendar> (e.CalendarId);
-            if (null == c) {
-                return; // may be deleted
-            }
-            PerformSegue ("CalendarToEmailCompose", new SegueHolder (c));
+        }
+
+        // ICalendarTableViewSourceDelegate
+        public void ForwardInvite (int eventId)
+        {
+//            var c = CalendarHelper.GetMcCalendarRootForEvent (eventId);
+//            if (null != c) {
+//                PerformSegue ("CalendarToEmailCompose", new SegueHolder (c));
+//            }
         }
 
         // ICalendarTableViewSourceDelegate
