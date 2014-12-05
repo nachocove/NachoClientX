@@ -84,11 +84,11 @@ namespace NachoClient.iOS
             return this.messageThreads.GetEmailThread (0);
         }
 
-        public bool RefreshEmailMessages ()
+        public bool RefreshEmailMessages (out List<int> deletes)
         {
             RefreshCapture.Start ();
             messageCache.Clear ();
-            var didRefresh = messageThreads.Refresh ();
+            var didRefresh = messageThreads.Refresh (out deletes);
             RefreshCapture.Stop ();
             return didRefresh;
         }
