@@ -83,7 +83,7 @@ namespace NachoClient.iOS
                 webView.Tag = WEB_VIEW_TAG;
                 interiorView.Add (webView);
                 contentView.AddSubview (interiorView);
-                if (hasNetworkConnection ()) {
+                if (NachoCore.Utils.Network_Helpers.HasNetworkConnection()) {
                     urlSourceCode = new WebClient ().DownloadString (url);
                     webView.LoadHtmlString (urlSourceCode, new NSUrl("about:blank"));
                     webView.LoadError += HandleLoadError;
@@ -123,16 +123,7 @@ namespace NachoClient.iOS
                 webView.LoadHtmlString ("<h2>Sorry, you will need an internet connection to view this information.&nbsp;</h2>", new NSUrl("about:blank"));
             }
         }
-
-        public bool hasNetworkConnection ()
-        {
-            if (NcCommStatus.Instance.Status != NetStatusStatusEnum.Up) {
-                return false;
-            } else {
-                return true;
-            }
-        }
-
+            
         protected override void ConfigureAndLayout ()
         {
 
