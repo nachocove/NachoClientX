@@ -503,6 +503,16 @@ namespace Test.Common
         }
 
         [Test]
+        public void BodyTouch()
+        {
+            var mds = new MockDataSource ();
+            CreateMcBody (mds, 1);
+            var body = McBody.QueryById<McBody> (1);
+            Assert.IsNotNull (body);
+            body.Touch ();
+        }
+
+        [Test]
         public void EmailCategoriesTest ()
         {
             var mds = new MockDataSource ();

@@ -58,6 +58,7 @@ namespace NachoClient.iOS
             }
 
             if (null != evt.UID) {
+                // TODO: Do McExceptions have their own status?
                 calendarItem = McCalendar.QueryByUID (evt.UID);
             }
 
@@ -703,6 +704,13 @@ namespace NachoClient.iOS
                 // TODO Give the user a chance to enter some text. For now, the message body is empty.
                 var mimeBody = CalendarHelper.CreateMime ("", iCalPart, new List<McAttachment> ());
                 CalendarHelper.SendMeetingResponse (account, (McCalendar)calendarItem, mimeBody, status);
+            }
+
+            if (0 != calendarItem.BodyId) {
+                var body = McBody.QueryById<McBody> (calendarItem.BodyId);
+                if (null != body) {
+                    body.Touch ();  // KLUDGE: Message display optimization looks a LastModified
+                }
             }
         }
 

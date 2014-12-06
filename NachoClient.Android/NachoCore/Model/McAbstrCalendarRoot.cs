@@ -149,6 +149,7 @@ namespace NachoCore.Model
                 var body = McBody.QueryById<McBody> (BodyId);
                 body.UpdateData (cachedDescription);
                 body.BodyType = McAbstrFileDesc.BodyTypeEnum.PlainText_1;
+                body.Update ();
             }
             descriptionWasChanged = false;
             cachedDescription = null;

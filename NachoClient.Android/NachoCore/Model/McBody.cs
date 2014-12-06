@@ -70,5 +70,12 @@ namespace NachoCore.Model
             }
             return body.GetContentsString ();
         }
+
+        public void Touch()
+        {
+            LastModified = DateTime.UtcNow;
+            NcModel.Instance.Db.Query<McBody> ("UPDATE McBody SET LastModified = ?", LastModified);
+        }
+
     }
 }
