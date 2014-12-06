@@ -182,9 +182,6 @@
     <Reference Include="MimeKit">
       <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\MonoTouch\MimeKit.dll</HintPath>
     </Reference>
-    <Reference Include="DnDns.iOS">
-      <HintPath>..\..\DnDns\SourceCode\DnDns\DnDns.iOS\bin\Release\DnDns.iOS.dll</HintPath>
-    </Reference>
     <Reference Include="HockeyApp.iOS">
       <HintPath>HockeyApp\hockeyappios-3.5.5\lib\ios\HockeyApp.iOS.dll</HintPath>
     </Reference>
@@ -1816,6 +1813,10 @@
     <ProjectReference Include="..\..\ModernHttpClient\src\ModernHttpClient\ModernHttpClient.iOS.csproj">
       <Project>{0F2A1CC8-4168-4CB4-B334-28C28BA51ECB}</Project>
       <Name>ModernHttpClient.iOS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\DnDns\SourceCode\DnDns\DnDns.iOS\DnDns.iOS.csproj">
+      <Project>{6F68E3AD-B80E-4980-8476-7ADDFFFF6672}</Project>
+      <Name>DnDns.iOS</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
