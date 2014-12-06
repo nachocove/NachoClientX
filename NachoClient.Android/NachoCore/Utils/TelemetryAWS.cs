@@ -111,6 +111,18 @@ namespace NachoCore.Utils
                 } catch (AmazonServiceException e) {
                     Console.WriteLine ("AWS service exception {0}", e);
                     Thread.Sleep (5000);
+                } catch (AggregateException e) {
+                    // Some code path wraps the exception with an AggregateException. Peel the onion
+                    if (e.InnerException is TaskCanceledException) {
+                        if (NcTask.Cts.Token.IsCancellationRequested) {
+                            throw;
+                        }
+                        Thread.Sleep (5000);
+                    } else if (e.InnerException is AmazonServiceException) {
+                        Console.WriteLine ("AWS service inner exception {0}", e.InnerException);
+                    } else {
+                        throw;
+                    }
                 }
             }
         }
