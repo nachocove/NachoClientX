@@ -623,15 +623,6 @@ namespace NachoClient.iOS
             }
         }
 
-        public bool hasNetworkConnection ()
-        {
-            if (NcCommStatus.Instance.Status != NetStatusStatusEnum.Up) {
-                return false;
-            } else {
-                return true;
-            }
-        }
-
         public bool canUserConnect ()
         {
             if (!haveEnteredEmailAndPass ()) {
@@ -643,7 +634,7 @@ namespace NachoClient.iOS
                 return false;
             }
 
-            if (!hasNetworkConnection ()) {
+            if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection()) {
                 ConfigureView (LoginStatus.NoNetwork);
                 return false;
             }

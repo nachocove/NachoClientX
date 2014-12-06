@@ -1,5 +1,6 @@
 using System;
 using NachoCore.Model;
+using NachoPlatform;
 
 namespace NachoCore.Utils
 {
@@ -21,6 +22,19 @@ namespace NachoCore.Utils
             return false;
         }
     }
+
+    public static class Network_Helpers
+    {
+        public static bool HasNetworkConnection ()
+        {
+            if (NcCommStatus.Instance.Status != NetStatusStatusEnum.Up) {
+                return false;
+            } else {
+                return true;
+            }
+        }
+    }
+
 
     public static class string_Helpers
     {

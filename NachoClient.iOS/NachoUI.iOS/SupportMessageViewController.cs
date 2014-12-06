@@ -257,7 +257,7 @@ namespace NachoClient.iOS
             UITextField contactInfoTextField = (UITextField)View.ViewWithTag(CONTACT_TEXTFIELD_TAG);
             UITextView messageInfoTextView = (UITextView)View.ViewWithTag (MESSAGEBODY_VIEW_TAG);
 
-            if (!hasNetworkConnection ()) {
+            if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection()) {
                 UIAlertView badNetworkConnection = new UIAlertView ("Network Error",
                     "There is an issue with the network and we cannot send this message. Please try again when you have a connection.",
                     null,
@@ -297,15 +297,6 @@ namespace NachoClient.iOS
                     grayBackgroundView.Alpha = 1.0f;
                 });
                 sendingActivityIndicator.StartAnimating ();
-            }
-        }
-
-        public bool hasNetworkConnection ()
-        {
-            if (NcCommStatus.Instance.Status != NetStatusStatusEnum.Up) {
-                return false;
-            } else {
-                return true;
             }
         }
 
