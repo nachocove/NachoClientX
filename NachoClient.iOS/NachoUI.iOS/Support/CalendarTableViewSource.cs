@@ -301,13 +301,13 @@ namespace NachoClient.iOS
                     // FIXME
                     break;
                 case FORWARD_TAG:
-                    // FIXME
+                    ForwardInvite (indexPath);
                     break;
                 case DIAL_IN_TAG:
                     // FIXME
                     break;
                 case LATE_TAG:
-                    SendRunningLateMessage(indexPath);
+                    SendRunningLateMessage (indexPath);
                     break;
                 default:
                     throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action tag {0}", tag));
@@ -493,8 +493,13 @@ namespace NachoClient.iOS
             }
         }
 
-
-
+        public void ForwardInvite (NSIndexPath indexPath)
+        {
+            var e = calendar.GetEvent (indexPath.Section, indexPath.Row);
+            if (null != e) {
+                owner.ForwardInvite (e.Id);
+            }
+        }
 
         public override void DraggingStarted (UIScrollView scrollView)
         {

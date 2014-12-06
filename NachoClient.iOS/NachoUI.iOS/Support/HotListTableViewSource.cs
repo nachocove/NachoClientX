@@ -346,7 +346,7 @@ namespace NachoClient.iOS
             previewViewHeight -= 16; // more button
 
             var previewView = view.ViewWithTag (PREVIEW_TAG) as BodyView;
-            previewView.Configure (message, isRefresh);
+            previewView.Configure (message, isRefresh, true);
             previewView.Resize (new RectangleF (12, 0 + previewViewAdjustment, previewView.Frame.Width, previewViewHeight));
 
         }

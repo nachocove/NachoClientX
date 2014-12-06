@@ -841,6 +841,141 @@ namespace NachoClient
             return stream;
         }
 
+        /// ///////////
+        // Event View Helpers
+        /// ///////////
+        public static void AddButtonImage (UIButton button, string imageName, UIControlState buttonState)
+        {
+            using (var buttonImage = UIImage.FromBundle (imageName)) {
+                button.SetImage (buttonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal), buttonState);
+            }
+        }
+
+        public static void AddTextLabel (float xOffset, float yOffset, float width, float height, string text, UIView parentView)
+        {
+            var textLabel = new UILabel (new RectangleF (xOffset, yOffset, width, height));
+            textLabel.Text = text;
+            textLabel.Font = A.Font_AvenirNextRegular14;
+            textLabel.TextColor = A.Color_NachoLightText;
+            parentView.AddSubview (textLabel);
+        }
+
+        public static void AddTextLabelWithImageView (float yOffset, string text, string imageName, EventViewController.TagType tag, UIView parentView)
+        {
+            var view = new UIView (new RectangleF (0, yOffset, parentView.Frame.Width, 16));
+            view.Tag = (int)tag;
+
+            var textLabel = new UILabel (new RectangleF (42, 0, 100, 16));
+            textLabel.Text = text;
+            textLabel.Font = A.Font_AvenirNextMedium12;
+            textLabel.TextColor = A.Color_NachoLightText;
+            view.AddSubview (textLabel);
+
+            var imageView = new UIImageView (new RectangleF (18, 0, 16, 16));
+            using (var image = UIImage.FromBundle (imageName)) {
+                imageView.Image = image;
+            }
+            view.AddSubview (imageView);
+
+            parentView.AddSubview (view);
+        }
+
+        public static void AddDetailTextLabel (float xOffset, float yOffset, float width, float height, EventViewController.TagType tag, UIView parentView)
+        {
+            var textLabel = new UILabel (new RectangleF (xOffset, yOffset, width, height));
+            textLabel.Font = A.Font_AvenirNextRegular14;
+            textLabel.TextColor = A.Color_NachoDarkText;
+            textLabel.Tag = (int)tag;
+            parentView.AddSubview (textLabel);
+        }
+
+        public static void CreateAttendeeButton (float attendeeImageDiameter, float spacing, float titleOffset, McAttendee attendee, int attendeeNum, bool isOrganizer, UIView parentView)
+        {
+            var attendeeButton = UIButton.FromType (UIButtonType.RoundedRect);
+            attendeeButton.Layer.CornerRadius = attendeeImageDiameter / 2;
+            attendeeButton.Layer.MasksToBounds = true;
+            attendeeButton.Frame = new RectangleF (42 + spacing, 10 + titleOffset, attendeeImageDiameter, attendeeImageDiameter);
+            var userImage = Util.ImageOfSender (LoginHelpers.GetCurrentAccountId(), attendee.Email);
+
+            if (null != userImage) {
+                using (var rawImage = userImage) {
+                    using (var originalImage = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
+                        attendeeButton.SetImage (originalImage, UIControlState.Normal);
+                    }
+                }
+                attendeeButton.Layer.BorderWidth = .25f;
+                attendeeButton.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
+            } else {
+                attendeeButton.Font = A.Font_AvenirNextRegular17;
+                attendeeButton.ShowsTouchWhenHighlighted = true;
+                attendeeButton.SetTitleColor (UIColor.White, UIControlState.Normal);
+                attendeeButton.SetTitleColor (UIColor.LightGray, UIControlState.Selected);
+                attendeeButton.Tag = (int)EventViewController.TagType.EVENT_ATTENDEE_TAG + attendeeNum;
+                attendeeButton.SetTitle (Util.NameToLetters (attendee.DisplayName), UIControlState.Normal);
+                attendeeButton.Layer.BackgroundColor = Util.GetCircleColorForEmail (attendee.Email, LoginHelpers.GetCurrentAccountId()).CGColor;
+            }
+
+            // There are future plans to do something with these buttons, but right now
+            // they don't have any behavior.  So pass their events to the parent view.
+            attendeeButton.UserInteractionEnabled = false;
+            parentView.AddSubview (attendeeButton);
+
+            var attendeeName = new UILabel (new RectangleF (42 + spacing, 65 + titleOffset, attendeeImageDiameter, 15));
+            attendeeName.Font = A.Font_AvenirNextRegular14;
+            attendeeName.TextColor = UIColor.LightGray;
+            attendeeName.Tag = (int)EventViewController.TagType.EVENT_ATTENDEE_LABEL_TAG + attendeeNum;
+            attendeeName.TextAlignment = UITextAlignment.Center;
+            attendeeName.Text = Util.GetFirstName (attendee.DisplayName);
+            parentView.AddSubview (attendeeName);
+
+            // If the current user is the organizer, then construct a little circle in the
+            // lower right corner of the main attendee circle, where the attendee's status
+            // can be displayed.  If the user is not the organizer, then the attendees'
+            // status is not known, so we don't want to display a blank circle.
+            if (isOrganizer) {
+                var responseView = new UIView (new RectangleF (42 + spacing + 27, 37 + titleOffset, 20, 20));
+                responseView.Tag = (int)EventViewController.TagType.EVENT_ATTENDEE_LABEL_TAG + attendeeNum + 200;
+                responseView.BackgroundColor = UIColor.White;
+                responseView.Layer.CornerRadius = 10;
+                parentView.AddSubview (responseView);
+                var circleView = new UIView (new RectangleF (2.5f, 2.5f, 15, 15));
+                circleView.BackgroundColor = UIColor.White;
+                circleView.Layer.CornerRadius = 15 / 2;
+                circleView.Layer.BorderColor = A.Color_NachoLightGrayBackground.CGColor;
+                circleView.Layer.BorderWidth = 1;
+                responseView.AddSubview (circleView);
+                var responseImageView = new UIImageView (new RectangleF (2.5f, 2.5f, 15, 15));
+                responseImageView.Tag = (int)EventViewController.TagType.EVENT_ATTENDEE_LABEL_TAG + attendeeNum + 100;
+                using (var image = GetImageForAttendeeResponse (attendee.AttendeeStatus)) {
+                    if (null != image) {
+                        responseImageView.Image = image;
+                    }
+                }
+                responseView.AddSubview (responseImageView);
+                responseView.Hidden = (null != responseImageView.Image ? false : true);
+            }
+        }
+
+
+        /// <summary>
+        /// Return the appropriate icon for the given attendee status.
+        /// </summary>
+        public static UIImage GetImageForAttendeeResponse (NcAttendeeStatus status)
+        {
+            switch (status) {
+            case NcAttendeeStatus.Accept:
+                return UIImage.FromBundle ("btn-mtng-accept-pressed");
+            case NcAttendeeStatus.Tentative:
+                return UIImage.FromBundle ("btn-mtng-tenative-pressed");
+            case NcAttendeeStatus.Decline:
+                return UIImage.FromBundle ("btn-mtng-decline-pressed");
+            default:
+                return null;
+            }
+        }
+        /// ///////////
+        /// ///////////
+
         public static void CallContact (string segueIdentifier, McContact contact, NcUIViewController owner)
         {
             if (0 == contact.PhoneNumbers.Count) {

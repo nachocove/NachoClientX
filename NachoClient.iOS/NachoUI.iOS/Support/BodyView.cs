@@ -25,6 +25,8 @@ namespace NachoClient.iOS
         // Which kind of BodyView is this?
         private bool variableHeight;
 
+        private bool isOnNow;
+
         // The item whose body is being shown
         private McAbstrItem item = null;
 
@@ -106,7 +108,7 @@ namespace NachoClient.iOS
         /// Display the body of the given item. The current contents of the BodyView are discarded.
         /// </summary>
         /// <param name="item">The item whose body should be displayed.</param>
-        public void Configure (McAbstrItem item, bool isRefresh)
+        public void Configure (McAbstrItem item, bool isRefresh, bool isOnNow)
         {
             this.item = item;
 
@@ -152,7 +154,7 @@ namespace NachoClient.iOS
                 RenderRtfString (body.GetContentsString ());
                 break;
             case McAbstrFileDesc.BodyTypeEnum.MIME_4:
-                RenderMime (body);
+                RenderMime (body, isOnNow);
                 break;
             default:
                 Log.Error (Log.LOG_UI, "Body {0} has an unknown body type {1}.", body.Id, (int)body.BodyType);
@@ -185,7 +187,7 @@ namespace NachoClient.iOS
             var refreshedItem = RefreshItem ();
             if (null != refreshedItem) {
 
-                Configure (refreshedItem, false);
+                Configure (refreshedItem, false, isOnNow);
 
                 // Configure() normally doesn't call the parent view's callback. But because
                 // the download completed in the background, that callback needs to be called.
@@ -527,15 +529,15 @@ namespace NachoClient.iOS
             }
         }
 
-        private void RenderCalendarPart (MimePart part)
+        private void RenderCalendarPart (MimePart part, bool isOnNow)
         {
-            var calView = new BodyCalendarView (yOffset, preferredWidth, part);
+            var calView = new BodyCalendarView (yOffset, preferredWidth, part, isOnNow);
             AddSubview (calView);
             childViews.Add (calView);
             yOffset += calView.Frame.Height;
         }
 
-        private void RenderMime (McBody body)
+        private void RenderMime (McBody body, bool isOnNow)
         {
             var message = MimeHelpers.LoadMessage (body);
             MimeHelpers.DumpMessage (message);
@@ -547,7 +549,7 @@ namespace NachoClient.iOS
                 if (part.ContentType.Matches ("text", "html")) {
                     RenderHtmlPart (part);
                 } else if (part.ContentType.Matches ("text", "calendar")) {
-                    RenderCalendarPart (part);
+                    RenderCalendarPart (part, isOnNow);
                 } else if (part.ContentType.Matches ("text", "rtf")) {
                     RenderRtfPart (part);
                 } else if (part.ContentType.Matches ("text", "*")) {

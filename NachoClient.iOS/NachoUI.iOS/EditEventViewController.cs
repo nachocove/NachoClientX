@@ -428,7 +428,7 @@ namespace NachoClient.iOS
             doneButton.Clicked += (sender, e) => {
                 ExtractValues ();
                 SyncMeetingRequest ();
-                SendInvites ();
+                PrepareInvites ();
                 DismissView ();
             };
 
@@ -1301,13 +1301,13 @@ namespace NachoClient.iOS
         /// <summary>
         /// Sends the message. Message (UID) must already exist in EAS.
         /// </summary>
-        protected void SendInvites ()
+        protected void PrepareInvites ()
         {
             //var tzid = RadioElementWithData.SelectedData (timezoneEntryElement);
             var iCalPart = CalendarHelper.iCalToMimePart (account, c);
             var mimeBody = CalendarHelper.CreateMime (c.Description, iCalPart, c.attachments);
 
-            CalendarHelper.SendInvites (account, c, null, mimeBody);
+            CalendarHelper.SendInvites (account, c, null, null, mimeBody, null);
         }
 
         /// IUcAttachmentBlock delegate

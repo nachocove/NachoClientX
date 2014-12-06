@@ -112,6 +112,19 @@ namespace NachoCore.Utils
             return false;
         }
 
+        public static McCalendar GetMcCalendarRootForEvent (int eventId)
+        {
+            var e = McEvent.QueryById<McEvent> (eventId);
+            if (null == e) {
+                return null;  // may be deleted
+            }
+            var c = McCalendar.QueryById<McCalendar> (e.CalendarId);
+            if (null == c) {
+                return null; // may be deleted
+            }
+            return c;
+        }
+
         public static IICalendar iCalendarFromMcCalendarWithResponse (McAccount account, McCalendar c, NcResponseType response)
         {
             var iCal = iCalendarFromMcCalendarCommon (c);
@@ -344,7 +357,7 @@ namespace NachoCore.Utils
             return dday_tz;
         }
 
-        public static void SendInvites (McAccount account, McCalendar c, List<McAttendee> attendeeOverride, MimeEntity mimeBody)
+        public static void SendInvites (McAccount account, McCalendar c, string subjectOverride, List<McAttendee> attendeeOverride, MimeEntity mimeBody, List<MailboxAddress> mailListOverride)
         {
             var attendees = attendeeOverride ?? c.attendees;
             if (0 == attendees.Count) {
@@ -353,13 +366,20 @@ namespace NachoCore.Utils
             }
             var mimeMessage = new MimeMessage ();
 
-            mimeMessage.From.Add (new MailboxAddress (Pretty.DisplayNameForAccount (account), account.EmailAddr));
+            mimeMessage.From.Add (new MailboxAddress (Pretty.OrganizerString (c.OrganizerName), c.OrganizerEmail));
 
-            foreach (var a in attendees) {
-                mimeMessage.To.Add (new MailboxAddress (a.Name, a.Email));
+            if (null != mailListOverride) {
+                foreach (var m in mailListOverride) {
+                    mimeMessage.To.Add (m);
+                }
+            } else {
+                foreach (var a in attendees) {
+                    mimeMessage.To.Add (new MailboxAddress (a.Name, a.Email));
+                }
             }
 
-            mimeMessage.Subject = Pretty.SubjectString (c.Subject);
+            var subject = subjectOverride ?? Pretty.SubjectString (c.Subject);
+            mimeMessage.Subject = subject;
             mimeMessage.Date = System.DateTime.UtcNow;
             mimeMessage.Body = mimeBody;
 
