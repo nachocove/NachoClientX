@@ -63,21 +63,19 @@ namespace NachoClient.iOS
 
             // The contents of the action/info bar depends on whether this is a request,
             // response, or cancellation.
-            if (!isOnNow) { 
-                if (iCal.Method.Equals (DDay.iCal.CalendarMethods.Reply)) {
-                    ShowAttendeeResponseBar (evt);
-                } else if (iCal.Method.Equals (DDay.iCal.CalendarMethods.Cancel)) {
-                    ShowCancellationBar (evt);
-                } else {
-                    if (!iCal.Method.Equals (DDay.iCal.CalendarMethods.Request)) {
-                        Log.Warn (Log.LOG_CALENDAR, "Unexpected calendar method: {0}. It will be treated as a {1}.",
-                            iCal.Method, DDay.iCal.CalendarMethods.Request);
-                    }
-                    ShowRequestChoicesBar (evt);
+            if (iCal.Method.Equals (DDay.iCal.CalendarMethods.Reply)) {
+                ShowAttendeeResponseBar (evt);
+            } else if (iCal.Method.Equals (DDay.iCal.CalendarMethods.Cancel)) {
+                ShowCancellationBar (evt);
+            } else {
+                if (!iCal.Method.Equals (DDay.iCal.CalendarMethods.Request)) {
+                    Log.Warn (Log.LOG_CALENDAR, "Unexpected calendar method: {0}. It will be treated as a {1}.",
+                        iCal.Method, DDay.iCal.CalendarMethods.Request);
                 }
+                ShowRequestChoicesBar (evt, isOnNow);
             }
 
-            ShowEventInfo (evt, isOnNow);
+            ShowEventInfo (evt);
         }
 
         public UIView uiView ()
@@ -101,19 +99,16 @@ namespace NachoClient.iOS
         /// <summary>
         /// Display the basic information about the calendar event.
         /// </summary>
-        private void ShowEventInfo (DDay.iCal.Event evt, bool isOnNow)
+        private void ShowEventInfo (DDay.iCal.Event evt)
         {
             string subject = evt.Summary;
             bool isAllDay = evt.IsAllDay;
             DateTime start = CalendarHelper.EventStartTime (evt, calendarItem);
             DateTime end = CalendarHelper.EventEndTime (evt, calendarItem);
             string location = evt.Location;
-            var yOffset = 18f;
-            if(!isOnNow){
-                yOffset += 60;
-            }
+            var yOffset = 60f + 18f;
 
-            Util.AddHorizontalLine (0, (isOnNow ? 0 : 60), viewWidth, A.Color_NachoBorderGray, this).Tag =
+            Util.AddHorizontalLine (0, 60, viewWidth, A.Color_NachoBorderGray, this).Tag =
                 (int)TagType.CALENDAR_LINE_TAG;
 
             UILabel titleLabel = new UILabel (new RectangleF (74, 27, viewWidth - 89, 20));
@@ -207,7 +202,7 @@ namespace NachoClient.iOS
             eventOrganizerView.BackgroundColor = UIColor.White;
             this.AddSubview (eventOrganizerView);
 
-            Util.AddArrowAccessory (eventOrganizerView.Frame.Width - 18 - 12, 16 + 20, 12, eventOrganizerView);
+            //Util.AddArrowAccessory (eventOrganizerView.Frame.Width - 18 - 12, 16 + 20, 12, eventOrganizerView);
 
             Util.AddTextLabelWithImageView (0, "ORGANIZER", "event-organizer", EventViewController.TagType.EVENT_ORGANIZER_TITLE_TAG, eventOrganizerView);
 
@@ -284,7 +279,7 @@ namespace NachoClient.iOS
 //            }
                 eventAttendeeView.BackgroundColor = UIColor.White;
                 Util.AddTextLabelWithImageView (0, "ATTENDEES", "event-attendees", EventViewController.TagType.EVENT_ATTENDEES_TITLE_TAG, eventAttendeeView);
-                Util.AddArrowAccessory (eventAttendeeView.Frame.Width - 18 - 12, 16 + 20, 12, eventAttendeeView);
+                //Util.AddArrowAccessory (eventAttendeeView.Frame.Width - 18 - 12, 16 + 20, 12, eventAttendeeView);
                 var titleOffset = 16;
                 var attendeeImageDiameter = 40;
                 var iconSpace = viewWidth - 60;
@@ -330,7 +325,6 @@ namespace NachoClient.iOS
                 
             Util.AddHorizontalLine (0, yOffset, viewWidth, A.Color_NachoBorderGray, this).Tag =
                 (int)TagType.CALENDAR_LINE_TAG;
-
             this.Frame = new RectangleF (this.Frame.X, this.Frame.Y, this.Frame.Width, yOffset + 20);
         }
 
@@ -347,6 +341,8 @@ namespace NachoClient.iOS
         UILabel messageLabel;
         UIButton changeResponseButton;
         UIButton removeFromCalendarButton;
+        UIImageView dotView;
+
 
         /// <summary>
         /// Configuration of some of the subview elements of the action bar that are
@@ -357,25 +353,25 @@ namespace NachoClient.iOS
             acceptButton = new UIButton (UIButtonType.RoundedRect);
             Util.AddButtonImage (acceptButton, "event-attend", UIControlState.Normal);
             Util.AddButtonImage (acceptButton, "event-attend-active", UIControlState.Selected);
-            acceptButton.Frame = new RectangleF (18, 18, 24, 24);
+            acceptButton.Frame = new RectangleF (responseView.Frame.X + 18, 18, 24, 24);
             acceptButton.TintColor = UIColor.Clear;
             responseView.AddSubview (acceptButton);
 
             tentativeButton = new UIButton (UIButtonType.RoundedRect);
             Util.AddButtonImage (tentativeButton, "event-maybe", UIControlState.Normal);
             Util.AddButtonImage (tentativeButton, "event-maybe-active", UIControlState.Selected);
-            tentativeButton.Frame = new RectangleF (122.5f, 18, 24, 24);
+            tentativeButton.Frame = new RectangleF (responseView.Center.X - 37.5f, 18, 24, 24);
             tentativeButton.TintColor = UIColor.Clear;
             responseView.AddSubview (tentativeButton);
 
             declineButton = new UIButton (UIButtonType.RoundedRect);
             Util.AddButtonImage (declineButton, "event-decline", UIControlState.Normal);
             Util.AddButtonImage (declineButton, "event-decline-active", UIControlState.Selected);
-            declineButton.Frame = new RectangleF (tentativeButton.Frame.X + 50 + 45 + 6, 18, 24, 24);
+            declineButton.Frame = new RectangleF (responseView.Frame.Width - 96.5f, 18, 24, 24);
             declineButton.TintColor = UIColor.Clear;
             responseView.AddSubview (declineButton);
 
-            acceptLabel = new UILabel (new RectangleF (48, 20, 45, 20));
+            acceptLabel = new UILabel (new RectangleF (acceptButton.Frame.X + 24 + 6, 20, 45, 20));
             acceptLabel.TextColor = A.Color_NachoDarkText;
             acceptLabel.Font = A.Font_AvenirNextMedium14;
             acceptLabel.Text = "Attend";
@@ -408,12 +404,19 @@ namespace NachoClient.iOS
             eventDoesNotExistLabel.Font = A.Font_AvenirNextRegular12;
             eventDoesNotExistLabel.Hidden = true;
             responseView.Add (eventDoesNotExistLabel);
+
+            dotView = new UIImageView ();
+            dotView.Frame = new RectangleF (21, 25, 10, 10);
+            var size = new SizeF (10, 10);
+            dotView.Image = Util.DrawCalDot (A.Color_NachoSwipeActionGreen, size);
+            dotView.Hidden = true;
+            responseView.Add (dotView);
         }
 
         /// <summary>
         /// Show the action bar for a meeting request, with the "Accept", "Tentative", and "Decline" buttons.
         /// </summary>
-        private void ShowRequestChoicesBar (DDay.iCal.Event evt)
+        private void ShowRequestChoicesBar (DDay.iCal.Event evt, bool isOnNow)
         {
             UIView responseView = new UIView (new RectangleF (0, 0, viewWidth, 60));
             responseView.BackgroundColor = UIColor.White;
@@ -435,6 +438,19 @@ namespace NachoClient.iOS
             acceptButton.TouchUpInside += AcceptButtonClicked;
             tentativeButton.TouchUpInside += TentativeButtonClicked;
             declineButton.TouchUpInside += DeclineButtonClicked;
+
+            if (isOnNow && NcResponseType.NotResponded == calendarItem.ResponseType) {
+                messageLabel.Text = "You have not responded to this invite";
+                messageLabel.Frame = new RectangleF (42, 18, viewWidth - 42, 24);
+                messageLabel.Hidden = false;
+                dotView.Hidden = false;
+                acceptButton.Hidden = true;
+                acceptLabel.Hidden = true;
+                tentativeButton.Hidden = true;
+                tentativeLabel.Hidden = true;
+                declineButton.Hidden = true;
+                declineLabel.Hidden = true;
+            }
 
             if (null != calendarItem) {
 
@@ -458,47 +474,50 @@ namespace NachoClient.iOS
 
                     case NcResponseType.Accepted:
                         acceptButton.Selected = true;
-//                        acceptButton.Frame = new RectangleF (18, 18, 24, 24);
-//                        messageLabel.Text = "You are going";
-//                        messageLabel.Hidden = false;
-//                        changeResponseButton.Hidden = false;
-//                        acceptLabel.Hidden = true;
-//                        tentativeButton.Hidden = true;
-//                        declineButton.Hidden = true;
-//                        tentativeLabel.Hidden = true;
-//                        declineLabel.Hidden = true;
+                        if (isOnNow) {
+                            acceptButton.Frame = new RectangleF (18, 18, 24, 24);
+                            messageLabel.Text = "You are going";
+                            messageLabel.Hidden = false;
+                            acceptLabel.Hidden = true;
+                            tentativeButton.Hidden = true;
+                            declineButton.Hidden = true;
+                            tentativeLabel.Hidden = true;
+                            declineLabel.Hidden = true;
+                        }
                         acceptButton.UserInteractionEnabled = false;
                         break;
 
                     case NcResponseType.Tentative:
                         tentativeButton.Selected = true;
-//                        tentativeButton.Frame = new RectangleF (18, 18, 24, 24);
-//                        messageLabel.Text = "Tentative";
-//                        messageLabel.Hidden = false;
-//                        changeResponseButton.Hidden = false;
-//                        acceptButton.Hidden = true;
-//                        acceptLabel.Hidden = true;
-//                        tentativeLabel.Hidden = true;
-//                        declineButton.Hidden = true;
-//                        declineLabel.Hidden = true;
+                        if (isOnNow) {
+                            tentativeButton.Frame = new RectangleF (18, 18, 24, 24);
+                            messageLabel.Text = "Tentative";
+                            messageLabel.Hidden = false;
+                            acceptButton.Hidden = true;
+                            acceptLabel.Hidden = true;
+                            tentativeLabel.Hidden = true;
+                            declineButton.Hidden = true;
+                            declineLabel.Hidden = true;
+                        }
                         tentativeButton.UserInteractionEnabled = false;
                         break;
 
                     case NcResponseType.Declined:
                         declineButton.Selected = true;
-//                        declineButton.Frame = new RectangleF (18, 18, 24, 24);
-//                        messageLabel.Text = "You are not going to this meeting";
-//                        messageLabel.Hidden = false;
-//                        changeResponseButton.Hidden = false;
-//                        acceptButton.Hidden = true;
-//                        acceptLabel.Hidden = true;
-//                        tentativeButton.Hidden = true;
-//                        tentativeLabel.Hidden = true;
-//                        declineLabel.Hidden = true;
+                        if (isOnNow) {
+                            declineButton.Frame = new RectangleF (18, 18, 24, 24);
+                            messageLabel.Text = "You are not going to this meeting";
+                            messageLabel.Hidden = false;
+                            acceptButton.Hidden = true;
+                            acceptLabel.Hidden = true;
+                            tentativeButton.Hidden = true;
+                            tentativeLabel.Hidden = true;
+                            declineLabel.Hidden = true;
+                        }
                         declineButton.UserInteractionEnabled = false;
                         break;
                     }
-                }
+                } 
             } else {
                 eventDoesNotExistLabel.Hidden = false;
                 acceptButton.Hidden = true;
@@ -512,10 +531,10 @@ namespace NachoClient.iOS
             this.AddSubview (responseView);
         }
 
-        //        /// <summary>
-        //        /// One of the "Accept", "Tentative", or "Decline" buttons has been touched.
-        //        /// Adjust the UI accordingly.
-        //        /// </summary>
+        /// <summary>
+        /// One of the "Accept", "Tentative", or "Decline" buttons has been touched.
+        /// Adjust the UI accordingly.
+        /// </summary>
         protected void ToggleButtons (NcResponseType r)
         {
             RestoreButtons ();

@@ -456,7 +456,7 @@ namespace NachoClient.iOS
             toView.Hidden = false;
             ccView.Hidden = false;
             bccView.Hidden = true;
-            attachmentView.Hidden = (calendarInviteIsSet ? true : false); 
+            attachmentView.Hidden = calendarInviteIsSet; 
 
             toView.SetCompact (false, -1);
             ccView.SetCompact (true, -1);

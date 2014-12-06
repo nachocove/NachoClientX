@@ -366,7 +366,7 @@ namespace NachoCore.Utils
             }
             var mimeMessage = new MimeMessage ();
 
-            mimeMessage.From.Add (new MailboxAddress (c.OrganizerName, c.OrganizerEmail));
+            mimeMessage.From.Add (new MailboxAddress (Pretty.OrganizerString (c.OrganizerName), c.OrganizerEmail));
 
             if (null != mailListOverride) {
                 foreach (var m in mailListOverride) {
