@@ -17,10 +17,10 @@ namespace NachoClient.iOS
         protected UIView contentView;
         protected UIScrollView scrollView;
 
-        protected UIBarButtonItem editButton = new UIBarButtonItem ();
-        protected UIBarButtonItem cancelButton = new UIBarButtonItem ();
-        protected UIBarButtonItem saveButton = new UIBarButtonItem ();
-        protected UIBarButtonItem backButton = new UIBarButtonItem (); 
+        protected UIBarButtonItem editButton;
+        protected UIBarButtonItem cancelButton;
+        protected UIBarButtonItem saveButton;
+        protected UIBarButtonItem backButton;
 
         protected bool textFieldsEditable = false;
 
@@ -115,6 +115,11 @@ namespace NachoClient.iOS
         {
             NavigationController.NavigationBar.Translucent = false;
             NavigationItem.Title = "Account Settings";
+
+            editButton = new UIBarButtonItem ();
+            cancelButton = new UIBarButtonItem ();
+            backButton = new UIBarButtonItem ();
+            saveButton = new UIBarButtonItem ();
 
             editButton.Image = UIImage.FromBundle ("gen-edit");
             cancelButton.Image = UIImage.FromBundle ("icn-close");
