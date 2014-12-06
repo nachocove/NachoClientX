@@ -8,10 +8,11 @@ using System.Collections.Generic;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore;
+using NachoPlatform;
 
 namespace NachoClient.iOS
 {
-    public partial class SupportMessageViewController : NcUIViewController
+    public partial class SupportMessageViewController : NcUIViewControllerNoLeaks
     {
         protected float yOffset;
         protected static float CELL_HEIGHT = 44f;
@@ -19,20 +20,22 @@ namespace NachoClient.iOS
         protected static float KEYBOARD_HEIGHT = 216f;
         protected const float HORIZONTAL_PADDING = 12f;
         protected const float INDENT = 18f;
-
         protected const float VERTICAL_PADDING = 20f;
+
         protected float keyboardHeight;
+
+        protected const int MESSAGEBODY_VIEW_TAG = 100;
+        protected const int CONTACT_TEXTFIELD_TAG = 101;
+
+        protected const int GRAY_BACKGROUND_VIEW_TAG = 200;
+        protected const int SENDING_SPINNER_TAG = 201;
+        protected const double WAIT_TIMER_LENGTH = 12;
+
+        protected NSTimer sendMessageTimer;
+        protected bool hasDisplayedStatusMessage = false;
 
         public SupportMessageViewController (IntPtr handle) : base (handle)
         {
-        }
-
-        public override void ViewDidLoad ()
-        {
-            base.ViewDidLoad ();
-            CreateView ();
-            LayoutView ();
-            ConfigureView ();
         }
 
         public override void ViewWillAppear (bool animated)
@@ -95,14 +98,11 @@ namespace NachoClient.iOS
             var s = (StatusIndEventArgs)e;
 
             if (NcResult.SubKindEnum.Info_TelemetrySupportMessageReceived == s.Status.SubKind) {
-                MessageReceived ();
+                MessageReceived (true);
             }
         }
 
-        protected const int MESSAGEBODY_VIEW_TAG = 100;
-        protected const int CONTACT_TEXTFIELD_TAG = 101;
-
-        public void CreateView ()
+        protected override void CreateViewHierarchy ()
         {
             View.BackgroundColor = A.Color_NachoBackgroundGray;
             contentView.BackgroundColor = A.Color_NachoBackgroundGray;
@@ -213,23 +213,100 @@ namespace NachoClient.iOS
                 backButton.TintColor = A.Color_NachoBlue;
                 navItems.SetLeftBarButtonItem (backButton, true);
             }
-
+          
             Util.SetAutomaticImageForButton (sendButton, "icn-send");
 
-            sendButton.Clicked += (object sender, EventArgs e) => {
+            sendButton.Clicked += SendButtonClicked;
+
+            navItems.RightBarButtonItem = sendButton;
+            navigationBar.Items = new UINavigationItem[]{ navItems };
+            View.AddSubview (navigationBar);
+
+            UIView grayBackgroundView = new UIView (new RectangleF (0, 0, View.Frame.Width, View.Frame.Height));
+            grayBackgroundView.BackgroundColor = UIColor.DarkGray.ColorWithAlpha (.6f);
+            grayBackgroundView.Tag = GRAY_BACKGROUND_VIEW_TAG;
+            grayBackgroundView.Hidden = true;
+            grayBackgroundView.Alpha = 0.0f;
+            View.AddSubview (grayBackgroundView);
+
+            UIView alertMimicView = new UIView (new RectangleF (grayBackgroundView.Frame.Width / 2 - 90, grayBackgroundView.Frame.Height / 2 - 80, 180, 110));
+            alertMimicView.BackgroundColor = UIColor.White;
+            alertMimicView.Layer.CornerRadius = 6.0f;
+            grayBackgroundView.AddSubview (alertMimicView);
+
+            UILabel statusMessage = new UILabel (new System.Drawing.RectangleF (8, 10, alertMimicView.Frame.Width - 16, 25));
+            statusMessage.BackgroundColor = UIColor.White;
+            statusMessage.Alpha = 1.0f;
+            statusMessage.Font = UIFont.SystemFontOfSize (17);
+            statusMessage.TextColor = UIColor.Black;
+            statusMessage.Text = "Sending Message";
+            statusMessage.TextAlignment = UITextAlignment.Center;
+            alertMimicView.AddSubview (statusMessage);
+
+            UIActivityIndicatorView sendingActivityIndicator = new UIActivityIndicatorView (UIActivityIndicatorViewStyle.WhiteLarge);
+            sendingActivityIndicator.Frame = new RectangleF (alertMimicView.Frame.Width / 2 - 20, statusMessage.Frame.Bottom + 15, 40, 40);
+            sendingActivityIndicator.Color = A.Color_SystemBlue;
+            sendingActivityIndicator.Alpha = 1.0f;
+            sendingActivityIndicator.StartAnimating ();
+            sendingActivityIndicator.Tag = SENDING_SPINNER_TAG;
+            alertMimicView.AddSubview (sendingActivityIndicator);
+        }
+
+        protected void SendButtonClicked (object sender, EventArgs e)
+        {
+            UITextField contactInfoTextField = (UITextField)View.ViewWithTag(CONTACT_TEXTFIELD_TAG);
+            UITextView messageInfoTextView = (UITextView)View.ViewWithTag (MESSAGEBODY_VIEW_TAG);
+
+            if (!hasNetworkConnection ()) {
+                UIAlertView badNetworkConnection = new UIAlertView ("Network Error",
+                    "There is an issue with the network and we cannot send this message. Please try again when you have a connection.",
+                    null,
+                    "Ok");
+                badNetworkConnection.Show ();
+            } else {
+                sendMessageTimer = NSTimer.CreateScheduledTimer (WAIT_TIMER_LENGTH, delegate {
+                    MessageReceived (false);
+                });
+
                 Dictionary<string,string> supportInfo = new Dictionary<string, string> ();
-                supportInfo.Add ("ContactInfo", sectionOneTextField.Text);
-                supportInfo.Add ("Message", sectionTwoTextView.Text);
+                supportInfo.Add ("ContactInfo", contactInfoTextField.Text);
+                supportInfo.Add ("Message", messageInfoTextView.Text);
+
                 Telemetry.RecordSupport (supportInfo, () => {
                     NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                         Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_TelemetrySupportMessageReceived),
                         Account = ConstMcAccount.NotAccountSpecific,
                     });
                 });
-            };
-            navItems.RightBarButtonItem = sendButton;
-            navigationBar.Items = new UINavigationItem[]{ navItems };
-            View.AddSubview (navigationBar);
+                ToggleSpinnerView ();
+            }
+        }
+
+        protected void ToggleSpinnerView ()
+        {
+            UIView grayBackgroundView = (UIView)View.ViewWithTag (GRAY_BACKGROUND_VIEW_TAG);
+            UIActivityIndicatorView sendingActivityIndicator = (UIActivityIndicatorView)View.ViewWithTag (SENDING_SPINNER_TAG);
+
+            grayBackgroundView.Hidden = !grayBackgroundView.Hidden;
+
+            if (grayBackgroundView.Hidden) {
+                sendingActivityIndicator.StopAnimating ();
+                grayBackgroundView.Alpha = 0.0f;
+            } else {
+                UIView.Animate (.15, () => {
+                    grayBackgroundView.Alpha = 1.0f;
+                });
+                sendingActivityIndicator.StartAnimating ();
+            }
+        }
+
+        public bool hasNetworkConnection ()
+        {
+            if (NcCommStatus.Instance.Status != NetStatusStatusEnum.Up) {
+                return false;
+            } else {
+                return true;
+            }
         }
 
         protected void LayoutView ()
@@ -240,10 +317,12 @@ namespace NachoClient.iOS
             scrollView.ContentSize = contentFrame.Size;
         }
 
-        protected void ConfigureView ()
+        protected override void ConfigureAndLayout ()
         {
             UITextField contactText = (UITextField)View.ViewWithTag (CONTACT_TEXTFIELD_TAG);
             contactText.Text = GetEmailAddress ();
+
+            LayoutView ();
         }
 
         protected string GetEmailAddress ()
@@ -266,16 +345,49 @@ namespace NachoClient.iOS
             scrollView.ScrollRectToVisible (caretRect, true);
         }
 
-        public void MessageReceived()
+        public void MessageReceived(bool didSend)
         {
-            UIAlertView confirmSent = new UIAlertView();
-            confirmSent.Title = "Message Successfully Sent";
-            confirmSent.Message = "We have received your message and will respond as quickly as possible. Thank you for your feedback.";
-            confirmSent.AddButton("Close");
-            confirmSent.Clicked += (object sender, UIButtonEventArgs e) => {
-                this.DismissViewController (true, null);
-            };
-            confirmSent.Show ();
+            if (!hasDisplayedStatusMessage) {
+                hasDisplayedStatusMessage = true;
+
+                ToggleSpinnerView ();
+
+                if (null != sendMessageTimer) {
+                    sendMessageTimer.Dispose ();
+                    sendMessageTimer = null;
+                }
+
+                if (didSend) {
+                    UIAlertView confirmSentAlert = new UIAlertView();
+                    confirmSentAlert.Title = "Message Successfully Sent";
+                    confirmSentAlert.Message = "We have received your message and will respond as quickly as possible. Thank you for your feedback.";
+                    confirmSentAlert.AddButton("Close");
+                    confirmSentAlert.Clicked += DismissFromAlert;
+                    confirmSentAlert.Show ();
+                } else {
+                    UIAlertView sendFailedAlert = new UIAlertView();
+                    sendFailedAlert.Title = "Message Was Not Sent";
+                    sendFailedAlert.Message = "There was a delay in sending the message. We will continue trying to send the message in the background.";
+                    sendFailedAlert.AddButton("Close");
+                    sendFailedAlert.Clicked += DismissFromAlert;
+                    sendFailedAlert.Show ();
+                }
+            }
+        }
+
+        protected void DismissFromAlert (object sender, UIButtonEventArgs e)
+        {
+            this.DismissViewController (true, null);
+
+            UIAlertView alert = (UIAlertView)sender;
+            alert.Clicked -= DismissFromAlert;
+            alert = null;
+        }
+
+        protected override void Cleanup ()
+        {
+            sendButton.Clicked -= SendButtonClicked;
+            sendButton = null;
         }
     }
 }
