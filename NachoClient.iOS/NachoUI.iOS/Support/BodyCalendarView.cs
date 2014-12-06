@@ -439,17 +439,19 @@ namespace NachoClient.iOS
             tentativeButton.TouchUpInside += TentativeButtonClicked;
             declineButton.TouchUpInside += DeclineButtonClicked;
 
-            if (isOnNow && NcResponseType.NotResponded == calendarItem.ResponseType) {
-                messageLabel.Text = "You have not responded to this invite";
-                messageLabel.Frame = new RectangleF (42, 18, viewWidth - 42, 24);
-                messageLabel.Hidden = false;
-                dotView.Hidden = false;
-                acceptButton.Hidden = true;
-                acceptLabel.Hidden = true;
-                tentativeButton.Hidden = true;
-                tentativeLabel.Hidden = true;
-                declineButton.Hidden = true;
-                declineLabel.Hidden = true;
+            if (null != calendarItem) {
+                if (isOnNow && NcResponseType.NotResponded == calendarItem.ResponseType) {
+                    messageLabel.Text = "You have not responded to this invite";
+                    messageLabel.Frame = new RectangleF (42, 18, viewWidth - 42, 24);
+                    messageLabel.Hidden = false;
+                    dotView.Hidden = false;
+                    acceptButton.Hidden = true;
+                    acceptLabel.Hidden = true;
+                    tentativeButton.Hidden = true;
+                    tentativeLabel.Hidden = true;
+                    declineButton.Hidden = true;
+                    declineLabel.Hidden = true;
+                }
             }
 
             if (null != calendarItem) {
