@@ -111,9 +111,11 @@ namespace NachoClient.iOS
         {
             var statusEvent = (StatusIndEventArgs)e;
             if (NcResult.SubKindEnum.Info_CalendarSetChanged == statusEvent.Status.SubKind) {
+                CalendarHelper.ExpandRecurrences (DateTime.UtcNow.AddDays(7));
                 Configure ();
             }
             if (NcResult.SubKindEnum.Info_CalendarChanged == statusEvent.Status.SubKind) {
+                CalendarHelper.ExpandRecurrences (DateTime.UtcNow.AddDays(7));
                 Configure ();
             }
             if (NcResult.SubKindEnum.Info_EventSetChanged == statusEvent.Status.SubKind) {
