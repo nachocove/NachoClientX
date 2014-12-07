@@ -175,7 +175,10 @@ namespace NachoClient.iOS
         {
             var s = (StatusIndEventArgs)e;
             if (NcResult.SubKindEnum.Info_CalendarSetChanged == s.Status.SubKind) {
-                Log.Debug (Log.LOG_UI, "StatusIndicatorCallback");
+                calendarSource.Refresh ();
+                calendarTableView.ReloadData ();
+            }
+            if (NcResult.SubKindEnum.Info_EventSetChanged == s.Status.SubKind) {
                 calendarSource.Refresh ();
                 calendarTableView.ReloadData ();
             }
