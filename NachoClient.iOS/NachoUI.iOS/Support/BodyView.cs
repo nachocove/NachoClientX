@@ -25,8 +25,6 @@ namespace NachoClient.iOS
         // Which kind of BodyView is this?
         private bool variableHeight;
 
-        private bool isOnNow;
-
         // The item whose body is being shown
         private McAbstrItem item = null;
 
@@ -187,7 +185,7 @@ namespace NachoClient.iOS
             var refreshedItem = RefreshItem ();
             if (null != refreshedItem) {
 
-                Configure (refreshedItem, false, isOnNow);
+                Configure (refreshedItem, false, false);
 
                 // Configure() normally doesn't call the parent view's callback. But because
                 // the download completed in the background, that callback needs to be called.
