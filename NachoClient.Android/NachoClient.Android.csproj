@@ -351,6 +351,8 @@
     <Compile Include="NachoCore\Utils\NcAbate.cs" />
     <Compile Include="NachoCore\Index\Index.cs" />
     <Compile Include="NachoCore\Index\IndexDocument.cs" />
+    <Compile Include="NachoCore\Brain\ObjectParser.cs" />
+    <Compile Include="NachoCore\Brain\NcTokenizer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

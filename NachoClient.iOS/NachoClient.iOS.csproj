@@ -1175,6 +1175,12 @@
     <Compile Include="NachoUI.iOS\Support\HotListTableViewSource.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoLabelChooser.cs" />
     <Compile Include="NachoUI.iOS\Interfaces\INachoContactDefaultSelector.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\ObjectParser.cs">
+      <Link>NachoCore\Brain\ObjectParser.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcTokenizer.cs">
+      <Link>NachoCore\Brain\NcTokenizer.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -1766,8 +1772,6 @@
     <BundleResource Include="Resources\gen-delete-all%404x.png" />
     <BundleResource Include="Resources\gen-delete-all%406x.png" />
     <BundleResource Include="Resources\contacts-icn-url%402x.png" />
-    <BundleResource Include="Resources\contacts-attendees%402x.png" />
-    <BundleResource Include="Resources\contacts-description%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
@@ -1817,6 +1821,10 @@
     <ProjectReference Include="..\..\DnDns\SourceCode\DnDns\DnDns.iOS\DnDns.iOS.csproj">
       <Project>{6F68E3AD-B80E-4980-8476-7ADDFFFF6672}</Project>
       <Name>DnDns.iOS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\MobileHtmlAgilityPack\MobileHtmlAgilityPack.csproj">
+      <Project>{D91DC8A9-454E-4CB9-96BE-19652A67D0A4}</Project>
+      <Name>MobileHtmlAgilityPack</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
