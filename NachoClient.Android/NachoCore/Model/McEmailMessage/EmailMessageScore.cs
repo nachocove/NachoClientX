@@ -137,7 +137,7 @@ namespace NachoCore.Model
                             emailAddress.IncrementEmailsRead (-1);
                         }
                         emailAddress.IncrementEmailsReplied ();
-                        emailAddress.Score = emailAddress.GetScore();
+                        emailAddress.Score = emailAddress.GetScore ();
                         emailAddress.UpdateByBrain ();
                     }
 
@@ -487,7 +487,7 @@ namespace NachoCore.Model
             int n = 0;
             Log.Info (Log.LOG_BRAIN, "Starting all time variances");
             foreach (McEmailMessage emailMessage in emailMessageList) {
-                emailMessage.InitializeTimeVariance ();
+                emailMessage.UpdateTimeVariance ();
 
                 /// Throttle
                 n = (n + 1) % 8;

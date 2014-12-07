@@ -52,7 +52,7 @@ namespace NachoCore.Brain
         /// one particular object (e.g one McEmailMessage)
         public class TimeVarianceList : HashSet<NcTimeVariance>
         {
-            public TimeVarianceList () : base ()
+            public TimeVarianceList () : base (new NcTimeVarianceComparer ())
             {
             }
 
@@ -83,6 +83,7 @@ namespace NachoCore.Brain
         public class TimeVarianceTable : IEnumerable
         {
             private object _LockObj;
+
             private object LockObj {
                 get {
                     if (null == _LockObj) {
@@ -96,6 +97,7 @@ namespace NachoCore.Brain
             }
 
             private ConcurrentDictionary<string, TimeVarianceList> _TvLists;
+
             private ConcurrentDictionary<string, TimeVarianceList> TvLists {
                 get {
                     if (null == _TvLists) {
@@ -187,6 +189,7 @@ namespace NachoCore.Brain
 
         /// A list of all active Time variance state machine
         protected static TimeVarianceTable _ActiveList;
+
         public static TimeVarianceTable ActiveList {
             get {
                 if (null == _ActiveList) {
@@ -197,6 +200,7 @@ namespace NachoCore.Brain
         }
 
         protected static NcTimerPool _TimerPool;
+
         public static NcTimerPool TimerPool {
             get {
                 if (null == _TimerPool) {
@@ -207,6 +211,7 @@ namespace NachoCore.Brain
         }
 
         private object _LockObj;
+
         private object LockObj {
             get {
                 if (null == _LockObj) {
@@ -222,6 +227,7 @@ namespace NachoCore.Brain
         /// State is just an integer that increments. Note that state 0 is
         /// reserved for terminated state.
         private int _State { get; set; }
+
         public int State {
             get {
                 return _State;
@@ -233,8 +239,9 @@ namespace NachoCore.Brain
 
         // The timer for keeping track of when the next event occurs.
         // In order to conserve memory, we only create the timer if
-        // needed. Otherwise, we'll need a timer for every 
+        // needed.
         private NcTimerPoolTimer EventTimer;
+
         public bool IsRunning {
             get {
                 return (null != EventTimer);
@@ -242,6 +249,7 @@ namespace NachoCore.Brain
         }
 
         protected string _Description { get; set; }
+
         public string Description {
             get {
                 return _Description;
@@ -332,7 +340,7 @@ namespace NachoCore.Brain
         {
             DateTime eventTime = NextEventTime ();
             long dueTime = (long)(eventTime - now).TotalMilliseconds;
-            Log.Debug (Log.LOG_BRAIN, "{0}: start timer {1} {2}", ToString(), now, eventTime);
+            Log.Debug (Log.LOG_BRAIN, "{0}: start timer {1} {2}", ToString (), now, eventTime);
             EventTimer = new NcTimerPoolTimer (TimerPool, TimerDescription (), AdvanceCallback, this,
                 dueTime, Timeout.Infinite);
         }
@@ -501,8 +509,7 @@ namespace NachoCore.Brain
             DateTime retval;
             try {
                 retval = time + duration;
-            }
-            catch (ArgumentOutOfRangeException) {
+            } catch (ArgumentOutOfRangeException) {
                 retval = time;
             }
             return retval;
@@ -519,12 +526,25 @@ namespace NachoCore.Brain
         }
     }
 
+    public class NcTimeVarianceComparer : IEqualityComparer<NcTimeVariance>
+    {
+        public bool Equals (NcTimeVariance tv1, NcTimeVariance tv2)
+        {
+            return tv1.TimeVarianceType () == tv2.TimeVarianceType ();
+        }
+
+        public int GetHashCode (NcTimeVariance tv)
+        {
+            return (int)tv.TimeVarianceType ();
+        }
+    }
+
     public class NcDeadlineTimeVariance : NcTimeVariance
     {
         public DateTime Deadline;
 
         public NcDeadlineTimeVariance (string description, TimeVarianceCallBack callback,
-            Int64 objId, DateTime deadline) : base (description, callback, objId)
+                                       Int64 objId, DateTime deadline) : base (description, callback, objId)
         {
             Deadline = deadline;
             MaxState = 3;
@@ -585,7 +605,7 @@ namespace NachoCore.Brain
         public DateTime DeferUntil { get; set; }
 
         public NcDeferenceTimeVariance (string description, TimeVarianceCallBack callback,
-            Int64 objId, DateTime deferUntil) : base (description, callback, objId)
+                                        Int64 objId, DateTime deferUntil) : base (description, callback, objId)
         {
             DeferUntil = deferUntil;
             MaxState = 1;
@@ -628,7 +648,7 @@ namespace NachoCore.Brain
                 throw new NcAssert.NachoDefaultCaseFailure (mesg);
             }
             return LimitEventTime (retval);
-        }  
+        }
     }
 
     public class NcAgingTimeVariance : NcTimeVariance
@@ -636,7 +656,7 @@ namespace NachoCore.Brain
         public DateTime StartTime { get; set; }
 
         public NcAgingTimeVariance (string description, TimeVarianceCallBack callback,
-            Int64 objId, DateTime startTime) : base (description, callback, objId)
+                                    Int64 objId, DateTime startTime) : base (description, callback, objId)
         {
             StartTime = startTime;
             MaxState = 8;
@@ -728,7 +748,7 @@ namespace NachoCore.Brain
         public DateTime EndTime { get; set; }
 
         public NcMeetingTimeVariance (string description, TimeVarianceCallBack callback,
-            Int64 objId, DateTime endTime) : base (description, callback, objId)
+                                      Int64 objId, DateTime endTime) : base (description, callback, objId)
         {
             EndTime = endTime;
             MaxState = 1;
@@ -771,6 +791,6 @@ namespace NachoCore.Brain
                 throw new NcAssert.NachoDefaultCaseFailure (mesg);
             }
             return LimitEventTime (retval);
-        }  
+        }
     }
 }
