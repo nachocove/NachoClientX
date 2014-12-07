@@ -147,11 +147,6 @@ namespace NachoClient.iOS
             { 10080, "1 week before" },
         };
 
-        public McCalendar GetItem ()
-        {
-            return this.item;
-        }
-
         public EditEventViewController (IntPtr handle) : base (handle)
         {
         }
@@ -767,6 +762,7 @@ namespace NachoClient.iOS
 
             var peopleTap = new UITapGestureRecognizer ();
             peopleTap.AddTarget (() => {
+                View.EndEditing (true);
                 PerformSegue ("EditEventToEventAttendees", this);
             });
             peopleView.AddGestureRecognizer (peopleTap);
@@ -796,6 +792,7 @@ namespace NachoClient.iOS
 
             var alertTap = new UITapGestureRecognizer ();
             alertTap.AddTarget (() => {
+                View.EndEditing (true);
                 PerformSegue ("EditEventToAlert", this);
             });
             alertsView.AddGestureRecognizer (alertTap);
@@ -821,6 +818,7 @@ namespace NachoClient.iOS
 
             var calTap = new UITapGestureRecognizer ();
             calTap.AddTarget (() => {
+                View.EndEditing (true);
                 PerformSegue ("EditEventToCalendarChooser", this);
             });
             calendarView.AddGestureRecognizer (calTap);
@@ -1279,6 +1277,7 @@ namespace NachoClient.iOS
                 c.Update ();
                 BackEnd.Instance.UpdateCalCmd (account.Id, c.Id);
             }
+            CalendarHelper.UpdateRecurrences (c);
             NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                 Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged),
                 Account = NachoCore.Model.ConstMcAccount.NotAccountSpecific,
