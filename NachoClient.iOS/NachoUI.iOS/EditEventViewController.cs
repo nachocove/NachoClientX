@@ -32,6 +32,7 @@ namespace NachoClient.iOS
         protected McFolder folder;
         protected McAccount account;
         protected NachoFolders calendars;
+        protected bool calendarChanged;
         protected string TempPhone = "";
         protected int calendarIndex = 0;
 
@@ -336,7 +337,7 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("EditEventToEventAttendees")) {
                 var dc = (EventAttendeeViewController)segue.DestinationViewController;
                 ExtractValues ();
-                dc.Setup (this, c.attendees, c, true, CalendarHelper.IsOrganizer(c.OrganizerEmail, account.EmailAddr));
+                dc.Setup (this, c.attendees, c, true, CalendarHelper.IsOrganizer (c.OrganizerEmail, account.EmailAddr));
                 return;
             }
 
@@ -380,6 +381,7 @@ namespace NachoClient.iOS
                 dc.SetSelectedCalIndex (calendarIndex);
                 dc.ViewDisappearing += (object s, EventArgs e) => {
                     calendarIndex = dc.GetCalIndex ();
+                    calendarChanged = true;
                     ConfigureEditEventView ();
                 };
                 return;
@@ -1016,10 +1018,46 @@ namespace NachoClient.iOS
 //            phoneDetailLabelView.Frame = new RectangleF (SCREEN_WIDTH - phoneDetailLabelView.Frame.Width - 34, 12.438f, phoneDetailLabelView.Frame.Width, TEXT_LINE_HEIGHT);
 
             //calendar view
+            var calFolder = new McFolder ();
+            if (!calendarChanged) {
+                if (action == CalendarItemEditorAction.create) {
+                    calFolder = calendars.GetFolder (0);
+                } else {
+                    calFolder = GetCalendarFolder ();
+                    if (null == calFolder) {
+                        calFolder = calendars.GetFolder (0);
+                    } 
+                }
+            } else {
+                calFolder = calendars.GetFolder (calendarIndex);
+            }
+            SetCalIndex (calFolder);
+
             var calendarDetailLabelView = contentView.ViewWithTag (CAL_DETAIL_TAG) as UILabel;
-            calendarDetailLabelView.Text = (calendars.GetFolder (calendarIndex)).DisplayName;
+            calendarDetailLabelView.Text = calendars.GetFolder (calendarIndex).DisplayName;
             calendarDetailLabelView.SizeToFit ();
             calendarDetailLabelView.Frame = new RectangleF (SCREEN_WIDTH - calendarDetailLabelView.Frame.Width - 34, 12.438f, calendarDetailLabelView.Frame.Width, TEXT_LINE_HEIGHT);
+        }
+
+        protected McFolder GetCalendarFolder ()
+        {
+            for (var i = 0; i < calendars.Count (); i++) {
+                var calFolderMap = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode (account.Id, (calendars.GetFolder (i)).Id, c.Id, c.GetClassCode ());
+                if (null != calFolderMap) {
+                    return calendars.GetFolderByFolderID (calFolderMap.FolderId);
+                }
+            }
+            return null;
+        }
+
+        protected void SetCalIndex (McFolder folder)
+        {
+            for (var i = 0; i < calendars.Count (); i++) {
+                if (folder.Id == (calendars.GetFolder (i)).Id) {
+                    calendarIndex = i;
+                    return;
+                }
+            }
         }
 
         protected void ConfigureDateView (string command)
@@ -1240,8 +1278,7 @@ namespace NachoClient.iOS
             foreach (var attachment in attachmentView.AttachmentList) {
                 c.attachments.Add (attachment);
             }
-
-            folder = calendars.GetFolder (calendarIndex);
+                
             // Extras
             c.OrganizerName = Pretty.DisplayNameForAccount (account);
             c.OrganizerEmail = account.EmailAddr;
@@ -1268,13 +1305,21 @@ namespace NachoClient.iOS
 
         protected void SyncMeetingRequest ()
         {
-            // TODO: If calendar changes folders
+
             if (0 == c.Id) {
                 c.Insert (); // new entry
+                folder = calendars.GetFolder (calendarIndex);
                 folder.Link (c);
                 BackEnd.Instance.CreateCalCmd (account.Id, c.Id, folder.Id);
             } else {
                 c.Update ();
+                var oldFolder = GetCalendarFolder ();
+                var newFolder = calendars.GetFolder (calendarIndex);
+                if (newFolder.Id != oldFolder.Id) {
+                    BackEnd.Instance.MoveCalCmd (account.Id, c.Id, newFolder.Id);
+                    oldFolder.Unlink (c);
+                    newFolder.Link (c);
+                }
                 BackEnd.Instance.UpdateCalCmd (account.Id, c.Id);
             }
             CalendarHelper.UpdateRecurrences (c);
