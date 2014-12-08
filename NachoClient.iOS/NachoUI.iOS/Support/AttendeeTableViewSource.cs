@@ -23,7 +23,6 @@ namespace NachoClient.iOS
         public IAttendeeTableViewSourceDelegate owner;
         protected bool isMultiSelecting;
         protected Dictionary<NSIndexPath,McAttendee> multiSelect = null;
-        EventAttendeeViewController vc;
 
         const string AttendeeCell = "AttendeeCell";
 
@@ -78,11 +77,10 @@ namespace NachoClient.iOS
             set { isMultiSelecting = value; }
         }
 
-        public AttendeeTableViewSource (IAttendeeTableViewSourceDelegate owner, EventAttendeeViewController vc)
+        public AttendeeTableViewSource (IAttendeeTableViewSourceDelegate owner)
         {
             this.multiSelect = new Dictionary<NSIndexPath,McAttendee> ();
             this.owner = owner;
-            this.vc = vc;
         }
 
         public void SetAttendeeList (List<McAttendee> attendees)
@@ -132,11 +130,10 @@ namespace NachoClient.iOS
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
             var attendee = AttendeeList [indexPath.Row];
-            var accountId = LoginHelpers.GetCurrentAccountId ();
-            McContact contact = McContact.QueryByEmailAddress (accountId, attendee.Email).FirstOrDefault ();
+            McContact contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
             if (null == contact) {
-                NcContactGleaner.GleanContact (attendee.Email, accountId);
-                contact = McContact.QueryByEmailAddress (accountId, attendee.Email).FirstOrDefault ();
+                NcContactGleaner.GleanContact (attendee.Email, Account.Id);
+                contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
             }
             owner.PerformSegueForDelegate ("SegueToContactDetail", new SegueHolder (contact));
         }

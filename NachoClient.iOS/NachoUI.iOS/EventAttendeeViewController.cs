@@ -65,11 +65,8 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            //TODO remove from storyboard
-            EventAttendeesTableView.Hidden = true;
-
             account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
-            AttendeeSource = new AttendeeTableViewSource (this, this);
+            AttendeeSource = new AttendeeTableViewSource (this);
 
             CreateEventAttendeeView ();
         }
