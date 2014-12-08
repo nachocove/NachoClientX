@@ -305,11 +305,11 @@ namespace NachoCore.Model
                 "SELECT t1.Id, t1.DisplayName, t1.CreatedAt, t1.FileType, t1.Contact " +
                 "FROM(SELECT a.Id, a.DisplayName, e.DateReceived AS CreatedAt, 0 AS FileType, e.[From] AS Contact " +
                 "FROM McAttachment a, McEmailMessage e " +
-                "WHERE a.ItemId=e.Id AND a.AccountId=?" +
+                "WHERE a.ItemId=e.Id AND a.AccountId=? AND a.IsInline = 0 AND a.ClassCode = ?" +
                 "UNION " +
                 "SELECT a.Id, a.DisplayName, c.CreatedAt AS CreatedAt, 0 AS FileType, c.OrganizerName AS Contact " +
                 "FROM McAttachment a, McCalendar c " +
-                "WHERE a.ItemId=c.Id AND a.AccountId=?" +
+                "WHERE a.ItemId=c.Id AND a.AccountId=? AND a.IsInline = 0 AND a.ClassCode = ? " +
                 "UNION " +
                 "SELECT Id, DisplayName, CreatedAt, 1 AS FileType, 'Me' AS Contact " +
                 "FROM McNote " +
@@ -317,7 +317,8 @@ namespace NachoCore.Model
                 "SELECT Id, DisplayName, CreatedAt, 2 AS FileType, 'Me' AS Contact " +
                 "FROM McDocument " +
                 "WHERE AccountId=?) " +
-                "t1 ORDER BY LOWER(t1.DisplayName) + 0, LOWER(t1.DisplayName)", accountId
+                "t1 ORDER BY LOWER(t1.DisplayName) + 0, LOWER(t1.DisplayName)",
+                accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Email, (int)McAbstrFolderEntry.ClassCodeEnum.Calendar
             ));
         }
 
