@@ -65,11 +65,8 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            //TODO remove from storyboard
-            EventAttendeesTableView.Hidden = true;
-
             account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
-            AttendeeSource = new AttendeeTableViewSource (this, this);
+            AttendeeSource = new AttendeeTableViewSource (this);
 
             CreateEventAttendeeView ();
         }
@@ -139,6 +136,14 @@ namespace NachoClient.iOS
                 var h = sender as SegueHolder;
                 MessageComposeViewController mcvc = (MessageComposeViewController)segue.DestinationViewController;
                 mcvc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, (string)h.value));
+                return;
+            }
+
+            if (segue.Identifier.Equals ("SegueToContactDetail")) {
+                var h = sender as SegueHolder;
+                var c = (McContact)h.value;
+                ContactDetailViewController destinationController = (ContactDetailViewController)segue.DestinationViewController;
+                destinationController.contact = c;
                 return;
             }
  
