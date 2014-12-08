@@ -72,7 +72,12 @@ namespace NachoCore.Model
         /// Email address of the sender (optional)
         public string From { set; get; }
 
+        /// Index of Email in McEmailAddress table
+        public int FromEmailAddressId { set; get; }
+
         public int cachedFromColor { set; get; }
+
+        public int cachedPortraitId { set; get; }
 
         public string cachedFromLetters { set; get; }
 

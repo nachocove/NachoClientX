@@ -459,7 +459,12 @@ namespace NachoClient
             if (0 == contact.PortraitId) {
                 return null;
             }
-            var data = McPortrait.GetContentsByteArray (contact.PortraitId);
+            return ImageOfPortrait (contact.PortraitId);
+        }
+
+        public static UIImage ImageOfPortrait(int portraitId)
+        {
+            var data = McPortrait.GetContentsByteArray (portraitId);
             if (null == data) {
                 return null;
             }
@@ -481,6 +486,19 @@ namespace NachoClient
                 }
             }
             return null;
+        }
+
+        public static UIImage PortraitOfSender(McEmailMessage message)
+        {
+            if(0 == message.cachedPortraitId) {
+                return null;
+            }
+            var image = ImageOfPortrait (message.cachedPortraitId);
+            if(null == image) {
+                message.cachedPortraitId = 0;
+                message.Update();
+            }
+            return image;
         }
 
         public static void PerformAction (string action, string number)

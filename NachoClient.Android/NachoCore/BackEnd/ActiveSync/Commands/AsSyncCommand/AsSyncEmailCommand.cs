@@ -39,8 +39,13 @@ namespace NachoCore.ActiveSync
                 }
                 emailMessage.IsIncomplete = true;
             }
-            bool justCreated = false;
 
+            McEmailAddress address;
+            if (McEmailAddress.Get (folder.AccountId, emailMessage.From, out address)) {
+                emailMessage.FromEmailAddressId = address.Id;
+            }
+
+            bool justCreated = false;
             if (null == eMsg) {
                 justCreated = true;
                 emailMessage.AccountId = folder.AccountId;
