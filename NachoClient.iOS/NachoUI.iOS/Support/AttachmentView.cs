@@ -85,7 +85,7 @@ namespace NachoClient.iOS
             if (attachment.IsInline) {
                 detailText += "Inline ";
             }
-            string extension = Path.GetExtension (attachment.DisplayName).ToUpper ();
+            string extension = Pretty.GetExtension (attachment.DisplayName);
             detailText += extension.Length > 1 ? extension.Substring (1) + " " : "Unrecognized "; // get rid of period and format
             detailText += "file";
             if (0 != attachment.FileSize) {

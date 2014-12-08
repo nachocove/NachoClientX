@@ -64,7 +64,6 @@ namespace NachoClient.iOS
         protected static int DOWNLOAD_IMAGEVIEW_TAG = 500;
         protected static int SEPARATOR_LINE_TAG = 600;
         protected static int BY_CONTACT_SEGMENT = 2;
-        protected bool downloaded;
 
         // Pre-made swipe action descriptors
         private static SwipeActionDescriptor EMAIL_ATTACH_BUTTON =
@@ -376,7 +375,7 @@ namespace NachoClient.iOS
         protected void ConfigureAttachmentView (SwipeActionView view, UITableViewCell cell, McAttachment attachment, NcFileIndex item, UIImageView iconView, UILabel textLabel, UILabel detailTextLabel, UILabel dateTextLabel, UIImageView downloadImageView)
         {
             if (null != attachment) {
-                downloaded = false;
+                var downloaded = false;
                 float xOffset = isMultiSelecting ? 34 : 0;
                 StopAnimationsOnCell (cell);
 
@@ -419,7 +418,7 @@ namespace NachoClient.iOS
                     view.OnClick = (int tag) => {
                         switch (tag) {
                         case DOWNLOAD_TAG:
-                            vc.DownloadAndDoAction(attachment.Id, cell, (a) => {
+                            vc.DownloadAndDoAction (attachment.Id, cell, (a) => {
                             });
                             break;
                         case PREVIEW_TAG:
@@ -442,7 +441,7 @@ namespace NachoClient.iOS
                     view.OnClick = (int tag) => {
                         switch (tag) {
                         case DOWNLOAD_TAG:
-                            vc.DownloadAndDoAction(attachment.Id, cell, (a) => {
+                            vc.DownloadAndDoAction (attachment.Id, cell, (a) => {
                             });
                             break;
                         case PREVIEW_TAG:
@@ -461,7 +460,7 @@ namespace NachoClient.iOS
                 if (attachment.IsInline) {
                     detailText += "Inline ";
                 }
-                string extension = Path.GetExtension (attachment.DisplayName).ToUpper ();
+                string extension = Pretty.GetExtension (attachment.DisplayName);
                 detailText += extension.Length > 1 ? extension.Substring (1) + " " : "Unrecognized "; // get rid of period and format
                 detailText += "file";
                 if (0 != attachment.FileSize) {

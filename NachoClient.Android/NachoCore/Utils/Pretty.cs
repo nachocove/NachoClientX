@@ -608,6 +608,14 @@ namespace NachoCore.Utils
                 return num + "th";
             }
         }
+
+        public static string GetExtension(string path)
+        {
+            if(null == path) {
+                return String.Empty;
+            }
+            return System.IO.Path.GetExtension (path).ToUpper ();
+        }
     }
 }
 
