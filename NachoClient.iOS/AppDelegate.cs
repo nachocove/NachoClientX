@@ -396,12 +396,12 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: Exit");
         }
 
-        private void ReverseFinalShutdown ()
+        private void ReverseFinalShutdown (bool willEnterForeground = true)
         {
             Log.Info (Log.LOG_LIFECYCLE, "ReverseFinalShutdown: Called");
             NcApplication.Instance.StartClass1Services ();
             Log.Info (Log.LOG_LIFECYCLE, "ReverseFinalShutdown: StartClass1Services complete");
-            NcApplication.Instance.StartClass2Services ();
+            NcApplication.Instance.StartClass2Services (willEnterForeground);
             Log.Info (Log.LOG_LIFECYCLE, "ReverseFinalShutdown: StartClass2Services complete");
             NcApplication.Instance.StartClass3Services ();
             Log.Info (Log.LOG_LIFECYCLE, "ReverseFinalShutdown: StartClass3Services complete");
@@ -514,7 +514,7 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void CompletePerformFetchWithoutShutdown()
+        protected void CompletePerformFetchWithoutShutdown ()
         {
             performFetchTimer.Dispose ();
             performFetchTimer = null;
@@ -541,7 +541,7 @@ namespace NachoClient.iOS
             // Need to set ExecutionContext before Start of BE so that strategy can see it.
             NcApplication.Instance.ExecutionContext = NcApplication.ExecutionContextEnum.QuickSync;
             if (FinalShutdownHasHappened) {
-                ReverseFinalShutdown ();
+                ReverseFinalShutdown (false);
             }
             NcApplication.Instance.StatusIndEvent += FetchStatusHandler;
             NcApplication.Instance.QuickSync ();
