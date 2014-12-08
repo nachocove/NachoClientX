@@ -129,23 +129,17 @@ namespace NachoClient.iOS
             return AttendeeList.Count;
         }
 
-        //        public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
-        //        {
-        //            McContact contact;
-        //
-        //            contact = AttendeeList [indexPath.Row].GetContact ();
-        //
-        //            owner.ContactSelectedCallback (contact);
-        //        }
-        //
-        //        public override void AccessoryButtonTapped (UITableView tableView, NSIndexPath indexPath)
-        //        {
-        //            McContact contact;
-        //
-        //            contact = AttendeeList [indexPath.Row].GetContact ();
-        //
-        //            owner.ContactSelectedCallback (contact);
-        //        }
+        public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
+        {
+            var attendee = AttendeeList [indexPath.Row];
+            var accountId = LoginHelpers.GetCurrentAccountId ();
+            McContact contact = McContact.QueryByEmailAddress (accountId, attendee.Email).FirstOrDefault ();
+            if (null == contact) {
+                NcContactGleaner.GleanContact (attendee.Email, accountId);
+                contact = McContact.QueryByEmailAddress (accountId, attendee.Email).FirstOrDefault ();
+            }
+            owner.PerformSegueForDelegate ("SegueToContactDetail", new SegueHolder (contact));
+        }
 
         UIView ViewWithImageName (string imageName)
         {
@@ -339,7 +333,7 @@ namespace NachoClient.iOS
                         RemoveAttendee (attendee);
                         break;
                     case CALL_SWIPE_TAG:
-                        CallSwipeHandler(attendee);
+                        CallSwipeHandler (attendee);
                         break;
                     case EMAIL_SWIPE_TAG:
                         EmailSwipeHandler (attendee);
@@ -494,23 +488,23 @@ namespace NachoClient.iOS
             }
         }
 
-        public override void RowSelected (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
-        {
-            UITableViewCell cell = tableView.CellAt (indexPath);
-            if (isMultiSelecting) {
-                var iv = cell.ViewWithTag (MULTI_ICON_TAG) as UIImageView;
-                ToggleMultiSelectIcon (iv);
-
-                var attendee = AttendeeList [indexPath.Row];
-                if (multiSelect.ContainsKey (indexPath)) {
-                    multiSelect.Remove (indexPath);
-                } else {
-                    multiSelect.Add (indexPath, attendee);
-                }
-                vc.ConfigureNavBar (multiSelect.Count);
-            } 
-            tableView.DeselectRow (indexPath, true);
-        }
+//        public override void RowSelected (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
+//        {
+//            UITableViewCell cell = tableView.CellAt (indexPath);
+//            if (isMultiSelecting) {
+//                var iv = cell.ViewWithTag (MULTI_ICON_TAG) as UIImageView;
+//                ToggleMultiSelectIcon (iv);
+//
+//                var attendee = AttendeeList [indexPath.Row];
+//                if (multiSelect.ContainsKey (indexPath)) {
+//                    multiSelect.Remove (indexPath);
+//                } else {
+//                    multiSelect.Add (indexPath, attendee);
+//                }
+//                vc.ConfigureNavBar (multiSelect.Count);
+//            } 
+//            tableView.DeselectRow (indexPath, true);
+//        }
 
         protected void ToggleMultiSelectIcon (UIImageView iv)
         {
