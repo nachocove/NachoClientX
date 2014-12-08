@@ -148,6 +148,18 @@ namespace NachoClient.iOS
                 quickResponseButton,
             };
 
+            quickResponseButton.Clicked += (object sender, EventArgs e) => {
+                View.EndEditing (true);
+                if (IsReplyAction ()) {
+                    QRType = NcQuickResponse.QRTypeEnum.Reply;
+                } else if (IsForwardAction ()) {
+                    QRType = NcQuickResponse.QRTypeEnum.Forward;
+                } else {
+                    QRType = NcQuickResponse.QRTypeEnum.Compose;
+                }
+                ShowQuickResponses ();
+            };
+
             sendButton.Clicked += (object sender, EventArgs e) => {
                 if (OkToSend ()) {
                     SendMessage ();
@@ -219,17 +231,7 @@ namespace NachoClient.iOS
                 ShowQuickResponses ();
             }
 
-            quickResponseButton.Clicked += (object sender, EventArgs e) => {
-                View.EndEditing (true);
-                if (IsReplyAction ()) {
-                    QRType = NcQuickResponse.QRTypeEnum.Reply;
-                } else if (IsForwardAction ()) {
-                    QRType = NcQuickResponse.QRTypeEnum.Forward;
-                } else {
-                    QRType = NcQuickResponse.QRTypeEnum.Compose;
-                }
-                ShowQuickResponses ();
-            };
+
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -866,11 +868,7 @@ namespace NachoClient.iOS
         {
             switch (QRType) {
             case NcQuickResponse.QRTypeEnum.Compose:
-                mcMessage.BodyId = McBody.InsertFile (account.Id, McAbstrFileDesc.BodyTypeEnum.PlainText_1, "").Id;
-                break;
             case NcQuickResponse.QRTypeEnum.Reply:
-                mcMessage.BodyId = McBody.InsertFile (account.Id, McAbstrFileDesc.BodyTypeEnum.PlainText_1, bodyTextView.Text).Id;
-                break;
             case NcQuickResponse.QRTypeEnum.Forward:
                 mcMessage.BodyId = McBody.InsertFile (account.Id, McAbstrFileDesc.BodyTypeEnum.PlainText_1, bodyTextView.Text).Id;
                 break;
