@@ -86,7 +86,6 @@ namespace NachoClient.iOS
                             FinishLoading (data, "image/jpeg");
                         }
                     } else {
-                        Log.Error (Log.LOG_UI, "CidImageProtocol: unknown extension {0}", Request.Url);
                         using (var data = image.AsJPEG ()) {
                             FinishLoading (data, "image/jpeg");
                         }
