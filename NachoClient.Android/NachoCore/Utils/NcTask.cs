@@ -73,20 +73,16 @@ namespace NachoCore.Utils
                 if (!stfu) {
                     Log.Info (Log.LOG_SYS, "NcTask {0} completed.", taskName);
                 }
-                if (null == taskRef) {
-                    // XAMMIT - Likely inappropriate Task inlining.
-                    Log.Warn (Log.LOG_SYS, "NcTask {0}: Weak reference unavailable", taskName);
-                }
-                else if (!TaskMap.TryRemove (taskRef, out dummy)) {
-                    Log.Error (Log.LOG_SYS, "Task already removed from TaskMap ({0}).", taskName);
-                }
             }, Cts.Token);
             taskRef = new WeakReference (task);
             if (!TaskMap.TryAdd (taskRef, taskName)) {
                 Log.Error (Log.LOG_SYS, "Task already added to TaskMap ({0}).", taskName);
             }
-            return task;
-            // XAMMIT - Task.Start() does not work reliably (FYI).
+            return task.ContinueWith (delegate {
+                if (!TaskMap.TryRemove (taskRef, out dummy)) {
+                    Log.Error (Log.LOG_SYS, "Task already removed from TaskMap ({0}).", taskName);
+                }
+            }, Cts.Token);
         }
 
         public static void StopService ()
