@@ -320,9 +320,6 @@ namespace NachoCore.Model
             CheckPointTimer = new NcTimer ("NcModel.CheckPointTimer", state => {
                 var checkpointCmd = "PRAGMA main.wal_checkpoint (PASSIVE);";
                 var threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
-                if (50 < threadId) {
-                    Log.Error (Log.LOG_DB, "CheckPointTimer: thread {0}", threadId);
-                }
                 foreach (var db in new List<SQLiteConnection> { Db, TeleDb }) {
                     var thisDb = db;
                     if (0 == walCheckpointCount) {
