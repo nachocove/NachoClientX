@@ -68,13 +68,13 @@ namespace NachoCore.Brain
             switch (whatType) {
             case QRTypeEnum.Compose:
                 emailMessage.Subject = selectedResponse.subject;
-                emailBody.UpdateData (selectedResponse.body);
+                emailBody.UpdateData (selectedResponse.body + " " + emailBody.GetContentsString());
                 break;
             case QRTypeEnum.Reply:
-                emailBody.UpdateData (selectedResponse.body + emailBody.GetContentsString ());
+                emailBody.UpdateData (selectedResponse.body + " " + emailBody.GetContentsString ());
                 break;
             case QRTypeEnum.Forward:
-                emailBody.UpdateData (selectedResponse.body + emailBody.GetContentsString ());
+                emailBody.UpdateData (selectedResponse.body + " "  + emailBody.GetContentsString ());
                 break;
             default:
                 break;
