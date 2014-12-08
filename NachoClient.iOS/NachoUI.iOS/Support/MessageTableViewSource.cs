@@ -123,6 +123,9 @@ namespace NachoClient.iOS
 
         protected float HeightForMessage (McEmailMessage message)
         {
+            if (null == message) {
+                return NORMAL_ROW_HEIGHT;
+            }
             if (message.IsDeferred () || message.HasDueDate ()) {
                 return DATED_ROW_HEIGHT;
             }
