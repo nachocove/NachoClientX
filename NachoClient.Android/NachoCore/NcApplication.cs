@@ -205,12 +205,14 @@ namespace NachoCore
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass1Services exited.");
         }
 
-        public void StartClass2Services ()
+        public void StartClass2Services (bool willEnterForeground = true)
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass2Services called.");
             NcModel.Instance.EngageRateLimiter ();
-            NcBrain.StartService ();
-            NcContactGleaner.Start ();
+            if (willEnterForeground) {
+                NcBrain.StartService ();
+                NcContactGleaner.Start ();
+            }
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass2Services exited.");
         }
 
