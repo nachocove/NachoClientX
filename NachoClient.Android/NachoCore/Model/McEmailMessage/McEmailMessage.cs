@@ -693,7 +693,7 @@ namespace NachoCore.Model
             foreach (var c in _Categories) {
                 c.Id = 0;
                 c.SetParent (this);
-                db.Insert (c);
+                c.Insert ();
             }
             return NcResult.OK ();
         }

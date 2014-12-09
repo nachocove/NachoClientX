@@ -51,7 +51,7 @@ namespace NachoCore.Brain
         protected static void MarkAsGleaned (McEmailMessage emailMessage)
         {
             emailMessage.HasBeenGleaned = true;
-            NcModel.Instance.Db.Update (emailMessage);
+            emailMessage.Update ();
         }
 
         /// TODO: I wanna be table driven!
@@ -85,13 +85,14 @@ namespace NachoCore.Brain
                 };
                 NcEmailAddress.SplitName (mbAddr, ref contact);
 
-                NcModel.Instance.Db.Insert (contact);
+                contact.Insert ();
                 gleanedFolder.Link (contact);
 
                 McEmailAddress emailAddress;
                 McEmailAddress.Get (accountId, mbAddr, out emailAddress);
 
                 var strattr = new McContactEmailAddressAttribute () {
+                    AccountId = accountId,
                     Name = "Email1Address",
                     Value = mbAddr.Address,
                     ContactId = contact.Id,
@@ -99,13 +100,13 @@ namespace NachoCore.Brain
                 };
 
                 // TODO - Get the reply state
-                NcModel.Instance.Db.Insert (strattr);
+                strattr.Insert ();
             } else {
                 // Update the refcount on the existing contact.
                 foreach (var contact in contacts) {
                     // TODO: need update count using timestamp check.
                     contact.RefCount += 1;
-                    NcModel.Instance.Db.Update (contact);
+                    contact.Update ();
                 }
             }
         }
@@ -120,19 +121,20 @@ namespace NachoCore.Brain
                 RefCount = 1,
             };
 
-            NcModel.Instance.Db.Insert (contact);
+            contact.Insert ();
             gleanedFolder.Link (contact);
 
             McEmailAddress emailAddress;
             McEmailAddress.Get (accountId, address, out emailAddress);
 
             var strattr = new McContactEmailAddressAttribute () {
+                AccountId = accountId,
                 Name = "Email1Address",
                 Value = address,
                 ContactId = contact.Id,
                 EmailAddress = emailAddress.Id,
             };
-            NcModel.Instance.Db.Insert (strattr);
+            strattr.Insert ();
         }
 
         public static void GleanContacts (int accountId, McEmailMessage emailMessage)
