@@ -48,10 +48,10 @@ namespace NachoCore.Utils
             config.ServiceURL = "https://dynamodb.us-west-2.amazonaws.com";
 
             CognitoAWSCredentials credentials = new CognitoAWSCredentials (
-                                                    "610813048224",
-                                                    "us-east-1:0d40f2cf-bf6c-4875-a917-38f8867b59ef",
-                                                    "arn:aws:iam::610813048224:role/Cognito_dev_telemetryUnauth_DefaultRole",
-                                                    "NO PUBLIC AUTHENTICATION",
+                                                    BuildInfo.AwsAccountId,
+                                                    BuildInfo.AwsIdentityPoolId,
+                                                    BuildInfo.AwsUnauthRoleArn,
+                                                    BuildInfo.AwsAuthRoleArn,
                                                     RegionEndpoint.USEast1
                                                 );
 
