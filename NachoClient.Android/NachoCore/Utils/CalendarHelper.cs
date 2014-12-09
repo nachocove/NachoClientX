@@ -908,6 +908,7 @@ namespace NachoCore.Utils
         {
 //            // Debug
 //            NcModel.Instance.Db.DeleteAll<McEvent> ();
+//            FIXME - if we choose to use DeleteAll, we need to add support for it in NcModel.
 //
 //            // Debug
 //            var l = NcModel.Instance.Db.Table<McCalendar> ().ToList ();

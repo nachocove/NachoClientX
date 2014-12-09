@@ -72,6 +72,8 @@ namespace NachoCore.Model
 
         public string TeleDbFileName { set; get; }
 
+        public object WriteNTransLockObj { private set; get; }
+
         public enum AutoVacuumEnum
         {
             NONE = 0,
@@ -277,8 +279,10 @@ namespace NachoCore.Model
             get {
                 if (instance == null) {
                     lock (syncRoot) {
-                        if (instance == null)
+                        if (instance == null) {
                             instance = new NcModel ();
+                            instance.WriteNTransLockObj = new object ();
+                        }
                     }
                 }
                 return instance; 
@@ -366,6 +370,13 @@ namespace NachoCore.Model
             return (TransDepth.TryGetValue (Thread.CurrentThread.ManagedThreadId, out depth) && depth > 0);
         }
 
+        public int Update (object obj, Type objType, bool performOC = false, int priorVersion = 0)
+        {
+            lock (WriteNTransLockObj) {
+                return Db.Update (obj, objType, performOC, priorVersion);
+            }
+        }
+
         public int BusyProtect (Func<int> action)
         {
             int rc = 0;
@@ -378,7 +389,9 @@ namespace NachoCore.Model
             var whoa = DateTime.UtcNow.AddSeconds (5.0);
             do {
                 try {
-                    rc = action ();
+                    lock (WriteNTransLockObj) {
+                        rc = action ();
+                    }
                     return rc;
                 } catch (SQLiteException ex) {
                     if (SQLite3.Result.Busy == ex.Result) {
@@ -431,7 +444,9 @@ namespace NachoCore.Model
                 do {
                     try {
                         watch.Start ();
-                        Db.RunInTransaction (action);
+                        lock (WriteNTransLockObj) {
+                            Db.RunInTransaction (action);
+                        }
                         watch.Stop ();
                         var span = watch.ElapsedMilliseconds;
                         if (1000 < span) {

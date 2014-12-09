@@ -609,31 +609,31 @@ namespace NachoCore.Model
 
             foreach (var o in Dates) {
                 o.ContactId = Id;
-                db.Insert (o);
+                o.Insert ();
             }
             foreach (var o in Addresses) {
                 o.ContactId = Id;
-                db.Insert (o);
+                o.Insert ();
             }
             foreach (var o in Relationships) {
                 o.ContactId = Id;
-                db.Insert (o);
+                o.Insert ();
             }
             foreach (var o in EmailAddresses) {
                 o.ContactId = Id;
-                db.Insert (o);
+                o.Insert ();
             }
             foreach (var o in PhoneNumbers) {
                 o.ContactId = Id;
-                db.Insert (o);
+                o.Insert ();
             }
             foreach (var o in IMAddresses) {
                 o.ContactId = Id;
-                db.Insert (o);
+                o.Insert ();
             }
             foreach (var o in Categories) {
                 o.ContactId = Id;
-                db.Insert (o);
+                o.Insert ();
             }
     
             // FIXME: Error handling
