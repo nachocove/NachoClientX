@@ -189,7 +189,7 @@ namespace NachoCore.Utils
             error = null;
 
             var body = message.GetBody ();
-            if (!McBody.IsComplete (body)) {
+            if (!McBody.IsNontruncatedBodyComplete (body)) {
                 error = "Nacho Mail has not downloaded the body of this message yet.\n" + message.GetBodyPreviewOrEmpty ();
                 return null;
             }

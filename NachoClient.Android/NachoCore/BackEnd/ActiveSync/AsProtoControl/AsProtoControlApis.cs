@@ -458,7 +458,7 @@ namespace NachoCore.ActiveSync
                 return null;
             }
             var body = emailMessage.GetBody ();
-            if(McAbstrFileDesc.IsComplete(body)) {
+            if(McAbstrFileDesc.IsNontruncatedBodyComplete(body)) {
                 Log.Error (Log.LOG_AS, "DnldEmailBodyCmd: FilePresence is Complete");
                 return null;
             }
@@ -629,7 +629,7 @@ namespace NachoCore.ActiveSync
                 return null;
             }
             var body = cal.GetBody ();
-            if(McAbstrFileDesc.IsComplete(body)) {
+            if(McAbstrFileDesc.IsNontruncatedBodyComplete(body)) {
                 return null;
             }
             var pending = new McPending (Account.Id) {
@@ -748,7 +748,7 @@ namespace NachoCore.ActiveSync
                 return null;
             }
             var body = contact.GetBody ();
-            if(McAbstrFileDesc.IsComplete(body)) {
+            if(McAbstrFileDesc.IsNontruncatedBodyComplete(body)) {
                 return null;
             }
             var pending = new McPending (Account.Id) {
@@ -865,7 +865,7 @@ namespace NachoCore.ActiveSync
                 return null;
             }
             var body = task.GetBody ();
-            if(McAbstrFileDesc.IsComplete(body)) {
+            if(McAbstrFileDesc.IsNontruncatedBodyComplete(body)) {
                 return null;
             }
             var pending = new McPending (Account.Id) {

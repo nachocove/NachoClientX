@@ -112,7 +112,7 @@ namespace NachoClient.iOS
 
             var body = McBody.QueryById<McBody> (item.BodyId);
 
-            if (null != body && McAbstrFileDesc.FilePresenceEnum.Complete == body.FilePresence) {
+            if (McAbstrFileDesc.IsNontruncatedBodyComplete(body)) {
                 if (isRefresh && (itemDateTime == body.LastModified)) {
                     return;
                 }
@@ -132,7 +132,7 @@ namespace NachoClient.iOS
                 statusIndicatorIsRegistered = false;
             }
 
-            if (null == body || McAbstrFileDesc.FilePresenceEnum.Complete != body.FilePresence) {
+            if (!McAbstrFileDesc.IsNontruncatedBodyComplete(body)) {
                 StartDownload ();
                 return;
             }
@@ -220,7 +220,7 @@ namespace NachoClient.iOS
                 if (null != refreshedItem) {
                     item = refreshedItem;
                     var body = McBody.QueryById<McBody> (item.BodyId);
-                    if (null != body && McAbstrFileDesc.FilePresenceEnum.Complete == body.FilePresence) {
+                    if (McAbstrFileDesc.IsNontruncatedBodyComplete(body)) {
                         // It was a race condition. We're good.
                         Reconfigure ();
                     } else {
