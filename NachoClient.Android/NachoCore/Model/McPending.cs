@@ -829,8 +829,7 @@ namespace NachoCore.Model
                 if (CanDepend ()) {
                     // Walk from the back toward the front of the Q looking for anything this pending might depend upon.
                     // If this gets to be expensive, we can implement a scoreboard (and possibly also RAM cache).
-                    var pendq = Query (AccountId).Where (y => StateEnum.Deleted != y.State && StateEnum.Failed != y.State)
-                        .OrderByDescending (x => x.Priority);
+                    var pendq = QueryNonFailedNonDeleted (AccountId).OrderByDescending (x => x.Priority);
                     foreach (var elem in pendq) {
                         if (DependsUpon (elem)) {
                             predIds.Add (elem.Id);
@@ -947,6 +946,14 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Table<McPending> ()
                     .Where (x => x.AccountId == accountId)
                     .ToList ();
+        }
+
+        public static List<McPending> QueryNonFailedNonDeleted (int accountId)
+        {
+            return NcModel.Instance.Db.Table<McPending> ()
+                .Where (x => x.AccountId == accountId &&
+                    StateEnum.Failed != x.State &&
+                    StateEnum.Deleted != x.State).ToList ();
         }
 
         public static IEnumerable<McPending> QueryEligible (int accountId)

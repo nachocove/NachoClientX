@@ -20,7 +20,7 @@ namespace NachoCore.ActiveSync
 
         public void ProcessServerCommand ()
         {
-            foreach (var pending in McPending.Query (AccountId).OrderBy (x => x.Id)) {
+            foreach (var pending in McPending.QueryNonFailedNonDeleted (AccountId).OrderBy (x => x.Id)) {
                 if (McPending.StateEnum.Dispatched == pending.State) {
                     // TODO: apply changes to pending after the server rejects them. Or should we mark them as maybe-gonna-fail?
                     continue;

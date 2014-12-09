@@ -725,6 +725,22 @@ namespace Test.iOS
             }
 
             [Test]
+            public void TestQueryNonFailedNonDeleted ()
+            {
+                var pending = CreatePending (accountId: 1);
+                var matcher = CreatePending (accountId: 2); // other pending
+                var isDel = CreatePending (accountId: 2);
+                isDel.State = McPending.StateEnum.Deleted;
+                isDel.Update ();
+                var isFailed = CreatePending (accountId: 2);
+                isFailed.State = McPending.StateEnum.Failed;
+                isFailed.Update ();
+                var retrieved = McPending.QueryNonFailedNonDeleted (2);
+                Assert.AreEqual (1, retrieved.Count, "Should retrieve pending from correct account");
+                PendingsAreEqual (matcher, retrieved.FirstOrDefault ());
+            }
+
+            [Test]
             public void TestQueryEligible ()
             {
                 var pendElig = CreatePending ();
