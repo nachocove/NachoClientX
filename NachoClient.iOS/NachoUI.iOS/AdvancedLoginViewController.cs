@@ -564,7 +564,7 @@ namespace NachoClient.iOS
                 LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, true);
             });
 
-            startBe ();
+            BackEnd.Instance.Start (LoginHelpers.GetCurrentAccountId ());
             waitScreen.ShowView ();
         }
 
