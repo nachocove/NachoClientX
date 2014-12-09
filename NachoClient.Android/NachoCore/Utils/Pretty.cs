@@ -149,6 +149,15 @@ namespace NachoCore.Utils
         }
 
         /// <summary>
+        /// Day and date: Sat, Mar 1
+        /// </summary>
+        static public string FullDateSpelledOutString (DateTime d)
+        {
+            NcAssert.True (DateTimeKind.Local != d.Kind);
+            return d.LocalT ().ToString ("dddd, MMMM d");
+        }
+
+        /// <summary>
         /// Day, date and year: Sat, Mar 1, 2014
         /// </summary>
         static public string FullDateYearString (DateTime d)
@@ -183,7 +192,6 @@ namespace NachoCore.Utils
             NcAssert.True (DateTimeKind.Local != d.Kind);
             return d.LocalT ().ToString ("t").ToLower ();
         }
-
 
         /// <summary>
         /// Compact version of event duration
@@ -609,9 +617,9 @@ namespace NachoCore.Utils
             }
         }
 
-        public static string GetExtension(string path)
+        public static string GetExtension (string path)
         {
-            if(null == path) {
+            if (null == path) {
                 return String.Empty;
             }
             return System.IO.Path.GetExtension (path).ToUpper ();

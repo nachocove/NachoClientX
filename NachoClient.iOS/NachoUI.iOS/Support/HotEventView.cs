@@ -162,7 +162,7 @@ namespace NachoClient.iOS
 
             var startString = "";
             if (c.AllDayEvent) {
-                startString = "ALL DAY";
+                startString = "ALL DAY " + Pretty.FullDateSpelledOutString (currentEvent.StartTime);
             } else {
                 if ((currentEvent.StartTime - DateTime.UtcNow).TotalHours < 12) {
                     startString = Pretty.ShortTimeString (currentEvent.StartTime);
