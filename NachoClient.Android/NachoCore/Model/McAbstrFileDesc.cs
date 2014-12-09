@@ -374,5 +374,10 @@ namespace NachoCore.Model
         {
             return (FilePresenceEnum.Complete == FilePresence);
         }
+
+        public static bool IsNontruncatedBodyComplete(McAbstrFileDesc file)
+        {
+            return (IsComplete (file) && !file.Truncated);
+        }
     }
 }
