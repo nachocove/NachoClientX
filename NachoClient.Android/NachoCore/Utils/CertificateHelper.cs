@@ -9,21 +9,12 @@ using NachoCore.Utils;
 using System.Security.Cryptography.X509Certificates;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace NachoCore.Utils
 {
     public class CertificateHelper
     {
-        string subjectCountry = "";
-        string subjectOrganization = "";
-        string subjectOrgainizationalUnit = "";
-        string subjectCommonName = "";
-        string issuerCountry = "";
-        string issuerOrganization = "";
-        string issuerOrganizationalUnit = "";
-        string issuerCommonName = "";
-        char[] delimeters = { ',', '=' };
-
         public CertificateHelper ()
         {
         }
@@ -39,22 +30,13 @@ namespace NachoCore.Utils
             string version = certificate.Version.ToString ();
             string signatureAlgorithm = certificate.SignatureAlgorithm.FriendlyName;
 
-            parseSubjectItems (subject);
-            parseIssuerItems (issuer);
-
             string certificateToken = 
 
-                "Subject \n" +
-                "Common Name: " + subjectCommonName + "\n" +
-                "Organization Unit: " + subjectOrgainizationalUnit + "\n" +
-                "Organization: " + subjectOrganization + "\n" +
-                "Country: " + subjectCountry + "\n\n" +
+                "Subject: \n" + 
+                subject.Trim().Replace("\"", "") + "\n\n" +
 
-                "Issuer \n" +
-                "Country: " + issuerCountry + "\n" +
-                "Organization: " + issuerOrganization + "\n" +
-                "Organizational Unit: " + issuerOrganizationalUnit + "\n" +
-                "Common Name: " + issuerCommonName + "\n\n" +
+                "Issuer: \n" +
+                issuer.Trim().Replace("\"", "") + "\n\n" + 
 
                 "Serial Number: " + serialNumber + "\n" +
                 "Version: " + version + "\n\n" +
@@ -67,60 +49,6 @@ namespace NachoCore.Utils
                 notValidAfter;
 
             return  certificateToken;
-        }
-
-        public void parseSubjectItems (string subject)
-        {
-            string[] subjectTokens = subject.Split (delimeters);
-            List<KeyValuePair<string, string>> subjectComponentKVPs = new List<KeyValuePair<string,string>> ();
-            for (int i = 0; i < subjectTokens.Length;) {
-                string key = subjectTokens [i].Trim ();
-                string value = subjectTokens [i + 1].Trim ();
-                subjectComponentKVPs.Add (new KeyValuePair<string, string> (key, value));
-                i = i + 2;
-            }
-
-            foreach (KeyValuePair<string,string> kvp in subjectComponentKVPs) {
-                if (kvp.Key == "CN") {
-                    subjectCommonName = kvp.Value;
-                }
-                if (kvp.Key == "OU") {
-                    subjectOrgainizationalUnit = kvp.Value;
-                }
-                if (kvp.Key == "O") {
-                    subjectOrganization = kvp.Value;
-                }
-                if (kvp.Key == "C") {
-                    subjectCountry = kvp.Value;
-                }
-            }
-        }
-
-        public void parseIssuerItems (string issuer)
-        {
-            string[] issuerTokens = issuer.Split (delimeters);
-            List<KeyValuePair<string, string>> issuerComponentKVPs = new List<KeyValuePair<string,string>> ();
-            for (int i = 0; i < issuerTokens.Length;) {
-                string key = issuerTokens [i].Trim ();
-                string value = issuerTokens [i + 1].Trim ();
-                issuerComponentKVPs.Add (new KeyValuePair<string, string> (key, value));
-                i = i + 2;
-            }
-
-            foreach (KeyValuePair<string,string> kvp in issuerComponentKVPs) {
-                if (kvp.Key == "CN") {
-                    issuerCommonName = kvp.Value;
-                }
-                if (kvp.Key == "OU") {
-                    issuerOrganizationalUnit = kvp.Value;
-                }
-                if (kvp.Key == "O") {
-                    issuerOrganization = kvp.Value;
-                }
-                if (kvp.Key == "C") {
-                    issuerCountry = kvp.Value;
-                }
-            }
         }
     }
 }
