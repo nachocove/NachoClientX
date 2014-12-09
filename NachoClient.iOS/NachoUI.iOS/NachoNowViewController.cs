@@ -22,6 +22,9 @@ namespace NachoClient.iOS
         protected UITableView hotListView;
         protected HotEventView hotEventView;
 
+        protected UIRefreshControl refreshControl;
+        protected UITableViewController tableViewController;
+
         public NachoNowViewController (IntPtr handle) : base (handle)
         {
         }
@@ -38,6 +41,28 @@ namespace NachoClient.iOS
 
             hotListSource = new HotListTableViewSource (this, priorityInbox);
             hotListView.Source = hotListSource;
+
+            refreshControl = new UIRefreshControl ();
+            refreshControl.TintColor = A.Color_NachoGreen;
+            refreshControl.AttributedTitle = new NSAttributedString ("Refreshing...");
+            refreshControl.ValueChanged += (object sender, EventArgs e) => {
+                refreshControl.BeginRefreshing ();
+                BackEnd.Instance.QuickSync ();
+                new NcTimer ("NachoNowViewController refresh", refreshCallback, null, 2000, 0);
+            };
+
+            tableViewController = new UITableViewController ();
+            tableViewController.RefreshControl = refreshControl;
+            tableViewController.TableView = hotListView;
+
+            this.AddChildViewController (tableViewController);
+        }
+
+        protected void refreshCallback (object sender)
+        {
+            NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
+                refreshControl.EndRefreshing ();
+            });
         }
 
         protected void CreateView ()

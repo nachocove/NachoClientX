@@ -93,9 +93,7 @@ namespace NachoClient.iOS
 
             ReloadDataMaintainingPosition ();
 
-            UIView backgroundView = new UIView (new RectangleF (0, 0, 320, 480));
-            backgroundView.BackgroundColor = new UIColor (227f / 255f, 227f / 255f, 227f / 255f, 1.0f);
-            TableView.BackgroundView = backgroundView;
+            View.BackgroundColor = new UIColor (227f / 255f, 227f / 255f, 227f / 255f, 1.0f);
 
             messageSource.owner = this;
             TableView.Source = messageSource;
@@ -105,7 +103,23 @@ namespace NachoClient.iOS
 
             TableView.TableHeaderView = null; // beta 1
 
+            RefreshControl = new UIRefreshControl ();
+            RefreshControl.TintColor = A.Color_NachoGreen;
+            RefreshControl.AttributedTitle = new NSAttributedString ("Refreshing...");
+            RefreshControl.ValueChanged += (object sender, EventArgs e) => {
+                RefreshControl.BeginRefreshing();
+                BackEnd.Instance.QuickSync();
+                new NcTimer("MessageListViewController refresh", refreshCallback, null, 2000, 0);
+            };
+
             Util.ConfigureNavBar (false, this.NavigationController);
+        }
+
+        protected void refreshCallback(object sender)
+        {
+            NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
+                RefreshControl.EndRefreshing ();
+            });
         }
 
         protected virtual void CustomizeBackButton ()

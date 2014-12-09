@@ -516,8 +516,7 @@ namespace Test.iOS
             phonyServer.Port = 500;
             phonyServer.Scheme = "/phonyscheme";
             phonyServer.UsedBefore = true;
-
-            NcModel.Instance.Db.Insert (phonyServer);
+            phonyServer.Insert ();
 
             mockContext.ProtoControl = ProtoOps.CreateProtoControl (mockContext.Account.Id);
 

@@ -164,7 +164,7 @@ namespace NachoCore.Model
                 }
                 int priorVersion = record.RowVersion;
                 record.RowVersion = priorVersion + 1;
-                count = NcModel.Instance.Db.Update (record, record.GetType (), true, priorVersion);
+                count = NcModel.Instance.Update (record, record.GetType (), true, priorVersion);
                 if (0 < count) {
                     break;
                 }
