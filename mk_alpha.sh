@@ -1,14 +1,14 @@
 #!/bin/sh
 
-# USAGE: mk_beta.sh [VERSION] [BUILD]
+# USAGE: mk_alpha.sh [VERSION] [BUILD]
 #
-# For example, mk_beta.sh 0.9 123 or mk_beta.sh 1.0.beta 321
+# For example, mk_alpha.sh 0.8 123 or mk_alpha.sh 1.0.alpha 321
 #
 # VERSION and BUILD are both strings. They preferably have no space. But if they
 # do contain spaces, please use ".
 
 if [ $# -ne 2 ]; then
-   echo "USAGE: mk_beta.sh [VERSION] [BUILD]"
+   echo "USAGE: mk_alpha.sh [VERSION] [BUILD]"
    exit 1
 fi
 
@@ -22,4 +22,4 @@ sh tag.sh "v$1_$2" "v$1_$2"
 make -f build.mk
 
 # Build NachoClient
-VERSION="$1" BUILD="$2" RELEASE="beta" make release
+VERSION="$1" BUILD="$2" RELEASE="alpha" make release

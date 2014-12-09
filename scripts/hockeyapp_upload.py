@@ -4,6 +4,7 @@ import plistlib
 import argparse
 import subprocess
 import hockeyapp
+from projects import projects
 
 
 class HockeyappUpload:
@@ -114,14 +115,17 @@ def main():
 
     if options.ios:
         ipa_file = None
-        if 'VERSION' in os.environ or 'BUILD' in os.environ:
-            api_token = '1c08642c07d244f7a0600ef5654e0dad'
-            app_id = '44dae4a6ae9134930c64c623d5023ac4'
-            if 'BUILD' in os.environ:
-                ipa_file = 'NachoClientiOS-%s.ipa' % os.environ['BUILD']
+        if 'RELEASE' in os.environ:
+            assert 'VERSION' in os.environ and 'BUILD' in os.environ
+            release = os.environ['RELEASE']
+            ipa_file = 'NachoClientiOS-%s.ipa' % os.environ['BUILD']
         else:
-            api_token = 'dbccf0190d5b410e8f43ef2b5e7d6b43'
-            app_id = 'b22a505d784d64901ab1abde0728df67'
+            release = 'dev'
+        if release not in projects:
+            raise ValueError('unknown release type %s' % release)
+        hockeyapp = projects[release]['hockeyapp']
+        api_token = hockeyapp['api_token']
+        app_id = hockeyapp['app_id']
         print 'Uploading to HockeyApp %s' % app_id
         hockey_app = HockeyappUploadIos(api_token=api_token, app_id=app_id)
     else:
