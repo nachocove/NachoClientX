@@ -445,6 +445,11 @@ namespace NachoCore.Brain
                         Log.Info (Log.LOG_BRAIN, "NcBrain Task exits");
                         return;
                     }
+                    // TODO - scheduling of brain actions need to be smarter. This will be
+                    // addressed in brain 2.0.
+                    if (NcApplication.ExecutionContextEnum.QuickSync == NcApplication.Instance.ExecutionContext) {
+                        continue;
+                    }
                     if (ENABLED) {
                         ProcessEvent (brainEvent);
                     }
