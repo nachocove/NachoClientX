@@ -438,7 +438,7 @@ namespace NachoClient.iOS
 
             ConfigureAttachments ();
 
-            bodyView.Configure (message, false, false);
+            bodyView.Configure (message, false);
 
             LayoutView ();
         }

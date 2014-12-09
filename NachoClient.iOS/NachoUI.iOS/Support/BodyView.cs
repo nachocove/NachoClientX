@@ -56,11 +56,12 @@ namespace NachoClient.iOS
         /// </summary>
         /// <returns>A new BodyView object that still needs to be configured.</returns>
         /// <param name="frame">The location and size of the BodyView.</param>
-        public static BodyView FixedSizeBodyView (RectangleF frame)
+        public static BodyView FixedSizeBodyView (RectangleF frame, Action sizeChangedCallback)
         {
             BodyView newBodyView = new BodyView (frame);
             newBodyView.variableHeight = false;
             newBodyView.visibleArea = frame.Size;
+            newBodyView.sizeChangedCallback = sizeChangedCallback;
             newBodyView.UserInteractionEnabled = false;
             return newBodyView;
         }
@@ -106,7 +107,7 @@ namespace NachoClient.iOS
         /// Display the body of the given item. The current contents of the BodyView are discarded.
         /// </summary>
         /// <param name="item">The item whose body should be displayed.</param>
-        public void Configure (McAbstrItem item, bool isRefresh, bool isOnNow)
+        public void Configure (McAbstrItem item, bool isRefresh)
         {
             this.item = item;
 
@@ -152,7 +153,7 @@ namespace NachoClient.iOS
                 RenderRtfString (body.GetContentsString ());
                 break;
             case McAbstrFileDesc.BodyTypeEnum.MIME_4:
-                RenderMime (body, isOnNow);
+                RenderMime (body);
                 break;
             default:
                 Log.Error (Log.LOG_UI, "Body {0} has an unknown body type {1}.", body.Id, (int)body.BodyType);
@@ -161,6 +162,14 @@ namespace NachoClient.iOS
             }
 
             LayoutQuietly ();
+        }
+
+        public void ConfigureAndResize (McAbstrItem item, bool isRefresh, SizeF newSize)
+        {
+            NcAssert.True (!variableHeight, "ConfigureAndResize should only be used for fixed size BodyViews");
+            preferredWidth = newSize.Width;
+            visibleArea = newSize;
+            Configure (item, isRefresh);
         }
 
         private McAbstrItem RefreshItem ()
@@ -185,8 +194,7 @@ namespace NachoClient.iOS
             var refreshedItem = RefreshItem ();
             if (null != refreshedItem) {
 
-                Configure (refreshedItem, false, false);
-
+                Configure (refreshedItem, false);
                 // Configure() normally doesn't call the parent view's callback. But because
                 // the download completed in the background, that callback needs to be called.
                 if (null != sizeChangedCallback) {
@@ -331,7 +339,7 @@ namespace NachoClient.iOS
             }
 
             bool sizeChanged = !AreClose (oldSize.Width, maxWidth * zoomScale) || !AreClose (oldSize.Height, subviewY * zoomScale);
-            if (sizeChanged && variableHeight) {
+            if (sizeChanged) {
                 ViewFramer.Create (this).Width (maxWidth * zoomScale).Height (subviewY * zoomScale);
             }
 
@@ -362,20 +370,6 @@ namespace NachoClient.iOS
         {
             this.contentOffset = newContentOffset;
             LayoutAndNotifyParent ();
-        }
-
-        /// <summary>
-        /// Resize and relocate the BodyView. This can only be called for a
-        /// fixed size BodyView.
-        /// </summary>
-        /// <param name="newFrame">The new location and size for the BodyView.</param>
-        public void Resize (RectangleF newFrame)
-        {
-            // Resizing only makes sense for a fixed size BodyView
-            NcAssert.True (!variableHeight);
-            preferredWidth = newFrame.Width;
-            visibleArea = newFrame.Size;
-            LayoutQuietly ();
         }
 
         /// <summary>
@@ -410,7 +404,7 @@ namespace NachoClient.iOS
             string preview = item.GetBodyPreviewOrEmpty ();
             bool hasPreview = !string.IsNullOrEmpty (preview);
             string message;
-            if (variableHeight) {
+            if (UserInteractionEnabled) {
                 if (hasPreview) {
                     message = "[ Download failed. Tap here to retry. Message preview only. ]";
                 } else {
@@ -527,15 +521,15 @@ namespace NachoClient.iOS
             }
         }
 
-        private void RenderCalendarPart (MimePart part, bool isOnNow)
+        private void RenderCalendarPart (MimePart part)
         {
-            var calView = new BodyCalendarView (yOffset, preferredWidth, part, isOnNow);
+            var calView = new BodyCalendarView (yOffset, preferredWidth, part, !UserInteractionEnabled);
             AddSubview (calView);
             childViews.Add (calView);
             yOffset += calView.Frame.Height;
         }
 
-        private void RenderMime (McBody body, bool isOnNow)
+        private void RenderMime (McBody body)
         {
             var message = MimeHelpers.LoadMessage (body);
             MimeHelpers.DumpMessage (message);
@@ -547,7 +541,7 @@ namespace NachoClient.iOS
                 if (part.ContentType.Matches ("text", "html")) {
                     RenderHtmlPart (part);
                 } else if (part.ContentType.Matches ("text", "calendar")) {
-                    RenderCalendarPart (part, isOnNow);
+                    RenderCalendarPart (part);
                 } else if (part.ContentType.Matches ("text", "rtf")) {
                     RenderRtfPart (part);
                 } else if (part.ContentType.Matches ("text", "*")) {
@@ -568,7 +562,7 @@ namespace NachoClient.iOS
 
             yOffset = errorMessage.Frame.Bottom;
 
-            if (variableHeight && null == retryDownloadGestureRecognizer) {
+            if (UserInteractionEnabled && null == retryDownloadGestureRecognizer) {
                 errorMessage.UserInteractionEnabled = true;
                 retryDownloadGestureRecognizer = new UITapGestureRecognizer ();
                 retryDownloadGestureRecognizer.NumberOfTapsRequired = 1;
@@ -578,6 +572,91 @@ namespace NachoClient.iOS
                 };
                 errorMessage.AddGestureRecognizer (retryDownloadGestureRecognizer);
             }
+        }
+    }
+
+    /// <summary>
+    /// Wrap a BodyView within a UIScrollView that uses two-fingered scrolling.  The BodyView
+    /// will be the only thing within the scroll view.  This is designed to be used within
+    /// the Nacho Now view.
+    /// </summary>
+    public class ScrollableBodyView : UIScrollView
+    {
+        private BodyView bodyView;
+        private int displayedBodyId = 0;
+
+        /// <summary>
+        /// Create a scrollable BodyView with the given frame.
+        /// </summary>
+        public ScrollableBodyView(RectangleF frame)
+            : base (frame)
+        {
+            // UIScrollView comes with a gesture recognizer for scrolling.
+            // Change it to use two fingers instead of one.
+            PanGestureRecognizer.MinimumNumberOfTouches = 2;
+            PanGestureRecognizer.MaximumNumberOfTouches = 2;
+
+            Scrolled += ScrollViewScrolled;
+            bodyView = BodyView.FixedSizeBodyView (new RectangleF (0, 0, frame.Width, frame.Height), BodyViewSizeChanged);
+            AddSubview (bodyView);
+        }
+
+        /// <summary>
+        /// Change the location and size of the scroll view's frame.  Configure the
+        /// BodyView with the giver item.
+        /// </summary>
+        public void ConfigureAndResize(McAbstrItem item, bool isRefresh, RectangleF newFrame)
+        {
+            this.Frame = newFrame;
+            if (0 == displayedBodyId || item.BodyId != displayedBodyId) {
+                // Displaying a different message. Scroll back to the top.
+                ContentOffset = new PointF (0, 0);
+                displayedBodyId = item.BodyId;
+            }
+            bodyView.ConfigureAndResize (item, isRefresh, newFrame.Size);
+            ContentSize = bodyView.Frame.Size;
+        }
+
+        protected override void Dispose (bool disposing)
+        {
+            Scrolled -= ScrollViewScrolled;
+            base.Dispose (disposing);
+        }
+
+        private void ScrollViewScrolled (object sender, EventArgs e)
+        {
+            bodyView.ScrollingAdjustment (ContentOffset);
+        }
+
+        private void BodyViewSizeChanged ()
+        {
+            ContentSize = bodyView.Frame.Size;
+        }
+
+        // I'm not sure exactly how this works, but it seems to do what we want.
+        // The intention is to pass all touch events, other then the scrolling
+        // that is recognized by the pan gesture recognizer, on up the chain.
+        // In the case of the Nacho Now view, this causes a single tap on the
+        // message body to open the message detail view.
+
+        public override void TouchesBegan (NSSet touches, UIEvent evt)
+        {
+            NextResponder.TouchesBegan (touches, evt);
+        }
+
+        public override void TouchesMoved (NSSet touches, UIEvent evt)
+        {
+            NextResponder.TouchesMoved (touches, evt);
+        }
+
+        public override void TouchesEnded (NSSet touches, UIEvent evt)
+        {
+            NextResponder.TouchesEnded (touches, evt);
+        }
+
+        public override void TouchesCancelled (NSSet touches, UIEvent evt)
+        {
+            NextResponder.TouchesCancelled (touches, evt);
         }
     }
 }
