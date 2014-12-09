@@ -14,6 +14,6 @@ clean:
 	$(MDTOOL) build --target:Clean --configuration:"$(CONFIG)" NachoClient.sln
 endif
 
-beta:
+release:
 	./scripts/configure_ios.py ./NachoClient.iOS/Info.plist
 	$(MDTOOL) build --target:Build --configuration:"Ad-Hoc|iPhone" NachoClient.sln
