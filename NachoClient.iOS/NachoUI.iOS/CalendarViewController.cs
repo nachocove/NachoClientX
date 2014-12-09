@@ -16,7 +16,7 @@ namespace NachoClient.iOS
     public partial class CalendarViewController : NcUIViewController, INachoCalendarItemEditorParent, ICalendarTableViewSourceDelegate
     {
         protected CalendarTableViewSource calendarSource;
-        protected UITableView tableView;
+        protected UITableView calendarTableView;
         public DateBarView DateDotView;
         public DateTime selectedDate = new DateTime ();
         public int selectedDateTag = 0;
@@ -45,9 +45,6 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-
-            //TODO remove from storyboard
-            calendarTableView.Hidden = true;
 
             if (null != NavigationItem) {
                 NavigationItem.SetHidesBackButton (true, false);
@@ -96,7 +93,7 @@ namespace NachoClient.iOS
 
             if (adjustScrollPosition) {
                 adjustScrollPosition = false;
-                calendarSource.ScrollToDate (tableView, DateTime.Today);
+                calendarSource.ScrollToDate (calendarTableView, DateTime.Today);
             }
         }
 
@@ -171,11 +168,11 @@ namespace NachoClient.iOS
             var s = (StatusIndEventArgs)e;
             if (NcResult.SubKindEnum.Info_CalendarSetChanged == s.Status.SubKind) {
                 calendarSource.Refresh ();
-                tableView.ReloadData ();
+                calendarTableView.ReloadData ();
             }
             if (NcResult.SubKindEnum.Info_EventSetChanged == s.Status.SubKind) {
                 calendarSource.Refresh ();
-                tableView.ReloadData ();
+                calendarTableView.ReloadData ();
             }
         }
 
@@ -212,10 +209,10 @@ namespace NachoClient.iOS
             calendarSource.owner = this;
             calendarSource.SetCalendar (NcEventManager.Instance);
 
-            tableView = new UITableView ();
+            calendarTableView = new UITableView ();
             ConfigureCalendarTableSize (1);
-            tableView.Source = calendarSource;
-            tableView.SeparatorColor = A.Color_NachoBorderGray;
+            calendarTableView.Source = calendarSource;
+            calendarTableView.SeparatorColor = A.Color_NachoBorderGray;
 
             NavigationItem.Title = "Calendar";
 
@@ -251,7 +248,7 @@ namespace NachoClient.iOS
 
             View.AddSubview (copyImageView);
             View.AddSubview (DateDotView);
-            View.AddSubview (tableView);
+            View.AddSubview (calendarTableView);
 
             DateDotView.SetOwner (this);
 
@@ -299,7 +296,7 @@ namespace NachoClient.iOS
                     if (0 > xOffset) { //Swipe left
                         if (directionFlag != 1) {
                             this.View.BringSubviewToFront (copyImageView);
-                            this.View.BringSubviewToFront (tableView);
+                            this.View.BringSubviewToFront (calendarTableView);
                             directionFlag = 1;
                             DateDotView.ViewDate = currentDate.AddDays (7);
                             DateDotView.ToggleButtons (-1);
@@ -313,7 +310,7 @@ namespace NachoClient.iOS
                     } else { //Swipe right
                         if (directionFlag != 2) {
                             this.View.BringSubviewToFront (copyImageView);
-                            this.View.BringSubviewToFront (tableView);
+                            this.View.BringSubviewToFront (calendarTableView);
                             directionFlag = 2;
                             DateDotView.ViewDate = currentDate.AddDays (-7);
                             DateDotView.ToggleButtons (-1);
@@ -337,7 +334,7 @@ namespace NachoClient.iOS
                             DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                         },
                         () => {
-                            this.View.BringSubviewToFront (tableView);
+                            this.View.BringSubviewToFront (calendarTableView);
                         }
                     );
                     currentDate = currentDate.AddDays (7);
@@ -350,7 +347,7 @@ namespace NachoClient.iOS
                             DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                         },
                         () => {
-                            this.View.BringSubviewToFront (tableView);
+                            this.View.BringSubviewToFront (calendarTableView);
                         }
                     );
                     currentDate = currentDate.AddDays (-7);
@@ -359,7 +356,7 @@ namespace NachoClient.iOS
                     DateDotView.ViewDate = currentDate;
                     DateDotView.UpdateButtons ();
                     this.View.BringSubviewToFront (DateDotView);
-                    this.View.BringSubviewToFront (tableView);
+                    this.View.BringSubviewToFront (calendarTableView);
 
                     if (-5 > xOffset && copyImageView.Center.X != DateDotView.Center.X) {
                         UIView.Animate (.3, 0, UIViewAnimationOptions.CurveLinear,
@@ -421,13 +418,13 @@ namespace NachoClient.iOS
                 if ((yOffset < -5) && (!isPanning)) {
                     ConfigureCalendarTableSize (1);
                     if (288.5 + (dateBarRowHeight * (rows - 1)) + yOffset <= 288.5 + (dateBarRowHeight * (rows - 1)) && 288.5 + (dateBarRowHeight * (rows - 1)) + yOffset > 291.5) {
-                        tableView.Center = new PointF ((View.Frame.Width / 2), (float)288.5 + (dateBarRowHeight * (rows - 1)) + yOffset);
+                        calendarTableView.Center = new PointF ((View.Frame.Width / 2), (float)288.5 + (dateBarRowHeight * (rows - 1)) + yOffset);
                     }
                     isClosing = true;
                     return;
                 } else if (((5 < xOffset) || (-5 > xOffset)) && (!isClosing)) {
                     this.View.BringSubviewToFront (copyImageView);
-                    this.View.BringSubviewToFront (tableView);
+                    this.View.BringSubviewToFront (calendarTableView);
                     if (0 > xOffset) { //Swipe left
                         if (directionFlag != 1) {
                             directionFlag = 1;
@@ -482,7 +479,7 @@ namespace NachoClient.iOS
                                 ConfigureCalendarTableSize (rows);
                             },
                             () => {
-                                View.BringSubviewToFront (tableView);
+                                View.BringSubviewToFront (calendarTableView);
                                 DisableGestureRecognizers ();
                                 ConfigureMonthView ();
                             }
@@ -544,7 +541,7 @@ namespace NachoClient.iOS
                         }
                     }
                     this.View.BringSubviewToFront (DateDotView);
-                    this.View.BringSubviewToFront (tableView);
+                    this.View.BringSubviewToFront (calendarTableView);
                     ConfigureMonthView ();
                     directionFlag = 0;
                 }
@@ -561,7 +558,7 @@ namespace NachoClient.iOS
         {
             int rows = DateDotView.RowsInAMonth (DateDotView.ViewDate);
             if (UIGestureRecognizerState.Began == obj.State) {
-                tableStartingY = tableView.Center.Y;
+                tableStartingY = calendarTableView.Center.Y;
                 return;
             }
 
@@ -572,7 +569,7 @@ namespace NachoClient.iOS
                     DateDotWeekPanGestureRecognizer.Enabled = false;
                     DateDotMonthViewPanGestureRecognizer.Enabled = false;
                     if ((dateBarHeight + 1 + ((rows - 3) * dateBarRowHeight)) > yOffset) {
-                        tableView.Center = new PointF (tableView.Center.X, tableStartingY + yOffset);
+                        calendarTableView.Center = new PointF (calendarTableView.Center.X, tableStartingY + yOffset);
                     }
                 }
                 return;
@@ -583,7 +580,7 @@ namespace NachoClient.iOS
                     UIView.Animate (.3, 0, UIViewAnimationOptions.CurveEaseOut,
                         () => {
                             ConfigureCalendarTableSize(rows);
-                            View.BringSubviewToFront (tableView);
+                            View.BringSubviewToFront (calendarTableView);
                             DateDotView.UpdateButtonsMonth ();
                         },
                         () => {
@@ -610,16 +607,16 @@ namespace NachoClient.iOS
         {
             switch (rows) {
             case 4: 
-                tableView.Frame = CalendarTableFourSize ();
+                calendarTableView.Frame = CalendarTableFourSize ();
                 break;
             case 5:
-                tableView.Frame = CalendarTableFiveSize ();
+                calendarTableView.Frame = CalendarTableFiveSize ();
                 break;
             case 6:
-                tableView.Frame = CalendarTableSixSize ();
+                calendarTableView.Frame = CalendarTableSixSize ();
                 break;
             default:
-                tableView.Frame = CalendarTableFullSize ();
+                calendarTableView.Frame = CalendarTableFullSize ();
                 break;
             }
         }
@@ -663,7 +660,7 @@ namespace NachoClient.iOS
                 Image.Dispose ();
                 if (106 > button.Tag && 23 <= Convert.ToInt32 (label)) {
                     this.View.BringSubviewToFront (copyImageView);
-                    this.View.BringSubviewToFront (tableView);
+                    this.View.BringSubviewToFront (calendarTableView);
                     tempDate = view.ViewDate.AddMonths (-1);
                     var difference = tempDate.Day - Convert.ToInt32 (label);
                     var date = tempDate.AddDays (-difference);
@@ -686,11 +683,11 @@ namespace NachoClient.iOS
                         }
                     );
                     currentDate = DateDotView.ViewDate;
-                    calendarSource.ScrollToDate (tableView, selectedDate);
+                    calendarSource.ScrollToDate (calendarTableView, selectedDate);
 
                 } else if (128 < button.Tag && 1 <= Convert.ToInt32 (label) && 6 >= Convert.ToInt32 (label)) {
                     this.View.BringSubviewToFront (copyImageView);
-                    this.View.BringSubviewToFront (tableView);
+                    this.View.BringSubviewToFront (calendarTableView);
                     tempDate = tempDate.AddMonths (1);
                     var difference = tempDate.Day - Convert.ToInt32 (label);
                     var date = tempDate.AddDays (-difference);
@@ -713,7 +710,7 @@ namespace NachoClient.iOS
                         }
                     );
                     currentDate = DateDotView.ViewDate;
-                    calendarSource.ScrollToDate (tableView, selectedDate);
+                    calendarSource.ScrollToDate (calendarTableView, selectedDate);
 
                 } else {
                     var difference = view.ViewDate.Day - Convert.ToInt32 (label);
@@ -721,7 +718,7 @@ namespace NachoClient.iOS
                     selectedDate = date;
                     currentDate = selectedDate;
                     selectedDateTag = button.Tag;
-                    calendarSource.ScrollToDate (tableView, date);
+                    calendarSource.ScrollToDate (calendarTableView, date);
                 }
             } else {
                 var difference = view.ViewDate.Day - Convert.ToInt32 (label);
@@ -738,10 +735,10 @@ namespace NachoClient.iOS
                 selectedDate = date;
                 currentDate = selectedDate;
                 selectedDateTag = button.Tag;
-                calendarSource.ScrollToDate (tableView, date);
+                calendarSource.ScrollToDate (calendarTableView, date);
             }
             this.View.BringSubviewToFront (DateDotView);
-            this.View.BringSubviewToFront (tableView);
+            this.View.BringSubviewToFront (calendarTableView);
         }
 
         public void ReturnToToday ()
@@ -754,7 +751,7 @@ namespace NachoClient.iOS
                 var Image = Util.captureView (DateDotView);
                 copyImageView.Image = Image;
                 this.View.BringSubviewToFront (copyImageView);
-                this.View.BringSubviewToFront (tableView);
+                this.View.BringSubviewToFront (calendarTableView);
                 Image.Dispose ();
 
                 if (-1 == returnWeek) {
@@ -809,7 +806,7 @@ namespace NachoClient.iOS
                 var Image = Util.captureView (DateDotView);
                 copyImageView.Image = Image;
                 this.View.BringSubviewToFront (copyImageView);
-                this.View.BringSubviewToFront (tableView);
+                this.View.BringSubviewToFront (calendarTableView);
                 Image.Dispose ();
 
                 if (-1 == returnMonth) {
@@ -865,8 +862,8 @@ namespace NachoClient.iOS
                 }
             }
             this.View.BringSubviewToFront (DateDotView);
-            this.View.BringSubviewToFront (tableView);
-            calendarSource.ScrollToDate (tableView, DateTime.Today);
+            this.View.BringSubviewToFront (calendarTableView);
+            calendarSource.ScrollToDate (calendarTableView, DateTime.Today);
 
         }
 
@@ -891,7 +888,7 @@ namespace NachoClient.iOS
         // ICalendarTableViewSourceDelegate
         public void CalendarTableViewScrollingEnded ()
         {
-            calendarSource.MaybeExtendTableView (tableView);
+            calendarSource.MaybeExtendTableView (calendarTableView);
         }
             
     }

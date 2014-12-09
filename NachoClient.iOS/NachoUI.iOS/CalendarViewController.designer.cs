@@ -13,9 +13,6 @@ namespace NachoClient.iOS
 	partial class CalendarViewController
 	{
 		[Outlet]
-		MonoTouch.UIKit.UITableView calendarTableView { get; set; }
-
-		[Outlet]
 		MonoTouch.UIKit.UIView dateView { get; set; }
 
 		[Outlet]
@@ -29,11 +26,6 @@ namespace NachoClient.iOS
 		
 		void ReleaseDesignerOutlets ()
 		{
-			if (calendarTableView != null) {
-				calendarTableView.Dispose ();
-				calendarTableView = null;
-			}
-
 			if (dateView != null) {
 				dateView.Dispose ();
 				dateView = null;
