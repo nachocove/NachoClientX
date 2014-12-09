@@ -27,12 +27,16 @@ namespace NachoClient.iOS
         });
         public DateTime ViewDate = new DateTime ();
         CalendarViewController owner;
-        UILabel monthLabelView = new UILabel (new RectangleF (110, 0, 100, 14));
+        UILabel monthLabelView; 
 
 
-        public DateBarView ()
+        public DateBarView (UIView parentView)
         {
-
+            monthLabelView = new UILabel (new RectangleF (0, 2, parentView.Frame.Width, 20));
+            this.Frame = (new RectangleF (0, 0, parentView.Frame.Width, 75 + (46 * 5)));
+            this.BackgroundColor = UIColor.White;
+            this.MakeDayLabels ();
+            this.MakeDateDotButtons ();
         }
 
         public DateBarView (IntPtr handle) : base (handle)
@@ -64,7 +68,7 @@ namespace NachoClient.iOS
             int i = 0;
             int spacing = 0;
             while (i < 7) {
-                var daysLabelView = new UILabel (new RectangleF (24 + spacing, 18, 12, 12));
+                var daysLabelView = new UILabel (new RectangleF (24 + spacing, 18 + 5, 12, 12));
                 daysLabelView.TextColor = A.Color_999999;
                 daysLabelView.Tag = 99 - i;
                 daysLabelView.Text = Days [i].Substring (0, 1);
@@ -82,8 +86,6 @@ namespace NachoClient.iOS
             monthLabelView.TextColor = A.Color_999999;
             monthLabelView.Font = (A.Font_AvenirNextRegular12);
             monthLabelView.TextAlignment = UITextAlignment.Center;
-            monthLabelView.Hidden = true;
-            monthLabelView.Tag = 200;
             this.Add (monthLabelView);
             this.ViewDate = DateTime.Today;
             int i = 0;
@@ -96,16 +98,16 @@ namespace NachoClient.iOS
                 spacing = 0;
                 while (i < 7) {
                     var buttonRect = UIButton.FromType (UIButtonType.RoundedRect);
-                    buttonRect.Frame = new RectangleF (12 + spacing, 34 + row, 36, 36);
+                    buttonRect.Frame = new RectangleF (12 + spacing, 5 + 34 + row, 36, 36);
                     buttonRect.Tag = tagIncrement + 100;
                     buttonRect.Layer.CornerRadius = 18;
+                    buttonRect.Layer.BorderColor = A.Card_Border_Color;
+                    buttonRect.Layer.BorderWidth = A.Card_Border_Width;
                     buttonRect.Layer.MasksToBounds = true;
                     buttonRect.TintColor = UIColor.Clear;
-                    buttonRect.BackgroundColor = A.Color_NachoLightGrayBackground;
+                    buttonRect.BackgroundColor = UIColor.White;
                     buttonRect.TouchUpInside += (sender, e) => {
                         ToggleButtons (buttonRect.Tag);
-                        buttonRect.Selected = true;
-                        buttonRect.BackgroundColor = A.Color_FEBA32;
                         owner.ScrollToDate (this, buttonRect);
                     };
                     this.Add (buttonRect);
@@ -123,6 +125,7 @@ namespace NachoClient.iOS
 
         public void UpdateButtons ()
         {   
+            UpdateMonthLabel ();
             int dayOffset = -(IndexOfDayOfWeek (this.ViewDate.DayOfWeek.ToString ()));
             int selectedIndex = IndexOfDayOfWeek (owner.selectedDate.DayOfWeek.ToString ());
             int i = 0;
@@ -131,7 +134,7 @@ namespace NachoClient.iOS
                 string date = this.ViewDate.AddDays (dayOffset).Day.ToString ();
                 button.SetTitle (date, UIControlState.Normal);
                 button.SetTitle (date, UIControlState.Selected);
-                button.SetTitleColor (A.Color_114645, UIControlState.Normal);
+                button.SetTitleColor (A.Color_NachoDarkText, UIControlState.Normal);
                 button.SetTitleColor (UIColor.White, UIControlState.Selected);
                 button.SetTitleColor (UIColor.White, UIControlState.Disabled);
                 button.Font = A.Font_AvenirNextDemiBold17;
@@ -140,25 +143,25 @@ namespace NachoClient.iOS
                         owner.todayWeekTag = button.Tag;
                         todayWeekTagSet = true;
                     }
-
                 }
                 if (selectedIndex == i && owner.selectedDate.Day.ToString () == date) {
-                    button.Selected = true;
-                    button.BackgroundColor = A.Color_FEBA32;
-                    owner.selectedDateTag = button.Tag;
+                    SetButtonState (true, button, false);
                 } else {
-                    button.Selected = false;
-                    button.BackgroundColor = A.Color_NachoLightGrayBackground;
+                    SetButtonState (false, button, false);
                 }
                 i++;
                 dayOffset++;
             }
+            while (i < 42) {
+                UIButton button = (this.ViewWithTag (i + 100)) as UIButton;
+                SetButtonState (false, button, false);
+                i++;
+            }
 
         }
 
-        public void MakeDateVisable ()
+        public void UpdateMonthLabel ()
         {
-            monthLabelView.Hidden = false;
             monthLabelView.Text = this.ViewDate.ToString ("MMMM");
         }
 
@@ -169,10 +172,29 @@ namespace NachoClient.iOS
             return firstDay;
         }
 
+        public void SetButtonState (bool selected, UIButton button, bool differentMonth)
+        {
+            if (selected) {
+                button.Selected = true;
+                button.BackgroundColor = A.Color_NachoGreen;
+                button.Layer.BorderColor = UIColor.Clear.CGColor;
+                owner.selectedDateTag = button.Tag;
+            } else {
+                button.Selected = false;
+                if (differentMonth) {
+                    button.BackgroundColor = A.Color_NachoLightGrayBackground;
+                    button.Layer.BorderColor = UIColor.Clear.CGColor;
+                } else {
+                    button.BackgroundColor = UIColor.White;
+                    button.Layer.BorderColor = A.Card_Border_Color;
+                }
+            }
+            button.Layer.BorderWidth = A.Card_Border_Width;
+        }
+
         public void UpdateButtonsMonth ()
         {
-            monthLabelView.Hidden = false;
-            monthLabelView.Text = this.ViewDate.ToString ("MMMM");
+            UpdateMonthLabel ();
             var firstDate = GetFirstDay (this.ViewDate);
             int rows = RowsInAMonth (this.ViewDate);
             int dayOffset = IndexOfDayOfWeek (firstDate.DayOfWeek.ToString ());
@@ -184,16 +206,13 @@ namespace NachoClient.iOS
                 string date = firstDate.AddDays (dayIncrement).Day.ToString ();
                 DateTime buttonDate = firstDate.AddDays (dayIncrement);
                 if (owner.selectedDate == buttonDate) {
-                    button.Selected = true;
-                    button.BackgroundColor = A.Color_FEBA32;
-                    owner.selectedDateTag = button.Tag;
+                    SetButtonState (true, button, true);
                 } else {
-                    button.Selected = false;
-                    button.BackgroundColor = UIColor.White;
+                    SetButtonState (false, button, true);
                 }
                 button.SetTitle (date, UIControlState.Normal);
                 button.SetTitle (date, UIControlState.Selected);
-                button.SetTitleColor (A.Color_114645, UIControlState.Normal);
+                button.SetTitleColor (A.Color_NachoIconGray, UIControlState.Normal);
                 button.SetTitleColor (UIColor.White, UIControlState.Selected);
                 button.SetTitleColor (UIColor.White, UIControlState.Disabled);
                 button.Font = A.Font_AvenirNextDemiBold17;
@@ -207,16 +226,13 @@ namespace NachoClient.iOS
                 string date = firstDate.AddDays (dayIncrement).Day.ToString ();
                 DateTime buttonDate = firstDate.AddDays (dayIncrement);
                 if (owner.selectedDate == buttonDate) {
-                    button.Selected = true;
-                    button.BackgroundColor = A.Color_FEBA32;
-                    owner.selectedDateTag = button.Tag;
+                    SetButtonState (true, button, false);
                 } else {
-                    button.Selected = false;
-                    button.BackgroundColor = A.Color_NachoLightGrayBackground;
+                    SetButtonState (false, button, false);
                 }
                 button.SetTitle (date, UIControlState.Normal);
                 button.SetTitle (date, UIControlState.Selected);
-                button.SetTitleColor (A.Color_114645, UIControlState.Normal);
+                button.SetTitleColor (A.Color_NachoDarkText, UIControlState.Normal);
                 button.SetTitleColor (UIColor.White, UIControlState.Selected);
                 button.SetTitleColor (UIColor.White, UIControlState.Disabled);
                 button.Font = A.Font_AvenirNextDemiBold17;
@@ -231,16 +247,13 @@ namespace NachoClient.iOS
                 string date = firstDate.AddDays (dayIncrement).Day.ToString ();
                 DateTime buttonDate = firstDate.AddDays (dayIncrement);
                 if (owner.selectedDate == buttonDate) {
-                    button.Selected = true;
-                    button.BackgroundColor = A.Color_FEBA32;
-                    owner.selectedDateTag = button.Tag;
+                    SetButtonState (true, button, true);
                 } else {
-                    button.Selected = false;
-                    button.BackgroundColor = UIColor.White;
+                    SetButtonState (false, button, true);
                 }
                 button.SetTitle (date, UIControlState.Normal);
                 button.SetTitle (date, UIControlState.Selected);
-                button.SetTitleColor (A.Color_114645, UIControlState.Normal);
+                button.SetTitleColor (A.Color_NachoIconGray, UIControlState.Normal);
                 button.SetTitleColor (UIColor.White, UIControlState.Selected);
                 button.SetTitleColor (UIColor.White, UIControlState.Disabled);
                 button.Font = A.Font_AvenirNextDemiBold17;
@@ -262,12 +275,10 @@ namespace NachoClient.iOS
                 while (i < dayOffset) {
                     UIButton button = (this.ViewWithTag (i + 100)) as UIButton;
                     if (true == button.Selected) {
-                        button.BackgroundColor = UIColor.White;
-                        button.Selected = false;
+                        SetButtonState (false, button, true);
                     } 
                     if (i == selectedButtonTag - 100) {
-                        button.BackgroundColor = A.Color_FEBA32;
-                        button.Selected = true;
+                        SetButtonState (true, button, true);
                     }
                     i++;
                 }
@@ -275,12 +286,10 @@ namespace NachoClient.iOS
                 while (i < numDaysOffset) {
                     UIButton button = (this.ViewWithTag (i + 100)) as UIButton;
                     if (true == button.Selected) {
-                        button.BackgroundColor = A.Color_NachoLightGrayBackground;
-                        button.Selected = false;
+                        SetButtonState (false, button, false);
                     } 
                     if (i == selectedButtonTag - 100) {
-                        button.BackgroundColor = A.Color_FEBA32;
-                        button.Selected = true;
+                        SetButtonState (true, button, false);
                     }
                     i++;
                 }
@@ -288,12 +297,10 @@ namespace NachoClient.iOS
                 while (i < monthEnd) {
                     UIButton button = (this.ViewWithTag (i + 100)) as UIButton;
                     if (true == button.Selected) {
-                        button.BackgroundColor = UIColor.White;
-                        button.Selected = false;
+                        SetButtonState (false, button, true);
                     } 
                     if (i == selectedButtonTag - 100) {
-                        button.BackgroundColor = A.Color_FEBA32;
-                        button.Selected = true;
+                        SetButtonState (true, button, true);
                     }
                     i++;
                 }
@@ -302,11 +309,9 @@ namespace NachoClient.iOS
                 while (i < 42) {
                     UIButton button = (this.ViewWithTag (i + 100)) as UIButton;
                     if (i == selectedButtonTag - 100) {
-                        button.BackgroundColor = A.Color_FEBA32;
-                        button.Selected = true;
+                        SetButtonState (true, button, false);
                     } else {
-                        button.BackgroundColor = A.Color_NachoLightGrayBackground;
-                        button.Selected = false;
+                        SetButtonState (false, button, false);
                     } 
                     i++;
                 }
@@ -395,7 +400,6 @@ namespace NachoClient.iOS
         {
             int dayOffset = IndexOfDayOfWeek ((GetFirstDay (date)).DayOfWeek.ToString ());
             return dayOffset + date.Day + 99;
-
         }
 
     }
