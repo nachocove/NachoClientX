@@ -169,7 +169,7 @@ namespace NachoClient.iOS
 
             // Preview label view
             // Size fields will be recalculated after text is known
-            var previewLabelView = BodyView.FixedSizeBodyView (new RectangleF (12, 75, viewWidth - 15 - 12, view.Frame.Height - 128));
+            var previewLabelView = new ScrollableBodyView (new RectangleF (12, 75, viewWidth - 15 - 12, view.Frame.Height - 128));
             previewLabelView.Tag = PREVIEW_TAG;
             view.AddSubview (previewLabelView);
 
@@ -328,7 +328,7 @@ namespace NachoClient.iOS
                 messageHeaderView.ConfigureView (message);
             };
 
-            float previewViewAdjustment = 0;
+            float previewViewTop;
 
             // Reminder image view and label
             var reminderImageView = view.ViewWithTag (REMINDER_ICON_TAG) as UIImageView;
@@ -337,21 +337,23 @@ namespace NachoClient.iOS
                 reminderImageView.Hidden = false;
                 reminderLabelView.Hidden = false;
                 reminderLabelView.Text = Pretty.ReminderText (message);
-                previewViewAdjustment = 24;
+                previewViewTop = reminderLabelView.Frame.Bottom;
             } else {
                 reminderImageView.Hidden = true;
                 reminderLabelView.Hidden = true;
+                previewViewTop = messageHeaderView.Frame.Bottom;
             }
 
-            // Size of preview, depends on reminder view
-            var previewViewHeight = view.Frame.Height - 80 - previewViewAdjustment;
-            previewViewHeight -= 44; // toolbar
-            previewViewHeight -= 16; // more button
+            // Five points of padding between the header and the body.
+            // There is no explicit padding on the bottom of the body because the
+            // "More" button is in the corner and acts like padding.
+            previewViewTop += 5;
 
-            var previewView = view.ViewWithTag (PREVIEW_TAG) as BodyView;
-            previewView.Configure (message, isRefresh, true);
-            previewView.Resize (new RectangleF (12, 0 + previewViewAdjustment, previewView.Frame.Width, previewViewHeight));
-
+            float moreButtonTop = view.ViewWithTag (USER_MORE_TAG).Frame.Top;
+            var previewView = view.ViewWithTag (PREVIEW_TAG) as ScrollableBodyView;
+            // X and Width remain the same, but Y and Height might change.
+            previewView.ConfigureAndResize (message, isRefresh,
+                new RectangleF (previewView.Frame.X, previewViewTop, previewView.Frame.Width, moreButtonTop - previewViewTop));
         }
 
         public void ReconfigureVisibleCells (UITableView tableView)
