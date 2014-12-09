@@ -21,6 +21,10 @@ namespace NachoCore.Brain
         #pragma warning restore 414
         private static void InvokerCallback (Object state)
         {
+            if (NcApplication.ExecutionContextEnum.QuickSync == NcApplication.Instance.ExecutionContext) {
+                // TODO - This is a temporary solution. We should not process any event other 
+                return;
+            }
             NcBrainEvent brainEvent = new NcBrainEvent (NcBrainEventType.PERIODIC_GLEAN);
             NcBrain.SharedInstance.Enqueue (brainEvent);
         }

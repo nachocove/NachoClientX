@@ -209,10 +209,8 @@ namespace NachoCore
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass2Services called.");
             NcModel.Instance.EngageRateLimiter ();
-            if (ExecutionContextEnum.QuickSync != ExecutionContext) {
-                NcBrain.StartService ();
-                NcContactGleaner.Start ();
-            }
+            NcBrain.StartService ();
+            NcContactGleaner.Start ();
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass2Services exited.");
         }
 
