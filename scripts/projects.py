@@ -45,9 +45,9 @@ projects = {
         'aws': {
             'prefix': 'beta',
             'account_id': '610813048224',
-            'identity_pool_id': '',
-            'unauth_role_arn': '',
-            'auth_role_arn': ''
+            'identity_pool_id': 'us-east-1:0d40f2cf-bf6c-4875-a917-38f8867b59ef',
+            'unauth_role_arn': 'arn:aws:iam::610813048224:role/Cognito_dev_telemetryUnauth_DefaultRole',
+            'auth_role_arn': 'NO PUBLIC AUTHENTICATION'
         }
     },
 }
