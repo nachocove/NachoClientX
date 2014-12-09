@@ -596,6 +596,8 @@ namespace NachoClient.iOS
             PanGestureRecognizer.MinimumNumberOfTouches = 2;
             PanGestureRecognizer.MaximumNumberOfTouches = 2;
 
+            ScrollsToTop = false;
+
             Scrolled += ScrollViewScrolled;
             bodyView = BodyView.FixedSizeBodyView (new RectangleF (0, 0, frame.Width, frame.Height), BodyViewSizeChanged);
             AddSubview (bodyView);
