@@ -515,6 +515,9 @@ namespace NachoClient
 
         public static string NameToLetters (string name)
         {
+            if (null == name) {
+                return "";
+            }
             var Initials = "";
             string[] names = name.Split (new char [] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
             if (1 == names.Length) {

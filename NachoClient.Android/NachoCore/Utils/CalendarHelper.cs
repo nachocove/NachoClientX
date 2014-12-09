@@ -412,6 +412,9 @@ namespace NachoCore.Utils
 
         public static void SendMeetingResponse (McAccount account, McCalendar c, MimeEntity mimeBody, NcResponseType response)
         {
+            // Need to send this message to someone.  Fix this assertion upstream if you hit it.
+            NcAssert.True (!String.IsNullOrEmpty (c.OrganizerName) || !String.IsNullOrEmpty (c.OrganizerEmail));
+
             var mimeMessage = new MimeMessage ();
             mimeMessage.From.Add (new MailboxAddress (Pretty.DisplayNameForAccount (account), account.EmailAddr));
             mimeMessage.To.Add (new MailboxAddress (c.OrganizerName, c.OrganizerEmail));
