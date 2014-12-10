@@ -46,10 +46,9 @@ namespace NachoClient.iOS
         protected UILabel tentativeLabel;
         protected UILabel declineLabel;
         protected UILabel messageLabel;
+        protected UIButton removeFromCalendarButton;
         protected UIButton changeResponseButton;
         protected UIButton extraAttendeesButton;
-        //        protected UITextView eventNotesTextView;
-        //        protected UILabel eventNotesText;
         protected UIBarButtonItem editEventButton;
 
         // UI colors
@@ -79,8 +78,6 @@ namespace NachoClient.iOS
         protected bool hasAttendees = false;
         protected bool hasNotes = false;
         protected bool attachmentsDrawerOpen = false;
-        protected string organizerEmail;
-        protected string organizerName;
 
         // UI-related constants, or pseudo-constants
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
@@ -118,7 +115,6 @@ namespace NachoClient.iOS
             EVENT_ORGANIZER_TITLE_TAG = 117,
             EVENT_ORGANIZER_NAME_LABEL = 118,
             EVENT_ORGANIZER_EMAIL_LABEL = 119,
-            EVENT_ORGANIZER_ONLY_EMAIL_LABEL = 120,
 
             EVENT_ATTENDEE_VIEW_TAG = 2000,
             EVENT_ATTENDEES_TITLE_TAG = 2001,
@@ -126,9 +122,9 @@ namespace NachoClient.iOS
             EVENT_ATTENDEE_TAG = 2010,
             EVENT_ATTENDEE_LABEL_TAG = 2020,
 
-            EVENT_NOTES_TEXT_VIEW_TAG = 121,
-            EVENT_NOTE_TITLE_TAG = 122,
-            EVENT_NOTES_DETAIL_TAG = 123,
+            EVENT_NOTES_TEXT_VIEW_TAG = 120,
+            EVENT_NOTE_TITLE_TAG = 121,
+            EVENT_NOTES_DETAIL_TAG = 122,
         }
 
         protected static TupleList<uint, string> minList = new TupleList<uint, string> {
@@ -243,6 +239,15 @@ namespace NachoClient.iOS
             messageLabel.Font = A.Font_AvenirNextMedium14;
             messageLabel.Hidden = true;
             eventCardView.Add (messageLabel);
+
+            removeFromCalendarButton = new UIButton (UIButtonType.RoundedRect);
+            removeFromCalendarButton.SetTitle ("Remove from calendar", UIControlState.Normal);
+            removeFromCalendarButton.Font = A.Font_AvenirNextRegular12;
+            removeFromCalendarButton.SizeToFit ();
+            removeFromCalendarButton.Frame = new RectangleF (18 + 24 + 10, 19, removeFromCalendarButton.Frame.Width, 24);
+            removeFromCalendarButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
+            removeFromCalendarButton.Hidden = true;
+            eventCardView.Add (removeFromCalendarButton);
 
             changeResponseButton = new UIButton (UIButtonType.RoundedRect);
             changeResponseButton.SetTitle ("Change response", UIControlState.Normal);
@@ -362,15 +367,6 @@ namespace NachoClient.iOS
             userEmailLabel.Tag = (int)TagType.EVENT_ORGANIZER_EMAIL_LABEL;
             eventOrganizerView.AddSubview (userEmailLabel);
 
-            //Only Email Label
-            var userOnlyEmailLabel = new UILabel (new RectangleF (92, (eventOrganizerView.Frame.Height / 2) - 2, eventOrganizerView.Frame.Width - 92 - 18, 20));
-            userOnlyEmailLabel.LineBreakMode = UILineBreakMode.TailTruncation;
-            userOnlyEmailLabel.TextColor = UIColor.LightGray;
-            userOnlyEmailLabel.Font = A.Font_AvenirNextRegular14;
-            userOnlyEmailLabel.Tag = (int)TagType.EVENT_ORGANIZER_ONLY_EMAIL_LABEL;
-            userOnlyEmailLabel.Hidden = true;
-            eventOrganizerView.AddSubview (userOnlyEmailLabel);
-
             organizerTapGestureRecognizer = new UITapGestureRecognizer ();
             organizerTapGestureRecognizerTapToken = organizerTapGestureRecognizer.AddTarget (OrganizerTapGestureRecognizerTap);
             eventOrganizerView.AddGestureRecognizer (organizerTapGestureRecognizer);
@@ -425,8 +421,6 @@ namespace NachoClient.iOS
 
             account = McAccount.QueryById<McAccount> (e.AccountId);
             root = McCalendar.QueryById<McCalendar> (e.CalendarId);
-            organizerEmail = (null != root.OrganizerEmail ? root.OrganizerEmail : null);
-            organizerName = (null != root.OrganizerName ? root.OrganizerName : null);
 
             if (0 == e.ExceptionId) {
                 c = root;
@@ -442,7 +436,7 @@ namespace NachoClient.iOS
                 isRecurring = true;
             }
 
-            bool isOrganizer = account.EmailAddr == organizerEmail && account.Id == c.AccountId;
+            bool isOrganizer = account.EmailAddr == root.OrganizerEmail && account.Id == c.AccountId;
             if (isOrganizer && !isRecurring) {
                 NavigationItem.RightBarButtonItem = editEventButton;
             }
@@ -520,20 +514,18 @@ namespace NachoClient.iOS
             ConfigureAttachments ();
 
             // Organizer
-            if (null != organizerEmail) {
+            if (null != root.OrganizerEmail) {
                 if (!isOrganizer) {
-                    if (null != organizerName) {
+                    var organizerEmailLabel = View.ViewWithTag ((int)TagType.EVENT_ORGANIZER_EMAIL_LABEL) as UILabel;
+                    if (null != root.OrganizerName) {
                         var organizerNameLabel = View.ViewWithTag ((int)TagType.EVENT_ORGANIZER_NAME_LABEL) as UILabel;
-                        organizerNameLabel.Text = organizerName;
-                        var organizerEmailLabel = View.ViewWithTag ((int)TagType.EVENT_ORGANIZER_EMAIL_LABEL) as UILabel;
-                        organizerEmailLabel.Text = organizerEmail;
+                        organizerNameLabel.Text = root.OrganizerName;
                     } else {
-                        var organizerOnlyEmailLabel = View.ViewWithTag ((int)TagType.EVENT_ORGANIZER_ONLY_EMAIL_LABEL) as UILabel;
-                        organizerOnlyEmailLabel.Hidden = false;
-                        organizerOnlyEmailLabel.Text = organizerEmail;
+                        organizerEmailLabel.Frame = new RectangleF (92, (eventOrganizerView.Frame.Height / 2) - 2, eventOrganizerView.Frame.Width - 92 - 18, 20);
                     }
+                    organizerEmailLabel.Text = root.OrganizerEmail;
 
-                    var userImage = Util.ImageOfSender (account.Id, organizerEmail);
+                    var userImage = Util.ImageOfSender (account.Id, root.OrganizerEmail);
 
                     if (null != userImage) {
                         using (var rawImage = userImage) {
@@ -553,13 +545,13 @@ namespace NachoClient.iOS
                         // User userLabelView view, if no image
                         var userLabelView = new UILabel (new RectangleF (42, 10 + 16, 40, 40));
                         userLabelView.Font = A.Font_AvenirNextRegular17;
-                        userLabelView.BackgroundColor = Util.GetCircleColorForEmail (organizerEmail, account.Id);
+                        userLabelView.BackgroundColor = Util.GetCircleColorForEmail (root.OrganizerEmail, account.Id);
                         userLabelView.TextColor = UIColor.White;
                         userLabelView.TextAlignment = UITextAlignment.Center;
                         userLabelView.LineBreakMode = UILineBreakMode.Clip;
                         userLabelView.Layer.CornerRadius = (40 / 2);
                         userLabelView.Layer.MasksToBounds = true;
-                        var nameString = (null != organizerName ? organizerName : organizerEmail);
+                        var nameString = (null != root.OrganizerName ? root.OrganizerName : root.OrganizerEmail);
                         userLabelView.Text = Util.NameToLetters (nameString);
                         eventOrganizerView.AddSubview (userLabelView);
                     }
@@ -655,8 +647,10 @@ namespace NachoClient.iOS
             acceptButton.TouchUpInside -= AcceptButtonTouchUpInside;
             tentativeButton.TouchUpInside -= TentativeButtonTouchUpInside;
             declineButton.TouchUpInside -= DeclineButtonTouchUpInside;
+            declineButton.TouchUpInside -= RemoveFromCalendarClicked;
             changeResponseButton.TouchUpInside -= ChangeResponseTouchUpInside;
             editEventButton.Clicked -= EditButtonClicked;
+            removeFromCalendarButton.TouchUpInside -= RemoveFromCalendarClicked;
             //eventNotesTextView.Changed -= NotesChanged;
             //eventNotesTextView.Started -= NotesEditingStarted;
             if (null != extraAttendeesButton) {
@@ -680,6 +674,7 @@ namespace NachoClient.iOS
             tentativeLabel = null;
             declineLabel = null;
             messageLabel = null;
+            removeFromCalendarButton = null;
             changeResponseButton = null;
             extraAttendeesButton = null;
             attendeeTapGestureRecognizer = null;
@@ -749,7 +744,7 @@ namespace NachoClient.iOS
         {
             if (segue.Identifier.Equals ("EventToEventAttendees")) {
                 var dc = (EventAttendeeViewController)segue.DestinationViewController;
-                dc.Setup (null, c.attendees, c, false, CalendarHelper.IsOrganizer (organizerEmail, account.EmailAddr));
+                dc.Setup (null, c.attendees, c, false, CalendarHelper.IsOrganizer (root.OrganizerEmail, account.EmailAddr));
                 return;
             }
 
@@ -890,8 +885,8 @@ namespace NachoClient.iOS
                 }
             }
 
-            if (null != organizerEmail) {
-                if (!(CalendarHelper.IsOrganizer (organizerEmail, account.EmailAddr))) {
+            if (null != root.OrganizerEmail) {
+                if (!(CalendarHelper.IsOrganizer (root.OrganizerEmail, account.EmailAddr))) {
                     AdjustViewLayout (TagType.EVENT_ORGANIZER_VIEW_TAG, 0, ref internalYOffset, padding);
                 }
             }
@@ -1037,7 +1032,25 @@ namespace NachoClient.iOS
 
         public void ConfigureRsvpBar ()
         {
-            if (account.EmailAddr == organizerEmail || (c.ResponseTypeIsSet && NcResponseType.Organizer == c.ResponseType)) {
+            if (c.MeetingStatus == NcMeetingStatus.ForwardedMeetingCancelled) {
+                declineButton.Hidden = false;
+                declineButton.Selected = false;
+                declineButton.Frame = new RectangleF (18, 18, 24, 24);
+                messageLabel.Hidden = true;
+                acceptButton.Hidden = true;
+                organizerIcon.Hidden = true;
+                acceptButton.Selected = true;
+                acceptLabel.Hidden = true;
+                tentativeButton.Hidden = true;
+                tentativeLabel.Hidden = true;
+                declineLabel.Hidden = true;
+                declineButton.TouchUpInside += RemoveFromCalendarClicked;
+                removeFromCalendarButton.Hidden = false;
+
+                removeFromCalendarButton.TouchUpInside += RemoveFromCalendarClicked;
+                return;
+            }
+            if (account.EmailAddr == root.OrganizerEmail || (c.ResponseTypeIsSet && NcResponseType.Organizer == c.ResponseType)) {
                 messageLabel.Hidden = false;
                 messageLabel.Text = "You are the organizer";
                 messageLabel.Frame = new RectangleF (18 + 24 + 12, 18, 150, 24);
@@ -1050,6 +1063,7 @@ namespace NachoClient.iOS
                 tentativeLabel.Hidden = true;
                 declineButton.Hidden = true;
                 declineLabel.Hidden = true;
+                removeFromCalendarButton.Hidden = true;
 
             } else if (c.ResponseTypeIsSet) {
 
@@ -1339,10 +1353,10 @@ namespace NachoClient.iOS
 
         private void OrganizerTapGestureRecognizerTap ()
         {
-            McContact contact = McContact.QueryByEmailAddress (account.Id, organizerEmail).FirstOrDefault ();
+            McContact contact = McContact.QueryByEmailAddress (account.Id, root.OrganizerEmail).FirstOrDefault ();
             if (null == contact) {
-                NcContactGleaner.GleanContact (organizerEmail, account.Id);
-                contact = McContact.QueryByEmailAddress (account.Id, organizerEmail).FirstOrDefault ();
+                NcContactGleaner.GleanContact (root.OrganizerEmail, account.Id);
+                contact = McContact.QueryByEmailAddress (account.Id, root.OrganizerEmail).FirstOrDefault ();
             }
             PerformSegue ("SegueToContactDetail", new SegueHolder (contact));
         }
@@ -1350,6 +1364,23 @@ namespace NachoClient.iOS
         private void NotesTapGestureRecognizerTap ()
         {
             PerformSegue ("EventToNotes", this);
+        }
+
+        /// <summary>
+        /// The "Remove from calendar" button has been touched. Adjust the UI, and remove
+        /// the calendar entry.
+        /// </summary>
+        private void RemoveFromCalendarClicked (object sender, EventArgs e)
+        {
+            NavigationController.PopViewControllerAnimated (true);
+
+            // Cancel notification if there is one
+            Notif eventNotif = Notif.Instance;
+            if (null != eventNotif.FindNotif (c.Id)) {
+                eventNotif.CancelNotif (c.Id);
+            }
+            // Remove the item from the calendar.
+            BackEnd.Instance.DeleteCalCmd (c.AccountId, c.Id);
         }
 
         private void AcceptButtonTouchUpInside (object sender, EventArgs e)

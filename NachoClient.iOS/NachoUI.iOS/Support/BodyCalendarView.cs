@@ -15,6 +15,7 @@ using NachoCore;
 using NachoCore.Utils;
 using NachoCore.Model;
 using System.Collections.Generic;
+using NachoPlatform;
 
 namespace NachoClient.iOS
 {
@@ -37,6 +38,7 @@ namespace NachoClient.iOS
         private bool requestActions = false;
         private bool cancelActions = false;
         private float viewWidth;
+        private string organizerEmail;
 
         public BodyCalendarView (float Y, float width, MimePart part, bool isOnNow)
             : base (new RectangleF (0, Y, width, 150))
@@ -67,7 +69,7 @@ namespace NachoClient.iOS
             if (iCal.Method.Equals (DDay.iCal.CalendarMethods.Reply)) {
                 ShowAttendeeResponseBar (evt);
             } else if (iCal.Method.Equals (DDay.iCal.CalendarMethods.Cancel)) {
-                ShowCancellationBar (evt);
+                ShowCancellationBar (evt, isOnNow);
             } else {
                 if (!iCal.Method.Equals (DDay.iCal.CalendarMethods.Request)) {
                     Log.Warn (Log.LOG_CALENDAR, "Unexpected calendar method: {0}. It will be treated as a {1}.",
@@ -188,7 +190,7 @@ namespace NachoClient.iOS
 //            alertDetailLabel.SizeToFit ();
 
 
-            string organizerEmail;
+
             if (Uri.UriSchemeMailto == evt.Organizer.Value.Scheme) {
                 organizerEmail = evt.Organizer.Value.AbsoluteUri.Substring (Uri.UriSchemeMailto.Length + 1);
             } else {
@@ -343,8 +345,6 @@ namespace NachoClient.iOS
             this.Frame = new RectangleF (this.Frame.X, this.Frame.Y, this.Frame.Width, yOffset + 20);
         }
 
-        UILabel eventDoesNotExistLabel;
-
         UIButton acceptButton;
         UIButton tentativeButton;
         UIButton declineButton;
@@ -412,18 +412,8 @@ namespace NachoClient.iOS
             messageLabel.Hidden = true;
             responseView.AddSubview (messageLabel);
 
-            eventDoesNotExistLabel = new UILabel (new RectangleF (0, 18, viewWidth, 24));
-            eventDoesNotExistLabel.TextColor = A.Color_NachoBlack;
-            eventDoesNotExistLabel.TextAlignment = UITextAlignment.Center;
-            eventDoesNotExistLabel.Text = "This event has been removed from your calendar";
-            eventDoesNotExistLabel.Font = A.Font_AvenirNextRegular12;
-            eventDoesNotExistLabel.Hidden = true;
-            responseView.Add (eventDoesNotExistLabel);
-
             dotView = new UIImageView ();
             dotView.Frame = new RectangleF (21, 25, 10, 10);
-            var size = new SizeF (10, 10);
-            dotView.Image = Util.DrawCalDot (A.Color_NachoSwipeActionGreen, size);
             dotView.Hidden = true;
             responseView.Add (dotView);
         }
@@ -460,6 +450,7 @@ namespace NachoClient.iOS
                     messageLabel.Frame = new RectangleF (42, 18, viewWidth - 42, 24);
                     messageLabel.Hidden = false;
                     dotView.Hidden = false;
+                    dotView.Image = Util.DrawCalDot (A.Color_NachoSwipeActionGreen, new SizeF (10, 10));
                     acceptButton.Hidden = true;
                     acceptLabel.Hidden = true;
                     tentativeButton.Hidden = true;
@@ -536,7 +527,6 @@ namespace NachoClient.iOS
                     }
                 } 
             } else {
-                eventDoesNotExistLabel.Hidden = false;
                 acceptButton.Hidden = true;
                 acceptLabel.Hidden = true;
                 tentativeButton.Hidden = true;
@@ -711,7 +701,7 @@ namespace NachoClient.iOS
         {
             BackEnd.Instance.RespondCalCmd (calendarItem.AccountId, calendarItem.Id, status);
 
-            if (calendarItem.ResponseRequestedIsSet && calendarItem.ResponseRequested) {
+            if (calendarItem.ResponseRequestedIsSet && calendarItem.ResponseRequested && null != organizerEmail) {
                 // Send an e-mail message to the organizer with the response.
                 McAccount account = McAccount.QueryById<McAccount> (calendarItem.AccountId);
                 var iCalPart = CalendarHelper.iCalResponseToMimePart (account, (McCalendar)calendarItem, status);
@@ -810,7 +800,7 @@ namespace NachoClient.iOS
         /// Show the action bar for a meeting cancellation, which has a
         /// "Remove from calendar" button.
         /// </summary>
-        private void ShowCancellationBar (DDay.iCal.Event evt)
+        private void ShowCancellationBar (DDay.iCal.Event evt, bool isOnNow)
         {
             UIView responseView = new UIView (new RectangleF (0, 0, viewWidth, 60));
             responseView.BackgroundColor = UIColor.Clear;
@@ -826,29 +816,49 @@ namespace NachoClient.iOS
 
             if (null == calendarItem) {
 
-                eventDoesNotExistLabel.Hidden = false;
+                messageLabel.Text = "This event is not on your calendar";
+                messageLabel.Frame = new RectangleF (42, 18, viewWidth - 42, 24);
+                messageLabel.Hidden = false;
+                dotView.Hidden = false;
+                dotView.Image = Util.DrawCalDot (A.Color_NachoSwipeEmailDefer, new SizeF (10, 10));
 
             } else {
 
                 // Let the user click either the red cirle X or the words "Remove from calendar."
                 // They both do the same thing.
 
-                cancelActions = true;
 
-                declineButton.Hidden = false;
-                declineButton.Selected = false;
-                declineButton.Frame = new RectangleF (18, 18, 24, 24);
-                declineButton.TouchUpInside += RemoveFromCalendarClicked;
+                if (isOnNow) {
+                    messageLabel.Text = "This event is no longer occurring";
+                    messageLabel.Frame = new RectangleF (42, 18, viewWidth - 42, 24);
+                    messageLabel.Hidden = false;
+                    dotView.Hidden = false;
+                    dotView.Image = Util.DrawCalDot (A.Color_NachoSwipeEmailDelete, new SizeF (10, 10));
+                    acceptButton.Hidden = true;
+                    acceptLabel.Hidden = true;
+                    tentativeButton.Hidden = true;
+                    tentativeLabel.Hidden = true;
+                    declineButton.Hidden = true;
+                    declineLabel.Hidden = true;
+                } else {
 
-                removeFromCalendarButton = new UIButton (UIButtonType.RoundedRect);
-                removeFromCalendarButton.SetTitle ("Remove from calendar", UIControlState.Normal);
-                removeFromCalendarButton.Font = A.Font_AvenirNextRegular12;
-                removeFromCalendarButton.SizeToFit ();
-                removeFromCalendarButton.Frame = new RectangleF (18 + 24 + 10, 18, removeFromCalendarButton.Frame.Width, 24);
-                removeFromCalendarButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
-                removeFromCalendarButton.Hidden = false;
-                removeFromCalendarButton.TouchUpInside += RemoveFromCalendarClicked;
-                responseView.Add (removeFromCalendarButton);
+                    cancelActions = true;
+
+                    declineButton.Hidden = false;
+                    declineButton.Selected = false;
+                    declineButton.Frame = new RectangleF (18, 18, 24, 24);
+                    declineButton.TouchUpInside += RemoveFromCalendarClicked;
+
+                    removeFromCalendarButton = new UIButton (UIButtonType.RoundedRect);
+                    removeFromCalendarButton.SetTitle ("Remove from calendar", UIControlState.Normal);
+                    removeFromCalendarButton.Font = A.Font_AvenirNextRegular12;
+                    removeFromCalendarButton.SizeToFit ();
+                    removeFromCalendarButton.Frame = new RectangleF (18 + 24 + 10, 19, removeFromCalendarButton.Frame.Width, 24);
+                    removeFromCalendarButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
+                    removeFromCalendarButton.Hidden = false;
+                    removeFromCalendarButton.TouchUpInside += RemoveFromCalendarClicked;
+                    responseView.Add (removeFromCalendarButton);
+                }
             }
 
             this.AddSubview (responseView);
@@ -863,19 +873,34 @@ namespace NachoClient.iOS
             // Handle the UI changes.
             declineButton.UserInteractionEnabled = false;
             removeFromCalendarButton.UserInteractionEnabled = false;
-            eventDoesNotExistLabel.Alpha = 0;
-            eventDoesNotExistLabel.Hidden = false;
+
+            messageLabel.Text = "This event is no longer on your calendar";
+            messageLabel.Frame = new RectangleF (42, 18, viewWidth - 42, 24);
+            messageLabel.Hidden = false;
+            dotView.Image = Util.DrawCalDot (A.Color_NachoSwipeEmailDelete, new SizeF (10, 10));
+
+            messageLabel.Alpha = 0;
+            messageLabel.Hidden = false;
+            dotView.Alpha = 0;
+            dotView.Hidden = false;
+
             UIView.Animate (0.2, 0, UIViewAnimationOptions.CurveLinear,
                 () => {
                     declineButton.Alpha = 0;
                     removeFromCalendarButton.Alpha = 0;
-                    eventDoesNotExistLabel.Alpha = 1;
+                    messageLabel.Alpha = 1;
+                    dotView.Alpha = 1;
                 },
                 () => {
                     declineButton.Hidden = true;
                     removeFromCalendarButton.Hidden = true;
                 });
 
+            // Cancel notification if there is one
+            Notif eventNotif = Notif.Instance;
+            if (null != eventNotif.FindNotif (calendarItem.Id)) {
+                eventNotif.CancelNotif (calendarItem.Id);
+            }
             // Remove the item from the calendar.
             BackEnd.Instance.DeleteCalCmd (calendarItem.AccountId, calendarItem.Id);
         }
