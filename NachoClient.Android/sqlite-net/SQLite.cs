@@ -641,7 +641,11 @@ namespace SQLite
                 _sw.Stop ();
                 var span = _sw.ElapsedMilliseconds;
                 if (span > TraceThreshold) {
-                    Log.Error (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
+                    if (NachoCore.NcApplication.Instance.UiThreadId == Thread.CurrentThread.ManagedThreadId) {
+                        Log.Error (Log.LOG_SYS, "SQLite-UI: {0}ms for: {1}", span, cmd);
+                    } else {
+                        Log.Warn (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
+                    }
                 }
             }
 			
@@ -671,7 +675,11 @@ namespace SQLite
                 _sw.Stop ();
                 var span = _sw.ElapsedMilliseconds;
                 if (span > TraceThreshold) {
-                    Log.Error (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
+                    if (NachoCore.NcApplication.Instance.UiThreadId == Thread.CurrentThread.ManagedThreadId) {
+                        Log.Error (Log.LOG_SYS, "SQLite-UI: {0}ms for: {1}", span, cmd);
+                    } else {
+                        Log.Warn (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
+                    }
                 }
             }
 			return r;
@@ -715,7 +723,11 @@ namespace SQLite
                 _sw.Stop ();
                 var span = _sw.ElapsedMilliseconds;
                 if (span > TraceThreshold) {
-                    Log.Error (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
+                    if (NachoCore.NcApplication.Instance.UiThreadId == Thread.CurrentThread.ManagedThreadId) {
+                        Log.Error (Log.LOG_SYS, "SQLite-UI: {0}ms for: {1}", span, cmd);
+                    } else {
+                        Log.Warn (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
+                    }
                 }
             }
             return retval;
@@ -786,7 +798,11 @@ namespace SQLite
                 _sw.Stop ();
                 var span = _sw.ElapsedMilliseconds;
                 if (span > TraceThreshold) {
-                    Log.Error (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
+                    if (NachoCore.NcApplication.Instance.UiThreadId == Thread.CurrentThread.ManagedThreadId) {
+                        Log.Error (Log.LOG_SYS, "SQLite-UI: {0}ms for: {1}", span, cmd);
+                    } else {
+                        Log.Warn (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
+                    }
                 }
             }
             return retval;
@@ -2976,7 +2992,11 @@ namespace SQLite
                 Connection._sw.Stop ();
                 var span = Connection._sw.ElapsedMilliseconds;
                 if (span > Connection.TraceThreshold) {
-                    Log.Error (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
+                    if (NachoCore.NcApplication.Instance.UiThreadId == Thread.CurrentThread.ManagedThreadId) {
+                        Log.Error (Log.LOG_SYS, "SQLite-UI: {0}ms for: {1}", span, cmd);
+                    } else {
+                        Log.Warn (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
+                    }
                 }
             }
             return retval;
@@ -3011,11 +3031,15 @@ namespace SQLite
                 Connection._sw.Stop ();
                 var span = Connection._sw.ElapsedMilliseconds;
                 if (span > Connection.TraceThreshold) {
-                    Log.Error (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
+                    if (NachoCore.NcApplication.Instance.UiThreadId == Thread.CurrentThread.ManagedThreadId) {
+                        Log.Error (Log.LOG_SYS, "SQLite-UI: {0}ms for: {1}", span, cmd);
+                    } else {
+                        Log.Warn (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
+                    }
                 }
             }
             return retval;
-		}
+        }
 
 		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator ()
 		{
