@@ -84,8 +84,6 @@ namespace NachoClient.iOS
 
         public override void ViewDidAppear (bool animated)
         {
-            base.ViewDidAppear (animated);
-
             if (HandlesKeyboardNotifications) {
                 NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
                 NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
@@ -106,11 +104,13 @@ namespace NachoClient.iOS
                 NavigationItem.Title = "Account Setup";
                 loadingCover.Hidden = true;
             }
+
+            LayoutView ();
+            base.ViewDidAppear (animated);
         }
 
         public override void ViewWillAppear (bool animated)
         {
-            base.ViewWillAppear (animated);
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
 
@@ -121,6 +121,7 @@ namespace NachoClient.iOS
                 NavigationItem.SetHidesBackButton (true, false);
             }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            base.ViewWillAppear (animated);
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -156,12 +157,16 @@ namespace NachoClient.iOS
                 NavigationController.NavigationBar.BackgroundColor = A.Color_NachoGreen.ColorWithAlpha (1.0f);
                 NavigationController.NavigationBar.Translucent = false;
             }
-            contentView = new UIView ();
-            contentView.BackgroundColor = A.Color_NachoNowBackground;
+
 
             scrollView = new UIScrollView (View.Frame);
             scrollView.BackgroundColor = A.Color_NachoNowBackground;
-            View.Add (scrollView);
+            scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
+            View.AddSubview (scrollView);
+
+            contentView = new UIView (View.Frame);
+            contentView.BackgroundColor = A.Color_NachoNowBackground;
+            scrollView.AddSubview (contentView);
 
             yOffset = 15f;
             errorMessage = new UILabel (new RectangleF (20, 15, View.Frame.Width - 40, 50));
@@ -236,14 +241,11 @@ namespace NachoClient.iOS
                 PerformSegue("SegueToSupport", this);
             };
             contentView.AddSubview (customerSupportButton);
-            yOffset = customerSupportButton.Frame.Bottom;
+            yOffset = customerSupportButton.Frame.Bottom + 20;
 
             loadingCover = new UIView (View.Frame);
             loadingCover.BackgroundColor = A.Color_NachoGreen;
             contentView.Add (loadingCover);
-
-            scrollView.Add (contentView);
-            LayoutView ();
 
             createInputFieldList ();
             configureKeyboards ();
@@ -356,8 +358,8 @@ namespace NachoClient.iOS
         {
             emailText.ShouldReturn += (textField) => {
                 haveEnteredEmailAndPass ();
-                serverText.BecomeFirstResponder ();
                 textField.TextColor = UIColor.Black;
+                View.EndEditing(true);
                 return true;
             };
             emailText.EditingChanged += (object sender, EventArgs e) => {
@@ -367,15 +369,15 @@ namespace NachoClient.iOS
             emailText.AutocorrectionType = UITextAutocorrectionType.No;
 
             serverText.ShouldReturn += (textField) => {
-                domainText.BecomeFirstResponder ();
                 textField.TextColor = UIColor.Black;
+                View.EndEditing(true);
                 return true;
             };
             serverText.AutocapitalizationType = UITextAutocapitalizationType.None;
             serverText.AutocorrectionType = UITextAutocorrectionType.No;
 
             domainText.ShouldReturn += (textField) => {
-                usernameText.BecomeFirstResponder ();
+                View.EndEditing(true);
                 return true;
             };
             domainText.AutocapitalizationType = UITextAutocapitalizationType.None;
@@ -383,7 +385,7 @@ namespace NachoClient.iOS
 
             usernameText.ShouldReturn += (textField) => {
                 usernameText.TextColor = UIColor.Black;
-                passwordText.BecomeFirstResponder ();
+                View.EndEditing(true);
                 return true;
             };
             usernameText.AutocapitalizationType = UITextAutocapitalizationType.None;
@@ -392,8 +394,8 @@ namespace NachoClient.iOS
             passwordText.SecureTextEntry = true;
             passwordText.ShouldReturn += (textField) => {
                 haveEnteredEmailAndPass ();
-                textField.ResignFirstResponder ();
                 textField.TextColor = UIColor.Black;
+                View.EndEditing(true);
                 return true;
             };
             passwordText.EditingChanged += (object sender, EventArgs e) => {
