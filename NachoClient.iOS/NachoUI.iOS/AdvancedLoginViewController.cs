@@ -35,7 +35,6 @@ namespace NachoClient.iOS
         public string certificateInformation = "";
         public bool hasSyncedEmail = false;
 
-
         UIButton connectButton;
         AccountSettings theAccount;
         AppDelegate appDelegate;
@@ -121,6 +120,8 @@ namespace NachoClient.iOS
                 NavigationItem.SetHidesBackButton (true, false);
             }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+
+            LayoutView ();
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -156,12 +157,14 @@ namespace NachoClient.iOS
                 NavigationController.NavigationBar.BackgroundColor = A.Color_NachoGreen.ColorWithAlpha (1.0f);
                 NavigationController.NavigationBar.Translucent = false;
             }
-            contentView = new UIView ();
-            contentView.BackgroundColor = A.Color_NachoNowBackground;
 
             scrollView = new UIScrollView (View.Frame);
             scrollView.BackgroundColor = A.Color_NachoNowBackground;
+            scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
             View.Add (scrollView);
+
+            contentView = new UIView (View.Frame);
+            contentView.BackgroundColor = A.Color_NachoNowBackground;
 
             yOffset = 15f;
             errorMessage = new UILabel (new RectangleF (20, 15, View.Frame.Width - 40, 50));
@@ -236,14 +239,13 @@ namespace NachoClient.iOS
                 PerformSegue("SegueToSupport", this);
             };
             contentView.AddSubview (customerSupportButton);
-            yOffset = customerSupportButton.Frame.Bottom;
+            yOffset = customerSupportButton.Frame.Bottom + 20;
 
             loadingCover = new UIView (View.Frame);
             loadingCover.BackgroundColor = A.Color_NachoGreen;
             contentView.Add (loadingCover);
 
-            scrollView.Add (contentView);
-            LayoutView ();
+            scrollView.AddSubview (contentView);
 
             createInputFieldList ();
             configureKeyboards ();
@@ -324,8 +326,12 @@ namespace NachoClient.iOS
 
         protected void LayoutView ()
         {
+            float navBarBottom = 0;
+            if(null != NavigationController){
+                navBarBottom = NavigationController.NavigationBar.Frame.Bottom;
+            }
             scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
-            var contentFrame = new RectangleF (0, 0, View.Frame.Width, yOffset);
+            var contentFrame = new RectangleF (0, 0, View.Frame.Width, navBarBottom + yOffset);
             contentView.Frame = contentFrame;
             scrollView.ContentSize = contentFrame.Size;
         }
@@ -493,6 +499,9 @@ namespace NachoClient.iOS
                     passwordText.Text = theAccount.Credentials.GetPassword ();
                     if (null != theAccount.Server) {
                         serverText.Text = theAccount.Server.Host;
+                        if (443 != theAccount.Server.Port) {
+                            serverText.Text += ":" + theAccount.Server.Port.ToString ();
+                        }
                     }
                 }
             }
@@ -553,8 +562,8 @@ namespace NachoClient.iOS
                 if (haveEnteredHost ()) {
                     var server = new McServer () { 
                         AccountId = appDelegate.Account.Id,
-                        Host = serverText.Text,
                     };
+                    SetHostAndPort(server);
                     server.Insert ();
                     serverId = server.Id;
                 }
@@ -566,6 +575,22 @@ namespace NachoClient.iOS
 
             BackEnd.Instance.Start (LoginHelpers.GetCurrentAccountId ());
             waitScreen.ShowView ();
+        }
+
+        protected void SetHostAndPort(McServer forServer)
+        {
+            UriHostNameType fullServerUri = Uri.CheckHostName (serverText.Text.Trim());
+            if(fullServerUri == UriHostNameType.Dns  ||
+                fullServerUri == UriHostNameType.IPv4 ||
+                fullServerUri == UriHostNameType.IPv6) {
+                forServer.Host = serverText.Text.Trim ();
+                forServer.Port = 443;
+                return;
+            }
+
+            Uri serverURI = new Uri ("my://" + serverText.Text.Trim ());
+            forServer.Host = serverURI.Host;
+            forServer.Port = serverURI.Port;
         }
 
         public void removeServerRecord ()
@@ -590,11 +615,11 @@ namespace NachoClient.iOS
         {
             McServer mailServer = McServer.QueryByAccountId<McServer> (LoginHelpers.GetCurrentAccountId ()).FirstOrDefault ();
             if (null != mailServer) {
-                mailServer.Host = serverText.Text.Trim ();
+                SetHostAndPort (mailServer);
                 mailServer.Update ();
             } else {
                 mailServer = new McServer ();
-                mailServer.Host = serverText.Text.Trim ();
+                SetHostAndPort (mailServer);
                 mailServer.AccountId = LoginHelpers.GetCurrentAccountId ();
                 mailServer.Insert ();
             }
@@ -649,13 +674,39 @@ namespace NachoClient.iOS
 
         public bool isValidHost ()
         {
-            UriHostNameType hostnameURI = Uri.CheckHostName (serverText.Text.Trim());
-            if (hostnameURI == UriHostNameType.Dns || hostnameURI == UriHostNameType.IPv4 || hostnameURI == UriHostNameType.IPv6) {
+            UriHostNameType fullServerUri = Uri.CheckHostName (serverText.Text.Trim());
+            if(fullServerUri == UriHostNameType.Dns  ||
+                fullServerUri == UriHostNameType.IPv4 ||
+                fullServerUri == UriHostNameType.IPv6) {
                 return true;
-            } else {
+            }
+
+            //fullServerUri didn't pass...validate host/port separately
+            Uri serverURI;
+            try{
+                 serverURI = new Uri ("my://" + serverText.Text.Trim ());
+            }catch {
                 ConfigureView (LoginStatus.InvalidServerName);
                 return false;
             }
+
+            var host = serverURI.Host;
+            var port = serverURI.Port;
+
+            UriHostNameType testHostName = Uri.CheckHostName (host);
+            if(testHostName == UriHostNameType.Unknown ||
+                testHostName == UriHostNameType.Basic) {
+                ConfigureView (LoginStatus.InvalidServerName);
+                return false;
+             } 
+
+            //host cleared, checking port
+            if (port < 0 || port > 65535) {
+                ConfigureView (LoginStatus.InvalidServerName);
+                return false;
+            }
+               
+            return true;
         }
 
         public void stopBeIfRunning ()
