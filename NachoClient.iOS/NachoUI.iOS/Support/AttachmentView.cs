@@ -30,6 +30,7 @@ namespace NachoClient.iOS
 
         private bool animationIsRunning = false;
         private bool statusIndicatorIsRegistered = false;
+        private string downloadToken = null;
 
         public AttachmentSelectedCallback OnAttachmentSelected;
 
@@ -206,9 +207,8 @@ namespace NachoClient.iOS
         private void StartDownload ()
         {
             MaybeRegisterStatusInd ();
-            var downloadToken = PlatformHelpers.DownloadAttachment (attachment);
+            downloadToken = PlatformHelpers.DownloadAttachment (attachment);
             if (null == downloadToken) {
-                attachment = McAttachment.QueryById<McAttachment> (attachment.Id);
                 RefreshStatus ();
                 return;
             }
@@ -223,8 +223,20 @@ namespace NachoClient.iOS
         private void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var statusEvent = (StatusIndEventArgs)e;
-            if (NcResult.SubKindEnum.Info_AttDownloadUpdate == statusEvent.Status.SubKind || NcResult.SubKindEnum.Error_AttDownloadFailed == statusEvent.Status.SubKind) {
+            if (null != downloadToken && null != statusEvent.Tokens && downloadToken == statusEvent.Tokens.FirstOrDefault ()) {
+                if (NcResult.SubKindEnum.Error_AttDownloadFailed == statusEvent.Status.SubKind) {
+                    var localAccountId = attachment.AccountId;
+                    var localDownloadToken = downloadToken;
+                    NcTask.Run (delegate {
+                        foreach (var request in McPending.QueryByToken(localAccountId, localDownloadToken)) {
+                            if (McPending.StateEnum.Failed == request.State) {
+                                request.Delete ();
+                            }
+                        }
+                    }, "DelFailedMcPendingAttachmentDnld");
+                }
                 RefreshStatus ();
+                downloadToken = null;
             }
         }
 

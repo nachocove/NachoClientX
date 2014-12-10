@@ -476,6 +476,18 @@ namespace NachoClient.iOS
 
                 case NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed:
                 case NcResult.SubKindEnum.Error_CalendarBodyDownloadFailed:
+
+                    // The McPending isn't needed any more.
+                    var localAccountId = item.AccountId;
+                    var localDownloadToken = downloadToken;
+                    NcTask.Run (delegate {
+                        foreach (var request in McPending.QueryByToken(localAccountId, localDownloadToken)) {
+                            if (McPending.StateEnum.Failed == request.State) {
+                                request.Delete ();
+                            }
+                        }
+                    }, "DelFailedMcPendingBodyDnld");
+
                     if (NcApplication.ExecutionContextEnum.Foreground != NcApplication.Instance.ExecutionContext &&
                             NcResult.WhyEnum.UnavoidableDelay == statusEvent.Status.Why) {
                         // The download probably failed because the back end was parked
@@ -488,6 +500,7 @@ namespace NachoClient.iOS
                         // This log message may be removed once it is confirmed that this is behaving as expected.
                         Log.Info (Log.LOG_UI, "BodyView: Download failed while the app is in the background. The download will be retried when the app comes back to the foreground.");
                     } else {
+                        // The download really did fail.  Let the user know.
                         ShowErrorMessage ();
                     }
                     break;
@@ -576,7 +589,6 @@ namespace NachoClient.iOS
         private void RenderMime (McBody body)
         {
             var message = MimeHelpers.LoadMessage (body);
-            MimeHelpers.DumpMessage (message);
             var list = new List<MimeEntity> ();
             MimeHelpers.MimeDisplayList (message, ref list);
 
