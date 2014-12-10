@@ -207,7 +207,7 @@ namespace NachoClient.iOS
                 if (canUserConnect ()) {
                     if (!LoginHelpers.IsCurrentAccountSet ()) {
                         if (haveEnteredHost ()) {
-                            if (isValidHost ()) {
+                            if (IsValidServer (serverText.Text)) {
                                 basicEnterFullConfiguration ();
                             }
                         } else {
@@ -215,7 +215,7 @@ namespace NachoClient.iOS
                         }
                     } else {
                         if (haveEnteredHost ()) {
-                            if (isValidHost ()) {
+                            if (IsValidServer (serverText.Text)) {
                                 tryValidateConfig ();
                                 waitScreen.ShowView ();
                             }
@@ -495,6 +495,9 @@ namespace NachoClient.iOS
                     passwordText.Text = theAccount.Credentials.GetPassword ();
                     if (null != theAccount.Server) {
                         serverText.Text = theAccount.Server.Host;
+                        if (443 != theAccount.Server.Port) {
+                            serverText.Text += ":" + theAccount.Server.Port.ToString ();
+                        }
                     }
                 }
             }
@@ -555,8 +558,8 @@ namespace NachoClient.iOS
                 if (haveEnteredHost ()) {
                     var server = new McServer () { 
                         AccountId = appDelegate.Account.Id,
-                        Host = serverText.Text,
                     };
+                    SetHostAndPort(server);
                     server.Insert ();
                     serverId = server.Id;
                 }
@@ -592,11 +595,11 @@ namespace NachoClient.iOS
         {
             McServer mailServer = McServer.QueryByAccountId<McServer> (LoginHelpers.GetCurrentAccountId ()).FirstOrDefault ();
             if (null != mailServer) {
-                mailServer.Host = serverText.Text.Trim ();
+                SetHostAndPort (mailServer);
                 mailServer.Update ();
             } else {
                 mailServer = new McServer ();
-                mailServer.Host = serverText.Text.Trim ();
+                SetHostAndPort (mailServer);
                 mailServer.AccountId = LoginHelpers.GetCurrentAccountId ();
                 mailServer.Insert ();
             }
@@ -649,15 +652,71 @@ namespace NachoClient.iOS
             return regexUtil.IsValidEmail (email);
         }
 
-        public bool isValidHost ()
+        protected bool IsValidHost (string host)
         {
-            UriHostNameType hostnameURI = Uri.CheckHostName (serverText.Text.Trim());
-            if (hostnameURI == UriHostNameType.Dns || hostnameURI == UriHostNameType.IPv4 || hostnameURI == UriHostNameType.IPv6) {
+            UriHostNameType fullServerUri = Uri.CheckHostName (host.Trim());
+            if(fullServerUri == UriHostNameType.Dns  ||
+                fullServerUri == UriHostNameType.IPv4 ||
+                fullServerUri == UriHostNameType.IPv6) {
                 return true;
+            }
+            return false;
+        }
+
+        protected bool IsValidPort (int port) 
+        {
+            if (port < 0 || port > 65535) {
+                return false;
             } else {
+                return true;
+            }
+        }
+
+        protected bool IsValidServer (string server)
+        {
+            if (IsValidHost (server)) {
+                return true;
+            }
+
+            //fullServerUri didn't pass...validate host/port separately
+            Uri serverURI;
+            try{
+                serverURI = new Uri ("my://" + serverText.Text.Trim ());
+            }catch {
                 ConfigureView (LoginStatus.InvalidServerName);
                 return false;
             }
+
+            var host = serverURI.Host;
+            var port = serverURI.Port;
+
+            if (!IsValidHost (host)) {
+                ConfigureView (LoginStatus.InvalidServerName);
+                return false;
+            }
+
+            //host cleared, checking port
+            if (!IsValidPort(port)) {
+                ConfigureView (LoginStatus.InvalidServerName);
+                return false;
+            }
+
+            return true;
+        }
+
+        protected void SetHostAndPort(McServer forServer)
+        {
+            NcAssert.True (IsValidServer (serverText.Text), "Server is not valid");
+
+            if(IsValidHost(serverText.Text)){
+                forServer.Host = serverText.Text.Trim ();
+                forServer.Port = 443;
+                return;
+            }
+
+            Uri serverURI = new Uri ("my://" + serverText.Text.Trim ());
+            forServer.Host = serverURI.Host;
+            forServer.Port = serverURI.Port;
         }
 
         public void stopBeIfRunning ()
