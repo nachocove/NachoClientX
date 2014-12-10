@@ -462,8 +462,9 @@ namespace NachoClient.iOS
 
             if (null != calendarItem) {
 
-                if (calendarItem.ResponseTypeIsSet && NcResponseType.Organizer == calendarItem.ResponseType) {
-                    // The organizer doesn't normally get an meeting request.
+                if (calendarItem.ResponseTypeIsSet && NcResponseType.Organizer == calendarItem.ResponseType
+                    || (NcMeetingStatus.Appointment == calendarItem.MeetingStatus) || (NcMeetingStatus.Meeting == calendarItem.MeetingStatus)) {
+                    // The organizer doesn't normally get a meeting request.
                     // I'm not sure if this will ever happen.
                     messageLabel.Hidden = false;
                     messageLabel.Text = "You are the organizer";
