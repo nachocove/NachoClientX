@@ -111,11 +111,11 @@ namespace NachoClient.iOS
         {
             var statusEvent = (StatusIndEventArgs)e;
             if (NcResult.SubKindEnum.Info_CalendarSetChanged == statusEvent.Status.SubKind) {
-                CalendarHelper.ExpandRecurrences (DateTime.UtcNow.AddDays(7));
+                CalendarHelper.ExpandRecurrences (DateTime.UtcNow.AddDays (7));
                 Configure ();
             }
             if (NcResult.SubKindEnum.Info_CalendarChanged == statusEvent.Status.SubKind) {
-                CalendarHelper.ExpandRecurrences (DateTime.UtcNow.AddDays(7));
+                CalendarHelper.ExpandRecurrences (DateTime.UtcNow.AddDays (7));
                 Configure ();
             }
             if (NcResult.SubKindEnum.Info_EventSetChanged == statusEvent.Status.SubKind) {
@@ -138,10 +138,13 @@ namespace NachoClient.iOS
                 c = currentEvent.GetCalendarItemforEvent ();
             }
 
+            var view = (SwipeActionView)this.ViewWithTag (SWIPE_TAG);
             var subjectLabelView = (UILabel)this.ViewWithTag (SUBJECT_TAG);
             var labelView = (UILabel)this.ViewWithTag (TEXT_TAG);
             var dotView = (UIImageView)this.ViewWithTag (DOT_TAG);
             var iconView = (UIImageView)this.ViewWithTag (ICON_TAG);
+
+            view.EnableSwipe (null != c);
 
             if (null == c) {
                 subjectLabelView.Text = "No upcoming events";
@@ -182,8 +185,6 @@ namespace NachoClient.iOS
             iconView.Hidden = String.IsNullOrEmpty (eventString);
             labelView.Text = eventString;
             labelView.Hidden = false;
-
-            var view = (SwipeActionView)this.ViewWithTag (SWIPE_TAG);
 
             view.OnClick = (int tag) => {
                 switch (tag) {
