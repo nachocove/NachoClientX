@@ -398,9 +398,9 @@ namespace NachoClient.iOS
             messageLabel.Hidden = true;
             responseView.AddSubview (messageLabel);
 
-            eventDoesNotExistLabel = new UILabel (new RectangleF (18, 18, viewWidth - 18, 24));
+            eventDoesNotExistLabel = new UILabel (new RectangleF (0, 18, viewWidth, 24));
             eventDoesNotExistLabel.TextColor = A.Color_NachoBlack;
-            eventDoesNotExistLabel.TextAlignment = UITextAlignment.Left;
+            eventDoesNotExistLabel.TextAlignment = UITextAlignment.Center;
             eventDoesNotExistLabel.Text = "This event has been removed from your calendar";
             eventDoesNotExistLabel.Font = A.Font_AvenirNextRegular12;
             eventDoesNotExistLabel.Hidden = true;
@@ -726,7 +726,7 @@ namespace NachoClient.iOS
                 return;
             }
 
-            UIView responseView = new UIView (new RectangleF (0, 86, viewWidth, 54));
+            UIView responseView = new UIView (new RectangleF (0, 0, viewWidth, 60));
             responseView.BackgroundColor = UIColor.Clear;
 
             ActionBarCommon (responseView);
@@ -798,7 +798,7 @@ namespace NachoClient.iOS
         /// </summary>
         private void ShowCancellationBar (DDay.iCal.Event evt)
         {
-            UIView responseView = new UIView (new RectangleF (0, 86, viewWidth, 54));
+            UIView responseView = new UIView (new RectangleF (0, 0, viewWidth, 60));
             responseView.BackgroundColor = UIColor.Clear;
 
             ActionBarCommon (responseView);
@@ -831,7 +831,7 @@ namespace NachoClient.iOS
                 removeFromCalendarButton.Font = A.Font_AvenirNextRegular12;
                 removeFromCalendarButton.SizeToFit ();
                 removeFromCalendarButton.Frame = new RectangleF (18 + 24 + 10, 18, removeFromCalendarButton.Frame.Width, 24);
-                removeFromCalendarButton.SetTitleColor (A.Color_SystemBlue, UIControlState.Normal);
+                removeFromCalendarButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
                 removeFromCalendarButton.Hidden = false;
                 removeFromCalendarButton.TouchUpInside += RemoveFromCalendarClicked;
                 responseView.Add (removeFromCalendarButton);

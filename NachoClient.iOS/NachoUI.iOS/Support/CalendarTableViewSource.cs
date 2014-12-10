@@ -396,8 +396,8 @@ namespace NachoClient.iOS
             }
 
             var addButton = new UIButton (UIButtonType.ContactAdd);
-            addButton.TintColor = A.Color_NachoTeal;
-            addButton.Frame = new RectangleF (tableView.Frame.Width - 42, (view.Frame.Height / 2) - 15, 30, 30);
+            addButton.TintColor = A.Color_NachoGreen;
+            addButton.Frame = new RectangleF (tableView.Frame.Width - 34, (view.Frame.Height / 2) - 8, 16, 16);
             addButton.TouchUpInside += (sender, e) => {
                 owner.PerformSegueForDelegate ("CalendarToEditEventView", new SegueHolder (date));
             };

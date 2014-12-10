@@ -16,12 +16,13 @@ namespace NachoClient.iOS
     public partial class CalendarViewController : NcUIViewController, INachoCalendarItemEditorParent, ICalendarTableViewSourceDelegate
     {
         protected CalendarTableViewSource calendarSource;
-        public DateBarView DateDotView = new DateBarView ();
+        protected UITableView calendarTableView;
+        public DateBarView DateDotView;
         public DateTime selectedDate = new DateTime ();
         public int selectedDateTag = 0;
         public int todayWeekTag = 0;
         public int todayMonthTag = 0;
-        protected static int dateBarHeight = 78;
+        protected static int dateBarHeight = 78 + 5;
         protected static int dateBarRowHeight = 46;
         protected static float screenWidth = UIScreen.MainScreen.Bounds.Width;
         protected static float screenRight = UIScreen.MainScreen.Bounds.Right;
@@ -73,18 +74,9 @@ namespace NachoClient.iOS
                 
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { addEventButton, todayButton };
 
-            calendarSource = new CalendarTableViewSource ();
-            calendarSource.owner = this;
-            calendarSource.SetCalendar (NcEventManager.Instance);
-            calendarTableView.Source = calendarSource;
-
             // We must request permission to access the user's calendar
             // This will prompt the user on platforms that ask, or it will validate
             // manifest permissions on platforms that declare their required permissions.
-
-            calendarSource.Refresh ();
-            calendarTableView.ReloadData ();
-
             CreateView ();
             ConfigureBasicView ();
         }
@@ -211,16 +203,20 @@ namespace NachoClient.iOS
 
         protected void CreateView ()
         {
-
             NavigationController.NavigationBar.Translucent = false;
 
+            calendarSource = new CalendarTableViewSource ();
+            calendarSource.owner = this;
+            calendarSource.SetCalendar (NcEventManager.Instance);
+
+            calendarTableView = new UITableView ();
+            ConfigureCalendarTableSize (1);
+            calendarTableView.Source = calendarSource;
             calendarTableView.SeparatorColor = A.Color_NachoBorderGray;
 
             NavigationItem.Title = "Calendar";
 
-            DateDotView.Frame = (new RectangleF (0, 0, View.Frame.Width, dateBarHeight));
-            DateDotView.ClipsToBounds = true;
-            DateDotView.BackgroundColor = UIColor.White;
+            DateDotView = new DateBarView (View);
 
             DateDotWeekPanGestureRecognizer = new UIPanGestureRecognizer ((UIPanGestureRecognizer obj) => {
                 DateDotWeekPan (obj);
@@ -248,11 +244,13 @@ namespace NachoClient.iOS
             DateDotMonthViewPanGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
                 return true;
             };
-            this.View.AddSubview (DateDotView);
+            copyImageView = new UIImageView (new RectangleF (0, 0, screenWidth, DateDotView.Frame.Height));
+
+            View.AddSubview (copyImageView);
+            View.AddSubview (DateDotView);
+            View.AddSubview (calendarTableView);
 
             DateDotView.SetOwner (this);
-            DateDotView.MakeDayLabels ();
-            DateDotView.MakeDateDotButtons ();
 
             DateDotView.ViewDate = DateTime.Today;
             currentDate = DateTime.Today;
@@ -260,7 +258,6 @@ namespace NachoClient.iOS
 
             todayMonthTag = DateDotView.GetMonthTag (DateTime.Today);
             DateDotView.UpdateButtons ();
-            View.BringSubviewToFront (DateDotView);
 
         }
 
@@ -271,7 +268,7 @@ namespace NachoClient.iOS
             DateDotMonthViewPanGestureRecognizer.Enabled = false;
         }
 
-        public static UIImageView copyWeekImage = new UIImageView (new RectangleF (0, 0, screenWidth, dateBarHeight));
+        public static UIImageView copyImageView;
         public float startingX = 0;
         public float xOffset = 0;
         public int directionFlag = 0;
@@ -285,7 +282,8 @@ namespace NachoClient.iOS
             if (UIGestureRecognizerState.Began == obj.State) {
                 startingX = obj.TranslationInView (this.View).X;
                 var Image = Util.captureView (DateDotView);
-                copyWeekImage.Image = Image;
+
+                copyImageView.Image = Image;
                 Image.Dispose ();
                 return;
             }
@@ -297,9 +295,8 @@ namespace NachoClient.iOS
                     DateDotToggleOpenMonthPanGestureRecognizer.Enabled = false;
                     if (0 > xOffset) { //Swipe left
                         if (directionFlag != 1) {
-
-                            this.View.AddSubview (copyWeekImage);
-                            this.View.BringSubviewToFront (copyWeekImage);
+                            this.View.BringSubviewToFront (copyImageView);
+                            this.View.BringSubviewToFront (calendarTableView);
                             directionFlag = 1;
                             DateDotView.ViewDate = currentDate.AddDays (7);
                             DateDotView.ToggleButtons (-1);
@@ -308,12 +305,12 @@ namespace NachoClient.iOS
                         }
 
                         var difference = Math.Abs (xOffset - startingX);
-                        copyWeekImage.Center = new PointF ((DateDotView.Frame.Width / 2) - difference, (DateDotView.Frame.Height / 2));
+                        copyImageView.Center = new PointF ((DateDotView.Frame.Width / 2) - difference, (DateDotView.Frame.Height / 2));
                         DateDotView.Center = new PointF (screenRight + (DateDotView.Frame.Width / 2) - difference, (DateDotView.Frame.Height / 2));
                     } else { //Swipe right
                         if (directionFlag != 2) {
-                            this.View.AddSubview (copyWeekImage);
-                            this.View.BringSubviewToFront (copyWeekImage);
+                            this.View.BringSubviewToFront (copyImageView);
+                            this.View.BringSubviewToFront (calendarTableView);
                             directionFlag = 2;
                             DateDotView.ViewDate = currentDate.AddDays (-7);
                             DateDotView.ToggleButtons (-1);
@@ -322,7 +319,7 @@ namespace NachoClient.iOS
                         }
 
                         var difference = Math.Abs (xOffset - startingX);
-                        copyWeekImage.Center = new PointF ((DateDotView.Frame.Width / 2) + difference, (DateDotView.Frame.Height / 2));
+                        copyImageView.Center = new PointF ((DateDotView.Frame.Width / 2) + difference, (DateDotView.Frame.Height / 2));
                         DateDotView.Center = new PointF (screenLeft - (DateDotView.Frame.Width / 2) + difference, (DateDotView.Frame.Height / 2));
                     }
                 }
@@ -333,10 +330,11 @@ namespace NachoClient.iOS
                 if (xOffset < -(DateDotView.Frame.Width / 3) || obj.VelocityInView (DateDotView).X < -500) { 
                     UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
                         () => {
-                            copyWeekImage.Center = new PointF (screenLeft - (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                            copyImageView.Center = new PointF (screenLeft - (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                             DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                         },
                         () => {
+                            this.View.BringSubviewToFront (calendarTableView);
                         }
                     );
                     currentDate = currentDate.AddDays (7);
@@ -345,10 +343,11 @@ namespace NachoClient.iOS
                 } else if (xOffset > (DateDotView.Frame.Width / 3) || obj.VelocityInView (DateDotView).X > 500) {
                     UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
                         () => {
-                            copyWeekImage.Center = new PointF (screenRight + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                            copyImageView.Center = new PointF (screenRight + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                             DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                         },
                         () => {
+                            this.View.BringSubviewToFront (calendarTableView);
                         }
                     );
                     currentDate = currentDate.AddDays (-7);
@@ -356,31 +355,38 @@ namespace NachoClient.iOS
                 } else {
                     DateDotView.ViewDate = currentDate;
                     DateDotView.UpdateButtons ();
-                    if (0 > xOffset) {
+                    this.View.BringSubviewToFront (DateDotView);
+                    this.View.BringSubviewToFront (calendarTableView);
+
+                    if (-5 > xOffset && copyImageView.Center.X != DateDotView.Center.X) {
                         UIView.Animate (.3, 0, UIViewAnimationOptions.CurveLinear,
                             () => {
-                                this.View.BringSubviewToFront (copyWeekImage);
-                                copyWeekImage.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                                copyImageView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                                 DateDotView.Center = new PointF (screenRight + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                             },
                             () => {
                                 DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
-                                this.View.BringSubviewToFront (DateDotView);
                             }
                         );
-                    } else {
+                    } else if (5 < xOffset && copyImageView.Center.X != DateDotView.Center.X) {
                         UIView.Animate (.3, 0, UIViewAnimationOptions.CurveLinear,
                             () => {
-                                this.View.BringSubviewToFront (copyWeekImage);
-                                copyWeekImage.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                                copyImageView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                                 DateDotView.Center = new PointF (screenLeft - (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                             },
                             () => {
                                 DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
-                                this.View.BringSubviewToFront (DateDotView);
                             }
                         );
 
+                    } else {
+                        UIView.Animate (.3, 0, UIViewAnimationOptions.CurveLinear,
+                            () => {
+                                DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                            },
+                            () => {
+                            }
+                        );
                     }
                 }
 
@@ -389,8 +395,7 @@ namespace NachoClient.iOS
                 return;
             }
         }
-
-        public static UIImageView copyMonthImage = new UIImageView (new RectangleF (0, 0, screenWidth, 300));
+            
         public float startingXMonth = 0;
         private bool isClosing = false;
         private bool isPanning = false;
@@ -401,7 +406,7 @@ namespace NachoClient.iOS
             if (UIGestureRecognizerState.Began == obj.State) {
                 startingXMonth = obj.TranslationInView (this.View).X;
                 var Image = Util.captureView (DateDotView);
-                copyMonthImage.Image = Image;
+                copyImageView.Image = Image;
                 Image.Dispose ();
                 return;
             }
@@ -411,39 +416,36 @@ namespace NachoClient.iOS
                 xOffset = obj.TranslationInView (this.View).X;
 
                 if ((yOffset < -5) && (!isPanning)) {
-                    calendarTableView.Frame = CalendarTableFullSize ();
+                    ConfigureCalendarTableSize (1);
                     if (288.5 + (dateBarRowHeight * (rows - 1)) + yOffset <= 288.5 + (dateBarRowHeight * (rows - 1)) && 288.5 + (dateBarRowHeight * (rows - 1)) + yOffset > 291.5) {
                         calendarTableView.Center = new PointF ((View.Frame.Width / 2), (float)288.5 + (dateBarRowHeight * (rows - 1)) + yOffset);
                     }
                     isClosing = true;
                     return;
                 } else if (((5 < xOffset) || (-5 > xOffset)) && (!isClosing)) {
-                    this.View.AddSubview (copyMonthImage);
-                    this.View.BringSubviewToFront (copyMonthImage);
+                    this.View.BringSubviewToFront (copyImageView);
                     this.View.BringSubviewToFront (calendarTableView);
                     if (0 > xOffset) { //Swipe left
                         if (directionFlag != 1) {
                             directionFlag = 1;
                             DateDotView.ViewDate = currentDate.AddMonths (1);
-                            DateDotView.ToggleButtons (-1);
-                            DateDotView.UpdateButtonsMonth ();
                         }
 
                         var difference = Math.Abs (xOffset - startingXMonth);
-                        copyMonthImage.Center = new PointF ((DateDotView.Frame.Width / 2) - difference, (DateDotView.Frame.Height / 2) + 5);
-                        DateDotView.Center = new PointF (screenRight + (DateDotView.Frame.Width / 2) - difference, (DateDotView.Frame.Height / 2) + 5);
+                        copyImageView.Center = new PointF ((DateDotView.Frame.Width / 2) - difference, (DateDotView.Frame.Height / 2));
+                        DateDotView.Center = new PointF (screenRight + (DateDotView.Frame.Width / 2) - difference, (DateDotView.Frame.Height / 2));
                     } else { //Swipe right
                         if (directionFlag != 2) {
                             directionFlag = 2;
                             DateDotView.ViewDate = currentDate.AddMonths (-1);
-                            DateDotView.ToggleButtons (-1);
-                            DateDotView.UpdateButtonsMonth ();
                         }
 
                         var difference = Math.Abs (xOffset - startingXMonth);
-                        copyMonthImage.Center = new PointF ((DateDotView.Frame.Width / 2) + difference, (DateDotView.Frame.Height / 2) + 5);
-                        DateDotView.Center = new PointF (screenLeft - (DateDotView.Frame.Width / 2) + difference, (DateDotView.Frame.Height / 2) + 5);
+                        copyImageView.Center = new PointF ((DateDotView.Frame.Width / 2) + difference, (DateDotView.Frame.Height / 2));
+                        DateDotView.Center = new PointF (screenLeft - (DateDotView.Frame.Width / 2) + difference, (DateDotView.Frame.Height / 2));
                     }
+                    DateDotView.ToggleButtons (-1);
+                    DateDotView.UpdateButtonsMonth ();
                     isPanning = true;
                     return;
                 }
@@ -453,39 +455,33 @@ namespace NachoClient.iOS
                     if ((yOffset < -60) || (obj.VelocityInView (DateDotView).Y < -500)) {
                         UIView.Animate (.5, 0, UIViewAnimationOptions.CurveEaseOut,
                             () => {
-                                DateDotView.Frame = new RectangleF (0, 0, View.Frame.Width, dateBarHeight);
-                                DateDotView.Center = new PointF ((screenWidth / 2), (dateBarHeight / 2));
-                                calendarTableView.Center = new PointF ((View.Frame.Width / 2), (float)291.5);
-                                copyMonthImage.Hidden = true;
-                                DisableGestureRecognizers ();
-                                ConfigureBasicView ();
-                                DateDotView.ViewWithTag (200).Hidden = true;
+                                DateDotView.Center = new PointF ((screenWidth / 2), (DateDotView.Frame.Height / 2));
+                                ConfigureCalendarTableSize (1);
+
                                 if ((DateDotView.ViewDate.Month != selectedDate.Month) || ((DateDotView.ViewDate.Month != selectedDate.Month) && (DateDotView.ViewDate.Year != selectedDate.Year))) {
                                     DateDotView.ViewDate = DateDotView.GetFirstDay (DateDotView.ViewDate);
-                                    DateDotView.ToggleButtons (-1);
                                     currentDate = DateDotView.ViewDate;
                                 } else {
                                     DateDotView.ViewDate = selectedDate;
-                                    DateDotView.ToggleButtons (-1);
-                                    DateDotView.UpdateButtons ();
                                     currentDate = selectedDate;
                                 }
+                                DateDotView.ToggleButtons (-1);
+                                DateDotView.UpdateButtons ();
                             },
                             () => {
-                                calendarTableView.Frame = CalendarTableFullSize ();
+                                DisableGestureRecognizers ();
+                                ConfigureBasicView ();
                             }
                         );
                     } else if ((yOffset >= -60)) {
                         UIView.Animate (.5, 0, UIViewAnimationOptions.CurveEaseOut,
                             () => {
-                                calendarTableView.Center = new PointF ((View.Frame.Width / 2), (float)288.5 + (dateBarRowHeight * (rows - 1)));
-                                copyMonthImage.Hidden = false;
-                                DisableGestureRecognizers ();
-                                ConfigureMonthView ();
+                                ConfigureCalendarTableSize (rows);
                             },
                             () => {
                                 View.BringSubviewToFront (calendarTableView);
-                                ConfigureCalendarTableSize (rows);
+                                DisableGestureRecognizers ();
+                                ConfigureMonthView ();
                             }
                         );
                     } 
@@ -493,14 +489,11 @@ namespace NachoClient.iOS
                     if ((xOffset < -(DateDotView.Frame.Width / 3)) || (((xOffset < -(DateDotView.Frame.Width / 5)) && (obj.VelocityInView (DateDotView).X < -500)))) { 
                         UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
                             () => {
-                                copyMonthImage.Center = new PointF (screenLeft - (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
-                                DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                                copyImageView.Center = new PointF (screenLeft - (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                                DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                                 ConfigureCalendarTableSize (rows);
                             },
                             () => {
-                                this.View.BringSubviewToFront (DateDotView);
-                                this.View.BringSubviewToFront (calendarTableView);
-
                             }
                         );
                         currentDate = currentDate.AddMonths (1);
@@ -509,13 +502,11 @@ namespace NachoClient.iOS
                     } else if ((xOffset > (DateDotView.Frame.Width / 3)) || (((xOffset > (DateDotView.Frame.Width / 5)) && (obj.VelocityInView (DateDotView).X > 500)))) {
                         UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
                             () => {
-                                copyMonthImage.Center = new PointF (screenRight + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
-                                DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                                copyImageView.Center = new PointF (screenRight + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                                DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                                 ConfigureCalendarTableSize (rows);
                             },
                             () => {
-                                this.View.BringSubviewToFront (DateDotView);
-                                this.View.BringSubviewToFront (calendarTableView);
                             }
                         );
                         currentDate = currentDate.AddMonths (-1);
@@ -523,35 +514,34 @@ namespace NachoClient.iOS
                     } else if ((xOffset < (DateDotView.Frame.Width / 3)) && (xOffset > -(DateDotView.Frame.Width / 3))) {
                         DateDotView.ViewDate = currentDate;
                         DateDotView.UpdateButtonsMonth ();
-                        if (0 >= xOffset) {
+                        if (0 >= xOffset && copyImageView.Center.X != DateDotView.Center.X) {
                             UIView.Animate (.3, 0, UIViewAnimationOptions.CurveLinear,
                                 () => {
-                                    copyMonthImage.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
-                                    DateDotView.Center = new PointF (screenRight + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                                    copyImageView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                                    DateDotView.Center = new PointF (screenRight + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                                 },
                                 () => {
-                                    DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
-                                    copyMonthImage.Center = new PointF (screenRight + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
-                                    this.View.BringSubviewToFront (DateDotView);
-                                    this.View.BringSubviewToFront (calendarTableView);
+                                    DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                                    copyImageView.Center = new PointF (screenRight + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                                 }
                             );
-                        } else if (0 < xOffset) {
+                        } else if (0 < xOffset && copyImageView.Center.X != DateDotView.Center.X) {
                             UIView.Animate (.3, 0, UIViewAnimationOptions.CurveLinear,
                                 () => {
-                                    copyMonthImage.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
-                                    DateDotView.Center = new PointF (screenLeft - (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                                    copyImageView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                                    DateDotView.Center = new PointF (screenLeft - (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                                 },
                                 () => {
-                                    DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
-                                    copyMonthImage.Center = new PointF (screenRight + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
-                                    this.View.BringSubviewToFront (DateDotView);
-                                    this.View.BringSubviewToFront (calendarTableView);
+                                    DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                                    copyImageView.Center = new PointF (screenRight + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                                 }
                             );
-
+                        } else {
+                            DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                         }
                     }
+                    this.View.BringSubviewToFront (DateDotView);
+                    this.View.BringSubviewToFront (calendarTableView);
                     ConfigureMonthView ();
                     directionFlag = 0;
                 }
@@ -562,13 +552,13 @@ namespace NachoClient.iOS
         }
 
         float yOffset = 0;
-        bool UpdateMB = false;
+        float tableStartingY;
 
         private void DateDotToggleOpenMonthPan (UIPanGestureRecognizer obj)
         {
             int rows = DateDotView.RowsInAMonth (DateDotView.ViewDate);
             if (UIGestureRecognizerState.Began == obj.State) {
-                UpdateMB = false;
+                tableStartingY = calendarTableView.Center.Y;
                 return;
             }
 
@@ -576,21 +566,10 @@ namespace NachoClient.iOS
                 yOffset = obj.TranslationInView (this.View).Y;
 
                 if (yOffset > 5) {
-                    if (!UpdateMB) {
-                        DateDotView.MakeDateVisable ();
-                        UIView.Animate (.2, 0, UIViewAnimationOptions.CurveEaseOut,
-                            () => {
-                                DateDotView.Center = new PointF ((screenWidth / 2), 44);
-                            },
-                            () => {
-                            }
-                        );
-                        UpdateMB = true;
-                    }
                     DateDotWeekPanGestureRecognizer.Enabled = false;
                     DateDotMonthViewPanGestureRecognizer.Enabled = false;
-                    if ((dateBarRowHeight * (rows - 1)) - 3 > yOffset) {
-                        calendarTableView.Center = new PointF ((View.Frame.Width / 2), (float)291.5 + yOffset);
+                    if ((dateBarHeight + 1 + ((rows - 3) * dateBarRowHeight)) > yOffset) {
+                        calendarTableView.Center = new PointF (calendarTableView.Center.X, tableStartingY + yOffset);
                     }
                 }
                 return;
@@ -598,40 +577,25 @@ namespace NachoClient.iOS
 
             if (UIGestureRecognizerState.Ended == obj.State) {
                 if (yOffset > 60 || obj.VelocityInView (DateDotView).Y > 500) {
-                    UIView.Animate (.5, 0, UIViewAnimationOptions.CurveEaseOut,
+                    UIView.Animate (.3, 0, UIViewAnimationOptions.CurveEaseOut,
                         () => {
-                            DateDotView.Frame = new RectangleF (0, 5, View.Frame.Width, (dateBarHeight - 8) + (dateBarRowHeight * (rows)));
-                            calendarTableView.Center = new PointF ((View.Frame.Width / 2), (float)288.5 + (dateBarRowHeight * (rows - 1)));
+                            ConfigureCalendarTableSize(rows);
                             View.BringSubviewToFront (calendarTableView);
-
-                            DateDotMonthViewPanGestureRecognizer.Enabled = true;
                             DateDotView.UpdateButtonsMonth ();
                         },
                         () => {
-                            copyMonthImage.Hidden = false;
                             DisableGestureRecognizers ();
                             ConfigureMonthView ();
-                            View.SendSubviewToBack (copyMonthImage);
-                            copyMonthImage.Frame = DateDotView.Frame;
-                            ConfigureCalendarTableSize (rows);
                         }
                     );
                 } else {
-                    UIView.Animate (.5, 0, UIViewAnimationOptions.CurveEaseOut,
+                    UIView.Animate (.3, 0, UIViewAnimationOptions.CurveEaseOut,
                         () => {
-
-                            DateDotView.Frame = new RectangleF (0, 0, View.Frame.Width, dateBarHeight);
-                            DateDotView.Center = new PointF ((screenWidth / 2), (dateBarHeight / 2));
-                            calendarTableView.Center = new PointF ((View.Frame.Width / 2), (float)291.5);
-                            copyMonthImage.Hidden = true;
-                            DateDotView.ViewWithTag (200).Hidden = true;
-                            DateDotWeekPanGestureRecognizer.Enabled = true;
-
+                            ConfigureCalendarTableSize (1);
                         },
                         () => {
                             DisableGestureRecognizers ();
                             ConfigureBasicView ();
-                            calendarTableView.Frame = CalendarTableFullSize ();
                         }
                     );
                 }
@@ -641,42 +605,47 @@ namespace NachoClient.iOS
 
         protected void ConfigureCalendarTableSize (int rows)
         {
-            if (4 == rows) {
+            switch (rows) {
+            case 4: 
                 calendarTableView.Frame = CalendarTableFourSize ();
-            }
-            if (5 == rows) {
+                break;
+            case 5:
                 calendarTableView.Frame = CalendarTableFiveSize ();
-            }
-            if (6 == rows) {
+                break;
+            case 6:
                 calendarTableView.Frame = CalendarTableSixSize ();
+                break;
+            default:
+                calendarTableView.Frame = CalendarTableFullSize ();
+                break;
             }
         }
 
         protected RectangleF CalendarTableFullSize ()
         {
             var parentFrame = View.Frame;
-            var rect = new RectangleF (0, dateBarHeight, parentFrame.Width, 426);
+            var rect = new RectangleF (0, dateBarHeight, parentFrame.Width, parentFrame.Height - dateBarHeight);
             return rect;
         }
 
         protected RectangleF CalendarTableFourSize ()
         {
             var parentFrame = View.Frame;
-            var rect = new RectangleF (0, 213, parentFrame.Width, 291);
+            var rect = new RectangleF (0, 75 + (3 * dateBarRowHeight), parentFrame.Width, parentFrame.Height - (75 + (3 * dateBarRowHeight)));
             return rect;
         }
 
         protected RectangleF CalendarTableFiveSize ()
         {
             var parentFrame = View.Frame;
-            var rect = new RectangleF (0, 259, parentFrame.Width, 245);
+            var rect = new RectangleF (0, 75 + (4 * dateBarRowHeight), parentFrame.Width, parentFrame.Height - (75 + (4 * dateBarRowHeight)));
             return rect;
         }
 
         protected RectangleF CalendarTableSixSize ()
         {
             var parentFrame = View.Frame;
-            var rect = new RectangleF (0, 305, parentFrame.Width, 199);
+            var rect = new RectangleF (0, 75 + (5 * dateBarRowHeight), parentFrame.Width, parentFrame.Height - (75 + (5 * dateBarRowHeight)));
             return rect;
         }
 
@@ -684,14 +653,13 @@ namespace NachoClient.iOS
         {
             var tempDate = view.ViewDate;
             var label = button.TitleLabel.Text.ToString ();
-            if (false == BasicView) {
+            if (!BasicView) {
                 var Image = Util.captureView (DateDotView);
-                copyMonthImage.Image = Image;
+                copyImageView.Image = Image;
 
                 Image.Dispose ();
                 if (106 > button.Tag && 23 <= Convert.ToInt32 (label)) {
-                    this.View.AddSubview (copyMonthImage);
-                    this.View.BringSubviewToFront (copyMonthImage);
+                    this.View.BringSubviewToFront (copyImageView);
                     this.View.BringSubviewToFront (calendarTableView);
                     tempDate = view.ViewDate.AddMonths (-1);
                     var difference = tempDate.Day - Convert.ToInt32 (label);
@@ -702,12 +670,12 @@ namespace NachoClient.iOS
                     DateDotView.ToggleButtons (-1);
                     DateDotView.UpdateButtonsMonth ();
                     var rows = DateDotView.RowsInAMonth (DateDotView.ViewDate);
-                    copyMonthImage.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
-                    DateDotView.Center = new PointF (screenLeft - (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                    copyImageView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                    DateDotView.Center = new PointF (screenLeft - (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                     UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
                         () => {
-                            copyMonthImage.Center = new PointF (screenRight + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
-                            DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                            copyImageView.Center = new PointF (screenRight + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                            DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                             ConfigureCalendarTableSize (rows);
                         },
                         () => {
@@ -718,8 +686,7 @@ namespace NachoClient.iOS
                     calendarSource.ScrollToDate (calendarTableView, selectedDate);
 
                 } else if (128 < button.Tag && 1 <= Convert.ToInt32 (label) && 6 >= Convert.ToInt32 (label)) {
-                    this.View.AddSubview (copyMonthImage);
-                    this.View.BringSubviewToFront (copyMonthImage);
+                    this.View.BringSubviewToFront (copyImageView);
                     this.View.BringSubviewToFront (calendarTableView);
                     tempDate = tempDate.AddMonths (1);
                     var difference = tempDate.Day - Convert.ToInt32 (label);
@@ -730,12 +697,12 @@ namespace NachoClient.iOS
                     DateDotView.ToggleButtons (-1);
                     DateDotView.UpdateButtonsMonth ();
                     var rows = DateDotView.RowsInAMonth (selectedDate);
-                    copyMonthImage.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
-                    DateDotView.Center = new PointF (screenRight + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                    copyImageView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                    DateDotView.Center = new PointF (screenRight + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                     UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
                         () => {
-                            copyMonthImage.Center = new PointF (screenLeft - (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
-                            DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                            copyImageView.Center = new PointF (screenLeft - (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                            DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                             ConfigureCalendarTableSize (rows);
                         },
                         () => {
@@ -770,6 +737,8 @@ namespace NachoClient.iOS
                 selectedDateTag = button.Tag;
                 calendarSource.ScrollToDate (calendarTableView, date);
             }
+            this.View.BringSubviewToFront (DateDotView);
+            this.View.BringSubviewToFront (calendarTableView);
         }
 
         public void ReturnToToday ()
@@ -780,9 +749,9 @@ namespace NachoClient.iOS
             int returnMonth = DateDotView.IsButtonInMonth (todayMonthTag, DateTime.Today, firstDay);
             if (BasicView) {
                 var Image = Util.captureView (DateDotView);
-                copyWeekImage.Image = Image;
-                this.View.AddSubview (copyWeekImage);
-                this.View.BringSubviewToFront (copyWeekImage);
+                copyImageView.Image = Image;
+                this.View.BringSubviewToFront (copyImageView);
+                this.View.BringSubviewToFront (calendarTableView);
                 Image.Dispose ();
 
                 if (-1 == returnWeek) {
@@ -792,15 +761,15 @@ namespace NachoClient.iOS
                     selectedDateTag = todayWeekTag;
                     DateDotView.ToggleButtons (-1);
                     DateDotView.UpdateButtons ();
-                    copyWeekImage.Center = new PointF ((DateDotView.Frame.Width / 2), (dateBarHeight / 2));
-                    DateDotView.Center = new PointF (screenLeft - (DateDotView.Frame.Width / 2), (dateBarHeight / 2));
+                    copyImageView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                    DateDotView.Center = new PointF (screenLeft - (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                     UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
                         () => {
-                            copyWeekImage.Center = new PointF (screenRight + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                            copyImageView.Center = new PointF (screenRight + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                             DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                         },
                         () => {
-                            calendarTableView.Frame = CalendarTableFullSize ();
+                            ConfigureCalendarTableSize (1);
                         }
                     );
                     currentDate = DateDotView.ViewDate;
@@ -811,15 +780,15 @@ namespace NachoClient.iOS
                     selectedDateTag = todayWeekTag;
                     DateDotView.ToggleButtons (-1);
                     DateDotView.UpdateButtons ();
-                    copyWeekImage.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                    copyImageView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                     DateDotView.Center = new PointF (screenRight + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                     UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
                         () => {
-                            copyWeekImage.Center = new PointF (screenLeft - (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                            copyImageView.Center = new PointF (screenLeft - (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                             DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                         },
                         () => {
-                            calendarTableView.Frame = CalendarTableFullSize ();
+                            ConfigureCalendarTableSize (1);
                         }
                     );
                     currentDate = DateDotView.ViewDate;
@@ -831,16 +800,12 @@ namespace NachoClient.iOS
                         DateDotView.ToggleButtons (-1);
                         DateDotView.UpdateButtons ();
                     }
-                    this.View.BringSubviewToFront (DateDotView);
                 }
 
-
             } else {
-
                 var Image = Util.captureView (DateDotView);
-                copyMonthImage.Image = Image;
-                this.View.AddSubview (copyMonthImage);
-                this.View.BringSubviewToFront (copyMonthImage);
+                copyImageView.Image = Image;
+                this.View.BringSubviewToFront (copyImageView);
                 this.View.BringSubviewToFront (calendarTableView);
                 Image.Dispose ();
 
@@ -852,12 +817,12 @@ namespace NachoClient.iOS
                     DateDotView.ToggleButtons (-1);
                     DateDotView.UpdateButtonsMonth ();
                     var rows = DateDotView.RowsInAMonth (DateDotView.ViewDate);
-                    copyMonthImage.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
-                    DateDotView.Center = new PointF (screenLeft - (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                    copyImageView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                    DateDotView.Center = new PointF (screenLeft - (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                     UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
                         () => {
-                            copyMonthImage.Center = new PointF (screenRight + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
-                            DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                            copyImageView.Center = new PointF (screenRight + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                            DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                             ConfigureCalendarTableSize (rows);
                         },
                         () => {
@@ -873,12 +838,12 @@ namespace NachoClient.iOS
                     DateDotView.ToggleButtons (-1);
                     DateDotView.UpdateButtonsMonth ();
                     var rows = DateDotView.RowsInAMonth (DateDotView.ViewDate);
-                    copyMonthImage.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
-                    DateDotView.Center = new PointF (screenRight + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                    copyImageView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                    DateDotView.Center = new PointF (screenRight + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                     UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
                         () => {
-                            copyMonthImage.Center = new PointF (screenLeft - (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
-                            DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2) + 5);
+                            copyImageView.Center = new PointF (screenLeft - (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
+                            DateDotView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                             ConfigureCalendarTableSize (rows);
                         },
                         () => {
@@ -894,10 +859,10 @@ namespace NachoClient.iOS
                         DateDotView.ToggleButtons (-1);
                         DateDotView.UpdateButtonsMonth ();
                     }
-                    this.View.BringSubviewToFront (DateDotView);
-                    this.View.BringSubviewToFront (calendarTableView);
                 }
             }
+            this.View.BringSubviewToFront (DateDotView);
+            this.View.BringSubviewToFront (calendarTableView);
             calendarSource.ScrollToDate (calendarTableView, DateTime.Today);
 
         }
