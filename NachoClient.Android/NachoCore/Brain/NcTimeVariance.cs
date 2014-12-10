@@ -393,8 +393,7 @@ namespace NachoCore.Brain
         public virtual void Start ()
         {
             Log.Debug (Log.LOG_BRAIN, "{0}: starting", ToString ());
-            bool added = ActiveList.Add (this);
-            NcAssert.True (added);
+            ActiveList.Add (this);
             Run ();
         }
 
