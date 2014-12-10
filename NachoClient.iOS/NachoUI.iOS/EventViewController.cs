@@ -79,6 +79,8 @@ namespace NachoClient.iOS
         protected bool hasAttendees = false;
         protected bool hasNotes = false;
         protected bool attachmentsDrawerOpen = false;
+        protected string organizerEmail;
+        protected string organizerName;
 
         // UI-related constants, or pseudo-constants
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
@@ -116,6 +118,7 @@ namespace NachoClient.iOS
             EVENT_ORGANIZER_TITLE_TAG = 117,
             EVENT_ORGANIZER_NAME_LABEL = 118,
             EVENT_ORGANIZER_EMAIL_LABEL = 119,
+            EVENT_ORGANIZER_ONLY_EMAIL_LABEL = 120,
 
             EVENT_ATTENDEE_VIEW_TAG = 2000,
             EVENT_ATTENDEES_TITLE_TAG = 2001,
@@ -123,9 +126,9 @@ namespace NachoClient.iOS
             EVENT_ATTENDEE_TAG = 2010,
             EVENT_ATTENDEE_LABEL_TAG = 2020,
 
-            EVENT_NOTES_TEXT_VIEW_TAG = 120,
-            EVENT_NOTE_TITLE_TAG = 121,
-            EVENT_NOTES_DETAIL_TAG = 122,
+            EVENT_NOTES_TEXT_VIEW_TAG = 121,
+            EVENT_NOTE_TITLE_TAG = 122,
+            EVENT_NOTES_DETAIL_TAG = 123,
         }
 
         protected static TupleList<uint, string> minList = new TupleList<uint, string> {
@@ -359,6 +362,15 @@ namespace NachoClient.iOS
             userEmailLabel.Tag = (int)TagType.EVENT_ORGANIZER_EMAIL_LABEL;
             eventOrganizerView.AddSubview (userEmailLabel);
 
+            //Only Email Label
+            var userOnlyEmailLabel = new UILabel (new RectangleF (92, (eventOrganizerView.Frame.Height / 2) - 2, eventOrganizerView.Frame.Width - 92 - 18, 20));
+            userOnlyEmailLabel.LineBreakMode = UILineBreakMode.TailTruncation;
+            userOnlyEmailLabel.TextColor = UIColor.LightGray;
+            userOnlyEmailLabel.Font = A.Font_AvenirNextRegular14;
+            userOnlyEmailLabel.Tag = (int)TagType.EVENT_ORGANIZER_ONLY_EMAIL_LABEL;
+            userOnlyEmailLabel.Hidden = true;
+            eventOrganizerView.AddSubview (userOnlyEmailLabel);
+
             organizerTapGestureRecognizer = new UITapGestureRecognizer ();
             organizerTapGestureRecognizerTapToken = organizerTapGestureRecognizer.AddTarget (OrganizerTapGestureRecognizerTap);
             eventOrganizerView.AddGestureRecognizer (organizerTapGestureRecognizer);
@@ -413,6 +425,9 @@ namespace NachoClient.iOS
 
             account = McAccount.QueryById<McAccount> (e.AccountId);
             root = McCalendar.QueryById<McCalendar> (e.CalendarId);
+            organizerEmail = (null != root.OrganizerEmail ? root.OrganizerEmail : null);
+            organizerName = (null != root.OrganizerName ? root.OrganizerName : null);
+
             if (0 == e.ExceptionId) {
                 c = root;
             } else {
@@ -427,7 +442,7 @@ namespace NachoClient.iOS
                 isRecurring = true;
             }
 
-            bool isOrganizer = account.EmailAddr == root.OrganizerEmail && account.Id == c.AccountId;
+            bool isOrganizer = account.EmailAddr == organizerEmail && account.Id == c.AccountId;
             if (isOrganizer && !isRecurring) {
                 NavigationItem.RightBarButtonItem = editEventButton;
             }
@@ -505,43 +520,51 @@ namespace NachoClient.iOS
             ConfigureAttachments ();
 
             // Organizer
-            if (!isOrganizer) {
-                var organizerNameLabel = View.ViewWithTag ((int)TagType.EVENT_ORGANIZER_NAME_LABEL) as UILabel;
-                organizerNameLabel.Text = root.OrganizerName;
-
-                var organizerEmailLabel = View.ViewWithTag ((int)TagType.EVENT_ORGANIZER_EMAIL_LABEL) as UILabel;
-                organizerEmailLabel.Text = root.OrganizerEmail;
-
-                var userImage = Util.ImageOfSender (account.Id, root.OrganizerEmail);
-
-                if (null != userImage) {
-                    using (var rawImage = userImage) {
-                        using (var originalImage = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
-                            // User image
-                            var userImageView = new UIImageView (new RectangleF (42, 10 + 16, 40, 40));
-                            userImageView.Layer.CornerRadius = (40.0f / 2.0f);
-                            userImageView.Layer.MasksToBounds = true;
-                            userImageView.Image = originalImage;
-                            userImageView.Layer.BorderWidth = .25f;
-                            userImageView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
-                            eventOrganizerView.AddSubview (userImageView);
-                        }
+            if (null != organizerEmail) {
+                if (!isOrganizer) {
+                    if (null != organizerName) {
+                        var organizerNameLabel = View.ViewWithTag ((int)TagType.EVENT_ORGANIZER_NAME_LABEL) as UILabel;
+                        organizerNameLabel.Text = organizerName;
+                        var organizerEmailLabel = View.ViewWithTag ((int)TagType.EVENT_ORGANIZER_EMAIL_LABEL) as UILabel;
+                        organizerEmailLabel.Text = organizerEmail;
+                    } else {
+                        var organizerOnlyEmailLabel = View.ViewWithTag ((int)TagType.EVENT_ORGANIZER_ONLY_EMAIL_LABEL) as UILabel;
+                        organizerOnlyEmailLabel.Hidden = false;
+                        organizerOnlyEmailLabel.Text = organizerEmail;
                     }
-                } else {
 
-                    // User userLabelView view, if no image
-                    var userLabelView = new UILabel (new RectangleF (42, 10 + 16, 40, 40));
-                    userLabelView.Font = A.Font_AvenirNextRegular17;
-                    userLabelView.BackgroundColor = Util.GetCircleColorForEmail (root.OrganizerEmail, account.Id);
-                    userLabelView.TextColor = UIColor.White;
-                    userLabelView.TextAlignment = UITextAlignment.Center;
-                    userLabelView.LineBreakMode = UILineBreakMode.Clip;
-                    userLabelView.Layer.CornerRadius = (40 / 2);
-                    userLabelView.Layer.MasksToBounds = true;
-                    userLabelView.Text = Util.NameToLetters (root.OrganizerName);
-                    eventOrganizerView.AddSubview (userLabelView);
+                    var userImage = Util.ImageOfSender (account.Id, organizerEmail);
+
+                    if (null != userImage) {
+                        using (var rawImage = userImage) {
+                            using (var originalImage = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
+                                // User image
+                                var userImageView = new UIImageView (new RectangleF (42, 10 + 16, 40, 40));
+                                userImageView.Layer.CornerRadius = (40.0f / 2.0f);
+                                userImageView.Layer.MasksToBounds = true;
+                                userImageView.Image = originalImage;
+                                userImageView.Layer.BorderWidth = .25f;
+                                userImageView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
+                                eventOrganizerView.AddSubview (userImageView);
+                            }
+                        }
+                    } else {
+
+                        // User userLabelView view, if no image
+                        var userLabelView = new UILabel (new RectangleF (42, 10 + 16, 40, 40));
+                        userLabelView.Font = A.Font_AvenirNextRegular17;
+                        userLabelView.BackgroundColor = Util.GetCircleColorForEmail (organizerEmail, account.Id);
+                        userLabelView.TextColor = UIColor.White;
+                        userLabelView.TextAlignment = UITextAlignment.Center;
+                        userLabelView.LineBreakMode = UILineBreakMode.Clip;
+                        userLabelView.Layer.CornerRadius = (40 / 2);
+                        userLabelView.Layer.MasksToBounds = true;
+                        var nameString = (null != organizerName ? organizerName : organizerEmail);
+                        userLabelView.Text = Util.NameToLetters (nameString);
+                        eventOrganizerView.AddSubview (userLabelView);
+                    }
+                    eventOrganizerView.Hidden = false;
                 }
-                eventOrganizerView.Hidden = false;
             }
 
             // Attendees
@@ -726,7 +749,7 @@ namespace NachoClient.iOS
         {
             if (segue.Identifier.Equals ("EventToEventAttendees")) {
                 var dc = (EventAttendeeViewController)segue.DestinationViewController;
-                dc.Setup (null, c.attendees, c, false, CalendarHelper.IsOrganizer (root.OrganizerEmail, account.EmailAddr));
+                dc.Setup (null, c.attendees, c, false, CalendarHelper.IsOrganizer (organizerEmail, account.EmailAddr));
                 return;
             }
 
@@ -867,8 +890,10 @@ namespace NachoClient.iOS
                 }
             }
 
-            if (!(CalendarHelper.IsOrganizer (root.OrganizerEmail, account.EmailAddr))) {
-                AdjustViewLayout (TagType.EVENT_ORGANIZER_VIEW_TAG, 0, ref internalYOffset, padding);
+            if (null != organizerEmail) {
+                if (!(CalendarHelper.IsOrganizer (organizerEmail, account.EmailAddr))) {
+                    AdjustViewLayout (TagType.EVENT_ORGANIZER_VIEW_TAG, 0, ref internalYOffset, padding);
+                }
             }
 
             if (hasAttendees) {
@@ -1012,7 +1037,7 @@ namespace NachoClient.iOS
 
         public void ConfigureRsvpBar ()
         {
-            if (account.EmailAddr == root.OrganizerEmail || (c.ResponseTypeIsSet && NcResponseType.Organizer == c.ResponseType)) {
+            if (account.EmailAddr == organizerEmail || (c.ResponseTypeIsSet && NcResponseType.Organizer == c.ResponseType)) {
                 messageLabel.Hidden = false;
                 messageLabel.Text = "You are the organizer";
                 messageLabel.Frame = new RectangleF (18 + 24 + 12, 18, 150, 24);
@@ -1314,7 +1339,6 @@ namespace NachoClient.iOS
 
         private void OrganizerTapGestureRecognizerTap ()
         {
-            var organizerEmail = root.OrganizerEmail;
             McContact contact = McContact.QueryByEmailAddress (account.Id, organizerEmail).FirstOrDefault ();
             if (null == contact) {
                 NcContactGleaner.GleanContact (organizerEmail, account.Id);

@@ -197,70 +197,84 @@ namespace NachoClient.iOS
             var organizerName = evt.Organizer.CommonName.ToString ();
             var accountId = LoginHelpers.GetCurrentAccountId ();
 
-            // Organizer
-            var eventOrganizerView = new UIView (new RectangleF (0, yOffset, viewWidth, 44 + 16 + 16));
-            eventOrganizerView.Tag = (int)EventViewController.TagType.EVENT_ORGANIZER_VIEW_TAG;
-            eventOrganizerView.BackgroundColor = UIColor.White;
-            this.AddSubview (eventOrganizerView);
+            if (null != organizerEmail) {
+                // Organizer
+                var eventOrganizerView = new UIView (new RectangleF (0, yOffset, viewWidth, 44 + 16 + 16));
+                eventOrganizerView.Tag = (int)EventViewController.TagType.EVENT_ORGANIZER_VIEW_TAG;
+                eventOrganizerView.BackgroundColor = UIColor.White;
+                this.AddSubview (eventOrganizerView);
 
-            //Util.AddArrowAccessory (eventOrganizerView.Frame.Width - 18 - 12, 16 + 20, 12, eventOrganizerView);
+                //Util.AddArrowAccessory (eventOrganizerView.Frame.Width - 18 - 12, 16 + 20, 12, eventOrganizerView);
 
-            Util.AddTextLabelWithImageView (0, "ORGANIZER", "event-organizer", EventViewController.TagType.EVENT_ORGANIZER_TITLE_TAG, eventOrganizerView);
+                Util.AddTextLabelWithImageView (0, "ORGANIZER", "event-organizer", EventViewController.TagType.EVENT_ORGANIZER_TITLE_TAG, eventOrganizerView);
 
-            // Organizer Name
-            var userNameLabel = new UILabel (new RectangleF (92, 16 + 10, eventOrganizerView.Frame.Width - 92 - 18, 20));
-            userNameLabel.LineBreakMode = UILineBreakMode.TailTruncation;
-            userNameLabel.TextColor = UIColor.LightGray;
-            userNameLabel.Font = A.Font_AvenirNextRegular14;
-            userNameLabel.Tag = (int)EventViewController.TagType.EVENT_ORGANIZER_NAME_LABEL;
-            userNameLabel.Text = organizerName;
-            eventOrganizerView.AddSubview (userNameLabel);
+                if (null != organizerName) {
+                    // Organizer Name
+                    var userNameLabel = new UILabel (new RectangleF (92, 16 + 10, eventOrganizerView.Frame.Width - 92 - 18, 20));
+                    userNameLabel.LineBreakMode = UILineBreakMode.TailTruncation;
+                    userNameLabel.TextColor = UIColor.LightGray;
+                    userNameLabel.Font = A.Font_AvenirNextRegular14;
+                    userNameLabel.Tag = (int)EventViewController.TagType.EVENT_ORGANIZER_NAME_LABEL;
+                    userNameLabel.Text = organizerName;
+                    eventOrganizerView.AddSubview (userNameLabel);
 
-            // Organizer Email
-            var userEmailLabel = new UILabel (new RectangleF (92, 26 + 20, eventOrganizerView.Frame.Width - 92 - 18, 20));
-            userEmailLabel.LineBreakMode = UILineBreakMode.TailTruncation;
-            userEmailLabel.TextColor = UIColor.LightGray;
-            userEmailLabel.Font = A.Font_AvenirNextRegular14;
-            userEmailLabel.Tag = (int)EventViewController.TagType.EVENT_ORGANIZER_EMAIL_LABEL;
-            userEmailLabel.Text = organizerEmail;
-            eventOrganizerView.AddSubview (userEmailLabel);
-
-            var userImage = Util.ImageOfSender (accountId, organizerEmail);
-
-            if (null != userImage) {
-                using (var rawImage = userImage) {
-                    using (var originalImage = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
-                        // User image
-                        var userImageView = new UIImageView (new RectangleF (42, 10 + 16, 40, 40));
-                        userImageView.Layer.CornerRadius = (40.0f / 2.0f);
-                        userImageView.Layer.MasksToBounds = true;
-                        userImageView.Image = originalImage;
-                        userImageView.Layer.BorderWidth = .25f;
-                        userImageView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
-                        eventOrganizerView.AddSubview (userImageView);
-                    }
+                    // Organizer Email
+                    var userEmailLabel = new UILabel (new RectangleF (92, 26 + 20, eventOrganizerView.Frame.Width - 92 - 18, 20));
+                    userEmailLabel.LineBreakMode = UILineBreakMode.TailTruncation;
+                    userEmailLabel.TextColor = UIColor.LightGray;
+                    userEmailLabel.Font = A.Font_AvenirNextRegular14;
+                    userEmailLabel.Tag = (int)EventViewController.TagType.EVENT_ORGANIZER_EMAIL_LABEL;
+                    userEmailLabel.Text = organizerEmail;
+                    eventOrganizerView.AddSubview (userEmailLabel);
+                } else {
+                    // Organizer Email
+                    var userOnlyEmailLabel = new UILabel (new RectangleF (92, (eventOrganizerView.Frame.Height / 2) - 3, eventOrganizerView.Frame.Width - 92 - 18, 20));
+                    userOnlyEmailLabel.LineBreakMode = UILineBreakMode.TailTruncation;
+                    userOnlyEmailLabel.TextColor = UIColor.LightGray;
+                    userOnlyEmailLabel.Font = A.Font_AvenirNextRegular14;
+                    userOnlyEmailLabel.Tag = (int)EventViewController.TagType.EVENT_ORGANIZER_EMAIL_LABEL;
+                    userOnlyEmailLabel.Text = organizerEmail;
+                    eventOrganizerView.AddSubview (userOnlyEmailLabel);
                 }
-            } else {
 
-                // User userLabelView view, if no image
-                var userLabelView = new UILabel (new RectangleF (42, 10 + 16, 40, 40));
-                userLabelView.Font = A.Font_AvenirNextRegular17;
-                userLabelView.BackgroundColor = Util.GetCircleColorForEmail (organizerEmail, accountId);
-                userLabelView.TextColor = UIColor.White;
-                userLabelView.TextAlignment = UITextAlignment.Center;
-                userLabelView.LineBreakMode = UILineBreakMode.Clip;
-                userLabelView.Layer.CornerRadius = (40 / 2);
-                userLabelView.Layer.MasksToBounds = true;
-                userLabelView.Text = Util.NameToLetters (organizerName);
-                eventOrganizerView.AddSubview (userLabelView);
-            }
+                var userImage = Util.ImageOfSender (accountId, organizerEmail);
+
+                if (null != userImage) {
+                    using (var rawImage = userImage) {
+                        using (var originalImage = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
+                            // User image
+                            var userImageView = new UIImageView (new RectangleF (42, 10 + 16, 40, 40));
+                            userImageView.Layer.CornerRadius = (40.0f / 2.0f);
+                            userImageView.Layer.MasksToBounds = true;
+                            userImageView.Image = originalImage;
+                            userImageView.Layer.BorderWidth = .25f;
+                            userImageView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
+                            eventOrganizerView.AddSubview (userImageView);
+                        }
+                    }
+                } else {
+
+                    // User userLabelView view, if no image
+                    var userLabelView = new UILabel (new RectangleF (42, 10 + 16, 40, 40));
+                    userLabelView.Font = A.Font_AvenirNextRegular17;
+                    userLabelView.BackgroundColor = Util.GetCircleColorForEmail (organizerEmail, accountId);
+                    userLabelView.TextColor = UIColor.White;
+                    userLabelView.TextAlignment = UITextAlignment.Center;
+                    userLabelView.LineBreakMode = UILineBreakMode.Clip;
+                    userLabelView.Layer.CornerRadius = (40 / 2);
+                    userLabelView.Layer.MasksToBounds = true;
+                    var nameString = (null != organizerName ? organizerName : organizerEmail);
+                    userLabelView.Text = Util.NameToLetters (nameString);
+                    eventOrganizerView.AddSubview (userLabelView);
+                }
 
 //            organizerTapGestureRecognizer = new UITapGestureRecognizer ();
 //            organizerTapGestureRecognizerTapToken = organizerTapGestureRecognizer.AddTarget (OrganizerTapGestureRecognizerTap);
 //            eventOrganizerView.AddGestureRecognizer (organizerTapGestureRecognizer);
 //            eventCardView.AddSubview (eventOrganizerView);
 
-            yOffset += 44 + 20 + 16;
+                yOffset += 44 + 20 + 16;
+            }
 
 
             if (0 != evt.Attendees.Count) {
