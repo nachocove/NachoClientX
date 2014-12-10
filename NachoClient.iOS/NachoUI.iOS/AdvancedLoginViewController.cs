@@ -202,7 +202,7 @@ namespace NachoClient.iOS
                 if (canUserConnect ()) {
                     if (!LoginHelpers.IsCurrentAccountSet ()) {
                         if (haveEnteredHost ()) {
-                            if (isValidHost ()) {
+                            if (IsValidServer (serverText.Text)) {
                                 basicEnterFullConfiguration ();
                             }
                         } else {
@@ -210,7 +210,7 @@ namespace NachoClient.iOS
                         }
                     } else {
                         if (haveEnteredHost ()) {
-                            if (isValidHost ()) {
+                            if (IsValidServer (serverText.Text)) {
                                 tryValidateConfig ();
                                 waitScreen.ShowView ();
                             }
@@ -650,12 +650,29 @@ namespace NachoClient.iOS
             return regexUtil.IsValidEmail (email);
         }
 
-        public bool isValidHost ()
+        protected bool IsValidHost (string host)
         {
-            UriHostNameType fullServerUri = Uri.CheckHostName (serverText.Text.Trim());
+            UriHostNameType fullServerUri = Uri.CheckHostName (host.Trim());
             if(fullServerUri == UriHostNameType.Dns  ||
                 fullServerUri == UriHostNameType.IPv4 ||
                 fullServerUri == UriHostNameType.IPv6) {
+                return true;
+            }
+            return false;
+        }
+
+        protected bool IsValidPort (int port) 
+        {
+            if (port < 0 || port > 65535) {
+                return false;
+            } else {
+                return true;
+            }
+        }
+
+        protected bool IsValidServer (string server)
+        {
+            if (IsValidHost (server)) {
                 return true;
             }
 
@@ -671,15 +688,13 @@ namespace NachoClient.iOS
             var host = serverURI.Host;
             var port = serverURI.Port;
 
-            UriHostNameType testHostName = Uri.CheckHostName (host);
-            if(testHostName == UriHostNameType.Unknown ||
-                testHostName == UriHostNameType.Basic) {
+            if (!IsValidHost (host)) {
                 ConfigureView (LoginStatus.InvalidServerName);
                 return false;
-            } 
+            }
 
             //host cleared, checking port
-            if (port < 0 || port > 65535) {
+            if (!IsValidPort(port)) {
                 ConfigureView (LoginStatus.InvalidServerName);
                 return false;
             }
@@ -689,10 +704,9 @@ namespace NachoClient.iOS
 
         protected void SetHostAndPort(McServer forServer)
         {
-            UriHostNameType fullServerUri = Uri.CheckHostName (serverText.Text.Trim());
-            if(fullServerUri == UriHostNameType.Dns  ||
-                fullServerUri == UriHostNameType.IPv4 ||
-                fullServerUri == UriHostNameType.IPv6) {
+            NcAssert.True (IsValidServer (serverText.Text), "Server is not valid");
+
+            if(IsValidHost(serverText.Text)){
                 forServer.Host = serverText.Text.Trim ();
                 forServer.Port = 443;
                 return;
