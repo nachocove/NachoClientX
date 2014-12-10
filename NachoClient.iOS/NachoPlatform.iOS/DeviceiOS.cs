@@ -5,6 +5,7 @@ using MonoTouch.CoreFoundation;
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using SQLite;
@@ -99,12 +100,18 @@ namespace NachoPlatform
             return UserAgentModel ().Split (null) [0];
         }
 
+        static string _IdentityMemoize = null;
+
         public string Identity ()
         {
+            if (null != _IdentityMemoize) {
+                return _IdentityMemoize;
+            }
             if (IsSimulator ()) {
                 StringBuilder sb = new StringBuilder (256);
                 nacho_macaddr (sb, (uint)sb.Capacity);
-                return "Ncho" + sb.ToString ();
+                _IdentityMemoize = "Ncho" + sb.ToString ();
+                return _IdentityMemoize;
             }
             //NOTE: iOS Mail App uses 'Appl' + serial number. Eg: ApplF17K1P5BF8H4.
             // We can get the serial number, but it may not be kosher w/Apple. If we cant use serial number, 
@@ -112,7 +119,16 @@ namespace NachoPlatform
             // https://github.com/erica/iOS-6-Cookbook
             // For now, use 'Ncho' + the identifierForVendor, which can change on delete & re-install.
             // We current truncate the string to 28 bytes, but we could by spec go for 32 bytes.
-            return "Ncho" + UIDevice.CurrentDevice.IdentifierForVendor.AsString ().Replace ('-', 'X').Substring (0, 24);
+            var bunId = NSBundle.MainBundle.BundleIdentifier;
+            var suffix = "";
+            var IdForVendorChars = 24;
+            if ("com.nachocove.nachomail.beta" != bunId) {
+                var BunIdHashChars = 4;
+                IdForVendorChars -= BunIdHashChars;
+                suffix = BitConverter.ToString (new SHA256Managed ().ComputeHash (Encoding.UTF8.GetBytes (bunId))).Replace ("-", "").Substring (0, BunIdHashChars);
+            }
+            _IdentityMemoize = "Ncho" + UIDevice.CurrentDevice.IdentifierForVendor.AsString ().Replace ('-', 'X').Substring (0, IdForVendorChars) + suffix;
+            return _IdentityMemoize;
         }
 
         public string OsType ()
