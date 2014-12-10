@@ -1,6 +1,4 @@
-﻿//#define DEBUG_UI
-
-//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Collections.Generic;
@@ -48,6 +46,7 @@ namespace NachoClient.iOS
         private Action sizeChangedCallback = null;
         private string downloadToken = null;
         private bool statusIndicatorIsRegistered = false;
+        private bool waitingForAppInForeground = false;
 
         /// <summary>
         /// Create a BodyView that will be displayed in a fixed sized view. The BodyView
@@ -134,7 +133,7 @@ namespace NachoClient.iOS
             }
 
             if (!McAbstrFileDesc.IsNontruncatedBodyComplete(body)) {
-                StartDownload ();
+                StartDownloadWhenInForeground ();
                 return;
             }
 
@@ -203,13 +202,30 @@ namespace NachoClient.iOS
             }
         }
 
-        private void StartDownload ()
+        private void StartDownloadWhenInForeground ()
         {
             // Register for the status indicator event, so we will know when the body has
-            // been downloaded.
+            // been downloaded, on when the app comes back into the foreground.
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
             statusIndicatorIsRegistered = true;
 
+            if (NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext) {
+                StartDownload ();
+            } else {
+                // The app is in the background, which means the back end might be parked,
+                // or it might get parked before the download completes.  Wait until the
+                // app comes back into the foreground before starting the download.  The
+                // StatusIndicatorCallback will take care of doing that.
+                waitingForAppInForeground = true;
+
+                // This log message may be removed once it is confirmed that this works
+                // as expected.
+                Log.Info (Log.LOG_UI, "BodyView: Download delayed because the app is not in the foreground.");
+            }
+        }
+
+        private void StartDownload ()
+        {
             // Download the body.
             if (item is McEmailMessage) {
                 downloadToken = BackEnd.Instance.DnldEmailBodyCmd (item.AccountId, item.Id, true);
@@ -426,6 +442,22 @@ namespace NachoClient.iOS
 
         private void StatusIndicatorCallback (object sender, EventArgs e)
         {
+            var statusEvent = (StatusIndEventArgs)e;
+
+            if (waitingForAppInForeground &&
+                    NcResult.SubKindEnum.Info_ExecutionContextChanged == statusEvent.Status.SubKind &&
+                    NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext) {
+                // We were waiting to start a download until the app was in the foreground.
+                // The app is now in the foreground.
+
+                // This log message may be removed once it is confirmed that this is behaving as expected.
+                Log.Info (Log.LOG_UI, "BodyView: Starting a delayed download now that the app is in the foreground.");
+
+                waitingForAppInForeground = false;
+                StartDownload ();
+                return;
+            }
+
             if (null == downloadToken) {
                 // This shouldn't happen normally.  But it can happen if a
                 // status event was queued up while this here function was
@@ -434,7 +466,6 @@ namespace NachoClient.iOS
                 return;
             }
 
-            var statusEvent = (StatusIndEventArgs)e;
             if (null != statusEvent.Tokens && statusEvent.Tokens.FirstOrDefault () == downloadToken) {
                 switch (statusEvent.Status.SubKind) {
 
@@ -445,7 +476,20 @@ namespace NachoClient.iOS
 
                 case NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed:
                 case NcResult.SubKindEnum.Error_CalendarBodyDownloadFailed:
-                    ShowErrorMessage ();
+                    if (NcApplication.ExecutionContextEnum.Foreground != NcApplication.Instance.ExecutionContext &&
+                            NcResult.WhyEnum.UnavoidableDelay == statusEvent.Status.Why) {
+                        // The download probably failed because the back end was parked
+                        // because the app is in the background.  Don't record this as
+                        // a failure.  Instead, wait for the app to be in the foreground
+                        // and then try the download again.
+                        waitingForAppInForeground = true;
+                        downloadToken = null;
+
+                        // This log message may be removed once it is confirmed that this is behaving as expected.
+                        Log.Info (Log.LOG_UI, "BodyView: Download failed while the app is in the background. The download will be retried when the app comes back to the foreground.");
+                    } else {
+                        ShowErrorMessage ();
+                    }
                     break;
                 }
             }
@@ -566,7 +610,7 @@ namespace NachoClient.iOS
                 errorMessage.UserInteractionEnabled = true;
                 retryDownloadGestureRecognizer = new UITapGestureRecognizer ();
                 retryDownloadGestureRecognizer.NumberOfTapsRequired = 1;
-                retryDownloadGestureRecognizerToken = retryDownloadGestureRecognizer.AddTarget (StartDownload);
+                retryDownloadGestureRecognizerToken = retryDownloadGestureRecognizer.AddTarget (StartDownloadWhenInForeground);
                 retryDownloadGestureRecognizer.ShouldRecognizeSimultaneously = delegate {
                     return false;
                 };
