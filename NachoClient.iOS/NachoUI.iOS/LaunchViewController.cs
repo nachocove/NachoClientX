@@ -331,10 +331,6 @@ namespace NachoClient.iOS
             }
 
             SaveEmailAndPassword ();
-
-            // Maintain the state of our progress
-            LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, true);
-
             BackEnd.Instance.Start (appDelegate.Account.Id);
             return true;
         }
@@ -355,6 +351,8 @@ namespace NachoClient.iOS
                 cred.Insert ();
                 cred.UpdatePassword (passwordField.Text);
                 Telemetry.RecordAccountEmailAddress (appDelegate.Account);
+                // Maintain the state of our progress
+                LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, true);
             });
         }
 
@@ -454,7 +452,6 @@ namespace NachoClient.iOS
             View.EndEditing(true);
             if (emailField.Text.Length > 0 || passwordField.Text.Length > 0) {
                 SaveEmailAndPassword ();
-                LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, true);
             }
             PerformSegue ("SegueToAdvancedLogin", this);
         }
