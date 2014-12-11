@@ -832,7 +832,6 @@ namespace NachoCore.ActiveSync
             SyncStrategy = new AsStrategy (this);
 
             McPending.ResolveAllDispatchedAsDeferred (ProtoControl, Account.Id);
-            McPending.DeleteAllOldFailed (Account.Id, new TimeSpan (2, 0, 0, 0));
             NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
         }

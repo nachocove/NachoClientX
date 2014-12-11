@@ -88,6 +88,8 @@ namespace NachoCore
 
         public bool TestOnlyInvokeUseCurrentThread { get; set; }
 
+        private bool serviceHasBeenEstablished = false;
+
         private bool IsXammit (Exception ex)
         {
             var message = ex.ToString ();
@@ -321,6 +323,13 @@ namespace NachoCore
 
         public void EstablishService ()
         {
+            // It is not a big deal if this function is run twice, so don't bother
+            // protecting the flag variable with a lock.
+            if (serviceHasBeenEstablished) {
+                return;
+            }
+            serviceHasBeenEstablished = true;
+
             // Create Device account if not yet there.
             McAccount deviceAccount = null;
             NcModel.Instance.RunInTransaction (() => {
@@ -352,6 +361,31 @@ namespace NachoCore
                     freshMade.Insert ();
                 }
             });
+        }
+
+        /// <summary>
+        /// Tasks that should happen just once when the app starts.
+        /// </summary>
+        public void AppStartupTasks ()
+        {
+            // Things that don't need to run on the UI thread and don't need
+            // to happen right away should go into a background task.
+            NcTask.Run (delegate {
+
+                // Clean up old McPending tasks that have been abandoned.
+                DateTime cutoff = DateTime.UtcNow - new TimeSpan (2, 0, 0, 0); // Two days ago
+                foreach (var account in NcModel.Instance.Db.Table<McAccount> ()) {
+                    foreach (var pending in McPending.QueryOlderThanByState (account.Id, cutoff, McPending.StateEnum.Failed)) {
+                        // TODO Expand this to clean up more than just downloads.
+                        if (McPending.Operations.EmailBodyDownload == pending.Operation ||
+                                McPending.Operations.CalBodyDownload == pending.Operation ||
+                                McPending.Operations.AttachmentDownload == pending.Operation) {
+                            pending.Delete ();
+                        }
+                    }
+                }
+
+            }, "NcAppStartup");
         }
 
         public void QuickSync ()

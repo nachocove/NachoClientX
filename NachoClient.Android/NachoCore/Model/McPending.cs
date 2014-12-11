@@ -821,21 +821,6 @@ namespace NachoCore.Model
             });
         }
 
-        public static void DeleteAllOldFailed (int accountId, TimeSpan age)
-        {
-            DateTime now = DateTime.UtcNow;
-            NcModel.Instance.Db.Table<McPending> ()
-                .Where (rec =>
-                    rec.AccountId == accountId && rec.State == StateEnum.Failed &&
-                    (rec.Operation == Operations.EmailBodyDownload || rec.Operation == Operations.CalBodyDownload || rec.Operation == Operations.AttachmentDownload))
-                .All (y => {
-                    if (now - y.LastModified > age) {
-                        y.Delete ();
-                    }
-                    return true;
-            });
-        }
-
         public override int Insert ()
         {
             var predIds = new List<int> ();
@@ -1109,6 +1094,15 @@ namespace NachoCore.Model
                     rec.AccountId == accountId &&
                     rec.AttachmentId == AttachmentId
             ).FirstOrDefault ();
+        }
+
+        public static IEnumerable<McPending> QueryOlderThanByState (int accountId, DateTime olderThan, StateEnum state)
+        {
+            return NcModel.Instance.Db.Table<McPending> ()
+                .Where (rec =>
+                    rec.AccountId == accountId &&
+                    rec.State == state &&
+                    rec.LastModified < olderThan);
         }
 
         public class ReWrite
