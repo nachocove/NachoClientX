@@ -5,8 +5,6 @@
 repos="
 Reachability
 registered-domain-libs
-iCarousel
-iCarouselBinding
 SwipeView
 SwipeViewBinding
 UIImageEffects
