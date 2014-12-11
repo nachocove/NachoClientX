@@ -478,6 +478,20 @@ namespace NachoClient.iOS
         protected SwipeActionSwipingView swipingView;
         protected UIView coverView;
 
+        public void TryOnClick (int tag)
+        {
+            if (null != OnClick) {
+                OnClick (tag);
+            }
+        }
+
+        public void TryOnSwipe (SwipeActionView activeView, SwipeState state)
+        {
+            if (null != OnSwipe) {
+                OnSwipe (activeView, state);
+            }
+        }
+
         public SwipeActionView (RectangleF frame) : base (frame)
         {
             Tag = (int)SwipeActionViewTagType.SWIPE_ACTION_VIEW;
@@ -519,7 +533,7 @@ namespace NachoClient.iOS
             switch (obj.State) {
             case UIGestureRecognizerState.Began:
                 {
-                    OnSwipe (this, SwipeState.SWIPE_BEGIN);
+                    TryOnSwipe (this, SwipeState.SWIPE_BEGIN);
 
                     // Create a swiping view
                     if (null == swipingView) {
@@ -528,7 +542,7 @@ namespace NachoClient.iOS
                             () => {
                                 swipingView.SnapToAllButtonsHidden (() => {
                                     RemoveSwipingView ();
-                                    OnSwipe (this, SwipeState.SWIPE_END_ALL_HIDDEN);
+                                    TryOnSwipe (this, SwipeState.SWIPE_END_ALL_HIDDEN);
                                 });
                             });
                         // Where is swiping view on the  screen?
@@ -541,7 +555,7 @@ namespace NachoClient.iOS
                         coverRecognizer = new UITapGestureRecognizer ((UITapGestureRecognizer tap) => {
                             swipingView.SnapToAllButtonsHidden (() => {
                                 RemoveSwipingView ();
-                                OnSwipe (this, SwipeState.SWIPE_END_ALL_HIDDEN);
+                                TryOnSwipe (this, SwipeState.SWIPE_END_ALL_HIDDEN);
                             });
                         });
                         coverView.AddGestureRecognizer (coverRecognizer);
@@ -604,8 +618,8 @@ namespace NachoClient.iOS
                 newButton.TouchUpInside += (object sender, EventArgs e) => {
                     int tag = newButton.Config.Tag;
                     RemoveSwipingView ();
-                    OnSwipe (this, SwipeState.SWIPE_END_ALL_HIDDEN);
-                    OnClick (tag);
+                    TryOnSwipe (this, SwipeState.SWIPE_END_ALL_HIDDEN);
+                    TryOnClick (tag);
                 };
             }
 
@@ -644,7 +658,7 @@ namespace NachoClient.iOS
             if (SnapAllShownThreshold > Math.Abs (swipingView.LastMovePercentage)) {
                 swipingView.SnapToAllButtonsHidden (() => {
                     RemoveSwipingView ();
-                    OnSwipe (this, SwipeState.SWIPE_END_ALL_HIDDEN);
+                    TryOnSwipe (this, SwipeState.SWIPE_END_ALL_HIDDEN);
                 });
                 return true;
             }
@@ -674,7 +688,7 @@ namespace NachoClient.iOS
                         return;
                     }
                     swipingView.EndSwipe ();
-                    OnSwipe (this, SwipeState.SWIPE_END_ALL_SHOWN);
+                    TryOnSwipe (this, SwipeState.SWIPE_END_ALL_SHOWN);
                 });
             }
         }

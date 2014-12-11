@@ -167,11 +167,13 @@ namespace NachoClient.iOS
                 if (null == item) {
                     c = CalendarHelper.DefaultMeeting ();
                     if (0001 != startingDate.Year) {
-                        var start = DateTime.UtcNow.AddMinutes (30.0);
+                        var start = DateTime.Now.AddMinutes (30.0);
+                        var localTime = new DateTime (startingDate.Year, startingDate.Month, startingDate.Day, start.Hour, start.Minute, 0, DateTimeKind.Local);
+                        var utcTime = localTime.ToUniversalTime ();
                         if (start.Minute >= 30.0) {
-                            c.StartTime = new DateTime (startingDate.Year, startingDate.Month, startingDate.Day, start.Hour, 30, 0, DateTimeKind.Utc);
+                            c.StartTime = new DateTime (utcTime.Year, utcTime.Month, utcTime.Day, utcTime.Hour, 30, 0, DateTimeKind.Utc);
                         } else {
-                            c.StartTime = new DateTime (startingDate.Year, startingDate.Month, startingDate.Day, start.Hour, 0, 0, DateTimeKind.Utc);
+                            c.StartTime = new DateTime (utcTime.Year, utcTime.Month, utcTime.Day, utcTime.Hour, 0, 0, DateTimeKind.Utc);
                         }
                         c.EndTime = c.StartTime.AddMinutes (60.0);
                     }

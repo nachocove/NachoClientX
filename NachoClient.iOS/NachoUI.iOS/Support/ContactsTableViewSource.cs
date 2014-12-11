@@ -449,12 +449,17 @@ namespace NachoClient.iOS
             labelView.Hidden = true;
             portraitView.Hidden = true;
 
+            var view = (SwipeActionView)cell.ViewWithTag (SWIPE_VIEW_TAG);
+            view.EnableSwipe (null != contact);
+
             if (null == contact) {
                 titleLabel.Text = "This contact is unavailable";
                 titleLabel.TextColor = UIColor.LightGray;
                 titleLabel.Font = A.Font_AvenirNextRegular14;
                 subtitle1Label.Text = "";
                 subtitle2Label.Text = "";
+                view.OnSwipe = null;
+                view.OnClick = null;
                 return;
             }
 
@@ -517,7 +522,6 @@ namespace NachoClient.iOS
                 portraitView.Hidden = false;
             }
 
-            var view = (SwipeActionView)cell.ViewWithTag (SWIPE_VIEW_TAG);
             view.OnClick = (int tag) => {
                 switch (tag) {
                 case EMAIL_SWIPE_TAG:
@@ -609,7 +613,7 @@ namespace NachoClient.iOS
             }
             foreach (var a in contact.EmailAddresses) {
                 var e = McEmailAddress.QueryById<McEmailAddress> (a.EmailAddress);
-                if(null != e){
+                if (null != e) {
                     Log.Debug (Log.LOG_UI, "contact Id={0} emailAddressId={1} email={2} score={3}", contact.Id, e.Id, e.CanonicalEmailAddress, e.Score);
                 }
             }
