@@ -192,7 +192,7 @@ namespace NachoClient.iOS
         {
             var moreTabController = MoreNavigationController.TopViewController;
 
-            existingTableView = moreTabController.View as UITableView;
+            existingTableView = (UITableView)moreTabController.View;
             existingTableView.TintColor = A.Color_NachoGreen;
             existingTableView.ScrollEnabled = false;
 
