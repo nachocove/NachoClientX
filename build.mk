@@ -1,7 +1,6 @@
 # Build / clean everything
 
 all:
-	make -C ../iCarouselBinding
 	make -C ../SwipeViewBinding
 	make -C ../UIImageEffects
 	make -C ../SWRevealViewControllerBinding
@@ -17,7 +16,6 @@ all:
 	make
 
 clean:
-	make -C ../iCarouselBinding clean
 	make -C ../SwipeViewBinding clean
 	make -C ../UIImageEffects clean
 	make -C ../SWRevealViewControllerBinding clean
