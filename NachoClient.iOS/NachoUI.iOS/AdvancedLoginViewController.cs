@@ -472,6 +472,7 @@ namespace NachoClient.iOS
             } else {
                 ConfigureView (LoginStatus.EnterInfo);
                 if (savedBasicCreds) {
+                    NcAssert.True (null != basicCreds, "Never set basic creds");
                     emailText.Text = basicCreds.email;
                     passwordText.Text = basicCreds.password;
                     haveEnteredEmailAndPass ();
