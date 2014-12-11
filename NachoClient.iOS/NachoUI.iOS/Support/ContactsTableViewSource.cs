@@ -563,8 +563,11 @@ namespace NachoClient.iOS
             labelView.BackgroundColor = Util.ColorForUser (colorIndex);
         }
 
-        public void ScrollToSection (UITableView tableView, int index)
+        public void ScrollToSectionIncludingRecent (UITableView tableView, int index)
         {
+            if (null == recent) {
+                index -= 1; // Recent index will become -1
+            }
             if (0 <= index) {
                 var p = NSIndexPath.FromItemSection (NSRange.NotFound, index);
                 tableView.ScrollToRow (p, UITableViewScrollPosition.Top, true);

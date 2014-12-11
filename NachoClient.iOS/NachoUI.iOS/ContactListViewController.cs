@@ -208,9 +208,9 @@ namespace NachoClient.iOS
             Util.CallContact ("SegueToContactDefaultSelection", contact, this);
         }
 
-        public void SelectSection (int index)
+        public void SelectSectionIncludingRecent (int index)
         {
-            contactTableViewSource.ScrollToSection (TableView, index);
+            contactTableViewSource.ScrollToSectionIncludingRecent (TableView, index);
         }
 
         public void PerformSegueForContactDefaultSelector (string identifier, NSObject sender)
@@ -230,7 +230,7 @@ namespace NachoClient.iOS
             public override void DidSelectItemAtIndex (SwipeView swipeView, int index)
             {
                 if (null != owner) {
-                    owner.SelectSection (index);
+                    owner.SelectSectionIncludingRecent (index);
                 }
             }
         }
@@ -305,7 +305,7 @@ namespace NachoClient.iOS
                 button.TouchUpInside += (object sender, EventArgs e) => {
                     SelectButton ((UIButton)sender);
                     if (null != owner) {
-                        owner.SelectSection (index);
+                        owner.SelectSectionIncludingRecent (index);
                     }
                 };
                 view.AddSubview (button);
@@ -329,7 +329,7 @@ namespace NachoClient.iOS
                 button.TouchUpInside += (object sender, EventArgs e) => {
                     SelectButton ((UIButton)sender);
                     if (null != owner) {
-                        owner.SelectSection (index);
+                        owner.SelectSectionIncludingRecent (index);
                     }
                 };
                 var view = new UIView (new RectangleF (0, 0, 50, 50));
