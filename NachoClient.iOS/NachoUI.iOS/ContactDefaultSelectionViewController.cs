@@ -72,7 +72,6 @@ namespace NachoClient.iOS
         protected string newPhoneString;
 
         UIScrollView scrollView;
-        protected float yOffset;
         protected float keyboardHeight;
 
         public enum DefaultSelectionType
@@ -187,7 +186,6 @@ namespace NachoClient.iOS
             UIView actionView = CreateActionView ("Compose Email", "now-newemail", SaveAndCompose, addEmailView, ADD_NEW_EMAIL_BUTTON_TAG);
             addEmailView.AddSubview (actionView);
 
-            //View.AddSubview (addEmailView);
             scrollView.AddSubview (addEmailView);
 
 //////////////ADD PHONE VIEW
@@ -252,7 +250,6 @@ namespace NachoClient.iOS
             addPhoneView.AddSubview (callActionView);
 
             addPhoneView.Hidden = true;
-            //View.AddSubview (addPhoneView);
             scrollView.AddSubview (addPhoneView);
 
 
@@ -266,7 +263,6 @@ namespace NachoClient.iOS
             selectPhoneView.BackgroundColor = A.Color_NachoGreen;
             selectPhoneView.Tag = SELECT_PHONE_VIEW_TAG;
             selectPhoneView.Hidden = true;
-            //View.AddSubview (selectPhoneView);
             scrollView.AddSubview (selectPhoneView);
 
             UIScrollView phoneListScrollView = new UIScrollView (new RectangleF (0, 0, View.Frame.Width, CELL_HEIGHT * 4));
@@ -320,7 +316,6 @@ namespace NachoClient.iOS
             selectEmailView.Tag = SELECT_EMAIL_VIEW_TAG;
             selectEmailView.Hidden = true;
             scrollView.AddSubview (selectEmailView);
-            //View.AddSubview (selectEmailView);
 
             i = 0;
             internalYOffset = 0;
