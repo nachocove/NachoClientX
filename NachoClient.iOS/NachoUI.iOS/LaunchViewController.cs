@@ -330,6 +330,17 @@ namespace NachoClient.iOS
                 return false;
             }
 
+            SaveEmailAndPassword ();
+
+            // Maintain the state of our progress
+            LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, true);
+
+            BackEnd.Instance.Start (appDelegate.Account.Id);
+            return true;
+        }
+
+        protected void SaveEmailAndPassword()
+        {
             NcModel.Instance.RunInTransaction (() => {
                 // Need to regex-validate UI inputs.
                 // You will always need to supply user credentials (until certs, for sure).
@@ -344,11 +355,7 @@ namespace NachoClient.iOS
                 cred.Insert ();
                 cred.UpdatePassword (passwordField.Text);
                 Telemetry.RecordAccountEmailAddress (appDelegate.Account);
-                // Maintain the state of our progress
-                LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, true);
             });
-            BackEnd.Instance.Start (appDelegate.Account.Id);
-            return true;
         }
 
         bool isValidEmail (string email)
@@ -445,6 +452,10 @@ namespace NachoClient.iOS
         protected void AdvancedLoginTouchUpInside (object sender, EventArgs e)
         {
             View.EndEditing(true);
+            if (emailField.Text.Length > 0 || passwordField.Text.Length > 0) {
+                SaveEmailAndPassword ();
+                LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, true);
+            }
             PerformSegue ("SegueToAdvancedLogin", this);
         }
 
