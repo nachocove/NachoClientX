@@ -17,22 +17,10 @@ namespace NachoCore.Utils
 
         public static void StartService ()
         {
-            if (null != TaskMap) {
-                foreach (var pair in TaskMap) {
-                    try {
-                        var taskRef = pair.Key;
-                        if (!taskRef.IsAlive) {
-                            continue;
-                        }
-                        if (!((Task)taskRef.Target).IsCompleted) {
-                            Log.Error (Log.LOG_SYS, "Task {0} survives across shutdown", pair.Value);
-                        }
-                    } catch {
-                        // tasks may be going away as we iterate.
-                    }
-                }
+            if (null == TaskMap) {
+                TaskMap = new ConcurrentDictionary<WeakReference, string> ();
             }
-            TaskMap = new ConcurrentDictionary<WeakReference, string> ();
+            Dump (true);
             Cts = new CancellationTokenSource ();
         }
 
@@ -82,7 +70,7 @@ namespace NachoCore.Utils
                 if (!TaskMap.TryRemove (taskRef, out dummy)) {
                     Log.Error (Log.LOG_SYS, "Task already removed from TaskMap ({0}).", taskName);
                 }
-            }, Cts.Token);
+            });
         }
 
         public static void StopService ()
@@ -100,6 +88,31 @@ namespace NachoCore.Utils
                             Log.Info (Log.LOG_SYS, "Task {0} cancelled", pair.Value);
                         }
                     }
+                } catch {
+                    // tasks may be going away as we iterate.
+                }
+            }
+        }
+
+        public static void Dump (bool warnLivedTasks = false)
+        {
+            if (null == TaskMap) {
+                return;
+            }
+            foreach (var pair in TaskMap) {
+                try {
+                    var taskName = pair.Value;
+                    var taskRef = pair.Key;
+                    if (!taskRef.IsAlive) {
+                        Log.Info (Log.LOG_SYS, "Task {0} is not alive", taskName);
+                        continue;
+                    }
+                    var task = (Task)taskRef.Target;
+                    if (!task.IsCompleted && warnLivedTasks) {
+                        Log.Error (Log.LOG_SYS, "Task {0} survives across shutdown", pair.Value);
+                    }
+                    Log.Info (Log.LOG_SYS, "Task {0}: IsCompleted={0}, IsCanceled={1}, IsFaulted={2}",
+                        task.IsCompleted, task.IsCanceled, task.IsFaulted);
                 } catch {
                     // tasks may be going away as we iterate.
                 }

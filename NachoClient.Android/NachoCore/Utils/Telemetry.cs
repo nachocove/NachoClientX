@@ -29,8 +29,9 @@ namespace NachoCore.Utils
         CAPTURE,
         UI,
         SUPPORT,
-        MAX_TELEMETRY_EVENT_TYPE
-    };
+        MAX_TELEMETRY_EVENT_TYPE}
+
+    ;
 
     [Serializable]
     public class TelemetryEvent : NcQueueElement
@@ -570,7 +571,7 @@ namespace NachoCore.Utils
                 return;
             }
 
-            TelemetryEvent tEvent = GetTelemetryEvent(uiType, uiObject);
+            TelemetryEvent tEvent = GetTelemetryEvent (uiType, uiObject);
             RecordRawEvent (tEvent);
         }
 
@@ -705,7 +706,7 @@ namespace NachoCore.Utils
             if (!ENABLED) {
                 return;
             }
-            if (Token != NcTask.Cts.Token) {
+            if (Token.GetHashCode () != NcTask.Cts.Token.GetHashCode ()) {
                 NcTask.Run (() => {
                     Token = NcTask.Cts.Token;
                     Process<T> ();
@@ -753,7 +754,7 @@ namespace NachoCore.Utils
                 List<TelemetryEvent> tEvents = null;
                 List<McTelemetryEvent> dbEvents = null;
                 // Always check for support event first
-                dbEvents = McTelemetrySupportEvent.QueryOne();
+                dbEvents = McTelemetrySupportEvent.QueryOne ();
                 if (0 == dbEvents.Count) {
                     // If doesn't have any, check for other events
                     dbEvents = McTelemetryEvent.QueryMultiple (MAX_QUERY_ITEMS);
@@ -794,6 +795,7 @@ namespace NachoCore.Utils
                         if (1 != rowsDeleted) {
                             Log.Error (Log.LOG_UTILS, "Telemetry fails to delete event. (rowsDeleted={0}, id={1})",
                                 rowsDeleted, dbEvent.Id);
+                            NcTask.Dump ();
                         }
                         NcAssert.True (1 == rowsDeleted);
                         eventDeleted = (eventDeleted + 1) & 0xfff;
