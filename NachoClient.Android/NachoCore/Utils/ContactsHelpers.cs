@@ -140,7 +140,7 @@ namespace NachoCore.Utils
             // Or, failing that, the first char
             if (String.IsNullOrEmpty (initials)) {
                 if (0 != contact.EmailAddresses.Count) {
-                var emailAddress = McEmailAddress.QueryById<McEmailAddress> (contact.EmailAddresses[0].EmailAddress);
+                    var emailAddress = McEmailAddress.QueryById<McEmailAddress> (contact.EmailAddresses[0].EmailAddress);
                     if (null != emailAddress) {
                         foreach (char c in emailAddress.CanonicalEmailAddress) {
                             if (Char.IsLetterOrDigit (c)) {
