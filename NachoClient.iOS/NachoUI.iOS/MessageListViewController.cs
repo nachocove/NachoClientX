@@ -138,8 +138,8 @@ namespace NachoClient.iOS
                 NavigationItem.SetLeftBarButtonItem (cancelSelectedButton, false);
             } else {
                 NavigationItem.RightBarButtonItems = new UIBarButtonItem[] {
-                    multiSelectButton,
                     composeMailButton,
+                    multiSelectButton,
                 };
                 if (null == backButton) {
                     NavigationItem.HidesBackButton = false;

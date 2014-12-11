@@ -141,6 +141,7 @@ namespace NachoClient.iOS
             scrollView = new UIScrollView (new RectangleF (0, 0, View.Frame.Width, View.Frame.Height));
             scrollView.BackgroundColor = A.Color_NachoBackgroundGray;
             scrollView.ScrollEnabled = true;
+            scrollView.AlwaysBounceVertical = true;
             scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
             View.AddSubview (scrollView);
 
