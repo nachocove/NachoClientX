@@ -788,6 +788,7 @@ namespace NachoClient
         {
             var devBundleId = NSBundle.FromIdentifier ("com.nachocove.nachomail");
             var betaBundleId = NSBundle.FromIdentifier ("com.nachocove.nachomail.beta");
+            var alphaBundleId = NSBundle.FromIdentifier ("com.nachocove.nachomail.alpha");
 
             if (devBundleId != null) {
                 var build = devBundleId.InfoDictionary ["CFBundleVersion"];
@@ -797,6 +798,11 @@ namespace NachoClient
             if (betaBundleId != null) {
                 var build = betaBundleId.InfoDictionary ["CFBundleVersion"];
                 var version = betaBundleId.InfoDictionary ["CFBundleShortVersionString"].ToString ();
+                return String.Format ("{0} ({1})", version, build);
+            } 
+            if (alphaBundleId != null) {
+                var build = alphaBundleId.InfoDictionary ["CFBundleVersion"];
+                var version = alphaBundleId.InfoDictionary ["CFBundleShortVersionString"].ToString ();
                 return String.Format ("{0} ({1})", version, build);
             } 
             return "Unknown version";

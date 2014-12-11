@@ -604,34 +604,42 @@ namespace NachoCore.Model
             HasReadAncillaryData = true;
 
             // FIXME: Fix this hammer?
+            // FIXME: For update, Id may not be zero. Insert() asserts that Id is zero, so zero it.
             // FIXME: After hammer is fixed, use DeleteAncillaryData to clean up associated McPortrait.
             DeleteAncillaryData (db);
 
             foreach (var o in Dates) {
+                o.Id = 0;
                 o.ContactId = Id;
                 o.Insert ();
             }
             foreach (var o in Addresses) {
+                o.Id = 0;
                 o.ContactId = Id;
                 o.Insert ();
             }
             foreach (var o in Relationships) {
+                o.Id = 0;
                 o.ContactId = Id;
                 o.Insert ();
             }
             foreach (var o in EmailAddresses) {
+                o.Id = 0;
                 o.ContactId = Id;
                 o.Insert ();
             }
             foreach (var o in PhoneNumbers) {
+                o.Id = 0;
                 o.ContactId = Id;
                 o.Insert ();
             }
             foreach (var o in IMAddresses) {
+                o.Id = 0;
                 o.ContactId = Id;
                 o.Insert ();
             }
             foreach (var o in Categories) {
+                o.Id = 0;
                 o.ContactId = Id;
                 o.Insert ();
             }
