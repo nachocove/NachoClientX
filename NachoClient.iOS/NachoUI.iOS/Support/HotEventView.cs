@@ -152,6 +152,8 @@ namespace NachoClient.iOS
                 labelView.Hidden = true;
                 iconView.Hidden = true;
                 dotView.Hidden = true;
+                view.OnSwipe = null;
+                view.OnClick = null;
                 return;
             }
 

@@ -210,6 +210,11 @@ namespace NachoClient.iOS
         /// </summary>
         protected void ConfigureCell (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath, bool isRefresh)
         {
+            var view = cell.ContentView.ViewWithTag (SWIPE_TAG) as SwipeActionView;
+            view.DisableSwipe ();
+            view.OnSwipe = null;
+            view.OnClick = null;
+
             if (NoMessageThreads ()) {
                 ConfigureAsNoMessages (cell);
                 return;
@@ -236,7 +241,7 @@ namespace NachoClient.iOS
 
             var cellWidth = tableView.Frame.Width;
 
-            var view = cell.ContentView.ViewWithTag (SWIPE_TAG) as SwipeActionView;
+            view.EnableSwipe (true);
 
             view.OnClick = (int tag) => {
                 switch (tag) {
