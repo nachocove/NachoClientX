@@ -71,6 +71,9 @@ namespace NachoClient.iOS
         protected McContact contact;
         protected string newPhoneString;
 
+        UIScrollView scrollView;
+        protected float keyboardHeight;
+
         public enum DefaultSelectionType
         {
             EmailAdder,
@@ -86,8 +89,21 @@ namespace NachoClient.iOS
 
         }
 
+        public override void ViewDidAppear (bool animated)
+        {
+            if (HandlesKeyboardNotifications) {
+                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
+                NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
+            }
+            base.ViewDidAppear (animated);
+        }
+
         public override void ViewWillDisappear (bool animated)
         {
+            if (HandlesKeyboardNotifications) {
+                NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillHideNotification);
+                NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillShowNotification);
+            }
             View.EndEditing (true);
             base.ViewWillDisappear (animated);
         }
@@ -95,6 +111,11 @@ namespace NachoClient.iOS
         protected override void CreateViewHierarchy ()
         {
             View.BackgroundColor = A.Color_NachoGreen;
+
+            scrollView = new UIScrollView (View.Frame);
+            scrollView.BackgroundColor = A.Color_NachoGreen;
+            scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
+            View.AddSubview (scrollView);
 
             var navBar = new UINavigationBar (new RectangleF (0, 20, View.Frame.Width, CELL_HEIGHT));
             navBar.BarStyle = UIBarStyle.Default;
@@ -165,7 +186,7 @@ namespace NachoClient.iOS
             UIView actionView = CreateActionView ("Compose Email", "now-newemail", SaveAndCompose, addEmailView, ADD_NEW_EMAIL_BUTTON_TAG);
             addEmailView.AddSubview (actionView);
 
-            View.AddSubview (addEmailView);
+            scrollView.AddSubview (addEmailView);
 
 //////////////ADD PHONE VIEW
 //////////////ADD PHONE VIEW
@@ -229,7 +250,8 @@ namespace NachoClient.iOS
             addPhoneView.AddSubview (callActionView);
 
             addPhoneView.Hidden = true;
-            View.AddSubview (addPhoneView);
+            scrollView.AddSubview (addPhoneView);
+
 
 ////////////MULTI PHONE SELECTOR VIEW
 ////////////MULTI PHONE SELECTOR VIEW
@@ -241,8 +263,7 @@ namespace NachoClient.iOS
             selectPhoneView.BackgroundColor = A.Color_NachoGreen;
             selectPhoneView.Tag = SELECT_PHONE_VIEW_TAG;
             selectPhoneView.Hidden = true;
-            View.AddSubview (selectPhoneView);
-
+            scrollView.AddSubview (selectPhoneView);
 
             UIScrollView phoneListScrollView = new UIScrollView (new RectangleF (0, 0, View.Frame.Width, CELL_HEIGHT * 4));
             selectPhoneView.AddSubview (phoneListScrollView);
@@ -294,7 +315,7 @@ namespace NachoClient.iOS
             selectEmailView.BackgroundColor = A.Color_NachoGreen;
             selectEmailView.Tag = SELECT_EMAIL_VIEW_TAG;
             selectEmailView.Hidden = true;
-            View.AddSubview (selectEmailView);
+            scrollView.AddSubview (selectEmailView);
 
             i = 0;
             internalYOffset = 0;
@@ -495,6 +516,15 @@ namespace NachoClient.iOS
                 emailSelectView.Hidden = false;
                 break;
             }
+
+            LayoutView();
+        }
+
+        protected void LayoutView ()
+        {
+            scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
+            RectangleF contentFrame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height);
+            scrollView.ContentSize = contentFrame.Size;
         }
 
         public void SetContact (McContact contact)
@@ -551,6 +581,7 @@ namespace NachoClient.iOS
 
         private void ToggleDefault (object sender, EventArgs e)
         {
+            View.EndEditing (true);
             isDefaultSelected = !isDefaultSelected;
 
             UIButton defaultToggleButton = (UIButton)sender;
@@ -630,6 +661,46 @@ namespace NachoClient.iOS
 
             UITextField phoneTextField = (UITextField)View.ViewWithTag (PHONE_TEXTFIELD_TAG);
             phoneTextField.Text = newPhoneString; 
+        }
+
+        protected virtual void OnKeyboardChanged (bool visible, float height)
+        {
+            var newHeight = (visible ? height : 0);
+
+            if (newHeight == keyboardHeight) {
+                return;
+            }
+            keyboardHeight = newHeight;
+
+            LayoutView ();
+        }
+
+        public virtual bool HandlesKeyboardNotifications {
+            get { return true; }
+        }
+
+        private void OnKeyboardNotification (NSNotification notification)
+        {
+            if (IsViewLoaded) {
+                //Check if the keyboard is becoming visible
+                bool visible = notification.Name == UIKeyboard.WillShowNotification;
+                //Start an animation, using values from the keyboard
+                UIView.BeginAnimations ("AnimateForKeyboard");
+                UIView.SetAnimationBeginsFromCurrentState (true);
+                UIView.SetAnimationDuration (UIKeyboard.AnimationDurationFromNotification (notification));
+                UIView.SetAnimationCurve ((UIViewAnimationCurve)UIKeyboard.AnimationCurveFromNotification (notification));
+                //Pass the notification, calculating keyboard height, etc.
+                bool landscape = InterfaceOrientation == UIInterfaceOrientation.LandscapeLeft || InterfaceOrientation == UIInterfaceOrientation.LandscapeRight;
+                if (visible) {
+                    var keyboardFrame = UIKeyboard.FrameEndFromNotification (notification);
+                    OnKeyboardChanged (visible, landscape ? keyboardFrame.Width : keyboardFrame.Height);
+                } else {
+                    var keyboardFrame = UIKeyboard.FrameBeginFromNotification (notification);
+                    OnKeyboardChanged (visible, landscape ? keyboardFrame.Width : keyboardFrame.Height);
+                }
+                //Commit the animation
+                UIView.CommitAnimations (); 
+            }
         }
     }
 }
