@@ -95,6 +95,20 @@ namespace NachoCore.Utils
             });
         }
 
+        private void CancelableSleep (int msec)
+        {
+            try {
+                Task.WaitAll (new Task[] { Task.Delay (msec, NcTask.Cts.Token) });
+            } catch (AggregateException e) {
+                foreach (var ex in e.InnerExceptions) {
+                    if (ex is OperationCanceledException) {
+                        continue;
+                    }
+                    throw;
+                }
+            }
+        }
+
         private void Retry (Action action)
         {
             bool isDone = false;
@@ -107,23 +121,25 @@ namespace NachoCore.Utils
                         throw;
                     }
                     // Otherwise, most likely HTTP client timeout
-                    Thread.Sleep (5000);
+                    CancelableSleep (5000);
                 } catch (AmazonServiceException e) {
                     Console.WriteLine ("AWS service exception {0}", e);
-                    Thread.Sleep (5000);
+                    CancelableSleep (5000);
                 } catch (AggregateException e) {
                     // Some code path wraps the exception with an AggregateException. Peel the onion
                     if (e.InnerException is TaskCanceledException) {
                         if (NcTask.Cts.Token.IsCancellationRequested) {
                             throw;
                         }
-                        Thread.Sleep (5000);
+                        CancelableSleep (5000);
                     } else if (e.InnerException is AmazonServiceException) {
                         Console.WriteLine ("AWS service inner exception {0}", e.InnerException);
+                        CancelableSleep (5000);
                     } else {
                         throw;
                     }
                 }
+                NcTask.Cts.Token.ThrowIfCancellationRequested ();
             }
         }
 
