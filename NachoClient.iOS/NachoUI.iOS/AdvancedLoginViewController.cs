@@ -398,15 +398,15 @@ namespace NachoClient.iOS
 
         public void handleStatusEnums ()
         {
-            if (LoginHelpers.IsCurrentAccountSet ()) {
+            if (LoginHelpers.IsCurrentAccountSet () && LoginHelpers.HasProvidedCreds(LoginHelpers.GetCurrentAccountId())) {
 
-                BackEndAutoDStateEnum backEndState;
-                try { 
-                    backEndState = BackEnd.Instance.AutoDState (LoginHelpers.GetCurrentAccountId ());
-                } catch {
-                    ConfigureView (LoginStatus.EnterInfo);
-                    return;
-                }
+                BackEndAutoDStateEnum backEndState = BackEnd.Instance.AutoDState (LoginHelpers.GetCurrentAccountId ());
+//                try { 
+//                    backEndState = 
+//                } catch {
+//                    ConfigureView (LoginStatus.EnterInfo);
+//                    return;
+//                }
                 
                 switch (backEndState) {
                 case BackEndAutoDStateEnum.ServerConfWait:
@@ -423,8 +423,8 @@ namespace NachoClient.iOS
                 case BackEndAutoDStateEnum.CertAskWait:
                     Log.Info (Log.LOG_UI, "CertAskWait Auto-D-State-Enum On Page Load");
                     ConfigureView (LoginStatus.AcceptCertificate);
-                    certificateCallbackHandler ();
                     waitScreen.ShowView ();
+                    certificateCallbackHandler ();
                     return;
 
                 case BackEndAutoDStateEnum.PostAutoDPreInboxSync:
@@ -566,7 +566,7 @@ namespace NachoClient.iOS
                 LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, true);
             });
 
-            startBe ();
+            BackEnd.Instance.Start (theAccount.Account.Id);
             waitScreen.ShowView ();
         }
 
@@ -723,14 +723,7 @@ namespace NachoClient.iOS
 
         public void startBe ()
         {
-            BackEndAutoDStateEnum backEndState;
-
-            try {
-                backEndState = BackEnd.Instance.AutoDState (LoginHelpers.GetCurrentAccountId ());
-            } catch {
-                BackEnd.Instance.Start (LoginHelpers.GetCurrentAccountId ());
-                return;
-            }
+            BackEndAutoDStateEnum backEndState = BackEnd.Instance.AutoDState (LoginHelpers.GetCurrentAccountId ());
 
             if (BackEndAutoDStateEnum.CredWait == backEndState) {
                 BackEnd.Instance.CredResp (LoginHelpers.GetCurrentAccountId ());

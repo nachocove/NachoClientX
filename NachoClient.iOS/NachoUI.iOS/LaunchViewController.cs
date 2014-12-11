@@ -351,8 +351,6 @@ namespace NachoClient.iOS
                 cred.Insert ();
                 cred.UpdatePassword (passwordField.Text);
                 Telemetry.RecordAccountEmailAddress (appDelegate.Account);
-                // Maintain the state of our progress
-                LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, true);
             });
         }
 
@@ -443,6 +441,8 @@ namespace NachoClient.iOS
         protected void SubmitButtonTouchUpInside (object sender, EventArgs e)
         {
             if (EnterFullConfiguration ()) {
+                // Maintain the state of our progress
+                LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, true);
                 PerformSegue(StartupViewController.NextSegue(), this);
             }
         }
