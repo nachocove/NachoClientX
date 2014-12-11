@@ -436,7 +436,9 @@ namespace NachoClient.iOS
                 isRecurring = true;
             }
 
-            bool isOrganizer = account.EmailAddr == root.OrganizerEmail && account.Id == c.AccountId;
+            bool isOrganizer = (account.EmailAddr == root.OrganizerEmail && account.Id == c.AccountId || (c.ResponseTypeIsSet && NcResponseType.Organizer == c.ResponseType)
+                               || (NcMeetingStatus.Appointment == c.MeetingStatus) || (NcMeetingStatus.Meeting == c.MeetingStatus));
+
             if (isOrganizer && !isRecurring) {
                 NavigationItem.RightBarButtonItem = editEventButton;
             }
@@ -619,7 +621,7 @@ namespace NachoClient.iOS
             eventNotes.Frame = new RectangleF (42, 22, EVENT_CARD_WIDTH - 60, 0);
             eventNotes.SizeToFit ();
 
-            ConfigureRsvpBar ();
+            ConfigureRsvpBar (isOrganizer);
 
             LayoutView ();
         }
@@ -867,7 +869,7 @@ namespace NachoClient.iOS
                 ViewFramer.Create (descriptionView).Y (internalYOffset);
             }
             // descriptionView should already be layed out correctly. There is no need to call Layout() again.
-            internalYOffset += descriptionView.Frame.Height;
+            internalYOffset += Math.Max (descriptionView.Frame.Height, 20);
 
             #if PHONE_UI
             AdjustViewLayout (TagType.EVENT_PHONE_TITLE_TAG, 23, ref yOffset, 20, SCREEN_WIDTH - 50);
@@ -1030,7 +1032,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public void ConfigureRsvpBar ()
+        public void ConfigureRsvpBar (bool isOrganizer)
         {
             if (c.MeetingStatus == NcMeetingStatus.ForwardedMeetingCancelled) {
                 declineButton.Hidden = false;
@@ -1050,7 +1052,7 @@ namespace NachoClient.iOS
                 removeFromCalendarButton.TouchUpInside += RemoveFromCalendarClicked;
                 return;
             }
-            if (account.EmailAddr == root.OrganizerEmail || (c.ResponseTypeIsSet && NcResponseType.Organizer == c.ResponseType)) {
+            if (isOrganizer) {
                 messageLabel.Hidden = false;
                 messageLabel.Text = "You are the organizer";
                 messageLabel.Frame = new RectangleF (18 + 24 + 12, 18, 150, 24);
