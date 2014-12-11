@@ -59,6 +59,21 @@ namespace NachoClient.iOS
             EnterInfo,
         };
 
+        public class BasicCredentials {
+
+            public string email;
+            public string password;
+
+            public BasicCredentials (string email, string password)
+            {
+                this.email = email;
+                this.password = password;
+            }
+        }
+
+        public BasicCredentials basicCreds;
+        public bool savedBasicCreds = false;
+
         public AdvancedLoginViewController (IntPtr handle) : base (handle)
         {
             appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
@@ -456,6 +471,11 @@ namespace NachoClient.iOS
                 }
             } else {
                 ConfigureView (LoginStatus.EnterInfo);
+                if (savedBasicCreds) {
+                    emailText.Text = basicCreds.email;
+                    passwordText.Text = basicCreds.password;
+                    haveEnteredEmailAndPass ();
+                }
             }
         }
 

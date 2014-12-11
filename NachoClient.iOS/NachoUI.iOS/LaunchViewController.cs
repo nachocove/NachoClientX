@@ -475,5 +475,26 @@ namespace NachoClient.iOS
             emailField = null;
             passwordField = null;
         }
+
+        public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
+        {
+            if (segue.Identifier.Equals ("SegueToSupport")) {
+                return;
+            }
+
+            if (segue.Identifier.Equals ("SegueToAdvancedLogin")) {
+                if (LoginHelpers.IsCurrentAccountSet ()) {
+                    return;
+                } else {
+                    if (emailField.Text.Length > 0 || passwordField.Text.Length > 0) {
+                        AdvancedLoginViewController destController = (AdvancedLoginViewController)segue.DestinationViewController;
+                        destController.savedBasicCreds = true;
+                        destController.basicCreds = new AdvancedLoginViewController.BasicCredentials (emailField.Text, passwordField.Text);
+                    }
+                    return;
+                }
+            }
+        }
+
     }
 }
