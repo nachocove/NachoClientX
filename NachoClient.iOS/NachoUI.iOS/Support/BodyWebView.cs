@@ -5,13 +5,17 @@ using System.Drawing;
 using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using NachoCore.Utils;
+using NachoCore;
 
 namespace NachoClient.iOS
 {
     public class BodyWebView : UIWebView, IBodyRender
     {
+        private string html;
+        private NSUrl baseUrl;
         private float preferredWidth;
         private Action sizeChangedCallback;
+        private bool loadingComplete;
 
         private const string magic = @"
             var style = document.createElement(""style""); 
@@ -29,14 +33,21 @@ namespace NachoClient.iOS
         public BodyWebView (float Y, float preferredWidth, float initialHeight, Action sizeChangedCallback, string html, NSUrl baseUrl)
             : base (new RectangleF(0, Y, preferredWidth, initialHeight))
         {
+            this.html = html;
+            this.baseUrl = baseUrl;
             this.preferredWidth = preferredWidth;
             this.sizeChangedCallback = sizeChangedCallback;
 
             ScrollView.ScrollEnabled = false;
             LoadFinished += OnLoadFinished;
             ShouldStartLoad += OnShouldStartLoad;
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
-            LoadHtmlString (dispableJavaScript + wrapPre + html, baseUrl);
+            loadingComplete = false;
+
+            if (NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext) {
+                LoadHtmlString (dispableJavaScript + wrapPre + html, baseUrl);
+            }
         }
 
         protected override void Dispose (bool disposing)
@@ -44,6 +55,9 @@ namespace NachoClient.iOS
             StopLoading ();
             LoadFinished -= OnLoadFinished;
             ShouldStartLoad -= OnShouldStartLoad;
+            if (!loadingComplete) {
+                NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+            }
             base.Dispose (disposing);
         }
 
@@ -78,9 +92,11 @@ namespace NachoClient.iOS
 
         private void OnLoadFinished (object sender, EventArgs e)
         {
+            loadingComplete = true;
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
             EvaluateJavascript (string.Format(magic, preferredWidth));
             // Force a re-layout of this web view now that the JavaScript magic has been applied.
-            ViewFramer.Create (this).Height (2);
+            ViewFramer.Create (this).Height (Frame.Height - 1);
             // And force a re-layout of the entire BodyView now that the size of this web view is known.
             if (null != sizeChangedCallback) {
                 sizeChangedCallback ();
@@ -95,6 +111,26 @@ namespace NachoClient.iOS
                 return false;
             }
             return true;
+        }
+
+        private void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var statusEvent = (StatusIndEventArgs)e;
+
+            if (NcResult.SubKindEnum.Info_ExecutionContextChanged == statusEvent.Status.SubKind) {
+                if (NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext) {
+                    // If the web view loading was interrupted by the app going into
+                    // the background, then restart it.
+                    if (!loadingComplete && !base.IsLoading) {
+                        LoadHtmlString (dispableJavaScript + wrapPre + html, baseUrl);
+                    }
+                } else {
+                    // The app is going into the background.  Stop any loading that
+                    // is in progress.  But leave loadingComplete == false, so we know
+                    // to restart loading when the app comes back into the foreground.
+                    StopLoading ();
+                }
+            }
         }
     }
 }
