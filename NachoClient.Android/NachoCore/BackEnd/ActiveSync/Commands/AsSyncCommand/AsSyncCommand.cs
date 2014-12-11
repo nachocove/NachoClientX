@@ -203,11 +203,14 @@ namespace NachoCore.ActiveSync
                     case McAbstrFolderEntry.ClassCodeEnum.Email:
                         options.Add (new XElement (m_ns + Xml.AirSync.FilterType, (uint)perFolder.FilterCode));
                         options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.NoMime_0));
-                        options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
-                            new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.Html_2),
-                            new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "128"),
-                            new XElement (m_baseNs + Xml.AirSyncBase.AllOrNone, "1"),
-                            new XElement (m_baseNs + Xml.AirSyncBase.Preview, "255")));
+                        var bodyPref = new XElement (m_baseNs + Xml.AirSync.BodyPreference,
+                                           new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.Html_2),
+                                           new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "128"),
+                                           new XElement (m_baseNs + Xml.AirSyncBase.AllOrNone, "1"));
+                        if (14.0 <= Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
+                            bodyPref.Add (new XElement (m_baseNs + Xml.AirSyncBase.Preview, "255"));
+                        }
+                        options.Add (bodyPref);
                         break;
 
                     case McAbstrFolderEntry.ClassCodeEnum.Calendar:
@@ -221,7 +224,9 @@ namespace NachoCore.ActiveSync
                     case McAbstrFolderEntry.ClassCodeEnum.Contact:
                         if (Xml.FolderHierarchy.TypeCode.Ric_19 == folder.Type) {
                             // Expressing BodyPreference for RIC gets Protocol Error.
-                            options.Add (new XElement (m_ns + Xml.AirSync.MaxItems, "200"));
+                            if (14.0 <= Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
+                                options.Add (new XElement (m_ns + Xml.AirSync.MaxItems, "200"));
+                            }
                         } else {
                             options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
                                 new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
@@ -387,6 +392,10 @@ namespace NachoCore.ActiveSync
                 var oldSyncKey = folder.AsSyncKey;
                 var xmlSyncKey = collection.Element (m_ns + Xml.AirSync.SyncKey);
                 var xmlMoreAvailable = collection.Element (m_ns + Xml.AirSync.MoreAvailable);
+                var xmlCommands = collection.Element (m_ns + Xml.AirSync.Commands);
+                if (null == xmlCommands && null != xmlMoreAvailable) {
+                    Log.Error (Log.LOG_AS, "AsSyncCommand: MoreAvailable with no commands.");
+                }
                 var xmlStatus = collection.Element (m_ns + Xml.AirSync.Status);
                 // The protocol requires SyncKey, but GOOG does not obey in the StatusCode.NotFound case.
                 if (null != xmlSyncKey) {
@@ -408,7 +417,6 @@ namespace NachoCore.ActiveSync
                     var xmlResponses = collection.Element (m_ns + Xml.AirSync.Responses);
                     ProcessCollectionResponses (folder, xmlResponses);
 
-                    var xmlCommands = collection.Element (m_ns + Xml.AirSync.Commands);
                     ProcessCollectionCommands (folder, xmlCommands);
 
                     lock (PendingResolveLockObj) {

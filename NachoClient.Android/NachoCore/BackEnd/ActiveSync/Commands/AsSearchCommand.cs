@@ -30,7 +30,7 @@ namespace NachoCore.ActiveSync
                               new XElement (m_ns + Xml.Search.Range, string.Format ("0-{0}", PendingSingle.Search_MaxResults - 1)));
             // TODO: move decision to strategy.
             if (NcCommStatus.Instance.Speed != NachoPlatform.NetStatusSpeedEnum.CellSlow &&
-                // FIXME - enum-ize AsProtocolVersion.
+                // TODO - enum-ize AsProtocolVersion.
                 "14.1" == BEContext.ProtocolState.AsProtocolVersion) {
                 options.Add (new XElement (m_ns + Xml.Search.Picture,
                     new XElement (m_ns + Xml.Search.MaxPictures, PendingSingle.Search_MaxResults)));
