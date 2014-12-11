@@ -90,15 +90,7 @@ namespace NachoClient.iOS
             }
 
             fillInKnownFields ();
-            if (LoginHelpers.IsCurrentAccountSet ()) {
-                if (LoginHelpers.HasViewedTutorial (LoginHelpers.GetCurrentAccountId ())) {
-                    handleStatusEnums ();
-                } else {
-                    waitScreen.ShowView ();
-                }
-            } else {
-                handleStatusEnums ();
-            }
+            handleStatusEnums ();
 
             if (waitScreen.Hidden == true) {
                 NavigationItem.Title = "Account Setup";
@@ -157,7 +149,6 @@ namespace NachoClient.iOS
                 NavigationController.NavigationBar.BackgroundColor = A.Color_NachoGreen.ColorWithAlpha (1.0f);
                 NavigationController.NavigationBar.Translucent = false;
             }
-
 
             scrollView = new UIScrollView (View.Frame);
             scrollView.BackgroundColor = A.Color_NachoNowBackground;
@@ -409,8 +400,14 @@ namespace NachoClient.iOS
         {
             if (LoginHelpers.IsCurrentAccountSet ()) {
 
-                BackEndAutoDStateEnum backEndState = BackEnd.Instance.AutoDState (LoginHelpers.GetCurrentAccountId ());
-
+                BackEndAutoDStateEnum backEndState;
+                try { 
+                    backEndState = BackEnd.Instance.AutoDState (LoginHelpers.GetCurrentAccountId ());
+                } catch {
+                    ConfigureView (LoginStatus.EnterInfo);
+                    return;
+                }
+                
                 switch (backEndState) {
                 case BackEndAutoDStateEnum.ServerConfWait:
                     Log.Info (Log.LOG_UI, "ServerConfWait Auto-D-State-Enum On Page Load");
@@ -569,7 +566,7 @@ namespace NachoClient.iOS
                 LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, true);
             });
 
-            BackEnd.Instance.Start (LoginHelpers.GetCurrentAccountId ());
+            startBe ();
             waitScreen.ShowView ();
         }
 
@@ -726,7 +723,14 @@ namespace NachoClient.iOS
 
         public void startBe ()
         {
-            BackEndAutoDStateEnum backEndState = BackEnd.Instance.AutoDState (LoginHelpers.GetCurrentAccountId ());
+            BackEndAutoDStateEnum backEndState;
+
+            try {
+                backEndState = BackEnd.Instance.AutoDState (LoginHelpers.GetCurrentAccountId ());
+            } catch {
+                BackEnd.Instance.Start (LoginHelpers.GetCurrentAccountId ());
+                return;
+            }
 
             if (BackEndAutoDStateEnum.CredWait == backEndState) {
                 BackEnd.Instance.CredResp (LoginHelpers.GetCurrentAccountId ());
