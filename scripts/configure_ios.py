@@ -60,5 +60,16 @@ def main():
     info_plist.replace('CFBundleDisplayName', display_name)
     info_plist.write()
 
+    icon_script = projects[release]['ios'].get('icon_script', None)
+    if icon_script is not None:
+        print 'Icon script = %s' % icon_script
+        project_dir = os.path.dirname(os.path.abspath(sys.argv[1]))
+        release_dir = os.path.dirname(icon_script)
+        script = os.path.basename(icon_script)
+        path = '%s/Resources/%s' % (project_dir, release_dir)
+        if os.system('sh -c "cd %s; sh %s"' % (path, script)) != 0:
+            print 'ERROR: fail to copy icons'
+            exit(1)
+
 if __name__ == '__main__':
     main()

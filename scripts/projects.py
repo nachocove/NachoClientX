@@ -19,7 +19,8 @@ projects = {
     'alpha': {
         'ios': {
             'bundle_id': 'com.nachocove.nachomail.alpha',
-            'display_name': '[alpha] Nacho Mail'
+            'display_name': 'Nacho Mail',
+            'icon_script': 'alpha/copy.sh'
         },
         'hockeyapp': {
             'app_id': 'f0c98aa84e693061fbbf3d60bb6ab1fc',
@@ -36,7 +37,8 @@ projects = {
     'beta': {
         'ios': {
             'bundle_id': 'com.nachocove.nachomail.beta',
-            'display_name': '[beta] Nacho Mail'
+            'display_name': 'Nacho Mail',
+            'icon_script': 'beta/copy.sh'
         },
         'hockeyapp': {
             'app_id': '44dae4a6ae9134930c64c623d5023ac4',
