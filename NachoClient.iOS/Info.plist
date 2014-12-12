@@ -46,7 +46,7 @@
 	<key>CFBundleIdentifier</key>
 	<string>com.nachocove.nachomail</string>
 	<key>CFBundleDisplayName</key>
-	<string>Nacho Mail</string>
+	<string>[dev] Nacho Mail</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
