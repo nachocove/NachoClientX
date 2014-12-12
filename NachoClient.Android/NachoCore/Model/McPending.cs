@@ -1096,6 +1096,15 @@ namespace NachoCore.Model
             ).FirstOrDefault ();
         }
 
+        public static IEnumerable<McPending> QueryOlderThanByState (int accountId, DateTime olderThan, StateEnum state)
+        {
+            return NcModel.Instance.Db.Table<McPending> ()
+                .Where (rec =>
+                    rec.AccountId == accountId &&
+                    rec.State == state &&
+                    rec.LastModified < olderThan);
+        }
+
         public class ReWrite
         {
             public enum ObjActionEnum

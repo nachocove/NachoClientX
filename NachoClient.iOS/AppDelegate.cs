@@ -215,8 +215,11 @@ namespace NachoClient.iOS
             NcApplication.Instance.StartClass3Services ();
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartClass3Services complete");
 
-            application.SetStatusBarStyle (UIStatusBarStyle.LightContent, true);
             Account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
+
+            NcApplication.Instance.AppStartupTasks ();
+
+            application.SetStatusBarStyle (UIStatusBarStyle.LightContent, true);
 
             UINavigationBar.Appearance.BarTintColor = A.Color_NachoGreen;
             UIToolbar.Appearance.BackgroundColor = UIColor.White;
