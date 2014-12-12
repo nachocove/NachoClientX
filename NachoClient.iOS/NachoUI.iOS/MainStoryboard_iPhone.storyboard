@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="6245" systemVersion="13F34" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="Ds7-Ad-QXl">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="6254" systemVersion="14B25" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="Ds7-Ad-QXl">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="6238"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="6247"/>
     </dependencies>
     <scenes>
         <!--Advanced Login View Controller-->
@@ -83,7 +83,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="k65-2v-IXe" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-2147" y="-955"/>
+            <point key="canvasLocation" x="-1615" y="-955"/>
         </scene>
         <!--Tasks-->
         <scene sceneID="eS4-pd-cWT">
@@ -434,7 +434,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="1Iy-0a-PtC" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1536" y="73"/>
+            <point key="canvasLocation" x="2068" y="73"/>
         </scene>
         <!--Contact Edit View Controller-->
         <scene sceneID="0AJ-Oh-Ge6">
@@ -802,7 +802,7 @@
                         <segue destination="rp9-J1-cgU" kind="push" identifier="EditEventToEventAttendees" id="w67-dy-XSq"/>
                         <segue destination="Nbe-45-5AM" kind="push" identifier="EditEventToAttachment" id="peA-r2-tjq"/>
                         <segue destination="SX4-pu-5YA" kind="modal" identifier="SegueToAddAttachment" modalTransitionStyle="crossDissolve" id="Kr2-7H-kbB"/>
-                        <segue destination="1pE-rh-uML" kind="modal" identifier="SegueToAttachments" id="g8B-SL-7oa"/>
+                        <segue destination="1pE-rh-uML" kind="modal" identifier="SegueToAttachments" id="j2D-VY-BIq"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="O99-IW-kIW" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -821,7 +821,7 @@
                     </date>
                 </datePicker>
             </objects>
-            <point key="canvasLocation" x="-3203" y="2687"/>
+            <point key="canvasLocation" x="-2615" y="476"/>
         </scene>
         <!--Alert Chooser View Controller-->
         <scene sceneID="DXi-EB-bSZ">
@@ -903,7 +903,7 @@
                         <segue destination="v0a-Zq-Chs" kind="relationship" relationship="viewControllers" id="haI-Fc-A7q"/>
                         <segue destination="xfD-Vu-nBF" kind="relationship" relationship="viewControllers" id="XQg-JR-vxA"/>
                         <segue destination="PGe-ip-eZd" kind="relationship" relationship="viewControllers" id="aB0-7O-hbe"/>
-                        <segue destination="1pE-rh-uML" kind="relationship" relationship="viewControllers" id="L3g-YM-YjM"/>
+                        <segue destination="Ond-cj-T9D" kind="relationship" relationship="viewControllers" id="L3g-YM-YjM"/>
                         <segue destination="sL0-ex-8A8" kind="relationship" relationship="viewControllers" id="DQk-BA-wYt"/>
                         <segue destination="bzq-xt-DVh" kind="relationship" relationship="viewControllers" id="b7c-1Z-ljK"/>
                         <segue destination="Dc9-zu-AZQ" kind="relationship" relationship="viewControllers" id="5QG-Sn-Ioi"/>
@@ -924,7 +924,6 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                     </view>
-                    <tabBarItem key="tabBarItem" title="Files" id="hS2-az-KrC"/>
                     <navigationItem key="navigationItem" id="lw1-fW-wNn"/>
                     <connections>
                         <segue destination="tAw-fh-hJX" kind="push" identifier="AttachmentsToCompose" id="p7w-hx-Y70"/>
@@ -933,7 +932,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="PMN-Ra-w2D" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-3911" y="476"/>
+            <point key="canvasLocation" x="-2615" y="-356"/>
         </scene>
         <!--Event Attachment View Controller-->
         <scene sceneID="ZMa-bI-tY1">
@@ -956,8 +955,8 @@
                     <connections>
                         <outlet property="EventAttachmentsTableView" destination="fhu-bP-xWZ" id="jdL-IM-bML"/>
                         <outlet property="addAttachmentButton" destination="N2c-Hs-Cv9" id="QHy-9U-koS"/>
-                        <segue destination="1pE-rh-uML" kind="modal" identifier="EventAttachmentToFiles" id="GKm-A3-njZ"/>
                         <segue destination="SX4-pu-5YA" kind="modal" identifier="SegueToAddAttachment" modalTransitionStyle="crossDissolve" id="Zgo-Hx-sjv"/>
+                        <segue destination="1pE-rh-uML" kind="modal" identifier="EventAttachmentToFiles" id="TTO-7u-4qX"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="2A8-Nn-b9g" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -997,15 +996,15 @@
                         <segue destination="OCr-PO-3nH" kind="push" identifier="ComposeToNachoNow" id="tkk-6o-6oa"/>
                         <segue destination="MCC-ND-pIu" kind="modal" identifier="SegueToMessagePriority" modalTransitionStyle="crossDissolve" id="DDa-hb-SgY"/>
                         <segue destination="ErX-HX-Xxl" kind="modal" identifier="SegueToIntentSelection" modalPresentationStyle="fullScreen" modalTransitionStyle="crossDissolve" id="5qs-bm-OYT"/>
-                        <segue destination="1pE-rh-uML" kind="modal" identifier="SegueToAttachments" id="84g-IQ-Iaw"/>
                         <segue destination="q23-o6-SFp" kind="modal" identifier="SegueToQuickResponse" modalTransitionStyle="crossDissolve" id="tsd-Qf-0s2"/>
                         <segue destination="SX4-pu-5YA" kind="modal" identifier="SegueToAddAttachment" modalTransitionStyle="crossDissolve" id="zby-Sy-Y3J"/>
                         <segue destination="HJp-il-GU9" kind="custom" identifier="ComposeToContactSearch" customClass="FadeCustomSegue" id="ay2-o2-R8l"/>
+                        <segue destination="1pE-rh-uML" kind="modal" identifier="SegueToAttachments" id="eTD-uL-AQU"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="K96-0O-l77" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="2823" y="880"/>
+            <point key="canvasLocation" x="-1877" y="-107"/>
         </scene>
         <!--Intent Selection View Controller-->
         <scene sceneID="mbi-5g-bbR">
@@ -1070,7 +1069,7 @@
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                     </view>
                     <connections>
-                        <segue destination="1pE-rh-uML" kind="modal" identifier="AddAttachmentToAttachments" id="bIh-V3-UrL"/>
+                        <segue destination="1pE-rh-uML" kind="modal" identifier="AddAttachmentToAttachments" id="47y-6M-xBI"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="3d3-Vl-kXG" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1286,7 +1285,7 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="1hO-fB-YFd" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="2687" y="84"/>
+            <point key="canvasLocation" x="3219" y="84"/>
         </scene>
         <!--Event Attendee View Controller-->
         <scene sceneID="odK-NZ-B9r">
@@ -1326,7 +1325,7 @@
                 </navigationController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="sxX-aT-beH" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="2152" y="84"/>
+            <point key="canvasLocation" x="2684" y="84"/>
         </scene>
         <!--Navigation Controller-->
         <scene sceneID="qgS-M8-2Bx">
@@ -1435,7 +1434,7 @@
                 </navigationController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="FdC-Dq-yUj" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-2663" y="-955"/>
+            <point key="canvasLocation" x="-2131" y="-955"/>
         </scene>
         <!--Hot List View Controller-->
         <scene sceneID="R89-bm-KgW">
@@ -1675,6 +1674,25 @@
             </objects>
             <point key="canvasLocation" x="1213" y="1613"/>
         </scene>
+        <!--Files-->
+        <scene sceneID="Emn-be-pWe">
+            <objects>
+                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="Ond-cj-T9D" sceneMemberID="viewController">
+                    <tabBarItem key="tabBarItem" title="Files" id="hS2-az-KrC"/>
+                    <toolbarItems/>
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="ODi-Hk-OII">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </navigationBar>
+                    <nil name="viewControllers"/>
+                    <connections>
+                        <segue destination="1pE-rh-uML" kind="relationship" relationship="rootViewController" id="22b-Az-fdF"/>
+                    </connections>
+                </navigationController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="YBw-dW-sdc" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-3433" y="-464"/>
+        </scene>
     </scenes>
     <resources>
         <image name="navbar-icn-close.png" width="17" height="17"/>
@@ -1685,36 +1703,36 @@
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="6J3-c2-bz5"/>
-        <segue reference="5u2-X0-TbZ"/>
-        <segue reference="HCr-Oa-UHV"/>
-        <segue reference="zDw-Tx-fTt"/>
-        <segue reference="XQg-JR-vxA"/>
-        <segue reference="4z2-t5-9Cd"/>
+        <segue reference="CDa-jw-wpg"/>
         <segue reference="QbR-l1-NT5"/>
         <segue reference="9pm-2U-9AI"/>
-        <segue reference="dHu-Pd-Udl"/>
-        <segue reference="CDa-jw-wpg"/>
+        <segue reference="4z2-t5-9Cd"/>
+        <segue reference="XQg-JR-vxA"/>
         <segue reference="K8c-x2-hEf"/>
+        <segue reference="zDw-Tx-fTt"/>
         <segue reference="6Lm-Uk-Knv"/>
-        <segue reference="AiM-59-h7m"/>
-        <segue reference="84g-IQ-Iaw"/>
-        <segue reference="zby-Sy-Y3J"/>
-        <segue reference="JTo-qU-j7O"/>
-        <segue reference="Tfk-Mt-BlS"/>
-        <segue reference="RR1-bJ-URL"/>
-        <segue reference="tdu-G2-PEp"/>
-        <segue reference="4M9-UI-9mt"/>
+        <segue reference="w67-dy-XSq"/>
+        <segue reference="peA-r2-tjq"/>
+        <segue reference="m2D-2n-RiV"/>
+        <segue reference="7sK-rg-HQL"/>
         <segue reference="b2R-9j-Kqr"/>
-        <segue reference="tt1-JW-EVV"/>
-        <segue reference="Ar9-Nl-fq9"/>
+        <segue reference="5u2-X0-TbZ"/>
         <segue reference="mLY-u0-R5O"/>
-        <segue reference="UJb-nL-M4Z"/>
+        <segue reference="6J3-c2-bz5"/>
+        <segue reference="Ar9-Nl-fq9"/>
         <segue reference="ZzH-qS-KOm"/>
-        <segue reference="szv-KC-TId"/>
-        <segue reference="rEt-DF-c51"/>
-        <segue reference="zOx-eF-clw"/>
         <segue reference="vUs-ft-xdy"/>
+        <segue reference="zOx-eF-clw"/>
+        <segue reference="rEt-DF-c51"/>
+        <segue reference="szv-KC-TId"/>
+        <segue reference="DDa-hb-SgY"/>
+        <segue reference="p7w-hx-Y70"/>
+        <segue reference="eTD-uL-AQU"/>
+        <segue reference="KnL-e9-HQR"/>
+        <segue reference="ay2-o2-R8l"/>
+        <segue reference="zby-Sy-Y3J"/>
+        <segue reference="xrp-ey-B0j"/>
+        <segue reference="tkk-6o-6oa"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>
