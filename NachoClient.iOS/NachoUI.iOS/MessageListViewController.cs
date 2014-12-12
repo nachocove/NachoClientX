@@ -91,8 +91,6 @@ namespace NachoClient.iOS
             NavigationController.NavigationBar.Translucent = false;
             Util.HideBlackNavigationControllerLine (NavigationController.NavigationBar);
 
-            ReloadDataMaintainingPosition ();
-
             View.BackgroundColor = new UIColor (227f / 255f, 227f / 255f, 227f / 255f, 1.0f);
 
             messageSource.owner = this;
@@ -199,6 +197,17 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
+
+            // TODO: Figure this out
+            // When this view is loaded directly from the tab bar,
+            // the first time the view is displayed, the content
+            // offset is set such that the refresh controller is
+            // visible.  The second time this view is presented
+            // the content offset is set to properly.
+            if (0 > TableView.ContentOffset.Y) {
+                TableView.ContentOffset = new PointF (0, 0);
+            }
+
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
