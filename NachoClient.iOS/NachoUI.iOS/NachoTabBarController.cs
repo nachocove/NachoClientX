@@ -20,7 +20,7 @@ namespace NachoClient.iOS
         protected UILabel accountNameLabel;
         protected UILabel emailAddressLabel;
         protected UILabel initialsCircle;
-        protected UIView existingTableView;
+        protected UITableView existingTableView;
         protected static NachoTabBarController instance;
 
         public NachoTabBarController (IntPtr handle) : base (handle)
@@ -66,7 +66,7 @@ namespace NachoClient.iOS
 
             InsertAccountInfoIntoMoreTab ();
         }
-           
+
         // Fires only when app starts; not on all fg events
         public override void ViewWillAppear (bool animated)
         {
@@ -190,17 +190,23 @@ namespace NachoClient.iOS
 
         protected void InsertAccountInfoIntoMoreTab ()
         {
-            var moreTabController = MoreNavigationController.ViewControllers [0];
+            var moreTabController = MoreNavigationController.TopViewController;
 
-            existingTableView = moreTabController.View;
+            existingTableView = (UITableView)moreTabController.View;
             existingTableView.TintColor = A.Color_NachoGreen;
+            existingTableView.ScrollEnabled = false;
 
-            var newView = new UIView (existingTableView.Frame);
+            foreach (var cell in existingTableView.VisibleCells) {
+                cell.TextLabel.Font = A.Font_AvenirNextMedium14;
+            }
+
+            var newView = new UIScrollView (existingTableView.Frame);
+
             newView.BackgroundColor = A.Color_NachoBackgroundGray;
 
             var accountInfoView = new UIView (new RectangleF (
-                                      A.Card_Horizontal_Indent, A.Card_Vertical_Indent,
-                                      newView.Frame.Width - 2 * A.Card_Horizontal_Indent, 100));
+                A.Card_Horizontal_Indent, A.Card_Vertical_Indent,
+                newView.Frame.Width - 2 * A.Card_Horizontal_Indent, 100));
             accountInfoView.BackgroundColor = UIColor.White;
             accountInfoView.Layer.CornerRadius = A.Card_Corner_Radius;
             accountInfoView.Layer.MasksToBounds = true;
@@ -226,13 +232,18 @@ namespace NachoClient.iOS
             emailAddressLabel.Font = A.Font_AvenirNextMedium14;
             accountInfoView.AddSubview (emailAddressLabel);
 
+            // checks for a 4s screen
+            var tableHeight = (500 < newView.Frame.Height ? newView.Frame.Height - accountInfoView.Frame.Bottom - 3 * A.Card_Vertical_Indent - 11 : newView.Frame.Height - accountInfoView.Frame.Bottom - A.Card_Vertical_Indent + 36);
+
             existingTableView.Frame = new RectangleF (
                 A.Card_Horizontal_Indent, accountInfoView.Frame.Bottom + A.Card_Vertical_Indent,
-                newView.Frame.Width - 2 * A.Card_Horizontal_Indent, newView.Frame.Height - accountInfoView.Frame.Bottom - 2 * A.Card_Vertical_Indent);
+                newView.Frame.Width - 2 * A.Card_Horizontal_Indent, tableHeight);
             existingTableView.Layer.CornerRadius = A.Card_Corner_Radius;
             existingTableView.Layer.MasksToBounds = true;
             existingTableView.Layer.BorderWidth = A.Card_Border_Width;
             existingTableView.Layer.BorderColor = A.Card_Border_Color;
+
+            newView.ContentSize = new SizeF (moreTabController.View.Frame.Width, existingTableView.Frame.Bottom - 2 * A.Card_Vertical_Indent);
 
             newView.AddSubview (accountInfoView);
             newView.AddSubview (existingTableView);
