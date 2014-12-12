@@ -58,6 +58,7 @@ namespace NachoCore.ActiveSync
                     Log.Warn (Log.LOG_AS, "AsOptionsCommand: more than one MS-ASProtocolVersions header.");
                 }
                 var value = values.First ();
+                Log.Info (Log.LOG_AS, "AsOptionsCommand: MS-ASProtocolVersions: {0}", value);
                 float[] float_versions = Array.ConvertAll (value.Split (','), x => float.Parse (x));
                 Array.Sort (float_versions);
                 Array.Reverse (float_versions);
@@ -74,6 +75,7 @@ namespace NachoCore.ActiveSync
                     Log.Warn (Log.LOG_AS, "AsOptionsCommand: more than one MS-ASProtocolVersions header.");
                 }
                 var value = values.First ();
+                Log.Info (Log.LOG_AS, "AsOptionsCommand: MS-ASProtocolCommands: {0}", value);
                 string[] commands = value.Split (',');
                 // TODO: check for other potentially missing commands. ensure that all fundamental commands are listed.
                 if (!commands.Contains ("Provision")) {
