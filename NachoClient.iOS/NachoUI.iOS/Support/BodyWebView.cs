@@ -27,7 +27,7 @@ namespace NachoClient.iOS
             viewPortTag.content = ""width={0}; initial-scale=1.0;"";
             document.getElementsByTagName('head')[0].appendChild(viewPortTag);
         ";
-        private const string dispableJavaScript = "<meta http-equiv=\"Content-Security-Policy\" content=\"script-src 'none'\">";
+        private const string disableJavaScript = "<meta http-equiv=\"Content-Security-Policy\" content=\"script-src 'none'\">";
         private const string wrapPre = "<style>pre { white-space: pre-wrap;}</style>";
 
         public BodyWebView (float Y, float preferredWidth, float initialHeight, Action sizeChangedCallback, string html, NSUrl baseUrl)
@@ -46,7 +46,7 @@ namespace NachoClient.iOS
             loadingComplete = false;
 
             if (NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext) {
-                LoadHtmlString (dispableJavaScript + wrapPre + html, baseUrl);
+                LoadHtmlString (disableJavaScript + wrapPre + html, baseUrl);
             }
         }
 
@@ -122,7 +122,7 @@ namespace NachoClient.iOS
                     // If the web view loading was interrupted by the app going into
                     // the background, then restart it.
                     if (!loadingComplete && !base.IsLoading) {
-                        LoadHtmlString (dispableJavaScript + wrapPre + html, baseUrl);
+                        LoadHtmlString (disableJavaScript + wrapPre + html, baseUrl);
                     }
                 } else {
                     // The app is going into the background.  Stop any loading that
