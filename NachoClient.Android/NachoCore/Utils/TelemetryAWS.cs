@@ -222,7 +222,13 @@ namespace NachoCore.Utils
             var anEvent = new Document ();
             // Client and timeestamp are the only common fields for all event tables.
             // They are also the primary keys.
-            anEvent ["id"] = Guid.NewGuid ().ToString ().Replace ("-", "");
+            if (null == tEvent.ServerId) {
+                // These are old events that do not have the ServerId field yet.
+                // In that case, create an id for the event.
+                anEvent ["id"] = Guid.NewGuid ().ToString ().Replace ("-", "");
+            } else {
+                anEvent ["id"] = tEvent.ServerId;
+            }
             anEvent ["client"] = GetUserName ();
             anEvent ["timestamp"] = tEvent.Timestamp.Ticks;
             return anEvent;
