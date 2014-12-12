@@ -35,6 +35,7 @@ namespace NachoClient.iOS
         protected override void CreateViewHierarchy ()
         {
             View.BackgroundColor = A.Color_NachoBackgroundGray;
+            Util.ConfigureNavBar (false, this.NavigationController);
 
             UIView supportView = new UIView (new RectangleF (A.Card_Horizontal_Indent, A.Card_Vertical_Indent, View.Frame.Width - A.Card_Horizontal_Indent * 2, View.Frame.Height - 24 - 120));
             supportView.BackgroundColor = UIColor.White;

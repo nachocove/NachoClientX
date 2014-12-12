@@ -16,14 +16,14 @@
                     <navigationItem key="navigationItem" id="8g2-6N-eMx"/>
                     <connections>
                         <segue destination="OCr-PO-3nH" kind="push" identifier="SegueToNachoNow" id="Dxn-bx-hdu"/>
-                        <segue destination="MRl-Tp-bqC" kind="push" identifier="SegueToSupport" id="lXf-yZ-Qj9"/>
                         <segue destination="OQ8-xH-iKh" kind="custom" identifier="SegueToHome" customClass="FadeCustomSegue" id="tzJ-j2-YOi"/>
                         <segue destination="whm-e9-YWX" kind="modal" identifier="SegueToTabController" modalTransitionStyle="crossDissolve" id="V0S-kd-9OI"/>
+                        <segue destination="MRl-Tp-bqC" kind="push" identifier="SegueToSupport" id="0vO-2s-NmS"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="GIv-K1-Hbe" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-4557" y="-4212"/>
+            <point key="canvasLocation" x="-6573" y="-1548"/>
         </scene>
         <!--Nacho Now View Controller-->
         <scene sceneID="w1N-3O-jJd">
@@ -83,7 +83,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="k65-2v-IXe" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-1615" y="-955"/>
+            <point key="canvasLocation" x="-551" y="-955"/>
         </scene>
         <!--Tasks-->
         <scene sceneID="eS4-pd-cWT">
@@ -134,7 +134,7 @@
             </objects>
             <point key="canvasLocation" x="-5418" y="-3850"/>
         </scene>
-        <!--Settings-->
+        <!--General Settings View Controller-->
         <scene sceneID="cES-6I-XY9">
             <objects>
                 <viewController storyboardIdentifier="GeneralSettingsViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="zEe-J0-xNV" customClass="GeneralSettingsViewController" sceneMemberID="viewController">
@@ -156,7 +156,6 @@
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
-                    <tabBarItem key="tabBarItem" title="Settings" id="WTt-N1-83W"/>
                     <navigationItem key="navigationItem" id="t0b-mf-IZ6"/>
                     <connections>
                         <outlet property="contentView" destination="73b-MM-u7g" id="Erf-qp-QXw"/>
@@ -170,7 +169,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="yGs-h9-8Dq" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-1931" y="-3171"/>
+            <point key="canvasLocation" x="-3811" y="-1155"/>
         </scene>
         <!--Settings Legal View Controller-->
         <scene sceneID="G7Z-DN-RLf">
@@ -198,7 +197,6 @@
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
                     <extendedEdge key="edgesForExtendedLayout"/>
-                    <tabBarItem key="tabBarItem" title="Support" id="AEp-H2-ACI"/>
                     <navigationItem key="navigationItem" title="Support" id="mWr-gQ-Yyx"/>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <connections>
@@ -209,7 +207,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="sxr-xY-2cF" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-4747" y="-3163"/>
+            <point key="canvasLocation" x="-4997" y="-1339"/>
         </scene>
         <!--Support Message View Controller-->
         <scene sceneID="7yh-xJ-ffT">
@@ -306,8 +304,8 @@
                         <segue destination="tch-Ox-Ppd" kind="custom" identifier="SegueToAdvancedLogin" customClass="FadeCustomSegue" id="9pm-2U-9AI"/>
                         <segue destination="OQ8-xH-iKh" kind="custom" identifier="SegueToHome" customClass="FadeCustomSegue" id="QbR-l1-NT5"/>
                         <segue destination="OCr-PO-3nH" kind="push" identifier="SegueToNow" id="dHu-Pd-Udl"/>
-                        <segue destination="MRl-Tp-bqC" kind="push" identifier="SegueToSupport" id="CDa-jw-wpg"/>
                         <segue destination="gGE-NB-tlz" kind="push" identifier="SegueToSelectProvider" id="vE8-53-onN"/>
+                        <segue destination="MRl-Tp-bqC" kind="push" identifier="SegueToSupport" id="XZZ-AT-ZHc"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="B4U-5i-lJV" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -693,7 +691,7 @@
                 <barButtonItem image="navbar-icn-close.png" id="oR4-zY-1Lz" userLabel="Bar Button Item - cancelButton"/>
                 <barButtonItem systemItem="edit" id="3zq-FM-sEG" userLabel="Bar Button Item - editButton"/>
             </objects>
-            <point key="canvasLocation" x="-523" y="-1730"/>
+            <point key="canvasLocation" x="541" y="-1730"/>
         </scene>
         <!--Phone View Controller-->
         <scene sceneID="WJn-nf-jaa">
@@ -732,7 +730,7 @@
                     <color key="tintColor" red="0.20784313730000001" green="0.81568627449999997" blue="0.74509803919999995" alpha="1" colorSpace="deviceRGB"/>
                 </barButtonItem>
             </objects>
-            <point key="canvasLocation" x="-63" y="-1730"/>
+            <point key="canvasLocation" x="1001" y="-1730"/>
         </scene>
         <!--Choose Calendar View Controller-->
         <scene sceneID="w8I-bN-nC2">
@@ -853,7 +851,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Sw8-hu-my8" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1455" y="-1730"/>
+            <point key="canvasLocation" x="2519" y="-1730"/>
         </scene>
         <!--Notes View Controller-->
         <scene sceneID="OcZ-uK-llj">
@@ -907,8 +905,8 @@
                         <segue destination="sL0-ex-8A8" kind="relationship" relationship="viewControllers" id="DQk-BA-wYt"/>
                         <segue destination="bzq-xt-DVh" kind="relationship" relationship="viewControllers" id="b7c-1Z-ljK"/>
                         <segue destination="Dc9-zu-AZQ" kind="relationship" relationship="viewControllers" id="5QG-Sn-Ioi"/>
-                        <segue destination="zEe-J0-xNV" kind="relationship" relationship="viewControllers" id="CgA-hJ-TPb"/>
-                        <segue destination="MRl-Tp-bqC" kind="relationship" relationship="viewControllers" id="Eb2-K0-nI3"/>
+                        <segue destination="BOY-39-YAe" kind="relationship" relationship="viewControllers" id="CgA-hJ-TPb"/>
+                        <segue destination="aHn-x6-ar8" kind="relationship" relationship="viewControllers" id="Eb2-K0-nI3"/>
                     </connections>
                 </tabBarController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="o80-D6-q8C" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1434,7 +1432,7 @@
                 </navigationController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="FdC-Dq-yUj" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-2131" y="-955"/>
+            <point key="canvasLocation" x="-1067" y="-955"/>
         </scene>
         <!--Hot List View Controller-->
         <scene sceneID="R89-bm-KgW">
@@ -1693,6 +1691,45 @@
             </objects>
             <point key="canvasLocation" x="-3433" y="-464"/>
         </scene>
+        <!--Settings-->
+        <scene sceneID="Nut-xc-WjX">
+            <objects>
+                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="BOY-39-YAe" sceneMemberID="viewController">
+                    <tabBarItem key="tabBarItem" title="Settings" id="WTt-N1-83W"/>
+                    <toolbarItems/>
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="mEU-eA-HsL">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </navigationBar>
+                    <nil name="viewControllers"/>
+                    <connections>
+                        <segue destination="zEe-J0-xNV" kind="relationship" relationship="rootViewController" id="LZe-BL-zKg"/>
+                    </connections>
+                </navigationController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="HPZ-TD-Z5i" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-4343" y="-1155"/>
+        </scene>
+        <!--Support-->
+        <scene sceneID="pSf-dt-Q4e">
+            <objects>
+                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="aHn-x6-ar8" sceneMemberID="viewController">
+                    <tabBarItem key="tabBarItem" title="Support" id="AEp-H2-ACI"/>
+                    <toolbarItems/>
+                    <navigationItem key="navigationItem" id="aRb-Qr-Wl4"/>
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="XDo-PN-nHM">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </navigationBar>
+                    <nil name="viewControllers"/>
+                    <connections>
+                        <segue destination="MRl-Tp-bqC" kind="relationship" relationship="rootViewController" id="yNo-Ue-PAG"/>
+                    </connections>
+                </navigationController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="i4K-uK-e0B" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-5529" y="-1339"/>
+        </scene>
     </scenes>
     <resources>
         <image name="navbar-icn-close.png" width="17" height="17"/>
@@ -1703,18 +1740,19 @@
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="CDa-jw-wpg"/>
-        <segue reference="QbR-l1-NT5"/>
+        <segue reference="0vO-2s-NmS"/>
         <segue reference="9pm-2U-9AI"/>
-        <segue reference="4z2-t5-9Cd"/>
+        <segue reference="V0S-kd-9OI"/>
+        <segue reference="Dxn-bx-hdu"/>
+        <segue reference="tzJ-j2-YOi"/>
         <segue reference="XQg-JR-vxA"/>
         <segue reference="K8c-x2-hEf"/>
         <segue reference="zDw-Tx-fTt"/>
         <segue reference="6Lm-Uk-Knv"/>
+        <segue reference="7sK-rg-HQL"/>
         <segue reference="w67-dy-XSq"/>
         <segue reference="peA-r2-tjq"/>
         <segue reference="m2D-2n-RiV"/>
-        <segue reference="7sK-rg-HQL"/>
         <segue reference="b2R-9j-Kqr"/>
         <segue reference="5u2-X0-TbZ"/>
         <segue reference="mLY-u0-R5O"/>
@@ -1725,14 +1763,13 @@
         <segue reference="zOx-eF-clw"/>
         <segue reference="rEt-DF-c51"/>
         <segue reference="szv-KC-TId"/>
+        <segue reference="ywO-BF-h0n"/>
         <segue reference="DDa-hb-SgY"/>
-        <segue reference="p7w-hx-Y70"/>
-        <segue reference="eTD-uL-AQU"/>
-        <segue reference="KnL-e9-HQR"/>
         <segue reference="ay2-o2-R8l"/>
         <segue reference="zby-Sy-Y3J"/>
         <segue reference="xrp-ey-B0j"/>
-        <segue reference="tkk-6o-6oa"/>
+        <segue reference="47y-6M-xBI"/>
+        <segue reference="KnL-e9-HQR"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>

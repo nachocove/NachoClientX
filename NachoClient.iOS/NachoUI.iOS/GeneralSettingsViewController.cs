@@ -70,6 +70,7 @@ namespace NachoClient.iOS
             if (null != NavigationItem) {
                 NavigationItem.SetHidesBackButton (true, false);
             }
+            Util.ConfigureNavBar (false, this.NavigationController);
 
             yOffset = A.Card_Vertical_Indent;
 
