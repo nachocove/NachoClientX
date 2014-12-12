@@ -82,6 +82,7 @@ namespace NachoClient.iOS
                 NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
                 NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
             }
+            autoCompleteTextField.BecomeFirstResponder ();
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -98,7 +99,6 @@ namespace NachoClient.iOS
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
-            autoCompleteTextField.BecomeFirstResponder ();
         }
 
         public virtual bool HandlesKeyboardNotifications {
@@ -112,7 +112,9 @@ namespace NachoClient.iOS
             UIView inputView = new UIView (new RectangleF (0, 0, View.Frame.Width, 44));
             inputView.BackgroundColor = A.Color_NachoBackgroundGray;
 
-            resultsTableView = new UITableView (new RectangleF (0, 44, View.Frame.Width, View.Frame.Height - 44));
+            keyboardHeight = NcKeyboardSpy.Instance.keyboardHeight;
+            resultsTableView = new UITableView (new RectangleF (0, 44, View.Frame.Width, View.Frame.Height - keyboardHeight));
+
             resultsTableView.SeparatorColor = A.Color_NachoBorderGray;
             resultsTableView.Source = new ContactChooserDataSource (this);
 
@@ -124,7 +126,7 @@ namespace NachoClient.iOS
             cancelSearchButton.TouchUpInside += (object sender, EventArgs e) => {
                 CancelSelected ();
             };
-            inputView.Add (cancelSearchButton);
+            inputView.AddSubviews (cancelSearchButton);
 
             UIView textInputView = new UIView (new RectangleF (8, 6, 246, 32));
             textInputView.BackgroundColor = UIColor.White;
@@ -151,11 +153,17 @@ namespace NachoClient.iOS
             autoCompleteTextField.Text = address.address;
             UpdateAutocompleteResults (0, address.address);
 
-            textInputView.Add (autoCompleteTextField);
-            inputView.Add (textInputView);
+            textInputView.AddSubview (autoCompleteTextField);
+            inputView.AddSubview (textInputView);
 
-            View.Add (inputView);
-            View.Add (resultsTableView);
+            View.AddSubview (inputView);
+            View.AddSubview (resultsTableView);
+        }
+
+        public override void ViewDidLayoutSubviews ()
+        {
+            base.ViewDidLayoutSubviews ();
+            resultsTableView.Frame = new RectangleF (0, 44, View.Frame.Width, View.Frame.Height - keyboardHeight);
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)

@@ -1179,6 +1179,7 @@
     <Compile Include="NachoUI.iOS\SelectProviderViewController.designer.cs">
       <DependentUpon>SelectProviderViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\NcKeyboardSpy.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

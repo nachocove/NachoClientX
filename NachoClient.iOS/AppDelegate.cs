@@ -285,6 +285,8 @@ namespace NachoClient.iOS
                 }
             }
 
+            NcKeyboardSpy.Instance.Init ();
+
             if ("SegueToTabController" == StartupViewController.NextSegue ()) {
                 var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
                 var vc = storyboard.InstantiateViewController ("NachoTabBarController");
