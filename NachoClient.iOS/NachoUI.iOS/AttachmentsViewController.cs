@@ -134,6 +134,7 @@ namespace NachoClient.iOS
                 yOffset += navbar.Frame.Height;
             } else {
                 NavigationItem.Title = "Files";
+                Util.ConfigureNavBar (false, this.NavigationController);
             }
 
             segmentedControlView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 40));
