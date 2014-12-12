@@ -120,34 +120,33 @@ namespace NachoClient.iOS
 
         protected void CreateView ()
         {
-            float yOffset = 20f;
+            float yOffset = 64f;
             scrollView = new UIScrollView (new RectangleF (0, 0, View.Frame.Width, View.Frame.Height));
             ConfigureColors ();
 
             if (modal) {
                 titleView = new UIView ();
-                titleView.Frame = new RectangleF (0, 0, View.Frame.Width, 85);
+                titleView.Frame = new RectangleF (0, 0, View.Frame.Width, 64);
                 titleView.ClipsToBounds = true;
                 titleView.BackgroundColor = A.Color_NachoGreen;
 
-                yOffset = 40;
+                var navBar = new UINavigationBar (new RectangleF (0, 20, View.Frame.Width, 44));
+                navBar.BarStyle = UIBarStyle.Default;
+                navBar.Opaque = true;
+                navBar.Translucent = false;
 
-                UIButton dismissButton = new UIButton (new RectangleF (30, yOffset, 25, 25));
-                dismissButton.SetImage (UIImage.FromBundle ("modal-close"), UIControlState.Normal);
-                dismissButton.TouchUpInside += (object sender, EventArgs e) => {
-                    DismissViewController (true, null);
-                };
-                titleView.AddSubview (dismissButton);
+                var navItem = new UINavigationItem ();
+                navItem.Title = "Move to Folder";
+                using (var image = UIImage.FromBundle ("modal-close")) {
+                    var dismissButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
+                    dismissButton.Clicked += (object sender, EventArgs e) => {
+                        DismissViewController(true, null);
+                    };
+                    navItem.LeftBarButtonItem = dismissButton;
+                }
+                navBar.Items = new UINavigationItem[] { navItem };
 
-                UILabel viewTitle = new UILabel (new RectangleF (View.Frame.Width / 2 - 75, yOffset, 150, 25));
-                viewTitle.Text = "Move to Folder";
-
-                viewTitle.Font = A.Font_AvenirNextDemiBold17;
-                viewTitle.TextColor = UIColor.White;
-                viewTitle.TextAlignment = UITextAlignment.Center;
-                titleView.AddSubview (viewTitle);
-
-                yOffset = viewTitle.Frame.Bottom + 20;
+                titleView.AddSubview (navBar);
 
                 UIView sectionSeparator = new UIView (new RectangleF (0, yOffset - .5f, View.Frame.Width, .5f));
                 sectionSeparator.BackgroundColor = separatorColor;
@@ -312,7 +311,7 @@ namespace NachoClient.iOS
                 CreateFolderCell (0, yourFoldersView, HasSubFolders (f), false, f);
                 index++;
             }
-                
+
             LayoutView ();
         }
 
@@ -367,7 +366,7 @@ namespace NachoClient.iOS
             folderListHeight = defaultCellsOffset * 44;
             ViewFramer.Create (yourFoldersView).Y (yOffset).Height (folderListHeight);
             yOffset += folderListHeight;
-           
+
             if (!modal) {
                 yOffset += 64 + 24;
             }
@@ -468,7 +467,7 @@ namespace NachoClient.iOS
 
             recentView.Add (cell);
         }
-            
+
         public void ClearViews ()
         {
             // Not sure how defaultsView can be null
@@ -886,6 +885,6 @@ namespace NachoClient.iOS
             vc.SetOwner (null);
             vc.DismissMessageEditor (false, null);
         }
-            
+
     }
 }
