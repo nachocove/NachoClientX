@@ -137,6 +137,9 @@ namespace NachoClient.iOS
             autoCompleteTextField.Font = A.Font_AvenirNextMedium14;
             autoCompleteTextField.ClearButtonMode = UITextFieldViewMode.Always;
             autoCompleteTextField.TintColor = A.Color_NachoIconGray;
+            autoCompleteTextField.AutocapitalizationType = UITextAutocapitalizationType.None;
+            autoCompleteTextField.AutocorrectionType = UITextAutocorrectionType.No;
+            autoCompleteTextField.SpellCheckingType = UITextSpellCheckingType.No;
 
             // Update the auto-complete on each keystroke
             autoCompleteTextField.EditingChanged += delegate {

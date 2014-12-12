@@ -63,6 +63,9 @@ namespace NachoClient.iOS
                 #endif
                 break;
             }
+            AutocapitalizationType = UITextAutocapitalizationType.None;
+            AutocorrectionType = UITextAutocorrectionType.No;
+            SpellCheckingType = UITextSpellCheckingType.No;
         }
 
         // Return null to hide the caret.  We want it hidden in a text field.
