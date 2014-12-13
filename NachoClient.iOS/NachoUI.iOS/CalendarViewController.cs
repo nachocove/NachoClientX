@@ -399,6 +399,7 @@ namespace NachoClient.iOS
         public float startingXMonth = 0;
         private bool isClosing = false;
         private bool isPanning = false;
+        private bool startingTableYIsSet = false;
 
         private void DateDotMonthViewPan (UIPanGestureRecognizer obj)
         {
@@ -417,9 +418,13 @@ namespace NachoClient.iOS
 
                 if ((yOffset < -5) && (!isPanning)) {
                     ConfigureCalendarTableSize (1);
-                    if (288.5 + (dateBarRowHeight * (rows - 1)) + yOffset <= 288.5 + (dateBarRowHeight * (rows - 1)) && 288.5 + (dateBarRowHeight * (rows - 1)) + yOffset > 291.5) {
-                        calendarTableView.Center = new PointF ((View.Frame.Width / 2), (float)288.5 + (dateBarRowHeight * (rows - 1)) + yOffset);
+                    if (!startingTableYIsSet) {
+                        tableStartingY = calendarTableView.Center.Y + dateBarHeight + 1 + ((rows - 3) * dateBarRowHeight);
+                        startingTableYIsSet = true;
                     }
+                    if ((dateBarHeight + 1 + ((rows - 3) * dateBarRowHeight)) + yOffset >= 5) {
+                        calendarTableView.Center = new PointF (calendarTableView.Center.X, tableStartingY + yOffset);
+                    } 
                     isClosing = true;
                     return;
                 } else if (((5 < xOffset) || (-5 > xOffset)) && (!isClosing)) {
@@ -485,6 +490,7 @@ namespace NachoClient.iOS
                             }
                         );
                     } 
+                    startingTableYIsSet = false;
                 } else if (isPanning) {
                     if ((xOffset < -(DateDotView.Frame.Width / 3)) || (((xOffset < -(DateDotView.Frame.Width / 5)) && (obj.VelocityInView (DateDotView).X < -500)))) { 
                         UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
