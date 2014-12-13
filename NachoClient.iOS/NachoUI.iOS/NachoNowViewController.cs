@@ -142,6 +142,7 @@ namespace NachoClient.iOS
         // if we need to handle a notification.
         public void HandleNotifications ()
         {
+            NavigationController.PopToViewController (this, false);
             // If we have a pending notification, bring up the event detail view
             var eventNotifications = McMutables.Get (McAccount.GetDeviceAccount ().Id, NachoClient.iOS.AppDelegate.EventNotificationKey);
             var eventNotification = eventNotifications.FirstOrDefault ();

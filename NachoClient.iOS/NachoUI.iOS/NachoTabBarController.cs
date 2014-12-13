@@ -85,31 +85,44 @@ namespace NachoClient.iOS
             }
         }
 
-        protected UINavigationController SelectTabRoot (UITabBarItem item)
+        protected UINavigationController FindTabRoot (UITabBarItem item)
         {
-            int i = 0;
             foreach (var viewController in ViewControllers) {
                 if (item == viewController.TabBarItem) {
                     var vc = (UINavigationController)viewController;
-                    vc.PopToRootViewController (false);
-                    this.SelectedIndex = i;
                     return vc;
                 }
-                i = i + 1;
+            }
+            return null;
+        }
+
+        protected UIViewController FindViewController (UINavigationController vc)
+        {
+            foreach (var v in vc.ViewControllers) {
+                if (v is NachoNowViewController) {
+                    return v;
+                }
             }
             return null;
         }
 
         public void SwitchToNachoNow ()
         {
-            var navigationController = SelectTabRoot (nachoNowItem);
-            var nachoNowViewController = (NachoNowViewController)navigationController.TopViewController;
-            nachoNowViewController.HandleNotifications ();
+            var navigationController = FindTabRoot (nachoNowItem);
+            if (0 == navigationController.ViewControllers.Length) {
+                navigationController = MoreNavigationController;
+            }
+            var nachoNowViewController = (NachoNowViewController)FindViewController (navigationController);
+            this.SelectedViewController = navigationController;
+            if (null != nachoNowViewController) {
+                nachoNowViewController.HandleNotifications ();
+            }
         }
 
         public void SwitchToFolders ()
         {
-            SelectTabRoot (foldersItem);
+            var folderTab = FindTabRoot (foldersItem);
+            this.SelectedViewController = folderTab;
         }
 
         protected string GetTabBarItemTypeName (UIViewController vc)
@@ -205,8 +218,8 @@ namespace NachoClient.iOS
             newView.BackgroundColor = A.Color_NachoBackgroundGray;
 
             var accountInfoView = new UIView (new RectangleF (
-                A.Card_Horizontal_Indent, A.Card_Vertical_Indent,
-                newView.Frame.Width - 2 * A.Card_Horizontal_Indent, 100));
+                                      A.Card_Horizontal_Indent, A.Card_Vertical_Indent,
+                                      newView.Frame.Width - 2 * A.Card_Horizontal_Indent, 100));
             accountInfoView.BackgroundColor = UIColor.White;
             accountInfoView.Layer.CornerRadius = A.Card_Corner_Radius;
             accountInfoView.Layer.MasksToBounds = true;
