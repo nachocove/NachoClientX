@@ -259,7 +259,7 @@ namespace NachoCore.Model
             if (null == bodyPath) {
                 return null;
             }
-            var fileStream = new FileStream (bodyPath, FileMode.Open);
+            var fileStream = new FileStream (bodyPath, FileMode.Open, FileAccess.Read);
             if (null == fileStream) {
                 Log.Error (Log.LOG_EMAIL, "BodyPath {0} doesn't find a file.", bodyPath);
                 return null;
@@ -727,9 +727,10 @@ namespace NachoCore.Model
 
         // Track how long it takes for Update() to run. This code should be removed
         // once the issue has been solved.
-        private static Random random = new Random();
+        private static Random random = new Random ();
         private static string characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-        private static string Duration(DateTime start, DateTime end)
+
+        private static string Duration (DateTime start, DateTime end)
         {
             long ms = (end.Ticks - start.Ticks) / 10000;
             if (0 == ms) {
@@ -740,6 +741,7 @@ namespace NachoCore.Model
             }
             return string.Format ("{0}", ms);
         }
+
         private static int fastCount = 0;
         private static int slowCount = 0;
 
@@ -773,7 +775,7 @@ namespace NachoCore.Model
                 // and other interesting data, so we can hopefully figure out what is
                 // causing these delays.
                 ++slowCount;
-                Log.Error(Log.LOG_EMAIL, "Update: {0} = {1} {2} {3} {4} {5} {6} : +{7} [{8},{9}]",
+                Log.Error (Log.LOG_EMAIL, "Update: {0} = {1} {2} {3} {4} {5} {6} : +{7} [{8},{9}]",
                     Duration (start, allDone), Duration (start, txStart), Duration (txStart, baseDone), Duration (baseDone, readAncDone),
                     Duration (readAncDone, deleteAncDone), Duration (deleteAncDone, insertAncDone), Duration (insertAncDone, allDone),
                     tryCount, slowCount, fastCount);
