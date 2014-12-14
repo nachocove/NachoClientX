@@ -18,22 +18,14 @@ namespace NachoClient.iOS
         public static string LICENSE_AGREEMENT_KEY = "LICENSE_AGREEMENT";
 
         protected const float CELL_HEIGHT = 44f;
-        protected const float TEXT_LINE_HEIGHT = 19.124f;
 
         protected float yOffset;
 
-        protected const int NAME_LABEL_TAG = 100;
-        protected const int EMAIL_ADDRESS_LABEL_TAG = 101;
-        protected const int USER_IMAGE_VIEW_TAG = 102;
-        protected const int USER_LABEL_VIEW_TAG = 103;
         protected const int FIX_BE_BUTTON_TAG = 104;
-        protected const int ACCOUNT_SETTINGS_VIEW_TAG = 105;
+        protected const int ACCOUNT_INFO_VIEW_TAG = 105;
         protected const int ABOUT_US_VIEW_TAG = 106;
         protected const int PRIVACY_POLICY_VIEW_TAG = 107;
         protected const int FIX_BE_LABEL_TAG = 108;
-
-        protected UITapGestureRecognizer accountSettingsTapGesture;
-        protected UITapGestureRecognizer.Token accountSettingsTapGestureHandlerToken;
 
         protected UIButton aboutUsButton;
         protected UIButton privacyPolicyButton;
@@ -74,71 +66,9 @@ namespace NachoClient.iOS
 
             yOffset = A.Card_Vertical_Indent;
 
-            UIView accountSettingsView = new UIView (new RectangleF (A.Card_Horizontal_Indent, yOffset, contentView.Frame.Width - (A.Card_Horizontal_Indent * 2), 80));
-            accountSettingsView.BackgroundColor = UIColor.White;
-            accountSettingsView.Layer.CornerRadius = A.Card_Corner_Radius;
-            accountSettingsView.Layer.BorderColor = A.Card_Border_Color;
-            accountSettingsView.Layer.BorderWidth = A.Card_Border_Width;
-            accountSettingsView.Tag = ACCOUNT_SETTINGS_VIEW_TAG;
-            accountSettingsTapGesture = new UITapGestureRecognizer ();
-            accountSettingsTapGestureHandlerToken = accountSettingsTapGesture.AddTarget (AccountSettingsTapHandler);
-            accountSettingsView.AddGestureRecognizer (accountSettingsTapGesture);
-
-            var userImageView = new UIImageView (new RectangleF (12, 15, 50, 50));
-            userImageView.Center = new PointF (userImageView.Center.X, accountSettingsView.Frame.Height / 2);
-            userImageView.Layer.CornerRadius = 25;
-            userImageView.Layer.MasksToBounds = true;
-            userImageView.Hidden = true;
-            userImageView.Tag = USER_IMAGE_VIEW_TAG;
-            accountSettingsView.AddSubview (userImageView);
-
-            var userLabelView = new UILabel (new RectangleF (12, 15, 50, 50));
-            userLabelView.Font = A.Font_AvenirNextRegular24;
-            userLabelView.TextColor = UIColor.White;
-            userLabelView.TextAlignment = UITextAlignment.Center;
-            userLabelView.LineBreakMode = UILineBreakMode.Clip;
-            userLabelView.Layer.CornerRadius = 25;
-            userLabelView.Layer.MasksToBounds = true;
-            userLabelView.Hidden = true;
-            userLabelView.Tag = USER_LABEL_VIEW_TAG;
-            accountSettingsView.AddSubview (userLabelView);
-
-            McAccount userAccount = McAccount.QueryById <McAccount> (LoginHelpers.GetCurrentAccountId ());
-            McContact userContact = McContact.QueryByEmailAddress (LoginHelpers.GetCurrentAccountId (), userAccount.EmailAddr).FirstOrDefault ();
-
-            var userImage = Util.ImageOfSender (LoginHelpers.GetCurrentAccountId (), userAccount.EmailAddr);
-
-            if (null != userImage) {
-                userImageView.Hidden = false;
-                userImageView.Image = userImage;
-            } else {
-                userLabelView.Hidden = false;
-                int ColorIndex;
-                string Initials;
-                Util.UserMessageField (userContact.GetEmailAddress (), LoginHelpers.GetCurrentAccountId (), out ColorIndex, out Initials);
-                userLabelView.Text = NachoCore.Utils.ContactsHelper.GetInitials (userContact);
-                userLabelView.BackgroundColor = Util.ColorForUser (ColorIndex);
-            }
-
-            UILabel nameLabel = new UILabel (new RectangleF (75, 20, 100, TEXT_LINE_HEIGHT));
-            nameLabel.Font = A.Font_AvenirNextDemiBold14;
-            nameLabel.TextColor = A.Color_NachoBlack;
-            nameLabel.Tag = NAME_LABEL_TAG;
-            accountSettingsView.AddSubview (nameLabel);
-
-            UILabel accountEmailAddress = new UILabel (new RectangleF (75, nameLabel.Frame.Bottom, 170, TEXT_LINE_HEIGHT));
-            accountEmailAddress.Tag = EMAIL_ADDRESS_LABEL_TAG;
-            accountEmailAddress.Text = "";
-            accountEmailAddress.Font = A.Font_AvenirNextRegular14;
-            accountEmailAddress.TextColor = A.Color_NachoBlack;
-            accountSettingsView.AddSubview (accountEmailAddress);
-
-            UIImageView accountSettingsIndicatorArrow;
-            using (var disclosureIcon = UIImage.FromBundle ("gen-more-arrow")) {
-                accountSettingsIndicatorArrow = new UIImageView (disclosureIcon);
-            }
-            accountSettingsIndicatorArrow.Frame = new RectangleF (accountEmailAddress.Frame.Right + 10, accountSettingsView.Frame.Height / 2 - accountSettingsIndicatorArrow.Frame.Height / 2, accountSettingsIndicatorArrow.Frame.Width, accountSettingsIndicatorArrow.Frame.Height);
-            accountSettingsView.AddSubview (accountSettingsIndicatorArrow);
+            var accountSettingsView = new AccountInfoView (new RectangleF (A.Card_Horizontal_Indent, yOffset, contentView.Frame.Width - (A.Card_Horizontal_Indent * 2), 80));
+            accountSettingsView.OnAccountSelected = AccountSettingsTapHandler;
+            accountSettingsView.Tag = ACCOUNT_INFO_VIEW_TAG;
             contentView.AddSubview (accountSettingsView);
 
             yOffset = accountSettingsView.Frame.Bottom + 30;
@@ -237,14 +167,9 @@ namespace NachoClient.iOS
 
         protected override void ConfigureAndLayout ()
         {
-            var nameLabel = (UILabel)contentView.ViewWithTag (NAME_LABEL_TAG);
-
             McAccount userAccount = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
-            McContact userContact = McContact.QueryByEmailAddress (LoginHelpers.GetCurrentAccountId (), userAccount.EmailAddr).FirstOrDefault ();
-            nameLabel.Text = userContact.FileAs;
-
-            var emailLabel = (UILabel)contentView.ViewWithTag (EMAIL_ADDRESS_LABEL_TAG);
-            emailLabel.Text = GetEmailAddress ();
+            var accountInfoView = (AccountInfoView)contentView.ViewWithTag (ACCOUNT_INFO_VIEW_TAG);
+            accountInfoView.Configure (userAccount);
 
             UIButton FixButton = (UIButton)View.ViewWithTag (FIX_BE_BUTTON_TAG);
             FixButton.Hidden = !LoginHelpers.DoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId ());
@@ -261,11 +186,9 @@ namespace NachoClient.iOS
             FixButton.TouchUpInside -= FixBackEndButtonClicked;
             FixButton = null;
 
-            accountSettingsTapGesture.RemoveTarget (accountSettingsTapGestureHandlerToken);
-            var accountSettingsView = (UIView)View.ViewWithTag (ACCOUNT_SETTINGS_VIEW_TAG);
-            if (null != accountSettingsView) {
-                accountSettingsView.RemoveGestureRecognizer (accountSettingsTapGesture);
-            }
+            var accountInfoView = (AccountInfoView)contentView.ViewWithTag (ACCOUNT_INFO_VIEW_TAG);
+            accountInfoView.OnAccountSelected = null;
+            accountInfoView.Cleanup ();
 
             aboutUsButton.TouchUpInside -= AboutUsTapHandler;
             aboutUsButton = null;
@@ -274,10 +197,10 @@ namespace NachoClient.iOS
             privacyPolicyButton = null;
         }
 
-        protected void AccountSettingsTapHandler (NSObject sender)
+        protected void AccountSettingsTapHandler (McAccount account)
         {
-            PerformSegue ("SegueToAccountSettings", this);
             View.EndEditing (true);
+            PerformSegue ("SegueToAccountSettings", new SegueHolder (account));
         }
 
         protected void PrivacyPolicyTapHandler (object sender, EventArgs e)
