@@ -1774,6 +1774,10 @@
     <BundleResource Include="Resources\contacts-icn-url%402x.png" />
     <BundleResource Include="Resources\contacts-attendees%402x.png" />
     <BundleResource Include="Resources\contacts-description%402x.png" />
+    <BundleResource Include="Resources\calendar-empty-cal%402x.png" />
+    <BundleResource Include="Resources\calendar-empty-cal%403x.png" />
+    <BundleResource Include="Resources\calendar-empty-cal%404x.png" />
+    <BundleResource Include="Resources\calendar-empty-cal%406x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

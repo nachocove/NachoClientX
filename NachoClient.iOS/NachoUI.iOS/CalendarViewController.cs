@@ -52,7 +52,7 @@ namespace NachoClient.iOS
 
             var dateButton = UIButton.FromType (UIButtonType.Custom);
             dateButton.Frame = new RectangleF (0, 0, 22, 22);
-            using (var image = UIImage.FromBundle ("nav-calendar-empty")) {
+            using (var image = UIImage.FromBundle ("calendar-empty-cal")) {
                 dateButton.SetBackgroundImage (image, UIControlState.Normal);
             }
             // The icon center is a little off so adjust the text downward.
