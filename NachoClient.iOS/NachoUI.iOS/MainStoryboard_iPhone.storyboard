@@ -30,7 +30,7 @@
             <objects>
                 <viewController storyboardIdentifier="NachoNowViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="ygr-ff-C2f" customClass="NachoNowViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="BSK-Fb-RSa">
-                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="455"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -163,8 +163,8 @@
                         <segue destination="2DH-ex-Jce" kind="modal" identifier="GeneralSettingsToSettings" id="AbJ-I5-x4b"/>
                         <segue destination="0HP-De-GcZ" kind="modal" identifier="GeneralSettingsToSettingsLegal" id="K8c-x2-hEf"/>
                         <segue destination="OCr-PO-3nH" kind="push" identifier="SegueToNachoNow" id="v9F-jf-qe1"/>
-                        <segue destination="3rW-o2-Ptb" kind="push" identifier="SegueToAccountSettings" id="3TJ-PJ-REj"/>
                         <segue destination="KWh-cK-EXH" kind="modal" identifier="SegueToAboutUs" id="PD1-1A-eiQ"/>
+                        <segue destination="WIT-yF-b17" kind="push" identifier="SegueToAccountSettings" id="z0K-Fc-ato"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="yGs-h9-8Dq" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1173,7 +1173,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="piC-17-y5j" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-243" y="-4684"/>
+            <point key="canvasLocation" x="-251" y="-4524"/>
         </scene>
         <!--Signature Edit View Controller-->
         <scene sceneID="796-Pe-Evt">
@@ -1740,36 +1740,37 @@
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="0vO-2s-NmS"/>
         <segue reference="9pm-2U-9AI"/>
-        <segue reference="V0S-kd-9OI"/>
-        <segue reference="Dxn-bx-hdu"/>
         <segue reference="tzJ-j2-YOi"/>
+        <segue reference="0vO-2s-NmS"/>
+        <segue reference="V0S-kd-9OI"/>
+        <segue reference="ywO-BF-h0n"/>
+        <segue reference="ay2-o2-R8l"/>
+        <segue reference="xrp-ey-B0j"/>
+        <segue reference="zby-Sy-Y3J"/>
+        <segue reference="DDa-hb-SgY"/>
+        <segue reference="47y-6M-xBI"/>
+        <segue reference="KnL-e9-HQR"/>
         <segue reference="XQg-JR-vxA"/>
+        <segue reference="z0K-Fc-ato"/>
+        <segue reference="v9F-jf-qe1"/>
         <segue reference="K8c-x2-hEf"/>
         <segue reference="zDw-Tx-fTt"/>
         <segue reference="6Lm-Uk-Knv"/>
+        <segue reference="m2D-2n-RiV"/>
+        <segue reference="peA-r2-tjq"/>
         <segue reference="7sK-rg-HQL"/>
         <segue reference="w67-dy-XSq"/>
-        <segue reference="peA-r2-tjq"/>
-        <segue reference="m2D-2n-RiV"/>
         <segue reference="b2R-9j-Kqr"/>
         <segue reference="5u2-X0-TbZ"/>
+        <segue reference="ZzH-qS-KOm"/>
         <segue reference="mLY-u0-R5O"/>
         <segue reference="6J3-c2-bz5"/>
         <segue reference="Ar9-Nl-fq9"/>
-        <segue reference="ZzH-qS-KOm"/>
-        <segue reference="vUs-ft-xdy"/>
         <segue reference="zOx-eF-clw"/>
         <segue reference="rEt-DF-c51"/>
         <segue reference="szv-KC-TId"/>
-        <segue reference="ywO-BF-h0n"/>
-        <segue reference="DDa-hb-SgY"/>
-        <segue reference="ay2-o2-R8l"/>
-        <segue reference="zby-Sy-Y3J"/>
-        <segue reference="xrp-ey-B0j"/>
-        <segue reference="47y-6M-xBI"/>
-        <segue reference="KnL-e9-HQR"/>
+        <segue reference="vUs-ft-xdy"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>

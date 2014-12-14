@@ -111,6 +111,12 @@ namespace NachoClient.iOS
             base.ViewWillDisappear (animated);
         }
 
+        public override bool HidesBottomBarWhenPushed {
+            get {
+                return this.NavigationController.TopViewController == this;
+            }
+        }
+
         protected override void CreateViewHierarchy ()
         {
             NavigationController.NavigationBar.Translucent = false;
