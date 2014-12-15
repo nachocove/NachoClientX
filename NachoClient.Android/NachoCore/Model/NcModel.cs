@@ -255,12 +255,14 @@ namespace NachoCore.Model
         {
             NcAssert.True (2 == SQLite3.Threadsafe () || 1 == SQLite3.Threadsafe ());
             SQLite3.Config (SQLite3.ConfigOption.Log, Device.Instance.GetSQLite3ErrorCallback ((code, message) => {
-                Log.IndirectQ.Enqueue (new LogElement () {
-                    Level = LogElement.LevelEnum.Error,
-                    Subsystem = Log.LOG_DB,
-                    Message = string.Format ("SQLite Error Log (code {0}): {1}", code, message),
-                    Occurred = DateTime.UtcNow,
-                });
+                if ((int)SQLite3.Result.OK != code) {
+                    Log.IndirectQ.Enqueue (new LogElement () {
+                        Level = LogElement.LevelEnum.Error,
+                        Subsystem = Log.LOG_DB,
+                        Message = string.Format ("SQLite Error Log (code {0}): {1}", code, message),
+                        Occurred = DateTime.UtcNow,
+                    });
+                }
             }), (IntPtr)null);
             Documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
             DbFileName = Path.Combine (Documents, "db");
