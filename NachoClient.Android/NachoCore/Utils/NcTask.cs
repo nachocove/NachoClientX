@@ -118,5 +118,33 @@ namespace NachoCore.Utils
                 }
             }
         }
+
+        /// <summary>
+        /// Sleep for a number of milliseconds 
+        /// </summary>
+        /// <returns><c>true</c> if it sleeps for the specified duration. If the sleep is interrupted by
+        /// cancellation, return <c>false</c>.</returns>
+        /// <param name="msec">Msec.</param>
+        /// <param name="token">Token.</param>
+        public static bool CancelableSleep (int msec, CancellationToken token)
+        {
+            try {
+                Task.WaitAll (new Task[] { Task.Delay (msec, token) });
+                return true;
+            } catch (AggregateException e) {
+                foreach (var ex in e.InnerExceptions) {
+                    if (ex is OperationCanceledException) {
+                        continue;
+                    }
+                    throw;
+                }
+                return false;
+            }
+        }
+
+        public static void CancelableSleep (int msec)
+        {
+            CancelableSleep (msec, Cts.Token);
+        }
     }
 }
