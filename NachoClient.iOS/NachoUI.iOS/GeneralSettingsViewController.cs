@@ -56,8 +56,8 @@ namespace NachoClient.iOS
 
         protected override void CreateViewHierarchy ()
         {
-            View.BackgroundColor = A.Color_NachoNowBackground;
-            contentView.BackgroundColor = A.Color_NachoNowBackground;
+            View.BackgroundColor = A.Color_NachoBackgroundGray;
+            contentView.BackgroundColor = A.Color_NachoBackgroundGray;
 
             if (null != NavigationItem) {
                 NavigationItem.SetHidesBackButton (true, false);
