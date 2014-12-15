@@ -194,6 +194,14 @@ namespace NachoCore.Utils
         }
 
         /// <summary>
+        /// Month: March or March 2016
+        /// </summary>
+        static public string PrettyMonthLabel (DateTime d)
+        {
+            return (d.Year == DateTime.UtcNow.Year) ? d.ToString ("MMMM") : d.ToString ("Y");
+        }
+
+        /// <summary>
         /// Compact version of event duration
         /// </summary>
         static public string PrettyEventDuration (DateTime startTime, DateTime endTime)
