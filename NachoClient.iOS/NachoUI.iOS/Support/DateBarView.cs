@@ -27,7 +27,7 @@ namespace NachoClient.iOS
         });
         public DateTime ViewDate = new DateTime ();
         CalendarViewController owner;
-        UILabel monthLabelView; 
+        UILabel monthLabelView;
 
 
         public DateBarView (UIView parentView)
@@ -162,7 +162,7 @@ namespace NachoClient.iOS
 
         public void UpdateMonthLabel ()
         {
-            monthLabelView.Text = this.ViewDate.ToString ("MMMM");
+            monthLabelView.Text = (this.ViewDate.Year == DateTime.UtcNow.Year) ? this.ViewDate.ToString ("MMMM") : this.ViewDate.ToString ("Y");
         }
 
         public DateTime GetFirstDay (DateTime date)
