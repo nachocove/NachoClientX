@@ -88,32 +88,35 @@ namespace NachoClient.iOS
             var nameLabel = (UILabel)this.ViewWithTag (NAME_LABEL_TAG);
             var emailLabel = (UILabel)this.ViewWithTag (EMAIL_ADDRESS_LABEL_TAG);
 
+            userImageView.Hidden = true;
+            userLabelView.Hidden = true;
+
             if (null == account) {
-                userImageView.Hidden = true;
-                userLabelView.Hidden = true;
                 nameLabel.Hidden = true;
                 emailLabel.Hidden = true;
                 return;
             }
 
-            McContact userContact = McContact.QueryByEmailAddress (LoginHelpers.GetCurrentAccountId (), account.EmailAddr).FirstOrDefault ();
+            // Account name
+            nameLabel.Text = (null == account.DisplayName) ? "Exchange" : account.DisplayName;
 
-            var userImage = Util.ImageOfSender (LoginHelpers.GetCurrentAccountId (), account.EmailAddr);
+            // Email address
+            var emailAddress = account.EmailAddr;
+            emailLabel.Text = emailAddress;
+
+            var userImage = Util.ImageOfSender (LoginHelpers.GetCurrentAccountId (), emailAddress);
 
             if (null != userImage) {
-                userImageView.Hidden = false;
                 userImageView.Image = userImage;
+                userImageView.Hidden = false;
             } else {
-                userLabelView.Hidden = false;
                 int ColorIndex;
                 string Initials;
-                Util.UserMessageField (userContact.GetEmailAddress (), LoginHelpers.GetCurrentAccountId (), out ColorIndex, out Initials);
-                userLabelView.Text = NachoCore.Utils.ContactsHelper.GetInitials (userContact);
+                Util.UserMessageField (emailAddress, LoginHelpers.GetCurrentAccountId (), out ColorIndex, out Initials);
                 userLabelView.BackgroundColor = Util.ColorForUser (ColorIndex);
+                userLabelView.Text = Initials;
+                userLabelView.Hidden = false;
             }
-
-            nameLabel.Text = userContact.FileAs;
-            emailLabel.Text = userContact.GetEmailAddress ();
         }
 
         protected void AccountSettingsTapHandler (NSObject sender)
