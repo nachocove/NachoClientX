@@ -458,12 +458,7 @@ namespace NachoClient.iOS
 
         protected void LayoutView()
         {
-            float tabBarSpace = this.TabBarController.TabBar.Frame.Height;
-            if (0 == keyboardHeight) {
-                tabBarSpace = 0;
-            }
-
-            scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, tabBarSpace + View.Frame.Height - keyboardHeight);
+            scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
             contentView.Frame = new RectangleF (0, 0, View.Frame.Width, yOffset);
             scrollView.ContentSize = contentView.Frame.Size;
         }
