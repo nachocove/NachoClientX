@@ -434,7 +434,7 @@ namespace NachoCore.Brain
         public void Process ()
         {
             if (ENABLED) {
-                McEmailMessage.StartTimeVariance ();
+                McEmailMessage.StartTimeVariance (EventQueue.Token);
                 NcApplication.Instance.StatusIndEvent += GenerateInitialContactScores;
                 NcApplication.Instance.StatusIndEvent += UIScrollingEnd;
             }

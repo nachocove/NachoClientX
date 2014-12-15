@@ -1521,7 +1521,6 @@
     <BundleResource Include="Resources\icn-inbox%402x.png" />
     <BundleResource Include="Resources\icn-nacho-now%402x.png" />
     <BundleResource Include="Resources\icn-settings%402x.png" />
-    <BundleResource Include="Resources\nav-calendar-empty%402x.png" />
     <BundleResource Include="Resources\icn-calendar%402x.png" />
     <BundleResource Include="Resources\icn-close%402x.png" />
     <BundleResource Include="Resources\icn-send%402x.png" />

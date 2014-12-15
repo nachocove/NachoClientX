@@ -7,6 +7,7 @@ using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using UIImageEffectsBinding;
 using MonoTouch.CoreGraphics;
+using NachoCore.Utils;
 
 
 namespace NachoClient.iOS
@@ -27,7 +28,7 @@ namespace NachoClient.iOS
         });
         public DateTime ViewDate = new DateTime ();
         CalendarViewController owner;
-        UILabel monthLabelView; 
+        UILabel monthLabelView;
 
 
         public DateBarView (UIView parentView)
@@ -162,7 +163,7 @@ namespace NachoClient.iOS
 
         public void UpdateMonthLabel ()
         {
-            monthLabelView.Text = this.ViewDate.ToString ("MMMM");
+            monthLabelView.Text = Pretty.PrettyMonthLabel(this.ViewDate);
         }
 
         public DateTime GetFirstDay (DateTime date)

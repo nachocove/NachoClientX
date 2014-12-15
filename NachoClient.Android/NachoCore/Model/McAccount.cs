@@ -15,6 +15,7 @@ namespace NachoCore.Model
 
         public string EmailAddr { get; set; }
 
+        // This is the nickname of the account, not the user's name
         public string DisplayName { get; set; }
 
         public string Culture { get; set; }

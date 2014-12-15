@@ -58,6 +58,10 @@ namespace NachoCore.Utils
 
         public DateTime Timestamp { set; get; }
 
+        // This is the event ID recorded in the server (not the id of the server);
+        // as opposed to the local dbId.
+        public string ServerId { set; get; }
+
         private TelemetryEventType _Type;
 
         public TelemetryEventType Type {
@@ -364,6 +368,7 @@ namespace NachoCore.Utils
         public TelemetryEvent (TelemetryEventType type)
         {
             Timestamp = DateTime.UtcNow;
+            ServerId = Guid.NewGuid ().ToString ().Replace ("-", "");
             _Type = type;
             _Message = null;
             _Wbxml = null;

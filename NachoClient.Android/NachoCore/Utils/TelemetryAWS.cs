@@ -95,20 +95,6 @@ namespace NachoCore.Utils
             });
         }
 
-        private void CancelableSleep (int msec)
-        {
-            try {
-                Task.WaitAll (new Task[] { Task.Delay (msec, NcTask.Cts.Token) });
-            } catch (AggregateException e) {
-                foreach (var ex in e.InnerExceptions) {
-                    if (ex is OperationCanceledException) {
-                        continue;
-                    }
-                    throw;
-                }
-            }
-        }
-
         private void Retry (Action action)
         {
             bool isDone = false;
@@ -121,20 +107,20 @@ namespace NachoCore.Utils
                         throw;
                     }
                     // Otherwise, most likely HTTP client timeout
-                    CancelableSleep (5000);
+                    NcTask.CancelableSleep (5000);
                 } catch (AmazonServiceException e) {
                     Console.WriteLine ("AWS service exception {0}", e);
-                    CancelableSleep (5000);
+                    NcTask.CancelableSleep (5000);
                 } catch (AggregateException e) {
                     // Some code path wraps the exception with an AggregateException. Peel the onion
                     if (e.InnerException is TaskCanceledException) {
                         if (NcTask.Cts.Token.IsCancellationRequested) {
                             throw;
                         }
-                        CancelableSleep (5000);
+                        NcTask.CancelableSleep (5000);
                     } else if (e.InnerException is AmazonServiceException) {
                         Console.WriteLine ("AWS service inner exception {0}", e.InnerException);
-                        CancelableSleep (5000);
+                        NcTask.CancelableSleep (5000);
                     } else {
                         throw;
                     }
@@ -222,7 +208,13 @@ namespace NachoCore.Utils
             var anEvent = new Document ();
             // Client and timeestamp are the only common fields for all event tables.
             // They are also the primary keys.
-            anEvent ["id"] = Guid.NewGuid ().ToString ().Replace ("-", "");
+            if (null == tEvent.ServerId) {
+                // These are old events that do not have the ServerId field yet.
+                // In that case, create an id for the event.
+                anEvent ["id"] = Guid.NewGuid ().ToString ().Replace ("-", "");
+            } else {
+                anEvent ["id"] = tEvent.ServerId;
+            }
             anEvent ["client"] = GetUserName ();
             anEvent ["timestamp"] = tEvent.Timestamp.Ticks;
             return anEvent;
