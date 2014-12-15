@@ -7,6 +7,7 @@ using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using UIImageEffectsBinding;
 using MonoTouch.CoreGraphics;
+using NachoCore.Utils;
 
 
 namespace NachoClient.iOS
@@ -162,7 +163,7 @@ namespace NachoClient.iOS
 
         public void UpdateMonthLabel ()
         {
-            monthLabelView.Text = (this.ViewDate.Year == DateTime.UtcNow.Year) ? this.ViewDate.ToString ("MMMM") : this.ViewDate.ToString ("Y");
+            monthLabelView.Text = Pretty.PrettyMonthLabel(this.ViewDate);
         }
 
         public DateTime GetFirstDay (DateTime date)
