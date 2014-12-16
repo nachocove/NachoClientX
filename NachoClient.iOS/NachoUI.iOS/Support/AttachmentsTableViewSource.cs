@@ -358,16 +358,23 @@ namespace NachoClient.iOS
                 separatorLine.Frame = new RectangleF (60 + xOffset, 79.5f, cell.Frame.Width - 60 - xOffset, .5f);
             }
 
-            switch (item.FileType) {
-            case 0:
-                ConfigureAttachmentView (view, cell, McAttachment.QueryById<McAttachment> (item.Id), item, cellIconImageView, textLabel, detailTextlabel, dateTextlabel, downloadImageView);
-                break;
-            case 1:
-                ConfigureNoteView (item, cellIconImageView, textLabel, detailTextlabel, dateTextlabel, downloadImageView);
-                break;
-            case 2:
-                ConfigureDocumentView (McDocument.QueryById<McDocument> (item.Id), item, cellIconImageView, textLabel, detailTextlabel, dateTextlabel, downloadImageView);
-                break;
+            if (null != item) {
+                switch (item.FileType) {
+                case 0:
+                    ConfigureAttachmentView (view, cell, McAttachment.QueryById<McAttachment> (item.Id), item, cellIconImageView, textLabel, detailTextlabel, dateTextlabel, downloadImageView);
+                    break;
+                case 1:
+                    ConfigureNoteView (item, cellIconImageView, textLabel, detailTextlabel, dateTextlabel, downloadImageView);
+                    break;
+                case 2:
+                    ConfigureDocumentView (McDocument.QueryById<McDocument> (item.Id), item, cellIconImageView, textLabel, detailTextlabel, dateTextlabel, downloadImageView);
+                    break;
+                default:
+                    NcAssert.CaseError ("Item should have FileType");
+                    break;
+                }
+            } else {
+                ConfigureEmptyView (view, cellIconImageView, textLabel, detailTextlabel, dateTextlabel, downloadImageView);
             }
 
         }
@@ -503,6 +510,16 @@ namespace NachoClient.iOS
             downloadImageView.Hidden = true;
         }
 
+        protected void ConfigureEmptyView (SwipeActionView view, UIImageView iconView, UILabel textLabel, UILabel detailTextLabel, UILabel dateTextLabel, UIImageView downloadImageView){
+            textLabel.Text = "";
+            detailTextLabel.Text = "This file is unavailable";
+            dateTextLabel.Text = "";
+            iconView.Image = UIImage.FromBundle ("");
+            downloadImageView.Hidden = true;
+            view.LeftSwipeActionButtons.Clear ();
+            view.RightSwipeActionButtons.Clear ();
+        }
+
         private string DateToString (DateTime date)
         {
             string dateText = "Date unknown";
@@ -549,27 +566,28 @@ namespace NachoClient.iOS
             } else {
                 NcFileIndex item;
                 item = FileFromIndexPath (tableView, indexPath);
-            
-                switch (item.FileType) {
-                case 0:
-                    McAttachment attachment = McAttachment.QueryById<McAttachment> (item.Id);
+                if (null != item) {
+                    switch (item.FileType) {
+                    case 0:
+                        McAttachment attachment = McAttachment.QueryById<McAttachment> (item.Id);
 
-                    if (null != attachment) {
-                        vc.AttachmentAction (attachment.Id, cell);
+                        if (null != attachment) {
+                            vc.AttachmentAction (attachment.Id, cell);
+                        }
+                        break;
+                    case 1:
+                        McNote note = McNote.QueryById<McNote> (item.Id);
+                        if (null != note) {
+                            vc.NoteAction (note);
+                        }
+                        break;
+                    case 2:
+                        McDocument document = McDocument.QueryById<McDocument> (item.Id);
+                        if (null != document) {
+                            vc.DocumentAction (document);
+                        }
+                        break;
                     }
-                    break;
-                case 1:
-                    McNote note = McNote.QueryById<McNote> (item.Id);
-                    if (null != note) {
-                        vc.NoteAction (note);
-                    }
-                    break;
-                case 2:
-                    McDocument document = McDocument.QueryById<McDocument> (item.Id);
-                    if (null != document) {
-                        vc.DocumentAction (document);
-                    }
-                    break;
                 }
             }
             tableView.DeselectRow (indexPath, true);
