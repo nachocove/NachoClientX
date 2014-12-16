@@ -127,7 +127,6 @@ namespace NachoClient.iOS
                 emailBox.Alpha = 1.0f;
                 passwordBox.Alpha = 1.0f;
                 submitButton.Alpha = 1.0f;
-                advancedButton.Alpha = 1.0f;
                 startLabel.Text = "Enter your account information to get started.";
             }
         }
