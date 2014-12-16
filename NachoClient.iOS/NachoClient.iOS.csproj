@@ -1181,6 +1181,7 @@
     </Compile>
     <Compile Include="NachoUI.iOS\Support\NcKeyboardSpy.cs" />
     <Compile Include="NachoUI.iOS\Support\AccountInfoView.cs" />
+    <Compile Include="NachoUI.iOS\Support\EmailServiceTableViewSource.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -1777,6 +1778,42 @@
     <BundleResource Include="Resources\calendar-empty-cal%403x.png" />
     <BundleResource Include="Resources\calendar-empty-cal%404x.png" />
     <BundleResource Include="Resources\calendar-empty-cal%406x.png" />
+    <BundleResource Include="Resources\login-dropdown%402x.png" />
+    <BundleResource Include="Resources\login-dropdown%403x.png" />
+    <BundleResource Include="Resources\login-dropdown%404x.png" />
+    <BundleResource Include="Resources\login-dropdown%406x.png" />
+    <BundleResource Include="Resources\login-google-min%402x.png" />
+    <BundleResource Include="Resources\login-google-min%403x.png" />
+    <BundleResource Include="Resources\login-google-min%404x.png" />
+    <BundleResource Include="Resources\login-google-min%406x.png" />
+    <BundleResource Include="Resources\login-google%402x.png" />
+    <BundleResource Include="Resources\login-google%403x.png" />
+    <BundleResource Include="Resources\login-google%404x.png" />
+    <BundleResource Include="Resources\login-google%406x.png" />
+    <BundleResource Include="Resources\login-hotmail-min%402x.png" />
+    <BundleResource Include="Resources\login-hotmail-min%403x.png" />
+    <BundleResource Include="Resources\login-hotmail-min%404x.png" />
+    <BundleResource Include="Resources\login-hotmail-min%406x.png" />
+    <BundleResource Include="Resources\login-hotmail%402x.png" />
+    <BundleResource Include="Resources\login-hotmail%403x.png" />
+    <BundleResource Include="Resources\login-hotmail%404x.png" />
+    <BundleResource Include="Resources\login-hotmail%406x.png" />
+    <BundleResource Include="Resources\login-mex-min%402x.png" />
+    <BundleResource Include="Resources\login-mex-min%403x.png" />
+    <BundleResource Include="Resources\login-mex-min%404x.png" />
+    <BundleResource Include="Resources\login-mex-min%406x.png" />
+    <BundleResource Include="Resources\login-mex%402x.png" />
+    <BundleResource Include="Resources\login-mex%403x.png" />
+    <BundleResource Include="Resources\login-mex%404x.png" />
+    <BundleResource Include="Resources\login-mex%406x.png" />
+    <BundleResource Include="Resources\login-outlook-min%402x.png" />
+    <BundleResource Include="Resources\login-outlook-min%403x.png" />
+    <BundleResource Include="Resources\login-outlook-min%404x.png" />
+    <BundleResource Include="Resources\login-outlook-min%406x.png" />
+    <BundleResource Include="Resources\login-outlook%402x.png" />
+    <BundleResource Include="Resources\login-outlook%403x.png" />
+    <BundleResource Include="Resources\login-outlook%404x.png" />
+    <BundleResource Include="Resources\login-outlook%406x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

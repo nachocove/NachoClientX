@@ -18,6 +18,7 @@ namespace NachoClient.iOS
 
         float yOffset;
         float keyboardHeight;
+        bool shortScreen;
 
         protected UIImageView circleMail;
         protected UILabel startLabel;
@@ -28,6 +29,10 @@ namespace NachoClient.iOS
         protected UIButton submitButton;
         protected UIButton advancedButton;
         protected UIButton supportButton;
+        protected UITableView emailServiceTableView;
+
+        protected bool serviceTableExpanded;
+        protected EmailServiceTableViewSource emailServices;
 
         protected UIImageView loginTriangles;
         protected PointF originalStartLabelCenter;
@@ -63,19 +68,17 @@ namespace NachoClient.iOS
                 NSNotificationCenter.DefaultCenter.AddObserver (UITextField.TextFieldTextDidChangeNotification, OnTextFieldChanged);
             }
 
-            if(!hasCompletedInitialAnimation){
+            if (!hasCompletedInitialAnimation) {
                 UIView.AnimateKeyframes (1.6, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
 
                     UIView.AddKeyframeWithRelativeStartTime (0, .5, () => {
                         circleMail.Transform = CGAffineTransform.MakeScale (2.0f / 3.0f, 2.0f / 3.0f);
-                        circleMail.Center = new PointF (160, View.Frame.Height / 4.369f - (View.Frame.Height == 480 ? 30 : 0));
+                        circleMail.Center = new PointF (160, View.Frame.Height / 4.369f - (shortScreen ? 40 : 0));
                     });
 
                     UIView.AddKeyframeWithRelativeStartTime (.5, .5, () => {
                         startLabel.Alpha = 1.0f;
-                        emailBox.Alpha = 1.0f;
-                        passwordBox.Alpha = 1.0f;
-                        submitButton.Alpha = 1.0f;
+                        emailServiceTableView.Alpha = 1.0f;
                         advancedButton.Alpha = 1.0f;
                         supportButton.Alpha = 1.0f;
                     });
@@ -104,6 +107,30 @@ namespace NachoClient.iOS
             get { return true; }
         }
 
+        public void OnEmailServiceSelected (EmailServiceTableViewSource.EmailServiceEnum service, bool willExpand)
+        {
+            if (willExpand) {
+                emailServices.Grow (emailServiceTableView);
+                View.EndEditing (true);
+            } else {
+                emailServices.Shrink (emailServiceTableView);
+            }
+
+            // Gotta keep global state :(
+            serviceTableExpanded = willExpand;
+            ConfigureAndLayout ();
+
+            // Show everything after they've selected a service
+            if (EmailServiceTableViewSource.EmailServiceEnum.None == service) {
+                ;
+            } else {
+                emailBox.Alpha = 1.0f;
+                passwordBox.Alpha = 1.0f;
+                submitButton.Alpha = 1.0f;
+                startLabel.Text = "Enter your account information to get started.";
+            }
+        }
+
         protected override void CreateViewHierarchy ()
         {
             View.BackgroundColor = A.Color_NachoGreen;
@@ -111,20 +138,22 @@ namespace NachoClient.iOS
             scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
             contentView.BackgroundColor = A.Color_NachoGreen;
 
+            shortScreen = (500 > View.Frame.Height);
+
             circleMail = new UIImageView ();
             using (var circleImage = UIImage.FromBundle ("Bootscreen-1")) {
                 circleMail.Image = circleImage;
             }
 
-            circleMail.Frame = new RectangleF (View.Frame.Width / 2 - 60, (View.Frame.Height == 480 ? 155 : 200), 120, 120);
+            circleMail.Frame = new RectangleF (View.Frame.Width / 2 - 60, (shortScreen ? 155 : 200), 120, 120);
             contentView.AddSubview (circleMail);
 
-            yOffset = View.Frame.Height - 363;
+            yOffset = View.Frame.Height - 343;
+            yOffset -= (shortScreen ? 20 : 40);
 
-            float labelSpacer = View.Frame.Height < 500 ? 15 : 0;
-            startLabel = new UILabel (new RectangleF (30, yOffset + labelSpacer, View.Frame.Width - 60, 50));
+            startLabel = new UILabel (new RectangleF (30, yOffset, View.Frame.Width - 60, 50));
             originalStartLabelCenter = startLabel.Center;
-            startLabel.Text = "Start by entering your Exchange email address and password.";
+            startLabel.Text = "Start by choosing your email service provider.";
             startLabel.Lines = 2;
             startLabel.BackgroundColor = A.Color_NachoGreen;
             startLabel.TextColor = UIColor.White;
@@ -133,7 +162,21 @@ namespace NachoClient.iOS
             startLabel.Alpha = 0.0f;
             contentView.AddSubview (startLabel);
 
-            yOffset = startLabel.Frame.Bottom + 32f - labelSpacer;
+            yOffset = startLabel.Frame.Bottom + 20;
+
+            emailServices = new EmailServiceTableViewSource ();
+            emailServices.SetSelectedItem (EmailServiceTableViewSource.EmailServiceEnum.None);
+            emailServices.OnSelected = OnEmailServiceSelected;
+
+            emailServiceTableView = new UITableView (new RectangleF (25, yOffset, View.Frame.Width - 50, emailServices.GetTableHeight ()));
+            emailServiceTableView.BackgroundColor = UIColor.White;
+            emailServiceTableView.ScrollEnabled = false;
+            emailServiceTableView.Alpha = 0f;
+            contentView.AddSubview (emailServiceTableView);
+
+            emailServiceTableView.Source = emailServices;
+
+            yOffset = emailServiceTableView.Frame.Bottom + 4f;
 
             emailBox = new UIView (new RectangleF (25, yOffset, View.Frame.Width - 50, 46));
             emailBox.BackgroundColor = UIColor.White;
@@ -191,7 +234,7 @@ namespace NachoClient.iOS
 
             contentView.AddSubview (passwordBox);
 
-            yOffset = passwordBox.Frame.Bottom + 40f;
+            yOffset = passwordBox.Frame.Bottom + 20f;
 
             submitButton = new UIButton (new System.Drawing.RectangleF (25, yOffset, View.Frame.Width - 50, 46));
             submitButton.BackgroundColor = A.Color_NachoSubmitButton;
@@ -208,8 +251,6 @@ namespace NachoClient.iOS
 
             yOffset = submitButton.Frame.Bottom + 20f;
 
-
-            yOffset += 15;
             advancedButton = new UIButton (new RectangleF (0, yOffset, View.Frame.Width, 20));
             advancedButton.BackgroundColor = A.Color_NachoGreen;
             advancedButton.SetTitle ("Advanced Sign In", UIControlState.Normal);
@@ -220,7 +261,7 @@ namespace NachoClient.iOS
             contentView.AddSubview (advancedButton);
             advancedButton.TouchUpInside += AdvancedLoginTouchUpInside;
 
-            yOffset = advancedButton.Frame.Bottom + 10;
+            yOffset = advancedButton.Frame.Bottom + 20;
 
             supportButton = new UIButton (new RectangleF (0, yOffset, View.Frame.Width, 20));
             supportButton.BackgroundColor = A.Color_NachoGreen;
@@ -232,95 +273,83 @@ namespace NachoClient.iOS
             contentView.AddSubview (supportButton);
             supportButton.TouchUpInside += SupportButtonTouchUpInside;
 
-            yOffset = View.Frame.Height - 39;
+            yOffset = supportButton.Frame.Bottom;
+
+            // bottom padding
+            yOffset += 20;
+
+            contentView.BringSubviewToFront (emailServiceTableView);
+
+            // Anchor loginTriangles on the bottom
 
             loginTriangles = new UIImageView ();
             using (var bootImage = UIImage.FromBundle ("Bootscreen-5")) {
                 loginTriangles.Image = bootImage;
             }
-            loginTriangles.Frame = new RectangleF (0, yOffset, 320, 39);
-            contentView.AddSubview (loginTriangles);
-
-            yOffset = loginTriangles.Frame.Bottom;
+            loginTriangles.Frame = new RectangleF (0, View.Frame.Height - 39, 320, 39);
+            View.AddSubview (loginTriangles);
         }
 
+        /// <summary>
+        /// Hides the Advances & Customer Support buttons when the service table is visible
+        /// </summary>
         protected override void ConfigureAndLayout ()
         {
             UIView.AnimateKeyframes (1, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
                 UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
+                    circleMail.Alpha = (keyboardHeight == 0 ? 1.0f : 0.0f);
+                    supportButton.Alpha = (serviceTableExpanded ? 0.0f : 1.0f);
+                    advancedButton.Alpha = (serviceTableExpanded ? 0.0f : 1.0f);
+                    ViewFramer.Create (emailServiceTableView).Height (emailServices.GetTableHeight ());
                     scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
                     RectangleF contentFrame;
-                    if(View.Frame.Height > 500){
-                        contentFrame = new RectangleF (0, 0, View.Frame.Width, yOffset);
-                    } else {
-                        contentFrame = new RectangleF (0, 0, View.Frame.Width, yOffset + (keyboardHeight / 3));
-                    }
+                    contentFrame = new RectangleF (0, 0, View.Frame.Width, yOffset);
                     contentView.Frame = contentFrame;
                     scrollView.ContentSize = contentFrame.Size;
 
                     if (startLabel.Center == originalStartLabelCenter) {
                         //Raise Keyboard
                         if (keyboardHeight > 0) {
-                            if(View.Frame.Height > 500){
-                                KeyboardRaisedLarge();
+                            if (!shortScreen) {
+                                KeyboardRaisedLarge ();
                             } else {
-                                KeyboardRaisedSmall();
+                                KeyboardRaisedSmall ();
                             }
                         }
                     } else {
                         //Dismiss Keyboard
-                        if(View.Frame.Height > 500){
-                            KeyboardDismissedLarge();
+                        if (!shortScreen) {
+                            KeyboardDismissedLarge ();
                         } else {
-                            KeyboardDismissedSmall();
+                            KeyboardDismissedSmall ();
                         }
                     }
                 });
             }, ((bool finished) => {
-
+                ;
             }));
         }
 
         protected void KeyboardRaisedLarge ()
         {
-            startLabel.Center = new PointF (startLabel.Center.X, startLabel.Center.Y + 45);
-            emailBox.Center = new PointF (emailBox.Center.X, emailBox.Center.Y + 35);
-            passwordBox.Center = new PointF (passwordBox.Center.X, passwordBox.Center.Y + 35);
-            submitButton.Center = new PointF (submitButton.Center.X, submitButton.Center.Y + 15);
-            loginTriangles.Center = new PointF (loginTriangles.Center.X, loginTriangles.Center.Y + 10);
+            startLabel.Center = new PointF (startLabel.Center.X, startLabel.Center.Y - 40);
         }
 
-        protected void KeyboardDismissedLarge()
+        protected void KeyboardDismissedLarge ()
         {
-            startLabel.Center = new PointF (startLabel.Center.X, startLabel.Center.Y - 45);
-            emailBox.Center = new PointF (emailBox.Center.X, emailBox.Center.Y - 35);
-            passwordBox.Center = new PointF (passwordBox.Center.X, passwordBox.Center.Y - 35);
-            submitButton.Center = new PointF (submitButton.Center.X, submitButton.Center.Y - 15);
-            loginTriangles.Center = new PointF (loginTriangles.Center.X, loginTriangles.Center.Y - 10);
+            startLabel.Center = new PointF (startLabel.Center.X, startLabel.Center.Y + 40);
         }
 
         protected void KeyboardRaisedSmall ()
         {
-            circleMail.Center = new PointF (circleMail.Center.X, circleMail.Center.Y + 50);
-            startLabel.Center = new PointF (startLabel.Center.X, startLabel.Center.Y + 100);
-            emailBox.Center = new PointF (emailBox.Center.X, emailBox.Center.Y + 90);
-            passwordBox.Center = new PointF (passwordBox.Center.X, passwordBox.Center.Y + 90);
-            submitButton.Center = new PointF (submitButton.Center.X, submitButton.Center.Y + 60);
-            advancedButton.Center = new PointF (advancedButton.Center.X, advancedButton.Center.Y + 70);
-            supportButton.Center = new PointF (supportButton.Center.X, supportButton.Center.Y + 70);
-            loginTriangles.Center = new PointF (loginTriangles.Center.X, loginTriangles.Center.Y + 100);
+            startLabel.Center = new PointF (startLabel.Center.X, startLabel.Center.Y - 40);
+            submitButton.Center = new PointF (submitButton.Center.X, submitButton.Center.Y - 15);
         }
 
-        protected void KeyboardDismissedSmall()
+        protected void KeyboardDismissedSmall ()
         {
-            circleMail.Center = new PointF (circleMail.Center.X, circleMail.Center.Y - 50);
-            startLabel.Center = new PointF (startLabel.Center.X, startLabel.Center.Y - 100);
-            emailBox.Center = new PointF (emailBox.Center.X, emailBox.Center.Y - 90);
-            passwordBox.Center = new PointF (passwordBox.Center.X, passwordBox.Center.Y - 90);
-            submitButton.Center = new PointF (submitButton.Center.X, submitButton.Center.Y - 60);
-            advancedButton.Center = new PointF (advancedButton.Center.X, advancedButton.Center.Y - 70);
-            supportButton.Center = new PointF (supportButton.Center.X, supportButton.Center.Y - 70);
-            loginTriangles.Center = new PointF (loginTriangles.Center.X, loginTriangles.Center.Y - 100);
+            startLabel.Center = new PointF (startLabel.Center.X, startLabel.Center.Y + 40);
+            submitButton.Center = new PointF (submitButton.Center.X, submitButton.Center.Y + 15);
         }
 
         private bool EnterFullConfiguration ()
@@ -415,10 +444,10 @@ namespace NachoClient.iOS
 
             ConfigureAndLayout ();
 
-            if (View.Frame.Height > 500) {
+            if (!shortScreen) {
                 scrollView.ScrollRectToVisible (new RectangleF (supportButton.Frame.X, supportButton.Frame.Y + 10, supportButton.Frame.Width, supportButton.Frame.Height), false);
             } else {
-                scrollView.ScrollRectToVisible (new RectangleF(submitButton.Frame.X, submitButton.Frame.Y + 10, submitButton.Frame.Width, submitButton.Frame.Height), false);
+                scrollView.ScrollRectToVisible (new RectangleF (submitButton.Frame.X, submitButton.Frame.Y + 10, submitButton.Frame.Width, submitButton.Frame.Height), false);
             }
         }
 
@@ -438,7 +467,7 @@ namespace NachoClient.iOS
         protected void SubmitButtonTouchUpInside (object sender, EventArgs e)
         {
             if (EnterFullConfiguration ()) {
-                PerformSegue(StartupViewController.NextSegue(), this);
+                PerformSegue (StartupViewController.NextSegue (), this);
             }
         }
 
@@ -450,7 +479,7 @@ namespace NachoClient.iOS
 
         protected void SupportButtonTouchUpInside (object sender, EventArgs e)
         {
-            View.EndEditing(true);
+            View.EndEditing (true);
             PerformSegue ("SegueToSupport", this);
         }
 

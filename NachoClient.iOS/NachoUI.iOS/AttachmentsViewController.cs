@@ -134,7 +134,6 @@ namespace NachoClient.iOS
                 yOffset += navbar.Frame.Height;
             } else {
                 NavigationItem.Title = "Files";
-                Util.ConfigureNavBar (false, this.NavigationController);
             }
 
             segmentedControlView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 40));
@@ -307,6 +306,9 @@ namespace NachoClient.iOS
                 this.tableView.ScrollEnabled = true;
                 EmptyListLabel.Hidden = true;
                 tableView.Hidden = false;
+            }
+            if (null != this.NavigationController) {
+                Util.ConfigureNavBar (false, this.NavigationController);
             }
         }
 

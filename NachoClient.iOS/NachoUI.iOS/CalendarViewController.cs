@@ -51,14 +51,16 @@ namespace NachoClient.iOS
             }
 
             var dateButton = UIButton.FromType (UIButtonType.Custom);
-            dateButton.Frame = new RectangleF (0, 0, 22, 22);
+            dateButton.Frame = new RectangleF (0, 0, 24, 26);
+            dateButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Center;
+            dateButton.VerticalAlignment = UIControlContentVerticalAlignment.Center;
             using (var image = UIImage.FromBundle ("calendar-empty-cal")) {
                 dateButton.SetBackgroundImage (image, UIControlState.Normal);
+                dateButton.ImageEdgeInsets = new UIEdgeInsets (0, 1, 4, 1);
             }
-            // The icon center is a little off so adjust the text downward.
-            dateButton.VerticalAlignment = UIControlContentVerticalAlignment.Bottom;
             dateButton.SetTitle (DateTime.Today.Day.ToString (), UIControlState.Normal);
             dateButton.SetTitleColor (A.Color_NachoBlue, UIControlState.Normal);
+            dateButton.TitleEdgeInsets = new UIEdgeInsets (5, 0, 0, 0);
             dateButton.Font = A.Font_AvenirNextRegular12;
             dateButton.TouchUpInside += (object sender, EventArgs e) => {
                 ReturnToToday ();
@@ -71,7 +73,7 @@ namespace NachoClient.iOS
             addEventButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("CalendarToEditEventView", new SegueHolder (null));
             };
-                
+
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { addEventButton, todayButton };
 
             // We must request permission to access the user's calendar
@@ -395,7 +397,7 @@ namespace NachoClient.iOS
                 return;
             }
         }
-            
+
         public float startingXMonth = 0;
         private bool isClosing = false;
         private bool isPanning = false;
@@ -585,7 +587,7 @@ namespace NachoClient.iOS
                 if (yOffset > 60 || obj.VelocityInView (DateDotView).Y > 500) {
                     UIView.Animate (.3, 0, UIViewAnimationOptions.CurveEaseOut,
                         () => {
-                            ConfigureCalendarTableSize(rows);
+                            ConfigureCalendarTableSize (rows);
                             View.BringSubviewToFront (calendarTableView);
                             DateDotView.UpdateButtonsMonth ();
                         },
