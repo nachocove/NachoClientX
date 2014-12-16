@@ -736,7 +736,7 @@ namespace NachoCore.ActiveSync
                     if (null != pathElem) {
                         pathElem.Delete ();
                     } else {
-                        Log.Error (Log.LOG_AS, "AsSyncCommand: McPath for Command {0}, ServerId {1} not in DB.", command.Name.LocalName, delServerId);
+                        Log.Info (Log.LOG_AS, "AsSyncCommand: McPath for Command {0}, ServerId {1} not in DB - may have been subject of MoveItems.", command.Name.LocalName, delServerId);
                     }
                     var applyDelete = new ApplyItemDelete (BEContext.Account.Id) {
                         ClassCode = classCode,
