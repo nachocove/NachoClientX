@@ -449,9 +449,14 @@ namespace NachoClient.iOS
             if (0 == contact.EmailAddresses.Count) {
                 userBackgroundColor = Util.ColorForUser (Util.PickRandomColorForUser ());
             } else {
-                var emailAddressAttribute = contact.EmailAddresses [0];
-                var emailAddress = McEmailAddress.QueryById<McEmailAddress> (emailAddressAttribute.EmailAddress);
-                userBackgroundColor = Util.ColorForUser (emailAddress.ColorIndex);
+                userBackgroundColor = Util.ColorForUser (Util.PickRandomColorForUser ());
+                foreach (var e in contact.EmailAddresses) {
+                    var emailAddress = McEmailAddress.QueryById<McEmailAddress> (e.EmailAddress);
+                    if (null != emailAddress) {
+                        userBackgroundColor = Util.ColorForUser (emailAddress.ColorIndex);
+                        break;
+                    }
+                }
             }
 
             UILabel headerInitialsLabel = (UILabel)View.ViewWithTag (HEADER_INITIALS_CIRCLE_TAG);
@@ -1029,11 +1034,14 @@ namespace NachoClient.iOS
             if (String.IsNullOrEmpty (name)) {
                 return "";
             }
-
             if (contact.EmailAddresses.Count > 0) {
-                var emailAddressAttribute = contact.EmailAddresses [0];
-                var emailAddress = McEmailAddress.QueryById<McEmailAddress> (emailAddressAttribute.EmailAddress);
-                return emailAddress.CanonicalEmailAddress;
+                foreach (var e in contact.EmailAddresses) {
+                    var emailAddress = McEmailAddress.QueryById<McEmailAddress> (e.EmailAddress);
+                    if (null != emailAddress) {
+                        return emailAddress.CanonicalEmailAddress;
+                    }
+                }
+                return "";
             } else {
                 return "";
             }
