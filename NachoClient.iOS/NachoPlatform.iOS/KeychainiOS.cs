@@ -46,7 +46,13 @@ namespace NachoPlatform
             SecStatusCode res;
             var match = SecKeyChain.QueryAsRecord (CreateQuery (handle), out res);
             if (SecStatusCode.Success == res) {
-                return match.ValueData.ToString ();
+                var iData = match.ValueData;
+                var bytes = iData.ToArray ();
+                var password = System.Text.Encoding.UTF8.GetString (bytes);
+                return password;
+                // XAMMIT. 
+                // Sometimes NSData.ToString would return System.Runtime.Remoting.Messaging.AsyncResult.
+                // return match.ValueData.ToString ();
             } else {
                 Log.Error (Log.LOG_SYS, "GetPassword: SecKeyChain.QueryAsRecord returned {0}", res.ToString ());
                 return null;
