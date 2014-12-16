@@ -73,14 +73,14 @@ namespace NachoClient.iOS
             new SwipeActionDescriptor (OPEN_IN_TAG, 0.25f, UIImage.FromBundle ("files-open-app-swipe"),
                 "Open in", A.Color_NachoSwipeActionBlue);
         private static SwipeActionDescriptor DELETE_BUTTON =
-            new SwipeActionDescriptor (DELETE_TAG, 0.25f, UIImage.FromBundle ("email-delete-swipe"),
+            new SwipeActionDescriptor (DELETE_TAG, 0.5f, UIImage.FromBundle ("email-delete-swipe"),
                 "Delete", A.Color_NachoSwipeActionRed);
 
         private static SwipeActionDescriptor DOWNLOAD_BUTTON =
-            new SwipeActionDescriptor (DOWNLOAD_TAG, 0.25f, UIImage.FromBundle ("gen-download-swipe"),
+            new SwipeActionDescriptor (DOWNLOAD_TAG, 0.5f, UIImage.FromBundle ("gen-download-swipe"),
                 "Download", A.Color_NachoSwipeActionMatteBlack);
         private static SwipeActionDescriptor PREVIEW_BUTTON =
-            new SwipeActionDescriptor (PREVIEW_TAG, 0.25f, UIImage.FromBundle ("gen-preview-swipe"),
+            new SwipeActionDescriptor (PREVIEW_TAG, 0.5f, UIImage.FromBundle ("gen-preview-swipe"),
                 "Preview", A.Color_NachoeSwipeForward);
 
         public List<NcFileIndex> Items {
