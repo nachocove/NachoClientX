@@ -439,23 +439,20 @@ namespace NachoClient.iOS
             isFirstInfoItem = true;
             UpdateVipButton ();
 
-            UIColor userBackgroundColor;
 
             if (null == contact) {
                 var unavailableTitle = (UILabel)View.ViewWithTag (HEADER_TITLE_TAG);
                 unavailableTitle.Text = "Contact is unavailable.";
                 return;
             }
-            if (0 == contact.EmailAddresses.Count) {
-                userBackgroundColor = Util.ColorForUser (Util.PickRandomColorForUser ());
-            } else {
-                userBackgroundColor = Util.ColorForUser (Util.PickRandomColorForUser ());
-                foreach (var e in contact.EmailAddresses) {
-                    var emailAddress = McEmailAddress.QueryById<McEmailAddress> (e.EmailAddress);
-                    if (null != emailAddress) {
-                        userBackgroundColor = Util.ColorForUser (emailAddress.ColorIndex);
-                        break;
-                    }
+
+            UIColor userBackgroundColor = Util.ColorForUser (Util.PickRandomColorForUser ());
+
+            foreach (var e in contact.EmailAddresses) {
+                var emailAddress = McEmailAddress.QueryById<McEmailAddress> (e.EmailAddress);
+                if (null != emailAddress) {
+                    userBackgroundColor = Util.ColorForUser (emailAddress.ColorIndex);
+                    break;
                 }
             }
 
@@ -1034,18 +1031,8 @@ namespace NachoClient.iOS
             if (String.IsNullOrEmpty (name)) {
                 return "";
             }
-            if (contact.EmailAddresses.Count > 0) {
-                foreach (var e in contact.EmailAddresses) {
-                    var emailAddress = McEmailAddress.QueryById<McEmailAddress> (e.EmailAddress);
-                    if (null != emailAddress) {
-                        return emailAddress.CanonicalEmailAddress;
-                    }
-                }
-                return "";
-            } else {
-                return "";
-            }
 
+            return contact.GetPrimaryCanonicalEmailAddress ();
         }
 
         protected void TouchedEmailButton (string address)
