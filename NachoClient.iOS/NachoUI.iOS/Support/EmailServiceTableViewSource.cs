@@ -52,6 +52,22 @@ namespace NachoClient.iOS
         {
         }
 
+        public bool IsHotmailServiceSelected ()
+        {
+            var p = GetSelectedItem ();
+
+            if (null == p) {
+                return false;
+            }
+            if (EmailServiceEnum.HotmailExchange == p.EmailService) {
+                return true;
+            }
+            if (EmailServiceEnum.OutlookExchange == p.EmailService) {
+                return true;
+            }
+            return false;
+        }
+
         public void SetSelectedItem (EmailServiceEnum provider)
         {
             foreach (var p in providers) {

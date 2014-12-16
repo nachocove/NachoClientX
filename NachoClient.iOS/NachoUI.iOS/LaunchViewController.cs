@@ -352,13 +352,85 @@ namespace NachoClient.iOS
             submitButton.Center = new PointF (submitButton.Center.X, submitButton.Center.Y + 15);
         }
 
-        private bool EnterFullConfiguration ()
+        private bool IsHotmailServiceAddress (string emailAddress)
         {
-            if (!isValidEmail (emailField.Text)) {
+            if (emailAddress.EndsWith ("@hotmail.com", StringComparison.OrdinalIgnoreCase)) {
+                return true;
+            }
+            if (emailAddress.EndsWith ("@outlook.com", StringComparison.OrdinalIgnoreCase)) {
+                return true;
+            }
+            if (emailAddress.EndsWith ("@live.com", StringComparison.OrdinalIgnoreCase)) {
+                return true;
+            }
+            return false;
+        }
+
+        private void MaybeStartLogin ()
+        {
+            var emailAddress = emailField.Text.Trim ();
+
+            if (emailAddress.EndsWith ("@gmail.com", StringComparison.OrdinalIgnoreCase)) {
                 emailField.TextColor = A.Color_NachoRed;
-                return false;
+                Complain ("Nacho Mail", "Nacho Mail does not support GMail addresses yet.");
+                return;
             }
 
+            if (emailAddress.EndsWith ("@yahoo.com", StringComparison.OrdinalIgnoreCase)) {
+                emailField.TextColor = A.Color_NachoRed;
+                Complain ("Nacho Mail", "Nacho Mail does not support Yahoo! addresses yet.");
+                return;
+            }
+
+            if (!emailAddress.Contains ("@")) {
+                emailField.TextColor = A.Color_NachoRed;
+                Complain ("Nacho Mail", "Your email address must contain an '@'.\nFor example, username@company.com");
+                return;
+            }
+
+            if (!isValidEmail (emailField.Text)) {
+                emailField.TextColor = A.Color_NachoRed;
+                Complain ("Nacho Mail", "Your email address is not valid.\nFor example, username@company.com");
+                return;
+            }
+
+            if (IsHotmailServiceAddress (emailAddress)) {
+                if (!emailServices.IsHotmailServiceSelected ()) {
+                    ConfirmBeforeStarting ("Confirm Email", "Your email address does not match the selected service.\nUse it anyway?");
+                    return;
+                }
+            } else {
+                if (emailServices.IsHotmailServiceSelected ()) {
+                    ConfirmBeforeStarting ("Confirm Email", "Your email address does not match the selected service.\nUse it anyway?");
+                    return;
+                }
+            }
+
+            StartLoginProcess ();
+        }
+
+        private void Complain (string title, string message)
+        {
+            var alert = new UIAlertView (title, message, null, "OK", null);
+            alert.Show ();        
+        }
+
+        /// <summary>
+        /// Confirms something the before starting the login process
+        /// </summary>
+        private void ConfirmBeforeStarting (string title, string message)
+        {
+            var alert = new UIAlertView (title, message, null, "OK", new string[] { "Cancel" });
+            alert.Clicked += (s, b) => {
+                if (0 == b.ButtonIndex) {
+                    StartLoginProcess ();
+                }
+            };
+            alert.Show ();
+        }
+
+        private void StartLoginProcess ()
+        {
             NcModel.Instance.RunInTransaction (() => {
                 // Need to regex-validate UI inputs.
                 // You will always need to supply user credentials (until certs, for sure).
@@ -377,7 +449,7 @@ namespace NachoClient.iOS
                 LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, true);
             });
             BackEnd.Instance.Start (appDelegate.Account.Id);
-            return true;
+            PerformSegue (StartupViewController.NextSegue (), this);
         }
 
         bool isValidEmail (string email)
@@ -466,14 +538,12 @@ namespace NachoClient.iOS
 
         protected void SubmitButtonTouchUpInside (object sender, EventArgs e)
         {
-            if (EnterFullConfiguration ()) {
-                PerformSegue (StartupViewController.NextSegue (), this);
-            }
+            MaybeStartLogin ();
         }
 
         protected void AdvancedLoginTouchUpInside (object sender, EventArgs e)
         {
-            View.EndEditing(true);
+            View.EndEditing (true);
             PerformSegue ("SegueToAdvancedLogin", this);
         }
 
