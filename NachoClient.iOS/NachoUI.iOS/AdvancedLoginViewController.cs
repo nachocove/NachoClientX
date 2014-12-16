@@ -505,12 +505,12 @@ namespace NachoClient.iOS
             contentView.AddSubview (inputBox);
         }
 
-        public void fillInKnownFields ()
+        protected void fillInKnownFields ()
         {
             if (LoginHelpers.IsCurrentAccountSet ()) {
                 if (LoginHelpers.HasProvidedCreds (LoginHelpers.GetCurrentAccountId ())) {
                     emailText.Text = theAccount.Account.EmailAddr;
-                    if (theAccount.Credentials.Username != theAccount.Account.EmailAddr) {
+                    if (!String.IsNullOrEmpty (theAccount.Credentials.Username)) {
                         usernameText.Text = theAccount.Credentials.Username;
                     }
                     passwordText.Text = theAccount.Credentials.GetPassword ();
@@ -524,7 +524,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public void loadSettingsForAccount ()
+        protected void loadSettingsForAccount ()
         {
             if (LoginHelpers.IsCurrentAccountSet ()) {
                 if (LoginHelpers.HasProvidedCreds (LoginHelpers.GetCurrentAccountId ())) {
@@ -535,7 +535,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public void setUsersSettings ()
+        protected void saveUsersSettings ()
         {
             theAccount.Account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
             theAccount.Credentials = McCred.QueryByAccountId<McCred> (theAccount.Account.Id).SingleOrDefault (); 
@@ -607,7 +607,7 @@ namespace NachoClient.iOS
 
         public void tryAutoD ()
         {
-            setUsersSettings ();
+            saveUsersSettings ();
             removeServerRecord ();
             startBe ();
         }
@@ -624,7 +624,7 @@ namespace NachoClient.iOS
                 mailServer.AccountId = LoginHelpers.GetCurrentAccountId ();
                 mailServer.Insert ();
             }
-            setUsersSettings ();
+            saveUsersSettings ();
             BackEnd.Instance.ValidateConfig (LoginHelpers.GetCurrentAccountId (), mailServer, theAccount.Credentials);
         }
 
