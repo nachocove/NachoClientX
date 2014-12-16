@@ -439,19 +439,21 @@ namespace NachoClient.iOS
             isFirstInfoItem = true;
             UpdateVipButton ();
 
-            UIColor userBackgroundColor;
 
             if (null == contact) {
                 var unavailableTitle = (UILabel)View.ViewWithTag (HEADER_TITLE_TAG);
                 unavailableTitle.Text = "Contact is unavailable.";
                 return;
             }
-            if (0 == contact.EmailAddresses.Count) {
-                userBackgroundColor = Util.ColorForUser (Util.PickRandomColorForUser ());
-            } else {
-                var emailAddressAttribute = contact.EmailAddresses [0];
-                var emailAddress = McEmailAddress.QueryById<McEmailAddress> (emailAddressAttribute.EmailAddress);
-                userBackgroundColor = Util.ColorForUser (emailAddress.ColorIndex);
+
+            UIColor userBackgroundColor = Util.ColorForUser (Util.PickRandomColorForUser ());
+
+            foreach (var e in contact.EmailAddresses) {
+                var emailAddress = McEmailAddress.QueryById<McEmailAddress> (e.EmailAddress);
+                if (null != emailAddress) {
+                    userBackgroundColor = Util.ColorForUser (emailAddress.ColorIndex);
+                    break;
+                }
             }
 
             UILabel headerInitialsLabel = (UILabel)View.ViewWithTag (HEADER_INITIALS_CIRCLE_TAG);
@@ -1031,14 +1033,7 @@ namespace NachoClient.iOS
                 return "";
             }
 
-            if (contact.EmailAddresses.Count > 0) {
-                var emailAddressAttribute = contact.EmailAddresses [0];
-                var emailAddress = McEmailAddress.QueryById<McEmailAddress> (emailAddressAttribute.EmailAddress);
-                return emailAddress.CanonicalEmailAddress;
-            } else {
-                return "";
-            }
-
+            return contact.GetPrimaryCanonicalEmailAddress ();
         }
 
         protected void TouchedEmailButton (string address)
