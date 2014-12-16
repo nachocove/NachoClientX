@@ -131,6 +131,7 @@ namespace NachoCore.ActiveSync
                 var pathElem = McPath.QueryByServerId (BEContext.Account.Id, oldServerId);
                 pathElem.Delete ();
                 pathElem = new McPath (BEContext.Account.Id);
+                pathElem.WasMoveDest = true;
                 pathElem.ServerId = newServerId;
                 pathElem.ParentId = PendingSingle.DestParentId;
                 pathElem.Insert ();
