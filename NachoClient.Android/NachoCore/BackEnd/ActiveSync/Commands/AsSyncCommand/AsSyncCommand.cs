@@ -947,6 +947,7 @@ namespace NachoCore.ActiveSync
         private void ProcessCollectionChangeResponse (McFolder folder, XElement xmlChange, string classCode)
         {
             // Note: we are only supposed to see Change in this context if there was a failure.
+            // HotMail didn't read that memo.
             switch (classCode) {
             case Xml.AirSync.ClassCode.Email:
             case Xml.AirSync.ClassCode.Contacts:
@@ -965,6 +966,10 @@ namespace NachoCore.ActiveSync
                             return;
                         }
                         switch (status) {
+                        case Xml.AirSync.StatusCode.Success_1:
+                            // Let implicit responses code take care of it (HotMail).
+                            break;
+
                         case Xml.AirSync.StatusCode.ProtocolError_4:
                         case Xml.AirSync.StatusCode.ClientError_6:
                             Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: {0}", status);
@@ -1017,7 +1022,7 @@ namespace NachoCore.ActiveSync
                         default:
                         // Note: we don't send partial Sync requests.
                         case Xml.AirSync.StatusCode.ResendFull_13:
-                            Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: ResendFull_13");
+                            Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: {0}", status);
                             PendingList.RemoveAll (x => x.Id == pending.Id);
                             pending.ResponsegXmlStatus = (uint)status;
                             pending.ResolveAsHardFail (BEContext.ProtoControl,
