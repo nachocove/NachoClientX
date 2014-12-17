@@ -724,63 +724,16 @@ namespace NachoCore.Model
             return returnVal;
         }
 
-        // Track how long it takes for Update() to run. This code should be removed
-        // once the issue has been solved.
-        private static Random random = new Random ();
-        private static string characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-
-        private static string Duration (DateTime start, DateTime end)
-        {
-            long ms = (end.Ticks - start.Ticks) / 10000;
-            if (0 == ms) {
-                // Zeros are too common and are causing the telemetry summary to merge
-                // messages, preventing us from seeing useful data.  Print a random
-                // single character instead of 0.
-                return characters.Substring (random.Next (characters.Length), 1);
-            }
-            return string.Format ("{0}", ms);
-        }
-
-        private static int fastCount = 0;
-        private static int slowCount = 0;
-
         public override int Update ()
         {
             int returnVal = -1;  
 
-            int tryCount = 0;
-            DateTime txStart = DateTime.MinValue;
-            DateTime baseDone = DateTime.MinValue;
-            DateTime readAncDone = DateTime.MinValue;
-            DateTime deleteAncDone = DateTime.MinValue;
-            DateTime insertAncDone = DateTime.MinValue;
-            DateTime start = DateTime.UtcNow;
             NcModel.Instance.RunInTransaction (() => {
-                ++tryCount;
-                txStart = DateTime.UtcNow;
                 returnVal = base.Update ();
-                baseDone = DateTime.UtcNow;
                 ReadAncillaryData ();
-                readAncDone = DateTime.UtcNow;
                 DeleteAncillaryData (NcModel.Instance.Db);
-                deleteAncDone = DateTime.UtcNow;
                 InsertAncillaryData (NcModel.Instance.Db);
-                insertAncDone = DateTime.UtcNow;
             });
-            DateTime allDone = DateTime.UtcNow;
-
-            if (allDone.Ticks - start.Ticks > 5000000) {
-                // Update() took more than 500ms. Log an error message with split times
-                // and other interesting data, so we can hopefully figure out what is
-                // causing these delays.
-                ++slowCount;
-                Log.Error (Log.LOG_EMAIL, "Update: {0} = {1} {2} {3} {4} {5} {6} : +{7} [{8},{9}]",
-                    Duration (start, allDone), Duration (start, txStart), Duration (txStart, baseDone), Duration (baseDone, readAncDone),
-                    Duration (readAncDone, deleteAncDone), Duration (deleteAncDone, insertAncDone), Duration (insertAncDone, allDone),
-                    tryCount, slowCount, fastCount);
-            } else {
-                ++fastCount;
-            }
 
             return returnVal;
         }
