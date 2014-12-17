@@ -510,7 +510,8 @@ namespace NachoClient.iOS
             downloadImageView.Hidden = true;
         }
 
-        protected void ConfigureEmptyView (SwipeActionView view, UIImageView iconView, UILabel textLabel, UILabel detailTextLabel, UILabel dateTextLabel, UIImageView downloadImageView){
+        protected void ConfigureEmptyView (SwipeActionView view, UIImageView iconView, UILabel textLabel, UILabel detailTextLabel, UILabel dateTextLabel, UIImageView downloadImageView)
+        {
             textLabel.Text = "";
             detailTextLabel.Text = "This file is unavailable";
             dateTextLabel.Text = "";
@@ -870,12 +871,12 @@ namespace NachoClient.iOS
                 userImageView.Hidden = false;
                 userImageView.Image = userImage;
             } else {
-                userLabelView.Hidden = false;
                 int ColorIndex;
                 string Initials;
                 Util.UserMessageField (senderString, account.Id, out ColorIndex, out Initials);
                 userLabelView.Text = Initials;
                 userLabelView.BackgroundColor = Util.ColorForUser (ColorIndex);
+                userLabelView.Hidden = String.IsNullOrEmpty (Initials);
             }
             return view;
         }
