@@ -513,10 +513,6 @@ namespace NachoCore.Model
                 body.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Error);
                 body.Update ();
             }
-            // We are trying to track down why so many message bodies are having download failures.
-            // Use an error message to make this situation more visible.  Remove this error once
-            // the problem has been solved.
-            Log.Error (Log.LOG_AS, "Body download failed: {0}", ResultWhy.ToString ());
         }
 
         private void EmailBodyClear (int accountId, string serverId)
