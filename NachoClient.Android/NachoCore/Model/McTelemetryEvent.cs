@@ -14,6 +14,7 @@ namespace NachoCore.Model
     public class McTelemetryEvent
     {
         private static NcCapture _InsertCapture;
+
         private static NcCapture InsertCapture {
             get {
                 if (null == _InsertCapture) {
@@ -26,6 +27,7 @@ namespace NachoCore.Model
         }
 
         private static NcCapture _DeleteCapture;
+
         private static NcCapture DeleteCapture {
             get {
                 if (null == _DeleteCapture) {
@@ -73,8 +75,7 @@ namespace NachoCore.Model
             try {
                 return NcModel.Instance.TeleDb.Query<McTelemetryEvent> (
                     "SELECT * FROM McTelemetryEvent ORDER BY Id LIMIT ?;", numItems);
-            }
-            catch (SQLiteException e) {
+            } catch (SQLiteException e) {
                 if (SQLite3.Result.Corrupt == e.Result) {
                     NcModel.Instance.ResetTeleDb ();
                     return null;
@@ -89,12 +90,11 @@ namespace NachoCore.Model
             NcAssert.True (0 == Id);
             try {
                 InsertCapture.Start ();
-                int rc =  NcModel.Instance.TeleDb.Insert (this);
+                int rc = NcModel.Instance.TeleDb.Insert (this);
                 InsertCapture.Stop ();
                 InsertCapture.Reset ();
                 return rc;
-            }
-            catch (SQLiteException e) {
+            } catch (SQLiteException e) {
                 if (SQLite3.Result.Corrupt == e.Result) {
                     NcModel.Instance.ResetTeleDb ();
                     return 0;
@@ -113,8 +113,21 @@ namespace NachoCore.Model
                 DeleteCapture.Stop ();
                 DeleteCapture.Reset ();
                 return rc;
+            } catch (SQLiteException e) {
+                if (SQLite3.Result.Corrupt == e.Result) {
+                    NcModel.Instance.ResetTeleDb ();
+                    return 0;
+                } else {
+                    throw;
+                }
             }
-            catch (SQLiteException e) {
+        }
+
+        public static int QueryCount ()
+        {
+            try {
+                return NcModel.Instance.TeleDb.Table<McTelemetryEvent> ().Count ();
+            } catch (SQLiteException e) {
                 if (SQLite3.Result.Corrupt == e.Result) {
                     NcModel.Instance.ResetTeleDb ();
                     return 0;
@@ -139,14 +152,13 @@ namespace NachoCore.Model
         {
             try {
                 var dbEvent = (McTelemetryEvent)NcModel.Instance.TeleDb.Query<McTelemetrySupportEvent> (
-                    "SELECT * FROM McTelemetrySupportEvent ORDER BY Id ASC LIMIT 1;").SingleOrDefault ();
+                                  "SELECT * FROM McTelemetrySupportEvent ORDER BY Id ASC LIMIT 1;").SingleOrDefault ();
                 var dbEventList = new List<McTelemetryEvent> ();
                 if (null != dbEvent) {
                     dbEventList.Add (dbEvent);
                 }
                 return dbEventList;
-            }
-            catch (SQLiteException e) {
+            } catch (SQLiteException e) {
                 if (SQLite3.Result.Corrupt == e.Result) {
                     NcModel.Instance.ResetTeleDb ();
                     return null;
