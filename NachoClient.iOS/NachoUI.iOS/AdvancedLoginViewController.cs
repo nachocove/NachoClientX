@@ -29,6 +29,16 @@ namespace NachoClient.iOS
         UIScrollView scrollView;
         UILabel errorMessage;
 
+        UIView emailView;
+        UIView serverView;
+        UIView domainView;
+        UIView usernameView;
+        UIView passwordView;
+        UIView emailWhiteInset;
+        UIView domainWhiteInset;
+        UIButton connectButton;
+        UIButton customerSupportButton;
+
         public WaitingScreen waitScreen;
 
         public UIView statusViewBackground;
@@ -36,7 +46,6 @@ namespace NachoClient.iOS
         public bool hasSyncedEmail = false;
 
 
-        UIButton connectButton;
         AccountSettings theAccount;
         AppDelegate appDelegate;
         CertificateView certificateView;
@@ -59,7 +68,8 @@ namespace NachoClient.iOS
             EnterInfo,
         };
 
-        public class BasicCredentials {
+        public class BasicCredentials
+        {
 
             public string email;
             public string password;
@@ -105,22 +115,22 @@ namespace NachoClient.iOS
             }
 
             fillInKnownFields ();
-            if (LoginHelpers.IsCurrentAccountSet ()) {
-                if (LoginHelpers.HasViewedTutorial (LoginHelpers.GetCurrentAccountId ())) {
-                    handleStatusEnums ();
-                } else {
-                    waitScreen.ShowView ();
-                }
-            } else {
+
+            bool showWaitScreen = LoginHelpers.IsCurrentAccountSet () && !LoginHelpers.HasViewedTutorial (LoginHelpers.GetCurrentAccountId ());
+
+            if (!showWaitScreen) {
+                NavigationItem.Title = "Account Setup";
+                loadingCover.Hidden = true;
                 handleStatusEnums ();
             }
 
-            if (waitScreen.Hidden == true) {
-                NavigationItem.Title = "Account Setup";
-                loadingCover.Hidden = true;
+            // Layout before waitScreen.ShowView() hides the nav bar
+            LayoutView ();
+
+            if (showWaitScreen) {
+                waitScreen.ShowView ();
             }
 
-            LayoutView ();
             base.ViewDidAppear (animated);
         }
 
@@ -192,21 +202,35 @@ namespace NachoClient.iOS
             contentView.AddSubview (errorMessage);
 
             yOffset = errorMessage.Frame.Bottom + 15;
-            AddInputCell ("Email", emailText, "joe@bigdog.com", yOffset, true);
-            yOffset += CELL_HEIGHT + 25;
-            AddInputCell ("Server", serverText, "Required", yOffset, true);
-            yOffset += CELL_HEIGHT + 25;
-            float topDomainCell = yOffset;
-            AddInputCell ("Domain", domainText, "Optional", yOffset, true);
-            yOffset += CELL_HEIGHT;
-            AddInputCell ("Username", usernameText, "Required", yOffset, false);
-            yOffset += CELL_HEIGHT;
-            AddInputCell ("Password", passwordText, "******", yOffset, true);
-            yOffset += CELL_HEIGHT + 25;
 
-            UIView whiteInset = new UIView (new RectangleF (0, topDomainCell + 1, 15, 90));
-            whiteInset.BackgroundColor = UIColor.White;
-            contentView.AddSubview (whiteInset);
+            emailView = AddInputCell ("Email", emailText, "joe@bigdog.com", yOffset, true);
+            yOffset += CELL_HEIGHT;
+
+            passwordView = AddInputCell ("Password", passwordText, "******", yOffset, true);
+            yOffset += CELL_HEIGHT;
+
+            emailWhiteInset = new UIView (new RectangleF (0, emailView.Frame.Top + (CELL_HEIGHT / 2), 15, CELL_HEIGHT));
+            emailWhiteInset.BackgroundColor = UIColor.White;
+            contentView.AddSubview (emailWhiteInset);
+
+            yOffset += 25;
+
+            serverView = AddInputCell ("Server", serverText, "Server", yOffset, true);
+            yOffset += CELL_HEIGHT;
+
+            yOffset += 25;
+
+            domainView = AddInputCell ("Domain", domainText, "Domain", yOffset, true);
+            yOffset += CELL_HEIGHT;
+
+            usernameView = AddInputCell ("Username", usernameText, "Username", yOffset, true);
+            yOffset += CELL_HEIGHT;
+
+            domainWhiteInset = new UIView (new RectangleF (0, domainView.Frame.Top + (CELL_HEIGHT / 2), 15, CELL_HEIGHT));
+            domainWhiteInset.BackgroundColor = UIColor.White;
+            contentView.AddSubview (domainWhiteInset);
+
+            yOffset += 25;
 
             connectButton = new UIButton (new RectangleF (25, yOffset, View.Frame.Width - 50, 46));
             connectButton.BackgroundColor = A.Color_NachoTeal;
@@ -244,7 +268,7 @@ namespace NachoClient.iOS
 
             yOffset = connectButton.Frame.Bottom + 15;
 
-            UIButton customerSupportButton = new UIButton (new RectangleF (50, yOffset, View.Frame.Width - 100, 30));
+            customerSupportButton = new UIButton (new RectangleF (50, yOffset, View.Frame.Width - 100, 30));
             customerSupportButton.BackgroundColor = A.Color_NachoNowBackground;
             customerSupportButton.TitleLabel.TextAlignment = UITextAlignment.Center;
             customerSupportButton.SetTitle ("Customer Support", UIControlState.Normal);
@@ -252,7 +276,7 @@ namespace NachoClient.iOS
             customerSupportButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
             customerSupportButton.TouchUpInside += (object sender, EventArgs e) => {
                 View.EndEditing (true);
-                PerformSegue("SegueToSupport", this);
+                PerformSegue ("SegueToSupport", this);
             };
             contentView.AddSubview (customerSupportButton);
             yOffset = customerSupportButton.Frame.Bottom + 20;
@@ -340,6 +364,41 @@ namespace NachoClient.iOS
 
         protected void LayoutView ()
         {
+            yOffset = 15f;
+
+            ViewFramer.Create (errorMessage).Y (yOffset);
+            yOffset = errorMessage.Frame.Bottom + 15;
+
+            ViewFramer.Create (emailView).Y (yOffset);
+            yOffset += CELL_HEIGHT;
+
+            ViewFramer.Create (passwordView).Y (yOffset);
+            yOffset += CELL_HEIGHT;
+
+            ViewFramer.Create (emailWhiteInset).Y (emailView.Frame.Top + (CELL_HEIGHT / 2));
+            yOffset += 25;
+
+            ViewFramer.Create (serverView).Y (yOffset);
+            yOffset += CELL_HEIGHT;
+
+            yOffset += 25;
+
+            ViewFramer.Create (domainView).Y (yOffset);
+            yOffset += CELL_HEIGHT;
+
+            ViewFramer.Create (usernameView).Y (yOffset);
+            yOffset += CELL_HEIGHT;
+
+            ViewFramer.Create (domainWhiteInset).Y (domainView.Frame.Top + (CELL_HEIGHT / 2));
+
+            yOffset += 25;
+
+            ViewFramer.Create (connectButton).Y (yOffset);
+            yOffset = connectButton.Frame.Bottom + 15;
+
+            ViewFramer.Create (customerSupportButton).Y (yOffset);
+            yOffset = customerSupportButton.Frame.Bottom + 20;
+
             scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
             var contentFrame = new RectangleF (0, 0, View.Frame.Width, yOffset);
             contentView.Frame = contentFrame;
@@ -373,7 +432,7 @@ namespace NachoClient.iOS
             emailText.ShouldReturn += (textField) => {
                 haveEnteredEmailAndPass ();
                 textField.TextColor = UIColor.Black;
-                View.EndEditing(true);
+                View.EndEditing (true);
                 return true;
             };
             emailText.EditingChanged += (object sender, EventArgs e) => {
@@ -384,14 +443,14 @@ namespace NachoClient.iOS
 
             serverText.ShouldReturn += (textField) => {
                 textField.TextColor = UIColor.Black;
-                View.EndEditing(true);
+                View.EndEditing (true);
                 return true;
             };
             serverText.AutocapitalizationType = UITextAutocapitalizationType.None;
             serverText.AutocorrectionType = UITextAutocorrectionType.No;
 
             domainText.ShouldReturn += (textField) => {
-                View.EndEditing(true);
+                View.EndEditing (true);
                 return true;
             };
             domainText.AutocapitalizationType = UITextAutocapitalizationType.None;
@@ -399,7 +458,7 @@ namespace NachoClient.iOS
 
             usernameText.ShouldReturn += (textField) => {
                 usernameText.TextColor = UIColor.Black;
-                View.EndEditing(true);
+                View.EndEditing (true);
                 return true;
             };
             usernameText.AutocapitalizationType = UITextAutocapitalizationType.None;
@@ -409,7 +468,7 @@ namespace NachoClient.iOS
             passwordText.ShouldReturn += (textField) => {
                 haveEnteredEmailAndPass ();
                 textField.TextColor = UIColor.Black;
-                View.EndEditing(true);
+                View.EndEditing (true);
                 return true;
             };
             passwordText.EditingChanged += (object sender, EventArgs e) => {
@@ -455,7 +514,7 @@ namespace NachoClient.iOS
                 case BackEndAutoDStateEnum.PostAutoDPostInboxSync:
                     Log.Info (Log.LOG_UI, "PostAutoDPostInboxSync Auto-D-State-Enum On Page Load");
                     LoginHelpers.SetFirstSyncCompleted (LoginHelpers.GetCurrentAccountId (), true);
-                    PerformSegue(StartupViewController.NextSegue(), this);
+                    PerformSegue (StartupViewController.NextSegue (), this);
                     return;
 
                 case BackEndAutoDStateEnum.Running:
@@ -479,7 +538,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public void AddInputCell (string labelText, UITextField textInput, string placeHolder, float yVal, bool hasBorder)
+        protected UIView AddInputCell (string labelText, UITextField textInput, string placeHolder, float yVal, bool hasBorder)
         {
             UIView inputBox = new UIView (new RectangleF (0, yVal, View.Frame.Width + 1, CELL_HEIGHT));
             inputBox.BackgroundColor = UIColor.White;
@@ -495,13 +554,16 @@ namespace NachoClient.iOS
             cellLefthandLabel.Font = A.Font_AvenirNextMedium14;
             inputBox.Add (cellLefthandLabel);
 
-            textInput.Frame = new RectangleF (120, 0, inputBox.Frame.Width - 100, inputBox.Frame.Height);
+            textInput.Frame = new RectangleF (120, 0, inputBox.Frame.Width - 120 - 1, inputBox.Frame.Height);
+            textInput.ClearButtonMode = UITextFieldViewMode.WhileEditing;
             textInput.BackgroundColor = UIColor.White;
             textInput.Placeholder = placeHolder;
             textInput.Font = A.Font_AvenirNextRegular14;
             inputBox.Add (textInput);
 
             contentView.AddSubview (inputBox);
+
+            return inputBox;
         }
 
         protected void fillInKnownFields ()
@@ -540,7 +602,7 @@ namespace NachoClient.iOS
             theAccount.Account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
             theAccount.Credentials = McCred.QueryByAccountId<McCred> (theAccount.Account.Id).SingleOrDefault (); 
 
-            if (usernameText.Text.Length > 0) {
+            if (!String.IsNullOrEmpty (usernameText.Text)) {
                 theAccount.Credentials.Username = usernameText.Text;
             } else {
                 theAccount.Credentials.Username = emailText.Text;
@@ -580,7 +642,7 @@ namespace NachoClient.iOS
                     var server = new McServer () { 
                         AccountId = appDelegate.Account.Id,
                     };
-                    SetHostAndPort(server);
+                    SetHostAndPort (server);
                     server.Insert ();
                     serverId = server.Id;
                 }
@@ -656,7 +718,7 @@ namespace NachoClient.iOS
                 return false;
             }
 
-            if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection()) {
+            if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
                 ConfigureView (LoginStatus.NoNetwork);
                 return false;
             }
@@ -672,9 +734,9 @@ namespace NachoClient.iOS
 
             //fullServerUri didn't pass...validate host/port separately
             Uri serverURI;
-            try{
+            try {
                 serverURI = new Uri ("my://" + serverText.Text.Trim ());
-            }catch {
+            } catch {
                 ConfigureView (LoginStatus.InvalidServerName);
                 return false;
             }
@@ -688,7 +750,7 @@ namespace NachoClient.iOS
             }
 
             //host cleared, checking port
-            if (!EmailHelper.IsValidPort(port)) {
+            if (!EmailHelper.IsValidPort (port)) {
                 ConfigureView (LoginStatus.InvalidServerName);
                 return false;
             }
@@ -696,11 +758,11 @@ namespace NachoClient.iOS
             return true;
         }
 
-        protected void SetHostAndPort(McServer forServer)
+        protected void SetHostAndPort (McServer forServer)
         {
             NcAssert.True (IsValidServer (serverText.Text), "Server is not valid");
 
-            if(EmailHelper.IsValidHost(serverText.Text)){
+            if (EmailHelper.IsValidHost (serverText.Text)) {
                 forServer.Host = serverText.Text.Trim ();
                 forServer.Port = 443;
                 return;
@@ -785,11 +847,11 @@ namespace NachoClient.iOS
             if (NcResult.SubKindEnum.Info_AsAutoDComplete == s.Status.SubKind) {
                 Log.Info (Log.LOG_UI, "Auto-D-Completed Status Ind (Advanced View)");
                 waitScreen.SetLoadingText ("Syncing Your Inbox...");
-                theAccount.Server = McServer.QueryByAccountId<McServer> (LoginHelpers.GetCurrentAccountId()).FirstOrDefault();
+                theAccount.Server = McServer.QueryByAccountId<McServer> (LoginHelpers.GetCurrentAccountId ()).FirstOrDefault ();
                 serverText.Text = theAccount.Server.Host;
                 LoginHelpers.SetAutoDCompleted (LoginHelpers.GetCurrentAccountId (), true);
-                if(!LoginHelpers.HasViewedTutorial(LoginHelpers.GetCurrentAccountId())){
-                    PerformSegue(StartupViewController.NextSegue(), this);
+                if (!LoginHelpers.HasViewedTutorial (LoginHelpers.GetCurrentAccountId ())) {
+                    PerformSegue (StartupViewController.NextSegue (), this);
                 }
             }
             if (NcResult.SubKindEnum.Error_NetworkUnavailable == s.Status.SubKind) {
