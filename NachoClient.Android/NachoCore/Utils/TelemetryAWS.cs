@@ -108,22 +108,35 @@ namespace NachoCore.Utils
                     }
                     // Otherwise, most likely HTTP client timeout
                     NcTask.CancelableSleep (5000);
+                } catch (OperationCanceledException) {
+                    throw;
                 } catch (AmazonServiceException e) {
                     Console.WriteLine ("AWS service exception {0}", e);
                     NcTask.CancelableSleep (5000);
                 } catch (AggregateException e) {
                     // Some code path wraps the exception with an AggregateException. Peel the onion
-                    if (e.InnerException is TaskCanceledException) {
+                    AggregateException ae = e;
+                    while (ae.InnerException is AggregateException) {
+                        ae = (AggregateException)ae.InnerException;
+                    }
+                    if (ae.InnerException is TaskCanceledException) {
                         if (NcTask.Cts.Token.IsCancellationRequested) {
                             throw;
                         }
                         NcTask.CancelableSleep (5000);
-                    } else if (e.InnerException is AmazonServiceException) {
-                        Console.WriteLine ("AWS service inner exception {0}", e.InnerException);
+                    }
+                    if (ae.InnerException is OperationCanceledException) {
+                        throw;
+                    } else if (ae.InnerException is AmazonServiceException) {
+                        Console.WriteLine ("AWS service inner exception {0}", ae.InnerException);
                         NcTask.CancelableSleep (5000);
                     } else {
+                        Log.Error (Log.LOG_SYS, "Unhandled execption in AWS retry logic: {0}", e);
                         throw;
                     }
+                } catch (Exception e) {
+                    Log.Error (Log.LOG_SYS, "Unhandle exception in AWS retry logic: {0}", e);
+                    throw;
                 }
                 NcTask.Cts.Token.ThrowIfCancellationRequested ();
             }
