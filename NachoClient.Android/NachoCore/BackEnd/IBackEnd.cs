@@ -19,7 +19,7 @@ namespace NachoCore
 
     public enum AutoDInfoEnum {
         None = 0,
-        MxMatchedGMail = 1,
+        MXNotFound = 1,
     };
 
     public interface IBackEnd
