@@ -17,7 +17,7 @@ namespace NachoCore.Model
 
         public string Host { get; set; }
 
-        public const string GMail_Host = "m.google.com";
+        public const string GMail_Uri = "https://m.google.com";
         public const string HotMail_Host = "s.outlook.com";
         public const string GMail_MX_Suffix = "ASPMX.L.GOOGLE.com";
 
