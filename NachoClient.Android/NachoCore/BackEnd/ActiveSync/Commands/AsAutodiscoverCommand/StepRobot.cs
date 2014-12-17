@@ -653,7 +653,7 @@ namespace NachoCore.ActiveSync
 
             private void DoRobotMxDnsSuccess ()
             {
-                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: MX DNS succeeded: {1}.", Step, LastUri);
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: MX DNS succeeded: {1}.", Step, SrServerUri);
                 DoRobotSuccess ();
             }
 
@@ -1099,7 +1099,7 @@ namespace NachoCore.ActiveSync
                         NsType.MX == response.NsType) {
                         var aBest = (MxRecord)response.Answers.OrderBy (r1 => ((MxRecord)r1).Preference).First ();
                         if (aBest.MailExchange.EndsWith (McServer.GMail_MX_Suffix, StringComparison.OrdinalIgnoreCase)) {
-                            SrDomain = McServer.GMail_Host;
+                            SrServerUri = new Uri (McServer.GMail_Uri);
                             return Event.Create ((uint)SmEvt.E.Success, "SRPRMXSUCCESS");
                         } else {
                             return Event.Create ((uint)SmEvt.E.HardFail, "SRPRMXHARD1");
