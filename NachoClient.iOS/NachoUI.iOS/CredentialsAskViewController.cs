@@ -54,8 +54,8 @@ namespace NachoClient.iOS
                 NSNotificationCenter.DefaultCenter.AddObserver (UITextField.TextFieldTextDidChangeNotification, OnTextFieldChanged);
             }
 
-            BackEndAutoDStateEnum backEndState = BackEnd.Instance.AutoDState (LoginHelpers.GetCurrentAccountId ());
-            if (BackEndAutoDStateEnum.CertAskWait == backEndState) {
+            BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
+            if (BackEndStateEnum.CertAskWait == backEndState) {
                 certificateView.SetCertificateInformation ();
                 certificateView.ShowView ();
             }

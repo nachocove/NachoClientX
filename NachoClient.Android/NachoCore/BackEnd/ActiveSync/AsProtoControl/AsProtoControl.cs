@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
+using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoPlatform;
@@ -43,7 +44,7 @@ namespace NachoCore.ActiveSync
             Parked,
         };
 
-        public override BackEndAutoDStateEnum AutoDState {
+        public override BackEndStateEnum BackEndState {
             get {
                 var state = Sm.State;
                 if ((uint)Lst.Parked == state) {
@@ -52,17 +53,17 @@ namespace NachoCore.ActiveSync
                 // Every state above must be mapped here.
                 switch (state) {
                 case (uint)Lst.DiscW:
-                    return BackEndAutoDStateEnum.Running;
+                    return BackEndStateEnum.Running;
 
                 case (uint)Lst.UiDCrdW:
                 case (uint)Lst.UiPCrdW:
-                    return BackEndAutoDStateEnum.CredWait;
+                    return BackEndStateEnum.CredWait;
 
                 case (uint)Lst.UiServConfW:
-                    return BackEndAutoDStateEnum.ServerConfWait;
+                    return BackEndStateEnum.ServerConfWait;
 
                 case (uint)Lst.UiCertOkW:
-                    return BackEndAutoDStateEnum.CertAskWait;
+                    return BackEndStateEnum.CertAskWait;
 
                 case (uint)Lst.OptW:
                 case (uint)Lst.ProvW:
@@ -77,16 +78,22 @@ namespace NachoCore.ActiveSync
                 case (uint)Lst.FetchW:
                 case (uint)Lst.IdleW:
                      return (ProtocolState.HasSyncedInbox) ? 
-                        BackEndAutoDStateEnum.PostAutoDPostInboxSync : 
-                        BackEndAutoDStateEnum.PostAutoDPreInboxSync;
+                        BackEndStateEnum.PostAutoDPostInboxSync : 
+                        BackEndStateEnum.PostAutoDPreInboxSync;
 
                 default:
                     NcAssert.CaseError (string.Format ("Unhandled state {0}", Sm.State));
-                    return BackEndAutoDStateEnum.PostAutoDPostInboxSync;
+                    return BackEndStateEnum.PostAutoDPostInboxSync;
                 }
             }
         }
 
+        private AutoDInfoEnum _autoDInfo;
+        public override AutoDInfoEnum AutoDInfo {
+            get {
+                return _autoDInfo;
+            }
+        }
         private X509Certificate2 _ServerCertToBeExamined;
         public override X509Certificate2 ServerCertToBeExamined {
             get {
@@ -979,7 +986,8 @@ namespace NachoCore.ActiveSync
         private void DoUiServConfReq ()
         {
             // Send the request toward the UI.
-            Owner.ServConfReq (this);
+            _autoDInfo = (AutoDInfoEnum)Sm.Arg;
+            Owner.ServConfReq (this, _autoDInfo);
         }
 
         private void DoSetServConf ()

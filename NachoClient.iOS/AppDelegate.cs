@@ -338,19 +338,20 @@ namespace NachoClient.iOS
             });
 
             if (LoginHelpers.IsCurrentAccountSet () && LoginHelpers.HasFirstSyncCompleted (LoginHelpers.GetCurrentAccountId ())) {
-                BackEndAutoDStateEnum backEndState = BackEnd.Instance.AutoDState (LoginHelpers.GetCurrentAccountId ());
+                BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
 
+                int accountId = LoginHelpers.GetCurrentAccountId ();
                 switch (backEndState) {
-                case BackEndAutoDStateEnum.CertAskWait:
-                    CertAskReqCallback (LoginHelpers.GetCurrentAccountId (), null);
+                case BackEndStateEnum.CertAskWait:
+                    CertAskReqCallback (accountId, null);
                     Log.Info (Log.LOG_STATE, "OnActived: CERTASKCALLBACK ");
                     break;
-                case BackEndAutoDStateEnum.CredWait:
-                    CredReqCallback (LoginHelpers.GetCurrentAccountId ());
+                case BackEndStateEnum.CredWait:
+                    CredReqCallback (accountId);
                     Log.Info (Log.LOG_STATE, "OnActived: CREDCALLBACK ");
                     break;
-                case BackEndAutoDStateEnum.ServerConfWait:
-                    ServConfReqCallback (LoginHelpers.GetCurrentAccountId ());
+                case BackEndStateEnum.ServerConfWait:
+                    ServConfReqCallback (accountId, BackEnd.Instance.AutoDInfo (accountId));
                     Log.Info (Log.LOG_STATE, "OnActived: SERVCONFCALLBACK ");
                     break;
                 default:
@@ -660,7 +661,7 @@ namespace NachoClient.iOS
         }
 
 
-        public void ServConfReqCallback (int accountId)
+        public void ServConfReqCallback (int accountId, AutoDInfoEnum autoDInfo)
         {
             Log.Info (Log.LOG_UI, "ServConfReqCallback Called for account: {0}", accountId);
 
@@ -728,7 +729,7 @@ namespace NachoClient.iOS
                         gonnaquit.Show ();
                         gonnaquit.Clicked += delegate(object sender, UIButtonEventArgs e) {
                             if (e.ButtonIndex == 1) {
-                                ServConfReqCallback (accountId); // go again
+                                ServConfReqCallback (accountId, BackEnd.Instance.AutoDInfo (accountId)); // go again
                             }
                             gonnaquit.ResignFirstResponder ();
                         };

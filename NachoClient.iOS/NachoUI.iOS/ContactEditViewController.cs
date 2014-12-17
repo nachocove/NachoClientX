@@ -922,6 +922,8 @@ namespace NachoClient.iOS
 
         protected void BackButtonClicked (object sender, EventArgs e)
         {
+            View.EndEditing (true);
+
             UIAlertView alert = new UIAlertView ();
             alert.Title = "Discard Changes?";
             alert.Message = "Going back will discard your changes. Are you sure you want to do this?";
