@@ -206,9 +206,12 @@ namespace NachoClient.iOS
             existingTableView = (UITableView)moreTabController.View;
             existingTableView.TintColor = A.Color_NachoGreen;
             existingTableView.ScrollEnabled = false;
-
+            var cellHeight = 0f;
+            var cellCount = 0;
             foreach (var cell in existingTableView.VisibleCells) {
                 cell.TextLabel.Font = A.Font_AvenirNextMedium14;
+                cellHeight = cell.Frame.Height;
+                cellCount++;
             }
 
             var newView = new UIScrollView (existingTableView.Frame);
@@ -220,8 +223,7 @@ namespace NachoClient.iOS
                 newView.Frame.Width - 2 * A.Card_Horizontal_Indent, 80));
             accountInfoView.OnAccountSelected = AccountTapHandler;
 
-            // checks for a 4s screen
-            var tableHeight = (500 < newView.Frame.Height ? newView.Frame.Height - accountInfoView.Frame.Bottom - 3 * A.Card_Vertical_Indent - 11 : newView.Frame.Height - accountInfoView.Frame.Bottom - A.Card_Vertical_Indent + 36);
+            var tableHeight = ((cellCount + 2) * cellHeight) + 5;
 
             existingTableView.Frame = new RectangleF (
                 A.Card_Horizontal_Indent, accountInfoView.Frame.Bottom + A.Card_Vertical_Indent,
@@ -231,7 +233,7 @@ namespace NachoClient.iOS
             existingTableView.Layer.BorderWidth = A.Card_Border_Width;
             existingTableView.Layer.BorderColor = A.Card_Border_Color;
 
-            newView.ContentSize = new SizeF (moreTabController.View.Frame.Width, existingTableView.Frame.Bottom - 2 * A.Card_Vertical_Indent);
+            newView.ContentSize = new SizeF (moreTabController.View.Frame.Width, existingTableView.Frame.Bottom - A.Card_Vertical_Indent);
 
             newView.AddSubview (accountInfoView);
             newView.AddSubview (existingTableView);
