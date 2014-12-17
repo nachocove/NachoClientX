@@ -44,13 +44,12 @@ namespace NachoCore
             return ts.Days;
         }
 
-        protected void Initialize()
+        protected void Initialize ()
         {
             listOfEventsOnADay = new List<List<int>> ();
-
         }
 
-        public void ExpandRecurrences()
+        public void ExpandRecurrences ()
         {
             CalendarHelper.ExpandRecurrences (finalDayInList);
         }
@@ -99,7 +98,7 @@ namespace NachoCore
             firstDayInList = MidnightOf (DateTime.Today).AddDays (-startingOffsetInDays);
             finalDayInList = firstDayInList;
             // Initialize the table
-            ExtendEventMap (firstDayInList.AddDays (6*startingOffsetInDays));
+            ExtendEventMap (firstDayInList.AddDays (6 * startingOffsetInDays));
         }
 
         protected virtual void Reload ()
@@ -144,13 +143,13 @@ namespace NachoCore
             return GetEvent (listOfEventsOnADay [day] [item]);
         }
 
-        public McAbstrCalendarRoot GetEventDetail(int day, int item)
+        public McAbstrCalendarRoot GetEventDetail (int day, int item)
         {
             var e = GetEvent (day, item);
             if (null == e) {
                 return null;
             }
-            if(0 == e.ExceptionId) {
+            if (0 == e.ExceptionId) {
                 return McCalendar.QueryById<McCalendar> (e.CalendarId);
             } else {
                 return McException.QueryById<McException> (e.ExceptionId);
@@ -172,7 +171,7 @@ namespace NachoCore
                 }
                 for (int j = 0; j < listOfEventsOnADay [i].Count; j++) {
                     var e = listOfEventsOnADay [i] [j];
-                    if (date <= list [e].StartTime.LocalT()) {
+                    if (date <= list [e].StartTime.LocalT ()) {
                         item = j;
                         section = i;
                         return true;
