@@ -351,21 +351,7 @@ namespace NachoClient.iOS
             startLabel.Center = new PointF (startLabel.Center.X, startLabel.Center.Y + 40);
             submitButton.Center = new PointF (submitButton.Center.X, submitButton.Center.Y + 15);
         }
-
-        private bool IsHotmailServiceAddress (string emailAddress)
-        {
-            if (emailAddress.EndsWith ("@hotmail.com", StringComparison.OrdinalIgnoreCase)) {
-                return true;
-            }
-            if (emailAddress.EndsWith ("@outlook.com", StringComparison.OrdinalIgnoreCase)) {
-                return true;
-            }
-            if (emailAddress.EndsWith ("@live.com", StringComparison.OrdinalIgnoreCase)) {
-                return true;
-            }
-            return false;
-        }
-
+     
         private void MaybeStartLogin ()
         {
             var emailAddress = emailField.Text.Trim ();
@@ -388,13 +374,13 @@ namespace NachoClient.iOS
                 return;
             }
 
-            if (!isValidEmail (emailField.Text)) {
+            if (!EmailHelper.IsValidEmail (emailField.Text)) {
                 emailField.TextColor = A.Color_NachoRed;
                 Complain ("Nacho Mail", "Your email address is not valid.\nFor example, username@company.com");
                 return;
             }
 
-            if (IsHotmailServiceAddress (emailAddress)) {
+            if (EmailHelper.IsHotmailServiceAddress (emailAddress)) {
                 if (!emailServices.IsHotmailServiceSelected ()) {
                     ConfirmBeforeStarting ("Confirm Email", "Your email address does not match the selected service.\nUse it anyway?");
                     return;
@@ -450,12 +436,6 @@ namespace NachoClient.iOS
             });
             BackEnd.Instance.Start (appDelegate.Account.Id);
             PerformSegue (StartupViewController.NextSegue (), this);
-        }
-
-        bool isValidEmail (string email)
-        {
-            RegexUtilities regexUtil = new RegexUtilities ();
-            return regexUtil.IsValidEmail (email);
         }
 
         public void maybeEnableConnect ()

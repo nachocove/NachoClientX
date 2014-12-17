@@ -173,7 +173,6 @@ namespace NachoClient.iOS
                 NavigationController.NavigationBar.Translucent = false;
             }
 
-
             scrollView = new UIScrollView (View.Frame);
             scrollView.BackgroundColor = A.Color_NachoNowBackground;
             scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
@@ -535,6 +534,7 @@ namespace NachoClient.iOS
             }
         }
 
+        // TODO: Should we be setting HasProvidedCreds to true?
         protected void saveUsersSettings ()
         {
             theAccount.Account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
@@ -642,11 +642,7 @@ namespace NachoClient.iOS
 
         public bool haveEnteredHost ()
         {
-            if (0 == serverText.Text.Length) {
-                return false;
-            } else {
-                return true;
-            }
+            return !String.IsNullOrEmpty (serverText.Text);
         }
 
         public bool canUserConnect ()
@@ -655,7 +651,7 @@ namespace NachoClient.iOS
                 return false;
             }
 
-            if (!isValidEmail (emailText.Text)) {
+            if (!EmailHelper.IsValidEmail (emailText.Text)) {
                 ConfigureView (LoginStatus.InvalidEmail);
                 return false;
             }
@@ -667,35 +663,10 @@ namespace NachoClient.iOS
             return true;
         }
 
-        bool isValidEmail (string email)
-        {
-            RegexUtilities regexUtil = new RegexUtilities ();
-            return regexUtil.IsValidEmail (email);
-        }
-
-        protected bool IsValidHost (string host)
-        {
-            UriHostNameType fullServerUri = Uri.CheckHostName (host.Trim());
-            if(fullServerUri == UriHostNameType.Dns  ||
-                fullServerUri == UriHostNameType.IPv4 ||
-                fullServerUri == UriHostNameType.IPv6) {
-                return true;
-            }
-            return false;
-        }
-
-        protected bool IsValidPort (int port) 
-        {
-            if (port < 0 || port > 65535) {
-                return false;
-            } else {
-                return true;
-            }
-        }
 
         protected bool IsValidServer (string server)
         {
-            if (IsValidHost (server)) {
+            if (EmailHelper.IsValidHost (server)) {
                 return true;
             }
 
@@ -711,13 +682,13 @@ namespace NachoClient.iOS
             var host = serverURI.Host;
             var port = serverURI.Port;
 
-            if (!IsValidHost (host)) {
+            if (!EmailHelper.IsValidHost (host)) {
                 ConfigureView (LoginStatus.InvalidServerName);
                 return false;
             }
 
             //host cleared, checking port
-            if (!IsValidPort(port)) {
+            if (!EmailHelper.IsValidPort(port)) {
                 ConfigureView (LoginStatus.InvalidServerName);
                 return false;
             }
@@ -729,7 +700,7 @@ namespace NachoClient.iOS
         {
             NcAssert.True (IsValidServer (serverText.Text), "Server is not valid");
 
-            if(IsValidHost(serverText.Text)){
+            if(EmailHelper.IsValidHost(serverText.Text)){
                 forServer.Host = serverText.Text.Trim ();
                 forServer.Port = 443;
                 return;

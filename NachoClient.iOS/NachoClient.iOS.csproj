@@ -1182,6 +1182,7 @@
     <Compile Include="NachoUI.iOS\Support\NcKeyboardSpy.cs" />
     <Compile Include="NachoUI.iOS\Support\AccountInfoView.cs" />
     <Compile Include="NachoUI.iOS\Support\EmailServiceTableViewSource.cs" />
+    <Compile Include="NachoCore\Utils\EmailHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
