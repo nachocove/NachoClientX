@@ -1814,6 +1814,7 @@
     <BundleResource Include="Resources\login-outlook%403x.png" />
     <BundleResource Include="Resources\login-outlook%404x.png" />
     <BundleResource Include="Resources\login-outlook%406x.png" />
+    <BundleResource Include="Resources\calendar-empty-cal-alt%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

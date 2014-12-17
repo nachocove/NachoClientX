@@ -49,24 +49,12 @@ namespace NachoClient.iOS
             if (null != NavigationItem) {
                 NavigationItem.SetHidesBackButton (true, false);
             }
-
-            var dateButton = UIButton.FromType (UIButtonType.Custom);
-            dateButton.Frame = new RectangleF (0, 0, 24, 26);
-            dateButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Center;
-            dateButton.VerticalAlignment = UIControlContentVerticalAlignment.Center;
-            using (var image = UIImage.FromBundle ("calendar-empty-cal")) {
-                dateButton.SetBackgroundImage (image, UIControlState.Normal);
-                dateButton.ImageEdgeInsets = new UIEdgeInsets (0, 1, 4, 1);
-            }
-            dateButton.SetTitle (DateTime.Today.Day.ToString (), UIControlState.Normal);
-            dateButton.SetTitleColor (A.Color_NachoBlue, UIControlState.Normal);
-            dateButton.TitleEdgeInsets = new UIEdgeInsets (5, 0, 0, 0);
-            dateButton.Font = A.Font_AvenirNextRegular12;
-            dateButton.TouchUpInside += (object sender, EventArgs e) => {
+                
+            var todayButton = new UIBarButtonItem ();
+            Util.SetAutomaticImageForButton (todayButton, "calendar-empty-cal-alt");
+            todayButton.Clicked += (object sender, EventArgs e) => {
                 ReturnToToday ();
             };
-                
-            var todayButton = new UIBarButtonItem (dateButton);
 
             var addEventButton = new UIBarButtonItem ();
             Util.SetAutomaticImageForButton (addEventButton, "cal-add");
@@ -75,6 +63,14 @@ namespace NachoClient.iOS
             };
 
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { addEventButton, todayButton };
+
+            UILabel dateText = new UILabel (new RectangleF (NavigationController.NavigationBar.Frame.Width - 94, 9, 24, 24));
+            dateText.BackgroundColor = UIColor.Clear;
+            dateText.Text = DateTime.Today.Day.ToString ();
+            dateText.Font = A.Font_AvenirNextMedium12;
+            dateText.TextColor = A.Color_NachoBlue;
+            dateText.TextAlignment = UITextAlignment.Center;
+            NavigationController.NavigationBar.AddSubview (dateText);
 
             // We must request permission to access the user's calendar
             // This will prompt the user on platforms that ask, or it will validate
