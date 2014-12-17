@@ -52,6 +52,8 @@ namespace NachoCore.Model
 
         public DateTime LastNarrowSync { get; set; }
 
+        public DateTime LastSync { get; set; }
+
         public DateTime LastPing { get; set; }
 
         public bool IsWipeRequired { get; set; }

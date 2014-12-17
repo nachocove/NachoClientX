@@ -572,11 +572,13 @@ namespace NachoCore.ActiveSync
 
         private Event SuccessEvent (string mnemonic)
         {
+            var protocolState = BEContext.ProtocolState;
+            var now = DateTime.UtcNow;
+            protocolState.LastSync = now;
             if (IsNarrow) {
-                var protocolState = BEContext.ProtocolState;
-                protocolState.LastNarrowSync = DateTime.UtcNow;
-                protocolState.Update ();
+                protocolState.LastNarrowSync = now;
             }
+            protocolState.Update ();
             return Event.Create ((uint)SmEvt.E.Success, mnemonic);
         }
 

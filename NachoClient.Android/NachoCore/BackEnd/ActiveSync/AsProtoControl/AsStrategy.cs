@@ -789,16 +789,27 @@ namespace NachoCore.ActiveSync
                     return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.HotQOp, cmd);
                 }
             }
-            // (QS) If a narrow Sync hasn’t successfully completed in the last N seconds, 
-            // perform a narrow Sync Command.
+            // (QS) If a Sync hasn’t successfully completed in the last N seconds, 
+            // perform a Sync Command.
+            // 1/2 of the time we want to do a narrow Sync to ensure the Inbox is flowing.
+            // 1/2 we want to do a wide sync to keep all folders flowing (think server-side filter/rules).
+            bool lastQSSyncWasNarrow = false;
             if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
-                if (protocolState.LastNarrowSync < DateTime.UtcNow.AddSeconds (-60)) {
-                    var nSyncKit = GenSyncKit (accountId, protocolState, true, false);
-                    Log.Info (Log.LOG_AS, "Strategy:QS:Narrow Sync...");
-                    if (null != nSyncKit) {
+                if (protocolState.LastSync < DateTime.UtcNow.AddSeconds (-60)) {
+                    SyncKit syncKit;
+                    if (lastQSSyncWasNarrow) {
+                        syncKit = GenSyncKit (accountId, protocolState, false, false);
+                        Log.Info (Log.LOG_AS, "Strategy:QS:Wide Sync...");
+                        lastQSSyncWasNarrow = false;
+                    } else {
+                        syncKit = GenSyncKit (accountId, protocolState, true, false);
+                        Log.Info (Log.LOG_AS, "Strategy:QS:Narrow Sync...");
+                        lastQSSyncWasNarrow = true;
+                    }
+                    if (null != syncKit) {
                         Log.Info (Log.LOG_AS, "Strategy:QS:...SyncKit");
                         return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
-                            new AsSyncCommand (BEContext.ProtoControl, nSyncKit));
+                            new AsSyncCommand (BEContext.ProtoControl, syncKit));
                     }
                 }
             }
@@ -878,7 +889,7 @@ namespace NachoCore.ActiveSync
                     return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.QOop, cmd);
                 }
                 // (FG, BG) Unless one of these conditions are met, perform a narrow Sync Command...
-                var needNarrowSyncMarker = DateTime.UtcNow.AddSeconds (-300);
+                var needNarrowSyncMarker = DateTime.UtcNow.AddMinutes (-30);
                 if (Scope.FlagIsSet (Scope.StrategyRung (protocolState), Scope.FlagEnum.NarrowSyncOk) &&
                     protocolState.LastNarrowSync < needNarrowSyncMarker &&
                     (protocolState.LastPing < needNarrowSyncMarker ||
@@ -934,7 +945,7 @@ namespace NachoCore.ActiveSync
                 // that they do a narrow Ping and that each add'l folder needs to be manuall added
                 // as "synced". So we will do narrow Ping 90% of the time and see if that helps.
                 PingKit pingKit = null;
-                if (0.9 < CoinToss.NextDouble ()) {
+                if (0.6 < CoinToss.NextDouble ()) {
                     Log.Info (Log.LOG_AS, "Strategy:FG/BG:PingKit try generating wide PingKit.");
                     pingKit = GenPingKit (accountId, protocolState, false);
                 }
