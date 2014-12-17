@@ -219,7 +219,7 @@ namespace Test.iOS
 
         // we aren't interested in these
         public void CredReq (ProtoControl sender) {}
-        public void ServConfReq (ProtoControl sender) {}
+        public void ServConfReq (ProtoControl sender, AutoDInfoEnum autoDInfo) {}
         public void CertAskReq (ProtoControl sender, X509Certificate2 certificate) {}
         public void SearchContactsResp (ProtoControl sender, string prefix, string token) {}
     }

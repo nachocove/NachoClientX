@@ -219,18 +219,19 @@ namespace NachoClient.iOS
         {
             if (LoginHelpers.IsCurrentAccountSet ()) {
 
-                BackEndAutoDStateEnum backEndState = BackEnd.Instance.AutoDState (LoginHelpers.GetCurrentAccountId ());
+                BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
 
-                if (BackEndAutoDStateEnum.CredWait == backEndState || BackEndAutoDStateEnum.CertAskWait == backEndState) {
+                if (BackEndStateEnum.CredWait == backEndState || BackEndStateEnum.CertAskWait == backEndState) {
                     UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
                     CredentialsAskViewController cvc = (CredentialsAskViewController)x.InstantiateViewController ("CredentialsAskViewController");
                     cvc.SetTabBarController ((NachoTabBarController)this.TabBarController);
                     this.PresentViewController (cvc, true, null);
                 }
 
-                if (BackEndAutoDStateEnum.ServerConfWait == backEndState) {
+                int accountId = LoginHelpers.GetCurrentAccountId ();
+                if (BackEndStateEnum.ServerConfWait == backEndState) {
                     var x = (AppDelegate)UIApplication.SharedApplication.Delegate;
-                    x.ServConfReqCallback (LoginHelpers.GetCurrentAccountId ());
+                    x.ServConfReqCallback (accountId, BackEnd.Instance.AutoDInfo (accountId));
                 }
             }
         }
