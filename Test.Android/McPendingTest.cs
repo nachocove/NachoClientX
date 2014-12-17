@@ -727,7 +727,7 @@ namespace Test.iOS
             [Test]
             public void TestQueryNonFailedNonDeleted ()
             {
-                var pending = CreatePending (accountId: 1);
+                CreatePending (accountId: 1);
                 var matcher = CreatePending (accountId: 2); // other pending
                 var isDel = CreatePending (accountId: 2);
                 isDel.State = McPending.StateEnum.Deleted;

@@ -482,28 +482,28 @@ namespace NachoClient.iOS
         {
             if (LoginHelpers.IsCurrentAccountSet ()) {
 
-                BackEndAutoDStateEnum backEndState = BackEnd.Instance.AutoDState (LoginHelpers.GetCurrentAccountId ());
+                BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
 
                 switch (backEndState) {
-                case BackEndAutoDStateEnum.ServerConfWait:
+                case BackEndStateEnum.ServerConfWait:
                     Log.Info (Log.LOG_UI, "ServerConfWait Auto-D-State-Enum On Page Load");
                     stopBeIfRunning ();
                     ConfigureView (LoginStatus.ServerConf);
                     return;
 
-                case BackEndAutoDStateEnum.CredWait:
+                case BackEndStateEnum.CredWait:
                     Log.Info (Log.LOG_UI, "CredWait Auto-D-State-Enum On Page Load");
                     ConfigureView (LoginStatus.BadCredentials);
                     return;
 
-                case BackEndAutoDStateEnum.CertAskWait:
+                case BackEndStateEnum.CertAskWait:
                     Log.Info (Log.LOG_UI, "CertAskWait Auto-D-State-Enum On Page Load");
                     ConfigureView (LoginStatus.AcceptCertificate);
                     certificateCallbackHandler ();
                     waitScreen.ShowView ();
                     return;
 
-                case BackEndAutoDStateEnum.PostAutoDPreInboxSync:
+                case BackEndStateEnum.PostAutoDPreInboxSync:
                     Log.Info (Log.LOG_UI, "PostAutoDPreInboxSync Auto-D-State-Enum On Page Load");
                     LoginHelpers.SetAutoDCompleted (LoginHelpers.GetCurrentAccountId (), true);
                     errorMessage.Text = "Waiting for Inbox-Sync.";
@@ -511,13 +511,13 @@ namespace NachoClient.iOS
                     waitScreen.ShowView ();
                     return;
 
-                case BackEndAutoDStateEnum.PostAutoDPostInboxSync:
+                case BackEndStateEnum.PostAutoDPostInboxSync:
                     Log.Info (Log.LOG_UI, "PostAutoDPostInboxSync Auto-D-State-Enum On Page Load");
                     LoginHelpers.SetFirstSyncCompleted (LoginHelpers.GetCurrentAccountId (), true);
                     PerformSegue (StartupViewController.NextSegue (), this);
                     return;
 
-                case BackEndAutoDStateEnum.Running:
+                case BackEndStateEnum.Running:
                     Log.Info (Log.LOG_UI, "Running Auto-D-State-Enum On Page Load");
                     errorMessage.Text = "Auto-D is running.";
                     waitScreen.ShowView ();
@@ -780,9 +780,9 @@ namespace NachoClient.iOS
 
         public void startBe ()
         {
-            BackEndAutoDStateEnum backEndState = BackEnd.Instance.AutoDState (LoginHelpers.GetCurrentAccountId ());
+            BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
 
-            if (BackEndAutoDStateEnum.CredWait == backEndState) {
+            if (BackEndStateEnum.CredWait == backEndState) {
                 BackEnd.Instance.CredResp (LoginHelpers.GetCurrentAccountId ());
             } else {
                 BackEnd.Instance.Stop (LoginHelpers.GetCurrentAccountId ());
