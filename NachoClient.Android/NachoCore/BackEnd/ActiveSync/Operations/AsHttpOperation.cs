@@ -543,7 +543,7 @@ namespace NachoCore.ActiveSync
                 // If the owner is returning an event, they MUST have resolved all pendings.
                 return Final (preProcessEvent);
             }
-            XDocument responseDoc;
+            XDocument responseDoc = null;
             if (HttpStatusCode.ServiceUnavailable != response.StatusCode) {
                 ConsecThrottlePriorDelaySecs = 0;
             }
@@ -631,9 +631,20 @@ namespace NachoCore.ActiveSync
                     default:
                         if (null == ContentType) {
                             Log.Warn (Log.LOG_HTTP, "ProcessHttpResponse: received HTTP response with content but no Content-Type.");
+                        } else {
+                            Log.Warn (Log.LOG_HTTP, "ProcessHttpResponse: received HTTP response with content but unexpected Content-Type: {0}.", ContentType);
                         }
-                        // Owner MUST resolve all pending.
-                        return Final (Owner.ProcessResponse (this, response));
+                        // Just *try* to see if it will parse as XML. Could be poorly configured auto-d.
+                        try {
+                            responseDoc = XDocument.Load (ContentData);
+                        } catch {
+                        }
+                        if (null == responseDoc) {
+                            // Owner MUST resolve all pending.
+                            return Final (Owner.ProcessResponse (this, response));
+                        } else {
+                            return Final (Owner.ProcessResponse (this, response, responseDoc));
+                        }
                     }
                 } 
                 // Owner MUST resolve all pending.
