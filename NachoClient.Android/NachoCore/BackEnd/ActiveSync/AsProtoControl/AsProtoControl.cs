@@ -822,7 +822,6 @@ namespace NachoCore.ActiveSync
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.TempFail,
-                            (uint)AsEvt.E.ReDisc,
                             (uint)AsEvt.E.ReProv,
                             (uint)AsEvt.E.ReSync,
                             (uint)AsEvt.E.AuthFail,
@@ -832,6 +831,7 @@ namespace NachoCore.ActiveSync
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDrive, ActSetsState = true },
+                            new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                         }
                     },
                 }
