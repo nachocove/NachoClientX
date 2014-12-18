@@ -83,7 +83,7 @@ namespace NachoClient.iOS
                 PerformSegue ("NachoNowToEditEventView", new SegueHolder (null));
             };
 
-            NavigationItem.Title = "Nacho Now";
+            NavigationItem.Title = "Hot";
                 
             NavigationItem.LeftBarButtonItem = null;
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, newMeetingButton };
