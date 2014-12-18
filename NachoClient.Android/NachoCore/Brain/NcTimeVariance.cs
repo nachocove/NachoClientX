@@ -210,19 +210,7 @@ namespace NachoCore.Brain
             }
         }
 
-        private object _LockObj;
-
-        private object LockObj {
-            get {
-                if (null == _LockObj) {
-                    _LockObj = new object ();
-                }
-                return _LockObj;
-            }
-            set {
-                _LockObj = value;
-            }
-        }
+        private object LockObj { set; get; }
 
         /// State is just an integer that increments. Note that state 0 is
         /// reserved for terminated state.
@@ -305,6 +293,7 @@ namespace NachoCore.Brain
         public NcTimeVariance (string description, TimeVarianceCallBack callback, Int64 objId)
         {
             _Description = description;
+            LockObj = new object ();
             CallBackFunction = callback;
             CallBackId = objId;
             Initialize ();
