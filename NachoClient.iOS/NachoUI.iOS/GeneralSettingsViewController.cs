@@ -107,8 +107,7 @@ namespace NachoClient.iOS
 
             yOffset = buttonsView.Frame.Bottom + 30f;
 
-            UILabel dirtyBackEndLabel = new UILabel (new RectangleF (A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), CELL_HEIGHT));
-            dirtyBackEndLabel.Text = "There is an issue with your account that is preventing you from sending or receiving messages.";
+            UILabel dirtyBackEndLabel = new UILabel (new RectangleF (A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), 60));
             dirtyBackEndLabel.Font = A.Font_AvenirNextRegular12;
             dirtyBackEndLabel.TextAlignment = UITextAlignment.Center;
             dirtyBackEndLabel.BackgroundColor = UIColor.Clear;
@@ -125,7 +124,6 @@ namespace NachoClient.iOS
             DirtyBackEnd.Layer.CornerRadius = 4.0f;
             DirtyBackEnd.BackgroundColor = A.Color_NachoRed;
             DirtyBackEnd.TitleLabel.Font = A.Font_AvenirNextDemiBold14;
-            DirtyBackEnd.SetTitle ("Fix Account", UIControlState.Normal);
             DirtyBackEnd.SetTitleColor (UIColor.White, UIControlState.Normal);
             DirtyBackEnd.TouchUpInside += FixBackEndButtonClicked; 
             DirtyBackEnd.Tag = FIX_BE_BUTTON_TAG;
@@ -134,7 +132,7 @@ namespace NachoClient.iOS
 
             yOffset = DirtyBackEnd.Frame.Bottom + 5;
 
-            UILabel versionLabel = new UILabel (new RectangleF (View.Frame.Width / 2 - 75, yOffset, 150, 20));
+            UILabel versionLabel = new UILabel (new RectangleF (View.Frame.Width / 2 - 75, View.Frame.Bottom - 30 - this.TabBarController.TabBar.Frame.Height - 64, 150, 20));
             versionLabel.Font = A.Font_AvenirNextRegular10;
             versionLabel.TextColor = A.Color_NachoBlack;
             versionLabel.TextAlignment = UITextAlignment.Center;
@@ -172,10 +170,31 @@ namespace NachoClient.iOS
             accountInfoView.Configure (userAccount);
 
             UIButton FixButton = (UIButton)View.ViewWithTag (FIX_BE_BUTTON_TAG);
-            FixButton.Hidden = !LoginHelpers.DoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId ());
-
             UILabel FixLabel = (UILabel)View.ViewWithTag (FIX_BE_LABEL_TAG);
-            FixLabel.Hidden = !LoginHelpers.DoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId ());
+
+            FixButton.Hidden = true;
+            FixLabel.Hidden = true;
+
+            McAccount currentAccount = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
+            if (ExpirationHelper.AccountIsExpiring(currentAccount)) {
+                FixLabel.Text = "Your password is set to expire in " + currentAccount.DaysUntilPasswordExpires.ToString() + " days." +
+                    " Please go to your corporate email and update your password.";
+                FixLabel.TextColor = A.Color_NachoRed;
+                FixLabel.Hidden = false;
+
+                if (ExpirationHelper.ProvidedFixUrl (currentAccount)) {
+                    FixButton.SetTitle ("Update Password", UIControlState.Normal);
+                    FixButton.Hidden = false;
+                }
+            }
+
+            if(LoginHelpers.DoesBackEndHaveIssues (LoginHelpers.GetCurrentAccountId ())){
+                FixButton.SetTitle ("Fix Account", UIControlState.Normal);
+                FixButton.Hidden = false;
+                FixLabel.Text = "There is an issue with your account that is preventing you from sending and receiving messages.";
+                FixLabel.TextColor = A.Color_NachoGreen;
+                FixLabel.Hidden = false;
+            }
 
             LayoutView ();
         }
@@ -217,22 +236,27 @@ namespace NachoClient.iOS
 
         protected void FixBackEndButtonClicked (object sender, EventArgs e)
         {
-            if (LoginHelpers.IsCurrentAccountSet ()) {
+            McAccount currentAccount = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
 
-                BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
+            if (ExpirationHelper.ProvidedFixUrl (currentAccount)) {
+                ExpirationHelper.UserClickedFix (currentAccount);
+                return;
+            }
 
-                if (BackEndStateEnum.CredWait == backEndState || BackEndStateEnum.CertAskWait == backEndState) {
-                    UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-                    CredentialsAskViewController cvc = (CredentialsAskViewController)x.InstantiateViewController ("CredentialsAskViewController");
-                    cvc.SetTabBarController ((NachoTabBarController)this.TabBarController);
-                    this.PresentViewController (cvc, true, null);
-                }
+            BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (currentAccount.Id);
 
-                int accountId = LoginHelpers.GetCurrentAccountId ();
-                if (BackEndStateEnum.ServerConfWait == backEndState) {
-                    var x = (AppDelegate)UIApplication.SharedApplication.Delegate;
-                    x.ServConfReqCallback (accountId, BackEnd.Instance.AutoDInfo (accountId));
-                }
+            if (BackEndStateEnum.CredWait == backEndState || BackEndStateEnum.CertAskWait == backEndState) {
+                UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+                CredentialsAskViewController cvc = (CredentialsAskViewController)x.InstantiateViewController ("CredentialsAskViewController");
+                cvc.SetTabBarController ((NachoTabBarController)this.TabBarController);
+                this.PresentViewController (cvc, true, null);
+                return;
+            }
+
+            if (BackEndStateEnum.ServerConfWait == backEndState) {
+                var x = (AppDelegate)UIApplication.SharedApplication.Delegate;
+                x.ServConfReqCallback (currentAccount.Id, BackEnd.Instance.AutoDInfo(currentAccount.Id));
+                return;
             }
         }
 

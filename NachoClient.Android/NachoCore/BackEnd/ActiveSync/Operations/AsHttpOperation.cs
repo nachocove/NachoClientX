@@ -575,8 +575,23 @@ namespace NachoCore.ActiveSync
                     }
                 }
                 if (0 <= credDaysLeft || null != credUri) {
+                    McAccount account = McAccount.QueryById<McAccount> (BEContext.Account.Id);
+                    account.DaysUntilPasswordExpires = credDaysLeft;
+                    if (null != credUri) {
+                        account.PasswordExpirationUrl = credUri.AbsoluteUri;
+                    }
+                    account.Update ();
                     var result = NcResult.Error (NcResult.SubKindEnum.Error_PasswordWillExpire);
                     result.Value = new Tuple<int,Uri> (credDaysLeft, credUri);
+                    Owner.StatusInd (result);
+                } else {
+                    McAccount account = McAccount.QueryById<McAccount> (BEContext.Account.Id);
+                    account.DaysUntilPasswordExpires = -1;
+                    account.PasswordExpirationUrl = "";
+                    account.Update ();
+
+                    var result = NcResult.Error (NcResult.SubKindEnum.Error_PasswordWillExpire);
+                    result.Value = new Tuple<int,Uri> (-1, null);
                     Owner.StatusInd (result);
                 }
                 if ((0 < ContentData.Length ||

@@ -28,6 +28,10 @@ namespace NachoCore.Model
 
         public string Signature { get; set; }
 
+        public int DaysUntilPasswordExpires { get; set; }
+
+        public string PasswordExpirationUrl { get; set; }
+
         public static IEnumerable<McAccount> QueryByAccountType (AccountTypeEnum accountType)
         {
             return NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == accountType);

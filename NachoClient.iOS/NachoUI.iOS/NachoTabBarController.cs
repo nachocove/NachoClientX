@@ -27,6 +27,8 @@ namespace NachoClient.iOS
 
         protected UITabBarItem nachoNowItem;
         protected UITabBarItem foldersItem;
+        protected UITabBarItem moreItem;
+        protected UITabBarItem generalSettingsItem;
 
         public override void ViewDidLoad ()
         {
@@ -51,7 +53,7 @@ namespace NachoClient.iOS
             SetTabBarItem ("NachoClient.iOS.CalendarViewController", "Calendar", "nav-calendar", "nav-calendar-active"); // Done
             SetTabBarItem ("NachoClient.iOS.ContactListViewController", "Contacts", "nav-contacts", "nav-contacts-active"); // Done
             SetTabBarItem ("NachoClient.iOS.InboxViewController", "Inbox", "nav-mail", "nav-mail-active"); // Done
-            SetTabBarItem ("NachoClient.iOS.GeneralSettingsViewController", "Settings", "more-settings", "more-settings-active"); // Done
+            generalSettingsItem = SetTabBarItem ("NachoClient.iOS.GeneralSettingsViewController", "Settings", "more-settings", "more-settings-active"); // Done
             SetTabBarItem ("NachoClient.iOS.SupportViewController", "Support", "more-support", "more-support-active"); // Done
             SetTabBarItem ("NachoClient.iOS.HotListViewController", "Hot", "nav-mail", "nav-mail-active"); // Done
             SetTabBarItem ("NachoClient.iOS.DeferredViewController", "Deferred", "nav-mail", "nav-mail-active"); // Done
@@ -187,15 +189,12 @@ namespace NachoClient.iOS
 
         public void SetSettingsBadge (bool isDirty)
         {
-            for (int i = 0; i < ViewControllers.Length; i++) {
-                if (ViewControllers [i].GetType () == typeof(GeneralSettingsViewController)) {
-                    ViewControllers [i].TabBarItem.BadgeValue = (isDirty ? @"!" : null);
-                    if (i > (TabBar.Items.Length - 2) && isDirty) {
-                        MoreNavigationController.TabBarItem.BadgeValue = @"!";
-                    } else {
-                        MoreNavigationController.TabBarItem.BadgeValue = null;
-                    }
-                }
+            generalSettingsItem.BadgeValue = (isDirty ? @"!" : null);
+
+            if (ViewControllers.Length > (TabBar.Items.Length - 2) && isDirty) {
+                MoreNavigationController.TabBarItem.BadgeValue = @"!";
+            } else {
+                MoreNavigationController.TabBarItem.BadgeValue = null;
             }
         }
 

@@ -64,6 +64,7 @@ namespace NachoClient.iOS
         private bool StartCrashReportingHasHappened = false;
         private bool hasFirstSyncCompleted;
 
+
         private void StartCrashReporting ()
         {
             if (Arch.SIMULATOR == Runtime.Arch) {
@@ -330,12 +331,25 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "OnActivated: StartClass4Services complete");
 
             NcApplication.Instance.StatusIndEvent -= BgStatusIndReceiver;
+            NcApplication.Instance.StatusIndEvent += ExpirationNotificationReceiver;
+
 
             BackgroundIosTaskId = UIApplication.SharedApplication.BeginBackgroundTask (() => {
                 Log.Info (Log.LOG_LIFECYCLE, "BeginBackgroundTask: Callback time remaining: {0}", application.BackgroundTimeRemaining);
                 FinalShutdown (null);
                 Log.Info (Log.LOG_LIFECYCLE, "BeginBackgroundTask: Callback exit");
             });
+
+            if (ExpirationHelper.HasUserClickedFix(McAccount.QueryById<McAccount>(LoginHelpers.GetCurrentAccountId()))){
+                UIAlertView alert = new UIAlertView ();
+                alert.Title = "Changed Password?";
+                alert.Message = "You recently chose to change your password. If your password has changed, please go to account settings and update your password.";
+                alert.AddButton ("Ok");
+                alert.Clicked += (object alertSender, UIButtonEventArgs alertEvent) => {
+                    ExpirationHelper.RemoveUserClickedFix(McAccount.QueryById<McAccount>(LoginHelpers.GetCurrentAccountId()));
+                };
+                alert.Show ();
+            }
 
             if (LoginHelpers.IsCurrentAccountSet () && LoginHelpers.HasFirstSyncCompleted (LoginHelpers.GetCurrentAccountId ())) {
                 BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
@@ -372,7 +386,9 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_LIFECYCLE, "OnResignActivation: time remaining: {0}", application.BackgroundTimeRemaining);
             BadgeNotifGoInactive ();
+
             NcApplication.Instance.StatusIndEvent += BgStatusIndReceiver;
+            NcApplication.Instance.StatusIndEvent -= ExpirationNotificationReceiver;
 
             NcApplication.Instance.StopClass4Services ();
             Log.Info (Log.LOG_LIFECYCLE, "OnResignActivation: StopClass4Services complete");
@@ -645,6 +661,48 @@ namespace NachoClient.iOS
             }
         }
 
+        public void ExpirationNotificationReceiver (object sender, EventArgs e)
+        {
+            StatusIndEventArgs ea = (StatusIndEventArgs)e;
+
+            if (NcResult.SubKindEnum.Error_PasswordWillExpire == ea.Status.SubKind) {
+                McAccount acct = ea.Account;
+
+                if (ExpirationHelper.AccountIsExpiring (acct) && !ExpirationHelper.HasAlertedToday (acct)) {
+                    ExpirationHelper.SetAlertDate (acct);
+                    if (!ExpirationHelper.ProvidedFixUrl (acct)) {
+                        UIAlertView alert = new UIAlertView ();
+                        alert.Title = "Password Expiring";
+                        alert.Message = "Your password is set to expire in " + acct.DaysUntilPasswordExpires.ToString() + " days.";
+                        alert.AddButton ("Ok");
+                        alert.Show ();
+                    } else {
+                        UIAlertView alert = new UIAlertView ();
+                        alert.Title = "Password Expiring";
+                        alert.Message = "Your password is set to expire in " + acct.DaysUntilPasswordExpires.ToString() + " days. Would you like to change your password?";
+                        alert.AddButton ("Cancel");
+                        alert.AddButton ("Yes");
+                        alert.CancelButtonIndex = 0;
+                        alert.Dismissed += (object alertSender, UIButtonEventArgs alertEvent) => {
+                            if (1 == alertEvent.ButtonIndex) {
+                                ExpirationHelper.UserClickedFix (acct);
+                            }
+                        };
+                        alert.Show ();
+                    }
+                } else {
+                    ExpirationHelper.RemoveAlertDate (acct);
+                }
+
+                //Set or clear settings/more badge
+                try {
+                    Util.GetActiveTabBar ().SetSettingsBadge (ExpirationHelper.AccountIsExpiring(acct));
+                } catch {
+                    return;
+                }
+            }
+        }
+
         public void CredReqCallback (int accountId)
         {
             Log.Info (Log.LOG_UI, "CredReqCallback Called for account: {0}", accountId);
@@ -659,7 +717,6 @@ namespace NachoClient.iOS
                 DisplayCredentialsFixView ();
             }
         }
-
 
         public void ServConfReqCallback (int accountId, AutoDInfoEnum autoDInfo)
         {

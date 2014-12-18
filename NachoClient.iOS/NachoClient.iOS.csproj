@@ -1183,6 +1183,7 @@
     <Compile Include="NachoUI.iOS\Support\AccountInfoView.cs" />
     <Compile Include="NachoUI.iOS\Support\EmailServiceTableViewSource.cs" />
     <Compile Include="NachoCore\Utils\EmailHelper.cs" />
+    <Compile Include="NachoCore\Utils\ExpirationHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
