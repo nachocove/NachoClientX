@@ -371,7 +371,6 @@ namespace NachoClient
 
         public static UIImage DrawCalDot (UIColor circleColor, SizeF size)
         {
-            //var size = new SizeF (10, 10);
             var origin = new PointF (0, 0);
 
             UIGraphics.BeginImageContextWithOptions (size, false, 0);

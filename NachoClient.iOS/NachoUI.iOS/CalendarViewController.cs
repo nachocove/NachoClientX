@@ -22,8 +22,8 @@ namespace NachoClient.iOS
         public int selectedDateTag = 0;
         public int todayWeekTag = 0;
         public int todayMonthTag = 0;
-        protected static int dateBarHeight = 78 + 5;
-        protected static int dateBarRowHeight = 46;
+        protected static int dateBarHeight = 97;
+        protected static int dateBarRowHeight = 60;
         protected static float screenWidth = UIScreen.MainScreen.Bounds.Width;
         protected static float screenRight = UIScreen.MainScreen.Bounds.Right;
         protected static float screenLeft = UIScreen.MainScreen.Bounds.Left;
@@ -214,7 +214,7 @@ namespace NachoClient.iOS
 
             NavigationItem.Title = "Calendar";
 
-            DateDotView = new DateBarView (View);
+            DateDotView = new DateBarView (View, NcEventManager.Instance);
 
             DateDotWeekPanGestureRecognizer = new UIPanGestureRecognizer ((UIPanGestureRecognizer obj) => {
                 DateDotWeekPan (obj);
@@ -635,21 +635,21 @@ namespace NachoClient.iOS
         protected RectangleF CalendarTableFourSize ()
         {
             var parentFrame = View.Frame;
-            var rect = new RectangleF (0, 75 + (3 * dateBarRowHeight), parentFrame.Width, parentFrame.Height - (75 + (3 * dateBarRowHeight)));
+            var rect = new RectangleF (0, dateBarHeight + (3 * dateBarRowHeight), parentFrame.Width, parentFrame.Height - (dateBarHeight + (3 * dateBarRowHeight)));
             return rect;
         }
 
         protected RectangleF CalendarTableFiveSize ()
         {
             var parentFrame = View.Frame;
-            var rect = new RectangleF (0, 75 + (4 * dateBarRowHeight), parentFrame.Width, parentFrame.Height - (75 + (4 * dateBarRowHeight)));
+            var rect = new RectangleF (0, dateBarHeight + (4 * dateBarRowHeight), parentFrame.Width, parentFrame.Height - (dateBarHeight + (4 * dateBarRowHeight)));
             return rect;
         }
 
         protected RectangleF CalendarTableSixSize ()
         {
             var parentFrame = View.Frame;
-            var rect = new RectangleF (0, 75 + (5 * dateBarRowHeight), parentFrame.Width, parentFrame.Height - (75 + (5 * dateBarRowHeight)));
+            var rect = new RectangleF (0, dateBarHeight + (5 * dateBarRowHeight), parentFrame.Width, parentFrame.Height - (dateBarHeight + (5 * dateBarRowHeight)));
             return rect;
         }
 
