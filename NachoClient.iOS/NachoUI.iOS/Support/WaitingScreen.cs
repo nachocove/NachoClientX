@@ -103,7 +103,7 @@ namespace NachoClient.iOS
             syncStatusLabel.Font = A.Font_AvenirNextRegular17;
             syncStatusLabel.TextColor = UIColor.White;
             syncStatusLabel.TextAlignment = UITextAlignment.Center;
-            syncStatusLabel.Text = "Locating Your Server...";
+            syncStatusLabel.Text = "Verifying Your Server...";
             syncStatusLabel.Alpha = 0.0f;
             this.AddSubview (syncStatusLabel);
 
@@ -157,7 +157,7 @@ namespace NachoClient.iOS
             dismissLabel = new UILabel (new RectangleF (this.Frame.Width / 2 - 75, this.Frame.Bottom - 30 , 150, 15));
             dismissLabel.Font = A.Font_AvenirNextRegular12;
             dismissLabel.TextColor = UIColor.White;
-            dismissLabel.Text = "Return To Advanced Login";
+            dismissLabel.Text = "Return To Account Setup";
             dismissLabel.TextAlignment = UITextAlignment.Center;
             dismissLabel.UserInteractionEnabled = true;
             UITapGestureRecognizer dismissLabelTap = new UITapGestureRecognizer (() => {
