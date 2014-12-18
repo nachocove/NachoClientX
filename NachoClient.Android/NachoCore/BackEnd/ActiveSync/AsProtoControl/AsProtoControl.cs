@@ -185,7 +185,6 @@ namespace NachoCore.ActiveSync
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.TempFail,
                             (uint)SmEvt.E.HardFail,
-                            (uint)AsEvt.E.ReDisc,
                             (uint)AsEvt.E.ReProv,
                             (uint)AsEvt.E.AuthFail,
                             (uint)CtlEvt.E.GetServConf,
@@ -199,6 +198,7 @@ namespace NachoCore.ActiveSync
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)CtlEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                         }
                     },
@@ -416,7 +416,6 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.UiSetServConf,
                         },
                         Invalid = new [] {
-                            (uint)AsEvt.E.ReDisc,
                             (uint)AsEvt.E.ReProv,
                             (uint)CtlEvt.E.GetServConf,
                             (uint)CtlEvt.E.GetCertOk,
@@ -432,6 +431,7 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoProv, State = (uint)Lst.ProvW },
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoOldProtoProv, State = (uint)Lst.ProvW },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoOpt, State = (uint)Lst.OptW },
+                            new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
                             new Trans { Event = (uint)CtlEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                         }
@@ -584,7 +584,7 @@ namespace NachoCore.ActiveSync
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.TempFail,
-                            (uint)AsEvt.E.ReDisc,
+
                             (uint)AsEvt.E.ReProv,
                             (uint)AsEvt.E.AuthFail,
                             (uint)CtlEvt.E.GetServConf,
@@ -593,10 +593,11 @@ namespace NachoCore.ActiveSync
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },
                             new Trans { Event = (uint)CtlEvt.E.PkQOp, Act = DoArg, State = (uint)Lst.QOpW },
                             new Trans { Event = (uint)CtlEvt.E.PkHotQOp, Act = DoArg, State = (uint)Lst.HotQOpW },
                             new Trans { Event = (uint)CtlEvt.E.PkFetch, Act = DoArg, State = (uint)Lst.FetchW },
-                            new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },
                             new Trans { Event = (uint)CtlEvt.E.PkPing, Act = DoArg, State = (uint)Lst.PingW },
                             new Trans { Event = (uint)CtlEvt.E.PkWait, Act = DoArg, State = (uint)Lst.IdleW },
                             new Trans { Event = (uint)CtlEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
@@ -933,8 +934,12 @@ namespace NachoCore.ActiveSync
                 }, null, 1000, 2000);
                 PendingOnTimeTimer.Stfu = true;
             }
-            // All states are required to handle the Launch event gracefully.
-            Sm.PostEvent ((uint)SmEvt.E.Launch, "ASPCEXE");
+            if (null == Server) {
+                Sm.PostEvent ((uint)AsEvt.E.ReDisc, "ASPCEXECAUTOD");
+            } else {
+                // All states are required to handle the Launch event gracefully.
+                Sm.PostEvent ((uint)SmEvt.E.Launch, "ASPCEXE");
+            }
         }
 
         public override void CredResp ()
