@@ -380,7 +380,15 @@ namespace NachoClient.iOS
         protected void BackShouldSwitchToFolders ()
         {
             using (var image = UIImage.FromBundle ("nav-backarrow")) {
-                backButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, onClickBackButton);
+//                backButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, onClickBackButton);
+                var button = UIButton.FromType (UIButtonType.System);
+                button.Frame = new RectangleF (0, 0, 70, 30);
+                button.SetTitle ("Mail", UIControlState.Normal);
+                button.SetTitleColor(UIColor.White, UIControlState.Normal);
+                button.SetImage (image, UIControlState.Normal);
+                button.Font = UINavigationBar.Appearance.TitleTextAttributes.Font;
+                backButton = new UIBarButtonItem (button);
+                button.TouchUpInside += onClickBackButton;
             }
         }
 
