@@ -668,27 +668,29 @@ namespace NachoClient.iOS
             if (NcResult.SubKindEnum.Error_PasswordWillExpire == ea.Status.SubKind) {
                 McAccount acct = ea.Account;
 
-                if (ExpirationHelper.AccountIsExpiring (acct) && !ExpirationHelper.HasAlertedToday (acct)) {
-                    ExpirationHelper.SetAlertDate (acct);
-                    if (!ExpirationHelper.ProvidedFixUrl (acct)) {
-                        UIAlertView alert = new UIAlertView ();
-                        alert.Title = "Password Expiring";
-                        alert.Message = "Your password is set to expire in " + acct.DaysUntilPasswordExpires.ToString() + " days.";
-                        alert.AddButton ("Ok");
-                        alert.Show ();
-                    } else {
-                        UIAlertView alert = new UIAlertView ();
-                        alert.Title = "Password Expiring";
-                        alert.Message = "Your password is set to expire in " + acct.DaysUntilPasswordExpires.ToString() + " days. Would you like to change your password?";
-                        alert.AddButton ("Cancel");
-                        alert.AddButton ("Yes");
-                        alert.CancelButtonIndex = 0;
-                        alert.Dismissed += (object alertSender, UIButtonEventArgs alertEvent) => {
-                            if (1 == alertEvent.ButtonIndex) {
-                                ExpirationHelper.UserClickedFix (acct);
-                            }
-                        };
-                        alert.Show ();
+                if (ExpirationHelper.AccountIsExpiring (acct)){
+                    if (!ExpirationHelper.HasAlertedToday (acct)) {
+                        ExpirationHelper.SetAlertDate (acct);
+                        if (!ExpirationHelper.ProvidedFixUrl (acct)) {
+                            UIAlertView alert = new UIAlertView ();
+                            alert.Title = "Password Expiring";
+                            alert.Message = "Your password is set to expire in " + acct.DaysUntilPasswordExpires.ToString () + " days.";
+                            alert.AddButton ("Ok");
+                            alert.Show ();
+                        } else {
+                            UIAlertView alert = new UIAlertView ();
+                            alert.Title = "Password Expiring";
+                            alert.Message = "Your password is set to expire in " + acct.DaysUntilPasswordExpires.ToString () + " days. Would you like to change your password?";
+                            alert.AddButton ("Cancel");
+                            alert.AddButton ("Yes");
+                            alert.CancelButtonIndex = 0;
+                            alert.Dismissed += (object alertSender, UIButtonEventArgs alertEvent) => {
+                                if (1 == alertEvent.ButtonIndex) {
+                                    ExpirationHelper.UserClickedFix (acct);
+                                }
+                            };
+                            alert.Show ();
+                        }
                     }
                 } else {
                     ExpirationHelper.RemoveAlertDate (acct);
