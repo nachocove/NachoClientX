@@ -51,7 +51,7 @@ namespace NachoClient.iOS
             }
                 
             var todayButton = new UIBarButtonItem ();
-            Util.SetAutomaticImageForButton (todayButton, "calendar-empty-cal-alt");
+            Util.SetAutomaticImageForButton (todayButton, Util.DrawTodayButtonImage(DateTime.Now.Day.ToString()));
             todayButton.Clicked += (object sender, EventArgs e) => {
                 ReturnToToday ();
             };
@@ -63,14 +63,6 @@ namespace NachoClient.iOS
             };
 
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { addEventButton, todayButton };
-
-            UILabel dateText = new UILabel (new RectangleF (NavigationController.NavigationBar.Frame.Width - 94, 9, 24, 24));
-            dateText.BackgroundColor = UIColor.Clear;
-            dateText.Text = DateTime.Today.Day.ToString ();
-            dateText.Font = A.Font_AvenirNextMedium12;
-            dateText.TextColor = A.Color_NachoBlue;
-            dateText.TextAlignment = UITextAlignment.Center;
-            NavigationController.NavigationBar.AddSubview (dateText);
 
             // We must request permission to access the user's calendar
             // This will prompt the user on platforms that ask, or it will validate
