@@ -351,7 +351,7 @@ namespace NachoClient.iOS
                     Log.Info (Log.LOG_STATE, "OnActived: CREDCALLBACK ");
                     break;
                 case BackEndStateEnum.ServerConfWait:
-                    ServConfReqCallback (accountId, BackEnd.Instance.AutoDInfo (accountId));
+                    ServConfReqCallback (accountId);
                     Log.Info (Log.LOG_STATE, "OnActived: SERVCONFCALLBACK ");
                     break;
                 default:
@@ -661,9 +661,12 @@ namespace NachoClient.iOS
         }
 
 
-        public void ServConfReqCallback (int accountId, AutoDInfoEnum autoDInfo)
+        public void ServConfReqCallback (int accountId)
         {
             Log.Info (Log.LOG_UI, "ServConfReqCallback Called for account: {0}", accountId);
+
+            // TODO Make use of the MX information that was gathered during auto-d.
+            // It can be found at BackEnd.Instance.AutoDInfo(accountId).
 
             hasFirstSyncCompleted = LoginHelpers.HasFirstSyncCompleted (accountId); 
             if (hasFirstSyncCompleted == false) {
@@ -729,7 +732,7 @@ namespace NachoClient.iOS
                         gonnaquit.Show ();
                         gonnaquit.Clicked += delegate(object sender, UIButtonEventArgs e) {
                             if (e.ButtonIndex == 1) {
-                                ServConfReqCallback (accountId, BackEnd.Instance.AutoDInfo (accountId)); // go again
+                                ServConfReqCallback (accountId); // go again
                             }
                             gonnaquit.ResignFirstResponder ();
                         };

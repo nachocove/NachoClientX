@@ -18,8 +18,10 @@ namespace NachoCore
     };
 
     public enum AutoDInfoEnum {
-        None = 0,
-        MXNotFound = 1,
+        Unknown = 0,
+        MXNotFound,
+        MXFoundGoogle,
+        MXFoundNonGoogle,
     };
 
     public interface IBackEnd

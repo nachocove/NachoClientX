@@ -470,10 +470,10 @@ namespace NachoCore
             });
         }
 
-        public void ServConfReq (ProtoControl sender, AutoDInfoEnum autoDInfo)
+        public void ServConfReq (ProtoControl sender)
         {
             InvokeOnUIThread.Instance.Invoke (delegate () {
-                Owner.ServConfReq (sender.AccountId, autoDInfo);
+                Owner.ServConfReq (sender.AccountId);
             });
         }
 

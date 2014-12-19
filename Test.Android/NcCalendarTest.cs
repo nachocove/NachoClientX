@@ -42,7 +42,7 @@ namespace Test.Common
         {
         }
 
-        public void ServConfReq (ProtoControl sender, AutoDInfoEnum autoDInfo)
+        public void ServConfReq (ProtoControl sender)
         {
         }
 
