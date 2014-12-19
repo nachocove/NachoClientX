@@ -27,7 +27,7 @@ namespace NachoCore.ActiveSync
     {
         private class StepRobot : IAsHttpOperationOwner, IAsDnsOperationOwner
         {
-            private const string KDefaultCertTimeoutSeconds = "8";
+            private const int KDefaultCertTimeoutSeconds = 8;
             private double KDefaultTimeoutExpander = 2.0;
             public enum RobotLst : uint
             {
@@ -96,8 +96,8 @@ namespace NachoCore.ActiveSync
 
             public StepRobot (AsAutodiscoverCommand command, Steps step, string emailAddr, string domain)
             {
-                var timeoutSeconds = McMutables.GetOrCreate (McAccount.GetDeviceAccount ().Id, "AUTOD", "CertTimeoutSeconds", KDefaultCertTimeoutSeconds);
-                CertTimeout = new TimeSpan (0, 0, timeoutSeconds.ToInt ());
+                int timeoutSeconds = McMutables.GetOrCreateInt (McAccount.GetDeviceAccount ().Id, "AUTOD", "CertTimeoutSeconds", KDefaultCertTimeoutSeconds);
+                CertTimeout = new TimeSpan (0, 0, timeoutSeconds);
                 Cts = new CancellationTokenSource ();
                 Ct = Cts.Token;
                 DisposedJunk = new ConcurrentBag<object> ();
