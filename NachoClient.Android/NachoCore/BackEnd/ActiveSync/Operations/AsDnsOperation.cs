@@ -70,6 +70,8 @@ namespace NachoCore.ActiveSync
             }
         }
 
+        // TODO The declaration for nacho_res_query needs to be moved to platform-specific code.
+
         // res_query() stores its error code in h_errno, not errno.  The usual technique
         // for getting the error code, SetLastError=true, won't work.  So we have created
         // a wrapper function around res_query that gets the error code from h_errno and
