@@ -152,7 +152,7 @@ namespace NachoCore.Model
             return defaultValue;
         }
 
-        public static int SetInt (int accountId, string module, string key, int value)
+        public static void SetInt (int accountId, string module, string key, int value)
         {
             Set (accountId, module, key, value.ToString ());
         }
