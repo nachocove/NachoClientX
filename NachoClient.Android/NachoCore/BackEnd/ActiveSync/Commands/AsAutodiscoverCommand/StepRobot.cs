@@ -521,9 +521,7 @@ namespace NachoCore.ActiveSync
             private void DoRobotDns ()
             {
                 if (0 < RetriesLeft--) {
-                    DnsOp = new AsDnsOperation (this) {
-                        Timeout = new TimeSpan(0, 0, 10),
-                    };
+                    DnsOp = new AsDnsOperation (this, new TimeSpan(0, 0, 10));
                     DnsOp.Execute (StepSm);
                 } else {
                     StepSm.PostEvent ((uint)SmEvt.E.HardFail, "SRDRDHARD");
