@@ -149,7 +149,7 @@ namespace NachoCore.ActiveSync
                 if (GetOp == Sender) {
                     if (McProtocolState.AsPolicyKey_Initial == BEContext.ProtocolState.AsPolicyKey &&
                         "14.1" == BEContext.ProtocolState.AsProtocolVersion) {
-                        provision.Add (AsSettingsCommand.DeviceInformation ());
+                        provision.Add (AsSettingsCommand.DeviceInformation (BEContext));
                     }
                 } else {
                     NcAssert.True (AckOp == Sender);
