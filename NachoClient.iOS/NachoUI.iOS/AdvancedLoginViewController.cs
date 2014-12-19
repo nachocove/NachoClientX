@@ -146,7 +146,9 @@ namespace NachoClient.iOS
 
             fillInKnownFields ();
 
-            showAdvanced |= theAccount.Credentials.UserSpecifiedUsername;
+            if (null != theAccount.Credentials) {
+                showAdvanced |= theAccount.Credentials.UserSpecifiedUsername;
+            }
             if (null != theAccount.Server) {
                 showAdvanced |= theAccount.Server.UserSpecifiedServer;
             }
