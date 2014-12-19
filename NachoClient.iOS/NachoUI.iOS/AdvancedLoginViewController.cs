@@ -309,21 +309,25 @@ namespace NachoClient.iOS
                 return; // error has been displayed
             }
 
+            bool freshAccount = !LoginHelpers.IsCurrentAccountSet ();
+
             // Save or setup the account
-            if (LoginHelpers.IsCurrentAccountSet ()) {
-                saveUsersSettings ();
-            } else {
+            if (freshAccount) {
                 basicEnterFullConfiguration ();
+            } else {
+                saveUsersSettings ();
             }
 
             // If only password has changed, then do cred resp
-            if (!String.Equals (gOriginalPassword, passwordView.textField.Text, StringComparison.OrdinalIgnoreCase)) {
-                BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
-                if (BackEndStateEnum.CredWait == backEndState) {
-                    BackEnd.Instance.CredResp (LoginHelpers.GetCurrentAccountId ());
-                    waitScreen.SetLoadingText ("Verifying Your Credentials...");
-                    waitScreen.ShowView ();
-                    return;
+            if (!freshAccount) {
+                if (!String.Equals (gOriginalPassword, passwordView.textField.Text, StringComparison.OrdinalIgnoreCase)) {
+                    BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
+                    if (BackEndStateEnum.CredWait == backEndState) {
+                        BackEnd.Instance.CredResp (LoginHelpers.GetCurrentAccountId ());
+                        waitScreen.SetLoadingText ("Verifying Your Credentials...");
+                        waitScreen.ShowView ();
+                        return;
+                    }
                 }
             }
 
@@ -613,6 +617,7 @@ namespace NachoClient.iOS
         /// </summary>
         protected void saveUsersSettings ()
         {
+            theAccount.Account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
             theAccount.Credentials = McCred.QueryByAccountId<McCred> (theAccount.Account.Id).SingleOrDefault (); 
 
             // If the user supplied the username originally, they are in charge from now on
@@ -632,7 +637,6 @@ namespace NachoClient.iOS
             theAccount.Credentials.UpdatePassword (passwordView.textField.Text);
             theAccount.Credentials.Update ();
 
-            theAccount.Account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
             theAccount.Account.EmailAddr = emailView.textField.Text;
             theAccount.Account.Update ();
         }
@@ -661,7 +665,6 @@ namespace NachoClient.iOS
                     server.Insert ();
                     theAccount.Server = server;
                 }
-                theAccount.Account = appDelegate.Account;
                 Telemetry.RecordAccountEmailAddress (appDelegate.Account);
                 LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, true);
             });
