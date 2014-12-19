@@ -1014,7 +1014,7 @@ namespace NachoCore.ActiveSync
                         // TODO: add support for CertEnroll.
                     }
                     var xmlName = xmlServer.ElementAnyNs (Xml.Autodisco.Name);
-                    if (null != xmlName) {
+                    if (null == xmlName) {
                         Log.Warn (Log.LOG_AS, "ProcessXmlSettings: missing Name: {0}", xmlServer.ToString ());
                         // We should have gotten our server info from Url.
                     }
