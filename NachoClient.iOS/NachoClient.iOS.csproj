@@ -1281,7 +1281,6 @@
     <BundleResource Include="Resources\icn-defer%402x.png" />
     <BundleResource Include="Resources\cal-dialintomeeting-gray%402x.png" />
     <BundleResource Include="Resources\email-archive-gray%402x.png" />
-    <BundleResource Include="Resources\email-delete-gray%402x.png" />
     <BundleResource Include="Resources\toolbar-icn-fwd%402x.png" />
     <BundleResource Include="Resources\toolbar-icn-reply%402x.png" />
     <BundleResource Include="Resources\icn-close%402x.png" />

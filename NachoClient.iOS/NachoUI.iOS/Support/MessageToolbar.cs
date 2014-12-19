@@ -98,7 +98,7 @@ namespace NachoClient.iOS
 
             deleteButton = new UIBarButtonItem ();
             deleteButton.TintColor = BUTTON_COLOR;
-            Util.SetAutomaticImageForButton (deleteButton, "email-delete-gray");
+            Util.SetAutomaticImageForButton (deleteButton, "email-delete");
             deleteButton.Clicked += DeleteButtonClicked;
 
             SetItems (new UIBarButtonItem[] {
