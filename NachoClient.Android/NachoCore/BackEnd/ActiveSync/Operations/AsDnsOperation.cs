@@ -35,18 +35,8 @@ namespace NachoCore.ActiveSync
         public AsDnsOperation (IAsDnsOperationOwner owner)
         {
             this.owner = owner;
-            int timeoutSeconds = kDefaultTimeoutSeconds;
-            string timeoutString = McMutables.GetOrCreate (
-                McAccount.GetDeviceAccount ().Id, "DNSOP", "TimeoutSeconds", kDefaultTimeoutSeconds.ToString ());
-            try {
-                timeoutSeconds = timeoutString.ToInt ();
-            } catch (Exception e) {
-                // The timeout value is not an integer.  Swallow the exception, leaving the
-                // timeout as the default.
-                Log.Error (Log.LOG_DNS, "The timeout value for DNS operations, {0}, is not an integer: {1}",
-                    timeoutString, e.ToString ());
-            }
-            timeout = new TimeSpan (0, 0, timeoutSeconds);
+            timeout = new TimeSpan (0, 0, McMutables.GetOrCreateInt (
+                McAccount.GetDeviceAccount ().Id, "DNSOP", "TimeoutSeconds", kDefaultTimeoutSeconds));
         }
 
         public AsDnsOperation (IAsDnsOperationOwner owner, TimeSpan timeout)
