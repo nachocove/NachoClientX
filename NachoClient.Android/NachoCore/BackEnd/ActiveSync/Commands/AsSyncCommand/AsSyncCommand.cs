@@ -524,7 +524,11 @@ namespace NachoCore.ActiveSync
             foreach (var maybeStale in FoldersInRequest) {
                 var folder = McFolder.ServerEndQueryById (maybeStale.Id);
                 if (0 == processedFolders.Where (f => folder.Id == f.Id).Count ()) {
-                    folder = folder.UpdateSet_AsSyncMetaToClientExpected (false);
+                    // This is a grey area in the spec. I've seen HotMail exclude a folder from a response where there IS more waiting on the server.
+                    // This was the old code:
+                    // folder = folder.UpdateSet_AsSyncMetaToClientExpected (false);
+                    // I suspect it may have been driven by GOOG doing the opposite - omitting when there is nothing. We will have to test and see.
+                    Log.Info (Log.LOG_AS, "McFolder {0} not included in Sync response.", folder.ServerId);
                 }
                 reloadedFolders.Add (folder);
             }
