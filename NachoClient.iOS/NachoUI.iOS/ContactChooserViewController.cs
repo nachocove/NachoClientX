@@ -342,12 +342,24 @@ namespace NachoClient.iOS
             {
                 var cell = tableView.DequeueReusableCell (ContactCellReuseIdentifier);
                 if (null == cell) {
-                    cell = Owner.contactTableViewSource.CreateCell (tableView);
-
+                    cell = Owner.contactTableViewSource.CreateCell (tableView, VipButtonTouched);
                 }
                 var contact = Owner.searchResults [indexPath.Row].GetContact ();
                 Owner.contactTableViewSource.ConfigureCell (tableView, cell, contact);
                 return cell;
+            }
+
+            protected void VipButtonTouched (object sender, EventArgs e)
+            {
+                UIButton vipButton = (UIButton)sender;
+                UITableViewCell containingCell = Util.FindEnclosingTableViewCell (vipButton);
+                UITableView containingTable = Util.FindEnclosingTableView (vipButton);
+                NSIndexPath cellIndexPath = containingTable.IndexPathForCell (containingCell);
+                var contact = Owner.searchResults [cellIndexPath.Row].GetContact ();
+                contact.SetVIP (!contact.IsVip);
+                using (var image = UIImage.FromBundle (contact.IsVip ? "contacts-vip-checked" : "contacts-vip")) {
+                    vipButton.SetImage (image, UIControlState.Normal);
+                }
             }
 
             public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
