@@ -734,12 +734,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\NcCommStatus\INcCommStatus.cs">
       <Link>NachoCore\BackEnd\NcCommStatus\INcCommStatus.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Mockables\IDnsQueryRequest.cs">
-      <Link>NachoCore\Mockables\IDnsQueryRequest.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Mockables\MockableDnsQueryRequest.cs">
-      <Link>NachoCore\Mockables\MockableDnsQueryRequest.cs</Link>
-    </Compile>
     <Compile Include="NachoUI.iOS\Interfaces\INachoCalendarController.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McTelemetryEvent.cs">
       <Link>NachoCore\Model\McTelemetryEvent.cs</Link>
