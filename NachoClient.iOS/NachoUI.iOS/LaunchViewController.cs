@@ -351,20 +351,15 @@ namespace NachoClient.iOS
             startLabel.Center = new PointF (startLabel.Center.X, startLabel.Center.Y + 40);
             submitButton.Center = new PointF (submitButton.Center.X, submitButton.Center.Y + 15);
         }
-     
+
         private void MaybeStartLogin ()
         {
             var emailAddress = emailField.Text.Trim ();
 
-            if (emailAddress.EndsWith ("@gmail.com", StringComparison.OrdinalIgnoreCase)) {
-                emailField.TextColor = A.Color_NachoRed;
-                Complain ("Nacho Mail", "Nacho Mail does not support GMail addresses yet.");
-                return;
-            }
-
-            if (emailAddress.EndsWith ("@yahoo.com", StringComparison.OrdinalIgnoreCase)) {
-                emailField.TextColor = A.Color_NachoRed;
-                Complain ("Nacho Mail", "Nacho Mail does not support Yahoo! addresses yet.");
+            string serviceName;
+            if (EmailHelper.IsServiceUnsupported (emailAddress, out serviceName)) {
+                var nuance = String.Format ("Nacho Mail does not support {0} yet.", serviceName);
+                Complain ("Nacho Mail", nuance);
                 return;
             }
 
@@ -562,17 +557,14 @@ namespace NachoClient.iOS
             }
 
             if (segue.Identifier.Equals ("SegueToAdvancedLogin")) {
-                if (LoginHelpers.IsCurrentAccountSet ()) {
-                    return;
-                } else {
-                    if (emailField.Text.Length > 0 || passwordField.Text.Length > 0) {
-                        AdvancedLoginViewController destController = (AdvancedLoginViewController)segue.DestinationViewController;
-                        destController.savedBasicCreds = true;
-                        destController.basicCreds = new AdvancedLoginViewController.BasicCredentials (emailField.Text, passwordField.Text);
-                    }
-                    return;
+                // TODO: How can account be set?
+                if (!LoginHelpers.IsCurrentAccountSet ()) {
+                    var vc = (AdvancedLoginViewController)segue.DestinationViewController;
+                    vc.SetAdvanced (emailField.Text, passwordField.Text);
                 }
+                return;
             }
+
         }
 
     }

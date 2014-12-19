@@ -29,6 +29,10 @@ namespace NachoCore.Model
 
         public bool UsedBefore { get; set; }
 
+        // We want to remember if the user entered their
+        // own server or if we figured it out on our own.
+        public bool UserSpecifiedServer { get; set; }
+
         public static McServer Create (int accountId, Uri uri)
         {
             return new McServer () {
