@@ -88,12 +88,6 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private AutoDInfoEnum _autoDInfo;
-        public override AutoDInfoEnum AutoDInfo {
-            get {
-                return _autoDInfo;
-            }
-        }
         private X509Certificate2 _ServerCertToBeExamined;
         public override X509Certificate2 ServerCertToBeExamined {
             get {
@@ -991,8 +985,7 @@ namespace NachoCore.ActiveSync
         private void DoUiServConfReq ()
         {
             // Send the request toward the UI.
-            _autoDInfo = (AutoDInfoEnum)Sm.Arg;
-            Owner.ServConfReq (this, _autoDInfo);
+            Owner.ServConfReq (this);
         }
 
         private void DoSetServConf ()

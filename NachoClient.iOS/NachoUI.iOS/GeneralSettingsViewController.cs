@@ -231,7 +231,7 @@ namespace NachoClient.iOS
                 int accountId = LoginHelpers.GetCurrentAccountId ();
                 if (BackEndStateEnum.ServerConfWait == backEndState) {
                     var x = (AppDelegate)UIApplication.SharedApplication.Delegate;
-                    x.ServConfReqCallback (accountId, BackEnd.Instance.AutoDInfo (accountId));
+                    x.ServConfReqCallback (accountId);
                 }
             }
         }

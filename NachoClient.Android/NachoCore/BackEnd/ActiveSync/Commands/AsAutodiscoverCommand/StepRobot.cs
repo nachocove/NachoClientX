@@ -681,6 +681,7 @@ namespace NachoCore.ActiveSync
 
             private void DoRobotDnsMxHardFail ()
             {
+                Command.ProtoControl.AutoDInfo = AutoDInfoEnum.MXNotFound;
                 Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: DNS MX failed.", Step);
                 DoRobotHardFail ();
             }
@@ -1097,13 +1098,16 @@ namespace NachoCore.ActiveSync
                         NsType.MX == response.NsType) {
                         var aBest = (MxRecord)response.Answers.OrderBy (r1 => ((MxRecord)r1).Preference).First ();
                         if (aBest.MailExchange.EndsWith (McServer.GMail_MX_Suffix, StringComparison.OrdinalIgnoreCase)) {
+                            Command.ProtoControl.AutoDInfo = AutoDInfoEnum.MXFoundGoogle;
                             SrServerUri = new Uri (McServer.GMail_Uri);
                             return Event.Create ((uint)SmEvt.E.Success, "SRPRMXSUCCESS");
                         } else {
+                            Command.ProtoControl.AutoDInfo = AutoDInfoEnum.MXFoundNonGoogle;
                             return Event.Create ((uint)SmEvt.E.HardFail, "SRPRMXHARD1");
                         }
 
                     } else {
+                        Command.ProtoControl.AutoDInfo = AutoDInfoEnum.MXNotFound;
                         return Event.Create ((uint)SmEvt.E.HardFail, "SRPRMXHARD2");
                     }
 

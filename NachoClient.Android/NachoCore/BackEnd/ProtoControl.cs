@@ -53,9 +53,13 @@ namespace NachoCore
             }
         }
 
+        private AutoDInfoEnum _autoDInfo = AutoDInfoEnum.Unknown;
         public virtual AutoDInfoEnum AutoDInfo {
             get {
-                return AutoDInfoEnum.None;
+                return _autoDInfo;
+            }
+            set {
+                _autoDInfo = value;
             }
         }
 

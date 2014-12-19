@@ -562,7 +562,7 @@ namespace NachoCore.ActiveSync
 
         private void DoUiGetServer ()
         {
-            OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf, "AUTODDUGS", AutoDInfoEnum.None);
+            OwnerSm.PostEvent ((uint)AsProtoControl.CtlEvt.E.GetServConf, "AUTODDUGS");
         }
 
         private void DoUiServerCertAsk ()
