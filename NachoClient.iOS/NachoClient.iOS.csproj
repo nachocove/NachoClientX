@@ -1202,8 +1202,6 @@
     <BundleResource Include="Resources\ic_action_collection.png" />
     <BundleResource Include="Resources\ic_action_accounts.png" />
     <BundleResource Include="Resources\ic_action_settings.png" />
-    <BundleResource Include="Resources\Nacho-Cove-Icon.png" />
-    <BundleResource Include="Resources\Nacho-Cove-Icon%402x.png" />
     <BundleResource Include="Resources\ic_action_call.png" />
     <BundleResource Include="Resources\ic_action_make_available_offline.png" />
     <BundleResource Include="Resources\ic_action_web_site.png" />
@@ -1229,8 +1227,6 @@
     <BundleResource Include="Resources\btn-mtng-tenative-pressed%402x.png" />
     <BundleResource Include="Resources\btn-mtng-tenative%402x.png" />
     <BundleResource Include="Resources\Icon-60%402x.png" />
-    <BundleResource Include="Resources\Icon-72.png" />
-    <BundleResource Include="Resources\Icon-72%402x.png" />
     <BundleResource Include="Resources\Icon-76%402x.png" />
     <BundleResource Include="Resources\Icon-76.png" />
     <BundleResource Include="Resources\Icon-Small.png" />
