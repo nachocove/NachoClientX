@@ -11,6 +11,8 @@ namespace NachoCore.ActiveSync
 {
     public class AsSettingsCommand : AsCommand
     {
+        public bool OmitDeviceInformation { get; set; }
+
         public AsSettingsCommand (IBEContext beContext) : base (Xml.Settings.Ns, Xml.Settings.Ns, beContext)
         {
             // This command does not currently use McPending.
@@ -22,9 +24,10 @@ namespace NachoCore.ActiveSync
             // We ask for user information and send device information.
             var settings = new XElement (m_ns + Xml.Settings.Ns, 
                                new XElement (m_ns + Xml.Settings.UserInformation, 
-                                   new XElement (m_ns + Xml.Settings.Get)), 
-                               DeviceInformation (BEContext));
-                               
+                                   new XElement (m_ns + Xml.Settings.Get)));
+            if (!OmitDeviceInformation) {
+                settings.Add (DeviceInformation (BEContext));
+            }
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (settings);
             return doc;
@@ -65,7 +68,7 @@ namespace NachoCore.ActiveSync
                 // Capture UserInformation.
                 var xmlUserInformation = xmlSettings.Element (m_ns + Xml.Settings.UserInformation);
                 if (null != xmlUserInformation) {
-                    var xmlInnerStatus = xmlDeviceInformation.Element (m_ns + Xml.Settings.Status);
+                    var xmlInnerStatus = xmlUserInformation.Element (m_ns + Xml.Settings.Status);
                     var innerStatus = (Xml.Settings.SetGetStatusCode)uint.Parse (xmlInnerStatus.Value);
                     switch (innerStatus) {
                     case Xml.Settings.SetGetStatusCode.Success_1:
