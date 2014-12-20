@@ -8,7 +8,8 @@ using NachoCore.ActiveSync;
 
 namespace NachoCore
 {
-    public enum BackEndStateEnum { 
+    public enum BackEndStateEnum {
+        NotYetStarted,
         Running, 
         CertAskWait, 
         ServerConfWait, 

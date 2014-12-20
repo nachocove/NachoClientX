@@ -52,6 +52,9 @@ namespace NachoCore.ActiveSync
                 }
                 // Every state above must be mapped here.
                 switch (state) {
+                case (uint)St.Start:
+                    return BackEndStateEnum.NotYetStarted;
+
                 case (uint)Lst.DiscW:
                     return BackEndStateEnum.Running;
 
