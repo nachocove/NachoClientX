@@ -446,8 +446,8 @@ namespace Test.iOS
                 }, (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType, out int answerLength) => {
                     if (MockSteps.S4 == step && MockSteps.S4 == DetermineRobotType (dnsType)) {
                         if (!hasTimedOutOnce) {
-                            System.Threading.Thread.Sleep (new TimeSpan(0, 0, 20));
                             hasTimedOutOnce = true;
+                            System.Threading.Thread.Sleep (new TimeSpan(0, 0, 20));
                             answerLength = 0;
                             return null;
                         } else {
