@@ -267,7 +267,12 @@ namespace NachoCore.Utils
 
         public string ExchangeNameToLabel (string name)
         {
-            return ExchangeLabelDictionary [name];
+            string value;
+            if (ExchangeLabelDictionary.TryGetValue (name, out value)) {
+                return value;
+            }
+            Log.Error (Log.LOG_CONTACTS, "Exchange label dictionary missing key {0}", name);
+            return name;
         }
 
         public List<string> GetAvailablePhoneNames (McContact contact)
