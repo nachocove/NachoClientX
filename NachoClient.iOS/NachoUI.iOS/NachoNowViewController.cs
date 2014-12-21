@@ -400,11 +400,13 @@ namespace NachoClient.iOS
         public void CreateTaskForEmailMessage (INachoMessageEditor vc, McEmailMessageThread thread)
         {
             var m = thread.SingleMessageSpecialCase ();
-            var t = CalendarHelper.CreateTask (m);
-            vc.SetOwner (null);
-            vc.DismissMessageEditor (false, new NSAction (delegate {
-                PerformSegue ("", new SegueHolder (t));
-            }));
+            if (null != m) {
+                var t = CalendarHelper.CreateTask (m);
+                vc.SetOwner (null);
+                vc.DismissMessageEditor (false, new NSAction (delegate {
+                    PerformSegue ("", new SegueHolder (t));
+                }));
+            }
         }
 
         /// <summary>
@@ -413,10 +415,12 @@ namespace NachoClient.iOS
         public void CreateMeetingEmailForMessage (INachoMessageEditor vc, McEmailMessageThread thread)
         {
             var m = thread.SingleMessageSpecialCase ();
-            var c = CalendarHelper.CreateMeeting (m);
-            vc.DismissMessageEditor (false, new NSAction (delegate {
-                PerformSegue ("NachoNowToEditEventView", new SegueHolder (c));
-            }));
+            if (null != m) {
+                var c = CalendarHelper.CreateMeeting (m);
+                vc.DismissMessageEditor (false, new NSAction (delegate {
+                    PerformSegue ("NachoNowToEditEventView", new SegueHolder (c));
+                }));
+            }
         }
 
         /// <summary>
@@ -436,7 +440,9 @@ namespace NachoClient.iOS
             var segueHolder = (SegueHolder)cookie;
             var messageThread = (McEmailMessageThread)segueHolder.value;
             var message = messageThread.SingleMessageSpecialCase ();
-            NcEmailArchiver.Move (message, folder);
+            if (null != message) {
+                NcEmailArchiver.Move (message, folder);
+            }
             vc.DismissFolderChooser (true, null);
         }
 

@@ -329,11 +329,13 @@ namespace NachoClient.iOS
         public void CreateTaskForEmailMessage (INachoMessageEditor vc, McEmailMessageThread thread)
         {
             var m = thread.SingleMessageSpecialCase ();
-            var t = CalendarHelper.CreateTask (m);
-            vc.SetOwner (null);
-            vc.DismissMessageEditor (false, new NSAction (delegate {
-                PerformSegue ("", new SegueHolder (t));
-            }));
+            if (null != m) {
+                var t = CalendarHelper.CreateTask (m);
+                vc.SetOwner (null);
+                vc.DismissMessageEditor (false, new NSAction (delegate {
+                    PerformSegue ("", new SegueHolder (t));
+                }));
+            }
         }
 
         /// <summary>
@@ -342,10 +344,12 @@ namespace NachoClient.iOS
         public void CreateMeetingEmailForMessage (INachoMessageEditor vc, McEmailMessageThread thread)
         {
             var m = thread.SingleMessageSpecialCase ();
-            var c = CalendarHelper.CreateMeeting (m);
-            vc.DismissMessageEditor (false, new NSAction (delegate {
-                PerformSegue ("NachoNowToEditEvent", new SegueHolder (c));
-            }));
+            if (null != m) {
+                var c = CalendarHelper.CreateMeeting (m);
+                vc.DismissMessageEditor (false, new NSAction (delegate {
+                    PerformSegue ("NachoNowToEditEvent", new SegueHolder (c));
+                }));
+            }
         }
 
         /// <summary>
