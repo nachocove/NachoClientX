@@ -338,8 +338,6 @@ namespace NachoClient.iOS
             }, View.Frame.Width);
             blockMenu.Tag = (int)TagType.BLOCK_MENU_TAG;
             View.AddSubview (blockMenu);
-
-            Util.HideBlackNavigationControllerLine (NavigationController.NavigationBar);
         }
 
         protected override void ConfigureAndLayout ()
@@ -351,6 +349,8 @@ namespace NachoClient.iOS
                 NavigationController.PopViewControllerAnimated (true);
                 return;
             }
+
+            Util.HideBlackNavigationControllerLine (NavigationController.NavigationBar);
 
             attachments = McAttachment.QueryByItemId (message);
 
