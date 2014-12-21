@@ -172,7 +172,7 @@ namespace NachoClient.iOS
             editEventButton.Clicked += EditButtonClicked;
 
             // Title label
-            var eventTitleLabel = new UILabel (new RectangleF (15 + 18, yOffset, SCREEN_WIDTH - 50, 20));
+            var eventTitleLabel = new UILabel (new RectangleF (15 + 18, yOffset, SCREEN_WIDTH - 66, 20));
             eventTitleLabel.Font = A.Font_AvenirNextDemiBold17;
             eventTitleLabel.TextColor = A.Color_NachoBlack;
             eventTitleLabel.Tag = (int)TagType.EVENT_TITLE_LABEL_TAG;
