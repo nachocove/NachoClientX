@@ -608,7 +608,9 @@ namespace NachoClient.iOS
         {
             NcAssert.NotNull (messageThread);
             var message = messageThread.SingleMessageSpecialCase ();
-            NcEmailArchiver.Move (message, folder);
+            if (null != message) {
+                NcEmailArchiver.Move (message, folder);
+            }
         }
 
         public void DeleteThisMessage (McEmailMessageThread messageThread)
@@ -616,7 +618,9 @@ namespace NachoClient.iOS
             NcAssert.NotNull (messageThread);
             Log.Debug (Log.LOG_UI, "DeleteThisMessage");
             var message = messageThread.SingleMessageSpecialCase ();
-            NcEmailArchiver.Delete (message);
+            if (null != message) {
+                NcEmailArchiver.Delete (message);
+            }
         }
 
         public void ArchiveThisMessage (McEmailMessageThread messageThread)
@@ -624,7 +628,9 @@ namespace NachoClient.iOS
             NcAssert.NotNull (messageThread);
             ArchiveCaptureMessage.Start ();
             var message = messageThread.SingleMessageSpecialCase ();
-            NcEmailArchiver.Archive (message);
+            if (null != message) {
+                NcEmailArchiver.Archive (message);
+            }
             ArchiveCaptureMessage.Stop ();
         }
 
@@ -635,7 +641,9 @@ namespace NachoClient.iOS
             foreach (var messageThreadIndex in MultiSelect) {
                 var messageThread = messageThreads.GetEmailThread (messageThreadIndex);
                 var message = messageThread.SingleMessageSpecialCase ();
-                messageList.Add (message);
+                if (null != message) {
+                    messageList.Add (message);
+                }
             }
             return messageList;
         }
