@@ -228,7 +228,6 @@ namespace NachoClient.iOS
             var subjectLabelView = new UILabel (new RectangleF (65, yOffset, 250, 20));
             subjectLabelView.LineBreakMode = UILineBreakMode.WordWrap;
             subjectLabelView.Font = A.Font_AvenirNextMedium14;
-            subjectLabelView.TextColor = A.Color_0F424C;
             subjectLabelView.Tag = (int)TagType.SUBJECT_TAG;
             headerView.AddSubview (subjectLabelView);
 
@@ -383,9 +382,12 @@ namespace NachoClient.iOS
 
             var subjectLabelView = View.ViewWithTag ((int)TagType.SUBJECT_TAG) as UILabel;
             subjectLabelView.Lines = 0;
-            subjectLabelView.Text = Pretty.SubjectString (message.Subject);
             if (string.IsNullOrEmpty (message.Subject)) {
                 subjectLabelView.TextColor = A.Color_9B9B9B;
+                subjectLabelView.Text = Pretty.NoSubjectString ();
+            } else {
+                subjectLabelView.TextColor = A.Color_0F424C;
+                subjectLabelView.Text = Pretty.SubjectString (message.Subject);
             }
             cursor.LayoutView (subjectLabelView);
 
