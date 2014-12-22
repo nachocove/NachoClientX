@@ -102,24 +102,6 @@ namespace NachoCore.Model
             return folder;
         }
 
-        public static void ScrubSyncedFolders (int accountId)
-        {
-            var folders = QueryByIsClientOwned (accountId, false);
-            var now = DateTime.UtcNow;
-            foreach (var folder in folders) {
-                if (!folder.HasSeenServerCommand &&
-                    !folder.AsSyncMetaToClientExpected &&
-                    folder.AsSyncKey != McFolder.AsSyncKey_Initial) {
-                    // TODO: We may have back-off further on Android, where we can burn 
-                    // the battery in the background at will.
-                    int delay = (10 > folder.SyncAttemptCount) ? 10 : 120;
-                    if (folder.LastSyncAttempt < (now - new TimeSpan (0, 0, delay))) {
-                        folder.UpdateSet_AsSyncMetaToClientExpected (true);
-                    }
-                }
-            }
-        }
-
         // TODO - is there a good way not to specify tries here?
         public override T UpdateWithOCApply<T> (Mutator mutator, out int count, int tries = 100)
         {

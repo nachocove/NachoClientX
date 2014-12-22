@@ -50,7 +50,7 @@ namespace NachoCore.ActiveSync
 
         public TimeSpan Timeout { set; get; }
 
-        public uint MaxRetries { set; get; }
+        public uint MaxTries { set; get; }
 
         public bool DontReportCommResult { set; get; }
 
@@ -77,9 +77,9 @@ namespace NachoCore.ActiveSync
             if (TimeSpan.Zero != Timeout) {
                 Op.Timeout = Timeout;
             }
-            if (0 != MaxRetries) {
-                Op.MaxRetries = MaxRetries;
-                Op.TriesLeft = MaxRetries + 1;
+            if (0 != MaxTries) {
+                Op.MaxRetries = MaxTries - 1;
+                Op.TriesLeft = MaxTries;
             }
             opRef = Op;
             Op.Execute (sm);

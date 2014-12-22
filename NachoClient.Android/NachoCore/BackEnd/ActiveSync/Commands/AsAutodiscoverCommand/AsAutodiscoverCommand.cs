@@ -592,14 +592,14 @@ namespace NachoCore.ActiveSync
                 TestCmd = new AsSettingsCommand (this) {
                     DontReportCommResult = true,
                     Timeout = new TimeSpan (0, 0, 15),
-                    MaxRetries = 1,
+                    MaxTries = 2,
                     OmitDeviceInformation = true,
                 };
             } else {
                 TestCmd = new AsProvisionCommand (this) {
                     DontReportCommResult = true,
                     Timeout = new TimeSpan (0, 0, 15),
-                    MaxRetries = 1,
+                    MaxTries = 2,
                 };
             }
             TestCmd.Execute (Sm);
@@ -611,7 +611,7 @@ namespace NachoCore.ActiveSync
             TestCmd = new AsOptionsCommand (this) {
                 DontReportCommResult = true,
                 Timeout = new TimeSpan (0, 0, 15),
-                MaxRetries = 1,
+                MaxTries = 2,
             };
             // HotMail/GMail doesn't WWW-Authenticate on OPTIONS.
             Sm.State = (ServerCandidate.HostIsGMail () || ServerCandidate.HostIsHotMail ())

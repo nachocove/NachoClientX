@@ -594,8 +594,15 @@ namespace NachoCore.ActiveSync
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
         {
             // FoldersInRequest NOT stale here.
-            foreach (var folder in FoldersInRequest) {
-                folder.UpdateSet_AsSyncMetaToClientExpected (false);
+            var now = DateTime.UtcNow;
+            foreach (var iterFolder in FoldersInRequest) {
+                iterFolder.UpdateWithOCApply<McFolder> ((record) => {
+                    var target = (McFolder)record;
+                    target.AsSyncMetaToClientExpected = false;
+                    target.SyncAttemptCount += 1;
+                    target.LastSyncAttempt = now;
+                    return true;
+                });
             }
             lock (PendingResolveLockObj) {
                 ProcessImplicitResponses (PendingList);
