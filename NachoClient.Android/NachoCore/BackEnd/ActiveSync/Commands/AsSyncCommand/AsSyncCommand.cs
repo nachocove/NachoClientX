@@ -204,9 +204,14 @@ namespace NachoCore.ActiveSync
                         options.Add (new XElement (m_ns + Xml.AirSync.FilterType, (uint)perFolder.FilterCode));
                         options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.NoMime_0));
                         var bodyPref = new XElement (m_baseNs + Xml.AirSync.BodyPreference,
-                                           new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.Html_2),
-                                           new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "128"),
-                                           new XElement (m_baseNs + Xml.AirSyncBase.AllOrNone, "1"));
+                                           new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.Html_2));
+                        // TODO - this should be in strategy.
+                        if (BEContext.Server.HostIsHotMail ()) {
+                            bodyPref.Add (new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "512"));
+                        } else {
+                            bodyPref.Add (new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "128"));
+                            bodyPref.Add (new XElement (m_baseNs + Xml.AirSyncBase.AllOrNone, "1"));
+                        }
                         if (14.0 <= Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
                             bodyPref.Add (new XElement (m_baseNs + Xml.AirSyncBase.Preview, "255"));
                         }
