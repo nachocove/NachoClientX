@@ -31,6 +31,12 @@ namespace NachoCore.Model
         public bool AsSyncMetaToClientExpected { get; set; }
         // Updated when a Sync works on this folder. When we hit MaxFolders limit, this decides who goes next.
         public DateTime AsSyncLastPing { get; set; }
+        // True after we see our first command from the server (gotta be an Add).
+        public bool HasSeenServerCommand { get; set; }
+        // Number of times we've attempted to Sync this folder and seen a response.
+        public int SyncAttemptCount { get; set; }
+        // Updated when a Sync response contains this folder.
+        public DateTime LastSyncAttempt { get; set; }
 
         [Indexed]
         public string DisplayName { get; set; }
@@ -94,6 +100,24 @@ namespace NachoCore.Model
                 Type = folderType,
             };
             return folder;
+        }
+
+        public static void ScrubSyncedFolders (int accountId)
+        {
+            var folders = QueryByIsClientOwned (accountId, false);
+            var now = DateTime.UtcNow;
+            foreach (var folder in folders) {
+                if (!folder.HasSeenServerCommand &&
+                    !folder.AsSyncMetaToClientExpected &&
+                    folder.AsSyncKey != McFolder.AsSyncKey_Initial) {
+                    // TODO: We may have back-off further on Android, where we can burn 
+                    // the battery in the background at will.
+                    int delay = (10 > folder.SyncAttemptCount) ? 10 : 120;
+                    if (folder.LastSyncAttempt < (now - new TimeSpan (0, 0, delay))) {
+                        folder.UpdateSet_AsSyncMetaToClientExpected (true);
+                    }
+                }
+            }
         }
 
         // TODO - is there a good way not to specify tries here?

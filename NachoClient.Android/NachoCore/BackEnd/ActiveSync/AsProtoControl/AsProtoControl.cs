@@ -140,6 +140,8 @@ namespace NachoCore.ActiveSync
 
         private NcTimer PendingOnTimeTimer { set; get; }
 
+        private NcTimer FolderScrubTimer { set; get; }
+
         public AsProtoControl (IProtoControlOwner owner, int accountId) : base (owner, accountId)
         {
             ProtoControl = this;
@@ -926,10 +928,16 @@ namespace NachoCore.ActiveSync
                 return;
             }
             if (null == PendingOnTimeTimer) {
-                PendingOnTimeTimer = new NcTimer ("AsProtoControl", state => {
+                PendingOnTimeTimer = new NcTimer ("AsProtoControl:PendingOnTimeTimer", state => {
                     McPending.MakeEligibleOnTime (Account.Id);
                 }, null, 1000, 2000);
                 PendingOnTimeTimer.Stfu = true;
+            }
+            if (null == FolderScrubTimer) {
+                FolderScrubTimer = new NcTimer ("AsProtoControl:FolderScrubTimer", state => {
+                    McFolder.ScrubSyncedFolders (Account.Id);
+                }, null, 10000, 5000);
+                FolderScrubTimer.Stfu = true;
             }
             if (null == Server) {
                 Sm.PostEvent ((uint)AsEvt.E.ReDisc, "ASPCEXECAUTOD");
@@ -1196,6 +1204,10 @@ namespace NachoCore.ActiveSync
             if (null != PendingOnTimeTimer) {
                 PendingOnTimeTimer.Dispose ();
                 PendingOnTimeTimer = null;
+            }
+            if (null != FolderScrubTimer) {
+                FolderScrubTimer.Dispose ();
+                FolderScrubTimer = null;
             }
         }
 

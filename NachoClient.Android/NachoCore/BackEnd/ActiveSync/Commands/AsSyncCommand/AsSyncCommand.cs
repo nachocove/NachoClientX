@@ -399,10 +399,16 @@ namespace NachoCore.ActiveSync
                 var xmlStatus = collection.Element (m_ns + Xml.AirSync.Status);
                 // The protocol requires SyncKey, but GOOG does not obey in the StatusCode.NotFound case.
                 if (null != xmlSyncKey) {
+                    var now = DateTime.UtcNow;
                     folder = folder.UpdateWithOCApply<McFolder> ((record) => {
                         var target = (McFolder)record;
                         target.AsSyncKey = xmlSyncKey.Value;
                         target.AsSyncMetaToClientExpected = (McFolder.AsSyncKey_Initial == oldSyncKey) || (null != xmlMoreAvailable);
+                        if (null != xmlCommands) {
+                            target.HasSeenServerCommand = true;
+                        }
+                        target.SyncAttemptCount += 1;
+                        target.LastSyncAttempt = now;
                         return true;
                     });
                 } else {
