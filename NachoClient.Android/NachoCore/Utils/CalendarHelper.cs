@@ -20,11 +20,18 @@ namespace NachoCore.Utils
         }
 
         /// <summary>
-        /// parameters must be passed as Utc to yield desired output.
-        /// If the desired output is for the start and end time to be on the same day, 
-        /// pass in a presetStart and presetEnd that are equal to each other.
+        // Create a new McCalendar item.
+        //
+        // The start time and end time parameters are used solely for
+        // the start and end dates, not the meeting time. The meeting
+        // start time is set for Now rounded up to the next 30-minute
+        // boundary.  The meeting end time is 60 minutes later but on
+        // the date given by the end time parameter.
+        //
+        // This behavior is specifically designed to help toggling an
+        // all-day meeting on and off present reasonable results.
         /// </summary>
-        public static McCalendar DefaultMeeting (DateTime presetStart, DateTime presetEnd) 
+        public static McCalendar DefaultMeeting (DateTime presetStart, DateTime presetEnd)
         {
             var c = new McCalendar ();
 
