@@ -165,17 +165,10 @@ namespace NachoClient.iOS
             switch (action) {
             case CalendarItemEditorAction.create:
                 if (null == item) {
-                    c = CalendarHelper.DefaultMeeting ();
                     if (0001 != startingDate.Year) {
-                        var start = DateTime.Now.AddMinutes (30.0);
-                        var localTime = new DateTime (startingDate.Year, startingDate.Month, startingDate.Day, start.Hour, start.Minute, 0, DateTimeKind.Local);
-                        var utcTime = localTime.ToUniversalTime ();
-                        if (start.Minute >= 30.0) {
-                            c.StartTime = new DateTime (utcTime.Year, utcTime.Month, utcTime.Day, utcTime.Hour, 30, 0, DateTimeKind.Utc);
-                        } else {
-                            c.StartTime = new DateTime (utcTime.Year, utcTime.Month, utcTime.Day, utcTime.Hour, 0, 0, DateTimeKind.Utc);
-                        }
-                        c.EndTime = c.StartTime.AddMinutes (60.0);
+                        c = CalendarHelper.DefaultMeeting (startingDate, startingDate);
+                    } else {
+                        c = CalendarHelper.DefaultMeeting (DateTime.UtcNow, DateTime.UtcNow);
                     }
                 } else {
                     c = item;
@@ -664,23 +657,9 @@ namespace NachoClient.iOS
                     endDatePicker.Mode = UIDatePickerMode.Date;
                 } else {
                     if (!timesAreSet) {  //Special case in which the user changes an all day event to an event with a start and end time
-                        var start = DateTime.Now.AddMinutes (30.0);
-                        var localTime = new DateTime (startDate.Year, startDate.Month, startDate.Day, start.Hour, start.Minute, 0, DateTimeKind.Local);
-                        var utcTime = localTime.ToUniversalTime ();
-                        if (start.Minute >= 30.0) {
-                            startDate = new DateTime (utcTime.Year, utcTime.Month, utcTime.Day, utcTime.Hour, 30, 0, DateTimeKind.Utc);
-                        } else {
-                            startDate = new DateTime (utcTime.Year, utcTime.Month, utcTime.Day, utcTime.Hour, 0, 0, DateTimeKind.Utc);
-                        }
-                            
-                        var end = DateTime.Now.AddMinutes (90.0);
-                        var endLocalTime = new DateTime (endDate.Year, endDate.Month, endDate.Day, end.Hour, end.Minute, 0, DateTimeKind.Local);
-                        var endUtcTime = endLocalTime.ToUniversalTime ();
-                        if (end.Minute >= 30.0) {
-                            endDate = new DateTime (endUtcTime.Year, endUtcTime.Month, endUtcTime.Day, endUtcTime.Hour, 30, 0, DateTimeKind.Utc);
-                        } else {
-                            endDate = new DateTime (endUtcTime.Year, endUtcTime.Month, endUtcTime.Day, endUtcTime.Hour, 0, 0, DateTimeKind.Utc);
-                        }
+                        var tempC = CalendarHelper.DefaultMeeting(startDate, endDate);
+                        startDate = tempC.StartTime;
+                        endDate = tempC.EndTime;
                         timesAreSet = !timesAreSet;
                     }
                     startDatePicker.Date = startDate;

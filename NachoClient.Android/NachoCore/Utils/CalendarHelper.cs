@@ -19,16 +19,28 @@ namespace NachoCore.Utils
         {
         }
 
-        public static McCalendar DefaultMeeting ()
+        public static McCalendar DefaultMeeting (DateTime presetStart, DateTime presetEnd)
         {
             var c = new McCalendar ();
-            var start = DateTime.UtcNow.AddMinutes (30.0);
+
+            var start = DateTime.Now.AddMinutes (30.0);
+            var localTime = new DateTime (presetStart.Year, presetStart.Month, presetStart.Day, start.Hour, start.Minute, 0, DateTimeKind.Local);
+            var utcTime = localTime.ToUniversalTime ();
             if (start.Minute >= 30.0) {
-                c.StartTime = new DateTime (start.Year, start.Month, start.Day, start.Hour, 30, 0, DateTimeKind.Utc);
+                c.StartTime = new DateTime (utcTime.Year, utcTime.Month, utcTime.Day, utcTime.Hour, 30, 0, DateTimeKind.Utc);
             } else {
-                c.StartTime = new DateTime (start.Year, start.Month, start.Day, start.Hour, 0, 0, DateTimeKind.Utc);
+                c.StartTime = new DateTime (utcTime.Year, utcTime.Month, utcTime.Day, utcTime.Hour, 0, 0, DateTimeKind.Utc);
             }
-            c.EndTime = c.StartTime.AddMinutes (60.0);
+
+            var end = DateTime.Now.AddMinutes (90.0);
+            var endLocalTime = new DateTime (presetEnd.Year, presetEnd.Month, presetEnd.Day, end.Hour, end.Minute, 0, DateTimeKind.Local);
+            var endUtcTime = endLocalTime.ToUniversalTime ();
+            if (end.Minute >= 30.0) {
+                c.EndTime = new DateTime (endUtcTime.Year, endUtcTime.Month, endUtcTime.Day, endUtcTime.Hour, 30, 0, DateTimeKind.Utc);
+            } else {
+                c.EndTime = new DateTime (endUtcTime.Year, endUtcTime.Month, endUtcTime.Day, endUtcTime.Hour, 0, 0, DateTimeKind.Utc);
+            }
+
             return c;
         }
 
@@ -537,7 +549,7 @@ namespace NachoCore.Utils
 
         public static McCalendar CreateMeeting (McEmailMessage message)
         {
-            var c = DefaultMeeting ();
+            var c = DefaultMeeting (DateTime.UtcNow, DateTime.UtcNow);
             c.AccountId = message.AccountId;
             c.Subject = message.Subject;
 //            var dupBody = McBody.InsertDuplicate (message.AccountId, message.BodyId);
