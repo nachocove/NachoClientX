@@ -10,6 +10,7 @@ using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore.Brain;
+using MonoTouch.ObjCRuntime;
 
 namespace NachoClient.iOS
 {
@@ -136,6 +137,17 @@ namespace NachoClient.iOS
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
+
+            var accountId = LoginHelpers.GetCurrentAccountId ();
+
+            if (!McMutables.GetOrCreateBool (accountId, "Notifications", "AskedUserAboutLocalNotifications", false)) {
+                McMutables.SetBool (accountId, "Notifications", "AskedUserAboutLocalNotifications", true);
+                var application = UIApplication.SharedApplication;
+                if (application.RespondsToSelector (new Selector ("registerUserNotificationSettings:"))) {
+                    var settings = UIUserNotificationSettings.GetSettingsForTypes (UIUserNotificationType.Alert | UIUserNotificationType.Badge | UIUserNotificationType.Sound, new NSSet ());
+                    application.RegisterUserNotificationSettings (settings);
+                }
+            }
         }
 
         // Called from NachoTabBarController
