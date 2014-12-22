@@ -232,10 +232,6 @@ namespace NachoClient.iOS
             UIBarButtonItem.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes, UIControlState.Normal);
             UIApplication.SharedApplication.RegisterForRemoteNotificationTypes (
                 UIRemoteNotificationType.NewsstandContentAvailability | UIRemoteNotificationType.Sound);
-            if (application.RespondsToSelector (new Selector ("registerUserNotificationSettings:"))) {
-                var settings = UIUserNotificationSettings.GetSettingsForTypes (UIUserNotificationType.Alert | UIUserNotificationType.Badge | UIUserNotificationType.Sound, new NSSet ());
-                application.RegisterUserNotificationSettings (settings);
-            }
             UIApplication.SharedApplication.SetMinimumBackgroundFetchInterval (UIApplication.BackgroundFetchIntervalMinimum);
             // Set up webview to handle html with embedded custom types (curtesy of Exchange)
             NSUrlProtocol.RegisterClass (new MonoTouch.ObjCRuntime.Class (typeof(CidImageProtocol)));
