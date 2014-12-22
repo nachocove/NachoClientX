@@ -32,11 +32,11 @@ namespace NachoCore.Utils
 
             string certificateToken = 
 
-                "Subject: \n" + 
-                subject.Trim().Replace("\"", "") + "\n\n" +
+                "Subject: \n" +
+                subject.Trim ().Replace ("\"", "") + "\n\n" +
 
                 "Issuer: \n" +
-                issuer.Trim().Replace("\"", "") + "\n\n" + 
+                issuer.Trim ().Replace ("\"", "") + "\n\n" +
 
                 "Serial Number: " + serialNumber + "\n" +
                 "Version: " + version + "\n\n" +
@@ -50,6 +50,35 @@ namespace NachoCore.Utils
 
             return  certificateToken;
         }
+
+        public static string GetField (X509Certificate2 certificate, string[] matches)
+        {
+            string multiline = certificate.SubjectName.Format (true);
+            string[] parsedFields = multiline.Split (new char[] { '\n' });
+        
+            foreach (var field in parsedFields) {
+                if (!string.IsNullOrEmpty (field)) {
+                    foreach (var match in matches) {
+                        var target = match + "=";
+                        if (field.StartsWith (target)) {
+                            return field.Substring (target.Length);
+                        }
+                    }
+                }
+            }
+            return "";
+        }
+
+        public static string GetCommonName (X509Certificate2 certificate)
+        {
+            return GetField (certificate, new String[] { "CN" });
+        }
+
+        public static string GetOrganizationname (X509Certificate2 certificate)
+        {
+            return GetField (certificate, new String[] { "O", "OU" });
+        }
+
     }
 }
 

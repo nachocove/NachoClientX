@@ -157,7 +157,7 @@ namespace NachoCore.ActiveSync
                         "&", string.Format ("{0}={1}", pair.Key, pair.Value));
                 }
             }
-            return new Uri (AsCommand.BaseUri (BEContext.Server), requestLine);
+            return new Uri (BEContext.Server.BaseUri (), requestLine);
         }
 
         public virtual void ServerUriChanged (Uri ServerUri, AsHttpOperation Sender)
@@ -636,13 +636,6 @@ namespace NachoCore.ActiveSync
             var doc = new XDocument ();
             doc.Declaration = new XDeclaration ("1.0", "utf-8", "no");
             return doc;
-        }
-
-        static internal Uri BaseUri (McServer server)
-        {
-            var retval = string.Format ("{0}://{1}:{2}{3}",
-                             server.Scheme, server.Host, server.Port, server.Path);
-            return new Uri (retval);
         }
     }
 }

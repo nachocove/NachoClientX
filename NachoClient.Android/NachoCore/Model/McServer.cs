@@ -18,7 +18,6 @@ namespace NachoCore.Model
         public string Host { get; set; }
 
         public const string GMail_Host = "m.google.com";
-        public const string GMail_Uri = "https://" + GMail_Host;
         public const string GMail_MX_Suffix = "ASPMX.L.GOOGLE.com";
         public const string HotMail_Host = "s.outlook.com";
         public const string HotMail_Suffix = "hotmail.com";
@@ -35,6 +34,31 @@ namespace NachoCore.Model
         // We want to remember if the user entered their
         // own server or if we figured it out on our own.
         public bool UserSpecifiedServer { get; set; }
+
+        /// <summary>
+        /// The base URI for the server.
+        /// </summary>
+        public Uri BaseUri ()
+        {
+            string uriString;
+            if (443 == Port && "https" == Scheme) {
+                uriString = string.Format ("{0}://{1}{2}", Scheme, Host, Path);
+            } else {
+                uriString = string.Format ("{0}://{1}:{2}{3}", Scheme, Host, Port, Path);
+            }
+            return new Uri (uriString);
+        }
+
+        /// <summary>
+        /// The base URI for the server at the given host.
+        /// </summary>
+        public static Uri BaseUriForHost (string host)
+        {
+            McServer dummy = new McServer () {
+                Host = host,
+            };
+            return dummy.BaseUri ();
+        }
 
         public bool HostIsHotMail ()
         {

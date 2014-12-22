@@ -752,7 +752,7 @@ namespace NachoCore.ActiveSync
                         ServerUriBeingTested = true;
                         var dummy = McServer.Create (BEContext.Account.Id, redirUri);
                         var query = (string.Empty == redirUri.Query) ? ServerUri.Query : redirUri.Query;
-                        ServerUri = new Uri (AsCommand.BaseUri (dummy), query);
+                        ServerUri = new Uri (dummy.BaseUri (), query);
                         return Event.Create ((uint)SmEvt.E.Launch, "HTTPOP451C");
                     } catch (Exception ex) {
                         Log.Info (Log.LOG_HTTP, "ProcessHttpResponse {0} {1}: exception {2}", ex, ServerUri, ex.Message);
