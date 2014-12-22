@@ -981,7 +981,7 @@ namespace NachoClient.iOS
             //end date
             var endDateLabelView = contentView.ViewWithTag (END_DATE_TAG) as UILabel;
             if (c.AllDayEvent) {
-                var endDay = CalendarHelper.AdjustAllDayEventEndTime(c.EndTime);
+                var endDay = CalendarHelper.ReturnAllDayEventEndTime(c.EndTime);
                 endDateLabelView.Text = Pretty.FullDateString (endDay);
                 endDatePicker.Mode = UIDatePickerMode.Date;
                 endDate = endDay;

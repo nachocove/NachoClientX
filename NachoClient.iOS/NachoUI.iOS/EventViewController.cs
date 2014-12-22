@@ -459,7 +459,7 @@ namespace NachoClient.iOS
                 durationLabel.Text = "All day event";
                 if ((c.EndTime - c.StartTime) > TimeSpan.FromDays (1)) {
                     durationLabel.Text = string.Format ("All day from {0} \nthrough {1}",
-                        Pretty.FullDateYearString (c.StartTime), Pretty.FullDateYearString (CalendarHelper.AdjustAllDayEventEndTime(c.EndTime)));
+                        Pretty.FullDateYearString (c.StartTime), Pretty.FullDateYearString (CalendarHelper.ReturnAllDayEventEndTime(c.EndTime)));
                 }
             } else {
                 if (e.StartTime.LocalT ().DayOfYear == e.EndTime.LocalT ().DayOfYear) {

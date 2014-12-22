@@ -19,7 +19,12 @@ namespace NachoCore.Utils
         {
         }
 
-        public static McCalendar DefaultMeeting (DateTime presetStart, DateTime presetEnd)
+        /// <summary>
+        /// parameters must be passed as Utc to yeild desired output.
+        /// If the desired output is for the start and end time to be on the same day, 
+        /// pass in a presetStart and presetEnd that are equal to each other.
+        /// </summary>
+        public static McCalendar DefaultMeeting (DateTime presetStart, DateTime presetEnd) 
         {
             var c = new McCalendar ();
 
@@ -124,7 +129,7 @@ namespace NachoCore.Utils
             return false;
         }
 
-        public static DateTime AdjustAllDayEventEndTime (DateTime date)
+        public static DateTime ReturnAllDayEventEndTime (DateTime date)
         {
             return date.AddDays (-1);
         }
