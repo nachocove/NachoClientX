@@ -20,7 +20,7 @@ namespace NachoCore.Utils
         }
 
         /// <summary>
-        /// parameters must be passed as Utc to yeild desired output.
+        /// parameters must be passed as Utc to yield desired output.
         /// If the desired output is for the start and end time to be on the same day, 
         /// pass in a presetStart and presetEnd that are equal to each other.
         /// </summary>
