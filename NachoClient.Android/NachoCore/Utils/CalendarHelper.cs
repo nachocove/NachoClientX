@@ -112,6 +112,11 @@ namespace NachoCore.Utils
             return false;
         }
 
+        public static DateTime AdjustAllDayEventEndTime (DateTime date)
+        {
+            return date.AddDays (-1);
+        }
+
         public static McCalendar GetMcCalendarRootForEvent (int eventId)
         {
             var e = McEvent.QueryById<McEvent> (eventId);

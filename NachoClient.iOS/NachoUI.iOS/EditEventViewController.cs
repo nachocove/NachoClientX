@@ -87,7 +87,6 @@ namespace NachoClient.iOS
         protected bool startIsOpening = false;
         protected bool endIsOpening = false;
         protected bool endChanged = false;
-        protected bool allDayEvent = false;
         protected bool eventEditStarted = false;
         protected bool isRecurring = false;
         protected bool attachmentsInitialized = false;
@@ -663,7 +662,6 @@ namespace NachoClient.iOS
                     strikethrough.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, CELL_HEIGHT / 2, endDateLabel.Frame.Width, 1);
                     startDatePicker.Mode = UIDatePickerMode.Date;
                     endDatePicker.Mode = UIDatePickerMode.Date;
-                    allDayEvent = true;
                 } else {
                     if (!timesAreSet) {  //Special case in which the user changes an all day event to an event with a start and end time
                         var start = DateTime.Now.AddMinutes (30.0);
@@ -698,8 +696,6 @@ namespace NachoClient.iOS
                     endDateLabel.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, 12.438f, endDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
 
                     strikethrough.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, CELL_HEIGHT / 2, endDateLabel.Frame.Width, 1);
-
-                    allDayEvent = false;
                 }
                 eventEditStarted = true;
             };
@@ -988,7 +984,6 @@ namespace NachoClient.iOS
             //all day event
             var allDaySwitchView = contentView.ViewWithTag (ALL_DAY_SWITCH_TAG) as UISwitch;
             allDaySwitchView.SetState (c.AllDayEvent, false);
-            allDayEvent = c.AllDayEvent;
 
             //start date
             var startDateLabelView = contentView.ViewWithTag (START_DATE_TAG) as UILabel;
@@ -1007,7 +1002,7 @@ namespace NachoClient.iOS
             //end date
             var endDateLabelView = contentView.ViewWithTag (END_DATE_TAG) as UILabel;
             if (c.AllDayEvent) {
-                var endDay = c.EndTime.AddDays (-1);
+                var endDay = CalendarHelper.AdjustAllDayEventEndTime(c.EndTime);
                 endDateLabelView.Text = Pretty.FullDateString (endDay);
                 endDatePicker.Mode = UIDatePickerMode.Date;
                 endDate = endDay;
@@ -1296,6 +1291,7 @@ namespace NachoClient.iOS
             c.AccountId = account.Id;
             c.Subject = titleField.Text;
             c.Description = descriptionTextView.Text;
+            var allDayEvent = ((UISwitch)contentView.ViewWithTag (ALL_DAY_SWITCH_TAG)).On;
             c.AllDayEvent = allDayEvent;
             if (allDayEvent) {
                 // An all-day event is supposed to run midnight to midnight in the local time zone.
