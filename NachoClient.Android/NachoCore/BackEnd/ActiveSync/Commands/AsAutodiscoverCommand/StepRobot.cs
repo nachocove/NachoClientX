@@ -1099,7 +1099,7 @@ namespace NachoCore.ActiveSync
                         var aBest = (MxRecord)response.Answers.OrderBy (r1 => ((MxRecord)r1).Preference).First ();
                         if (aBest.MailExchange.EndsWith (McServer.GMail_MX_Suffix, StringComparison.OrdinalIgnoreCase)) {
                             Command.ProtoControl.AutoDInfo = AutoDInfoEnum.MXFoundGoogle;
-                            SrServerUri = new Uri (McServer.GMail_Uri);
+                            SrServerUri = McServer.BaseUriForHost (McServer.GMail_Host);
                             return Event.Create ((uint)SmEvt.E.Success, "SRPRMXSUCCESS");
                         } else {
                             Command.ProtoControl.AutoDInfo = AutoDInfoEnum.MXFoundNonGoogle;
