@@ -204,9 +204,14 @@ namespace NachoCore.ActiveSync
                         options.Add (new XElement (m_ns + Xml.AirSync.FilterType, (uint)perFolder.FilterCode));
                         options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.NoMime_0));
                         var bodyPref = new XElement (m_baseNs + Xml.AirSync.BodyPreference,
-                                           new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.Html_2),
-                                           new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "128"),
-                                           new XElement (m_baseNs + Xml.AirSyncBase.AllOrNone, "1"));
+                                           new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.Html_2));
+                        // TODO - this should be in strategy.
+                        if (BEContext.Server.HostIsHotMail ()) {
+                            bodyPref.Add (new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "512"));
+                        } else {
+                            bodyPref.Add (new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "128"));
+                            bodyPref.Add (new XElement (m_baseNs + Xml.AirSyncBase.AllOrNone, "1"));
+                        }
                         if (14.0 <= Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
                             bodyPref.Add (new XElement (m_baseNs + Xml.AirSyncBase.Preview, "255"));
                         }
@@ -399,10 +404,16 @@ namespace NachoCore.ActiveSync
                 var xmlStatus = collection.Element (m_ns + Xml.AirSync.Status);
                 // The protocol requires SyncKey, but GOOG does not obey in the StatusCode.NotFound case.
                 if (null != xmlSyncKey) {
+                    var now = DateTime.UtcNow;
                     folder = folder.UpdateWithOCApply<McFolder> ((record) => {
                         var target = (McFolder)record;
                         target.AsSyncKey = xmlSyncKey.Value;
                         target.AsSyncMetaToClientExpected = (McFolder.AsSyncKey_Initial == oldSyncKey) || (null != xmlMoreAvailable);
+                        if (null != xmlCommands) {
+                            target.HasSeenServerCommand = true;
+                        }
+                        target.SyncAttemptCount += 1;
+                        target.LastSyncAttempt = now;
                         return true;
                     });
                 } else {
@@ -588,8 +599,15 @@ namespace NachoCore.ActiveSync
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
         {
             // FoldersInRequest NOT stale here.
-            foreach (var folder in FoldersInRequest) {
-                folder.UpdateSet_AsSyncMetaToClientExpected (false);
+            var now = DateTime.UtcNow;
+            foreach (var iterFolder in FoldersInRequest) {
+                iterFolder.UpdateWithOCApply<McFolder> ((record) => {
+                    var target = (McFolder)record;
+                    target.AsSyncMetaToClientExpected = false;
+                    target.SyncAttemptCount += 1;
+                    target.LastSyncAttempt = now;
+                    return true;
+                });
             }
             lock (PendingResolveLockObj) {
                 ProcessImplicitResponses (PendingList);

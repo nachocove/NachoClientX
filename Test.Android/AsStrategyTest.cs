@@ -534,10 +534,10 @@ namespace Test.iOS
             folder = McFolder.Create (account.Id, false, false, true, "0", "cal", "Cal", Xml.FolderHierarchy.TypeCode.DefaultCal_8);
             folder.AsSyncMetaToClientExpected = true;
             folder.Insert ();
-            var result = strat.NarrowFoldersNoToClientExpected (account.Id);
+            var result = !strat.ANarrowFolderHasToClientExpected (account.Id);
             Assert.False (result);
             folder.UpdateSet_AsSyncMetaToClientExpected (false);
-            result = strat.NarrowFoldersNoToClientExpected (account.Id);
+            result = !strat.ANarrowFolderHasToClientExpected (account.Id);
             Assert.True (result);
         }
 
@@ -575,21 +575,21 @@ namespace Test.iOS
             context.ProtocolState.StrategyRung = 6;
             context.ProtocolState.MaxFolders = 7;
             context.ProtocolState.Update ();
-            var result = strat.GenPingKit (account.Id, context.ProtocolState, true);
+            var result = strat.GenPingKit (account.Id, context.ProtocolState, true, false);
             Assert.AreEqual (2, result.Folders.Count);
             Assert.True (result.Folders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Type));
             Assert.True (result.Folders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultCal_8 == x.Type));
             inbox.UpdateSet_AsSyncMetaToClientExpected (true);
-            result = strat.GenPingKit (account.Id, context.ProtocolState, true);
+            result = strat.GenPingKit (account.Id, context.ProtocolState, true, false);
             Assert.IsNull (result);
-            result = strat.GenPingKit (account.Id, context.ProtocolState, false);
+            result = strat.GenPingKit (account.Id, context.ProtocolState, false, false);
             Assert.IsNull (result);
             inbox.UpdateSet_AsSyncMetaToClientExpected (false);
-            result = strat.GenPingKit (account.Id, context.ProtocolState, false);
+            result = strat.GenPingKit (account.Id, context.ProtocolState, false, false);
             Assert.AreEqual (7, result.Folders.Count);
             context.ProtocolState.MaxFolders = 3;
             context.ProtocolState.Update ();
-            result = strat.GenPingKit (account.Id, context.ProtocolState, false);
+            result = strat.GenPingKit (account.Id, context.ProtocolState, false, false);
             Assert.AreEqual (3, result.Folders.Count);
             Assert.True (result.Folders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Type));
             Assert.True (result.Folders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultCal_8 == x.Type));

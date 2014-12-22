@@ -10,6 +10,7 @@ namespace NachoCore.ActiveSync
 
     public class PingKit
     {
+        public uint MaxHeartbeatInterval { get; set; }
         public List<McFolder> Folders { get; set; }
     }
 

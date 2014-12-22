@@ -926,7 +926,7 @@ namespace NachoCore.ActiveSync
                 return;
             }
             if (null == PendingOnTimeTimer) {
-                PendingOnTimeTimer = new NcTimer ("AsProtoControl", state => {
+                PendingOnTimeTimer = new NcTimer ("AsProtoControl:PendingOnTimeTimer", state => {
                     McPending.MakeEligibleOnTime (Account.Id);
                 }, null, 1000, 2000);
                 PendingOnTimeTimer.Stfu = true;
