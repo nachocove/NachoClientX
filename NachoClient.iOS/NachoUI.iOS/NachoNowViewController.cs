@@ -353,7 +353,11 @@ namespace NachoClient.iOS
         {
             var c = CalendarHelper.GetMcCalendarRootForEvent (eventId);
             if (null != c) {
-                PerformSegue ("CalendarToEmailCompose", new SegueHolder (c));
+                if (String.IsNullOrEmpty (c.OrganizerEmail)) {
+                    // maybe we should do a pop up or hide the swipe
+                } else {
+                    PerformSegue ("CalendarToEmailCompose", new SegueHolder (c));
+                }
             }
         }
 
