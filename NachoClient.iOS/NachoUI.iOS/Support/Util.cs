@@ -79,8 +79,9 @@ namespace NachoClient
         {
             public int Compare (McContactStringAttribute x, McContactStringAttribute y)
             {
-                int xPriority = ContactsHelper.PhonePriority [x.Name];
-                int yPriority = ContactsHelper.PhonePriority [y.Name];
+                ContactsHelper contactHelper = new ContactsHelper ();
+                int xPriority = contactHelper.PhoneNames.IndexOf (x.Name);
+                int yPriority = contactHelper.PhoneNames.IndexOf (y.Name);
 
                 return xPriority.CompareTo (yPriority);
             }

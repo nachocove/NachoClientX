@@ -14,32 +14,20 @@ namespace NachoCore.Utils
         {
         }
 
-        public static Dictionary<string, int> PhonePriority = new Dictionary<string, int> () {
-            {Xml.Contacts.BusinessPhoneNumber, 1},
-            {Xml.Contacts.MobilePhoneNumber, 2},
-            {Xml.Contacts.HomePhoneNumber, 3},
-            {Xml.Contacts.AssistantPhoneNumber, 4},
-            {Xml.Contacts.Business2PhoneNumber, 5},
-            {Xml.Contacts.Home2PhoneNumber, 5},
-            {Xml.Contacts.CarPhoneNumber, 6},
-            {Xml.Contacts.PagerNumber, 7},
-            {Xml.Contacts.RadioPhoneNumber, 8},
-            {Xml.Contacts.BusinessFaxNumber, 9},
-            {Xml.Contacts.HomeFaxNumber, 10}
-        };
-
+        //The order of these names also determines their priority when sorting.
         public List<string> PhoneNames = new List<string> () {
             Xml.Contacts.MobilePhoneNumber,
             Xml.Contacts.BusinessPhoneNumber,
             Xml.Contacts.HomePhoneNumber,
             Xml.Contacts.AssistantPhoneNumber,
+            Xml.Contacts2.CompanyMainPhone,
             Xml.Contacts.Business2PhoneNumber,
             Xml.Contacts.Home2PhoneNumber,
             Xml.Contacts.CarPhoneNumber,
             Xml.Contacts.PagerNumber,
             Xml.Contacts.RadioPhoneNumber,
             Xml.Contacts.BusinessFaxNumber,
-            Xml.Contacts.HomeFaxNumber
+            Xml.Contacts.HomeFaxNumber,
         };
 
         public List<string> EmailNames = new List<string> () {
@@ -77,7 +65,10 @@ namespace NachoCore.Utils
             Xml.Contacts2.CustomerId,
             Xml.Contacts2.GovernmentId,
             Xml.Contacts2.MMS,
-            Xml.Contacts2.NickName
+            Xml.Contacts2.NickName,
+            Xml.Contacts.YomiCompanyName,
+            Xml.Contacts.YomiFirstName,
+            Xml.Contacts.YomiLastName,
         };
 
         public List<string> RelationshipNames = new List<string> () {
@@ -102,6 +93,7 @@ namespace NachoCore.Utils
             {Xml.Contacts.MobilePhoneNumber, "Mobile"},
             {Xml.Contacts.PagerNumber, "Pager"},
             {Xml.Contacts.RadioPhoneNumber, "Radio"},
+            {Xml.Contacts2.CompanyMainPhone, "Company Main"},
             {Xml.Contacts.Anniversary, "Anniversary"},
             {Xml.Contacts.Birthday, "Birthday"},
             {"Home", "Home"},
@@ -125,7 +117,10 @@ namespace NachoCore.Utils
             {Xml.Contacts2.CustomerId, "Customer ID"},
             {Xml.Contacts2.GovernmentId, "Government ID"},
             {Xml.Contacts2.MMS, "MMS"},
-            {Xml.Contacts2.NickName, "Nickname"}
+            {Xml.Contacts2.NickName, "Nickname"},
+            {Xml.Contacts.YomiCompanyName, "Yomi Company Name"},
+            {Xml.Contacts.YomiFirstName, "Yomi First Name"},
+            {Xml.Contacts.YomiLastName, "Yomi Last Name"},
         };
 
         public static string GetInitials (McContact contact)
