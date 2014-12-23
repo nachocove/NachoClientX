@@ -91,12 +91,6 @@ namespace NachoClient.iOS
 
             CreateView ();
 
-            if (!LoginHelpers.IsCurrentAccountSet ()) {
-                emailView.textField.Text = presetEmailAddress;
-                passwordView.textField.Text = presetPassword;
-                gOriginalPassword = presetPassword;
-            }
-
             waitScreen = new WaitingScreen (View.Frame);
             waitScreen.SetOwner (this);
             waitScreen.CreateView ();
@@ -567,6 +561,9 @@ namespace NachoClient.iOS
             gOriginalUsername = "";
 
             if (!LoginHelpers.IsCurrentAccountSet ()) {
+                emailView.textField.Text = presetEmailAddress;
+                passwordView.textField.Text = presetPassword;
+                gOriginalPassword = presetPassword;
                 return;
             }
             if (!LoginHelpers.HasProvidedCreds (LoginHelpers.GetCurrentAccountId ())) {
