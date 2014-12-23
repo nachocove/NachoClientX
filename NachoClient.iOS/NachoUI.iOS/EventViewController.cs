@@ -444,8 +444,13 @@ namespace NachoClient.iOS
                 isRecurring = true;
             }
 
-            isOrganizer = ((account.EmailAddr == root.OrganizerEmail && account.Id == c.AccountId) && ((c.ResponseTypeIsSet && NcResponseType.Organizer == c.ResponseType)
-            || (NcMeetingStatus.Appointment == c.MeetingStatus) || (NcMeetingStatus.Meeting == c.MeetingStatus)));
+            /// There are three cases which ensure the user is the organizer of an event.  
+            /// 1. The users email and account id match the event's organizer email and event's account id.
+            /// 2. The events ResponseType is set and it is set to Organizer.
+            /// 3. The events MeetingStatus is "Meeting"
+            /// if any of these are true the user is the organizer of the event.
+            isOrganizer = ((account.EmailAddr == root.OrganizerEmail && account.Id == c.AccountId) || (c.ResponseTypeIsSet && NcResponseType.Organizer == c.ResponseType) 
+                || (NcMeetingStatus.Meeting == c.MeetingStatus));
 
             if (isOrganizer && !isRecurring) {
                 NavigationItem.RightBarButtonItem = editEventButton;
