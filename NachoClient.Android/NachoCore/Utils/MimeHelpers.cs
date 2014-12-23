@@ -150,7 +150,6 @@ namespace NachoCore.Utils
         static public string ExtractSummary (McEmailMessage message)
         {
             var body = message.GetBody ();
-            NcAssert.NotNull (body);
 
             if (!McBody.IsComplete (body)) {
                 return "";
