@@ -402,53 +402,57 @@ namespace NachoClient.iOS
 
         public void DownloadAndDoAction (int attachmentId, UITableViewCell cell, Action<McAttachment> attachmentAction)
         {
+            // Handle completed downloads directly
             var a = McAttachment.QueryById<McAttachment> (attachmentId);
-            if (McAbstrFileDesc.FilePresenceEnum.Complete != a.FilePresence) {
-                if (McAbstrFileDesc.FilePresenceEnum.Partial == a.FilePresence) {
-                    // replace animations if one is already going
-                    AttachmentsTableViewSource.StopAnimationsOnCell (cell);
-                    AttachmentsSource.StartArrowAnimation (cell);
-                } else {
-                    AttachmentsSource.StartDownloadingAnimation (cell);
+            if (McAbstrFileDesc.FilePresenceEnum.Complete == a.FilePresence) {
+                attachmentAction (a);
+                return;
+            }
+
+            // Start, or re-state, the downloading animation
+            if (McAbstrFileDesc.FilePresenceEnum.Partial == a.FilePresence) {
+                AttachmentsTableViewSource.StopAnimationsOnCell (cell);
+                AttachmentsSource.StartArrowAnimation (cell);
+            } else {
+                AttachmentsSource.StartDownloadingAnimation (cell);
+            }
+
+            string token = PlatformHelpers.DownloadAttachment (a);
+            Token = token; // make this the attachment that will get opened next
+            NcAssert.NotNull (Token, "Found token should not be null");
+            EventHandler fileAction = null;
+
+            // Handle download-related status inds
+            fileAction = (object sender, EventArgs e) => {
+                var s = (StatusIndEventArgs)e;
+                if (null == s.Tokens) {
+                    return;
                 }
-                string token = PlatformHelpers.DownloadAttachment (a);
-                Token = token; // make this the attachment that will get opened next
-                NcAssert.NotNull (Token, "Found token should not be null");
-                EventHandler fileAction = null;
-
-                // prepare to do action on the most recently clicked item
-                fileAction = (object sender, EventArgs e) => {
-                    var s = (StatusIndEventArgs)e;
-                    var eventTokens = s.Tokens;
-
-                    // open attachment if the statusInd says this attachment has downloaded
-                    if (NcResult.SubKindEnum.Info_AttDownloadUpdate == s.Status.SubKind && eventTokens.Contains (token)) {
-                        a = McAttachment.QueryById<McAttachment> (attachmentId); // refresh the now-downloaded attachment
-                        if (McAbstrFileDesc.FilePresenceEnum.Complete == a.FilePresence) {
-                            // wait until download-complete animation finishes to do the attachment action
-                            AttachmentsTableViewSource.DownloadCompleteAnimation (cell, displayAttachment: () => {
-                                // check if this is still the next attachment we want to open
-                                if (Token == token) {
-                                    attachmentAction (a);
-                                }
-                            });
-                        } else {
-                            NcAssert.True (false, "Item should have been downloaded at this point");
-                        }
-                    }
+                if (!s.Tokens.Contains (token)) {
+                    return;
+                }
+                // Bail out on errors
+                if (NcResult.SubKindEnum.Error_AttDownloadFailed == s.Status.SubKind) {
                     NcApplication.Instance.StatusIndEvent -= fileAction;
-                    var tempA = McAttachment.QueryById<McAttachment> (attachmentId);
-                    if (McAbstrFileDesc.FilePresenceEnum.Complete == tempA.FilePresence) {
+                    AttachmentsTableViewSource.DownloadCompleteAnimation (cell, displayAttachment: () => {
+                    });
+                    return;
+                }
+                // Open the attachment if we're done & it was last chosen
+                if (NcResult.SubKindEnum.Info_AttDownloadUpdate == s.Status.SubKind) {
+                    a = McAttachment.QueryById<McAttachment> (attachmentId); // refresh the now-downloaded attachment
+                    if (McAbstrFileDesc.FilePresenceEnum.Complete == a.FilePresence) {
+                        NcApplication.Instance.StatusIndEvent -= fileAction;
                         AttachmentsTableViewSource.DownloadCompleteAnimation (cell, displayAttachment: () => {
+                            if (Token == token) {
+                                attachmentAction (a);
+                            }
                         });
                     }
-                };
+                }
+            };
 
-                NcApplication.Instance.StatusIndEvent += new EventHandler (fileAction);
-                return;
-            } else {
-                attachmentAction (a);
-            }
+            NcApplication.Instance.StatusIndEvent += new EventHandler (fileAction);
         }
 
         public void DeleteAttachment (McAttachment attachment)
