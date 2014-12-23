@@ -456,10 +456,10 @@ namespace NachoClient.iOS
 
             var durationLabel = View.ViewWithTag ((int)TagType.EVENT_WHEN_DURATION_TAG) as UILabel;
             if (c.AllDayEvent) {
-                durationLabel.Text = "all day event";
-                if ((e.StartTime.LocalT ().DayOfYear) + 1 != e.EndTime.LocalT ().DayOfYear) {
-                    durationLabel.Text = string.Format ("All day from {0} \nuntil {1}",
-                        Pretty.FullDateYearString (e.StartTime), Pretty.FullDateYearString (e.EndTime));
+                durationLabel.Text = "All day event";
+                if ((c.EndTime - c.StartTime) > TimeSpan.FromDays (1)) {
+                    durationLabel.Text = string.Format ("All day from {0} \nthrough {1}",
+                        Pretty.FullDateYearString (c.StartTime), Pretty.FullDateYearString (CalendarHelper.ReturnAllDayEventEndTime(c.EndTime)));
                 }
             } else {
                 if (e.StartTime.LocalT ().DayOfYear == e.EndTime.LocalT ().DayOfYear) {
@@ -470,6 +470,7 @@ namespace NachoClient.iOS
                         Pretty.FullTimeString (e.StartTime), Pretty.FullDateTimeString (e.EndTime));
                 }
             }
+            durationLabel.Frame = new RectangleF (durationLabel.Frame.X, durationLabel.Frame.Y, SCREEN_WIDTH - 90, 20);
             durationLabel.Lines = 0;
             durationLabel.LineBreakMode = UILineBreakMode.WordWrap;
             durationLabel.SizeToFit ();

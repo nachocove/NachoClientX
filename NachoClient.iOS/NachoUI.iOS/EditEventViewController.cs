@@ -87,10 +87,10 @@ namespace NachoClient.iOS
         protected bool startIsOpening = false;
         protected bool endIsOpening = false;
         protected bool endChanged = false;
-        protected bool allDayEvent = false;
         protected bool eventEditStarted = false;
         protected bool isRecurring = false;
         protected bool attachmentsInitialized = false;
+        protected bool timesAreSet = true;
 
         protected UIView line1;
         protected UIView line2;
@@ -165,17 +165,10 @@ namespace NachoClient.iOS
             switch (action) {
             case CalendarItemEditorAction.create:
                 if (null == item) {
-                    c = CalendarHelper.DefaultMeeting ();
                     if (0001 != startingDate.Year) {
-                        var start = DateTime.Now.AddMinutes (30.0);
-                        var localTime = new DateTime (startingDate.Year, startingDate.Month, startingDate.Day, start.Hour, start.Minute, 0, DateTimeKind.Local);
-                        var utcTime = localTime.ToUniversalTime ();
-                        if (start.Minute >= 30.0) {
-                            c.StartTime = new DateTime (utcTime.Year, utcTime.Month, utcTime.Day, utcTime.Hour, 30, 0, DateTimeKind.Utc);
-                        } else {
-                            c.StartTime = new DateTime (utcTime.Year, utcTime.Month, utcTime.Day, utcTime.Hour, 0, 0, DateTimeKind.Utc);
-                        }
-                        c.EndTime = c.StartTime.AddMinutes (60.0);
+                        c = CalendarHelper.DefaultMeeting (startingDate, startingDate);
+                    } else {
+                        c = CalendarHelper.DefaultMeeting (DateTime.UtcNow, DateTime.UtcNow);
                     }
                 } else {
                     c = item;
@@ -186,6 +179,9 @@ namespace NachoClient.iOS
                 c = item;
                 if (0 != c.recurrences.Count) {
                     isRecurring = true;
+                }
+                if (c.AllDayEvent) {
+                    timesAreSet = false;
                 }
                 CreateEditEventView ();
                 break;
@@ -515,8 +511,6 @@ namespace NachoClient.iOS
             startView.AddSubview (startLabel);
 
             startDateLabel = new UILabel ();
-            startDate = c.StartTime;
-            startDateLabel.Text = Pretty.FullDateTimeString (startDate);
             startDateLabel.Tag = START_DATE_TAG;
             startDateLabel.SizeToFit ();
             startDateLabel.TextAlignment = UITextAlignment.Right;
@@ -589,8 +583,6 @@ namespace NachoClient.iOS
             endView.AddSubview (endLabel);
 
             endDateLabel = new UILabel ();
-            endDate = c.EndTime;
-            endDateLabel.Text = Pretty.FullTimeString (endDate);
             endDateLabel.Tag = END_DATE_TAG;
             endDateLabel.SizeToFit ();
             endDateLabel.TextAlignment = UITextAlignment.Right;
@@ -663,19 +655,26 @@ namespace NachoClient.iOS
                     strikethrough.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, CELL_HEIGHT / 2, endDateLabel.Frame.Width, 1);
                     startDatePicker.Mode = UIDatePickerMode.Date;
                     endDatePicker.Mode = UIDatePickerMode.Date;
-                    allDayEvent = true;
                 } else {
+                    if (!timesAreSet) {  //Special case in which the user changes an all day event to an event with a start and end time
+                        var tempC = CalendarHelper.DefaultMeeting(startDate, endDate);
+                        startDate = tempC.StartTime;
+                        endDate = tempC.EndTime;
+                        timesAreSet = !timesAreSet;
+                    }
+                    startDatePicker.Date = startDate;
+                    startDatePicker.Mode = UIDatePickerMode.DateAndTime;
                     startDateLabel.Text = Pretty.FullDateTimeString (startDate);
                     startDateLabel.SizeToFit ();
                     startDateLabel.Frame = new RectangleF (SCREEN_WIDTH - startDateLabel.Frame.Width - 15, 12.438f, startDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
+
                     endDatePicker.Date = endDate;
+                    endDatePicker.Mode = UIDatePickerMode.DateAndTime;
                     endDateLabel.Text = Pretty.FullDateTimeString (endDate);
                     endDateLabel.SizeToFit ();
                     endDateLabel.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, 12.438f, endDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
+
                     strikethrough.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, CELL_HEIGHT / 2, endDateLabel.Frame.Width, 1);
-                    startDatePicker.Mode = UIDatePickerMode.DateAndTime;
-                    endDatePicker.Mode = UIDatePickerMode.DateAndTime;
-                    allDayEvent = false;
                 }
                 eventEditStarted = true;
             };
@@ -965,26 +964,33 @@ namespace NachoClient.iOS
             var allDaySwitchView = contentView.ViewWithTag (ALL_DAY_SWITCH_TAG) as UISwitch;
             allDaySwitchView.SetState (c.AllDayEvent, false);
 
-            //date views
-            startDatePicker.Date = c.StartTime.LocalT ();
-            endDatePicker.Date = c.EndTime.LocalT ();
-
             //start date
             var startDateLabelView = contentView.ViewWithTag (START_DATE_TAG) as UILabel;
             if (c.AllDayEvent) {
                 startDateLabelView.Text = Pretty.FullDateString (c.StartTime);
+                startDatePicker.Mode = UIDatePickerMode.Date;
             } else {
                 startDateLabelView.Text = Pretty.FullDateTimeString (c.StartTime);
+                startDatePicker.Mode = UIDatePickerMode.DateAndTime;
             }
+            startDate = c.StartTime;
+            startDatePicker.Date = c.StartTime.LocalT ();
             startDateLabelView.SizeToFit ();
             startDateLabelView.Frame = new RectangleF (SCREEN_WIDTH - startDateLabel.Frame.Width - 15, 12.438f, startDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
 
             //end date
             var endDateLabelView = contentView.ViewWithTag (END_DATE_TAG) as UILabel;
             if (c.AllDayEvent) {
-                endDateLabelView.Text = Pretty.FullDateString (c.EndTime);
+                var endDay = CalendarHelper.ReturnAllDayEventEndTime(c.EndTime);
+                endDateLabelView.Text = Pretty.FullDateString (endDay);
+                endDatePicker.Mode = UIDatePickerMode.Date;
+                endDate = endDay;
+                endDatePicker.Date = endDay.LocalT ();
             } else {
                 endDateLabelView.Text = Pretty.FullDateTimeString (c.EndTime);
+                endDatePicker.Mode = UIDatePickerMode.DateAndTime;
+                endDate = c.EndTime;
+                endDatePicker.Date = c.EndTime.LocalT ();
             }
             endDateLabelView.SizeToFit ();
             endDateLabelView.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, 12.438f, endDateLabel.Frame.Width, TEXT_LINE_HEIGHT);
@@ -1264,6 +1270,7 @@ namespace NachoClient.iOS
             c.AccountId = account.Id;
             c.Subject = titleField.Text;
             c.Description = descriptionTextView.Text;
+            var allDayEvent = ((UISwitch)contentView.ViewWithTag (ALL_DAY_SWITCH_TAG)).On;
             c.AllDayEvent = allDayEvent;
             if (allDayEvent) {
                 // An all-day event is supposed to run midnight to midnight in the local time zone.
