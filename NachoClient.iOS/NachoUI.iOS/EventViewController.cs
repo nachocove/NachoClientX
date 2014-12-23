@@ -48,6 +48,7 @@ namespace NachoClient.iOS
         protected UILabel messageLabel;
         protected UIButton removeFromCalendarButton;
         protected UIButton changeResponseButton;
+        protected UIView rsvpSeparatorLine;
         protected UIButton extraAttendeesButton;
         protected UIBarButtonItem editEventButton;
 
@@ -72,8 +73,8 @@ namespace NachoClient.iOS
 
         // Helper objects
         protected bool isRecurring = false;
+        protected bool isOrganizer = false;
         protected bool hasLocation = false;
-        protected bool hasDescription = false;
         protected bool hasAttachments = false;
         protected bool hasAttendees = false;
         protected bool hasNotes = false;
@@ -199,6 +200,7 @@ namespace NachoClient.iOS
             acceptButton.Frame = new RectangleF (18, 18, 24, 24);
             acceptButton.TintColor = UIColor.Clear;
             acceptButton.TouchUpInside += AcceptButtonTouchUpInside;
+            acceptButton.Hidden = true;
             eventCardView.AddSubview (acceptButton);
 
             Util.AddButtonImage (tentativeButton, "event-maybe", UIControlState.Normal);
@@ -206,6 +208,7 @@ namespace NachoClient.iOS
             tentativeButton.Frame = new RectangleF (acceptButton.Frame.X + 42 + 45, 18, 24, 24);
             tentativeButton.TintColor = UIColor.Clear;
             tentativeButton.TouchUpInside += TentativeButtonTouchUpInside;
+            tentativeButton.Hidden = true;
             eventCardView.AddSubview (tentativeButton);
 
             Util.AddButtonImage (declineButton, "event-decline", UIControlState.Normal);
@@ -213,24 +216,28 @@ namespace NachoClient.iOS
             declineButton.Frame = new RectangleF (tentativeButton.Frame.X + 38 + 45 + 6, 18, 24, 24);
             declineButton.TintColor = UIColor.Clear;
             declineButton.TouchUpInside += DeclineButtonTouchUpInside;
+            declineButton.Hidden = true;
             eventCardView.AddSubview (declineButton);
 
             acceptLabel = new UILabel (new RectangleF (48, 20, 45, 20));
             acceptLabel.TextColor = textColor;
             acceptLabel.Font = A.Font_AvenirNextMedium14;
             acceptLabel.Text = "Attend";
+            acceptLabel.Hidden = true;
             eventCardView.Add (acceptLabel);
 
             tentativeLabel = new UILabel (new RectangleF (tentativeButton.Frame.X + 24 + 6, 20, 45, 20));
             tentativeLabel.TextColor = textColor;
             tentativeLabel.Font = A.Font_AvenirNextMedium14;
             tentativeLabel.Text = "Maybe";
+            tentativeLabel.Hidden = true;
             eventCardView.Add (tentativeLabel);
 
             declineLabel = new UILabel (new RectangleF (declineButton.Frame.X + 24 + 6, 20, 50, 20));
             declineLabel.TextColor = textColor;
             declineLabel.Font = A.Font_AvenirNextMedium14;
             declineLabel.Text = "Decline";
+            declineLabel.Hidden = true;
             eventCardView.Add (declineLabel);
 
             messageLabel = new UILabel (new RectangleF (18 + 24 + 6, 20, 100, 20));
@@ -261,7 +268,8 @@ namespace NachoClient.iOS
 
             yOffset = 60;
 
-            Util.AddHorizontalLine (0, yOffset, EVENT_CARD_WIDTH, borderColor, eventCardView);
+            rsvpSeparatorLine = Util.AddHorizontalLineView (0, yOffset, EVENT_CARD_WIDTH, A.Color_NachoBorderGray);
+            eventCardView.Add (rsvpSeparatorLine);
 
             yOffset += 18;
 
@@ -400,13 +408,13 @@ namespace NachoClient.iOS
             Util.AddDetailTextLabel (42, 22, SCREEN_WIDTH - 90, 20, TagType.EVENT_NOTES_DETAIL_TAG, eventNotesView);
 
             // Leaving in case we want to go back to inline notes
-//            eventNotesTextView = new UITextView (new RectangleF (42, yOffset, EVENT_CARD_WIDTH - 60, 30));
-//            eventNotesTextView.Font = A.Font_AvenirNextRegular14;
-//            eventNotesTextView.TextColor = textColor;
-//            eventNotesTextView.Tag = (int)TagType.EVENT_NOTES_TEXT_VIEW_TAG;
-//
-//            eventNotesTextView.Started += NotesEditingStarted;
-//            eventNotesTextView.Changed += NotesChanged;
+            //            eventNotesTextView = new UITextView (new RectangleF (42, yOffset, EVENT_CARD_WIDTH - 60, 30));
+            //            eventNotesTextView.Font = A.Font_AvenirNextRegular14;
+            //            eventNotesTextView.TextColor = textColor;
+            //            eventNotesTextView.Tag = (int)TagType.EVENT_NOTES_TEXT_VIEW_TAG;
+            //
+            //            eventNotesTextView.Started += NotesEditingStarted;
+            //            eventNotesTextView.Changed += NotesChanged;
             //eventCardView.AddSubview (eventNotesTextView);
             eventCardView.Frame = new RectangleF (A.Card_Horizontal_Indent, 60, contentView.Frame.Width - 30, yOffset + A.Card_Vertical_Indent);
 
@@ -436,12 +444,13 @@ namespace NachoClient.iOS
                 isRecurring = true;
             }
 
-            bool isOrganizer = (account.EmailAddr == root.OrganizerEmail && account.Id == c.AccountId || (c.ResponseTypeIsSet && NcResponseType.Organizer == c.ResponseType)
-                               || (NcMeetingStatus.Appointment == c.MeetingStatus) || (NcMeetingStatus.Meeting == c.MeetingStatus));
+            isOrganizer = ((account.EmailAddr == root.OrganizerEmail && account.Id == c.AccountId) && ((c.ResponseTypeIsSet && NcResponseType.Organizer == c.ResponseType)
+            || (NcMeetingStatus.Appointment == c.MeetingStatus) || (NcMeetingStatus.Meeting == c.MeetingStatus)));
 
             if (isOrganizer && !isRecurring) {
                 NavigationItem.RightBarButtonItem = editEventButton;
             }
+            ConfigureRsvpBar (isOrganizer);
 
             NavigationItem.Title = e.StartTime.ToString ("Y");
 
@@ -459,7 +468,7 @@ namespace NachoClient.iOS
                 durationLabel.Text = "All day event";
                 if ((c.EndTime - c.StartTime) > TimeSpan.FromDays (1)) {
                     durationLabel.Text = string.Format ("All day from {0} \nthrough {1}",
-                        Pretty.FullDateYearString (c.StartTime), Pretty.FullDateYearString (CalendarHelper.ReturnAllDayEventEndTime(c.EndTime)));
+                        Pretty.FullDateYearString (c.StartTime), Pretty.FullDateYearString (CalendarHelper.ReturnAllDayEventEndTime (c.EndTime)));
                 }
             } else {
                 if (e.StartTime.LocalT ().DayOfYear == e.EndTime.LocalT ().DayOfYear) {
@@ -622,8 +631,6 @@ namespace NachoClient.iOS
             eventNotes.Frame = new RectangleF (42, 22, EVENT_CARD_WIDTH - 60, 0);
             eventNotes.SizeToFit ();
 
-            ConfigureRsvpBar (isOrganizer);
-
             LayoutView ();
         }
 
@@ -679,14 +686,13 @@ namespace NachoClient.iOS
             messageLabel = null;
             removeFromCalendarButton = null;
             changeResponseButton = null;
+            rsvpSeparatorLine = null;
             extraAttendeesButton = null;
             attendeeTapGestureRecognizer = null;
             alertTapGestureRecognizer = null;
             attachmentsTapGestureRecognizer = null;
             notesTapGestureRecognizer = null;
         }
-
-
 
         public void SetCalendarItem (McEvent e)
         {
@@ -851,7 +857,7 @@ namespace NachoClient.iOS
             AdjustViewLayout (TagType.EVENT_TITLE_LABEL_TAG, 15 + 18, ref yOffset, 20, SCREEN_WIDTH - 66);
             AdjustY (eventCardView, yOffset + 15);
 
-            float internalYOffset = 60;
+            float internalYOffset = (NcMeetingStatus.Appointment == c.MeetingStatus && !isOrganizer) ? 0 : 60;
 
             AdjustViewLayout (TagType.EVENT_WHEN_TITLE_TAG, 0, ref internalYOffset, 18, EVENT_CARD_WIDTH - 100);
             AdjustViewLayout (TagType.EVENT_WHEN_DETAIL_LABEL_TAG, 42, ref internalYOffset, 5, EVENT_CARD_WIDTH - 60);
@@ -864,7 +870,7 @@ namespace NachoClient.iOS
                 AdjustViewLayout (TagType.EVENT_LOCATION_TITLE_TAG, 0, ref internalYOffset, 18, EVENT_CARD_WIDTH - 100);
                 AdjustViewLayout (TagType.EVENT_LOCATION_DETAIL_LABEL_TAG, 42, ref internalYOffset, 5, EVENT_CARD_WIDTH - 60);
             }
-
+                
             AdjustViewLayout (TagType.EVENT_DESCRIPTION_TITLE_TAG, 0, ref internalYOffset, 18, EVENT_CARD_WIDTH - 100);
             if (yOffset != descriptionView.Frame.Y) {
                 ViewFramer.Create (descriptionView).Y (internalYOffset);
@@ -1049,7 +1055,7 @@ namespace NachoClient.iOS
                 declineLabel.Hidden = true;
                 declineButton.TouchUpInside += RemoveFromCalendarClicked;
                 removeFromCalendarButton.Hidden = false;
-
+                rsvpSeparatorLine.Hidden = false;
                 removeFromCalendarButton.TouchUpInside += RemoveFromCalendarClicked;
                 return;
             }
@@ -1067,13 +1073,35 @@ namespace NachoClient.iOS
                 declineButton.Hidden = true;
                 declineLabel.Hidden = true;
                 removeFromCalendarButton.Hidden = true;
+                rsvpSeparatorLine.Hidden = false;
+                return;
+            } 
 
+            if (NcMeetingStatus.Appointment == c.MeetingStatus) {
+                messageLabel.Hidden = true;
+                acceptButton.Hidden = true;
+                organizerIcon.Hidden = true;
+                acceptButton.Selected = true;
+                acceptLabel.Hidden = true;
+                tentativeButton.Hidden = true;
+                tentativeLabel.Hidden = true;
+                declineButton.Hidden = true;
+                declineLabel.Hidden = true;
+                removeFromCalendarButton.Hidden = true;
+                rsvpSeparatorLine.Hidden = true;
+                return;
             } else if (c.ResponseTypeIsSet) {
 
                 switch (c.ResponseType) {
 
                 case NcResponseType.Accepted:
                     acceptButton.Selected = true;
+                    acceptButton.Hidden = false;
+                    acceptLabel.Hidden = false;
+                    tentativeButton.Hidden = false;
+                    declineButton.Hidden = false;
+                    tentativeLabel.Hidden = false;
+                    declineLabel.Hidden = false;
                     //                    messageLabel.Text = "You are going";
                     //                    messageLabel.Hidden = false;
                     //                    changeResponseButton.Hidden = false;
@@ -1088,6 +1116,12 @@ namespace NachoClient.iOS
 
                 case NcResponseType.Tentative:
                     tentativeButton.Selected = true;
+                    acceptButton.Hidden = false;
+                    acceptLabel.Hidden = false;
+                    tentativeButton.Hidden = false;
+                    declineButton.Hidden = false;
+                    tentativeLabel.Hidden = false;
+                    declineLabel.Hidden = false;
                     //                    messageLabel.Text = "Tentative";
                     //                    messageLabel.Hidden = false;
                     //                    changeResponseButton.Hidden = false;
@@ -1102,6 +1136,12 @@ namespace NachoClient.iOS
 
                 case NcResponseType.Declined:
                     declineButton.Selected = true;
+                    acceptButton.Hidden = false;
+                    acceptLabel.Hidden = false;
+                    tentativeButton.Hidden = false;
+                    declineButton.Hidden = false;
+                    tentativeLabel.Hidden = false;
+                    declineLabel.Hidden = false;
                     //                    messageLabel.Text = "You are not going to this meeting";
                     //                    messageLabel.Hidden = false;
                     //                    changeResponseButton.Hidden = false;
@@ -1114,6 +1154,7 @@ namespace NachoClient.iOS
                     declineButton.UserInteractionEnabled = false;
                     break;
                 }
+                rsvpSeparatorLine.Hidden = false;
             }
         }
 
