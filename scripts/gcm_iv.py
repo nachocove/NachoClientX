@@ -60,7 +60,7 @@ def Nacho_GCM_IV(device_id):
     # 19 digits is the size of the string for 2**63 -1, which is a 64bit integer.
     IV = ":".join((device_id, "{:019d}".format(counter)))
     random_length = 160-len(IV)
-    print "IV: %s:<random crap, %d bytes>" % (IV, random_length)
+    #print "IV: %s:<random crap, %d bytes>" % (IV, random_length)
     IV = IV+":"+os.urandom(random_length)
     return IV.encode('base-64')
 
