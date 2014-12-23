@@ -29,7 +29,7 @@ def get_next_counter_value():
     return counter
 
 
-def Nacho_GCM_IV(device_id):
+def Nacho_GCM_IV(device_id, counter):
     """
     Create an IV suitable for GCM. In GCM, it is fatal to reuse the same IV with a given key.
 
@@ -56,7 +56,6 @@ def Nacho_GCM_IV(device_id):
     """
     import os
     # <device-id>:<timestamp>:<counter protected by mutex>:<random stuff>
-    counter = get_next_counter_value()
     # 19 digits is the size of the string for 2**63 -1, which is a 64bit integer.
     IV = ":".join((device_id, "{:019d}".format(counter)))
     random_length = 160-len(IV)
@@ -67,5 +66,6 @@ def Nacho_GCM_IV(device_id):
 
 if __name__ == "__main__":
     device_id = 'Ncho3168E1E2XF59EX4E37XAFDEX'
-    print Nacho_GCM_IV(device_id)
+    counter = get_next_counter_value()
+    print Nacho_GCM_IV(device_id, counter)
 
