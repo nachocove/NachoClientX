@@ -327,6 +327,7 @@ namespace NachoClient.iOS
 
             // If they've just entered a server, verify the server
             if (haveEnteredServer ()) {
+                BackEnd.Instance.Stop (LoginHelpers.GetCurrentAccountId ());
                 waitScreen.SetLoadingText ("Verifying Your Server...");
                 tryValidateConfig ();  // status ind handler will take next steps
                 waitScreen.ShowView ();
