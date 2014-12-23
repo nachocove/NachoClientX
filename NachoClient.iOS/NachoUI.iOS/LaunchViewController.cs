@@ -33,6 +33,7 @@ namespace NachoClient.iOS
 
         protected bool serviceTableExpanded;
         protected EmailServiceTableViewSource emailServices;
+        protected McAccount.AccountServiceEnum selectedEmailService;
 
         protected UIImageView loginTriangles;
         protected PointF originalStartLabelCenter;
@@ -107,7 +108,7 @@ namespace NachoClient.iOS
             get { return true; }
         }
 
-        public void OnEmailServiceSelected (EmailServiceTableViewSource.EmailServiceEnum service, bool willExpand)
+        public void OnEmailServiceSelected (McAccount.AccountServiceEnum service, bool willExpand)
         {
             if (willExpand) {
                 emailServices.Grow (emailServiceTableView);
@@ -117,11 +118,13 @@ namespace NachoClient.iOS
             }
 
             // Gotta keep global state :(
+            selectedEmailService = service;
             serviceTableExpanded = willExpand;
             ConfigureAndLayout ();
 
-            // Show everything after they've selected a service
-            if (EmailServiceTableViewSource.EmailServiceEnum.None == service) {
+            // Hide email/password/submit before they've selected a service.
+            // Show email/password/submit after they've selected a service.
+            if (McAccount.AccountServiceEnum.None == service) {
                 ;
             } else {
                 emailBox.Alpha = 1.0f;
@@ -165,7 +168,7 @@ namespace NachoClient.iOS
             yOffset = startLabel.Frame.Bottom + 20;
 
             emailServices = new EmailServiceTableViewSource ();
-            emailServices.SetSelectedItem (EmailServiceTableViewSource.EmailServiceEnum.None);
+            emailServices.SetSelectedItem (McAccount.AccountServiceEnum.None);
             emailServices.OnSelected = OnEmailServiceSelected;
 
             emailServiceTableView = new UITableView (new RectangleF (25, yOffset, View.Frame.Width - 50, emailServices.GetTableHeight ()));
@@ -418,6 +421,8 @@ namespace NachoClient.iOS
                 // You will always need to supply the user's email address.
                 appDelegate.Account = new McAccount () { EmailAddr = emailField.Text };
                 appDelegate.Account.Signature = "Sent from Nacho Mail";
+                appDelegate.Account.AccountService = selectedEmailService;
+                appDelegate.Account.DisplayName = McAccount.AccountServiceName(selectedEmailService);
                 appDelegate.Account.Insert ();
                 var cred = new McCred () { 
                     AccountId = appDelegate.Account.Id,

@@ -4,6 +4,7 @@ using System;
 using System.Drawing;
 using MonoTouch.UIKit;
 using MonoTouch.Foundation;
+using NachoCore.Model;
 using NachoCore.Utils;
 using System.Collections.Generic;
 
@@ -11,16 +12,9 @@ namespace NachoClient.iOS
 {
     public class EmailServiceTableViewSource : UITableViewSource
     {
-        public enum EmailServiceEnum
-        {
-            None,
-            Exchange,
-            HotmailExchange,
-            OutlookExchange,
-            GoogleExchange,
-        };
 
-        public delegate void ServiceSelected (EmailServiceEnum service, bool willExpand);
+
+        public delegate void ServiceSelected (McAccount.AccountServiceEnum service, bool willExpand);
 
         public ServiceSelected OnSelected;
 
@@ -28,9 +22,9 @@ namespace NachoClient.iOS
         {
             public bool Selected;
             public String ServiceIconName;
-            public EmailServiceEnum EmailService;
+            public McAccount.AccountServiceEnum EmailService;
 
-            public ServiceInfo (bool selected, string iconName, EmailServiceEnum service)
+            public ServiceInfo (bool selected, string iconName, McAccount.AccountServiceEnum service)
             {
                 Selected = selected;
                 ServiceIconName = iconName;
@@ -39,11 +33,11 @@ namespace NachoClient.iOS
         }
 
         protected List<ServiceInfo> providers = new List<ServiceInfo> {
-            new ServiceInfo (true, "", EmailServiceEnum.None),
-            new ServiceInfo (false, "login-mex@2x", EmailServiceEnum.Exchange),
-            new ServiceInfo (false, "login-hotmail@2x", EmailServiceEnum.HotmailExchange),
-            new ServiceInfo (false, "login-google@2x", EmailServiceEnum.GoogleExchange),
-            new ServiceInfo (false, "login-outlook@2x", EmailServiceEnum.OutlookExchange),
+            new ServiceInfo (true, "", McAccount.AccountServiceEnum.None),
+            new ServiceInfo (false, "login-mex@2x", McAccount.AccountServiceEnum.Exchange),
+            new ServiceInfo (false, "login-hotmail@2x", McAccount.AccountServiceEnum.HotmailExchange),
+            new ServiceInfo (false, "login-google@2x", McAccount.AccountServiceEnum.GoogleExchange),
+            new ServiceInfo (false, "login-outlook@2x", McAccount.AccountServiceEnum.OutlookExchange),
         };
 
         protected bool expanded;
@@ -59,16 +53,16 @@ namespace NachoClient.iOS
             if (null == p) {
                 return false;
             }
-            if (EmailServiceEnum.HotmailExchange == p.EmailService) {
+            if (McAccount.AccountServiceEnum.HotmailExchange == p.EmailService) {
                 return true;
             }
-            if (EmailServiceEnum.OutlookExchange == p.EmailService) {
+            if (McAccount.AccountServiceEnum.OutlookExchange == p.EmailService) {
                 return true;
             }
             return false;
         }
 
-        public void SetSelectedItem (EmailServiceEnum provider)
+        public void SetSelectedItem (McAccount.AccountServiceEnum provider)
         {
             foreach (var p in providers) {
                 p.Selected = false;
@@ -160,9 +154,9 @@ namespace NachoClient.iOS
             var dropdownImageView = (UIImageView)cell.ContentView.ViewWithTag (DROPDOWN_IMAGEVIEW_TAG);
 
             cell.TextLabel.Text = "";
-            providerImageView.Hidden = (EmailServiceEnum.None == provider.EmailService);
+            providerImageView.Hidden = (McAccount.AccountServiceEnum.None == provider.EmailService);
 
-            if (EmailServiceEnum.None == provider.EmailService) {
+            if (McAccount.AccountServiceEnum.None == provider.EmailService) {
                 cell.TextLabel.Text = "Choose your email service";
             }
 
@@ -186,7 +180,7 @@ namespace NachoClient.iOS
             return 46;
         }
 
-        protected void MaybeOnSelected (EmailServiceEnum provider, bool willExpand)
+        protected void MaybeOnSelected (McAccount.AccountServiceEnum provider, bool willExpand)
         {
             if (null != OnSelected) {
                 OnSelected (provider, willExpand);

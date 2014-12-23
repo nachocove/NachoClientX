@@ -9,9 +9,24 @@ namespace NachoCore.Model
 {
     public class McAccount : McAbstrObject
     {
-        public enum AccountTypeEnum { Exchange, Device };
+        public enum AccountTypeEnum
+        {
+            Exchange,
+            Device,
+        };
+
+        public enum AccountServiceEnum
+        {
+            None,
+            Exchange,
+            HotmailExchange,
+            OutlookExchange,
+            GoogleExchange,
+        };
 
         public AccountTypeEnum AccountType { get; set; }
+
+        public AccountServiceEnum AccountService { get; set; }
 
         public string EmailAddr { get; set; }
 
@@ -36,6 +51,25 @@ namespace NachoCore.Model
         public static McAccount GetDeviceAccount ()
         {
             return McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Device).SingleOrDefault ();
+        }
+
+        public static string AccountServiceName (AccountServiceEnum service)
+        {
+            switch (service) {
+            case AccountServiceEnum.None:
+                return "";
+            case AccountServiceEnum.Exchange:
+                return "Exchange";
+            case AccountServiceEnum.HotmailExchange:
+                return "Hotmail";
+            case AccountServiceEnum.OutlookExchange:
+                return "Outlook.com";
+            case AccountServiceEnum.GoogleExchange:
+                return "Google Apps for Work";
+            default:
+                NcAssert.CaseError (String.Format ("AccountServiceName: unknown {0}", service));
+                return "";
+            }
         }
     }
 
@@ -73,6 +107,7 @@ namespace NachoCore.Model
             NcAssert.True (false);
             return -1;
         }
+
     }
 }
 
