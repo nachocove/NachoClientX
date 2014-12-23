@@ -541,6 +541,10 @@ namespace NachoClient.iOS
             // Preview label view
             var previewLabelView = cell.ContentView.ViewWithTag (PREVIEW_TAG) as UILabel;
             previewLabelView.Hidden = false;
+            if (null == message.BodyPreview) {
+                message.BodyPreview = MimeHelpers.ExtractSummary (message);
+                message.Update ();
+            }
             var rawPreview = message.GetBodyPreviewOrEmpty ();
             var cookedPreview = System.Text.RegularExpressions.Regex.Replace (rawPreview, @"\s+", " ");
             previewLabelView.AttributedText = new NSAttributedString (cookedPreview);

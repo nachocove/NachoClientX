@@ -147,16 +147,38 @@ namespace NachoCore.Utils
             return null;
         }
 
-        static public string ExtractSummary (MimeMessage mimeMessage)
+        static public string ExtractSummary (McEmailMessage message)
         {
-            var textPart = FindTextPart (mimeMessage.Body);
-            if (null == textPart) {
-                return null;
+            var body = message.GetBody ();
+            NcAssert.NotNull (body);
+
+            if (!McBody.IsComplete (body)) {
+                return "";
             }
-            if (null == textPart.Text) {
-                return null;
+
+            if (McAbstrFileDesc.BodyTypeEnum.None == body.BodyType) {
+                return "";
             }
-            var raw = textPart.Text.Substring (0, Math.Min (textPart.Text.Length, 1000));
+
+            if (McAbstrFileDesc.BodyTypeEnum.HTML_2 == body.BodyType) {
+                return "";
+            }
+
+            if (McAbstrFileDesc.BodyTypeEnum.RTF_3 == body.BodyType) {
+                return "";
+            }
+
+            string text;
+            if (McAbstrFileDesc.BodyTypeEnum.PlainText_1 == body.BodyType) {
+                text = body.GetContentsString ();
+            } else {
+                NcAssert.True (McAbstrFileDesc.BodyTypeEnum.MIME_4 == body.BodyType);
+                text = ExtractTextPart (McBody.QueryById<McBody> (message.BodyId));
+            }
+            if (null == text) {
+                return "";
+            }
+            var raw = text.Substring (0, Math.Min (text.Length, 1000));
             var cooked = System.Text.RegularExpressions.Regex.Replace (raw, @"\s+", " ");
             return cooked;
         }
