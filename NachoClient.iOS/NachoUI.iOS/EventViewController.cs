@@ -797,13 +797,7 @@ namespace NachoClient.iOS
                 };
                 return;
             }
-
-            if (segue.Identifier.Equals ("EventToAttachment")) {
-                var dc = (EventAttachmentViewController)segue.DestinationViewController;
-                dc.SetAttachments (c.attachments);
-                return;
-            }
-
+                
             if (segue.Identifier.Equals ("EventToNotes")) {
                 var dc = (NotesViewController)segue.DestinationViewController;
                 dc.SetOwner (this, true);
