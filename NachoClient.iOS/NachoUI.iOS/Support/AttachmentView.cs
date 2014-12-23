@@ -106,7 +106,9 @@ namespace NachoClient.iOS
             //Download image view
             downloadImageView = new UIImageView (new RectangleF (frame.Width - 18 - 16, (frame.Height / 2) - 8, 16, 16)); 
             downloadImageView.Tag = (int)TagType.DOWNLOAD_IMAGEVIEW_TAG;
-            downloadImageView.Image = UIImage.FromBundle ("email-att-download");
+            using (var image = UIImage.FromBundle ("email-att-download")) {
+                downloadImageView.Image = image;
+            }
 
             AddSubview (downloadImageView);
 
@@ -157,11 +159,17 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void MaybeStopAnimation ()
+        protected void MaybeStopAnimation (bool restoreDownloadArrow)
         {
             if (animationIsRunning) {
                 StopAnimations ();
                 animationIsRunning = false;
+            }
+            if (restoreDownloadArrow) {
+                var iv = this.ViewWithTag ((int)TagType.DOWNLOAD_IMAGEVIEW_TAG) as UIImageView;
+                using (var image = UIImage.FromBundle ("email-att-download")) {
+                    downloadImageView.Image = image;
+                }
             }
         }
 
@@ -255,12 +263,12 @@ namespace NachoClient.iOS
             case McAbstrFileDesc.FilePresenceEnum.Partial:
                 break;
             case McAbstrFileDesc.FilePresenceEnum.Error:
-                MaybeStopAnimation ();
+                MaybeStopAnimation (true);
                 MaybeUnregisterStatusInd ();
                 UserInteractionEnabled = true;
                 break;
             case McAbstrFileDesc.FilePresenceEnum.Complete:
-                MaybeStopAnimation ();
+                MaybeStopAnimation (false);
                 MaybeUnregisterStatusInd ();
                 UserInteractionEnabled = true;
                 downloadImageView.Hidden = true;
@@ -348,7 +356,7 @@ namespace NachoClient.iOS
 
         public void Cleanup ()
         {
-            MaybeStopAnimation ();
+            MaybeStopAnimation (false);
             MaybeUnregisterStatusInd ();
 
             // Clean up gesture recognizers.
