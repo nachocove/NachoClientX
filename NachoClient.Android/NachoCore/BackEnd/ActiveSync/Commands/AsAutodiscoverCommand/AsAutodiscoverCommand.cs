@@ -80,6 +80,8 @@ namespace NachoCore.ActiveSync
                 ServerCertAsk,
                 // Pool of to-dos (asking about certs, waiting for robots, etc) is empty.
                 Empty,
+                // Pool of to-dos is empty, but default server can be tested.
+                TestDefaultServer,
                 Cancel,
             };
         };
@@ -117,7 +119,7 @@ namespace NachoCore.ActiveSync
                         Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.TempFail, (uint)SmEvt.E.HardFail, 
                             (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
                             (uint)SharedEvt.E.ReStart,
-                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty,
+                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty, (uint)TlEvt.E.TestDefaultServer,
                         },
                         On = new[] {
                             // Start robots and wait.
@@ -169,6 +171,12 @@ namespace NachoCore.ActiveSync
                                 Act = DoUiGetServer,
                                 State = (uint)Lst.SrvConfW
                             },
+                            // The last robot failed, but test against Google before giving up.
+                            new Trans {
+                                Event = (uint)TlEvt.E.TestDefaultServer,
+                                Act = DoTestDefaultServer,
+                                ActSetsState = true
+                            },
                             new Trans { Event = (uint)TlEvt.E.Cancel, Act = DoCancel, State = (uint)St.Stop },
                         }
                     },
@@ -176,7 +184,7 @@ namespace NachoCore.ActiveSync
                     new Node {State = (uint)Lst.AskW,
                         Invalid = new [] {(uint)SmEvt.E.TempFail,
                             (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
-                            (uint)SharedEvt.E.ReStart,
+                            (uint)SharedEvt.E.ReStart, (uint)TlEvt.E.TestDefaultServer,
                         },
                         On = new[] {
                             // Start robots and wait.
@@ -217,7 +225,7 @@ namespace NachoCore.ActiveSync
                     new Node {State = (uint)Lst.TestW1,
                         Drop = new [] { (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY },
                         Invalid = new [] {(uint)SharedEvt.E.ReStart,
-                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty
+                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty, (uint)TlEvt.E.TestDefaultServer,
                         },
                         On = new[] {
                             // Test the new server config.
@@ -260,8 +268,8 @@ namespace NachoCore.ActiveSync
                             // Ask for creds again before re-test.
                             new Trans {
                                 Event = (uint)AsProtoControl.AsEvt.E.AuthFail,
-                                Act = DoUiGetCred,
-                                State = (uint)Lst.CredW2
+                                Act = DoUiGetCredOrGetServer,
+                                ActSetsState = true
                             },
                             // Re-try test because app set creds.
                             new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoTest, ActSetsState = true },
@@ -278,7 +286,7 @@ namespace NachoCore.ActiveSync
                     new Node {State = (uint)Lst.TestW2,
                         Drop = new [] { (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY },
                         Invalid = new [] {(uint)SharedEvt.E.ReStart,
-                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty
+                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty, (uint)TlEvt.E.TestDefaultServer,
                         },
                         On = new[] {
                             // Test the new server config.
@@ -321,8 +329,8 @@ namespace NachoCore.ActiveSync
                             // Ask for creds again before re-test.
                             new Trans {
                                 Event = (uint)AsProtoControl.AsEvt.E.AuthFail,
-                                Act = DoUiGetCred,
-                                State = (uint)Lst.CredW2
+                                Act = DoUiGetCredOrGetServer,
+                                ActSetsState = true
                             },
                             // Re-try test because app set creds.
                             new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoTest, ActSetsState = true },
@@ -342,7 +350,7 @@ namespace NachoCore.ActiveSync
                         Invalid = new [] {(uint)SmEvt.E.Success, (uint)SmEvt.E.TempFail, 
                             (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync,
                             (uint)SharedEvt.E.ReStart,
-                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty,
+                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty, (uint)TlEvt.E.TestDefaultServer,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoTest, ActSetsState = true },
@@ -372,7 +380,7 @@ namespace NachoCore.ActiveSync
                         Invalid = new [] {(uint)SmEvt.E.TempFail, (uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail,
                             (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
                             (uint)SharedEvt.E.ReStart,
-                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty
+                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty, (uint)TlEvt.E.TestDefaultServer,
                         },
                         On = new[] {
                             // Ask app for creds.
@@ -391,7 +399,7 @@ namespace NachoCore.ActiveSync
                         Invalid = new [] {(uint)SmEvt.E.TempFail, (uint)SmEvt.E.Success, (uint)SmEvt.E.HardFail,
                             (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
                             (uint)SharedEvt.E.ReStart,
-                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty
+                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty, (uint)TlEvt.E.TestDefaultServer,
                         },
                         On = new [] {
                             // Ask app for creds.
@@ -410,7 +418,7 @@ namespace NachoCore.ActiveSync
                         Invalid = new [] { (uint)SmEvt.E.Success, (uint)SmEvt.E.TempFail, (uint)SmEvt.E.HardFail,
                             (uint)AsProtoControl.AsEvt.E.ReDisc, (uint)AsProtoControl.AsEvt.E.ReProv, (uint)AsProtoControl.AsEvt.E.ReSync, (uint)AsProtoControl.AsEvt.E.AuthFail, 
                             (uint)SharedEvt.E.ReStart,
-                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty
+                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty, (uint)TlEvt.E.TestDefaultServer,
                         },
                         On = new[] {
                             // Ask again and wait.
@@ -512,6 +520,23 @@ namespace NachoCore.ActiveSync
             base.DoUiGetCred ();
         }
 
+        /// <summary>
+        /// When authorization fails, we normally go to the get credentials view.
+        /// But if the user selected Google Apps for Work and auto-d failed, then
+        /// we don't really know that we have the correct server and we want to go
+        /// to the advanced login view instead.
+        /// </summary>
+        private void DoUiGetCredOrGetServer ()
+        {
+            if (!AutoDSucceeded && McAccount.AccountServiceEnum.GoogleExchange == Account.AccountService) {
+                Sm.State = (uint)Lst.SrvConfW;
+                DoUiGetServer ();
+            } else {
+                Sm.State = (uint)Lst.CredW2;
+                DoUiGetCred ();
+            }
+        }
+
         private void DoCancel ()
         {
             KillAllRobots ();
@@ -557,7 +582,13 @@ namespace NachoCore.ActiveSync
             Robots.Remove (robot);
             if (0 == Robots.Count) {
                 // This can never happen in AskW - there is still the asking robot in the list.
-                Sm.PostEvent ((uint)TlEvt.E.Empty, "AUTODDRR");
+                if (McAccount.AccountServiceEnum.GoogleExchange == Account.AccountService) {
+                    // Auto-d failed, but the user earlier selected Google Apps for Work.  Test
+                    // against the Google server before giving up.
+                    Sm.PostEvent ((uint)TlEvt.E.TestDefaultServer, "AUTODTRYG");
+                } else {
+                    Sm.PostEvent ((uint)TlEvt.E.Empty, "AUTODDRR");
+                }
             }
         }
 
@@ -637,6 +668,17 @@ namespace NachoCore.ActiveSync
             KillAllRobots ();
             // Must clear event Q for TL SM of anything a robot may have posted (threads).
             Sm.ClearEventQueue ();
+            DoTest ();
+        }
+
+        /// <summary>
+        /// Auto-d failed, but the user selected Google Apps for Work.  Do what the user
+        /// told us to do and test the Google server.
+        /// </summary>
+        private void DoTestDefaultServer ()
+        {
+            AutoDSucceeded = false;
+            ServerCandidate = McServer.Create (Account.Id, McServer.BaseUriForHost (McServer.GMail_Host));
             DoTest ();
         }
 
