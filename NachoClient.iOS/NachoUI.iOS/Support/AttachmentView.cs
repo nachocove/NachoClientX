@@ -166,7 +166,6 @@ namespace NachoClient.iOS
                 animationIsRunning = false;
             }
             if (restoreDownloadArrow) {
-                var iv = this.ViewWithTag ((int)TagType.DOWNLOAD_IMAGEVIEW_TAG) as UIImageView;
                 using (var image = UIImage.FromBundle ("email-att-download")) {
                     downloadImageView.Image = image;
                 }
