@@ -1814,10 +1814,10 @@ namespace NachoClient.iOS
 
             public int CompareTo(PhoneCell other){
                 string name = phoneAttribute.Name;
-                int phonePriority = ContactsHelper.PhonePriority [name];
+                int phonePriority = owner.contactHelper.PhoneNames.IndexOf(name);
 
                 string otherName = other.phoneAttribute.Name;
-                int otherPriority = ContactsHelper.PhonePriority [otherName];
+                int otherPriority = owner.contactHelper.PhoneNames.IndexOf (otherName);
 
                 return phonePriority.CompareTo (otherPriority);
             }
