@@ -17,6 +17,8 @@ namespace NachoCore.Model
         [Indexed]
         public string ServerId { get; set; }
 
+        public bool WasMoveDest { get; set; }
+
         public McPath ()
         {
         }
@@ -49,9 +51,12 @@ namespace NachoCore.Model
             var preExists = McPath.QueryByServerId (AccountId, ServerId);
             Log.Info (Log.LOG_DB, "McPath:Insert ServerId {0}", ServerId);
             if (null != preExists) {
-                Log.Error (Log.LOG_DB, string.Format ("Duplicate McPath: old entry {0}/{1} replaced with {2}/{3} @ {4}.",
-                    preExists.ParentId, preExists.ServerId,
-                    ParentId, ServerId, new StackTrace ().ToString ()));
+                // In a move, expect the server to send one Add, which is not an error.
+                if (!preExists.WasMoveDest) {
+                    Log.Error (Log.LOG_DB, string.Format ("Duplicate McPath: old entry {0}/{1} replaced with {2}/{3} @ {4}.",
+                        preExists.ParentId, preExists.ServerId,
+                        ParentId, ServerId, new StackTrace ().ToString ()));
+                }
                 preExists.Delete ();
             }
             return base.Insert ();

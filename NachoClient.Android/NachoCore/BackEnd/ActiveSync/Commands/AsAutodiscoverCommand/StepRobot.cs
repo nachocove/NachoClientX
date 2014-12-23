@@ -27,7 +27,7 @@ namespace NachoCore.ActiveSync
     {
         private class StepRobot : IAsHttpOperationOwner, IAsDnsOperationOwner
         {
-            private const string KDefaultCertTimeoutSeconds = "8";
+            private const int KDefaultCertTimeoutSeconds = 8;
             private double KDefaultTimeoutExpander = 2.0;
             public enum RobotLst : uint
             {
@@ -96,8 +96,8 @@ namespace NachoCore.ActiveSync
 
             public StepRobot (AsAutodiscoverCommand command, Steps step, string emailAddr, string domain)
             {
-                var timeoutSeconds = McMutables.GetOrCreate (McAccount.GetDeviceAccount ().Id, "AUTOD", "CertTimeoutSeconds", KDefaultCertTimeoutSeconds);
-                CertTimeout = new TimeSpan (0, 0, timeoutSeconds.ToInt ());
+                int timeoutSeconds = McMutables.GetOrCreateInt (McAccount.GetDeviceAccount ().Id, "AUTOD", "CertTimeoutSeconds", KDefaultCertTimeoutSeconds);
+                CertTimeout = new TimeSpan (0, 0, timeoutSeconds);
                 Cts = new CancellationTokenSource ();
                 Ct = Cts.Token;
                 DisposedJunk = new ConcurrentBag<object> ();
@@ -521,9 +521,7 @@ namespace NachoCore.ActiveSync
             private void DoRobotDns ()
             {
                 if (0 < RetriesLeft--) {
-                    DnsOp = new AsDnsOperation (this) {
-                        Timeout = new TimeSpan(0, 0, 10),
-                    };
+                    DnsOp = new AsDnsOperation (this, new TimeSpan(0, 0, 10));
                     DnsOp.Execute (StepSm);
                 } else {
                     StepSm.PostEvent ((uint)SmEvt.E.HardFail, "SRDRDHARD");
@@ -653,7 +651,7 @@ namespace NachoCore.ActiveSync
 
             private void DoRobotMxDnsSuccess ()
             {
-                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: MX DNS succeeded: {1}.", Step, LastUri);
+                Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: MX DNS succeeded: {1}.", Step, SrServerUri);
                 DoRobotSuccess ();
             }
 
@@ -683,6 +681,7 @@ namespace NachoCore.ActiveSync
 
             private void DoRobotDnsMxHardFail ()
             {
+                Command.ProtoControl.AutoDInfo = AutoDInfoEnum.MXNotFound;
                 Log.Info (Log.LOG_AS, "AUTOD:{0}:PROGRESS: DNS MX failed.", Step);
                 DoRobotHardFail ();
             }
@@ -1016,7 +1015,7 @@ namespace NachoCore.ActiveSync
                         // TODO: add support for CertEnroll.
                     }
                     var xmlName = xmlServer.ElementAnyNs (Xml.Autodisco.Name);
-                    if (null != xmlName) {
+                    if (null == xmlName) {
                         Log.Warn (Log.LOG_AS, "ProcessXmlSettings: missing Name: {0}", xmlServer.ToString ());
                         // We should have gotten our server info from Url.
                     }
@@ -1099,13 +1098,16 @@ namespace NachoCore.ActiveSync
                         NsType.MX == response.NsType) {
                         var aBest = (MxRecord)response.Answers.OrderBy (r1 => ((MxRecord)r1).Preference).First ();
                         if (aBest.MailExchange.EndsWith (McServer.GMail_MX_Suffix, StringComparison.OrdinalIgnoreCase)) {
-                            SrDomain = McServer.GMail_Host;
+                            Command.ProtoControl.AutoDInfo = AutoDInfoEnum.MXFoundGoogle;
+                            SrServerUri = McServer.BaseUriForHost (McServer.GMail_Host);
                             return Event.Create ((uint)SmEvt.E.Success, "SRPRMXSUCCESS");
                         } else {
+                            Command.ProtoControl.AutoDInfo = AutoDInfoEnum.MXFoundNonGoogle;
                             return Event.Create ((uint)SmEvt.E.HardFail, "SRPRMXHARD1");
                         }
 
                     } else {
+                        Command.ProtoControl.AutoDInfo = AutoDInfoEnum.MXNotFound;
                         return Event.Create ((uint)SmEvt.E.HardFail, "SRPRMXHARD2");
                     }
 

@@ -636,14 +636,15 @@ namespace NachoCore.ActiveSync
             return null;
         }
 
-        public PingKit GenPingKit (int accountId, McProtocolState protocolState, bool isNarrow)
+        public PingKit GenPingKit (int accountId, McProtocolState protocolState, bool isNarrow, bool stillHaveUnsyncedFolders)
         {
+            var maxHeartbeatInterval = (stillHaveUnsyncedFolders) ? 60 : BEContext.ProtocolState.HeartbeatInterval;
             var folders = FolderListProvider (accountId, Scope.StrategyRung (protocolState), isNarrow);
             if (folders.Any (x => true == x.AsSyncMetaToClientExpected)) {
                 return null;
             }
             if (protocolState.MaxFolders >= folders.Count) {
-                return new PingKit () { Folders = folders };
+                return new PingKit () { Folders = folders, MaxHeartbeatInterval = maxHeartbeatInterval };
             }
             // If we have too many folders, then whittle down the list, but keep default inbox & cal.
             List<McFolder> fewer = new List<McFolder> ();
@@ -660,7 +661,7 @@ namespace NachoCore.ActiveSync
             // Prefer the least-recently-ping'd.
             var stalest = folders.OrderBy (x => x.AsSyncLastPing).Take ((int)protocolState.MaxFolders - fewer.Count);
             fewer.AddRange (stalest);
-            return new PingKit () { Folders = fewer };
+            return new PingKit () { Folders = fewer, MaxHeartbeatInterval = maxHeartbeatInterval };
         }
 
         // Returns null if nothing to do.
@@ -698,12 +699,12 @@ namespace NachoCore.ActiveSync
             return null;
         }
 
-        public bool NarrowFoldersNoToClientExpected (int accountId)
+        public bool ANarrowFolderHasToClientExpected (int accountId)
         {
             var defInbox = McFolder.GetDefaultInboxFolder (accountId);
             var defCal = McFolder.GetDefaultCalendarFolder (accountId);
-            var retval = !(defInbox.AsSyncMetaToClientExpected || defCal.AsSyncMetaToClientExpected);
-            Log.Info (Log.LOG_AS, "NarrowFoldersNoToClientExpected is {0}", retval);
+            var retval = (defInbox.AsSyncMetaToClientExpected || defCal.AsSyncMetaToClientExpected);
+            Log.Info (Log.LOG_AS, "ANarrowFolderHasToClientExpected is {0}", retval);
             return retval;
         }
 
@@ -721,12 +722,46 @@ namespace NachoCore.ActiveSync
         }
         // </DEBUG>
 
+        public static bool ScrubSyncedFolders (int accountId)
+        {
+            var folders = McFolder.QueryByIsClientOwned (accountId, false);
+            var now = DateTime.UtcNow;
+            var stillHaveUnsyncedFolders = false;
+            foreach (var folder in folders) {
+                if (!folder.AsSyncMetaToClientExpected &&
+                    folder.AsSyncKey != McFolder.AsSyncKey_Initial) {
+                    if (!folder.HasSeenServerCommand &&
+                        15 > folder.SyncAttemptCount &&
+                        folder.LastSyncAttempt < (now - new TimeSpan (0, 0, 10))) {
+                        // HotMail's MoreAvailable can't be trusted - doing so can get a folder in a never-synced state.
+                        // Here we re-enable sync with high freqency for folders that have never seen an Add - to a limit.
+                        folder.UpdateSet_AsSyncMetaToClientExpected (true);
+                        stillHaveUnsyncedFolders = true;
+                        Log.Warn (Log.LOG_AS, "ScrubSyncedFolders: re-enable of never-synced folder {0}", folder.ServerId);
+                    } else if (folder.LastSyncAttempt < (now - new TimeSpan (0, 5, 0))) {
+                        // Re-enable any folder that hasn't synced in a long time. This is because the AS spec only
+                        // requires Ping to report Adds, and not Changes or Deletes.
+                        folder.UpdateSet_AsSyncMetaToClientExpected (true);
+                        Log.Info (Log.LOG_AS, "ScrubSyncedFolders: re-enable of folder {0}", folder.ServerId);
+                    }
+                }
+            }
+            return stillHaveUnsyncedFolders;
+        }
+
+        public bool PowerPermitsSpeculation ()
+        {
+            return (Power.Instance.PowerState != PowerStateEnum.Unknown && Power.Instance.BatteryLevel > 0.7) ||
+            (Power.Instance.PowerStateIsPlugged () && Power.Instance.BatteryLevel > 0.2);
+        }
+
         public Tuple<PickActionEnum, AsCommand> Pick ()
         {
             var accountId = BEContext.Account.Id;
             var protocolState = BEContext.ProtocolState;
             var exeCtxt = NcApplication.Instance.ExecutionContext;
             AdvanceIfPossible (accountId, Scope.StrategyRung (protocolState));
+            var stillHaveUnsyncedFolders = ScrubSyncedFolders (accountId);
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
                 // (FG) If the user has initiated a Search command, we do that.
                 var search = McPending.QueryEligible (accountId).
@@ -747,6 +782,8 @@ namespace NachoCore.ActiveSync
                             ).FirstOrDefault ();
                 if (null != fetch) {
                     Log.Info (Log.LOG_AS, "Strategy:FG:Fetch");
+                    // TODO: aggregate more than one hot fetch into this command, keeping in mind the
+                    // total expected size.
                     return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.HotQOp,
                         new AsItemOperationsCommand (BEContext.ProtoControl,
                             new FetchKit () {
@@ -791,6 +828,9 @@ namespace NachoCore.ActiveSync
             }
             // (QS) If a narrow Sync hasn’t successfully completed in the last N seconds, 
             // perform a narrow Sync Command.
+            // TODO we'd like to prioritize Inbox, but still get other folders too if we can squeeze it in.
+            // TODO we'd like a quick hotness assesment from the Brain, and then download hot bodies/attachments if
+            // we can squeeze it in.
             if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
                 if (protocolState.LastNarrowSync < DateTime.UtcNow.AddSeconds (-60)) {
                     var nSyncKit = GenSyncKit (accountId, protocolState, true, false);
@@ -878,11 +918,11 @@ namespace NachoCore.ActiveSync
                     return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.QOop, cmd);
                 }
                 // (FG, BG) Unless one of these conditions are met, perform a narrow Sync Command...
+                // The goal here is to ensure a narrow Sync periodically so that new Inbox/default cal aren't crowded out.
                 var needNarrowSyncMarker = DateTime.UtcNow.AddSeconds (-300);
                 if (Scope.FlagIsSet (Scope.StrategyRung (protocolState), Scope.FlagEnum.NarrowSyncOk) &&
                     protocolState.LastNarrowSync < needNarrowSyncMarker &&
-                    (protocolState.LastPing < needNarrowSyncMarker ||
-                        !NarrowFoldersNoToClientExpected (accountId))) {
+                    (protocolState.LastPing < needNarrowSyncMarker || ANarrowFolderHasToClientExpected (accountId))) {
                     Log.Info (Log.LOG_AS, "Strategy:FG/BG:Narrow Sync...");
                     var nSyncKit = GenSyncKit (accountId, protocolState, true, false);
                     if (null != nSyncKit) {
@@ -893,8 +933,10 @@ namespace NachoCore.ActiveSync
                 }
                 // (FG, BG) If we are rate-limited, and we can execute a narrow Ping command at the 
                 // current filter setting, execute a narrow Ping command.
-                if (NcCommStatus.Instance.IsRateLimited (BEContext.Server.Id)) {
-                    var rlPingKit = GenPingKit (accountId, protocolState, true);
+                // Do don't obey rate-limiter if HotMail.
+                if (NcCommStatus.Instance.IsRateLimited (BEContext.Server.Id) &&
+                    !BEContext.Server.HostIsHotMail ()) {
+                    var rlPingKit = GenPingKit (accountId, protocolState, true, stillHaveUnsyncedFolders);
                     if (null != rlPingKit) {
                         Log.Info (Log.LOG_AS, "Strategy:FG/BG,RL:Narrow Ping");
                         return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Ping, 
@@ -910,11 +952,11 @@ namespace NachoCore.ActiveSync
                 }
                 // (FG, BG) Choose eligible option by priority, split tie randomly...
                 if (Scope.FlagIsSet (Scope.StrategyRung (protocolState), Scope.FlagEnum.IgnorePower) ||
-                    (Power.Instance.PowerState != PowerStateEnum.Unknown && Power.Instance.BatteryLevel > 0.7) ||
-                    (Power.Instance.PowerStateIsPlugged () && Power.Instance.BatteryLevel > 0.2)) {
+                    PowerPermitsSpeculation () ||
+                    NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
                     FetchKit fetchKit = null;
                     SyncKit syncKit = null;
-                    if (NetStatusSpeedEnum.WiFi == NcCommStatus.Instance.Speed) {
+                    if (NetStatusSpeedEnum.WiFi == NcCommStatus.Instance.Speed && PowerPermitsSpeculation ()) {
                         fetchKit = GenFetchKit (accountId);
                     }
                     syncKit = GenSyncKit (accountId, protocolState, false, false);
@@ -932,15 +974,15 @@ namespace NachoCore.ActiveSync
                 // DEBUG. It seems like the server is slow to respond when there is new email. 
                 // At least it is slower to tell us than other clients. Sniffing touchdown shows 
                 // that they do a narrow Ping and that each add'l folder needs to be manuall added
-                // as "synced". So we will do narrow Ping 90% of the time and see if that helps.
+                // as "synced". So we will do narrow Ping 80% of the time and see if that helps.
                 PingKit pingKit = null;
-                if (0.9 < CoinToss.NextDouble ()) {
+                if (0.8 < CoinToss.NextDouble ()) {
                     Log.Info (Log.LOG_AS, "Strategy:FG/BG:PingKit try generating wide PingKit.");
-                    pingKit = GenPingKit (accountId, protocolState, false);
+                    pingKit = GenPingKit (accountId, protocolState, false, stillHaveUnsyncedFolders);
                 }
                 if (null == pingKit) {
                     Log.Info (Log.LOG_AS, "Strategy:FG/BG:PingKit will be narrow.");
-                    pingKit = GenPingKit (accountId, protocolState, true);
+                    pingKit = GenPingKit (accountId, protocolState, true, stillHaveUnsyncedFolders);
                 }
                 if (null != pingKit) {
                     Log.Info (Log.LOG_AS, "Strategy:FG/BG:Ping");

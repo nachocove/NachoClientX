@@ -31,6 +31,12 @@ namespace NachoCore.Model
         public bool AsSyncMetaToClientExpected { get; set; }
         // Updated when a Sync works on this folder. When we hit MaxFolders limit, this decides who goes next.
         public DateTime AsSyncLastPing { get; set; }
+        // True after we see our first command from the server (gotta be an Add).
+        public bool HasSeenServerCommand { get; set; }
+        // Number of times we've attempted to Sync this folder and seen a response.
+        public int SyncAttemptCount { get; set; }
+        // Updated when a Sync response contains this folder.
+        public DateTime LastSyncAttempt { get; set; }
 
         [Indexed]
         public string DisplayName { get; set; }

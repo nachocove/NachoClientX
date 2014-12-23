@@ -58,6 +58,10 @@ namespace NachoCore.Utils
 
         public DateTime Timestamp { set; get; }
 
+        // This is the event ID recorded in the server (not the id of the server);
+        // as opposed to the local dbId.
+        public string ServerId { set; get; }
+
         private TelemetryEventType _Type;
 
         public TelemetryEventType Type {
@@ -364,6 +368,7 @@ namespace NachoCore.Utils
         public TelemetryEvent (TelemetryEventType type)
         {
             Timestamp = DateTime.UtcNow;
+            ServerId = Guid.NewGuid ().ToString ().Replace ("-", "");
             _Type = type;
             _Message = null;
             _Wbxml = null;
@@ -724,6 +729,8 @@ namespace NachoCore.Utils
 
         private void Process<T> () where T : ITelemetryBE, new()
         {
+            bool ranOnce = false;
+
             BackEnd = new T ();
             Counters [0].ReportPeriod = 5 * 60; // report once every 5 min
 
@@ -742,6 +749,21 @@ namespace NachoCore.Utils
             SendSha1AccountEmailAddresses ();
             DateTime heartBeat = DateTime.Now;
             while (true) {
+                if (!ranOnce) {
+                    // Record how much back log we have in telemetry db
+                    Dictionary<string, string> dict = new Dictionary<string, string> ();
+                    var numEvents = McTelemetryEvent.QueryCount ();
+                    dict.Add ("num_events", numEvents.ToString ());
+                    if (0 < numEvents) {
+                        // Get the oldest event and report its timestamp
+                        var oldestDbEvent = McTelemetryEvent.QueryMultiple (1) [0];
+                        var oldestTeleEvent = oldestDbEvent.GetTelemetryEvent ();
+                        dict.Add ("oldest_event", oldestTeleEvent.Timestamp.ToString ("yyyy-MM-ddTHH:mm:ssK"));
+                        RecordSupport (dict);
+                    }
+                    ranOnce = true;
+                }
+
                 // TODO - We need to be smart about when we run. 
                 // For example, if we don't have WiFi, it may not be a good
                 // idea to upload a lot of data. The exact algorithm is TBD.

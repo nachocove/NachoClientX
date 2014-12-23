@@ -80,6 +80,7 @@ namespace NachoCore.Utils
             Info_CredReqCallback,
             Info_TelemetrySupportMessageReceived,
             Info_ExecutionContextChanged,
+            Info_InboxPingStarted,
 
             // Warning.
             // Error.

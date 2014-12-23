@@ -203,57 +203,71 @@ namespace NachoCore.Brain
                 MarkAsGleaned (emailMessage);
                 return;
             }
-            using (var fileStream = new FileStream (path, FileMode.Open, FileAccess.Read)) {
-                MimeMessage mimeMsg;
-                try {
-                    var mimeParser = new MimeParser (fileStream, true);
-                    mimeMsg = mimeParser.ParseMessage ();
-                } catch (Exception e) {
-                    // TODO: Find root cause
-                    MarkAsGleaned (emailMessage);
-                    NachoCore.Utils.Log.Error (Log.LOG_BRAIN, "GleanContactsFromMime exception ignored:\n{0}", e);
-                    return;
-                }
-                List<InternetAddressList> addrsLists = new List<InternetAddressList> ();
-                if (null != mimeMsg.To) {
-                    addrsLists.Add (mimeMsg.To);
-                }
-                if (null != mimeMsg.From) {
-                    addrsLists.Add (mimeMsg.From);
-                }
-                if (null != mimeMsg.Cc) {
-                    addrsLists.Add (mimeMsg.Cc);
-                }
-                if (null != mimeMsg.Bcc) {
-                    addrsLists.Add (mimeMsg.Bcc);
-                }
-                if (null != mimeMsg.ReplyTo) {
-                    addrsLists.Add (mimeMsg.ReplyTo);
-                }
-                if (null != mimeMsg.Sender) {
-                    var senderAsList = new InternetAddressList ();
-                    senderAsList.Add (mimeMsg.Sender);
-                    addrsLists.Add (senderAsList);
-                }
-                if (null != mimeMsg.MessageId) {
-                    emailMessage.MessageID = mimeMsg.MessageId;
-                }
-                if (null != mimeMsg.InReplyTo) {
-                    emailMessage.InReplyTo = mimeMsg.InReplyTo;
-                }
-                if (null != mimeMsg.References) {
-                    emailMessage.References = String.Join ("\n", mimeMsg.References.ToArray ());
-                }
-                foreach (var addrsList in addrsLists) {
-                    foreach (var addr in addrsList) {
-                        if (NcApplication.Instance.IsBackgroundAbateRequired) {
-                            return;
-                        }
-                        if (addr is MailboxAddress) {
-                            GleanContact (addr as MailboxAddress, accountId, gleanedFolder, emailMessage);
+            try {
+                using (var fileStream = new FileStream (path, FileMode.Open, FileAccess.Read)) {
+                    MimeMessage mimeMsg;
+                    try {
+                        var mimeParser = new MimeParser (fileStream, true);
+                        mimeMsg = mimeParser.ParseMessage ();
+                    } catch (Exception e) {
+                        // TODO: Find root cause
+                        MarkAsGleaned (emailMessage);
+                        NachoCore.Utils.Log.Error (Log.LOG_BRAIN, "GleanContactsFromMime exception ignored:\n{0}", e);
+                        return;
+                    }
+                    List<InternetAddressList> addrsLists = new List<InternetAddressList> ();
+                    if (null != mimeMsg.To) {
+                        addrsLists.Add (mimeMsg.To);
+                    }
+                    if (null != mimeMsg.From) {
+                        addrsLists.Add (mimeMsg.From);
+                    }
+                    if (null != mimeMsg.Cc) {
+                        addrsLists.Add (mimeMsg.Cc);
+                    }
+                    if (null != mimeMsg.Bcc) {
+                        addrsLists.Add (mimeMsg.Bcc);
+                    }
+                    if (null != mimeMsg.ReplyTo) {
+                        addrsLists.Add (mimeMsg.ReplyTo);
+                    }
+                    if (null != mimeMsg.Sender) {
+                        var senderAsList = new InternetAddressList ();
+                        senderAsList.Add (mimeMsg.Sender);
+                        addrsLists.Add (senderAsList);
+                    }
+                    if (null != mimeMsg.MessageId) {
+                        emailMessage.MessageID = mimeMsg.MessageId;
+                    }
+                    if (null != mimeMsg.InReplyTo) {
+                        emailMessage.InReplyTo = mimeMsg.InReplyTo;
+                    }
+                    if (null != mimeMsg.References) {
+                        emailMessage.References = String.Join ("\n", mimeMsg.References.ToArray ());
+                    }
+                    foreach (var addrsList in addrsLists) {
+                        foreach (var addr in addrsList) {
+                            if (NcApplication.Instance.IsBackgroundAbateRequired) {
+                                return;
+                            }
+                            if (addr is MailboxAddress) {
+                                GleanContact (addr as MailboxAddress, accountId, gleanedFolder, emailMessage);
+                            }
                         }
                     }
                 }
+            } catch (AggregateException ae) {
+                if (ae.InnerException is DirectoryNotFoundException) {
+                    Log.Warn (Log.LOG_BRAIN, "Directory {0} no longer exists", path);
+                } else if (ae.InnerException is FileNotFoundException) {
+                    Log.Warn (Log.LOG_BRAIN, "File {0} no longer exists", path);
+                } else {
+                    throw;
+                }
+            } catch (DirectoryNotFoundException) {
+                Log.Warn (Log.LOG_BRAIN, "Directory {0} no longer exists", path);
+            } catch (FileNotFoundException) {
+                Log.Warn (Log.LOG_BRAIN, "File {0} no longer exists", path);
             }
         }
     }

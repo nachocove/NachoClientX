@@ -232,10 +232,6 @@ namespace NachoClient.iOS
             UIBarButtonItem.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes, UIControlState.Normal);
             UIApplication.SharedApplication.RegisterForRemoteNotificationTypes (
                 UIRemoteNotificationType.NewsstandContentAvailability | UIRemoteNotificationType.Sound);
-            if (application.RespondsToSelector (new Selector ("registerUserNotificationSettings:"))) {
-                var settings = UIUserNotificationSettings.GetSettingsForTypes (UIUserNotificationType.Alert | UIUserNotificationType.Badge | UIUserNotificationType.Sound, new NSSet ());
-                application.RegisterUserNotificationSettings (settings);
-            }
             UIApplication.SharedApplication.SetMinimumBackgroundFetchInterval (UIApplication.BackgroundFetchIntervalMinimum);
             // Set up webview to handle html with embedded custom types (curtesy of Exchange)
             NSUrlProtocol.RegisterClass (new MonoTouch.ObjCRuntime.Class (typeof(CidImageProtocol)));
@@ -338,19 +334,20 @@ namespace NachoClient.iOS
             });
 
             if (LoginHelpers.IsCurrentAccountSet () && LoginHelpers.HasFirstSyncCompleted (LoginHelpers.GetCurrentAccountId ())) {
-                BackEndAutoDStateEnum backEndState = BackEnd.Instance.AutoDState (LoginHelpers.GetCurrentAccountId ());
+                BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
 
+                int accountId = LoginHelpers.GetCurrentAccountId ();
                 switch (backEndState) {
-                case BackEndAutoDStateEnum.CertAskWait:
-                    CertAskReqCallback (LoginHelpers.GetCurrentAccountId (), null);
+                case BackEndStateEnum.CertAskWait:
+                    CertAskReqCallback (accountId, null);
                     Log.Info (Log.LOG_STATE, "OnActived: CERTASKCALLBACK ");
                     break;
-                case BackEndAutoDStateEnum.CredWait:
-                    CredReqCallback (LoginHelpers.GetCurrentAccountId ());
+                case BackEndStateEnum.CredWait:
+                    CredReqCallback (accountId);
                     Log.Info (Log.LOG_STATE, "OnActived: CREDCALLBACK ");
                     break;
-                case BackEndAutoDStateEnum.ServerConfWait:
-                    ServConfReqCallback (LoginHelpers.GetCurrentAccountId ());
+                case BackEndStateEnum.ServerConfWait:
+                    ServConfReqCallback (accountId);
                     Log.Info (Log.LOG_STATE, "OnActived: SERVCONFCALLBACK ");
                     break;
                 default:
@@ -663,6 +660,9 @@ namespace NachoClient.iOS
         public void ServConfReqCallback (int accountId)
         {
             Log.Info (Log.LOG_UI, "ServConfReqCallback Called for account: {0}", accountId);
+
+            // TODO Make use of the MX information that was gathered during auto-d.
+            // It can be found at BackEnd.Instance.AutoDInfo(accountId).
 
             hasFirstSyncCompleted = LoginHelpers.HasFirstSyncCompleted (accountId); 
             if (hasFirstSyncCompleted == false) {

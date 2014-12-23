@@ -22,8 +22,8 @@ namespace NachoClient.iOS
         public int selectedDateTag = 0;
         public int todayWeekTag = 0;
         public int todayMonthTag = 0;
-        protected static int dateBarHeight = 78 + 5;
-        protected static int dateBarRowHeight = 46;
+        protected static int dateBarHeight = 97;
+        protected static int dateBarRowHeight = 60;
         protected static float screenWidth = UIScreen.MainScreen.Bounds.Width;
         protected static float screenRight = UIScreen.MainScreen.Bounds.Right;
         protected static float screenLeft = UIScreen.MainScreen.Bounds.Left;
@@ -49,29 +49,19 @@ namespace NachoClient.iOS
             if (null != NavigationItem) {
                 NavigationItem.SetHidesBackButton (true, false);
             }
-
-            var dateButton = UIButton.FromType (UIButtonType.Custom);
-            dateButton.Frame = new RectangleF (0, 0, 22, 22);
-            using (var image = UIImage.FromBundle ("nav-calendar-empty")) {
-                dateButton.SetBackgroundImage (image, UIControlState.Normal);
-            }
-            // The icon center is a little off so adjust the text downward.
-            dateButton.VerticalAlignment = UIControlContentVerticalAlignment.Bottom;
-            dateButton.SetTitle (DateTime.Today.Day.ToString (), UIControlState.Normal);
-            dateButton.SetTitleColor (A.Color_NachoBlue, UIControlState.Normal);
-            dateButton.Font = A.Font_AvenirNextRegular12;
-            dateButton.TouchUpInside += (object sender, EventArgs e) => {
+                
+            var todayButton = new UIBarButtonItem ();
+            Util.SetAutomaticImageForButton (todayButton, Util.DrawTodayButtonImage(DateTime.Now.Day.ToString()));
+            todayButton.Clicked += (object sender, EventArgs e) => {
                 ReturnToToday ();
             };
-                
-            var todayButton = new UIBarButtonItem (dateButton);
 
             var addEventButton = new UIBarButtonItem ();
             Util.SetAutomaticImageForButton (addEventButton, "cal-add");
             addEventButton.Clicked += (object sender, EventArgs e) => {
                 PerformSegue ("CalendarToEditEventView", new SegueHolder (null));
             };
-                
+
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { addEventButton, todayButton };
 
             // We must request permission to access the user's calendar
@@ -216,7 +206,7 @@ namespace NachoClient.iOS
 
             NavigationItem.Title = "Calendar";
 
-            DateDotView = new DateBarView (View);
+            DateDotView = new DateBarView (View, NcEventManager.Instance);
 
             DateDotWeekPanGestureRecognizer = new UIPanGestureRecognizer ((UIPanGestureRecognizer obj) => {
                 DateDotWeekPan (obj);
@@ -395,10 +385,11 @@ namespace NachoClient.iOS
                 return;
             }
         }
-            
+
         public float startingXMonth = 0;
         private bool isClosing = false;
         private bool isPanning = false;
+        private bool startingTableYIsSet = false;
 
         private void DateDotMonthViewPan (UIPanGestureRecognizer obj)
         {
@@ -417,9 +408,13 @@ namespace NachoClient.iOS
 
                 if ((yOffset < -5) && (!isPanning)) {
                     ConfigureCalendarTableSize (1);
-                    if (288.5 + (dateBarRowHeight * (rows - 1)) + yOffset <= 288.5 + (dateBarRowHeight * (rows - 1)) && 288.5 + (dateBarRowHeight * (rows - 1)) + yOffset > 291.5) {
-                        calendarTableView.Center = new PointF ((View.Frame.Width / 2), (float)288.5 + (dateBarRowHeight * (rows - 1)) + yOffset);
+                    if (!startingTableYIsSet) {
+                        tableStartingY = calendarTableView.Center.Y + dateBarHeight + 1 + ((rows - 3) * dateBarRowHeight);
+                        startingTableYIsSet = true;
                     }
+                    if ((dateBarHeight + 1 + ((rows - 3) * dateBarRowHeight)) + yOffset >= 5) {
+                        calendarTableView.Center = new PointF (calendarTableView.Center.X, tableStartingY + yOffset);
+                    } 
                     isClosing = true;
                     return;
                 } else if (((5 < xOffset) || (-5 > xOffset)) && (!isClosing)) {
@@ -485,6 +480,7 @@ namespace NachoClient.iOS
                             }
                         );
                     } 
+                    startingTableYIsSet = false;
                 } else if (isPanning) {
                     if ((xOffset < -(DateDotView.Frame.Width / 3)) || (((xOffset < -(DateDotView.Frame.Width / 5)) && (obj.VelocityInView (DateDotView).X < -500)))) { 
                         UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
@@ -579,7 +575,7 @@ namespace NachoClient.iOS
                 if (yOffset > 60 || obj.VelocityInView (DateDotView).Y > 500) {
                     UIView.Animate (.3, 0, UIViewAnimationOptions.CurveEaseOut,
                         () => {
-                            ConfigureCalendarTableSize(rows);
+                            ConfigureCalendarTableSize (rows);
                             View.BringSubviewToFront (calendarTableView);
                             DateDotView.UpdateButtonsMonth ();
                         },
@@ -631,21 +627,21 @@ namespace NachoClient.iOS
         protected RectangleF CalendarTableFourSize ()
         {
             var parentFrame = View.Frame;
-            var rect = new RectangleF (0, 75 + (3 * dateBarRowHeight), parentFrame.Width, parentFrame.Height - (75 + (3 * dateBarRowHeight)));
+            var rect = new RectangleF (0, dateBarHeight + (3 * dateBarRowHeight), parentFrame.Width, parentFrame.Height - (dateBarHeight + (3 * dateBarRowHeight)));
             return rect;
         }
 
         protected RectangleF CalendarTableFiveSize ()
         {
             var parentFrame = View.Frame;
-            var rect = new RectangleF (0, 75 + (4 * dateBarRowHeight), parentFrame.Width, parentFrame.Height - (75 + (4 * dateBarRowHeight)));
+            var rect = new RectangleF (0, dateBarHeight + (4 * dateBarRowHeight), parentFrame.Width, parentFrame.Height - (dateBarHeight + (4 * dateBarRowHeight)));
             return rect;
         }
 
         protected RectangleF CalendarTableSixSize ()
         {
             var parentFrame = View.Frame;
-            var rect = new RectangleF (0, 75 + (5 * dateBarRowHeight), parentFrame.Width, parentFrame.Height - (75 + (5 * dateBarRowHeight)));
+            var rect = new RectangleF (0, dateBarHeight + (5 * dateBarRowHeight), parentFrame.Width, parentFrame.Height - (dateBarHeight + (5 * dateBarRowHeight)));
             return rect;
         }
 

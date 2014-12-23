@@ -11,12 +11,15 @@ namespace NachoCore.ActiveSync
     public class AsPingCommand : AsCommand
     {
         private IEnumerable<McFolder> FoldersInRequest;
+        private uint HeartbeatInterval;
 
         public AsPingCommand (IBEContext dataSource, PingKit pingKit) : base (Xml.Ping.Ns, Xml.Ping.Ns, dataSource)
         {
-            // Add a 10-second fudge so that orderly timeout doesn't look like a network failure.
-            Timeout = new TimeSpan (0, 0, (int)BEContext.ProtocolState.HeartbeatInterval + 10);
             FoldersInRequest = pingKit.Folders;
+            HeartbeatInterval = pingKit.MaxHeartbeatInterval;
+            // Add a 10-second fudge so that orderly timeout doesn't look like a network failure.
+            Timeout = new TimeSpan (0, 0, (int)HeartbeatInterval + 10);
+            MaxTries = 1;
         }
 
         public override bool DoSendPolicyKey (AsHttpOperation Sender)
@@ -29,12 +32,15 @@ namespace NachoCore.ActiveSync
             var xFolders = new XElement (m_ns + Xml.Ping.Folders);
 
             foreach (var folder in FoldersInRequest) {
+                if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == folder.Type) {
+                    BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_InboxPingStarted));
+                }
                 xFolders.Add (new XElement (m_ns + Xml.Ping.Folder,
                     new XElement (m_ns + Xml.Ping.Id, folder.ServerId),
                     new XElement (m_ns + Xml.Ping.Class, Xml.FolderHierarchy.TypeCodeToAirSyncClassCode (folder.Type))));
             }
             var ping = new XElement (m_ns + Xml.Ping.Ns);
-            ping.Add (new XElement (m_ns + Xml.Ping.HeartbeatInterval, BEContext.ProtocolState.HeartbeatInterval.ToString ()));
+            ping.Add (new XElement (m_ns + Xml.Ping.HeartbeatInterval, HeartbeatInterval.ToString ()));
             ping.Add (xFolders);
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (ping);

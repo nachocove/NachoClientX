@@ -1,5 +1,6 @@
 using System;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using NachoCore.ActiveSync;
 using NachoCore.Model;
@@ -10,6 +11,8 @@ namespace NachoCore.ActiveSync
 {
     public class AsSettingsCommand : AsCommand
     {
+        public bool OmitDeviceInformation { get; set; }
+
         public AsSettingsCommand (IBEContext beContext) : base (Xml.Settings.Ns, Xml.Settings.Ns, beContext)
         {
             // This command does not currently use McPending.
@@ -21,9 +24,10 @@ namespace NachoCore.ActiveSync
             // We ask for user information and send device information.
             var settings = new XElement (m_ns + Xml.Settings.Ns, 
                                new XElement (m_ns + Xml.Settings.UserInformation, 
-                                   new XElement (m_ns + Xml.Settings.Get)), 
-                               DeviceInformation ());
-                               
+                                   new XElement (m_ns + Xml.Settings.Get)));
+            if (!OmitDeviceInformation) {
+                settings.Add (DeviceInformation (BEContext));
+            }
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (settings);
             return doc;
@@ -64,7 +68,7 @@ namespace NachoCore.ActiveSync
                 // Capture UserInformation.
                 var xmlUserInformation = xmlSettings.Element (m_ns + Xml.Settings.UserInformation);
                 if (null != xmlUserInformation) {
-                    var xmlInnerStatus = xmlDeviceInformation.Element (m_ns + Xml.Settings.Status);
+                    var xmlInnerStatus = xmlUserInformation.Element (m_ns + Xml.Settings.Status);
                     var innerStatus = (Xml.Settings.SetGetStatusCode)uint.Parse (xmlInnerStatus.Value);
                     switch (innerStatus) {
                     case Xml.Settings.SetGetStatusCode.Success_1:
@@ -113,16 +117,21 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        public static XElement DeviceInformation ()
+        public static XElement DeviceInformation (IBEContext BEContext)
         {
             XNamespace Ns = Xml.Settings.Ns;
+            // TODO: capture in model whether this is HotMail or not, and gate FriendlyName 
+            // dumbing-down on it.
+            var friendlyName = Device.Instance.FriendlyName ();
+            var rgx = new Regex ("[^a-zA-Z0-9 ]");
+            friendlyName = rgx.Replace(friendlyName, "");
             return new XElement (Ns + Xml.Settings.DeviceInformation, 
                 new XElement (Ns + Xml.Settings.Set,
                     new XElement (Ns + Xml.Settings.Model, Device.Instance.UserAgentModel ()),
                     new XElement (Ns + Xml.Settings.UserAgent, Device.Instance.UserAgent ()),
                     new XElement (Ns + Xml.Settings.OS, Device.Instance.Os ()),
                     new XElement (Ns + Xml.Settings.OSLanguage, Device.Instance.OsLanguage ()),
-                    new XElement (Ns + Xml.Settings.FriendlyName, Device.Instance.FriendlyName ())));
+                    new XElement (Ns + Xml.Settings.FriendlyName, friendlyName)));
         }
     }
 }

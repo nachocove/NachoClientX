@@ -71,7 +71,7 @@ namespace NachoCore.Model
         {
             string boolString = (defaultValue) ? "1" : "0";
             var stringRetval = GetOrCreate (accountId, module, key, boolString);
-            return ("1" == stringRetval) ? true : false;
+            return "1" == stringRetval;
         }
 
         public static string GetOrCreate (int accountId, string module, string key, string defaultValue)
@@ -117,20 +117,44 @@ namespace NachoCore.Model
         public static bool GetBool (int accountId, string module, string key)
         {
             var value = Get (accountId, module, key);
-            if (value == "1") {
-                return true;
-            } else {
-                return false;
-            }
+            return "1" == value;
         }
 
         public static void SetBool (int accountId, string module, string key, bool value)
         {
-            if (true == value) {
-                Set (accountId, module, key, "1");
+            Set (accountId, module, key, value ? "1" : "0");
+        }
+
+        public static int GetInt (int accountId, string module, string key, int defaultValue)
+        {
+            int value;
+            if (int.TryParse (Get (accountId, module, key), out value)) {
+                return value;
             } else {
-                Set (accountId, module, key, "0");
+                return defaultValue;
             }
+        }
+
+        public static int GetOrCreateInt (int accountId, string module, string key, int defaultValue)
+        {
+            var existing = Get (accountId, module, key);
+            int value;
+            if (int.TryParse (existing, out value)) {
+                return value;
+            }
+            if (null == existing) {
+                Set (accountId, module, key, defaultValue.ToString ());
+            } else {
+                // There is an exiting value for this key, but it is not a number.
+                // Leave the value unchanged (though it is not clear that that is
+                // the correct behavior.)
+            }
+            return defaultValue;
+        }
+
+        public static void SetInt (int accountId, string module, string key, int value)
+        {
+            Set (accountId, module, key, value.ToString ());
         }
     }
 }

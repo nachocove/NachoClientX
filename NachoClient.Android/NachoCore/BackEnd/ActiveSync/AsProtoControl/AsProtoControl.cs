@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
+using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoPlatform;
@@ -43,7 +44,7 @@ namespace NachoCore.ActiveSync
             Parked,
         };
 
-        public override BackEndAutoDStateEnum AutoDState {
+        public override BackEndStateEnum BackEndState {
             get {
                 var state = Sm.State;
                 if ((uint)Lst.Parked == state) {
@@ -51,18 +52,21 @@ namespace NachoCore.ActiveSync
                 }
                 // Every state above must be mapped here.
                 switch (state) {
+                case (uint)St.Start:
+                    return BackEndStateEnum.NotYetStarted;
+
                 case (uint)Lst.DiscW:
-                    return BackEndAutoDStateEnum.Running;
+                    return BackEndStateEnum.Running;
 
                 case (uint)Lst.UiDCrdW:
                 case (uint)Lst.UiPCrdW:
-                    return BackEndAutoDStateEnum.CredWait;
+                    return BackEndStateEnum.CredWait;
 
                 case (uint)Lst.UiServConfW:
-                    return BackEndAutoDStateEnum.ServerConfWait;
+                    return BackEndStateEnum.ServerConfWait;
 
                 case (uint)Lst.UiCertOkW:
-                    return BackEndAutoDStateEnum.CertAskWait;
+                    return BackEndStateEnum.CertAskWait;
 
                 case (uint)Lst.OptW:
                 case (uint)Lst.ProvW:
@@ -77,12 +81,12 @@ namespace NachoCore.ActiveSync
                 case (uint)Lst.FetchW:
                 case (uint)Lst.IdleW:
                      return (ProtocolState.HasSyncedInbox) ? 
-                        BackEndAutoDStateEnum.PostAutoDPostInboxSync : 
-                        BackEndAutoDStateEnum.PostAutoDPreInboxSync;
+                        BackEndStateEnum.PostAutoDPostInboxSync : 
+                        BackEndStateEnum.PostAutoDPreInboxSync;
 
                 default:
                     NcAssert.CaseError (string.Format ("Unhandled state {0}", Sm.State));
-                    return BackEndAutoDStateEnum.PostAutoDPostInboxSync;
+                    return BackEndStateEnum.PostAutoDPostInboxSync;
                 }
             }
         }
@@ -178,7 +182,6 @@ namespace NachoCore.ActiveSync
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.TempFail,
                             (uint)SmEvt.E.HardFail,
-                            (uint)AsEvt.E.ReDisc,
                             (uint)AsEvt.E.ReProv,
                             (uint)AsEvt.E.AuthFail,
                             (uint)CtlEvt.E.GetServConf,
@@ -192,6 +195,7 @@ namespace NachoCore.ActiveSync
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDisc, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)CtlEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                         }
                     },
@@ -409,7 +413,6 @@ namespace NachoCore.ActiveSync
                             (uint)CtlEvt.E.UiSetServConf,
                         },
                         Invalid = new [] {
-                            (uint)AsEvt.E.ReDisc,
                             (uint)AsEvt.E.ReProv,
                             (uint)CtlEvt.E.GetServConf,
                             (uint)CtlEvt.E.GetCertOk,
@@ -425,6 +428,7 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoProv, State = (uint)Lst.ProvW },
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoOldProtoProv, State = (uint)Lst.ProvW },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoOpt, State = (uint)Lst.OptW },
+                            new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
                             new Trans { Event = (uint)CtlEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                         }
@@ -487,7 +491,8 @@ namespace NachoCore.ActiveSync
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoSettings, State = (uint)Lst.SettingsW },
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoFSync, State = (uint)Lst.FSyncW },
-                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoSettings, State = (uint)Lst.SettingsW },
+                            // We choose to move on and try FSync if we're stuck on Settings not working.
+                            new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoFSync, State = (uint)Lst.FSyncW },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoSettings, State = (uint)Lst.SettingsW },
                             new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
@@ -576,7 +581,7 @@ namespace NachoCore.ActiveSync
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.TempFail,
-                            (uint)AsEvt.E.ReDisc,
+
                             (uint)AsEvt.E.ReProv,
                             (uint)AsEvt.E.AuthFail,
                             (uint)CtlEvt.E.GetServConf,
@@ -585,10 +590,11 @@ namespace NachoCore.ActiveSync
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
+                            new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },
                             new Trans { Event = (uint)CtlEvt.E.PkQOp, Act = DoArg, State = (uint)Lst.QOpW },
                             new Trans { Event = (uint)CtlEvt.E.PkHotQOp, Act = DoArg, State = (uint)Lst.HotQOpW },
                             new Trans { Event = (uint)CtlEvt.E.PkFetch, Act = DoArg, State = (uint)Lst.FetchW },
-                            new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },
                             new Trans { Event = (uint)CtlEvt.E.PkPing, Act = DoArg, State = (uint)Lst.PingW },
                             new Trans { Event = (uint)CtlEvt.E.PkWait, Act = DoArg, State = (uint)Lst.IdleW },
                             new Trans { Event = (uint)CtlEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
@@ -813,7 +819,6 @@ namespace NachoCore.ActiveSync
                             (uint)SmEvt.E.Success,
                             (uint)SmEvt.E.HardFail,
                             (uint)SmEvt.E.TempFail,
-                            (uint)AsEvt.E.ReDisc,
                             (uint)AsEvt.E.ReProv,
                             (uint)AsEvt.E.ReSync,
                             (uint)AsEvt.E.AuthFail,
@@ -823,6 +828,7 @@ namespace NachoCore.ActiveSync
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoDrive, ActSetsState = true },
+                            new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                         }
                     },
                 }
@@ -920,13 +926,17 @@ namespace NachoCore.ActiveSync
                 return;
             }
             if (null == PendingOnTimeTimer) {
-                PendingOnTimeTimer = new NcTimer ("AsProtoControl", state => {
+                PendingOnTimeTimer = new NcTimer ("AsProtoControl:PendingOnTimeTimer", state => {
                     McPending.MakeEligibleOnTime (Account.Id);
                 }, null, 1000, 2000);
                 PendingOnTimeTimer.Stfu = true;
             }
-            // All states are required to handle the Launch event gracefully.
-            Sm.PostEvent ((uint)SmEvt.E.Launch, "ASPCEXE");
+            if (null == Server) {
+                Sm.PostEvent ((uint)AsEvt.E.ReDisc, "ASPCEXECAUTOD");
+            } else {
+                // All states are required to handle the Launch event gracefully.
+                Sm.PostEvent ((uint)SmEvt.E.Launch, "ASPCEXE");
+            }
         }
 
         public override void CredResp ()

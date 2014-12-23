@@ -475,7 +475,7 @@ namespace NachoCore.Model
             }
         }
 
-        public static void StartTimeVariance ()
+        public static void StartTimeVariance (CancellationToken token)
         {
             /// Look for all email messages that are:
             ///
@@ -492,7 +492,9 @@ namespace NachoCore.Model
                 /// Throttle
                 n = (n + 1) % 8;
                 if (0 == n) {
-                    Thread.Sleep (new TimeSpan (0, 0, 0, 0, 500));
+                    if (!NcTask.CancelableSleep (500, token)) {
+                        break;
+                    }
                 }
             }
             Log.Info (Log.LOG_BRAIN, "{0} time variances started", emailMessageList.Count);

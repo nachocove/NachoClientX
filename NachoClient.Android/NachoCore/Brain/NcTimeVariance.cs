@@ -137,10 +137,9 @@ namespace NachoCore.Brain
                 return tvList;
             }
 
-            public bool RemoveList (string description)
+            public bool RemoveList (string description, out TimeVarianceList tvList)
             {
                 lock (LockObj) {
-                    TimeVarianceList tvList;
                     return TvLists.TryRemove (description, out tvList);
                 }
             }
@@ -166,7 +165,8 @@ namespace NachoCore.Brain
                     bool removed = tvList.Remove (tv);
                     if (0 == tvList.Count) {
                         /// Remove the last element in the set. Get rid of the set itself
-                        RemoveList (tv.Description);
+                        TimeVarianceList dummy;
+                        RemoveList (tv.Description, out dummy);
                     }
                     return removed;
                 }
@@ -210,19 +210,7 @@ namespace NachoCore.Brain
             }
         }
 
-        private object _LockObj;
-
-        private object LockObj {
-            get {
-                if (null == _LockObj) {
-                    _LockObj = new object ();
-                }
-                return _LockObj;
-            }
-            set {
-                _LockObj = value;
-            }
-        }
+        private object LockObj { set; get; }
 
         /// State is just an integer that increments. Note that state 0 is
         /// reserved for terminated state.
@@ -305,6 +293,7 @@ namespace NachoCore.Brain
         public NcTimeVariance (string description, TimeVarianceCallBack callback, Int64 objId)
         {
             _Description = description;
+            LockObj = new object ();
             CallBackFunction = callback;
             CallBackId = objId;
             Initialize ();
@@ -399,15 +388,12 @@ namespace NachoCore.Brain
 
         public static void StopList (string description)
         {
-            TimeVarianceList tvList = ActiveList.GetList (description);
-            if (null == tvList) {
-                return;
+            TimeVarianceList tvList;
+            if (ActiveList.RemoveList (description, out tvList)) {
+                foreach (NcTimeVariance tv in tvList) {
+                    tv.StopTimer ();
+                }
             }
-            foreach (NcTimeVariance tv in tvList) {
-                tv.StopTimer ();
-            }
-            bool removed = ActiveList.RemoveList (description);
-            NcAssert.True (removed);
         }
 
         public static void AdvanceCallback (object obj)

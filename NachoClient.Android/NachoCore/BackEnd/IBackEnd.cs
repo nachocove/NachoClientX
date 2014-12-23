@@ -8,13 +8,21 @@ using NachoCore.ActiveSync;
 
 namespace NachoCore
 {
-    public enum BackEndAutoDStateEnum { 
+    public enum BackEndStateEnum {
+        NotYetStarted,
         Running, 
         CertAskWait, 
         ServerConfWait, 
         CredWait, 
         PostAutoDPreInboxSync, 
         PostAutoDPostInboxSync,
+    };
+
+    public enum AutoDInfoEnum {
+        Unknown = 0,
+        MXNotFound,
+        MXFoundGoogle,
+        MXFoundNonGoogle,
     };
 
     public interface IBackEnd
@@ -107,8 +115,9 @@ namespace NachoCore
         // validate account config.
         bool ValidateConfig (int accountId, McServer server, McCred cred);
         void CancelValidateConfig (int accountId);
-        // auto-discovery state.
-        BackEndAutoDStateEnum AutoDState (int accountId);
+        // state, including auto-d.
+        BackEndStateEnum BackEndState (int accountId);
+        AutoDInfoEnum AutoDInfo (int accountId);
         X509Certificate2 ServerCertToBeExamined (int accountId);
     }
 }

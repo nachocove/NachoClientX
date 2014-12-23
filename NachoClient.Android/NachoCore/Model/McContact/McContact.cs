@@ -1239,6 +1239,39 @@ namespace NachoCore.Model
             return EmailAddresses.First ().Value;
         }
 
+        public string GetPrimaryCanonicalEmailAddress ()
+        {
+            if (null == EmailAddresses) {
+                return "";
+            }
+            if (0 == EmailAddresses.Count ()) {
+                return "";
+            }
+
+            //First, grab the default (if available)
+            foreach (var e in EmailAddresses) {
+                if (e.IsDefault) {
+                    var emailAddress = McEmailAddress.QueryById<McEmailAddress> (e.EmailAddress);
+                    if (null != emailAddress) {
+                        return emailAddress.CanonicalEmailAddress;
+                    }
+                    break;
+                }
+            }
+
+            //Second, grab the first email address w/non-empty value
+            foreach (var e in EmailAddresses) {
+                var emailAddress = McEmailAddress.QueryById<McEmailAddress> (e.EmailAddress);
+                if (null != emailAddress) {
+                    return emailAddress.CanonicalEmailAddress;
+                }
+            }
+
+            //No email addresses
+            return "";
+        }
+
+
         public string GetPhoneNumber ()
         {
             if (null == PhoneNumbers) {

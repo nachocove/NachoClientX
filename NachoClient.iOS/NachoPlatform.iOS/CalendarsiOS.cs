@@ -48,11 +48,10 @@ namespace NachoPlatform
                 if (null == who) {
                     return null;
                 }
-                RegexUtilities regexUtil = new RegexUtilities ();
                 string maybeEmailAddr = null;
                 if (null != who.Url) {
                     maybeEmailAddr = who.Url.ResourceSpecifier;
-                    if (null != maybeEmailAddr && regexUtil.IsValidEmail (maybeEmailAddr)) {
+                    if (null != maybeEmailAddr && EmailHelper.IsValidEmail (maybeEmailAddr)) {
                         return maybeEmailAddr;
                     }
                 }
@@ -63,7 +62,7 @@ namespace NachoPlatform
                             var kvp = parm.Split ('=');
                             if (2 == kvp.Length) {
                                 maybeEmailAddr = kvp [1].Trim ();
-                                if (regexUtil.IsValidEmail (maybeEmailAddr)) {
+                                if (EmailHelper.IsValidEmail (maybeEmailAddr)) {
                                     return maybeEmailAddr;
                                 }
                             }

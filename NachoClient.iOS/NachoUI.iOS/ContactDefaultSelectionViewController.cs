@@ -19,7 +19,6 @@ namespace NachoClient.iOS
     {
         public INachoContactDefaultSelector owner;
 
-        protected RegexUtilities regexUtil = new RegexUtilities ();
         protected ContactsHelper contactHelper = new ContactsHelper ();
         protected bool isDefaultSelected = false;
 
@@ -564,7 +563,7 @@ namespace NachoClient.iOS
         private void SaveAndCompose (object sender, EventArgs e)
         {
             UITextField emailTextField = (UITextField)View.ViewWithTag (EMAIL_TEXTFIELD_TAG);
-            if (regexUtil.IsValidEmail (emailTextField.Text)) {
+            if (EmailHelper.IsValidEmail (emailTextField.Text)) {
                 if (isDefaultSelected) {
                     contact.AddDefaultEmailAddressAttribute (LoginHelpers.GetCurrentAccountId (), Xml.Contacts.Email1Address, contactHelper.ExchangeNameToLabel(Xml.Contacts.Email1Address), emailTextField.Text);
                 } else {

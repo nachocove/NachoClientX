@@ -439,19 +439,21 @@ namespace NachoClient.iOS
             isFirstInfoItem = true;
             UpdateVipButton ();
 
-            UIColor userBackgroundColor;
 
             if (null == contact) {
                 var unavailableTitle = (UILabel)View.ViewWithTag (HEADER_TITLE_TAG);
                 unavailableTitle.Text = "Contact is unavailable.";
                 return;
             }
-            if (0 == contact.EmailAddresses.Count) {
-                userBackgroundColor = Util.ColorForUser (Util.PickRandomColorForUser ());
-            } else {
-                var emailAddressAttribute = contact.EmailAddresses [0];
-                var emailAddress = McEmailAddress.QueryById<McEmailAddress> (emailAddressAttribute.EmailAddress);
-                userBackgroundColor = Util.ColorForUser (emailAddress.ColorIndex);
+
+            UIColor userBackgroundColor = Util.ColorForUser (Util.PickRandomColorForUser ());
+
+            foreach (var e in contact.EmailAddresses) {
+                var emailAddress = McEmailAddress.QueryById<McEmailAddress> (e.EmailAddress);
+                if (null != emailAddress) {
+                    userBackgroundColor = Util.ColorForUser (emailAddress.ColorIndex);
+                    break;
+                }
             }
 
             UILabel headerInitialsLabel = (UILabel)View.ViewWithTag (HEADER_INITIALS_CIRCLE_TAG);
@@ -596,9 +598,14 @@ namespace NachoClient.iOS
             // CONFIGURE NOTES VIEW
             var notesTextView = (UITextView)View.ViewWithTag (NOTES_TEXT_VIEW_TAG);
             notesTextView.TextColor = A.Color_NachoGreen;
-            McBody contactBody = McBody.QueryById<McBody> (contact.BodyId);
-            if (null != contactBody) {
-                notesTextView.Text = contactBody.GetContentsString ();
+
+            if (contact.Source != McAbstrItem.ItemSource.ActiveSync) {
+                notesTextView.Text = "This contact has not been synced. Adding or editing notes is disabled.";
+            } else {
+                McBody contactBody = McBody.QueryById<McBody> (contact.BodyId);
+                if (null != contactBody) {
+                    notesTextView.Text = contactBody.GetContentsString ();
+                }
                 if(string.IsNullOrEmpty(notesTextView.Text)){
                     notesTextView.Text = "You have not entered any " +
                         "notes for this contact. You can add and " +
@@ -606,10 +613,6 @@ namespace NachoClient.iOS
                         " right corner of this screen.";
                     notesTextView.TextColor = UIColor.Gray;
                 }
-            }
-
-            if (contact.Source != McAbstrItem.ItemSource.ActiveSync) {
-                notesTextView.Text = "This contact has not been synced. Adding or editing notes is disabled.";
             }
 
             LayoutView ();
@@ -1030,14 +1033,7 @@ namespace NachoClient.iOS
                 return "";
             }
 
-            if (contact.EmailAddresses.Count > 0) {
-                var emailAddressAttribute = contact.EmailAddresses [0];
-                var emailAddress = McEmailAddress.QueryById<McEmailAddress> (emailAddressAttribute.EmailAddress);
-                return emailAddress.CanonicalEmailAddress;
-            } else {
-                return "";
-            }
-
+            return contact.GetPrimaryCanonicalEmailAddress ();
         }
 
         protected void TouchedEmailButton (string address)
@@ -1147,20 +1143,24 @@ namespace NachoClient.iOS
         public void CreateTaskForEmailMessage (INachoMessageEditor vc, McEmailMessageThread thread)
         {
             var m = thread.SingleMessageSpecialCase ();
-            var t = CalendarHelper.CreateTask (m);
-            vc.SetOwner (null);
-            vc.DismissMessageEditor (false, new NSAction (delegate {
-                PerformSegue ("", new SegueHolder (t));
-            }));
+            if (null != m) {
+                var t = CalendarHelper.CreateTask (m);
+                vc.SetOwner (null);
+                vc.DismissMessageEditor (false, new NSAction (delegate {
+                    PerformSegue ("", new SegueHolder (t));
+                }));
+            }
         }
 
         public void CreateMeetingEmailForMessage (INachoMessageEditor vc, McEmailMessageThread thread)
         {
             var m = thread.SingleMessageSpecialCase ();
-            var c = CalendarHelper.CreateMeeting (m);
-            vc.DismissMessageEditor (false, new NSAction (delegate {
-                PerformSegue ("NachoNowToEditEvent", new SegueHolder (c));
-            }));
+            if (null != m) {
+                var c = CalendarHelper.CreateMeeting (m);
+                vc.DismissMessageEditor (false, new NSAction (delegate {
+                    PerformSegue ("NachoNowToEditEvent", new SegueHolder (c));
+                }));
+            }
         }
 
         public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)

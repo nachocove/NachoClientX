@@ -307,6 +307,13 @@ namespace NachoCore
             Log.Info (Log.LOG_SYS, "Monitor: Min Threads {0}/{1}", workerThreads, completionPortThreads);
             ThreadPool.GetMaxThreads (out workerThreads, out completionPortThreads);
             Log.Info (Log.LOG_SYS, "Monitor: Max Threads {0}/{1}", workerThreads, completionPortThreads);
+            var numThreads = PlatformProcess.GetNumberOfSystemThreads ();
+            var message = String.Format ("Monitor: System Threads {0}", numThreads);
+            if (50 > numThreads) {
+                Log.Info (Log.LOG_SYS, message);
+            } else {
+                Log.Warn (Log.LOG_SYS, message);
+            }
             Log.Info (Log.LOG_SYS, "Monitor: Comm Status {0}, Speed {1}", 
                 NcCommStatus.Instance.Status, NcCommStatus.Instance.Speed);
             Log.Info (Log.LOG_SYS, "Monitor: Battery Level {0}, Plugged Status {1}",
@@ -378,8 +385,8 @@ namespace NachoCore
                     foreach (var pending in McPending.QueryOlderThanByState (account.Id, cutoff, McPending.StateEnum.Failed)) {
                         // TODO Expand this to clean up more than just downloads.
                         if (McPending.Operations.EmailBodyDownload == pending.Operation ||
-                                McPending.Operations.CalBodyDownload == pending.Operation ||
-                                McPending.Operations.AttachmentDownload == pending.Operation) {
+                            McPending.Operations.CalBodyDownload == pending.Operation ||
+                            McPending.Operations.AttachmentDownload == pending.Operation) {
                             pending.Delete ();
                         }
                     }

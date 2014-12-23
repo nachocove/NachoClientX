@@ -54,8 +54,8 @@ namespace NachoClient.iOS
                 NSNotificationCenter.DefaultCenter.AddObserver (UITextField.TextFieldTextDidChangeNotification, OnTextFieldChanged);
             }
 
-            BackEndAutoDStateEnum backEndState = BackEnd.Instance.AutoDState (LoginHelpers.GetCurrentAccountId ());
-            if (BackEndAutoDStateEnum.CertAskWait == backEndState) {
+            BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
+            if (BackEndStateEnum.CertAskWait == backEndState) {
                 certificateView.SetCertificateInformation ();
                 certificateView.ShowView ();
             }
@@ -156,7 +156,7 @@ namespace NachoClient.iOS
             contentView.AddSubview (submitButton);
 
             submitButton.TouchUpInside += delegate {
-                if(isValidEmail(emailField.Text)){
+                if(EmailHelper.IsValidEmail(emailField.Text)){
                     McAccount UsersAccount = McAccount.QueryById<McAccount>(LoginHelpers.GetCurrentAccountId());
                     McCred UsersCredentials = McCred.QueryByAccountId<McCred>(UsersAccount.Id).SingleOrDefault ();
                     UsersCredentials.Username = emailField.Text;
@@ -197,12 +197,6 @@ namespace NachoClient.iOS
             UITextField passwordField = (UITextField)View.ViewWithTag (PASSWORD_FIELD_TAG);
             passwordField.Text = GetPassword ();
             passwordField.TextColor = A.Color_NachoRed;
-        }
-
-        protected bool isValidEmail (string email)
-        {
-            RegexUtilities regexUtil = new RegexUtilities ();
-            return regexUtil.IsValidEmail (email);
         }
 
         protected string GetUsername ()

@@ -19,16 +19,40 @@ namespace NachoCore.Utils
         {
         }
 
-        public static McCalendar DefaultMeeting ()
+        /// <summary>
+        // Create a new McCalendar item.
+        //
+        // The start time and end time parameters are used solely for
+        // the start and end dates, not the meeting time. The meeting
+        // start time is set for Now rounded up to the next 30-minute
+        // boundary.  The meeting end time is 60 minutes later but on
+        // the date given by the end time parameter.
+        //
+        // This behavior is specifically designed to help toggling an
+        // all-day meeting on and off present reasonable results.
+        /// </summary>
+        public static McCalendar DefaultMeeting (DateTime presetStart, DateTime presetEnd)
         {
             var c = new McCalendar ();
-            var start = DateTime.UtcNow.AddMinutes (30.0);
+
+            var start = DateTime.Now.AddMinutes (30.0);
+            var localTime = new DateTime (presetStart.Year, presetStart.Month, presetStart.Day, start.Hour, start.Minute, 0, DateTimeKind.Local);
+            var utcTime = localTime.ToUniversalTime ();
             if (start.Minute >= 30.0) {
-                c.StartTime = new DateTime (start.Year, start.Month, start.Day, start.Hour, 30, 0, DateTimeKind.Utc);
+                c.StartTime = new DateTime (utcTime.Year, utcTime.Month, utcTime.Day, utcTime.Hour, 30, 0, DateTimeKind.Utc);
             } else {
-                c.StartTime = new DateTime (start.Year, start.Month, start.Day, start.Hour, 0, 0, DateTimeKind.Utc);
+                c.StartTime = new DateTime (utcTime.Year, utcTime.Month, utcTime.Day, utcTime.Hour, 0, 0, DateTimeKind.Utc);
             }
-            c.EndTime = c.StartTime.AddMinutes (60.0);
+
+            var end = DateTime.Now.AddMinutes (90.0);
+            var endLocalTime = new DateTime (presetEnd.Year, presetEnd.Month, presetEnd.Day, end.Hour, end.Minute, 0, DateTimeKind.Local);
+            var endUtcTime = endLocalTime.ToUniversalTime ();
+            if (end.Minute >= 30.0) {
+                c.EndTime = new DateTime (endUtcTime.Year, endUtcTime.Month, endUtcTime.Day, endUtcTime.Hour, 30, 0, DateTimeKind.Utc);
+            } else {
+                c.EndTime = new DateTime (endUtcTime.Year, endUtcTime.Month, endUtcTime.Day, endUtcTime.Hour, 0, 0, DateTimeKind.Utc);
+            }
+
             return c;
         }
 
@@ -110,6 +134,11 @@ namespace NachoCore.Utils
                 return true;
             }
             return false;
+        }
+
+        public static DateTime ReturnAllDayEventEndTime (DateTime date)
+        {
+            return date.AddDays (-1);
         }
 
         public static McCalendar GetMcCalendarRootForEvent (int eventId)
@@ -532,7 +561,7 @@ namespace NachoCore.Utils
 
         public static McCalendar CreateMeeting (McEmailMessage message)
         {
-            var c = DefaultMeeting ();
+            var c = DefaultMeeting (DateTime.UtcNow, DateTime.UtcNow);
             c.AccountId = message.AccountId;
             c.Subject = message.Subject;
 //            var dupBody = McBody.InsertDuplicate (message.AccountId, message.BodyId);

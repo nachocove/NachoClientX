@@ -204,9 +204,14 @@ namespace NachoCore.ActiveSync
                         options.Add (new XElement (m_ns + Xml.AirSync.FilterType, (uint)perFolder.FilterCode));
                         options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.NoMime_0));
                         var bodyPref = new XElement (m_baseNs + Xml.AirSync.BodyPreference,
-                                           new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.Html_2),
-                                           new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "128"),
-                                           new XElement (m_baseNs + Xml.AirSyncBase.AllOrNone, "1"));
+                                           new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.Html_2));
+                        // TODO - this should be in strategy.
+                        if (BEContext.Server.HostIsHotMail ()) {
+                            bodyPref.Add (new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "512"));
+                        } else {
+                            bodyPref.Add (new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "128"));
+                            bodyPref.Add (new XElement (m_baseNs + Xml.AirSyncBase.AllOrNone, "1"));
+                        }
                         if (14.0 <= Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
                             bodyPref.Add (new XElement (m_baseNs + Xml.AirSyncBase.Preview, "255"));
                         }
@@ -399,10 +404,16 @@ namespace NachoCore.ActiveSync
                 var xmlStatus = collection.Element (m_ns + Xml.AirSync.Status);
                 // The protocol requires SyncKey, but GOOG does not obey in the StatusCode.NotFound case.
                 if (null != xmlSyncKey) {
+                    var now = DateTime.UtcNow;
                     folder = folder.UpdateWithOCApply<McFolder> ((record) => {
                         var target = (McFolder)record;
                         target.AsSyncKey = xmlSyncKey.Value;
                         target.AsSyncMetaToClientExpected = (McFolder.AsSyncKey_Initial == oldSyncKey) || (null != xmlMoreAvailable);
+                        if (null != xmlCommands) {
+                            target.HasSeenServerCommand = true;
+                        }
+                        target.SyncAttemptCount += 1;
+                        target.LastSyncAttempt = now;
                         return true;
                     });
                 } else {
@@ -524,7 +535,11 @@ namespace NachoCore.ActiveSync
             foreach (var maybeStale in FoldersInRequest) {
                 var folder = McFolder.ServerEndQueryById (maybeStale.Id);
                 if (0 == processedFolders.Where (f => folder.Id == f.Id).Count ()) {
-                    folder = folder.UpdateSet_AsSyncMetaToClientExpected (false);
+                    // This is a grey area in the spec. I've seen HotMail exclude a folder from a response where there IS more waiting on the server.
+                    // This was the old code:
+                    // folder = folder.UpdateSet_AsSyncMetaToClientExpected (false);
+                    // I suspect it may have been driven by GOOG doing the opposite - omitting when there is nothing. We will have to test and see.
+                    Log.Info (Log.LOG_AS, "McFolder {0} not included in Sync response.", folder.ServerId);
                 }
                 reloadedFolders.Add (folder);
             }
@@ -584,8 +599,15 @@ namespace NachoCore.ActiveSync
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
         {
             // FoldersInRequest NOT stale here.
-            foreach (var folder in FoldersInRequest) {
-                folder.UpdateSet_AsSyncMetaToClientExpected (false);
+            var now = DateTime.UtcNow;
+            foreach (var iterFolder in FoldersInRequest) {
+                iterFolder.UpdateWithOCApply<McFolder> ((record) => {
+                    var target = (McFolder)record;
+                    target.AsSyncMetaToClientExpected = false;
+                    target.SyncAttemptCount += 1;
+                    target.LastSyncAttempt = now;
+                    return true;
+                });
             }
             lock (PendingResolveLockObj) {
                 ProcessImplicitResponses (PendingList);
@@ -736,7 +758,7 @@ namespace NachoCore.ActiveSync
                     if (null != pathElem) {
                         pathElem.Delete ();
                     } else {
-                        Log.Error (Log.LOG_AS, "AsSyncCommand: McPath for Command {0}, ServerId {1} not in DB.", command.Name.LocalName, delServerId);
+                        Log.Info (Log.LOG_AS, "AsSyncCommand: McPath for Command {0}, ServerId {1} not in DB - may have been subject of MoveItems.", command.Name.LocalName, delServerId);
                     }
                     var applyDelete = new ApplyItemDelete (BEContext.Account.Id) {
                         ClassCode = classCode,
@@ -947,6 +969,7 @@ namespace NachoCore.ActiveSync
         private void ProcessCollectionChangeResponse (McFolder folder, XElement xmlChange, string classCode)
         {
             // Note: we are only supposed to see Change in this context if there was a failure.
+            // HotMail didn't read that memo.
             switch (classCode) {
             case Xml.AirSync.ClassCode.Email:
             case Xml.AirSync.ClassCode.Contacts:
@@ -965,6 +988,10 @@ namespace NachoCore.ActiveSync
                             return;
                         }
                         switch (status) {
+                        case Xml.AirSync.StatusCode.Success_1:
+                            // Let implicit responses code take care of it (HotMail).
+                            break;
+
                         case Xml.AirSync.StatusCode.ProtocolError_4:
                         case Xml.AirSync.StatusCode.ClientError_6:
                             Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: {0}", status);
@@ -1017,7 +1044,7 @@ namespace NachoCore.ActiveSync
                         default:
                         // Note: we don't send partial Sync requests.
                         case Xml.AirSync.StatusCode.ResendFull_13:
-                            Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: ResendFull_13");
+                            Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: {0}", status);
                             PendingList.RemoveAll (x => x.Id == pending.Id);
                             pending.ResponsegXmlStatus = (uint)status;
                             pending.ResolveAsHardFail (BEContext.ProtoControl,

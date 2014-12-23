@@ -320,14 +320,14 @@ namespace NachoClient.iOS
             UITableViewCell cell = null;
             cell = tableView.DequeueReusableCell (ContactCellReuseIdentifier);
             if (null == cell) {
-                cell = CreateCell (tableView);
+                cell = CreateCell (tableView, VipButtonTouched);
             }
             var contact = ContactFromIndexPath (tableView, indexPath);
             ConfigureCell (tableView, cell, contact);
             return cell;
         }
 
-        public UITableViewCell CreateCell (UITableView tableView)
+        public UITableViewCell CreateCell (UITableView tableView, EventHandler e)
         {
             var cell = new UITableViewCell (UITableViewCellStyle.Subtitle, ContactCellReuseIdentifier);
 
@@ -340,15 +340,12 @@ namespace NachoClient.iOS
             view.SetAction (CALL_BUTTON, SwipeSide.LEFT);
             view.SetAction (EMAIL_BUTTON, SwipeSide.RIGHT);
             view.Tag = SWIPE_VIEW_TAG;
-            if (!allowSwiping) {
-                view.DisableSwipe ();
-            }
 
             cell.ContentView.AddSubview (view);
 
             UIButton toggleVipButton = new UIButton (new RectangleF (cell.ContentView.Frame.Right - 30, 10, 20, 20));
             toggleVipButton.Tag = SET_VIP_TAG;
-            toggleVipButton.TouchUpInside += VipButtonTouched;
+            toggleVipButton.TouchUpInside += e;
             view.AddSubview (toggleVipButton);
 
             var titleLabel = new UILabel (new RectangleF (HORIZONTAL_INDENT, 10, cell.Frame.Width - 15 - HORIZONTAL_INDENT - toggleVipButton.Frame.Width - 8, 20));
@@ -450,7 +447,7 @@ namespace NachoClient.iOS
             portraitView.Hidden = true;
 
             var view = (SwipeActionView)cell.ViewWithTag (SWIPE_VIEW_TAG);
-            view.EnableSwipe (null != contact);
+            view.EnableSwipe (null != contact && allowSwiping);
 
             if (null == contact) {
                 titleLabel.Text = "This contact is unavailable";

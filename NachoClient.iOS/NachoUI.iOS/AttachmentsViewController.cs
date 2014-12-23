@@ -134,7 +134,6 @@ namespace NachoClient.iOS
                 yOffset += navbar.Frame.Height;
             } else {
                 NavigationItem.Title = "Files";
-                Util.ConfigureNavBar (false, this.NavigationController);
             }
 
             segmentedControlView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 40));
@@ -308,6 +307,9 @@ namespace NachoClient.iOS
                 EmptyListLabel.Hidden = true;
                 tableView.Hidden = false;
             }
+            if (null != this.NavigationController) {
+                Util.ConfigureNavBar (false, this.NavigationController);
+            }
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
@@ -375,13 +377,27 @@ namespace NachoClient.iOS
                 AttachmentsSource.Items.Reverse ();
                 break;
             case 2:
-                AttachmentsSource.Items.Sort ((x, y) => x.Contact.CompareTo (y.Contact));
-                AttachmentsSource.SetItems (AttachmentsSource.Items);
+                AttachmentsSource.Items = AttachmentsSource.Items.OrderBy (x => x.Contact, new EmptyContactsAreLast ()).ToList ();
+                AttachmentsSource.SetItems (AttachmentsSource.Items); 
                 break;
             }
 
             tableView.ReloadData ();
             ConfigureFilesView ();
+        }
+
+        public class EmptyContactsAreLast : IComparer<string>
+        {
+            public int Compare (string x, string y)
+            {
+                if (String.IsNullOrEmpty (y) && !String.IsNullOrEmpty (x)) {
+                    return -1;
+                } else if (!String.IsNullOrEmpty (y) && String.IsNullOrEmpty (x)) {
+                    return 1;
+                } else {
+                    return String.Compare (x, y);
+                }
+            }
         }
 
         public void DownloadAndDoAction (int attachmentId, UITableViewCell cell, Action<McAttachment> attachmentAction)

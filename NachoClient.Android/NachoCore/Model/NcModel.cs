@@ -255,6 +255,10 @@ namespace NachoCore.Model
         {
             NcAssert.True (2 == SQLite3.Threadsafe () || 1 == SQLite3.Threadsafe ());
             SQLite3.Config (SQLite3.ConfigOption.Log, Device.Instance.GetSQLite3ErrorCallback ((code, message) => {
+                if ((int)SQLite3.Result.OK == code ||
+                    ((int)SQLite3.Result.Locked == code && message.Contains ("PRAGMA main.wal_checkpoint (PASSIVE)"))) {
+                    return;
+                }
                 Log.IndirectQ.Enqueue (new LogElement () {
                     Level = LogElement.LevelEnum.Error,
                     Subsystem = Log.LOG_DB,

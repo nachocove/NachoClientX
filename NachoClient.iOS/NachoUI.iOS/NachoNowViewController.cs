@@ -10,6 +10,7 @@ using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore.Brain;
+using MonoTouch.ObjCRuntime;
 
 namespace NachoClient.iOS
 {
@@ -43,6 +44,7 @@ namespace NachoClient.iOS
             hotListView.Source = hotListSource;
 
             refreshControl = new UIRefreshControl ();
+            refreshControl.Hidden = true;
             refreshControl.TintColor = A.Color_NachoGreen;
             refreshControl.AttributedTitle = new NSAttributedString ("Refreshing...");
             refreshControl.ValueChanged += (object sender, EventArgs e) => {
@@ -83,7 +85,7 @@ namespace NachoClient.iOS
                 PerformSegue ("NachoNowToEditEventView", new SegueHolder (null));
             };
 
-            NavigationItem.Title = "Nacho Now";
+            NavigationItem.Title = "Hot";
                 
             NavigationItem.LeftBarButtonItem = null;
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, newMeetingButton };
@@ -136,12 +138,24 @@ namespace NachoClient.iOS
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
+
+            var accountId = LoginHelpers.GetCurrentAccountId ();
+
+            if (!McMutables.GetOrCreateBool (accountId, "Notifications", "AskedUserAboutLocalNotifications", false)) {
+                McMutables.SetBool (accountId, "Notifications", "AskedUserAboutLocalNotifications", true);
+                var application = UIApplication.SharedApplication;
+                if (application.RespondsToSelector (new Selector ("registerUserNotificationSettings:"))) {
+                    var settings = UIUserNotificationSettings.GetSettingsForTypes (UIUserNotificationType.Alert | UIUserNotificationType.Badge | UIUserNotificationType.Sound, new NSSet ());
+                    application.RegisterUserNotificationSettings (settings);
+                }
+            }
         }
 
         // Called from NachoTabBarController
         // if we need to handle a notification.
         public void HandleNotifications ()
         {
+            NavigationController.PopToViewController (this, false);
             // If we have a pending notification, bring up the event detail view
             var eventNotifications = McMutables.Get (McAccount.GetDeviceAccount ().Id, NachoClient.iOS.AppDelegate.EventNotificationKey);
             var eventNotification = eventNotifications.FirstOrDefault ();
@@ -399,11 +413,13 @@ namespace NachoClient.iOS
         public void CreateTaskForEmailMessage (INachoMessageEditor vc, McEmailMessageThread thread)
         {
             var m = thread.SingleMessageSpecialCase ();
-            var t = CalendarHelper.CreateTask (m);
-            vc.SetOwner (null);
-            vc.DismissMessageEditor (false, new NSAction (delegate {
-                PerformSegue ("", new SegueHolder (t));
-            }));
+            if (null != m) {
+                var t = CalendarHelper.CreateTask (m);
+                vc.SetOwner (null);
+                vc.DismissMessageEditor (false, new NSAction (delegate {
+                    PerformSegue ("", new SegueHolder (t));
+                }));
+            }
         }
 
         /// <summary>
@@ -412,10 +428,12 @@ namespace NachoClient.iOS
         public void CreateMeetingEmailForMessage (INachoMessageEditor vc, McEmailMessageThread thread)
         {
             var m = thread.SingleMessageSpecialCase ();
-            var c = CalendarHelper.CreateMeeting (m);
-            vc.DismissMessageEditor (false, new NSAction (delegate {
-                PerformSegue ("NachoNowToEditEventView", new SegueHolder (c));
-            }));
+            if (null != m) {
+                var c = CalendarHelper.CreateMeeting (m);
+                vc.DismissMessageEditor (false, new NSAction (delegate {
+                    PerformSegue ("NachoNowToEditEventView", new SegueHolder (c));
+                }));
+            }
         }
 
         /// <summary>
@@ -435,7 +453,9 @@ namespace NachoClient.iOS
             var segueHolder = (SegueHolder)cookie;
             var messageThread = (McEmailMessageThread)segueHolder.value;
             var message = messageThread.SingleMessageSpecialCase ();
-            NcEmailArchiver.Move (message, folder);
+            if (null != message) {
+                NcEmailArchiver.Move (message, folder);
+            }
             vc.DismissFolderChooser (true, null);
         }
 

@@ -93,7 +93,6 @@ namespace Test.iOS
                 var syncCmd = new AsSyncCommand (context, context.ProtoControl.SyncStrategy.GenSyncKit (
                                   defaultAccountId, context.ProtocolState, false));
                 AsHttpOperation.HttpClientType = typeof(MockHttpClient);
-                AsDnsOperation.DnsQueryRequestType = typeof(MockDnsQueryRequest);
                 return syncCmd;
             }
 

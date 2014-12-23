@@ -259,7 +259,7 @@ namespace NachoCore.Model
             if (null == bodyPath) {
                 return null;
             }
-            var fileStream = new FileStream (bodyPath, FileMode.Open);
+            var fileStream = new FileStream (bodyPath, FileMode.Open, FileAccess.Read);
             if (null == fileStream) {
                 Log.Error (Log.LOG_EMAIL, "BodyPath {0} doesn't find a file.", bodyPath);
                 return null;
@@ -341,26 +341,25 @@ namespace NachoCore.Model
 
         public static List<NcEmailMessageIndex> QueryInteractions (int accountId, McContact contact)
         {
-            if (null != contact.EmailAddresses) {
-                if (0 < contact.EmailAddresses.Count) {
-                    string emailWildcard = "%" + McEmailAddress.QueryById<McEmailAddress> (contact.EmailAddresses.First ().EmailAddress).CanonicalEmailAddress + "%";
-                    McFolder deletedFolder = McFolder.GetDefaultDeletedFolder (accountId);
+            if (!string.IsNullOrEmpty(contact.GetPrimaryCanonicalEmailAddress())) {
 
-                    return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
-                        "SELECT DISTINCT e.Id as Id FROM McEmailMessage AS e " +
-                        " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
-                        " JOIN McFolder AS f ON m.FolderId = f.Id " +
-                        " WHERE " +
-                        " e.AccountId = ? AND " +
-                        " e.IsAwaitingDelete = 0 AND " +
-                        " f.IsClientOwned != 1 AND " +
-                        " m.ClassCode = ? AND " +
-                        " m.AccountId = ? AND " +
-                        " m.FolderId != ? AND " +
-                        " e.[From] LIKE ? OR " +
-                        " e.[To] Like ? ORDER BY e.DateReceived DESC",
-                        accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, deletedFolder.Id, emailWildcard, emailWildcard);
-                }
+                string emailWildcard = "%" + contact.GetPrimaryCanonicalEmailAddress() + "%";
+                McFolder deletedFolder = McFolder.GetDefaultDeletedFolder (accountId);
+
+                return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
+                    "SELECT DISTINCT e.Id as Id FROM McEmailMessage AS e " +
+                    " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                    " JOIN McFolder AS f ON m.FolderId = f.Id " +
+                    " WHERE " +
+                    " e.AccountId = ? AND " +
+                    " e.IsAwaitingDelete = 0 AND " +
+                    " f.IsClientOwned != 1 AND " +
+                    " m.ClassCode = ? AND " +
+                    " m.AccountId = ? AND " +
+                    " m.FolderId != ? AND " +
+                    " e.[From] LIKE ? OR " +
+                    " e.[To] Like ? ORDER BY e.DateReceived DESC",
+                    accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, deletedFolder.Id, emailWildcard, emailWildcard);
             }
             return new List<NcEmailMessageIndex> ();
         }
@@ -725,61 +724,16 @@ namespace NachoCore.Model
             return returnVal;
         }
 
-        // Track how long it takes for Update() to run. This code should be removed
-        // once the issue has been solved.
-        private static Random random = new Random();
-        private static string characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-        private static string Duration(DateTime start, DateTime end)
-        {
-            long ms = (end.Ticks - start.Ticks) / 10000;
-            if (0 == ms) {
-                // Zeros are too common and are causing the telemetry summary to merge
-                // messages, preventing us from seeing useful data.  Print a random
-                // single character instead of 0.
-                return characters.Substring (random.Next (characters.Length), 1);
-            }
-            return string.Format ("{0}", ms);
-        }
-        private static int fastCount = 0;
-        private static int slowCount = 0;
-
         public override int Update ()
         {
             int returnVal = -1;  
 
-            int tryCount = 0;
-            DateTime txStart = DateTime.MinValue;
-            DateTime baseDone = DateTime.MinValue;
-            DateTime readAncDone = DateTime.MinValue;
-            DateTime deleteAncDone = DateTime.MinValue;
-            DateTime insertAncDone = DateTime.MinValue;
-            DateTime start = DateTime.UtcNow;
             NcModel.Instance.RunInTransaction (() => {
-                ++tryCount;
-                txStart = DateTime.UtcNow;
                 returnVal = base.Update ();
-                baseDone = DateTime.UtcNow;
                 ReadAncillaryData ();
-                readAncDone = DateTime.UtcNow;
                 DeleteAncillaryData (NcModel.Instance.Db);
-                deleteAncDone = DateTime.UtcNow;
                 InsertAncillaryData (NcModel.Instance.Db);
-                insertAncDone = DateTime.UtcNow;
             });
-            DateTime allDone = DateTime.UtcNow;
-
-            if (allDone.Ticks - start.Ticks > 5000000) {
-                // Update() took more than 500ms. Log an error message with split times
-                // and other interesting data, so we can hopefully figure out what is
-                // causing these delays.
-                ++slowCount;
-                Log.Error(Log.LOG_EMAIL, "Update: {0} = {1} {2} {3} {4} {5} {6} : +{7} [{8},{9}]",
-                    Duration (start, allDone), Duration (start, txStart), Duration (txStart, baseDone), Duration (baseDone, readAncDone),
-                    Duration (readAncDone, deleteAncDone), Duration (deleteAncDone, insertAncDone), Duration (insertAncDone, allDone),
-                    tryCount, slowCount, fastCount);
-            } else {
-                ++fastCount;
-            }
 
             return returnVal;
         }

@@ -423,9 +423,14 @@ namespace NachoCore
             ServiceFromAccountId (accountId).CancelValidateConfig ();
         }
 
-        public BackEndAutoDStateEnum AutoDState (int accountId)
+        public BackEndStateEnum BackEndState (int accountId)
         {
-            return ServiceFromAccountId (accountId).AutoDState;
+            return ServiceFromAccountId (accountId).BackEndState;
+        }
+
+        public AutoDInfoEnum AutoDInfo (int accountId)
+        {
+            return ServiceFromAccountId (accountId).AutoDInfo;
         }
 
         public X509Certificate2 ServerCertToBeExamined (int accountId)

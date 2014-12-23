@@ -17,10 +17,8 @@ namespace NachoClient.iOS
         protected static string TabBarOrderKey = "TabBarOrder";
 
         // UI elements needed to customize the "More" tab.
-        protected UILabel accountNameLabel;
-        protected UILabel emailAddressLabel;
-        protected UILabel initialsCircle;
         protected UITableView existingTableView;
+        protected AccountInfoView accountInfoView;
         protected static NachoTabBarController instance;
 
         public NachoTabBarController (IntPtr handle) : base (handle)
@@ -49,13 +47,13 @@ namespace NachoClient.iOS
 
             RestoreCustomTabBarOrder ();
 
-            nachoNowItem = SetTabBarItem ("NachoClient.iOS.NachoNowViewController", "Now", "nav-nachonow", "nav-nachonow-active"); // Done
+            nachoNowItem = SetTabBarItem ("NachoClient.iOS.NachoNowViewController", "Hot", "nav-nachonow", "nav-nachonow-active"); // Done
             SetTabBarItem ("NachoClient.iOS.CalendarViewController", "Calendar", "nav-calendar", "nav-calendar-active"); // Done
             SetTabBarItem ("NachoClient.iOS.ContactListViewController", "Contacts", "nav-contacts", "nav-contacts-active"); // Done
             SetTabBarItem ("NachoClient.iOS.InboxViewController", "Inbox", "nav-mail", "nav-mail-active"); // Done
             SetTabBarItem ("NachoClient.iOS.GeneralSettingsViewController", "Settings", "more-settings", "more-settings-active"); // Done
             SetTabBarItem ("NachoClient.iOS.SupportViewController", "Support", "more-support", "more-support-active"); // Done
-            SetTabBarItem ("NachoClient.iOS.HotListViewController", "Hot", "nav-mail", "nav-mail-active"); // Done
+            SetTabBarItem ("NachoClient.iOS.HotListViewController", "Hot List", "nav-mail", "nav-mail-active"); // Done
             SetTabBarItem ("NachoClient.iOS.DeferredViewController", "Deferred", "nav-mail", "nav-mail-active"); // Done
             foldersItem = SetTabBarItem ("NachoClient.iOS.FoldersViewController", "Mail", "nav-mail", "nav-mail-active"); // Done
             SetTabBarItem ("NachoClient.iOS.AttachmentsViewController", "Files", "more-files", "more-files-active"); // Done
@@ -85,31 +83,45 @@ namespace NachoClient.iOS
             }
         }
 
-        protected UINavigationController SelectTabRoot (UITabBarItem item)
+        protected UINavigationController FindTabRoot (UITabBarItem item)
         {
-            int i = 0;
             foreach (var viewController in ViewControllers) {
                 if (item == viewController.TabBarItem) {
                     var vc = (UINavigationController)viewController;
-                    vc.PopToRootViewController (false);
-                    this.SelectedIndex = i;
                     return vc;
                 }
-                i = i + 1;
+            }
+            return null;
+        }
+
+        protected UIViewController FindViewController (UINavigationController vc)
+        {
+            foreach (var v in vc.ViewControllers) {
+                if (v is NachoNowViewController) {
+                    return v;
+                }
             }
             return null;
         }
 
         public void SwitchToNachoNow ()
         {
-            var navigationController = SelectTabRoot (nachoNowItem);
-            var nachoNowViewController = (NachoNowViewController)navigationController.TopViewController;
-            nachoNowViewController.HandleNotifications ();
+            var navigationController = FindTabRoot (nachoNowItem);
+            if (0 == navigationController.ViewControllers.Length) {
+                navigationController = MoreNavigationController;
+            }
+            var nachoNowViewController = (NachoNowViewController)FindViewController (navigationController);
+            this.SelectedViewController = navigationController;
+            if (null != nachoNowViewController) {
+                nachoNowViewController.HandleNotifications ();
+            }
         }
 
         public void SwitchToFolders ()
         {
-            SelectTabRoot (foldersItem);
+            var folderTab = FindTabRoot (foldersItem);
+            folderTab.PopToRootViewController (false);
+            this.SelectedViewController = folderTab;
         }
 
         protected string GetTabBarItemTypeName (UIViewController vc)
@@ -195,45 +207,22 @@ namespace NachoClient.iOS
             existingTableView = (UITableView)moreTabController.View;
             existingTableView.TintColor = A.Color_NachoGreen;
             existingTableView.ScrollEnabled = false;
-
+            var cellHeight = 0f;
             foreach (var cell in existingTableView.VisibleCells) {
                 cell.TextLabel.Font = A.Font_AvenirNextMedium14;
+                cellHeight = cell.Frame.Height;
             }
 
             var newView = new UIScrollView (existingTableView.Frame);
 
             newView.BackgroundColor = A.Color_NachoBackgroundGray;
 
-            var accountInfoView = new UIView (new RectangleF (
+            accountInfoView = new AccountInfoView (new RectangleF (
                 A.Card_Horizontal_Indent, A.Card_Vertical_Indent,
-                newView.Frame.Width - 2 * A.Card_Horizontal_Indent, 100));
-            accountInfoView.BackgroundColor = UIColor.White;
-            accountInfoView.Layer.CornerRadius = A.Card_Corner_Radius;
-            accountInfoView.Layer.MasksToBounds = true;
-            accountInfoView.Layer.BorderWidth = A.Card_Border_Width;
-            accountInfoView.Layer.BorderColor = A.Card_Border_Color;
+                newView.Frame.Width - 2 * A.Card_Horizontal_Indent, 80));
+            accountInfoView.OnAccountSelected = AccountTapHandler;
 
-            initialsCircle = new UILabel (new RectangleF (18, 20, 60, 60));
-            initialsCircle.Font = A.Font_AvenirNextRegular24;
-            initialsCircle.TextColor = UIColor.White;
-            initialsCircle.TextAlignment = UITextAlignment.Center;
-            initialsCircle.LineBreakMode = UILineBreakMode.Clip;
-            initialsCircle.Layer.CornerRadius = 30;
-            initialsCircle.Layer.MasksToBounds = true;
-            initialsCircle.Layer.BorderColor = A.Card_Border_Color;
-            initialsCircle.Layer.BorderWidth = A.Card_Border_Width;
-            accountInfoView.AddSubview (initialsCircle);
-
-            accountNameLabel = new UILabel (new RectangleF (initialsCircle.Frame.Right + 16, 31, accountInfoView.Frame.Width - (initialsCircle.Frame.Right + 26), 20));
-            accountNameLabel.TextAlignment = UITextAlignment.Left;
-            accountInfoView.AddSubview (accountNameLabel);
-
-            emailAddressLabel = new UILabel (new RectangleF (accountNameLabel.Frame.X, accountNameLabel.Frame.Bottom + 6, accountNameLabel.Frame.Width, accountNameLabel.Frame.Height - 5));
-            emailAddressLabel.Font = A.Font_AvenirNextMedium14;
-            accountInfoView.AddSubview (emailAddressLabel);
-
-            // checks for a 4s screen
-            var tableHeight = (500 < newView.Frame.Height ? newView.Frame.Height - accountInfoView.Frame.Bottom - 3 * A.Card_Vertical_Indent - 11 : newView.Frame.Height - accountInfoView.Frame.Bottom - A.Card_Vertical_Indent + 36);
+            var tableHeight = (((existingTableView.NumberOfRowsInSection(0)) + 2) * cellHeight) + 5;
 
             existingTableView.Frame = new RectangleF (
                 A.Card_Horizontal_Indent, accountInfoView.Frame.Bottom + A.Card_Vertical_Indent,
@@ -243,22 +232,16 @@ namespace NachoClient.iOS
             existingTableView.Layer.BorderWidth = A.Card_Border_Width;
             existingTableView.Layer.BorderColor = A.Card_Border_Color;
 
-            newView.ContentSize = new SizeF (moreTabController.View.Frame.Width, existingTableView.Frame.Bottom - 2 * A.Card_Vertical_Indent);
+            newView.ContentSize = new SizeF (moreTabController.View.Frame.Width, existingTableView.Frame.Bottom - A.Card_Vertical_Indent);
 
             newView.AddSubview (accountInfoView);
             newView.AddSubview (existingTableView);
             moreTabController.View = newView;
 
             ConfigureAccountInfo ();
-
-            var accountTapRecognizer = new UITapGestureRecognizer ();
-            accountTapRecognizer = new UITapGestureRecognizer ();
-            accountTapRecognizer.NumberOfTapsRequired = 1;
-            accountTapRecognizer.AddTarget (AccountTapHandler);
-            accountInfoView.AddGestureRecognizer (accountTapRecognizer);
         }
 
-        private void AccountTapHandler (NSObject sender)
+        private void AccountTapHandler (McAccount account)
         {
             UIStoryboard x = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
             var vc = (AccountSettingsViewController)x.InstantiateViewController ("AccountSettingsViewController");
@@ -268,32 +251,7 @@ namespace NachoClient.iOS
         public void ConfigureAccountInfo ()
         {
             var account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
-
-            if (!string.IsNullOrEmpty (account.DisplayName)) {
-                initialsCircle.Text = Util.NameToLetters (account.DisplayName);
-            } else if (!string.IsNullOrEmpty (account.EmailAddr)) {
-                initialsCircle.Text = Util.NameToLetters (account.EmailAddr);
-            } else {
-                initialsCircle.Text = "?";
-            }
-
-            McEmailAddress address;
-            bool validAddress = McEmailAddress.Get (account.Id, account.EmailAddr, out address);
-            initialsCircle.BackgroundColor = Util.ColorForUser (validAddress ? address.ColorIndex : Util.PickRandomColorForUser ());
-
-            if (string.IsNullOrEmpty (account.DisplayName)) {
-                accountNameLabel.Text = "Account name";
-                accountNameLabel.Font = A.Font_AvenirNextRegular14;
-                accountNameLabel.TextColor = UIColor.LightGray;
-                emailAddressLabel.TextColor = A.Color_NachoGreen;
-            } else {
-                accountNameLabel.Text = account.DisplayName;
-                accountNameLabel.Font = A.Font_AvenirNextDemiBold17;
-                accountNameLabel.TextColor = A.Color_NachoGreen;
-                emailAddressLabel.TextColor = A.Color_NachoTextGray;
-            }
-
-            emailAddressLabel.Text = account.EmailAddr;
+            accountInfoView.Configure (account);
         }
 
         public static void ReconfigureMoreTab ()

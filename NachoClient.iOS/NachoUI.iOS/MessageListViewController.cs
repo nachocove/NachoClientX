@@ -102,6 +102,7 @@ namespace NachoClient.iOS
             TableView.TableHeaderView = null; // beta 1
 
             RefreshControl = new UIRefreshControl ();
+            RefreshControl.Hidden = true;
             RefreshControl.TintColor = A.Color_NachoGreen;
             RefreshControl.AttributedTitle = new NSAttributedString ("Refreshing...");
             RefreshControl.ValueChanged += (object sender, EventArgs e) => {
@@ -329,11 +330,13 @@ namespace NachoClient.iOS
         public void CreateTaskForEmailMessage (INachoMessageEditor vc, McEmailMessageThread thread)
         {
             var m = thread.SingleMessageSpecialCase ();
-            var t = CalendarHelper.CreateTask (m);
-            vc.SetOwner (null);
-            vc.DismissMessageEditor (false, new NSAction (delegate {
-                PerformSegue ("", new SegueHolder (t));
-            }));
+            if (null != m) {
+                var t = CalendarHelper.CreateTask (m);
+                vc.SetOwner (null);
+                vc.DismissMessageEditor (false, new NSAction (delegate {
+                    PerformSegue ("", new SegueHolder (t));
+                }));
+            }
         }
 
         /// <summary>
@@ -342,10 +345,12 @@ namespace NachoClient.iOS
         public void CreateMeetingEmailForMessage (INachoMessageEditor vc, McEmailMessageThread thread)
         {
             var m = thread.SingleMessageSpecialCase ();
-            var c = CalendarHelper.CreateMeeting (m);
-            vc.DismissMessageEditor (false, new NSAction (delegate {
-                PerformSegue ("NachoNowToEditEvent", new SegueHolder (c));
-            }));
+            if (null != m) {
+                var c = CalendarHelper.CreateMeeting (m);
+                vc.DismissMessageEditor (false, new NSAction (delegate {
+                    PerformSegue ("NachoNowToEditEvent", new SegueHolder (c));
+                }));
+            }
         }
 
         /// <summary>
@@ -380,7 +385,15 @@ namespace NachoClient.iOS
         protected void BackShouldSwitchToFolders ()
         {
             using (var image = UIImage.FromBundle ("nav-backarrow")) {
-                backButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, onClickBackButton);
+//                backButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, onClickBackButton);
+                var button = UIButton.FromType (UIButtonType.System);
+                button.Frame = new RectangleF (0, 0, 70, 30);
+                button.SetTitle ("Mail", UIControlState.Normal);
+                button.SetTitleColor(UIColor.White, UIControlState.Normal);
+                button.SetImage (image, UIControlState.Normal);
+                button.Font = UINavigationBar.Appearance.TitleTextAttributes.Font;
+                backButton = new UIBarButtonItem (button);
+                button.TouchUpInside += onClickBackButton;
             }
         }
 

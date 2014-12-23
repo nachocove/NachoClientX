@@ -416,7 +416,9 @@ namespace NachoClient.iOS
             var messageThread = (McEmailMessageThread)h.value;
             NcAssert.NotNull (messageThread);
             var message = messageThread.SingleMessageSpecialCase ();
-            NcEmailArchiver.Move (message, folder);
+            if (null != message) {
+                NcEmailArchiver.Move (message, folder);
+            }
         }
 
         /// INachoFolderChooserParent delegate

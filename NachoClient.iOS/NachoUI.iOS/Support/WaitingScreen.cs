@@ -75,55 +75,55 @@ namespace NachoClient.iOS
             spinnerView.Layer.CornerRadius = MASK_DIAMETER / 2;
             spinnerView.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
             spinnerView.Layer.MasksToBounds = true;
-            this.Add (spinnerView);
+            this.AddSubview (spinnerView);
 
             bottomHalfSpinner = new UIImageView (UIImage.FromBundle ("Spinner-1@2x"));
             bottomHalfSpinner.Frame = new RectangleF (-35, LOWER_SECTION_Y_VAL - 400, SPINNER_WIDTH, SPINNER_HEIGHT);
             bottomHalfSpinnerCenter = bottomHalfSpinner.Center;
-            spinnerView.Add (bottomHalfSpinner);
+            spinnerView.AddSubview (bottomHalfSpinner);
 
             topHalfSpinner = new UIImageView (UIImage.FromBundle ("Spinner-1@2x"));
             topHalfSpinner.Frame = new RectangleF (-35, LOWER_SECTION_Y_VAL - 590, SPINNER_WIDTH, SPINNER_HEIGHT);
             topHalfSpinnerCenter = topHalfSpinner.Center;
-            spinnerView.Add (topHalfSpinner);
+            spinnerView.AddSubview (topHalfSpinner);
 
             circleMask = new UIImageView (maskImage (UIImage.FromBundle ("Circular-Mask")));
             circleMask.Frame = new RectangleF (this.Frame.Width / 2, LOWER_SECTION_Y_VAL + MASK_DIAMETER / 2, .5f, .5f);
             circleMask.Layer.CornerRadius = MASK_DIAMETER / 2;
             circleMask.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
             circleMask.Layer.MasksToBounds = true;
-            this.Add (circleMask);
+            this.AddSubview (circleMask);
 
             animationBlocker = new UIView (new RectangleF (this.Frame.Width / 2 - 40, LOWER_SECTION_Y_VAL, MASK_DIAMETER, MASK_DIAMETER));
             animationBlocker.Alpha = 1.0f;
             animationBlocker.BackgroundColor = A.Color_NachoGreen;
-            this.Add (animationBlocker);
+            this.AddSubview (animationBlocker);
 
             syncStatusLabel = new UILabel (new RectangleF (0, LOWER_SECTION_Y_VAL + 89, this.Frame.Width, 30));
             syncStatusLabel.Font = A.Font_AvenirNextRegular17;
             syncStatusLabel.TextColor = UIColor.White;
             syncStatusLabel.TextAlignment = UITextAlignment.Center;
-            syncStatusLabel.Text = "Locating Your Server...";
+            syncStatusLabel.Text = "Verifying Your Server...";
             syncStatusLabel.Alpha = 0.0f;
-            this.Add (syncStatusLabel);
+            this.AddSubview (syncStatusLabel);
 
             startedCircleImage = new UIImageView (UIImage.FromBundle ("Loginscreen-BG@2x"));
             startedCircleImage.Frame = new RectangleF (this.Frame.Width / 2 - .5f, LOWER_SECTION_Y_VAL, 1, 1);
             startedCircleImage.Alpha = 0.0f;
-            this.Add (startedCircleImage);
+            this.AddSubview (startedCircleImage);
 
             finishedCircleImage = new UIImageView (UIImage.FromBundle ("Bootscreen-1@2x"));
             finishedCircleImage.Frame = new RectangleF (this.Frame.Width / 2 - .5f, LOWER_SECTION_Y_VAL, 1, 1);
             finishedCircleImage.Alpha = 0.0f;
-            this.Add (finishedCircleImage);
+            this.AddSubview (finishedCircleImage);
 
             firstTrianglesImage = new UIImageView (UIImage.FromBundle ("Bootscreen-3@2x"));
             firstTrianglesImage.Frame = new RectangleF (0, LOWER_SECTION_Y_VAL + 309, this.Frame.Width, 39);
-            this.Add (firstTrianglesImage);
+            this.AddSubview (firstTrianglesImage);
 
             secondTriangleImage = new UIImageView (UIImage.FromBundle ("Bootscreen-2@2x"));
             secondTriangleImage.Frame = new RectangleF (40, LOWER_SECTION_Y_VAL + 309, this.Frame.Width - 80, 25);
-            this.Add (secondTriangleImage);
+            this.AddSubview (secondTriangleImage);
 
             welcomeToLabel = new UILabel (new RectangleF (100, LOWER_SECTION_Y_VAL + 89, 120, 20));
             welcomeToLabel.Font = A.Font_AvenirNextRegular17;
@@ -131,7 +131,7 @@ namespace NachoClient.iOS
             welcomeToLabel.Text = "Welcome To";
             welcomeToLabel.Alpha = 0.0f;
             welcomeToLabel.TextAlignment = UITextAlignment.Center;
-            this.Add (welcomeToLabel);
+            this.AddSubview (welcomeToLabel);
 
             nachoMailLabel = new UILabel (new RectangleF (70, LOWER_SECTION_Y_VAL + 110, 180, 40));
             nachoMailLabel.Font = A.Font_AvenirNextDemiBold30;
@@ -139,12 +139,12 @@ namespace NachoClient.iOS
             nachoMailLabel.Text = "NachoMail";
             nachoMailLabel.Alpha = 0.0f;
             nachoMailLabel.TextAlignment = UITextAlignment.Center;
-            this.Add (nachoMailLabel);
+            this.AddSubview (nachoMailLabel);
 
             swipeUpTriangle = new UIImageView (UIImage.FromBundle ("Bootscreen-4@2x"));
             swipeUpTriangle.Frame = new RectangleF (this.Frame.Width / 2 - 11, LOWER_SECTION_Y_VAL + 289, 22, 9);
             swipeUpTriangle.Alpha = 0.0f;
-            this.Add (swipeUpTriangle);
+            this.AddSubview (swipeUpTriangle);
 
             swipeUpLabel = new UILabel (new RectangleF (70, LOWER_SECTION_Y_VAL + 255, 180, 20));
             swipeUpLabel.Font = A.Font_AvenirNextRegular14;
@@ -152,12 +152,12 @@ namespace NachoClient.iOS
             swipeUpLabel.Text = "Get Started Now";
             swipeUpLabel.Alpha = 0.0f;
             swipeUpLabel.TextAlignment = UITextAlignment.Center;
-            this.Add (swipeUpLabel);
+            this.AddSubview (swipeUpLabel);
 
             dismissLabel = new UILabel (new RectangleF (this.Frame.Width / 2 - 75, this.Frame.Bottom - 30 , 150, 15));
             dismissLabel.Font = A.Font_AvenirNextRegular12;
             dismissLabel.TextColor = UIColor.White;
-            dismissLabel.Text = "Return To Advanced Login";
+            dismissLabel.Text = "Return To Account Setup";
             dismissLabel.TextAlignment = UITextAlignment.Center;
             dismissLabel.UserInteractionEnabled = true;
             UITapGestureRecognizer dismissLabelTap = new UITapGestureRecognizer (() => {
@@ -165,7 +165,7 @@ namespace NachoClient.iOS
                 owner.ConfigureView (AdvancedLoginViewController.LoginStatus.EnterInfo);
             });
             dismissLabel.AddGestureRecognizer (dismissLabelTap);
-            this.Add (dismissLabel);
+            this.AddSubview (dismissLabel);
 
             this.Hidden = true;
         }

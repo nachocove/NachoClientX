@@ -49,7 +49,8 @@ namespace NachoCore.ActiveSync
             CredW1,
             CredW2,
             SrvConfW,
-            TestW,
+            TestW1,
+            TestW2,
             Peek404,
         };
         // Event codes shared between TL and Robot SMs.
@@ -88,7 +89,7 @@ namespace NachoCore.ActiveSync
         private List<StepRobot> Robots;
         private Queue<StepRobot> AskingRobotQ;
         private Queue<StepRobot> SuccessfulRobotQ;
-        private AsOptionsCommand OptCmd;
+        private AsCommand TestCmd;
         private ConcurrentBag<object> DisposedJunk;
         private string Domain;
         private string BaseDomain;
@@ -122,7 +123,7 @@ namespace NachoCore.ActiveSync
                             // Start robots and wait.
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoStepsPll, State = (uint)Lst.RobotW },
                             // App just set the server so, go test it (skip robots).
-                            new Trans { Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestW },
+                            new Trans { Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, ActSetsState = true },
                             new Trans { Event = (uint)TlEvt.E.Cancel, Act = DoCancel, State = (uint)St.Stop },
                         }
                     },
@@ -137,7 +138,7 @@ namespace NachoCore.ActiveSync
                             // Start robots and wait.
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoStepsPll, State = (uint)Lst.RobotW },
                             // Stop robots, test, and wait for test results.
-                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoTestFromRobot, State = (uint)Lst.TestW },
+                            new Trans { Event = (uint)SmEvt.E.Success, Act = DoTestFromRobot, ActSetsState = true },
                             // Remove robot, post "Empty" if none left running.
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoReapRobot, State = (uint)Lst.RobotW },
                             // Stop robots and ask for creds, then wait.
@@ -154,7 +155,7 @@ namespace NachoCore.ActiveSync
                             new Trans {
                                 Event = (uint)TlEvt.E.ServerSet,
                                 Act = DoTestFromUi,
-                                State = (uint)Lst.TestW
+                                ActSetsState = true
                             },
                             // Keeping robots running, ask app if server cert is okay.
                             new Trans {
@@ -199,7 +200,7 @@ namespace NachoCore.ActiveSync
                             // Stop and re-start robots, then wait.
                             new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoStepsPll, State = (uint)Lst.RobotW },
                             // Stop robots, test, and wait for test results.
-                            new Trans { Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestW },
+                            new Trans { Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, ActSetsState = true },
                             // We're already asking, so queue this ask.
                             new Trans {
                                 Event = (uint)TlEvt.E.ServerCertAsk,
@@ -213,14 +214,14 @@ namespace NachoCore.ActiveSync
                         }
                     },
 
-                    new Node {State = (uint)Lst.TestW,
+                    new Node {State = (uint)Lst.TestW1,
                         Drop = new [] { (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY },
                         Invalid = new [] {(uint)SharedEvt.E.ReStart,
                             (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty
                         },
                         On = new[] {
                             // Test the new server config.
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoTest, State = (uint)Lst.TestW },
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoTest, ActSetsState = true },
                             // It worked! We're done.
                             new Trans {
                                 Event = (uint)SmEvt.E.Success,
@@ -263,12 +264,73 @@ namespace NachoCore.ActiveSync
                                 State = (uint)Lst.CredW2
                             },
                             // Re-try test because app set creds.
-                            new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoTest, State = (uint)Lst.TestW },
+                            new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoTest, ActSetsState = true },
                             // Re-try test because app set server config.
                             new Trans {
                                 Event = (uint)TlEvt.E.ServerSet,
                                 Act = DoTestFromUi,
-                                State = (uint)Lst.TestW
+                                ActSetsState = true
+                            },
+                            new Trans { Event = (uint)TlEvt.E.Cancel, Act = DoCancel, State = (uint)St.Stop },
+                        }
+                    },
+
+                    new Node {State = (uint)Lst.TestW2,
+                        Drop = new [] { (uint)SharedEvt.E.SrvCertN, (uint)SharedEvt.E.SrvCertY },
+                        Invalid = new [] {(uint)SharedEvt.E.ReStart,
+                            (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty
+                        },
+                        On = new[] {
+                            // Test the new server config.
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoTest, ActSetsState = true },
+                            // Options worked, not test creds with Settings.
+                            new Trans {
+                                Event = (uint)SmEvt.E.Success,
+                                Act = Do2ndTest,
+                                State = (uint)Lst.TestW1
+                            },
+                            // It failed. Ask app for server config again.
+                            new Trans {
+                                Event = (uint)SmEvt.E.TempFail,
+                                Act = DoUiGetServer,
+                                State = (uint)Lst.SrvConfW
+                            },
+                            new Trans {
+                                Event = (uint)SmEvt.E.HardFail,
+                                Act = DoPeek404,
+                                State = (uint)Lst.Peek404
+                            },
+                            // We got told to re-do auto-d. But that won't work!
+                            new Trans {
+                                Event = (uint)AsProtoControl.AsEvt.E.ReDisc,
+                                Act = DoUiGetServer,
+                                State = (uint)Lst.SrvConfW
+                            },
+                            // We got told to re-prov. Should not happen.
+                            new Trans {
+                                Event = (uint)AsProtoControl.AsEvt.E.ReProv,
+                                Act = DoUiGetServer,
+                                State = (uint)Lst.SrvConfW
+                            },
+                            // We got told to re-sync. Should not happen.
+                            new Trans {
+                                Event = (uint)AsProtoControl.AsEvt.E.ReSync,
+                                Act = DoUiGetServer,
+                                State = (uint)Lst.SrvConfW
+                            },
+                            // Ask for creds again before re-test.
+                            new Trans {
+                                Event = (uint)AsProtoControl.AsEvt.E.AuthFail,
+                                Act = DoUiGetCred,
+                                State = (uint)Lst.CredW2
+                            },
+                            // Re-try test because app set creds.
+                            new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoTest, ActSetsState = true },
+                            // Re-try test because app set server config.
+                            new Trans {
+                                Event = (uint)TlEvt.E.ServerSet,
+                                Act = DoTestFromUi,
+                                ActSetsState = true
                             },
                             new Trans { Event = (uint)TlEvt.E.Cancel, Act = DoCancel, State = (uint)St.Stop },
                         }
@@ -283,7 +345,7 @@ namespace NachoCore.ActiveSync
                             (uint)TlEvt.E.ServerCertAsk, (uint)TlEvt.E.Empty,
                         },
                         On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoTest, State = (uint)Lst.TestW },
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoTest, ActSetsState = true },
                             new Trans {
                                 Event = (uint)SmEvt.E.HardFail,
                                 Act = DoUiGetServer,
@@ -294,11 +356,11 @@ namespace NachoCore.ActiveSync
                                 Act = DoUiGetCred,
                                 State = (uint)Lst.CredW2
                             },
-                            new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoTest, State = (uint)Lst.TestW },
+                            new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoTest, ActSetsState = true },
                             new Trans {
                                 Event = (uint)TlEvt.E.ServerSet,
                                 Act = DoTestFromUi,
-                                State = (uint)Lst.TestW
+                                ActSetsState = true
                             },
                             new Trans { Event = (uint)TlEvt.E.Cancel, Act = DoCancel, State = (uint)St.Stop },
                         }
@@ -318,7 +380,7 @@ namespace NachoCore.ActiveSync
                             // Got creds, re-start all robots and try again.
                             new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoStepsPll, State = (uint)Lst.RobotW },
                             // Got new server value. run-with it and test it.
-                            new Trans { Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestW },
+                            new Trans { Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, ActSetsState = true },
                             new Trans { Event = (uint)TlEvt.E.Cancel, Act = DoCancel, State = (uint)St.Stop },
                         }
                     },
@@ -335,9 +397,9 @@ namespace NachoCore.ActiveSync
                             // Ask app for creds.
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoUiGetCred, State = (uint)Lst.CredW1 },
                             // Got creds, re-test & wait.
-                            new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoTest, State = (uint)Lst.TestW },
+                            new Trans { Event = (uint)TlEvt.E.CredSet, Act = DoTest, ActSetsState = true },
                             // Got new server value. run-with it and test it.
-                            new Trans { Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestW },
+                            new Trans { Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, ActSetsState = true },
                             new Trans { Event = (uint)TlEvt.E.Cancel, Act = DoCancel, State = (uint)St.Stop },
                         }
                     },
@@ -354,7 +416,7 @@ namespace NachoCore.ActiveSync
                             // Ask again and wait.
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoUiGetServer, State = (uint)Lst.SrvConfW },
                             // Got server config, now test & wait.
-                            new Trans { Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, State = (uint)Lst.TestW },
+                            new Trans { Event = (uint)TlEvt.E.ServerSet, Act = DoTestFromUi, ActSetsState = true },
                             new Trans { Event = (uint)TlEvt.E.Cancel, Act = DoCancel, State = (uint)St.Stop },
                         }
                     },
@@ -393,7 +455,8 @@ namespace NachoCore.ActiveSync
                 Sm.Start ();
             } else {
                 ServerCandidate = BEContext.Server;
-                Sm.Start ((uint)Lst.TestW);
+                // Okay to start at TestW1 because DoTest will evaluate Host.
+                Sm.Start ((uint)Lst.TestW1);
             }
         }
         // UTILITY METHODS.
@@ -454,10 +517,10 @@ namespace NachoCore.ActiveSync
             KillAllRobots ();
             AskingRobotQ = null;
             SuccessfulRobotQ = null;
-            if (null != OptCmd) {
-                OptCmd.Cancel ();
-                DisposedJunk.Add (OptCmd);
-                OptCmd = null;
+            if (null != TestCmd) {
+                TestCmd.Cancel ();
+                DisposedJunk.Add (TestCmd);
+                TestCmd = null;
             }
         }
 
@@ -520,15 +583,41 @@ namespace NachoCore.ActiveSync
             SxServerCertX ((uint)SharedEvt.E.SrvCertN, "AUTODS1CN");
         }
 
+        private void Do2ndTest ()
+        {
+            // TODO: enhance the top-level state machine so that these operations
+            // OPTIONS, Settings/Provision aren't repeated unnecessarily.
+            DoCancel ();
+            if (ProtocolState.DisableProvisionCommand) {
+                TestCmd = new AsSettingsCommand (this) {
+                    DontReportCommResult = true,
+                    Timeout = new TimeSpan (0, 0, 15),
+                    MaxTries = 2,
+                    OmitDeviceInformation = true,
+                };
+            } else {
+                TestCmd = new AsProvisionCommand (this) {
+                    DontReportCommResult = true,
+                    Timeout = new TimeSpan (0, 0, 15),
+                    MaxTries = 2,
+                };
+            }
+            TestCmd.Execute (Sm);
+        }
+
         private void DoTest ()
         {
             DoCancel ();
-            OptCmd = new AsOptionsCommand (this) {
+            TestCmd = new AsOptionsCommand (this) {
                 DontReportCommResult = true,
                 Timeout = new TimeSpan (0, 0, 15),
-                MaxRetries = 1,
+                MaxTries = 2,
             };
-            OptCmd.Execute (Sm);
+            // HotMail/GMail doesn't WWW-Authenticate on OPTIONS.
+            Sm.State = (ServerCandidate.HostIsGMail () || ServerCandidate.HostIsHotMail ())
+                ? (uint)Lst.TestW2 : (uint)Lst.TestW1;
+
+            TestCmd.Execute (Sm);
         }
 
         private void DoTestFromUi ()
@@ -614,7 +703,11 @@ namespace NachoCore.ActiveSync
 
         public McServer Server {
             get { return ServerCandidate; }
-            set { throw new Exception ("Illegal set of Server by AsOptionsCommand."); }
+            // OPTIONS should not need to set the server, but Settings might. So we allow it.
+            set { 
+                Log.Info (Log.LOG_AS, "Server changed to {0} during test.", value.Host);
+                ServerCandidate = value;
+            }
         }
 
         public McAccount Account {

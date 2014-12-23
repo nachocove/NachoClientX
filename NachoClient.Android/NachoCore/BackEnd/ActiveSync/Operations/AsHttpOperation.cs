@@ -72,13 +72,13 @@ namespace NachoCore.ActiveSync
         private const string KCommon = "common";
         private const string KRequest = "request";
         private const string KResponse = "response";
-        private const string KDefaultDelaySeconds = "5";
-        private const string KDefaultThrottleDelaySeconds = "60";
-        private const string KMaxDelaySeconds = "30";
+        private const int KDefaultDelaySeconds = 5;
+        private const int KDefaultThrottleDelaySeconds = 60;
+        private const int KMaxDelaySeconds = 30;
         private const int KMaxTimeoutSeconds = 100;
-        private const string KDefaultTimeoutSeconds = "20";
+        private const int KDefaultTimeoutSeconds = 20;
         private const string KDefaultTimeoutExpander = "1.2";
-        private const string KDefaultRetries = "8";
+        private const int KDefaultRetries = 8;
         private const int KConsec401ThenReDisc = 5;
         private const string KToXML = "ToXML";
         private string CommandName;
@@ -164,11 +164,11 @@ namespace NachoCore.ActiveSync
             NcCapture.AddKind (KToXML);
             NcCommStatusSingleton = NcCommStatus.Instance;
             BEContext = beContext;
-            var timeoutSeconds = McMutables.GetOrCreate (BEContext.Account.Id, "HTTPOP", "TimeoutSeconds", KDefaultTimeoutSeconds);
-            Timeout = new TimeSpan (0, 0, timeoutSeconds.ToInt ());
+            int timeoutSeconds = McMutables.GetOrCreateInt (BEContext.Account.Id, "HTTPOP", "TimeoutSeconds", KDefaultTimeoutSeconds);
+            Timeout = new TimeSpan (0, 0, timeoutSeconds);
             var timeoutExpander = McMutables.GetOrCreate (BEContext.Account.Id, "HTTPOP", "TimeoutExpander", KDefaultTimeoutExpander);
             TimeoutExpander = double.Parse (timeoutExpander);
-            MaxRetries = uint.Parse (McMutables.GetOrCreate (BEContext.Account.Id, "HTTPOP", "Retries", KDefaultRetries));
+            MaxRetries = (uint)McMutables.GetOrCreateInt (BEContext.Account.Id, "HTTPOP", "Retries", KDefaultRetries);
             TriesLeft = MaxRetries + 1;
             Allow451Follow = true;
             CommandName = commandName;
@@ -543,7 +543,7 @@ namespace NachoCore.ActiveSync
                 // If the owner is returning an event, they MUST have resolved all pendings.
                 return Final (preProcessEvent);
             }
-            XDocument responseDoc;
+            XDocument responseDoc = null;
             if (HttpStatusCode.ServiceUnavailable != response.StatusCode) {
                 ConsecThrottlePriorDelaySecs = 0;
             }
@@ -631,9 +631,20 @@ namespace NachoCore.ActiveSync
                     default:
                         if (null == ContentType) {
                             Log.Warn (Log.LOG_HTTP, "ProcessHttpResponse: received HTTP response with content but no Content-Type.");
+                        } else {
+                            Log.Warn (Log.LOG_HTTP, "ProcessHttpResponse: received HTTP response with content but unexpected Content-Type: {0}.", ContentType);
                         }
-                        // Owner MUST resolve all pending.
-                        return Final (Owner.ProcessResponse (this, response));
+                        // Just *try* to see if it will parse as XML. Could be poorly configured auto-d.
+                        try {
+                            responseDoc = XDocument.Load (ContentData);
+                        } catch {
+                        }
+                        if (null == responseDoc) {
+                            // Owner MUST resolve all pending.
+                            return Final (Owner.ProcessResponse (this, response));
+                        } else {
+                            return Final (Owner.ProcessResponse (this, response, responseDoc));
+                        }
                     }
                 } 
                 // Owner MUST resolve all pending.
@@ -741,7 +752,7 @@ namespace NachoCore.ActiveSync
                         ServerUriBeingTested = true;
                         var dummy = McServer.Create (BEContext.Account.Id, redirUri);
                         var query = (string.Empty == redirUri.Query) ? ServerUri.Query : redirUri.Query;
-                        ServerUri = new Uri (AsCommand.BaseUri (dummy), query);
+                        ServerUri = new Uri (dummy.BaseUri (), query);
                         return Event.Create ((uint)SmEvt.E.Launch, "HTTPOP451C");
                     } catch (Exception ex) {
                         Log.Info (Log.LOG_HTTP, "ProcessHttpResponse {0} {1}: exception {2}", ex, ServerUri, ex.Message);
@@ -812,9 +823,9 @@ namespace NachoCore.ActiveSync
                         Log.Error (Log.LOG_HTTP, "Could not parse header {0}: {1}.", HeaderXMsAsThrottle, value);
                     }
                     Owner.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ExplicitThrottling));
-                    configuredSecs = uint.Parse (McMutables.GetOrCreate (BEContext.Account.Id, "HTTP", "ThrottleDelaySeconds", KDefaultThrottleDelaySeconds));
+                    configuredSecs = (uint)McMutables.GetOrCreateInt (BEContext.Account.Id, "HTTP", "ThrottleDelaySeconds", KDefaultThrottleDelaySeconds);
                 } else {
-                    configuredSecs = uint.Parse (McMutables.GetOrCreate (BEContext.Account.Id, "HTTP", "DelaySeconds", KDefaultDelaySeconds));
+                    configuredSecs = (uint)McMutables.GetOrCreateInt (BEContext.Account.Id, "HTTP", "DelaySeconds", KDefaultDelaySeconds);
                 }
                 bestSecs = configuredSecs;
                 if (response.Headers.Contains (HeaderRetryAfter)) {
@@ -870,7 +881,7 @@ namespace NachoCore.ActiveSync
             var result = NcResult.Info (NcResult.SubKindEnum.Info_ServiceUnavailable);
             result.Value = secs;
             Owner.StatusInd (result);
-            uint maxSecs = uint.Parse (McMutables.GetOrCreate (BEContext.Account.Id, "HTTP", "MaxDelaySeconds", KMaxDelaySeconds));
+            uint maxSecs = (uint)McMutables.GetOrCreateInt (BEContext.Account.Id, "HTTP", "MaxDelaySeconds", KMaxDelaySeconds);
             if (maxSecs >= secs) {
                 return Event.Create ((uint)HttpOpEvt.E.Delay, mnemonic, secs, message);
             }

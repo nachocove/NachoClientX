@@ -26,8 +26,8 @@ namespace NachoClient.iOS
 
         protected const string CACHE_MODULE = "CACHE";
 
-        UIScrollView scrollView = new UIScrollView();
-        UIView contentView = new UIView();
+        UIScrollView scrollView = new UIScrollView ();
+        UIView contentView = new UIView ();
 
         protected const int WEB_VIEW_TAG = 100;
         protected const int INTERIOR_VIEW_TAG = 101;
@@ -53,7 +53,7 @@ namespace NachoClient.iOS
             scrollView.AddSubview (contentView);
             View.AddSubview (scrollView);
 
-            backButton = new UIBarButtonItem();
+            backButton = new UIBarButtonItem ();
             backButton.Clicked += BackButtonClicked;
             backButton.Image = UIImage.FromBundle ("nav-backarrow");
             backButton.TintColor = A.Color_NachoBlue;
@@ -80,21 +80,25 @@ namespace NachoClient.iOS
 
             if (loadFromWeb) {
                 UIWebView webView = new UIWebView (new RectangleF (10, yOffset, interiorView.Frame.Width - 20, interiorView.Frame.Height - yOffset - 10));
+                webView.LoadError += HandleLoadError;
+                webView.LoadFinished += CacheUrlHtml;
                 webView.Tag = WEB_VIEW_TAG;
                 interiorView.Add (webView);
                 contentView.AddSubview (interiorView);
-                if (NachoCore.Utils.Network_Helpers.HasNetworkConnection()) {
-                    urlSourceCode = new WebClient ().DownloadString (url);
-                    webView.LoadHtmlString (urlSourceCode, new NSUrl("about:blank"));
-                    webView.LoadError += HandleLoadError;
-                    webView.LoadFinished += CacheUrlHtml;
+                if (NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
+                    try {
+                        urlSourceCode = new WebClient ().DownloadString (url);
+                        webView.LoadHtmlString (urlSourceCode, new NSUrl ("about:blank"));
+                    } catch {
+                        HandleLoadError (this, null);
+                    }
                 } else {
                     HandleLoadError (this, null);
                 }
             } else {
-                UITextView textView = new UITextView (new RectangleF(10, yOffset, interiorView.Frame.Width - 20, interiorView.Frame.Height - yOffset - 10));
+                UITextView textView = new UITextView (new RectangleF (10, yOffset, interiorView.Frame.Width - 20, interiorView.Frame.Height - yOffset - 10));
                 textView.Tag = TEXT_VIEW_TAG; 
-                textView.Text =  System.IO.File.ReadAllText(url);
+                textView.Text = System.IO.File.ReadAllText (url);
                 SizeF newSize = textView.SizeThatFits (new SizeF (textView.Frame.Width, float.MaxValue));
                 textView.Frame = new RectangleF (textView.Frame.X, textView.Frame.Y, textView.Frame.Width, newSize.Height);
                 interiorView.Add (textView);
@@ -115,24 +119,25 @@ namespace NachoClient.iOS
         void HandleLoadError (object sender, UIWebErrorArgs e)
         {
             UIWebView webView = (UIWebView)View.ViewWithTag (WEB_VIEW_TAG);
-            webView.LoadFinished += CacheUrlHtml;
             string urlHtml = McMutables.GetOrCreate (LoginHelpers.GetCurrentAccountId (), CACHE_MODULE, key, "");
             if (!string.IsNullOrEmpty (urlHtml)) {
-                webView.LoadHtmlString (urlHtml, new NSUrl("about:blank"));
+                webView.LoadHtmlString (urlHtml, new NSUrl ("about:blank"));
+            } else if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
+                webView.LoadHtmlString ("<h2>Sorry, you will need an internet connection to view this information.&nbsp;</h2>", new NSUrl ("about:blank"));
             } else {
-                webView.LoadHtmlString ("<h2>Sorry, you will need an internet connection to view this information.&nbsp;</h2>", new NSUrl("about:blank"));
+                webView.LoadHtmlString ("<p>Sorry, unable to load this information.&nbsp;</p>", new NSUrl ("about:blank"));
             }
         }
-            
+
         protected override void ConfigureAndLayout ()
         {
 
         }
 
-        protected void LayoutView()
+        protected void LayoutView ()
         {
             int textViewPadding = 0;
-            UIWebView theWebView = (UIWebView)View.ViewWithTag(WEB_VIEW_TAG);
+            UIWebView theWebView = (UIWebView)View.ViewWithTag (WEB_VIEW_TAG);
             UITextView theTextView = (UITextView)View.ViewWithTag (TEXT_VIEW_TAG);
             SizeF dynamicSize = new SizeF (0, 0);
 
@@ -153,7 +158,7 @@ namespace NachoClient.iOS
             UIView interiorView = (UIView)View.ViewWithTag (INTERIOR_VIEW_TAG);
             interiorView.Frame = new RectangleF (interiorView.Frame.X, interiorView.Frame.Y, interiorView.Frame.Width, yOffset + dynamicSize.Height);
             scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height);
-            scrollView.ContentSize = new SizeF(View.Frame.Width, yOffset + dynamicSize.Height + 40 + textViewPadding);
+            scrollView.ContentSize = new SizeF (View.Frame.Width, yOffset + dynamicSize.Height + 40 + textViewPadding);
         }
 
         protected override void Cleanup ()
@@ -171,6 +176,6 @@ namespace NachoClient.iOS
         protected void BackButtonClicked (object sender, EventArgs e)
         {
             DismissViewController (true, null);
-        }    
+        }
     }
 }

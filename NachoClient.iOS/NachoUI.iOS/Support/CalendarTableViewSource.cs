@@ -111,17 +111,17 @@ namespace NachoClient.iOS
         protected const int SWIPE_TAG = 99110;
 
         // Pre-made swipe action descriptors
-        private static SwipeActionDescriptor DIAL_IN_BUTTON =
-            new SwipeActionDescriptor (DIAL_IN_TAG, 0.25f, UIImage.FromBundle (A.File_NachoSwipeDialIn),
-                "Dial In", A.Color_NachoSwipeDialIn);
-        private static SwipeActionDescriptor NAVIGATE_BUTTON =
-            new SwipeActionDescriptor (NAVIGATE_TO_TAG, 0.25f, UIImage.FromBundle (A.File_NachoSwipeNavigate),
-                "Navigate To", A.Color_NachoSwipeNavigate);
+//        private static SwipeActionDescriptor DIAL_IN_BUTTON =
+//            new SwipeActionDescriptor (DIAL_IN_TAG, 0.25f, UIImage.FromBundle (A.File_NachoSwipeDialIn),
+//                "Dial In", A.Color_NachoSwipeDialIn);
+//        private static SwipeActionDescriptor NAVIGATE_BUTTON =
+//            new SwipeActionDescriptor (NAVIGATE_TO_TAG, 0.25f, UIImage.FromBundle (A.File_NachoSwipeNavigate),
+//                "Navigate To", A.Color_NachoSwipeNavigate);
         private static SwipeActionDescriptor LATE_BUTTON =
-            new SwipeActionDescriptor (LATE_TAG, 0.25f, UIImage.FromBundle (A.File_NachoSwipeLate),
+            new SwipeActionDescriptor (LATE_TAG, 0.5f, UIImage.FromBundle (A.File_NachoSwipeLate),
                 "I'm Late", A.Color_NachoSwipeLate);
         private static SwipeActionDescriptor FORWARD_BUTTON =
-            new SwipeActionDescriptor (FORWARD_TAG, 0.25f, UIImage.FromBundle (A.File_NachoSwipeForward),
+            new SwipeActionDescriptor (FORWARD_TAG, 0.5f, UIImage.FromBundle (A.File_NachoSwipeForward),
                 "Forward", A.Color_NachoeSwipeForward);
 
         /// <summary>
@@ -153,9 +153,9 @@ namespace NachoClient.iOS
                 var view = new SwipeActionView (frame);
                 view.Tag = SWIPE_TAG;
 
-                view.SetAction (NAVIGATE_BUTTON, SwipeSide.LEFT);
-                view.SetAction (DIAL_IN_BUTTON, SwipeSide.LEFT);
-                view.SetAction (LATE_BUTTON, SwipeSide.RIGHT);
+//                view.SetAction (NAVIGATE_BUTTON, SwipeSide.LEFT);
+//                view.SetAction (DIAL_IN_BUTTON, SwipeSide.LEFT);
+                view.SetAction (LATE_BUTTON, SwipeSide.LEFT);
                 view.SetAction (FORWARD_BUTTON, SwipeSide.RIGHT);
                
                 cell.ContentView.AddSubview (view);
@@ -227,6 +227,7 @@ namespace NachoClient.iOS
         {
             var e = calendar.GetEvent (indexPath.Section, indexPath.Row);
             var c = calendar.GetEventDetail (indexPath.Section, indexPath.Row);
+            var cRoot =  CalendarHelper.GetMcCalendarRootForEvent (e.Id);
 
             if (null == c) {
                 foreach (var v in cell.ContentView.Subviews) {
@@ -294,6 +295,7 @@ namespace NachoClient.iOS
             lineView.Frame = new RectangleF (34, 0, 1, HeightForCalendarEvent (c));
 
             var view = (SwipeActionView)cell.ViewWithTag (SWIPE_TAG);
+            view.EnableSwipe ((null != cRoot) && (!String.IsNullOrEmpty(cRoot.OrganizerEmail)));
 
             view.OnClick = (int tag) => {
                 switch (tag) {

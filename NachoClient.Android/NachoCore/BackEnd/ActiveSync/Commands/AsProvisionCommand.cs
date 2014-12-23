@@ -149,7 +149,7 @@ namespace NachoCore.ActiveSync
                 if (GetOp == Sender) {
                     if (McProtocolState.AsPolicyKey_Initial == BEContext.ProtocolState.AsPolicyKey &&
                         "14.1" == BEContext.ProtocolState.AsProtocolVersion) {
-                        provision.Add (AsSettingsCommand.DeviceInformation ());
+                        provision.Add (AsSettingsCommand.DeviceInformation (BEContext));
                     }
                 } else {
                     NcAssert.True (AckOp == Sender);
@@ -507,7 +507,7 @@ namespace NachoCore.ActiveSync
                     propUint.SetValue (targetObj, numValue);
                 }
             } catch (Exception ex) {
-                Log.Warn (Log.LOG_AS, "TrySetTruncFromXml: Bad value {0} or property {1}: {3}.", value, targetProp, 
+                Log.Warn (Log.LOG_AS, "TrySetTruncFromXml: Bad value {0} or property {1}: {2}.", value, targetProp, 
                     ex.ToString ());
             }
         }

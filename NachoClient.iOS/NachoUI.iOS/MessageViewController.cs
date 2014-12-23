@@ -59,7 +59,9 @@ namespace NachoClient.iOS
         const int VIEW_INSET = 4;
         const int ATTACHMENTVIEW_INSET = 10;
         float HEADER_TOP_MARGIN = 0;
-        #else
+        
+
+#else
         const int VIEW_INSET = 0;
         const int ATTACHMENTVIEW_INSET = 15;
         float HEADER_TOP_MARGIN = 0;
@@ -226,7 +228,6 @@ namespace NachoClient.iOS
             var subjectLabelView = new UILabel (new RectangleF (65, yOffset, 250, 20));
             subjectLabelView.LineBreakMode = UILineBreakMode.WordWrap;
             subjectLabelView.Font = A.Font_AvenirNextMedium14;
-            subjectLabelView.TextColor = A.Color_0F424C;
             subjectLabelView.Tag = (int)TagType.SUBJECT_TAG;
             headerView.AddSubview (subjectLabelView);
 
@@ -332,14 +333,15 @@ namespace NachoClient.iOS
                     PerformSegue ("SegueToDatePicker", new SegueHolder (null));
                 }),
                 new UIBlockMenu.Block ("now-addcalevent", "Create Event", () => {
-                    var c = CalendarHelper.CreateMeeting (thread.SingleMessageSpecialCase ());
-                    PerformSegue ("SegueToEditEvent", new SegueHolder (c));
+                    var message = thread.SingleMessageSpecialCase ();
+                    if (null != message) {
+                        var c = CalendarHelper.CreateMeeting (message);
+                        PerformSegue ("SegueToEditEvent", new SegueHolder (c));
+                    }
                 })
             }, View.Frame.Width);
             blockMenu.Tag = (int)TagType.BLOCK_MENU_TAG;
             View.AddSubview (blockMenu);
-
-            Util.HideBlackNavigationControllerLine (NavigationController.NavigationBar);
         }
 
         protected override void ConfigureAndLayout ()
@@ -351,6 +353,8 @@ namespace NachoClient.iOS
                 NavigationController.PopViewControllerAnimated (true);
                 return;
             }
+
+            Util.HideBlackNavigationControllerLine (NavigationController.NavigationBar);
 
             attachments = McAttachment.QueryByItemId (message);
 
@@ -378,9 +382,12 @@ namespace NachoClient.iOS
 
             var subjectLabelView = View.ViewWithTag ((int)TagType.SUBJECT_TAG) as UILabel;
             subjectLabelView.Lines = 0;
-            subjectLabelView.Text = Pretty.SubjectString (message.Subject);
             if (string.IsNullOrEmpty (message.Subject)) {
                 subjectLabelView.TextColor = A.Color_9B9B9B;
+                subjectLabelView.Text = Pretty.NoSubjectString ();
+            } else {
+                subjectLabelView.TextColor = A.Color_0F424C;
+                subjectLabelView.Text = Pretty.SubjectString (message.Subject);
             }
             cursor.LayoutView (subjectLabelView);
 
@@ -648,7 +655,7 @@ namespace NachoClient.iOS
         protected void MarkAsRead ()
         {
             var message = thread.SingleMessageSpecialCase ();
-            if (!message.IsRead) {
+            if ((null != message) && !message.IsRead) {
                 var body = McBody.QueryById<McBody> (message.BodyId);
                 if (McBody.IsComplete (body)) {
                     BackEnd.Instance.MarkEmailReadCmd (message.AccountId, message.Id);
@@ -658,17 +665,26 @@ namespace NachoClient.iOS
 
         protected void DeleteThisMessage ()
         {
-            NcEmailArchiver.Delete (thread.SingleMessageSpecialCase ());
+            var message = thread.SingleMessageSpecialCase ();
+            if (null != message) {
+                NcEmailArchiver.Delete (message);
+            }
         }
 
         protected void ArchiveThisMessage ()
         {
-            NcEmailArchiver.Archive (thread.SingleMessageSpecialCase ());
+            var message = thread.SingleMessageSpecialCase ();
+            if (null != message) {
+                NcEmailArchiver.Archive (message);
+            }
         }
 
         protected void MoveThisMessage (McFolder folder)
         {
-            NcEmailArchiver.Move (thread.SingleMessageSpecialCase (), folder);
+            var message = thread.SingleMessageSpecialCase ();
+            if (null != message) {
+                NcEmailArchiver.Move (message, folder);
+            }
         }
 
         // Interface implemntations
@@ -715,10 +731,12 @@ namespace NachoClient.iOS
         public void CreateMeetingEmailForMessage (INachoMessageEditor vc, McEmailMessageThread thread)
         {
             var message = thread.SingleMessageSpecialCase ();
-            var cal = CalendarHelper.CreateMeeting (message);
-            vc.DismissMessageEditor (false, new NSAction (delegate {
-                PerformSegue ("MessageViewToEditEvent", new SegueHolder (cal));
-            }));
+            if (null != message) {
+                var cal = CalendarHelper.CreateMeeting (message);
+                vc.DismissMessageEditor (false, new NSAction (delegate {
+                    PerformSegue ("MessageViewToEditEvent", new SegueHolder (cal));
+                }));
+            }
         }
 
         public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)
@@ -865,11 +883,11 @@ namespace NachoClient.iOS
             // Attempt to center the resulting view on the location where the user tapped.
             var touchPoint = recognizer.LocationInView (bodyView);
             var zoomToRect = new RectangleF (
-                touchPoint.X - ((scrollView.Frame.Width / targetZoomScale) / 2.0f),
-                touchPoint.Y - ((scrollView.Frame.Height / targetZoomScale) / 2.0f),
-                scrollView.Frame.Width / targetZoomScale,
-                scrollView.Frame.Height / targetZoomScale);
-            scrollView.ZoomToRect(zoomToRect, true);
+                                 touchPoint.X - ((scrollView.Frame.Width / targetZoomScale) / 2.0f),
+                                 touchPoint.Y - ((scrollView.Frame.Height / targetZoomScale) / 2.0f),
+                                 scrollView.Frame.Width / targetZoomScale,
+                                 scrollView.Frame.Height / targetZoomScale);
+            scrollView.ZoomToRect (zoomToRect, true);
             LayoutBody ();
         }
             

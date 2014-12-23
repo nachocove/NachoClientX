@@ -7,6 +7,8 @@ using MonoTouch.Foundation;
 using MonoTouch.UIKit;
 using UIImageEffectsBinding;
 using MonoTouch.CoreGraphics;
+using NachoCore.Utils;
+using NachoCore;
 
 
 namespace NachoClient.iOS
@@ -25,18 +27,23 @@ namespace NachoClient.iOS
             "Friday",
             "Saturday"
         });
+        INcEventProvider calendar;
         public DateTime ViewDate = new DateTime ();
         CalendarViewController owner;
-        UILabel monthLabelView; 
+        UILabel monthLabelView;
+
+        protected static int dateBarHeight = 97;
+        protected static int dateBarRowHeight = 60;
 
 
-        public DateBarView (UIView parentView)
+        public DateBarView (UIView parentView, INcEventProvider calendar)
         {
             monthLabelView = new UILabel (new RectangleF (0, 2, parentView.Frame.Width, 20));
-            this.Frame = (new RectangleF (0, 0, parentView.Frame.Width, 75 + (46 * 5)));
+            this.Frame = (new RectangleF (0, 0, parentView.Frame.Width, dateBarHeight + (dateBarRowHeight * 5)));
             this.BackgroundColor = UIColor.White;
             this.MakeDayLabels ();
             this.MakeDateDotButtons ();
+            this.calendar = calendar;
         }
 
         public DateBarView (IntPtr handle) : base (handle)
@@ -69,10 +76,10 @@ namespace NachoClient.iOS
             int spacing = 0;
             while (i < 7) {
                 var daysLabelView = new UILabel (new RectangleF (24 + spacing, 18 + 5, 12, 12));
-                daysLabelView.TextColor = A.Color_999999;
+                daysLabelView.TextColor = A.Color_NachoIconGray;
                 daysLabelView.Tag = 99 - i;
                 daysLabelView.Text = Days [i].Substring (0, 1);
-                daysLabelView.Font = (A.Font_AvenirNextRegular12);
+                daysLabelView.Font = (A.Font_AvenirNextMedium10);
                 daysLabelView.TextAlignment = UITextAlignment.Center;
                 this.Add (daysLabelView);
                 spacing += 43;
@@ -83,10 +90,10 @@ namespace NachoClient.iOS
 
         public void MakeDateDotButtons ()
         {
-            monthLabelView.TextColor = A.Color_999999;
-            monthLabelView.Font = (A.Font_AvenirNextRegular12);
+            monthLabelView.TextColor = A.Color_NachoIconGray;
+            monthLabelView.Font = A.Font_AvenirNextMedium12;
             monthLabelView.TextAlignment = UITextAlignment.Center;
-            this.Add (monthLabelView);
+            this.AddSubview (monthLabelView);
             this.ViewDate = DateTime.Today;
             int i = 0;
             int spacing = 0;
@@ -110,12 +117,19 @@ namespace NachoClient.iOS
                         ToggleButtons (buttonRect.Tag);
                         owner.ScrollToDate (this, buttonRect);
                     };
-                    this.Add (buttonRect);
+                    this.AddSubview (buttonRect);
+
+                    var eventIndicatorDot = new UIImageView (new RectangleF (buttonRect.Center.X - 2, buttonRect.Center.Y + 24, 4, 4));
+                    eventIndicatorDot.Image = Util.DrawCalDot (A.Color_NachoBorderGray, new SizeF (4, 4));
+                    eventIndicatorDot.Hidden = true;
+                    eventIndicatorDot.Tag = tagIncrement + 200;
+                    this.AddSubview (eventIndicatorDot);
+
                     spacing += 43;
                     i++;
                     tagIncrement++;
                 }
-                row += 44;
+                row += dateBarRowHeight;
                 j++;
             }
         }
@@ -130,7 +144,7 @@ namespace NachoClient.iOS
             int selectedIndex = IndexOfDayOfWeek (owner.selectedDate.DayOfWeek.ToString ());
             int i = 0;
             while (i < 7) {
-                UIButton button = (this.ViewWithTag (i + 100)) as UIButton;
+                UIButton button = (UIButton)(this.ViewWithTag (i + 100));
                 string date = this.ViewDate.AddDays (dayOffset).Day.ToString ();
                 button.SetTitle (date, UIControlState.Normal);
                 button.SetTitle (date, UIControlState.Selected);
@@ -149,6 +163,10 @@ namespace NachoClient.iOS
                 } else {
                     SetButtonState (false, button, false);
                 }
+
+                UIImageView eventIndicator = (UIImageView)(this.ViewWithTag (i + 200));
+                eventIndicator.Hidden = UpdateEventIndicator (this.ViewDate.AddDays (dayOffset));
+
                 i++;
                 dayOffset++;
             }
@@ -162,7 +180,7 @@ namespace NachoClient.iOS
 
         public void UpdateMonthLabel ()
         {
-            monthLabelView.Text = this.ViewDate.ToString ("MMMM");
+            monthLabelView.Text = Pretty.PrettyMonthLabel (this.ViewDate);
         }
 
         public DateTime GetFirstDay (DateTime date)
@@ -216,6 +234,10 @@ namespace NachoClient.iOS
                 button.SetTitleColor (UIColor.White, UIControlState.Selected);
                 button.SetTitleColor (UIColor.White, UIControlState.Disabled);
                 button.Font = A.Font_AvenirNextDemiBold17;
+
+                UIImageView eventIndicator = (UIImageView)(this.ViewWithTag (i + 200));
+                eventIndicator.Hidden = UpdateEventIndicator (firstDate.AddDays (dayIncrement));
+
                 i++;
                 dayIncrement++;
             }
@@ -237,6 +259,9 @@ namespace NachoClient.iOS
                 button.SetTitleColor (UIColor.White, UIControlState.Disabled);
                 button.Font = A.Font_AvenirNextDemiBold17;
 
+                UIImageView eventIndicator = (UIImageView)(this.ViewWithTag (i + 200));
+                eventIndicator.Hidden = UpdateEventIndicator (firstDate.AddDays (dayIncrement));
+
                 i++;
                 dayOffset++;
                 dayIncrement++;
@@ -257,6 +282,9 @@ namespace NachoClient.iOS
                 button.SetTitleColor (UIColor.White, UIControlState.Selected);
                 button.SetTitleColor (UIColor.White, UIControlState.Disabled);
                 button.Font = A.Font_AvenirNextDemiBold17;
+
+                UIImageView eventIndicator = (UIImageView)(this.ViewWithTag (i + 200));
+                eventIndicator.Hidden = UpdateEventIndicator (firstDate.AddDays (dayIncrement));
 
                 i++;
                 dayIncrement++;
@@ -402,6 +430,16 @@ namespace NachoClient.iOS
             return dayOffset + date.Day + 99;
         }
 
+        public bool UpdateEventIndicator (DateTime date)
+        {
+            if ((date.Month >= DateTime.UtcNow.Month && date.Year == DateTime.UtcNow.Year) || date.Year > DateTime.UtcNow.Year) {
+                var index = calendar.IndexOfDate (date);
+                if ((calendar.NumberOfDays () - 1) >= index) {
+                    return !(0 < calendar.NumberOfItemsForDay (index));
+                }
+            }
+            return true;
+        }
     }
 
 }

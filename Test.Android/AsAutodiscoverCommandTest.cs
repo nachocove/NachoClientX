@@ -41,27 +41,6 @@ namespace Test.iOS
         TestW,
     };
 
-    public class MockDnsQueryRequest : IDnsQueryRequest
-    {
-        public delegate DnsQueryResponse ProvideDnsQueryResponseMessageDelegate (MockDnsQueryRequest dnsRequest);
-        public static ProvideDnsQueryResponseMessageDelegate ProvideDnsQueryResponseMessage { set; get; }
-
-        public UdpClient UdpClient { set; get; }
-
-        public int Timeout { set; get; }
-
-        public NsType DnsType { set; get; }
-
-        public Task<DnsQueryResponse> ResolveAsync (string host, NsType dnsType, NsClass dnsClass, ProtocolType pType)
-        {
-            DnsType = dnsType;
-            return Task.Run<DnsQueryResponse> (delegate {
-                return ProvideDnsQueryResponseMessage (this);
-            });
-        }
-    }
-        
-
     public class BaseAutoDiscoverTests : AsAutodiscoverCommandTest
     {
         // Test that each of the 8 Sx complete successfully
@@ -108,13 +87,18 @@ namespace Test.iOS
 
                 bool hasRedirected = false;
 
-                PerformAutoDiscoveryWithSettings (true, sm => {}, request => {
+                PerformAutoDiscoveryWithSettings (true, sm => {
+                }, request => {
                     MockSteps robotType = DetermineRobotType (request);
                     return XMLForRobotType (request, robotType, step, xml);
-                }, (dnsRequest, provideDnsResponse) => {
-                    if (step == MockSteps.S4 && MockSteps.S4 == DetermineRobotType (dnsRequest)) {
-                        provideDnsResponse.ParseResponse (dnsByteArray);
-                        step = MockSteps.S1; // S4 resolves to POST after DNS lookup
+                }, (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType, out int answerLength) => {
+                    if (MockSteps.S4 == step && MockSteps.S4 == DetermineRobotType (dnsType)) {
+                        step = MockSteps.S1;
+                        answerLength = dnsByteArray.Length;
+                        return dnsByteArray;
+                    } else {
+                        answerLength = 0;
+                        return null;
                     }
                 }, (httpRequest, httpResponse) => {
                     // provide valid redirection headers if needed
@@ -169,11 +153,13 @@ namespace Test.iOS
                 string mockResponseLength = xml.Length.ToString ();
 
                 PerformAutoDiscoveryWithSettings (hasCert, sm => {
-                    provideSm(sm);
+                    provideSm (sm);
                 }, request => {
                     MockSteps robotType = DetermineRobotType (request);
                     return XMLForRobotType (request, robotType, step, xml);
-                }, (dnsRequest, provideDnsResponse) => {
+                }, (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType, out int answerLength) => {
+                    answerLength = 0;
+                    return null;
                 }, (httpRequest, httpResponse) => {
                     // provide valid redirection headers if needed
                     if (ShouldRedirect (httpRequest, step)) {
@@ -226,7 +212,9 @@ namespace Test.iOS
                 }, request => {
                     MockSteps robotType = DetermineRobotType (request);
                     return XMLForRobotType (request, robotType, step, xml);
-                }, (dnsRequest, provideDnsResponse) => {
+                }, (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType, out int answerLength) => {
+                    answerLength = 0;
+                    return null;
                 }, (httpRequest, httpResponse) => {
                     MockSteps robotType = DetermineRobotType (httpRequest);
                     httpResponse.StatusCode = AssignStatusCode (httpRequest, robotType, step);
@@ -285,9 +273,13 @@ namespace Test.iOS
                 }, request => {
                     MockSteps robotType = DetermineRobotType (request);
                     return XMLForRobotType (request, robotType, step, xml, optionsXml: optionsXml);
-                }, (dnsRequest, provideDnsResponse) => {
-                    if (step == MockSteps.S4 && MockSteps.S4 == DetermineRobotType (dnsRequest)) {
-                        provideDnsResponse.ParseResponse (dnsByteArray);
+                }, (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType, out int answerLength) => {
+                    if (MockSteps.S4 == step && MockSteps.S4 == DetermineRobotType (dnsType)) {
+                        answerLength = dnsByteArray.Length;
+                        return dnsByteArray;
+                    } else {
+                        answerLength = 0;
+                        return null;
                     }
                 }, (httpRequest, httpResponse) => {
                     // provide valid redirection headers if needed
@@ -347,7 +339,9 @@ namespace Test.iOS
                 }, request => {
                     MockSteps robotType = DetermineRobotType (request);
                     return XMLForRobotType (request, robotType, step, xml, optionsXml: optionsXml);
-                }, (dnsRequest, provideDnsResponse) => {
+                }, (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType, out int answerLength) => {
+                    answerLength = 0;
+                    return null;
                 }, (httpRequest, httpResponse) => {
                     // provide valid redirection headers if needed
                     if (ShouldRedirect (httpRequest, step)) {
@@ -445,26 +439,32 @@ namespace Test.iOS
                 bool hasRedirected = false;
                 bool hasTimedOutOnce = false;
 
-                PerformAutoDiscoveryWithSettings (true, sm => {}, request => {
+                PerformAutoDiscoveryWithSettings (true, sm => {
+                }, request => {
                     MockSteps robotType = DetermineRobotType (request, isSubDomain: isSubDomain);
                     return XMLForRobotType (request, robotType, step, xml);
-                }, (dnsRequest, provideDnsResponse) => {
-                    if (step == MockSteps.S4 && MockSteps.S4 == DetermineRobotType (dnsRequest)) {
+                }, (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType, out int answerLength) => {
+                    if (MockSteps.S4 == step && MockSteps.S4 == DetermineRobotType (dnsType)) {
                         if (!hasTimedOutOnce) {
-                            System.Threading.Thread.Sleep (TimeoutTime);
                             hasTimedOutOnce = true;
-                            throw new AggregateException ("Timed out", new SocketException (1));
+                            System.Threading.Thread.Sleep (new TimeSpan(0, 0, 20));
+                            answerLength = 0;
+                            return null;
                         } else {
-                            provideDnsResponse.ParseResponse (dnsByteArray);
-                            step = MockSteps.S1; // S4 resolves to POST after DNS lookup
+                            step = MockSteps.S1;
+                            answerLength = dnsByteArray.Length;
+                            return dnsByteArray;
                         }
+                    } else {
+                        answerLength = 0;
+                        return null;
                     }
                 }, (httpRequest, httpResponse) => {
                     MockSteps robotType = DetermineRobotType (httpRequest, isSubDomain: isSubDomain);
                     if (!hasTimedOutOnce && robotType == step) {
                         System.Threading.Thread.Sleep (TimeoutTime);
                         hasTimedOutOnce = true;
-                        throw new WebException("Timed out on purpose");
+                        throw new WebException ("Timed out on purpose");
                     }
                     // provide valid redirection headers if needed
                     if (ShouldRedirect (httpRequest, step, isSubDomain: isSubDomain) && !hasRedirected) {
@@ -492,8 +492,6 @@ namespace Test.iOS
         public new void SetUp ()
         {
             base.SetUp ();
-
-            MockDnsQueryRequest.ProvideDnsQueryResponseMessage = null;
 
             MockHttpClient.AsyncCalledCount = 0; // reset counter
             MockHttpClient.ExamineHttpRequestMessage = null;
@@ -606,9 +604,9 @@ namespace Test.iOS
             Assert.AreEqual ("12.0", protocolVersion, "MS-ASProtocolVersion should be set to the correct version by AsHttpOperation");
         }
 
-        public MockSteps DetermineRobotType (MockDnsQueryRequest request)
+        public MockSteps DetermineRobotType (NsType dnsType)
         {
-            switch (request.DnsType) {
+            switch (dnsType) {
             case NsType.SRV:
                 return MockSteps.S4;
 
@@ -656,7 +654,7 @@ namespace Test.iOS
         }
 
         public void PerformAutoDiscoveryWithSettings (bool hasCert, Action<NcStateMachine> provideSm, Func<HttpRequestMessage, string> provideXml,
-            Action<MockDnsQueryRequest, DnsQueryResponse> exposeDnsResponse, Action<HttpRequestMessage, HttpResponseMessage> exposeHttpMessage)
+            AsDnsOperation.CallResQueryDelegate exposeDnsResponse, Action<HttpRequestMessage, HttpResponseMessage> exposeHttpMessage)
         {
             var autoResetEvent = new AutoResetEvent(false);
             bool smFail = false;
@@ -671,11 +669,7 @@ namespace Test.iOS
 
             provideSm (sm);
 
-            MockDnsQueryRequest.ProvideDnsQueryResponseMessage = (dnsRequest) => {
-                var mockDnsQueryResponse = new DnsQueryResponse () {};
-                exposeDnsResponse (dnsRequest, mockDnsQueryResponse);
-                return mockDnsQueryResponse;
-            };
+            AsDnsOperation.CallResQuery = exposeDnsResponse;
 
             MockHttpClient.ExamineHttpRequestMessage = (request) => {};
 
@@ -700,7 +694,6 @@ namespace Test.iOS
                 return hasCert;
             };
 
-            AsDnsOperation.DnsQueryRequestType = typeof(MockDnsQueryRequest);
             AsHttpOperation.HttpClientType = typeof(MockHttpClient);
             var autod = new AsAutodiscoverCommand (mockContext);
 

@@ -9,6 +9,10 @@ namespace NachoCore.Model
     {
         public string Username { get; set; }
 
+        // We want to remember if the user entered their
+        // own username or if we copied in the email address.
+        public bool UserSpecifiedUsername { get; set; }
+
         /// <summary>
         /// DO NOT ACCESS. Use UpdatePassword/GetPassword.
         /// Property is here for SQLite.Net only!
@@ -33,6 +37,31 @@ namespace NachoCore.Model
                 Update ();
             }
         }
+
+        static public string Join(string domain, string username)
+        {
+            return String.Join ("\\", new string[] { domain, username });
+        }
+
+        static public void Split(string username, out string domain, out string user)
+        {
+            user = "";
+            domain = "";
+
+            if (String.IsNullOrEmpty (username)) {
+                return;
+            }
+            int slashIndex = username.IndexOf ("\\", StringComparison.OrdinalIgnoreCase);
+            if (-1 == slashIndex) {
+                user = username;
+            } else if(username.Length == (slashIndex + 1)) {
+                user = username.Substring (0, slashIndex);
+            } else {
+                domain = username.Substring (0, slashIndex);
+                user = username.Substring (slashIndex + 1);
+            }
+        }
+
 
         /// <summary>
         /// Sets the password in RAM only. Used only when validating.

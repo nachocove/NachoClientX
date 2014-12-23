@@ -37,6 +37,7 @@ using NachoCore.Utils;
 using System.Collections.Generic;
 using MonoTouch.CoreGraphics;
 using NachoClient.iOS;
+using MonoTouch.CoreText;
 
 namespace NachoClient
 {
@@ -76,9 +77,11 @@ namespace NachoClient
      
         public class PhoneAttributeComparer: IComparer<McContactStringAttribute>
         {
-            public int Compare (McContactStringAttribute x, McContactStringAttribute y){
-                int xPriority = ContactsHelper.PhonePriority [x.Name];
-                int yPriority = ContactsHelper.PhonePriority [y.Name];
+            public int Compare (McContactStringAttribute x, McContactStringAttribute y)
+            {
+                ContactsHelper contactHelper = new ContactsHelper ();
+                int xPriority = contactHelper.PhoneNames.IndexOf (x.Name);
+                int yPriority = contactHelper.PhoneNames.IndexOf (y.Name);
 
                 return xPriority.CompareTo (yPriority);
             }
@@ -371,7 +374,6 @@ namespace NachoClient
 
         public static UIImage DrawCalDot (UIColor circleColor, SizeF size)
         {
-            //var size = new SizeF (10, 10);
             var origin = new PointF (0, 0);
 
             UIGraphics.BeginImageContextWithOptions (size, false, 0);
@@ -379,6 +381,34 @@ namespace NachoClient
 
             ctx.SetFillColor (circleColor.CGColor);
             ctx.FillEllipseInRect (new RectangleF (origin, size));
+
+            var image = UIGraphics.GetImageFromCurrentImageContext ();
+            UIGraphics.EndImageContext ();
+            return image;
+        }
+
+        public static UIImage DrawTodayButtonImage (string day)
+        {
+            var size = new SizeF (24, 24);
+            var origin = new PointF (0, 0);
+
+            var todayImage = UIImage.FromBundle ("calendar-empty-cal-alt");
+
+            var attributedString = new NSAttributedString (day,
+                                       new UIStringAttributes {
+                    Font = A.Font_AvenirNextMedium12
+                });
+
+            UIGraphics.BeginImageContextWithOptions (size, false, 0);
+            var ctx = UIGraphics.GetCurrentContext ();
+            ctx.TranslateCTM (0, todayImage.Size.Height);
+            ctx.ScaleCTM (1, -1);
+            ctx.DrawImage (new RectangleF (origin, size), todayImage.CGImage);
+
+            ctx.TranslateCTM ((todayImage.Size.Width/2) - (attributedString.Size.Width/2) , (todayImage.Size.Height/2) - (attributedString.Size.Height/2) + 5);
+            using (var textLine = new CTLine (attributedString)) {
+                textLine.Draw (ctx);
+            }
 
             var image = UIGraphics.GetImageFromCurrentImageContext ();
             UIGraphics.EndImageContext ();
@@ -462,7 +492,7 @@ namespace NachoClient
             return ImageOfPortrait (contact.PortraitId);
         }
 
-        public static UIImage ImageOfPortrait(int portraitId)
+        public static UIImage ImageOfPortrait (int portraitId)
         {
             var data = McPortrait.GetContentsByteArray (portraitId);
             if (null == data) {
@@ -488,15 +518,15 @@ namespace NachoClient
             return null;
         }
 
-        public static UIImage PortraitOfSender(McEmailMessage message)
+        public static UIImage PortraitOfSender (McEmailMessage message)
         {
-            if(0 == message.cachedPortraitId) {
+            if (0 == message.cachedPortraitId) {
                 return null;
             }
             var image = ImageOfPortrait (message.cachedPortraitId);
-            if(null == image) {
+            if (null == image) {
                 message.cachedPortraitId = 0;
-                message.Update();
+                message.Update ();
             }
             return image;
         }
@@ -733,6 +763,13 @@ namespace NachoClient
             }
         }
 
+        public static void SetAutomaticImageForButton (UIBarButtonItem button, UIImage image)
+        {
+            using (var buttonImage = image) {
+                button.Image = buttonImage.ImageWithRenderingMode (UIImageRenderingMode.Automatic);
+            }
+        }
+
         public static void SetOriginalImageForButton (UIBarButtonItem button, string iconName)
         {
             using (var buttonImage = UIImage.FromBundle (iconName)) {
@@ -922,7 +959,7 @@ namespace NachoClient
             attendeeButton.Layer.CornerRadius = attendeeImageDiameter / 2;
             attendeeButton.Layer.MasksToBounds = true;
             attendeeButton.Frame = new RectangleF (42 + spacing, 10 + titleOffset, attendeeImageDiameter, attendeeImageDiameter);
-            var userImage = Util.ImageOfSender (LoginHelpers.GetCurrentAccountId(), attendee.Email);
+            var userImage = Util.ImageOfSender (LoginHelpers.GetCurrentAccountId (), attendee.Email);
 
             if (null != userImage) {
                 using (var rawImage = userImage) {
@@ -939,7 +976,7 @@ namespace NachoClient
                 attendeeButton.SetTitleColor (UIColor.LightGray, UIControlState.Selected);
                 attendeeButton.Tag = (int)EventViewController.TagType.EVENT_ATTENDEE_TAG + attendeeNum;
                 attendeeButton.SetTitle (Util.NameToLetters (attendee.DisplayName), UIControlState.Normal);
-                attendeeButton.Layer.BackgroundColor = Util.GetCircleColorForEmail (attendee.Email, LoginHelpers.GetCurrentAccountId()).CGColor;
+                attendeeButton.Layer.BackgroundColor = Util.GetCircleColorForEmail (attendee.Email, LoginHelpers.GetCurrentAccountId ()).CGColor;
             }
 
             // There are future plans to do something with these buttons, but right now
@@ -1000,6 +1037,7 @@ namespace NachoClient
                 return null;
             }
         }
+
         /// ///////////
         /// ///////////
 
