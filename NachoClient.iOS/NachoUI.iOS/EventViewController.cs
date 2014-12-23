@@ -449,8 +449,8 @@ namespace NachoClient.iOS
             /// 2. The events ResponseType is set and it is set to Organizer.
             /// 3. The events MeetingStatus is "Meeting"
             /// if any of these are true the user is the organizer of the event.
-            isOrganizer = ((account.EmailAddr == root.OrganizerEmail && account.Id == c.AccountId) || (c.ResponseTypeIsSet && NcResponseType.Organizer == c.ResponseType) 
-                || (NcMeetingStatus.Meeting == c.MeetingStatus));
+            isOrganizer = ((account.EmailAddr == root.OrganizerEmail && account.Id == c.AccountId) || (c.ResponseTypeIsSet && NcResponseType.Organizer == c.ResponseType)
+            || (NcMeetingStatus.Meeting == c.MeetingStatus));
 
             if (isOrganizer && !isRecurring) {
                 NavigationItem.RightBarButtonItem = editEventButton;
@@ -531,7 +531,7 @@ namespace NachoClient.iOS
             ConfigureAttachments ();
 
             // Organizer
-            if (null != root.OrganizerEmail) {
+            if (!String.IsNullOrEmpty (root.OrganizerEmail)) {
                 if (!isOrganizer) {
                     var organizerEmailLabel = View.ViewWithTag ((int)TagType.EVENT_ORGANIZER_EMAIL_LABEL) as UILabel;
                     if (null != root.OrganizerName) {
@@ -899,8 +899,8 @@ namespace NachoClient.iOS
                 }
             }
 
-            if (null != root.OrganizerEmail) {
-                if (!(CalendarHelper.IsOrganizer (root.OrganizerEmail, account.EmailAddr))) {
+            if (!String.IsNullOrEmpty (root.OrganizerEmail)) {
+                if (!isOrganizer) {
                     AdjustViewLayout (TagType.EVENT_ORGANIZER_VIEW_TAG, 0, ref internalYOffset, padding);
                 }
             }
