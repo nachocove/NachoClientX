@@ -58,7 +58,7 @@ namespace NachoClient.iOS
             userLabelView.Tag = USER_LABEL_VIEW_TAG;
             accountInfoView.AddSubview (userLabelView);
 
-            UILabel nameLabel = new UILabel (new RectangleF (75, 20, 100, LINE_HEIGHT));
+            UILabel nameLabel = new UILabel (new RectangleF (75, 20, 170, LINE_HEIGHT));
             nameLabel.Font = A.Font_AvenirNextDemiBold14;
             nameLabel.TextColor = A.Color_NachoBlack;
             nameLabel.Tag = NAME_LABEL_TAG;
