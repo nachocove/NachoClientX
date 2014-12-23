@@ -882,12 +882,11 @@ namespace NachoClient.iOS
 
             if (NcResult.SubKindEnum.Info_EmailMessageSetChanged == s.Status.SubKind) {
                 Log.Info (Log.LOG_UI, "Info_EmailMessageSetChanged Status Ind (AdvancedView)");
-                LoginHelpers.SetFirstSyncCompleted (LoginHelpers.GetCurrentAccountId (), true);
-                if (!hasSyncedEmail) {
-                    waitScreen.Layer.RemoveAllAnimations ();
-                    waitScreen.StartSyncedEmailAnimation ();
-                    hasSyncedEmail = true;
-                }
+                SyncCompleted ();
+            }
+            if (NcResult.SubKindEnum.Info_InboxPingStarted == s.Status.SubKind) {
+                Log.Info (Log.LOG_UI, "Info_InboxPingStarted Status Ind (AdvancedView)");
+                SyncCompleted ();
             }
             if (NcResult.SubKindEnum.Info_AsAutoDComplete == s.Status.SubKind) {
                 Log.Info (Log.LOG_UI, "Auto-D-Completed Status Ind (Advanced View)");
@@ -962,6 +961,16 @@ namespace NachoClient.iOS
             ConfigureView (LoginStatus.AcceptCertificate);
             NcApplication.Instance.CertAskResp (LoginHelpers.GetCurrentAccountId (), true);
             waitScreen.InitializeAutomaticSegueTimer ();
+        }
+
+        protected void SyncCompleted ()
+        {
+            LoginHelpers.SetFirstSyncCompleted (LoginHelpers.GetCurrentAccountId (), true);
+            if (!hasSyncedEmail) {
+                waitScreen.Layer.RemoveAllAnimations ();
+                waitScreen.StartSyncedEmailAnimation ();
+                hasSyncedEmail = true;
+            }
         }
 
         public class AccountSettings
