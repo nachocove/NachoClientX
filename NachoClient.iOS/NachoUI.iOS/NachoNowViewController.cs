@@ -44,6 +44,7 @@ namespace NachoClient.iOS
             hotListView.Source = hotListSource;
 
             refreshControl = new UIRefreshControl ();
+            refreshControl.Hidden = true;
             refreshControl.TintColor = A.Color_NachoGreen;
             refreshControl.AttributedTitle = new NSAttributedString ("Refreshing...");
             refreshControl.ValueChanged += (object sender, EventArgs e) => {

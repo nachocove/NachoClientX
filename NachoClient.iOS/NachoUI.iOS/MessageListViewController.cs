@@ -102,6 +102,7 @@ namespace NachoClient.iOS
             TableView.TableHeaderView = null; // beta 1
 
             RefreshControl = new UIRefreshControl ();
+            RefreshControl.Hidden = true;
             RefreshControl.TintColor = A.Color_NachoGreen;
             RefreshControl.AttributedTitle = new NSAttributedString ("Refreshing...");
             RefreshControl.ValueChanged += (object sender, EventArgs e) => {
