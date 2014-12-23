@@ -61,11 +61,11 @@ def Nacho_GCM_IV(device_id, counter):
     random_length = 160-len(IV)
     #print "IV: %s:<random crap, %d bytes>" % (IV, random_length)
     IV = IV+":"+os.urandom(random_length)
-    return IV.encode('base-64')
+    return IV
 
 
 if __name__ == "__main__":
     device_id = 'Ncho3168E1E2XF59EX4E37XAFDEX'
     counter = get_next_counter_value()
-    print Nacho_GCM_IV(device_id, counter)
+    print Nacho_GCM_IV(device_id, counter).encode('base-64')
 
