@@ -190,13 +190,16 @@ namespace NachoClient.iOS
 //            alertDetailLabel.SizeToFit ();
 
 
-
-            if (Uri.UriSchemeMailto == evt.Organizer.Value.Scheme) {
-                organizerEmail = evt.Organizer.Value.AbsoluteUri.Substring (Uri.UriSchemeMailto.Length + 1);
-            } else {
-                organizerEmail = evt.Organizer.Value.ToString ();
+            organizerEmail = null;
+            string organizerName = null;
+            if (null != evt.Organizer) {
+                if (Uri.UriSchemeMailto == evt.Organizer.Value.Scheme) {
+                    organizerEmail = evt.Organizer.Value.AbsoluteUri.Substring (Uri.UriSchemeMailto.Length + 1);
+                } else {
+                    organizerEmail = evt.Organizer.Value.ToString ();
+                }
+                organizerName = evt.Organizer.CommonName.ToString ();
             }
-            var organizerName = evt.Organizer.CommonName.ToString ();
             var accountId = LoginHelpers.GetCurrentAccountId ();
 
             if (null != organizerEmail) {
@@ -308,7 +311,7 @@ namespace NachoClient.iOS
                     attendee.AccountId = accountId;
                     attendee.Name = a.CommonName;
                     string aEmail;
-                    if (Uri.UriSchemeMailto == evt.Organizer.Value.Scheme) {
+                    if (Uri.UriSchemeMailto == a.Value.Scheme) {
                         aEmail = a.Value.AbsoluteUri.Substring (Uri.UriSchemeMailto.Length + 1);
                     } else {
                         aEmail = a.Value.ToString ();
