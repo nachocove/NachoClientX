@@ -368,7 +368,9 @@ namespace NachoCore.Brain
                 } else {
                     Log.Debug (Log.LOG_BRAIN, "{0}: terminated", ToString ());
                     bool removed = ActiveList.Remove (this);
-                    NcAssert.True (removed);
+                    if (!removed) {
+                        Log.Error (Log.LOG_BRAIN, "Unable to remove {0} from ActiveList.", ToString ());
+                    }
                 }
             }
         }
