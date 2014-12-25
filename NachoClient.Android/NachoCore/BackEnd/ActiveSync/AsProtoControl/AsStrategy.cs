@@ -936,7 +936,8 @@ namespace NachoCore.ActiveSync
                 // current filter setting, execute a narrow Ping command.
                 // Do don't obey rate-limiter if HotMail.
                 if (NcCommStatus.Instance.IsRateLimited (BEContext.Server.Id) &&
-                    !BEContext.Server.HostIsHotMail ()) {
+                    !BEContext.Server.HostIsHotMail () &&
+                    !BEContext.Server.HostIsGMail ()) {
                     var rlPingKit = GenPingKit (accountId, protocolState, true, stillHaveUnsyncedFolders);
                     if (null != rlPingKit) {
                         Log.Info (Log.LOG_AS, "Strategy:FG/BG,RL:Narrow Ping");
