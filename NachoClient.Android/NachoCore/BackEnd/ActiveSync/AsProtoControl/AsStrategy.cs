@@ -12,9 +12,9 @@ namespace NachoCore.ActiveSync
 {
     public class AsStrategy : IAsStrategy
     {
-        public const int KBaseOverallWindowSize = 150;
-        public const int KBasePerFolderWindowSize = 100;
-        public const int KBaseFetchSize = 10;
+        public const int KBaseOverallWindowSize = 25;
+        public const int KBasePerFolderWindowSize = 20;
+        public const int KBaseFetchSize = 5;
 
         public enum LadderChoiceEnum
         {
@@ -667,6 +667,7 @@ namespace NachoCore.ActiveSync
         // Returns null if nothing to do.
         public FetchKit GenFetchKit (int accountId)
         {
+            // TODO take into account network status and total data in the fetch request.
             var remaining = KBaseFetchSize;
             var fetchBodies = new List<FetchKit.FetchBody> ();
             var emails = McEmailMessage.QueryNeedsFetch (accountId, remaining, McEmailMessage.minHotScore).ToList ();
