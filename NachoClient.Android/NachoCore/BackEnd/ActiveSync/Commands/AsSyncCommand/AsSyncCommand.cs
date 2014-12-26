@@ -329,6 +329,11 @@ namespace NachoCore.ActiveSync
                     folder.UpdateResetSyncState ();
                 }
                 ResolveAllDeferred ();
+                // Overkill, but ensure that UI knows that the rug was pulled from under it.
+                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
+                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ContactSetChanged));
+                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged));
+                BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_TaskSetChanged));
                 return Event.Create ((uint)SmEvt.E.HardFail, "ASYNCTOPFOOF");
 
             case Xml.AirSync.StatusCode.ProtocolError_4:
@@ -465,6 +470,11 @@ namespace NachoCore.ActiveSync
                 case Xml.AirSync.StatusCode.SyncKeyInvalid_3:
                     Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: SyncKeyInvalid_3");
                     folder = folder.UpdateResetSyncState ();
+                    // Overkill, but ensure that UI knows that the rug was pulled from under it.
+                    HadEmailMessageSetChanges = true;
+                    HadContactSetChanges = true;
+                    HadCalendarSetChanges = true;
+                    HadTaskChanges = true;
                     lock (PendingResolveLockObj) {
                         // Defer all the outbound commands until after ReSync.
                         pendingInFolder = PendingList.Where (x => x.ParentId == folder.ServerId).ToList ();
