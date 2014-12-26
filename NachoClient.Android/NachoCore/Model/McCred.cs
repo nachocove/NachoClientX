@@ -40,7 +40,11 @@ namespace NachoCore.Model
 
         static public string Join(string domain, string username)
         {
-            return String.Join ("\\", new string[] { domain, username });
+            if (String.IsNullOrEmpty (domain)) {
+                return username;
+            } else {
+                return String.Join ("\\", new string[] { domain, username });
+            }
         }
 
         static public void Split(string username, out string domain, out string user)
