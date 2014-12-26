@@ -285,7 +285,24 @@ namespace NachoCore.ActiveSync
             }
 
             NcAssert.True (destFolder.IsClientOwned != true, "Back end should not modify client-owned folders");
-                
+
+            McPending markUpdate = null;
+            if (McPending.Operations.EmailMove == op && Server.HostIsGMail ()) {
+                // Need to make sure the email is marked read to get it out of GFE Inbox.
+                var emailMessage = item as McEmailMessage;
+                if (null != emailMessage && !emailMessage.IsRead) {
+                    markUpdate = new McPending (Account.Id) {
+                        Operation = McPending.Operations.EmailMarkRead,
+                        ServerId = emailMessage.ServerId,
+                        ParentId = srcFolder.ServerId,
+                    };   
+                    markUpdate.Insert ();
+
+                    // Mark the actual item.
+                    emailMessage.IsRead = true;
+                    emailMessage.Update ();
+                }
+            }
             var move = new McPending (Account.Id) {
                 Operation = op,
                 ServerId = item.ServerId,
