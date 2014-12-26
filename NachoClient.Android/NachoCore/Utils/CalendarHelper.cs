@@ -880,19 +880,19 @@ namespace NachoCore.Utils
             }
             // All date/time calculations must be done in the event's original time zone.
             TimeZoneInfo timeZone = new AsTimeZone (c.TimeZone).ConvertToSystemTimeZone ();
-            DateTime eventStart = TimeZoneInfo.ConvertTimeFromUtc (c.StartTime, timeZone);
-            DateTime eventEnd = TimeZoneInfo.ConvertTimeFromUtc (c.EndTime, timeZone);
+            DateTime eventStart = ConvertTimeFromUtc (c.StartTime, timeZone);
+            DateTime eventEnd = ConvertTimeFromUtc (c.EndTime, timeZone);
             var duration = eventEnd - eventStart;
 
             int maxOccurrences = r.OccurencesIsSet ? r.Occurences : int.MaxValue;
-            DateTime lastOccurence = r.Until == default(DateTime) ? DateTime.MaxValue : TimeZoneInfo.ConvertTimeFromUtc (r.Until, timeZone);
+            DateTime lastOccurence = r.Until == default(DateTime) ? DateTime.MaxValue : ConvertTimeFromUtc (r.Until, timeZone);
 
             int occurrence = 0;
 
             while (occurrence < maxOccurrences && eventStart <= lastOccurence) {
-                DateTime eventStartUtc = TimeZoneInfo.ConvertTimeToUtc (eventStart, timeZone);
+                DateTime eventStartUtc = ConvertTimeToUtc (eventStart, timeZone);
                 if (eventStartUtc > startingTime) {
-                    DateTime eventEndUtc = TimeZoneInfo.ConvertTimeToUtc (eventStart + duration, timeZone);
+                    DateTime eventEndUtc = ConvertTimeToUtc (eventStart + duration, timeZone);
                     if (c.AllDayEvent) {
                         ExpandAllDayEvent (c, eventStartUtc, eventEndUtc);
                     } else {
@@ -917,7 +917,7 @@ namespace NachoCore.Utils
             // more than one day long, repeat for subsequent days.
 
             TimeZoneInfo timeZone = new AsTimeZone (c.TimeZone).ConvertToSystemTimeZone ();
-            DateTime organizersTime = TimeZoneInfo.ConvertTimeFromUtc (start, timeZone);
+            DateTime organizersTime = ConvertTimeFromUtc (start, timeZone);
             DateTime localStartTime = new DateTime (organizersTime.Year, organizersTime.Month, organizersTime.Day, 0, 0, 0, DateTimeKind.Local);
             double days = (end - start).TotalDays;
             // Use a do/while loop so we will always create at least one event, even if
@@ -1124,6 +1124,130 @@ namespace NachoCore.Utils
                 fixedTransition.TimeOfDay, month, week, transitionDate.DayOfWeek);
         }
 
+        /// <summary>
+        /// Mono has a bug in its daylight saving code, where a transition to or from
+        /// daylight saving time might happen a week early.  This function tests whether
+        /// or not the runtime in use has this particular bug.
+        /// </summary>
+        /// <returns><c>true</c>, if the runtime is correct, <c>false</c> if the runtime has the bug.</returns>
+        /// <remarks>
+        /// The bug happens when (1) the transition is a floating rule rather than a
+        /// fixed rule, (2) the transition happens in a week other than the first week,
+        /// and (3) the day of the week of the first day of the month is later in the
+        /// week than the day of the week that the transition happens on.  (Since most
+        /// transitions happen on Sundays, which is the first day of the week, condition
+        /// #3 almost always applies.)
+        /// </remarks>
+        private static bool DaylightSavingCorrectnessCheck ()
+        {
+            // Construct a custom time zone where daylight saving time starts on the
+            // 2nd Sunday in March.
+            var transitionToDaylight = TimeZoneInfo.TransitionTime.CreateFloatingDateRule (
+                new DateTime (1, 1, 1, 2, 0, 0), 3, 2, DayOfWeek.Sunday);
+            var transitionToStandard = TimeZoneInfo.TransitionTime.CreateFloatingDateRule (
+                new DateTime (1, 1, 1, 2, 0, 0), 11, 1, DayOfWeek.Sunday);
+            var adjustment = TimeZoneInfo.AdjustmentRule.CreateAdjustmentRule (
+                DateTime.MinValue.Date, DateTime.MaxValue.Date, new TimeSpan (1, 0, 0),
+                transitionToDaylight, transitionToStandard);
+            var timeZone = TimeZoneInfo.CreateCustomTimeZone (
+                "BugCheck", new TimeSpan (-8, 0, 0), "Testing", "Testing Standard", "Testing Daylight",
+                new TimeZoneInfo.AdjustmentRule[] { adjustment });
+            // See if March 7, 2014 is listed as being during daylight saving time.
+            // If it is DST, then the runtime has the bug that we are looking for.
+            return !timeZone.IsDaylightSavingTime (new DateTime (2014, 3, 7, 12, 0, 0, DateTimeKind.Unspecified));
+        }
+        private static bool daylightSavingIsCorrect = DaylightSavingCorrectnessCheck ();
+
+        /// <summary>
+        /// Convert from UTC to the specified time zone, working around a Mono bug if
+        /// necessary.
+        /// </summary>
+        public static DateTime ConvertTimeFromUtc (DateTime utc, TimeZoneInfo timeZone)
+        {
+            if (daylightSavingIsCorrect || !timeZone.SupportsDaylightSavingTime) {
+                return TimeZoneInfo.ConvertTimeFromUtc (utc, timeZone);
+            }
+            DateTime local = new DateTime (utc.Ticks + timeZone.BaseUtcOffset.Ticks, DateTimeKind.Unspecified);
+            TimeZoneInfo.AdjustmentRule adjustment = FindAdjustmentRule (timeZone, local);
+            if (null == adjustment || (!WorkaroundNeeded (local, adjustment.DaylightTransitionStart) && !WorkaroundNeeded (local, adjustment.DaylightTransitionEnd))) {
+                return TimeZoneInfo.ConvertTimeFromUtc (utc, timeZone);
+            }
+            if (IsDaylightTime (local, adjustment)) {
+                local = local.Add (adjustment.DaylightDelta);
+            }
+            return local;
+        }
+
+        /// <summary>
+        /// Convert from a time in the specified time zone to UTC, working around a Mono
+        /// bug if necessary.
+        /// </summary>
+        public static DateTime ConvertTimeToUtc (DateTime local, TimeZoneInfo timeZone)
+        {
+            if (daylightSavingIsCorrect || !timeZone.SupportsDaylightSavingTime) {
+                return TimeZoneInfo.ConvertTimeToUtc (local, timeZone);
+            }
+            TimeZoneInfo.AdjustmentRule adjustment = FindAdjustmentRule (timeZone, local);
+            if (null == adjustment ||
+                    (!WorkaroundNeeded (local, adjustment.DaylightTransitionStart) &&
+                     !WorkaroundNeeded (local, adjustment.DaylightTransitionEnd))) {
+                return TimeZoneInfo.ConvertTimeToUtc (local, timeZone);
+            }
+            DateTime utc = new DateTime (local.Ticks - timeZone.BaseUtcOffset.Ticks, DateTimeKind.Utc);
+            if (IsDaylightTime (local, adjustment)) {
+                utc = utc.Subtract (adjustment.DaylightDelta);
+            }
+            return utc;
+        }
+
+        /// <summary>
+        /// Find the daylight adjustment rule that applies to the specified
+        /// local time, if any.
+        /// </summary>
+        private static TimeZoneInfo.AdjustmentRule FindAdjustmentRule (TimeZoneInfo timeZone, DateTime local)
+        {
+            foreach (var adjustment in timeZone.GetAdjustmentRules()) {
+                if (adjustment.DateStart < local && local <= adjustment.DateEnd) {
+                    return adjustment;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Is the workaround needed for the given time and the given transition rule?
+        /// Return true only if the given time is within the month of the transition and
+        /// the transition is suseptable to the bug.
+        /// </summary>
+        private static bool WorkaroundNeeded (DateTime local, TimeZoneInfo.TransitionTime rule)
+        {
+            return !rule.IsFixedDateRule && 1 != rule.Week && local.Month == rule.Month;
+        }
+
+        /// <summary>
+        /// Return the exact time of the given transition for the given year.
+        /// </summary>
+        private static DateTime TransitionPoint (TimeZoneInfo.TransitionTime rule, int year)
+        {
+            DayOfWeek first = new DateTime (year, rule.Month, 1).DayOfWeek;
+            int day = 1 + (rule.Week - 1) * 7 + ((rule.DayOfWeek - first) + 7) % 7;
+            while (day > DateTime.DaysInMonth (year, rule.Month)) {
+                day -= 7;
+            }
+            return new DateTime (year, rule.Month, day) + rule.TimeOfDay.TimeOfDay;
+        }
+
+        /// <summary>
+        /// Is the given time within the daylight saving time period?  **NOTE**:
+        /// This will give the correct answer only if the given time is in the same
+        /// month as either of the transitions. It will return false for any other
+        /// month.
+        /// </summary>
+        private static bool IsDaylightTime (DateTime local, TimeZoneInfo.AdjustmentRule adjustment)
+        {
+            return (local.Month == adjustment.DaylightTransitionStart.Month && local > TransitionPoint (adjustment.DaylightTransitionStart, local.Year)) ||
+                (local.Month == adjustment.DaylightTransitionEnd.Month && local < TransitionPoint (adjustment.DaylightTransitionEnd, local.Year));
+        }
     }
 }
 
