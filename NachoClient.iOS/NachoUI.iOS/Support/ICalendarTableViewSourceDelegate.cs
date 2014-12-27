@@ -13,7 +13,10 @@ namespace NachoClient.iOS
 
         void ForwardInvite (int calendarIndex);
 
-        void CalendarTableViewScrollingEnded();
+        void CalendarTableViewScrollingEnded ();
+
+        void ReturnToToday ();
+
     }
 }
 

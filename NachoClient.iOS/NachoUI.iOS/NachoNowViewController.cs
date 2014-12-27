@@ -14,7 +14,7 @@ using MonoTouch.ObjCRuntime;
 
 namespace NachoClient.iOS
 {
-    public partial class NachoNowViewController : NcUIViewController, IMessageTableViewSourceDelegate, INachoMessageEditorParent, INachoFolderChooserParent, INachoCalendarItemEditorParent, ICalendarTableViewSourceDelegate, INachoDateControllerParent
+    public partial class NachoNowViewController : NcUIViewController, IMessageTableViewSourceDelegate, INachoMessageEditorParent, INachoFolderChooserParent, INachoCalendarItemEditorParent, INachoDateControllerParent
     {
         protected bool priorityInboxNeedsRefresh;
         protected INachoEmailMessages priorityInbox;
@@ -348,7 +348,6 @@ namespace NachoClient.iOS
             PerformSegue (identifier, sender);
         }
 
-        // ICalendarTableViewSourceDelegate
         public void SendRunningLateMessage (int eventId)
         {
             var c = CalendarHelper.GetMcCalendarRootForEvent (eventId);
@@ -361,18 +360,12 @@ namespace NachoClient.iOS
             }
         }
 
-        // ICalendarTableViewSourceDelegate
         public void ForwardInvite (int eventId)
         {
 //            var c = CalendarHelper.GetMcCalendarRootForEvent (eventId);
 //            if (null != c) {
 //                PerformSegue ("CalendarToEmailCompose", new SegueHolder (c));
 //            }
-        }
-
-        // ICalendarTableViewSourceDelegate
-        public void CalendarTableViewScrollingEnded ()
-        {
         }
 
         ///  IMessageTableViewSourceDelegate

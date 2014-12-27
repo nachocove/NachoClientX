@@ -525,6 +525,14 @@ namespace NachoClient.iOS
                 NachoCore.Utils.NcAbate.RegularPriority ("CalendarTableViewSource DraggingEnded");
             }
         }
+
+        public override bool ShouldScrollToTop (UIScrollView scrollView)
+        {
+            if (null != owner) {
+                owner.ReturnToToday ();
+            }
+            return false;
+        }
     }
 }
 

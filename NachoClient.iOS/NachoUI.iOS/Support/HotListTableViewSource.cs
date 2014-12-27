@@ -18,6 +18,9 @@ namespace NachoClient.iOS
 
         protected IMessageTableViewSourceDelegate owner;
 
+        bool scrolling;
+        // to control whether swiping is allowed or not
+
         private const int ARCHIVE_TAG = 1;
         private const int SAVE_TAG = 2;
         private const int DELETE_TAG = 3;
@@ -241,7 +244,9 @@ namespace NachoClient.iOS
 
             var cellWidth = tableView.Frame.Width;
 
-            view.EnableSwipe (true);
+            if (!scrolling) {
+                view.EnableSwipe (true);
+            }
 
             view.OnClick = (int tag) => {
                 switch (tag) {
@@ -361,6 +366,10 @@ namespace NachoClient.iOS
                 new RectangleF (previewView.Frame.X, previewViewTop, previewView.Frame.Width, moreButtonTop - previewViewTop));
         }
 
+        /// <summary>
+        /// Reconfigures the visible cells.
+        /// Enables, disables scrolling too.
+        /// </summary>
         public void ReconfigureVisibleCells (UITableView tableView)
         {
             if (null == tableView) {
@@ -491,21 +500,29 @@ namespace NachoClient.iOS
 
         public override void DraggingStarted (UIScrollView scrollView)
         {
+            scrolling = true;
+            var tableView = (UITableView)scrollView;
+            ReconfigureVisibleCells (tableView);
+
             startingPoint = scrollView.ContentOffset;
             NachoCore.Utils.NcAbate.HighPriority ("MessageTableViewSource DraggingStarted");
         }
 
         public override void DecelerationEnded (UIScrollView scrollView)
         {
-            NachoCore.Utils.NcAbate.RegularPriority ("MessageTableViewSource DecelerationEnded");
+            scrolling = false;
+            var tableView = (UITableView)scrollView;
+            ReconfigureVisibleCells (tableView);
 
-//            SquareUpCard (scrollView);
+            NachoCore.Utils.NcAbate.RegularPriority ("MessageTableViewSource DecelerationEnded");
         }
 
         public override void DraggingEnded (UIScrollView scrollView, bool willDecelerate)
         {
             if (!willDecelerate) {
-//                SquareUpCard (scrollView);
+                scrolling = false;
+                var tableView = (UITableView)scrollView;
+                ReconfigureVisibleCells (tableView);
                 NachoCore.Utils.NcAbate.RegularPriority ("MessageTableViewSource DraggingEnded");
             }
         }
@@ -540,21 +557,6 @@ namespace NachoClient.iOS
             targetContentOffset.Y = tableView.RectForRowAtIndexPath (next).Location.Y - 10;
         }
 
-        protected void SquareUpCard (UIScrollView scrollView)
-        {
-            float y = scrollView.ContentOffset.Y;
-
-            if (startingPoint.Y < scrollView.ContentOffset.Y) {
-                y += (scrollView.Frame.Height * 0.66f);
-            } else {
-                y += (scrollView.Frame.Height * 0.33f);
-            }
-
-            // Fix us up
-            var tableView = (UITableView)scrollView;
-            var pathForTargetMiddleCell = tableView.IndexPathForRowAtPoint (new PointF (tableView.Frame.X / 2, y));
-            tableView.ScrollToRow (pathForTargetMiddleCell, UITableViewScrollPosition.Middle, true);
-        }
     }
 }
 
