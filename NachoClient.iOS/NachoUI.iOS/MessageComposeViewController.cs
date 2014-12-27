@@ -89,6 +89,7 @@ namespace NachoClient.iOS
         protected float LINE_HEIGHT = 42;
         protected float LEFT_INDENT = 15;
         protected float RIGHT_INDENT = 15;
+        protected float BODY_TOP_MARGIN = 10;
         protected float BODY_LEFT_MARGIN = 10;
         protected float BODY_RIGHT_MARGIN = 10;
         protected float BODY_BOTTOM_MARGIN = 10;
@@ -391,7 +392,7 @@ namespace NachoClient.iOS
             bodyTextView.Font = labelFont;
             bodyTextView.TextColor = labelColor;
             bodyTextView.BackgroundColor = UIColor.White;
-            bodyTextView.TextContainerInset = new UIEdgeInsets (0, BODY_LEFT_MARGIN, BODY_BOTTOM_MARGIN, BODY_RIGHT_MARGIN);
+            bodyTextView.TextContainerInset = new UIEdgeInsets (BODY_TOP_MARGIN, BODY_LEFT_MARGIN, BODY_BOTTOM_MARGIN, BODY_RIGHT_MARGIN);
             bodyTextView.ScrollEnabled = false;
 
             if (EmailTemplate != null) {
@@ -558,15 +559,18 @@ namespace NachoClient.iOS
         {
             // this might be the place that we set up our initializaiton text
             toView.SetCompact (true, -1);
-
             toView.Hidden = false;
-            ccView.Hidden = true;
-            bccView.Hidden = true;
-            attachmentView.Hidden = true;
-
             toViewHR.Hidden = false;
-            ccViewHR.Hidden = true;
+
+            // Don't hide cc if there's someone on cc list.
+            ccView.SetCompact (true, -1);
+            ccView.Hidden = (0 == ccView.AddressList.Count);
+            ccViewHR.Hidden = ccView.Hidden;
+
+            bccView.Hidden = true;
             bccViewHR.Hidden = true;
+
+            attachmentView.Hidden = true;
             attachmentViewHR.Hidden = true;
 
             intentView.Hidden = !alwaysShowIntent;
@@ -1042,15 +1046,15 @@ namespace NachoClient.iOS
 
                 // TODO Check whether or not the back end supports SmartReply and SmartForward
 
-            bool originalEmailIsEmbedded = true;
-            string bodyText = bodyTextView.Text;
-            if (!string.IsNullOrEmpty(initialQuotedText) && bodyText.EndsWith (initialQuotedText)) {
-                // This is a reply or forward, and the user didn't changed the quoted text.
-                // Strip the quoted text from the body of the message and instead have the
-                // server add in the original message.
-                originalEmailIsEmbedded = false;
-                bodyText = bodyText.Remove (bodyText.Length - initialQuotedText.Length);
-            }
+                bool originalEmailIsEmbedded = true;
+                string bodyText = bodyTextView.Text;
+                if (!string.IsNullOrEmpty (initialQuotedText) && bodyText.EndsWith (initialQuotedText)) {
+                    // This is a reply or forward, and the user didn't changed the quoted text.
+                    // Strip the quoted text from the body of the message and instead have the
+                    // server add in the original message.
+                    originalEmailIsEmbedded = false;
+                    bodyText = bodyText.Remove (bodyText.Length - initialQuotedText.Length);
+                }
 
                 var body = new BodyBuilder ();
 

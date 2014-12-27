@@ -322,6 +322,9 @@ namespace NachoClient.iOS
 
             if (0 < list.Count) {
                 NcAssert.True (1 < list.Count); // must have at least 2 since the first one is a gap
+                list [0].Hidden = false;
+                AdjustXY (list [0], xOffset, yOffset);
+                xOffset += list [0].Frame.Width;
                 var firstAddress = list [1];
                 firstAddress.Hidden = false;
                 AdjustXY (firstAddress, xOffset, yOffset);
