@@ -9,6 +9,7 @@ using System.Threading;
 
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DocumentModel;
+using Amazon.DynamoDBv2.Model;
 using Amazon.Runtime;
 using Amazon.SecurityToken;
 using Amazon.Util;
@@ -233,73 +234,80 @@ namespace NachoCore.Utils
             return anEvent;
         }
 
-        private bool AwsSendOneEvent (Table eventTable, Document eventItem)
+        /// <summary>
+        /// Handles the AWS exception.
+        /// </summary>
+        /// <returns><c>true</c>, if AWS exception was handled, <c>false</c> otherwise.
+        /// In that case, the caller must re-throw.</returns>
+        /// <param name="e">E.</param>
+        private bool HandleAWSException (Exception e)
+        {
+            if (null != e) {
+                if (e is AggregateException) {
+                    return HandleAWSException (e.InnerException);
+                }
+                if (e is ProvisionedThroughputExceededException) {
+                    return true;
+                }
+                if (e is TaskCanceledException) {
+                    if (NcTask.Cts.Token.IsCancellationRequested) {
+                        return false;
+                    }
+                    // Otherwise, most likely HTTP client timeout
+                    Console.WriteLine ("Task canceled exception caught in AWS send event\n{0}", e);
+                    return true;
+                }
+                if (e is OperationCanceledException) {
+                    // Since we are catching Exception below, we must catch and re-throw
+                    // or this exception will be swallowed and telemetry task will not exit.
+                    return false;
+                }
+                if (e is AmazonDynamoDBException) {
+                    Console.WriteLine ("AWS DynamoDB exception caught in AWS send event\n{0}", e);
+                    ReinitializeTables ();
+                    return true;
+                }
+                if (e is AmazonServiceException) {
+                    Console.WriteLine ("AWS exception caught in AWS send event\n{0}", e);
+                    return true;
+                }
+            }
+            // FIXME - An exception is thrown but the exception is null.
+            // This workaround simply catches everything and re-initializes
+            // the connection and tables.
+            Console.WriteLine ("Some exception caught in AWS send event\n{0}", e);
+            ReinitializeTables ();
+            return true;
+        }
+
+        private bool AwsSendEvent (Action action)
         {
             try {
-                eventItem ["uploaded_at"] = DateTime.UtcNow.Ticks;
-                var task = eventTable.PutItemAsync (eventItem);
-                task.Wait (NcTask.Cts.Token);
-            } catch (TaskCanceledException e) {
-                if (NcTask.Cts.Token.IsCancellationRequested) {
+                action ();
+            } catch (Exception e) {
+                if (!HandleAWSException (e)) {
                     throw;
                 }
-                // Otherwise, most likely HTTP client timeout
-                Console.WriteLine ("Task canceled exception {0}", e);
-                return false;
-            } catch (OperationCanceledException) {
-                // Since we are catching Exception below, we must catch and re-throw
-                // or this exception will be swallowed and telemetry task will not exit.
-                throw;
-            } catch (AmazonDynamoDBException e) {
-                Console.WriteLine ("AWS DynamoDB exception {0}", e);
-                ReinitializeTables ();
-                return false;
-            } catch (AmazonServiceException e) {
-                Console.WriteLine ("AWS exception {0}", e);
-                return false;
-            } catch (Exception e) {
-                // FIXME - An exception is thrown but the exception is null.
-                // This workaround simply catches everything and re-initializes
-                // the connection and tables.
-                Console.WriteLine ("Some exception {0}", e);
-                ReinitializeTables ();
                 return false;
             }
             return true;
         }
 
+        private bool AwsSendOneEvent (Table eventTable, Document eventItem)
+        {
+            return AwsSendEvent (() => {
+                eventItem ["uploaded_at"] = DateTime.UtcNow.Ticks;
+                var task = eventTable.PutItemAsync (eventItem);
+                task.Wait (NcTask.Cts.Token);
+            });
+        }
+
         private bool AwsSendBatchEvents (MultiTableDocumentBatchWrite multiBatchWrite)
         {
-            try {
+            return AwsSendEvent (() => {
                 var task = multiBatchWrite.ExecuteAsync (NcTask.Cts.Token);
                 task.Wait (NcTask.Cts.Token);
-            } catch (TaskCanceledException e) {
-                if (NcTask.Cts.Token.IsCancellationRequested) {
-                    throw;
-                }
-                // Otherwise, most likely HTTP client timeout
-                Console.WriteLine ("Task canceled exception {0}", e);
-                return false;
-            } catch (OperationCanceledException) {
-                // Since we are catching Exception below, we must catch and re-throw
-                // or this exception will be swallowed and telemetry task will not exit.
-                throw;
-            } catch (AmazonDynamoDBException e) {
-                Console.WriteLine ("AWS DynamoDB exception {0}", e);
-                ReinitializeTables ();
-                return false;
-            } catch (AmazonServiceException e) {
-                Console.WriteLine ("AWS exception {0}", e);
-                return false;
-            } catch (Exception e) {
-                // FIXME - An exception is thrown but the exception is null.
-                // This workaround simply catches everything and re-initializes
-                // the connection and tables.
-                Console.WriteLine ("Some exception {0}", e);
-                ReinitializeTables ();
-                return false;
-            }
-            return true;
+            });
         }
 
         private bool SendDeviceInfo ()
