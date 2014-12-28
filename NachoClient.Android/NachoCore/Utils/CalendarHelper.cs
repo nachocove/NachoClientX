@@ -169,7 +169,7 @@ namespace NachoCore.Utils
             return iCal;
         }
 
-        public static IICalendar iCalendarFromMcCalendarWithCancellation (McAccount account, McCalendar c)
+        public static IICalendar iCalendarFromMcCalendarWithCancelation (McAccount account, McCalendar c)
         {
             var iCal = iCalendarFromMcCalendarCommon (c, EventStatus.Cancelled);
             iCal.Method = DDay.iCal.CalendarMethods.Cancel;
@@ -511,11 +511,11 @@ namespace NachoCore.Utils
         }
 
         /// <summary>
-        /// Create a text/calendar MIME part with a cancellation notice for the given event.
+        /// Create a text/calendar MIME part with a cancelation notice for the given event.
         /// </summary>
         public static TextPart iCalCancelToMimePart (McAccount account, McCalendar c)
         {
-            return iCalToMimePartCommon (CalendarHelper.iCalendarFromMcCalendarWithCancellation (account, c), DDay.iCal.CalendarMethods.Cancel);
+            return iCalToMimePartCommon (CalendarHelper.iCalendarFromMcCalendarWithCancelation (account, c), DDay.iCal.CalendarMethods.Cancel);
         }
 
         /// <summary>
