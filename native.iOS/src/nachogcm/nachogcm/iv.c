@@ -9,7 +9,7 @@
 
 unsigned char *create_iv(const char *device_id, long counter, int iv_len_bits) {
 	if (iv_len_bits%8 != 0) {
-		fprintf(stderr, "IV must be a multiple of 8 bits long");
+		fprintf(stderr, "IV must be a multiple of 8 bits long\n");
 		return NULL;
 	}
 	int iv_len = iv_len_bits/8;
