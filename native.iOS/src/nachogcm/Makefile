@@ -2,7 +2,7 @@ CFLAGS = -Wno-deprecated-declarations -Werror -Wall -Wextra -I/usr/local/ssl/inc
 
 NACHOGCM_LIB=lib/nachogcm.a
 LIBS = $(NACHOGCM_LIB) -L/usr/local/ssl/lib 
-.PHONY: clean all test nachogcm
+.PHONY: clean all test nachogcm tests
 
 all: gcm_test tests
 
@@ -22,5 +22,6 @@ clean:
 
 tests:
 	$(MAKE) -C tests all
+
 test:
 	$(MAKE) -C tests test
