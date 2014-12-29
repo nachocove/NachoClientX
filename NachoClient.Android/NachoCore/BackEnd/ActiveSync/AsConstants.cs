@@ -185,6 +185,7 @@ namespace NachoCore.ActiveSync
             public const string Limit = "Limit";
             public const string MaxItems = "MaxItems";
             public const string MimeSupport = "MIMESupport";
+            public const string MimeTruncation = "MIMETruncation";
             public const string MoreAvailable = "MoreAvailable";
             public const string Options = "Options";
             public const string Responses = "Responses";
@@ -231,6 +232,19 @@ namespace NachoCore.ActiveSync
                 NoMime_0 = 0,
                 SMimeOnly_1 = 1,
                 AllMime_2 = 2,
+            };
+
+            public enum MimeTruncationCode : uint
+            {
+                TruncAll_0 = 0,
+                Trunc4k_1 = 1,
+                Trunc5k_2 = 2,
+                Trunc7k_3 = 3,
+                Trunc10k_4 = 4,
+                Trunc20k_5 = 5,
+                Trunc50k_6 = 6,
+                Trunc100k_7 = 7,
+                DontTrunc_8 = 8,
             };
 
             public enum StatusCode : uint

@@ -198,20 +198,24 @@ namespace NachoCore.ActiveSync
                     // WindowSize.
                     // Options.
                     var classCodeEnum = Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (folder.Type);
+                    // TODO - this should be in strategy.
                     var options = new XElement (m_ns + Xml.AirSync.Options);
                     switch (classCodeEnum) {
                     case McAbstrFolderEntry.ClassCodeEnum.Email:
                         options.Add (new XElement (m_ns + Xml.AirSync.FilterType, (uint)perFolder.FilterCode));
+                        options.Add (new XElement (m_ns + Xml.AirSync.MimeTruncation, (uint)Xml.AirSync.MimeTruncationCode.Trunc4k_1));
                         options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.NoMime_0));
                         var bodyPref = new XElement (m_baseNs + Xml.AirSync.BodyPreference,
-                                           new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.Html_2));
-                        // TODO - this should be in strategy.
+                                           new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.PlainText_1));
+                        /* Left as a warning to the future that HotMail was not the same as the others.
                         if (BEContext.Server.HostIsHotMail ()) {
                             bodyPref.Add (new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "512"));
                         } else {
                             bodyPref.Add (new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "128"));
                             bodyPref.Add (new XElement (m_baseNs + Xml.AirSyncBase.AllOrNone, "1"));
                         }
+                        */
+                        bodyPref.Add (new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "500"));
                         if (14.0 <= Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
                             bodyPref.Add (new XElement (m_baseNs + Xml.AirSyncBase.Preview, "255"));
                         }
@@ -220,10 +224,9 @@ namespace NachoCore.ActiveSync
 
                     case McAbstrFolderEntry.ClassCodeEnum.Calendar:
                         options.Add (new XElement (m_ns + Xml.AirSync.FilterType, (uint)perFolder.FilterCode));
-                        options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.AllMime_2));
                         options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
-                            new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.Mime_4),
-                            new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "100000000")));
+                            new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
+                            new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "32768")));
                         break;
 
                     case McAbstrFolderEntry.ClassCodeEnum.Contact:
@@ -235,14 +238,14 @@ namespace NachoCore.ActiveSync
                         } else {
                             options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
                                 new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
-                                new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "100000000")));
+                                new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "32768")));
                         }
                         break;
 
                     case McAbstrFolderEntry.ClassCodeEnum.Tasks:
                         options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
                             new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
-                            new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "100000000")));
+                            new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "32768")));
                         break;
                     }
                     if (options.HasElements) {
