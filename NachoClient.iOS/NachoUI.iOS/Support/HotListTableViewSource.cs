@@ -180,9 +180,13 @@ namespace NachoClient.iOS
             toolbar.Tag = TOOLBAR_TAG;
             view.AddSubview (toolbar);
 
-            var moreImageView = new UIImageView (new RectangleF (view.Frame.Width - 23, frame.Height - 44 - 3 - 16, 16, 16));
+            var moreImageView = new UIImageView (new RectangleF (view.Frame.Width - 40, frame.Height - 44 - 32, 18, 10));
+            moreImageView.ContentMode = UIViewContentMode.Center;
             moreImageView.Image = UIImage.FromBundle ("gen-readmore");
             moreImageView.Tag = USER_MORE_TAG;
+            moreImageView.BackgroundColor = A.Color_NachoLightGrayBackground;
+            moreImageView.Layer.CornerRadius = 2;
+            moreImageView.Layer.MasksToBounds = true;
             view.AddSubview (moreImageView);
 
             return cell;
@@ -355,15 +359,15 @@ namespace NachoClient.iOS
             }
 
             // Five points of padding between the header and the body.
-            // There is no explicit padding on the bottom of the body because the
-            // "More" button is in the corner and acts like padding.
             previewViewTop += 5;
 
-            float moreButtonTop = view.ViewWithTag (USER_MORE_TAG).Frame.Top;
-            var previewView = view.ViewWithTag (PREVIEW_TAG) as ScrollableBodyView;
+            // The "more" image overlays the preview view
+            float previewViewBottom = view.Frame.Bottom - 44 - 5;
+
+            var previewView = (ScrollableBodyView)view.ViewWithTag (PREVIEW_TAG);
             // X and Width remain the same, but Y and Height might change.
             previewView.ConfigureAndResize (message, isRefresh,
-                new RectangleF (previewView.Frame.X, previewViewTop, previewView.Frame.Width, moreButtonTop - previewViewTop));
+                new RectangleF (previewView.Frame.X, previewViewTop, previewView.Frame.Width, previewViewBottom - previewViewTop));
         }
 
         /// <summary>
