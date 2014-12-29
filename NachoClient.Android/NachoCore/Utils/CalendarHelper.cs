@@ -1004,6 +1004,12 @@ namespace NachoCore.Utils
                 }
             } else {
                 foreach (var exception in exceptions) {
+                    if (DateTime.MinValue == exception.StartTime) {
+                        exception.StartTime = startTime;
+                    }
+                    if (DateTime.MinValue == exception.EndTime) {
+                        exception.EndTime = endTime;
+                    }
                     var e = McEvent.Create (c.AccountId, exception.StartTime, exception.EndTime, c.Id, exception.Id);
                     if (exception.ReminderIsSet) {
                         ScheduleNotification (e, exception.Reminder);
