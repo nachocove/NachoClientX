@@ -1,1 +1,6 @@
 Needs a recent version of openssl (1.0.1j was used to write and test this code).
+
+to build, make sure openssl is in /usr/local/ssl, then run 'make all'.
+
+to test, run 'make test'
+
