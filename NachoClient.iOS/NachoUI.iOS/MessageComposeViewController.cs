@@ -1212,7 +1212,9 @@ namespace NachoClient.iOS
                     string[] ToList = referencedMessage.To.Split (new Char [] { ',' });
                     if (null != ToList) {
                         foreach (var a in ToList) {
-                            ccView.Append (new NcEmailAddress (NcEmailAddress.Kind.Cc, a));
+                            if (!a.Contains (account.EmailAddr)) {
+                                ccView.Append (new NcEmailAddress (NcEmailAddress.Kind.Cc, a));
+                            }
                         }
                     }
                 }
@@ -1221,7 +1223,9 @@ namespace NachoClient.iOS
                     string[] ccList = referencedMessage.Cc.Split (new Char [] { ',' });
                     if (null != ccList) {
                         foreach (var a in ccList) {
-                            ccView.Append (new NcEmailAddress (NcEmailAddress.Kind.Cc, a));
+                            if (!a.Contains (account.EmailAddr)) {
+                                ccView.Append (new NcEmailAddress (NcEmailAddress.Kind.Cc, a));
+                            }
                         }
                     }
                 }
