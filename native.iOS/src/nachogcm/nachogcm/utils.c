@@ -9,12 +9,15 @@
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/buffer.h>
+#include <openssl/sha.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <ctype.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 unsigned char *b64decode(char *data, unsigned int data_len, unsigned int *out_data_len) {
 	BIO *b64 = BIO_new(BIO_f_base64());
@@ -133,4 +136,29 @@ void hexdump(char *text, void *mem, unsigned int len)
                         putchar('\n');
                 }
         }
+}
+
+#define BUFSIZE	1024*16
+unsigned char *file_sha1(const char *file) {
+	SHA_CTX c;
+	unsigned char *md;
+	int fd;
+	int i;
+	unsigned char buf[BUFSIZE];
+
+	md = malloc(SHA_DIGEST_LENGTH);
+	if (!md) {
+		perror("malloc");
+		exit(1);
+	}
+	fd=open(file, O_RDONLY);
+	SHA1_Init(&c);
+	for (;;)
+		{
+		i=read(fd,buf,BUFSIZE);
+		if (i <= 0) break;
+		SHA1_Update(&c,buf,(unsigned long)i);
+		}
+	SHA1_Final(&(md[0]),&c);
+	return md;
 }

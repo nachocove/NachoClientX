@@ -20,7 +20,7 @@ int BIO_decrypt(EVP_CIPHER_CTX *ctx,
 		BIO *cleartext_bio,                // BIO to write the decrypted data to
 		unsigned char *outbuf, int out_len,  // Used for speed, i.e. the caller provides a reusable temporary buffer.
 		unsigned char *inbuf, int in_len,   // Data to decrypt
-		int max_write
+		int bytes_to_write
 ) {
 	int rv;
 
@@ -29,11 +29,15 @@ int BIO_decrypt(EVP_CIPHER_CTX *ctx,
 	if (rv < 0) {
 		return rv;
 	}
-	if (max_write == -1) {
-		max_write = out_len;
+	if (bytes_to_write == -1) {
+		bytes_to_write = out_len;
 	}
-	rv = BIO_write(cleartext_bio, outbuf, max_write);
-	return rv;
+	int bytes_written = 0;
+	while ((rv = BIO_write(cleartext_bio, outbuf, bytes_to_write)) > 0) {
+		bytes_written += rv;
+		bytes_to_write -= rv;
+	}
+	return bytes_written;
 }
 
 long gcm_decrypt_bio(const EVP_CIPHER *cipher,
@@ -159,18 +163,16 @@ long gcm_decrypt_bio(const EVP_CIPHER *cipher,
 	unsigned long clear_data_left = datalen - rv;
 
 	/* Decrypt the rest */
-	while ((in_len = BIO_read(ciphertext_bio, inbuf, clear_data_left)) > 0) {
+	int bytes_to_read = blocksize > clear_data_left ? clear_data_left : blocksize;
+	while ((in_len = BIO_read(ciphertext_bio, inbuf, bytes_to_read)) > 0) {
 		rv = BIO_decrypt(ctx, cleartext_bio,
 				outbuf, out_len,
-				inbuf, in_len,
-				blocksize > clear_data_left ? clear_data_left : blocksize);
+				inbuf, in_len, -1);
 		if (rv < 0) {
 			goto cleanup;
 		}
 		clear_data_left -= rv;
-		if (clear_data_left > 0 && BIO_eof(cleartext_bio)) {
-			break;
-		}
+		bytes_to_read = blocksize > clear_data_left ? clear_data_left : blocksize;
 	}
 
 	memset(inbuf, 0x0, blocksize);
