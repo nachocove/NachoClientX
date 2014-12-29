@@ -341,9 +341,9 @@ namespace NachoCore.Model
 
         public static List<NcEmailMessageIndex> QueryInteractions (int accountId, McContact contact)
         {
-            if (!string.IsNullOrEmpty(contact.GetPrimaryCanonicalEmailAddress())) {
+            if (!string.IsNullOrEmpty (contact.GetPrimaryCanonicalEmailAddress ())) {
 
-                string emailWildcard = "%" + contact.GetPrimaryCanonicalEmailAddress() + "%";
+                string emailWildcard = "%" + contact.GetPrimaryCanonicalEmailAddress () + "%";
                 McFolder deletedFolder = McFolder.GetDefaultDeletedFolder (accountId);
 
                 return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
@@ -432,7 +432,7 @@ namespace NachoCore.Model
                 " m.FolderId = ? AND " +
                 " e.FlagUtcStartDate < ? AND " +
                 " e.UserAction > -1 AND " +
-                " (e.Score > ? OR e.UserAction = 1) " +
+                " (e.Score >= ? OR e.UserAction = 1) " +
                 "UNION " +
                 "SELECT e.Id as Id, e.DateReceived FROM McEmailMessage AS e " +
                 " JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
