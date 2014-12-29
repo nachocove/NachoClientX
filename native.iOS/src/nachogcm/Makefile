@@ -20,8 +20,8 @@ clean:
 	@$(MAKE) -C tests clean
 	@rm -f gcm_test gcm_test.o lib/* include/nachogcm/* 2> /dev/null
 
-tests:
+tests: nachogcm
 	$(MAKE) -C tests all
 
-test:
+test: tests
 	$(MAKE) -C tests test
