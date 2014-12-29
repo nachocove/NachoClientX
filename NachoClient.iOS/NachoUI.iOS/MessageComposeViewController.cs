@@ -1216,8 +1216,11 @@ namespace NachoClient.iOS
                     string[] ToList = referencedMessage.To.Split (new Char [] { ',' });
                     if (null != ToList) {
                         foreach (var a in ToList) {
-                            McEmailAddress.Get (account.Id, a, out appendingEmailAddress);
-                            if (accountEmailAddress.CanonicalEmailAddress != appendingEmailAddress.CanonicalEmailAddress) {
+                            if (null != accountEmailAddress && McEmailAddress.Get (account.Id, a, out appendingEmailAddress)) {
+                                if (accountEmailAddress.CanonicalEmailAddress != appendingEmailAddress.CanonicalEmailAddress) {
+                                    ccView.Append (new NcEmailAddress (NcEmailAddress.Kind.Cc, a));
+                                }
+                            } else {
                                 ccView.Append (new NcEmailAddress (NcEmailAddress.Kind.Cc, a));
                             }
                         }
@@ -1228,8 +1231,11 @@ namespace NachoClient.iOS
                     string[] ccList = referencedMessage.Cc.Split (new Char [] { ',' });
                     if (null != ccList) {
                         foreach (var a in ccList) {
-                            McEmailAddress.Get (account.Id, a, out appendingEmailAddress);
-                            if (accountEmailAddress.CanonicalEmailAddress != appendingEmailAddress.CanonicalEmailAddress) {
+                            if (null != accountEmailAddress & McEmailAddress.Get (account.Id, a, out appendingEmailAddress)) {
+                                if (accountEmailAddress.CanonicalEmailAddress != appendingEmailAddress.CanonicalEmailAddress) {
+                                    ccView.Append (new NcEmailAddress (NcEmailAddress.Kind.Cc, a));
+                                }
+                            } else {
                                 ccView.Append (new NcEmailAddress (NcEmailAddress.Kind.Cc, a));
                             }
                         }
