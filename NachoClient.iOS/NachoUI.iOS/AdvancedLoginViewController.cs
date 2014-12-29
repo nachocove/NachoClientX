@@ -618,6 +618,9 @@ namespace NachoClient.iOS
             theAccount.Account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
             theAccount.Credentials = McCred.QueryByAccountId<McCred> (theAccount.Account.Id).SingleOrDefault (); 
 
+            // If the user clears the username, we'll let them start over
+            theAccount.Credentials.UserSpecifiedUsername = !(String.IsNullOrEmpty (domainView.textField.Text) && String.IsNullOrEmpty (usernameView.textField.Text));
+
             // If the user supplied the username originally, they are in charge from now on
             if (theAccount.Credentials.UserSpecifiedUsername) {
                 theAccount.Credentials.Username = McCred.Join (domainView.textField.Text, usernameView.textField.Text);
