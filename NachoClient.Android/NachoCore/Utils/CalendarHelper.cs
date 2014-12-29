@@ -909,8 +909,21 @@ namespace NachoCore.Utils
             return DateTime.MaxValue;
         }
 
-        protected static void ExpandAllDayEvent (McCalendar c, DateTime start, DateTime end)
+        protected static void ExpandAllDayEvent (McCalendar c, DateTime start, DateTime end, McException exception = null)
         {
+            if (null == exception) {
+                // Look for any exceptions for this particular occurrence.
+                var exceptions = McException.QueryForExceptionId (c.Id, start);
+                if (0 < exceptions.Count) {
+                    foreach (var ex in exceptions) {
+                        DateTime exceptionStart = DateTime.MinValue == exception.StartTime ? start : exception.StartTime;
+                        DateTime exceptionEnd = DateTime.MinValue == exception.EndTime ? end : exception.EndTime;
+                        ExpandAllDayEvent (c, exceptionStart, exceptionEnd, ex);
+                    }
+                    return;
+                }
+            }
+
             // Create local events for an all-day calendar item.  Figure out the starting
             // day of the event in the organizer's time zone.  Create a local event that
             // starts at midnight local time on the same day.  If the original item is
@@ -920,17 +933,38 @@ namespace NachoCore.Utils
             DateTime organizersTime = ConvertTimeFromUtc (start, timeZone);
             DateTime localStartTime = new DateTime (organizersTime.Year, organizersTime.Month, organizersTime.Day, 0, 0, 0, DateTimeKind.Local);
             double days = (end - start).TotalDays;
-            // Use a do/while loop so we will always create at least one event, even if
-            // the original item is improperly less than one day long.  If the all-day
-            // event spans the transition from daylight saving time to standard time,
-            // then it will have an extra hour in its duration.  So the cutoff for
-            // creating an extra event is a quarter of a day.
-            do {
-                DateTime nextDay = localStartTime.AddDays (1.0);
-                CreateEventRecord (c, localStartTime.ToUniversalTime (), nextDay.ToUniversalTime ());
-                localStartTime = nextDay;
-                days -= 1.0;
-            } while (days > 0.25);
+
+            Action createEvents = delegate() {
+                // Use a do/while loop so we will always create at least one event, even if
+                // the original item is improperly less than one day long.  If the all-day
+                // event spans the transition from daylight saving time to standard time,
+                // then it will have an extra hour in its duration.  So the cutoff for
+                // creating an extra event is a quarter of a day.
+                McAbstrCalendarRoot reminderItem = (McAbstrCalendarRoot)exception ?? c;
+                bool needsReminder = reminderItem.ReminderIsSet;
+                int exceptionId = null == exception ? 0 : exception.Id;
+                do {
+                    DateTime nextDay = localStartTime.AddDays (1.0);
+                    var ev = McEvent.Create (c.AccountId, localStartTime.ToUniversalTime (), nextDay.ToUniversalTime (), c.Id, exceptionId);
+                    if (needsReminder) {
+                        ScheduleNotification (ev, reminderItem.Reminder);
+                        needsReminder = false; // Only the first day should have a reminder.
+                    }
+                    localStartTime = nextDay;
+                    days -= 1.0;
+                    NcTask.Cts.Token.ThrowIfCancellationRequested ();
+                } while (days > 0.25);
+            };
+
+            if (7.0 > days) {
+                // Less than a week long.  Create the events, usually just one event,
+                // right now in the current thread.  This is the normal case.
+                createEvents ();
+            } else {
+                // The event is at least a week long.  This should be very unusual.
+                // Create the events on a background thread so nothing is blocked.
+                NcTask.Run (createEvents, "ExpandAllDayEvent");
+            }
         }
 
         public static bool ExpandRecurrences (DateTime untilDate)
