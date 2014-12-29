@@ -1,16 +1,18 @@
-CFLAGS = -Wno-deprecated-declarations -Werror -Wall -Wextra -I/usr/local/ssl/include -I./include -g -O0
+OPENSSL_HOME ?= /usr/local/ssl
+CFLAGS = -Wno-deprecated-declarations -Werror -Wall -Wextra -I$(OPENSSL_HOME)/include -I./include -g -O0
 
 NACHOGCM_LIB=lib/nachogcm.a
-LIBS = $(NACHOGCM_LIB) -L/usr/local/ssl/lib 
+LIBS = $(NACHOGCM_LIB) -L$(OPENSSL_HOME)/lib -lcrypto
 .PHONY: clean all test nachogcm tests
 
 all: gcm_test tests
 
 nachogcm:
+	@if [ ! -d $(OPENSSL_HOME)/include ] ; then echo "OPENSSL_HOME=$(OPENSSL_HOME) is not valid"; exit 1; fi
 	$(MAKE) -C nachogcm install
 
 gcm_test: gcm_test.o nachogcm
-	$(CC) -o $@ $< $(LIBS) -lcrypto
+	$(CC) -o $@ $< $(LIBS)
 
 %.o: %.c
 	$(CC) -g -c -o $@ $< $(CFLAGS)
