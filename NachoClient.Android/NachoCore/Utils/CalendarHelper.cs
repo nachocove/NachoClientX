@@ -952,6 +952,7 @@ namespace NachoCore.Utils
                     }
                     localStartTime = nextDay;
                     days -= 1.0;
+                    NcTask.Cts.Token.ThrowIfCancellationRequested ();
                 } while (days > 0.25);
             };
 
