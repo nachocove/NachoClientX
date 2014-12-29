@@ -1231,7 +1231,7 @@ namespace NachoClient.iOS
                     string[] ccList = referencedMessage.Cc.Split (new Char [] { ',' });
                     if (null != ccList) {
                         foreach (var a in ccList) {
-                            if (null != accountEmailAddress & McEmailAddress.Get (account.Id, a, out appendingEmailAddress)) {
+                            if (null != accountEmailAddress && McEmailAddress.Get (account.Id, a, out appendingEmailAddress)) {
                                 if (accountEmailAddress.CanonicalEmailAddress != appendingEmailAddress.CanonicalEmailAddress) {
                                     ccView.Append (new NcEmailAddress (NcEmailAddress.Kind.Cc, a));
                                 }
