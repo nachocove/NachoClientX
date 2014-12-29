@@ -628,7 +628,7 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoPick, State = (uint)Lst.Pick },
                             new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
                             new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
-                            new Trans { Event = (uint)CtlEvt.E.PendQHot, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)CtlEvt.E.PendQHot, Act = DoSidecarOrPick, ActSetsState = true },
                             new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
                             new Trans { Event = (uint)CtlEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                         }
@@ -1090,6 +1090,60 @@ namespace NachoCore.ActiveSync
             } else {
                 // We are running, ignore the Launch, stay in the current state.
             }
+        }
+
+        private void DoSidecarOrPick ()
+        {
+            // If we think we can do the HotQOp in parallel with the currently running op, do so.
+            // FIXME - track success/failure with sidecar requests. Also limit number of concurrent requests.
+            if (true) {
+                var pack = SyncStrategy.PickUserDemand ();
+                if (null != pack) {
+                    var dummySm = new NcStateMachine ("ASPC:SC") { 
+                        Name = string.Format ("ASPC:SC({0})", AccountId),
+                        LocalEventType = typeof(AsEvt),
+                        TransTable = new[] {
+                            new Node {
+                                State = (uint)St.Start,
+                                On = new Trans[] {
+                                    new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)St.Start },
+                                    new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)St.Start },
+                                    new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoNop, State = (uint)St.Start },
+                                    new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoNop, State = (uint)St.Start },
+                                    new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoNop, State = (uint)St.Start },
+                                    new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoNop, State = (uint)St.Start },
+                                    new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoNop, State = (uint)St.Start },
+                                    new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoNop, State = (uint)St.Start },
+                                },
+                            }
+                        }
+                    };
+                    dummySm.Validate ();
+                    var pickAction = pack.Item1;
+                    var cmd = pack.Item2;
+                    switch (pickAction) {
+                    case PickActionEnum.Fetch:
+                    case PickActionEnum.QOop:
+                    case PickActionEnum.HotQOp:
+                        cmd.Execute (dummySm);
+                        break;
+
+                    case PickActionEnum.Sync:
+                        // TODO add support for user-initiated Sync of >= 1 folders.
+                        // if current op is a sync including specified folder(s), then ignore.
+                    case PickActionEnum.Ping:
+                    case PickActionEnum.Wait:
+                    default:
+                        NcAssert.CaseError (cmd.ToString ());
+                        break;
+                    }
+                    // Leave State unchanged.
+                    return;
+                }
+            }
+            // If we can't, then DoPick, which will Cancel the current op.
+            DoPick ();
+            Sm.State = (uint)Lst.Pick;
         }
 
         private void DoPick ()
