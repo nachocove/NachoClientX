@@ -5,7 +5,8 @@ using NachoCore.Utils;
 
 namespace NachoCore.Brain
 {
-    public enum NcBrainEventType {
+    public enum NcBrainEventType
+    {
         UNKNOWN = 0,
         PERIODIC_GLEAN,
         UI,
@@ -15,8 +16,9 @@ namespace NachoCore.Brain
         MESSAGE_FLAGS,
         INITIAL_RIC,
         UPDATE_ADDRESS_SCORE,
-        UPDATE_MESSAGE_SCORE
-    };
+        UPDATE_MESSAGE_SCORE}
+
+    ;
 
     public class NcBrainEvent : NcQueueElement
     {
@@ -43,9 +45,11 @@ namespace NachoCore.Brain
         }
     }
 
-    public enum NcBrainUIEventType {
-        MESSAGE_VIEW
-    };
+    public enum NcBrainUIEventType
+    {
+        MESSAGE_VIEW}
+
+    ;
 
     public class NcBrainUIEvent : NcBrainEvent
     {
@@ -163,6 +167,21 @@ namespace NachoCore.Brain
         {
             return String.Format ("[NcBrainMessageFlagEvent: type={0}, accountId={1}, emailMessageId={2}]",
                 GetEventType (), AccountId, EmailMessageId);
+        }
+    }
+
+    public class NcBrainStateMachineEvent : NcBrainEvent
+    {
+        public Int64 AccountId;
+
+        public NcBrainStateMachineEvent (Int64 accountId) : base (NcBrainEventType.STATE_MACHINE)
+        {
+            AccountId = accountId;
+        }
+
+        public override string ToString ()
+        {
+            return String.Format ("[NcBrainStateMachineEvent: type={0} accountId={1}", GetEventType (), AccountId);
         }
     }
 }
