@@ -73,6 +73,54 @@ namespace Test.Common
             {
             }
         }
+
+        [Test]
+        public void ParseMailTo()
+        {
+            List<NcEmailAddress> addresses;
+            string subject;
+            string body;
+
+            string urlString;
+
+            urlString = "mailto:someone@example.com";
+            Assert.IsTrue (EmailHelper.ParseMailTo (urlString, out addresses, out subject, out body));
+            Assert.AreEqual (1, addresses.Count);
+            Assert.IsTrue (String.IsNullOrEmpty (subject));
+            Assert.IsTrue (String.IsNullOrEmpty (body));
+
+            urlString = "mailto:someone@example.com?subject=This%20is%20the%20subject&cc=someone_else@example.com&body=This%20is%20the%20body";
+            Assert.IsTrue (EmailHelper.ParseMailTo (urlString, out addresses, out subject, out body));
+            Assert.AreEqual (2, addresses.Count);
+            Assert.AreEqual ("This is the subject", subject);
+            Assert.AreEqual ("This is the body", body);
+
+            urlString = "mailto:someone@example.com,someoneelse@example.com";
+            Assert.IsTrue (EmailHelper.ParseMailTo (urlString, out addresses, out subject, out body));
+            Assert.AreEqual (2, addresses.Count);
+            Assert.IsTrue (String.IsNullOrEmpty (subject));
+            Assert.IsTrue (String.IsNullOrEmpty (body));
+
+            urlString = "mailto:someone@example.com,someoneelse@example.com?";
+            Assert.IsTrue (EmailHelper.ParseMailTo (urlString, out addresses, out subject, out body));
+            Assert.AreEqual (2, addresses.Count);
+            Assert.IsTrue (String.IsNullOrEmpty (subject));
+            Assert.IsTrue (String.IsNullOrEmpty (body));
+
+            urlString = "mailto:someone@example.com,someoneelse@example.com?&&";
+            Assert.IsTrue (EmailHelper.ParseMailTo (urlString, out addresses, out subject, out body));
+            Assert.AreEqual (2, addresses.Count);
+            Assert.IsTrue (String.IsNullOrEmpty (subject));
+            Assert.IsTrue (String.IsNullOrEmpty (body));
+
+            urlString = "mailto:?to=&subject=mailto%20with%20examples&body=http://en.wikipedia.org/wiki/Mailto";
+            Assert.IsTrue (EmailHelper.ParseMailTo (urlString, out addresses, out subject, out body));
+            Assert.AreEqual (0, addresses.Count);
+            Assert.AreEqual ("mailto with examples", subject);
+            Assert.AreEqual ("http://en.wikipedia.org/wiki/Mailto", body);
+
+        }
+
         //Creates a string that represents an XML email
         public string createXMLEmail (string serverID, List<McEmailMessageCategory> categories)
         {
@@ -503,7 +551,7 @@ namespace Test.Common
         }
 
         [Test]
-        public void BodyTouch()
+        public void BodyTouch ()
         {
             var mds = new MockDataSource ();
             CreateMcBody (mds, 1);

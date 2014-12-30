@@ -1,6 +1,7 @@
 ﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Collections.Generic;
 
 namespace NachoCore.Utils
 {
@@ -21,8 +22,8 @@ namespace NachoCore.Utils
         {
             UriHostNameType fullServerUri = Uri.CheckHostName (host.Trim ());
             if (fullServerUri == UriHostNameType.Dns ||
-               fullServerUri == UriHostNameType.IPv4 ||
-               fullServerUri == UriHostNameType.IPv6) {
+                fullServerUri == UriHostNameType.IPv4 ||
+                fullServerUri == UriHostNameType.IPv6) {
                 return true;
             }
             return false;
@@ -37,7 +38,7 @@ namespace NachoCore.Utils
             }
         }
 
-        public static bool IsServiceUnsupported(string emailAddress, out string serviceName)
+        public static bool IsServiceUnsupported (string emailAddress, out string serviceName)
         {
             if (emailAddress.EndsWith ("@gmail.com", StringComparison.OrdinalIgnoreCase)) {
                 serviceName = "Gmail";
@@ -101,6 +102,95 @@ namespace NachoCore.Utils
             }
             serviceName = "";
             return false;
+        }
+
+        public static bool IsMailToURL (string urlString)
+        {
+            return urlString.StartsWith ("mailto:", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Parses a mailto: url.
+        /// </summary>
+        /// <returns><c>true</c>, if mailto: was parsed, <c>false</c> otherwise.</returns>
+        /// <param name="url">The string of the URL</param>
+        /// The format is mailto:<comma separated list of email addresses>.
+        /// Then an & separated list of name value pairs, any of which can be empty:
+        /// cc, bcc, subject, and body, all percent encoded.
+        public static bool ParseMailTo (string urlString, out List<NcEmailAddress> addresses, out string subject, out string body)
+        {
+            addresses = new List<NcEmailAddress> ();
+            subject = null;
+            body = null;
+
+            if (!urlString.StartsWith ("mailto:", StringComparison.OrdinalIgnoreCase)) {
+                return false;
+            }
+
+            if (7 == urlString.Length) {
+                return false;
+            }
+
+            // Look for the query string '?'
+            int queryIndex = urlString.IndexOf ('?');
+
+            string encodedToString;
+            if (-1 == queryIndex) {
+                encodedToString = urlString.Substring (7);
+            } else {
+                encodedToString = urlString.Substring (7, queryIndex - 7);
+            }
+            var toString = Uri.UnescapeDataString (encodedToString);
+            addresses = NcEmailAddress.ParseToAddressListString (toString);
+
+            // check if we only have a to list
+            if ((-1 == queryIndex) || (urlString.Length == queryIndex)) {
+                return true;
+            }
+
+            var parameters = urlString.Substring (queryIndex + 1).Split (new char[] { '&' }, StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var parameter in parameters) {
+                if (parameter.StartsWith ("to=", StringComparison.OrdinalIgnoreCase)) {
+                    if (3 < parameter.Length) {
+                        var toParameterString = Uri.UnescapeDataString (parameter.Substring (3));
+                        var toList = NcEmailAddress.ParseToAddressListString (toParameterString);
+                        addresses.AddRange (toList);
+                    }
+                    continue;
+                }
+                if (parameter.StartsWith ("cc=", StringComparison.OrdinalIgnoreCase)) {
+                    if (3 < parameter.Length) {
+                        var ccString = Uri.UnescapeDataString (parameter.Substring (3));
+                        var ccList = NcEmailAddress.ParseCcAddressListString (ccString);
+                        addresses.AddRange (ccList);
+                    }
+                    continue;
+                }
+                if (parameter.StartsWith ("bcc=", StringComparison.OrdinalIgnoreCase)) {
+                    if (4 < parameter.Length) {
+                        var bccString = Uri.UnescapeDataString (parameter.Substring (4));
+                        var bccList = NcEmailAddress.ParseBccAddressListString (bccString);
+                        addresses.AddRange (bccList);
+                    }
+                    continue;
+                }
+                if (parameter.StartsWith ("subject=", StringComparison.OrdinalIgnoreCase)) {
+                    if (8 < parameter.Length) {
+                        subject = Uri.UnescapeDataString (parameter.Substring (8));
+                    }
+                    continue;
+                }
+                if (parameter.StartsWith ("body=", StringComparison.OrdinalIgnoreCase)) {
+                    if (5 < parameter.Length) {
+                        body = Uri.UnescapeDataString (parameter.Substring (5));
+                    }
+                    continue;
+                }
+                Log.Error (Log.LOG_EMAIL, "ParseMailTo: unknown parameter {0}", parameter);
+            }
+
+            return true;
         }
     }
 }

@@ -239,6 +239,11 @@ namespace NachoCore.Utils
             return ParseAddressListString (ccAddressString, Kind.Cc);
         }
 
+        public static List<NcEmailAddress> ParseBccAddressListString (string bccAddressString)
+        {
+            return ParseAddressListString (bccAddressString, Kind.Bcc);
+        }
+
         /// <summary>
         /// Parses the mailbox address string.
         /// </summary>

@@ -322,7 +322,7 @@ namespace NachoClient.iOS
             yOffset += 1;
 
             // Message body, which is added to the scroll view, not the header view.
-            bodyView = BodyView.VariableHeightBodyView (new PointF (VIEW_INSET, yOffset), scrollView.Frame.Width - 2 * VIEW_INSET, scrollView.Frame.Size, LayoutView);
+            bodyView = BodyView.VariableHeightBodyView (new PointF (VIEW_INSET, yOffset), scrollView.Frame.Width - 2 * VIEW_INSET, scrollView.Frame.Size, LayoutView, onLinkSelected);
             scrollView.AddSubview (bodyView);
 
             blockMenu = new UIBlockMenu (this, new List<UIBlockMenu.Block> () {
@@ -581,7 +581,13 @@ namespace NachoClient.iOS
                         vc.SetQRType ((NcQuickResponse.QRTypeEnum)h.value2);
                     }
                 }
-
+                return;
+            }
+            if (segue.Identifier == "SegueToMailTo") {
+                var dc = (MessageComposeViewController)segue.DestinationViewController;
+                var holder = sender as SegueHolder;
+                var url = (string) holder.value;
+                dc.SetMailToUrl (url);
                 return;
             }
             if (segue.Identifier == "MessageViewToEditEvent") {
@@ -913,5 +919,15 @@ namespace NachoClient.iOS
         public void AddressBlockSearchContactClicked (UcAddressBlock view, string prefix)
         {
         }
+
+        public void onLinkSelected(NSUrl url)
+        {
+            if(EmailHelper.IsMailToURL(url.AbsoluteString)) {
+                PerformSegue ("SegueToMailTo", new SegueHolder (url.AbsoluteString));
+            } else {
+                UIApplication.SharedApplication.OpenUrl (url);
+            }
+        }
+
     }
 }

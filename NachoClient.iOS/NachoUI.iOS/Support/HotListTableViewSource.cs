@@ -172,7 +172,7 @@ namespace NachoClient.iOS
 
             // Preview label view
             // Size fields will be recalculated after text is known
-            var previewLabelView = new ScrollableBodyView (new RectangleF (12, 75, viewWidth - 15 - 12, view.Frame.Height - 128));
+            var previewLabelView = new ScrollableBodyView (new RectangleF (12, 75, viewWidth - 15 - 12, view.Frame.Height - 128), onLinkSelected);
             previewLabelView.Tag = PREVIEW_TAG;
             view.AddSubview (previewLabelView);
 
@@ -561,6 +561,14 @@ namespace NachoClient.iOS
             targetContentOffset.Y = tableView.RectForRowAtIndexPath (next).Location.Y - 10;
         }
 
+        public void onLinkSelected (NSUrl url)
+        {
+            if(EmailHelper.IsMailToURL(url.AbsoluteString)) {
+                owner.PerformSegueForDelegate ("SegueToMailTo", new SegueHolder (url.AbsoluteString));
+            } else {
+                UIApplication.SharedApplication.OpenUrl (url);
+            }
+        }
     }
 }
 

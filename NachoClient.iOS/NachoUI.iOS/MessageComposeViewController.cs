@@ -73,7 +73,7 @@ namespace NachoClient.iOS
         UIView intentLabelHR;
         UIView attachmentViewHR;
 
-        NcEmailAddress PresetToAddress;
+        List<NcEmailAddress> PresetAddresses;
         string PresetSubject;
         string EmailTemplate;
         List<McAttachment> PresetAttachmentList;
@@ -116,16 +116,36 @@ namespace NachoClient.iOS
             this.QRType = QRType;
         }
 
+        public void SetMailToUrl(string urlString)
+        {
+            List<NcEmailAddress> addresses = new List<NcEmailAddress> ();
+            string subject;
+            string body;
+
+            EmailHelper.ParseMailTo (urlString, out addresses, out subject, out body);
+
+            PresetAddresses = addresses;
+            PresetSubject = subject;
+            EmailTemplate = body;
+
+            alwaysShowIntent = !String.IsNullOrEmpty (PresetSubject);
+            startInSubjectField = (null != PresetAddresses) && String.IsNullOrEmpty (PresetSubject);
+            startInBodyField = (null != PresetAddresses) && !String.IsNullOrEmpty (PresetSubject) && !String.IsNullOrEmpty (body);
+        }
+
         // Can be called by owner to set a pre-existing To: address, subject, email template and/or attachment
         public void SetEmailPresetFields (NcEmailAddress toAddress = null, string subject = null, string emailTemplate = null, List<McAttachment> attachmentList = null, bool isQR = false)
         {
-            PresetToAddress = toAddress;
+            if (null != toAddress) {
+                PresetAddresses = new List<NcEmailAddress> ();
+                PresetAddresses.Add (toAddress);
+            }
             PresetSubject = subject;
             EmailTemplate = emailTemplate;
             PresetAttachmentList = attachmentList;
             alwaysShowIntent = !String.IsNullOrEmpty (PresetSubject);
-            startInSubjectField = (null != PresetToAddress) && String.IsNullOrEmpty (PresetSubject);
-            startInBodyField = (null != PresetToAddress) && !String.IsNullOrEmpty (PresetSubject) && !String.IsNullOrEmpty (emailTemplate);
+            startInSubjectField = (null != PresetAddresses) && String.IsNullOrEmpty (PresetSubject);
+            startInBodyField = (null != PresetAddresses) && !String.IsNullOrEmpty (PresetSubject) && !String.IsNullOrEmpty (emailTemplate);
         }
 
         public override void ViewDidLoad ()
@@ -437,8 +457,10 @@ namespace NachoClient.iOS
                 SelectionChanged (bodyTextView);
             };
 
-            if (PresetToAddress != null) {
-                UpdateEmailAddress (null, PresetToAddress);
+            if (null != PresetAddresses) {
+                foreach (var address in PresetAddresses) {
+                    UpdateEmailAddress (null, address);
+                }
             }
 
             if (PresetAttachmentList != null) {

@@ -222,6 +222,13 @@ namespace NachoClient.iOS
                 vc.SetOwner (this);
                 return;
             }
+            if (segue.Identifier == "SegueToMailTo") {
+                var dc = (MessageComposeViewController)segue.DestinationViewController;
+                var holder = sender as SegueHolder;
+                var url = (string) holder.value;
+                dc.SetMailToUrl (url);
+                return;
+            }
             if (segue.Identifier.Equals ("CalendarToEmailCompose")) {
                 var dc = (MessageComposeViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
