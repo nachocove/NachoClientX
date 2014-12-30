@@ -375,9 +375,22 @@ namespace NachoCore.Model
             return (FilePresenceEnum.Complete == FilePresence);
         }
 
-        public static bool IsNontruncatedBodyComplete(McAbstrFileDesc file)
+        public bool DownloadCommandCompletedSuccessfully { get; set; }
+
+        /// <summary>
+        /// Return true if we have a non-truncated mime body or
+        /// if we asked for a mime body but did not receive it.
+        /// </summary>
+        public static bool IsNontruncatedBodyComplete (McAbstrFileDesc file)
         {
-            return (IsComplete (file) && !file.Truncated);
+//            return (IsComplete (file) && !file.Truncated);
+
+            if (!IsComplete (file) || file.Truncated) {
+                return false;
+            } else {
+                NcAssert.NotNull (file);
+                return (file.DownloadCommandCompletedSuccessfully || (BodyTypeEnum.MIME_4 == file.BodyType));
+            }
         }
     }
 }
