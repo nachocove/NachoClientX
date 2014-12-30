@@ -1208,11 +1208,21 @@ namespace NachoClient.iOS
             }
             if (Action.ReplyAll == action) {
                 // Add the To list to the CC list
+                McEmailAddress accountEmailAddress;
+                McEmailAddress appendingEmailAddress;
+                McEmailAddress.Get (account.Id, account.EmailAddr, out accountEmailAddress);
+
                 if (null != referencedMessage.To) {
                     string[] ToList = referencedMessage.To.Split (new Char [] { ',' });
                     if (null != ToList) {
                         foreach (var a in ToList) {
-                            ccView.Append (new NcEmailAddress (NcEmailAddress.Kind.Cc, a));
+                            if (null != accountEmailAddress && McEmailAddress.Get (account.Id, a, out appendingEmailAddress)) {
+                                if (accountEmailAddress.CanonicalEmailAddress != appendingEmailAddress.CanonicalEmailAddress) {
+                                    ccView.Append (new NcEmailAddress (NcEmailAddress.Kind.Cc, a));
+                                }
+                            } else {
+                                ccView.Append (new NcEmailAddress (NcEmailAddress.Kind.Cc, a));
+                            }
                         }
                     }
                 }
@@ -1221,7 +1231,13 @@ namespace NachoClient.iOS
                     string[] ccList = referencedMessage.Cc.Split (new Char [] { ',' });
                     if (null != ccList) {
                         foreach (var a in ccList) {
-                            ccView.Append (new NcEmailAddress (NcEmailAddress.Kind.Cc, a));
+                            if (null != accountEmailAddress && McEmailAddress.Get (account.Id, a, out appendingEmailAddress)) {
+                                if (accountEmailAddress.CanonicalEmailAddress != appendingEmailAddress.CanonicalEmailAddress) {
+                                    ccView.Append (new NcEmailAddress (NcEmailAddress.Kind.Cc, a));
+                                }
+                            } else {
+                                ccView.Append (new NcEmailAddress (NcEmailAddress.Kind.Cc, a));
+                            }
                         }
                     }
                 }
