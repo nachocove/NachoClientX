@@ -39,6 +39,10 @@ namespace NachoCore.Utils
 
         public TelemetryBEAWS ()
         {
+        }
+
+        public void Initialize ()
+        {
             InitializeTables ();
         }
 
@@ -215,11 +219,6 @@ namespace NachoCore.Utils
         {
             if (null != e) {
                 if (e is AggregateException) {
-                    return HandleAWSException (e.InnerException);
-                }
-                if (e is TargetInvocationException) {
-                    // Have seen this being nested in a stack of exceptions. It looks like
-                    // We may be trying to get a stack trace and fails.
                     return HandleAWSException (e.InnerException);
                 }
                 if (e is ProvisionedThroughputExceededException) {

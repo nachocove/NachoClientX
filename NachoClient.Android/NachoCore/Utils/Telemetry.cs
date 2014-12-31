@@ -732,6 +732,7 @@ namespace NachoCore.Utils
             bool ranOnce = false;
 
             BackEnd = new T ();
+            BackEnd.Initialize ();
             Counters [0].ReportPeriod = 5 * 60; // report once every 5 min
 
             // Capture the transaction time to telemetry server
@@ -856,6 +857,8 @@ namespace NachoCore.Utils
 
     public interface ITelemetryBE
     {
+        void Initialize ();
+
         bool IsUseable ();
 
         string GetUserName ();
