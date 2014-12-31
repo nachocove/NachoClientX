@@ -148,18 +148,16 @@ namespace NachoCore.Brain
                 NcContactGleaner.GleanContacts (emailMessage.AccountId, emailMessage, quickGlean);
                 if (quickGlean) {
                     // Assign a version 0 score by checking if our address is in the to list
-                    InternetAddressList addressList;
-                    if (InternetAddressList.TryParse (emailMessage.To, out addressList)) {
-                        foreach (var address in addressList) {
-                            if (!(address is MailboxAddress)) {
-                                continue;
-                            }
-                            if (((MailboxAddress)address).Address == accountAddress) {
-                                NcAssert.True (0 == emailMessage.ScoreVersion); // shouldn't be gleaning if version > 0
-                                emailMessage.Score = McEmailMessage.minHotScore;
-                                emailMessage.UpdateByBrain ();
-                                break;
-                            }
+                    InternetAddressList addressList = NcEmailAddress.ParseAddressListString (emailMessage.To);
+                    foreach (var address in addressList) {
+                        if (!(address is MailboxAddress)) {
+                            continue;
+                        }
+                        if (((MailboxAddress)address).Address == accountAddress) {
+                            NcAssert.True (0 == emailMessage.ScoreVersion); // shouldn't be gleaning if version > 0
+                            emailMessage.Score = McEmailMessage.minHotScore;
+                            emailMessage.UpdateByBrain ();
+                            break;
                         }
                     }
                 }
