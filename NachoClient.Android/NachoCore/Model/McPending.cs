@@ -11,6 +11,10 @@ namespace NachoCore.Model
 {
     public class McPending : McAbstrObjectPerAcc
     {
+        // Incremented on every table write.
+        private static int _Version = 0;
+        public static int Version { get { return _Version; } }
+
         // Parameterless constructor only here for use w/LINQ. Please only use w/accountId.
         public McPending ()
         {
@@ -843,6 +847,7 @@ namespace NachoCore.Model
                     Item.Update ();
                 }
                 base.Insert ();
+                ++_Version;
                 Priority = Id;
                 base.Update ();
                 foreach (var predId in predIds) {
@@ -856,6 +861,16 @@ namespace NachoCore.Model
             }
             Log.Info (Log.LOG_SYNC, "Pending:Insert:{0}", Id);
             return 1;
+        }
+
+        public override int Update ()
+        {
+            int retval = 0;
+            NcModel.Instance.RunInLock (() => {
+                retval = base.Update ();
+                ++_Version;
+            });
+            return retval;
         }
 
         public McAbstrItem QueryItemUsingServerId ()
@@ -928,6 +943,7 @@ namespace NachoCore.Model
                     }
                 }
                 base.Delete ();
+                ++_Version;
             });
             
             Log.Info (Log.LOG_SYNC, "Pending:Delete:{0}", Id);
