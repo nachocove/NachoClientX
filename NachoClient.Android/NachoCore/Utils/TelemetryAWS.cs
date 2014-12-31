@@ -6,6 +6,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Threading;
+using System.Reflection;
 
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DocumentModel;
@@ -103,41 +104,11 @@ namespace NachoCore.Utils
                 try {
                     action ();
                     isDone = true;
-                } catch (TaskCanceledException) {
-                    if (NcTask.Cts.Token.IsCancellationRequested) {
-                        throw;
-                    }
-                    // Otherwise, most likely HTTP client timeout
-                    NcTask.CancelableSleep (5000);
-                } catch (OperationCanceledException) {
-                    throw;
-                } catch (AmazonServiceException e) {
-                    Console.WriteLine ("AWS service exception {0}", e);
-                    NcTask.CancelableSleep (5000);
-                } catch (AggregateException e) {
-                    // Some code path wraps the exception with an AggregateException. Peel the onion
-                    AggregateException ae = e;
-                    while (ae.InnerException is AggregateException) {
-                        ae = (AggregateException)ae.InnerException;
-                    }
-                    if (ae.InnerException is TaskCanceledException) {
-                        if (NcTask.Cts.Token.IsCancellationRequested) {
-                            throw;
-                        }
-                        NcTask.CancelableSleep (5000);
-                    }
-                    if (ae.InnerException is OperationCanceledException) {
-                        throw;
-                    } else if (ae.InnerException is AmazonServiceException) {
-                        Console.WriteLine ("AWS service inner exception {0}", ae.InnerException);
-                        NcTask.CancelableSleep (5000);
-                    } else {
-                        Log.Error (Log.LOG_SYS, "Unhandled execption in AWS retry logic: {0}", e);
-                        throw;
-                    }
                 } catch (Exception e) {
-                    Log.Error (Log.LOG_SYS, "Unhandle exception in AWS retry logic: {0}", e);
-                    throw;
+                    if (!HandleAWSException (e)) {
+                        throw;
+                    }
+                    NcTask.CancelableSleep (5000);
                 }
                 NcTask.Cts.Token.ThrowIfCancellationRequested ();
             }
@@ -244,6 +215,11 @@ namespace NachoCore.Utils
         {
             if (null != e) {
                 if (e is AggregateException) {
+                    return HandleAWSException (e.InnerException);
+                }
+                if (e is TargetInvocationException) {
+                    // Have seen this being nested in a stack of exceptions. It looks like
+                    // We may be trying to get a stack trace and fails.
                     return HandleAWSException (e.InnerException);
                 }
                 if (e is ProvisionedThroughputExceededException) {
