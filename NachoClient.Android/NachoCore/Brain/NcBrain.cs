@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.IO;
+using MimeKit;
 using NachoCore.Utils;
 using NachoCore.Model;
 using NachoCoreLog = NachoCore.Index.Log;
@@ -127,8 +128,16 @@ namespace NachoCore.Brain
 
         private int GleanContacts (int count, Int64 accountId = -1)
         {
-            // Look for a list of emails
             int numGleaned = 0;
+            bool quickGlean = false;
+            string accountAddress = null;
+            if (0 < accountId) {
+                var account = McAccount.QueryById<McAccount> ((int)accountId);
+                if ((null != account) && (!String.IsNullOrEmpty (account.EmailAddr))) {
+                    accountAddress = account.EmailAddr;
+                    quickGlean = true;
+                }
+            }
             while (numGleaned < count && !NcApplication.Instance.IsBackgroundAbateRequired &&
                    !EventQueue.Token.IsCancellationRequested) {
                 McEmailMessage emailMessage = McEmailMessage.QueryNeedGleaning (accountId);
@@ -136,7 +145,24 @@ namespace NachoCore.Brain
                     break;
                 }
                 Log.Info (Log.LOG_BRAIN, "glean contact from email message {0}", emailMessage.Id);
-                NcContactGleaner.GleanContacts (emailMessage.AccountId, emailMessage);
+                NcContactGleaner.GleanContacts (emailMessage.AccountId, emailMessage, quickGlean);
+                if (quickGlean) {
+                    // Assign a version 0 score by checking if our address is in the to list
+                    InternetAddressList addressList;
+                    if (InternetAddressList.TryParse (emailMessage.To, out addressList)) {
+                        foreach (var address in addressList) {
+                            if (!(address is MailboxAddress)) {
+                                continue;
+                            }
+                            if (((MailboxAddress)address).Address == accountAddress) {
+                                NcAssert.True (0 == emailMessage.ScoreVersion); // shouldn't be gleaning if version > 0
+                                emailMessage.Score = McEmailMessage.minHotScore;
+                                emailMessage.UpdateByBrain ();
+                                break;
+                            }
+                        }
+                    }
+                }
                 numGleaned++;
             }
             if (0 != numGleaned) {
