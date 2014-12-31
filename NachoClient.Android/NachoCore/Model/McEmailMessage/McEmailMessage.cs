@@ -514,7 +514,7 @@ namespace NachoCore.Model
             if (0 > UserAction) {
                 return false;
             }
-            return (minHotScore < this.Score);
+            return (minHotScore <= this.Score);
         }
 
         public bool IsDeferred ()

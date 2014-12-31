@@ -27,14 +27,9 @@ namespace NachoCore
             double threshold = McEmailMessage.minHotScore;
             // Before statistics converge, there may be a period when there is no hot emails.
             // When that happens, lower the threshold until we found something
-            while ((0 == list.Count) && (0.0 <= threshold)) {
-                list = McEmailMessage.QueryActiveMessageItemsByScore (folder.AccountId, folder.Id, threshold);
-                if (null == list) {
-                    list = new List<NcEmailMessageIndex> ();
-                }
-                if (0 == list.Count) {
-                    threshold -= McEmailMessage.minHotScore * 0.5;
-                }
+            list = McEmailMessage.QueryActiveMessageItemsByScore (folder.AccountId, folder.Id, threshold);
+            if (null == list) {
+                list = new List<NcEmailMessageIndex> ();
             }
             if (!NcMessageThreads.AreDifferent (threadList, list, out deletes)) {
                 return false;

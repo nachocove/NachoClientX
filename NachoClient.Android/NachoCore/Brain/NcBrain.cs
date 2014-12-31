@@ -5,7 +5,9 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.IO;
+using MimeKit;
 using NachoCore.Utils;
 using NachoCore.Model;
 using NachoCoreLog = NachoCore.Index.Log;
@@ -15,6 +17,8 @@ namespace NachoCore.Brain
     public partial class NcBrain
     {
         public const bool ENABLED = true;
+
+        public static bool RegisterStatusIndHandler = false;
 
         private static NcBrain _SharedInstance;
 
@@ -52,21 +56,18 @@ namespace NachoCore.Brain
         public OperationCounters McEmailAddressCounters;
         public OperationCounters McEmailAddressScoreSyncInfo;
 
-        // Last time a notification of score update was sent (via status indication).
-        // Used for rate limit status indication.
-        private DateTime LastEmailAddressScoreUpdate;
-        private DateTime LastEmailMessageScoreUpdate;
-
         private DateTime LastPeriodicGlean;
         private DateTime LastPeriodicGleanRestart;
+
+        private ConcurrentDictionary<NcResult.SubKindEnum, DateTime> LastNotified;
 
         private object LockObj;
 
         public NcBrain ()
         {
             LastPeriodicGlean = new DateTime ();
-            LastEmailAddressScoreUpdate = new DateTime ();
-            LastEmailMessageScoreUpdate = new DateTime ();
+            LastPeriodicGleanRestart = new DateTime ();
+            LastNotified = new ConcurrentDictionary<NcResult.SubKindEnum, DateTime> ();
 
             RootCounter = new NcCounter ("Brain", true);
             McEmailMessageCounters = new OperationCounters ("McEmailMessage", RootCounter);
@@ -125,22 +126,48 @@ namespace NachoCore.Brain
             return EventQueue.IsEmpty ();
         }
 
-        private int GleanContacts (int count)
+        private int GleanContacts (int count, Int64 accountId = -1)
         {
-            // Look for a list of emails
             int numGleaned = 0;
+            bool quickGlean = false;
+            string accountAddress = null;
+            if (0 < accountId) {
+                var account = McAccount.QueryById<McAccount> ((int)accountId);
+                if ((null != account) && (!String.IsNullOrEmpty (account.EmailAddr))) {
+                    accountAddress = account.EmailAddr;
+                    quickGlean = true;
+                }
+            }
             while (numGleaned < count && !NcApplication.Instance.IsBackgroundAbateRequired &&
                    !EventQueue.Token.IsCancellationRequested) {
-                McEmailMessage emailMessage = McEmailMessage.QueryNeedGleaning ();
+                McEmailMessage emailMessage = McEmailMessage.QueryNeedGleaning (accountId);
                 if (null == emailMessage) {
                     break;
                 }
                 Log.Info (Log.LOG_BRAIN, "glean contact from email message {0}", emailMessage.Id);
-                NcContactGleaner.GleanContacts (emailMessage.AccountId, emailMessage);
+                NcContactGleaner.GleanContacts (emailMessage.AccountId, emailMessage, quickGlean);
+                if (quickGlean) {
+                    // Assign a version 0 score by checking if our address is in the to list
+                    InternetAddressList addressList;
+                    if (InternetAddressList.TryParse (emailMessage.To, out addressList)) {
+                        foreach (var address in addressList) {
+                            if (!(address is MailboxAddress)) {
+                                continue;
+                            }
+                            if (((MailboxAddress)address).Address == accountAddress) {
+                                NcAssert.True (0 == emailMessage.ScoreVersion); // shouldn't be gleaning if version > 0
+                                emailMessage.Score = McEmailMessage.minHotScore;
+                                emailMessage.UpdateByBrain ();
+                                break;
+                            }
+                        }
+                    }
+                }
                 numGleaned++;
             }
             if (0 != numGleaned) {
                 Log.Info (Log.LOG_BRAIN, "{0} email message gleaned", numGleaned);
+                NotifyUpdates (NcResult.SubKindEnum.Info_ContactSetChanged);
             }
             return numGleaned;
         }
@@ -405,8 +432,8 @@ namespace NachoCore.Brain
                 #endif
                 break;
             case NcBrainEventType.STATE_MACHINE:
-                GleanContacts (int.MaxValue);
-                AnalyzeEmails (int.MaxValue);
+                var stateMachineEvent = (NcBrainStateMachineEvent)brainEvent;
+                GleanContacts (100, stateMachineEvent.AccountId); /// FIXME - Should get the number from the event arg
                 break;
             case NcBrainEventType.UI:
                 ProcessUIEvent (brainEvent as NcBrainUIEvent);
@@ -435,8 +462,12 @@ namespace NachoCore.Brain
         {
             if (ENABLED) {
                 McEmailMessage.StartTimeVariance (EventQueue.Token);
-                NcApplication.Instance.StatusIndEvent += GenerateInitialContactScores;
-                NcApplication.Instance.StatusIndEvent += UIScrollingEnd;
+                if (!NcBrain.RegisterStatusIndHandler) {
+                    NcApplication.Instance.StatusIndEvent += GenerateInitialContactScores;
+                    NcApplication.Instance.StatusIndEvent += UIScrollingEnd;
+                    NcApplication.Instance.StatusIndEvent += NewEmailMessageSynced;
+                    NcBrain.RegisterStatusIndHandler = true;
+                }
             }
             lock (LockObj) {
                 while (true) {
@@ -457,12 +488,19 @@ namespace NachoCore.Brain
             }
         }
 
-        private void NotifyUpdates (NcResult.SubKindEnum type, ref DateTime last)
+        private void NotifyUpdates (NcResult.SubKindEnum type)
         {
+            if (!LastNotified.ContainsKey (type)) {
+                LastNotified.TryAdd (type, new DateTime ());
+            }
+            DateTime last;
+            bool got = LastNotified.TryGetValue (type, out last);
+            NcAssert.True (got);
+
             // Rate limit to one notification per 2 seconds.
             DateTime now = DateTime.Now;
             if (2000 < (long)(now - last).TotalMilliseconds) {
-                last = now;
+                LastNotified.TryUpdate (type, now, last);
                 StatusIndEventArgs e = new StatusIndEventArgs ();
                 e.Account = ConstMcAccount.NotAccountSpecific;
                 e.Status = NcResult.Info (type);
@@ -472,14 +510,21 @@ namespace NachoCore.Brain
 
         public void NotifyEmailAddressUpdates ()
         {
-            NotifyUpdates (NcResult.SubKindEnum.Info_EmailAddressScoreUpdated,
-                ref LastEmailAddressScoreUpdate);
+            NotifyUpdates (NcResult.SubKindEnum.Info_EmailAddressScoreUpdated);
         }
 
         public void NotifyEmailMessageUpdates ()
         {
-            NotifyUpdates (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated,
-                ref LastEmailMessageScoreUpdate);
+            NotifyUpdates (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated);
+        }
+
+        public static void NewEmailMessageSynced (object sender, EventArgs args)
+        {
+            StatusIndEventArgs eventArgs = args as StatusIndEventArgs;
+            if (NcResult.SubKindEnum.Info_EmailMessageSetChanged != eventArgs.Status.SubKind) {
+                return;
+            }
+            NcBrain.SharedInstance.Enqueue (new NcBrainStateMachineEvent (eventArgs.Account.Id));
         }
 
         /// Status indication handler for Info_RicInitialSyncCompleted. We do not 
