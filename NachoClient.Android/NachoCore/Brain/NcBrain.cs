@@ -149,7 +149,8 @@ namespace NachoCore.Brain
                 if (quickGlean) {
                     // Assign a version 0 score by checking if our address is in the to list
                     InternetAddressList addressList;
-                    if (InternetAddressList.TryParse (emailMessage.To, out addressList)) {
+                    if (!String.IsNullOrEmpty (emailMessage.To) &&
+                        InternetAddressList.TryParse (emailMessage.To, out addressList)) {
                         foreach (var address in addressList) {
                             if (!(address is MailboxAddress)) {
                                 continue;
