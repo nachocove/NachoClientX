@@ -160,8 +160,8 @@ namespace NachoCore.Utils
             iCal.Method = DDay.iCal.CalendarMethods.Reply;
             var vEvent = iCal.Events [0];
             var iAttendee = new Attendee ("MAILTO:" + account.EmailAddr);
-            if (!string.IsNullOrEmpty (account.DisplayName)) {
-                iAttendee.CommonName = account.DisplayName;
+            if (!String.IsNullOrEmpty (Pretty.UserNameForAccount (account))) {
+                iAttendee.CommonName = Pretty.UserNameForAccount (account);
             }
             iAttendee.ParticipationStatus = iCalResponseString (response);
             vEvent.Attendees.Add (iAttendee);
@@ -178,8 +178,8 @@ namespace NachoCore.Utils
             evt.Summary = c.Subject;
             evt.Organizer = new Organizer (account.EmailAddr);
             evt.Organizer.SentBy = new Uri ("MAILTO:" + account.EmailAddr);
-            if (!string.IsNullOrEmpty (account.DisplayName)) {
-                evt.Organizer.CommonName = account.DisplayName;
+            if (!String.IsNullOrEmpty (Pretty.UserNameForAccount (account))) {
+                evt.Organizer.CommonName = Pretty.UserNameForAccount (account);
             }
 
             foreach (var mcAttendee in c.attendees) {
@@ -426,7 +426,7 @@ namespace NachoCore.Utils
         {
             var mimeMessage = new MimeMessage ();
 
-            mimeMessage.From.Add (new MailboxAddress (Pretty.DisplayNameForAccount (account), account.EmailAddr));
+            mimeMessage.From.Add (new MailboxAddress (Pretty.UserNameForAccount (account), account.EmailAddr));
             mimeMessage.To.Add (new MailboxAddress (a.Name, a.Email));
 
             mimeMessage.Subject = Pretty.SubjectString (c.Subject);
@@ -445,7 +445,7 @@ namespace NachoCore.Utils
             NcAssert.True (!String.IsNullOrEmpty (c.OrganizerName) || !String.IsNullOrEmpty (c.OrganizerEmail));
 
             var mimeMessage = new MimeMessage ();
-            mimeMessage.From.Add (new MailboxAddress (Pretty.DisplayNameForAccount (account), account.EmailAddr));
+            mimeMessage.From.Add (new MailboxAddress (Pretty.UserNameForAccount (account), account.EmailAddr));
             mimeMessage.To.Add (new MailboxAddress (c.OrganizerName, c.OrganizerEmail));
             mimeMessage.Subject = Pretty.SubjectString (ResponseSubjectPrefix (response) + ": " + c.Subject);
             mimeMessage.Date = DateTime.UtcNow;
@@ -1183,19 +1183,20 @@ namespace NachoCore.Utils
             // Construct a custom time zone where daylight saving time starts on the
             // 2nd Sunday in March.
             var transitionToDaylight = TimeZoneInfo.TransitionTime.CreateFloatingDateRule (
-                new DateTime (1, 1, 1, 2, 0, 0), 3, 2, DayOfWeek.Sunday);
+                                           new DateTime (1, 1, 1, 2, 0, 0), 3, 2, DayOfWeek.Sunday);
             var transitionToStandard = TimeZoneInfo.TransitionTime.CreateFloatingDateRule (
-                new DateTime (1, 1, 1, 2, 0, 0), 11, 1, DayOfWeek.Sunday);
+                                           new DateTime (1, 1, 1, 2, 0, 0), 11, 1, DayOfWeek.Sunday);
             var adjustment = TimeZoneInfo.AdjustmentRule.CreateAdjustmentRule (
-                DateTime.MinValue.Date, DateTime.MaxValue.Date, new TimeSpan (1, 0, 0),
-                transitionToDaylight, transitionToStandard);
+                                 DateTime.MinValue.Date, DateTime.MaxValue.Date, new TimeSpan (1, 0, 0),
+                                 transitionToDaylight, transitionToStandard);
             var timeZone = TimeZoneInfo.CreateCustomTimeZone (
-                "BugCheck", new TimeSpan (-8, 0, 0), "Testing", "Testing Standard", "Testing Daylight",
-                new TimeZoneInfo.AdjustmentRule[] { adjustment });
+                               "BugCheck", new TimeSpan (-8, 0, 0), "Testing", "Testing Standard", "Testing Daylight",
+                               new TimeZoneInfo.AdjustmentRule[] { adjustment });
             // See if March 7, 2014 is listed as being during daylight saving time.
             // If it is DST, then the runtime has the bug that we are looking for.
             return !timeZone.IsDaylightSavingTime (new DateTime (2014, 3, 7, 12, 0, 0, DateTimeKind.Unspecified));
         }
+
         private static bool daylightSavingIsCorrect = DaylightSavingCorrectnessCheck ();
 
         /// <summary>
@@ -1229,8 +1230,8 @@ namespace NachoCore.Utils
             }
             TimeZoneInfo.AdjustmentRule adjustment = FindAdjustmentRule (timeZone, local);
             if (null == adjustment ||
-                    (!WorkaroundNeeded (local, adjustment.DaylightTransitionStart) &&
-                     !WorkaroundNeeded (local, adjustment.DaylightTransitionEnd))) {
+                (!WorkaroundNeeded (local, adjustment.DaylightTransitionStart) &&
+                !WorkaroundNeeded (local, adjustment.DaylightTransitionEnd))) {
                 return TimeZoneInfo.ConvertTimeToUtc (local, timeZone);
             }
             DateTime utc = new DateTime (local.Ticks - timeZone.BaseUtcOffset.Ticks, DateTimeKind.Utc);
@@ -1286,7 +1287,7 @@ namespace NachoCore.Utils
         private static bool IsDaylightTime (DateTime local, TimeZoneInfo.AdjustmentRule adjustment)
         {
             return (local.Month == adjustment.DaylightTransitionStart.Month && local > TransitionPoint (adjustment.DaylightTransitionStart, local.Year)) ||
-                (local.Month == adjustment.DaylightTransitionEnd.Month && local < TransitionPoint (adjustment.DaylightTransitionEnd, local.Year));
+            (local.Month == adjustment.DaylightTransitionEnd.Month && local < TransitionPoint (adjustment.DaylightTransitionEnd, local.Year));
         }
     }
 }

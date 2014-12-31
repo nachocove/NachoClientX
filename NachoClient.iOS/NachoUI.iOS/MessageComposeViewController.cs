@@ -1031,7 +1031,7 @@ namespace NachoClient.iOS
             if (!calendarInviteIsSet) {
                 var mimeMessage = new MimeMessage ();
 
-                mimeMessage.From.Add (new MailboxAddress (Pretty.DisplayNameForAccount (account), account.EmailAddr));
+                mimeMessage.From.Add (new MailboxAddress (Pretty.UserNameForAccount (account), account.EmailAddr));
                 foreach (var view in new UcAddressBlock[] { toView, ccView, bccView }) {
                     foreach (var a in view.AddressList) {
                         var mailbox = a.ToMailboxAddress ();

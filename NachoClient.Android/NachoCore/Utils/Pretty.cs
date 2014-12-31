@@ -330,10 +330,20 @@ namespace NachoCore.Utils
             return Date.LocalT ().ToString ("dddd") + " " + Date.LocalT ().ToString ("t");
         }
 
-        static public string DisplayNameForAccount (McAccount account)
+        // The display name of the account is a nickname for
+        // the account, like Exchange or My Work Account, etc.
+        // We do not support this yet, so null is teh right value.
+        static public string UserNameForAccount (McAccount account)
         {
-            if (null == account.DisplayName) {
-                return account.EmailAddr;
+            NcAssert.True (null == account.DisplayUserName);
+            return null;
+        }
+
+        // "Exchange" predates always setting the display name
+        static public string AccountName(McAccount account)
+        {
+            if(null == account.DisplayName) {
+                return "Exchange";
             } else {
                 return account.DisplayName;
             }

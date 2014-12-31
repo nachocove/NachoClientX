@@ -1289,7 +1289,7 @@ namespace NachoClient.iOS
             }
                 
             // Extras
-            c.OrganizerName = Pretty.DisplayNameForAccount (account);
+            c.OrganizerName = Pretty.UserNameForAccount (account);
             c.OrganizerEmail = account.EmailAddr;
             c.DtStamp = DateTime.UtcNow;
             if (0 == c.attendees.Count) {

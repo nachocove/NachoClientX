@@ -35,7 +35,7 @@ namespace NachoClient.iOS
         protected readonly UIColor TEXT_FIELD_TEXT_COLOR = A.Color_NachoGreen;
         protected readonly UIFont TEXT_FIELD_FONT = A.Font_AvenirNextMedium14;
 
-        protected const int NAME_TAG = 100;
+        protected const int ACCOUNT_NAME_TAG = 100;
         protected const int USERNAME_TAG = 101;
         protected const int PASSWORD_TAG = 102;
         protected const int EMAIL_TAG = 103;
@@ -169,15 +169,15 @@ namespace NachoClient.iOS
             nameLabel.Text = "Name";
             settingsView.Add (nameLabel);
 
-            UITextField nameTextField = new UITextField (new RectangleF (nameLabel.Frame.Right + SPACER, yOffset, 171, TEXTFIELD_HEIGHT));
-            nameTextField.Placeholder = "Exchange";
-            nameTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
-            nameTextField.Font = TEXT_FIELD_FONT;
-            nameTextField.TextAlignment = UITextAlignment.Left;
-            nameTextField.Tag = NAME_TAG;
-            settingsView.Add (nameTextField);
+            UITextField accountNameTextField = new UITextField (new RectangleF (nameLabel.Frame.Right + SPACER, yOffset, 171, TEXTFIELD_HEIGHT));
+            accountNameTextField.Placeholder = "Exchange";
+            accountNameTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
+            accountNameTextField.Font = TEXT_FIELD_FONT;
+            accountNameTextField.TextAlignment = UITextAlignment.Left;
+            accountNameTextField.Tag = ACCOUNT_NAME_TAG;
+            settingsView.Add (accountNameTextField);
 
-            yOffset = nameTextField.Frame.Bottom;
+            yOffset = accountNameTextField.Frame.Bottom;
 
             Util.AddHorizontalLine (HORIZONTAL_PADDING, yOffset, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, settingsView);
 
@@ -401,7 +401,7 @@ namespace NachoClient.iOS
             McCred theCred = McCred.QueryByAccountId<McCred> (LoginHelpers.GetCurrentAccountId ()).FirstOrDefault ();
             McConference theConference = McConference.QueryByAccountId <McConference> (LoginHelpers.GetCurrentAccountId ()).FirstOrDefault ();
 
-            var nameTextField = (UITextField)View.ViewWithTag (NAME_TAG);
+            var accountNameTextField = (UITextField)View.ViewWithTag (ACCOUNT_NAME_TAG);
             var usernameTextField = (UITextField)View.ViewWithTag (USERNAME_TAG);
             var passwordTextField = (UITextField)View.ViewWithTag (PASSWORD_TAG);
             var emailTextField = (UITextField)View.ViewWithTag (EMAIL_TAG);
@@ -410,7 +410,7 @@ namespace NachoClient.iOS
             var signatureLabel = (UILabel)View.ViewWithTag (SIGNATURE_TAG);
 
             if (!String.IsNullOrEmpty (theAccount.DisplayName)) {
-                nameTextField.Text = theAccount.DisplayName;
+                accountNameTextField.Text = theAccount.DisplayName;
             }
 
             if (!String.IsNullOrEmpty (theCred.Username)) {
@@ -444,7 +444,7 @@ namespace NachoClient.iOS
                 signatureLabel.Text = theAccount.Signature;
             }
 
-            nameTextField.Enabled = textFieldsEditable;
+            accountNameTextField.Enabled = textFieldsEditable;
             usernameTextField.Enabled = textFieldsEditable;
             passwordTextField.Enabled = textFieldsEditable;
             emailTextField.Enabled = textFieldsEditable;
@@ -494,14 +494,14 @@ namespace NachoClient.iOS
 
         protected bool DidUserEditAccount ()
         {
-            var nameTextField = (UITextField)View.ViewWithTag (NAME_TAG);
+            var accountNameTextField = (UITextField)View.ViewWithTag (ACCOUNT_NAME_TAG);
             var usernameTextField = (UITextField)View.ViewWithTag (USERNAME_TAG);
             var passwordTextField = (UITextField)View.ViewWithTag (PASSWORD_TAG);
             var emailTextField = (UITextField)View.ViewWithTag (EMAIL_TAG);
             var mailserverTextField = (UITextField)View.ViewWithTag (MAILSERVER_TAG);
             var conferenceTextField = (UITextField)View.ViewWithTag (CONFERENCE_TAG);
 
-            if (nameTextField.Text != originalAccountNameValue) {
+            if (accountNameTextField.Text != originalAccountNameValue) {
                 return true;
             }
             if (usernameTextField.Text != originalUsernameValue) {
@@ -772,7 +772,7 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
             if (DidUserEditAccount ()) {
-                var nameTextField = (UITextField)View.ViewWithTag (NAME_TAG);
+                var accountNameTextField = (UITextField)View.ViewWithTag (ACCOUNT_NAME_TAG);
                 var usernameTextField = (UITextField)View.ViewWithTag (USERNAME_TAG);
                 var passwordTextField = (UITextField)View.ViewWithTag (PASSWORD_TAG);
                 var emailTextField = (UITextField)View.ViewWithTag (EMAIL_TAG);
@@ -784,7 +784,7 @@ namespace NachoClient.iOS
                 McCred theCred = McCred.QueryByAccountId<McCred> (LoginHelpers.GetCurrentAccountId ()).FirstOrDefault ();
                 McConference theConference = McConference.QueryByAccountId <McConference> (LoginHelpers.GetCurrentAccountId ()).FirstOrDefault ();
 
-                theAccount.DisplayName = nameTextField.Text;
+                theAccount.DisplayName = accountNameTextField.Text;
                 theAccount.EmailAddr = emailTextField.Text;
                 theServer.Host = mailserverTextField.Text;
                 theCred.Username = usernameTextField.Text;
