@@ -458,8 +458,14 @@ namespace NachoCore.Brain
 
         public void Process ()
         {
+            bool tvStarted = false;
             if (ENABLED) {
-                McEmailMessage.StartTimeVariance (EventQueue.Token);
+                // If brain task is running under quick sync, do not start time variance
+                // as it is a waste of time.
+                if (NcApplication.ExecutionContextEnum.QuickSync != NcApplication.Instance.ExecutionContext) {
+                    McEmailMessage.StartTimeVariance (EventQueue.Token);
+                    tvStarted = true;
+                }
                 if (!NcBrain.RegisterStatusIndHandler) {
                     NcApplication.Instance.StatusIndEvent += GenerateInitialContactScores;
                     NcApplication.Instance.StatusIndEvent += UIScrollingEnd;
@@ -470,6 +476,11 @@ namespace NachoCore.Brain
             lock (LockObj) {
                 while (true) {
                     var brainEvent = EventQueue.Dequeue ();
+                    if (!tvStarted &&
+                        (NcApplication.ExecutionContextEnum.QuickSync != NcApplication.Instance.ExecutionContext)) {
+                        McEmailMessage.StartTimeVariance (EventQueue.Token);
+                        tvStarted = true;
+                    }
                     if (NcBrainEventType.TERMINATE == brainEvent.Type) {
                         Log.Info (Log.LOG_BRAIN, "NcBrain Task exits");
                         return;
