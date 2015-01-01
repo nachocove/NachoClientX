@@ -31,6 +31,7 @@ namespace NachoClient.iOS
         UIView domainWhiteInset;
         UIButton connectButton;
         UIButton customerSupportButton;
+        UIButton advancedButton;
 
         UIScrollView scrollView;
         UIView contentView;
@@ -270,7 +271,21 @@ namespace NachoClient.iOS
 
             yOffset = connectButton.Frame.Bottom + 15;
 
-            customerSupportButton = new UIButton (new RectangleF (50, yOffset, View.Frame.Width - 100, 30));
+            advancedButton = new UIButton (new RectangleF (50, yOffset, View.Frame.Width - 100, 20));
+            advancedButton.BackgroundColor = A.Color_NachoNowBackground;
+            advancedButton.TitleLabel.TextAlignment = UITextAlignment.Center;
+            advancedButton.SetTitle ("Advanced Sign In", UIControlState.Normal);
+            advancedButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
+            advancedButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
+            advancedButton.TouchUpInside += (object sender, EventArgs e) => {
+                View.EndEditing (true);
+                showAdvanced = true;
+                handleStatusEnums ();
+            };
+            contentView.AddSubview (advancedButton);
+            yOffset = advancedButton.Frame.Bottom + 20;
+
+            customerSupportButton = new UIButton (new RectangleF (50, yOffset, View.Frame.Width - 100, 20));
             customerSupportButton.BackgroundColor = A.Color_NachoNowBackground;
             customerSupportButton.TitleLabel.TextAlignment = UITextAlignment.Center;
             customerSupportButton.SetTitle ("Customer Support", UIControlState.Normal);
@@ -461,7 +476,15 @@ namespace NachoClient.iOS
             domainWhiteInset.Hidden = !showAdvanced;
 
             ViewFramer.Create (connectButton).Y (yOffset);
-            yOffset = connectButton.Frame.Bottom + 15;
+            yOffset = connectButton.Frame.Bottom + 25;
+
+            if (showAdvanced) {
+                advancedButton.Hidden = true;
+            } else {
+                advancedButton.Hidden = false;
+                ViewFramer.Create (advancedButton).Y (yOffset);
+                yOffset = advancedButton.Frame.Bottom + 20;
+            }
 
             ViewFramer.Create (customerSupportButton).Y (yOffset);
             yOffset = customerSupportButton.Frame.Bottom + 20;
