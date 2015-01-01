@@ -904,32 +904,64 @@ namespace NachoCore.ActiveSync
             if (!GetItemAndFolder<McCalendar> (calId, out cal, -1, out folder)) {
                 return null;
             }
+            /* From MS-ASCMD:
+             * When protocol versions 2.5, 12.0, 12.1, or 14.0 are used, the MeetingResponse command cannot be used to modify meeting requests in the Calendar folder.
+             * AND
+             * In Exchange 2007, the MeetingResponse command is used to accept, tentatively accept, or decline a meeting request only in the user's Inbox folder.
+             * 
+             * In this (these?) scenarios, update the Cal item in the DB, and Sync the change to the server.
+             */
+            McPending pending;
+            if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 != folder.Type &&
+                14.1 > Convert.ToDouble (ProtocolState.AsProtocolVersion)) {
+                switch (response) {
+                case NcResponseType.Accepted:
+                    cal.ResponseType = NcResponseType.Accepted;
+                    break;
 
-            Xml.MeetingResp.UserResponseCode apiResponse;
-            switch (response) {
-            case NcResponseType.Accepted:
-                apiResponse = Xml.MeetingResp.UserResponseCode.Accepted_1;
-                break;
+                case NcResponseType.Tentative:
+                    cal.ResponseType = NcResponseType.Tentative;
+                    break;
 
-            case NcResponseType.Tentative:
-                apiResponse = Xml.MeetingResp.UserResponseCode.Tentatively_2;
-                break;
+                case NcResponseType.Declined:
+                    cal.ResponseType = NcResponseType.Declined;
+                    break;
 
-            case NcResponseType.Declined:
-                apiResponse = Xml.MeetingResp.UserResponseCode.Declined_3;
-                break;
+                default:
+                    return null;
+                }
+                cal.ResponseTypeIsSet = true;
+                cal.Update ();
+                pending = new McPending (Account.Id, cal) {
+                    Operation = McPending.Operations.CalUpdate,
+                    ParentId = folder.ServerId,
+                    ServerId = cal.ServerId,
+                }; 
+            } else {
+                Xml.MeetingResp.UserResponseCode apiResponse;
+                switch (response) {
+                case NcResponseType.Accepted:
+                    apiResponse = Xml.MeetingResp.UserResponseCode.Accepted_1;
+                    break;
 
-            default:
-                return null;
+                case NcResponseType.Tentative:
+                    apiResponse = Xml.MeetingResp.UserResponseCode.Tentatively_2;
+                    break;
+
+                case NcResponseType.Declined:
+                    apiResponse = Xml.MeetingResp.UserResponseCode.Declined_3;
+                    break;
+
+                default:
+                    return null;
+                }
+                pending = new McPending (Account.Id) {
+                    Operation = McPending.Operations.CalRespond,
+                    ServerId = cal.ServerId,
+                    ParentId = folder.ServerId,
+                    CalResponse = apiResponse,
+                };
             }
-
-            var pending = new McPending (Account.Id) {
-                Operation = McPending.Operations.CalRespond,
-                ServerId = cal.ServerId,
-                ParentId = folder.ServerId,
-                CalResponse = apiResponse,
-            };
-
             pending.Insert ();
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCRESPCAL");
