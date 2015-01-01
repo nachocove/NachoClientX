@@ -947,7 +947,7 @@ namespace NachoCore.Utils
                     DateTime nextDay = localStartTime.AddDays (1.0);
                     var ev = McEvent.Create (c.AccountId, localStartTime.ToUniversalTime (), nextDay.ToUniversalTime (), c.Id, exceptionId);
                     if (needsReminder) {
-                        ScheduleNotification (ev, reminderItem.Reminder);
+                        ev.SetReminder (reminderItem.Reminder);
                         needsReminder = false; // Only the first day should have a reminder.
                     }
                     localStartTime = nextDay;
@@ -1034,7 +1034,7 @@ namespace NachoCore.Utils
             if ((null == exceptions) || (0 == exceptions.Count)) {
                 var e = McEvent.Create (c.AccountId, startTime, endTime, c.Id, 0);
                 if (c.ReminderIsSet) {
-                    ScheduleNotification (e, c.Reminder);
+                    e.SetReminder (c.Reminder);
                 }
             } else {
                 foreach (var exception in exceptions) {
@@ -1046,7 +1046,7 @@ namespace NachoCore.Utils
                     }
                     var e = McEvent.Create (c.AccountId, exception.StartTime, exception.EndTime, c.Id, exception.Id);
                     if (exception.ReminderIsSet) {
-                        ScheduleNotification (e, exception.Reminder);
+                        e.SetReminder (exception.Reminder);
                     }
                 }
             }
@@ -1058,21 +1058,6 @@ namespace NachoCore.Utils
             c.RecurrencesGeneratedUntil = DateTime.MinValue;
             c.Update ();
             NcEventManager.Instance.ExpandRecurrences ();
-        }
-
-        /// Note that McEvent Ids are not immutable; they change often as the
-        /// calendar event changes. Thus we push the immutable calendar ID into
-        /// the notification. The 'calendar view' event will show the proper view.
-        protected static void ScheduleNotification (McEvent e, uint reminder)
-        {
-            var notifier = NachoPlatform.Notif.Instance;
-            notifier.CancelNotif (e.Id);
-            var notificationTime = e.StartTime.AddMinutes (-reminder);
-            var calendarItem = e.GetCalendarItemforEvent ();
-            var message = Pretty.Join (Pretty.SubjectString (calendarItem.Subject), Pretty.FormatAlert (reminder));
-            if (DateTime.UtcNow < notificationTime) {
-                notifier.ScheduleNotif (e.Id, e.StartTime.AddMinutes (-reminder), message);
-            }
         }
 
         /// <summary>

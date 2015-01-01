@@ -79,11 +79,59 @@ namespace NachoPlatform
         void Invoke (Action action);
     }
 
+    /// <summary>
+    /// Information necessary for a notification of an upcoming event.
+    /// </summary>
+    public struct NotificationInfo
+    {
+        public int Handle;
+        public DateTime When;
+        public string Message;
+        public NotificationInfo (int handle, DateTime when, string message)
+        {
+            Handle = handle;
+            When = when;
+            Message = message;
+        }
+    }
+
+    /// <summary>
+    /// Local notifications.  Used to inform the user about events in the near future.
+    /// </summary>
     public interface IPlatformNotif
     {
-        void ScheduleNotif (int handle, DateTime when, string message);
-        void CancelNotif (int handle);
-        void CancelNotif (List<int> handles);
+        /// <summary>
+        /// Notify the user right away.
+        /// </summary>
+        void ImmediateNotification (int handle, string message);
+
+        /// <summary>
+        /// Schedule a notification some time in the future.
+        /// </summary>
+        /// <param name="handle">An identifier that can be used to cancel the notification.</param>
+        /// <param name="when">When the notification should happen.</param>
+        /// <param name="message">The message to display to the user.</param>
+        void ScheduleNotification (int handle, DateTime when, string message);
+
+        /// <summary>
+        /// Schedule a notification some time in the future.
+        /// </summary>
+        void ScheduleNotification (NotificationInfo notification);
+
+        /// <summary>
+        /// Schedule a set of notifications. This might replace all existing
+        /// notifications with the new notifications, or it might merge the
+        /// new notifications in with the existing ones.
+        /// </summary>
+        /// <remarks>iOS and Android have very different capabilities for
+        /// local notifications, which makes it difficult to nail down the
+        /// exact behavior of this method.</remarks>
+        void ScheduleNotifications (List<NotificationInfo> notifications);
+
+        /// <summary>
+        /// Cancel the scheduled notification with the given handle.
+        /// </summary>
+        void CancelNotification (int handle);
     }
 
     public abstract class PlatformContactRecord

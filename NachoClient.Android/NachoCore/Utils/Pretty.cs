@@ -371,30 +371,40 @@ namespace NachoCore.Utils
             }
         }
 
-
-        public static string FormatAlert (uint alert)
+        public static string ReminderTime (TimeSpan startsIn)
         {
-            var alertMessage = "";
-            if (0 == alert) {
-                alertMessage = "now";
-            } else if (1 == alert) {
-                alertMessage = " in a minute";
-            } else if (5 == alert || 15 == alert || 30 == alert) {
-                alertMessage = " in " + alert + " minutes";
-            } else if (60 == alert) {
-                alertMessage = " in an hour";
-            } else if (120 == alert) {
-                alertMessage = " in two hours";
-            } else if ((60 * 24) == alert) {
-                alertMessage = " in one day";
-            } else if ((60 * 48) == alert) {
-                alertMessage = " in two days";
-            } else if ((60 * 24 * 7) == alert) {
-                alertMessage = " in a week";
-            } else {
-                alertMessage = String.Format (" in {0} minutes", alert);
+            int minutes = Convert.ToInt32 (startsIn.TotalMinutes);
+            if (0 > minutes) {
+                return "already started";
             }
-            return alertMessage;
+            if (0 == minutes) {
+                return "now";
+            }
+            if (1 == minutes) {
+                return "in a minute";
+            }
+            if (60 == minutes) {
+                return "in an hour";
+            }
+            if ((60 * 24) == minutes) {
+                return "in a day";
+            }
+            if ((60 * 24 * 7) == minutes) {
+                return "in a week";
+            }
+            if (60 > minutes) {
+                return string.Format ("in {0} minutes", minutes);
+            }
+            if (120 > minutes) {
+                return string.Format ("in an hour and {0} minutes", minutes - 60);
+            }
+            if (0 == minutes % (60 * 24)) {
+                return string.Format ("in {0} days", minutes / (60 * 24));
+            }
+            if (0 == minutes % 60) {
+                return string.Format ("in {0} hours", minutes / 60);
+            }
+            return string.Format ("in {0}:{1:D2}", minutes / 60, minutes % 60);
         }
 
         public static string PrettyFileSize (long fileSize)

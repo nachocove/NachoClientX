@@ -1340,10 +1340,6 @@ namespace NachoClient.iOS
 
         protected void DeleteEvent ()
         {
-            Notif eventNotif = Notif.Instance;
-            if (null != eventNotif.FindNotif (c.Id)) {
-                eventNotif.CancelNotif (c.Id);
-            }
             //remove item from db
             BackEnd.Instance.DeleteCalCmd (account.Id, c.Id);
             var controllers = this.NavigationController.ViewControllers;
