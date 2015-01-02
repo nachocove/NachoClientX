@@ -555,6 +555,7 @@ namespace NachoClient.iOS
                 }
                 contact.Update ();
                 NachoCore.BackEnd.Instance.UpdateContactCmd (contact.AccountId, contact.Id);
+                contact = McContact.QueryById<McContact> (contact.Id); // Re-read to get fields set by BE
                 Util.PerformAction ("tel", phoneTextField.Text);
             }
             DismissViewController (true, null);
@@ -571,6 +572,7 @@ namespace NachoClient.iOS
                 }
                 contact.Update ();
                 NachoCore.BackEnd.Instance.UpdateContactCmd (contact.AccountId, contact.Id);
+                contact = McContact.QueryById<McContact> (contact.Id); // Re-read to get fields set by BE
                 DismissViewController (true, null);
                 owner.PerformSegueForContactDefaultSelector ("SegueToMessageCompose", new SegueHolder (emailTextField.Text));
             } else {

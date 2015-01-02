@@ -19,7 +19,7 @@ using NachoCore.ActiveSync;
 namespace NachoClient.iOS
 {
     public partial class ContactEditViewController : NcUIViewControllerNoLeaks, INachoLabelChooserParent
-	{
+    {
         public enum BlockType
         {
             Phone,
@@ -62,7 +62,7 @@ namespace NachoClient.iOS
         protected RelationshipCell editingRelationshipCell;
         protected MiscCell editingMiscCell;
 
-        protected UIBarButtonItem backButton = new UIBarButtonItem (); 
+        protected UIBarButtonItem backButton = new UIBarButtonItem ();
         protected UIBarButtonItem doneButton = new UIBarButtonItem ();
 
         protected NachoCore.Utils.ContactsHelper contactHelper = new ContactsHelper ();
@@ -117,20 +117,20 @@ namespace NachoClient.iOS
 
         //Address section
         protected UIView addressView;
-        protected UIButton addAddressButton; 
+        protected UIButton addAddressButton;
         protected bool shouldScrollToAddressView = false;
 
         //IMAddress section
         protected UIView imAddressView;
-        protected UIButton addIMAddressButton; 
+        protected UIButton addIMAddressButton;
 
         //Relationship section
         protected UIView relationshipView;
-        protected UIButton addRelationshipButton; 
+        protected UIButton addRelationshipButton;
 
         //Misc. section
         protected UIView miscView;
-        protected UIButton addMiscButton; 
+        protected UIButton addMiscButton;
 
         //Notes Section
         protected UIView notesView;
@@ -176,9 +176,9 @@ namespace NachoClient.iOS
             base.ViewDidLoad ();
         }
 
-		public ContactEditViewController (IntPtr handle) : base (handle)
-		{
-		}
+        public ContactEditViewController (IntPtr handle) : base (handle)
+        {
+        }
 
         public override bool HidesBottomBarWhenPushed {
             get {
@@ -219,9 +219,9 @@ namespace NachoClient.iOS
             scrollView.AddSubview (contentView);
             View.AddSubview (scrollView);
 
-            phoneView = new UIView (new RectangleF(0,0,0,0));
-            emailView = new UIView (new RectangleF(0,0,0,0));
-            dateView = new UIView (new RectangleF(0,0,0,0));
+            phoneView = new UIView (new RectangleF (0, 0, 0, 0));
+            emailView = new UIView (new RectangleF (0, 0, 0, 0));
+            dateView = new UIView (new RectangleF (0, 0, 0, 0));
 
             yOffset = A.Card_Vertical_Indent;
 
@@ -267,7 +267,7 @@ namespace NachoClient.iOS
             userImageView.Hidden = true;
             headerView.AddSubview (userImageView);
 
-            UIView headerNameEditView = new UIView(new RectangleF (initialsCircleLabel.Frame.Right + 26, 0, 204, (CELL_HEIGHT * 4)));
+            UIView headerNameEditView = new UIView (new RectangleF (initialsCircleLabel.Frame.Right + 26, 0, 204, (CELL_HEIGHT * 4)));
             headerNameEditView.BackgroundColor = UIColor.White;
             headerNameEditView.Tag = HEADER_NAME_EDIT_VIEW_TAG;
             headerNameEditView.Hidden = false;
@@ -325,7 +325,7 @@ namespace NachoClient.iOS
 
             headerView.AddSubview (headerNameEditView);
 
-            UIView headerCompanyView = new UIView(new RectangleF(initialsCircleLabel.Frame.Right + 26, headerNameEditView.Frame.Bottom, 204, CELL_HEIGHT));
+            UIView headerCompanyView = new UIView (new RectangleF (initialsCircleLabel.Frame.Right + 26, headerNameEditView.Frame.Bottom, 204, CELL_HEIGHT));
             headerCompanyView.BackgroundColor = UIColor.White;
             headerCompanyView.Tag = HEADER_COMPANY_VIEW_TAG;
             headerView.AddSubview (headerCompanyView);
@@ -342,7 +342,7 @@ namespace NachoClient.iOS
 
             yOffset = headerView.Frame.Bottom + A.Card_Vertical_Indent;
 
-            phoneView = new UIView (new RectangleF(0, yOffset, View.Frame.Width, 200));
+            phoneView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 200));
             phoneView.BackgroundColor = UIColor.White;
             contentView.AddSubview (phoneView);
 
@@ -357,7 +357,7 @@ namespace NachoClient.iOS
             phoneCellList.Sort ();
             yOffset = phoneView.Frame.Bottom + A.Card_Vertical_Indent;
 
-            emailView = new UIView (new RectangleF(0, yOffset, View.Frame.Width, 200));
+            emailView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 200));
             emailView.BackgroundColor = UIColor.White;
             addEmailButton = AddNewButton ("Email", AddEmailTouchUpInside, emailView);
             contentView.AddSubview (emailView);
@@ -371,7 +371,7 @@ namespace NachoClient.iOS
             }
             yOffset = emailView.Frame.Bottom + 20;
 
-            dateView = new UIView (new RectangleF(0, yOffset, View.Frame.Width, 200));
+            dateView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 200));
             dateView.BackgroundColor = UIColor.White;
             contentView.AddSubview (dateView);
 
@@ -386,7 +386,7 @@ namespace NachoClient.iOS
             }
             yOffset = dateView.Frame.Bottom + 20;
 
-            addressView = new UIView (new RectangleF(0, yOffset, View.Frame.Width, 200));
+            addressView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 200));
             addressView.BackgroundColor = UIColor.White;
             contentView.AddSubview (addressView);
 
@@ -401,7 +401,7 @@ namespace NachoClient.iOS
             }
             yOffset = addressView.Frame.Bottom + 20;
 
-            imAddressView = new UIView (new RectangleF(0, yOffset, View.Frame.Width, 200));
+            imAddressView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 200));
             imAddressView.BackgroundColor = UIColor.White;
             contentView.AddSubview (imAddressView);
 
@@ -416,7 +416,7 @@ namespace NachoClient.iOS
             }
             yOffset = imAddressView.Frame.Bottom + 20;
 
-            relationshipView = new UIView (new RectangleF(0, yOffset, View.Frame.Width, 200));
+            relationshipView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 200));
             relationshipView.BackgroundColor = UIColor.White;
             contentView.AddSubview (relationshipView);
 
@@ -432,7 +432,7 @@ namespace NachoClient.iOS
 
             yOffset = relationshipView.Frame.Bottom + 20;
 
-            miscView = new UIView (new RectangleF(0, yOffset, View.Frame.Width, 200));
+            miscView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 200));
             miscView.BackgroundColor = UIColor.White;
             contentView.AddSubview (miscView);
 
@@ -512,7 +512,7 @@ namespace NachoClient.iOS
             AdjustY (headerCompanyView, headerNameEditView.Frame.Bottom);
             SetViewHeight (headerView, headerCompanyView.Frame.Bottom);
 
-            if(null != phoneView){
+            if (null != phoneView) {
                 AdjustY (phoneView, headerView.Frame.Bottom + 20);
                 SetViewHeight (phoneView, (phoneCellList.Count + 1) * CELL_HEIGHT);
                 AdjustY (addPhoneButton, phoneCellList.Count * CELL_HEIGHT);
@@ -623,10 +623,10 @@ namespace NachoClient.iOS
 
         protected void NameEditingEnded (object sender, EventArgs e)
         {
-            contactCopy.FirstName = firstNameField.Text.Trim();
-            contactCopy.MiddleName = middleNameField.Text.Trim();
-            contactCopy.LastName = lastNameField.Text.Trim();
-            contactCopy.Suffix = suffixField.Text.Trim();
+            contactCopy.FirstName = firstNameField.Text.Trim ();
+            contactCopy.MiddleName = middleNameField.Text.Trim ();
+            contactCopy.LastName = lastNameField.Text.Trim ();
+            contactCopy.Suffix = suffixField.Text.Trim ();
             contactCopy.Update ();
             ConfigureAndLayout ();
         }
@@ -689,11 +689,11 @@ namespace NachoClient.iOS
             }
             contactNameLabel.Text = 
                 firstName +
-                (middleName.Length > 0 ? " " : "") + 
-                middleName +
-                (lastName.Length > 0 ? " " : "") + 
-                lastName +
-                " " + suffix;
+            (middleName.Length > 0 ? " " : "") +
+            middleName +
+            (lastName.Length > 0 ? " " : "") +
+            lastName +
+            " " + suffix;
             return true;
         }
 
@@ -748,7 +748,7 @@ namespace NachoClient.iOS
             contactCopy.AccountId = contact.AccountId;
             contactCopy.Insert ();
             ContactsHelper.CopyContact (contact, ref contactCopy);
-            contactCopy.Update();
+            contactCopy.Update ();
         }
 
         protected void SetViewHeight (UIView view, float height)
@@ -764,7 +764,7 @@ namespace NachoClient.iOS
                 LabelSelectionViewController destinationController = (LabelSelectionViewController)segue.DestinationViewController;
                 var holder = (SegueHolder)sender;
 
-                destinationController.SetLabelList((List<string>)holder.value);
+                destinationController.SetLabelList ((List<string>)holder.value);
                 switch (editingBlockType) {
                 case BlockType.Phone:
                     destinationController.SetSelectedName (editingPhoneCell.phoneAttribute.Name);
@@ -787,7 +787,7 @@ namespace NachoClient.iOS
                 case BlockType.Misc:
                     destinationController.SetSelectedName (editingMiscCell.Name);
                     break;
-            }
+                }
                 destinationController.SetContact (contactCopy);
                 destinationController.SetOwner (this);
                 return;
@@ -932,7 +932,7 @@ namespace NachoClient.iOS
             alert.CancelButtonIndex = 0;
             alert.Dismissed += (object alertSender, UIButtonEventArgs alertEvent) => {
                 if (1 == alertEvent.ButtonIndex) {
-                    contactCopy.Delete();
+                    contactCopy.Delete ();
                     NavigationController.PopViewControllerAnimated (true);
                 }
             };
@@ -942,7 +942,7 @@ namespace NachoClient.iOS
         protected void DoneButtonClicked (object sender, EventArgs e)
         {
             View.EndEditing (true);
-            if(UpdateContact()){
+            if (UpdateContact ()) {
                 switch (controllerType) {
                 case ControllerType.Edit:
                     SaveNotesText ();
@@ -960,6 +960,7 @@ namespace NachoClient.iOS
                     ContactsHelper.CopyContact (contactCopy, ref contact);
                     contact.Update ();
                     NachoCore.BackEnd.Instance.UpdateContactCmd (contact.AccountId, contact.Id);
+                    contact = McContact.QueryById<McContact> (contact.Id); // Re-read to get fields set by BE
                     contactCopy.Delete ();
                     break;
                 case ControllerType.Add:
@@ -968,6 +969,7 @@ namespace NachoClient.iOS
                     f.Link (contactCopy);
                     NachoCore.BackEnd.Instance.CreateContactCmd (contactCopy.AccountId,
                         contactCopy.Id, f.Id);
+                    contactCopy = McContact.QueryById<McContact> (contactCopy.Id); // Re-read to get fields set by BE
                     break;
                 }
                 NavigationController.PopViewControllerAnimated (true);
@@ -977,7 +979,7 @@ namespace NachoClient.iOS
                 alert.Message = "One (or more) of the email addresses you entered is not entered in a valid format.";
                 alert.AddButton ("Ok");
                 alert.Show ();
-                LayoutView();
+                LayoutView ();
             }
         }
 
@@ -987,8 +989,8 @@ namespace NachoClient.iOS
             if (null != contactBody) {
                 contactBody.UpdateData (notesTextView.Text);
             } else {
-                contactCopy.BodyId = McBody.InsertFile (LoginHelpers.GetCurrentAccountId()
-                    ,McAbstrFileDesc.BodyTypeEnum.PlainText_1,
+                contactCopy.BodyId = McBody.InsertFile (LoginHelpers.GetCurrentAccountId ()
+                    , McAbstrFileDesc.BodyTypeEnum.PlainText_1,
                     notesTextView.Text).Id;
             }
             contactCopy.Update ();
@@ -1065,13 +1067,13 @@ namespace NachoClient.iOS
                 if (string.IsNullOrEmpty (e.editField.Text)) {
                     contactCopy.EmailAddresses.Remove (e.emailAttribute);
                     e.emailAttribute.Delete ();
-                } else if (!new RegexUtilities ().IsValidEmail(e.editField.Text)){
+                } else if (!new RegexUtilities ().IsValidEmail (e.editField.Text)) {
                     e.editField.TextColor = A.Color_NachoRed;
                     badEmailFlag = true;
                 } else {
                     e.emailAttribute.Value = e.editField.Text;
                     e.emailAttribute.Update ();
-                    McEmailAddress email = McEmailAddress.QueryById<McEmailAddress>(e.emailAttribute.EmailAddress);
+                    McEmailAddress email = McEmailAddress.QueryById<McEmailAddress> (e.emailAttribute.EmailAddress);
                     if (null == email) {
                         contactCopy.EmailAddresses.Remove (e.emailAttribute);
                         e.emailAttribute = contactCopy.AddEmailAddressAttribute (
@@ -1140,8 +1142,8 @@ namespace NachoClient.iOS
             alert.CancelButtonIndex = 0;
             alert.Dismissed += (object alertSender, UIButtonEventArgs alertEvent) => {
                 if (1 == alertEvent.ButtonIndex) {
-                    contactCopy.Delete();
-                    BackEnd.Instance.DeleteContactCmd(contact.AccountId, contact.Id);
+                    contactCopy.Delete ();
+                    BackEnd.Instance.DeleteContactCmd (contact.AccountId, contact.Id);
                     NavigationController.PopToRootViewController (true);
                 }
             };
@@ -1152,16 +1154,16 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
 
-            if (0 == contactHelper.GetAvailablePhoneNames(contactCopy).Count) {
+            if (0 == contactHelper.GetAvailablePhoneNames (contactCopy).Count) {
                 DisplayNoMoreSlotsAlert ("Phones", "Phone");
                 return;
             }
 
             var phoneAttribute = contactCopy.AddOrUpdatePhoneNumberAttribute (LoginHelpers.GetCurrentAccountId (), 
-                contactHelper.GetAvailablePhoneNames (contactCopy).First (),
-                contactHelper.ExchangeNameToLabel (contactHelper.GetAvailablePhoneNames (contactCopy).First ()),
-                ""
-            );
+                                     contactHelper.GetAvailablePhoneNames (contactCopy).First (),
+                                     contactHelper.ExchangeNameToLabel (contactHelper.GetAvailablePhoneNames (contactCopy).First ()),
+                                     ""
+                                 );
             contactCopy.Update ();
 
             PhoneCell newPhoneCell = new PhoneCell (phoneCellList.Count * CELL_HEIGHT, this, phoneAttribute);
@@ -1175,16 +1177,16 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
 
-            if (0 == contactHelper.GetAvailableEmailNames(contactCopy).Count) {
+            if (0 == contactHelper.GetAvailableEmailNames (contactCopy).Count) {
                 DisplayNoMoreSlotsAlert ("Emails", "Email");
                 return;
             }
 
             var emailAttribute = contactCopy.AddOrUpdateEmailAddressAttribute (LoginHelpers.GetCurrentAccountId (), 
-                contactHelper.GetAvailableEmailNames (contactCopy).First (),
-                contactHelper.ExchangeNameToLabel (contactHelper.GetAvailableEmailNames (contactCopy).First ()),
-                ""
-            );
+                                     contactHelper.GetAvailableEmailNames (contactCopy).First (),
+                                     contactHelper.ExchangeNameToLabel (contactHelper.GetAvailableEmailNames (contactCopy).First ()),
+                                     ""
+                                 );
             contactCopy.Update ();
 
 
@@ -1199,7 +1201,7 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
 
-            if (0 == contactHelper.GetAvailableDateNames(contactCopy).Count) {
+            if (0 == contactHelper.GetAvailableDateNames (contactCopy).Count) {
                 DisplayNoMoreSlotsAlert ("Dates", "Dates");
                 return;
             }
@@ -1221,7 +1223,7 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
 
-            if (0 == contactHelper.GetAvailableAddressNames(contactCopy).Count) {
+            if (0 == contactHelper.GetAvailableAddressNames (contactCopy).Count) {
                 DisplayNoMoreSlotsAlert ("Addresses", "Address");
                 return;
             }
@@ -1252,14 +1254,14 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
 
-            if (0 == contactHelper.GetAvailableIMAddressNames(contactCopy).Count) {
+            if (0 == contactHelper.GetAvailableIMAddressNames (contactCopy).Count) {
                 DisplayNoMoreSlotsAlert ("Addresses", "Address");
                 return;
             }
 
             var imAddressAttribute = contactCopy.AddIMAddressAttribute (contactCopy.AccountId,
                                          contactHelper.GetAvailableIMAddressNames (contactCopy).First (),
-                                         contactHelper.ExchangeNameToLabel(contactHelper.GetAvailableIMAddressNames (contactCopy).First ()),
+                                         contactHelper.ExchangeNameToLabel (contactHelper.GetAvailableIMAddressNames (contactCopy).First ()),
                                          "");
             contactCopy.Update ();
 
@@ -1276,7 +1278,7 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
 
-            if (0 == contactHelper.GetAvailableRelationshipNames(contactCopy).Count) {
+            if (0 == contactHelper.GetAvailableRelationshipNames (contactCopy).Count) {
                 DisplayNoMoreSlotsAlert ("Relationships", "Relationships");
                 return;
             }
@@ -1308,12 +1310,12 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
 
-            if (0 == contactHelper.GetAvailableMiscNames(TakenMiscNames()).Count) {
+            if (0 == contactHelper.GetAvailableMiscNames (TakenMiscNames ()).Count) {
                 DisplayNoMoreSlotsAlert ("Items", "Items");
                 return;
             }
 
-            string newMiscName = contactHelper.GetAvailableMiscNames (TakenMiscNames()).First ();
+            string newMiscName = contactHelper.GetAvailableMiscNames (TakenMiscNames ()).First ();
 
             MiscCell newMiscCell = new MiscCell (miscCellList.Count * CELL_HEIGHT, this, newMiscName, "");
             miscCellList.Add (newMiscCell);
@@ -1333,7 +1335,7 @@ namespace NachoClient.iOS
             defaultImageView.Tag = chooserButton.Tag + 1000;
             chooserButton.AddSubview (defaultImageView);
 
-            UILabel buttonLabel = new UILabel (new RectangleF(defaultImageView.Frame.Right + 6, 13, 54, 14));
+            UILabel buttonLabel = new UILabel (new RectangleF (defaultImageView.Frame.Right + 6, 13, 54, 14));
             buttonLabel.Font = A.Font_AvenirNextRegular12;
             buttonLabel.TextColor = UIColor.DarkGray;
             buttonLabel.TextAlignment = UITextAlignment.Left;
@@ -1401,10 +1403,10 @@ namespace NachoClient.iOS
 
             McBody contactBody = McBody.QueryById<McBody> (contactCopy.BodyId);
             if (null != contactBody) {
-                notesTextView.Text =  contactBody.GetContentsString ();
+                notesTextView.Text = contactBody.GetContentsString ();
             }
 
-            if ( ControllerType.Add == controllerType) {
+            if (ControllerType.Add == controllerType) {
                 deleteContactButton.Hidden = true;
             }
 
@@ -1586,7 +1588,7 @@ namespace NachoClient.iOS
             UIView backgroundCover = new UIView (View.Frame);
             backgroundCover.BackgroundColor = UIColor.LightGray.ColorWithAlpha (.1f);
 
-            UIView moreView = new UIView (new RectangleF(102, -28, 165, 102));
+            UIView moreView = new UIView (new RectangleF (102, -28, 165, 102));
             moreView.BackgroundColor = A.Color_NachoGreen;
             moreView.Layer.CornerRadius = 6.0f;
             moreView.Hidden = true;
@@ -1609,7 +1611,7 @@ namespace NachoClient.iOS
             defaultLabel.Text = "Set As Default";
             defaultButton.AddSubview (defaultLabel);
 
-            Util.AddHorizontalLine (18, defaultButton.Frame.Bottom, moreView.Frame.Width - (18 * 2), UIColor.LightGray.ColorWithAlpha(.8f), moreView);
+            Util.AddHorizontalLine (18, defaultButton.Frame.Bottom, moreView.Frame.Width - (18 * 2), UIColor.LightGray.ColorWithAlpha (.8f), moreView);
 
             UIButton deleteButton = new UIButton (new RectangleF (0, moreView.Frame.Height / 2 + 1, moreView.Frame.Width, (moreView.Frame.Height / 2) - 1));
             deleteButton.BackgroundColor = A.Color_NachoGreen;
@@ -1665,7 +1667,7 @@ namespace NachoClient.iOS
             ToggleMoreView ();
         }
 
-        protected void ToggleMoreView()
+        protected void ToggleMoreView ()
         {
             View.EndEditing (true);
             viewCover.Hidden = !viewCover.Hidden;
@@ -1751,11 +1753,11 @@ namespace NachoClient.iOS
         {
             public McContactStringAttribute phoneAttribute;
 
-            public PhoneCell (float yOffset, ContactEditViewController owner, McContactStringAttribute phoneAttribute) : base(yOffset, owner)
+            public PhoneCell (float yOffset, ContactEditViewController owner, McContactStringAttribute phoneAttribute) : base (yOffset, owner)
             {
                 this.phoneAttribute = phoneAttribute;
-                CreateView();
-                ConfigureView();
+                CreateView ();
+                ConfigureView ();
             }
 
             public override void CreateView ()
@@ -1773,7 +1775,7 @@ namespace NachoClient.iOS
             protected void EditingEnded (object sender, EventArgs e)
             {
                 phoneAttribute.Value = editField.Text;
-                phoneAttribute.Update();
+                phoneAttribute.Update ();
             }
 
             public void ConfigureView ()
@@ -1812,9 +1814,10 @@ namespace NachoClient.iOS
                 owner.ConfigurePhoneCells ();
             }
 
-            public int CompareTo(PhoneCell other){
+            public int CompareTo (PhoneCell other)
+            {
                 string name = phoneAttribute.Name;
-                int phonePriority = owner.contactHelper.PhoneNames.IndexOf(name);
+                int phonePriority = owner.contactHelper.PhoneNames.IndexOf (name);
 
                 string otherName = other.phoneAttribute.Name;
                 int otherPriority = owner.contactHelper.PhoneNames.IndexOf (otherName);
@@ -1822,7 +1825,7 @@ namespace NachoClient.iOS
                 return phonePriority.CompareTo (otherPriority);
             }
 
-            public void Cleanup()
+            public void Cleanup ()
             {
                 editField.EditingDidEnd -= EditingEnded;
                 labelButton.TouchUpInside -= PhoneLabelClicked;
@@ -1840,11 +1843,11 @@ namespace NachoClient.iOS
         {
             public McContactEmailAddressAttribute emailAttribute;
 
-            public EmailCell (float yOffset, ContactEditViewController owner, McContactEmailAddressAttribute emailAttribute) : base(yOffset, owner)
+            public EmailCell (float yOffset, ContactEditViewController owner, McContactEmailAddressAttribute emailAttribute) : base (yOffset, owner)
             {
                 this.emailAttribute = emailAttribute;
-                CreateView();
-                ConfigureView();
+                CreateView ();
+                ConfigureView ();
             }
 
             public override void CreateView ()
@@ -1860,7 +1863,7 @@ namespace NachoClient.iOS
             protected void EditingEnded (object sender, EventArgs e)
             {
                 emailAttribute.Value = editField.Text;
-                emailAttribute.Update();
+                emailAttribute.Update ();
             }
 
             public void ConfigureView ()
@@ -1891,10 +1894,10 @@ namespace NachoClient.iOS
                 owner.View.EndEditing (true);
                 owner.editingBlockType = BlockType.Email;
                 owner.editingEmailCell = this;
-                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (owner.contactHelper.GetAvailableEmailNames(owner.contactCopy)));
+                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (owner.contactHelper.GetAvailableEmailNames (owner.contactCopy)));
             }
 
-            public void Cleanup()
+            public void Cleanup ()
             {
                 editField.EditingDidEnd -= EditingEnded;
                 labelButton.TouchUpInside -= EmailLabelClicked;
@@ -1932,8 +1935,8 @@ namespace NachoClient.iOS
                 this.yOffset = yOffset;
                 this.owner = owner;
                 this.dateAttribute = dateAttribute;
-                CreateView();
-                ConfigureView();
+                CreateView ();
+                ConfigureView ();
             }
 
             public void CreateView ()
@@ -1963,7 +1966,7 @@ namespace NachoClient.iOS
                 Util.AddHorizontalLine (28, dateView.Frame.Height - 1, owner.View.Frame.Width - 28, A.Color_NachoBackgroundGray, dateView);
                 this.AddSubview (dateView);
 
-                datePicker = new UIDatePicker(new RectangleF (0, 0, owner.View.Frame.Width, 216));
+                datePicker = new UIDatePicker (new RectangleF (0, 0, owner.View.Frame.Width, 216));
                 datePicker.Mode = UIDatePickerMode.Date;
                 dateView.AddSubview (datePicker);
 
@@ -1985,7 +1988,7 @@ namespace NachoClient.iOS
                 UILabel labelButtonLabel = (UILabel)labelButton.ViewWithTag (BUTTON_TAG + 2000);
                 labelButtonLabel.Text = dateAttribute.Label;
 
-                dateLabel.Text = dateAttribute.Value.ToShortDateString();
+                dateLabel.Text = dateAttribute.Value.ToShortDateString ();
 
                 LayoutView ();
             }
@@ -2004,7 +2007,7 @@ namespace NachoClient.iOS
                 }
             }
 
-            public void DateClicked()
+            public void DateClicked ()
             {
                 owner.View.EndEditing (true);
                 owner.editingDateCell = this;
@@ -2040,10 +2043,10 @@ namespace NachoClient.iOS
                 owner.View.EndEditing (true);
                 owner.editingBlockType = BlockType.Date;
                 owner.editingDateCell = this;
-                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (owner.contactHelper.GetAvailableDateNames(owner.contactCopy)));
+                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (owner.contactHelper.GetAvailableDateNames (owner.contactCopy)));
             }
 
-            public void Cleanup()
+            public void Cleanup ()
             {
                 labelButton.TouchUpInside -= DateLabelClicked;
                 trashButton.TouchUpInside -= TrashButtonClicked;
@@ -2083,8 +2086,8 @@ namespace NachoClient.iOS
                 this.yOffset = yOffset;
                 this.owner = owner;
                 this.addressAttribute = addressAttribute;
-                CreateView();
-                ConfigureView();
+                CreateView ();
+                ConfigureView ();
             }
 
             public void CreateView ()
@@ -2108,50 +2111,50 @@ namespace NachoClient.iOS
                 editAddressView.BackgroundColor = UIColor.White;
                 this.AddSubview (editAddressView);
 
-                streetTextField = owner.ConfigureAddressTextField(new RectangleF(HORIZONTAL_INDENT, 0, 250, owner.CELL_HEIGHT - 1), "Street");
+                streetTextField = owner.ConfigureAddressTextField (new RectangleF (HORIZONTAL_INDENT, 0, 250, owner.CELL_HEIGHT - 1), "Street");
                 streetTextField.EditingDidEnd += EditingEnded;
                 streetTextField.ShouldReturn += (textField) => {
-                    cityTextField.BecomeFirstResponder();
+                    cityTextField.BecomeFirstResponder ();
                     return true;
                 };
                 editAddressView.AddSubview (streetTextField);
 
                 Util.AddHorizontalLine (28, streetTextField.Frame.Bottom, owner.View.Frame.Width - 28, A.Color_NachoBackgroundGray, editAddressView);
 
-                cityTextField = owner.ConfigureAddressTextField(new RectangleF(HORIZONTAL_INDENT, owner.CELL_HEIGHT, 250, owner.CELL_HEIGHT - 1), "City");
+                cityTextField = owner.ConfigureAddressTextField (new RectangleF (HORIZONTAL_INDENT, owner.CELL_HEIGHT, 250, owner.CELL_HEIGHT - 1), "City");
                 cityTextField.EditingDidEnd += EditingEnded;
                 cityTextField.ShouldReturn += (textField) => {
-                    stateTextField.BecomeFirstResponder();
+                    stateTextField.BecomeFirstResponder ();
                     return true;
                 };
                 editAddressView.AddSubview (cityTextField);
 
                 Util.AddHorizontalLine (28, cityTextField.Frame.Bottom, owner.View.Frame.Width - 28, A.Color_NachoBackgroundGray, editAddressView);
 
-                stateTextField = owner.ConfigureAddressTextField(new RectangleF(HORIZONTAL_INDENT, (owner.CELL_HEIGHT * 2), 250, owner.CELL_HEIGHT - 1), "State");
+                stateTextField = owner.ConfigureAddressTextField (new RectangleF (HORIZONTAL_INDENT, (owner.CELL_HEIGHT * 2), 250, owner.CELL_HEIGHT - 1), "State");
                 stateTextField.EditingDidEnd += EditingEnded;
                 stateTextField.ShouldReturn += (textField) => {
-                    zipTextField.BecomeFirstResponder();
+                    zipTextField.BecomeFirstResponder ();
                     return true;
                 };
                 editAddressView.AddSubview (stateTextField);
 
                 Util.AddHorizontalLine (28, stateTextField.Frame.Bottom, owner.View.Frame.Width - 28, A.Color_NachoBackgroundGray, editAddressView);
 
-                zipTextField = owner.ConfigureAddressTextField(new RectangleF(HORIZONTAL_INDENT, (owner.CELL_HEIGHT * 3), 250, owner.CELL_HEIGHT - 1), "Zip Code");
+                zipTextField = owner.ConfigureAddressTextField (new RectangleF (HORIZONTAL_INDENT, (owner.CELL_HEIGHT * 3), 250, owner.CELL_HEIGHT - 1), "Zip Code");
                 zipTextField.EditingDidEnd += EditingEnded;
                 zipTextField.ShouldReturn += (textField) => {
-                    countryTextField.BecomeFirstResponder();
+                    countryTextField.BecomeFirstResponder ();
                     return true;
                 };
                 editAddressView.AddSubview (zipTextField);
 
                 Util.AddHorizontalLine (28, zipTextField.Frame.Bottom, owner.View.Frame.Width - 28, A.Color_NachoBackgroundGray, editAddressView);
 
-                countryTextField = owner.ConfigureAddressTextField(new RectangleF(HORIZONTAL_INDENT, (owner.CELL_HEIGHT * 4), 250, owner.CELL_HEIGHT - 1), "Country");
+                countryTextField = owner.ConfigureAddressTextField (new RectangleF (HORIZONTAL_INDENT, (owner.CELL_HEIGHT * 4), 250, owner.CELL_HEIGHT - 1), "Country");
                 countryTextField.EditingDidEnd += EditingEnded;
                 countryTextField.ShouldReturn += (textField) => {
-                    owner.View.EndEditing(true);
+                    owner.View.EndEditing (true);
                     return true;
                 };
                 editAddressView.AddSubview (countryTextField);
@@ -2206,7 +2209,7 @@ namespace NachoClient.iOS
                 owner.View.EndEditing (true);
                 owner.editingBlockType = BlockType.Address;
                 owner.editingAddressCell = this;
-                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (owner.contactHelper.GetAvailableAddressNames(owner.contactCopy)));
+                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (owner.contactHelper.GetAvailableAddressNames (owner.contactCopy)));
             }
 
             protected void EditingEnded (object sender, EventArgs e)
@@ -2219,7 +2222,7 @@ namespace NachoClient.iOS
                 addressAttribute.Update ();
             }
 
-            public void Cleanup()
+            public void Cleanup ()
             {
                 streetTextField.EditingDidEnd -= EditingEnded;
                 cityTextField.EditingDidEnd -= EditingEnded;
@@ -2241,11 +2244,11 @@ namespace NachoClient.iOS
         {
             public McContactStringAttribute imAddressAttribute;
 
-            public IMAddressCell (float yOffset, ContactEditViewController owner, McContactStringAttribute imAddressAttribute) : base(yOffset, owner)
+            public IMAddressCell (float yOffset, ContactEditViewController owner, McContactStringAttribute imAddressAttribute) : base (yOffset, owner)
             {
                 this.imAddressAttribute = imAddressAttribute;
-                CreateView();
-                ConfigureView();
+                CreateView ();
+                ConfigureView ();
             }
 
             public override void CreateView ()
@@ -2279,7 +2282,7 @@ namespace NachoClient.iOS
             protected void EditingEnded (object sender, EventArgs e)
             {
                 imAddressAttribute.Value = editField.Text;
-                imAddressAttribute.Update();
+                imAddressAttribute.Update ();
             }
 
             public void LabelClicked (object sender, EventArgs e)
@@ -2287,7 +2290,7 @@ namespace NachoClient.iOS
                 owner.View.EndEditing (true);
                 owner.editingBlockType = BlockType.IMAddress;
                 owner.editingIMAddressCell = this;
-                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (owner.contactHelper.GetAvailableIMAddressNames(owner.contactCopy)));
+                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (owner.contactHelper.GetAvailableIMAddressNames (owner.contactCopy)));
             }
 
             public void TrashButtonClicked (object sender, EventArgs e)
@@ -2304,7 +2307,7 @@ namespace NachoClient.iOS
                 owner.LayoutView ();
             }
 
-            public void Cleanup()
+            public void Cleanup ()
             {
                 editField.EditingDidEnd -= EditingEnded;
                 labelButton.TouchUpInside -= LabelClicked;
@@ -2320,11 +2323,11 @@ namespace NachoClient.iOS
         {
             public McContactStringAttribute relationshipAttribute;
 
-            public RelationshipCell (float yOffset, ContactEditViewController owner, McContactStringAttribute relationshipAttribute) : base(yOffset, owner)
+            public RelationshipCell (float yOffset, ContactEditViewController owner, McContactStringAttribute relationshipAttribute) : base (yOffset, owner)
             {
                 this.relationshipAttribute = relationshipAttribute;
-                CreateView();
-                ConfigureView();
+                CreateView ();
+                ConfigureView ();
             }
 
             public override void CreateView ()
@@ -2357,7 +2360,7 @@ namespace NachoClient.iOS
             protected void EditingEnded (object sender, EventArgs e)
             {
                 relationshipAttribute.Value = editField.Text;
-                relationshipAttribute.Update();
+                relationshipAttribute.Update ();
             }
 
             public void LabelClicked (object sender, EventArgs e)
@@ -2365,7 +2368,7 @@ namespace NachoClient.iOS
                 owner.View.EndEditing (true);
                 owner.editingBlockType = BlockType.Relationship;
                 owner.editingRelationshipCell = this;
-                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (owner.contactHelper.GetAvailableRelationshipNames(owner.contactCopy)));
+                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (owner.contactHelper.GetAvailableRelationshipNames (owner.contactCopy)));
             }
 
             public void TrashButtonClicked (object sender, EventArgs e)
@@ -2380,7 +2383,7 @@ namespace NachoClient.iOS
                 owner.LayoutView ();
             }
 
-            public void Cleanup()
+            public void Cleanup ()
             {
                 editField.EditingDidEnd -= EditingEnded;
                 labelButton.TouchUpInside -= LabelClicked;
@@ -2399,12 +2402,12 @@ namespace NachoClient.iOS
             public string Value;
             public Xml.Contacts Type;
 
-            public MiscCell (float yOffset, ContactEditViewController owner, string Name, string Value) : base(yOffset, owner)
+            public MiscCell (float yOffset, ContactEditViewController owner, string Name, string Value) : base (yOffset, owner)
             {
                 this.Name = Name;
                 this.Value = Value;
-                CreateView();
-                ConfigureView();
+                CreateView ();
+                ConfigureView ();
             }
 
             public override void CreateView ()
@@ -2443,7 +2446,7 @@ namespace NachoClient.iOS
                 owner.View.EndEditing (true);
                 owner.editingBlockType = BlockType.Misc;
                 owner.editingMiscCell = this;
-                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (owner.contactHelper.GetAvailableMiscNames(owner.TakenMiscNames ())));
+                owner.PerformSegue ("SegueToLabelSelection", new SegueHolder (owner.contactHelper.GetAvailableMiscNames (owner.TakenMiscNames ())));
             }
 
             public void TrashButtonClicked (object sender, EventArgs e)
@@ -2457,7 +2460,7 @@ namespace NachoClient.iOS
                 owner.LayoutView ();
             }
 
-            public void Cleanup()
+            public void Cleanup ()
             {
                 editField.EditingDidEnd -= EditingEnded;
                 labelButton.TouchUpInside -= LabelClicked;
@@ -2478,14 +2481,14 @@ namespace NachoClient.iOS
             return takenNames;
         }
 
-        public void ConfigurePhoneCells()
+        public void ConfigurePhoneCells ()
         {
             foreach (var pc in phoneCellList) {
                 pc.ConfigureView ();
             }
         }
 
-        public void ConfigureEmailCells()
+        public void ConfigureEmailCells ()
         {
             foreach (var ec in emailCellList) {
                 ec.ConfigureView ();
@@ -2494,18 +2497,18 @@ namespace NachoClient.iOS
 
         protected void DisplayNoMoreSlotsAlert (string headerPlural, string msgSingular)
         {
-            UIAlertView noSlotsAvailable = new UIAlertView(
-                "No Available " + headerPlural, 
-                "There are no available " + msgSingular + " slots left for this contact. You cannot add another.",
-                null,
-                "Ok",
-                null
-            );
+            UIAlertView noSlotsAvailable = new UIAlertView (
+                                               "No Available " + headerPlural, 
+                                               "There are no available " + msgSingular + " slots left for this contact. You cannot add another.",
+                                               null,
+                                               "Ok",
+                                               null
+                                           );
             noSlotsAvailable.Show ();
             return;
         }
 
-        protected UITextField ConfigureAddressTextField(RectangleF frame, string placeholder)
+        protected UITextField ConfigureAddressTextField (RectangleF frame, string placeholder)
         {
             UITextField addressTextField = new UITextField (frame);
             addressTextField.Font = A.Font_AvenirNextMedium14;
@@ -2518,5 +2521,5 @@ namespace NachoClient.iOS
 
             return addressTextField;
         }
-	}
+    }
 }

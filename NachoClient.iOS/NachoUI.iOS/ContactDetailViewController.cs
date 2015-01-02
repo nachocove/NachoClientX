@@ -1207,6 +1207,7 @@ namespace NachoClient.iOS
                 }
                 contact.Update ();
                 NachoCore.BackEnd.Instance.UpdateContactCmd (contact.AccountId, contact.Id);
+                contact = McContact.QueryById<McContact> (contact.Id); // Re-read to get fields set by BE
             }
         }
 
