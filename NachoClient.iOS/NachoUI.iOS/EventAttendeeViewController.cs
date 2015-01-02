@@ -612,6 +612,7 @@ namespace NachoClient.iOS
             } else {
                 c.Update ();
                 BackEnd.Instance.UpdateCalCmd (account.Id, c.Id);
+                c = McCalendar.QueryById<McCalendar> (c.Id);
             }
         }
 

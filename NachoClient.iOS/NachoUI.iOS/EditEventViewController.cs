@@ -1331,6 +1331,7 @@ namespace NachoClient.iOS
                 }
                 BackEnd.Instance.UpdateCalCmd (account.Id, c.Id);
             }
+            c = McCalendar.QueryById<McCalendar> (c.Id);
             CalendarHelper.UpdateRecurrences (c);
             NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                 Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged),

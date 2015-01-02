@@ -1336,6 +1336,7 @@ namespace NachoClient.iOS
             NcAssert.True (0 != c.Id);
             c.Update ();
             BackEnd.Instance.UpdateCalCmd (account.Id, c.Id);
+            c = McCalendar.QueryById<McCalendar> (c.Id);
         }
 
         protected void UpdateStatus (NcResponseType status)
