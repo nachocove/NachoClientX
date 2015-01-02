@@ -64,6 +64,7 @@ namespace NachoClient.iOS
         protected float LEFT_LABEL_INDENT = 15;
         protected float LEFT_ADDRESS_INDENT = 57;
         protected float RIGHT_INDENT = 15;
+        protected float CHOOSER_INSET = 8;
 
         protected UcAddressField currentAddressField;
 
@@ -220,11 +221,15 @@ namespace NachoClient.iOS
             topLeftLabel.Font = A.Font_AvenirNextMedium14;
             topLeftLabel.TextColor = A.Color_NachoDarkText;
 
+
             chooserButton = UIButton.FromType (UIButtonType.System);
             Util.SetOriginalImagesForButton (chooserButton, "email-add", "email-add-active");
-            chooserButton.Tag = (int)TagType.CHOOSER_BUTTON_TAG;
             chooserButton.SizeToFit ();
-            chooserButton.Frame = new RectangleF (parentWidth - chooserButton.Frame.Width - RIGHT_INDENT, 0, chooserButton.Frame.Width, chooserButton.Frame.Height);
+            var chooserButtonX = parentWidth - chooserButton.Frame.Width - RIGHT_INDENT - CHOOSER_INSET;
+            chooserButton.Frame = new RectangleF (chooserButtonX, 0, chooserButton.Frame.Width + RIGHT_INDENT + CHOOSER_INSET, LINE_HEIGHT);
+            chooserButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
+            chooserButton.ImageEdgeInsets = new UIEdgeInsets (0, 8, 0, 0);
+            chooserButton.Tag = (int)TagType.CHOOSER_BUTTON_TAG;
             chooserButton.Hidden = !isEditable;
             chooserButton.TouchUpInside += (object sender, EventArgs e) => {
                 if (null != owner) {
@@ -382,7 +387,7 @@ namespace NachoClient.iOS
                 chooserButton.Hidden = true;
             } else {
                 chooserButton.Hidden = false;
-                AdjustXY (chooserButton, parentWidth - chooserButton.Frame.Width - RIGHT_INDENT, yOffset);
+                AdjustXY (chooserButton, chooserButton.Frame.X, yOffset);
                 xLimit = chooserButton.Frame.X;
             }
 
