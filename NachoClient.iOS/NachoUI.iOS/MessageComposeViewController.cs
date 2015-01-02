@@ -1178,6 +1178,7 @@ namespace NachoClient.iOS
                 // Update calendar item
                 calendarInviteItem.Update ();
                 BackEnd.Instance.UpdateCalCmd (account.Id, calendarInviteItem.Id);
+                calendarInviteItem = McCalendar.QueryById<McCalendar> (calendarInviteItem.Id);
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                     Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged),
                     Account = NachoCore.Model.ConstMcAccount.NotAccountSpecific,
