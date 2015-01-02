@@ -19,7 +19,7 @@ namespace NachoClient.iOS
         {
             this.onLinkSelected = onLinkSelected;
 
-            DataDetectorTypes = UIDataDetectorType.All;
+            DataDetectorTypes = UIDataDetectorType.Link | UIDataDetectorType.PhoneNumber;
             Delegate = new BodyTextViewDelegate (this);
 
             Editable = false;

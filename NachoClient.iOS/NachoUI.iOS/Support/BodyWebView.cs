@@ -38,7 +38,7 @@ namespace NachoClient.iOS
             this.baseUrl = baseUrl;
             this.preferredWidth = preferredWidth;
             this.sizeChangedCallback = sizeChangedCallback;
-            this.DataDetectorTypes = UIDataDetectorType.All;
+            this.DataDetectorTypes = UIDataDetectorType.Link | UIDataDetectorType.PhoneNumber;
             this.onLinkSelected = onLinkSelected;
 
             ScrollView.ScrollEnabled = false;
