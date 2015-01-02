@@ -492,18 +492,18 @@ namespace NachoCore.ActiveSync
                 }
 
                 if (!cToken.IsCancellationRequested) {
-                    CancelTimeoutTimer ("Success");
                     var contentType = response.Content.Headers.ContentType;
                     ContentType = (null == contentType) ? null : contentType.MediaType.ToLower ();
                     try {
                         ContentData = new BufferedStream (await response.Content.ReadAsStreamAsync ().ConfigureAwait (false));
                     } catch (Exception ex) {
                         // If we see this, it is most likely a bug in error processing above in AttemptHttp().
+                        CancelTimeoutTimer ("Exception creating ContentData");
                         Log.Error (Log.LOG_HTTP, "AttempHttp {0} {1}: exception in ReadAsStreamAsync {2}\n{3}", ex, ServerUri, ex.Message, ex.StackTrace);
                         HttpOpSm.PostEvent ((uint)SmEvt.E.TempFail, "HTTPOPODE", null, string.Format ("E, Uri: {0}", ServerUri));
                         return;
                     }
-
+                    CancelTimeoutTimer ("Success");
                     try {
                         HttpOpSm.PostEvent (ProcessHttpResponse (response, cToken));
                     } catch (Exception ex) {
