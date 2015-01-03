@@ -1426,11 +1426,6 @@ namespace NachoClient.iOS
         {
             NavigationController.PopViewControllerAnimated (true);
 
-            // Cancel notification if there is one
-            Notif eventNotif = Notif.Instance;
-            if (null != eventNotif.FindNotif (c.Id)) {
-                eventNotif.CancelNotif (c.Id);
-            }
             // Remove the item from the calendar.
             BackEnd.Instance.DeleteCalCmd (c.AccountId, c.Id);
         }

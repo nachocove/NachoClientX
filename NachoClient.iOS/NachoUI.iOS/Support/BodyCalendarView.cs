@@ -900,11 +900,6 @@ namespace NachoClient.iOS
                     removeFromCalendarButton.Hidden = true;
                 });
 
-            // Cancel notification if there is one
-            Notif eventNotif = Notif.Instance;
-            if (null != eventNotif.FindNotif (calendarItem.Id)) {
-                eventNotif.CancelNotif (calendarItem.Id);
-            }
             // Remove the item from the calendar.
             BackEnd.Instance.DeleteCalCmd (calendarItem.AccountId, calendarItem.Id);
         }
