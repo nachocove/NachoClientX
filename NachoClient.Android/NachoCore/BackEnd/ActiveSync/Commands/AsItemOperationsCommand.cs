@@ -263,10 +263,14 @@ namespace NachoCore.ActiveSync
                                 NcAssert.True (false, string.Format ("ItemOperations: inappropriate McPending Operation {0}", pending.Operation));
                                 break;
                             }
-                            // We are ignoring all the other crap that can come down (for now). We just want the Body.
-                            item.ApplyAsXmlBody (xmlBody);
-                            item.Update ();
-                            Log.Info (Log.LOG_AS, "ItemOperations item {0} {1}fetched.", item.ServerId, 
+                            if (null != item) {
+                                // We are ignoring all the other crap that can come down (for now). We just want the Body.
+                                // The item can be already deleted while we are waiting for this response.
+                                // TODO - make sure we're not leaking the body if it is already deleted.
+                                item.ApplyAsXmlBody (xmlBody);
+                                item.Update ();
+                            }
+                            Log.Info (Log.LOG_AS, "ItemOperations item {0} {1}fetched.", serverId, 
                                 (null == pending) ? "pre" : "");
                             if (null != pending) {
                                 var result = NcResult.Info (successInd);
