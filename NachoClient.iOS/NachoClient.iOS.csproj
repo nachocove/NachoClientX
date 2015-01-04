@@ -1955,6 +1955,7 @@
     <BundleResource Include="Resources\Slide05SwipeRight%406x.png" />
     <BundleResource Include="Resources\SlideNav-SwipeArrow%406x.png" />
     <BundleResource Include="Resources\Spinner-1%406x.png" />
+    <BundleResource Include="Resources\ReleaseNotes.txt" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
