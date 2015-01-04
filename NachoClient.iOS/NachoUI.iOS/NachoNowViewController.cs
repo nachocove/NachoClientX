@@ -225,7 +225,7 @@ namespace NachoClient.iOS
             if (segue.Identifier == "SegueToMailTo") {
                 var dc = (MessageComposeViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
-                var url = (string) holder.value;
+                var url = (string)holder.value;
                 dc.SetMailToUrl (url);
                 return;
             }
@@ -293,19 +293,13 @@ namespace NachoClient.iOS
 
             if (priorityInboxNeedsRefresh) {
                 priorityInboxNeedsRefresh = false;
+                List<int> adds;
                 List<int> deletes;
-                if (priorityInbox.Refresh (out deletes)) {
-                    if (null == deletes) {
+                if (priorityInbox.Refresh (out adds, out deletes)) {
+                    if ((null == adds) && (null == deletes)) {
                         hotListView.ReloadData ();
                     } else {
-                        var deletePaths = new List<NSIndexPath> ();
-                        foreach (var i in deletes) {
-                            var path = NSIndexPath.FromItemSection (i, 0);
-                            deletePaths.Add (path);
-                        }
-                        hotListView.BeginUpdates ();
-                        hotListView.DeleteRows (deletePaths.ToArray (), UITableViewRowAnimation.Fade);
-                        hotListView.EndUpdates ();
+                        Util.UpdateTable (hotListView, adds, deletes);
                     }
                     callReconfigure = false;
                 }

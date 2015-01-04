@@ -106,15 +106,15 @@ namespace NachoClient.iOS
             RefreshControl.TintColor = A.Color_NachoGreen;
             RefreshControl.AttributedTitle = new NSAttributedString ("Refreshing...");
             RefreshControl.ValueChanged += (object sender, EventArgs e) => {
-                RefreshControl.BeginRefreshing();
-                BackEnd.Instance.QuickSync();
-                new NcTimer("MessageListViewController refresh", refreshCallback, null, 2000, 0);
+                RefreshControl.BeginRefreshing ();
+                BackEnd.Instance.QuickSync ();
+                new NcTimer ("MessageListViewController refresh", refreshCallback, null, 2000, 0);
             };
 
             Util.ConfigureNavBar (false, this.NavigationController);
         }
 
-        protected void refreshCallback(object sender)
+        protected void refreshCallback (object sender)
         {
             NachoPlatform.InvokeOnUIThread.Instance.Invoke (() => {
                 RefreshControl.EndRefreshing ();
@@ -173,22 +173,12 @@ namespace NachoClient.iOS
         public void ReloadDataMaintainingPosition ()
         {
             NachoCore.Utils.NcAbate.HighPriority ("MessageListViewController ReloadDataMaintainingPosition");
+            List<int> adds;
             List<int> deletes;
-            if (messageSource.RefreshEmailMessages (out deletes)) {
-                if (null == deletes) {
-                    ReloadCapture.Start ();
-                    TableView.ReloadData ();
-                    ReloadCapture.Stop ();
-                } else {
-                    var deletePaths = new List<NSIndexPath> ();
-                    foreach (var i in deletes) {
-                        var path = NSIndexPath.FromItemSection (i, 0);
-                        deletePaths.Add (path);
-                    }
-                    TableView.BeginUpdates ();
-                    TableView.DeleteRows (deletePaths.ToArray (), UITableViewRowAnimation.Fade);
-                    TableView.EndUpdates ();
-                }
+            if (messageSource.RefreshEmailMessages (out adds, out deletes)) {
+                ReloadCapture.Start ();
+                Util.UpdateTable (TableView, adds, deletes);
+                ReloadCapture.Stop ();
             } else {
                 messageSource.ReconfigureVisibleCells (TableView);
             }
@@ -389,7 +379,7 @@ namespace NachoClient.iOS
                 var button = UIButton.FromType (UIButtonType.System);
                 button.Frame = new RectangleF (0, 0, 70, 30);
                 button.SetTitle ("Mail", UIControlState.Normal);
-                button.SetTitleColor(UIColor.White, UIControlState.Normal);
+                button.SetTitleColor (UIColor.White, UIControlState.Normal);
                 button.SetImage (image, UIControlState.Normal);
                 button.Font = UINavigationBar.Appearance.TitleTextAttributes.Font;
                 backButton = new UIBarButtonItem (button);

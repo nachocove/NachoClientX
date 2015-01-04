@@ -1113,8 +1113,9 @@ namespace NachoClient.iOS
             UITableView interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
 
             NachoCore.Utils.NcAbate.HighPriority ("ContactDetailViewController RefreshData");
+            List<int> adds;
             List<int> deletes;
-            messageSource.RefreshEmailMessages (out deletes);
+            messageSource.RefreshEmailMessages (out adds, out deletes);
             interactionsTableView.ReloadData ();
             NachoCore.Utils.NcAbate.RegularPriority ("ContactDetailViewController RefreshData");
         }
