@@ -54,10 +54,6 @@ namespace NachoClient.iOS
         protected const int GREY_BACKGROUND_VIEW_TAG = 200;
         protected const int STATUS_VIEW_TAG = 201;
 
-        protected const int DISMISS_CHANGES_ALERT_VIEW_TAG = 300;
-        protected const int ERROR_ALERT_VIEW_TAG = 301;
-        protected const int CANCEL_VALIDATION_ALERT_VIEW_TAG = 302;
-        protected const int BAD_NETWORK_ALERT_VIEW_TAG = 303;
         protected const int CANCEL_VALIDATION_BUTTON_TAG = 304;
         protected const int SIGNATURE_VIEW_TAG = 305;
 
@@ -87,7 +83,6 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 
         public override void ViewDidAppear (bool animated)
@@ -107,7 +102,6 @@ namespace NachoClient.iOS
                 NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillShowNotification);
             }
             View.EndEditing (true);
-            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
             base.ViewWillDisappear (animated);
         }
 
@@ -384,10 +378,6 @@ namespace NachoClient.iOS
             cancelValidation.Tag = CANCEL_VALIDATION_BUTTON_TAG;
             statusView.AddSubview (cancelValidation);
 
-            UIAlertView userHitCancel = new UIAlertView ("Validation Cancelled", "Your settings have not been validated and therefore may not work correctly. Would you still like to save?", null, "Save", "Cancel");
-            userHitCancel.Tag = CANCEL_VALIDATION_ALERT_VIEW_TAG;
-            userHitCancel.Clicked += SaveAnywayClicked;
-
             cancelValidation.TouchUpInside += CancelValidationButtonClicked;
 
             statusView.AddSubview (cancelValidation);
@@ -535,30 +525,6 @@ namespace NachoClient.iOS
             saveButton = null;
             backButton = null;
 
-            var cancelValidationAlertView = (UIAlertView)View.ViewWithTag (CANCEL_VALIDATION_ALERT_VIEW_TAG);
-            if (null != cancelValidationAlertView) {
-                cancelValidationAlertView.Clicked -= SaveAnywayClicked;
-                cancelValidationAlertView = null;
-            }
-
-            var dismissChangesAlertView = (UIAlertView)View.ViewWithTag (DISMISS_CHANGES_ALERT_VIEW_TAG);
-            if (null != dismissChangesAlertView) {
-                dismissChangesAlertView.Clicked -= DismissChangesClicked;
-                dismissChangesAlertView = null;
-            }
-
-            var errorAlertView = (UIAlertView)View.ViewWithTag (ERROR_ALERT_VIEW_TAG);
-            if (null != errorAlertView) {
-                errorAlertView.Clicked -= SaveAnywayClicked;
-                errorAlertView = null;
-            }
-
-            var networkFailureAlertView = (UIAlertView)View.ViewWithTag (BAD_NETWORK_ALERT_VIEW_TAG);
-            if (null != networkFailureAlertView) {
-                networkFailureAlertView.Clicked -= SaveAnywayClicked;
-                networkFailureAlertView = null;
-            }
-
             var cancelValidationButton = (UIButton)View.ViewWithTag (CANCEL_VALIDATION_BUTTON_TAG);
             if (null != cancelValidationButton) {
                 cancelValidationButton.TouchUpInside -= CancelValidationButtonClicked;
@@ -592,11 +558,11 @@ namespace NachoClient.iOS
             testCred.Username = (usernameTextField.Text);
 
             if (!BackEnd.Instance.ValidateConfig (LoginHelpers.GetCurrentAccountId (), testServer, testCred)) {
-                UIAlertView badNetworkConnection = new UIAlertView ("Network Error", "There is an issue with the network and we cannot validate your changes. Would you like to save anyway?", null, "Ok", "Cancel");
-                badNetworkConnection.Tag = BAD_NETWORK_ALERT_VIEW_TAG;
+                var badNetworkConnection = new UIAlertView ("Network Error", "There is an issue with the network and we cannot validate your changes. Would you like to save anyway?", null, "Ok", "Cancel");
                 badNetworkConnection.Clicked += SaveAnywayClicked;
                 badNetworkConnection.Show ();
             } else {
+                NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
                 ShowStatusView ();
             }
         }
@@ -604,6 +570,7 @@ namespace NachoClient.iOS
         public void StatusIndicatorTriggered ()
         {
             HideStatusView ();
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
             if (handleStatusEnums) {
                 HandleAccountIssue ();
             }
@@ -651,8 +618,7 @@ namespace NachoClient.iOS
         protected void CancelButtonClicked (object sender, EventArgs e)
         {
             if (DidUserEditAccount ()) {
-                UIAlertView dismissChanges = new UIAlertView ("Dismiss Changes", "If you leave this screen your changes will not be saved.", null, "Ok", "Cancel");
-                dismissChanges.Tag = DISMISS_CHANGES_ALERT_VIEW_TAG;
+                var dismissChanges = new UIAlertView ("Dismiss Changes", "If you leave this screen your changes will not be saved.", null, "Ok", "Cancel");
                 dismissChanges.Clicked += DismissChangesClicked;
                 dismissChanges.Show ();
             } else {
@@ -663,8 +629,14 @@ namespace NachoClient.iOS
         protected void CancelValidationButtonClicked (object sender, EventArgs e)
         {
             BackEnd.Instance.CancelValidateConfig (LoginHelpers.GetCurrentAccountId ());
-            var cancelValidationAlertView = (UIAlertView)View.ViewWithTag (CANCEL_VALIDATION_ALERT_VIEW_TAG);
-            cancelValidationAlertView.Show ();
+
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+            HideStatusView ();
+
+            var cancelledValidationAlertView = new UIAlertView ("Validation Cancelled", "Your settings have not been validated and therefore may not work correctly. Would you still like to save?", null, "Save", "Cancel");
+            cancelledValidationAlertView.Clicked += SaveAnywayClicked;
+            cancelledValidationAlertView.Show ();
+
         }
 
         protected void CaptureOriginalSettings ()
@@ -699,6 +671,8 @@ namespace NachoClient.iOS
             if (b.ButtonIndex == 0) {
                 ToggleEditing ();
             }
+            var me = (UIAlertView)sender;
+            me.Clicked -= DismissChangesClicked;
         }
 
         protected void SaveAnywayClicked (object sender, UIButtonEventArgs b)
@@ -707,6 +681,8 @@ namespace NachoClient.iOS
                 SaveAccountSettings ();
                 ToggleEditing ();
             }
+            var me = (UIAlertView)sender;
+            me.Clicked -= SaveAnywayClicked;
         }
 
         protected void SignatureTapHandler (NSObject sender)
@@ -743,8 +719,7 @@ namespace NachoClient.iOS
                 break;
             }
 
-            UIAlertView errorAlertView = new UIAlertView (alertViewHeader, alertViewMessage, null, "Save", "Cancel");
-            errorAlertView.Tag = ERROR_ALERT_VIEW_TAG;
+            var errorAlertView = new UIAlertView (alertViewHeader, alertViewMessage, null, "Save", "Cancel");
             errorAlertView.Clicked += SaveAnywayClicked;
             errorAlertView.Show ();
             handleStatusEnums = false;
