@@ -136,7 +136,7 @@ namespace NachoClient.iOS
             nachoMailLabel = new UILabel (new RectangleF (70, LOWER_SECTION_Y_VAL + 110, 180, 40));
             nachoMailLabel.Font = A.Font_AvenirNextDemiBold30;
             nachoMailLabel.TextColor = UIColor.White;
-            nachoMailLabel.Text = "NachoMail";
+            nachoMailLabel.Text = "Nacho Mail";
             nachoMailLabel.Alpha = 0.0f;
             nachoMailLabel.TextAlignment = UITextAlignment.Center;
             this.AddSubview (nachoMailLabel);
