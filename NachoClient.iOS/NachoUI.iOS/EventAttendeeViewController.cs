@@ -217,7 +217,7 @@ namespace NachoClient.iOS
             addAttendeesButton.Clicked += (object sender, EventArgs e) => {
                 var address = new NcEmailAddress (NcEmailAddress.Kind.Required);
                 address.action = NcEmailAddress.Action.create;
-                PerformSegue ("SegueToContactSearch", new SegueHolder (address));
+                PerformSegue ("EventAttendeesToContactChooser", new SegueHolder (address));
             }; 
 
             segmentedControlView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 40));
