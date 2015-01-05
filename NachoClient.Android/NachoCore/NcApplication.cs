@@ -242,6 +242,9 @@ namespace NachoCore
         // ALL CLASS-4 STARTS ARE DEFERRED BASED ON TIME.
         public void StartClass4Services ()
         {
+            // Make sure the scheduled notifications are up to date.
+            LocalNotificationManager.ScheduleNotifications ();
+
             ExecutionContext = ExecutionContextEnum.Foreground;
             MonitorStart (); // Has a deferred timer start inside.
             Log.Info (Log.LOG_LIFECYCLE, "{0} (build {1}) built at {2} by {3}",
@@ -378,6 +381,8 @@ namespace NachoCore
             // Things that don't need to run on the UI thread and don't need
             // to happen right away should go into a background task.
             NcTask.Run (delegate {
+
+                LocalNotificationManager.InitializeLocalNotifications ();
 
                 // Clean up old McPending tasks that have been abandoned.
                 DateTime cutoff = DateTime.UtcNow - new TimeSpan (2, 0, 0, 0); // Two days ago

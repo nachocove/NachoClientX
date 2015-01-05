@@ -17,17 +17,18 @@ namespace NachoCore
         public NachoEmailMessages (McFolder folder)
         {
             this.folder = folder;
+            List<int> adds;
             List<int> deletes;
-            Refresh (out deletes);
+            Refresh (out adds, out deletes);
         }
 
-        public bool Refresh (out List<int> deletes)
+        public bool Refresh (out List<int> adds, out List<int> deletes)
         {
             var list = McEmailMessage.QueryActiveMessageItems (folder.AccountId, folder.Id);
             if (null == list) {
                 list = new List<NcEmailMessageIndex> ();
             }
-            if (!NcMessageThreads.AreDifferent (threadList, list, out deletes)) {
+            if (!NcMessageThreads.AreDifferent (threadList, list, out adds, out deletes)) {
                 return false;
             }
             threadList = NcMessageThreads.ThreadByConversation (list);

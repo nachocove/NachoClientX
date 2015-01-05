@@ -12,13 +12,21 @@ namespace NachoClient.iOS
 {
     public class BodyTextView : UITextView, IBodyRender
     {
-        public BodyTextView (float Y, float preferredWidth, NSAttributedString text)
+        protected BodyView.LinkSelectedCallback onLinkSelected;
+
+        public BodyTextView (float Y, float preferredWidth, NSAttributedString text, BodyView.LinkSelectedCallback onLinkSelected)
             : base (new RectangleF(0, Y, preferredWidth, 1))
         {
+            this.onLinkSelected = onLinkSelected;
+
+            DataDetectorTypes = UIDataDetectorType.Link | UIDataDetectorType.PhoneNumber;
+            Delegate = new BodyTextViewDelegate (this);
+
             Editable = false;
+            Selectable = true;
             AttributedText = text;
             base.ContentSize = SizeThatFits (Frame.Size);
-
+           
             // Workaround a bug.  UITextView, which is a kind of UIScrollView, only allows
             // scrolling programatically if ScrollEnabled is true.  If ScrollEnabled is
             // false, then setting ContentOffset has no effect (or the wrong effect). To
@@ -51,6 +59,34 @@ namespace NachoClient.iOS
             this.Frame = frame;
             this.ContentOffset = contentOffset;
         }
+
+        protected override void Dispose (bool disposing)
+        {
+            var bodyTextViewDelegate = (BodyTextViewDelegate)this.Delegate;
+            bodyTextViewDelegate.owner = null;
+            this.onLinkSelected = null;
+            this.Delegate = null;
+            base.Dispose (disposing);
+        }
+
+        protected class BodyTextViewDelegate : UITextViewDelegate
+        {
+            public BodyTextView owner;
+
+            public BodyTextViewDelegate(BodyTextView owner)
+            {
+                this.owner = owner;
+            }
+
+            public override bool ShouldInteractWithUrl (UITextView textView, NSUrl URL, NSRange characterRange)
+            {
+                if ((null != owner) && (null != owner.onLinkSelected)) {
+                    owner.onLinkSelected (URL);
+                }
+                return false;
+            }
+        }
+
     }
 }
 

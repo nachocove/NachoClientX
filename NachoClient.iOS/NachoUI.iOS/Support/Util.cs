@@ -405,7 +405,7 @@ namespace NachoClient
             ctx.ScaleCTM (1, -1);
             ctx.DrawImage (new RectangleF (origin, size), todayImage.CGImage);
 
-            ctx.TranslateCTM ((todayImage.Size.Width/2) - (attributedString.Size.Width/2) , (todayImage.Size.Height/2) - (attributedString.Size.Height/2) + 5);
+            ctx.TranslateCTM ((todayImage.Size.Width / 2) - (attributedString.Size.Width / 2), (todayImage.Size.Height / 2) - (attributedString.Size.Height / 2) + 5);
             using (var textLine = new CTLine (attributedString)) {
                 textLine.Draw (ctx);
             }
@@ -1088,6 +1088,35 @@ namespace NachoClient
             }
 
             return Util.ColorForUser (colorIndex);
+        }
+
+        public static void UpdateTable (UITableView tableView, List<int> adds, List<int> deletes)
+        {
+            var deletePaths = new List<NSIndexPath> ();
+            if (null != deletes) {
+                foreach (var i in deletes) {
+                    var path = NSIndexPath.FromItemSection (i, 0);
+                    deletePaths.Add (path);
+                }
+            }
+            var addPaths = new List<NSIndexPath> ();
+            if (null != adds) {
+                foreach (var i in adds) {
+                    addPaths.Add (NSIndexPath.FromItemSection (i, 0));
+                }
+            }
+            if ((0 == deletePaths.Count) && (0 == addPaths.Count)) {
+                tableView.ReloadData ();
+                return;
+            }
+            tableView.BeginUpdates ();
+            if (0 != deletePaths.Count) {
+                tableView.DeleteRows (deletePaths.ToArray (), UITableViewRowAnimation.Fade);
+            }
+            if (0 != addPaths.Count) {
+                tableView.InsertRows (addPaths.ToArray (), UITableViewRowAnimation.Fade);
+            }
+            tableView.EndUpdates ();
         }
 
         #endregion

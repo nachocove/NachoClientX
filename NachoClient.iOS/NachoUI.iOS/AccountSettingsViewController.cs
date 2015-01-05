@@ -35,7 +35,7 @@ namespace NachoClient.iOS
         protected readonly UIColor TEXT_FIELD_TEXT_COLOR = A.Color_NachoGreen;
         protected readonly UIFont TEXT_FIELD_FONT = A.Font_AvenirNextMedium14;
 
-        protected const int NAME_TAG = 100;
+        protected const int ACCOUNT_NAME_TAG = 100;
         protected const int USERNAME_TAG = 101;
         protected const int PASSWORD_TAG = 102;
         protected const int EMAIL_TAG = 103;
@@ -54,10 +54,6 @@ namespace NachoClient.iOS
         protected const int GREY_BACKGROUND_VIEW_TAG = 200;
         protected const int STATUS_VIEW_TAG = 201;
 
-        protected const int DISMISS_CHANGES_ALERT_VIEW_TAG = 300;
-        protected const int ERROR_ALERT_VIEW_TAG = 301;
-        protected const int CANCEL_VALIDATION_ALERT_VIEW_TAG = 302;
-        protected const int BAD_NETWORK_ALERT_VIEW_TAG = 303;
         protected const int CANCEL_VALIDATION_BUTTON_TAG = 304;
         protected const int SIGNATURE_VIEW_TAG = 305;
 
@@ -87,7 +83,6 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
-            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
         }
 
         public override void ViewDidAppear (bool animated)
@@ -107,7 +102,6 @@ namespace NachoClient.iOS
                 NSNotificationCenter.DefaultCenter.RemoveObserver (UIKeyboard.WillShowNotification);
             }
             View.EndEditing (true);
-            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
             base.ViewWillDisappear (animated);
         }
 
@@ -169,15 +163,15 @@ namespace NachoClient.iOS
             nameLabel.Text = "Name";
             settingsView.Add (nameLabel);
 
-            UITextField nameTextField = new UITextField (new RectangleF (nameLabel.Frame.Right + SPACER, yOffset, 171, TEXTFIELD_HEIGHT));
-            nameTextField.Placeholder = "Exchange";
-            nameTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
-            nameTextField.Font = TEXT_FIELD_FONT;
-            nameTextField.TextAlignment = UITextAlignment.Left;
-            nameTextField.Tag = NAME_TAG;
-            settingsView.Add (nameTextField);
+            UITextField accountNameTextField = new UITextField (new RectangleF (nameLabel.Frame.Right + SPACER, yOffset, 171, TEXTFIELD_HEIGHT));
+            accountNameTextField.Placeholder = "Exchange";
+            accountNameTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
+            accountNameTextField.Font = TEXT_FIELD_FONT;
+            accountNameTextField.TextAlignment = UITextAlignment.Left;
+            accountNameTextField.Tag = ACCOUNT_NAME_TAG;
+            settingsView.Add (accountNameTextField);
 
-            yOffset = nameTextField.Frame.Bottom;
+            yOffset = accountNameTextField.Frame.Bottom;
 
             Util.AddHorizontalLine (HORIZONTAL_PADDING, yOffset, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, settingsView);
 
@@ -384,10 +378,6 @@ namespace NachoClient.iOS
             cancelValidation.Tag = CANCEL_VALIDATION_BUTTON_TAG;
             statusView.AddSubview (cancelValidation);
 
-            UIAlertView userHitCancel = new UIAlertView ("Validation Cancelled", "Your settings have not been validated and therefore may not work correctly. Would you still like to save?", null, "Save", "Cancel");
-            userHitCancel.Tag = CANCEL_VALIDATION_ALERT_VIEW_TAG;
-            userHitCancel.Clicked += SaveAnywayClicked;
-
             cancelValidation.TouchUpInside += CancelValidationButtonClicked;
 
             statusView.AddSubview (cancelValidation);
@@ -401,7 +391,7 @@ namespace NachoClient.iOS
             McCred theCred = McCred.QueryByAccountId<McCred> (LoginHelpers.GetCurrentAccountId ()).FirstOrDefault ();
             McConference theConference = McConference.QueryByAccountId <McConference> (LoginHelpers.GetCurrentAccountId ()).FirstOrDefault ();
 
-            var nameTextField = (UITextField)View.ViewWithTag (NAME_TAG);
+            var accountNameTextField = (UITextField)View.ViewWithTag (ACCOUNT_NAME_TAG);
             var usernameTextField = (UITextField)View.ViewWithTag (USERNAME_TAG);
             var passwordTextField = (UITextField)View.ViewWithTag (PASSWORD_TAG);
             var emailTextField = (UITextField)View.ViewWithTag (EMAIL_TAG);
@@ -410,7 +400,7 @@ namespace NachoClient.iOS
             var signatureLabel = (UILabel)View.ViewWithTag (SIGNATURE_TAG);
 
             if (!String.IsNullOrEmpty (theAccount.DisplayName)) {
-                nameTextField.Text = theAccount.DisplayName;
+                accountNameTextField.Text = theAccount.DisplayName;
             }
 
             if (!String.IsNullOrEmpty (theCred.Username)) {
@@ -444,7 +434,7 @@ namespace NachoClient.iOS
                 signatureLabel.Text = theAccount.Signature;
             }
 
-            nameTextField.Enabled = textFieldsEditable;
+            accountNameTextField.Enabled = textFieldsEditable;
             usernameTextField.Enabled = textFieldsEditable;
             passwordTextField.Enabled = textFieldsEditable;
             emailTextField.Enabled = textFieldsEditable;
@@ -494,14 +484,14 @@ namespace NachoClient.iOS
 
         protected bool DidUserEditAccount ()
         {
-            var nameTextField = (UITextField)View.ViewWithTag (NAME_TAG);
+            var accountNameTextField = (UITextField)View.ViewWithTag (ACCOUNT_NAME_TAG);
             var usernameTextField = (UITextField)View.ViewWithTag (USERNAME_TAG);
             var passwordTextField = (UITextField)View.ViewWithTag (PASSWORD_TAG);
             var emailTextField = (UITextField)View.ViewWithTag (EMAIL_TAG);
             var mailserverTextField = (UITextField)View.ViewWithTag (MAILSERVER_TAG);
             var conferenceTextField = (UITextField)View.ViewWithTag (CONFERENCE_TAG);
 
-            if (nameTextField.Text != originalAccountNameValue) {
+            if (accountNameTextField.Text != originalAccountNameValue) {
                 return true;
             }
             if (usernameTextField.Text != originalUsernameValue) {
@@ -534,30 +524,6 @@ namespace NachoClient.iOS
             editButton = null;
             saveButton = null;
             backButton = null;
-
-            var cancelValidationAlertView = (UIAlertView)View.ViewWithTag (CANCEL_VALIDATION_ALERT_VIEW_TAG);
-            if (null != cancelValidationAlertView) {
-                cancelValidationAlertView.Clicked -= SaveAnywayClicked;
-                cancelValidationAlertView = null;
-            }
-
-            var dismissChangesAlertView = (UIAlertView)View.ViewWithTag (DISMISS_CHANGES_ALERT_VIEW_TAG);
-            if (null != dismissChangesAlertView) {
-                dismissChangesAlertView.Clicked -= DismissChangesClicked;
-                dismissChangesAlertView = null;
-            }
-
-            var errorAlertView = (UIAlertView)View.ViewWithTag (ERROR_ALERT_VIEW_TAG);
-            if (null != errorAlertView) {
-                errorAlertView.Clicked -= SaveAnywayClicked;
-                errorAlertView = null;
-            }
-
-            var networkFailureAlertView = (UIAlertView)View.ViewWithTag (BAD_NETWORK_ALERT_VIEW_TAG);
-            if (null != networkFailureAlertView) {
-                networkFailureAlertView.Clicked -= SaveAnywayClicked;
-                networkFailureAlertView = null;
-            }
 
             var cancelValidationButton = (UIButton)View.ViewWithTag (CANCEL_VALIDATION_BUTTON_TAG);
             if (null != cancelValidationButton) {
@@ -592,11 +558,11 @@ namespace NachoClient.iOS
             testCred.Username = (usernameTextField.Text);
 
             if (!BackEnd.Instance.ValidateConfig (LoginHelpers.GetCurrentAccountId (), testServer, testCred)) {
-                UIAlertView badNetworkConnection = new UIAlertView ("Network Error", "There is an issue with the network and we cannot validate your changes. Would you like to save anyway?", null, "Ok", "Cancel");
-                badNetworkConnection.Tag = BAD_NETWORK_ALERT_VIEW_TAG;
+                var badNetworkConnection = new UIAlertView ("Network Error", "There is an issue with the network and we cannot validate your changes. Would you like to save anyway?", null, "Ok", "Cancel");
                 badNetworkConnection.Clicked += SaveAnywayClicked;
                 badNetworkConnection.Show ();
             } else {
+                NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
                 ShowStatusView ();
             }
         }
@@ -604,6 +570,7 @@ namespace NachoClient.iOS
         public void StatusIndicatorTriggered ()
         {
             HideStatusView ();
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
             if (handleStatusEnums) {
                 HandleAccountIssue ();
             }
@@ -651,8 +618,7 @@ namespace NachoClient.iOS
         protected void CancelButtonClicked (object sender, EventArgs e)
         {
             if (DidUserEditAccount ()) {
-                UIAlertView dismissChanges = new UIAlertView ("Dismiss Changes", "If you leave this screen your changes will not be saved.", null, "Ok", "Cancel");
-                dismissChanges.Tag = DISMISS_CHANGES_ALERT_VIEW_TAG;
+                var dismissChanges = new UIAlertView ("Dismiss Changes", "If you leave this screen your changes will not be saved.", null, "Ok", "Cancel");
                 dismissChanges.Clicked += DismissChangesClicked;
                 dismissChanges.Show ();
             } else {
@@ -663,8 +629,14 @@ namespace NachoClient.iOS
         protected void CancelValidationButtonClicked (object sender, EventArgs e)
         {
             BackEnd.Instance.CancelValidateConfig (LoginHelpers.GetCurrentAccountId ());
-            var cancelValidationAlertView = (UIAlertView)View.ViewWithTag (CANCEL_VALIDATION_ALERT_VIEW_TAG);
-            cancelValidationAlertView.Show ();
+
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+            HideStatusView ();
+
+            var cancelledValidationAlertView = new UIAlertView ("Validation Cancelled", "Your settings have not been validated and therefore may not work correctly. Would you still like to save?", null, "Save", "Cancel");
+            cancelledValidationAlertView.Clicked += SaveAnywayClicked;
+            cancelledValidationAlertView.Show ();
+
         }
 
         protected void CaptureOriginalSettings ()
@@ -699,6 +671,8 @@ namespace NachoClient.iOS
             if (b.ButtonIndex == 0) {
                 ToggleEditing ();
             }
+            var me = (UIAlertView)sender;
+            me.Clicked -= DismissChangesClicked;
         }
 
         protected void SaveAnywayClicked (object sender, UIButtonEventArgs b)
@@ -707,6 +681,8 @@ namespace NachoClient.iOS
                 SaveAccountSettings ();
                 ToggleEditing ();
             }
+            var me = (UIAlertView)sender;
+            me.Clicked -= SaveAnywayClicked;
         }
 
         protected void SignatureTapHandler (NSObject sender)
@@ -743,8 +719,7 @@ namespace NachoClient.iOS
                 break;
             }
 
-            UIAlertView errorAlertView = new UIAlertView (alertViewHeader, alertViewMessage, null, "Save", "Cancel");
-            errorAlertView.Tag = ERROR_ALERT_VIEW_TAG;
+            var errorAlertView = new UIAlertView (alertViewHeader, alertViewMessage, null, "Save", "Cancel");
             errorAlertView.Clicked += SaveAnywayClicked;
             errorAlertView.Show ();
             handleStatusEnums = false;
@@ -772,7 +747,7 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
             if (DidUserEditAccount ()) {
-                var nameTextField = (UITextField)View.ViewWithTag (NAME_TAG);
+                var accountNameTextField = (UITextField)View.ViewWithTag (ACCOUNT_NAME_TAG);
                 var usernameTextField = (UITextField)View.ViewWithTag (USERNAME_TAG);
                 var passwordTextField = (UITextField)View.ViewWithTag (PASSWORD_TAG);
                 var emailTextField = (UITextField)View.ViewWithTag (EMAIL_TAG);
@@ -784,7 +759,7 @@ namespace NachoClient.iOS
                 McCred theCred = McCred.QueryByAccountId<McCred> (LoginHelpers.GetCurrentAccountId ()).FirstOrDefault ();
                 McConference theConference = McConference.QueryByAccountId <McConference> (LoginHelpers.GetCurrentAccountId ()).FirstOrDefault ();
 
-                theAccount.DisplayName = nameTextField.Text;
+                theAccount.DisplayName = accountNameTextField.Text;
                 theAccount.EmailAddr = emailTextField.Text;
                 theServer.Host = mailserverTextField.Text;
                 theCred.Username = usernameTextField.Text;

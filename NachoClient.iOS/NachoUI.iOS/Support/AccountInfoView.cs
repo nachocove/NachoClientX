@@ -6,6 +6,7 @@ using System.Drawing;
 using MonoTouch.UIKit;
 using MonoTouch.Foundation;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
@@ -98,7 +99,7 @@ namespace NachoClient.iOS
             }
 
             // Account name
-            nameLabel.Text = (null == account.DisplayName) ? "Exchange" : account.DisplayName;
+            nameLabel.Text = Pretty.AccountName (account);
 
             // Email address
             var emailAddress = account.EmailAddr;

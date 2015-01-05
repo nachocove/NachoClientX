@@ -867,7 +867,7 @@ namespace NachoClient.iOS
             var c = McCalendar.QueryById<McCalendar> (e.CalendarId);
             var notif = new UILocalNotification () {
                 AlertAction = null,
-                AlertBody = c.Subject + Pretty.FormatAlert (7),
+                AlertBody = c.Subject + Pretty.ReminderTime (new TimeSpan (0, 7, 0)),
                 UserInfo = NSDictionary.FromObjectAndKey (NSNumber.FromInt32 (c.Id), EventNotificationKey),
                 FireDate = NSDate.FromTimeIntervalSinceNow (15),
             };

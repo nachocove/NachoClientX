@@ -908,7 +908,7 @@ namespace NachoCore.ActiveSync
                     default:
                         if (AsSyncCommand.IsSyncCommand (next.Operation)) {
                             Log.Info (Log.LOG_AS, "Strategy:FG/BG:QOp-IsSyncCommand:{0}", next.Operation.ToString ());
-                            var syncKit = GenSyncKit (accountId, protocolState, false, false);
+                            var syncKit = GenSyncKit (accountId, protocolState, false, true);
                             return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
                                 new AsSyncCommand (BEContext.ProtoControl, syncKit));
                         } else {

@@ -1289,7 +1289,7 @@ namespace NachoClient.iOS
             }
                 
             // Extras
-            c.OrganizerName = Pretty.DisplayNameForAccount (account);
+            c.OrganizerName = Pretty.UserNameForAccount (account);
             c.OrganizerEmail = account.EmailAddr;
             c.DtStamp = DateTime.UtcNow;
             if (0 == c.attendees.Count) {
@@ -1331,6 +1331,7 @@ namespace NachoClient.iOS
                 }
                 BackEnd.Instance.UpdateCalCmd (account.Id, c.Id);
             }
+            c = McCalendar.QueryById<McCalendar> (c.Id);
             CalendarHelper.UpdateRecurrences (c);
             NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                 Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged),
@@ -1340,10 +1341,6 @@ namespace NachoClient.iOS
 
         protected void DeleteEvent ()
         {
-            Notif eventNotif = Notif.Instance;
-            if (null != eventNotif.FindNotif (c.Id)) {
-                eventNotif.CancelNotif (c.Id);
-            }
             //remove item from db
             if (0 != c.attendees.Count) {
                 PrepareCancelationNotices ();

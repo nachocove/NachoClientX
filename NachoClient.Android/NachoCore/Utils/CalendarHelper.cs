@@ -160,8 +160,8 @@ namespace NachoCore.Utils
             iCal.Method = DDay.iCal.CalendarMethods.Reply;
             var vEvent = iCal.Events [0];
             var iAttendee = new Attendee ("MAILTO:" + account.EmailAddr);
-            if (!string.IsNullOrEmpty (account.DisplayName)) {
-                iAttendee.CommonName = account.DisplayName;
+            if (!String.IsNullOrEmpty (Pretty.UserNameForAccount (account))) {
+                iAttendee.CommonName = Pretty.UserNameForAccount (account);
             }
             iAttendee.ParticipationStatus = iCalResponseString (response);
             vEvent.Attendees.Add (iAttendee);
@@ -197,8 +197,8 @@ namespace NachoCore.Utils
         {
             evt.Organizer = new Organizer (account.EmailAddr);
             evt.Organizer.SentBy = new Uri ("MAILTO:" + account.EmailAddr);
-            if (!string.IsNullOrEmpty (account.DisplayName)) {
-                evt.Organizer.CommonName = account.DisplayName;
+            if (!String.IsNullOrEmpty (Pretty.UserNameForAccount (account))) {
+                evt.Organizer.CommonName = Pretty.UserNameForAccount (account);
             }
             foreach (var mcAttendee in c.attendees) {
                 var iAttendee = new Attendee ("MAILTO:" + mcAttendee.Email);
@@ -444,7 +444,7 @@ namespace NachoCore.Utils
         {
             var mimeMessage = new MimeMessage ();
 
-            mimeMessage.From.Add (new MailboxAddress (Pretty.DisplayNameForAccount (account), account.EmailAddr));
+            mimeMessage.From.Add (new MailboxAddress (Pretty.UserNameForAccount (account), account.EmailAddr));
             mimeMessage.To.Add (new MailboxAddress (a.Name, a.Email));
 
             mimeMessage.Subject = Pretty.SubjectString (c.Subject);
@@ -463,7 +463,7 @@ namespace NachoCore.Utils
             NcAssert.True (!String.IsNullOrEmpty (c.OrganizerName) || !String.IsNullOrEmpty (c.OrganizerEmail));
 
             var mimeMessage = new MimeMessage ();
-            mimeMessage.From.Add (new MailboxAddress (Pretty.DisplayNameForAccount (account), account.EmailAddr));
+            mimeMessage.From.Add (new MailboxAddress (Pretty.UserNameForAccount (account), account.EmailAddr));
             mimeMessage.To.Add (new MailboxAddress (c.OrganizerName, c.OrganizerEmail));
             mimeMessage.Subject = Pretty.SubjectString (ResponseSubjectPrefix (response) + ": " + c.Subject);
             mimeMessage.Date = DateTime.UtcNow;
@@ -951,8 +951,21 @@ namespace NachoCore.Utils
             return DateTime.MaxValue;
         }
 
-        protected static void ExpandAllDayEvent (McCalendar c, DateTime start, DateTime end)
+        protected static void ExpandAllDayEvent (McCalendar c, DateTime start, DateTime end, McException exception = null)
         {
+            if (null == exception) {
+                // Look for any exceptions for this particular occurrence.
+                var exceptions = McException.QueryForExceptionId (c.Id, start);
+                if (0 < exceptions.Count) {
+                    foreach (var ex in exceptions) {
+                        DateTime exceptionStart = DateTime.MinValue == exception.StartTime ? start : exception.StartTime;
+                        DateTime exceptionEnd = DateTime.MinValue == exception.EndTime ? end : exception.EndTime;
+                        ExpandAllDayEvent (c, exceptionStart, exceptionEnd, ex);
+                    }
+                    return;
+                }
+            }
+
             // Create local events for an all-day calendar item.  Figure out the starting
             // day of the event in the organizer's time zone.  Create a local event that
             // starts at midnight local time on the same day.  If the original item is
@@ -962,17 +975,38 @@ namespace NachoCore.Utils
             DateTime organizersTime = ConvertTimeFromUtc (start, timeZone);
             DateTime localStartTime = new DateTime (organizersTime.Year, organizersTime.Month, organizersTime.Day, 0, 0, 0, DateTimeKind.Local);
             double days = (end - start).TotalDays;
-            // Use a do/while loop so we will always create at least one event, even if
-            // the original item is improperly less than one day long.  If the all-day
-            // event spans the transition from daylight saving time to standard time,
-            // then it will have an extra hour in its duration.  So the cutoff for
-            // creating an extra event is a quarter of a day.
-            do {
-                DateTime nextDay = localStartTime.AddDays (1.0);
-                CreateEventRecord (c, localStartTime.ToUniversalTime (), nextDay.ToUniversalTime ());
-                localStartTime = nextDay;
-                days -= 1.0;
-            } while (days > 0.25);
+
+            Action createEvents = delegate() {
+                // Use a do/while loop so we will always create at least one event, even if
+                // the original item is improperly less than one day long.  If the all-day
+                // event spans the transition from daylight saving time to standard time,
+                // then it will have an extra hour in its duration.  So the cutoff for
+                // creating an extra event is a quarter of a day.
+                McAbstrCalendarRoot reminderItem = (McAbstrCalendarRoot)exception ?? c;
+                bool needsReminder = reminderItem.ReminderIsSet;
+                int exceptionId = null == exception ? 0 : exception.Id;
+                do {
+                    DateTime nextDay = localStartTime.AddDays (1.0);
+                    var ev = McEvent.Create (c.AccountId, localStartTime.ToUniversalTime (), nextDay.ToUniversalTime (), c.Id, exceptionId);
+                    if (needsReminder) {
+                        ev.SetReminder (reminderItem.Reminder);
+                        needsReminder = false; // Only the first day should have a reminder.
+                    }
+                    localStartTime = nextDay;
+                    days -= 1.0;
+                    NcTask.Cts.Token.ThrowIfCancellationRequested ();
+                } while (days > 0.25);
+            };
+
+            if (7.0 > days) {
+                // Less than a week long.  Create the events, usually just one event,
+                // right now in the current thread.  This is the normal case.
+                createEvents ();
+            } else {
+                // The event is at least a week long.  This should be very unusual.
+                // Create the events on a background thread so nothing is blocked.
+                NcTask.Run (createEvents, "ExpandAllDayEvent");
+            }
         }
 
         public static bool ExpandRecurrences (DateTime untilDate)
@@ -1042,13 +1076,19 @@ namespace NachoCore.Utils
             if ((null == exceptions) || (0 == exceptions.Count)) {
                 var e = McEvent.Create (c.AccountId, startTime, endTime, c.Id, 0);
                 if (c.ReminderIsSet) {
-                    ScheduleNotification (e, c.Reminder);
+                    e.SetReminder (c.Reminder);
                 }
             } else {
                 foreach (var exception in exceptions) {
+                    if (DateTime.MinValue == exception.StartTime) {
+                        exception.StartTime = startTime;
+                    }
+                    if (DateTime.MinValue == exception.EndTime) {
+                        exception.EndTime = endTime;
+                    }
                     var e = McEvent.Create (c.AccountId, exception.StartTime, exception.EndTime, c.Id, exception.Id);
                     if (exception.ReminderIsSet) {
-                        ScheduleNotification (e, exception.Reminder);
+                        e.SetReminder (exception.Reminder);
                     }
                 }
             }
@@ -1060,21 +1100,6 @@ namespace NachoCore.Utils
             c.RecurrencesGeneratedUntil = DateTime.MinValue;
             c.Update ();
             NcEventManager.Instance.ExpandRecurrences ();
-        }
-
-        /// Note that McEvent Ids are not immutable; they change often as the
-        /// calendar event changes. Thus we push the immutable calendar ID into
-        /// the notification. The 'calendar view' event will show the proper view.
-        protected static void ScheduleNotification (McEvent e, uint reminder)
-        {
-            var notifier = NachoPlatform.Notif.Instance;
-            notifier.CancelNotif (e.Id);
-            var notificationTime = e.StartTime.AddMinutes (-reminder);
-            var calendarItem = e.GetCalendarItemforEvent ();
-            var message = Pretty.Join (Pretty.SubjectString (calendarItem.Subject), Pretty.FormatAlert (reminder));
-            if (DateTime.UtcNow < notificationTime) {
-                notifier.ScheduleNotif (e.Id, e.StartTime.AddMinutes (-reminder), message);
-            }
         }
 
         /// <summary>
@@ -1185,19 +1210,20 @@ namespace NachoCore.Utils
             // Construct a custom time zone where daylight saving time starts on the
             // 2nd Sunday in March.
             var transitionToDaylight = TimeZoneInfo.TransitionTime.CreateFloatingDateRule (
-                new DateTime (1, 1, 1, 2, 0, 0), 3, 2, DayOfWeek.Sunday);
+                                           new DateTime (1, 1, 1, 2, 0, 0), 3, 2, DayOfWeek.Sunday);
             var transitionToStandard = TimeZoneInfo.TransitionTime.CreateFloatingDateRule (
-                new DateTime (1, 1, 1, 2, 0, 0), 11, 1, DayOfWeek.Sunday);
+                                           new DateTime (1, 1, 1, 2, 0, 0), 11, 1, DayOfWeek.Sunday);
             var adjustment = TimeZoneInfo.AdjustmentRule.CreateAdjustmentRule (
-                DateTime.MinValue.Date, DateTime.MaxValue.Date, new TimeSpan (1, 0, 0),
-                transitionToDaylight, transitionToStandard);
+                                 DateTime.MinValue.Date, DateTime.MaxValue.Date, new TimeSpan (1, 0, 0),
+                                 transitionToDaylight, transitionToStandard);
             var timeZone = TimeZoneInfo.CreateCustomTimeZone (
-                "BugCheck", new TimeSpan (-8, 0, 0), "Testing", "Testing Standard", "Testing Daylight",
-                new TimeZoneInfo.AdjustmentRule[] { adjustment });
+                               "BugCheck", new TimeSpan (-8, 0, 0), "Testing", "Testing Standard", "Testing Daylight",
+                               new TimeZoneInfo.AdjustmentRule[] { adjustment });
             // See if March 7, 2014 is listed as being during daylight saving time.
             // If it is DST, then the runtime has the bug that we are looking for.
             return !timeZone.IsDaylightSavingTime (new DateTime (2014, 3, 7, 12, 0, 0, DateTimeKind.Unspecified));
         }
+
         private static bool daylightSavingIsCorrect = DaylightSavingCorrectnessCheck ();
 
         /// <summary>
@@ -1231,8 +1257,8 @@ namespace NachoCore.Utils
             }
             TimeZoneInfo.AdjustmentRule adjustment = FindAdjustmentRule (timeZone, local);
             if (null == adjustment ||
-                    (!WorkaroundNeeded (local, adjustment.DaylightTransitionStart) &&
-                     !WorkaroundNeeded (local, adjustment.DaylightTransitionEnd))) {
+                (!WorkaroundNeeded (local, adjustment.DaylightTransitionStart) &&
+                !WorkaroundNeeded (local, adjustment.DaylightTransitionEnd))) {
                 return TimeZoneInfo.ConvertTimeToUtc (local, timeZone);
             }
             DateTime utc = new DateTime (local.Ticks - timeZone.BaseUtcOffset.Ticks, DateTimeKind.Utc);
@@ -1288,7 +1314,7 @@ namespace NachoCore.Utils
         private static bool IsDaylightTime (DateTime local, TimeZoneInfo.AdjustmentRule adjustment)
         {
             return (local.Month == adjustment.DaylightTransitionStart.Month && local > TransitionPoint (adjustment.DaylightTransitionStart, local.Year)) ||
-                (local.Month == adjustment.DaylightTransitionEnd.Month && local < TransitionPoint (adjustment.DaylightTransitionEnd, local.Year));
+            (local.Month == adjustment.DaylightTransitionEnd.Month && local < TransitionPoint (adjustment.DaylightTransitionEnd, local.Year));
         }
     }
 }

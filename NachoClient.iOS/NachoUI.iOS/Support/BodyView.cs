@@ -43,6 +43,8 @@ namespace NachoClient.iOS
         private UITapGestureRecognizer.Token retryDownloadGestureRecognizerToken;
 
         // Other stuff
+        public delegate void LinkSelectedCallback (NSUrl url);
+        private LinkSelectedCallback onLinkSelected;
         private Action sizeChangedCallback = null;
         private string downloadToken = null;
         private bool statusIndicatorIsRegistered = false;
@@ -55,12 +57,13 @@ namespace NachoClient.iOS
         /// </summary>
         /// <returns>A new BodyView object that still needs to be configured.</returns>
         /// <param name="frame">The location and size of the BodyView.</param>
-        public static BodyView FixedSizeBodyView (RectangleF frame, Action sizeChangedCallback)
+        public static BodyView FixedSizeBodyView (RectangleF frame, Action sizeChangedCallback, LinkSelectedCallback onLinkSelected)
         {
             BodyView newBodyView = new BodyView (frame);
             newBodyView.variableHeight = false;
             newBodyView.visibleArea = frame.Size;
             newBodyView.sizeChangedCallback = sizeChangedCallback;
+            newBodyView.onLinkSelected = onLinkSelected;
             newBodyView.UserInteractionEnabled = false;
             return newBodyView;
         }
@@ -74,12 +77,13 @@ namespace NachoClient.iOS
         /// <param name="preferredWidth">The preferred width of the BodyView.</param>
         /// <param name="visibleArea">The maximum amount of space that is visible at one time in the parent view.</param>
         /// <param name="sizeChangedCallback">A function to call when the size of the BodyView changes.</param>
-        public static BodyView VariableHeightBodyView (PointF location, float preferredWidth, SizeF visibleArea, Action sizeChangedCallback)
+        public static BodyView VariableHeightBodyView (PointF location, float preferredWidth, SizeF visibleArea, Action sizeChangedCallback, LinkSelectedCallback onLinksSelected)
         {
             BodyView newBodyView = new BodyView (new RectangleF(location.X, location.Y, preferredWidth, 1));
             newBodyView.variableHeight = true;
             newBodyView.visibleArea = visibleArea;
             newBodyView.sizeChangedCallback = sizeChangedCallback;
+            newBodyView.onLinkSelected = onLinksSelected;
             return newBodyView;
         }
 
@@ -510,7 +514,7 @@ namespace NachoClient.iOS
 
         private void RenderAttributedString (NSAttributedString text)
         {
-            var textView = new BodyTextView (yOffset, Frame.Width, text);
+            var textView = new BodyTextView (yOffset, Frame.Width, text, onLinkSelected);
             AddSubview (textView);
             childViews.Add (textView);
             yOffset += textView.ContentSize.Height;
@@ -542,7 +546,7 @@ namespace NachoClient.iOS
         {
             var webView = new BodyWebView (
                 yOffset, preferredWidth, visibleArea.Height, LayoutAndNotifyParent,
-                html, NSUrl.FromString (string.Format ("cid://{0}", item.BodyId)));
+                html, NSUrl.FromString (string.Format ("cid://{0}", item.BodyId)), onLinkSelected);
             AddSubview (webView);
             childViews.Add (webView);
             yOffset += webView.ContentSize.Height;
@@ -644,7 +648,7 @@ namespace NachoClient.iOS
         /// <summary>
         /// Create a scrollable BodyView with the given frame.
         /// </summary>
-        public ScrollableBodyView(RectangleF frame)
+        public ScrollableBodyView(RectangleF frame, BodyView.LinkSelectedCallback onLinkSelected)
             : base (frame)
         {
             // UIScrollView comes with a gesture recognizer for scrolling.
@@ -655,7 +659,7 @@ namespace NachoClient.iOS
             ScrollsToTop = false;
 
             Scrolled += ScrollViewScrolled;
-            bodyView = BodyView.FixedSizeBodyView (new RectangleF (0, 0, frame.Width, frame.Height), BodyViewSizeChanged);
+            bodyView = BodyView.FixedSizeBodyView (new RectangleF (0, 0, frame.Width, frame.Height), BodyViewSizeChanged, onLinkSelected);
             AddSubview (bodyView);
         }
 

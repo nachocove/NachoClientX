@@ -292,7 +292,7 @@ namespace NachoClient.iOS
             // Description, for which we use a BodyView.
             Util.AddTextLabelWithImageView (yOffset, "DESCRIPTION", "event-description", TagType.EVENT_DESCRIPTION_TITLE_TAG, eventCardView);
             yOffset += 16 + 6;
-            descriptionView = BodyView.VariableHeightBodyView (new PointF (42, yOffset), EVENT_CARD_WIDTH - 60, scrollView.Frame.Size, LayoutView);
+            descriptionView = BodyView.VariableHeightBodyView (new PointF (42, yOffset), EVENT_CARD_WIDTH - 60, scrollView.Frame.Size, LayoutView, onLinkSelected);
             descriptionView.Tag = (int)TagType.EVENT_DESCRIPTION_LABEL_TAG;
             eventCardView.AddSubview (descriptionView);
 
@@ -818,6 +818,14 @@ namespace NachoClient.iOS
                 return;
             }
 
+            if (segue.Identifier == "SegueToMailTo") {
+                var dc = (MessageComposeViewController)segue.DestinationViewController;
+                var holder = sender as SegueHolder;
+                var url = (string) holder.value;
+                dc.SetMailToUrl (url);
+                return;
+            }
+
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }
@@ -1328,6 +1336,7 @@ namespace NachoClient.iOS
             NcAssert.True (0 != c.Id);
             c.Update ();
             BackEnd.Instance.UpdateCalCmd (account.Id, c.Id);
+            c = McCalendar.QueryById<McCalendar> (c.Id);
         }
 
         protected void UpdateStatus (NcResponseType status)
@@ -1417,11 +1426,6 @@ namespace NachoClient.iOS
         {
             NavigationController.PopViewControllerAnimated (true);
 
-            // Cancel notification if there is one
-            Notif eventNotif = Notif.Instance;
-            if (null != eventNotif.FindNotif (c.Id)) {
-                eventNotif.CancelNotif (c.Id);
-            }
             // Remove the item from the calendar.
             BackEnd.Instance.DeleteCalCmd (c.AccountId, c.Id);
         }
@@ -1502,6 +1506,15 @@ namespace NachoClient.iOS
         private void NotesChanged (object sender, EventArgs e)
         {
             scrollView.SetContentOffset (new PointF (0, contentView.Frame.Height - scrollView.Frame.Height), true);
+        }
+
+        public void onLinkSelected(NSUrl url)
+        {
+            if(EmailHelper.IsMailToURL(url.AbsoluteString)) {
+                PerformSegue ("SegueToMailTo", new SegueHolder (url.AbsoluteString));
+            } else {
+                UIApplication.SharedApplication.OpenUrl (url);
+            }
         }
     }
 }

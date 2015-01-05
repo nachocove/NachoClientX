@@ -33,6 +33,11 @@ namespace NachoCore.Model
         // This is the nickname of the account, not the user's name
         public string DisplayName { get; set; }
 
+        // This is the user's display name, it should be null.
+        // Exchange servers do a good job of converting the email
+        // address on outgoing messages to including the user's name.
+        public string DisplayUserName { get; set; }
+
         public string Culture { get; set; }
 
         public ActiveSync.Xml.Provision.MaxAgeFilterCode DaysToSyncEmail { get; set; }

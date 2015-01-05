@@ -289,11 +289,14 @@ namespace NachoCore.Model
                 .FirstOrDefault ();
         }
 
-        public static McEmailMessage QueryNeedGleaning ()
+        public static McEmailMessage QueryNeedGleaning (Int64 accountId = -1)
         {
-            return NcModel.Instance.Db.Table<McEmailMessage> ()
-                .Where (x => x.HasBeenGleaned == false)
-                .FirstOrDefault ();
+            var table = NcModel.Instance.Db.Table<McEmailMessage> ()
+                .Where (x => x.HasBeenGleaned == false);
+            if (0 <= accountId) {
+                table = table.Where (x => x.AccountId == accountId);
+            }
+            return table.FirstOrDefault ();
         }
 
         /// <summary>

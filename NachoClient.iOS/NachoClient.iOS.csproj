@@ -1171,7 +1171,12 @@
     <Compile Include="NachoUI.iOS\Support\NcKeyboardSpy.cs" />
     <Compile Include="NachoUI.iOS\Support\AccountInfoView.cs" />
     <Compile Include="NachoUI.iOS\Support\EmailServiceTableViewSource.cs" />
-    <Compile Include="NachoCore\Utils\EmailHelper.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\EmailHelper.cs">
+      <Link>NachoCore\Utils\EmailHelper.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\LocalNotificationManager.cs">
+      <Link>NachoCore\Utils\LocalNotificationManager.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -1950,6 +1955,7 @@
     <BundleResource Include="Resources\Slide05SwipeRight%406x.png" />
     <BundleResource Include="Resources\SlideNav-SwipeArrow%406x.png" />
     <BundleResource Include="Resources\Spinner-1%406x.png" />
+    <BundleResource Include="Resources\ReleaseNotes.txt" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

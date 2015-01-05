@@ -38,8 +38,9 @@ namespace NachoClient.AndroidClient
             NcApplication.Instance.StatusIndEvent += (object sender, EventArgs e) => {
                 var s = (StatusIndEventArgs)e;
                 if (NcResult.SubKindEnum.Info_EmailMessageSetChanged == s.Status.SubKind) {
+                    List<int> adds;
                     List<int> deletes;
-                    messages.Refresh (out deletes);
+                    messages.Refresh (out adds, out deletes);
                     adapter.NotifyDataSetChanged ();
                 }
             };

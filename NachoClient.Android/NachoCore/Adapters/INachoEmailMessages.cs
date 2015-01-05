@@ -13,7 +13,7 @@ namespace NachoCore
         /// <summary>
         /// Refresh the email message list. Return true if there is changes; false otherrwise.
         /// </summary>
-        bool Refresh (out List<int> deletes);
+        bool Refresh (out List<int> adds, out List<int> deletes);
 
         McEmailMessageThread GetEmailThread (int i);
 

@@ -16,6 +16,7 @@ namespace NachoClient.iOS
         private float preferredWidth;
         private Action sizeChangedCallback;
         private bool loadingComplete;
+        private BodyView.LinkSelectedCallback onLinkSelected;
 
         private const string magic = @"
             var style = document.createElement(""style""); 
@@ -30,13 +31,15 @@ namespace NachoClient.iOS
         private const string disableJavaScript = "<meta http-equiv=\"Content-Security-Policy\" content=\"script-src 'none'\">";
         private const string wrapPre = "<style>pre { white-space: pre-wrap;}</style>";
 
-        public BodyWebView (float Y, float preferredWidth, float initialHeight, Action sizeChangedCallback, string html, NSUrl baseUrl)
+        public BodyWebView (float Y, float preferredWidth, float initialHeight, Action sizeChangedCallback, string html, NSUrl baseUrl, BodyView.LinkSelectedCallback onLinkSelected)
             : base (new RectangleF(0, Y, preferredWidth, initialHeight))
         {
             this.html = html;
             this.baseUrl = baseUrl;
             this.preferredWidth = preferredWidth;
             this.sizeChangedCallback = sizeChangedCallback;
+            this.DataDetectorTypes = UIDataDetectorType.Link | UIDataDetectorType.PhoneNumber;
+            this.onLinkSelected = onLinkSelected;
 
             ScrollView.ScrollEnabled = false;
             LoadFinished += OnLoadFinished;
@@ -53,6 +56,7 @@ namespace NachoClient.iOS
         protected override void Dispose (bool disposing)
         {
             StopLoading ();
+            onLinkSelected = null;
             LoadFinished -= OnLoadFinished;
             ShouldStartLoad -= OnShouldStartLoad;
             if (!loadingComplete) {
@@ -107,7 +111,9 @@ namespace NachoClient.iOS
             UIWebViewNavigationType navigationType)
         {
             if (UIWebViewNavigationType.LinkClicked == navigationType) {
-                UIApplication.SharedApplication.OpenUrl (request.Url);
+                if (null != onLinkSelected) {
+                    onLinkSelected (request.Url);
+                }
                 return false;
             }
             return true;

@@ -4,6 +4,8 @@ using System;
 using SQLite;
 
 using NachoCore.Model;
+using NachoCore.Utils;
+using System.Collections.Generic;
 
 namespace NachoCore.Model
 {
@@ -18,6 +20,9 @@ namespace NachoCore.Model
 
         [Indexed]
         public DateTime EndTime { get; set; }
+
+        [Indexed]
+        public DateTime ReminderTime { get; set; }
 
         public int CalendarId { get; set; }
 
@@ -40,10 +45,16 @@ namespace NachoCore.Model
             return e;
         }
 
+        public void SetReminder (uint reminderMinutes)
+        {
+            ReminderTime = StartTime - new TimeSpan (reminderMinutes * TimeSpan.TicksPerMinute);
+            Update ();
+            LocalNotificationManager.ScheduleNotification (this);
+        }
+
         public override int Delete ()
         {
-            var notifier = NachoPlatform.Notif.Instance;
-            notifier.CancelNotif (this.Id);
+            LocalNotificationManager.CancelNotification (this);
             return base.Delete ();
         }
 
@@ -61,6 +72,14 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Table<McEvent> ().Where (x => x.EndTime >= DateTime.UtcNow).OrderBy (x => x.StartTime).FirstOrDefault ();
         }
 
+        /// <summary>
+        /// All events that have a reminder time within the given range, ordered by reminder time.
+        /// </summary>
+        public static IEnumerable<McEvent> QueryEventsWithRemindersInRange (DateTime start, DateTime end)
+        {
+            return NcModel.Instance.Db.Table<McEvent> ()
+                .Where (e => start <= e.ReminderTime && e.ReminderTime < end)
+                .OrderBy (e => e.ReminderTime);
+        }
     }
 }
-
