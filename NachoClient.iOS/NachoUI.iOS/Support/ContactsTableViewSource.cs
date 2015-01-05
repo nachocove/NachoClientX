@@ -463,23 +463,13 @@ namespace NachoClient.iOS
             var displayTitle = contact.GetDisplayName ();
             var displayTitleColor = A.Color_NachoDarkText;
 
-            var displaySubtitle1 = contact.GetEmailAddress ();
+            var displaySubtitle1 = contact.GetPrimaryCanonicalEmailAddress ();
             var displaySubtitle1Color = A.Color_NachoDarkText;
 
-            var displaySubtitle2 = contact.GetPhoneNumber ();
+            var displaySubtitle2 = contact.GetPrimaryPhoneNumber ();
             var displaySubtitle2Color = A.Color_NachoDarkText;
 
-            int colorIndex = 1;
-            if (!String.IsNullOrEmpty (displaySubtitle1)) {
-                McEmailAddress emailAddress;
-                if (McEmailAddress.Get (contact.AccountId, displaySubtitle1, out emailAddress)) {
-                    displaySubtitle1 = emailAddress.CanonicalEmailAddress;
-                    colorIndex = emailAddress.ColorIndex;
-                }
-            }
-            if (1 == colorIndex) {
-                colorIndex = Util.PickRandomColorForUser ();
-            }
+            var contactColor = Util.GetContactColor (contact);
 
             if (String.IsNullOrEmpty (displayTitle) && !String.IsNullOrEmpty (displaySubtitle1)) {
                 displayTitle = displaySubtitle1;
@@ -512,7 +502,7 @@ namespace NachoClient.iOS
             subtitle2Label.TextColor = displaySubtitle2Color;
 
             if (0 == contact.PortraitId) {
-                ConfigureLabelView (labelView, contact, colorIndex);
+                ConfigureLabelView (labelView, contact, contactColor);
                 labelView.Hidden = false;
             } else {
                 portraitView.Image = Util.ImageOfContact (contact);
@@ -553,11 +543,11 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void ConfigureLabelView (UILabel labelView, McContact contact, int colorIndex)
+        protected void ConfigureLabelView (UILabel labelView, McContact contact, UIColor contactColor)
         {
             labelView.Hidden = false;
             labelView.Text = NachoCore.Utils.ContactsHelper.GetInitials (contact);
-            labelView.BackgroundColor = Util.ColorForUser (colorIndex);
+            labelView.BackgroundColor = contactColor;
         }
 
         public void ScrollToSectionIncludingRecent (UITableView tableView, int index)

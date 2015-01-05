@@ -342,6 +342,22 @@ namespace NachoClient
             return colors [index];
         }
 
+        public static UIColor GetContactColor (McContact contact)
+        {
+            if (null == contact.EmailAddresses || 0 == contact.EmailAddresses.Count ) {
+                return ColorForUser(PickRandomColorForUser ());
+            }
+
+            if (!String.IsNullOrEmpty (contact.GetPrimaryCanonicalEmailAddress())) {
+                McEmailAddress emailAddress;
+                if (McEmailAddress.Get (contact.AccountId, contact.GetPrimaryCanonicalEmailAddress(), out emailAddress)) {
+                    return ColorForUser(emailAddress.ColorIndex);
+                }
+            }
+
+            return ColorForUser(PickRandomColorForUser ());
+        }
+
         public static NachoTabBarController GetActiveTabBar ()
         {
             var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;

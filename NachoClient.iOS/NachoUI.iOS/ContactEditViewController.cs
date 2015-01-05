@@ -1352,19 +1352,7 @@ namespace NachoClient.iOS
 
         protected override void ConfigureAndLayout ()
         {
-            UIColor userBackgroundColor;
-
-            if (0 == contactCopy.EmailAddresses.Count) {
-                userBackgroundColor = Util.ColorForUser (Util.PickRandomColorForUser ());
-            } else {
-                var emailAddressAttribute = contactCopy.EmailAddresses [0];
-                var emailAddress = McEmailAddress.QueryById<McEmailAddress> (emailAddressAttribute.EmailAddress);
-                if (null == emailAddress) {
-                    userBackgroundColor = Util.ColorForUser (Util.PickRandomColorForUser ());
-                } else {
-                    userBackgroundColor = Util.ColorForUser (emailAddress.ColorIndex);
-                }
-            }
+            UIColor userBackgroundColor = Util.GetContactColor (contactCopy);
 
             UILabel headerInitialsLabel = (UILabel)View.ViewWithTag (HEADER_INITIALS_CIRCLE_TAG);
             UIImageView headerPortraitImageView = (UIImageView)View.ViewWithTag (HEADER_PORTRAIT_TAG);

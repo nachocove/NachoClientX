@@ -1283,6 +1283,23 @@ namespace NachoCore.Model
             return PhoneNumbers.First ().Value;
         }
 
+        public string GetPrimaryPhoneNumber ()
+        {
+            if (null == PhoneNumbers) {
+                return "";
+            }
+            if (0 == PhoneNumbers.Count ()) {
+                return "";
+            }
+
+            foreach (var p in PhoneNumbers) {
+                if (p.IsDefault) {
+                    return p.Value;
+                }
+            }
+            return PhoneNumbers.First ().Value;
+        }
+
         public string GetDisplayNameOrEmailAddress ()
         {
             var displayName = GetDisplayName ();
