@@ -1316,7 +1316,7 @@ namespace NachoCore.Model
             var ric = McFolder.GetRicContactFolder (AccountId);
             var maps = McMapFolderFolderEntry.QueryByFolderEntryIdClassCode (AccountId, Id, GetClassCode ());
             foreach (var map in maps) {
-                if (map.FolderId == ric.Id) {
+                if ((null != ric) && (map.FolderId == ric.Id)) {
                     Log.Info (Log.LOG_CONTACTS, "cannot edit contact from ric");
                     return false;
                 }
