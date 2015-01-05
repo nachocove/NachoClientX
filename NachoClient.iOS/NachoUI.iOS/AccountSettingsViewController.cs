@@ -663,7 +663,7 @@ namespace NachoClient.iOS
             if (null != theAccount.EmailAddr) {
                 originalEmailValue = theAccount.EmailAddr;
             }
-            if (null != theServer.Host) {
+            if (null != theServer) {
                 originalMailServerValue = theServer.Host;
                 if (443 != theServer.Port) {
                     originalMailServerValue += ":" + theServer.Port;
