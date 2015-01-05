@@ -166,6 +166,7 @@
                         <segue destination="OCr-PO-3nH" kind="push" identifier="SegueToNachoNow" id="v9F-jf-qe1"/>
                         <segue destination="KWh-cK-EXH" kind="modal" identifier="SegueToAboutUs" id="PD1-1A-eiQ"/>
                         <segue destination="WIT-yF-b17" kind="push" identifier="SegueToAccountSettings" id="z0K-Fc-ato"/>
+                        <segue destination="0HP-De-GcZ" kind="modal" identifier="SegueToReleaseNotes" id="WB8-Zh-IK8"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="yGs-h9-8Dq" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1378,10 +1379,10 @@
             </objects>
             <point key="canvasLocation" x="-1301" y="-4684"/>
         </scene>
-        <!--Navigation Controller-->
+        <!--Navigation Controller for Setting Legal View-->
         <scene sceneID="Oxc-a2-QY4">
             <objects>
-                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="0HP-De-GcZ" sceneMemberID="viewController">
+                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="0HP-De-GcZ" userLabel="Navigation Controller for Setting Legal View" sceneMemberID="viewController">
                     <toolbarItems/>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" translucent="NO" prompted="NO"/>
                     <navigationBar key="navigationBar" contentMode="scaleToFill" translucent="NO" id="nYM-UB-hPS">
@@ -1743,37 +1744,37 @@
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="9pm-2U-9AI"/>
         <segue reference="V0S-kd-9OI"/>
-        <segue reference="0vO-2s-NmS"/>
+        <segue reference="9pm-2U-9AI"/>
         <segue reference="tzJ-j2-YOi"/>
+        <segue reference="0vO-2s-NmS"/>
         <segue reference="z0K-Fc-ato"/>
-        <segue reference="K8c-x2-hEf"/>
-        <segue reference="Bq3-C6-QI6"/>
-        <segue reference="s9j-Ih-SWz"/>
+        <segue reference="v9F-jf-qe1"/>
+        <segue reference="WB8-Zh-IK8"/>
+        <segue reference="UJW-GW-OZz"/>
+        <segue reference="RaB-9o-azo"/>
+        <segue reference="ja3-Zu-g6R"/>
         <segue reference="Kmd-x6-iCJ"/>
-        <segue reference="kEo-Rl-rFG"/>
-        <segue reference="JTo-qU-j7O"/>
+        <segue reference="Bq3-C6-QI6"/>
+        <segue reference="rew-s7-VAQ"/>
+        <segue reference="rEt-DF-c51"/>
+        <segue reference="zOx-eF-clw"/>
+        <segue reference="vUs-ft-xdy"/>
         <segue reference="Tfk-Mt-BlS"/>
         <segue reference="HCr-Oa-UHV"/>
         <segue reference="RR1-bJ-URL"/>
-        <segue reference="tdu-G2-PEp"/>
+        <segue reference="kEo-Rl-rFG"/>
         <segue reference="k2t-Pj-AhS"/>
         <segue reference="udF-bU-cV6"/>
+        <segue reference="JTo-qU-j7O"/>
+        <segue reference="tdu-G2-PEp"/>
+        <segue reference="b2R-9j-Kqr"/>
         <segue reference="ay2-o2-R8l"/>
         <segue reference="xrp-ey-B0j"/>
         <segue reference="zby-Sy-Y3J"/>
         <segue reference="47y-6M-xBI"/>
-        <segue reference="b2R-9j-Kqr"/>
-        <segue reference="Ar9-Nl-fq9"/>
         <segue reference="mLY-u0-R5O"/>
-        <segue reference="RaB-9o-azo"/>
-        <segue reference="rew-s7-VAQ"/>
-        <segue reference="UJW-GW-OZz"/>
-        <segue reference="ja3-Zu-g6R"/>
-        <segue reference="rEt-DF-c51"/>
-        <segue reference="zOx-eF-clw"/>
-        <segue reference="vUs-ft-xdy"/>
+        <segue reference="Ar9-Nl-fq9"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>
 </document>

@@ -60,8 +60,9 @@ namespace NachoCore
                 return 0;
             }
 
-            public bool Refresh (out List<int> deletes)
+            public bool Refresh (out List<int> adds, out List<int> deletes)
             {
+                adds = null;
                 deletes = null;
                 return false;
             }

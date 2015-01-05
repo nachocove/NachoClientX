@@ -98,41 +98,41 @@ namespace NachoCore.Brain
                 from = AdjustToHour (from, from.AddMinutes (270).Hour);
                 break;
             case MessageDeferralType.EndOfDay:
-                if (from.Hour >= 17) {
-                    from = AdjustToHour (from, 23);
+                if (from.ToLocalTime ().Hour >= 17) {
+                    from = AdjustToLocalHour (from, 23);
                 } else {
-                    from = AdjustToHour (from, 17);
+                    from = AdjustToLocalHour (from, 17);
                 }
                 break;
             case MessageDeferralType.Tonight:
-                if (from.Hour > 18) {
+                if (from.ToLocalTime ().Hour > 18) {
                     // Later this evening...
                     from = from.AddHours (2);
                 } else {
-                    from = AdjustToHour (from, 19);
+                    from = AdjustToLocalHour (from, 19);
                 }
                 break;
             case MessageDeferralType.Tomorrow:
                 from = from.AddDays (1d);
-                from = AdjustToHour (from, 8);
+                from = AdjustToLocalHour (from, 8);
                 break;
             case MessageDeferralType.NextWeek:
                 do {
                     from = from.AddDays (1.0d);
                 } while(from.DayOfWeek != FirstDayOfWork);
-                from = AdjustToHour (from, 8);
+                from = AdjustToLocalHour (from, 8);
                 break;
             case MessageDeferralType.MonthEnd:
                 // Last day
                 from = from.AddMonths (1);
                 from = from.AddDays (-from.Day); // Day is 1..31
-                from = AdjustToHour (from, 8);
+                from = AdjustToLocalHour (from, 8);
                 break;
             case MessageDeferralType.NextMonth:
                 // First day
                 from = from.AddMonths (1);
                 from = from.AddDays (1.0 - from.Day); // Day is 1..32
-                from = AdjustToHour (from, 8);
+                from = AdjustToLocalHour (from, 8);
                 break;
             case MessageDeferralType.Forever:
                 from = DateTime.MaxValue;
@@ -144,13 +144,20 @@ namespace NachoCore.Brain
                 NcAssert.CaseError (String.Format ("ComputeDeferral; {0} was unexpected", deferralType));
                 return NcResult.Error ("");
             }
-            Console.WriteLine ("Defer until raw={0} utc={1} local={2}", from, from.ToUniversalTime(), from.ToLocalTime());
+            Console.WriteLine ("Defer until raw={0} utc={1} local={2}", from, from.ToUniversalTime (), from.ToLocalTime ());
             return NcResult.OK (from.ToUniversalTime ());
         }
 
         static DateTime AdjustToHour (DateTime t, int hour)
         {
-            return new DateTime (t.Year, t.Month, t.Day, hour, 0, 0);
+            return new DateTime (t.Year, t.Month, t.Day, hour, 0, 0, DateTimeKind.Utc);
+        }
+
+        static DateTime AdjustToLocalHour (DateTime t, int hour)
+        {
+            var l = t.ToLocalTime ();
+            var n = new DateTime (l.Year, l.Month, l.Day, hour, 0, 0, DateTimeKind.Local);
+            return n.ToUniversalTime ();
         }
 
     }

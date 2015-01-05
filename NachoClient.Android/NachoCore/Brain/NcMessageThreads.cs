@@ -25,21 +25,25 @@ namespace NachoCore.Brain
             return conversationList;
         }
 
-        // Return true if lists differ. Return a list of deletions
-        public static bool AreDifferent (List<McEmailMessageThread> oldList, List<NcEmailMessageIndex> newList, out List<int> deletes)
+        // Return true or false if old and new lists are different.
+        // Return 'deletes' if a series of deletes can transform oldList into newList.
+        protected static bool CheckForDeletes (List<McEmailMessageThread> oldList, List<NcEmailMessageIndex> newList, out List<int> deletes)
         {
             deletes = null;
             if (null == oldList) {
                 return (null != newList);
             }
-            // New list has nore; we don't handle additions yet
+            if (0 == newList.Count) {
+                return true;
+            }
+            // New list has more; need 'adds'
             if (oldList.Count < newList.Count) {
                 return true;
             }
             deletes = new List<int> ();
             int oldListIndex = 0;
             int newListIndex = 0;
-            while((oldListIndex < oldList.Count) && (newListIndex < newList.Count)) {
+            while ((oldListIndex < oldList.Count) && (newListIndex < newList.Count)) {
                 var messageId = oldList [oldListIndex].GetEmailMessageIndex (0);
                 if (messageId != newList [newListIndex].Id) {
                     deletes.Add (oldListIndex);
@@ -53,8 +57,8 @@ namespace NachoCore.Brain
                 deletes.Add (oldListIndex);
                 oldListIndex += 1;
             }
-            // Made it to the end of the lists with no deletes
-            if((newList.Count == newListIndex) && (oldList.Count == oldListIndex)) {
+            // Made it to the end of the lists with no deletes; old & new are the same
+            if ((newList.Count == newListIndex) && (oldList.Count == oldListIndex)) {
                 if (0 == deletes.Count) {
                     deletes = null;
                     return false;
@@ -64,9 +68,68 @@ namespace NachoCore.Brain
             if (newList.Count != newListIndex) {
                 deletes = null;
             }
-            // Bug -- iOS crash is resulting list is empty
+            return true;
+        }
+
+        // Return true or false if old and new lists are different.
+        // Return 'adds' if the new list is strictly additions to the old list
+        protected static bool CheckForAdds (List<McEmailMessageThread> oldList, List<NcEmailMessageIndex> newList, out List<int> adds)
+        {
+            adds = null;
+            if (null == oldList) {
+                return (null != newList);
+            }
             if (0 == newList.Count) {
-                deletes = null;
+                return true;
+            }
+            // Old list has more; need 'deletes'
+            if (oldList.Count > newList.Count) {
+                return true;
+            }
+            adds = new List<int> ();
+            int oldListIndex = 0;
+            int newListIndex = 0;
+
+            while ((oldListIndex < oldList.Count) && (newListIndex < newList.Count)) {
+                var oldId = oldList [oldListIndex].GetEmailMessageIndex (0);
+                var newId = newList [newListIndex].Id;
+                if (oldId != newId) {
+                    adds.Add (newListIndex);
+                } else {
+                    oldListIndex += 1;
+                }
+                newListIndex += 1;
+            }
+
+            // Adds the end of list, if any more
+            while (newListIndex < newList.Count) {
+                adds.Add (newListIndex);
+                newListIndex += 1;
+            }
+            // Made it to the end of the lists with no adds; old & new are the same
+            if ((newList.Count == newListIndex) && (oldList.Count == oldListIndex)) {
+                if (0 == adds.Count) {
+                    adds = null;
+                    return false;
+                }
+            }
+            // Didn't get to the end of the old list, some deletes at the end
+            if (oldList.Count != oldListIndex) {
+                adds = null;
+            }
+            return true;
+        }
+
+        // Return true if lists differ. Return a list of additions or deletions
+        public static bool AreDifferent (List<McEmailMessageThread> oldList, List<NcEmailMessageIndex> newList, out List<int> adds, out List<int> deletes)
+        {
+            adds = null;
+            deletes = null;
+            if (!CheckForDeletes (oldList, newList, out deletes)) {
+                return false;
+            }
+            if (null == deletes) {
+                CheckForAdds (oldList, newList, out adds);
             }
             return true;
         }

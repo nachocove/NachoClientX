@@ -140,7 +140,7 @@ namespace NachoClient.iOS
             versionLabel.Font = A.Font_AvenirNextRegular10;
             versionLabel.TextColor = A.Color_NachoBlack;
             versionLabel.TextAlignment = UITextAlignment.Center;
-            versionLabel.Text = "NachoMail version " + Util.GetVersionNumber ();//"NachoMail version 0.9";
+            versionLabel.Text = "Nacho Mail version " + Util.GetVersionNumber ();//"Nacho Mail version 0.9";
             supportView.AddSubview (versionLabel);
 
             View.AddSubview (supportView);

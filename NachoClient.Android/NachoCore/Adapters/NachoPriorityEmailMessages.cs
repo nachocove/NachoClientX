@@ -17,11 +17,12 @@ namespace NachoCore
         public NachoPriorityEmailMessages (McFolder folder)
         {
             this.folder = folder;
+            List<int> adds;
             List<int> deletes;
-            Refresh (out deletes);
+            Refresh (out adds, out deletes);
         }
 
-        public bool Refresh (out List<int> deletes)
+        public bool Refresh (out List<int> adds, out List<int> deletes)
         {
             List<NcEmailMessageIndex> list = new List<NcEmailMessageIndex> ();
             double threshold = McEmailMessage.minHotScore;
@@ -31,7 +32,7 @@ namespace NachoCore
             if (null == list) {
                 list = new List<NcEmailMessageIndex> ();
             }
-            if (!NcMessageThreads.AreDifferent (threadList, list, out deletes)) {
+            if (!NcMessageThreads.AreDifferent (threadList, list, out adds, out deletes)) {
                 return false;
             }
             threadList = NcMessageThreads.ThreadByConversation (list);
