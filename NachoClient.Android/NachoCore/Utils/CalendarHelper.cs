@@ -477,7 +477,7 @@ namespace NachoCore.Utils
         public static void SendMeetingCancelations (McAccount account, McCalendar c, MimeEntity mimeBody)
         {
             var mimeMessage = new MimeMessage ();
-            mimeMessage.From.Add (new MailboxAddress (Pretty.DisplayNameForAccount (account), account.EmailAddr));
+            mimeMessage.From.Add (new MailboxAddress (Pretty.OrganizerString(c.OrganizerName), account.EmailAddr));
             foreach (var a in c.attendees) {
                 mimeMessage.To.Add (new MailboxAddress (a.Name, a.Email));
             }
