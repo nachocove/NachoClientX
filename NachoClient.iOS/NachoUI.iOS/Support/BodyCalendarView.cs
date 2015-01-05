@@ -210,6 +210,8 @@ namespace NachoClient.iOS
 
                     Util.AddTextLabelWithImageView (0, "ORGANIZER", "event-organizer", EventViewController.TagType.EVENT_ORGANIZER_TITLE_TAG, eventOrganizerView);
 
+                    var emailOffset = 46f;
+
                     if (null != organizerName) {
                         // Organizer Name
                         var userNameLabel = new UILabel (new RectangleF (92, 16 + 10, eventOrganizerView.Frame.Width - 92 - 18, 20));
@@ -219,25 +221,17 @@ namespace NachoClient.iOS
                         userNameLabel.Tag = (int)EventViewController.TagType.EVENT_ORGANIZER_NAME_LABEL;
                         userNameLabel.Text = organizerName;
                         eventOrganizerView.AddSubview (userNameLabel);
-
-                        // Organizer Email
-                        var userEmailLabel = new UILabel (new RectangleF (92, 26 + 20, eventOrganizerView.Frame.Width - 92 - 18, 20));
-                        userEmailLabel.LineBreakMode = UILineBreakMode.TailTruncation;
-                        userEmailLabel.TextColor = UIColor.LightGray;
-                        userEmailLabel.Font = A.Font_AvenirNextRegular14;
-                        userEmailLabel.Tag = (int)EventViewController.TagType.EVENT_ORGANIZER_EMAIL_LABEL;
-                        userEmailLabel.Text = organizerEmail;
-                        eventOrganizerView.AddSubview (userEmailLabel);
                     } else {
-                        // Organizer Email
-                        var userOnlyEmailLabel = new UILabel (new RectangleF (92, (eventOrganizerView.Frame.Height / 2) - 3, eventOrganizerView.Frame.Width - 92 - 18, 20));
-                        userOnlyEmailLabel.LineBreakMode = UILineBreakMode.TailTruncation;
-                        userOnlyEmailLabel.TextColor = UIColor.LightGray;
-                        userOnlyEmailLabel.Font = A.Font_AvenirNextRegular14;
-                        userOnlyEmailLabel.Tag = (int)EventViewController.TagType.EVENT_ORGANIZER_EMAIL_LABEL;
-                        userOnlyEmailLabel.Text = organizerEmail;
-                        eventOrganizerView.AddSubview (userOnlyEmailLabel);
+                        emailOffset = (eventOrganizerView.Frame.Height / 2) - 3;
                     }
+
+                    var userEmailLabel = new UILabel (new RectangleF (92, emailOffset, eventOrganizerView.Frame.Width - 92 - 18, 20));
+                    userEmailLabel.LineBreakMode = UILineBreakMode.TailTruncation;
+                    userEmailLabel.TextColor = UIColor.LightGray;
+                    userEmailLabel.Font = A.Font_AvenirNextRegular14;
+                    userEmailLabel.Tag = (int)EventViewController.TagType.EVENT_ORGANIZER_EMAIL_LABEL;
+                    userEmailLabel.Text = organizerEmail;
+                    eventOrganizerView.AddSubview (userEmailLabel);
 
                     var userImage = Util.ImageOfSender (accountId, organizerEmail);
 
