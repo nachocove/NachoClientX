@@ -110,6 +110,11 @@ namespace NachoCore.Utils
                     isDone = true;
                 } catch (Exception e) {
                     if (!HandleAWSException (e)) {
+                        if (NcTask.Cts.Token.IsCancellationRequested) {
+                            Client.Dispose ();
+                            Client = null;
+                            NcTask.Cts.Token.ThrowIfCancellationRequested ();
+                        }
                         throw;
                     }
                     NcTask.CancelableSleep (5000);
@@ -261,6 +266,11 @@ namespace NachoCore.Utils
                 action ();
             } catch (Exception e) {
                 if (!HandleAWSException (e)) {
+                    if (NcTask.Cts.Token.IsCancellationRequested) {
+                        Client.Dispose ();
+                        Client = null;
+                        NcTask.Cts.Token.ThrowIfCancellationRequested ();
+                    }
                     throw;
                 }
                 return false;
