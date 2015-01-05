@@ -1092,10 +1092,6 @@ namespace NachoClient
 
         public static void UpdateTable (UITableView tableView, List<int> adds, List<int> deletes)
         {
-            if ((null == adds) && (null == deletes)) {
-                tableView.ReloadData ();
-                return;
-            }
             var deletePaths = new List<NSIndexPath> ();
             if (null != deletes) {
                 foreach (var i in deletes) {
@@ -1108,6 +1104,10 @@ namespace NachoClient
                 foreach (var i in adds) {
                     addPaths.Add (NSIndexPath.FromItemSection (i, 0));
                 }
+            }
+            if ((0 == deletePaths.Count) && (0 == addPaths.Count)) {
+                tableView.ReloadData ();
+                return;
             }
             tableView.BeginUpdates ();
             if (0 != deletePaths.Count) {
