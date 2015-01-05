@@ -111,6 +111,7 @@
     <Compile Include="McAttachmentTest.cs" />
     <Compile Include="McEmailMessageTest.cs" />
     <Compile Include="NcEventsCommonTest.cs" />
+    <Compile Include="NcDeferralTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
