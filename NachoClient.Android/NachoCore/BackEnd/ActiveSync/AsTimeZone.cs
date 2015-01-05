@@ -101,9 +101,22 @@ namespace NachoCore.ActiveSync
                     new TimeSpan (-((DaylightBias - StandardBias) * TimeSpan.TicksPerMinute)),
                     transitionToDaylight, transitionToStandard);
 
+                string timeZoneID;
+                string displayName;
+                string standardName;
+                if (string.IsNullOrEmpty (StandardName)) {
+                    timeZoneID = "CustomID";
+                    displayName = "Custom Time Zone";
+                    standardName = "Standard";
+                } else {
+                    timeZoneID = StandardName;
+                    displayName = StandardName;
+                    standardName = StandardName;
+                }
+                string daylightName = string.IsNullOrEmpty(DaylightName) ? "Daylight" : DaylightName;
                 return TimeZoneInfo.CreateCustomTimeZone (
-                    StandardName, new TimeSpan (-((Bias + StandardBias) * TimeSpan.TicksPerMinute)),
-                    StandardName, StandardName, DaylightName,
+                    timeZoneID, new TimeSpan (-((Bias + StandardBias) * TimeSpan.TicksPerMinute)),
+                    displayName, standardName, daylightName,
                     new TimeZoneInfo.AdjustmentRule[] { adjustment });
 
             } catch (ArgumentException e) {
