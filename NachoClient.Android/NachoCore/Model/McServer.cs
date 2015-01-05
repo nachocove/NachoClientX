@@ -60,6 +60,11 @@ namespace NachoCore.Model
             return dummy.BaseUri ();
         }
 
+        public bool HostIsWellKnown ()
+        {
+            return HostIsGMail () || HostIsHotMail ();
+        }
+
         public bool HostIsHotMail ()
         {
             return Host.EndsWith (McServer.HotMail_Suffix, StringComparison.OrdinalIgnoreCase) ||
