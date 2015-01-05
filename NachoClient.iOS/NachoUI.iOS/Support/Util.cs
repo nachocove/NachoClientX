@@ -1062,7 +1062,7 @@ namespace NachoClient
             if (0 == contact.PhoneNumbers.Count) {
                 owner.PerformSegue (segueIdentifier, new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.PhoneNumberAdder));
             } else if (1 == contact.PhoneNumbers.Count) {
-                Util.PerformAction ("tel", contact.GetPhoneNumber ());
+                Util.PerformAction ("tel", contact.GetPrimaryPhoneNumber ());
             } else {
                 foreach (var p in contact.PhoneNumbers) {
                     if (p.IsDefault) {

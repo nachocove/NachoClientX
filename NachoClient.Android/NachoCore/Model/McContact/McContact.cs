@@ -1271,18 +1271,6 @@ namespace NachoCore.Model
             return "";
         }
 
-
-        public string GetPhoneNumber ()
-        {
-            if (null == PhoneNumbers) {
-                return "";
-            }
-            if (0 == PhoneNumbers.Count ()) {
-                return "";
-            }
-            return PhoneNumbers.First ().Value;
-        }
-
         public string GetPrimaryPhoneNumber ()
         {
             if (null == PhoneNumbers) {

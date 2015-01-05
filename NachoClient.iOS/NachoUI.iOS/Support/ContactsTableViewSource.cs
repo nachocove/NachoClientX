@@ -406,7 +406,7 @@ namespace NachoClient.iOS
             if (0 == contact.PhoneNumbers.Count) {
                 owner.PerformSegueForDelegate ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.PhoneNumberAdder));
             } else if (1 == contact.PhoneNumbers.Count) {
-                Util.PerformAction ("tel", contact.GetPhoneNumber ());
+                Util.PerformAction ("tel", contact.GetPrimaryPhoneNumber ());
             } else {
                 foreach (var p in contact.PhoneNumbers) {
                     if (p.IsDefault) {
