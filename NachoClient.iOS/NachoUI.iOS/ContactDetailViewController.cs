@@ -627,11 +627,7 @@ namespace NachoClient.iOS
             selectedSegment = ((UISegmentedControl)sender).SelectedSegment;
             switch (selectedSegment) {
             case 0:
-                if (contact.Source != McAbstrItem.ItemSource.ActiveSync) {
-                    editContact.Enabled = false;
-                } else {
-                    editContact.Enabled = true;
-                }
+                editContact.Enabled = contact.CanUserEdit ();
                 contactInfoScrollView.Hidden = false;
                 interactionsTableView.Hidden = true;
                 notesView.Hidden = true;
@@ -644,14 +640,10 @@ namespace NachoClient.iOS
                 RefreshData ();
                 break;
             case 2:
+                editContact.Enabled = contact.CanUserEdit ();
                 interactionsTableView.Hidden = true;
                 contactInfoScrollView.Hidden = true;
                 notesView.Hidden = false;
-                if (contact.Source != McAbstrItem.ItemSource.ActiveSync) {
-                    editContact.Enabled = false;
-                } else {
-                    editContact.Enabled = true;
-                }
                 break;
             default:
                 NcAssert.CaseError ();

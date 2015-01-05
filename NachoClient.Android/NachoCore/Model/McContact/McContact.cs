@@ -1307,5 +1307,26 @@ namespace NachoCore.Model
                 }
             }
         }
+
+        public bool CanUserEdit ()
+        {
+            if (McAbstrItem.ItemSource.ActiveSync != Source) {
+                return false;
+            }
+            var ric = McFolder.GetRicContactFolder (AccountId);
+            var maps = McMapFolderFolderEntry.QueryByFolderEntryIdClassCode (AccountId, Id, GetClassCode ());
+            foreach (var map in maps) {
+                if (map.FolderId == ric.Id) {
+                    Log.Info (Log.LOG_CONTACTS, "cannot edit contact from ric");
+                    return false;
+                }
+                var folder = McFolder.QueryById<McFolder> (map.FolderId);
+                if (folder.IsClientOwned) {
+                    Log.Info (Log.LOG_CONTACTS, "cannot edit contact from client-owned folder {0}", folder.DisplayName);
+                    return false;
+                }
+            }
+            return true;
+        }
     }
 }
