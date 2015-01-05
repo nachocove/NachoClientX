@@ -757,7 +757,8 @@ namespace NachoClient.iOS
             }
 
             if (haveEnteredServer ()) {
-                if (!IsValidServer (serverView.textField.Text)) {
+                if (!EmailHelper.IsValidServer (serverView.textField.Text)) {
+                    ConfigureView (LoginStatus.InvalidServerName);
                     return false;
                 }
             }
@@ -797,41 +798,9 @@ namespace NachoClient.iOS
             return true;
         }
 
-        protected bool IsValidServer (string server)
-        {
-            if (EmailHelper.IsValidHost (server)) {
-                return true;
-            }
-
-            //fullServerUri didn't pass...validate host/port separately
-            Uri serverURI;
-            try {
-                serverURI = new Uri ("my://" + serverView.textField.Text.Trim ());
-            } catch {
-                ConfigureView (LoginStatus.InvalidServerName);
-                return false;
-            }
-
-            var host = serverURI.Host;
-            var port = serverURI.Port;
-
-            if (!EmailHelper.IsValidHost (host)) {
-                ConfigureView (LoginStatus.InvalidServerName);
-                return false;
-            }
-
-            //host cleared, checking port
-            if (!EmailHelper.IsValidPort (port)) {
-                ConfigureView (LoginStatus.InvalidServerName);
-                return false;
-            }
-
-            return true;
-        }
-
         protected void SetHostAndPort (McServer forServer)
         {
-            NcAssert.True (IsValidServer (serverView.textField.Text), "Server is not valid");
+            NcAssert.True (EmailHelper.IsValidServer (serverView.textField.Text), "Server is not valid");
 
             if (EmailHelper.IsValidHost (serverView.textField.Text)) {
                 forServer.Host = serverView.textField.Text.Trim ();
