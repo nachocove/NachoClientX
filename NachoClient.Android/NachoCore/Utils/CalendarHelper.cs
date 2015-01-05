@@ -156,7 +156,7 @@ namespace NachoCore.Utils
 
         public static IICalendar iCalendarFromMcCalendarWithResponse (McAccount account, McCalendar c, NcResponseType response)
         {
-            var iCal = iCalendarFromMcCalendarCommon (c);
+            var iCal = iCalendarFromMcCalendarCommon (c, EventStatus.Confirmed);
             iCal.Method = DDay.iCal.CalendarMethods.Reply;
             var vEvent = iCal.Events [0];
             var iAttendee = new Attendee ("MAILTO:" + account.EmailAddr);
@@ -169,19 +169,37 @@ namespace NachoCore.Utils
             return iCal;
         }
 
+        public static IICalendar iCalendarFromMcCalendarWithCancelation (McAccount account, McCalendar c)
+        {
+            var iCal = iCalendarFromMcCalendarCommon (c, EventStatus.Cancelled);
+            iCal.Method = DDay.iCal.CalendarMethods.Cancel;
+
+            var vEvent = iCal.Events [0];
+            vEvent.Summary = "Canceled: " + c.Subject;
+
+            AddAttendeesAndOrganizerToiCalEvent (vEvent, account, c);
+            return iCal;
+        }
+
         public static IICalendar iCalendarFromMcCalendar (McAccount account, McCalendar c)
         {
-            var iCal = iCalendarFromMcCalendarCommon (c);
+            var iCal = iCalendarFromMcCalendarCommon (c, EventStatus.Confirmed);
             iCal.Method = DDay.iCal.CalendarMethods.Request;
 
             var evt = iCal.Events [0];
             evt.Summary = c.Subject;
+
+            AddAttendeesAndOrganizerToiCalEvent (evt, account, c);
+            return iCal;
+        }
+
+        private static void AddAttendeesAndOrganizerToiCalEvent (IEvent evt, McAccount account, McCalendar c)
+        {
             evt.Organizer = new Organizer (account.EmailAddr);
             evt.Organizer.SentBy = new Uri ("MAILTO:" + account.EmailAddr);
             if (!String.IsNullOrEmpty (Pretty.UserNameForAccount (account))) {
                 evt.Organizer.CommonName = Pretty.UserNameForAccount (account);
             }
-
             foreach (var mcAttendee in c.attendees) {
                 var iAttendee = new Attendee ("MAILTO:" + mcAttendee.Email);
                 NcAssert.True (null != mcAttendee.Name);
@@ -206,13 +224,12 @@ namespace NachoCore.Utils
                 }
                 evt.Attendees.Add (iAttendee);
             }
-            return iCal;
         }
 
         /// <summary>
         /// The parts of iCalendar that are common to both meeting requests and meeting responses.
         /// </summary>
-        private static IICalendar iCalendarFromMcCalendarCommon (McCalendar c)
+        private static IICalendar iCalendarFromMcCalendarCommon (McCalendar c, EventStatus eventStatus)
         {
             var iCal = new iCalendar ();
             iCal.ProductID = "Nacho Mail";
@@ -239,8 +256,9 @@ namespace NachoCore.Utils
                 vEvent.Properties.Set ("X-MICROSOFT-CDO-ALLDAYEVENT", "FALSE");
                 vEvent.Properties.Set ("X-MICROSOFT-CDO-INTENDEDSTATUS", "BUSY");
             }
+            vEvent.Properties.Set ("X-MICROSOFT-CDO-IMPORTANCE", 1);
             vEvent.Location = c.Location;
-            vEvent.Status = EventStatus.Confirmed;
+            vEvent.Status = eventStatus;
             vEvent.Class = "PUBLIC";
             vEvent.Transparency = TransparencyType.Opaque;
             return iCal;
@@ -456,6 +474,22 @@ namespace NachoCore.Utils
             mcMessage.Delete ();
         }
 
+        public static void SendMeetingCancelations (McAccount account, McCalendar c, MimeEntity mimeBody)
+        {
+            var mimeMessage = new MimeMessage ();
+            mimeMessage.From.Add (new MailboxAddress (Pretty.OrganizerString(c.OrganizerName), account.EmailAddr));
+            foreach (var a in c.attendees) {
+                mimeMessage.To.Add (new MailboxAddress (a.Name, a.Email));
+            }
+            mimeMessage.Subject = Pretty.SubjectString ("Canceled : " + c.Subject);
+            mimeMessage.Date = DateTime.UtcNow;
+            mimeMessage.Body = mimeBody;
+            var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
+            BackEnd.Instance.SendEmailCmd (mcMessage.AccountId, mcMessage.Id, c.Id);
+            mcMessage = McEmailMessage.QueryById<McEmailMessage> (mcMessage.Id);
+            mcMessage.Delete ();
+        }
+
         /// <summary>
         /// Create a text/calendar MIME part with a meeting request for the given event.
         /// </summary>
@@ -474,6 +508,14 @@ namespace NachoCore.Utils
             return iCalToMimePartCommon (
                 CalendarHelper.iCalendarFromMcCalendarWithResponse (account, c, response),
                 DDay.iCal.CalendarMethods.Reply);
+        }
+
+        /// <summary>
+        /// Create a text/calendar MIME part with a cancelation notice for the given event.
+        /// </summary>
+        public static TextPart iCalCancelToMimePart (McAccount account, McCalendar c)
+        {
+            return iCalToMimePartCommon (CalendarHelper.iCalendarFromMcCalendarWithCancelation (account, c), DDay.iCal.CalendarMethods.Cancel);
         }
 
         /// <summary>

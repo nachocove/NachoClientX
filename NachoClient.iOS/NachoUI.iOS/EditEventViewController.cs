@@ -657,7 +657,7 @@ namespace NachoClient.iOS
                     endDatePicker.Mode = UIDatePickerMode.Date;
                 } else {
                     if (!timesAreSet) {  //Special case in which the user changes an all day event to an event with a start and end time
-                        var tempC = CalendarHelper.DefaultMeeting(startDate, endDate);
+                        var tempC = CalendarHelper.DefaultMeeting (startDate, endDate);
                         startDate = tempC.StartTime;
                         endDate = tempC.EndTime;
                         timesAreSet = !timesAreSet;
@@ -981,7 +981,7 @@ namespace NachoClient.iOS
             //end date
             var endDateLabelView = contentView.ViewWithTag (END_DATE_TAG) as UILabel;
             if (c.AllDayEvent) {
-                var endDay = CalendarHelper.ReturnAllDayEventEndTime(c.EndTime);
+                var endDay = CalendarHelper.ReturnAllDayEventEndTime (c.EndTime);
                 endDateLabelView.Text = Pretty.FullDateString (endDay);
                 endDatePicker.Mode = UIDatePickerMode.Date;
                 endDate = endDay;
@@ -1342,10 +1342,21 @@ namespace NachoClient.iOS
         protected void DeleteEvent ()
         {
             //remove item from db
+            if (0 != c.attendees.Count) {
+                PrepareCancelationNotices ();
+            }
             BackEnd.Instance.DeleteCalCmd (account.Id, c.Id);
             var controllers = this.NavigationController.ViewControllers;
             int currentVC = controllers.Count () - 1; // take 0 indexing into account
             NavigationController.PopToViewController (controllers [currentVC - 2], true);
+        }
+
+        protected void PrepareCancelationNotices ()
+        {
+            var iCalCancelPart = CalendarHelper.iCalCancelToMimePart (account, c);
+            var mimeBody = CalendarHelper.CreateMime ("", iCalCancelPart, new List<McAttachment> ());
+
+            CalendarHelper.SendMeetingCancelations (account, c, mimeBody);
         }
 
         /// <summary>
@@ -1353,7 +1364,6 @@ namespace NachoClient.iOS
         /// </summary>
         protected void PrepareInvites ()
         {
-            //var tzid = RadioElementWithData.SelectedData (timezoneEntryElement);
             var iCalPart = CalendarHelper.iCalToMimePart (account, c);
             var mimeBody = CalendarHelper.CreateMime (c.Description, iCalPart, c.attachments);
 
