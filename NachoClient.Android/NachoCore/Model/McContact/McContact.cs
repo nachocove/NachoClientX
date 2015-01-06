@@ -651,7 +651,7 @@ namespace NachoCore.Model
         public override int Insert ()
         {
             // FIXME db transaction.
-            SetColor ();
+            CircleColor = NachoPlatform.PlatformUserColorIndex.PickRandomColorForUser ();
             int retval = base.Insert ();
             InsertAncillaryData (NcModel.Instance.Db);
             return retval;
@@ -1227,11 +1227,6 @@ namespace NachoCore.Model
                 value.Add (LastName);
             }
             return String.Join (" ", value);
-        }
-
-        private void SetColor ()
-        {
-            CircleColor = NachoPlatform.PlatformUserColorIndex.PickRandomColorForUser ();
         }
 
         public string GetEmailAddress ()
