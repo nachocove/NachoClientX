@@ -840,6 +840,7 @@ namespace NachoCore.ActiveSync
             public const string Ns = "MeetingResponse";
             // Alpha order.
             public const string CollectionId = "CollectionId";
+            public const string InstanceId = "InstanceId";
             public const string MeetingResponse = "MeetingResponse";
             public const string Request = "Request";
             public const string RequestId = "RequestId";

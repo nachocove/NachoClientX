@@ -214,7 +214,12 @@ namespace NachoCore
             return null;
         }
 
-        public virtual string RespondCalCmd (int calId, NcResponseType response)
+        public virtual string RespondEmailCmd (int emailMessageId, NcResponseType response)
+        {
+            return null;
+        }
+
+        public virtual string RespondCalCmd (int calId, NcResponseType response, DateTime? instance = null)
         {
             return null;
         }

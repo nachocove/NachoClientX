@@ -897,11 +897,22 @@ namespace NachoCore.ActiveSync
             return pending.Token;
         }
 
-        public override string RespondCalCmd (int calId, NcResponseType response)
+        public override string RespondEmailCmd (int emailMessageId, NcResponseType response)
         {
-            McCalendar cal;
+            return RespondItemCmd<McCalendar> (emailMessageId, response);
+        }
+
+        public override string RespondCalCmd (int calId, NcResponseType response, DateTime? instance = null)
+        {
+            return RespondItemCmd<McCalendar> (calId, response, instance);
+        }
+
+        private string RespondItemCmd<T> (int itemId, NcResponseType response, DateTime? instance = null)
+            where T : McAbstrItem, new ()
+        {
+            T item;
             McFolder folder;
-            if (!GetItemAndFolder<McCalendar> (calId, out cal, -1, out folder)) {
+            if (!GetItemAndFolder<T> (itemId, out item, -1, out folder)) {
                 return null;
             }
 
@@ -925,15 +936,17 @@ namespace NachoCore.ActiveSync
 
             var pending = new McPending (Account.Id) {
                 Operation = McPending.Operations.CalRespond,
-                ServerId = cal.ServerId,
+                ServerId = item.ServerId,
                 ParentId = folder.ServerId,
                 CalResponse = apiResponse,
             };
-
+            if (null != instance) {
+                pending.CalResponseInstance = (DateTime)instance;
+            }
             pending.Insert ();
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCRESPCAL");
-            }, "RespondCalCmd");
+            }, "RespondItemCmd");
 
             return pending.Token;
         }

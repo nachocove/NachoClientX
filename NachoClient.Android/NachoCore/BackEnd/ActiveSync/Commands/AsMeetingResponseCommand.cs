@@ -24,11 +24,19 @@ namespace NachoCore.ActiveSync
 
         protected override XDocument ToXDocument (AsHttpOperation Sender)
         {
-            var meetingResp = new XElement (m_ns + Xml.MeetingResp.MeetingResponse,
-                                  new XElement (m_ns + Xml.MeetingResp.Request,
-                                      new XElement (m_ns + Xml.MeetingResp.UserResponse, (uint)PendingSingle.CalResponse),
-                                      new XElement (m_ns + Xml.MeetingResp.CollectionId, PendingSingle.ParentId),
-                                      new XElement (m_ns + Xml.MeetingResp.RequestId, PendingSingle.ServerId)));
+            var request = new XElement (m_ns + Xml.MeetingResp.Request,
+                              new XElement (m_ns + Xml.MeetingResp.UserResponse, (uint)PendingSingle.CalResponse),
+                              new XElement (m_ns + Xml.MeetingResp.CollectionId, PendingSingle.ParentId),
+                              new XElement (m_ns + Xml.MeetingResp.RequestId, PendingSingle.ServerId));
+            if (DateTime.MinValue != PendingSingle.CalResponseInstance) {
+                if ("14.1" == BEContext.ProtocolState.AsProtocolVersion) {
+                    request.Add (new XElement (m_ns + Xml.MeetingResp.InstanceId, 
+                        PendingSingle.CalResponseInstance.ToAsUtcString ()));
+                } else {
+                    Log.Error (Log.LOG_AS, "AsMeetingResponseCommand:InstanceId specified without protocol support.");
+                }
+            }
+            var meetingResp = new XElement (m_ns + Xml.MeetingResp.MeetingResponse, request);
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (meetingResp);
             return doc;

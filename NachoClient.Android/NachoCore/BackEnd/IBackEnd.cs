@@ -90,7 +90,8 @@ namespace NachoCore
         string UpdateCalCmd (int accountId, int calId);
         string DeleteCalCmd (int accountId, int calId);
         string MoveCalCmd (int accountId, int calId, int destFolderId);
-        string RespondCalCmd (int accountId, int calId, NcResponseType response);
+        string RespondEmailCmd (int accountId, int emailMessageId, NcResponseType response);
+        string RespondCalCmd (int accountId, int calId, NcResponseType response, DateTime? instance = null);
         string DnldCalBodyCmd (int accountId, int calId);
         string CreateContactCmd (int accountId, int contactId, int folderId);
         string UpdateContactCmd (int accountId, int contactId);
