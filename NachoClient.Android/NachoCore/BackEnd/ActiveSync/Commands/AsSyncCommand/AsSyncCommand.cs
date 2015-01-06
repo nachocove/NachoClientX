@@ -248,6 +248,11 @@ namespace NachoCore.ActiveSync
                     if (options.HasElements) {
                         collection.Add (options);
                     }
+                } else if (McFolder.AsSyncKey_Initial != folder.AsSyncKey && BEContext.Server.HostIsGMail ()) {
+                    // If we perform a Sync-based command and don't include Options + FilterType, GFE
+                    // Will go into a MoreAvailable=1 w/no changes tailspin until a new message arrives.
+                    collection.Add (new XElement (m_ns + Xml.AirSync.Options,
+                        new XElement (m_ns + Xml.AirSync.FilterType, (uint)perFolder.FilterCode)));
                 }
                 // Commands.  
                 var commands = new XElement (m_ns + Xml.AirSync.Commands);

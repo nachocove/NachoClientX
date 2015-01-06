@@ -704,23 +704,23 @@ namespace Test.iOS
             Fetch_InjectEmails (account.Id, 11);
             result = strat.GenFetchKit (account.Id);
             Assert.AreEqual (0, result.FetchAttachments.Count);
-            Assert.AreEqual (10, result.FetchBodies.Count);
+            Assert.AreEqual (AsStrategy.KBaseFetchSize, result.FetchBodies.Count);
             Assert.NotNull (result.Pendings);
             Assert.AreEqual (0, result.Pendings.Count);
             Fetch_DeleteEmails (account.Id);
 
             Fetch_InjectAtts (account.Id, 11);
             result = strat.GenFetchKit (account.Id);
-            Assert.AreEqual (10, result.FetchAttachments.Count);
+            Assert.AreEqual (AsStrategy.KBaseFetchSize, result.FetchAttachments.Count);
             Assert.AreEqual (0, result.FetchBodies.Count);
             Assert.AreEqual (0, result.Pendings.Count);
             Fetch_DeleteAtts (account.Id);
 
-            Fetch_InjectEmails (account.Id, 5);
-            Fetch_InjectAtts (account.Id, 6);
+            Fetch_InjectEmails (account.Id, AsStrategy.KBaseFetchSize / 2);
+            Fetch_InjectAtts (account.Id, AsStrategy.KBaseFetchSize / 2);
             result = strat.GenFetchKit (account.Id);
-            Assert.AreEqual (5, result.FetchAttachments.Count);
-            Assert.AreEqual (5, result.FetchBodies.Count);
+            Assert.AreEqual (AsStrategy.KBaseFetchSize / 2, result.FetchAttachments.Count);
+            Assert.AreEqual (AsStrategy.KBaseFetchSize / 2, result.FetchBodies.Count);
             Assert.AreEqual (0, result.Pendings.Count);
             Fetch_DeleteEmails (account.Id);
             Fetch_DeleteAtts (account.Id);

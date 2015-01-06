@@ -585,7 +585,7 @@ namespace NachoCore.ActiveSync
                  * The device MUST synchronize the full contents of a given folder, and then have its changes, 
                  * additions, and deletions applied.
                  * 
-                 * If we are in serial mode, we will issue no more pendings.
+                 * If we are in serial mode, we will issue no more commands (McPendings).
                  */
                 commands = new List<McPending> ();
                 if (!folder.AsSyncMetaToClientExpected && 
@@ -615,7 +615,8 @@ namespace NachoCore.ActiveSync
                         GetChanges = getChanges,
                     };
                     // Parameters are only valid/expressed when not AsSyncKey_Initial.
-                    if (getChanges && McFolder.AsSyncKey_Initial != folder.AsSyncKey) {
+                    // They are typically only expressed when doing GetChanges (exception: GFE).
+                    if (McFolder.AsSyncKey_Initial != folder.AsSyncKey) {
                         var parms = ParametersProvider (folder, rung, false);
                         perFolder.FilterCode = parms.Item1;
                         perFolder.WindowSize = parms.Item2;
