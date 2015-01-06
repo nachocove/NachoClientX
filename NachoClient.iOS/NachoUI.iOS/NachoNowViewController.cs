@@ -49,7 +49,7 @@ namespace NachoClient.iOS
             refreshControl.AttributedTitle = new NSAttributedString ("Refreshing...");
             refreshControl.ValueChanged += (object sender, EventArgs e) => {
                 refreshControl.BeginRefreshing ();
-                BackEnd.Instance.QuickSync ();
+                RefreshPriorityInboxIfVisible ();
                 new NcTimer ("NachoNowViewController refresh", refreshCallback, null, 2000, 0);
             };
 
@@ -271,9 +271,14 @@ namespace NachoClient.iOS
             var s = (StatusIndEventArgs)e;
             if (NcResult.SubKindEnum.Info_EmailMessageSetChanged == s.Status.SubKind) {
                 RefreshPriorityInboxIfVisible ();
-
             }
             if (NcResult.SubKindEnum.Info_EmailMessageScoreUpdated == s.Status.SubKind) {
+                RefreshPriorityInboxIfVisible ();
+            }
+            if (NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded == s.Status.SubKind) {
+                RefreshPriorityInboxIfVisible ();
+            }
+            if (NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded == s.Status.SubKind) {
                 RefreshPriorityInboxIfVisible ();
             }
         }

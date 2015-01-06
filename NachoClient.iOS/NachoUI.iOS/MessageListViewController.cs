@@ -107,7 +107,7 @@ namespace NachoClient.iOS
             RefreshControl.AttributedTitle = new NSAttributedString ("Refreshing...");
             RefreshControl.ValueChanged += (object sender, EventArgs e) => {
                 RefreshControl.BeginRefreshing ();
-                BackEnd.Instance.QuickSync ();
+                ReloadDataMaintainingPosition ();
                 new NcTimer ("MessageListViewController refresh", refreshCallback, null, 2000, 0);
             };
 
@@ -221,7 +221,12 @@ namespace NachoClient.iOS
         {
             var s = (StatusIndEventArgs)e;
             if (NcResult.SubKindEnum.Info_EmailMessageSetChanged == s.Status.SubKind) {
-                Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: EmailMessageSetChanged");
+                ReloadDataMaintainingPosition ();
+            }
+            if (NcResult.SubKindEnum.Info_EmailMessageSetFlagSucceeded == s.Status.SubKind) {
+                ReloadDataMaintainingPosition ();
+            }
+            if (NcResult.SubKindEnum.Info_EmailMessageClearFlagSucceeded == s.Status.SubKind) {
                 ReloadDataMaintainingPosition ();
             }
         }
