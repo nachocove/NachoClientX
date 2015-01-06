@@ -299,6 +299,17 @@ namespace NachoCore.Model
             return table.FirstOrDefault ();
         }
 
+        public static int CountByVersion (int version)
+        {
+            return NcModel.Instance.Db.Table<McEmailMessage> ().Where (x => x.ScoreVersion == version).Count ();
+        }
+
+        public static int Count ()
+        {
+            return NcModel.Instance.Db.Table<McEmailMessage> ().Count ();
+        }
+
+
         /// <summary>
         /// Evaluate the parameters in McEmailMessage and produce a list of 
         /// NcTimeVariance that applies. These NcTimeVariance do not need to be 
