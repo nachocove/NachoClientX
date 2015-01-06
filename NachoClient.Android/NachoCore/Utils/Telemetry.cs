@@ -733,6 +733,14 @@ namespace NachoCore.Utils
 
             BackEnd = new T ();
             BackEnd.Initialize ();
+            if (Token.IsCancellationRequested) {
+                // If cancellation occurred and this telemetry didn't quit in time.
+                // This happens because some AWS initialization routines are synchronous
+                // and do not accept a cancellation token.
+                // Better late than never. Quit now.
+                Log.Warn (Log.LOG_LIFECYCLE, "Delay cancellation of telemetry task");
+                return;
+            }
             Counters [0].ReportPeriod = 5 * 60; // report once every 5 min
 
             // Capture the transaction time to telemetry server
