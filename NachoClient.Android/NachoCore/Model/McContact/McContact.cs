@@ -1231,7 +1231,6 @@ namespace NachoCore.Model
 
         private void SetColor ()
         {
-            Random random = new Random ();
             CircleColor = NachoPlatform.PlatformUserColorIndex.PickRandomColorForUser ();
         }
 
@@ -1299,7 +1298,7 @@ namespace NachoCore.Model
         {
             var displayName = GetDisplayName ();
             if (String.IsNullOrEmpty (displayName)) {
-                return GetEmailAddress ();
+                return GetPrimaryCanonicalEmailAddress ();
             } else {
                 return displayName;
             }
