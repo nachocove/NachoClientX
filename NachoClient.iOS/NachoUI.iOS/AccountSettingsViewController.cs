@@ -169,6 +169,7 @@ namespace NachoClient.iOS
             accountNameTextField.Font = TEXT_FIELD_FONT;
             accountNameTextField.TextAlignment = UITextAlignment.Left;
             accountNameTextField.Tag = ACCOUNT_NAME_TAG;
+            accountNameTextField.ShouldReturn += TextFieldShouldReturn;
             settingsView.Add (accountNameTextField);
 
             yOffset = accountNameTextField.Frame.Bottom;
@@ -188,6 +189,7 @@ namespace NachoClient.iOS
             usernameTextField.Font = TEXT_FIELD_FONT;
             usernameTextField.TextAlignment = UITextAlignment.Left;
             usernameTextField.Tag = USERNAME_TAG;
+            usernameTextField.ShouldReturn += TextFieldShouldReturn;
             settingsView.Add (usernameTextField);
 
             yOffset = usernameTextField.Frame.Bottom;
@@ -208,6 +210,7 @@ namespace NachoClient.iOS
             passwordTextField.TextAlignment = UITextAlignment.Left;
             passwordTextField.SecureTextEntry = true;
             passwordTextField.Tag = PASSWORD_TAG;
+            passwordTextField.ShouldReturn += TextFieldShouldReturn;
             settingsView.Add (passwordTextField);
 
             yOffset = passwordTextField.Frame.Bottom;
@@ -227,6 +230,7 @@ namespace NachoClient.iOS
             emailTextField.Font = TEXT_FIELD_FONT;
             emailTextField.TextAlignment = UITextAlignment.Left;
             emailTextField.Tag = EMAIL_TAG;
+            emailTextField.ShouldReturn += TextFieldShouldReturn;
             settingsView.Add (emailTextField);
 
             yOffset = emailTextField.Frame.Bottom;
@@ -246,6 +250,7 @@ namespace NachoClient.iOS
             mailserverTextField.Font = TEXT_FIELD_FONT;
             mailserverTextField.TextAlignment = UITextAlignment.Left;
             mailserverTextField.Tag = MAILSERVER_TAG;
+            mailserverTextField.ShouldReturn += TextFieldShouldReturn;
             settingsView.Add (mailserverTextField);
 
             yOffset = mailserverTextField.Frame.Bottom;
@@ -269,6 +274,7 @@ namespace NachoClient.iOS
             conferencecallTextField.Font = TEXT_FIELD_FONT;
             conferencecallTextField.TextAlignment = UITextAlignment.Left;
             conferencecallTextField.Tag = CONFERENCE_TAG;
+            conferencecallTextField.ShouldReturn += TextFieldShouldReturn;
             settingsView.Add (conferencecallTextField);
 
             yOffset = conferencecallTextField.Frame.Bottom;
@@ -541,6 +547,27 @@ namespace NachoClient.iOS
             if (null != signatureView) {
                 signatureView.RemoveGestureRecognizer (signatureTapGesture);
             }
+
+            UITextField accountNameTextField = (UITextField)View.ViewWithTag(ACCOUNT_NAME_TAG);
+            UITextField usernameTextField = (UITextField)View.ViewWithTag(USERNAME_TAG);
+            UITextField passwordTextField = (UITextField)View.ViewWithTag(PASSWORD_TAG);
+            UITextField emailTextField = (UITextField)View.ViewWithTag(EMAIL_TAG);
+            UITextField mailServerTextField = (UITextField)View.ViewWithTag(MAILSERVER_TAG);
+            UITextField conferenceTextField = (UITextField)View.ViewWithTag(CONFERENCE_TAG);
+
+            accountNameTextField.ShouldReturn -= TextFieldShouldReturn;
+            usernameTextField.ShouldReturn  -= TextFieldShouldReturn;
+            passwordTextField.ShouldReturn  -= TextFieldShouldReturn;
+            emailTextField.ShouldReturn  -= TextFieldShouldReturn;
+            mailServerTextField.ShouldReturn  -= TextFieldShouldReturn;
+            conferenceTextField.ShouldReturn  -= TextFieldShouldReturn;
+
+            accountNameTextField = null;
+            usernameTextField = null;
+            passwordTextField = null;
+            emailTextField = null;
+            mailServerTextField = null;
+            conferenceTextField = null;
         }
 
         protected void ValidateAndDisplayWaitingView ()
@@ -601,6 +628,12 @@ namespace NachoClient.iOS
                 accountIssue = AccountIssue.ErrorUser;
                 StatusIndicatorTriggered ();
             }
+        }
+
+        public bool TextFieldShouldReturn (UITextField whatField)
+        {
+            View.EndEditing (true);
+            return true;
         }
 
         protected void SaveButtonClicked (object sender, EventArgs e)
