@@ -415,8 +415,11 @@ namespace NachoClient.iOS
                 emailTextField.Text = theAccount.EmailAddr;
             }
 
-            if (!String.IsNullOrEmpty (theServer.Host)) {
+            if (null != theServer) {
                 mailserverTextField.Text = theServer.Host;
+                if (443 != theServer.Port) {
+                    mailserverTextField.Text += ":" + theServer.Port.ToString ();
+                }
             }
 
             if (null == theConference) {
@@ -467,9 +470,11 @@ namespace NachoClient.iOS
 
             switch (accountIssue) {
             case AccountIssue.ErrorAuth:
-            case AccountIssue.ErrorComm:
                 usernameTextField.TextColor = A.Color_NachoRed;
                 passwordTextField.TextColor = A.Color_NachoRed;
+                break;
+            case AccountIssue.ErrorComm:
+                mailserverTextField.TextColor = A.Color_NachoRed;
                 break;
             case AccountIssue.ErrorUser:
                 usernameTextField.TextColor = A.Color_NachoRed;
@@ -544,14 +549,14 @@ namespace NachoClient.iOS
             var passwordTextField = (UITextField)View.ViewWithTag (PASSWORD_TAG);
             var mailserverTextField = (UITextField)View.ViewWithTag (MAILSERVER_TAG);
 
-            if (!NachoCore.Utils.RegexUtilities.IsValidHostName (mailserverTextField.Text.Trim ())) {
+            if (!EmailHelper.IsValidServer (mailserverTextField.Text.Trim ())) {
                 accountIssue = AccountIssue.InvalidHost;
                 ConfigureAndLayout ();
                 return;
             }
 
             McServer testServer = new McServer ();
-            testServer.Host = mailserverTextField.Text;
+            SetHostAndPort (testServer, mailserverTextField.Text);
 
             McCred testCred = new McCred ();
             testCred.SetTestPassword (passwordTextField.Text);
@@ -658,8 +663,11 @@ namespace NachoClient.iOS
             if (null != theAccount.EmailAddr) {
                 originalEmailValue = theAccount.EmailAddr;
             }
-            if (null != theServer.Host) {
+            if (null != theServer) {
                 originalMailServerValue = theServer.Host;
+                if (443 != theServer.Port) {
+                    originalMailServerValue += ":" + theServer.Port;
+                }
             }
             if (null != theConference.DefaultPhoneNumber) {
                 originalConferenceValue = theConference.DefaultPhoneNumber;
@@ -761,7 +769,7 @@ namespace NachoClient.iOS
 
                 theAccount.DisplayName = accountNameTextField.Text;
                 theAccount.EmailAddr = emailTextField.Text;
-                theServer.Host = mailserverTextField.Text;
+                SetHostAndPort (theServer, mailserverTextField.Text);
                 theCred.Username = usernameTextField.Text;
                 theCred.UpdatePassword (passwordTextField.Text);
                 theConference.DefaultPhoneNumber = conferenceTextField.Text;
@@ -773,6 +781,22 @@ namespace NachoClient.iOS
 
                 NachoTabBarController.ReconfigureMoreTab ();
             }
+        }
+
+        //Should this be a helper? EmailHelper?
+        protected void SetHostAndPort (McServer forServer, string serverText)
+        {
+            NcAssert.True (EmailHelper.IsValidServer (serverText), "Server is not valid");
+
+            if (EmailHelper.IsValidHost (serverText)) {
+                forServer.Host = serverText.Trim ();
+                forServer.Port = 443;
+                return;
+            }
+
+            Uri serverURI = new Uri ("my://" + serverText.Trim ());
+            forServer.Host = serverURI.Host;
+            forServer.Port = serverURI.Port;
         }
 
         protected void ToggleEditing ()

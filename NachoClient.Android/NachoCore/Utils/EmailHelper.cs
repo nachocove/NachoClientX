@@ -18,6 +18,35 @@ namespace NachoCore.Utils
             return regexUtil.IsValidEmail (email);
         }
 
+        public static bool IsValidServer (string server)
+        {
+            if (EmailHelper.IsValidHost (server)) {
+                return true;
+            }
+
+            //fullServerUri didn't pass...validate host/port separately
+            Uri serverURI;
+            try {
+                serverURI = new Uri ("my://" + server.Trim ());
+            } catch {
+                return false;
+            }
+
+            var host = serverURI.Host;
+            var port = serverURI.Port;
+
+            if (!EmailHelper.IsValidHost (host)) {
+                return false;
+            }
+
+            //host cleared, checking port
+            if (!EmailHelper.IsValidPort (port)) {
+                return false;
+            }
+
+            return true;
+        }
+
         public static bool IsValidHost (string host)
         {
             UriHostNameType fullServerUri = Uri.CheckHostName (host.Trim ());
