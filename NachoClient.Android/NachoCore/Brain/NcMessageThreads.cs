@@ -2,6 +2,7 @@
 //
 using System;
 using System.Collections.Generic;
+using NachoCore.Brain;
 using NachoCore.Model;
 using NachoCore.Utils;
 
@@ -30,10 +31,10 @@ namespace NachoCore.Brain
         protected static bool CheckForDeletes (List<McEmailMessageThread> oldList, List<NcEmailMessageIndex> newList, out List<int> deletes)
         {
             deletes = null;
-            if (null == oldList) {
-                return (null != newList);
+            if ((null == oldList) || (null == newList)) {
+                return true;
             }
-            if (0 == newList.Count) {
+            if ((0 == oldList.Count) || (0 == newList.Count)) {
                 return true;
             }
             // New list has more; need 'adds'
@@ -68,18 +69,19 @@ namespace NachoCore.Brain
             if (newList.Count != newListIndex) {
                 deletes = null;
             }
+            NcAssert.True ((null == deletes) || (0 < deletes.Count));
             return true;
         }
 
-        // Return true or false if old and new lists are different.
-        // Return 'adds' if the new list is strictly additions to the old list
+        // Return true if old and new lists are different. Empty lists always differ.
+        // Return a list of 'adds' if the new list is strictly additions to the old list.
         protected static bool CheckForAdds (List<McEmailMessageThread> oldList, List<NcEmailMessageIndex> newList, out List<int> adds)
         {
             adds = null;
-            if (null == oldList) {
-                return (null != newList);
+            if ((null == oldList) || (null == newList)) {
+                return true;
             }
-            if (0 == newList.Count) {
+            if ((0 == oldList.Count) || (0 == newList.Count)) {
                 return true;
             }
             // Old list has more; need 'deletes'
@@ -117,14 +119,25 @@ namespace NachoCore.Brain
             if (oldList.Count != oldListIndex) {
                 adds = null;
             }
+            NcAssert.True ((null == adds) || (0 < adds.Count));
             return true;
         }
 
         // Return true if lists differ. Return a list of additions or deletions
+        // If either list is empty, always returns true with no additions or deletions.
+        // (Kind of a kludge but needed because empty list really has one cell "Empty list".)
         public static bool AreDifferent (List<McEmailMessageThread> oldList, List<NcEmailMessageIndex> newList, out List<int> adds, out List<int> deletes)
         {
             adds = null;
             deletes = null;
+
+            if ((null == oldList) || (0 == oldList.Count)) {
+                return true;
+            }
+            if ((null == newList) || (0 == newList.Count)) {
+                return true;
+            }
+
             if (!CheckForDeletes (oldList, newList, out deletes)) {
                 return false;
             }

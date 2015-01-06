@@ -296,11 +296,7 @@ namespace NachoClient.iOS
                 List<int> adds;
                 List<int> deletes;
                 if (priorityInbox.Refresh (out adds, out deletes)) {
-                    if ((null == adds) && (null == deletes)) {
-                        hotListView.ReloadData ();
-                    } else {
-                        Util.UpdateTable (hotListView, adds, deletes);
-                    }
+                    Util.UpdateTable (hotListView, adds, deletes);
                     callReconfigure = false;
                 }
             }
