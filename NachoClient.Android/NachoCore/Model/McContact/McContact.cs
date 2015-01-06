@@ -651,6 +651,7 @@ namespace NachoCore.Model
         public override int Insert ()
         {
             // FIXME db transaction.
+            CircleColor = NachoPlatform.PlatformUserColorIndex.PickRandomColorForUser ();
             int retval = base.Insert ();
             InsertAncillaryData (NcModel.Instance.Db);
             return retval;
@@ -1271,14 +1272,19 @@ namespace NachoCore.Model
             return "";
         }
 
-
-        public string GetPhoneNumber ()
+        public string GetPrimaryPhoneNumber ()
         {
             if (null == PhoneNumbers) {
                 return "";
             }
             if (0 == PhoneNumbers.Count ()) {
                 return "";
+            }
+
+            foreach (var p in PhoneNumbers) {
+                if (p.IsDefault) {
+                    return p.Value;
+                }
             }
             return PhoneNumbers.First ().Value;
         }
@@ -1287,7 +1293,7 @@ namespace NachoCore.Model
         {
             var displayName = GetDisplayName ();
             if (String.IsNullOrEmpty (displayName)) {
-                return GetEmailAddress ();
+                return GetPrimaryCanonicalEmailAddress ();
             } else {
                 return displayName;
             }

@@ -150,6 +150,7 @@ namespace NachoCore.Utils
         {
             copy.ServerId = orig.ServerId;
 
+            copy.CircleColor = orig.CircleColor;
             copy.PortraitId = orig.PortraitId;
             copy.NativeBodyType = orig.NativeBodyType;
 

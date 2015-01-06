@@ -446,15 +446,7 @@ namespace NachoClient.iOS
                 return;
             }
 
-            UIColor userBackgroundColor = Util.ColorForUser (Util.PickRandomColorForUser ());
-
-            foreach (var e in contact.EmailAddresses) {
-                var emailAddress = McEmailAddress.QueryById<McEmailAddress> (e.EmailAddress);
-                if (null != emailAddress) {
-                    userBackgroundColor = Util.ColorForUser (emailAddress.ColorIndex);
-                    break;
-                }
-            }
+            UIColor userBackgroundColor = Util.GetContactColor (contact);
 
             UILabel headerInitialsLabel = (UILabel)View.ViewWithTag (HEADER_INITIALS_CIRCLE_TAG);
             UIImageView headerPortraitImageView = (UIImageView)View.ViewWithTag (HEADER_PORTRAIT_TAG);
@@ -519,7 +511,7 @@ namespace NachoClient.iOS
             if (contact.PhoneNumbers.Count > 0) {
                 foreach (var p in contact.PhoneNumbers) {
                     if (p.IsDefault) {
-                        contactInfoHeight += AddPhoneNumber (contact.PhoneNumbers.FirstOrDefault (), contactInfoHeight, contactInfoScrollView, true);
+                        contactInfoHeight += AddPhoneNumber (p, contactInfoHeight, contactInfoScrollView, true);
                         break;
                     }
                 }
