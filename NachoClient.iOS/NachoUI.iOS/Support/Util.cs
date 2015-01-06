@@ -344,18 +344,12 @@ namespace NachoClient
 
         public static UIColor GetContactColor (McContact contact)
         {
-            if (null == contact.EmailAddresses || 0 == contact.EmailAddresses.Count ) {
-                return ColorForUser(PickRandomColorForUser ());
+            if (0 == contact.CircleColor) {
+                contact.CircleColor = PickRandomColorForUser ();
+                contact.Update ();
             }
 
-            if (!String.IsNullOrEmpty (contact.GetPrimaryCanonicalEmailAddress())) {
-                McEmailAddress emailAddress;
-                if (McEmailAddress.Get (contact.AccountId, contact.GetPrimaryCanonicalEmailAddress(), out emailAddress)) {
-                    return ColorForUser(emailAddress.ColorIndex);
-                }
-            }
-
-            return ColorForUser(PickRandomColorForUser ());
+            return ColorForUser (contact.CircleColor);
         }
 
         public static NachoTabBarController GetActiveTabBar ()
