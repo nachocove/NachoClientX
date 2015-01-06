@@ -211,6 +211,7 @@ namespace NachoClient.iOS
             passwordTextField.SecureTextEntry = true;
             passwordTextField.Tag = PASSWORD_TAG;
             passwordTextField.ShouldReturn += TextFieldShouldReturn;
+            passwordTextField.ShouldChangeCharacters += ShouldChangeCharacters;
             settingsView.Add (passwordTextField);
 
             yOffset = passwordTextField.Frame.Bottom;
@@ -562,6 +563,8 @@ namespace NachoClient.iOS
             mailServerTextField.ShouldReturn  -= TextFieldShouldReturn;
             conferenceTextField.ShouldReturn  -= TextFieldShouldReturn;
 
+            passwordTextField.ShouldChangeCharacters -= ShouldChangeCharacters;
+
             accountNameTextField = null;
             usernameTextField = null;
             passwordTextField = null;
@@ -634,6 +637,13 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
             return true;
+        }
+
+        public bool ShouldChangeCharacters (UITextField textField, NSRange range, string replacementString) 
+        {
+            var updatedString = textField.Text.Substring (0, range.Location) + replacementString + textField.Text.Substring (range.Location + range.Length);
+            textField.Text = updatedString;
+            return false;
         }
 
         protected void SaveButtonClicked (object sender, EventArgs e)
