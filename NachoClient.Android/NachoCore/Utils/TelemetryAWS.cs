@@ -52,6 +52,8 @@ namespace NachoCore.Utils
             config.UseHttp = false;
             config.AuthenticationRegion = "us-west-2";
             config.ServiceURL = "https://dynamodb.us-west-2.amazonaws.com";
+            // Disable exponential backoff to implement our own linear backoff scheme.
+            config.MaxErrorRetry = 0;
 
             CognitoAWSCredentials credentials = new CognitoAWSCredentials (
                                                     BuildInfo.AwsAccountId,
@@ -273,6 +275,8 @@ namespace NachoCore.Utils
                     }
                     throw;
                 }
+                // Linear backoff
+                NcTask.CancelableSleep (1000);
                 return false;
             }
             return true;
