@@ -58,6 +58,43 @@ namespace NachoCore.ActiveSync
             }
         }
 
+        /// <summary>
+        /// Set the item's preview based on the Body element in the response.
+        /// Use the Preview element if it exists.  Otherwise, extract the first
+        /// 255 characters out of the body.  The item's Body field is not changed
+        /// at all.  The body in the response is used only to generate a preview.
+        /// It will not be treated as the real message body.
+        /// </summary>
+        public static void ExtractPreviewFromXmlBody (this McAbstrItem item, XElement xmlBody)
+        {
+            var xmlData = xmlBody.ElementAnyNs (Xml.AirSyncBase.Data);
+            var xmlPreview = xmlBody.ElementAnyNs (Xml.AirSyncBase.Preview);
+
+            if (null != xmlPreview) {
+                item.BodyPreview = xmlPreview.Value;
+            }
+            if (null != xmlData) {
+                string bodyText;
+                var saveAttr = xmlData.Attributes ().Where (x => x.Name == "nacho-body-id").SingleOrDefault ();
+                if (null != saveAttr) {
+                    var body = McBody.QueryById<McBody> (int.Parse (saveAttr.Value));
+                    NcAssert.NotNull (body);
+                    bodyText = body.GetContentsString ();
+                    // Now that we have looked at the contents, get rid of the McBody.
+                    body.Delete ();
+                } else {
+                    bodyText = xmlData.Value;
+                }
+                if (null == xmlPreview) {
+                    if (255 >= bodyText.Length) {
+                        item.BodyPreview = bodyText;
+                    } else {
+                        item.BodyPreview = bodyText.Substring (0, 255);
+                    }
+                }
+            }
+        }
+
         public static T ToEnum<T> (this string enumString)
         {
             return (T)Enum.Parse (typeof(T), enumString);
@@ -637,7 +674,6 @@ namespace NachoCore.ActiveSync
 
         public NcResult ParseEmail (XNamespace ns, XElement command, McFolder folder)
         {
-
             var serverId = command.Element (ns + Xml.AirSync.ServerId);
             NcAssert.True (null != serverId);
 
@@ -664,7 +700,7 @@ namespace NachoCore.ActiveSync
                     emailMessage.cachedHasAttachments = true;
                     break;
                 case Xml.AirSyncBase.Body:
-                    emailMessage.ApplyAsXmlBody (child);
+                    emailMessage.ExtractPreviewFromXmlBody (child);
                     break;
 
                 case Xml.Email.Flag:

@@ -202,28 +202,36 @@ namespace NachoCore.ActiveSync
                     switch (classCodeEnum) {
                     case McAbstrFolderEntry.ClassCodeEnum.Email:
                         options.Add (new XElement (m_ns + Xml.AirSync.FilterType, (uint)perFolder.FilterCode));
-                        options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.NoMime_0));
-                        var bodyPref = new XElement (m_baseNs + Xml.AirSync.BodyPreference,
-                                           new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.Html_2));
-                        // TODO - this should be in strategy.
-                        if (BEContext.Server.HostIsHotMail ()) {
-                            bodyPref.Add (new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "512"));
+                        // If the server supports previews, then ask for 0-sized MIME with a preview.
+                        // Otherwise, ask for 255 bytes of plain text.
+                        if (BEContext.Server.HostIsGMail () || 14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
+                            options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.NoMime_0));
+                            options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
+                                new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
+                                new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "255")));
                         } else {
-                            bodyPref.Add (new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "128"));
-                            bodyPref.Add (new XElement (m_baseNs + Xml.AirSyncBase.AllOrNone, "1"));
+                            options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.AllMime_2));
+                            options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
+                                new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.Mime_4),
+                                new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "0"),
+                                new XElement (m_baseNs + Xml.AirSyncBase.Preview, "255")));
                         }
-                        if (14.0 <= Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
-                            bodyPref.Add (new XElement (m_baseNs + Xml.AirSyncBase.Preview, "255"));
-                        }
-                        options.Add (bodyPref);
                         break;
 
                     case McAbstrFolderEntry.ClassCodeEnum.Calendar:
                         options.Add (new XElement (m_ns + Xml.AirSync.FilterType, (uint)perFolder.FilterCode));
-                        options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.AllMime_2));
-                        options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
-                            new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.Mime_4),
-                            new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "100000000")));
+                        // GFE, Hotmail, and Exchange 2007 will only give us calendar bodies as plain text.
+                        if (BEContext.Server.HostIsGMail () || BEContext.Server.HostIsHotMail () || 14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
+                            options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.NoMime_0));
+                            options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
+                                new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
+                                new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "100000000")));
+                        } else {
+                            options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.AllMime_2));
+                            options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
+                                new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.Mime_4),
+                                new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "100000000")));
+                        }
                         break;
 
                     case McAbstrFolderEntry.ClassCodeEnum.Contact:
