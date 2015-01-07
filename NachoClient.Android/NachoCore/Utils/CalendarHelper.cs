@@ -1057,8 +1057,8 @@ namespace NachoCore.Utils
                 calendarItem.Update ();
             }
 
-            var el = NcModel.Instance.Db.Table<McEvent> ().ToList ();
-            Log.Info (Log.LOG_CALENDAR, "Events in db: {0}", el.Count);
+            var el = NcModel.Instance.Db.Table<McEvent> ().Count ();
+            Log.Info (Log.LOG_CALENDAR, "Events in db: {0}", el);
 
             NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                 Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EventSetChanged),
