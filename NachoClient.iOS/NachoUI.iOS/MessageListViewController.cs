@@ -173,15 +173,15 @@ namespace NachoClient.iOS
         public void ReloadDataMaintainingPosition ()
         {
             NachoCore.Utils.NcAbate.HighPriority ("MessageListViewController ReloadDataMaintainingPosition");
+            ReloadCapture.Start ();
             List<int> adds;
             List<int> deletes;
             if (messageSource.RefreshEmailMessages (out adds, out deletes)) {
-                ReloadCapture.Start ();
                 Util.UpdateTable (TableView, adds, deletes);
-                ReloadCapture.Stop ();
             } else {
                 messageSource.ReconfigureVisibleCells (TableView);
             }
+            ReloadCapture.Stop ();
             NachoCore.Utils.NcAbate.RegularPriority ("MessageListViewController ReloadDataMaintainingPosition");
         }
 

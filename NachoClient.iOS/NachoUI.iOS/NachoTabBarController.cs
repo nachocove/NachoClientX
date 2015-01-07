@@ -74,11 +74,13 @@ namespace NachoClient.iOS
 
             var emailMessageIdString = McMutables.Get (McAccount.GetDeviceAccount ().Id, NachoClient.iOS.AppDelegate.EmailNotificationKey, accountId.ToString ());
             if (!String.IsNullOrEmpty (emailMessageIdString)) {
+                Log.Info (Log.LOG_UI, "NachoTabBarController: SwitchToNachoNow(emailMessageIdString={0}", emailMessageIdString);
                 SwitchToNachoNow ();
             }
 
-            var eventMessageString = McMutables.Get (McAccount.GetDeviceAccount ().Id, NachoClient.iOS.AppDelegate.EventNotificationKey, accountId.ToString ());
-            if (!String.IsNullOrEmpty (eventMessageString)) {
+            var eventMessageIdString = McMutables.Get (McAccount.GetDeviceAccount ().Id, NachoClient.iOS.AppDelegate.EventNotificationKey, accountId.ToString ());
+            if (!String.IsNullOrEmpty (eventMessageIdString)) {
+                Log.Info (Log.LOG_UI, "NachoTabBarController: SwitchToNachoNow(eventMessageIdString={0}", eventMessageIdString);
                 SwitchToNachoNow ();
             }
         }
@@ -113,7 +115,10 @@ namespace NachoClient.iOS
             var nachoNowViewController = (NachoNowViewController)FindViewController (navigationController);
             this.SelectedViewController = navigationController;
             if (null != nachoNowViewController) {
+                Log.Info (Log.LOG_UI, "SwitchToNachoNow HandleNotifications");
                 nachoNowViewController.HandleNotifications ();
+            } else {
+                Log.Info (Log.LOG_UI, "SwitchToNachoNow view controller is null");
             }
         }
 

@@ -26,6 +26,9 @@ namespace NachoClient.iOS
         protected UIRefreshControl refreshControl;
         protected UITableViewController tableViewController;
 
+        protected NcCapture ReloadCapture;
+        private string ReloadCaptureName;
+
         public NachoNowViewController (IntPtr handle) : base (handle)
         {
         }
@@ -33,6 +36,10 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+
+            ReloadCaptureName = "NachoNowViewController.Reload";
+            NcCapture.AddKind (ReloadCaptureName);
+            ReloadCapture = NcCapture.Create (ReloadCaptureName);
 
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
@@ -300,10 +307,14 @@ namespace NachoClient.iOS
                 priorityInboxNeedsRefresh = false;
                 List<int> adds;
                 List<int> deletes;
+                NachoCore.Utils.NcAbate.HighPriority ("NachoNowViewController MaybeRefreshPriorityInbox");
+                ReloadCapture.Start ();
                 if (priorityInbox.Refresh (out adds, out deletes)) {
                     Util.UpdateTable (hotListView, adds, deletes);
                     callReconfigure = false;
                 }
+                ReloadCapture.Stop ();
+                NachoCore.Utils.NcAbate.RegularPriority ("NachoNowViewController MaybeRefreshPriorityInbox");
             }
             if (callReconfigure) {
                 hotListSource.ReconfigureVisibleCells (hotListView);
