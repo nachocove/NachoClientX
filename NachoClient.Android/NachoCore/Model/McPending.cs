@@ -219,6 +219,8 @@ namespace NachoCore.Model
 
         public Xml.MeetingResp.UserResponseCode CalResponse { set; get; }
 
+        public DateTime CalResponseInstance { set; get; }
+
         [Indexed]
         public int AttachmentId { set; get; }
 

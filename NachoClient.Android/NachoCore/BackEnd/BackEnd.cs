@@ -300,9 +300,14 @@ namespace NachoCore
             return ServiceFromAccountId (accountId).MoveCalCmd (calId, destFolderId);
         }
 
-        public string RespondCalCmd (int accountId, int calId, NcResponseType response)
+        public string RespondEmailCmd (int accountId, int emailMessageId, NcResponseType response)
         {
-            return ServiceFromAccountId (accountId).RespondCalCmd (calId, response);
+            return ServiceFromAccountId (accountId).RespondEmailCmd (emailMessageId, response);
+        }
+
+        public string RespondCalCmd (int accountId, int calId, NcResponseType response, DateTime? instance = null)
+        {
+            return ServiceFromAccountId (accountId).RespondCalCmd (calId, response, instance);
         }
 
         public string DnldCalBodyCmd (int accountId, int calId)
