@@ -101,7 +101,7 @@ namespace NachoClient.iOS
             return view.Transform.xx;
         }
 
-        private static string ViewInfo (UIView view, string tagName)
+        public static string ViewInfo (UIView view, string tagName)
         {
             string result = view.GetType ().Name;
             if (!string.IsNullOrEmpty (tagName)) {
