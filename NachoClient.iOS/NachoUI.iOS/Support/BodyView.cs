@@ -44,6 +44,7 @@ namespace NachoClient.iOS
 
         // Other stuff
         public delegate void LinkSelectedCallback (NSUrl url);
+
         private LinkSelectedCallback onLinkSelected;
         private Action sizeChangedCallback = null;
         private string downloadToken = null;
@@ -79,7 +80,7 @@ namespace NachoClient.iOS
         /// <param name="sizeChangedCallback">A function to call when the size of the BodyView changes.</param>
         public static BodyView VariableHeightBodyView (PointF location, float preferredWidth, SizeF visibleArea, Action sizeChangedCallback, LinkSelectedCallback onLinksSelected)
         {
-            BodyView newBodyView = new BodyView (new RectangleF(location.X, location.Y, preferredWidth, 1));
+            BodyView newBodyView = new BodyView (new RectangleF (location.X, location.Y, preferredWidth, 1));
             newBodyView.variableHeight = true;
             newBodyView.visibleArea = visibleArea;
             newBodyView.sizeChangedCallback = sizeChangedCallback;
@@ -110,13 +111,24 @@ namespace NachoClient.iOS
         /// Display the body of the given item. The current contents of the BodyView are discarded.
         /// </summary>
         /// <param name="item">The item whose body should be displayed.</param>
-        public void Configure (McAbstrItem item, bool isRefresh)
+        public void Configure (McAbstrItem itemParam, bool isRefresh)
         {
-            this.item = item;
+            this.item = itemParam;
+
+            // McException without a body inherits from its McCalendar
+            if ((item is McException) && (0 == item.BodyId)) {
+                var exception = (McException)item;
+                item = McCalendar.QueryById<McCalendar> ((int)exception.CalendarId);
+            }
 
             var body = McBody.QueryById<McBody> (item.BodyId);
 
-            if (McAbstrFileDesc.IsNontruncatedBodyComplete(body)) {
+            if (item is McException) {
+                // McException bodies are always inline; they better be complete
+                NcAssert.True (McAbstrFileDesc.IsNontruncatedBodyComplete (body));
+            }
+
+            if (McAbstrFileDesc.IsNontruncatedBodyComplete (body)) {
                 if (isRefresh && (itemDateTime == body.LastModified)) {
                     return;
                 }
@@ -136,7 +148,7 @@ namespace NachoClient.iOS
                 statusIndicatorIsRegistered = false;
             }
 
-            if (!McAbstrFileDesc.IsNontruncatedBodyComplete(body)) {
+            if (!McAbstrFileDesc.IsNontruncatedBodyComplete (body)) {
                 StartDownloadWhenInForeground ();
                 return;
             }
@@ -248,7 +260,7 @@ namespace NachoClient.iOS
                 if (null != refreshedItem) {
                     item = refreshedItem;
                     var body = McBody.QueryById<McBody> (item.BodyId);
-                    if (McAbstrFileDesc.IsNontruncatedBodyComplete(body)) {
+                    if (McAbstrFileDesc.IsNontruncatedBodyComplete (body)) {
                         // It was a race condition. We're good.
                         Reconfigure ();
                     } else {
@@ -441,7 +453,7 @@ namespace NachoClient.iOS
             if (hasPreview) {
                 RenderTextString (preview);
             }
-            LayoutQuietly ();
+            LayoutAndNotifyParent ();
         }
 
         private void StatusIndicatorCallback (object sender, EventArgs e)
@@ -449,8 +461,8 @@ namespace NachoClient.iOS
             var statusEvent = (StatusIndEventArgs)e;
 
             if (waitingForAppInForeground &&
-                    NcResult.SubKindEnum.Info_ExecutionContextChanged == statusEvent.Status.SubKind &&
-                    NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext) {
+                NcResult.SubKindEnum.Info_ExecutionContextChanged == statusEvent.Status.SubKind &&
+                NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext) {
                 // We were waiting to start a download until the app was in the foreground.
                 // The app is now in the foreground.
 
@@ -493,7 +505,7 @@ namespace NachoClient.iOS
                     }, "DelFailedMcPendingBodyDnld");
 
                     if (NcApplication.ExecutionContextEnum.Foreground != NcApplication.Instance.ExecutionContext &&
-                            NcResult.WhyEnum.UnavoidableDelay == statusEvent.Status.Why) {
+                        NcResult.WhyEnum.UnavoidableDelay == statusEvent.Status.Why) {
                         // The download probably failed because the back end was parked
                         // because the app is in the background.  Don't record this as
                         // a failure.  Instead, wait for the app to be in the foreground
@@ -545,8 +557,8 @@ namespace NachoClient.iOS
         private void RenderHtmlString (string html)
         {
             var webView = new BodyWebView (
-                yOffset, preferredWidth, visibleArea.Height, LayoutAndNotifyParent,
-                html, NSUrl.FromString (string.Format ("cid://{0}", item.BodyId)), onLinkSelected);
+                              yOffset, preferredWidth, visibleArea.Height, LayoutAndNotifyParent,
+                              html, NSUrl.FromString (string.Format ("cid://{0}", item.BodyId)), onLinkSelected);
             AddSubview (webView);
             childViews.Add (webView);
             yOffset += webView.ContentSize.Height;
@@ -648,7 +660,7 @@ namespace NachoClient.iOS
         /// <summary>
         /// Create a scrollable BodyView with the given frame.
         /// </summary>
-        public ScrollableBodyView(RectangleF frame, BodyView.LinkSelectedCallback onLinkSelected)
+        public ScrollableBodyView (RectangleF frame, BodyView.LinkSelectedCallback onLinkSelected)
             : base (frame)
         {
             // UIScrollView comes with a gesture recognizer for scrolling.
@@ -667,7 +679,7 @@ namespace NachoClient.iOS
         /// Change the location and size of the scroll view's frame.  Configure the
         /// BodyView with the giver item.
         /// </summary>
-        public void ConfigureAndResize(McAbstrItem item, bool isRefresh, RectangleF newFrame)
+        public void ConfigureAndResize (McAbstrItem item, bool isRefresh, RectangleF newFrame)
         {
             this.Frame = newFrame;
             if (0 == displayedBodyId || item.BodyId != displayedBodyId) {
