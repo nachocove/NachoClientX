@@ -116,7 +116,7 @@ namespace NachoClient.iOS
             this.QRType = QRType;
         }
 
-        public void SetMailToUrl(string urlString)
+        public void SetMailToUrl (string urlString)
         {
             List<NcEmailAddress> addresses = new List<NcEmailAddress> ();
             string subject;
@@ -413,16 +413,23 @@ namespace NachoClient.iOS
             bodyTextView.TextColor = labelColor;
             bodyTextView.BackgroundColor = UIColor.White;
             bodyTextView.TextContainerInset = new UIEdgeInsets (BODY_TOP_MARGIN, BODY_LEFT_MARGIN, BODY_BOTTOM_MARGIN, BODY_RIGHT_MARGIN);
-            bodyTextView.ScrollEnabled = false;
+            bodyTextView.ScrollEnabled = true;
+            bodyTextView.Scrolled += BodyTextViewScrolled;
+            bodyTextView.DraggingEnded += BodyTextViewDraggingEnded;
+            bodyTextView.ShowsHorizontalScrollIndicator = false;
+            bodyTextView.ShowsVerticalScrollIndicator = false;
 
             if (EmailTemplate != null) {
                 bodyTextView.InsertText (EmailTemplate);
             }
             if (!String.IsNullOrEmpty (account.Signature)) {
-                bodyTextView.InsertText ("\n" + "\n" + account.Signature);
+                bodyTextView.InsertText ("\n\n");
+                bodyTextView.InsertText (account.Signature);
             }
+
             var beginningRange = new NSRange (0, 0);
             bodyTextView.SelectedRange = beginningRange;
+
 
             //Need to be able to inserthtml here, but for now will do simple text input
             //bodyTextView.InsertText ("<html><head></head><body>This message sent by <a href='http://www.nachocove.com'>NachoMail</a></body></html>");
@@ -719,6 +726,7 @@ namespace NachoClient.iOS
             ViewFramer.Create (bodyTextView).Y (contentFrame.Bottom);
 
             SetBodyAndScrollViewSize (bodyTextView);
+            bodyTextView.SetNeedsDisplay ();
         }
 
         protected void AdjustY (UIView view, float yOffset)
@@ -816,9 +824,10 @@ namespace NachoClient.iOS
 
             // Get the size that'll hold this text.
             var sz = textView.SizeThatFits (new SizeF (textView.Frame.Width, float.MaxValue));
+            float height = (float)Math.Ceiling (sz.Height + textView.TextContainerInset.Top + textView.TextContainerInset.Bottom);
 
             // Adjust frame but only alter height.
-            textView.Frame = new RectangleF (textView.Frame.X, textView.Frame.Y, textView.Frame.Width, sz.Height);
+            textView.Frame = new RectangleF (textView.Frame.X, textView.Frame.Y, textView.Frame.Width, height);
 
             return sz.Height;
         }
@@ -830,10 +839,13 @@ namespace NachoClient.iOS
             if (!textView.Frame.Size.Equals (textView.ContentSize)) {
                 textView.ContentSize = textView.Frame.Size;
             }
-            var scrollViewContentSize = new SizeF (textView.ContentSize.Width, textView.Frame.Y + textView.Frame.Height);
+            var scrollViewContentSize = new SizeF (textView.ContentSize.Width, textView.Frame.Y + textView.Frame.Height + BODY_BOTTOM_MARGIN + BODY_TOP_MARGIN);
             if (!scrollView.ContentSize.Equals (scrollViewContentSize)) {
                 scrollView.ContentSize = scrollViewContentSize;
             }
+            // Console.WriteLine ("SetBodyAndScrollViewSize: {0}", ViewHelper.ViewInfo (scrollView, "scrollView"));
+            // Console.WriteLine ("SetBodyAndScrollViewSize: {0}", ViewHelper.ViewInfo (bodyTextView, "bodyTextView"));
+
         }
 
         /// <summary>
@@ -851,6 +863,42 @@ namespace NachoClient.iOS
             var targetRect = caretRect;
             targetRect.Y += textView.Frame.Y;
             scrollView.ScrollRectToVisible (targetRect, true);
+        }
+
+        /// <summary>
+        /// If the body view scroll takes over from the main scrollview,
+        /// we make sure body text view is always scrolled to the top iff
+        /// the scrollview is visible on the screen.
+        /// </summary>
+        protected void BodyTextViewScrolled (object sender, EventArgs e)
+        {
+            // is header on the screen?
+            if (scrollView.ContentOffset.Y < contentView.Frame.Bottom) {
+                var nco = scrollView.ContentOffset.Y + bodyTextView.ContentOffset.Y;
+                // Console.WriteLine ("adjusted: {0} {1}", nco, ViewHelper.ViewInfo (scrollView, ""));
+                scrollView.SetContentOffset (new PointF (scrollView.ContentOffset.X, nco), false);
+                bodyTextView.SetContentOffset (new PointF (bodyTextView.ContentOffset.X, 0), false);
+            }
+            if (0 > bodyTextView.ContentOffset.Y) {
+                var nco = scrollView.ContentOffset.Y + bodyTextView.ContentOffset.Y;
+                // Console.WriteLine ("adjusted: {0} {1}", nco, ViewHelper.ViewInfo (scrollView, ""));
+                scrollView.SetContentOffset (new PointF (scrollView.ContentOffset.X, nco), false);
+                bodyTextView.SetContentOffset (new PointF (bodyTextView.ContentOffset.X, 0), false);
+            }
+        }
+
+        /// <summary>
+        /// If the body view scroll takes over from the main scrollview,
+        /// we have to make sure that the main scrollview bounces back up
+        /// to the top iff the scrollview is pulled down to a negative offset.
+        /// </summary>
+
+        protected void BodyTextViewDraggingEnded (object sender, DraggingEventArgs e)
+        {
+            if (scrollView.ContentOffset.Y < 0) {
+                // Console.WriteLine ("dragging adjusted: {0}", ViewHelper.ViewInfo (scrollView, ""));
+                scrollView.SetContentOffset (new PointF (scrollView.ContentOffset.X, 0), true);
+            }
         }
 
         public void AddressBlockClicked (UcAddressBlock view, string prefix, string segue)
