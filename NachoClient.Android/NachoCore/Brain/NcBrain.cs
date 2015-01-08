@@ -463,6 +463,8 @@ namespace NachoCore.Brain
                 // If brain task is running under quick sync, do not start time variance
                 // as it is a waste of time.
                 if (NcApplication.ExecutionContextEnum.QuickSync != NcApplication.Instance.ExecutionContext) {
+                    // Defer the processing until Nacho Nov view shows up.
+                    NcTask.CancelableSleep (4000);
                     McEmailMessage.StartTimeVariance (EventQueue.Token);
                     tvStarted = true;
                 }
