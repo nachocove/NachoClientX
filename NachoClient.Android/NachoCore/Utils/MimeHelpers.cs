@@ -147,41 +147,6 @@ namespace NachoCore.Utils
             return null;
         }
 
-        static public string ExtractSummary (McEmailMessage message)
-        {
-            var body = message.GetBody ();
-
-            if (!McBody.IsComplete (body)) {
-                return "";
-            }
-
-            if (McAbstrFileDesc.BodyTypeEnum.None == body.BodyType) {
-                return "";
-            }
-
-            if (McAbstrFileDesc.BodyTypeEnum.HTML_2 == body.BodyType) {
-                return "";
-            }
-
-            if (McAbstrFileDesc.BodyTypeEnum.RTF_3 == body.BodyType) {
-                return "";
-            }
-
-            string text;
-            if (McAbstrFileDesc.BodyTypeEnum.PlainText_1 == body.BodyType) {
-                text = body.GetContentsString ();
-            } else {
-                NcAssert.True (McAbstrFileDesc.BodyTypeEnum.MIME_4 == body.BodyType);
-                text = ExtractTextPart (McBody.QueryById<McBody> (message.BodyId));
-            }
-            if (null == text) {
-                return "";
-            }
-            var raw = text.Substring (0, Math.Min (text.Length, 1000));
-            var cooked = System.Text.RegularExpressions.Regex.Replace (raw, @"\s+", " ");
-            return cooked;
-        }
-
         /// <summary>
         /// Returns the plain text part of a message body, an error message if the body is in
         /// a format other than plain text, or <code>null</code> if no body can be found.
