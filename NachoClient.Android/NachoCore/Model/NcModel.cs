@@ -20,14 +20,14 @@ namespace NachoCore.Model
         private bool DidDispose;
 
         public NcSQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = false) :
-        base (databasePath, openFlags, storeDateTimeAsTicks)
+            base (databasePath, openFlags, storeDateTimeAsTicks)
         {
             LockObj = new object ();
             LastAccess = DateTime.UtcNow;
         }
 
         public NcSQLiteConnection (string databasePath, bool storeDateTimeAsTicks = false) :
-        base (databasePath, storeDateTimeAsTicks)
+            base (databasePath, storeDateTimeAsTicks)
         {
             LockObj = new object ();
             LastAccess = DateTime.UtcNow;
@@ -352,7 +352,7 @@ namespace NachoCore.Model
                     }
                      */
                 }
-            }, null, 1000, 1000);
+            }, null, 4000, 1000);
             CheckPointTimer.Stfu = true;
         }
 
