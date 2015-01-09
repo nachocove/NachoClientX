@@ -533,7 +533,7 @@ Global
 		StartupItem = NachoClient.iOS\NachoClient.iOS.csproj
 		Policies = $0
 		$0.StandardHeader = $1
-		$1.Text = @ Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.\n
+		$1.Text = @ Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.\n
 		$1.IncludeInNewFiles = True
 		$0.VersionControlPolicy = $2
 		$2.inheritsSet = Mono
