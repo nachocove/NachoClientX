@@ -67,9 +67,12 @@ namespace NachoClient.iOS
                 UIImage image = Config.Image;
                 if (UIImageRenderingMode.AlwaysTemplate != image.RenderingMode) {
                     // Make sure it is a template so we can use tint to match the icon color to that of the title
-                    image = image.ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate);
+                    using (var templateImage = image.ImageWithRenderingMode (UIImageRenderingMode.AlwaysTemplate)) {
+                        SetImage (templateImage, UIControlState.Normal);
+                    }
+                } else {
+                    SetImage (image, UIControlState.Normal);
                 }
-                SetImage (image, UIControlState.Normal);
                 ImageView.TintColor = UIColor.White;
 
                 // Move the image on top of the title and center it

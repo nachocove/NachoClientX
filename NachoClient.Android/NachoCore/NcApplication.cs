@@ -12,6 +12,7 @@ using NachoClient.Build;
 using NachoPlatform;
 using NachoPlatformBinding;
 using System.Security.Cryptography.X509Certificates;
+using System.Runtime.CompilerServices;
 
 namespace NachoCore
 {
@@ -301,8 +302,11 @@ namespace NachoCore
             MonitorTimer.Dispose ();
         }
 
-        public void MonitorReport ()
+        public void MonitorReport (string moniker = null, [CallerFilePath] string sourceFilePath = "",  [CallerLineNumber] int sourceLineNumber = 0)
         {
+            if (!String.IsNullOrEmpty (moniker)) {
+                Log.Info (Log.LOG_SYS, "Monitor: {0} from line {1} of {2}", moniker, sourceLineNumber, sourceFilePath);
+            }
             Log.Info (Log.LOG_SYS, "Monitor: Process Memory {0} MB", (int)PlatformProcess.GetUsedMemory () / (1024 * 1024));
             Log.Info (Log.LOG_SYS, "Monitor: GC Memory {0} MB", GC.GetTotalMemory (true) / (1024 * 1024));
             int workerThreads, completionPortThreads;

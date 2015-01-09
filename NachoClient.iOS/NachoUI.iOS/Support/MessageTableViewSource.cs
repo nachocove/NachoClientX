@@ -386,7 +386,10 @@ namespace NachoClient.iOS
 
                 // Reminder image view
                 var reminderImageView = new UIImageView (new RectangleF (65, 129, 12, 12));
-                reminderImageView.Image = UIImage.FromBundle ("inbox-icn-deadline");
+                using (var image = UIImage.FromBundle ("inbox-icn-deadline")) {
+                    reminderImageView.Image = image;
+                }
+
                 reminderImageView.BackgroundColor = UIColor.White;
                 reminderImageView.Tag = REMINDER_ICON_TAG;
                 view.AddSubview (reminderImageView);
@@ -543,7 +546,9 @@ namespace NachoClient.iOS
             previewLabelView.Hidden = false;
             var rawPreview = message.GetBodyPreviewOrEmpty ();
             var cookedPreview = System.Text.RegularExpressions.Regex.Replace (rawPreview, @"\s+", " ");
-            previewLabelView.AttributedText = new NSAttributedString (cookedPreview);
+            using (var text = new NSAttributedString (cookedPreview)) {
+                previewLabelView.AttributedText = text;
+            }
             previewLabelView.Frame = new RectangleF (65, 80, cellWidth - 15 - 65, 60);
             previewLabelView.SizeToFit ();
 
