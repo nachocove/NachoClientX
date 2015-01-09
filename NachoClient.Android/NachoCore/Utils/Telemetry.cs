@@ -402,7 +402,13 @@ namespace NachoCore.Utils
         // fields is not clear. So, we just limit the log messages and
         // redacted WBXML to 120 KB to leave some headroom for other fields.
         private const int MAX_PARSE_LEN = 120 * 1024;
+
+        // Maximnum number of events to query per write to telemetry server
         private const int MAX_QUERY_ITEMS = 10;
+
+        // Maximum number of seconds without any event to send before a message is generated
+        // to confirm that telemetry is still running.
+        private const double MAX_IDLE_PERIOD = 30.0;
 
         private static Telemetry _SharedInstance;
 
@@ -424,6 +430,8 @@ namespace NachoCore.Utils
 
         NcCounter[] Counters;
         NcCounter FailToSend;
+
+        private NcRateLimter FailToSendLogLimiter;
 
         public Telemetry ()
         {
@@ -449,6 +457,11 @@ namespace NachoCore.Utils
 
             // Add other non-event type related counters
             FailToSend = Counters [0].AddChild ("FAIL_TO_SEND");
+
+            // Allow one failure log per 64 sec or roughly 1 per min. 1/64
+            // is chosen so that the arithematic is exact.
+            FailToSendLogLimiter = new NcRateLimter (1.0 / 64.0, 64.0);
+            FailToSendLogLimiter.Enabled = true;
         }
 
         // This is kind of a hack. When Telemetry is reporting the counter values,
@@ -795,8 +808,9 @@ namespace NachoCore.Utils
                     DateTime then = DateTime.Now;
                     while (!DbUpdated.WaitOne (NcTask.MaxCancellationTestInterval)) {
                         NcTask.Cts.Token.ThrowIfCancellationRequested ();
-                        if (30 < (DateTime.Now - then).TotalSeconds) {
-                            Console.WriteLine ("Telemetry has no event for more than 30 seconds");
+                        if (MAX_IDLE_PERIOD < (DateTime.Now - then).TotalSeconds) {
+                            Log.Info (Log.LOG_UTILS, "Telemetry has no event for more than {0} seconds",
+                                MAX_IDLE_PERIOD);
                         }
                     }
                     continue;
@@ -846,8 +860,10 @@ namespace NachoCore.Utils
                 } else {
                     // Log only to console. Logging telemetry failures to telemetry is
                     // a vicious cycle.
-                    Console.WriteLine ("fail to reach telemetry server");
                     FailToSend.Click ();
+                    if (FailToSendLogLimiter.TakeToken ()) {
+                        Log.Warn (Log.LOG_UTILS, "fail to reach telemetry server (count={0})", FailToSend.Count);
+                    }
                 }
             }
         }
