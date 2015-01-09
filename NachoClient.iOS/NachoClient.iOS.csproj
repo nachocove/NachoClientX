@@ -140,7 +140,6 @@
     </CustomCommands>
     <DebugSymbols>true</DebugSymbols>
     <DefineConstants>DEBUG; BETA_BUILD</DefineConstants>
-    <MtouchDebug>true</MtouchDebug>
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
   </PropertyGroup>
