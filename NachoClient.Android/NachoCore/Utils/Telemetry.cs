@@ -811,6 +811,7 @@ namespace NachoCore.Utils
                         if (MAX_IDLE_PERIOD < (DateTime.Now - then).TotalSeconds) {
                             Log.Info (Log.LOG_UTILS, "Telemetry has no event for more than {0} seconds",
                                 MAX_IDLE_PERIOD);
+                            then = DateTime.Now;
                         }
                     }
                     continue;
