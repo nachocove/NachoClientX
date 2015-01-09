@@ -220,18 +220,29 @@ namespace NachoCore.ActiveSync
 
                     case McAbstrFolderEntry.ClassCodeEnum.Calendar:
                         options.Add (new XElement (m_ns + Xml.AirSync.FilterType, (uint)perFolder.FilterCode));
-                        // GFE, Hotmail, and Exchange 2007 will only give us calendar bodies as plain text.
-                        if (BEContext.Server.HostIsGMail () || BEContext.Server.HostIsHotMail () || 14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
-                            options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.NoMime_0));
-                            options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
-                                new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.PlainText_1),
-                                new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "100000000")));
+                        uint mimeSupport;
+                        uint preferredType;
+                        if (BEContext.Server.HostIsGMail () || BEContext.Server.HostIsHotMail ()) {
+                            // GFE will only give us plain text, no matter what we ask for.
+                            // Hotmail will give us anything except MIME, but the HTML and RTF
+                            // will be unformatted.  So we may as well just ask for plain text.
+                            mimeSupport = (uint)Xml.AirSync.MimeSupportCode.NoMime_0;
+                            preferredType = (uint)Xml.AirSync.TypeCode.PlainText_1;
+                        } else if (14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
+                            // Exchange 2007 will fail if we ask for MIME.  But it can handle
+                            // any other format.  So ask for HTML, which is the non-MIME format
+                            // that we handle best.
+                            mimeSupport = (uint)Xml.AirSync.MimeSupportCode.NoMime_0;
+                            preferredType = (uint)Xml.AirSync.TypeCode.Html_2;
                         } else {
-                            options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, (uint)Xml.AirSync.MimeSupportCode.AllMime_2));
-                            options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
-                                new XElement (m_baseNs + Xml.AirSyncBase.Type, (uint)Xml.AirSync.TypeCode.Mime_4),
-                                new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "100000000")));
+                            // The others, Exchange 2010 and Office365, will give us MIME.
+                            mimeSupport = (uint)Xml.AirSync.MimeSupportCode.AllMime_2;
+                            preferredType = (uint)Xml.AirSync.TypeCode.Mime_4;
                         }
+                        options.Add (new XElement (m_ns + Xml.AirSync.MimeSupport, mimeSupport));
+                        options.Add (new XElement (m_baseNs + Xml.AirSync.BodyPreference,
+                            new XElement (m_baseNs + Xml.AirSyncBase.Type, preferredType),
+                            new XElement (m_baseNs + Xml.AirSyncBase.TruncationSize, "100000000")));
                         break;
 
                     case McAbstrFolderEntry.ClassCodeEnum.Contact:
