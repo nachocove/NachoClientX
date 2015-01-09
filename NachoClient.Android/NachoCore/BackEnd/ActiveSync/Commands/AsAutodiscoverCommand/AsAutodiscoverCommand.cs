@@ -88,6 +88,7 @@ namespace NachoCore.ActiveSync
 
         public const string RequestSchema = "http://schemas.microsoft.com/exchange/autodiscover/mobilesync/requestschema/2006";
         public const string ResponseSchema = "http://schemas.microsoft.com/exchange/autodiscover/mobilesync/responseschema/2006";
+        public const int TestTimeoutSecs = 30;
         private List<StepRobot> Robots;
         private Queue<StepRobot> AskingRobotQ;
         private Queue<StepRobot> SuccessfulRobotQ;
@@ -622,14 +623,14 @@ namespace NachoCore.ActiveSync
             if (ProtocolState.DisableProvisionCommand) {
                 TestCmd = new AsSettingsCommand (this) {
                     DontReportCommResult = true,
-                    Timeout = new TimeSpan (0, 0, 15),
+                    Timeout = new TimeSpan (0, 0, TestTimeoutSecs),
                     MaxTries = 2,
                     OmitDeviceInformation = true,
                 };
             } else {
                 TestCmd = new AsProvisionCommand (this) {
                     DontReportCommResult = true,
-                    Timeout = new TimeSpan (0, 0, 15),
+                    Timeout = new TimeSpan (0, 0, TestTimeoutSecs),
                     MaxTries = 2,
                 };
             }
@@ -641,7 +642,7 @@ namespace NachoCore.ActiveSync
             DoCancel ();
             TestCmd = new AsOptionsCommand (this) {
                 DontReportCommResult = true,
-                Timeout = new TimeSpan (0, 0, 15),
+                Timeout = new TimeSpan (0, 0, TestTimeoutSecs),
                 MaxTries = 2,
             };
             // HotMail/GMail doesn't WWW-Authenticate on OPTIONS.
