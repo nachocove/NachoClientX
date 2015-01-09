@@ -642,9 +642,9 @@ namespace SQLite
                 var span = _sw.ElapsedMilliseconds;
                 if (span > TraceThreshold) {
                     if (NachoCore.NcApplication.Instance.UiThreadId == Thread.CurrentThread.ManagedThreadId) {
-                        Log.Error (Log.LOG_SYS, "SQLite-UI: {0}ms for: {1}", span, cmd);
+                        Log.Error (Log.LOG_SYS, "SQLite-UI: {0}ms for: {1}", span, cmd.CommandText);
                     } else {
-                        Log.Warn (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
+                        Log.Warn (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd.CommandText);
                     }
                 }
             }
@@ -676,9 +676,9 @@ namespace SQLite
                 var span = _sw.ElapsedMilliseconds;
                 if (span > TraceThreshold) {
                     if (NachoCore.NcApplication.Instance.UiThreadId == Thread.CurrentThread.ManagedThreadId) {
-                        Log.Error (Log.LOG_SYS, "SQLite-UI: {0}ms for: {1}", span, cmd);
+                        Log.Error (Log.LOG_SYS, "SQLite-UI: {0}ms for: {1}", span, cmd.CommandText);
                     } else {
-                        Log.Warn (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
+                        Log.Warn (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd.CommandText);
                     }
                 }
             }
@@ -724,9 +724,9 @@ namespace SQLite
                 var span = _sw.ElapsedMilliseconds;
                 if (span > TraceThreshold) {
                     if (NachoCore.NcApplication.Instance.UiThreadId == Thread.CurrentThread.ManagedThreadId) {
-                        Log.Error (Log.LOG_SYS, "SQLite-UI: {0}ms for: {1}", span, cmd);
+                        Log.Error (Log.LOG_SYS, "SQLite-UI: {0}ms for: {1}", span, cmd.CommandText);
                     } else {
-                        Log.Warn (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
+                        Log.Warn (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd.CommandText);
                     }
                 }
             }
@@ -799,9 +799,9 @@ namespace SQLite
                 var span = _sw.ElapsedMilliseconds;
                 if (span > TraceThreshold) {
                     if (NachoCore.NcApplication.Instance.UiThreadId == Thread.CurrentThread.ManagedThreadId) {
-                        Log.Error (Log.LOG_SYS, "SQLite-UI: {0}ms for: {1}", span, cmd);
+                        Log.Error (Log.LOG_SYS, "SQLite-UI: {0}ms for: {1}", span, cmd.CommandText);
                     } else {
-                        Log.Warn (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
+                        Log.Warn (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd.CommandText);
                     }
                 }
             }
@@ -2993,9 +2993,9 @@ namespace SQLite
                 var span = Connection._sw.ElapsedMilliseconds;
                 if (span > Connection.TraceThreshold) {
                     if (NachoCore.NcApplication.Instance.UiThreadId == Thread.CurrentThread.ManagedThreadId) {
-                        Log.Error (Log.LOG_SYS, "SQLite-UI: {0}ms for: {1}", span, cmd);
+                        Log.Error (Log.LOG_SYS, "SQLite-UI: {0}ms for: {1}", span, cmd.CommandText);
                     } else {
-                        Log.Warn (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
+                        Log.Warn (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd.CommandText);
                     }
                 }
             }
@@ -3032,9 +3032,9 @@ namespace SQLite
                 var span = Connection._sw.ElapsedMilliseconds;
                 if (span > Connection.TraceThreshold) {
                     if (NachoCore.NcApplication.Instance.UiThreadId == Thread.CurrentThread.ManagedThreadId) {
-                        Log.Error (Log.LOG_SYS, "SQLite-UI: {0}ms for: {1}", span, cmd);
+                        Log.Error (Log.LOG_SYS, "SQLite-UI: {0}ms for: {1}", span, cmd.CommandText);
                     } else {
-                        Log.Warn (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd);
+                        Log.Warn (Log.LOG_SYS, "SQLite: {0}ms for: {1}", span, cmd.CommandText);
                     }
                 }
             }
