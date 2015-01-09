@@ -2,6 +2,7 @@
 //
 using System;
 using System.Collections.Generic;
+using MimeKit;
 
 namespace NachoCore.Utils
 {
@@ -220,6 +221,50 @@ namespace NachoCore.Utils
             }
 
             return true;
+        }
+
+        private static bool IsAccountAlias(InternetAddress accountInternetAddress, string match)
+        {
+            if (null == accountInternetAddress) {
+                return false;
+            }
+            var accountMailboxAddress = accountInternetAddress as MailboxAddress;
+            if (null == accountMailboxAddress) {
+                return false;
+            }
+            if (String.IsNullOrEmpty (accountMailboxAddress.Address) || String.IsNullOrEmpty (match)) {
+                return false;
+            }
+            var target = accountMailboxAddress.Address;
+            Console.WriteLine ("match: '{0}' '{1}' {2}", target, match, String.Equals (target, match, StringComparison.OrdinalIgnoreCase));
+            return String.Equals (target, match, StringComparison.OrdinalIgnoreCase);
+
+        }
+
+        public static List<NcEmailAddress> CcList (string accountEmailAddress, string toString, string ccString)
+        {
+            var ccList = new List<NcEmailAddress> ();
+
+            InternetAddress accountAddress;
+            if (String.IsNullOrEmpty(accountEmailAddress) || !MailboxAddress.TryParse (accountEmailAddress, out accountAddress)) {
+                accountAddress = null;
+            }
+            InternetAddressList addresses;
+            if (!String.IsNullOrEmpty(toString) && InternetAddressList.TryParse (toString, out addresses)) {
+                foreach (var mailboxAddress in addresses.Mailboxes) {
+                    if (!IsAccountAlias(accountAddress, mailboxAddress.Address)) {
+                        ccList.Add (new NcEmailAddress (NcEmailAddress.Kind.Cc, mailboxAddress.Address));
+                    }
+                }
+            }
+            if (!String.IsNullOrEmpty(ccString) && InternetAddressList.TryParse (ccString, out addresses)) {
+                foreach (var mailboxAddress in addresses.Mailboxes) {
+                    if (!IsAccountAlias(accountAddress, mailboxAddress.Address)) {
+                        ccList.Add (new NcEmailAddress (NcEmailAddress.Kind.Cc, mailboxAddress.Address));
+                    }
+                }
+            }
+            return ccList;
         }
     }
 }
