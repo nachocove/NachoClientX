@@ -33,13 +33,15 @@ namespace NachoCore.Model
 
         public static bool Get (int accountId, string emailAddressString, out McEmailAddress emailAddress)
         {
+            emailAddress = null;
+            if (String.IsNullOrEmpty (emailAddressString)) {
+                return false;
+            }
             InternetAddressList addresses;
             if (!InternetAddressList.TryParse (emailAddressString, out addresses)) {
-                emailAddress = null;
                 return false;
             }
             if (0 == addresses.Count) {
-                emailAddress = null;
                 return false;
             }
             NcAssert.True (1 == addresses.Count);
