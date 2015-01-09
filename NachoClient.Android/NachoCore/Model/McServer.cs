@@ -95,13 +95,6 @@ namespace NachoCore.Model
             Port = src.Port;
         }
 
-        // <DEBUG>
-        public override int Delete ()
-        {
-            Log.Error (Log.LOG_AS, "McServer.Delete called by {0}", new StackTrace ().ToString ());
-            return base.Delete ();
-        }
-        // </DEBUG>
         public static McServer QueryByHost (string host)
         {
             return NcModel.Instance.Db.Table<McServer> ().Where (x => host == x.Host).SingleOrDefault ();

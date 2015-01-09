@@ -69,7 +69,7 @@ namespace NachoCore.ActiveSync
             // for an event seems to change over time, but we don't know what triggers it.  It is
             // hoped that these error messages will identify the source of the issue.
             if (string.IsNullOrEmpty (newItem.UID)) {
-                Log.Error (Log.LOG_SYNC, "ActiveSync command sent an event (with subject \"{0}\") without a UID.", newItem.Subject);
+                Log.Error (Log.LOG_SYNC, "ActiveSync command sent an event without a UID.");
             } else {
                 var sameUid = McCalendar.QueryByUID (newItem.UID);
                 if (null != sameUid && (sameUid.AccountId != newItem.AccountId || sameUid.ServerId != newItem.ServerId)) {
