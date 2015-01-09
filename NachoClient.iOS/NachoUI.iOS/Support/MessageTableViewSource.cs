@@ -201,6 +201,7 @@ namespace NachoClient.iOS
         protected const int REMINDER_ICON_TAG = 99105;
         protected const int REMINDER_TEXT_TAG = 99106;
         protected const int MESSAGE_HEADER_TAG = 99107;
+        protected const int UNREAD_IMAGE_TAG = 99108;
 
         [MonoTouch.Foundation.Export ("ImageViewTapSelector:")]
         public void ImageViewTapSelector (UIGestureRecognizer sender)
@@ -350,6 +351,15 @@ namespace NachoClient.iOS
                 userLabelView.Tag = USER_LABEL_TAG;
                 imageViews.AddSubview (userLabelView);
                 userLabelView.BackgroundColor = UIColor.Yellow;
+
+                // Unread message dot
+                var unreadMessageView = new UIImageView (new Rectangle (4, 35, 9, 9));
+                using (var image = UIImage.FromBundle ("SlideNav-Btn")) {
+                    unreadMessageView.Image = image;
+                }
+                unreadMessageView.BackgroundColor = UIColor.White;
+                unreadMessageView.Tag = UNREAD_IMAGE_TAG;
+                imageViews.AddSubview (unreadMessageView);
 
                 // Set up multi-select on checkmark
                 var imagesViewTap = new UITapGestureRecognizer ();
@@ -529,6 +539,9 @@ namespace NachoClient.iOS
                 userLabelView.Text = message.cachedFromLetters;
                 userLabelView.BackgroundColor = Util.ColorForUser (message.cachedFromColor);
             }
+
+            var unreadMessageView = (UIImageView) cell.ContentView.ViewWithTag (UNREAD_IMAGE_TAG);
+            unreadMessageView.Hidden = message.IsRead;
 
             var messageHeaderView = cell.ContentView.ViewWithTag (MESSAGE_HEADER_TAG) as MessageHeaderView;
             messageHeaderView.ConfigureView (message);

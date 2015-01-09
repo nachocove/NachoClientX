@@ -126,8 +126,11 @@ namespace NachoClient.iOS
             if (String.IsNullOrEmpty (message.Subject)) {
                 subjectLabelView.Text = Pretty.NoSubjectString ();
                 subjectLabelView.TextColor = A.Color_9B9B9B;
+                subjectLabelView.Font = A.Font_AvenirNextRegular17;
             } else {
+                subjectLabelView.TextColor = A.Color_0F424C;
                 subjectLabelView.Text = Pretty.SubjectString (message.Subject);
+                subjectLabelView.Font = A.Font_AvenirNextRegular17;
             }
             subjectLabelView.Hidden = false;
 
