@@ -49,6 +49,7 @@ namespace NachoClient.iOS
         protected const int MESSAGE_HEADER_TAG = 99107;
         protected const int TOOLBAR_TAG = 99109;
         protected const int USER_MORE_TAG = 99110;
+        protected const int UNREAD_IMAGE_TAG = 99111;
 
         public HotListTableViewSource (IMessageTableViewSourceDelegate owner, INachoEmailMessages messageThreads)
         {
@@ -151,6 +152,15 @@ namespace NachoClient.iOS
             userLabelView.Layer.MasksToBounds = true;
             userLabelView.Tag = USER_LABEL_TAG;
             view.AddSubview (userLabelView);
+
+            // Unread message dot
+            var unreadMessageView = new UIImageView (new Rectangle (5, 30, 9, 9));
+            using (var image = UIImage.FromBundle ("SlideNav-Btn")) {
+                unreadMessageView.Image = image;
+            }
+            unreadMessageView.BackgroundColor = UIColor.White;
+            unreadMessageView.Tag = UNREAD_IMAGE_TAG;
+            view.AddSubview (unreadMessageView);
 
             var messageHeaderView = new MessageHeaderView (new RectangleF (65, 0, viewWidth - 65, 75));
             messageHeaderView.CreateView ();
@@ -333,6 +343,9 @@ namespace NachoClient.iOS
                 userLabelView.Text = message.cachedFromLetters;
                 userLabelView.BackgroundColor = Util.ColorForUser (message.cachedFromColor);
             }
+
+            var unreadMessageView = (UIImageView) cell.ContentView.ViewWithTag (UNREAD_IMAGE_TAG);
+            unreadMessageView.Hidden = message.IsRead;
 
             var messageHeaderView = view.ViewWithTag (MESSAGE_HEADER_TAG) as MessageHeaderView;
             messageHeaderView.ConfigureView (message);
