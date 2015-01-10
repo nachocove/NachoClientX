@@ -958,8 +958,8 @@ namespace NachoCore.Utils
                 var exceptions = McException.QueryForExceptionId (c.Id, start);
                 if (0 < exceptions.Count) {
                     foreach (var ex in exceptions) {
-                        DateTime exceptionStart = DateTime.MinValue == exception.StartTime ? start : exception.StartTime;
-                        DateTime exceptionEnd = DateTime.MinValue == exception.EndTime ? end : exception.EndTime;
+                        DateTime exceptionStart = DateTime.MinValue == ex.StartTime ? start : ex.StartTime;
+                        DateTime exceptionEnd = DateTime.MinValue == ex.EndTime ? end : ex.EndTime;
                         ExpandAllDayEvent (c, exceptionStart, exceptionEnd, ex);
                     }
                     return;
