@@ -17,6 +17,8 @@ namespace NachoCore.Brain
         /// User's first day of week
         /// TODO: Must be configurable
         const DayOfWeek FirstDayOfWork = DayOfWeek.Monday;
+        const DayOfWeek LastDayOfWork = DayOfWeek.Friday;
+        const DayOfWeek FirstDayOfWeekend = DayOfWeek.Saturday;
 
 
         public NcMessageDeferral ()
@@ -88,14 +90,14 @@ namespace NachoCore.Brain
                 from = DateTime.MinValue;
                 break;
             case MessageDeferralType.OneHour:
-                from = AdjustToHour (from, from.AddMinutes (90).Hour);
+                from = TruncateToHour (from.AddMinutes (90));
                 break;
             case MessageDeferralType.TwoHours:
-                from = AdjustToHour (from, from.AddMinutes (150).Hour);
+                from = TruncateToHour (from.AddMinutes (150));
                 break;
             case MessageDeferralType.Later:
-                // TODO: Probaly want to choose next free hour
-                from = AdjustToHour (from, from.AddMinutes (270).Hour);
+                // TODO: Probaly want to choose next free hour (three hours now)
+                from = TruncateToHour (from.AddMinutes (210));
                 break;
             case MessageDeferralType.EndOfDay:
                 if (from.ToLocalTime ().Hour >= 17) {
@@ -107,7 +109,7 @@ namespace NachoCore.Brain
             case MessageDeferralType.Tonight:
                 if (from.ToLocalTime ().Hour > 18) {
                     // Later this evening...
-                    from = from.AddHours (2);
+                    from = AdjustToLocalHour (from, 21);
                 } else {
                     from = AdjustToLocalHour (from, 19);
                 }
@@ -116,10 +118,24 @@ namespace NachoCore.Brain
                 from = from.AddDays (1d);
                 from = AdjustToLocalHour (from, 8);
                 break;
+            case MessageDeferralType.ThisWeek:
+                // Friday 5pm
+                while(from.ToLocalTime ().DayOfWeek != LastDayOfWork) {
+                    from = from.AddDays (1);
+                } 
+                from = AdjustToLocalHour (from, 17);
+                break;
+            case MessageDeferralType.Weekend:
+                // Satuday 8am
+                do {
+                    from = from.AddDays (1);
+                } while(from.ToLocalTime ().DayOfWeek != FirstDayOfWeekend);
+                from = AdjustToLocalHour (from, 8);
+                break;
             case MessageDeferralType.NextWeek:
                 do {
                     from = from.AddDays (1.0d);
-                } while(from.DayOfWeek != FirstDayOfWork);
+                } while(from.ToLocalTime ().DayOfWeek != FirstDayOfWork);
                 from = AdjustToLocalHour (from, 8);
                 break;
             case MessageDeferralType.MonthEnd:
@@ -148,11 +164,6 @@ namespace NachoCore.Brain
             return NcResult.OK (from.ToUniversalTime ());
         }
 
-        static DateTime AdjustToHour (DateTime t, int hour)
-        {
-            return new DateTime (t.Year, t.Month, t.Day, hour, 0, 0, DateTimeKind.Utc);
-        }
-
         static DateTime AdjustToLocalHour (DateTime t, int hour)
         {
             var l = t.ToLocalTime ();
@@ -160,6 +171,12 @@ namespace NachoCore.Brain
             return n.ToUniversalTime ();
         }
 
+        static DateTime TruncateToHour (DateTime t)
+        {
+            NcAssert.True (DateTimeKind.Utc == t.Kind);
+            var n = new DateTime (t.Year, t.Month, t.Day, t.Hour, 0, 0, DateTimeKind.Utc);
+            return n;
+        }
     }
 }
 

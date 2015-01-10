@@ -30,6 +30,8 @@ namespace NachoCore.Model
         NextMonth,
         Forever,
         Custom,
+        Weekend,
+        ThisWeek,
     };
 
     public enum NcImportance
