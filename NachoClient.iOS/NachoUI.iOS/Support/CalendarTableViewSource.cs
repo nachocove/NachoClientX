@@ -90,6 +90,10 @@ namespace NachoClient.iOS
 
         public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
+            var cell = tableView.CellAt (indexPath);
+            if (null != cell) {
+                cell.Selected = false;
+            }
             var e = calendar.GetEvent (indexPath.Section, indexPath.Row);
             if (null != e) {
                 owner.PerformSegueForDelegate ("NachoNowToEventView", new SegueHolder (e));
@@ -209,11 +213,13 @@ namespace NachoClient.iOS
         protected void ConfigureCell (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
         {
             if (cell.ReuseIdentifier.Equals (EmptyCellReuseIdentifier)) {
+                cell.SelectionStyle = UITableViewCellSelectionStyle.None;
                 cell.TextLabel.Text = "No messages";
                 return;
             }
 
             if (cell.ReuseIdentifier.Equals (CalendarEventReuseIdentifier)) {
+                cell.SelectionStyle = UITableViewCellSelectionStyle.Default;
                 ConfigureCalendarCell (tableView, cell, indexPath);
                 return;
             }
