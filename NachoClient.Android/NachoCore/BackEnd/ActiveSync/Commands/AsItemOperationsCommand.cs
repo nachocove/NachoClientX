@@ -197,6 +197,10 @@ namespace NachoCore.ActiveSync
             switch (outerStatus) {
             case Xml.ItemOperations.StatusCode.Success_1:
                 var xmlResponse = doc.Root.Element (m_ns + Xml.ItemOperations.Response);
+                if (null == xmlResponse) {
+                    Log.Error (Log.LOG_AS, "ItemOperations: no response.");
+                    return Event.Create ((uint)SmEvt.E.Success, "IOSUCCESS");
+                }
                 var xmlFetches = xmlResponse.Elements (m_ns + Xml.ItemOperations.Fetch);
                 foreach (var xmlFetch in xmlFetches) {
                     var xmlFileReference = xmlFetch.Element (m_baseNs + Xml.AirSyncBase.FileReference);
