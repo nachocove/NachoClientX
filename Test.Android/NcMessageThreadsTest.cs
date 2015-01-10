@@ -73,7 +73,8 @@ namespace Test.Common
             List<int> adds;
             List<int> deletes;
 
-            Assert.False (NcMessageThreads.AreDifferent (null, null, out adds, out deletes));
+            // Empty lists are different because we need to re-draw the empty list cell
+            Assert.True (NcMessageThreads.AreDifferent (null, null, out adds, out deletes));
             Assert.True (IsNullOrNotEmpty (adds));
             Assert.True (IsNullOrNotEmpty (deletes));
 

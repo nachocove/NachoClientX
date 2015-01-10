@@ -14,9 +14,9 @@
     <AndroidResgenClass>Resource</AndroidResgenClass>
     <MonoAndroidResourcePrefix>Resources</MonoAndroidResourcePrefix>
     <MonoAndroidAssetsPrefix>Assets</MonoAndroidAssetsPrefix>
-    <AndroidUseLatestPlatformSdk>False</AndroidUseLatestPlatformSdk>
+    <AndroidUseLatestPlatformSdk>True</AndroidUseLatestPlatformSdk>
     <AssemblyName>Test.Android</AssemblyName>
-    <TargetFrameworkVersion>v4.4</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v5.0</TargetFrameworkVersion>
     <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -66,6 +66,15 @@
     </Reference>
     <Reference Include="ModernHttpClient">
       <HintPath>..\..\ModernHttpClient\build\MonoAndroid\ModernHttpClient.dll</HintPath>
+    </Reference>
+    <Reference Include="DDay.Collections.Android">
+      <HintPath>..\..\DDay-iCal-Xamarin\DDay.Collections.Android\obj\Debug\DDay.Collections.Android.dll</HintPath>
+    </Reference>
+    <Reference Include="DDay.iCal.Android">
+      <HintPath>..\..\DDay-iCal-Xamarin\DDay.iCal.Android\obj\Debug\DDay.iCal.Android.dll</HintPath>
+    </Reference>
+    <Reference Include="antlr.runtime.Android">
+      <HintPath>..\..\DDay-iCal-Xamarin\antlr.runtime.Android\obj\Debug\antlr.runtime.Android.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

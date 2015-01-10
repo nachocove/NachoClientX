@@ -9,6 +9,10 @@ using NachoCore.Model;
 using NachoCore.ActiveSync;
 using System.Security.Cryptography.X509Certificates;
 using SQLite;
+using DDay.iCal;
+using DDay.iCal.Serialization;
+using DDay.iCal.Serialization.iCalendar;
+using System.IO;
 
 namespace Test.Common
 {
@@ -781,6 +785,128 @@ namespace Test.Common
             var e5 = McException.QueryForExceptionId (c.Id, new DateTime (2011, 3, 17));
             Assert.IsNotNull (e5);
         }
+            
+        [Test]
+        public void iCalParse()
+        {
+            IICalendar iCal;
+            using (var stringReader = new StringReader (ical_string01_good)) {
+                iCal = iCalendar.LoadFromStream (stringReader) [0];
+            }
+
+//            Issue https://github.com/nachocove/NachoClientX/issues/1298
+//            using (var stringReader = new StringReader (ical_string01_bad)) {
+//                iCal = iCalendar.LoadFromStream (stringReader) [0];
+//            }
+
+        }
+
+        String ical_string01_good = @"
+BEGIN:VCALENDAR
+METHOD:REQUEST
+PRODID:Microsoft Exchange Server 2010
+VERSION:2.0
+BEGIN:VTIMEZONE
+TZID:Greenwich Standard Time
+BEGIN:STANDARD
+DTSTART:16010101T000000
+TZOFFSETFROM:+0000
+TZOFFSETTO:+0000
+END:STANDARD
+BEGIN:DAYLIGHT
+DTSTART:16010101T000000
+TZOFFSETFROM:+0000
+TZOFFSETTO:+0000
+END:DAYLIGHT
+END:VTIMEZONE
+BEGIN:VEVENT
+ORGANIZER;CN=Cole Britton:MAILTO:coleb@nachocove.com
+ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE;CN=timedout@d
+ 2.officeburrito.com:MAILTO:timedout@d2.officeburrito.com
+DESCRIPTION;LANGUAGE=en-US:Your meeting was found to be out of date and has
+  been automatically updated.\n\n________________________________\nSent by 
+ Microsoft Exchange Server 2013\n
+UID:F0913F5194204D4B8E9EC350258932E4
+SUMMARY;LANGUAGE=en-US:Fw: Zurfs ⬆️ 🏄
+DTSTART;TZID=Greenwich Standard Time:20150110T190000
+DTEND;TZID=Greenwich Standard Time:20150110T200000
+CLASS:PUBLIC
+PRIORITY:5
+DTSTAMP:20150109T191927Z
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+SEQUENCE:1
+LOCATION;LANGUAGE=en-US:Da beach
+X-MICROSOFT-CDO-APPT-SEQUENCE:1
+X-MICROSOFT-CDO-OWNERAPPTID:2112965529
+X-MICROSOFT-CDO-BUSYSTATUS:FREE
+X-MICROSOFT-CDO-INTENDEDSTATUS:FREE
+X-MICROSOFT-CDO-ALLDAYEVENT:FALSE
+X-MICROSOFT-CDO-IMPORTANCE:1
+X-MICROSOFT-CDO-INSTTYPE:0
+X-MICROSOFT-DISALLOW-COUNTER:FALSE
+BEGIN:VALARM
+DESCRIPTION:REMINDER
+TRIGGER;RELATED=START:-PT15M
+ACTION:DISPLAY
+END:VALARM
+END:VEVENT
+END:VCALENDAR
+";
+
+        String ical_string01_bad = @"
+BEGIN:VCALENDAR
+METHOD:REQUEST
+PRODID:Microsoft Exchange Server 2010
+VERSION:2.0
+BEGIN:VTIMEZONE
+TZID:Greenwich Standard Time
+BEGIN:STANDARD
+DTSTART:16010101T000000
+TZOFFSETFROM:+0000
+TZOFFSETTO:+0000
+END:STANDARD
+BEGIN:DAYLIGHT
+DTSTART:16010101T000000
+TZOFFSETFROM:+0000
+TZOFFSETTO:+0000
+END:DAYLIGHT
+END:VTIMEZONE
+BEGIN:VEVENT
+ORGANIZER;CN=Cole Britton:MAILTO:coleb@nachocove.com
+ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE;CN=timedout@d
+ 2.officeburrito.com:MAILTO:timedout@d2.officeburrito.com
+DESCRIPTION;LANGUAGE=en-US:Your meeting was found to be out of date and has
+  been automatically updated.\n\n________________________________\nSent by 
+ Microsoft Exchange Server 2013\n
+UID:F0913F5194204D4B8E9EC350258932E4
+SUMMARY;LANGUAGE=en-US:Zurfs  <�
+DTSTART;TZID=Greenwich Standard Time:20150110T190000
+DTEND;TZID=Greenwich Standard Time:20150110T200000
+CLASS:PUBLIC
+PRIORITY:5
+DTSTAMP:20150109T191927Z
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+SEQUENCE:1
+LOCATION;LANGUAGE=en-US:Da beach
+X-MICROSOFT-CDO-APPT-SEQUENCE:1
+X-MICROSOFT-CDO-OWNERAPPTID:2112965529
+X-MICROSOFT-CDO-BUSYSTATUS:FREE
+X-MICROSOFT-CDO-INTENDEDSTATUS:FREE
+X-MICROSOFT-CDO-ALLDAYEVENT:FALSE
+X-MICROSOFT-CDO-IMPORTANCE:1
+X-MICROSOFT-CDO-INSTTYPE:0
+X-MICROSOFT-DISALLOW-COUNTER:FALSE
+BEGIN:VALARM
+DESCRIPTION:REMINDER
+TRIGGER;RELATED=START:-PT15M
+ACTION:DISPLAY
+END:VALARM
+END:VEVENT
+END:VCALENDAR
+";
+
 
         String addString_01 = @"
                 <Add xmlns=""AirSync"">
