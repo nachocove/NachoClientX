@@ -126,10 +126,7 @@ namespace NachoPlatform
                     if (null != handleValue && handleValue is NSNumber) {
                         handle = ((NSNumber)handleValue).IntValue;
                     }
-                    Log.Info (Log.LOG_CALENDAR, "Handle: {0}, When: {1}, Message: {2}",
-                        handle,
-                        notification.FireDate.ToDateTime (),
-                        notification.AlertBody);
+                    Log.Info (Log.LOG_CALENDAR, "Handle: {0}", handle);
                 }
             });
         }
