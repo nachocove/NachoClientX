@@ -198,8 +198,10 @@ namespace NachoCore.ActiveSync
             case Xml.ItemOperations.StatusCode.Success_1:
                 var xmlResponse = doc.Root.Element (m_ns + Xml.ItemOperations.Response);
                 if (null == xmlResponse) {
-                    Log.Error (Log.LOG_AS, "ItemOperations: no response.");
-                    return Event.Create ((uint)SmEvt.E.Success, "IOSUCCESS");
+                    PendingResolveApply ((pending) => {
+                        pending.ResolveAsHardFail (BEContext.ProtoControl, NcResult.WhyEnum.Unknown);
+                    });
+                    return Event.Create ((uint)SmEvt.E.HardFail, "IONORESP");
                 }
                 var xmlFetches = xmlResponse.Elements (m_ns + Xml.ItemOperations.Fetch);
                 foreach (var xmlFetch in xmlFetches) {
