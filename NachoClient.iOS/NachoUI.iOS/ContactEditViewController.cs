@@ -62,7 +62,7 @@ namespace NachoClient.iOS
         protected RelationshipCell editingRelationshipCell;
         protected MiscCell editingMiscCell;
 
-        protected UIBarButtonItem backButton = new UIBarButtonItem ();
+        protected UIBarButtonItem cancelButton = new UIBarButtonItem ();
         protected UIBarButtonItem doneButton = new UIBarButtonItem ();
 
         protected NachoCore.Utils.ContactsHelper contactHelper = new ContactsHelper ();
@@ -190,14 +190,13 @@ namespace NachoClient.iOS
         {
             float internalOffset = 0;
 
-            UIBarButtonItem backButton = new UIBarButtonItem ();
-            using (var image = UIImage.FromBundle ("nav-backarrow")) {
-                backButton.Image = image;
+            using (var image = UIImage.FromBundle ("icn-close")) {
+                cancelButton.Image = image;
             }
 
-            backButton.Clicked += BackButtonClicked;
-            backButton.TintColor = A.Color_NachoBlue;
-            NavigationItem.SetLeftBarButtonItem (backButton, true);
+            cancelButton.Clicked += CancelButtonClicked;
+            cancelButton.TintColor = A.Color_NachoBlue;
+            NavigationItem.SetLeftBarButtonItem (cancelButton, true);
 
             switch (controllerType) {
             case ControllerType.Add:
@@ -920,7 +919,7 @@ namespace NachoClient.iOS
             contactCopy.Update ();
         }
 
-        protected void BackButtonClicked (object sender, EventArgs e)
+        protected void CancelButtonClicked (object sender, EventArgs e)
         {
             View.EndEditing (true);
 
@@ -1493,10 +1492,10 @@ namespace NachoClient.iOS
             deleteContactButton = null;
 
             //NavBar Buttons
-            backButton.Clicked -= BackButtonClicked;
+            cancelButton.Clicked -= CancelButtonClicked;
             doneButton.Clicked -= DoneButtonClicked;
 
-            backButton = null;
+            cancelButton = null;
             doneButton = null;
 
             foreach (var p in phoneCellList) {
