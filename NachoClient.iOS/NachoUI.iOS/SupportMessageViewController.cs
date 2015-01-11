@@ -254,6 +254,8 @@ namespace NachoClient.iOS
 
         protected void SendButtonClicked (object sender, EventArgs e)
         {
+            View.EndEditing (true);
+
             UITextField contactInfoTextField = (UITextField)View.ViewWithTag(CONTACT_TEXTFIELD_TAG);
             UITextView messageInfoTextView = (UITextView)View.ViewWithTag (MESSAGEBODY_VIEW_TAG);
 
