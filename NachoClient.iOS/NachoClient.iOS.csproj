@@ -127,7 +127,7 @@
     <MtouchArch>ARMv7</MtouchArch>
     <IpaPackageName>
     </IpaPackageName>
-    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -framework SystemConfiguration -framework CFNetwork -framework CoreGraphics -framework CoreLocation -framework MobileCoreServices -framework QuartzCore -framework Security -lNachoPlatformSDK -lresolv -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
+    <MtouchExtraArgs>-gcc_flags "-L${ProjectDir}/../native.iOS -framework SystemConfiguration -framework CFNetwork -framework CoreGraphics -framework MobileCoreServices -framework QuartzCore -framework Security -lNachoPlatformSDK -lresolv -force_load ${ProjectDir}/../native.iOS/libNachoPlatformSDK.a"</MtouchExtraArgs>
     <CustomCommands>
       <CustomCommands>
         <Command type="BeforeBuild" command="${SolutionDir}/scripts/mk_build_info.py --root ${ProjectDir} --csproj-file ${ProjectFile}" workingdir="${ProjectDir}" />
