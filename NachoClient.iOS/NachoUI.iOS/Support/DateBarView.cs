@@ -93,7 +93,6 @@ namespace NachoClient.iOS
                 this.Add (daysLabelView);
                 spacing += spacer;
                 i++;
-                Console.WriteLine ("letter center : " + daysLabelView.Center.X.ToString());
             }
         }
 
@@ -104,7 +103,6 @@ namespace NachoClient.iOS
             monthLabelView.TextAlignment = UITextAlignment.Center;
 
             this.AddSubview (monthLabelView);
-            Console.WriteLine ("MONTH CENTER : " + monthLabelView.Center.X);
             this.ViewDate = DateTime.Today;
             int i = 0;
             float spacing = 0;
@@ -141,9 +139,6 @@ namespace NachoClient.iOS
                     spacing += spacerWidth;
                     i++;
                     tagIncrement++;
-
-                    Console.WriteLine ("circleCenter: " + buttonRect.Center.X.ToString());
-
                 }
                 row += dateBarRowHeight;
                 j++;
