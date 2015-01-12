@@ -9,6 +9,7 @@ using MonoTouch.UIKit;
 using NachoCore.Model;
 using NachoCore.Utils;
 using System.Drawing;
+using NachoCore;
 
 namespace NachoClient.iOS
 {
@@ -28,6 +29,8 @@ namespace NachoClient.iOS
         protected UITabBarItem nachoNowItem;
         protected UITabBarItem foldersItem;
 
+        protected const int TABLEVIEW_TAG = 1999;
+
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
@@ -45,6 +48,8 @@ namespace NachoClient.iOS
             MoreNavigationController.NavigationBar.TintColor = A.Color_NachoBlue;
             MoreNavigationController.NavigationBar.Translucent = false;
 
+            NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+
             RestoreCustomTabBarOrder ();
 
             nachoNowItem = SetTabBarItem ("NachoClient.iOS.NachoNowViewController", "Hot", "nav-nachonow", "nav-nachonow-active"); // Done
@@ -60,6 +65,10 @@ namespace NachoClient.iOS
 
             FinishedCustomizingViewControllers += (object sender, UITabBarCustomizeChangeEventArgs e) => {
                 SaveCustomTabBarOrder (e);
+            };
+
+            ViewControllerSelected += (object sender, UITabBarSelectionEventArgs e) => {
+                LayoutMoreTable ();
             };
 
             InsertAccountInfoIntoMoreTab ();
@@ -104,6 +113,14 @@ namespace NachoClient.iOS
                 }
             }
             return null;
+        }
+
+        public void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+            if (NcResult.SubKindEnum.Info_StatusBarHeightChanged == s.Status.SubKind) {
+                LayoutMoreTable ();
+            }
         }
 
         public void SwitchToNachoNow ()
@@ -218,7 +235,7 @@ namespace NachoClient.iOS
                 cellHeight = cell.Frame.Height;
             }
 
-            var newView = new UIScrollView (existingTableView.Frame);
+            var newView = new UIScrollView (View.Frame);
 
             newView.BackgroundColor = A.Color_NachoBackgroundGray;
 
@@ -227,7 +244,7 @@ namespace NachoClient.iOS
                 newView.Frame.Width - 2 * A.Card_Horizontal_Indent, 80));
             accountInfoView.OnAccountSelected = AccountTapHandler;
 
-            var tableHeight = (((existingTableView.NumberOfRowsInSection(0)) + 2) * cellHeight) + 5;
+            var tableHeight = (((existingTableView.NumberOfRowsInSection (0)) + 2) * cellHeight + 25);
 
             existingTableView.Frame = new RectangleF (
                 A.Card_Horizontal_Indent, accountInfoView.Frame.Bottom + A.Card_Vertical_Indent,
@@ -236,14 +253,25 @@ namespace NachoClient.iOS
             existingTableView.Layer.MasksToBounds = true;
             existingTableView.Layer.BorderWidth = A.Card_Border_Width;
             existingTableView.Layer.BorderColor = A.Card_Border_Color;
+            existingTableView.Tag = TABLEVIEW_TAG;
 
-            newView.ContentSize = new SizeF (moreTabController.View.Frame.Width, existingTableView.Frame.Bottom - A.Card_Vertical_Indent);
+            newView.ContentSize = new SizeF (View.Frame.Width, existingTableView.Frame.Bottom - A.Card_Vertical_Indent - 20);
 
             newView.AddSubview (accountInfoView);
             newView.AddSubview (existingTableView);
             moreTabController.View = newView;
 
             ConfigureAccountInfo ();
+            LayoutMoreTable ();
+        }
+
+        protected void LayoutMoreTable ()
+        {
+            var tableView = (UITableView)View.ViewWithTag (TABLEVIEW_TAG);
+            if (null != tableView) {
+                var tableHeight = (tableView.NumberOfRowsInSection (0) * 44);
+                tableView.Frame = new RectangleF (tableView.Frame.X, tableView.Frame.Y, tableView.Frame.Width, tableHeight);
+            }
         }
 
         private void AccountTapHandler (McAccount account)
