@@ -161,18 +161,24 @@ namespace NachoCore.ActiveSync
 
             protected override void ApplyCommandToModel ()
             {
-                var target = McFolder.QueryByServerId<McFolder> (AccountId, PlaceholderId);
-                if (null != target) {
-                    target.ServerId = FinalServerId;
-                    target.IsAwaitingCreate = false;
-                    target.Update ();
+                var created = McFolder.QueryByServerId<McFolder> (AccountId, PlaceholderId);
+                if (null != created) {
+                    created = created.UpdateWithOCApply<McFolder> ((record) => {
+                        var target = (McFolder)record;
+                        target.ServerId = FinalServerId;
+                        target.IsAwaitingCreate = false;
+                        return true;
+                    });
                     var account = McAccount.QueryById<McAccount> (AccountId);
                     var protocolState = McProtocolState.QueryByAccountId<McProtocolState> (account.Id).SingleOrDefault ();
                     var folders = McFolder.QueryByParentId (AccountId, PlaceholderId);
                     foreach (var child in folders) {
-                        child.ParentId = FinalServerId;
-                        child.AsFolderSyncEpoch = protocolState.AsFolderSyncEpoch;
-                        child.Update ();
+                        child.UpdateWithOCApply<McFolder> ((record) => {
+                            var target = (McFolder)record;
+                            target.ParentId = FinalServerId;
+                            target.AsFolderSyncEpoch = protocolState.AsFolderSyncEpoch;
+                            return true;
+                        });
                     }
                 }
             }
