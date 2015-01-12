@@ -250,12 +250,6 @@ namespace NachoClient.iOS
             }
         }
 
-        public override void ViewDidLayoutSubviews ()
-        {
-
-            base.ViewDidLayoutSubviews ();
-        }
-
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
