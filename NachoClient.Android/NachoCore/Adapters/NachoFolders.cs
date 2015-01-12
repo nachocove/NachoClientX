@@ -64,6 +64,9 @@ namespace NachoCore
             // TODO: Make this a query
             list = new List<McFolder> ();
             var account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
+            if (null == account) {
+                return;
+            }
             var temp = NcModel.Instance.Db.Table<McFolder> ().Where (f => (f.AccountId == account.Id) && (f.IsClientOwned == false)).OrderBy (f => f.DisplayName).ToList ();
             foreach (var l in temp) {
                 if (!l.IsHidden) {

@@ -69,6 +69,17 @@ namespace NachoClient.AndroidClient
         {
             base.OnCreate (savedInstanceState);
 
+            NcApplication.Instance.StartClass1Services ();
+            Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartClass1Services complete");
+
+            NcApplication.Instance.StartClass2Services ();
+            Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartClass2Services complete");
+
+            NcApplication.Instance.StartClass3Services ();
+            Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartClass3Services complete");
+
+            NcApplication.Instance.AppStartupTasks ();
+
             // Set our view from the "main" layout resource
             SetContentView (Resource.Layout.Main);
 
@@ -118,7 +129,7 @@ namespace NachoClient.AndroidClient
                 }
             };
 
-            if (0 == NcModel.Instance.Db.Table<McAccount> ().Count ()) {
+            if (1 == NcModel.Instance.Db.Table<McAccount> ().Count ()) {
                 var fragment = new CredentialsFragment ();
                 this.SupportFragmentManager.BeginTransaction ()
                     .Replace (Resource.Id.content_frame, fragment)
@@ -127,10 +138,6 @@ namespace NachoClient.AndroidClient
                 if (null == savedInstanceState) {
                     ItemSelected (0);
                 }
-                NcApplication.Instance.StartClass1Services ();
-                NcApplication.Instance.StartClass2Services ();
-                NcApplication.Instance.StartClass3Services ();
-                NcApplication.Instance.StartClass4Services ();
             }
 
             SupportActionBar.SetDisplayHomeAsUpEnabled (true);

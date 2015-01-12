@@ -29,21 +29,23 @@ namespace NachoClient.AndroidClient
                 var txtUsername = rootView.FindViewById<TextView> (Resource.Id.user_email).Text;
                 var txtPassword = rootView.FindViewById<TextView> (Resource.Id.user_password).Text;
 
-                var cred = new McCred () { Username = txtUsername };
-                cred.Insert ();
-                cred.UpdatePassword (txtPassword);
-                // Once autodiscover is viable, you will only need to supply this server info IFF you get a callback.
-				var server = new McServer () { Host = txtServer };
-                server.Insert ();
-                // In the near future, you won't need to create this protocol state object.
-                var protocolState = new McProtocolState ();
-                protocolState.Insert ();
-                var policy = new McPolicy ();
-                policy.Insert ();
                 // You will always need to supply the user's email address.
                 var Account = new McAccount () { EmailAddr = txtUsername };
                 // The account object is the "top", pointing to credential, server, and opaque protocol state.
                 Account.Insert ();
+
+                var cred = new McCred () { Username = txtUsername, AccountId = Account.Id };
+                cred.Insert ();
+                cred.UpdatePassword (txtPassword);
+                // Once autodiscover is viable, you will only need to supply this server info IFF you get a callback.
+//                var server = new McServer () { Host = txtServer, AccountId = Account.Id };
+//                server.Insert ();
+//                // In the near future, you won't need to create this protocol state object.
+//                var protocolState = new McProtocolState ();
+//                protocolState.Insert ();
+//                var policy = new McPolicy ();
+//                policy.Insert ();
+
                 BackEnd.Instance.Start (Account.Id);
                 // Clean up UI
                 Activity.SupportFragmentManager.BeginTransaction().Remove(this).Commit();
