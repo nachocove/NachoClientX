@@ -24,12 +24,13 @@ namespace NachoClient.iOS
         protected UIView pageContainerView;
         // full screen
 
-        protected const float DESCRIPTION_TEXT_WIDTH = 284; //As defined by Hugo
+        protected const float DESCRIPTION_TEXT_WIDTH = 284;
+        //As defined by Hugo
         // the phone-image content
-        protected UIView contentContainer;
+        protected UIView imageContainer;
 
         // the helpful text container
-        protected UIView helperContainer;
+        protected UIView helperTextContainer;
 
         // text Title
         protected UILabel helperTitleText;
@@ -118,15 +119,15 @@ namespace NachoClient.iOS
         const string BodyThree = "Your next meeting is <font color=\"FF3F20\">here</font>. Manage <br> your schedule using Calendar.";
         const string BodyFour = "Sliding right or left elsewhere will get you <br> shortcuts and options for the items";
 
-        const string contentscreen = "Slide1-3.png";
+        const string contentscreen = "Slide1-3";
         // phone-face image
-        const string calendarpull = "Slide1-2.png";
+        const string calendarpull = "Slide1-2";
         // calendar pull down
-        const string msg1loc = "Slide1-1A.png";
+        const string msg1loc = "Slide1-1A";
         // Meagan message
-        const string msg2loc = "Slide1-1B.png";
+        const string msg2loc = "Slide1-1B";
         // next message
-        const string inboxloc = "Slide1-4.png";
+        const string inboxloc = "Slide1-4";
         // inbox msg at bottom of screen
 
         string[] titleText = {
@@ -146,25 +147,21 @@ namespace NachoClient.iOS
 
         public override void ViewDidLoad ()
         {
-            this.pageContainerView = new UIView (new RectangleF (0, 0, this.owner.View.Bounds.Width, this.owner.View.Bounds.Height - 48));
+            base.ViewDidLoad ();
+
+            this.pageContainerView = new UIView (new RectangleF (0, 0, this.owner.View.Frame.Width, this.owner.View.Frame.Height));
             pageContainerView.BackgroundColor = A.Color_NachoGreen;
 
-            if (UIScreen.MainScreen.Bounds.Height == 480) {
-                this.contentContainer = new UIView (new RectangleF (View.Frame.Width / 2 - GetContentSize ().Width / 2, 60, GetContentSize ().Width, GetContentSize ().Height)); // see size of helpercontainer
-                this.helperContainer = new UIView (new RectangleF (0, this.contentContainer.Frame.Bottom, pageContainerView.Frame.Width, pageContainerView.Frame.Bottom - this.contentContainer.Frame.Bottom));// contains the helpertext and labels  
-                this.helperTitleText = new UILabel (new RectangleF (0, 12, helperContainer.Frame.Width, 20));
-                this.helperWebView = new UIWebView (new RectangleF ((helperContainer.Frame.Width - DESCRIPTION_TEXT_WIDTH) / 2, helperTitleText.Frame.Bottom, DESCRIPTION_TEXT_WIDTH, 40));
-            } else {
-                this.contentContainer = new UIView (new RectangleF (View.Frame.Width / 2 - GetContentSize ().Width / 2, 85, GetContentSize ().Width, GetContentSize ().Height)); // see size of helpercontainer
-                this.helperContainer = new UIView (new RectangleF (0, this.contentContainer.Frame.Bottom, pageContainerView.Frame.Width, 130));// contains the helpertext and labels  
-                this.helperTitleText = new UILabel (new RectangleF (0, 24, helperContainer.Frame.Width, 20));
-                this.helperWebView = new UIWebView (new RectangleF ((helperContainer.Frame.Width - DESCRIPTION_TEXT_WIDTH) / 2, helperTitleText.Frame.Bottom, DESCRIPTION_TEXT_WIDTH, 50));
-            }
+            float textContainerHeight = 100 * GetPositionScale ();
+            float helperTitleTextYVal = textContainerHeight / 2 - 40;
+
+            this.helperTextContainer = new UIView (new RectangleF (0, pageContainerView.Frame.Height - textContainerHeight - 25, pageContainerView.Frame.Width, textContainerHeight));// contains the helpertext and labels  
+            this.helperTitleText = new UILabel (new RectangleF (0, helperTitleTextYVal, helperTextContainer.Frame.Width, 20));
+            this.helperWebView = new UIWebView (new RectangleF ((helperTextContainer.Frame.Width - DESCRIPTION_TEXT_WIDTH) / 2, helperTitleText.Frame.Bottom, DESCRIPTION_TEXT_WIDTH, 50));
+            this.imageContainer = new UIView (new RectangleF (pageContainerView.Frame.Width / 2 - GetContentSize ().Width / 2, helperTextContainer.Frame.Top - GetContentSize ().Height, GetContentSize ().Width, GetContentSize ().Height)); // see size of helpercontainer
 
             pageView = new UIView (pageContainerView.Frame);
-            contentView = new UIView (contentContainer.Frame);
-
-            base.ViewDidLoad ();
+            contentView = new UIView (imageContainer.Frame);
 
             string leftNachos = "";
             string rightNachos = "";
@@ -174,23 +171,23 @@ namespace NachoClient.iOS
                 CreateViewZero ();
                 break;
             case 1:
-                leftNachos = "BG-S01Left@2x";
-                rightNachos = "BG-S01Right@2x";
+                leftNachos = "BG-S02Left";
+                rightNachos = "BG-S02Right";
                 CreateViewOne ();
                 break;
             case 2:
-                leftNachos = "BG-S02Left@2x";
-                rightNachos = "BG-S02Right@2x";
+                leftNachos = "BG-S03Left";
+                rightNachos = "BG-S03Right";
                 CreateViewTwo ();
                 break;
             case 3:
-                leftNachos = "BG-S03Left@2x";
-                rightNachos = "BG-S03Right@2x";
+                leftNachos = "BG-S04Left";
+                rightNachos = "BG-S04Right";
                 CreateViewThree ();
                 break;
             case 4:
-                leftNachos = "BG-S04Left@2x";
-                rightNachos = "BG-S04Right@2x";
+                leftNachos = "BG-S05Left";
+                rightNachos = "BG-S05Right";
                 CreateViewFour ();
                 break;
             }
@@ -233,6 +230,7 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
+
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
@@ -252,10 +250,15 @@ namespace NachoClient.iOS
             }
         }
 
+        public override void ViewDidLayoutSubviews ()
+        {
+
+            base.ViewDidLayoutSubviews ();
+        }
+
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
-
             switch (this.PageIndex) {
             case 0:
                 ResetViewZero ();
@@ -288,33 +291,33 @@ namespace NachoClient.iOS
         private SizeF GetContentSize ()
         {
             UIImageView contentImage;
-            using (var image = UIImage.FromBundle ("Slide03BG")) {
+            using (var image = UIImage.FromBundle (Util.GetImage ("Slide03BG"))) {
                 contentImage = new UIImageView (image);
             }
             return new SizeF (contentImage.Frame.Width, contentImage.Frame.Height);
         }
-              
+
         private void CreateNachos (string leftNachos, string rightNachos)
         {
-            UIImageView leftSideNachos = new UIImageView (UIImage.FromBundle (leftNachos));
-            leftSideNachos.Frame = new RectangleF (0, this.contentContainer.Frame.Bottom - leftSideNachos.Frame.Height, this.contentContainer.Frame.X, leftSideNachos.Frame.Height);
+            UIImageView leftSideNachos = new UIImageView (UIImage.FromBundle (Util.GetImage (leftNachos)));
+            leftSideNachos.Frame = new RectangleF (0, this.imageContainer.Frame.Bottom - leftSideNachos.Frame.Height, this.imageContainer.Frame.X, leftSideNachos.Frame.Height);
             this.View.AddSubview (leftSideNachos);
 
-            UIImageView rightSideNachos = new UIImageView (UIImage.FromBundle (rightNachos));
-            rightSideNachos.Frame = new RectangleF (this.contentContainer.Frame.X + this.contentContainer.Frame.Width, this.contentContainer.Frame.Bottom - rightSideNachos.Frame.Height, this.contentContainer.Frame.X, rightSideNachos.Frame.Height);
+            UIImageView rightSideNachos = new UIImageView (UIImage.FromBundle (Util.GetImage (rightNachos)));
+            rightSideNachos.Frame = new RectangleF (this.imageContainer.Frame.X + this.imageContainer.Frame.Width, this.imageContainer.Frame.Bottom - rightSideNachos.Frame.Height, this.imageContainer.Frame.X, rightSideNachos.Frame.Height);
             this.View.AddSubview (rightSideNachos);
         }
 
         void CreateHelperText ()
         {
-            helperContainer.BackgroundColor = UIColor.White;
+            helperTextContainer.BackgroundColor = UIColor.White;
 
             helperTitleText.BackgroundColor = UIColor.White; // debug
             helperTitleText.TextColor = A.Color_11464F;
             helperTitleText.Text = titleText [this.PageIndex];
             helperTitleText.Font = A.Font_AvenirNextDemiBold17;
             helperTitleText.TextAlignment = UITextAlignment.Center;
-            helperContainer.Add (helperTitleText);
+            helperTextContainer.Add (helperTitleText);
 
             helperWebView.LoadHtmlString (
                 "<html>" +
@@ -325,29 +328,26 @@ namespace NachoClient.iOS
                 bodyText [this.PageIndex] +
                 "</body>" +
                 "</html>", new NSUrl ("about:blank"));
-            helperContainer.Add (helperWebView);
-
-
-            Util.AddHorizontalLine (0, helperContainer.Frame.Height + 10, helperContainer.Frame.Width, A.Color_NachoBorderGray, helperContainer);
+            helperTextContainer.Add (helperWebView);
         }
 
         protected void CreateViewZero ()
         {
             UIImageView theNachos;
-            using (var image = UIImage.FromBundle ("BG-S01")) {
+            using (var image = UIImage.FromBundle (Util.GetImage ("BG-S01"))) {
                 theNachos = new UIImageView (image);
             }
-            theNachos.Frame = new RectangleF (0, this.contentContainer.Frame.Bottom - theNachos.Frame.Height, View.Frame.Width, theNachos.Frame.Height);
+            theNachos.Frame = new RectangleF (0, this.imageContainer.Frame.Bottom - theNachos.Frame.Height, theNachos.Frame.Width, theNachos.Frame.Height);
             pageContainerView.AddSubview (theNachos);
 
             UIImageView nachoLogoImageView;
             using (var image = UIImage.FromBundle ("Bootscreen-1")) {
                 nachoLogoImageView = new UIImageView (image);
             }
-            nachoLogoImageView.Center = new PointF (pageContainerView.Center.X, 130 + nachoLogoImageView.Frame.Width / 2);
+            nachoLogoImageView.Center = new PointF (pageContainerView.Center.X, 130 * GetPositionScale () + nachoLogoImageView.Frame.Width / 2);
             pageContainerView.AddSubview (nachoLogoImageView);
 
-            swipeLabel = new UILabel (new RectangleF (235, nachoLogoImageView.Frame.Bottom + 24, 150, 20));
+            swipeLabel = new UILabel (new RectangleF (pageContainerView.Frame.Width / 2 - 75 + 150, nachoLogoImageView.Frame.Bottom + 24, 150, 20));
             swipeLabel.Font = A.Font_AvenirNextMedium14;
             swipeLabel.Text = "Swipe left to continue";
             swipeLabel.TextColor = A.Color_NachoYellow;
@@ -358,178 +358,190 @@ namespace NachoClient.iOS
 
             for (int i = 0; i < 10; i++) {
                 var tempSwipeArrow = new UIImageView ();
-                using (var image = UIImage.FromBundle ("SlideNav-SwipeArrow")) {
+                using (var image = UIImage.FromBundle (Util.GetImage ("SlideNav-SwipeArrow"))) {
                     tempSwipeArrow = new UIImageView (image);
                 }
-                tempSwipeArrow.Center = new PointF (225 - (i * 15), swipeLabel.Center.Y);
+                tempSwipeArrow.Center = new PointF (swipeLabel.Frame.X - 10 - (i * 15), swipeLabel.Center.Y);
                 tempSwipeArrow.Alpha = 0.0f;
                 swipeLeftArrows.Add (tempSwipeArrow);
                 pageContainerView.AddSubview (tempSwipeArrow);
             }
 
             CreateHelperText ();
-            pageContainerView.AddSubview (helperContainer);
+            pageContainerView.AddSubview (helperTextContainer);
         }
 
         protected void CreateViewOne ()
         {
             UIImageView nachoNowImageView = new UIImageView ();
-            using (var image = UIImage.FromBundle ("Slide02BG")) {
+            using (var image = UIImage.FromBundle (Util.GetImage ("Slide02BG"))) {
                 nachoNowImageView.Image = image;
             }
-            nachoNowImageView.Frame = (new RectangleF (0, 0, contentContainer.Frame.Width, contentContainer.Frame.Height));
-            contentContainer.AddSubview (nachoNowImageView);
+            nachoNowImageView.Frame = (new RectangleF (0, 0, imageContainer.Frame.Width, imageContainer.Frame.Height));
+            imageContainer.AddSubview (nachoNowImageView);
 
-            using (var image = UIImage.FromBundle ("red_pointer")) {
+            using (var image = UIImage.FromBundle (Util.GetImage ("Slide02RedMarker"))) {
                 redButton = new UIImageView (image);
             }
-            redButton.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 4);
+            redButton.Center = new PointF (this.imageContainer.Frame.Width / 2, this.imageContainer.Frame.Height / 4);
             redButton.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
-            contentContainer.AddSubview (redButton);
+            imageContainer.AddSubview (redButton);
 
-            using (var image = UIImage.FromBundle ("Slide02MessageUp")) {
+            using (var image = UIImage.FromBundle (Util.GetImage ("Slide02MessageUp"))) {
                 redToolTip = new UIImageView (image);
             }
-            redToolTip.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height / 4 + 35);
+            redToolTip.Center = new PointF (this.imageContainer.Frame.Width / 2, this.imageContainer.Frame.Height / 4 + 35 * GetImageScale ());
             redToolTip.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
-            contentContainer.AddSubview (redToolTip);
+            imageContainer.AddSubview (redToolTip);
 
-            using (var image = UIImage.FromBundle ("teal_pointer")) {
+            using (var image = UIImage.FromBundle (Util.GetImage ("Slide02TealMarker"))) {
                 greenButton = new UIImageView (image);
             }
-            greenButton.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height - 25);
+            greenButton.Center = new PointF (this.imageContainer.Frame.Width / 2, this.imageContainer.Frame.Height - 25 * GetImageScale ());
             greenButton.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
-            contentContainer.AddSubview (greenButton);
+            imageContainer.AddSubview (greenButton);
 
-            using (var image = UIImage.FromBundle ("Slide02MessageDown")) {
+            using (var image = UIImage.FromBundle (Util.GetImage ("Slide02MessageDown"))) {
                 greenToolTip = new UIImageView (image);
             }
-            greenToolTip.Center = new PointF (this.contentContainer.Frame.Width / 2, this.contentContainer.Frame.Height - 60);
+            greenToolTip.Center = new PointF (this.imageContainer.Frame.Width / 2, this.imageContainer.Frame.Height - 60 * GetImageScale ());
             greenToolTip.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
-            contentContainer.AddSubview (greenToolTip);
+            imageContainer.AddSubview (greenToolTip);
 
             CreateHelperText ();
-            contentContainer.ClipsToBounds = true;
-            pageContainerView.AddSubview (contentContainer);
-            pageContainerView.AddSubview (helperContainer);
+            imageContainer.ClipsToBounds = true;
+            pageContainerView.AddSubview (imageContainer);
+            pageContainerView.AddSubview (helperTextContainer);
         }
 
         protected void CreateViewTwo ()
         {
             UIImageView nachoGrayBackground = new UIImageView ();
-            using (var image = UIImage.FromBundle ("Slide03BG")) {
+            using (var image = UIImage.FromBundle (Util.GetImage ("Slide03BG"))) {
                 nachoGrayBackground.Image = image;
             }
-            nachoGrayBackground.Frame = (new RectangleF (0, 0, contentContainer.Frame.Width, contentContainer.Frame.Height));
-            contentContainer.AddSubview (nachoGrayBackground);
+            nachoGrayBackground.Frame = (new RectangleF (0, 0, imageContainer.Frame.Width, imageContainer.Frame.Height));
+            imageContainer.AddSubview (nachoGrayBackground);
 
             UIImageView nachoNowBackground = new UIImageView ();
-            using (var image = UIImage.FromBundle ("Slide03MidBG")) {
+            using (var image = UIImage.FromBundle (Util.GetImage ("Slide03MidBG"))) {
                 nachoNowBackground.Image = image;
             }
-            nachoNowBackground.Frame = (new RectangleF (0, 0, contentContainer.Frame.Width, contentContainer.Frame.Height));
-            contentContainer.AddSubview (nachoNowBackground);
-
-            UIView cardHolderView = new UIView (new RectangleF (8, 56, contentContainer.Frame.Width - 15, contentContainer.Frame.Height - 75));
-            cardHolderView.Layer.CornerRadius = 4f;
-            cardHolderView.ClipsToBounds = true;
-            contentContainer.AddSubview (cardHolderView);
+            nachoNowBackground.Frame = (new RectangleF (0, 0, imageContainer.Frame.Width, imageContainer.Frame.Height));
+            imageContainer.AddSubview (nachoNowBackground);
 
             nachoCardOne = new UIImageView ();
-            using (var image = UIImage.FromBundle ("Slide03Card01")) {
+            using (var image = UIImage.FromBundle (Util.GetImage ("Slide03Card01"))) {
                 nachoCardOne.Image = image;
             }
-            nachoCardOne.Frame = (new RectangleF (0, 0, cardHolderView.Frame.Width, cardHolderView.Frame.Height));
+            nachoCardOne.Frame = (new RectangleF (0, 0, nachoCardOne.Image.Size.Width + 1, nachoCardOne.Image.Size.Height + 1));
             nachoCardOneCenter = nachoCardOne.Center;
+
+            UIView cardHolderView = new UIView (new RectangleF ((GetContentSize ().Width - nachoCardOne.Frame.Width) / 2f + .5f, 56.5f * GetImageScale (), nachoCardOne.Frame.Width, nachoCardOne.Frame.Height));
+            cardHolderView.Layer.CornerRadius = 4f;
+            cardHolderView.ClipsToBounds = true;
+            imageContainer.AddSubview (cardHolderView);
             cardHolderView.AddSubview (nachoCardOne);
 
             nachoCardTwo = new UIImageView ();
-            using (var image = UIImage.FromBundle ("Slide03Card02")) {
+            using (var image = UIImage.FromBundle (Util.GetImage ("Slide03Card02"))) {
                 nachoCardTwo.Image = image;
             }
             nachoCardTwo.Frame = (new RectangleF (0, nachoCardOne.Frame.Bottom + 15, cardHolderView.Frame.Width, cardHolderView.Frame.Height));
             nachoCardTwoCenter = nachoCardTwo.Center;
             cardHolderView.AddSubview (nachoCardTwo);
 
-            mailRedDot = new UIImageView (UIImage.FromBundle ("red_pointer.png"));
-            mailRedDot.Center = new PointF (nachoCardOne.Center.X, nachoCardOne.Center.Y + 30);
+            mailRedDot = new UIImageView (UIImage.FromBundle (Util.GetImage ("Slide02RedMarker")));
+            mailRedDot.Center = new PointF (nachoCardOne.Center.X, nachoCardOne.Center.Y + 30 * GetImageScale ());
             mailRedDotCenter = mailRedDot.Center;
             cardHolderView.AddSubview (mailRedDot);
 
             CreateHelperText ();
             contentView.ClipsToBounds = true;
-            pageView.AddSubview (contentContainer);
-            pageView.AddSubview (helperContainer);
+            pageView.AddSubview (imageContainer);
+            pageView.AddSubview (helperTextContainer);
         }
 
         protected void CreateViewThree ()
         {
             UIImageView calendarBackground = new UIImageView ();
-            using (var image = UIImage.FromBundle ("Slide04BG")) {
+            using (var image = UIImage.FromBundle (Util.GetImage ("Slide04BG"))) {
                 calendarBackground.Image = image;
             }
-            calendarBackground.Frame = (new RectangleF (0, 0, contentContainer.Frame.Width, contentContainer.Frame.Height));
-            contentContainer.AddSubview (calendarBackground);
+            calendarBackground.Frame = (new RectangleF (0, 0, imageContainer.Frame.Width, imageContainer.Frame.Height));
+            imageContainer.AddSubview (calendarBackground);
 
-            using (var image = UIImage.FromBundle ("Slide04MessageUp")) {
+            using (var image = UIImage.FromBundle (Util.GetImage ("Slide04MessageUp"))) {
                 meetingMessage = new UIImageView (image);
             }
-            meetingMessage.Frame = (new RectangleF (contentContainer.Frame.Width / 2 - meetingMessage.Frame.Width / 2, 43, meetingMessage.Frame.Width, meetingMessage.Frame.Height));
+            meetingMessage.Frame = (new RectangleF (imageContainer.Frame.Width / 2 - meetingMessage.Frame.Width / 2, 43 * GetImageScale (), meetingMessage.Frame.Width, meetingMessage.Frame.Height));
             meetingMessage.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
-            contentContainer.AddSubview (meetingMessage);
+            imageContainer.AddSubview (meetingMessage);
 
-            using (var image = UIImage.FromBundle ("red_pointer.png")) {
+            using (var image = UIImage.FromBundle (Util.GetImage ("Slide02RedMarker"))) {
                 pullDownDotView = new UIImageView (image);
             }
-            pullDownDotView.Center = new PointF (meetingMessage.Center.X, 25);
+            pullDownDotView.Center = new PointF (meetingMessage.Center.X, 25 * GetImageScale ());
             pullDownDotView.Layer.Transform = CATransform3D.MakeScale (0.0f, 0.0f, 1.0f);
-            contentContainer.AddSubview (pullDownDotView);
+            imageContainer.AddSubview (pullDownDotView);
 
             CreateHelperText ();
-            contentContainer.ClipsToBounds = true;
-            pageContainerView.AddSubview (contentContainer);
-            pageContainerView.AddSubview (helperContainer);
+            imageContainer.ClipsToBounds = true;
+            pageContainerView.AddSubview (imageContainer);
+            pageContainerView.AddSubview (helperTextContainer);
+        }
+
+        protected float GetImageScale ()
+        {
+            UIImage myScaledImage = UIImage.FromBundle (Util.GetImage ("Slide03Card01"));
+            UIImage originalImage = UIImage.FromBundle ("Slide03Card01@2x");
+            return myScaledImage.Size.Height / originalImage.Size.Height;
+        }
+
+        protected float GetPositionScale ()
+        {
+            return owner.View.Frame.Height / 480f;
         }
 
         private void CreateViewFour ()
         {
             UIImageView inboxBackgroundImageView = new UIImageView ();
-            using (var image = UIImage.FromBundle ("Slide05BG.png")) {
+            using (var image = UIImage.FromBundle (Util.GetImage ("Slide05BG"))) {
                 inboxBackgroundImageView.Image = image;
             }
-            inboxBackgroundImageView.Frame = (new RectangleF (0, 0, contentContainer.Frame.Width, contentContainer.Frame.Height));
-            contentContainer.AddSubview (inboxBackgroundImageView);
+            inboxBackgroundImageView.Frame = (new RectangleF (0, 0, imageContainer.Frame.Width, imageContainer.Frame.Height));
+            imageContainer.AddSubview (inboxBackgroundImageView);
 
-            using (var image = UIImage.FromBundle ("Slide05SwipeRight.png")) {
+            using (var image = UIImage.FromBundle (Util.GetImage ("Slide05SwipeRight"))) {
                 swipeRightImageView = new UIImageView (image);
             }
             swipeRightImageView.Frame = new RectangleF (-swipeRightImageView.Frame.Width, 0, swipeRightImageView.Frame.Width, swipeRightImageView.Frame.Height);
             swipeRightCenter = swipeRightImageView.Center;
-            contentContainer.AddSubview (swipeRightImageView);
+            imageContainer.AddSubview (swipeRightImageView);
 
-            using (var image = UIImage.FromBundle ("Slide05Email.png")) {
+            using (var image = UIImage.FromBundle (Util.GetImage ("Slide05Email"))) {
                 emailCellView = new UIImageView (image);
             }
-            emailCellView.Frame = new RectangleF (0, 0, this.contentContainer.Frame.Width, emailCellView.Frame.Height);
+            emailCellView.Frame = new RectangleF (0, 0, this.imageContainer.Frame.Width, emailCellView.Frame.Height);
             emailCellViewCenter = emailCellView.Center;
-            contentContainer.AddSubview (emailCellView);
+            imageContainer.AddSubview (emailCellView);
 
-            using (var image = UIImage.FromBundle ("Slide05SwipeLeft.png")) {
+            using (var image = UIImage.FromBundle (Util.GetImage ("Slide05SwipeLeft"))) {
                 swipeLeftImageView = new UIImageView (image);
             }
-            swipeLeftImageView.Frame = new RectangleF (this.contentContainer.Frame.Width, 0, swipeLeftImageView.Frame.Width, swipeLeftImageView.Frame.Height);
+            swipeLeftImageView.Frame = new RectangleF (this.imageContainer.Frame.Width, 0, swipeLeftImageView.Frame.Width, swipeLeftImageView.Frame.Height);
             swipeLeftCenter = swipeLeftImageView.Center;
-            contentContainer.AddSubview (swipeLeftImageView);
+            imageContainer.AddSubview (swipeLeftImageView);
 
-            swipeDotView = new UIImageView (UIImage.FromBundle ("red_pointer.png"));
-            swipeDotView.Center = new PointF (emailCellView.Center.X + 30, emailCellView.Center.Y);
+            swipeDotView = new UIImageView (UIImage.FromBundle (Util.GetImage ("Slide02RedMarker")));
+            swipeDotView.Center = new PointF (emailCellView.Center.X + 30 * GetImageScale (), emailCellView.Center.Y);
             swipeDotCenter = swipeDotView.Center;
-            contentContainer.AddSubview (swipeDotView);
+            imageContainer.AddSubview (swipeDotView);
 
             CreateHelperText ();
-            contentContainer.ClipsToBounds = true;
-            pageContainerView.AddSubview (contentContainer);
-            pageContainerView.AddSubview (helperContainer);
+            imageContainer.ClipsToBounds = true;
+            pageContainerView.AddSubview (imageContainer);
+            pageContainerView.AddSubview (helperTextContainer);
         }
 
         protected void AnimateViewZero (int i)
@@ -624,7 +636,7 @@ namespace NachoClient.iOS
             });
 
             flashTwoTimer = NSTimer.CreateScheduledTimer (3.6, delegate {
-                mailRedDot.Center = new PointF (mailRedDotCenter.X, mailRedDotCenter.Y - 80);
+                mailRedDot.Center = new PointF (mailRedDotCenter.X, mailRedDotCenter.Y - 80 * GetImageScale ());
                 UIView.AnimateKeyframes (2.1, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
                     UIView.AddKeyframeWithRelativeStartTime (0, .5, () => {
                         mailRedDot.Alpha = .5f;
@@ -706,7 +718,7 @@ namespace NachoClient.iOS
             moveDotsTimer = NSTimer.CreateScheduledTimer (5.2, delegate {
                 UIView.AnimateKeyframes (.2, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
                     UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
-                        swipeDotView.Center = new PointF (swipeDotCenter.X - 70, swipeDotCenter.Y);
+                        swipeDotView.Center = new PointF (swipeDotCenter.X - 70 * GetImageScale (), swipeDotCenter.Y);
                     });
 
                 }, ((bool finished) => {

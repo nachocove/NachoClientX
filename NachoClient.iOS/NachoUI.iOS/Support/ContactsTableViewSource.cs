@@ -335,7 +335,7 @@ namespace NachoClient.iOS
             cell.Layer.MasksToBounds = true;
             cell.SelectionStyle = UITableViewCellSelectionStyle.None;
 
-            var view = new SwipeActionView (new RectangleF (0, 0, cell.ContentView.Frame.Width, ROW_HEIGHT));
+            var view = new SwipeActionView (new RectangleF (0, 0, tableView.Frame.Width, ROW_HEIGHT));
             view.BackgroundColor = UIColor.White;
             view.SetAction (CALL_BUTTON, SwipeSide.LEFT);
             view.SetAction (EMAIL_BUTTON, SwipeSide.RIGHT);
@@ -343,25 +343,25 @@ namespace NachoClient.iOS
 
             cell.ContentView.AddSubview (view);
 
-            UIButton toggleVipButton = new UIButton (new RectangleF (cell.ContentView.Frame.Right - 30, 10, 20, 20));
+            UIButton toggleVipButton = new UIButton (new RectangleF (tableView.Frame.Right - 30, 10, 20, 20));
             toggleVipButton.Tag = SET_VIP_TAG;
             toggleVipButton.TouchUpInside += e;
             view.AddSubview (toggleVipButton);
 
-            var titleLabel = new UILabel (new RectangleF (HORIZONTAL_INDENT, 10, cell.Frame.Width - 15 - HORIZONTAL_INDENT - toggleVipButton.Frame.Width - 8, 20));
+            var titleLabel = new UILabel (new RectangleF (HORIZONTAL_INDENT, 10, tableView.Frame.Width - 15 - HORIZONTAL_INDENT - toggleVipButton.Frame.Width - 8, 20));
             titleLabel.TextColor = A.Color_NachoGreen;
             titleLabel.Font = A.Font_AvenirNextDemiBold17;
             titleLabel.LineBreakMode = UILineBreakMode.TailTruncation;
             titleLabel.Tag = TITLE_LABEL_TAG;
             view.AddSubview (titleLabel);
 
-            var subtitle1Label = new UILabel (new RectangleF (HORIZONTAL_INDENT, 35, cell.Frame.Width - 15 - HORIZONTAL_INDENT, 20));
+            var subtitle1Label = new UILabel (new RectangleF (HORIZONTAL_INDENT, 35, titleLabel.Frame.Width, 20));
             subtitle1Label.LineBreakMode = UILineBreakMode.TailTruncation;
             subtitle1Label.Font = A.Font_AvenirNextRegular14;
             subtitle1Label.Tag = SUBTITLE1_LABEL_TAG;
             view.AddSubview (subtitle1Label);
 
-            var subtitle2Label = new UILabel (new RectangleF (HORIZONTAL_INDENT, 55, cell.Frame.Width - 15 - HORIZONTAL_INDENT, 20));
+            var subtitle2Label = new UILabel (new RectangleF (HORIZONTAL_INDENT, 55, titleLabel.Frame.Width, 20));
             subtitle2Label.LineBreakMode = UILineBreakMode.TailTruncation;
             subtitle2Label.Font = A.Font_AvenirNextRegular14;
             subtitle2Label.Tag = SUBTITLE2_LABEL_TAG;

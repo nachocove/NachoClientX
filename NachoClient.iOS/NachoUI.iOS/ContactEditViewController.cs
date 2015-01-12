@@ -42,7 +42,7 @@ namespace NachoClient.iOS
 
         protected BlockType editingBlockType;
 
-        protected const float MORE_BUTTON_INDENT = 280;
+        protected float moreButtonIndent;
         protected const float HORIZONTAL_INDENT = 30;
         protected float CELL_HEIGHT = 44;
 
@@ -164,6 +164,8 @@ namespace NachoClient.iOS
 
         public override void ViewDidLoad ()
         {
+            moreButtonIndent = View.Frame.Width - 40;
+
             switch (controllerType) {
             case ControllerType.Edit:
                 CopyOriginalContact ();
@@ -267,7 +269,7 @@ namespace NachoClient.iOS
             userImageView.Hidden = true;
             headerView.AddSubview (userImageView);
 
-            UIView headerNameEditView = new UIView (new RectangleF (initialsCircleLabel.Frame.Right + 26, 0, 204, (CELL_HEIGHT * 4)));
+            UIView headerNameEditView = new UIView (new RectangleF (initialsCircleLabel.Frame.Right + 26, 0, View.Frame.Width - 115, (CELL_HEIGHT * 4)));
             headerNameEditView.BackgroundColor = UIColor.White;
             headerNameEditView.Tag = HEADER_NAME_EDIT_VIEW_TAG;
             headerNameEditView.Hidden = false;
@@ -728,7 +730,7 @@ namespace NachoClient.iOS
             addButton.AddSubview (addLabel);
 
             UIImageView addIcon = new UIImageView (UIImage.FromBundle ("email-add"));
-            addIcon.Frame = new RectangleF (MORE_BUTTON_INDENT + 8, 14, addIcon.Frame.Width, addIcon.Frame.Height);
+            addIcon.Frame = new RectangleF (moreButtonIndent + 8, 14, addIcon.Frame.Width, addIcon.Frame.Height);
             addButton.AddSubview (addIcon);
 
             return addButton;
@@ -1561,7 +1563,7 @@ namespace NachoClient.iOS
                 editField.Tag = BUTTON_TAG + 2000;
                 this.AddSubview (editField);
 
-                moreButton = new UIButton (new RectangleF (MORE_BUTTON_INDENT, 7, 30, 30));
+                moreButton = new UIButton (new RectangleF (owner.moreButtonIndent, 7, 30, 30));
                 moreButton.SetImage (UIImage.FromBundle ("contacts-more-options"), UIControlState.Normal);
                 moreButton.SetImage (UIImage.FromBundle ("contacts-more-options-active"), UIControlState.Selected);
                 moreButton.Tag = BUTTON_TAG + 3000;
@@ -1576,7 +1578,7 @@ namespace NachoClient.iOS
             UIView backgroundCover = new UIView (View.Frame);
             backgroundCover.BackgroundColor = UIColor.LightGray.ColorWithAlpha (.1f);
 
-            UIView moreView = new UIView (new RectangleF (102, -28, 165, 102));
+            UIView moreView = new UIView (new RectangleF (View.Frame.Width - 220, -28, 165, 102));
             moreView.BackgroundColor = A.Color_NachoGreen;
             moreView.Layer.CornerRadius = 6.0f;
             moreView.Hidden = true;
@@ -1634,19 +1636,19 @@ namespace NachoClient.iOS
             switch (editingBlockType) {
             case BlockType.Phone:
                 RectangleF moreFrame = theMoreView.Frame;
-                moreFrame.X = 100;
+                moreFrame.X = moreFrame.X;
                 moreFrame.Y = (phoneView.Frame.Y - 28) + editingPhoneCell.Frame.Y;
                 theMoreView.Frame = moreFrame;
                 break;
             case BlockType.Email:
                 RectangleF emailMoreFrame = theMoreView.Frame;
-                emailMoreFrame.X = 100;
+                emailMoreFrame.X = emailMoreFrame.X;
                 emailMoreFrame.Y = (emailView.Frame.Y - 28) + editingEmailCell.Frame.Y;
                 theMoreView.Frame = emailMoreFrame;
                 break;
             case BlockType.Address:
                 RectangleF addressMoreFrame = theMoreView.Frame;
-                addressMoreFrame.X = 100;
+                addressMoreFrame.X = addressMoreFrame.X;
                 addressMoreFrame.Y = (addressView.Frame.Y - 28) + editingAddressCell.Frame.Y;
                 theMoreView.Frame = addressMoreFrame;
                 break;
@@ -1958,7 +1960,7 @@ namespace NachoClient.iOS
                 datePicker.Mode = UIDatePickerMode.Date;
                 dateView.AddSubview (datePicker);
 
-                trashButton = new UIButton (new RectangleF (MORE_BUTTON_INDENT, 7, 30, 30));
+                trashButton = new UIButton (new RectangleF (owner.moreButtonIndent, 7, 30, 30));
                 UIImage x = UIImage.FromBundle ("gen-trash");
                 trashButton.SetImage (x, UIControlState.Normal);
                 trashButton.Tag = BUTTON_TAG + 3000;
@@ -2087,7 +2089,7 @@ namespace NachoClient.iOS
                 labelButton.TouchUpInside += AddressLabelClicked;
                 this.AddSubview (labelButton);
 
-                moreButton = new UIButton (new RectangleF (MORE_BUTTON_INDENT, 6, 30, 30));
+                moreButton = new UIButton (new RectangleF (owner.moreButtonIndent, 6, 30, 30));
                 moreButton.SetImage (UIImage.FromBundle ("contacts-more-options"), UIControlState.Normal);
                 moreButton.SetImage (UIImage.FromBundle ("contacts-more-options-active"), UIControlState.Selected);
                 moreButton.TouchUpInside += MoreButtonClicked;

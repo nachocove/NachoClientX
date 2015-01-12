@@ -77,15 +77,17 @@ namespace NachoClient.iOS
             emailIconImage.Frame = new RectangleF (INDENT, yOffset, emailIconImage.Frame.Width, emailIconImage.Frame.Height);
             supportView.AddSubview (emailIconImage);
 
-            UILabel sendUsEmailLabel = new UILabel (new RectangleF (emailIconImage.Frame.Right + 12, yOffset - 3, 220, 40));
+            UILabel sendUsEmailLabel = new UILabel (new RectangleF (emailIconImage.Frame.Right + 12, yOffset, View.Frame.Width - 100, 40));
             sendUsEmailLabel.Font = A.Font_AvenirNextMedium14;
             sendUsEmailLabel.TextColor = A.Color_NachoBlack;
             sendUsEmailLabel.TextAlignment = UITextAlignment.Left;
             sendUsEmailLabel.Lines = 2;
             sendUsEmailLabel.LineBreakMode = UILineBreakMode.WordWrap;
             sendUsEmailLabel.Text = "Send us a message at support@nachocove.com";
+            sendUsEmailLabel.SizeToFit ();
             supportView.AddSubview (sendUsEmailLabel);
 
+            new ViewFramer (emailIconImage).Y (sendUsEmailLabel.Center.Y - emailIconImage.Frame.Height / 2);
             yOffset = sendUsEmailLabel.Frame.Bottom + INDENT;
             float bottomEmailCellYVal = yOffset;
 

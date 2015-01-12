@@ -298,7 +298,7 @@ namespace NachoClient.iOS
             headerView.AddSubview (blankView);
 
             // Separator 1
-            var separator1View = new UIView (new RectangleF (0, yOffset, 320, 1));
+            var separator1View = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 1));
             separator1View.BackgroundColor = A.Color_NachoBorderGray;
             separator1View.Tag = (int)TagType.SEPARATOR1_TAG;
             headerView.AddSubview (separator1View);
@@ -314,7 +314,7 @@ namespace NachoClient.iOS
             headerView.AddSubview (attachmentListView);
 
             // Separater 2
-            var separator2View = new UIView (new RectangleF (0, yOffset, 320, 1));
+            var separator2View = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 1));
             separator2View.BackgroundColor = A.Color_NachoBorderGray;
             separator2View.Tag = (int)TagType.SEPARATOR2_TAG;
             headerView.AddSubview (separator2View);
@@ -324,6 +324,7 @@ namespace NachoClient.iOS
             // Message body, which is added to the scroll view, not the header view.
             bodyView = BodyView.VariableHeightBodyView (new PointF (VIEW_INSET, yOffset), scrollView.Frame.Width - 2 * VIEW_INSET, scrollView.Frame.Size, LayoutView, onLinkSelected);
             scrollView.AddSubview (bodyView);
+
 
             blockMenu = new UIBlockMenu (this, new List<UIBlockMenu.Block> () {
                 new UIBlockMenu.Block ("contact-quickemail", "Quick Reply", () => {

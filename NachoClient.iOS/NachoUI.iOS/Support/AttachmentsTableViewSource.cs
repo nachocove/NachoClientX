@@ -232,7 +232,7 @@ namespace NachoClient.iOS
             textLabel.Font = A.Font_AvenirNextDemiBold14;
             textLabel.TextColor = A.Color_NachoDarkText;
             textLabel.BackgroundColor = CELL_COMPONENT_BG_COLOR;
-            textLabel.Frame = new RectangleF (60, 11, cell.Frame.Width - 60 - 52, 19.5f);
+            textLabel.Frame = new RectangleF (60, 11, cellWidth - 60 - 52, 19.5f);
             view.AddSubview (textLabel);
 
             //Detail text label
@@ -241,7 +241,7 @@ namespace NachoClient.iOS
             detailTextlabel.BackgroundColor = CELL_COMPONENT_BG_COLOR;
             detailTextlabel.Font = A.Font_AvenirNextRegular14;
             detailTextlabel.TextColor = A.Color_NachoTextGray;
-            detailTextlabel.Frame = new RectangleF (60, 11 + 19.5f, cell.Frame.Width - 60 - 52, 19.5f);
+            detailTextlabel.Frame = new RectangleF (60, 11 + 19.5f, cellWidth - 60 - 52, 19.5f);
             view.AddSubview (detailTextlabel);
 
             //Date text label
@@ -250,16 +250,16 @@ namespace NachoClient.iOS
             dateTextlabel.BackgroundColor = CELL_COMPONENT_BG_COLOR;
             dateTextlabel.Font = A.Font_AvenirNextRegular14;
             dateTextlabel.TextColor = A.Color_NachoTextGray;
-            dateTextlabel.Frame = new RectangleF (60, 11 + 19.5f + 19.5f, cell.Frame.Width - 60 - 52, 19.5f);
+            dateTextlabel.Frame = new RectangleF (60, 11 + 19.5f + 19.5f, cellWidth - 60 - 52, 19.5f);
             view.AddSubview (dateTextlabel);
 
             //Download image view
-            var dowloadImageView = new UIImageView (new RectangleF (cell.Frame.Width - 18 - 16, (view.Frame.Height / 2) - 8, 16, 16)); 
+            var dowloadImageView = new UIImageView (new RectangleF (cellWidth - 18 - 16, (view.Frame.Height / 2) - 8, 16, 16)); 
             dowloadImageView.Tag = DOWNLOAD_IMAGEVIEW_TAG;
             view.AddSubview (dowloadImageView);
 
             //Separator line
-            var separatorLine = Util.AddHorizontalLineView (60, 80, cell.Frame.Width - 60, A.Color_NachoBorderGray);
+            var separatorLine = Util.AddHorizontalLineView (60, 80, cellWidth - 60, A.Color_NachoBorderGray);
             separatorLine.Tag = SEPARATOR_LINE_TAG;
             view.AddSubview (separatorLine);
 
@@ -271,6 +271,8 @@ namespace NachoClient.iOS
         {
             float xOffset = isMultiSelecting ? 34 : 0;
             float yOffset = 0;
+
+            float cellWidth = tableView.Frame.Width;
 
             //Item
             NcFileIndex item;
@@ -331,19 +333,21 @@ namespace NachoClient.iOS
             var cellIconImageView = view.ViewWithTag (ICON_TAG) as UIImageView;
             cellIconImageView.Frame = new RectangleF (18 + xOffset, 28, 24, 24);
 
+
+
             //Text label
             var textLabel = view.ViewWithTag (TEXT_LABEL_TAG) as UILabel; 
-            textLabel.Frame = new RectangleF (60 + xOffset, 11, cell.Frame.Width - xOffset - 112, 19.5f);
+            textLabel.Frame = new RectangleF (60 + xOffset, 11, cellWidth - xOffset - 112, 19.5f);
             yOffset += textLabel.Frame.Height;
 
             //Detail text label
             var detailTextlabel = view.ViewWithTag (DETAIL_TEXT_LABEL_TAG) as UILabel;  
-            detailTextlabel.Frame = new RectangleF (60 + xOffset, 11 + yOffset, cell.Frame.Width - xOffset - 112, 19.5f);
+            detailTextlabel.Frame = new RectangleF (60 + xOffset, 11 + yOffset, cellWidth - xOffset - 112, 19.5f);
             yOffset += detailTextlabel.Frame.Height;
 
             //Date text label
             var dateTextlabel = view.ViewWithTag (DATE_TEXT_LABEL_TAG) as UILabel; 
-            dateTextlabel.Frame = new RectangleF (60 + xOffset, 11 + yOffset, cell.Frame.Width - xOffset - 112, 19.5f);
+            dateTextlabel.Frame = new RectangleF (60 + xOffset, 11 + yOffset, cellWidth - xOffset - 112, 19.5f);
 
             //Download image view
             var downloadImageView = view.ViewWithTag (DOWNLOAD_IMAGEVIEW_TAG) as UIImageView;
@@ -353,9 +357,9 @@ namespace NachoClient.iOS
             var separatorLine = view.ViewWithTag (SEPARATOR_LINE_TAG);
             var totalRow = tableView.NumberOfRowsInSection (indexPath.Section);
             if (totalRow - 1 == indexPath.Row) {
-                separatorLine.Frame = new RectangleF (0, 79.5f, cell.Frame.Width, .5f);
+                separatorLine.Frame = new RectangleF (0, 79.5f, cellWidth, .5f);
             } else {
-                separatorLine.Frame = new RectangleF (60 + xOffset, 79.5f, cell.Frame.Width - 60 - xOffset, .5f);
+                separatorLine.Frame = new RectangleF (60 + xOffset, 79.5f, cellWidth - 60 - xOffset, .5f);
             }
 
             if (null != item) {

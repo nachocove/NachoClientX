@@ -41,6 +41,13 @@ namespace NachoClient.iOS
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
+
+            Console.WriteLine ("UIScreenHeight : " + UIScreen.MainScreen.Bounds.Height.ToString());
+            Console.WriteLine ("UIScreenWidth : " + UIScreen.MainScreen.Bounds.Width.ToString());
+
+            Console.WriteLine ("View.Frame.Height : " + View.Frame.Height.ToString());
+            Console.WriteLine ("View.Frame.Width : " + View.Frame.Width.ToString());
+
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
                 this.NavigationController.NavigationBar.Hidden = true;
@@ -83,6 +90,7 @@ namespace NachoClient.iOS
 
         public void InitializePageViewController ()
         {
+            View.BackgroundColor = A.Color_NachoGreen;
             // Initialize the first page
             HomePageController firstPageController = new HomePageController (0);
             firstPageController.owner = this;   // set up our own "dots" for page indicator
@@ -90,7 +98,7 @@ namespace NachoClient.iOS
             // overlay the page controller and the dismiss button
 
             pageDots = new UIPageControl (); // page indicators; will get updates as datasource updates
-            UIView containerView = new UIView(); // contain pageDots and the dismiss button
+            UIView dotsAndDismissContainerView = new UIView(); // contain pageDots and the dismiss button
             //setup 
             pageDots.Pages = this.TotalPages;
             pageDots.CurrentPage = 0;
@@ -99,9 +107,9 @@ namespace NachoClient.iOS
             pageDots.CurrentPageIndicatorTintColor = UIColor.Black;
 
             //containerView.Frame = new System.Drawing.RectangleF (0, View.Frame.Bottom - 50, View.Frame.Width, 50);
-            containerView.Frame = new System.Drawing.RectangleF (0, this.View.Frame.Bottom-35  , this.View.Frame.Width, 35);
-            containerView.BackgroundColor = UIColor.White;
-            pageDots.Frame = new System.Drawing.RectangleF(20,0, 62, 30);  // relative to containerView
+            dotsAndDismissContainerView.Frame = new System.Drawing.RectangleF (0, this.View.Frame.Bottom-35  , this.View.Frame.Width, 35);
+            dotsAndDismissContainerView.BackgroundColor = UIColor.White;
+            pageDots.Frame = new System.Drawing.RectangleF(20,0, 62, 35);  // relative to containerView
             this.pageController = new UIPageViewController (UIPageViewControllerTransitionStyle.Scroll, 
                 UIPageViewControllerNavigationOrientation.Horizontal, UIPageViewControllerSpineLocation.None);
 
@@ -116,7 +124,7 @@ namespace NachoClient.iOS
             this.View.AddSubview (this.pageController.View);
 
             //Simulates a user dismissing tutorial, or the tutorial finishing on its own
-            closeTutorial = new UIButton (new System.Drawing.RectangleF (View.Frame.Width-145, 0, 130, 30));
+            closeTutorial = new UIButton (new System.Drawing.RectangleF (View.Frame.Width-145, 0, 130, 35));
             closeTutorial.TitleLabel.TextColor = UIColor.Black;
             closeTutorial.SetTitle ("Dismiss", UIControlState.Normal);
             closeTutorial.TitleLabel.TextColor = UIColor.Black;
@@ -129,13 +137,12 @@ namespace NachoClient.iOS
                 LoginHelpers.SetHasViewedTutorial (accountId, true);
                 PerformSegue(StartupViewController.NextSegue(), this);
             };
-            containerView.Add (pageDots);
-            containerView.Add (closeTutorial);
+            dotsAndDismissContainerView.Add (pageDots);
+            dotsAndDismissContainerView.Add (closeTutorial);
 
-            //           UIImageView skipArrow = new UIImageView (UIImage.FromBundle("Content/SlideNav-Arrow@2x"));
-            //            skipArrow.Frame = new System.Drawing.RectangleF (closeTutorial.Frame.Right, closeTutorial.Center.Y - 5, 8, 12);
-            //            containerView.Add (skipArrow);
-            View.Add (containerView);
+            Util.AddHorizontalLine (0, 0, dotsAndDismissContainerView.Frame.Width, A.Color_NachoBorderGray, dotsAndDismissContainerView);
+
+            View.Add (dotsAndDismissContainerView);
         }
 
         /// <summary>

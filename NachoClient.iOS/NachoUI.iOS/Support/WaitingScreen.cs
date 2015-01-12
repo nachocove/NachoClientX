@@ -78,12 +78,12 @@ namespace NachoClient.iOS
             this.AddSubview (spinnerView);
 
             bottomHalfSpinner = new UIImageView (UIImage.FromBundle ("Spinner-1@2x"));
-            bottomHalfSpinner.Frame = new RectangleF (-35, LOWER_SECTION_Y_VAL - 400, SPINNER_WIDTH, SPINNER_HEIGHT);
+            bottomHalfSpinner.Frame = new RectangleF (-35, -180, SPINNER_WIDTH, SPINNER_HEIGHT);
             bottomHalfSpinnerCenter = bottomHalfSpinner.Center;
             spinnerView.AddSubview (bottomHalfSpinner);
 
             topHalfSpinner = new UIImageView (UIImage.FromBundle ("Spinner-1@2x"));
-            topHalfSpinner.Frame = new RectangleF (-35, LOWER_SECTION_Y_VAL - 590, SPINNER_WIDTH, SPINNER_HEIGHT);
+            topHalfSpinner.Frame = new RectangleF (-35, -370, SPINNER_WIDTH, SPINNER_HEIGHT);
             topHalfSpinnerCenter = topHalfSpinner.Center;
             spinnerView.AddSubview (topHalfSpinner);
 
@@ -125,7 +125,7 @@ namespace NachoClient.iOS
             secondTriangleImage.Frame = new RectangleF (40, LOWER_SECTION_Y_VAL + 309, this.Frame.Width - 80, 25);
             this.AddSubview (secondTriangleImage);
 
-            welcomeToLabel = new UILabel (new RectangleF (100, LOWER_SECTION_Y_VAL + 89, 120, 20));
+            welcomeToLabel = new UILabel (new RectangleF (this.Frame.Width / 2 - (120 / 2), LOWER_SECTION_Y_VAL + 89, 120, 20));
             welcomeToLabel.Font = A.Font_AvenirNextRegular17;
             welcomeToLabel.TextColor = UIColor.White;
             welcomeToLabel.Text = "Welcome To";
@@ -133,7 +133,7 @@ namespace NachoClient.iOS
             welcomeToLabel.TextAlignment = UITextAlignment.Center;
             this.AddSubview (welcomeToLabel);
 
-            nachoMailLabel = new UILabel (new RectangleF (70, LOWER_SECTION_Y_VAL + 110, 180, 40));
+            nachoMailLabel = new UILabel (new RectangleF (this.Frame.Width / 2 - (180 / 2), LOWER_SECTION_Y_VAL + 110, 180, 40));
             nachoMailLabel.Font = A.Font_AvenirNextDemiBold30;
             nachoMailLabel.TextColor = UIColor.White;
             nachoMailLabel.Text = "Nacho Mail";

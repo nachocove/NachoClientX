@@ -75,5 +75,7 @@
 	<string>0</string>
 	<key>UIPrerenderedIcon</key>
 	<true/>
+	<key>XSLaunchImageAssets</key>
+	<string>Resources/Images.xcassets/LaunchImage.launchimage</string>
 </dict>
 </plist>
