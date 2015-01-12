@@ -42,12 +42,6 @@ namespace NachoClient.iOS
         {
             base.ViewWillAppear (animated);
 
-            Console.WriteLine ("UIScreenHeight : " + UIScreen.MainScreen.Bounds.Height.ToString());
-            Console.WriteLine ("UIScreenWidth : " + UIScreen.MainScreen.Bounds.Width.ToString());
-
-            Console.WriteLine ("View.Frame.Height : " + View.Frame.Height.ToString());
-            Console.WriteLine ("View.Frame.Width : " + View.Frame.Width.ToString());
-
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
                 this.NavigationController.NavigationBar.Hidden = true;
