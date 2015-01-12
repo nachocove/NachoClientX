@@ -62,8 +62,8 @@ namespace NachoClient.iOS
         protected RelationshipCell editingRelationshipCell;
         protected MiscCell editingMiscCell;
 
-        protected UIBarButtonItem cancelButton = new UIBarButtonItem ();
-        protected UIBarButtonItem doneButton = new UIBarButtonItem ();
+        protected UIBarButtonItem cancelButton;
+        protected UIBarButtonItem doneButton;
 
         protected NachoCore.Utils.ContactsHelper contactHelper = new ContactsHelper ();
 
@@ -190,10 +190,10 @@ namespace NachoClient.iOS
         {
             float internalOffset = 0;
 
+            cancelButton = new UIBarButtonItem ();
             using (var image = UIImage.FromBundle ("icn-close")) {
                 cancelButton.Image = image;
             }
-
             cancelButton.Clicked += CancelButtonClicked;
             cancelButton.TintColor = A.Color_NachoBlue;
             NavigationItem.SetLeftBarButtonItem (cancelButton, true);
@@ -207,6 +207,7 @@ namespace NachoClient.iOS
                 break;
             }
 
+            doneButton = new UIBarButtonItem ();
             doneButton.Title = "Save";
             doneButton.Clicked += DoneButtonClicked;
             NavigationItem.SetRightBarButtonItem (doneButton, true);
