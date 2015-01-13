@@ -591,7 +591,7 @@ namespace NachoClient.iOS
             var notesTextView = (UITextView)View.ViewWithTag (NOTES_TEXT_VIEW_TAG);
             notesTextView.TextColor = A.Color_NachoGreen;
 
-            if (contact.Source != McAbstrItem.ItemSource.ActiveSync) {
+            if (!contact.CanUserEdit ()) {
                 notesTextView.Text = "This contact has not been synced. Adding or editing notes is disabled.";
             } else {
                 McBody contactBody = McBody.QueryById<McBody> (contact.BodyId);
@@ -606,7 +606,6 @@ namespace NachoClient.iOS
                     notesTextView.TextColor = UIColor.Gray;
                 }
             }
-
             LayoutView ();
         }
 
@@ -1200,7 +1199,7 @@ namespace NachoClient.iOS
         {
             NcAssert.True (null != contact);
 
-            if (contact.Source != McAbstrItem.ItemSource.ActiveSync) {
+            if (!contact.CanUserEdit()) {
                 return "This contact has not been synced. Adding or editing notes is disabled.";
             } else {
                 McBody contactBody = McBody.QueryById<McBody> (contact.BodyId);
