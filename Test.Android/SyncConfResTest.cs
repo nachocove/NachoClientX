@@ -34,6 +34,7 @@ namespace Test.iOS
                 var protoControl = ProtoOps.CreateProtoControl (accountId: defaultAccountId);
 
                 var server = McServer.Create (defaultAccountId, CommonMockData.MockUri);
+                server.Insert ();
                 Context = new MockContext (protoControl, server);
             }
 
