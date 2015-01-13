@@ -1177,6 +1177,10 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\LocalNotificationManager.cs">
       <Link>NachoCore\Utils\LocalNotificationManager.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\DraftsViewController.cs" />
+    <Compile Include="NachoUI.iOS\DraftsViewController.designer.cs">
+      <DependentUpon>DraftsViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
