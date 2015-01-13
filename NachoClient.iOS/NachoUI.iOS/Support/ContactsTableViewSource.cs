@@ -46,10 +46,16 @@ namespace NachoClient.iOS
         protected const string UICellReuseIdentifier = "UICell";
         protected const string ContactCellReuseIdentifier = "ContactCell";
 
+        public string searchToken;
+        McAccount account;
+
         public ContactsTableViewSource ()
         {
             owner = null;
             allowSwiping = false;
+            account = NcModel.Instance.Db.Table<McAccount> ()
+                .Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange)
+                .FirstOrDefault ();
         }
 
         public void SetOwner (IContactsTableViewSourceDelegate owner, bool allowSwiping, UISearchDisplayController SearchDisplayController)
@@ -132,6 +138,15 @@ namespace NachoClient.iOS
             }
             int n = (null == recent ? 0 : recent.Count) + (null == contacts ? 0 : contacts.Count);
             return (0 == n);
+        }
+
+        public new void Dispose ()
+        {
+            base.Dispose ();
+            if (null != searchToken) {
+                BackEnd.Instance.Cancel (account.Id, searchToken);
+                searchToken = null;
+            }
         }
 
         /// <summary>
@@ -587,9 +602,20 @@ namespace NachoClient.iOS
         /// <returns><c>true</c>, if search results are updated, <c>false</c> otherwise.</returns>
         /// <param name="forSearchOption">Index of the selected tab.</param>
         /// <param name="forSearchString">The prefix string to search for.</param>
-        public bool UpdateSearchResults (int forSearchOption, string forSearchString)
+        /// <param name="doGalSearch">True if it should issue a GAL search as well</param>.
+        public bool UpdateSearchResults (int forSearchOption, string forSearchString, bool doGalSearch = true)
         {
             NachoCore.Utils.NcAbate.HighPriority ("ContactTableViewSource UpdateSearchResults");
+            if ((null != account) && doGalSearch) {
+                // Issue a GAL search. The status indication handler will update the search results
+                // (with doGalSearch = false) to reflect potential matches from GAL.
+                if (String.IsNullOrEmpty (searchToken)) {
+                    searchToken = BackEnd.Instance.StartSearchContactsReq (account.Id, forSearchString, null);
+                } else {
+                    BackEnd.Instance.SearchContactsReq (account.Id, forSearchString, null, searchToken);
+                }
+            }
+            // We immeidately display matches from our db.
             var results = McContact.SearchAllContactItems (forSearchString);
             SetSearchResults (results);
             NachoCore.Utils.NcAbate.RegularPriority ("ContactTableViewSource UpdateSearchResults");
