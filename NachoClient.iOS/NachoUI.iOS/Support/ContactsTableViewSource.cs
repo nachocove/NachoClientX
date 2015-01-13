@@ -13,7 +13,7 @@ using System.Text.RegularExpressions;
 
 namespace NachoClient.iOS
 {
-    public class ContactsTableViewSource : UITableViewSource, IDisposable
+    public class ContactsTableViewSource : UITableViewSource
     {
         protected const float HORIZONTAL_INDENT = 65;
 
@@ -605,10 +605,12 @@ namespace NachoClient.iOS
         {
             NachoCore.Utils.NcAbate.HighPriority ("ContactTableViewSource UpdateSearchResults");
             // Search GAL
-            if (String.IsNullOrEmpty (searchToken)) {
-                searchToken = BackEnd.Instance.StartSearchContactsReq (account.Id, forSearchString, null);
-            } else {
-                BackEnd.Instance.SearchContactsReq (account.Id, forSearchString, null, searchToken);
+            if (null != account) {
+                if (String.IsNullOrEmpty (searchToken)) {
+                    searchToken = BackEnd.Instance.StartSearchContactsReq (account.Id, forSearchString, null);
+                } else {
+                    BackEnd.Instance.SearchContactsReq (account.Id, forSearchString, null, searchToken);
+                }
             }
             var results = McContact.SearchAllContactItems (forSearchString);
             SetSearchResults (results);
