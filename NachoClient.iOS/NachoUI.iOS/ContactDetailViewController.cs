@@ -305,7 +305,7 @@ namespace NachoClient.iOS
             using (var image = UIImage.FromBundle ("contacts-call")) {
                 callIcon = new UIImageView (image);
             }
-            callIcon.Frame = new RectangleF (40, 11, callIcon.Frame.Height, callIcon.Frame.Width);
+            callIcon.Frame = new RectangleF (callView.Frame.Width / 3, 11, callIcon.Frame.Height, callIcon.Frame.Width);
             callView.AddSubview (callIcon);
 
             UILabel callLabel = new UILabel (new RectangleF (callIcon.Frame.Right + 10, 15, 50, 15));
@@ -316,7 +316,7 @@ namespace NachoClient.iOS
             callLabel.SizeToFit ();
             callView.AddSubview (callLabel);
 
-            UIView emailView = new UIView (new RectangleF (headerView.Frame.Width / 2, initialsCircleLabel.Frame.Bottom + PADDING, headerView.Frame.Width, headerView.Frame.Height - (initialsCircleLabel.Frame.Bottom + PADDING)));
+            UIView emailView = new UIView (new RectangleF (headerView.Frame.Width / 2, initialsCircleLabel.Frame.Bottom + PADDING, headerView.Frame.Width / 2, headerView.Frame.Height - (initialsCircleLabel.Frame.Bottom + PADDING)));
             emailView.Tag = HEADER_EMAIL_VIEW_TAG;
             emailView.BackgroundColor = UIColor.Clear;
             headerEmailViewTapGesture = new UITapGestureRecognizer ();
@@ -328,7 +328,7 @@ namespace NachoClient.iOS
             using (var image = UIImage.FromBundle ("contacts-email")) {
                 emailIcon = new UIImageView (image);
             }
-            emailIcon.Frame = new RectangleF (35, 11, emailIcon.Frame.Height, emailIcon.Frame.Width);
+            emailIcon.Frame = new RectangleF (emailView.Frame.Width / 2 - 40, 11, emailIcon.Frame.Height, emailIcon.Frame.Width);
             emailView.AddSubview (emailIcon);
 
             UILabel emailLabel = new UILabel (new RectangleF (emailIcon.Frame.Right + 10, 15, 50, 15));
@@ -591,14 +591,14 @@ namespace NachoClient.iOS
             var notesTextView = (UITextView)View.ViewWithTag (NOTES_TEXT_VIEW_TAG);
             notesTextView.TextColor = A.Color_NachoGreen;
 
-            if (contact.Source != McAbstrItem.ItemSource.ActiveSync) {
+            if (!contact.CanUserEdit ()) {
                 notesTextView.Text = "This contact has not been synced. Adding or editing notes is disabled.";
             } else {
                 McBody contactBody = McBody.QueryById<McBody> (contact.BodyId);
                 if (null != contactBody) {
                     notesTextView.Text = contactBody.GetContentsString ();
                 }
-                if(string.IsNullOrEmpty(notesTextView.Text)){
+                if (string.IsNullOrEmpty (notesTextView.Text)) {
                     notesTextView.Text = "You have not entered any " +
                         "notes for this contact. You can add and " +
                         "edit notes by tapping the edit button in the top" +
@@ -606,7 +606,6 @@ namespace NachoClient.iOS
                     notesTextView.TextColor = UIColor.Gray;
                 }
             }
-
             LayoutView ();
         }
 
@@ -1200,7 +1199,7 @@ namespace NachoClient.iOS
         {
             NcAssert.True (null != contact);
 
-            if (contact.Source != McAbstrItem.ItemSource.ActiveSync) {
+            if (!contact.CanUserEdit()) {
                 return "This contact has not been synced. Adding or editing notes is disabled.";
             } else {
                 McBody contactBody = McBody.QueryById<McBody> (contact.BodyId);

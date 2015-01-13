@@ -1390,7 +1390,8 @@ namespace NachoClient.iOS
             // BodyView needs to know when scrolling happens, so it can do its magic and make sure
             // the correct stuff is visible.
             descriptionView.ScrollingAdjustment (new PointF (
-                scrollView.ContentOffset.X - descriptionView.Frame.X, scrollView.ContentOffset.Y - descriptionView.Frame.Y));
+                scrollView.ContentOffset.X - (eventCardView.Frame.X + descriptionView.Frame.X),
+                scrollView.ContentOffset.Y - (eventCardView.Frame.Y + descriptionView.Frame.Y)));
         }
 
         private void AttendeeTapGestureRecognizerTap ()

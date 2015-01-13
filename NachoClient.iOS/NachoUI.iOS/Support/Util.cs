@@ -600,6 +600,15 @@ namespace NachoClient
             return names [0].ToUpper ();
         }
 
+        public static string GetImage (string image)
+        {
+            if (UIScreen.MainScreen.Bounds.Height > 600 && UIScreen.MainScreen.Bounds.Height < 700) {
+                return image + "-667h";
+            } else {
+                return image;
+            }
+        }
+
         public static UIImage MakeCheckmark (UIColor checkColor)
         {
             var size = new SizeF (15, 15);

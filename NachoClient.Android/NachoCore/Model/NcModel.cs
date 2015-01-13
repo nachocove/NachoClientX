@@ -352,7 +352,7 @@ namespace NachoCore.Model
                     }
                      */
                 }
-            }, null, 4000, 1000);
+            }, null, 10000, 1000);
             CheckPointTimer.Stfu = true;
         }
 

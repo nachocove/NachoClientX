@@ -25,9 +25,9 @@ namespace NachoClient.iOS
         protected bool textFieldsEditable = false;
 
         protected const float HORIZONTAL_PADDING = 25f;
-        protected const float LABEL_WIDTH = 90f;
         protected const float SPACER = 15f;
         protected const float LABEL_VERTICAL_SPACER = 17f;
+        protected const float LABEL_WIDTH = 90f;
         protected const float LABEL_HEIGHT = 17f;
         protected const float TEXTFIELD_HEIGHT = 50f;
 
@@ -163,7 +163,7 @@ namespace NachoClient.iOS
             nameLabel.Text = "Name";
             settingsView.Add (nameLabel);
 
-            UITextField accountNameTextField = new UITextField (new RectangleF (nameLabel.Frame.Right + SPACER, yOffset, 171, TEXTFIELD_HEIGHT));
+            UITextField accountNameTextField = new UITextField (new RectangleF (nameLabel.Frame.Right + SPACER, yOffset, View.Frame.Width - 149, TEXTFIELD_HEIGHT));
             accountNameTextField.Placeholder = "Exchange";
             accountNameTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
             accountNameTextField.Font = TEXT_FIELD_FONT;
@@ -176,14 +176,14 @@ namespace NachoClient.iOS
 
             Util.AddHorizontalLine (HORIZONTAL_PADDING, yOffset, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, settingsView);
 
-            UILabel usernameLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset + LABEL_VERTICAL_SPACER, LABEL_WIDTH, LABEL_HEIGHT));
+            UILabel usernameLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset + LABEL_VERTICAL_SPACER, nameLabel.Frame.Width, LABEL_HEIGHT));
             usernameLabel.Font = A.Font_AvenirNextRegular14;
             usernameLabel.TextAlignment = UITextAlignment.Left;
             usernameLabel.TextColor = LABEL_TEXT_COLOR;
             usernameLabel.Text = "Username";
             settingsView.Add (usernameLabel);
 
-            UITextField usernameTextField = new UITextField (new RectangleF (nameLabel.Frame.Right + SPACER, yOffset, 171, TEXTFIELD_HEIGHT));
+            UITextField usernameTextField = new UITextField (new RectangleF (nameLabel.Frame.Right + SPACER, yOffset, accountNameTextField.Frame.Width, TEXTFIELD_HEIGHT));
             usernameTextField.Placeholder = "username";
             usernameTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
             usernameTextField.Font = TEXT_FIELD_FONT;
@@ -196,14 +196,14 @@ namespace NachoClient.iOS
 
             Util.AddHorizontalLine (HORIZONTAL_PADDING, yOffset, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, settingsView);
 
-            UILabel passwordLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset + LABEL_VERTICAL_SPACER, LABEL_WIDTH, LABEL_HEIGHT));
+            UILabel passwordLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset + LABEL_VERTICAL_SPACER, nameLabel.Frame.Width, LABEL_HEIGHT));
             passwordLabel.Font = A.Font_AvenirNextRegular14;
             passwordLabel.TextAlignment = UITextAlignment.Left;
             passwordLabel.TextColor = LABEL_TEXT_COLOR;
             passwordLabel.Text = "Password";
             settingsView.Add (passwordLabel);
 
-            UITextField passwordTextField = new UITextField (new RectangleF (nameLabel.Frame.Right + SPACER, yOffset, 171, TEXTFIELD_HEIGHT));
+            UITextField passwordTextField = new UITextField (new RectangleF (nameLabel.Frame.Right + SPACER, yOffset, accountNameTextField.Frame.Width, TEXTFIELD_HEIGHT));
             passwordTextField.Placeholder = "********";
             passwordTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
             passwordTextField.Font = TEXT_FIELD_FONT;
@@ -218,14 +218,14 @@ namespace NachoClient.iOS
 
             Util.AddHorizontalLine (HORIZONTAL_PADDING, yOffset, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, settingsView);
 
-            UILabel emailLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset + LABEL_VERTICAL_SPACER, LABEL_WIDTH, LABEL_HEIGHT));
+            UILabel emailLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset + LABEL_VERTICAL_SPACER, nameLabel.Frame.Width, LABEL_HEIGHT));
             emailLabel.Font = A.Font_AvenirNextRegular14;
             emailLabel.TextAlignment = UITextAlignment.Left;
             emailLabel.TextColor = LABEL_TEXT_COLOR;
             emailLabel.Text = "Email";
             settingsView.Add (emailLabel);
 
-            UITextField emailTextField = new UITextField (new RectangleF (nameLabel.Frame.Right + SPACER, yOffset, 171, TEXTFIELD_HEIGHT));
+            UITextField emailTextField = new UITextField (new RectangleF (nameLabel.Frame.Right + SPACER, yOffset, accountNameTextField.Frame.Width, TEXTFIELD_HEIGHT));
             emailTextField.Placeholder = "zachq@nachocove.com";
             emailTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
             emailTextField.Font = TEXT_FIELD_FONT;
@@ -238,14 +238,14 @@ namespace NachoClient.iOS
 
             Util.AddHorizontalLine (HORIZONTAL_PADDING, yOffset, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, settingsView);
 
-            UILabel mailserverLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset + LABEL_VERTICAL_SPACER, LABEL_WIDTH, LABEL_HEIGHT));
+            UILabel mailserverLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset + LABEL_VERTICAL_SPACER, nameLabel.Frame.Width, LABEL_HEIGHT));
             mailserverLabel.Font = A.Font_AvenirNextRegular14;
             mailserverLabel.TextAlignment = UITextAlignment.Left;
             mailserverLabel.TextColor = LABEL_TEXT_COLOR;
             mailserverLabel.Text = "Mail Server";
             settingsView.Add (mailserverLabel);
 
-            UITextField mailserverTextField = new UITextField (new RectangleF (nameLabel.Frame.Right + SPACER, yOffset, 171, TEXTFIELD_HEIGHT));
+            UITextField mailserverTextField = new UITextField (new RectangleF (nameLabel.Frame.Right + SPACER, yOffset, accountNameTextField.Frame.Width, TEXTFIELD_HEIGHT));
             mailserverTextField.Placeholder = "outlook.office365.com";
             mailserverTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
             mailserverTextField.Font = TEXT_FIELD_FONT;
@@ -258,7 +258,7 @@ namespace NachoClient.iOS
 
             Util.AddHorizontalLine (HORIZONTAL_PADDING, yOffset, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, settingsView);
 
-            UILabel conferencecallLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset + 3f, LABEL_WIDTH, LABEL_HEIGHT + 25));
+            UILabel conferencecallLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset + 3f, nameLabel.Frame.Width, LABEL_HEIGHT + 25));
 
             conferencecallLabel.Font = A.Font_AvenirNextRegular14;
             conferencecallLabel.TextAlignment = UITextAlignment.Left;
@@ -269,7 +269,7 @@ namespace NachoClient.iOS
 
             settingsView.Add (conferencecallLabel);
 
-            UITextField conferencecallTextField = new UITextField (new RectangleF (nameLabel.Frame.Right + SPACER, yOffset, 171, TEXTFIELD_HEIGHT));
+            UITextField conferencecallTextField = new UITextField (new RectangleF (nameLabel.Frame.Right + SPACER, yOffset, accountNameTextField.Frame.Width, TEXTFIELD_HEIGHT));
             conferencecallTextField.Placeholder = "1928342-3";
             conferencecallTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
             conferencecallTextField.Font = TEXT_FIELD_FONT;
@@ -283,14 +283,14 @@ namespace NachoClient.iOS
 
             Util.AddHorizontalLine (HORIZONTAL_PADDING, yOffset, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, settingsView);
 
-            UILabel signatureLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset + LABEL_VERTICAL_SPACER, LABEL_WIDTH, LABEL_HEIGHT));
+            UILabel signatureLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset + LABEL_VERTICAL_SPACER, nameLabel.Frame.Width, LABEL_HEIGHT));
             signatureLabel.Font = A.Font_AvenirNextRegular14;
             signatureLabel.TextAlignment = UITextAlignment.Left;
             signatureLabel.TextColor = LABEL_TEXT_COLOR;
             signatureLabel.Text = "Signature";
             settingsView.Add (signatureLabel);
 
-            UILabel displaySignatureLabel = new UILabel (new RectangleF (signatureLabel.Frame.Right + SPACER, yOffset + LABEL_VERTICAL_SPACER, 171 - 15, LABEL_HEIGHT));
+            UILabel displaySignatureLabel = new UILabel (new RectangleF (signatureLabel.Frame.Right + SPACER, yOffset + LABEL_VERTICAL_SPACER, accountNameTextField.Frame.Width - 15, LABEL_HEIGHT));
             displaySignatureLabel.TextColor = TEXT_FIELD_TEXT_COLOR;
             displaySignatureLabel.Font = TEXT_FIELD_FONT;
             displaySignatureLabel.TextAlignment = UITextAlignment.Left;
