@@ -464,7 +464,7 @@ namespace NachoCore.Brain
                 // as it is a waste of time.
                 if (NcApplication.ExecutionContextEnum.QuickSync != NcApplication.Instance.ExecutionContext) {
                     // Defer the processing until Nacho Nov view shows up.
-                    NcTask.CancelableSleep (4000);
+                    NcTask.CancelableSleep (10000);
                     McEmailMessage.StartTimeVariance (EventQueue.Token);
                     tvStarted = true;
                 }
