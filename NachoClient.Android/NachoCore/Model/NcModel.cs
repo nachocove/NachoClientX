@@ -343,7 +343,9 @@ namespace NachoCore.Model
 //                        }
                     }
                     walCheckpointCount = (walCheckpointCount + 1) & 0xfff;
-                    thisDb.Query<CheckpointResult> (checkpointCmd);
+                    lock (WriteNTransLockObj) {
+                        thisDb.Query<CheckpointResult> (checkpointCmd);
+                    }
                     /*
                      * TODO: Try using the C interface. It doesn't seem that the log/checkpointed
                      * values always make sense as they don't float down to zero. This is the case 
