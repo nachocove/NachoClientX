@@ -719,6 +719,14 @@ namespace NachoCore.Utils
             RecordSupport (dict);
         }
 
+        public static void StartService ()
+        {
+            #if __IOS__
+            // FIXME - Add AWS SDK for Android so we can actually run telemetry for Android.
+            SharedInstance.Start <TelemetryBEAWS> ();
+            #endif
+        }
+
         public void Start<T> () where T : ITelemetryBE, new()
         {
             if (!ENABLED) {
@@ -728,7 +736,7 @@ namespace NachoCore.Utils
                 NcTask.Run (() => {
                     Token = NcTask.Cts.Token;
                     Process<T> ();
-                }, "Telemetry");
+                }, "Telemetry", false, true);
             }
         }
 

@@ -14,6 +14,7 @@ namespace NachoCore.Utils
         private static ConcurrentDictionary<WeakReference,string> TaskMap;
         private static int TaskId = 0;
         public static CancellationTokenSource Cts = new CancellationTokenSource ();
+        private static object LockObj = new object ();
 
         public static void StartService ()
         {
@@ -44,33 +45,52 @@ namespace NachoCore.Utils
 
         public static Task Run (Action action, string name)
         {
-            return Run (action, name, false);
+            return Run (action, name, false, false);
         }
 
         public static Task Run (Action action, string name, bool stfu)
         {
+            return Run (action, name, stfu, false);
+        }
+
+        public static Task Run (Action action, string name, bool stfu, bool isUnique)
+        {
             string dummy = null;
             var taskId = Interlocked.Increment (ref TaskId);
             var taskName = name + taskId.ToString ();
-            WeakReference taskRef = null;
-            var task = Task.Run (delegate {
-                if (!stfu) {
-                    Log.Info (Log.LOG_SYS, "NcTask {0} started.", taskName);
+            lock (LockObj) {
+                if (isUnique) {
+                    // Make sure that there is not another task by the same name already running
+                    // No reverse mapping just walk. Should be few enough tasks that walking is not a problem.
+                    foreach (var pair in TaskMap) {
+                        var taksname = pair.Value;
+                        if (taskName == name) {
+                            Log.Info (Log.LOG_SYS, "NcTask {0} already running", taskName);
+                            return null; // an entry exists
+                        }
+                    }
                 }
-                action.Invoke ();
-                if (!stfu) {
-                    Log.Info (Log.LOG_SYS, "NcTask {0} completed.", taskName);
+
+                WeakReference taskRef = null;
+                var task = Task.Run (delegate {
+                    if (!stfu) {
+                        Log.Info (Log.LOG_SYS, "NcTask {0} started.", taskName);
+                    }
+                    action.Invoke ();
+                    if (!stfu) {
+                        Log.Info (Log.LOG_SYS, "NcTask {0} completed.", taskName);
+                    }
+                }, Cts.Token);
+                taskRef = new WeakReference (task);
+                if (!TaskMap.TryAdd (taskRef, taskName)) {
+                    Log.Error (Log.LOG_SYS, "Task already added to TaskMap ({0}).", taskName);
                 }
-            }, Cts.Token);
-            taskRef = new WeakReference (task);
-            if (!TaskMap.TryAdd (taskRef, taskName)) {
-                Log.Error (Log.LOG_SYS, "Task already added to TaskMap ({0}).", taskName);
+                return task.ContinueWith (delegate {
+                    if (!TaskMap.TryRemove (taskRef, out dummy)) {
+                        Log.Error (Log.LOG_SYS, "Task already removed from TaskMap ({0}).", taskName);
+                    }
+                });
             }
-            return task.ContinueWith (delegate {
-                if (!TaskMap.TryRemove (taskRef, out dummy)) {
-                    Log.Error (Log.LOG_SYS, "Task already removed from TaskMap ({0}).", taskName);
-                }
-            });
         }
 
         public static void StopService ()
