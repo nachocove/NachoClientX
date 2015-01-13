@@ -146,7 +146,7 @@ namespace NachoClient.iOS
                 destinationController.contact = c;
                 return;
             }
- 
+
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }
@@ -411,7 +411,8 @@ namespace NachoClient.iOS
                     emptyListLabel.Text = "No attendees";
                 }
                 emptyListLabel.SizeToFit ();
-                emptyListLabel.Frame = new RectangleF (0, 0, addAttendeeView.Frame.Width, addAttendeeView.Frame.Height - 64);
+                emptyListLabel.Frame = new RectangleF (0, 0, 320 - 2 * A.Card_Horizontal_Indent, addAttendeeView.Frame.Height - 64);
+                emptyListLabel.Center = new PointF (addAttendeeView.Frame.Width / 2, addAttendeeView.Frame.Height / 2);
                 iconIv.Frame = new RectangleF (emptyListLabel.Center.X + 3, emptyListLabel.Center.Y + 21, 16, 16);
             } else {
                 AttendeeSource.SetAttendeeList (this.AttendeeList);
@@ -440,7 +441,9 @@ namespace NachoClient.iOS
                     emptyListLabel.Text = "No required attendees";
                 }
                 emptyListLabel.SizeToFit ();
-                emptyListLabel.Frame = new RectangleF (0, 0, addAttendeeView.Frame.Width, addAttendeeView.Frame.Height - 64);
+                emptyListLabel.Frame = new RectangleF (0, 0, 320 - 2 * A.Card_Horizontal_Indent, addAttendeeView.Frame.Height - 64);
+                emptyListLabel.Center = new PointF (addAttendeeView.Frame.Width / 2, addAttendeeView.Frame.Height / 2);
+                iconIv.Frame = new RectangleF (emptyListLabel.Center.X + 3, emptyListLabel.Center.Y + 21, 16, 16);
             } else {
                 AttendeeSource.SetAttendeeList (this.RequiredList);
                 tableView.ReloadData ();
@@ -466,7 +469,9 @@ namespace NachoClient.iOS
                     emptyListLabel.Text = "No optional attendees";
                 }
                 emptyListLabel.SizeToFit ();
-                emptyListLabel.Frame = new RectangleF (0, 0, addAttendeeView.Frame.Width, addAttendeeView.Frame.Height - 64);
+                emptyListLabel.Frame = new RectangleF (0, 0, 320 - 2 * A.Card_Horizontal_Indent, addAttendeeView.Frame.Height - 64);
+                emptyListLabel.Center = new PointF (addAttendeeView.Frame.Width / 2, addAttendeeView.Frame.Height / 2);
+                iconIv.Frame = new RectangleF (emptyListLabel.Center.X + 3, emptyListLabel.Center.Y + 21, 16, 16);
             } else {
                 AttendeeSource.SetAttendeeList (this.OptionalList);
                 tableView.ReloadData ();

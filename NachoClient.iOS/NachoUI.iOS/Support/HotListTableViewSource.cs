@@ -50,6 +50,11 @@ namespace NachoClient.iOS
         protected const int TOOLBAR_TAG = 99109;
         protected const int USER_MORE_TAG = 99110;
         protected const int UNREAD_IMAGE_TAG = 99111;
+        protected const int CARD_VIEW_TAG = 99112;
+
+        protected const int NO_MESSAGES_VIEW = 99113;
+        protected const int NO_MESSAGES_LABEL = 99114;
+        protected const int NO_MESSAGES_ICON = 99115;
 
         public HotListTableViewSource (IMessageTableViewSourceDelegate owner, INachoEmailMessages messageThreads)
         {
@@ -110,7 +115,7 @@ namespace NachoClient.iOS
             var cardFrame = new RectangleF (7, 10, tableView.Frame.Width - 15.0f, tableView.Frame.Height - 30);
             var cardView = new UIView (cardFrame);
             cardView.BackgroundColor = A.Color_NachoBackgroundGray;
-
+            cardView.Tag = CARD_VIEW_TAG;
             cell.ContentView.AddSubview (cardView);
 
             var frame = new RectangleF (0, 0, tableView.Frame.Width - 15.0f, tableView.Frame.Height - 40);
@@ -199,6 +204,41 @@ namespace NachoClient.iOS
             moreImageView.Layer.MasksToBounds = true;
             view.AddSubview (moreImageView);
 
+
+            //No hot messages ui components
+            var noMessagesView = new UIView (frame);
+            noMessagesView.BackgroundColor = UIColor.White;
+            noMessagesView.AutoresizingMask = UIViewAutoresizing.None;
+            noMessagesView.ContentMode = UIViewContentMode.Center;
+            noMessagesView.Layer.CornerRadius = A.Card_Corner_Radius;
+            noMessagesView.Layer.MasksToBounds = true;
+            noMessagesView.Layer.BorderColor = A.Card_Border_Color;
+            noMessagesView.Layer.BorderWidth = A.Card_Border_Width;
+            noMessagesView.Tag = NO_MESSAGES_VIEW;
+
+            cardView.AddSubview (noMessagesView);
+
+            var emptyLabel = new UILabel ();
+            emptyLabel.TextAlignment = UITextAlignment.Center;
+            emptyLabel.Font = A.Font_AvenirNextDemiBold14;
+            emptyLabel.TextColor = A.Color_NachoGreen;
+            emptyLabel.Lines = 0;
+            emptyLabel.LineBreakMode = UILineBreakMode.WordWrap;
+            emptyLabel.Text = "You have no hot messages yet. \n \n Start adding hot messages by tapping on the          icon in your mail.";
+            emptyLabel.SizeToFit ();
+            emptyLabel.Frame = new RectangleF (0, 0, 320 - 2 * A.Card_Horizontal_Indent, cardView.Frame.Height - 64);
+            emptyLabel.Center = noMessagesView.Center;
+            emptyLabel.Tag = NO_MESSAGES_LABEL;
+
+            noMessagesView.AddSubview (emptyLabel);
+
+            var iconIv = new UIImageView ();
+            iconIv.Image = UIImage.FromBundle ("email-not-hot");
+            iconIv.Frame = new RectangleF (emptyLabel.Center.X - 54, emptyLabel.Center.Y + 21, 20, 20);
+            iconIv.Tag = NO_MESSAGES_ICON;
+
+            noMessagesView.AddSubview (iconIv);
+
             return cell;
         }
 
@@ -209,6 +249,9 @@ namespace NachoClient.iOS
             }
             cell.TextLabel.Hidden = false;
             cell.TextLabel.Text = "Information temporarily unavailable";
+            cell.TextLabel.TextAlignment = UITextAlignment.Center;
+            cell.TextLabel.Font = A.Font_AvenirNextDemiBold14;
+            cell.TextLabel.TextColor = A.Color_NachoGreen;
             cell.TextLabel.ContentMode = UIViewContentMode.Center;
         }
 
@@ -217,9 +260,12 @@ namespace NachoClient.iOS
             foreach (var v in cell.ContentView.Subviews) {
                 v.Hidden = true;
             }
-            cell.TextLabel.Hidden = false;
-            cell.TextLabel.Text = "No Hot Messages";
-            cell.TextLabel.ContentMode = UIViewContentMode.Center;
+
+            cell.ContentView.Hidden = false;
+            cell.ContentView.ViewWithTag (CARD_VIEW_TAG).Hidden = false;
+            cell.ContentView.ViewWithTag (NO_MESSAGES_VIEW).Hidden = false;
+            cell.ContentView.ViewWithTag (NO_MESSAGES_LABEL).Hidden = false;
+            cell.ContentView.ViewWithTag (NO_MESSAGES_ICON).Hidden = false;
         }
 
         /// <summary>
@@ -256,6 +302,10 @@ namespace NachoClient.iOS
                 v.Hidden = false;
             }
 
+            cell.ContentView.ViewWithTag (NO_MESSAGES_VIEW).Hidden = true;
+            cell.ContentView.ViewWithTag (NO_MESSAGES_LABEL).Hidden = true;
+            cell.ContentView.ViewWithTag (NO_MESSAGES_ICON).Hidden = true;
+
             var cellWidth = tableView.Frame.Width;
 
             if (!scrolling) {
@@ -280,7 +330,7 @@ namespace NachoClient.iOS
                     throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action tag {0}", tag));
                 }
             };
-                
+
             view.OnSwipe = (SwipeActionView activeView, SwipeActionView.SwipeState state) => {
                 switch (state) {
                 case SwipeActionView.SwipeState.SWIPE_BEGIN:
@@ -344,7 +394,7 @@ namespace NachoClient.iOS
                 userLabelView.BackgroundColor = Util.ColorForUser (message.cachedFromColor);
             }
 
-            var unreadMessageView = (UIImageView) cell.ContentView.ViewWithTag (UNREAD_IMAGE_TAG);
+            var unreadMessageView = (UIImageView)cell.ContentView.ViewWithTag (UNREAD_IMAGE_TAG);
             unreadMessageView.Hidden = message.IsRead;
 
             var messageHeaderView = view.ViewWithTag (MESSAGE_HEADER_TAG) as MessageHeaderView;
@@ -561,7 +611,7 @@ namespace NachoClient.iOS
                 targetContentOffset.Y = tableView.RectForRowAtIndexPath (pathForTargetTopCell).Location.Y - 10;
                 return;
             }
-                
+
             var nextRow = pathForTargetTopCell.Row + 1;
             if (nextRow >= RowsInSection (tableView, pathForTargetTopCell.Section)) {
                 return;
@@ -576,7 +626,7 @@ namespace NachoClient.iOS
 
         public void onLinkSelected (NSUrl url)
         {
-            if(EmailHelper.IsMailToURL(url.AbsoluteString)) {
+            if (EmailHelper.IsMailToURL (url.AbsoluteString)) {
                 owner.PerformSegueForDelegate ("SegueToMailTo", new SegueHolder (url.AbsoluteString));
             } else {
                 UIApplication.SharedApplication.OpenUrl (url);
