@@ -126,9 +126,14 @@ namespace NachoClient.iOS
         public void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
-            if ((NcResult.SubKindEnum.Info_ContactSetChanged == s.Status.SubKind) ||
-                (NcResult.SubKindEnum.Info_SearchCommandSucceeded == s.Status.SubKind)) {
+            if (NcResult.SubKindEnum.Info_ContactSetChanged == s.Status.SubKind) {
                 LoadContacts ();
+            }
+            if (NcResult.SubKindEnum.Info_SearchCommandSucceeded == s.Status.SubKind) {
+                LoadContacts ();
+                var sb = SearchDisplayController.SearchBar;
+                contactTableViewSource.UpdateSearchResults (sb.SelectedScopeButtonIndex, sb.Text, false);
+                SearchDisplayController.SearchResultsTableView.ReloadData ();
             }
         }
 

@@ -601,17 +601,20 @@ namespace NachoClient.iOS
         /// <returns><c>true</c>, if search results are updated, <c>false</c> otherwise.</returns>
         /// <param name="forSearchOption">Index of the selected tab.</param>
         /// <param name="forSearchString">The prefix string to search for.</param>
-        public bool UpdateSearchResults (int forSearchOption, string forSearchString)
+        /// <param name="doGalSearch">True if it should issue a GAL search as well</param>.
+        public bool UpdateSearchResults (int forSearchOption, string forSearchString, bool doGalSearch = true)
         {
             NachoCore.Utils.NcAbate.HighPriority ("ContactTableViewSource UpdateSearchResults");
-            // Search GAL
-            if (null != account) {
+            if ((null != account) && doGalSearch) {
+                // Issue a GAL search. The status indication handler will update the search results
+                // (with doGalSearch = false) to reflect potential matches from GAL.
                 if (String.IsNullOrEmpty (searchToken)) {
                     searchToken = BackEnd.Instance.StartSearchContactsReq (account.Id, forSearchString, null);
                 } else {
                     BackEnd.Instance.SearchContactsReq (account.Id, forSearchString, null, searchToken);
                 }
             }
+            // We immeidately display matches from our db.
             var results = McContact.SearchAllContactItems (forSearchString);
             SetSearchResults (results);
             NachoCore.Utils.NcAbate.RegularPriority ("ContactTableViewSource UpdateSearchResults");
