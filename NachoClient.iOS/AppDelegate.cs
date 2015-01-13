@@ -516,6 +516,14 @@ namespace NachoClient.iOS
                 break;
             }
         }
+            
+        /// Status bar height can change when the user is on a call or using navigation
+        public override void ChangedStatusBarFrame (UIApplication application, RectangleF oldStatusBarFrame)
+        {
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_StatusBarHeightChanged),
+            });
+        }
 
         protected void CompletePerformFetchWithoutShutdown ()
         {

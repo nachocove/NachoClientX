@@ -243,6 +243,7 @@ namespace NachoClient.iOS
             McContact contact = ContactFromIndexPath (tableView, indexPath);
             owner.ContactSelectedCallback (contact);
             DumpInfo (contact);
+            tableView.DeselectRow (indexPath, true);
         }
 
         public override void AccessoryButtonTapped (UITableView tableView, NSIndexPath indexPath)
@@ -333,7 +334,7 @@ namespace NachoClient.iOS
 
             cell.Layer.CornerRadius = 15;
             cell.Layer.MasksToBounds = true;
-            cell.SelectionStyle = UITableViewCellSelectionStyle.None;
+            cell.SelectionStyle = UITableViewCellSelectionStyle.Default;
 
             var view = new SwipeActionView (new RectangleF (0, 0, tableView.Frame.Width, ROW_HEIGHT));
             view.BackgroundColor = UIColor.White;
