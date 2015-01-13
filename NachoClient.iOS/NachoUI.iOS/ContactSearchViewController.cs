@@ -46,6 +46,8 @@ namespace NachoClient.iOS
         public void Cleanup ()
         {
             this.owner = null;
+            this.contactTableViewSource.Dispose ();
+            this.contactTableViewSource = null;
         }
 
         public override void ViewDidLoad ()
@@ -93,7 +95,8 @@ namespace NachoClient.iOS
         public void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
-            if (NcResult.SubKindEnum.Info_ContactSetChanged == s.Status.SubKind) {
+            if ((NcResult.SubKindEnum.Info_ContactSetChanged == s.Status.SubKind) ||
+                (NcResult.SubKindEnum.Info_SearchCommandSucceeded == s.Status.SubKind)) {
                 LoadContacts ();
             }
         }
