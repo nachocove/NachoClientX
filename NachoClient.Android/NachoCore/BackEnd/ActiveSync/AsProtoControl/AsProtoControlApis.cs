@@ -181,7 +181,6 @@ namespace NachoCore.ActiveSync
                 }
                 token = pending.Token;
             });
-
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCSENDCAL");
             }, "SendEmailCmd(cal)");
@@ -213,7 +212,6 @@ namespace NachoCore.ActiveSync
                 pending.Insert ();
                 token = pending.Token;
             });
-
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCSMF");
             }, "SmartEmailCmd");
@@ -273,7 +271,6 @@ namespace NachoCore.ActiveSync
                 token = pending.Token;
                 emailMessage.Delete ();
             });
-
             if (null != emailMessage && null != token) {
                 Log.Info (Log.LOG_AS, "DeleteEmailCmd: Id {0}/ServerId {1} => Token {2}",
                     emailMessage.Id, emailMessage.ServerId, token);
@@ -562,7 +559,6 @@ namespace NachoCore.ActiveSync
                 }
                 pending.Insert ();
                 token = pending.Token;
-
                 att.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Partial);
                 att.Update ();
             });
@@ -952,12 +948,13 @@ namespace NachoCore.ActiveSync
         private string RespondItemCmd<T> (int itemId, NcResponseType response, DateTime? instance = null)
             where T : McAbstrItem, new ()
         {
+            string token = null;
             McPending pending;
             NcModel.Instance.RunInTransaction (() => {
                 T item;
                 McFolder folder;
                 if (!GetItemAndFolder<T> (itemId, out item, -1, out folder)) {
-                    return null;
+                    return;
                 }
                 // From MS-ASCMD:
                 // When protocol versions 2.5, 12.0, 12.1, or 14.0 are used, the MeetingResponse command cannot be used to modify meeting requests in the Calendar folder.
@@ -971,7 +968,7 @@ namespace NachoCore.ActiveSync
                 14.1 > Convert.ToDouble (ProtocolState.AsProtocolVersion)) {
                     if (null == cal) {
                         Log.Error (Log.LOG_AS, "Cannot respond to an email-invite message not in Inbox for older EAS ({0})", folder.Type);
-                        return null;
+                        return;
                     }
                     switch (response) {
                     case NcResponseType.Accepted:
@@ -984,7 +981,7 @@ namespace NachoCore.ActiveSync
                         cal.ResponseType = NcResponseType.Declined;
                         break;
                     default:
-                        return null;
+                        return;
                     }
                     cal.ResponseTypeIsSet = true;
                     cal.Update ();
@@ -1009,7 +1006,7 @@ namespace NachoCore.ActiveSync
                         break;
 
                     default:
-                        return null;
+                        return;
                     }
 
                     pending = new McPending (Account.Id) {
@@ -1023,11 +1020,12 @@ namespace NachoCore.ActiveSync
                     }
                 }
                 pending.Insert ();
+                token = pending.Token;
             });
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCRESPCAL");
             }, "RespondItemCmd");
-            return pending.Token;
+            return token;
         }
 
         public override string CreateFolderCmd (int destFolderId, string displayName, 
