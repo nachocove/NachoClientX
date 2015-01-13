@@ -100,10 +100,17 @@ namespace NachoClient.iOS
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
             EvaluateJavascript (string.Format(magic, preferredWidth));
             // Force a re-layout of this web view now that the JavaScript magic has been applied.
-            ViewFramer.Create (this).Height (Frame.Height - 1);
-            // And force a re-layout of the entire BodyView now that the size of this web view is known.
+            // The ScrollView.ContentSize is never smaller than the frame size, so in order to
+            // figure out how big the content really is, we have to set the frame height to a
+            // small number.
+            ViewFramer.Create (this).Height (1);
+            // Force a re-layout of the entire BodyView now that the size of this web view is known.
+            // This web view's frame will be adjusted as part of that.
             if (null != sizeChangedCallback) {
                 sizeChangedCallback ();
+            } else {
+                // There is no callback to force the BodyView to re-layout.
+                ViewFramer.Create (this).Height (ScrollView.ContentSize.Height);
             }
         }
 
