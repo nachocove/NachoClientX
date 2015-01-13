@@ -13,7 +13,7 @@ using System.Text.RegularExpressions;
 
 namespace NachoClient.iOS
 {
-    public class ContactsTableViewSource : UITableViewSource
+    public class ContactsTableViewSource : UITableViewSource, IDisposable
     {
         protected const float HORIZONTAL_INDENT = 65;
 
@@ -46,10 +46,16 @@ namespace NachoClient.iOS
         protected const string UICellReuseIdentifier = "UICell";
         protected const string ContactCellReuseIdentifier = "ContactCell";
 
+        public string searchToken;
+        McAccount account;
+
         public ContactsTableViewSource ()
         {
             owner = null;
             allowSwiping = false;
+            account = NcModel.Instance.Db.Table<McAccount> ()
+                .Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange)
+                .FirstOrDefault ();
         }
 
         public void SetOwner (IContactsTableViewSourceDelegate owner, bool allowSwiping, UISearchDisplayController SearchDisplayController)
@@ -132,6 +138,15 @@ namespace NachoClient.iOS
             }
             int n = (null == recent ? 0 : recent.Count) + (null == contacts ? 0 : contacts.Count);
             return (0 == n);
+        }
+
+        public new void Dispose ()
+        {
+            base.Dispose ();
+            if (null != searchToken) {
+                BackEnd.Instance.Cancel (account.Id, searchToken);
+                searchToken = null;
+            }
         }
 
         /// <summary>
@@ -589,6 +604,12 @@ namespace NachoClient.iOS
         public bool UpdateSearchResults (int forSearchOption, string forSearchString)
         {
             NachoCore.Utils.NcAbate.HighPriority ("ContactTableViewSource UpdateSearchResults");
+            // Search GAL
+            if (String.IsNullOrEmpty (searchToken)) {
+                searchToken = BackEnd.Instance.StartSearchContactsReq (account.Id, forSearchString, null);
+            } else {
+                BackEnd.Instance.SearchContactsReq (account.Id, forSearchString, null, searchToken);
+            }
             var results = McContact.SearchAllContactItems (forSearchString);
             SetSearchResults (results);
             NachoCore.Utils.NcAbate.RegularPriority ("ContactTableViewSource UpdateSearchResults");
