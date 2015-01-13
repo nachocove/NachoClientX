@@ -27,6 +27,8 @@ namespace NachoClient.iOS
             "Friday",
             "Saturday"
         });
+
+        UIView parentView;
         INcEventProvider calendar;
         public DateTime ViewDate = new DateTime ();
         CalendarViewController owner;
@@ -38,11 +40,7 @@ namespace NachoClient.iOS
 
         public DateBarView (UIView parentView, INcEventProvider calendar)
         {
-            monthLabelView = new UILabel (new RectangleF (0, 2, parentView.Frame.Width, 20));
-            this.Frame = (new RectangleF (0, 0, parentView.Frame.Width, dateBarHeight + (dateBarRowHeight * 5)));
-            this.BackgroundColor = UIColor.White;
-            this.MakeDayLabels ();
-            this.MakeDateDotButtons ();
+            this.parentView = parentView;
             this.calendar = calendar;
         }
 
@@ -54,6 +52,15 @@ namespace NachoClient.iOS
         public void SetOwner (CalendarViewController owner)
         {
             this.owner = owner;
+        }
+
+        public void InitializeDateBar ()
+        {
+            monthLabelView = new UILabel (new RectangleF (0, 2, parentView.Frame.Width, 20));
+            this.Frame = (new RectangleF (0, 0, parentView.Frame.Width, dateBarHeight + (dateBarRowHeight * 5)));
+            this.BackgroundColor = UIColor.White;
+            this.MakeDayLabels ();
+            this.MakeDateDotButtons ();
         }
 
         public static int IndexOfDayOfWeek (string dayOfWeek)
@@ -73,18 +80,19 @@ namespace NachoClient.iOS
         public void MakeDayLabels ()
         {
             int i = 0;
-            int spacing = 0;
+            float spacing = 0;
+            float spacer = (owner.View.Frame.Width - (24 * 2) - 12) / 6f;
+            float startingX = 24f;
             while (i < 7) {
-                var daysLabelView = new UILabel (new RectangleF (24 + spacing, 18 + 5, 12, 12));
+                var daysLabelView = new UILabel (new RectangleF (startingX + spacing, 18 + 5, 12, 12));
                 daysLabelView.TextColor = A.Color_NachoIconGray;
                 daysLabelView.Tag = 99 - i;
                 daysLabelView.Text = Days [i].Substring (0, 1);
                 daysLabelView.Font = (A.Font_AvenirNextMedium10);
                 daysLabelView.TextAlignment = UITextAlignment.Center;
                 this.Add (daysLabelView);
-                spacing += 43;
+                spacing += spacer;
                 i++;
-
             }
         }
 
@@ -93,10 +101,13 @@ namespace NachoClient.iOS
             monthLabelView.TextColor = A.Color_NachoIconGray;
             monthLabelView.Font = A.Font_AvenirNextMedium12;
             monthLabelView.TextAlignment = UITextAlignment.Center;
+
             this.AddSubview (monthLabelView);
             this.ViewDate = DateTime.Today;
             int i = 0;
-            int spacing = 0;
+            float spacing = 0;
+            float spacerWidth = (owner.View.Frame.Width - (12 * 2) - 36) / 6f;
+            float startingX = 12;
             int j = 0;
             var tagIncrement = 0;
             int row = 0;
@@ -105,7 +116,7 @@ namespace NachoClient.iOS
                 spacing = 0;
                 while (i < 7) {
                     var buttonRect = UIButton.FromType (UIButtonType.RoundedRect);
-                    buttonRect.Frame = new RectangleF (12 + spacing, 5 + 34 + row, 36, 36);
+                    buttonRect.Frame = new RectangleF (startingX + spacing, 5 + 34 + row, 36, 36);
                     buttonRect.Tag = tagIncrement + 100;
                     buttonRect.Layer.CornerRadius = 18;
                     buttonRect.Layer.BorderColor = A.Card_Border_Color;
@@ -125,7 +136,7 @@ namespace NachoClient.iOS
                     eventIndicatorDot.Tag = tagIncrement + 200;
                     this.AddSubview (eventIndicatorDot);
 
-                    spacing += 43;
+                    spacing += spacerWidth;
                     i++;
                     tagIncrement++;
                 }

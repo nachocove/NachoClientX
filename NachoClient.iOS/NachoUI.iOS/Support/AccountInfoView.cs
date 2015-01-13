@@ -59,13 +59,13 @@ namespace NachoClient.iOS
             userLabelView.Tag = USER_LABEL_VIEW_TAG;
             accountInfoView.AddSubview (userLabelView);
 
-            UILabel nameLabel = new UILabel (new RectangleF (75, 20, 170, LINE_HEIGHT));
+            UILabel nameLabel = new UILabel (new RectangleF (75, 20, accountInfoView.Frame.Width - 120, LINE_HEIGHT));
             nameLabel.Font = A.Font_AvenirNextDemiBold14;
             nameLabel.TextColor = A.Color_NachoBlack;
             nameLabel.Tag = NAME_LABEL_TAG;
             accountInfoView.AddSubview (nameLabel);
 
-            UILabel accountEmailAddress = new UILabel (new RectangleF (75, nameLabel.Frame.Bottom, 170, LINE_HEIGHT));
+            UILabel accountEmailAddress = new UILabel (new RectangleF (75, nameLabel.Frame.Bottom, accountInfoView.Frame.Width - 120, LINE_HEIGHT));
             accountEmailAddress.Tag = EMAIL_ADDRESS_LABEL_TAG;
             accountEmailAddress.Text = "";
             accountEmailAddress.Font = A.Font_AvenirNextRegular14;
@@ -76,7 +76,7 @@ namespace NachoClient.iOS
             using (var disclosureIcon = UIImage.FromBundle ("gen-more-arrow")) {
                 accountSettingsIndicatorArrow = new UIImageView (disclosureIcon);
             }
-            accountSettingsIndicatorArrow.Frame = new RectangleF (accountEmailAddress.Frame.Right + 10, accountInfoView.Frame.Height / 2 - accountSettingsIndicatorArrow.Frame.Height / 2, accountSettingsIndicatorArrow.Frame.Width, accountSettingsIndicatorArrow.Frame.Height);
+            accountSettingsIndicatorArrow.Frame = new RectangleF (accountInfoView.Frame.Width - (accountSettingsIndicatorArrow.Frame.Width + 10), accountInfoView.Frame.Height / 2 - accountSettingsIndicatorArrow.Frame.Height / 2, accountSettingsIndicatorArrow.Frame.Width, accountSettingsIndicatorArrow.Frame.Height);
             accountInfoView.AddSubview (accountSettingsIndicatorArrow);
         }
 

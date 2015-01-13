@@ -207,6 +207,8 @@ namespace NachoClient.iOS
             NavigationItem.Title = "Calendar";
 
             DateDotView = new DateBarView (View, NcEventManager.Instance);
+            DateDotView.SetOwner (this);
+            DateDotView.InitializeDateBar ();
 
             DateDotWeekPanGestureRecognizer = new UIPanGestureRecognizer ((UIPanGestureRecognizer obj) => {
                 DateDotWeekPan (obj);
@@ -240,7 +242,6 @@ namespace NachoClient.iOS
             View.AddSubview (DateDotView);
             View.AddSubview (calendarTableView);
 
-            DateDotView.SetOwner (this);
 
             DateDotView.ViewDate = DateTime.Today;
             currentDate = DateTime.Today;

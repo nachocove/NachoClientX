@@ -19,6 +19,7 @@ namespace NachoClient.iOS
         float yOffset;
         float keyboardHeight;
         bool shortScreen;
+        bool largeScreen;
 
         protected UIImageView circleMail;
         protected UILabel startLabel;
@@ -73,8 +74,12 @@ namespace NachoClient.iOS
                 UIView.AnimateKeyframes (1.6, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
 
                     UIView.AddKeyframeWithRelativeStartTime (0, .5, () => {
-                        circleMail.Transform = CGAffineTransform.MakeScale (2.0f / 3.0f, 2.0f / 3.0f);
-                        circleMail.Center = new PointF (160, View.Frame.Height / 4.369f - (shortScreen ? 40 : 0));
+                        if (!largeScreen){
+                            circleMail.Transform = CGAffineTransform.MakeScale (2.0f / 3.0f, 2.0f / 3.0f);
+                        } else {
+                            circleMail.Transform = CGAffineTransform.MakeScale (4.0f / 5.0f, 4.0f / 5.0f);
+                        }
+                        circleMail.Center = new PointF (View.Frame.Width / 2, View.Frame.Height / 4.369f - (shortScreen ? 40 : 0));
                     });
 
                     UIView.AddKeyframeWithRelativeStartTime (.5, .5, () => {
@@ -142,13 +147,13 @@ namespace NachoClient.iOS
             contentView.BackgroundColor = A.Color_NachoGreen;
 
             shortScreen = (500 > View.Frame.Height);
+            largeScreen = (600 < View.Frame.Height);
 
             circleMail = new UIImageView ();
-            using (var circleImage = UIImage.FromBundle ("Bootscreen-1")) {
+            using (var circleImage = UIImage.FromBundle (Util.GetImage("Bootscreen-1"))) {
                 circleMail.Image = circleImage;
             }
-
-            circleMail.Frame = new RectangleF (View.Frame.Width / 2 - 60, (shortScreen ? 155 : 200), 120, 120);
+            circleMail.Frame = new RectangleF (View.Frame.Width / 2 - (circleMail.Image.Size.Width / 2), (shortScreen ? 155 : 200) + (largeScreen ? 74 : 0), circleMail.Image.Size.Width, circleMail.Image.Size.Height);
             contentView.AddSubview (circleMail);
 
             yOffset = View.Frame.Height - 343;
@@ -183,6 +188,7 @@ namespace NachoClient.iOS
 
             emailBox = new UIView (new RectangleF (25, yOffset, View.Frame.Width - 50, 46));
             emailBox.BackgroundColor = UIColor.White;
+
             emailBox.Alpha = 0.0f;
 
             emailField = new UITextField (new RectangleF (45, 0, emailBox.Frame.Width - 50, emailBox.Frame.Height));
@@ -286,10 +292,10 @@ namespace NachoClient.iOS
             // Anchor loginTriangles on the bottom
 
             loginTriangles = new UIImageView ();
-            using (var bootImage = UIImage.FromBundle ("Bootscreen-5")) {
+            using (var bootImage = UIImage.FromBundle (Util.GetImage("Bootscreen-5"))) {
                 loginTriangles.Image = bootImage;
             }
-            loginTriangles.Frame = new RectangleF (0, View.Frame.Height - 39, 320, 39);
+            loginTriangles.Frame = new RectangleF (0, View.Frame.Height - loginTriangles.Image.Size.Height, loginTriangles.Image.Size.Width, loginTriangles.Image.Size.Height);
             View.AddSubview (loginTriangles);
         }
 

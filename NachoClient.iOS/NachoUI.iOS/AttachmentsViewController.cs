@@ -678,7 +678,7 @@ namespace NachoClient.iOS
                 searchbarOverlay.RemoveFromSuperview ();
                 SearchDisplayController.SearchBar.UserInteractionEnabled = true;
             } else {
-                searchbarOverlay = new UIView (new RectangleF (0, 0, 320, 44));
+                searchbarOverlay = new UIView (new RectangleF (0, 0, View.Frame.Width, 44));
                 searchbarOverlay.Hidden = false;
                 searchbarOverlay.BackgroundColor = UIColor.Black;
                 searchbarOverlay.Alpha = 0;

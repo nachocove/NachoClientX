@@ -220,13 +220,13 @@ namespace NachoClient.iOS
             view.AddSubview (multiSelectImageView);
 
             //User Name
-            var userNameLabel = new UILabel (new RectangleF (70, 22 - 2.5f, 320 - 15 - 65, 20));
+            var userNameLabel = new UILabel (new RectangleF (70, 22 - 2.5f, cellWidth - 15 - 65, 20));
             userNameLabel.LineBreakMode = UILineBreakMode.TailTruncation;
             userNameLabel.Tag = USER_NAME_TAG;
             view.AddSubview (userNameLabel);
 
             //User Email
-            var userEmailView = new UILabel (new RectangleF (70, 40 - 2.5f, 320 - 15 - 65, 20));
+            var userEmailView = new UILabel (new RectangleF (70, 40 - 2.5f, cellWidth - 15 - 65, 20));
             userEmailView.LineBreakMode = UILineBreakMode.TailTruncation;
             userEmailView.Tag = USER_EMAIL_TAG;
             view.AddSubview (userEmailView);
