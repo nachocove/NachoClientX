@@ -274,6 +274,7 @@ namespace NachoClient.iOS
                 supportInfo.Add ("ContactInfo", contactInfoTextField.Text);
                 supportInfo.Add ("Message", messageInfoTextView.Text);
 
+                Telemetry.StartService ();
                 Telemetry.RecordSupport (supportInfo, () => {
                     NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                         Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_TelemetrySupportMessageReceived),
