@@ -367,6 +367,13 @@ namespace Test.iOS
 
                 string token = null;
                 ProtoOps.DoClientSideCmds (Context, () => {
+                    // TODO - there should not be 2 ProtocolState records.
+                    // if !Inbox && version < 14.1 then we'll get a CalUpdate, which
+                    // will result in the item getting moved to LAF (and still findable.
+                    // TODO - add test cases: !Inbox, < 14.1, email item.
+                    var protocolState = Context.ProtoControl.ProtocolState;
+                    protocolState.AsProtocolVersion = "14.1";
+                    protocolState.Update ();
                     token = Context.ProtoControl.RespondCalCmd (inbox.Item.Id, response);
                 });
 
