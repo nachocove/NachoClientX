@@ -628,7 +628,7 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoPick, State = (uint)Lst.Pick },
                             new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
                             new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
-                            new Trans { Event = (uint)CtlEvt.E.PendQHot, Act = DoSidecarOrPick, ActSetsState = true },
+                            new Trans { Event = (uint)CtlEvt.E.PendQHot, Act = DoExtraOrPick, ActSetsState = true },
                             new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
                             new Trans { Event = (uint)CtlEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                         }
@@ -1092,7 +1092,7 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        private void DoSidecarOrPick ()
+        private void DoExtraOrPick ()
         {
             // If we think we can do the HotQOp in parallel with the currently running op, do so.
             // FIXME - track success/failure with sidecar requests. Also limit number of concurrent requests.
