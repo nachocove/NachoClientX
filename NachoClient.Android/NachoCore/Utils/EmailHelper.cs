@@ -3,6 +3,9 @@
 using System;
 using System.Collections.Generic;
 using MimeKit;
+using System.Text;
+using NachoCore.Model;
+
 
 namespace NachoCore.Utils
 {
@@ -10,6 +13,54 @@ namespace NachoCore.Utils
     {
         public EmailHelper ()
         {
+        }
+
+        public enum Action
+        {
+            Send,
+            Reply,
+            ReplyAll,
+            Forward,
+        };
+
+        public static bool IsSendAction (Action action)
+        {
+            return Action.Send == action;
+        }
+
+        public static bool IsForwardOrReplyAction (Action action)
+        {
+            return Action.Send != action;
+        }
+
+        // Reply or ReplyAll.  In almost all cases the two are treated the same.  There is only one case where they are different.
+        public static bool IsReplyAction (Action action)
+        {
+            return Action.Reply == action || Action.ReplyAll == action;
+        }
+
+        public static bool IsForwardAction (Action action)
+        {
+            return Action.Forward == action;
+        }
+
+        public static string CreateInitialSubjectLine (Action action, string referencedSubject)
+        {
+            if (IsSendAction (action)) {
+                return "";
+            }
+            if (null == referencedSubject) {
+                referencedSubject = "";
+            }
+            if (IsForwardAction (action)) {
+                return Pretty.Join ("Fwd:", referencedSubject, " ");
+            }
+            NcAssert.True (IsReplyAction (action));
+            if (referencedSubject.StartsWith ("Re:")) {
+                return referencedSubject;
+            } else {
+                return Pretty.Join ("Re:", referencedSubject, " ");
+            }
         }
 
 
@@ -223,7 +274,7 @@ namespace NachoCore.Utils
             return true;
         }
 
-        private static bool IsAccountAlias(InternetAddress accountInternetAddress, string match)
+        private static bool IsAccountAlias (InternetAddress accountInternetAddress, string match)
         {
             if (null == accountInternetAddress) {
                 return false;
@@ -246,25 +297,57 @@ namespace NachoCore.Utils
             var ccList = new List<NcEmailAddress> ();
 
             InternetAddress accountAddress;
-            if (String.IsNullOrEmpty(accountEmailAddress) || !MailboxAddress.TryParse (accountEmailAddress, out accountAddress)) {
+            if (String.IsNullOrEmpty (accountEmailAddress) || !MailboxAddress.TryParse (accountEmailAddress, out accountAddress)) {
                 accountAddress = null;
             }
             InternetAddressList addresses;
-            if (!String.IsNullOrEmpty(toString) && InternetAddressList.TryParse (toString, out addresses)) {
+            if (!String.IsNullOrEmpty (toString) && InternetAddressList.TryParse (toString, out addresses)) {
                 foreach (var mailboxAddress in addresses.Mailboxes) {
-                    if (!IsAccountAlias(accountAddress, mailboxAddress.Address)) {
+                    if (!IsAccountAlias (accountAddress, mailboxAddress.Address)) {
                         ccList.Add (new NcEmailAddress (NcEmailAddress.Kind.Cc, mailboxAddress.Address));
                     }
                 }
             }
-            if (!String.IsNullOrEmpty(ccString) && InternetAddressList.TryParse (ccString, out addresses)) {
+            if (!String.IsNullOrEmpty (ccString) && InternetAddressList.TryParse (ccString, out addresses)) {
                 foreach (var mailboxAddress in addresses.Mailboxes) {
-                    if (!IsAccountAlias(accountAddress, mailboxAddress.Address)) {
+                    if (!IsAccountAlias (accountAddress, mailboxAddress.Address)) {
                         ccList.Add (new NcEmailAddress (NcEmailAddress.Kind.Cc, mailboxAddress.Address));
                     }
                 }
             }
             return ccList;
+        }
+
+        // Build up the text for the header part of the message being forwarded or replied to.
+        public static string FormatBasicHeaders (McEmailMessage message)
+        {
+            StringBuilder result = new StringBuilder ();
+            result.Append ("-------------------\n");
+            result.Append ("From: ").Append (message.From ?? "").Append ("\n");
+            if (message.To != null && message.To.Length > 0) {
+                result.Append ("To: ").Append (message.To).Append ("\n");
+            }
+            if (message.Cc != null && message.Cc.Length > 0) {
+                result.Append ("Cc: ").Append (message.Cc).Append ("\n");
+            }
+            result.Append ("Subject: ").Append (message.Subject ?? "").Append ("\n");
+            result.Append ("Date: ").Append (Pretty.UniversalFullDateTimeString (message.DateReceived));
+            result.Append ("\n\n");
+            return result.ToString ();
+        }
+
+        // Build up the text for the header part of the message being forwarded or replied to.
+        public static string FormatBasicHeadersForCalendarForward (McCalendar calendar, string recipient)
+        {
+            StringBuilder result = new StringBuilder ();
+            result.Append ("-------------------\n");
+            result.Append ("Organizer: ").Append (calendar.OrganizerName ?? calendar.OrganizerEmail ?? "").Append ("\n");
+            result.Append ("To: ").Append (recipient).Append ("\n");
+            result.Append ("Subject: ").Append (calendar.Subject ?? "").Append ("\n");
+            result.Append ("When: ").Append (Pretty.FullDateYearString (calendar.StartTime)).Append ("\n");
+            result.Append ("Where: ").Append (calendar.Location ?? "").Append ("\n");
+            result.Append ("\n\n");
+            return result.ToString ();
         }
     }
 }

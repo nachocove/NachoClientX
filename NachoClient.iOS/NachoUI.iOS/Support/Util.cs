@@ -1138,6 +1138,22 @@ namespace NachoClient
             tableView.EndUpdates ();
         }
 
+        public static bool AttributedStringEndsWith(NSAttributedString target, NSAttributedString match)
+        {
+            if (null == match) {
+                return true;
+            }
+            if (null == target) {
+                return (null == match);
+            }
+            if (target.Length < match.Length) {
+                return false;
+            }
+            var t = target.Substring (target.Length - match.Length, match.Length);
+            return match.IsEqual (t);
+        }
+
+
         #endregion
     }
 }

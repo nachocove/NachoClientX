@@ -97,7 +97,7 @@ namespace NachoCore.Model
         }
 
         // Intent of the message (default None (0))
-        public int Intent { set; get; }
+        public IntentType Intent { set; get; }
 
         // Due date of selected intent (optional)
         public DateTime IntentDate { set; get; }

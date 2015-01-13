@@ -17,7 +17,6 @@ namespace NachoClient.iOS
         MessageComposeViewController owner;
         protected float yOffset;
         protected NcQuickResponse ncQuick;
-        protected McEmailMessage emailMessage;
 
         protected const float X_INDENT = 30;
 
@@ -26,22 +25,15 @@ namespace NachoClient.iOS
 
         }
 
-        public QuickResponseViewController (NcQuickResponse.QRTypeEnum whatType, ref McEmailMessage emailMessage)
-        {
-            ncQuick = new NcQuickResponse (whatType);
-            this.emailMessage = emailMessage;
-        }
-
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
             CreateView ();
         }
 
-        public void SetProperties (NcQuickResponse.QRTypeEnum whatType, ref McEmailMessage emailMessage)
+        public void SetProperties (NcQuickResponse.QRTypeEnum whatType)
         {
             ncQuick = new NcQuickResponse (whatType);
-            this.emailMessage = emailMessage;
         }
 
         public void SetOwner (MessageComposeViewController owner)
@@ -63,7 +55,7 @@ namespace NachoClient.iOS
             using (var image = UIImage.FromBundle ("modal-close")) {
                 var dismissButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
                 dismissButton.Clicked += (object sender, EventArgs e) => {
-                    DismissViewController(true, null);
+                    DismissViewController (true, null);
                 };
                 navItem.LeftBarButtonItem = dismissButton;
             }
@@ -86,22 +78,12 @@ namespace NachoClient.iOS
                 quickButton.Font = A.Font_AvenirNextDemiBold14;
                 quickButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
                 quickButton.TouchUpInside += (object sender, EventArgs e) => {
-                    ncQuick.CreateQuickResponse (response, ref emailMessage);
-                    if (null != response.intent) {
-                        if (null == owner.messageIntent) {
-                            owner.messageIntent = new NcMessageIntent ();
-                        }
-                        owner.messageIntent.SetType (response.intent);
-                        owner.messageIntent.SetMessageIntent (ref emailMessage);
-                        owner.PopulateMessageFromSelectedIntent (MessageDeferralType.None);
+                    if (null == response.intent) {
+                        owner.PopulateMessageFromSelectedIntent (McEmailMessage.IntentType.None, MessageDeferralType.None, DateTime.MinValue);
                     } else {
-                        if (null != owner.messageIntent) {
-                            owner.messageIntent.SetType (NcMessageIntent.NONE_INTENT);
-                            owner.messageIntent.SetMessageIntent (ref emailMessage);
-                            owner.PopulateMessageFromSelectedIntent (MessageDeferralType.None);
-                        }
+                        owner.PopulateMessageFromSelectedIntent (response.intent.type, MessageDeferralType.None, DateTime.MinValue);
                     }
-                    owner.PopulateMessageFromQR (ncQuick.whatType);
+                    owner.PopulateMessageFromQR (ncQuick.whatType, response);
                     DismissViewController (true, null);
                 };
                 qrView.Add (quickButton);
