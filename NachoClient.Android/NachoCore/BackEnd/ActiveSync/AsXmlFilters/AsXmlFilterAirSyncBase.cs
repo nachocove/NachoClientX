@@ -116,6 +116,9 @@ namespace NachoCore.Wbxml
             // NativeBodyType
             node1 = new NcXmlFilterNode ("NativeBodyType", RedactionType.NONE, RedactionType.NONE);
             node0.Add(node1); // xml -> NativeBodyType
+            // ContentType
+            node1 = new NcXmlFilterNode ("ContentType", RedactionType.FULL, RedactionType.FULL);
+            node0.Add(node1); // xml -> ContentType
             
             Root = node0;
         }

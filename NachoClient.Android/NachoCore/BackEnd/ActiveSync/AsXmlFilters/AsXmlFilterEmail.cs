@@ -150,7 +150,6 @@ namespace NachoCore.Wbxml
             node2 = new NcXmlFilterNode ("Category", RedactionType.FULL, RedactionType.FULL);
             node1.Add(node2); // Categories -> Category
             node0.Add(node1); // xml -> Categories
-
             
             Root = node0;
         }
