@@ -216,15 +216,13 @@ namespace Test.Common
         [Test]
         public void SetOptionalFields ()
         {
-            var mds = new MockDataSource ();
-            CreateMcBody (mds, 1);
             var setOptionalsXML = System.Xml.Linq.XElement.Parse (CategoryTestXML);
             McEmailMessage setOptionalsEmail = NachoCore.ActiveSync.AsSyncCommand.ServerSaysAddOrChangeEmail (setOptionalsXML, new MockNcFolder ());
-            Assert.NotNull (setOptionalsEmail.To);
-            Assert.NotNull (setOptionalsEmail.From);
-            Assert.NotNull (setOptionalsEmail.DisplayTo);
-            Assert.NotNull (setOptionalsEmail.Importance);
-            Assert.NotNull (setOptionalsEmail.Categories);
+            Assert.NotNull (setOptionalsEmail.To, "To");
+            Assert.NotNull (setOptionalsEmail.From, "From");
+            Assert.NotNull (setOptionalsEmail.DisplayTo, "DisplayTo");
+            Assert.NotNull (setOptionalsEmail.Importance, "Importance");
+            Assert.NotNull (setOptionalsEmail.Categories, "Categories");
         }
 
         [Test]
@@ -563,8 +561,6 @@ namespace Test.Common
         [Test]
         public void EmailCategoriesTest ()
         {
-            var mds = new MockDataSource ();
-            CreateMcBody (mds, 1);
             var categoriesXMLCommand = System.Xml.Linq.XElement.Parse (CategoryTestXML);
             Assert.IsNotNull (categoriesXMLCommand);
             Assert.AreEqual (categoriesXMLCommand.Name.LocalName, Xml.AirSync.Add);
@@ -722,7 +718,7 @@ namespace Test.Common
             <Body xmlns=""AirSyncBase"">
               <Type>4</Type>
               <EstimatedDataSize>308849</EstimatedDataSize>
-              <Data nacho-body-id=""1"" />
+              <Preview>This is the preview</Preview>
             </Body>
             <MessageClass xmlns=""Email"">IPM.Note</MessageClass>
             <Importance xmlns=""Email"">1</Importance>
