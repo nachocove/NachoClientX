@@ -135,4 +135,8 @@
       <element_redaction>none</element_redaction>
       <attribute_redaction>none</attribute_redaction>
    </NativeBodyType>
+   <ContentType>
+      <element_redaction>full</element_redaction>
+      <attribute_redaction>full</attribute_redaction>
+   </ContentType>
 </xml>
