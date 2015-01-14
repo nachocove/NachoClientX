@@ -106,6 +106,13 @@ namespace NachoClient.iOS
             }
         }
 
+        public override void ViewDidAppear (bool animated)
+        {
+            base.ViewDidAppear (animated);
+
+            PermissionManager.DealWithContactsPermission ();
+        }
+
         protected void LoadContacts ()
         {
             NachoCore.Utils.NcAbate.HighPriority ("ContactSearchViewController LoadContacts");

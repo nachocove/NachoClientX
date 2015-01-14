@@ -86,6 +86,8 @@ namespace NachoClient.iOS
         {
             base.ViewDidAppear (animated);
             tableView.ReloadData ();
+
+            PermissionManager.DealWithContactsPermission ();
         }
 
         public override void ViewWillDisappear (bool animated)

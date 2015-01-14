@@ -852,9 +852,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailAddress.cs">
       <Link>NachoCore\Model\McEmailAddress.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McMapContactEmail.cs">
-      <Link>NachoCore\Model\McMapContactEmail.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McConference.cs">
       <Link>NachoCore\Model\McConference.cs</Link>
     </Compile>
@@ -1181,6 +1178,7 @@
     <Compile Include="NachoUI.iOS\DraftsViewController.designer.cs">
       <DependentUpon>DraftsViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\PermissionManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

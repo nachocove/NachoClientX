@@ -115,6 +115,7 @@ namespace NachoClient.iOS
         {
             base.ViewDidAppear (animated);
 //            swipeViewDateSource.SelectButton (0);
+            PermissionManager.DealWithContactsPermission ();
         }
 
         public override void ViewWillDisappear (bool animated)

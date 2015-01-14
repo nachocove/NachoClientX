@@ -728,6 +728,7 @@ namespace NachoClient.iOS
                 NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
                 NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
             }
+            PermissionManager.DealWithCalendarPermission ();
         }
 
         public override bool HidesBottomBarWhenPushed {
