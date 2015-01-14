@@ -54,6 +54,7 @@ namespace NachoClient.iOS
         bool alwaysShowIntent;
 
         UITextView bodyTextView;
+        UIButton showQuotedTextButton;
 
         UIView toViewHR;
         UIView ccViewHR;
@@ -203,6 +204,7 @@ namespace NachoClient.iOS
             if (EmailHelper.IsForwardOrReplyAction (action)) {
                 InitializeMessageForAction ();
             }
+            showQuotedTextButton.Hidden = (null == referencedMessage);
 
             suppressLayout = false;
                 
@@ -446,12 +448,25 @@ namespace NachoClient.iOS
 
             scrollView.AddSubview (bodyTextView);
 
+            showQuotedTextButton = UIButton.FromType (UIButtonType.System);
+            showQuotedTextButton.SetTitle ("Tap to show quoted text", UIControlState.Normal);
+            showQuotedTextButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
+            showQuotedTextButton.SizeToFit ();
+
+            // The minimum indent from UITextView frame to text is a mystery
+            ViewFramer.Create (showQuotedTextButton).X (bodyTextView.Frame.X + 4);
+            ViewFramer.Create (showQuotedTextButton).Height (30);
+            scrollView.AddSubview (showQuotedTextButton);
+
+            showQuotedTextButton.TouchUpInside += onShowQuotedTextButton;
+
             subjectField.EditingDidBegin += (object sender, EventArgs e) => {
                 ConfigureSubjectEditView (true);
             };
                 
             bodyTextView.Started += (object sender, EventArgs e) => {
                 ConfigureBodyEditView (true);
+                LayoutView ();
             };
 
             bodyTextView.Changed += (object sender, EventArgs e) => {
@@ -829,7 +844,15 @@ namespace NachoClient.iOS
             if (!textView.Frame.Size.Equals (textView.ContentSize)) {
                 textView.ContentSize = textView.Frame.Size;
             }
-            var scrollViewContentSize = new SizeF (textView.ContentSize.Width, textView.Frame.Y + textView.Frame.Height + BODY_BOTTOM_MARGIN + BODY_TOP_MARGIN);
+            float y;
+            if (showQuotedTextButton.Hidden) {
+                y = textView.Frame.Bottom;
+            } else {
+                ViewFramer.Create (showQuotedTextButton).Y (textView.Frame.Bottom);
+                y = showQuotedTextButton.Frame.Bottom;
+            }
+
+            var scrollViewContentSize = new SizeF (textView.ContentSize.Width, y + BODY_BOTTOM_MARGIN + BODY_TOP_MARGIN);
             if (!scrollView.ContentSize.Equals (scrollViewContentSize)) {
                 scrollView.ContentSize = scrollViewContentSize;
             }
@@ -891,7 +914,7 @@ namespace NachoClient.iOS
 
         protected void BodyTextViewDraggingEnded (object sender, DraggingEventArgs e)
         {
-            if (scrollView.ContentOffset.Y < 0) {
+            if (0 > scrollView.ContentOffset.Y) {
                 // Console.WriteLine ("dragging adjusted: {0}", ViewHelper.ViewInfo (scrollView, ""));
                 scrollView.SetContentOffset (new PointF (scrollView.ContentOffset.X, 0), true);
             }
@@ -1090,10 +1113,15 @@ namespace NachoClient.iOS
 
                 bool originalEmailIsEmbedded = true;
                 var bodyAttributedText = bodyTextView.AttributedText;
+
+                // If there's no initialQuotedText, then the email is not embedded
+                if (null == initialQuotedText) {
+                    originalEmailIsEmbedded = false;
+                }
+                    
+                // Perhaps we can strip out the initialQuotedText and use smart reply?
                 if ((null != initialQuotedText) && Util.AttributedStringEndsWith (bodyAttributedText, initialQuotedText)) {
-                    // This is a reply or forward, and the user didn't changed the quoted text.
-                    // Strip the quoted text from the body of the message and instead have the
-                    // server add in the original message.
+                    // Strip the quoted text from the body of the message and instead have the server add in the original message.
                     originalEmailIsEmbedded = false;
                     bodyAttributedText = bodyAttributedText.Substring (0, (bodyAttributedText.Length - initialQuotedText.Length));
                 }
@@ -1243,6 +1271,21 @@ namespace NachoClient.iOS
                 subjectField.Text = "";
             }
             alwaysShowIntent |= !string.IsNullOrEmpty (subjectField.Text);
+        }
+
+
+        void onShowQuotedTextButton (object sender, EventArgs e)
+        {
+            showQuotedTextButton.Hidden = true;
+            InitializeQuotedText ();
+            LayoutView ();
+        }
+
+        void InitializeQuotedText ()
+        {
+            if (null == referencedMessage) {
+                return;
+            }
 
             string html;
             string text;
@@ -1251,8 +1294,8 @@ namespace NachoClient.iOS
                 attributes.Font = new MonoTouch.CoreText.CTFont (labelFont.Name, labelFont.PointSize);
                 var initialString = new NSMutableAttributedString ();
                 initialString.Append (bodyTextView.AttributedText);
-                initialString.Append (new NSAttributedString (EmailHelper.FormatBasicHeaders (referencedMessage), attributes));
                 initialString.Append (new NSAttributedString ("\n\n", attributes));
+                initialString.Append (new NSAttributedString (EmailHelper.FormatBasicHeaders (referencedMessage), attributes));
                 var whereQuotedTextBegins = initialString.Length;
                 if (null != html) {
                     NSError error = null;
@@ -1271,10 +1314,7 @@ namespace NachoClient.iOS
                     initialQuotedText = null;
                 }
             }
-
         }
-
-  
 
         /// <summary>
         /// INachoFileChooserParent delegate

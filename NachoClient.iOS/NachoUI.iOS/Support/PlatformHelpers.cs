@@ -32,7 +32,14 @@ namespace NachoClient
         {
             // In order to deal with gmail's logo.png CID, we encode
             // McBody id into the CID URL. The format is cid://[body_id]/[value]
-            NcAssert.True (cid.StartsWith ("//"));
+            // NcAssert.True (cid.StartsWith ("//"));
+            // Unfortunately, when we are rendering email reply text we do not
+            // have the opportunity to set up the base url using NSAttributedString.
+            // TODO: Compose mail need to use uiwebview for display and/or editing.
+            if (!cid.StartsWith ("//")) {
+                Log.Warn (Log.LOG_UTILS, "RenderContentId: no prefix for cid");
+                return Draw1px ();
+            }
             var index = cid.Substring (2).IndexOf ('/');
             var value = cid.Substring (index + 3);
             var bodyId = Convert.ToInt32 (cid.Substring (2, index));
@@ -124,6 +131,21 @@ namespace NachoClient
             return image;
         }
 
+        public static UIImage Draw1px ()
+        {
+            var size = new SizeF (1, 1);
+            var origin = new PointF (0, 0);
+
+            UIGraphics.BeginImageContextWithOptions (size, false, 0);
+            var ctx = UIGraphics.GetCurrentContext ();
+
+            ctx.SetFillColor (UIColor.Clear.CGColor);
+            ctx.FillEllipseInRect (new RectangleF (origin, size));
+
+            var image = UIGraphics.GetImageFromCurrentImageContext ();
+            UIGraphics.EndImageContext ();
+            return image;
+        }
 
         public static void DisplayAttachment (UIViewController vc, McAttachment attachment)
         {
