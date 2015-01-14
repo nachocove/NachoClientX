@@ -80,6 +80,16 @@ namespace NachoCore.Utils
 
         public NetStatusSpeedEnum Speed { get; set; }
 
+        public CommQualityEnum Quality (int serverId)
+        {
+            var tracker = GetTracker (serverId);
+            if (null == tracker) {
+                Log.Error (Log.LOG_STATE, "Quality: Can't find server with Id {0}.", serverId);
+                return CommQualityEnum.OK;
+            }
+            return tracker.Quality;
+        }
+
         public event NcCommStatusServerEventHandler CommStatusServerEvent;
 
         public event NetStatusEventHandler CommStatusNetEvent;
