@@ -120,6 +120,11 @@ namespace NachoCore
                 // XAMMIT. Cancel exception should be caught by system when c-token is the Task's c-token.
                 return true;
             }
+            if (message.Contains ("Amazon.Runtime")) {
+                Log.Error (Log.LOG_SYS, "AMAXAMMIT Unobserved Exception: {0}", message);
+                // Don't let AWS SDK exception brain damage take down the app.
+                return true;
+            }
             Log.Error (Log.LOG_SYS, "UnobservedTaskException: {0}", message);
             return false;
         }
