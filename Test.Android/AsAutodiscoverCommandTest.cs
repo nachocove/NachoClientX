@@ -392,14 +392,6 @@ namespace Test.iOS
                 TestSingleTimeout (MockSteps.S3, false);
             }
 
-            // Ensure that the Owner is called-back when a valid cert is encountered in
-            // the HTTPS access following a DNS SRV lookup
-            [Test]
-            public void TestS4 ()
-            {
-                TestSingleTimeout (MockSteps.S4, false);
-            }
-
             [Test]
             public void TestSubS1 ()
             {
@@ -416,12 +408,6 @@ namespace Test.iOS
             public void TestSubS3 ()
             {
                 TestSingleTimeout (MockSteps.S3, true);
-            }
-
-            [Test]
-            public void TestSubS4 ()
-            {
-                TestSingleTimeout (MockSteps.S4, true);
             }
 
             private void TestSingleTimeout (MockSteps step, bool isSubDomain)
@@ -445,16 +431,9 @@ namespace Test.iOS
                     return XMLForRobotType (request, robotType, step, xml);
                 }, (AsDnsOperation op, string host, NsClass dnsClass, NsType dnsType, out int answerLength) => {
                     if (MockSteps.S4 == step && MockSteps.S4 == DetermineRobotType (dnsType)) {
-                        if (!hasTimedOutOnce) {
-                            hasTimedOutOnce = true;
-                            System.Threading.Thread.Sleep (new TimeSpan(0, 0, 20));
-                            answerLength = 0;
-                            return null;
-                        } else {
-                            step = MockSteps.S1;
-                            answerLength = dnsByteArray.Length;
-                            return dnsByteArray;
-                        }
+                        step = MockSteps.S1;
+                        answerLength = dnsByteArray.Length;
+                        return dnsByteArray;
                     } else {
                         answerLength = 0;
                         return null;
