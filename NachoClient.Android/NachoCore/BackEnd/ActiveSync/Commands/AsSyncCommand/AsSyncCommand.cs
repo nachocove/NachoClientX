@@ -405,6 +405,8 @@ namespace NachoCore.ActiveSync
 
         public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
         {
+            List<McFolder> SawMoreAvailableNoCommands = new List<McFolder> ();
+            bool SawCommandsInAnyFolder = false;
             List<McFolder> processedFolders = new List<McFolder> ();
             var xmlLimit = doc.Root.Element (m_ns + Xml.AirSync.Limit);
             if (null != xmlLimit) {
@@ -427,8 +429,12 @@ namespace NachoCore.ActiveSync
                 var xmlSyncKey = collection.Element (m_ns + Xml.AirSync.SyncKey);
                 var xmlMoreAvailable = collection.Element (m_ns + Xml.AirSync.MoreAvailable);
                 var xmlCommands = collection.Element (m_ns + Xml.AirSync.Commands);
-                if (null == xmlCommands && null != xmlMoreAvailable) {
-                    Log.Error (Log.LOG_AS, "AsSyncCommand: MoreAvailable with no commands.");
+                if (null == xmlCommands) {
+                    if (null != xmlMoreAvailable) {
+                        SawMoreAvailableNoCommands.Add (folder);
+                    }
+                } else {
+                    SawCommandsInAnyFolder = true;
                 }
                 var xmlStatus = collection.Element (m_ns + Xml.AirSync.Status);
                 // The protocol requires SyncKey, but GOOG does not obey in the StatusCode.NotFound case.
@@ -563,6 +569,14 @@ namespace NachoCore.ActiveSync
                     break;
                 }
             }
+
+            // If we're getting MoreAvailable with NO Command(s) for the entire Sync, this may be an Error.
+            if (0 != SawMoreAvailableNoCommands.Count && !SawCommandsInAnyFolder) {
+                foreach (var errFolder in SawMoreAvailableNoCommands) {
+                    Log.Error (Log.LOG_AS, "AsSyncCommand: MoreAvailable with no commands in folder ServerId {0}.", errFolder.ServerId);
+                }
+            }
+
             // For any folders missing from the response, we need to note that there isn't more on the server-side.
             // Remember the loop above re-writes folders, so FoldersInRequest object will be stale!
             List<McFolder> reloadedFolders = new List<McFolder> ();
