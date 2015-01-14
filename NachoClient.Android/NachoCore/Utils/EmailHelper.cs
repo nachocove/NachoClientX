@@ -11,10 +11,6 @@ namespace NachoCore.Utils
 {
     public class EmailHelper
     {
-        public EmailHelper ()
-        {
-        }
-
         public enum Action
         {
             Send,
@@ -72,30 +68,43 @@ namespace NachoCore.Utils
 
         public static bool IsValidServer (string server)
         {
-            if (EmailHelper.IsValidHost (server)) {
-                return true;
-            }
-
-            //fullServerUri didn't pass...validate host/port separately
-            Uri serverURI;
+            NcAssert.NotNull (server);
+            Uri serverURI = null;
             try {
-                serverURI = new Uri ("my://" + server.Trim ());
+                // User may have entered a scheme - let's try it.
+                serverURI = new Uri (server);
             } catch {
+            }
+            if (null != serverURI) {
+                // Is this Uri any good at all?
+                if (serverURI.IsFile ||
+                    !EmailHelper.IsValidHost (serverURI.Host) ||
+                    !EmailHelper.IsValidPort (serverURI.Port)) {
+                    if (server.Contains ("://")) {
+                        // The user added a scheme, and it went bad.
+                        return false;
+                    }
+                    // Try with a prepended scheme.
+                    serverURI = null;
+                }
+            }
+            if (null == serverURI) {
+                // We possibly need to prepend a scheme.
+                try {
+                    // NB using a made-up scheme will get you a -1 port number unless port was specified.
+                    serverURI = new Uri ("https://" + server.Trim ());
+                } catch {
+                    // We give up
+                    return false;
+                }
+            }
+            // We were able to create a Url object.
+            if (!EmailHelper.IsValidHost (serverURI.Host)) {
                 return false;
             }
-
-            var host = serverURI.Host;
-            var port = serverURI.Port;
-
-            if (!EmailHelper.IsValidHost (host)) {
+            if (!EmailHelper.IsValidPort (serverURI.Port)) {
                 return false;
             }
-
-            //host cleared, checking port
-            if (!EmailHelper.IsValidPort (port)) {
-                return false;
-            }
-
             return true;
         }
 

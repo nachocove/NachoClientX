@@ -27,6 +27,7 @@
     <MtouchI18n>
     </MtouchI18n>
     <MtouchArch>i386</MtouchArch>
+    <CodesignKey>iPhone Developer</CodesignKey>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhoneSimulator' ">
     <DebugType>full</DebugType>
@@ -241,6 +242,9 @@
     </Compile>
     <Compile Include="..\Test.Android\NcMessageThreadsTest.cs">
       <Link>NcMessageThreadsTest.cs</Link>
+    </Compile>
+    <Compile Include="..\Test.Android\EmailHelperTest.cs">
+      <Link>EmailHelperTest.cs</Link>
     </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
