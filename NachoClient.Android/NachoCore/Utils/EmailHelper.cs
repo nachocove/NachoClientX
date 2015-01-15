@@ -66,13 +66,22 @@ namespace NachoCore.Utils
             return regexUtil.IsValidEmail (email);
         }
 
-        public static bool IsValidServer (string serverName)
+        public enum ParseServerWhyEnum
+        {
+            Success_0 = 0,
+            FailUnknown,
+            FailHadQuery,
+            FailBadPort,
+            FailBadHost,
+            FailBadScheme,
+        };
+        public static ParseServerWhyEnum IsValidServer (string serverName)
         {
             McServer dummy = new McServer ();
             return ParseServer (ref dummy, serverName);
         }
 
-        public static bool ParseServer (ref McServer server, string serverName)
+        public static ParseServerWhyEnum ParseServer (ref McServer server, string serverName)
         {
             NcAssert.NotNull (server);
             NcAssert.NotNull (serverName);
@@ -89,7 +98,7 @@ namespace NachoCore.Utils
                     !EmailHelper.IsValidPort (serverURI.Port)) {
                     if (serverName.Contains ("://")) {
                         // The user added a scheme, and it went bad.
-                        return false;
+                        return ParseServerWhyEnum.FailBadScheme;
                     }
                     // Try with a prepended scheme.
                     serverURI = null;
@@ -102,19 +111,19 @@ namespace NachoCore.Utils
                     serverURI = new Uri ("https://" + serverName.Trim ());
                 } catch {
                     // We give up
-                    return false;
+                    return ParseServerWhyEnum.FailUnknown;
                 }
             }
             // We were able to create a Url object.
             if (!EmailHelper.IsValidHost (serverURI.Host)) {
-                return false;
+                return ParseServerWhyEnum.FailBadHost;
             }
             if (!EmailHelper.IsValidPort (serverURI.Port)) {
-                return false;
+                return ParseServerWhyEnum.FailBadPort;
             }
             // Ensure there were no Query parameters.
             if (null != serverURI.Query && string.Empty != serverURI.Query) {
-                return false;
+                return ParseServerWhyEnum.FailHadQuery;
             }
             // Ensure that the Path is correct.
             if (null == serverURI.AbsolutePath || !serverURI.AbsolutePath.EndsWith (McServer.Default_Path)) {
@@ -132,7 +141,7 @@ namespace NachoCore.Utils
             server.Host = serverURI.Host;
             server.Port = serverURI.Port;
             server.Path = serverURI.AbsolutePath;
-            return true;
+            return ParseServerWhyEnum.Success_0;
         }
 
         public static bool IsValidHost (string host)

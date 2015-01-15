@@ -757,7 +757,7 @@ namespace NachoClient.iOS
             }
 
             if (haveEnteredServer ()) {
-                if (!EmailHelper.IsValidServer (serverView.textField.Text)) {
+                if (EmailHelper.ParseServerWhyEnum.Success_0 != EmailHelper.IsValidServer (serverView.textField.Text)) {
                     ConfigureView (LoginStatus.InvalidServerName);
                     return false;
                 }
@@ -800,7 +800,7 @@ namespace NachoClient.iOS
 
         protected void SetHostAndPort (McServer forServer)
         {
-            NcAssert.True (EmailHelper.ParseServer (ref forServer, serverView.textField.Text));
+            NcAssert.True (EmailHelper.ParseServerWhyEnum.Success_0 == EmailHelper.ParseServer (ref forServer, serverView.textField.Text));
         }
 
         public void stopBeIfRunning ()
