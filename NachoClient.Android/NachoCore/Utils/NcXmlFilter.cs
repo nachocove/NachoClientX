@@ -63,6 +63,13 @@ namespace NachoCore.Wbxml
 
     public class NcXmlFilter
     {
+        public static string[] DEFAULT_NO_REDACTION_VALUES = new string[1] {
+            "Inbox"
+        };
+
+        public string[] NoRedactionValues = DEFAULT_NO_REDACTION_VALUES;
+
+
         public NcXmlFilterSet ParentSet { set; get; }
 
         public NcXmlFilterNode Root { set; get; }
@@ -313,38 +320,32 @@ namespace NachoCore.Wbxml
             return newElement;
         }
 
-        private int GetContentLength (XNode content)
+        private string GetContentValue (XNode content)
         {
-            int contentLen = -1;
             NcAssert.True (IsContent (content));
             if (XmlNodeType.Text == content.NodeType) {
                 XText text = (XText)content;
-                contentLen = text.Value.Length;
+                return text.Value;
             } else if (XmlNodeType.CDATA == content.NodeType) {
                 XCData data = (XCData)content;
-                contentLen = data.Value.Length;
+                return data.Value;
             } else {
                 NcAssert.True (false);
             }
-            return contentLen;
+            return null; // unreachable. but keep compiler happy
+        }
+
+        private int GetContentLength (XNode content)
+        {
+            var value = GetContentValue (content);
+            return value.Length;
         }
 
         private string GetSha256Hash (XNode content, out int contentLen)
         {
-            NcAssert.True (IsContent (content));
-            contentLen = -1;
-            string hash = "";
-            if (XmlNodeType.Text == content.NodeType) {
-                XText text = (XText)content;
-                contentLen = text.Value.Length;
-                hash = HashHelper.Sha256 (text.Value);
-            } else if (XmlNodeType.CDATA == content.NodeType) {
-                XCData data = (XCData)content;
-                contentLen = data.Value.Length;
-                hash = HashHelper.Sha256 (data.Value);
-            } else {
-                NcAssert.True (false);
-            }
+            var value = GetContentValue (content);
+            contentLen = value.Length;
+            var hash = HashHelper.Sha256 (value);
             return hash;
         }
 
@@ -390,6 +391,20 @@ namespace NachoCore.Wbxml
             }
         }
 
+        private bool IsInNoRedactionList (NcXmlFilter filter, XNode node)
+        {
+            if (0 == filter.NoRedactionValues.Length) {
+                return false;
+            }
+            var content = GetContentValue (node);
+            foreach (string value in filter.NoRedactionValues) {
+                if (content == value) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         private void AddContent (XNode node, byte[] wbxml, RedactionType type)
         {
             // Check the latest redaction policy. That should be the parent element
@@ -400,8 +415,10 @@ namespace NachoCore.Wbxml
             XElement element = (XElement)current.XmlNode;
 
             if (RedactionType.NONE != current.ParentNode.ElementRedaction) {
-                RedactElement (element, node, type);
-                return;
+                if (!IsInNoRedactionList (current.Filter, node)) {
+                    RedactElement (element, node, type);
+                    return;
+                }
             }
 
             if (GenerateWbxml) {
