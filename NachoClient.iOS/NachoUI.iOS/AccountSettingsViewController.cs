@@ -579,7 +579,7 @@ namespace NachoClient.iOS
             var passwordTextField = (UITextField)View.ViewWithTag (PASSWORD_TAG);
             var mailserverTextField = (UITextField)View.ViewWithTag (MAILSERVER_TAG);
 
-            if (!EmailHelper.IsValidServer (mailserverTextField.Text.Trim ())) {
+            if (EmailHelper.ParseServerWhyEnum.Success_0 != EmailHelper.IsValidServer (mailserverTextField.Text.Trim ())) {
                 accountIssue = AccountIssue.InvalidHost;
                 ConfigureAndLayout ();
                 return;
@@ -829,17 +829,7 @@ namespace NachoClient.iOS
         //Should this be a helper? EmailHelper?
         protected void SetHostAndPort (McServer forServer, string serverText)
         {
-            NcAssert.True (EmailHelper.IsValidServer (serverText), "Server is not valid");
-
-            if (EmailHelper.IsValidHost (serverText)) {
-                forServer.Host = serverText.Trim ();
-                forServer.Port = 443;
-                return;
-            }
-
-            Uri serverURI = new Uri ("my://" + serverText.Trim ());
-            forServer.Host = serverURI.Host;
-            forServer.Port = serverURI.Port;
+            NcAssert.True (EmailHelper.ParseServerWhyEnum.Success_0 == EmailHelper.ParseServer (ref forServer, serverText));
         }
 
         protected void ToggleEditing ()

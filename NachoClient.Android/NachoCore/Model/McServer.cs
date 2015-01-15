@@ -10,13 +10,14 @@ namespace NachoCore.Model
     {
         public McServer ()
         {
-            Path = "/Microsoft-Server-ActiveSync";
+            Path = Default_Path;
             Scheme = "https";
             Port = 443;
         }
 
         public string Host { get; set; }
 
+        public const string Default_Path = "/Microsoft-Server-ActiveSync";
         public const string GMail_Host = "m.google.com";
         public const string GMail_MX_Suffix = "ASPMX.L.GOOGLE.com";
         public const string HotMail_Host = "s.outlook.com";
