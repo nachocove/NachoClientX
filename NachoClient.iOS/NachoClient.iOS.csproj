@@ -1181,6 +1181,9 @@
     <Compile Include="NachoUI.iOS\DraftsViewController.designer.cs">
       <DependentUpon>DraftsViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\HashHelper.cs">
+      <Link>NachoCore\Utils\HashHelper.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
