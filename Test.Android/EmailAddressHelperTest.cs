@@ -13,10 +13,6 @@ namespace Test.Android
 {
     public class EmailAddressHelperTest
     {
-        public EmailAddressHelperTest ()
-        {
-        }
-
         [Test]
         public void TestParseString ()
         {

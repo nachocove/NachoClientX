@@ -11,10 +11,6 @@ namespace NachoCore.Utils
 {
     public class EmailHelper
     {
-        public EmailHelper ()
-        {
-        }
-
         public enum Action
         {
             Send,
@@ -70,33 +66,82 @@ namespace NachoCore.Utils
             return regexUtil.IsValidEmail (email);
         }
 
-        public static bool IsValidServer (string server)
+        public enum ParseServerWhyEnum
         {
-            if (EmailHelper.IsValidHost (server)) {
-                return true;
-            }
+            Success_0 = 0,
+            FailUnknown,
+            FailHadQuery,
+            FailBadPort,
+            FailBadHost,
+            FailBadScheme,
+        };
+        public static ParseServerWhyEnum IsValidServer (string serverName)
+        {
+            McServer dummy = new McServer ();
+            return ParseServer (ref dummy, serverName);
+        }
 
-            //fullServerUri didn't pass...validate host/port separately
-            Uri serverURI;
+        public static ParseServerWhyEnum ParseServer (ref McServer server, string serverName)
+        {
+            NcAssert.NotNull (server);
+            NcAssert.NotNull (serverName);
+            Uri serverURI = null;
             try {
-                serverURI = new Uri ("my://" + server.Trim ());
+                // User may have entered a scheme - let's try it.
+                serverURI = new Uri (serverName);
             } catch {
-                return false;
             }
-
-            var host = serverURI.Host;
-            var port = serverURI.Port;
-
-            if (!EmailHelper.IsValidHost (host)) {
-                return false;
+            if (null != serverURI) {
+                // Is this Uri any good at all?
+                if (serverURI.IsFile ||
+                    !EmailHelper.IsValidHost (serverURI.Host) ||
+                    !EmailHelper.IsValidPort (serverURI.Port)) {
+                    if (serverName.Contains ("://")) {
+                        // The user added a scheme, and it went bad.
+                        return ParseServerWhyEnum.FailBadScheme;
+                    }
+                    // Try with a prepended scheme.
+                    serverURI = null;
+                }
             }
-
-            //host cleared, checking port
-            if (!EmailHelper.IsValidPort (port)) {
-                return false;
+            if (null == serverURI) {
+                // We possibly need to prepend a scheme.
+                try {
+                    // NB using a made-up scheme will get you a -1 port number unless port was specified.
+                    serverURI = new Uri ("https://" + serverName.Trim ());
+                } catch {
+                    // We give up
+                    return ParseServerWhyEnum.FailUnknown;
+                }
             }
-
-            return true;
+            // We were able to create a Url object.
+            if (!EmailHelper.IsValidHost (serverURI.Host)) {
+                return ParseServerWhyEnum.FailBadHost;
+            }
+            if (!EmailHelper.IsValidPort (serverURI.Port)) {
+                return ParseServerWhyEnum.FailBadPort;
+            }
+            // Ensure there were no Query parameters.
+            if (null != serverURI.Query && string.Empty != serverURI.Query) {
+                return ParseServerWhyEnum.FailHadQuery;
+            }
+            // Ensure that the Path is correct.
+            if (null == serverURI.AbsolutePath || !serverURI.AbsolutePath.EndsWith (McServer.Default_Path)) {
+                // If we don't end with the default path, we need to.
+                // If no path specified, then use the default.
+                // If we end with the default path and a '/', strip.
+                if (null != serverURI.AbsolutePath && serverURI.AbsolutePath.EndsWith (McServer.Default_Path + "/")) {
+                    serverURI = new Uri (serverURI.AbsoluteUri.Substring (0, serverURI.AbsoluteUri.Length - 1));
+                } else {
+                    var prefix = serverURI.AbsolutePath.TrimEnd ('/');
+                    serverURI = new Uri (serverURI, prefix + McServer.Default_Path);
+                }
+            }
+            server.Scheme = serverURI.Scheme;
+            server.Host = serverURI.Host;
+            server.Port = serverURI.Port;
+            server.Path = serverURI.AbsolutePath;
+            return ParseServerWhyEnum.Success_0;
         }
 
         public static bool IsValidHost (string host)
