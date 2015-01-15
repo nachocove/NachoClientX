@@ -6,6 +6,7 @@ using System.Linq;
 using NUnit.Framework;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoCore;
 
 namespace Test.Common
 {
@@ -159,6 +160,95 @@ namespace Test.Common
             var result = McEmailMessage.QueryByBodyIdIncAwaitDel<McEmailMessage> (1, 55);
             NcAssert.Equals (2, result.Count ());
             NcAssert.True (result.All (x => x.AccountId == 1 && x.BodyId == 55));
+        }
+
+        [Test]
+        public void TestCountOfUnreadMessageItems ()
+        {
+            McEmailMessage message = new McEmailMessage () {
+                AccountId = 1,
+                IsRead = false,
+            };
+            message.Insert ();
+            Folder.Link (message);
+
+            McEmailMessage message1 = new McEmailMessage () {
+                AccountId = 1,
+                IsRead = false,
+            };
+            message1.Insert ();
+            Folder.Link (message1);
+
+            McEmailMessage message2 = new McEmailMessage () {
+                AccountId = 1,
+                IsRead = true,
+            };
+            message2.Insert ();
+            Folder.Link (message2);
+
+            McEmailMessage message3 = new McEmailMessage () {
+                AccountId = 1,
+                IsRead = false,
+            };
+            message3.Insert ();
+            Folder.Link (message3);
+
+            var count = McEmailMessage.CountOfUnreadMessageItems (1, Folder.Id);
+            Assert.AreEqual(3, count);
+        }
+
+        [Test]
+        public void TestQueryDueDateMessageItemsAllAccounts ()
+        {
+            McEmailMessage message = new McEmailMessage () {
+                AccountId = 1,
+                FlagType = "Defer until",
+                FlagStatus = 1,
+            };
+            message.Insert ();
+
+            McEmailMessage message1 = new McEmailMessage () {
+                AccountId = 2,
+                FlagType = "Defer until",
+                FlagStatus = 1,
+            };
+            message1.Insert ();
+
+            McEmailMessage message2 = new McEmailMessage () {
+                AccountId = 1,
+                FlagType = "For follow up by",
+                FlagStatus = 2,
+            };
+            message2.Insert ();
+
+            McEmailMessage message3 = new McEmailMessage () {
+                AccountId = 1,
+                FlagType = "For follow up by",
+                FlagStatus = 1,
+            };
+            message3.Insert ();
+
+            McEmailMessage message4 = new McEmailMessage () {
+                AccountId = 1,
+                FlagType = "For follow up by",
+                FlagStatus = 0,
+            };
+            message4.Insert ();
+
+            McEmailMessage message5 = new McEmailMessage () {
+                AccountId = 1,
+                FlagType = "For follow up by",
+                FlagStatus = 1,
+                IsAwaitingDelete = true,
+            };
+            message5.Insert ();
+
+            var deadlines = McEmailMessage.QueryDueDateMessageItemsAllAccounts ();
+            foreach (var deadline in deadlines) {
+                Assert.AreNotEqual (0, McEmailMessage.QueryById<McEmailMessage> (deadline.Id).FlagStatus);
+                Assert.AreNotEqual("Defer until", McEmailMessage.QueryById<McEmailMessage> (deadline.Id).FlagType);
+                NcAssert.True (!McEmailMessage.QueryById<McEmailMessage> (deadline.Id).IsAwaitingDelete);
+            }
         }
 
         private void CheckScoreAndUpdate (int id, double expectedScore, bool expectedNeedUpdate)
