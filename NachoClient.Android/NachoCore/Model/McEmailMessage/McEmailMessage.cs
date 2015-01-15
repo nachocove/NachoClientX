@@ -385,10 +385,10 @@ namespace NachoCore.Model
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
         }
 
-        public static List<NcEmailMessageIndex> QueryUnreadMessageItems (int accountId, int folderId)
+        public static int CountOfUnreadMessageItems (int accountId, int folderId)
         {
-            return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
-                "SELECT e.Id as Id FROM McEmailMessage AS e " +
+            return NcModel.Instance.Db.ExecuteScalar<int> (
+                "SELECT COUNT(*) FROM McEmailMessage AS e " +
                 "JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
                 "WHERE " +
                 "e.AccountId = ?  AND " +

@@ -63,6 +63,10 @@ namespace NachoClient.iOS
         protected const int DEFERRED_HIT_BOX_TAG = 99120;
         protected const int INBOX_HIT_BOX_TAG = 99121;
 
+        protected const int DEADLINES_ACCESSORY_TAG = 99122;
+        protected const int DEFERRED_ACCESSORY_TAG = 99123;
+        protected const int INBOX_ACCESSORY_TAG = 99124;
+
         public HotListTableViewSource (IMessageTableViewSourceDelegate owner, INachoEmailMessages messageThreads)
         {
             this.owner = owner;
@@ -250,43 +254,63 @@ namespace NachoClient.iOS
             var inboxHitBox = (UIButton)footer.ViewWithTag (INBOX_HIT_BOX_TAG);
             var inboxLabel = (UILabel)footer.ViewWithTag (INBOX_LABEL);
             var inboxFolder = NcEmailManager.InboxFolder ();
-            var unreadInboxMessages = McEmailMessage.QueryUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id);
+            var unreadInboxMessagesCount = McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id);
 
-            if (0 == unreadInboxMessages.Count) {
+            if (0 == unreadInboxMessagesCount) {
                 inboxLabel.Text = "You do not have any unread message in your Inbox.";
-            } else if (1 == unreadInboxMessages.Count) {
-                inboxLabel.Text = "You have " + unreadInboxMessages.Count + " unread message in your Inbox.";
+                inboxHitBox.Enabled = false;
+                footer.ViewWithTag (INBOX_ACCESSORY_TAG).Hidden = true;
+            } else if (1 == unreadInboxMessagesCount) {
+                inboxLabel.Text = "You have " + unreadInboxMessagesCount + " unread message in your Inbox.";
+                inboxHitBox.Enabled = true;
+                footer.ViewWithTag (INBOX_ACCESSORY_TAG).Hidden = false;
             } else {
-                inboxLabel.Text = "You have " + unreadInboxMessages.Count + " unread messages in your Inbox.";
+                inboxLabel.Text = "You have " + unreadInboxMessagesCount + " unread messages in your Inbox.";
+                inboxHitBox.Enabled = true;
+                footer.ViewWithTag (INBOX_ACCESSORY_TAG).Hidden = false;
             }
             inboxLabel.Hidden = false;
             inboxLabel.SizeToFit ();
             inboxLabel.Center = new PointF (inboxLabel.Center.X, inboxHitBox.Frame.Height / 2);
 
             // Deadline label
+            var deadlinesHitBox = (UIButton)footer.ViewWithTag (DEADLINES_HIT_BOX_TAG);
             var deadlineMessages = McEmailMessage.QueryDueDateMessageItemsAllAccounts ();
             var deadlinesLabel = (UILabel)footer.ViewWithTag (DEADLINES_LABEL);
 
             if (0 == deadlineMessages.Count) {
                 deadlinesLabel.Text = "You do not have any messages with deadlines.";
+                deadlinesHitBox.Enabled = false;
+                footer.ViewWithTag (DEADLINES_ACCESSORY_TAG).Hidden = true;
             } else if (1 == deadlineMessages.Count) {
                 deadlinesLabel.Text = "You have 1 message with a deadline.";
+                deadlinesHitBox.Enabled = true;
+                footer.ViewWithTag (DEADLINES_ACCESSORY_TAG).Hidden = false;
             } else {
                 deadlinesLabel.Text = "You have " + deadlineMessages.Count + " messages with deadlines.";
+                deadlinesHitBox.Enabled = true;
+                footer.ViewWithTag (DEADLINES_ACCESSORY_TAG).Hidden = false;
             }
             deadlinesLabel.Hidden = false;
             deadlinesLabel.SizeToFit ();
             deadlinesLabel.Center = new PointF (deadlinesLabel.Center.X, inboxHitBox.Frame.Height / 2);
 
             // Deferred label
+            var deferredHitBox = (UIButton)footer.ViewWithTag (DEFERRED_HIT_BOX_TAG);
             var deferredMessages = new NachoDeferredEmailMessages ();
             var deferredLabel = (UILabel)footer.ViewWithTag (DEFERRED_LABEL);
             if (0 == deferredMessages.Count ()) {
                 deferredLabel.Text = "You do not have any deferred messages.";
+                deferredHitBox.Enabled = false;
+                footer.ViewWithTag (DEFERRED_ACCESSORY_TAG).Hidden = true;
             } else if (1 == deferredMessages.Count ()) {
                 deferredLabel.Text = "You have 1 deferred message.";
+                deferredHitBox.Enabled = true;
+                footer.ViewWithTag (DEFERRED_ACCESSORY_TAG).Hidden = false;
             } else {
                 deferredLabel.Text = "You have " + deferredMessages.Count () + " deferred messages.";
+                deferredHitBox.Enabled = true;
+                footer.ViewWithTag (DEFERRED_ACCESSORY_TAG).Hidden = false;
             }
             deferredLabel.Hidden = false;
             deferredLabel.SizeToFit ();
@@ -535,8 +559,10 @@ namespace NachoClient.iOS
             inboxLabel.Frame = new RectangleF (A.Card_Horizontal_Indent, 0, cardWidth - 4 * A.Card_Horizontal_Indent, cellHeight);
             inboxLabel.Tag = INBOX_LABEL;
 
-            Util.AddArrowAccessory (inboxHitBox.Frame.Width - 18 - 12, (cellHeight / 2) - 6, 12, inboxHitBox);
+            var inboxAccessory = Util.AddArrowAccessoryView (inboxHitBox.Frame.Width - 18 - 12, (cellHeight / 2) - 6, 12);
+            inboxAccessory.Tag = INBOX_ACCESSORY_TAG;
 
+            inboxHitBox.AddSubview (inboxAccessory);
             inboxHitBox.AddSubview (inboxLabel);
             noMessagesView.AddSubview (inboxHitBox);
 
@@ -555,8 +581,10 @@ namespace NachoClient.iOS
             deadlinesLabel.Frame = new RectangleF (A.Card_Horizontal_Indent, 0, cardWidth - 4 * A.Card_Horizontal_Indent, cellHeight);
             deadlinesLabel.Tag = DEADLINES_LABEL;
 
-            Util.AddArrowAccessory (deadlinesHitBox.Frame.Width - 18 - 12, (cellHeight / 2) - 6, 12, deadlinesHitBox);
+            var deadlinesAccessory = Util.AddArrowAccessoryView (deadlinesHitBox.Frame.Width - 18 - 12, (cellHeight / 2) - 6, 12);
+            deadlinesAccessory.Tag = DEADLINES_ACCESSORY_TAG;
 
+            deadlinesHitBox.AddSubview (deadlinesAccessory);
             deadlinesHitBox.AddSubview (deadlinesLabel);
             noMessagesView.AddSubview (deadlinesHitBox);
 
@@ -575,8 +603,10 @@ namespace NachoClient.iOS
             deferredLabel.Frame = new RectangleF (A.Card_Horizontal_Indent, 0, cardWidth - 4 * A.Card_Horizontal_Indent, cellHeight);
             deferredLabel.Tag = DEFERRED_LABEL;
 
-            Util.AddArrowAccessory (deferredHitBox.Frame.Width - 18 - 12, (cellHeight / 2) - 6, 12, deferredHitBox);
+            var deferredAccessory = Util.AddArrowAccessoryView (deferredHitBox.Frame.Width - 18 - 12, (cellHeight / 2) - 6, 12);
+            deferredAccessory.Tag = DEFERRED_ACCESSORY_TAG;
 
+            deferredHitBox.AddSubview (deferredAccessory);
             deferredHitBox.AddSubview (deferredLabel);
             noMessagesView.AddSubview (deferredHitBox);
 
