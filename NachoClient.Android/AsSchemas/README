@@ -1,0 +1,41 @@
+There are two types of files in the XML redaction filtering system:
+
+1. ActiveSync Schemas (.xsd) - These are, presumably, from Microsoft and are XML 
+   schemas that describe the XML of various ActiveSync commands.
+2. XML filtering configuration files (.xml) - These are configurations that
+   instruct XML filter code what and how to redact WBXML content.
+3. C# source (.cs) - These are C# code that construct the run-time filter structure.
+
+A two-step process converts .xsd to usable .cs:
+
+       
+        make -f mk_config             make clean ; make
+.xsd -----------------------> .xml -----------------------> .cs
+
+
+Normally, one only needs to edit .xml file to get the redaction he wants. So, he
+only needs to do the 2nd step (make clean; make). However, if he finds the .xsd
+are incorrect and needs to update it, he will need to run the 1st step to
+re-generate new .xml file.
+
+The process currently is rather tedious as the newly generated .xml overwrites
+previous manual configuration and change the redaction of all elements to full.
+One need to handle merge some diffs. When I have time, I'll automate the 
+process.
+
+Currently, I added comments in .xsd files on any change I make. (The original
+.xsd files have no comemnt.) So, one can see what bugs there are by reading
+the comments.
+
+Once you get the .cs files, rebuild NachoClient. If you like what you see, 
+commit the .xsd / .xml / .cs files. Note that the normal build process
+does not include the conversion process described here.
+
+There are 5 types of redaction actions:
+
+1. none - You get the original content.
+2. length - Reports only the # of bytes of the original content.
+3. short_hash - Reports the content length and first 6 bytes of the SHA-256 hash of the content.
+4. full_hash - Reports the content lengt and the SHA-256 hash of the content.
+5. full - All content information (other than the element exists) are removed. The element
+   becomes an empty-element tag.
