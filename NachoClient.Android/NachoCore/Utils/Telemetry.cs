@@ -684,19 +684,6 @@ namespace NachoCore.Utils
             RecordRawEvent (tEvent);
         }
 
-        private static string Sha2HashString (string s)
-        {
-            byte[] bytes = Encoding.ASCII.GetBytes (s);
-            SHA256 sha256 = SHA256.Create ();
-            sha256.ComputeHash (bytes);
-
-            string hash = "";
-            for (int n = 0; n < sha256.Hash.Length; n++) {
-                hash += String.Format ("{0:x2}", sha256.Hash [n]);
-            }
-            return hash;
-        }
-
         public static void RecordAccountEmailAddress (McAccount account)
         {
             string emailAddress = account.EmailAddr;
@@ -712,7 +699,7 @@ namespace NachoCore.Utils
             if (emailAddress.LastIndexOf ("@") != index) {
                 return; // malformed email address - more than 1 "@"
             }
-            string obfuscated = Sha2HashString (emailAddress.Substring (0, index)) + emailAddress.Substring (index);
+            string obfuscated = HashHelper.Sha256 (emailAddress.Substring (0, index)) + emailAddress.Substring (index);
 
             Dictionary<string, string> dict = new Dictionary<string, string> ();
             dict.Add ("sha256_email_address", obfuscated);

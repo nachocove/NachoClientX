@@ -351,6 +351,7 @@
     <Compile Include="NachoCore\Index\IndexDocument.cs" />
     <Compile Include="NachoCore\Utils\EmailHelper.cs" />
     <Compile Include="NachoCore\Utils\LocalNotificationManager.cs" />
+    <Compile Include="NachoCore\Utils\HashHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
