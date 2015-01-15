@@ -529,7 +529,7 @@ namespace NachoClient.iOS
             hotListLabel.BackgroundColor = UIColor.White;
             hotListLabel.Lines = 0;
             hotListLabel.LineBreakMode = UILineBreakMode.WordWrap;            
-            hotListLabel.Text = "You do not have any Hot messages. \n \n Start adding Hot messages by tapping on the          icon in your mail.";
+            hotListLabel.Text = "You do not have any Hot messages. \n \nStart adding Hot messages by tapping on the          icon in your mail.";
             hotListLabel.Frame = new RectangleF (A.Card_Horizontal_Indent, 2 * A.Card_Vertical_Indent, 320 - 2 * A.Card_Horizontal_Indent, noMessagesView.Frame.Height - 64);
             hotListLabel.SizeToFit ();
             hotListLabel.Center = new PointF (noMessagesView.Frame.Width / 2, (A.Card_Vertical_Indent + cellHeight * 3) / 2);
