@@ -115,6 +115,7 @@ namespace NachoClient.iOS
         {
             base.ViewDidAppear (animated);
 //            swipeViewDateSource.SelectButton (0);
+            PermissionManager.DealWithContactsPermission ();
         }
 
         public override void ViewWillDisappear (bool animated)
@@ -128,6 +129,12 @@ namespace NachoClient.iOS
             var s = (StatusIndEventArgs)e;
             if (NcResult.SubKindEnum.Info_ContactSetChanged == s.Status.SubKind) {
                 LoadContacts ();
+            }
+            if (NcResult.SubKindEnum.Info_SearchCommandSucceeded == s.Status.SubKind) {
+                LoadContacts ();
+                var sb = SearchDisplayController.SearchBar;
+                contactTableViewSource.UpdateSearchResults (sb.SelectedScopeButtonIndex, sb.Text, false);
+                SearchDisplayController.SearchResultsTableView.ReloadData ();
             }
         }
 

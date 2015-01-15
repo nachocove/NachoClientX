@@ -412,6 +412,7 @@ namespace NachoClient.iOS
             var cellTap = new UITapGestureRecognizer ();
             cellTap.AddTarget (() => {
                 action ();
+                cell.BackgroundColor = (modal ? UIColor.Black : UIColor.LightGray);
             });
             cell.AddGestureRecognizer (cellTap);
 
@@ -440,6 +441,7 @@ namespace NachoClient.iOS
             var cellTap = new UITapGestureRecognizer ();
             cellTap.AddTarget (() => {
                 folder = folder.UpdateSet_LastAccessed (DateTime.UtcNow);
+                cell.BackgroundColor = (modal ? UIColor.Black : UIColor.LightGray);
                 UpdateLastAccessed ();
                 if (modal) {
                     FolderSelected (folder);
@@ -495,6 +497,7 @@ namespace NachoClient.iOS
             cellTap.AddTarget (() => {
                 var folder = GetFolder (folderStruct);
                 folder = folder.UpdateSet_LastAccessed (DateTime.UtcNow);
+                cell.BackgroundColor = (modal ? UIColor.Black : UIColor.LightGray);
                 UpdateLastAccessed ();
                 if (modal) {
                     FolderSelected (folder);

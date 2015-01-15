@@ -421,6 +421,13 @@ namespace NachoCore.Model
             }
         }
 
+        public void RunInLock (Action action)
+        {
+            lock (WriteNTransLockObj) {
+                action ();
+            }
+        }
+
         public void RunInTransaction (Action action)
         {
             if (NcModel.Instance.IsInTransaction ()) {

@@ -757,13 +757,10 @@ namespace NachoCore.ActiveSync
             (Power.Instance.PowerStateIsPlugged () && Power.Instance.BatteryLevel > 0.2);
         }
 
-        public Tuple<PickActionEnum, AsCommand> Pick ()
+        public Tuple<PickActionEnum, AsCommand> PickUserDemand ()
         {
             var accountId = BEContext.Account.Id;
-            var protocolState = BEContext.ProtocolState;
             var exeCtxt = NcApplication.Instance.ExecutionContext;
-            AdvanceIfPossible (accountId, Scope.StrategyRung (protocolState));
-            var stillHaveUnsyncedFolders = ScrubSyncedFolders (accountId);
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
                 // (FG) If the user has initiated a Search command, we do that.
                 var search = McPending.QueryEligible (accountId).
@@ -777,11 +774,11 @@ namespace NachoCore.ActiveSync
                 var fetch = McPending.QueryEligibleOrderByPriorityStamp (accountId).
                     Where (x => 
                         McPending.Operations.AttachmentDownload == x.Operation ||
-                            McPending.Operations.EmailBodyDownload == x.Operation ||
-                            McPending.Operations.CalBodyDownload == x.Operation ||
-                            McPending.Operations.ContactBodyDownload == x.Operation ||
-                            McPending.Operations.TaskBodyDownload == x.Operation
-                            ).FirstOrDefault ();
+                        McPending.Operations.EmailBodyDownload == x.Operation ||
+                        McPending.Operations.CalBodyDownload == x.Operation ||
+                        McPending.Operations.ContactBodyDownload == x.Operation ||
+                        McPending.Operations.TaskBodyDownload == x.Operation
+                    ).FirstOrDefault ();
                 if (null != fetch) {
                     Log.Info (Log.LOG_AS, "Strategy:FG:Fetch");
                     // TODO: aggregate more than one hot fetch into this command, keeping in mind the
@@ -794,6 +791,20 @@ namespace NachoCore.ActiveSync
                                 Pendings = new List<McPending> { fetch },
                             }));
                 }
+            }
+            return null;
+        }
+
+        public Tuple<PickActionEnum, AsCommand> Pick ()
+        {
+            var accountId = BEContext.Account.Id;
+            var protocolState = BEContext.ProtocolState;
+            var exeCtxt = NcApplication.Instance.ExecutionContext;
+            AdvanceIfPossible (accountId, Scope.StrategyRung (protocolState));
+            var stillHaveUnsyncedFolders = ScrubSyncedFolders (accountId);
+            var userDemand = PickUserDemand ();
+            if (null != userDemand) {
+                return userDemand;
             }
             // (FG, BG) If there is a SendMail, SmartForward or SmartReply in the pending queue, send it.
             if (NcApplication.ExecutionContextEnum.Foreground == exeCtxt ||

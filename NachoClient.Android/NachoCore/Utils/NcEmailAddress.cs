@@ -171,7 +171,7 @@ namespace NachoCore.Utils
             MailboxAddress mailbox;
 
             if (null != this.contact) {
-                candidate = this.contact.GetEmailAddress();
+                candidate = this.contact.GetEmailAddress ();
             } else {
                 candidate = this.address;
             }
@@ -187,7 +187,7 @@ namespace NachoCore.Utils
             }
 
             if (null == mailbox.Name) {
-                mailbox.Name = this.contact.GetDisplayName();
+                mailbox.Name = this.contact.GetDisplayName ();
             }
 
             return mailbox;
@@ -212,7 +212,7 @@ namespace NachoCore.Utils
         }
 
         private static List<NcEmailAddress> ParseAddressListString (string addressString,
-            Kind addressKind)
+                                                                    Kind addressKind)
         {
             List<NcEmailAddress> addressList = new List<NcEmailAddress> ();
             if (null == addressString) {
@@ -285,6 +285,23 @@ namespace NachoCore.Utils
                 }
                 break;
             }
+        }
+
+
+        public static InternetAddressList ToInternetAddressList (List<NcEmailAddress> addressList, Kind kind)
+        {
+            var list = new InternetAddressList ();
+            if (null == addressList) {
+                return list;
+            }
+            foreach (var a in addressList) {
+                NcAssert.True (kind == a.kind);
+                var mailbox = a.ToMailboxAddress ();
+                if (null != mailbox) {
+                    list.Add (mailbox);
+                }
+            }
+            return list;
         }
     }
 }

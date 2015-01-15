@@ -18,51 +18,66 @@ namespace NachoCore.ActiveSync
             ReWrites = new List<McPending.ReWrite> ();
         }
 
+        // TODO per-account caching.
+        private static int LastAccountId = -1;
+        private static int LastVersion = -1;
+        private static List<McPending> LastQueryNonFailedNonDeleted = null;
+
         public void ProcessServerCommand ()
         {
-            foreach (var pending in McPending.QueryNonFailedNonDeleted (AccountId).OrderBy (x => x.Id)) {
-                if (McPending.StateEnum.Dispatched == pending.State) {
-                    // TODO: apply changes to pending after the server rejects them. Or should we mark them as maybe-gonna-fail?
-                    continue;
+            // TODO consider grouping in a transaction.
+            NcModel.Instance.RunInLock (() => {
+                if (LastVersion != McPending.Version || null == LastQueryNonFailedNonDeleted || AccountId != LastAccountId) {
+                    LastAccountId = AccountId;
+                    LastVersion = McPending.Version;
+                    // TODO: evaluate whether we can drop OrderBy.
+                    LastQueryNonFailedNonDeleted = McPending.QueryNonFailedNonDeleted (AccountId).OrderBy (x => x.Id).ToList ();
                 }
+                foreach (var pending in LastQueryNonFailedNonDeleted) {
+                    if (McPending.StateEnum.Dispatched == pending.State) {
+                        // TODO: possibly apply changes to pending after the server rejects them rather
+                        // than letting them possibly HardFail.
+                        continue;
+                    }
 
-                // Apply all existing re-writes to the pending.
-                switch (pending.ApplyReWrites (ReWrites)) {
-                case McPending.DbActionEnum.DoNothing:
-                    break;
-                case McPending.DbActionEnum.Update:
-                    pending.Update ();
-                    break;
-                case McPending.DbActionEnum.Delete:
-                    pending.Delete ();
-                    continue; // Not break! No need to apply delta to a just-deleted pending!
-                }
+                    // Apply all existing re-writes to the pending.
+                    switch (pending.ApplyReWrites (ReWrites)) {
+                    case McPending.DbActionEnum.DoNothing:
+                        break;
+                    case McPending.DbActionEnum.Update:
+                        pending.Update ();
+                        break;
+                    case McPending.DbActionEnum.Delete:
+                        pending.Delete ();
+                        continue; // Not break! No need to apply delta to a just-deleted pending!
+                    }
 
-                // Apply this specific to-client delta to the pending,
-                // possibly generating new re-writes.
-                McPending.DbActionEnum action;
-                bool cancelDelta;
-                var newReWrites = ApplyCommandToPending (pending, out action, out cancelDelta);
-                if (null != newReWrites) {
-                    ReWrites.AddRange (newReWrites);
+                    // Apply this specific to-client delta to the pending,
+                    // possibly generating new re-writes.
+                    McPending.DbActionEnum action;
+                    bool cancelDelta;
+                    var newReWrites = ApplyCommandToPending (pending, out action, out cancelDelta);
+                    if (null != newReWrites) {
+                        ReWrites.AddRange (newReWrites);
+                    }
+                    switch (action) {
+                    case McPending.DbActionEnum.DoNothing:
+                        break;
+                    case McPending.DbActionEnum.Update:
+                        pending.Update ();
+                        break;
+                    case McPending.DbActionEnum.Delete:
+                        pending.Delete ();
+                        break;
+                    }
+                    if (cancelDelta) {
+                        // There is no need to keep processing the delta, and no need to apply it to the DB.
+                        return;
+                    }
                 }
-                switch (action) {
-                case McPending.DbActionEnum.DoNothing:
-                    break;
-                case McPending.DbActionEnum.Update:
-                    pending.Update ();
-                    break;
-                case McPending.DbActionEnum.Delete:
-                    pending.Delete ();
-                    break;
-                }
-                if (cancelDelta) {
-                    // There is no need to keep processing the delta, and no need to apply it to the DB.
-                    return;
-                }
-            }
-            ApplyReWritesToModel ();
-            ApplyCommandToModel ();
+                ApplyReWritesToModel ();
+                ApplyCommandToModel ();
+            });
         }
 
         protected abstract List<McPending.ReWrite> ApplyCommandToPending (McPending pending, 

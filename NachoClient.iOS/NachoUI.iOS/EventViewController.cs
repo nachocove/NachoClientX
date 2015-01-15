@@ -728,6 +728,7 @@ namespace NachoClient.iOS
                 NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
                 NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
             }
+            PermissionManager.DealWithCalendarPermission ();
         }
 
         public override bool HidesBottomBarWhenPushed {
@@ -1097,71 +1098,34 @@ namespace NachoClient.iOS
                 removeFromCalendarButton.Hidden = true;
                 rsvpSeparatorLine.Hidden = true;
                 return;
-            } else if (c.ResponseTypeIsSet) {
 
-                switch (c.ResponseType) {
+            } else {
 
-                case NcResponseType.Accepted:
-                    acceptButton.Selected = true;
-                    acceptButton.Hidden = false;
-                    acceptLabel.Hidden = false;
-                    tentativeButton.Hidden = false;
-                    declineButton.Hidden = false;
-                    tentativeLabel.Hidden = false;
-                    declineLabel.Hidden = false;
-                    //                    messageLabel.Text = "You are going";
-                    //                    messageLabel.Hidden = false;
-                    //                    changeResponseButton.Hidden = false;
-                    //                    acceptButton.Frame = new RectangleF (18, 18, 24, 24);
-                    //                    acceptLabel.Hidden = true;
-                    //                    tentativeButton.Hidden = true;
-                    //                    declineButton.Hidden = true;
-                    //                    tentativeLabel.Hidden = true;
-                    //                    declineLabel.Hidden = true;
-                    acceptButton.UserInteractionEnabled = false;
-                    break;
-
-                case NcResponseType.Tentative:
-                    tentativeButton.Selected = true;
-                    acceptButton.Hidden = false;
-                    acceptLabel.Hidden = false;
-                    tentativeButton.Hidden = false;
-                    declineButton.Hidden = false;
-                    tentativeLabel.Hidden = false;
-                    declineLabel.Hidden = false;
-                    //                    messageLabel.Text = "Tentative";
-                    //                    messageLabel.Hidden = false;
-                    //                    changeResponseButton.Hidden = false;
-                    //                    tentativeButton.Frame = new RectangleF (18, 18, 24, 24);
-                    //                    acceptButton.Hidden = true;
-                    //                    acceptLabel.Hidden = true;
-                    //                    tentativeLabel.Hidden = true;
-                    //                    declineButton.Hidden = true;
-                    //                    declineLabel.Hidden = true;
-                    tentativeButton.UserInteractionEnabled = false;
-                    break;
-
-                case NcResponseType.Declined:
-                    declineButton.Selected = true;
-                    acceptButton.Hidden = false;
-                    acceptLabel.Hidden = false;
-                    tentativeButton.Hidden = false;
-                    declineButton.Hidden = false;
-                    tentativeLabel.Hidden = false;
-                    declineLabel.Hidden = false;
-                    //                    messageLabel.Text = "You are not going to this meeting";
-                    //                    messageLabel.Hidden = false;
-                    //                    changeResponseButton.Hidden = false;
-                    //                    declineButton.Frame = new RectangleF (18, 18, 24, 24);
-                    //                    acceptButton.Hidden = true;
-                    //                    acceptLabel.Hidden = true;
-                    //                    tentativeButton.Hidden = true;
-                    //                    tentativeLabel.Hidden = true;
-                    //                    declineLabel.Hidden = true;
-                    declineButton.UserInteractionEnabled = false;
-                    break;
-                }
+                // Show the Accept, Decline, and Maybe buttons.
+                acceptButton.Hidden = false;
+                acceptLabel.Hidden = false;
+                tentativeButton.Hidden = false;
+                tentativeLabel.Hidden = false;
+                declineButton.Hidden = false;
+                declineLabel.Hidden = false;
                 rsvpSeparatorLine.Hidden = false;
+
+                if (c.ResponseTypeIsSet) {
+                    switch (c.ResponseType) {
+                    case NcResponseType.Accepted:
+                        acceptButton.Selected = true;
+                        acceptButton.UserInteractionEnabled = false;
+                        break;
+                    case NcResponseType.Tentative:
+                        tentativeButton.Selected = true;
+                        tentativeButton.UserInteractionEnabled = false;
+                        break;
+                    case NcResponseType.Declined:
+                        declineButton.Selected = true;
+                        declineButton.UserInteractionEnabled = false;
+                        break;
+                    }
+                }
             }
         }
 

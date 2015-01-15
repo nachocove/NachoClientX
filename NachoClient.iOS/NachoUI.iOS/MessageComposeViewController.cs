@@ -21,14 +21,6 @@ namespace NachoClient.iOS
 {
     public partial class MessageComposeViewController : UIViewController, IUcAddressBlockDelegate, IUcAttachmentBlockDelegate, INachoContactChooserDelegate, INachoFileChooserParent, INachoDateControllerParent, INachoIntentChooserParent
     {
-        // The reason for sending this message
-        protected enum Action
-        {
-            Send,
-            Reply,
-            ReplyAll,
-            Forward,
-        };
 
         // Strings to be used when calling SetAction()
         public static readonly string REPLY_ACTION = "Reply";
@@ -40,12 +32,9 @@ namespace NachoClient.iOS
         protected McAccount account;
         protected McCalendar calendarInviteItem;
 
-        protected McEmailMessage mcMessage = new McEmailMessage ();
-        protected McBody mcBody = new McBody ();
-
         protected McEmailMessage referencedMessage;
         // The message being forwarded or replied to, if any
-        protected Action action;
+        protected EmailHelper.Action action;
         // The reason for sending this message
 
         protected bool calendarInviteIsSet;
@@ -65,6 +54,7 @@ namespace NachoClient.iOS
         bool alwaysShowIntent;
 
         UITextView bodyTextView;
+        UIButton showQuotedTextButton;
 
         UIView toViewHR;
         UIView ccViewHR;
@@ -82,7 +72,7 @@ namespace NachoClient.iOS
 
         // If this is a reply or forward, keep track of the quoted text that is inserted.
         // This makes it possible to check later if the user changed the text.
-        private string initialQuotedText = null;
+        private NSAttributedString initialQuotedText = null;
         protected UIFont labelFont = A.Font_AvenirNextMedium14;
         protected UIColor labelColor = A.Color_NachoDarkText;
 
@@ -99,8 +89,9 @@ namespace NachoClient.iOS
         UIBarButtonItem sendButton;
         UIBarButtonItem cancelButton;
         UIBarButtonItem quickResponseButton;
-        public NcMessageIntent messageIntent;
-        protected MessageDeferralType intentDateType;
+        protected McEmailMessage.IntentType messageIntent = McEmailMessage.IntentType.None;
+        protected MessageDeferralType messageIntentDateType;
+        protected DateTime messageIntentDateTime;
 
         public MessageComposeViewController (IntPtr handle) : base (handle)
         {
@@ -171,9 +162,9 @@ namespace NachoClient.iOS
 
             quickResponseButton.Clicked += (object sender, EventArgs e) => {
                 View.EndEditing (true);
-                if (IsReplyAction ()) {
+                if (EmailHelper.IsReplyAction (action)) {
                     QRType = NcQuickResponse.QRTypeEnum.Reply;
-                } else if (IsForwardAction ()) {
+                } else if (EmailHelper.IsForwardAction (action)) {
                     QRType = NcQuickResponse.QRTypeEnum.Forward;
                 } else {
                     QRType = NcQuickResponse.QRTypeEnum.Compose;
@@ -210,13 +201,14 @@ namespace NachoClient.iOS
 
             CreateView ();
 
-            if (IsForwardOrReplyAction ()) {
+            if (EmailHelper.IsForwardOrReplyAction (action)) {
                 InitializeMessageForAction ();
             }
+            showQuotedTextButton.Hidden = (null == referencedMessage);
 
             suppressLayout = false;
                 
-            if (IsReplyAction ()) {
+            if (EmailHelper.IsReplyAction (action)) {
                 ConfigureBodyEditView (false);
                 bodyTextView.BecomeFirstResponder ();
                 bodyTextView.SelectedRange = new NSRange (0, 0);
@@ -306,19 +298,13 @@ namespace NachoClient.iOS
             if (segue.Identifier == "SegueToQuickResponse") {
                 var vc = (QuickResponseViewController)segue.DestinationViewController;
                 vc.SetOwner (this);
-                vc.SetProperties (QRType, ref mcMessage);
+                vc.SetProperties (QRType);
                 return;
             }
             if (segue.Identifier == "SegueToIntentSelection") {
                 var vc = (IntentSelectionViewController)segue.DestinationViewController;
                 vc.SetOwner (this);
                 vc.SetDateControllerOwner (this);
-
-                if (null == messageIntent) {
-                    mcMessage.Subject = subjectField.Text;
-                    messageIntent = new NcMessageIntent ();
-                }
-
                 return;
             }
 
@@ -336,6 +322,8 @@ namespace NachoClient.iOS
         {
             View.BackgroundColor = UIColor.White;
             scrollView.BackgroundColor = UIColor.White;
+            scrollView.AutosizesSubviews = false;
+            scrollView.AutoresizingMask = UIViewAutoresizing.None;
 
             contentView.BackgroundColor = UIColor.White;
             contentView.Layer.CornerRadius = 6;
@@ -399,6 +387,9 @@ namespace NachoClient.iOS
                 View.EndEditing (true);
                 PerformSegue ("SegueToIntentSelection", this);
             });
+            intentTap.ShouldRecognizeSimultaneously = ((UIGestureRecognizer gestureRecognizer, UIGestureRecognizer otherGestureRecognizer) => {
+                return true;
+            }); 
             intentView.AddGestureRecognizer (intentTap);
             intentView.UserInteractionEnabled = true;
 
@@ -408,28 +399,33 @@ namespace NachoClient.iOS
 
             attachmentView = new UcAttachmentBlock (this, account.Id, View.Frame.Width, 40, true);
 
-            bodyTextView = new UITextView (new RectangleF (0, 0, View.Frame.Width, 0));
+            bodyTextView = new UITextView (new RectangleF (BODY_LEFT_MARGIN, 0, View.Frame.Width - BODY_RIGHT_MARGIN - BODY_LEFT_MARGIN, 0));
             bodyTextView.Font = labelFont;
             bodyTextView.TextColor = labelColor;
             bodyTextView.BackgroundColor = UIColor.White;
-            bodyTextView.TextContainerInset = new UIEdgeInsets (BODY_TOP_MARGIN, BODY_LEFT_MARGIN, BODY_BOTTOM_MARGIN, BODY_RIGHT_MARGIN);
             bodyTextView.ScrollEnabled = true;
             bodyTextView.Scrolled += BodyTextViewScrolled;
             bodyTextView.DraggingEnded += BodyTextViewDraggingEnded;
             bodyTextView.ShowsHorizontalScrollIndicator = false;
             bodyTextView.ShowsVerticalScrollIndicator = false;
+            bodyTextView.AllowsEditingTextAttributes = true;
+
+            var attributes = new MonoTouch.CoreText.CTStringAttributes ();
+            attributes.Font = new MonoTouch.CoreText.CTFont (labelFont.Name, labelFont.PointSize);
+            var initialString = new NSMutableAttributedString ();
 
             if (EmailTemplate != null) {
-                bodyTextView.InsertText (EmailTemplate);
+                initialString.Append (new NSAttributedString (EmailTemplate, attributes));
             }
             if (!String.IsNullOrEmpty (account.Signature)) {
-                bodyTextView.InsertText ("\n\n");
-                bodyTextView.InsertText (account.Signature);
+                initialString.Append (new NSAttributedString ("\n\n", attributes));
+                initialString.Append (new NSAttributedString (account.Signature, attributes));
             }
+
+            bodyTextView.AttributedText = initialString;
 
             var beginningRange = new NSRange (0, 0);
             bodyTextView.SelectedRange = beginningRange;
-
 
             //Need to be able to inserthtml here, but for now will do simple text input
             //bodyTextView.InsertText ("<html><head></head><body>This message sent by <a href='http://www.nachocove.com'>NachoMail</a></body></html>");
@@ -452,12 +448,25 @@ namespace NachoClient.iOS
 
             scrollView.AddSubview (bodyTextView);
 
+            showQuotedTextButton = UIButton.FromType (UIButtonType.System);
+            showQuotedTextButton.SetTitle ("Tap to show quoted text", UIControlState.Normal);
+            showQuotedTextButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
+            showQuotedTextButton.SizeToFit ();
+
+            // The minimum indent from UITextView frame to text is a mystery
+            ViewFramer.Create (showQuotedTextButton).X (bodyTextView.Frame.X + 4);
+            ViewFramer.Create (showQuotedTextButton).Height (30);
+            scrollView.AddSubview (showQuotedTextButton);
+
+            showQuotedTextButton.TouchUpInside += onShowQuotedTextButton;
+
             subjectField.EditingDidBegin += (object sender, EventArgs e) => {
                 ConfigureSubjectEditView (true);
             };
                 
             bodyTextView.Started += (object sender, EventArgs e) => {
                 ConfigureBodyEditView (true);
+                LayoutView ();
             };
 
             bodyTextView.Changed += (object sender, EventArgs e) => {
@@ -498,7 +507,7 @@ namespace NachoClient.iOS
             toViewHR.Hidden = false;
             ccViewHR.Hidden = false;
             bccViewHR.Hidden = true;
-            attachmentViewHR.Hidden = false;
+            attachmentViewHR.Hidden = calendarInviteIsSet;
 
             intentView.Hidden = !alwaysShowIntent;
             intentLabelHR.Hidden = !alwaysShowIntent;
@@ -522,7 +531,7 @@ namespace NachoClient.iOS
             toView.Hidden = false;
             ccView.Hidden = false;
             bccView.Hidden = false;
-            attachmentView.Hidden = (calendarInviteIsSet ? true : false); 
+            attachmentView.Hidden = calendarInviteIsSet; 
 
             toView.SetCompact (false, -1);
             ccView.SetCompact (false, -1);
@@ -532,7 +541,7 @@ namespace NachoClient.iOS
             toViewHR.Hidden = false;
             ccViewHR.Hidden = false;
             bccViewHR.Hidden = false;
-            attachmentViewHR.Hidden = false;
+            attachmentViewHR.Hidden = calendarInviteIsSet;
 
             intentView.Hidden = !alwaysShowIntent;
             intentLabelHR.Hidden = !alwaysShowIntent;
@@ -563,7 +572,8 @@ namespace NachoClient.iOS
             toView.SetCompact (true, -1);
             ccView.SetCompact (true, -1);
             bccView.SetCompact (true, -1);
-            attachmentView.Hidden = (calendarInviteIsSet ? true : false); 
+            attachmentView.Hidden = calendarInviteIsSet;
+            attachmentViewHR.Hidden = calendarInviteIsSet;
             attachmentView.SetCompact (true);
 
             suppressLayout = true;
@@ -668,21 +678,21 @@ namespace NachoClient.iOS
 
             float yOffset = 0;
 
-            AdjustY (toView, yOffset);
-            AdjustY (toViewHR, yOffset + toView.Frame.Height);
+            ViewFramer.Create (toView).Y (yOffset);
+            ViewFramer.Create (toViewHR).Y (yOffset + toView.Frame.Height);
             if (!toView.Hidden) {
                 yOffset = toViewHR.Frame.Bottom;
             }
 
-            AdjustY (ccView, yOffset);
-            AdjustY (ccViewHR, yOffset + ccView.Frame.Height);
+            ViewFramer.Create (ccView).Y (yOffset);
+            ViewFramer.Create (ccViewHR).Y (yOffset + ccView.Frame.Height);
             if (!ccView.Hidden) {
                 yOffset = ccViewHR.Frame.Bottom;
 
             }
 
-            AdjustY (bccView, yOffset);
-            AdjustY (bccViewHR, yOffset + bccView.Frame.Height);
+            ViewFramer.Create (bccView).Y (yOffset);
+            ViewFramer.Create (bccViewHR).Y (yOffset + bccView.Frame.Height);
             if (!bccView.Hidden) {
                 yOffset = bccViewHR.Frame.Bottom;
             }
@@ -694,7 +704,7 @@ namespace NachoClient.iOS
             CenterY (subjectField, subjectFieldStart, yOffset, subjectFieldWidth, LINE_HEIGHT);
             yOffset += LINE_HEIGHT;
 
-            AdjustY (subjectLabelHR, yOffset);
+            ViewFramer.Create (subjectLabelHR).Y (yOffset);
             yOffset += subjectLabelHR.Frame.Height;
 
             // Intent subviews
@@ -705,20 +715,23 @@ namespace NachoClient.iOS
             CenterY (intentDisplayLabel, intentDisplayStart, 0, intentDisplayWidth, LINE_HEIGHT);
 
             intentView.Frame = new RectangleF (0, yOffset, View.Frame.Width, LINE_HEIGHT);
-            AdjustY (intentLabelHR, intentView.Frame.Bottom);
+            ViewFramer.Create (intentLabelHR).Y (intentView.Frame.Bottom);
 
             if (!intentView.Hidden) {
                 yOffset = intentLabelHR.Frame.Bottom;
             }
 
             if (!attachmentView.Hidden) {
-                AdjustY (attachmentView, yOffset);
+                ViewFramer.Create (attachmentView).Y (yOffset);
                 yOffset += attachmentView.Frame.Height;
-                AdjustY (attachmentViewHR, yOffset);
+                ViewFramer.Create (attachmentViewHR).Y (yOffset);
                 yOffset += attachmentViewHR.Frame.Height;
             }
 
             scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
+
+            // padding at the end, before textview
+            yOffset += 10;
 
             var contentFrame = new RectangleF (0, 0, View.Frame.Width, yOffset);
             contentView.Frame = contentFrame;
@@ -726,14 +739,6 @@ namespace NachoClient.iOS
             ViewFramer.Create (bodyTextView).Y (contentFrame.Bottom);
 
             SetBodyAndScrollViewSize (bodyTextView);
-            bodyTextView.SetNeedsDisplay ();
-        }
-
-        protected void AdjustY (UIView view, float yOffset)
-        {
-            var frame = view.Frame;
-            frame.Y = yOffset;
-            view.Frame = frame;
         }
 
         protected void CenterY (UIView view, float x, float y, float width, float section_height)
@@ -839,13 +844,27 @@ namespace NachoClient.iOS
             if (!textView.Frame.Size.Equals (textView.ContentSize)) {
                 textView.ContentSize = textView.Frame.Size;
             }
-            var scrollViewContentSize = new SizeF (textView.ContentSize.Width, textView.Frame.Y + textView.Frame.Height + BODY_BOTTOM_MARGIN + BODY_TOP_MARGIN);
+            float y;
+            if (showQuotedTextButton.Hidden) {
+                y = textView.Frame.Bottom;
+            } else {
+                ViewFramer.Create (showQuotedTextButton).Y (textView.Frame.Bottom);
+                y = showQuotedTextButton.Frame.Bottom;
+            }
+
+            var scrollViewContentSize = new SizeF (textView.ContentSize.Width, y + BODY_BOTTOM_MARGIN + BODY_TOP_MARGIN);
             if (!scrollView.ContentSize.Equals (scrollViewContentSize)) {
                 scrollView.ContentSize = scrollViewContentSize;
             }
             // Console.WriteLine ("SetBodyAndScrollViewSize: {0}", ViewHelper.ViewInfo (scrollView, "scrollView"));
             // Console.WriteLine ("SetBodyAndScrollViewSize: {0}", ViewHelper.ViewInfo (bodyTextView, "bodyTextView"));
+            // ViewHelper.DumpViewHierarchy (View);
 
+        }
+
+        public override void ViewDidLayoutSubviews ()
+        {
+            base.ViewDidLayoutSubviews ();
         }
 
         /// <summary>
@@ -895,7 +914,7 @@ namespace NachoClient.iOS
 
         protected void BodyTextViewDraggingEnded (object sender, DraggingEventArgs e)
         {
-            if (scrollView.ContentOffset.Y < 0) {
+            if (0 > scrollView.ContentOffset.Y) {
                 // Console.WriteLine ("dragging adjusted: {0}", ViewHelper.ViewInfo (scrollView, ""));
                 scrollView.SetContentOffset (new PointF (scrollView.ContentOffset.X, 0), true);
             }
@@ -940,41 +959,23 @@ namespace NachoClient.iOS
 
         protected void ShowQuickResponses ()
         {
-            switch (QRType) {
-            case NcQuickResponse.QRTypeEnum.Compose:
-            case NcQuickResponse.QRTypeEnum.Reply:
-            case NcQuickResponse.QRTypeEnum.Forward:
-                mcMessage.BodyId = McBody.InsertFile (account.Id, McAbstrFileDesc.BodyTypeEnum.PlainText_1, bodyTextView.Text).Id;
-                break;
-            case NcQuickResponse.QRTypeEnum.None:
-                break;
-            default:
-                NcAssert.CaseError ("This type is not supported");
-                break;
-            }
-
-            mcMessage.Subject = subjectField.Text;
             PerformSegue ("SegueToQuickResponse", this);
         }
 
-        public void PopulateMessageFromQR (NcQuickResponse.QRTypeEnum whichType)
+        public void PopulateMessageFromQR (NcQuickResponse.QRTypeEnum whichType, NcQuickResponse.QuickResponse selectedResponse)
         {
-            switch (whichType) {
-            case NcQuickResponse.QRTypeEnum.Compose:
+            if (NcQuickResponse.QRTypeEnum.Compose == whichType) {
                 alwaysShowIntent = true;
-                subjectField.Text = mcMessage.Subject;
-                bodyTextView.Text = McBody.GetContentsString (mcMessage.BodyId);
-                break;
-            case NcQuickResponse.QRTypeEnum.Reply:
-                bodyTextView.Text = McBody.GetContentsString (mcMessage.BodyId);
-                break;
-            case NcQuickResponse.QRTypeEnum.Forward:
-                bodyTextView.Text = McBody.GetContentsString (mcMessage.BodyId);
-                break;
-            default:
-                break;
+                subjectField.Text = selectedResponse.subject;
             }
 
+            var attributes = new MonoTouch.CoreText.CTStringAttributes ();
+            attributes.Font = new MonoTouch.CoreText.CTFont (labelFont.Name, labelFont.PointSize);
+
+            var response = new NSMutableAttributedString (selectedResponse.body, attributes);
+            response.Append (bodyTextView.AttributedText);
+            bodyTextView.AttributedText = response;
+                       
             bodyTextView.BecomeFirstResponder ();
             if (bodyTextView.Text.Contains ("\n")) {
                 bodyTextView.SelectedRange = new NSRange (bodyTextView.Text.IndexOf ("\n"), 0);
@@ -987,17 +988,34 @@ namespace NachoClient.iOS
             calendarInviteIsSet = true;
         }
 
-        public void PopulateMessageFromSelectedIntent (MessageDeferralType intentDateTypeEnum)
+        public void PopulateMessageFromSelectedIntent (McEmailMessage.IntentType intent, MessageDeferralType intentDateType, DateTime intentDateTime)
         {
-            intentDateType = intentDateTypeEnum;
-            intentDisplayLabel.Text = NcMessageIntent.GetIntentString (intentDateTypeEnum, mcMessage);
+            this.messageIntent = intent;
+            this.messageIntentDateType = intentDateType;
+            this.messageIntentDateTime = intentDateTime;
+            intentDisplayLabel.Text = NcMessageIntent.GetIntentString (intent, intentDateType, intentDateTime);
         }
 
-        public void SelectMessageIntent (NcMessageIntent.MessageIntent intent)
+        // INachoIntentChooser
+        public void SelectMessageIntent (NcMessageIntent.MessageIntent selectedMessageIntent)
         {
-            messageIntent.SetType (intent);
-            messageIntent.SetMessageIntent (ref mcMessage);
-            PopulateMessageFromSelectedIntent (MessageDeferralType.None);
+            messageIntent = selectedMessageIntent.type;
+            PopulateMessageFromSelectedIntent (messageIntent, MessageDeferralType.None, DateTime.MinValue);
+        }
+
+        // INachoDateControllerParent called from IntentSelectionViewController -> Date selector
+        public void DateSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
+        {
+            // Assumption -- SelectMessageIntent was already called
+            NcAssert.True (McEmailMessage.IntentType.None != messageIntent);
+            PopulateMessageFromSelectedIntent (messageIntent, request, selectedDate);
+        }
+
+        // INachoDateControllerParent
+        public void DismissChildDateController (INachoDateController vc)
+        {
+            vc.Setup (null, null, DateControllerType.None);
+            vc.DismissDateController (false, null);
         }
 
         /// IUcAttachmentBlock delegate
@@ -1017,7 +1035,6 @@ namespace NachoClient.iOS
         {
             this.PresentViewController (viewControllerToPresent, animated, completionHandler);
         }
-
 
         /// <summary>
         /// INachoContactChooser callback
@@ -1078,63 +1095,50 @@ namespace NachoClient.iOS
 
             if (!calendarInviteIsSet) {
                 var mimeMessage = new MimeMessage ();
-
                 mimeMessage.From.Add (new MailboxAddress (Pretty.UserNameForAccount (account), account.EmailAddr));
-                foreach (var view in new UcAddressBlock[] { toView, ccView, bccView }) {
-                    foreach (var a in view.AddressList) {
-                        var mailbox = a.ToMailboxAddress ();
-                        if (null == mailbox) {
-                            continue;
-                        }
-                        switch (a.kind) {
-                        case NcEmailAddress.Kind.To:
-                            mimeMessage.To.Add (mailbox);
-                            break;
-                        case NcEmailAddress.Kind.Cc:
-                            mimeMessage.Cc.Add (mailbox);
-                            break;
-                        case NcEmailAddress.Kind.Bcc:
-                            mimeMessage.Bcc.Add (mailbox);
-                            break;
-                        default:
-                            NcAssert.CaseError ();
-                            break;
-                        }
-                    }
-                }
-                mimeMessage.Subject = Pretty.SubjectString (subjectField.Text);
-
-                if (McEmailMessage.IntentType.None != (McEmailMessage.IntentType)mcMessage.Intent) {
-                    if (String.IsNullOrEmpty (mimeMessage.Subject)) {
-                        mimeMessage.Subject = NcMessageIntent.GetIntentString (intentDateType, mcMessage);
-                    } else {
-                        mimeMessage.Subject = NcMessageIntent.GetIntentString (intentDateType, mcMessage) + " - " + mimeMessage.Subject;
-                    }
-                }
-
+                mimeMessage.To.AddRange (NcEmailAddress.ToInternetAddressList (toView.AddressList, NcEmailAddress.Kind.To));
+                mimeMessage.Cc.AddRange (NcEmailAddress.ToInternetAddressList (ccView.AddressList, NcEmailAddress.Kind.Cc));
+                mimeMessage.Bcc.AddRange (NcEmailAddress.ToInternetAddressList (bccView.AddressList, NcEmailAddress.Kind.Bcc));
                 mimeMessage.Date = System.DateTime.UtcNow;
 
-                // TODO Check whether or not the back end supports SmartReply and SmartForward
+                var subject = Pretty.SubjectString (subjectField.Text);
+                if (McEmailMessage.IntentType.None != messageIntent) {
+                    var intentString = NcMessageIntent.GetIntentString (messageIntent, messageIntentDateType, messageIntentDateTime);
+                    mimeMessage.Subject = Pretty.Join (intentString, subject, " - ");
+                } else {
+                    mimeMessage.Subject = subject;
+                }
+
+                // TODO: Check whether or not the back end supports SmartReply and SmartForward
 
                 bool originalEmailIsEmbedded = true;
-                string bodyText = bodyTextView.Text;
-                if (!string.IsNullOrEmpty (initialQuotedText) && bodyText.EndsWith (initialQuotedText)) {
-                    // This is a reply or forward, and the user didn't changed the quoted text.
-                    // Strip the quoted text from the body of the message and instead have the
-                    // server add in the original message.
+                var bodyAttributedText = bodyTextView.AttributedText;
+
+                // If there's no initialQuotedText, then the email is not embedded
+                if (null == initialQuotedText) {
                     originalEmailIsEmbedded = false;
-                    bodyText = bodyText.Remove (bodyText.Length - initialQuotedText.Length);
+                }
+                    
+                // Perhaps we can strip out the initialQuotedText and use smart reply?
+                if ((null != initialQuotedText) && Util.AttributedStringEndsWith (bodyAttributedText, initialQuotedText)) {
+                    // Strip the quoted text from the body of the message and instead have the server add in the original message.
+                    originalEmailIsEmbedded = false;
+                    bodyAttributedText = bodyAttributedText.Substring (0, (bodyAttributedText.Length - initialQuotedText.Length));
                 }
 
                 var body = new BodyBuilder ();
 
-                body.TextBody = bodyText;
+                body.TextBody = bodyTextView.Text;
+
+                NSError error = null;
+                NSData htmlData = bodyAttributedText.GetDataFromRange (new NSRange (0, bodyAttributedText.Length), new NSAttributedStringDocumentAttributes{ DocumentType = NSDocumentType.HTML }, ref error);
+                body.HtmlBody = htmlData.ToString ();
 
                 foreach (var attachment in attachmentView.AttachmentList) {
                     body.Attachments.Add (attachment.GetFilePath ());
                 }
                 bool attachmentNeedsDownloading = false;
-                if (IsForwardAction () && originalEmailIsEmbedded) {
+                if (EmailHelper.IsForwardAction (action) && originalEmailIsEmbedded) {
                     // The user edited the body of the message being forwarded. That means the server won't
                     // automatically include the attachments from the forwarded message (if any).  That needs
                     // to be done explicitly.  If all of the necessary attachments are available, go ahead and
@@ -1156,19 +1160,19 @@ namespace NachoClient.iOS
                 
                 mimeMessage.Body = body.ToMessageBody ();
                 var messageToSend = MimeHelpers.AddToDb (account.Id, mimeMessage);
-                messageToSend.Intent = this.mcMessage.Intent;
-                messageToSend.IntentDate = this.mcMessage.IntentDate;
+                messageToSend.Intent = messageIntent;
+                messageToSend.IntentDate = messageIntentDateTime;
                 messageToSend.Update ();
-                if (IsForwardOrReplyAction ()) {
+                if (EmailHelper.IsForwardOrReplyAction (action)) {
                     messageToSend.ReferencedEmailId = referencedMessage.Id;
                     messageToSend.ReferencedBodyIsIncluded = originalEmailIsEmbedded;
-                    messageToSend.ReferencedIsForward = IsForwardAction ();
+                    messageToSend.ReferencedIsForward = EmailHelper.IsForwardAction (action);
                     messageToSend.WaitingForAttachmentsToDownload = attachmentNeedsDownloading;
                     messageToSend.Update ();
                 }
 
                 bool messageSent = false;
-                if (IsForwardOrReplyAction ()) {
+                if (EmailHelper.IsForwardOrReplyAction (action)) {
                     var folders = McFolder.QueryByFolderEntryId<McEmailMessage> (referencedMessage.AccountId, referencedMessage.Id);
                     if (folders.Count == 0) {
                         Log.Error (Log.LOG_UI, "The message being forwarded or replied to is not owned by any folder. It will be sent as a regular outgoing message. Message: {0}", referencedMessage.ToString ());
@@ -1178,7 +1182,7 @@ namespace NachoClient.iOS
                             Log.Warn (Log.LOG_UI, "The message being forwarded or replied to is owned by {0} folders. One of the folders will be picked at random as the official owner when sending the message. Message: {0}", folders.Count, referencedMessage.ToString ());
                         }
                         int folderId = folders [0].Id;
-                        if (IsForwardAction ()) {
+                        if (EmailHelper.IsForwardAction (action)) {
                             NachoCore.BackEnd.Instance.ForwardEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, originalEmailIsEmbedded);
                         } else {
                             NachoCore.BackEnd.Instance.ReplyEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, originalEmailIsEmbedded);
@@ -1236,7 +1240,7 @@ namespace NachoClient.iOS
                 var iCalPart = CalendarHelper.iCalToMimePart (account, calendarInviteItem);
 
                 StringBuilder bodyText = new StringBuilder ();
-                bodyText.Append (bodyTextView.Text).Append ("\n\n").Append (FormatBasicHeadersForCalendarForward (calendarInviteItem, account.EmailAddr)).Append (calendarInviteItem.Description ?? "");
+                bodyText.Append (bodyTextView.Text).Append ("\n\n").Append (EmailHelper.FormatBasicHeadersForCalendarForward (calendarInviteItem, account.EmailAddr)).Append (calendarInviteItem.Description ?? "");
                 var mimeBody = CalendarHelper.CreateMime (bodyText.ToString (), iCalPart, calendarInviteItem.attachments);
 
                 CalendarHelper.SendInvites (account, calendarInviteItem, Pretty.SubjectString (subjectField.Text), null, mimeBody, mailList);
@@ -1244,29 +1248,6 @@ namespace NachoClient.iOS
             }
         }
 
-        // TODO: Put in pretty
-        protected string CreateInitialSubjectLine ()
-        {
-            if (IsSendAction ()) {
-                return ""; // Creating a message
-            }
-
-            var Subject = "";
-            if (null != referencedMessage.Subject) {
-                Subject = referencedMessage.Subject;
-            }
-
-            if (IsReplyAction ()) {
-                if (Subject.StartsWith ("Re:")) {
-                    return Subject;
-                }
-                return "Re: " + Subject;
-            }
-            if (IsForwardAction ()) {
-                return "Fwd: " + Subject;
-            }
-            return "";
-        }
 
         /// <summary>
         /// Reply, ReplyAll, Forward
@@ -1274,60 +1255,65 @@ namespace NachoClient.iOS
         /// </summary>
         void InitializeMessageForAction ()
         {
-            if (IsReplyAction ()) {
+            if (EmailHelper.IsReplyAction (action)) {
                 toView.Append (new NcEmailAddress (NcEmailAddress.Kind.To, referencedMessage.From));
             }
-            if (Action.ReplyAll == action) {
+            if (EmailHelper.Action.ReplyAll == action) {
                 // Add the To & Cc list to the CC list, not included this user
                 var ccList = EmailHelper.CcList (account.EmailAddr, referencedMessage.To, referencedMessage.Cc);
                 foreach (var cc in ccList) {
                     ccView.Append (cc);
                 }
             }
-            subjectField.Text = CreateInitialSubjectLine ();
-            if (!string.IsNullOrEmpty (subjectField.Text)) {
-                alwaysShowIntent = true;
+            if (null != referencedMessage) {
+                subjectField.Text = EmailHelper.CreateInitialSubjectLine (action, referencedMessage.Subject);
+            } else {
+                subjectField.Text = "";
             }
-
-            // TODO: Setup message id, etc etc.
-
-            // Populate the body of the outgoing message with the quoted text from the message being acted on.
-            // Right now this is identical for forward and reply.  But that might change as the behavior is refined.
-            initialQuotedText = MimeHelpers.ExtractTextPart (referencedMessage);
-            string headersText = FormatBasicHeaders (referencedMessage);
-            bodyTextView.Text = "\n\n" + headersText + initialQuotedText;
+            alwaysShowIntent |= !string.IsNullOrEmpty (subjectField.Text);
         }
 
-        // Build up the text for the header part of the message being forwarded or replied to.
-        private string FormatBasicHeaders (McEmailMessage message)
+
+        void onShowQuotedTextButton (object sender, EventArgs e)
         {
-            StringBuilder result = new StringBuilder ();
-            result.Append ("-------------------\n");
-            result.Append ("From: ").Append (message.From ?? "").Append ("\n");
-            if (message.To != null && message.To.Length > 0) {
-                result.Append ("To: ").Append (message.To).Append ("\n");
-            }
-            if (message.Cc != null && message.Cc.Length > 0) {
-                result.Append ("Cc: ").Append (message.Cc).Append ("\n");
-            }
-            result.Append ("Subject: ").Append (message.Subject ?? "").Append ("\n");
-            result.Append ("Date: ").Append (Pretty.UniversalFullDateTimeString (message.DateReceived));
-            result.Append ("\n\n");
-            return result.ToString ();
+            showQuotedTextButton.Hidden = true;
+            InitializeQuotedText ();
+            LayoutView ();
         }
 
-        // Build up the text for the header part of the message being forwarded or replied to.
-        private string FormatBasicHeadersForCalendarForward (McCalendar calendar, string recipient)
+        void InitializeQuotedText ()
         {
-            StringBuilder result = new StringBuilder ();
-            result.Append ("-------------------\n");
-            result.Append ("Organizer: ").Append (calendar.OrganizerName ?? calendar.OrganizerEmail ?? "").Append ("\n");
-            result.Append ("To: ").Append (recipient).Append ("\n");
-            result.Append ("Subject: ").Append (calendar.Subject ?? "").Append ("\n");
-            result.Append ("When: ").Append (Pretty.FullDateYearString (calendar.StartTime)).Append ("\n");
-            result.Append ("Where: ").Append (calendar.Location ?? "").Append ("\n");
-            result.Append ("\n\n");
-            return result.ToString ();
+            if (null == referencedMessage) {
+                return;
+            }
+
+            string html;
+            string text;
+            if (MimeHelpers.FindText (referencedMessage, out html, out text)) {
+                var attributes = new MonoTouch.CoreText.CTStringAttributes ();
+                attributes.Font = new MonoTouch.CoreText.CTFont (labelFont.Name, labelFont.PointSize);
+                var initialString = new NSMutableAttributedString ();
+                initialString.Append (bodyTextView.AttributedText);
+                initialString.Append (new NSAttributedString ("\n\n", attributes));
+                initialString.Append (new NSAttributedString (EmailHelper.FormatBasicHeaders (referencedMessage), attributes));
+                var whereQuotedTextBegins = initialString.Length;
+                if (null != html) {
+                    NSError error = null;
+                    var d = NSData.FromString (html);
+                    var convertedString = new NSAttributedString (d, new NSAttributedStringDocumentAttributes{ DocumentType = NSDocumentType.HTML }, ref error);
+                    initialString.Append (convertedString);
+                } else {
+                    NcAssert.NotNull (text);
+                    initialString.Append (new NSAttributedString (text, attributes));
+                }
+                bodyTextView.AttributedText = initialString;
+                if (whereQuotedTextBegins < bodyTextView.AttributedText.Length) {
+                    // Pull from uitextview to account for formatting that happens when the string is added
+                    initialQuotedText = bodyTextView.AttributedText.Substring (whereQuotedTextBegins, bodyTextView.AttributedText.Length - whereQuotedTextBegins);
+                } else {
+                    initialQuotedText = null;
+                }
+            }
         }
 
         /// <summary>
@@ -1367,18 +1353,6 @@ namespace NachoClient.iOS
             NcAssert.CaseError ();
         }
 
-        public void DateSelected (MessageDeferralType request, McEmailMessageThread thread, DateTime selectedDate)
-        {
-            messageIntent.SetMessageIntentDate (ref mcMessage, selectedDate);
-            PopulateMessageFromSelectedIntent (request);
-        }
-
-        public void DismissChildDateController (INachoDateController vc)
-        {
-            vc.Setup (null, null, DateControllerType.None);
-            vc.DismissDateController (false, null);
-        }
-
         /// <summary>
         /// INachoFileChooserParent delegate
         /// </summary>
@@ -1409,40 +1383,21 @@ namespace NachoClient.iOS
                 referencedMessage = thread.SingleMessageSpecialCase ();
             }
             if (null == actionString) {
-                action = Action.Send;
+                action = EmailHelper.Action.Send;
             } else if (REPLY_ACTION.Equals (actionString)) {
-                action = Action.Reply;
+                action = EmailHelper.Action.Reply;
             } else if (REPLY_ALL_ACTION.Equals (actionString)) {
-                action = Action.ReplyAll;
+                action = EmailHelper.Action.ReplyAll;
             } else if (FORWARD_ACTION.Equals (actionString)) {
-                action = Action.Forward;
+                action = EmailHelper.Action.Forward;
             } else {
                 NcAssert.CaseError (String.Format ("Unexpected value for message action: {0}", actionString));
             }
-            if (Action.Send != action) {
+            if (EmailHelper.Action.Send != action) {
                 NcAssert.NotNull (referencedMessage, String.Format ("A null message was passed to MessageComposeViewController for an action of {0}", actionString));
             }
         }
 
-        protected bool IsSendAction ()
-        {
-            return Action.Send == action;
-        }
-
-        protected bool IsForwardOrReplyAction ()
-        {
-            return Action.Send != action;
-        }
-
-        // Reply or ReplyAll.  In almost all cases the two are treated the same.  There is only one case where they are different.
-        protected bool IsReplyAction ()
-        {
-            return Action.Reply == action || Action.ReplyAll == action;
-        }
-
-        protected bool IsForwardAction ()
-        {
-            return Action.Forward == action;
-        }
+     
     }
 }

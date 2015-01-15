@@ -313,6 +313,11 @@ namespace Test.iOS
             };
         }
 
+        public Tuple<PickActionEnum, AsCommand> PickUserDemand ()
+        {
+            return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Wait, null);
+        }
+
         public Tuple<PickActionEnum, AsCommand> Pick ()
         {
             return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Wait, null);

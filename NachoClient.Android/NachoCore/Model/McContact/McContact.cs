@@ -743,6 +743,10 @@ namespace NachoCore.Model
                         PortraitId = portrait.Id;
                     }
                     break;
+ 
+                case Xml.Gal.Title:
+                    Title = prop.Value;
+                    break;
 
                 default:
                     Log.Error (Log.LOG_AS, "Unknown GAL property {0}.", prop.Name.LocalName);

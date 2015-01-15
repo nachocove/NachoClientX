@@ -61,19 +61,6 @@ namespace NachoCore.Brain
             }
         }
 
-        public void CreateQuickResponse (QuickResponse selectedResponse, ref McEmailMessage emailMessage)
-        {
-            McBody emailBody = McBody.QueryById<McBody> (emailMessage.BodyId);
-            if (QRTypeEnum.Compose == whatType) {
-                emailMessage.Subject = selectedResponse.subject;
-            }
-            emailBody.UpdateData (Pretty.Join(selectedResponse.body, emailBody.GetContentsString()));
-
-            if (null != selectedResponse.intent) {
-                emailMessage.Intent = (int)selectedResponse.intent.type;
-            }
-        }
-
         public class QuickResponse
         {
             public string subject;

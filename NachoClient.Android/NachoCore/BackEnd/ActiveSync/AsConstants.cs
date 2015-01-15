@@ -633,6 +633,7 @@ namespace NachoCore.ActiveSync
             public const string SyncKey = AirSync.SyncKey;
             public const string Type = AirSync.Type;
             public const string Update = "Update";
+
             public enum FolderSyncStatusCode : uint
             {
                 Success_1 = 1,
@@ -780,6 +781,7 @@ namespace NachoCore.ActiveSync
             public const string Phone = "Phone";
             public const string Picture = Contacts.Picture;
             public const string Status = AirSync.Status;
+            public const string Title = Contacts.Title;
 
             public enum StatusCode : uint
             {
@@ -1097,7 +1099,7 @@ namespace NachoCore.ActiveSync
                 PolicyDeny_7 = 7
             }
 
-            public enum SetGetStatusCode 
+            public enum SetGetStatusCode
             {
                 Success_1 = 1,
                 ProtocolError_2 = 2,

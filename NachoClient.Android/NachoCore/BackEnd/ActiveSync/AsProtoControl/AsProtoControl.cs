@@ -140,6 +140,8 @@ namespace NachoCore.ActiveSync
 
         private NcTimer PendingOnTimeTimer { set; get; }
 
+        private int ConcurrentExtraRequests = 0;
+
         public AsProtoControl (IProtoControlOwner owner, int accountId) : base (owner, accountId)
         {
             ProtoControl = this;
@@ -628,7 +630,7 @@ namespace NachoCore.ActiveSync
                             new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoPick, State = (uint)Lst.Pick },
                             new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoProv, State = (uint)Lst.ProvW },
                             new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoUiCredReq, State = (uint)Lst.UiPCrdW },
-                            new Trans { Event = (uint)CtlEvt.E.PendQHot, Act = DoPick, State = (uint)Lst.Pick },
+                            new Trans { Event = (uint)CtlEvt.E.PendQHot, Act = DoExtraOrDont, ActSetsState = true },
                             new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
                             new Trans { Event = (uint)CtlEvt.E.Park, Act = DoPark, State = (uint)Lst.Parked },
                         }
@@ -1089,6 +1091,83 @@ namespace NachoCore.ActiveSync
                 Sm.State = (uint)Lst.Pick;
             } else {
                 // We are running, ignore the Launch, stay in the current state.
+            }
+        }
+
+        private void DoExDone ()
+        {
+            Interlocked.Decrement (ref ConcurrentExtraRequests);
+            // TODO it would be ideal to send a PendQHot to the main SM if there were now room for another
+            // concurrent access.
+        }
+
+        private void DoExtraOrDont ()
+        {
+            /* TODO
+             * Move decision logic into strategy.
+             * Evaluate server success rate based on number of outstanding requests.
+             * Let those rates drive the allowed concurrency, rather than "1 + 2".
+             */
+            if (NcCommStatus.CommQualityEnum.OK == NcCommStatus.Instance.Quality (Server.Id) &&
+                NetStatusSpeedEnum.CellSlow != NcCommStatus.Instance.Speed &&
+                2 > ConcurrentExtraRequests) {
+                Interlocked.Increment (ref ConcurrentExtraRequests);
+                Log.Info (Log.LOG_AS, "DoExtraOrDont: starting extra request.");
+                var pack = SyncStrategy.PickUserDemand ();
+                if (null != pack) {
+                    var dummySm = new NcStateMachine ("ASPC:EXTRA") { 
+                        Name = string.Format ("ASPC:EXTRA({0})", AccountId),
+                        LocalEventType = typeof(AsEvt),
+                        TransTable = new[] {
+                            new Node {
+                                State = (uint)St.Start,
+                                On = new Trans[] {
+                                    new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)St.Start },
+                                    new Trans { Event = (uint)SmEvt.E.Success, Act = DoExDone, State = (uint)St.Stop },
+                                    new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoExDone, State = (uint)St.Stop },
+                                    new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoExDone, State = (uint)St.Stop },
+                                    new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoExDone, State = (uint)St.Stop },
+                                    new Trans { Event = (uint)AsEvt.E.ReProv, Act = DoExDone, State = (uint)St.Stop },
+                                    new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoExDone, State = (uint)St.Stop },
+                                    new Trans { Event = (uint)AsEvt.E.AuthFail, Act = DoExDone, State = (uint)St.Stop },
+                                },
+                            }
+                        }
+                    };
+                    dummySm.Validate ();
+                    var pickAction = pack.Item1;
+                    var cmd = pack.Item2;
+                    switch (pickAction) {
+                    case PickActionEnum.Fetch:
+                    case PickActionEnum.QOop:
+                    case PickActionEnum.HotQOp:
+                        cmd.Execute (dummySm);
+                        break;
+
+                    case PickActionEnum.Sync:
+                        // TODO add support for user-initiated Sync of >= 1 folders.
+                        // if current op is a sync including specified folder(s) - we must make sure we don't
+                        // have 2 concurrent syncs of the same folder.
+                    case PickActionEnum.Ping:
+                    case PickActionEnum.Wait:
+                    default:
+                        NcAssert.CaseError (cmd.ToString ());
+                        break;
+                    }
+                    // Leave State unchanged.
+                    return;
+                }
+            }
+            // If we got here, we decided that doing an extra request was a bad idea, ...
+            if (0 == ConcurrentExtraRequests) {
+                // ... and we are currently processing no extra requests. Only in this case will we 
+                // interrupt the base request.
+                Log.Info (Log.LOG_AS, "DoExtraOrDont: calling Pick.");
+                DoPick ();
+                Sm.State = (uint)Lst.Pick;
+            } else {
+                // ... and we are capable of processing extra requests, just not now.
+                Log.Info (Log.LOG_AS, "DoExtraOrDont: not starting extra request on top of {0}.", ConcurrentExtraRequests);
             }
         }
 

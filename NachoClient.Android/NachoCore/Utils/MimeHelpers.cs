@@ -114,10 +114,10 @@ namespace NachoCore.Utils
         }
 
         /// <summary>
-        /// Return the first "text/plain" entity found in the given subtree, or null if none was found.
+        /// Return the first "subtype" entity found in the given subtree, or null if none was found.
         /// </summary>
         /// <param name="entity">The portion of the MIME message to search.</param>
-        static protected TextPart FindTextPart (MimeEntity entity)
+        static protected TextPart FindTextPartWithSubtype (MimeEntity entity, string subtype)
         {
             if (null == entity) {
                 return null;
@@ -126,9 +126,9 @@ namespace NachoCore.Utils
                 // Pull apart the TNEF part and see what is inside.
                 var tnef = entity as MimeKit.Tnef.TnefPart;
                 var mimeMessage = tnef.ConvertToMessage ();
-                return FindTextPart (mimeMessage.Body);
+                return FindTextPartWithSubtype (mimeMessage.Body, subtype);
             }
-            if (entity is TextPart && entity.ContentType.Matches ("text", "plain")) {
+            if (entity is TextPart && entity.ContentType.Matches ("text", subtype)) {
                 TextPart textPart = entity as TextPart;
                 if (null != textPart && null != textPart.ContentObject) {
                     return textPart;
@@ -138,13 +138,62 @@ namespace NachoCore.Utils
             }
             if (entity is Multipart) {
                 foreach (var subpart in entity as Multipart) {
-                    var textPart = FindTextPart (subpart);
+                    var textPart = FindTextPartWithSubtype (subpart, subtype);
                     if (null != textPart) {
                         return textPart;
                     }
                 }
             }
             return null;
+        }
+
+        public static bool FindText (McEmailMessage message, out string html, out string text)
+        {
+            html = null;
+            text = null;
+
+            var body = message.GetBody ();
+            if (!McBody.IsNontruncatedBodyComplete (body)) {
+                return false;
+            }
+
+            if (McAbstrFileDesc.BodyTypeEnum.None == body.BodyType) {
+                return false;
+            }
+
+            if (McAbstrFileDesc.BodyTypeEnum.PlainText_1 == body.BodyType) {
+                text = body.GetContentsString ();
+                return true;
+            }
+
+            if (McAbstrFileDesc.BodyTypeEnum.HTML_2 == body.BodyType) {
+                html = body.GetContentsString ();
+                return true;
+            }
+
+            if (McAbstrFileDesc.BodyTypeEnum.RTF_3 == body.BodyType) {
+                return false;
+            }
+
+            NcAssert.True (McAbstrFileDesc.BodyTypeEnum.MIME_4 == body.BodyType);
+
+            var mimeMessage = LoadMessage (body);
+
+            if (null == mimeMessage) {
+                return false;
+            }
+
+            var part = FindTextPartWithSubtype (mimeMessage.Body, "html");
+            if (null != part) {
+                html = part.Text;
+                return true;
+            }
+            part = FindTextPartWithSubtype (mimeMessage.Body, "plain");
+            if (null != part) {
+                text = part.Text;
+                return true;
+            }
+            return false;
         }
 
         /// <summary>
@@ -229,7 +278,7 @@ namespace NachoCore.Utils
             if (null == message) {
                 return null;
             }
-            var textPart = FindTextPart (message.Body);
+            var textPart = FindTextPartWithSubtype (message.Body, "plain");
             if (null == textPart) {
                 return null;
             }

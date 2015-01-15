@@ -138,7 +138,7 @@ namespace NachoClient.iOS
                 }
 
                 var messageIntent = NcMessageIntent.GetIntentList () [indexPath.Row];
-                cell.TextLabel.Text = messageIntent.value;
+                cell.TextLabel.Text = messageIntent.text;
                 cell.AccessoryView.Hidden = !messageIntent.dueDateAllowed;
                 return cell;
             }

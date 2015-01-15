@@ -97,7 +97,7 @@ namespace NachoCore.Model
         }
 
         // Intent of the message (default None (0))
-        public int Intent { set; get; }
+        public IntentType Intent { set; get; }
 
         // Due date of selected intent (optional)
         public DateTime IntentDate { set; get; }
@@ -346,7 +346,10 @@ namespace NachoCore.Model
             if (!string.IsNullOrEmpty (contact.GetPrimaryCanonicalEmailAddress ())) {
 
                 string emailWildcard = "%" + contact.GetPrimaryCanonicalEmailAddress () + "%";
+
+                // Not all accounts have deleted folder (e.g. Device). Using '0' is a trick.
                 McFolder deletedFolder = McFolder.GetDefaultDeletedFolder (accountId);
+                var deletedFolderId = ((null == deletedFolder) ? 0 : deletedFolder.Id);
 
                 return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
                     "SELECT DISTINCT e.Id as Id FROM McEmailMessage AS e " +
@@ -361,7 +364,7 @@ namespace NachoCore.Model
                     " m.FolderId != ? AND " +
                     " e.[From] LIKE ? OR " +
                     " e.[To] Like ? ORDER BY e.DateReceived DESC",
-                    accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, deletedFolder.Id, emailWildcard, emailWildcard);
+                    accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, deletedFolderId, emailWildcard, emailWildcard);
             }
             return new List<NcEmailMessageIndex> ();
         }

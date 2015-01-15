@@ -66,6 +66,8 @@ namespace NachoClient.iOS
             contactTableViewSource = new ContactsTableViewSource ();
 
             CreateView ();
+
+            PermissionManager.DealWithContactsPermission ();
         }
 
         public override void ViewWillAppear (bool animated)

@@ -30,6 +30,7 @@ namespace NachoCore.Utils
             Info_CalendarChanged,
             Info_TaskChanged,
             Info_EventSetChanged,
+            Info_StatusBarHeightChanged,
 
             Info_NewUnreadEmailMessageInInbox,
             Info_EmailMessageMarkedReadSucceeded,

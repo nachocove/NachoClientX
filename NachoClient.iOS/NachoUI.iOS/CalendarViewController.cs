@@ -92,6 +92,7 @@ namespace NachoClient.iOS
             base.ViewDidAppear (animated);
             calendarSource.Refresh ();
             calendarTableView.ReloadData ();
+            PermissionManager.DealWithCalendarPermission ();
         }
 
         public override void ViewWillDisappear (bool animated)
