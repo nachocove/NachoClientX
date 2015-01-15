@@ -535,8 +535,12 @@ namespace NachoClient.iOS
             case NcEmailAddress.Action.create:
                 var attendee = new McAttendee ();
                 attendee.AccountId = account.Id;
-                attendee.Name = name;
                 attendee.Email = mailboxAddress.Address;
+                if (null != address.contact) {
+                    attendee.Name = address.contact.GetDisplayNameOrEmailAddress ();
+                } else {
+                    attendee.Name = name;
+                }
                 attendee.AttendeeType = NcEmailAddress.ToAttendeeType (address.kind);
                 attendee.AttendeeTypeIsSet = true;
                 AttendeeList.Add (attendee);

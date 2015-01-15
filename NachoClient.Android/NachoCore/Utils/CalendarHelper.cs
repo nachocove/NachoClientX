@@ -601,6 +601,24 @@ namespace NachoCore.Utils
             return attendeeList;
         }
 
+        public static string AttendeesToString (List<McAttendee> attendees)
+        {
+            string attendeeString = "";
+            if (null == attendees || 1 > attendees.Count) {
+                return attendeeString;
+            }
+
+            int remainingAttendees = attendees.Count;
+            foreach (McAttendee attendee in attendees) {
+                remainingAttendees--;
+                attendeeString += attendee.DisplayName;
+                if (remainingAttendees > 0) {
+                    attendeeString += ", ";
+                }
+            }
+            return attendeeString;
+        }
+
         public static McCalendar CreateMeeting (McEmailMessage message)
         {
             var c = DefaultMeeting (DateTime.UtcNow, DateTime.UtcNow);
