@@ -3,6 +3,7 @@
 using System;
 using NUnit.Framework;
 using NachoCore.Utils;
+using NachoCore.Model;
 
 namespace Test.Android
 {
@@ -33,6 +34,88 @@ namespace Test.Android
             Assert.IsTrue (EmailHelper.IsValidServer ("foo.com:8080"));
             Assert.IsTrue (EmailHelper.IsValidServer ("foo.com:8080/traveler"));
             Assert.IsTrue (EmailHelper.IsValidServer ("foo.com/traveler"));
+            Assert.IsFalse (EmailHelper.IsValidServer ("foo.com/traveler?cat=dog"));
+        }
+
+        [Test]
+        public void TestParseServer ()
+        {
+            McServer server = new McServer ();
+            Assert.IsTrue (EmailHelper.ParseServer (ref server, "foo."));
+            Assert.AreEqual ("https", server.Scheme);
+            Assert.AreEqual ("foo.", server.Host);
+            Assert.AreEqual (443, server.Port);
+            Assert.AreEqual (McServer.Default_Path, server.Path);
+            Assert.IsTrue (EmailHelper.ParseServer (ref server, "foo"));
+            Assert.AreEqual ("https", server.Scheme);
+            Assert.AreEqual ("foo", server.Host);
+            Assert.AreEqual (443, server.Port);
+            Assert.AreEqual (McServer.Default_Path, server.Path);
+            Assert.IsTrue (EmailHelper.ParseServer (ref server, "http://foo.com"));
+            Assert.AreEqual ("http", server.Scheme);
+            Assert.AreEqual ("foo.com", server.Host);
+            Assert.AreEqual (80, server.Port);
+            Assert.AreEqual (McServer.Default_Path, server.Path);
+            Assert.IsTrue (EmailHelper.ParseServer (ref server, "https://foo.com"));
+            Assert.AreEqual ("https", server.Scheme);
+            Assert.AreEqual ("foo.com", server.Host);
+            Assert.AreEqual (443, server.Port);
+            Assert.AreEqual (McServer.Default_Path, server.Path);
+            Assert.IsTrue (EmailHelper.ParseServer (ref server, "https://foo.com:8080"));
+            Assert.AreEqual ("https", server.Scheme);
+            Assert.AreEqual ("foo.com", server.Host);
+            Assert.AreEqual (8080, server.Port);
+            Assert.AreEqual (McServer.Default_Path, server.Path);
+            Assert.IsTrue (EmailHelper.ParseServer (ref server, "https://foo.com:8080/traveler"));
+            Assert.AreEqual ("https", server.Scheme);
+            Assert.AreEqual ("foo.com", server.Host);
+            Assert.AreEqual (8080, server.Port);
+            Assert.AreEqual ("/traveler" + McServer.Default_Path, server.Path);
+            Assert.IsTrue (EmailHelper.ParseServer (ref server, "https://foo.com/traveler"));
+            Assert.AreEqual ("https", server.Scheme);
+            Assert.AreEqual ("foo.com", server.Host);
+            Assert.AreEqual (443, server.Port);
+            Assert.AreEqual ("/traveler" + McServer.Default_Path, server.Path);
+            Assert.IsTrue (EmailHelper.ParseServer (ref server, "foo.com"));
+            Assert.AreEqual ("https", server.Scheme);
+            Assert.AreEqual ("foo.com", server.Host);
+            Assert.AreEqual (443, server.Port);
+            Assert.AreEqual (McServer.Default_Path, server.Path);
+            Assert.IsTrue (EmailHelper.ParseServer (ref server, "foo.com:8080"));
+            Assert.AreEqual ("https", server.Scheme);
+            Assert.AreEqual ("foo.com", server.Host);
+            Assert.AreEqual (8080, server.Port);
+            Assert.AreEqual (McServer.Default_Path, server.Path);
+            Assert.IsTrue (EmailHelper.ParseServer (ref server, "foo.com:8080/traveler"));
+            Assert.AreEqual ("https", server.Scheme);
+            Assert.AreEqual ("foo.com", server.Host);
+            Assert.AreEqual (8080, server.Port);
+            Assert.AreEqual ("/traveler" + McServer.Default_Path, server.Path);
+            Assert.IsTrue (EmailHelper.ParseServer (ref server, "foo.com/traveler"));
+            Assert.AreEqual ("https", server.Scheme);
+            Assert.AreEqual ("foo.com", server.Host);
+            Assert.AreEqual (443, server.Port);
+            Assert.AreEqual ("/traveler" + McServer.Default_Path, server.Path);
+            Assert.IsTrue (EmailHelper.ParseServer (ref server, "foo.com/traveler/"));
+            Assert.AreEqual ("https", server.Scheme);
+            Assert.AreEqual ("foo.com", server.Host);
+            Assert.AreEqual (443, server.Port);
+            Assert.AreEqual ("/traveler" + McServer.Default_Path, server.Path);
+            Assert.IsTrue (EmailHelper.ParseServer (ref server, "foo.com/"));
+            Assert.AreEqual ("https", server.Scheme);
+            Assert.AreEqual ("foo.com", server.Host);
+            Assert.AreEqual (443, server.Port);
+            Assert.AreEqual (McServer.Default_Path, server.Path);
+            Assert.IsTrue (EmailHelper.ParseServer (ref server, "foo.com/traveler" + McServer.Default_Path));
+            Assert.AreEqual ("https", server.Scheme);
+            Assert.AreEqual ("foo.com", server.Host);
+            Assert.AreEqual (443, server.Port);
+            Assert.AreEqual ("/traveler" + McServer.Default_Path, server.Path);
+            Assert.IsTrue (EmailHelper.ParseServer (ref server, "foo.com/traveler" + McServer.Default_Path + "/"));
+            Assert.AreEqual ("https", server.Scheme);
+            Assert.AreEqual ("foo.com", server.Host);
+            Assert.AreEqual (443, server.Port);
+            Assert.AreEqual ("/traveler" + McServer.Default_Path, server.Path);
         }
     }
 }
