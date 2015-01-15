@@ -1174,6 +1174,11 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\LocalNotificationManager.cs">
       <Link>NachoCore\Utils\LocalNotificationManager.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\DeadlinesViewController.cs" />
+    <Compile Include="NachoUI.iOS\DeadlinesViewController.designer.cs">
+      <DependentUpon>DeadlinesViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoCore\Adapters\NachoDeadlineEmailMessages.cs" />
     <Compile Include="NachoUI.iOS\DraftsViewController.cs" />
     <Compile Include="NachoUI.iOS\DraftsViewController.designer.cs">
       <DependentUpon>DraftsViewController.cs</DependentUpon>
