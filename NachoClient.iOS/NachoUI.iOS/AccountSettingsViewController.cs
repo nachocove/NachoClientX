@@ -829,17 +829,7 @@ namespace NachoClient.iOS
         //Should this be a helper? EmailHelper?
         protected void SetHostAndPort (McServer forServer, string serverText)
         {
-            NcAssert.True (EmailHelper.IsValidServer (serverText), "Server is not valid");
-
-            if (EmailHelper.IsValidHost (serverText)) {
-                forServer.Host = serverText.Trim ();
-                forServer.Port = 443;
-                return;
-            }
-
-            Uri serverURI = new Uri ("my://" + serverText.Trim ());
-            forServer.Host = serverURI.Host;
-            forServer.Port = serverURI.Port;
+            NcAssert.True (EmailHelper.ParseServer (ref forServer, serverText));
         }
 
         protected void ToggleEditing ()
