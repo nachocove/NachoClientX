@@ -332,7 +332,6 @@ namespace NachoCore.Utils
                 return false;
             }
             var target = accountMailboxAddress.Address;
-            Console.WriteLine ("match: '{0}' '{1}' {2}", target, match, String.Equals (target, match, StringComparison.OrdinalIgnoreCase));
             return String.Equals (target, match, StringComparison.OrdinalIgnoreCase);
 
         }
