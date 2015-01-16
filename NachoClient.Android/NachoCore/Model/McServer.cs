@@ -41,13 +41,18 @@ namespace NachoCore.Model
         /// </summary>
         public Uri BaseUri ()
         {
+            return new Uri (BaseUriString ());
+        }
+
+        public string BaseUriString()
+        {
             string uriString;
             if (443 == Port && "https" == Scheme) {
                 uriString = string.Format ("{0}://{1}{2}", Scheme, Host, Path);
             } else {
                 uriString = string.Format ("{0}://{1}:{2}{3}", Scheme, Host, Port, Path);
             }
-            return new Uri (uriString);
+            return uriString;
         }
 
         /// <summary>
@@ -94,6 +99,20 @@ namespace NachoCore.Model
             Path = src.Path;
             Scheme = src.Scheme;
             Port = src.Port;
+        }
+
+        public bool IsSameServer(McServer match)
+        {
+            if ((Host != match.Host) || (Port != match.Port)) {
+                return false;
+            }
+            if (!String.Equals (Scheme, match.Scheme, StringComparison.OrdinalIgnoreCase)) {
+                return false;
+            }
+            if (!String.Equals (Path, match.Path, StringComparison.OrdinalIgnoreCase)) {
+                return false;
+            }
+            return true;
         }
 
         public static McServer QueryByHost (string host)

@@ -42,7 +42,6 @@ namespace NachoClient.iOS
         string gOriginalPassword = "";
 
         string gOriginalDomain = "";
-        string gOriginalServer = "";
         string gOriginalUsername = "";
 
         AppDelegate appDelegate;
@@ -320,14 +319,15 @@ namespace NachoClient.iOS
 
             bool freshAccount = !LoginHelpers.IsCurrentAccountSet ();
 
-            // Save or setup the account
+            // Setup the account is there isn't one yet
             if (freshAccount) {
-                basicEnterFullConfiguration ();
-            } else {
-                saveUsersSettings ();
-            }
+                createUserSettings ();
+            } 
 
-            // If only password has changed, then do cred resp
+            // Save the stuff on the screen (pre-validated by canUserConnect())
+            saveUserSettings ();
+
+            // If only password has changed & backend is in CredWait, do cred resp
             if (!freshAccount) {
                 if (!String.Equals (gOriginalPassword, passwordView.textField.Text, StringComparison.OrdinalIgnoreCase)) {
                     BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
@@ -340,23 +340,23 @@ namespace NachoClient.iOS
                 }
             }
 
-            // If they've just entered a server, verify the server
-            if (haveEnteredServer ()) {
+            // If the user entered the server, respect it.
+            if ((null != theAccount.Server) && theAccount.Server.UserSpecifiedServer) {
                 BackEnd.Instance.Stop (LoginHelpers.GetCurrentAccountId ());
                 waitScreen.SetLoadingText ("Verifying Your Server...");
-                tryValidateConfig ();  // status ind handler will take next steps
+                loadTheAccount ();
+                startBe ();
                 waitScreen.ShowView ();
-                return;
+            } else {
+                // Removing server record will re-start auto-d on Backend.Start()
+                LoginHelpers.SetAutoDCompleted (LoginHelpers.GetCurrentAccountId (), false);
+                BackEnd.Instance.Stop (LoginHelpers.GetCurrentAccountId ());
+                removeServerRecord ();
+                theAccount.Server = null;
+                waitScreen.SetLoadingText ("Verifying Your Server...");
+                BackEnd.Instance.Start (LoginHelpers.GetCurrentAccountId ());
+                waitScreen.ShowView ();
             }
-
-            // Removing server record will re-start auto-d on Backend.Start()
-            LoginHelpers.SetAutoDCompleted (LoginHelpers.GetCurrentAccountId (), false);
-            BackEnd.Instance.Stop (LoginHelpers.GetCurrentAccountId ());
-            removeServerRecord ();
-            theAccount.Server = null;
-            waitScreen.SetLoadingText ("Verifying Your Server...");
-            BackEnd.Instance.Start (LoginHelpers.GetCurrentAccountId ());
-            waitScreen.ShowView ();
         }
 
         public void ConfigureView (LoginStatus currentStatus, string nuance = "")
@@ -580,7 +580,6 @@ namespace NachoClient.iOS
             }
             errorMessage.Text = "";
             gOriginalPassword = "";
-            gOriginalServer = "";
             gOriginalDomain = "";
             gOriginalUsername = "";
 
@@ -600,11 +599,7 @@ namespace NachoClient.iOS
             gOriginalPassword = passwordView.textField.Text;
 
             if (null != theAccount.Server) {
-                serverView.textField.Text = theAccount.Server.Host;
-                if (443 != theAccount.Server.Port) {
-                    serverView.textField.Text += ":" + theAccount.Server.Port.ToString ();
-                }
-                gOriginalServer = serverView.textField.Text;
+                serverView.textField.Text = theAccount.Server.BaseUriString ();
             }
 
             string domain, username;
@@ -636,13 +631,13 @@ namespace NachoClient.iOS
         /// Updates McCred and McAccount from the UI
         /// in both theAccount and the database.
         /// </summary>
-        protected void saveUsersSettings ()
+        protected void saveUserSettings ()
         {
             theAccount.Account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
             theAccount.Credentials = McCred.QueryByAccountId<McCred> (theAccount.Account.Id).SingleOrDefault (); 
 
             // If the user clears the username, we'll let them start over
-            if(String.IsNullOrEmpty (domainView.textField.Text) && String.IsNullOrEmpty (usernameView.textField.Text)) {
+            if (String.IsNullOrEmpty (domainView.textField.Text) && String.IsNullOrEmpty (usernameView.textField.Text)) {
                 theAccount.Credentials.UserSpecifiedUsername = false;
                 gOriginalUsername = String.Empty;
                 gOriginalDomain = String.Empty;
@@ -667,9 +662,44 @@ namespace NachoClient.iOS
 
             theAccount.Account.EmailAddr = emailView.textField.Text;
             theAccount.Account.Update ();
+
+            // if there is no server record and the text is not empty, create a server record and mark it user-created.
+            // if there is a server record and the text doesn't match, update the server record and mark it user-created.
+            // if there is a server record and the text is empty, delete the server record. Let the user start over.
+
+            McServer server = McServer.QueryByAccountId<McServer> (LoginHelpers.GetCurrentAccountId ()).FirstOrDefault ();
+
+            if (null == server) {
+                if (!String.IsNullOrEmpty (serverView.textField.Text)) {
+                    server = new McServer ();
+                    var result = EmailHelper.ParseServer (ref server, serverView.textField.Text);
+                    if (EmailHelper.ParseServerWhyEnum.Success_0 == result) {
+                        server.UserSpecifiedServer = true;
+                        server.AccountId = LoginHelpers.GetCurrentAccountId ();
+                        server.Insert ();
+                    }
+                }
+            } else {
+                if (String.IsNullOrEmpty (serverView.textField.Text)) {
+                    removeServerRecord ();
+                } else {
+                    var temp = new McServer ();
+                    var result = EmailHelper.ParseServer (ref temp, serverView.textField.Text);
+                    if (EmailHelper.ParseServerWhyEnum.Success_0 == result) {
+                        if(!server.IsSameServer(temp)) {
+                            server.CopyFrom (temp);
+                            server.UserSpecifiedServer = true;
+                            server.Update ();
+                        }
+                    }
+                }
+            }
+
+            theAccount.Server = McServer.QueryByAccountId<McServer> (LoginHelpers.GetCurrentAccountId ()).FirstOrDefault ();
         }
 
-        public void  basicEnterFullConfiguration ()
+        // Called when nothing exists.
+        public void  createUserSettings ()
         {
             NcModel.Instance.RunInTransaction (() => {
                 // Set up initial McAccount
@@ -681,18 +711,6 @@ namespace NachoClient.iOS
                     AccountId = appDelegate.Account.Id,
                 };
                 cred.Insert ();
-                // Updates db & theAccount from the UI
-                saveUsersSettings ();
-                // Create the initial McServer record, if needed
-                if (haveEnteredServer ()) {
-                    var server = new McServer () {
-                        AccountId = appDelegate.Account.Id,
-                    };
-                    SetHostAndPort (server);
-                    server.UserSpecifiedServer = true;
-                    server.Insert ();
-                    theAccount.Server = server;
-                }
                 Telemetry.RecordAccountEmailAddress (appDelegate.Account);
                 LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, true);
             });
@@ -712,24 +730,6 @@ namespace NachoClient.iOS
             }
         }
 
-        public void tryValidateConfig ()
-        {
-            McServer mailServer = McServer.QueryByAccountId<McServer> (LoginHelpers.GetCurrentAccountId ()).FirstOrDefault ();
-            if (null != mailServer) {
-                SetHostAndPort (mailServer);
-                mailServer.UserSpecifiedServer = true;
-                mailServer.Update ();
-            } else {
-                mailServer = new McServer ();
-                SetHostAndPort (mailServer);
-                mailServer.UserSpecifiedServer = true;
-                mailServer.AccountId = LoginHelpers.GetCurrentAccountId ();
-                mailServer.Insert ();
-            }
-            saveUsersSettings ();
-            BackEnd.Instance.ValidateConfig (LoginHelpers.GetCurrentAccountId (), mailServer, theAccount.Credentials);
-        }
-
         public void setTextToRed (AdvancedTextField[] whichViews)
         {
             foreach (var textView in inputViews) {
@@ -741,66 +741,29 @@ namespace NachoClient.iOS
             }
         }
 
-        protected bool haveEnteredServer ()
-        {
-            if (String.IsNullOrEmpty (serverView.textField.Text)) {
-                return false;
-            } else {
-                return !String.Equals (serverView.textField.Text, gOriginalServer);
-            }
-        }
-
         protected bool canUserConnect ()
         {
             if (!haveEnteredEmailAndPass ()) {
                 return false;
             }
-
-            if (haveEnteredServer ()) {
-                if (EmailHelper.ParseServerWhyEnum.Success_0 != EmailHelper.IsValidServer (serverView.textField.Text)) {
-                    ConfigureView (LoginStatus.InvalidServerName);
-                    return false;
-                }
-            }
-
-            var emailAddress = emailView.textField.Text;
-
             string serviceName;
+            var emailAddress = emailView.textField.Text;
             if (EmailHelper.IsServiceUnsupported (emailAddress, out serviceName)) {
                 var nuance = String.Format ("Nacho Mail does not support {0} yet.", serviceName);
                 ConfigureView (LoginStatus.InvalidEmail, nuance);
                 return false;
             }
-
-            if (!emailAddress.Contains ("@")) {
-                ConfigureView (LoginStatus.InvalidEmail, "Your email address must contain an '@'. For example, username@company.com");
-                return false;
-            }
-
-            if (haveEnteredServer ()) {
-                var serverName = serverView.textField.Text;
-                if (EmailHelper.IsHotmailServer (serverName, out serviceName)) {
-                    var nuance = String.Format ("Do not specify a server for {0}", serviceName);
-                    ConfigureView (LoginStatus.InvalidServerName, nuance);
+            if (!String.IsNullOrEmpty (serverView.textField.Text)) {
+                if (EmailHelper.ParseServerWhyEnum.Success_0 != EmailHelper.IsValidServer (serverView.textField.Text)) {
+                    ConfigureView (LoginStatus.InvalidServerName);
                     return false;
                 }
             }
-
-            if (!EmailHelper.IsValidEmail (emailAddress)) {
-                ConfigureView (LoginStatus.InvalidEmail);
-                return false;
-            }
-
             if (!NachoCore.Utils.Network_Helpers.HasNetworkConnection ()) {
                 ConfigureView (LoginStatus.NoNetwork);
                 return false;
             }
             return true;
-        }
-
-        protected void SetHostAndPort (McServer forServer)
-        {
-            NcAssert.True (EmailHelper.ParseServerWhyEnum.Success_0 == EmailHelper.ParseServer (ref forServer, serverView.textField.Text));
         }
 
         public void stopBeIfRunning ()
