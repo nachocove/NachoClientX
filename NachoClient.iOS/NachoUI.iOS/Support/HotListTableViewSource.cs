@@ -234,13 +234,6 @@ namespace NachoClient.iOS
             cell.TextLabel.ContentMode = UIViewContentMode.Center;
         }
 
-        protected void ConfigureAsNoMessages (UITableViewCell cell)
-        {
-            foreach (var v in cell.ContentView.Subviews) {
-                v.Hidden = true;
-            }
-        }
-
         protected void ConfigureFooter (UIView footer)
         {
 
@@ -324,7 +317,6 @@ namespace NachoClient.iOS
             view.OnClick = null;
 
             if (NoMessageThreads ()) {
-                ConfigureAsNoMessages (cell);
                 return;
             }
 
