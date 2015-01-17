@@ -85,7 +85,6 @@ namespace NachoCore.Brain
                 var contact = new McContact () {
                     AccountId = accountId,
                     Source = McAbstrItem.ItemSource.Internal,
-                    RefCount = 1,
                 };
                 NcEmailAddress.SplitName (mbAddr, ref contact);
 
@@ -105,13 +104,6 @@ namespace NachoCore.Brain
 
                 // TODO - Get the reply state
                 strattr.Insert ();
-            } else {
-                // Update the refcount on the existing contact.
-                foreach (var contact in contacts) {
-                    // TODO: need update count using timestamp check.
-                    contact.RefCount += 1;
-                    contact.Update ();
-                }
             }
         }
 
@@ -122,7 +114,6 @@ namespace NachoCore.Brain
             var contact = new McContact () {
                 AccountId = accountId,
                 Source = McAbstrItem.ItemSource.Internal,
-                RefCount = 1,
             };
 
             contact.Insert ();
