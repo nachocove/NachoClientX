@@ -50,6 +50,14 @@ namespace NachoCore.Utils
         {
             throw new NachoDefaultCaseFailure ("NcAssert.CaseError: " + message);
         }
+
+        public static void AreEqual(int expected, int actual, string message = "")
+        {
+            if (expected != actual) {
+                var prefix = String.Format ("NcAssert.AreEqual(expected={0}, actual={1}): ", expected, actual);
+                throw new NachoAssertionFailure (prefix + message);
+            }
+        }
     }
 }
 
