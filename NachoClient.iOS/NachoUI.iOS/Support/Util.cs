@@ -677,6 +677,15 @@ namespace NachoClient
             parentView.AddSubview (ArrowAcccessoryImage);
         }
 
+        public static UIImageView AddArrowAccessoryView (float xOffset, float yOffset, float size)
+        {
+            UIImageView ArrowAcccessoryImage = new UIImageView (new RectangleF (xOffset, yOffset, size, size));
+            using (var image = UIImage.FromBundle ("gen-more-arrow")) {
+                ArrowAcccessoryImage.Image = image;
+            }
+            return ArrowAcccessoryImage;
+        }
+
         public static UIView AddHorizontalLineView (float offset, float yVal, float width, UIColor color)
         {
             var lineUIView = new UIView (new RectangleF (offset, yVal, width, .5f));

@@ -385,6 +385,21 @@ namespace NachoCore.Model
                 accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
         }
 
+        public static int CountOfUnreadMessageItems (int accountId, int folderId)
+        {
+            return NcModel.Instance.Db.ExecuteScalar<int> (
+                "SELECT COUNT(*) FROM McEmailMessage AS e " +
+                "JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId " +
+                "WHERE " +
+                "e.AccountId = ?  AND " +
+                " e.IsAwaitingDelete = 0 AND " +
+                " m.AccountId = ? AND " +
+                " m.ClassCode = ? AND " +
+                " m.FolderId = ? AND " +
+                "e.IsRead = 0", 
+                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId);
+        }
+
         public static IEnumerable<McEmailMessage> QueryNeedsFetch (int accountId, int limit, double minScore)
         {
             return NcModel.Instance.Db.Query<McEmailMessage> (
@@ -471,6 +486,17 @@ namespace NachoCore.Model
                 " e.FlagUtcStartDate > ? " +
                 " ORDER BY e.DateReceived DESC",
                 DateTime.UtcNow);
+        }
+
+        public static List<NcEmailMessageIndex> QueryDueDateMessageItemsAllAccounts ()
+        {
+            return NcModel.Instance.Db.Query<NcEmailMessageIndex> (
+                "SELECT e.Id as Id FROM McEmailMessage AS e " +
+                " WHERE " +
+                " e.IsAwaitingDelete = 0 AND" +
+                " e.FlagStatus <> 0 AND" +
+                " e.FlagType <> ?", 
+                "Defer until");
         }
 
         public static List<McEmailMessage> QueryNeedsIndexing (int maxMessages)

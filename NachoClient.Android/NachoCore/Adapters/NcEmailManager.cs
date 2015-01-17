@@ -14,7 +14,7 @@ namespace NachoCore
         {
         }
 
-        protected static McFolder InboxFolder ()
+        public static McFolder InboxFolder ()
         {
             var emailFolders = new NachoFolders (NachoFolders.FilterForEmail);
             for (int i = 0; i < emailFolders.Count (); i++) {
