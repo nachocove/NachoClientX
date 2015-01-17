@@ -249,6 +249,67 @@ namespace Test.Common
                 Assert.AreNotEqual("Defer until", McEmailMessage.QueryById<McEmailMessage> (deadline.Id).FlagType);
                 NcAssert.True (!McEmailMessage.QueryById<McEmailMessage> (deadline.Id).IsAwaitingDelete);
             }
+            Assert.AreEqual(2, deadlines.Count);
+        }
+
+        [Test]
+        public void TestQueryDeferredMessageItemsAllAccounts ()
+        {
+            McEmailMessage message = new McEmailMessage () {
+                AccountId = 1,
+                FlagType = "Defer until",
+                FlagStatus = 1,
+                FlagUtcStartDate = DateTime.UtcNow.AddHours(1),
+
+            };
+            message.Insert ();
+
+            McEmailMessage message1 = new McEmailMessage () {
+                AccountId = 2,
+                FlagType = "Defer until",
+                FlagStatus = 1,
+                FlagUtcStartDate = DateTime.UtcNow.AddHours(1),
+            };
+            message1.Insert ();
+
+            McEmailMessage message2 = new McEmailMessage () {
+                AccountId = 1,
+                FlagType = "Defer until",
+                FlagStatus = 1,
+                FlagUtcStartDate = DateTime.UtcNow.AddHours(-1),
+            };
+            message2.Insert ();
+
+            McEmailMessage message3 = new McEmailMessage () {
+                AccountId = 1,
+                FlagType = "Defer until",
+                FlagStatus = 0,
+                FlagUtcStartDate = DateTime.UtcNow.AddHours(1),
+            };
+            message3.Insert ();
+
+            McEmailMessage message4 = new McEmailMessage () {
+                AccountId = 2,
+                FlagStatus = 1,
+                FlagUtcStartDate = DateTime.UtcNow.AddHours(1),
+                IsAwaitingDelete = true,
+            };
+            message4.Insert ();
+
+            McEmailMessage message5 = new McEmailMessage () {
+                AccountId = 3,
+                FlagStatus = 2,
+                FlagUtcStartDate = DateTime.UtcNow.AddHours(100),
+            };
+            message5.Insert ();
+
+            var deferred = McEmailMessage.QueryDeferredMessageItemsAllAccounts ();
+            foreach (var d in deferred) {
+                Assert.AreNotEqual (0, McEmailMessage.QueryById<McEmailMessage> (d.Id).FlagStatus);
+                NcAssert.True (McEmailMessage.QueryById<McEmailMessage> (d.Id).FlagUtcStartDate > DateTime.UtcNow);
+                NcAssert.True (!McEmailMessage.QueryById<McEmailMessage> (d.Id).IsAwaitingDelete);
+            }
+            Assert.AreEqual(3, deferred.Count);
         }
 
         private void CheckScoreAndUpdate (int id, double expectedScore, bool expectedNeedUpdate)

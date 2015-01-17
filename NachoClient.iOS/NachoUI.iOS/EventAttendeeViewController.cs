@@ -42,8 +42,8 @@ namespace NachoClient.iOS
 
         protected UITableView tableView;
         protected UILabel emptyListLabel;
+        protected UILabel emptyMessagelabel;
         protected UIView addAttendeeView;
-        protected UIImageView iconIv;
 
         protected static int SEGMENTED_CONTROL_TAG = 100;
         protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
@@ -272,19 +272,48 @@ namespace NachoClient.iOS
             emptyListLabel.TextAlignment = UITextAlignment.Center;
             emptyListLabel.Font = A.Font_AvenirNextDemiBold14;
             emptyListLabel.TextColor = A.Color_NachoGreen;
-            emptyListLabel.Lines = 0;
-            emptyListLabel.LineBreakMode = UILineBreakMode.WordWrap;
+            emptyListLabel.Text = "No attendees";
+            emptyListLabel.Hidden = true;
             addAttendeeView.AddSubview (emptyListLabel);
-
-            iconIv = new UIImageView (new RectangleF (0, 0, 16, 16));
-            iconIv.Image = UIImage.FromBundle ("calendar-add-attendee-bottom");
-            addAttendeeView.AddSubview (iconIv);
 
             tableView = new UITableView (new RectangleF (0, yOffset + 1, View.Frame.Width, View.Frame.Height - yOffset - 1 - 64), UITableViewStyle.Plain);
             tableView.SeparatorColor = UIColor.Clear;
             tableView.BackgroundColor = A.Color_NachoBackgroundGray;
             tableView.Source = AttendeeSource;
             View.AddSubview (tableView);
+
+
+            // When the user is adding attendees to an event and the 
+            // list of attendees is empty they are presented with this message
+            var stringAttributes = new UIStringAttributes {
+                ForegroundColor = A.Color_NachoGreen,
+                BackgroundColor = UIColor.White,
+                Font = A.Font_AvenirNextDemiBold14
+            };
+
+            var noAttendeesString = new NSMutableAttributedString ("There are currently no attendees yet. \n \nStart adding attendees to your event by tapping on the  ", stringAttributes);
+            var noAttendeesStringPartTwo = new NSAttributedString ("  icon above.", stringAttributes);
+
+            var inlineIcon = new NachoInlineImageTextAttachment ();
+            inlineIcon.Image = UIImage.FromBundle ("calendar-add-attendee-bottom");
+
+            var stringWithAttachment = new NSAttributedString ();
+            var stringWithImage = stringWithAttachment.FromTextAttachment (inlineIcon);
+
+            noAttendeesString.Append (stringWithImage);
+            noAttendeesString.Append (noAttendeesStringPartTwo);
+
+            var messageWidth = Math.Max (addAttendeeView.Frame.Width - 4 * A.Card_Horizontal_Indent, 320 - 4 * A.Card_Horizontal_Indent);
+
+            emptyMessagelabel = new UILabel (new RectangleF (2 * A.Card_Horizontal_Indent, 20, messageWidth, 50));
+            emptyMessagelabel.TextAlignment = UITextAlignment.Center;
+            emptyMessagelabel.Lines = 0;
+            emptyMessagelabel.LineBreakMode = UILineBreakMode.WordWrap;
+            emptyMessagelabel.AttributedText = noAttendeesString;
+            emptyMessagelabel.SizeToFit ();
+            emptyMessagelabel.Center = new PointF (addAttendeeView.Frame.Width / 2, addAttendeeView.Frame.Height / 2); 
+            emptyMessagelabel.Hidden = true;
+            addAttendeeView.AddSubview (emptyMessagelabel);
 
             View.BackgroundColor = A.Color_NachoBackgroundGray;
         }
@@ -398,24 +427,14 @@ namespace NachoClient.iOS
             }
         }
 
-        string addMessage = "There are currently no attendees yet. \n \n Start adding attendees to your event by tapping on the        icon above.";
-
         protected void ConfigureEventAttendeesView ()
         {
             segmentedControl.SelectedSegment = 0;
             if (0 == AttendeeList.Count) {
                 tableView.Hidden = true;
                 addAttendeeView.Hidden = false;
-                if (editing) {
-                    emptyListLabel.Text = addMessage;
-                    iconIv.Hidden = false;
-                } else {
-                    emptyListLabel.Text = "No attendees";
-                }
-                emptyListLabel.SizeToFit ();
-                emptyListLabel.Frame = new RectangleF (0, 0, 320 - 2 * A.Card_Horizontal_Indent, addAttendeeView.Frame.Height - 64);
-                emptyListLabel.Center = new PointF (addAttendeeView.Frame.Width / 2, addAttendeeView.Frame.Height / 2);
-                iconIv.Frame = new RectangleF (emptyListLabel.Center.X + 3, emptyListLabel.Center.Y + 21, 16, 16);
+                emptyListLabel.Hidden = editing;
+                emptyMessagelabel.Hidden = !editing;
             } else {
                 AttendeeSource.SetAttendeeList (this.AttendeeList);
                 tableView.ReloadData ();
@@ -431,21 +450,12 @@ namespace NachoClient.iOS
             if (0 == RequiredList.Count) {
                 tableView.Hidden = true;
                 addAttendeeView.Hidden = false;
-                iconIv.Hidden = true;
-                if (0 == AttendeeList.Count) {
-                    if (editing) {
-                        emptyListLabel.Text = addMessage;
-                        iconIv.Hidden = false;
-                    } else {
-                        emptyListLabel.Text = "No required attendees";
-                    }
-                } else {
-                    emptyListLabel.Text = "No required attendees";
-                }
+                emptyListLabel.Hidden = editing;
+                emptyMessagelabel.Hidden = !editing;
+                emptyListLabel.Text = "No required attendees";
                 emptyListLabel.SizeToFit ();
                 emptyListLabel.Frame = new RectangleF (0, 0, 320 - 2 * A.Card_Horizontal_Indent, addAttendeeView.Frame.Height - 64);
                 emptyListLabel.Center = new PointF (addAttendeeView.Frame.Width / 2, addAttendeeView.Frame.Height / 2);
-                iconIv.Frame = new RectangleF (emptyListLabel.Center.X + 3, emptyListLabel.Center.Y + 21, 16, 16);
             } else {
                 AttendeeSource.SetAttendeeList (this.RequiredList);
                 tableView.ReloadData ();
@@ -459,21 +469,12 @@ namespace NachoClient.iOS
             if (0 == OptionalList.Count) {
                 tableView.Hidden = true;
                 addAttendeeView.Hidden = false;
-                iconIv.Hidden = true;
-                if (0 == AttendeeList.Count) {
-                    if (editing) {
-                        emptyListLabel.Text = addMessage;
-                        iconIv.Hidden = false;
-                    } else {
-                        emptyListLabel.Text = "No optional attendees";
-                    }
-                } else {
-                    emptyListLabel.Text = "No optional attendees";
-                }
+                emptyListLabel.Hidden = editing;
+                emptyMessagelabel.Hidden = !editing;
+                emptyListLabel.Text = "No optional attendees";
                 emptyListLabel.SizeToFit ();
                 emptyListLabel.Frame = new RectangleF (0, 0, 320 - 2 * A.Card_Horizontal_Indent, addAttendeeView.Frame.Height - 64);
                 emptyListLabel.Center = new PointF (addAttendeeView.Frame.Width / 2, addAttendeeView.Frame.Height / 2);
-                iconIv.Frame = new RectangleF (emptyListLabel.Center.X + 3, emptyListLabel.Center.Y + 21, 16, 16);
             } else {
                 AttendeeSource.SetAttendeeList (this.OptionalList);
                 tableView.ReloadData ();

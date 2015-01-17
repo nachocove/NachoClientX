@@ -57,15 +57,18 @@ namespace NachoClient.iOS
         protected const int DEADLINES_LABEL = 99115;
         protected const int DEFERRED_LABEL = 99116;
         protected const int INBOX_LABEL = 99117;
-        protected const int NO_MESSAGES_ICON = 99118;
 
-        protected const int DEADLINES_HIT_BOX_TAG = 99119;
-        protected const int DEFERRED_HIT_BOX_TAG = 99120;
-        protected const int INBOX_HIT_BOX_TAG = 99121;
+        protected const int DEADLINES_BUTTON_TAG = 99118;
+        protected const int DEFERRED_BUTTON_TAG = 99119;
+        protected const int INBOX_BUTTON_TAG = 99120;
 
-        protected const int DEADLINES_ACCESSORY_TAG = 99122;
-        protected const int DEFERRED_ACCESSORY_TAG = 99123;
-        protected const int INBOX_ACCESSORY_TAG = 99124;
+        protected const int DEADLINES_ACCESSORY_TAG = 99121;
+        protected const int DEFERRED_ACCESSORY_TAG = 99122;
+        protected const int INBOX_ACCESSORY_TAG = 99123;
+
+        protected const int DEADLINES_ICON_TAG = 99124;
+        protected const int DEFERRED_ICON_TAG = 99125;
+        protected const int INBOX_ICON_TAG = 99126;
 
         public HotListTableViewSource (IMessageTableViewSourceDelegate owner, INachoEmailMessages messageThreads)
         {
@@ -240,24 +243,17 @@ namespace NachoClient.iOS
 
         protected void ConfigureFooter (UIView footer)
         {
-            var hotListLabel = (UILabel)footer.ViewWithTag (HOT_LIST_LABEL);
-            var icon = (UIImageView)footer.ViewWithTag (NO_MESSAGES_ICON);
-            if (NoMessageThreads ()) {
-                hotListLabel.Hidden = false;
-                icon.Hidden = false;
-            } else {
-                hotListLabel.Hidden = true;
-                icon.Hidden = true;
-            }
+
+            footer.ViewWithTag (HOT_LIST_LABEL).Hidden = !NoMessageThreads ();
 
             // Inbox label
-            var inboxHitBox = (UIButton)footer.ViewWithTag (INBOX_HIT_BOX_TAG);
+            var inboxHitBox = (UIButton)footer.ViewWithTag (INBOX_BUTTON_TAG);
             var inboxLabel = (UILabel)footer.ViewWithTag (INBOX_LABEL);
             var inboxFolder = NcEmailManager.InboxFolder ();
             var unreadInboxMessagesCount = McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id);
 
             if (0 == unreadInboxMessagesCount) {
-                inboxLabel.Text = "You do not have any unread message in your Inbox.";
+                inboxLabel.Text = "You do not have any unread messages in your Inbox.";
                 inboxHitBox.Enabled = false;
                 footer.ViewWithTag (INBOX_ACCESSORY_TAG).Hidden = true;
             } else if (1 == unreadInboxMessagesCount) {
@@ -274,7 +270,7 @@ namespace NachoClient.iOS
             inboxLabel.Center = new PointF (inboxLabel.Center.X, inboxHitBox.Frame.Height / 2);
 
             // Deadline label
-            var deadlinesHitBox = (UIButton)footer.ViewWithTag (DEADLINES_HIT_BOX_TAG);
+            var deadlinesHitBox = (UIButton)footer.ViewWithTag (DEADLINES_BUTTON_TAG);
             var deadlineMessages = McEmailMessage.QueryDueDateMessageItemsAllAccounts ();
             var deadlinesLabel = (UILabel)footer.ViewWithTag (DEADLINES_LABEL);
 
@@ -296,7 +292,7 @@ namespace NachoClient.iOS
             deadlinesLabel.Center = new PointF (deadlinesLabel.Center.X, inboxHitBox.Frame.Height / 2);
 
             // Deferred label
-            var deferredHitBox = (UIButton)footer.ViewWithTag (DEFERRED_HIT_BOX_TAG);
+            var deferredHitBox = (UIButton)footer.ViewWithTag (DEFERRED_BUTTON_TAG);
             var deferredMessages = new NachoDeferredEmailMessages ();
             var deferredLabel = (UILabel)footer.ViewWithTag (DEFERRED_LABEL);
             if (0 == deferredMessages.Count ()) {
@@ -520,95 +516,133 @@ namespace NachoClient.iOS
             var cellHeight = (tableView.Frame.Height - 40) / 8;
             var cardWidth = noMessagesView.Frame.Width;
 
-            var messagePadding = (NoMessageThreads () ? cellHeight * 3 : 0);
+            var messagePadding = (NoMessageThreads () ? noMessagesView.Frame.Height - ((cellHeight * 3) + (4 * A.Card_Vertical_Indent)) : 0);
 
-            var hotListLabel = new UILabel ();
+            // Empty Hot list label
+            var stringAttributes = new UIStringAttributes {
+                ForegroundColor = A.Color_NachoGreen,
+                BackgroundColor = UIColor.White,
+                Font = A.Font_AvenirNextDemiBold14
+            };
+
+            var noHotMessagesString = new NSMutableAttributedString ("You do not have any Hot messages. \n \nStart adding Hot messages by tapping on the  ", stringAttributes);
+            var noHotMessagesStringPartTwo = new NSAttributedString ("  icon in your mail.", stringAttributes);
+
+            var inlineIcon = new NachoInlineImageTextAttachment ();
+            inlineIcon.Image = UIImage.FromBundle ("email-not-hot");
+
+            var stringWithAttachment = new NSAttributedString ();
+            var stringWithImage = stringWithAttachment.FromTextAttachment (inlineIcon);
+
+            noHotMessagesString.Append (stringWithImage);
+            noHotMessagesString.Append (noHotMessagesStringPartTwo);
+
+            var messageWidth = 320 - 4 * A.Card_Horizontal_Indent;
+
+            var hotListLabel = new UILabel (new RectangleF (0, 0, messageWidth, 50));
             hotListLabel.TextAlignment = UITextAlignment.Center;
             hotListLabel.Font = A.Font_AvenirNextDemiBold14;
             hotListLabel.TextColor = A.Color_NachoGreen;
             hotListLabel.BackgroundColor = UIColor.White;
             hotListLabel.Lines = 0;
             hotListLabel.LineBreakMode = UILineBreakMode.WordWrap;            
-            hotListLabel.Text = "You do not have any Hot messages. \n \nStart adding Hot messages by tapping on the          icon in your mail.";
-            hotListLabel.Frame = new RectangleF (A.Card_Horizontal_Indent, 2 * A.Card_Vertical_Indent, 320 - 2 * A.Card_Horizontal_Indent, noMessagesView.Frame.Height - 64);
+            hotListLabel.AttributedText = noHotMessagesString;
             hotListLabel.SizeToFit ();
-            hotListLabel.Center = new PointF (noMessagesView.Frame.Width / 2, (A.Card_Vertical_Indent + cellHeight * 3) / 2);
+            hotListLabel.Center = new PointF (noMessagesView.Frame.Width / 2, (messagePadding / 2) + (A.Card_Vertical_Indent / 2)); 
+            hotListLabel.Hidden = true;
             hotListLabel.Tag = HOT_LIST_LABEL;
 
             noMessagesView.AddSubview (hotListLabel);
 
-            var iconIv = new UIImageView ();
-            iconIv.Image = UIImage.FromBundle ("email-not-hot");
-            iconIv.Frame = new RectangleF (hotListLabel.Center.X - 54, hotListLabel.Center.Y + 21, 20, 20);
-            iconIv.Tag = NO_MESSAGES_ICON;
-
-            noMessagesView.AddSubview (iconIv);
+            var iconFrame = new RectangleF (A.Card_Horizontal_Indent, 0, cellHeight / 2, cellHeight);
+            var rightIndent = (2 * A.Card_Horizontal_Indent) + (cellHeight / 2);
 
             // Inbox 
-            var inboxHitBox = UIButton.FromType (UIButtonType.RoundedRect);
-            inboxHitBox.Frame = new RectangleF (0, messagePadding + A.Card_Vertical_Indent, cardWidth, cellHeight);
-            inboxHitBox.BackgroundColor = UIColor.White;
-            inboxHitBox.Tag = INBOX_HIT_BOX_TAG;
-            inboxHitBox.TouchUpInside += InboxClicked;
+            var inboxButton = UIButton.FromType (UIButtonType.RoundedRect);
+            inboxButton.Frame = new RectangleF (0, messagePadding + A.Card_Vertical_Indent, cardWidth, cellHeight);
+            inboxButton.BackgroundColor = UIColor.White;
+            inboxButton.Tag = INBOX_BUTTON_TAG;
+            inboxButton.TouchUpInside += InboxClicked;
+
+            var inboxIcon = new UIImageView (new RectangleF (A.Card_Horizontal_Indent + 2, 0, cellHeight / 2, cellHeight));
+            inboxIcon.ContentMode = UIViewContentMode.Center;
+            inboxIcon.BackgroundColor = UIColor.White;
+            inboxIcon.Image = UIImage.FromBundle ("gen-unread-msgs");
+            inboxIcon.Tag = INBOX_ICON_TAG;
 
             var inboxLabel = new UILabel ();
             inboxLabel.Font = A.Font_AvenirNextDemiBold14;
             inboxLabel.TextColor = A.Color_NachoGreen;
             inboxLabel.Lines = 0;
             inboxLabel.LineBreakMode = UILineBreakMode.WordWrap;
-            inboxLabel.Frame = new RectangleF (A.Card_Horizontal_Indent, 0, cardWidth - 4 * A.Card_Horizontal_Indent, cellHeight);
+            inboxLabel.Frame = new RectangleF (rightIndent, 0, cardWidth - 2 * A.Card_Horizontal_Indent - rightIndent, cellHeight);
             inboxLabel.Tag = INBOX_LABEL;
 
-            var inboxAccessory = Util.AddArrowAccessoryView (inboxHitBox.Frame.Width - 18 - 12, (cellHeight / 2) - 6, 12);
+            var inboxAccessory = Util.AddArrowAccessoryView (inboxButton.Frame.Width - 18 - 12, (cellHeight / 2) - 6, 12);
             inboxAccessory.Tag = INBOX_ACCESSORY_TAG;
 
-            inboxHitBox.AddSubview (inboxAccessory);
-            inboxHitBox.AddSubview (inboxLabel);
-            noMessagesView.AddSubview (inboxHitBox);
+            inboxButton.AddSubview (inboxIcon);
+            inboxButton.AddSubview (inboxAccessory);
+            inboxButton.AddSubview (inboxLabel);
+            noMessagesView.AddSubview (inboxButton);
 
             // Deadlines
-            var deadlinesHitBox = UIButton.FromType (UIButtonType.RoundedRect);
-            deadlinesHitBox.Frame = new RectangleF (0, inboxHitBox.Frame.Bottom + A.Card_Vertical_Indent, cardWidth, cellHeight);
-            deadlinesHitBox.BackgroundColor = UIColor.White;
-            deadlinesHitBox.Tag = DEADLINES_HIT_BOX_TAG;
-            deadlinesHitBox.TouchUpInside += DeadlinesClicked;
+            var deadlinesButton = UIButton.FromType (UIButtonType.RoundedRect);
+            deadlinesButton.Frame = new RectangleF (0, inboxButton.Frame.Bottom + A.Card_Vertical_Indent, cardWidth, cellHeight);
+            deadlinesButton.BackgroundColor = UIColor.White;
+            deadlinesButton.Tag = DEADLINES_BUTTON_TAG;
+            deadlinesButton.TouchUpInside += DeadlinesClicked;
+
+            var deadlinesIcon = new UIImageView (iconFrame);
+            deadlinesIcon.ContentMode = UIViewContentMode.Center;
+            deadlinesIcon.BackgroundColor = UIColor.White;
+            deadlinesIcon.Image = UIImage.FromBundle ("gen-deadline");
+            deadlinesIcon.Tag = DEADLINES_ICON_TAG;
 
             var deadlinesLabel = new UILabel ();
             deadlinesLabel.Font = A.Font_AvenirNextDemiBold14;
             deadlinesLabel.TextColor = A.Color_NachoGreen;
             deadlinesLabel.Lines = 0;
             deadlinesLabel.LineBreakMode = UILineBreakMode.WordWrap;
-            deadlinesLabel.Frame = new RectangleF (A.Card_Horizontal_Indent, 0, cardWidth - 4 * A.Card_Horizontal_Indent, cellHeight);
+            deadlinesLabel.Frame = new RectangleF (rightIndent, 0, cardWidth - 2 * A.Card_Horizontal_Indent - rightIndent, cellHeight);
             deadlinesLabel.Tag = DEADLINES_LABEL;
 
-            var deadlinesAccessory = Util.AddArrowAccessoryView (deadlinesHitBox.Frame.Width - 18 - 12, (cellHeight / 2) - 6, 12);
+            var deadlinesAccessory = Util.AddArrowAccessoryView (deadlinesButton.Frame.Width - 18 - 12, (cellHeight / 2) - 6, 12);
             deadlinesAccessory.Tag = DEADLINES_ACCESSORY_TAG;
 
-            deadlinesHitBox.AddSubview (deadlinesAccessory);
-            deadlinesHitBox.AddSubview (deadlinesLabel);
-            noMessagesView.AddSubview (deadlinesHitBox);
+            deadlinesButton.AddSubview (deadlinesIcon);
+            deadlinesButton.AddSubview (deadlinesAccessory);
+            deadlinesButton.AddSubview (deadlinesLabel);
+            noMessagesView.AddSubview (deadlinesButton);
 
             // Deferred
-            var deferredHitBox = UIButton.FromType (UIButtonType.RoundedRect);
-            deferredHitBox.Frame = new RectangleF (0, deadlinesHitBox.Frame.Bottom + A.Card_Vertical_Indent, cardWidth, cellHeight);
-            deferredHitBox.BackgroundColor = UIColor.White;
-            deferredHitBox.Tag = DEFERRED_HIT_BOX_TAG;
-            deferredHitBox.TouchUpInside += DeferredClicked;
+            var deferredButton = UIButton.FromType (UIButtonType.RoundedRect);
+            deferredButton.Frame = new RectangleF (0, deadlinesButton.Frame.Bottom + A.Card_Vertical_Indent, cardWidth, cellHeight);
+            deferredButton.BackgroundColor = UIColor.White;
+            deferredButton.Tag = DEFERRED_BUTTON_TAG;
+            deferredButton.TouchUpInside += DeferredClicked;
+
+            var deferredIcon = new UIImageView (iconFrame);
+            deferredIcon.ContentMode = UIViewContentMode.Center;
+            deferredIcon.BackgroundColor = UIColor.White;
+            deferredIcon.Image = UIImage.FromBundle ("gen-deferred-msgs");
+            deferredIcon.Tag = DEFERRED_ICON_TAG;
 
             var deferredLabel = new UILabel ();
             deferredLabel.Font = A.Font_AvenirNextDemiBold14;
             deferredLabel.TextColor = A.Color_NachoGreen;
             deferredLabel.Lines = 0;
             deferredLabel.LineBreakMode = UILineBreakMode.WordWrap;
-            deferredLabel.Frame = new RectangleF (A.Card_Horizontal_Indent, 0, cardWidth - 4 * A.Card_Horizontal_Indent, cellHeight);
+            deferredLabel.Frame = new RectangleF (rightIndent, 0, cardWidth - 2 * A.Card_Horizontal_Indent - rightIndent, cellHeight);
             deferredLabel.Tag = DEFERRED_LABEL;
 
-            var deferredAccessory = Util.AddArrowAccessoryView (deferredHitBox.Frame.Width - 18 - 12, (cellHeight / 2) - 6, 12);
+            var deferredAccessory = Util.AddArrowAccessoryView (deferredButton.Frame.Width - 18 - 12, (cellHeight / 2) - 6, 12);
             deferredAccessory.Tag = DEFERRED_ACCESSORY_TAG;
 
-            deferredHitBox.AddSubview (deferredAccessory);
-            deferredHitBox.AddSubview (deferredLabel);
-            noMessagesView.AddSubview (deferredHitBox);
+            deferredButton.AddSubview (deferredIcon);
+            deferredButton.AddSubview (deferredAccessory);
+            deferredButton.AddSubview (deferredLabel);
+            noMessagesView.AddSubview (deferredButton);
 
             var footerView = new UIView ();
             footerView.AddSubview (noMessagesView);
@@ -832,6 +866,8 @@ namespace NachoClient.iOS
                 UIApplication.SharedApplication.OpenUrl (url);
             }
         }
+            
     }
+       
 }
 
