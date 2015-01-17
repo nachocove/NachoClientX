@@ -83,7 +83,7 @@ namespace NachoPlatform
                 }
                 var phones = Person.GetPhones ();
                 foreach (var phone in phones) {
-                    var phoneLabel = phone.Label.ToString ();
+                    var phoneLabel = (null == phone.Label) ? "" : phone.Label.ToString ();
                     if (phoneLabel.Contains ("Work")) {
                         contact.AddPhoneNumberAttribute (accountId, "BusinessPhoneNumber", "Work", phone.Value);
                     } else if (phoneLabel.Contains ("Home")) {
