@@ -90,11 +90,7 @@ namespace NachoClient.iOS
         /// The number of rows in the specified section.
         public override int RowsInSection (UITableView tableview, int section)
         {
-            if (NoMessageThreads ()) {
-                return 0; // "No messages"
-            } else {
-                return messageThreads.Count ();
-            }
+            return messageThreads.Count ();
         }
 
         public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
