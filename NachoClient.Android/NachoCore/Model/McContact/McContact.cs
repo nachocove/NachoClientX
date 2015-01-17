@@ -72,10 +72,6 @@ namespace NachoCore.Model
         // Valid only for GAL-cache entries.
         public string GalCacheToken { get; set; }
 
-        /// Reference count.
-        [Indexed]
-        public uint RefCount { get; set; }
-
         /// First name of the contact
         [Indexed]
         public string FirstName { get; set; }
