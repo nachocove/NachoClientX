@@ -1189,14 +1189,14 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration1.cs">
       <Link>NachoCore\Model\Migration\NcMigration1.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailMessage\McEmailMessageAddress.cs">
-      <Link>NachoCore\Model\McEmailMessage\McEmailMessageAddress.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McMigration.cs">
       <Link>NachoCore\Model\McMigration.cs</Link>
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration2.cs">
       <Link>NachoCore\Model\Migration\NcMigration2.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailMessage\McMapEmailMessageAddress.cs">
+      <Link>NachoCore\Model\McEmailMessage\McMapEmailMessageAddress.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
