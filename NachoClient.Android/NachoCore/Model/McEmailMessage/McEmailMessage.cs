@@ -134,6 +134,9 @@ namespace NachoCore.Model
         /// Sender, maybe not the same as From (optional)
         public string Sender { set; get; }
 
+        /// McEmailAddress Index of Sender
+        public int SenderEmailAddressId { set; get; }
+
         /// The user is on the bcc list (optional)
         public bool ReceivedAsBcc { set; get; }
 
@@ -734,8 +737,8 @@ namespace NachoCore.Model
             _Categories = NcModel.Instance.Db.Table<McEmailMessageCategory> ().Where (x => x.ParentId == Id).ToList ();
             _MeetingRequest = NcModel.Instance.Db.Table<McMeetingRequest> ().Where (x => x.EmailMessageId == Id).SingleOrDefault ();
             isAncillaryInMemory = true;
-            dbToEmailAddressId = McMapEmailMessageAddress.QueryToAddressId (Id);
-            dbCcEmailAddressId = McMapEmailMessageAddress.QueryCcAddressId (Id);
+            dbToEmailAddressId = McMapEmailAddressEntry.QueryMessageToAddressIds (Id);
+            dbCcEmailAddressId = McMapEmailAddressEntry.QueryMessageCcAddressIds (Id);
 
             return NcResult.OK ();
         }

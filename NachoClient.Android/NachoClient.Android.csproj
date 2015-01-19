@@ -355,8 +355,8 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration.cs" />
     <Compile Include="NachoCore\Model\McMigration.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration1.cs" />
-    <Compile Include="NachoCore\Model\McEmailMessage\McMapEmailMessageAddress.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration2.cs" />
+    <Compile Include="NachoCore\Model\McMapEmailAddressEntry.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
