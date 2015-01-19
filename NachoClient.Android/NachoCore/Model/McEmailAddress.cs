@@ -45,8 +45,9 @@ namespace NachoCore.Model
                 return false;
             }
             NcAssert.True (1 == addresses.Count);
-            NcAssert.True (addresses [0] is MailboxAddress);
-
+            if (!(addresses [0] is MailboxAddress)) {
+                return false; // TODO: group addresses
+            }
             return Get (accountId, addresses [0] as MailboxAddress, out emailAddress);
         }
 
