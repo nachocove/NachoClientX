@@ -17,6 +17,8 @@ namespace NachoCore.Model
     /// </summary>
     public class NcMigration
     {
+        int _Version = 0;
+
         // Convenient short hand for all migrations
         public SQLiteConnection Db {
             get {
@@ -39,10 +41,13 @@ namespace NachoCore.Model
 
         public int Version ()
         {
-            string className = this.GetType ().Name;
-            NcAssert.True (className.StartsWith ("NcMigration"));
-            string versionString = className.Substring (11);
-            return Convert.ToInt32 (versionString);
+            if (0 == _Version) {
+                string className = this.GetType ().Name;
+                NcAssert.True (className.StartsWith ("NcMigration"));
+                string versionString = className.Substring (11);
+                _Version = Convert.ToInt32 (versionString);
+            }
+            return _Version;
         }
 
         public static bool StartService ()

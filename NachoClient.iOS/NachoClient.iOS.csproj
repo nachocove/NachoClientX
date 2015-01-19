@@ -1195,8 +1195,8 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration2.cs">
       <Link>NachoCore\Model\Migration\NcMigration2.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Model\McEmailMessage\McMapEmailMessageAddress.cs">
-      <Link>NachoCore\Model\McEmailMessage\McMapEmailMessageAddress.cs</Link>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\McMapEmailAddressEntry.cs">
+      <Link>NachoCore\Model\McMapEmailAddressEntry.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

@@ -21,40 +21,89 @@ namespace NachoCore.Model
             return Db.Table<McEmailMessage> ().Where (x => x.MigrationVersion < 1).Count ();
         }
 
-        public void ProcessAddressList (McEmailMessage emailMessage, string addressString, EmailAddressType addressType)
+        public int ProcessAddress (int accountId, int objectId, MailboxAddress address, EmailAddressType addressType)
         {
-            var addressList = NcEmailAddress.ParseAddressListString (addressString);
-            var thisVersion = Version ();
-            foreach (MailboxAddress address in addressList) {
-                McEmailAddress emailAddress;
-                var got = McEmailAddress.Get (emailMessage.AccountId, address.Address, out emailAddress);
-                NcAssert.True (got);
+            McEmailAddress emailAddress;
+            var got = McEmailAddress.Get (accountId, address.Address, out emailAddress);
+            NcAssert.True (got);
 
-                var map = new McMapEmailMessageAddress ();
-                map.EmailMessageId = emailMessage.Id;
-                map.EmailAddressId = emailAddress.Id;
-                map.AddressType = addressType;
-                // don't use the current version as there may be migration between this and current version
-                map.MigrationVersion = thisVersion;
-                map.Insert ();
+            var map = new McMapEmailAddressEntry ();
+            map.ObjectId = objectId;
+            map.EmailAddressId = emailAddress.Id;
+            map.AddressType = addressType;
+            // Override the default current version as there may be migration between this and current version
+            map.MigrationVersion = Version ();
+            map.Insert ();
+
+            return emailAddress.Id;
+        }
+
+        public int ProcessAddress (int accountId, int objectId, string addressString, EmailAddressType addressType)
+        {
+            if (String.IsNullOrEmpty (addressString)) {
+                return 0;
+            }
+            var address = NcEmailAddress.ParseMailboxAddressString (addressString);
+            return ProcessAddress (accountId, objectId, address, addressType);
+        }
+
+        public void ProcessAddressList (int accountId, int objectId, string addressString, EmailAddressType addressType)
+        {
+            if (String.IsNullOrEmpty (addressString)) {
+                return;
+            }
+            var addressList = NcEmailAddress.ParseAddressListString (addressString);
+            foreach (MailboxAddress address in addressList) {
+                ProcessAddress (accountId, objectId, address, addressType);
             }
         }
 
         public override void Run (CancellationToken token)
         {
+            // McEmailMessage
             var thisVersion = Version ();
             foreach (var emailMessage in Db.Table<McEmailMessage> ().Where (x => x.MigrationVersion < thisVersion)) {
                 token.ThrowIfCancellationRequested ();
 
                 NcModel.Instance.RunInTransaction (() => {
-                    if (!String.IsNullOrEmpty (emailMessage.To)) {
-                        ProcessAddressList (emailMessage, emailMessage.To, EmailAddressType.TO);
-                    }
-                    if (!String.IsNullOrEmpty (emailMessage.Cc)) {
-                        ProcessAddressList (emailMessage, emailMessage.Cc, EmailAddressType.CC);
-                    }
+                    var accountId = emailMessage.AccountId;
+                    var objectId = emailMessage.Id;
+
+                    emailMessage.FromEmailAddressId = 
+                        ProcessAddress (accountId, objectId, emailMessage.From, EmailAddressType.MESSAGE_FROM);
+                    emailMessage.SenderEmailAddressId =
+                        ProcessAddress (accountId, objectId, emailMessage.Sender, EmailAddressType.MESSAGE_SENDER);
+                    ProcessAddressList (accountId, objectId, emailMessage.To, EmailAddressType.MESSAGE_TO);
+                    ProcessAddressList (accountId, objectId, emailMessage.Cc, EmailAddressType.MESSAGE_CC);
+
                     emailMessage.MigrationVersion = thisVersion;
                     emailMessage.Update ();
+                    NcMigration.ProcessedObjects += 1;
+                });
+            }
+
+            // McAttendee
+            foreach (var attendee in Db.Table<McAttendee> ().Where (x => x.MigrationVersion < thisVersion)) {
+                token.ThrowIfCancellationRequested ();
+
+                NcModel.Instance.RunInTransaction (() => {
+                    attendee.EmailAddressId =
+                        ProcessAddress (attendee.AccountId, attendee.Id, attendee.Email, EmailAddressType.ATTENDEE_EMAIL);
+                    attendee.MigrationVersion = thisVersion;
+                    attendee.Update ();
+                    NcMigration.ProcessedObjects += 1;
+                });
+            }
+
+            // McCalendar
+            foreach (var cal in Db.Table<McCalendar> ().Where (x => x.MigrationVersion < thisVersion)) {
+                token.ThrowIfCancellationRequested ();
+
+                NcModel.Instance.RunInTransaction (() => {
+                    cal.OrganizerEmailAddressId =
+                        ProcessAddress (cal.AccountId, cal.Id, cal.OrganizerEmail, EmailAddressType.CALENDAR_ORGANIZER);
+                    cal.MigrationVersion = thisVersion;
+                    cal.Update ();
                     NcMigration.ProcessedObjects += 1;
                 });
             }
