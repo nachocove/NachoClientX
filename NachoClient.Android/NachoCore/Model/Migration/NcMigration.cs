@@ -35,6 +35,55 @@ namespace NachoCore.Model
         // The highest migration version of the current build
         public static int CurrentVersion { get; protected set; }
 
+        // The last complete migrated version
+        public static int LastVersion { get; protected set; }
+
+        // All he migrations that need to be run
+        private static List<NcMigration> _migrations { get; set; }
+
+        private static List<NcMigration> migrations {
+            set {
+                _migrations = value;
+            }
+            get {
+                if (null == _migrations) {
+                    _migrations = new List<NcMigration> ();
+                    // Find all derived classes.
+                    var subclasses = (from assembly in AppDomain.CurrentDomain.GetAssemblies ()
+                                                     from type_ in assembly.GetTypes ()
+                                                     where type_.IsSubclassOf (typeof(NcMigration))
+                                                     select type_
+                                     );
+
+                    // Find the latest version
+                    var latestMigration = McMigration.QueryLatestMigration ();
+                    int LastMigration; // the latest complete migration
+                    if (null == latestMigration) {
+                        LastMigration = 0;
+                    } else {
+                        if (latestMigration.Finished) {
+                            LastMigration = latestMigration.Version;
+                        } else {
+                            LastMigration = latestMigration.Version - 1;
+                        }
+                    }
+
+                    // Filter out all migration versions that we have already finished.
+                    foreach (var subclass in subclasses) {
+                        NcMigration migration = (NcMigration)Activator.CreateInstance (subclass, false);
+                        var version = migration.Version ();
+                        if (version > CurrentVersion) {
+                            CurrentVersion = version;
+                        }
+                        if (version > LastMigration) {
+                            _migrations.Add (migration);
+                        }
+                    }
+                }
+                return _migrations;
+            }
+        }
+
         public NcMigration ()
         {
         }
@@ -50,43 +99,15 @@ namespace NachoCore.Model
             return _Version;
         }
 
-        public static bool StartService ()
+        public static bool WillStartService ()
         {
-            // Find all derived classes.
-            var subclasses = (from assembly in AppDomain.CurrentDomain.GetAssemblies ()
-                                       from type_ in assembly.GetTypes ()
-                                       where type_.IsSubclassOf (typeof(NcMigration))
-                                       select type_
-                             );
+            return (0 < migrations.Count);
+        }
 
-            // Find the latest version
-            var latestMigration = McMigration.QueryLatestMigration ();
-            int lastMigration; // the latest complete migration
-            if (null == latestMigration) {
-                lastMigration = 0;
-            } else {
-                if (latestMigration.Finished) {
-                    lastMigration = latestMigration.Version;
-                } else {
-                    lastMigration = latestMigration.Version - 1;
-                }
-            }
-
-            // Filter out all migration versions that we have already finished.
-            List<NcMigration> migrations = new List<NcMigration> ();
-            foreach (var subclass in subclasses) {
-                NcMigration migration = (NcMigration)Activator.CreateInstance (subclass, false);
-                var version = migration.Version ();
-                if (version > CurrentVersion) {
-                    CurrentVersion = version;
-                }
-                if (version >= lastMigration) {
-                    migrations.Add (migration);
-                }
-            }
-
+        public static void StartService (Action postRun)
+        {
             if (0 == migrations.Count) {
-                return false; // no outstanding migration
+                return; // no outstanding migration
             }
 
             // Run them all starting with the lowest version
@@ -131,8 +152,11 @@ namespace NachoCore.Model
                         throw;
                     }
                 }
+
+                if (null != postRun) {
+                    postRun ();
+                }
             }, "Migration");
-            return true;
         }
 
         /// <summary>

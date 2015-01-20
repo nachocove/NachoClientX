@@ -195,7 +195,7 @@ namespace NachoCore
             }
         }
 
-        public void StartClass1Services ()
+        public bool StartClass1Services (bool finishingMigration = false)
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass1Services called.");
             NcTask.StartService ();
@@ -204,6 +204,7 @@ namespace NachoCore
             NcModel.Instance.Start ();
             EstablishService ();
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass1Services exited.");
+            return true;
         }
 
         public void StopClass1Services ()

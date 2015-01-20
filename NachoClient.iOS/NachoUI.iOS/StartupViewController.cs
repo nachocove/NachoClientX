@@ -22,7 +22,10 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-            PerformSegue (NextSegue (), this);
+            var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
+            if (!appDelegate.IsMigrating) {
+                PerformSegue (NextSegue (), this);
+            }
         }
 
         public static string NextSegue ()
@@ -73,13 +76,33 @@ namespace NachoClient.iOS
             }
         }
 
+        public override void ViewDidAppear (bool animated)
+        {
+            this.View.BackgroundColor = A.Color_NachoGreen;
+            // We need to migrate. Put up a spinner until this is done.
+            var spinner = new UIActivityIndicatorView (this.View.Frame);
+            this.Add (spinner);
+            spinner.HidesWhenStopped = true;
+            spinner.StartAnimating ();
+            NcMigration.StartService (() => {
+                var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
+                appDelegate.InitializeBackEnd (null, null, true);
+                appDelegate.Account =
+                        McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
+                InvokeOnMainThread (() => {
+                    spinner.StopAnimating ();
+                    PerformSegue (NextSegue (), this);
+                });
+            });
+        }
+
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
 
             if (segue.Identifier == "SegueToEventView") {
                 var vc = (EventViewController)segue.DestinationViewController;
                 var devAccountId = McAccount.GetDeviceAccount ().Id;
-                var eventId = Convert.ToInt32(McMutables.Get (devAccountId, "EventNotif", LoginHelpers.GetCurrentAccountId ().ToString ()));
+                var eventId = Convert.ToInt32 (McMutables.Get (devAccountId, "EventNotif", LoginHelpers.GetCurrentAccountId ().ToString ()));
                 var item = McEvent.QueryById<McEvent> (eventId);
                 vc.SetCalendarItem (item);
                 McMutables.Delete (devAccountId, "EventNotif", LoginHelpers.GetCurrentAccountId ().ToString ());
