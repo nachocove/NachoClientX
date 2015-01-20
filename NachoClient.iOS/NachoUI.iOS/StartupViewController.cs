@@ -78,22 +78,52 @@ namespace NachoClient.iOS
 
         public override void ViewDidAppear (bool animated)
         {
-            this.View.BackgroundColor = A.Color_NachoGreen;
             // We need to migrate. Put up a spinner until this is done.
-            var spinner = new UIActivityIndicatorView (this.View.Frame);
-            this.Add (spinner);
-            spinner.HidesWhenStopped = true;
-            spinner.StartAnimating ();
-            NcMigration.StartService (() => {
-                var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
-                appDelegate.InitializeBackEnd (null, null, true);
-                appDelegate.Account =
+            this.View.BackgroundColor = A.Color_NachoGreen;
+            var frame = this.View.Frame;
+            var halfHeight = frame.Height / 2.0f;
+
+            var textField = new UITextView ();
+            ViewFramer.Create (textField)
+                .X (0)
+                .Y (halfHeight - 35.0f)
+                .Width (frame.Width)
+                .Height (35.0f);
+            textField.TextColor = UIColor.White;
+            textField.Font = A.Font_AvenirNextRegular17;
+            textField.Text = "Updating database... (1 of 1)";
+            textField.BackgroundColor = A.Color_NachoGreen;
+            textField.TextAlignment = UITextAlignment.Center;
+
+            var progressBar = new UIProgressView (frame);
+            ViewFramer.Create (progressBar).Y (halfHeight + 10.0f).AdjustHeight (20.0f);
+            progressBar.ProgressTintColor = A.Color_NachoYellow;
+            progressBar.TrackTintColor = A.Color_NachoIconGray;
+            this.Add (textField);
+            this.Add (progressBar);
+
+            NcMigration.StartService (
+                () => {
+                    var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
+                    appDelegate.InitializeBackEnd (null, null, true);
+                    appDelegate.Account =
                         McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
-                InvokeOnMainThread (() => {
-                    spinner.StopAnimating ();
-                    PerformSegue (NextSegue (), this);
-                });
-            });
+                    InvokeOnMainThread (() => {
+                        progressBar.Hidden = false;
+                        PerformSegue (NextSegue (), this);
+                    });
+                },
+                (percentage) => {
+                    InvokeOnMainThread (() => {
+                        progressBar.SetProgress (percentage, true);
+                    });
+                },
+                (description) => {
+                    InvokeOnMainThread (() => {
+                        textField.Text = description;
+                    });
+                }
+            );
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
