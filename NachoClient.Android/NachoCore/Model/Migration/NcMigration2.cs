@@ -18,7 +18,12 @@ namespace NachoCore.Model
         {
             // We only count the # of invalid ToEmailAddressId. But in reality, we will migrate
             // both To and Cc.
-            return Db.Table<McEmailMessage> ().Where (x => x.MigrationVersion < 1).Count ();
+            var thisVersion = Version ();
+            return (
+                Db.Table<McEmailMessage> ().Where (x => x.MigrationVersion < thisVersion).Count ()
+                + Db.Table<McAttendee> ().Where (x => x.MigrationVersion < thisVersion).Count ()
+                + Db.Table<McCalendar> ().Where (x => x.MigrationVersion < thisVersion).Count ()
+            );
         }
 
         public int ProcessAddress (int accountId, int objectId, MailboxAddress address, EmailAddressType addressType)
@@ -78,7 +83,7 @@ namespace NachoCore.Model
 
                     emailMessage.MigrationVersion = thisVersion;
                     emailMessage.Update ();
-                    NcMigration.ProcessedObjects += 1;
+                    UpdateProgress (1);
                 });
             }
 
@@ -91,7 +96,7 @@ namespace NachoCore.Model
                         ProcessAddress (attendee.AccountId, attendee.Id, attendee.Email, EmailAddressType.ATTENDEE_EMAIL);
                     attendee.MigrationVersion = thisVersion;
                     attendee.Update ();
-                    NcMigration.ProcessedObjects += 1;
+                    UpdateProgress (1);
                 });
             }
 
@@ -104,7 +109,7 @@ namespace NachoCore.Model
                         ProcessAddress (cal.AccountId, cal.Id, cal.OrganizerEmail, EmailAddressType.CALENDAR_ORGANIZER);
                     cal.MigrationVersion = thisVersion;
                     cal.Update ();
-                    NcMigration.ProcessedObjects += 1;
+                    UpdateProgress (1);
                 });
             }
         }

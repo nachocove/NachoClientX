@@ -12,12 +12,18 @@ using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
+    public delegate void NcMigrationDescriptionUpdateFunction (string descirption);
+
+    public delegate void NcMigrationProgressUpdateFunction (float percentageComplete);
+
     /// <summary>
     /// Base class for all migrations. Each migration is really a task that updates the database in some ways.
     /// </summary>
     public class NcMigration
     {
         int _Version = 0;
+
+        bool Finished;
 
         // Convenient short hand for all migrations
         public SQLiteConnection Db {
@@ -84,8 +90,40 @@ namespace NachoCore.Model
             }
         }
 
+        private static NcMigrationProgressUpdateFunction ProgressUpdate;
+
+        private static NcMigrationDescriptionUpdateFunction DescriptionUpdate;
+
         public NcMigration ()
         {
+        }
+
+        /// <summary>
+        /// Called after updating ProcessedObjects to reflect the progress in UI.
+        /// </summary>
+        public void UpdateProgress (int numObjects)
+        {
+            ProcessedObjects += numObjects;
+
+            if (null == ProgressUpdate) {
+                return;
+            }
+            float percentageComplete = 0.0f;
+            if (0 < TotalObjects) {
+                percentageComplete = (float)ProcessedObjects / (float)TotalObjects;
+                if (1.0 < percentageComplete) {
+                    percentageComplete = 1.0f;
+                }
+            }
+            ProgressUpdate (percentageComplete);
+        }
+
+        public static void UpdateDescription (string description)
+        {
+            if (null == DescriptionUpdate) {
+                return;
+            }
+            DescriptionUpdate (description);
         }
 
         public int Version ()
@@ -101,18 +139,30 @@ namespace NachoCore.Model
 
         public static bool WillStartService ()
         {
-            return (0 < migrations.Count);
+            return (0 < migrations.Where (x => !x.Finished).Count ());
         }
 
-        public static void StartService (Action postRun)
+        public static void StartService (Action postRun, NcMigrationProgressUpdateFunction progressUpdate,
+                                         NcMigrationDescriptionUpdateFunction descriptionUpdate)
         {
             if (0 == migrations.Count) {
                 return; // no outstanding migration
             }
 
+            ProgressUpdate = progressUpdate;
+            DescriptionUpdate = descriptionUpdate;
+
             // Run them all starting with the lowest version
             NcTask.Run (() => {
+                UpdateDescription ("");
+                int n = 0;
                 foreach (var migration in migrations) {
+                    n += 1;
+                    if (migration.Finished) {
+                        continue;
+                    }
+                    UpdateDescription (String.Format ("Updating database.. ({0} of {1})", n, migrations.Count));
+
                     var startTime = DateTime.Now;
                     var version = migration.Version ();
                     int rows;
@@ -120,6 +170,7 @@ namespace NachoCore.Model
                     // Set up the counters
                     ProcessedObjects = 0;
                     TotalObjects = 0;
+                    migration.UpdateProgress (0);
 
                     var numObjects = migration.GetNumberOfObjects ();
                     Log.Info (Log.LOG_DB, "Migration {0} will process {1} objects", migration.Version (), numObjects);
@@ -133,6 +184,7 @@ namespace NachoCore.Model
                         migrationRecord.StartTime = startTime;
                         rows = migrationRecord.Insert ();
                         NcAssert.True (1 == rows);
+                        migration.Finished = true;
                     }
                     migrationRecord.NumberOfTimesRan += 1;
 
