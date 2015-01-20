@@ -96,11 +96,12 @@ namespace NachoClient.iOS
             NavigationItem.LeftBarButtonItem = null;
             NavigationItem.RightBarButtonItems = new UIBarButtonItem[] { composeButton, newMeetingButton };
 
-            hotListView = new UITableView (carouselNormalSize (), UITableViewStyle.Plain);
+            hotListView = new UITableView (carouselNormalSize (), UITableViewStyle.Grouped);
             hotListView.BackgroundColor = A.Color_NachoBackgroundGray;
-            hotListView.TableFooterView = new UIView (new RectangleF (0, 0, 1, 20));
-            hotListView.TableFooterView.BackgroundColor = A.Color_NachoBackgroundGray;
+            hotListView.TableHeaderView = new UIView (new RectangleF (0, 0, 0, 0));
+            hotListView.ContentInset = new UIEdgeInsets (-A.Card_Vertical_Indent, 0, 0, 0);
             hotListView.DecelerationRate = UIScrollView.DecelerationRateFast;
+            hotListView.SeparatorColor = A.Color_NachoBackgroundGray;
             View.AddSubview (hotListView);
 
             hotEventView = new HotEventView (new RectangleF (0, 0, View.Frame.Width, 69));

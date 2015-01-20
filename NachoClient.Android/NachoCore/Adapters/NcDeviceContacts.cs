@@ -15,7 +15,25 @@ namespace NachoCore
             NcTask.Run (Process, "NcDeviceContacts");
         }
 
-        private static void Process ()
+        static bool running;
+        static object lockObject = new object ();
+
+        private static void Process()
+        {
+            lock (lockObject) {
+                if (running) {
+                    return;
+                }
+                running = true;
+            }
+            try {
+                ProcessContacts ();
+            } finally {
+                running = false;
+            }
+        }
+
+        private static void ProcessContacts ()
         {
             var folder = McFolder.GetDeviceContactsFolder ();
             NcAssert.NotNull (folder);
@@ -47,7 +65,7 @@ namespace NachoCore
                         // If missing, insert it.
                         inserter.Invoke (deviceContact);
                     } else {
-                        NcAssert.True (1 == present.RemoveAll (x => x.FolderEntryId == existing.Id));
+                        NcAssert.AreEqual (1, present.RemoveAll (x => x.FolderEntryId == existing.Id));
                         // If present and stale, update it.
                         if (deviceContact.LastUpdate > existing.DeviceLastUpdate) {
                             NcModel.Instance.RunInTransaction(() => {

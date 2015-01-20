@@ -495,7 +495,7 @@ namespace NachoClient.iOS
 
             if (String.IsNullOrEmpty (displayTitle)) {
                 displayTitle = "No name for this contact";
-                displayTitleColor = A.Color_NachoTextGray;
+                displayTitleColor = A.Color_NachoLightText;
             }
                 
             if (String.IsNullOrEmpty (displaySubtitle1)) {

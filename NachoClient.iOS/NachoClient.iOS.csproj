@@ -1175,6 +1175,11 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\LocalNotificationManager.cs">
       <Link>NachoCore\Utils\LocalNotificationManager.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\DeadlinesViewController.cs" />
+    <Compile Include="NachoUI.iOS\DeadlinesViewController.designer.cs">
+      <DependentUpon>DeadlinesViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NachoCore\Adapters\NachoDeadlineEmailMessages.cs" />
     <Compile Include="NachoUI.iOS\DraftsViewController.cs" />
     <Compile Include="NachoUI.iOS\DraftsViewController.designer.cs">
       <DependentUpon>DraftsViewController.cs</DependentUpon>
@@ -1198,6 +1203,7 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McMapEmailAddressEntry.cs">
       <Link>NachoCore\Model\McMapEmailAddressEntry.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\NachoInlineImageTextAttachment.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -2015,6 +2021,18 @@
     <BundleResource Include="Resources\Slide05SwipeLeft%403x.png" />
     <BundleResource Include="Resources\Slide05SwipeRight%403x.png" />
     <BundleResource Include="Resources\Slide04BG%403x.png" />
+    <BundleResource Include="Resources\gen-deadline%402x.png" />
+    <BundleResource Include="Resources\gen-deferred-msgs%402x.png" />
+    <BundleResource Include="Resources\gen-unread-msgs%402x.png" />
+    <BundleResource Include="Resources\gen-deadline%403x.png" />
+    <BundleResource Include="Resources\gen-deferred-msgs%403x.png" />
+    <BundleResource Include="Resources\gen-unread-msgs%403x.png" />
+    <BundleResource Include="Resources\gen-deadline%404x.png" />
+    <BundleResource Include="Resources\gen-deferred-msgs%404x.png" />
+    <BundleResource Include="Resources\gen-unread-msgs%404x.png" />
+    <BundleResource Include="Resources\gen-deadline%406x.png" />
+    <BundleResource Include="Resources\gen-deferred-msgs%406x.png" />
+    <BundleResource Include="Resources\gen-unread-msgs%406x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
