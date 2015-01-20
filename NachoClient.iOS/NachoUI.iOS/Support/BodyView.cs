@@ -596,7 +596,7 @@ namespace NachoClient.iOS
 
         private void RenderCalendarPart (MimePart part)
         {
-            var calView = new BodyCalendarView (yOffset, preferredWidth, part, !UserInteractionEnabled);
+            var calView = new BodyCalendarView (yOffset, preferredWidth, item, part, !UserInteractionEnabled);
             AddSubview (calView);
             childViews.Add (calView);
             yOffset += calView.Frame.Height;

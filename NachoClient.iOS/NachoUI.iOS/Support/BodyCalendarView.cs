@@ -34,15 +34,19 @@ namespace NachoClient.iOS
             CALENDAR_LINE_TAG = 406
         }
 
+        private DDay.iCal.Event evt;
+        private McEmailMessage parentMessage;
         private McCalendar calendarItem;
         private bool requestActions = false;
         private bool cancelActions = false;
         private float viewWidth;
         private string organizerEmail;
 
-        public BodyCalendarView (float Y, float width, MimePart part, bool isOnNow)
+        public BodyCalendarView (float Y, float width, McAbstrItem parent, MimePart part, bool isOnHot)
             : base (new RectangleF (0, Y, width, 150))
         {
+            parentMessage = parent as McEmailMessage;
+
             viewWidth = width;
             Tag = CALENDAR_PART_TAG;
 
@@ -51,7 +55,7 @@ namespace NachoClient.iOS
             using (var stringReader = new StringReader (textPart.Text)) {
                 iCal = iCalendar.LoadFromStream (stringReader) [0];
             }
-            var evt = iCal.Events.First () as DDay.iCal.Event;
+            evt = iCal.Events.First () as DDay.iCal.Event;
 
             if (null == evt) {
                 // The text/calendar part doesn't contain any events. There is nothing to show.
@@ -69,13 +73,13 @@ namespace NachoClient.iOS
             if (iCal.Method.Equals (DDay.iCal.CalendarMethods.Reply)) {
                 ShowAttendeeResponseBar (evt);
             } else if (iCal.Method.Equals (DDay.iCal.CalendarMethods.Cancel)) {
-                ShowCancellationBar (evt, isOnNow);
+                ShowCancellationBar (evt, isOnHot);
             } else {
                 if (!iCal.Method.Equals (DDay.iCal.CalendarMethods.Request)) {
                     Log.Warn (Log.LOG_CALENDAR, "Unexpected calendar method: {0}. It will be treated as a {1}.",
                         iCal.Method, DDay.iCal.CalendarMethods.Request);
                 }
-                ShowRequestChoicesBar (evt, isOnNow);
+                ShowRequestChoicesBar (evt, isOnHot);
             }
 
             ShowEventInfo (evt);
@@ -192,12 +196,8 @@ namespace NachoClient.iOS
             var accountId = LoginHelpers.GetCurrentAccountId ();
 
             if (null != evt.Organizer) {
-                if (Uri.UriSchemeMailto == evt.Organizer.Value.Scheme) {
-                    organizerEmail = evt.Organizer.Value.AbsoluteUri.Substring (Uri.UriSchemeMailto.Length + 1);
-                } else {
-                    organizerEmail = evt.Organizer.Value.ToString ();
-                }
-                var organizerName = evt.Organizer.CommonName.ToString ();
+                organizerEmail = EmailHelper.EmailAddressFromUri (evt.Organizer.Value);
+                var organizerName = evt.Organizer.CommonName;
 
                 if (null != organizerEmail) {
                     // Organizer
@@ -302,13 +302,7 @@ namespace NachoClient.iOS
                     var attendee = new McAttendee ();
                     attendee.AccountId = accountId;
                     attendee.Name = a.CommonName;
-                    string aEmail;
-                    if (Uri.UriSchemeMailto == a.Value.Scheme) {
-                        aEmail = a.Value.AbsoluteUri.Substring (Uri.UriSchemeMailto.Length + 1);
-                    } else {
-                        aEmail = a.Value.ToString ();
-                    }
-                    attendee.Email = aEmail;
+                    attendee.Email = EmailHelper.EmailAddressFromUri (a.Value);
                     Util.CreateAttendeeButton (attendeeImageDiameter, spacing, titleOffset, attendee, attendeeNum, false, eventAttendeeView);
 
                     spacing += (attendeeImageDiameter + iconPadding);
@@ -430,17 +424,19 @@ namespace NachoClient.iOS
         /// <summary>
         /// Show the action bar for a meeting request, with the "Accept", "Tentative", and "Decline" buttons.
         /// </summary>
-        private void ShowRequestChoicesBar (DDay.iCal.Event evt, bool isOnNow)
+        private void ShowRequestChoicesBar (DDay.iCal.Event evt, bool isOnHot)
         {
             UIView responseView = new UIView (new RectangleF (0, 0, viewWidth, 60));
             responseView.BackgroundColor = UIColor.White;
 
             CreateActionBarViews (responseView);
 
-            if (isOnNow) {
-                // In Nacho Hot, the buttons in the message body are not not clickable,
-                // so don't show all three buttons.  Instead, always show a message with
-                // either a non-clickable button or a dot.
+            if (isOnHot || null == parentMessage) {
+
+                // This is something other than the message detail view, probably the Hot view.
+                // Don't show all three buttons.  Instead, show a message with either a
+                // non-clickable button or a dot.
+
                 string message = "You have not responded to this invitation.";
                 UIButton displayedButton = null;
                 if (null != calendarItem && calendarItem.ResponseTypeIsSet) {
@@ -521,28 +517,16 @@ namespace NachoClient.iOS
         /// </summary>
         private void UpdateMeetingStatus (NcResponseType status)
         {
-            if (null == calendarItem) {
-                // FIXME Some servers don't create a calendar item until the user responds to the
-                // meeting request.  That situation is not yet supported.
-                return;
-            }
+            BackEnd.Instance.RespondEmailCmd (parentMessage.AccountId, parentMessage.Id, status);
 
-            BackEnd.Instance.RespondCalCmd (calendarItem.AccountId, calendarItem.Id, status);
+            McAccount account = McAccount.QueryById<McAccount> (parentMessage.AccountId);
 
-            if (calendarItem.ResponseRequestedIsSet && calendarItem.ResponseRequested && null != organizerEmail) {
-                // Send an e-mail message to the organizer with the response.
-                McAccount account = McAccount.QueryById<McAccount> (calendarItem.AccountId);
-                var iCalPart = CalendarHelper.iCalResponseToMimePart (account, (McCalendar)calendarItem, status);
+            if (null != organizerEmail && CalendarHelper.IsResponseRequested (evt, account.EmailAddr)) {
+
+                var iCalPart = CalendarHelper.iCalResponseToMimePart (account, evt, status);
                 // TODO Give the user a chance to enter some text. For now, the message body is empty.
                 var mimeBody = CalendarHelper.CreateMime ("", iCalPart, new List<McAttachment> ());
-                CalendarHelper.SendMeetingResponse (account, (McCalendar)calendarItem, mimeBody, status);
-            }
-
-            if (0 != calendarItem.BodyId) {
-                var body = McBody.QueryById<McBody> (calendarItem.BodyId);
-                if (null != body) {
-                    body.Touch ();  // KLUDGE: Message display optimization looks a LastModified
-                }
+                CalendarHelper.SendMeetingResponse (account, new MailboxAddress (evt.Organizer.CommonName, organizerEmail), evt.Summary, null, mimeBody, status);
             }
         }
 
@@ -596,12 +580,7 @@ namespace NachoClient.iOS
             if (!string.IsNullOrEmpty (responder.CommonName)) {
                 displayName = responder.CommonName;
             } else {
-                if (Uri.UriSchemeMailto == responder.Value.Scheme) {
-                    // String the "mailto:" off of the URL so the e-mail address is displayed.
-                    displayName = responder.Value.AbsoluteUri.Substring (Uri.UriSchemeMailto.Length + 1);
-                } else {
-                    displayName = responder.Value.ToString ();
-                }
+                displayName = EmailHelper.EmailAddressFromUri (responder.Value);
             }
 
             if (null != displayedButton) {
@@ -621,14 +600,14 @@ namespace NachoClient.iOS
         /// Show the action bar for a meeting cancellation, which has a
         /// "Remove from calendar" button.
         /// </summary>
-        private void ShowCancellationBar (DDay.iCal.Event evt, bool isOnNow)
+        private void ShowCancellationBar (DDay.iCal.Event evt, bool isOnHot)
         {
             UIView responseView = new UIView (new RectangleF (0, 0, viewWidth, 60));
             responseView.BackgroundColor = UIColor.Clear;
 
             CreateActionBarViews (responseView);
 
-            if (isOnNow || null == calendarItem) {
+            if (isOnHot || null == calendarItem) {
 
                 messageLabel.Text = "The meeting has been canceled.";
                 messageLabel.Frame = MessageFrameWithDot ();
