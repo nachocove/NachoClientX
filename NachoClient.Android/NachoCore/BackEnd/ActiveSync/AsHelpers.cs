@@ -704,10 +704,21 @@ namespace NachoCore.ActiveSync
                     break;
 
                 case Xml.Email.Flag:
-                    if (!child.HasElements) {
-                        // This is the clearing of the Flag.
-                        emailMessage.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Cleared;
-                    } else {
+                    // Implicit deletes: If an element is not present within the Flag container element
+                    // in a request or response, then the corresponding property is deleted. (MS-ASEMAIL)
+                    emailMessage.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Cleared;
+                    emailMessage.FlagType = null;
+                    emailMessage.FlagStartDate = DateTime.MinValue;
+                    emailMessage.FlagUtcStartDate = DateTime.MinValue;
+                    emailMessage.FlagDue = DateTime.MinValue;
+                    emailMessage.FlagUtcDue = DateTime.MinValue;
+                    emailMessage.FlagReminderSet = false;
+                    emailMessage.FlagReminderTime = DateTime.MinValue;
+                    emailMessage.FlagCompleteTime = DateTime.MinValue;
+                    emailMessage.FlagDateCompleted = DateTime.MinValue;
+                    emailMessage.FlagOrdinalDate = DateTime.MinValue;
+                    emailMessage.FlagSubOrdinalDate = DateTime.MinValue;
+                    if (child.HasElements) {
                         foreach (var flagPart in child.Elements()) {
                             switch (flagPart.Name.LocalName) {
                             case Xml.Email.Status:
