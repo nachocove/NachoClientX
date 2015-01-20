@@ -74,6 +74,7 @@ namespace NachoCore.Model
         public override int Insert ()
         {
             // FIXME db transaction.
+            OrganizerEmailAddressId = McEmailAddress.Get (AccountId, OrganizerEmail);
             int retval = base.Insert ();
             InsertAncillaryData ();
             return retval;
@@ -92,6 +93,7 @@ namespace NachoCore.Model
         public override int Update ()
         {
             // FIXME db transaction
+            OrganizerEmailAddressId = McEmailAddress.Get (AccountId, OrganizerEmail);
             int retval = base.Update ();
             UpdateAncillaryData (NcModel.Instance.Db);
             return retval;
