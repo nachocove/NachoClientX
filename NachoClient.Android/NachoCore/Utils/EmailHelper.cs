@@ -232,7 +232,21 @@ namespace NachoCore.Utils
 
         public static bool IsMailToURL (string urlString)
         {
-            return urlString.StartsWith ("mailto:", StringComparison.OrdinalIgnoreCase);
+            return urlString.StartsWith (Uri.UriSchemeMailto + ":", StringComparison.OrdinalIgnoreCase);
+        }
+
+        public static Uri MailToUri (string emailAddress)
+        {
+            return new Uri (Uri.UriSchemeMailto + ":" + emailAddress);
+        }
+
+        public static string EmailAddressFromUri (Uri mailtoUri)
+        {
+            if (Uri.UriSchemeMailto.Equals (mailtoUri.Scheme, StringComparison.OrdinalIgnoreCase)) {
+                return mailtoUri.AbsoluteUri.Substring (Uri.UriSchemeMailto.Length + 1);
+            } else {
+                return mailtoUri.ToString ();
+            }
         }
 
         /// <summary>

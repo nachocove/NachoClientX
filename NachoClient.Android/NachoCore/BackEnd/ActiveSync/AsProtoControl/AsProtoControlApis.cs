@@ -937,7 +937,7 @@ namespace NachoCore.ActiveSync
 
         public override string RespondEmailCmd (int emailMessageId, NcResponseType response)
         {
-            return RespondItemCmd<McCalendar> (emailMessageId, response);
+            return RespondItemCmd<McEmailMessage> (emailMessageId, response);
         }
 
         public override string RespondCalCmd (int calId, NcResponseType response, DateTime? instance = null)
@@ -963,9 +963,9 @@ namespace NachoCore.ActiveSync
                 // 
                 // In this (these?) scenarios, update the Cal item in the DB, and Sync the change to the server.
                 //
-                var cal = item as McCalendar;
                 if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 != folder.Type &&
                 14.1 > Convert.ToDouble (ProtocolState.AsProtocolVersion)) {
+                    var cal = item as McCalendar;
                     if (null == cal) {
                         Log.Error (Log.LOG_AS, "Cannot respond to an email-invite message not in Inbox for older EAS ({0})", folder.Type);
                         return;

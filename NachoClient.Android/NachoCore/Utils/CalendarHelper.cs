@@ -159,7 +159,7 @@ namespace NachoCore.Utils
             var iCal = iCalendarFromMcCalendarCommon (c, EventStatus.Confirmed);
             iCal.Method = DDay.iCal.CalendarMethods.Reply;
             var vEvent = iCal.Events [0];
-            var iAttendee = new Attendee ("MAILTO:" + account.EmailAddr);
+            var iAttendee = new Attendee (EmailHelper.MailToUri (account.EmailAddr));
             if (!String.IsNullOrEmpty (Pretty.UserNameForAccount (account))) {
                 iAttendee.CommonName = Pretty.UserNameForAccount (account);
             }
@@ -193,15 +193,30 @@ namespace NachoCore.Utils
             return iCal;
         }
 
+        public static IICalendar iCalendarFromICalEventWithReply (McAccount account, DDay.iCal.Event evt, NcResponseType response)
+        {
+            var iCal = iCalendarFromICalEventCommon (evt);
+            iCal.Method = DDay.iCal.CalendarMethods.Reply;
+            var newEvent = iCal.Events [0];
+            var iAttendee = new Attendee (EmailHelper.MailToUri (account.EmailAddr));
+            if (!string.IsNullOrEmpty (Pretty.UserNameForAccount (account))) {
+                iAttendee.CommonName = Pretty.UserNameForAccount (account);
+            }
+            iAttendee.ParticipationStatus = iCalResponseString (response);
+            newEvent.Attendees.Add (iAttendee);
+            newEvent.Summary = ResponseSubjectPrefix (response) + ": " + evt.Summary;
+            return iCal;
+        }
+
         private static void AddAttendeesAndOrganizerToiCalEvent (IEvent evt, McAccount account, McCalendar c)
         {
             evt.Organizer = new Organizer (account.EmailAddr);
-            evt.Organizer.SentBy = new Uri ("MAILTO:" + account.EmailAddr);
+            evt.Organizer.SentBy = EmailHelper.MailToUri (account.EmailAddr);
             if (!String.IsNullOrEmpty (Pretty.UserNameForAccount (account))) {
                 evt.Organizer.CommonName = Pretty.UserNameForAccount (account);
             }
             foreach (var mcAttendee in c.attendees) {
-                var iAttendee = new Attendee ("MAILTO:" + mcAttendee.Email);
+                var iAttendee = new Attendee (EmailHelper.MailToUri (mcAttendee.Email));
                 NcAssert.True (null != mcAttendee.Name);
                 iAttendee.CommonName = mcAttendee.Name;
                 NcAssert.True (mcAttendee.AttendeeTypeIsSet);
@@ -261,6 +276,30 @@ namespace NachoCore.Utils
             vEvent.Status = eventStatus;
             vEvent.Class = "PUBLIC";
             vEvent.Transparency = TransparencyType.Opaque;
+            return iCal;
+        }
+
+        private static IICalendar iCalendarFromICalEventCommon (DDay.iCal.Event evt)
+        {
+            var copyFrom = (IICalendar)evt.Parent;
+
+            var iCal = new iCalendar ();
+            iCal.ProductID = "Nacho Mail";
+            foreach (var timeZone in copyFrom.TimeZones) {
+                iCal.AddTimeZone (timeZone);
+            }
+
+            var newEvent = iCal.Create<DDay.iCal.Event> ();
+            newEvent.UID = evt.UID;
+            newEvent.LastModified = new iCalDateTime (DateTime.UtcNow);
+            newEvent.Start = evt.Start;
+            newEvent.End = evt.End;
+            newEvent.IsAllDay = evt.IsAllDay;
+            newEvent.Priority = evt.Priority;
+            newEvent.Location = evt.Location;
+            newEvent.Status = EventStatus.Confirmed;
+            newEvent.Class = "PUBLIC";
+            newEvent.Transparency = TransparencyType.Opaque;
             return iCal;
         }
 
@@ -474,6 +513,20 @@ namespace NachoCore.Utils
             mcMessage.Delete ();
         }
 
+        public static void SendMeetingResponse (McAccount account, MailboxAddress to, string subject, string token, MimeEntity mimeBody, NcResponseType response)
+        {
+            var mimeMessage = new MimeMessage ();
+            mimeMessage.From.Add (new MailboxAddress (Pretty.UserNameForAccount (account), account.EmailAddr));
+            mimeMessage.To.Add (to);
+            mimeMessage.Subject = Pretty.SubjectString (ResponseSubjectPrefix (response) + ": " + subject);
+            mimeMessage.Date = DateTime.UtcNow;
+            mimeMessage.Body = mimeBody;
+            var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
+            BackEnd.Instance.SendEmailCmd (mcMessage.AccountId, mcMessage.Id);
+            mcMessage = McEmailMessage.QueryById<McEmailMessage> (mcMessage.Id);
+            mcMessage.Delete ();
+        }
+
         public static void SendMeetingCancelations (McAccount account, McCalendar c, MimeEntity mimeBody)
         {
             var mimeMessage = new MimeMessage ();
@@ -488,6 +541,29 @@ namespace NachoCore.Utils
             BackEnd.Instance.SendEmailCmd (mcMessage.AccountId, mcMessage.Id, c.Id);
             mcMessage = McEmailMessage.QueryById<McEmailMessage> (mcMessage.Id);
             mcMessage.Delete ();
+        }
+
+        public static bool IsResponseRequested (DDay.iCal.Event evt, string emailAddress)
+        {
+            if (null != evt.Attendees) {
+                foreach (var attendee in evt.Attendees) {
+                    if (emailAddress.Equals (EmailHelper.EmailAddressFromUri (attendee.Value),
+                            StringComparison.OrdinalIgnoreCase)) {
+                        return attendee.RSVP;
+                    }
+                }
+
+                // Couldn't find the desired address. Assume that a response is requested
+                // from everyone or no one, and return the RSVP value of the first attendee
+                // in the list.
+                if (0 < evt.Attendees.Count) {
+                    return evt.Attendees [0].RSVP;
+                }
+            }
+
+            // There aren't any attendees.  Something is wrong.
+            Log.Error (Log.LOG_CALENDAR, "Received a meeting invitation that doesn't have any attendees listed.");
+            return true;
         }
 
         /// <summary>
@@ -508,6 +584,11 @@ namespace NachoCore.Utils
             return iCalToMimePartCommon (
                 CalendarHelper.iCalendarFromMcCalendarWithResponse (account, c, response),
                 DDay.iCal.CalendarMethods.Reply);
+        }
+
+        public static TextPart iCalResponseToMimePart (McAccount account, DDay.iCal.Event evt, NcResponseType response)
+        {
+            return iCalToMimePartCommon (iCalendarFromICalEventWithReply (account, evt, response), DDay.iCal.CalendarMethods.Reply);
         }
 
         /// <summary>
