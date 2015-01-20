@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Xml.Linq;
 using System.Linq;
+using MimeKit;
 using NachoCore.Model;
 using NachoCore.Utils;
 
@@ -40,10 +41,10 @@ namespace NachoCore.ActiveSync
                 emailMessage.IsIncomplete = true;
             }
 
-            McEmailAddress address;
-            if (McEmailAddress.Get (folder.AccountId, emailMessage.From, out address)) {
-                emailMessage.FromEmailAddressId = address.Id;
-            }
+            emailMessage.FromEmailAddressId = McEmailAddress.Get (folder.AccountId, emailMessage.From);
+            emailMessage.SenderEmailAddressId = McEmailAddress.Get (folder.AccountId, emailMessage.Sender);
+            emailMessage.ToEmailAddressId = McEmailAddress.GetList (folder.AccountId, emailMessage.To);
+            emailMessage.CcEmailAddressId = McEmailAddress.GetList (folder.AccountId, emailMessage.Cc);
 
             bool justCreated = false;
             if (null == eMsg) {

@@ -117,6 +117,18 @@ namespace NachoCore.Model
                 displayName = value;
             }
         }
+
+        public override int Insert ()
+        {
+            EmailAddressId = McEmailAddress.Get (AccountId, Email);
+            return base.Insert ();
+        }
+
+        public override int Update ()
+        {
+            EmailAddressId = McEmailAddress.Get (AccountId, Email);
+            return base.Update ();
+        }
     }
 }
 
