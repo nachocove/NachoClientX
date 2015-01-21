@@ -138,7 +138,7 @@ namespace NachoPlatform
     {
         public abstract string UniqueId { get; }
         public abstract DateTime LastUpdate { get; }
-        public abstract NcResult ToMcContact ();
+        public abstract NcResult ToMcContact (McContact contactToUpdate);
     }
 
     public interface IPlatformContacts
