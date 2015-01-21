@@ -127,8 +127,8 @@ namespace Test.Common
                 Assert.AreEqual (l [i].Id, m [i].Id);
             }
 
-            Assert.AreEqual ("#", l [0].FirstLetter);
-            Assert.AreEqual ("#", l [1].FirstLetter);
+            Assert.AreEqual (String.Empty, l [0].FirstLetter);
+            Assert.AreEqual (String.Empty, l [1].FirstLetter);
             Assert.AreEqual ("Adleman", l [2].GetContact ().GetDisplayNameOrEmailAddress ());
             Assert.AreEqual ("Bob Smith", l [3].GetContact ().GetDisplayNameOrEmailAddress ());
             Assert.AreEqual ("Charlie Clark", l [4].GetContact ().GetDisplayNameOrEmailAddress ());
