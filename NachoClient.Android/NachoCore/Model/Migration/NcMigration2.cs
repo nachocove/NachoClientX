@@ -26,7 +26,7 @@ namespace NachoCore.Model
             );
         }
 
-        public int ProcessAddress (int accountId, int objectId, MailboxAddress address, EmailAddressType addressType)
+        public int ProcessAddress (int accountId, int objectId, MailboxAddress address, NcEmailAddress.Kind addressType)
         {
             McEmailAddress emailAddress;
             var got = McEmailAddress.Get (accountId, address.Address, out emailAddress);
@@ -43,7 +43,7 @@ namespace NachoCore.Model
             return emailAddress.Id;
         }
 
-        public int ProcessAddress (int accountId, int objectId, string addressString, EmailAddressType addressType)
+        public int ProcessAddress (int accountId, int objectId, string addressString, NcEmailAddress.Kind addressType)
         {
             if (String.IsNullOrEmpty (addressString)) {
                 return 0;
@@ -52,7 +52,7 @@ namespace NachoCore.Model
             return ProcessAddress (accountId, objectId, address, addressType);
         }
 
-        public void ProcessAddressList (int accountId, int objectId, string addressString, EmailAddressType addressType)
+        public void ProcessAddressList (int accountId, int objectId, string addressString, NcEmailAddress.Kind addressType)
         {
             if (String.IsNullOrEmpty (addressString)) {
                 return;
@@ -67,7 +67,7 @@ namespace NachoCore.Model
         {
             // McEmailMessage
             var thisVersion = Version ();
-            foreach (var emailMessage in Db.Table<McEmailMessage> ().Where (x => x.MigrationVersion < thisVersion)) {
+            foreach (McEmailMessage emailMessage in Db.Table<McEmailMessage> ().Where (x => x.MigrationVersion < thisVersion)) {
                 token.ThrowIfCancellationRequested ();
 
                 NcModel.Instance.RunInTransaction (() => {
@@ -75,11 +75,11 @@ namespace NachoCore.Model
                     var objectId = emailMessage.Id;
 
                     emailMessage.FromEmailAddressId = 
-                        ProcessAddress (accountId, objectId, emailMessage.From, EmailAddressType.MESSAGE_FROM);
+                        ProcessAddress (accountId, objectId, emailMessage.From, NcEmailAddress.Kind.From);
                     emailMessage.SenderEmailAddressId =
-                        ProcessAddress (accountId, objectId, emailMessage.Sender, EmailAddressType.MESSAGE_SENDER);
-                    ProcessAddressList (accountId, objectId, emailMessage.To, EmailAddressType.MESSAGE_TO);
-                    ProcessAddressList (accountId, objectId, emailMessage.Cc, EmailAddressType.MESSAGE_CC);
+                        ProcessAddress (accountId, objectId, emailMessage.Sender, NcEmailAddress.Kind.Sender);
+                    ProcessAddressList (accountId, objectId, emailMessage.To, NcEmailAddress.Kind.To);
+                    ProcessAddressList (accountId, objectId, emailMessage.Cc, NcEmailAddress.Kind.Cc);
 
                     emailMessage.MigrationVersion = thisVersion;
                     emailMessage.Update ();
@@ -88,12 +88,13 @@ namespace NachoCore.Model
             }
 
             // McAttendee
-            foreach (var attendee in Db.Table<McAttendee> ().Where (x => x.MigrationVersion < thisVersion)) {
+            foreach (McAttendee attendee in Db.Table<McAttendee> ().Where (x => x.MigrationVersion < thisVersion)) {
                 token.ThrowIfCancellationRequested ();
 
                 NcModel.Instance.RunInTransaction (() => {
                     attendee.EmailAddressId =
-                        ProcessAddress (attendee.AccountId, attendee.Id, attendee.Email, EmailAddressType.ATTENDEE_EMAIL);
+                        ProcessAddress (attendee.AccountId, attendee.Id, attendee.Email,
+                        NcEmailAddress.ToKind (attendee.AttendeeType));
                     attendee.MigrationVersion = thisVersion;
                     attendee.Update ();
                     UpdateProgress (1);
@@ -101,12 +102,12 @@ namespace NachoCore.Model
             }
 
             // McCalendar
-            foreach (var cal in Db.Table<McCalendar> ().Where (x => x.MigrationVersion < thisVersion)) {
+            foreach (McCalendar cal in Db.Table<McCalendar> ().Where (x => x.MigrationVersion < thisVersion)) {
                 token.ThrowIfCancellationRequested ();
 
                 NcModel.Instance.RunInTransaction (() => {
                     cal.OrganizerEmailAddressId =
-                        ProcessAddress (cal.AccountId, cal.Id, cal.OrganizerEmail, EmailAddressType.CALENDAR_ORGANIZER);
+                        ProcessAddress (cal.AccountId, cal.Id, cal.OrganizerEmail, NcEmailAddress.Kind.Organizer);
                     cal.MigrationVersion = thisVersion;
                     cal.Update ();
                     UpdateProgress (1);
