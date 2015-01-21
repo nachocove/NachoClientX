@@ -187,6 +187,7 @@ namespace NachoCore.Model
                         migration.Finished = true;
                     }
                     migrationRecord.NumberOfTimesRan += 1;
+                    migrationRecord.Update ();
 
                     // Run the migration
                     Log.Info (Log.LOG_DB, "Running migration {0}...", version);
