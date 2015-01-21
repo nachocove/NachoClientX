@@ -1079,14 +1079,31 @@ namespace NachoCore.ActiveSync
                 switch (Step) {
                 case Steps.S4:
                     if (RCode.NoError == response.RCode &&
-                        0 < response.AnswerRRs &&
-                        NsType.SRV == response.NsType) {
-                        var aBest = (SrvRecord)response.Answers.OrderBy (r1 => ((SrvRecord)r1).Priority).ThenByDescending (r2 => ((SrvRecord)r2).Weight).First ();
-                        var bestRecs = response.Answers.Where (r1 => aBest.Priority == ((SrvRecord)r1).Priority &&
-                                       aBest.Weight == ((SrvRecord)r1).Weight).ToArray ();
-                        var index = (1 == bestRecs.Length) ? 0 : picker.Next (bestRecs.Length - 1);
-                        var chosen = (SrvRecord)bestRecs [index];
-                        SrDomain = chosen.HostName;
+                            0 < response.AnswerRRs &&
+                            NsType.SRV == response.NsType &&
+                            AtLeastOne<SrvRecord> (response.Answers)) {
+                        SrvRecord best = null;
+                        var allBest = new List<SrvRecord> ();
+                        foreach (var answer in response.Answers) {
+                            var srv = answer as SrvRecord;
+                            if (null != srv) {
+                                if (null == best || BetterThan (srv, best)) {
+                                    // The best record found so far.
+                                    best = srv;
+                                    allBest.Clear ();
+                                    allBest.Add (srv);
+                                } else if (SameValue (srv, best)) {
+                                    // Equal to the best one so far.  Add it to the set.
+                                    allBest.Add (srv);
+                                } else {
+                                    // Not the best record. Ignore it.
+                                }
+                            }
+                        }
+                        NcAssert.True (0 < allBest.Count, "No SRV records were found.");
+                        // Pick one of the best records at random.
+                        best = allBest [picker.Next (allBest.Count)];
+                        SrDomain = best.HostName;
                         return Event.Create ((uint)SmEvt.E.Success, "SRPR2SUCCESS");
                     } else {
                         return Event.Create ((uint)SmEvt.E.HardFail, "SRPR2HARD");
@@ -1094,9 +1111,10 @@ namespace NachoCore.ActiveSync
 
                 case Steps.S5:
                     if (RCode.NoError == response.RCode &&
-                        0 < response.AnswerRRs &&
-                        NsType.MX == response.NsType) {
-                        var aBest = (MxRecord)response.Answers.OrderBy (r1 => ((MxRecord)r1).Preference).First ();
+                            0 < response.AnswerRRs &&
+                            NsType.MX == response.NsType &&
+                            AtLeastOne<MxRecord> (response.Answers)) {
+                        var aBest = (MxRecord)response.Answers.Where (r0 => r0 is MxRecord).OrderBy (r1 => ((MxRecord)r1).Preference).First ();
                         if (aBest.MailExchange.EndsWith (McServer.GMail_MX_Suffix, StringComparison.OrdinalIgnoreCase)) {
                             Command.ProtoControl.AutoDInfo = AutoDInfoEnum.MXFoundGoogle;
                             SrServerUri = McServer.BaseUriForHost (McServer.GMail_Host);
@@ -1115,6 +1133,36 @@ namespace NachoCore.ActiveSync
                     NcAssert.CaseError (string.Format ("ProcessResponse with Step {0}", Step.ToString ()));
                     return null;
                 }
+            }
+
+            /// <summary>
+            /// Does the IDnsRecord array have at least one element of the given type?
+            /// </summary>
+            private static bool AtLeastOne<T> (IDnsRecord[] answers) where T : IDnsRecord
+            {
+                foreach (var record in answers) {
+                    if (record is T) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            /// <summary>
+            /// Do the two SrvRecords have the same priority and weight?
+            /// </summary>
+            private static bool SameValue (SrvRecord a, SrvRecord b)
+            {
+                return a.Priority == b.Priority && a.Weight == b.Weight;
+            }
+
+            /// <summary>
+            /// Does the first SrvRecord better than the second one?  "Better" is defined
+            /// as a lower priority, or the same priority with a greater weight.
+            /// </summary>
+            private static bool BetterThan (SrvRecord a, SrvRecord b)
+            {
+                return a.Priority < b.Priority || (a.Priority == b.Priority && a.Weight > b.Weight);
             }
         }
     }
