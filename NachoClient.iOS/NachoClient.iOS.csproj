@@ -2015,6 +2015,34 @@
     <BundleResource Include="Resources\gen-deadline%406x.png" />
     <BundleResource Include="Resources\gen-deferred-msgs%406x.png" />
     <BundleResource Include="Resources\gen-unread-msgs%406x.png" />
+    <BundleResource Include="Resources\gen-inbox%402x.png" />
+    <BundleResource Include="Resources\gen-nacholeft%402x.png" />
+    <BundleResource Include="Resources\gen-nachoright%402x.png" />
+    <BundleResource Include="Resources\gen-inbox%403x.png" />
+    <BundleResource Include="Resources\gen-nacholeft%403x.png" />
+    <BundleResource Include="Resources\gen-nachoright%403x.png" />
+    <BundleResource Include="Resources\gen-inbox%404x.png" />
+    <BundleResource Include="Resources\gen-nacholeft%404x.png" />
+    <BundleResource Include="Resources\gen-nachoright%404x.png" />
+    <BundleResource Include="Resources\gen-inbox%406x.png" />
+    <BundleResource Include="Resources\gen-nacholeft%406x.png" />
+    <BundleResource Include="Resources\gen-nachoright%406x.png" />
+    <BundleResource Include="Resources\modal-nextmonth-active%402x.png" />
+    <BundleResource Include="Resources\modal-nextmonth%402x.png" />
+    <BundleResource Include="Resources\modal-weekend-active%402x.png" />
+    <BundleResource Include="Resources\modal-weekend%402x.png" />
+    <BundleResource Include="Resources\modal-nextmonth-active%403x.png" />
+    <BundleResource Include="Resources\modal-nextmonth%403x.png" />
+    <BundleResource Include="Resources\modal-weekend-active%403x.png" />
+    <BundleResource Include="Resources\modal-weekend%403x.png" />
+    <BundleResource Include="Resources\modal-nextmonth-active%404x.png" />
+    <BundleResource Include="Resources\modal-nextmonth%404x.png" />
+    <BundleResource Include="Resources\modal-weekend-active%404x.png" />
+    <BundleResource Include="Resources\modal-weekend%404x.png" />
+    <BundleResource Include="Resources\modal-nextmonth-active%406x.png" />
+    <BundleResource Include="Resources\modal-nextmonth%406x.png" />
+    <BundleResource Include="Resources\modal-weekend-active%406x.png" />
+    <BundleResource Include="Resources\modal-weekend%406x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
