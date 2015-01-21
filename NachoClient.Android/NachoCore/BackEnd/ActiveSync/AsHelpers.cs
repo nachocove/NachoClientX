@@ -839,6 +839,9 @@ namespace NachoCore.ActiveSync
                     if (!String.IsNullOrEmpty (emailMessage.Subject) && (emailMessage.Subject != child.Value)) {
                         Log.Error (Log.LOG_AS, "Subject overwritten with changed value: serverId={0} {1} {2}", emailMessage.ServerId, emailMessage.Subject, child.Value);
                     }
+                    if (child.Value.StartsWith ("Synchronization with your") && child.Value.Contains ("failed for")) {
+                        Log.Error (Log.LOG_AS, "Server reports that synchronization failed. The user was notified via an e-mail message.");
+                    }
                     emailMessage.Subject = child.Value;
                     break;
 
