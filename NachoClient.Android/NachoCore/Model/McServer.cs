@@ -34,7 +34,7 @@ namespace NachoCore.Model
 
         // We want to remember if the user entered their
         // own server or if we figured it out on our own.
-        public bool UserSpecifiedServer { get; set; }
+        public string UserSpecifiedServerName { get; set; }
 
         /// <summary>
         /// The base URI for the server.

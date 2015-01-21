@@ -39,10 +39,9 @@ namespace NachoClient.iOS
 
         private bool hasSyncedEmail = false;
 
-        string gOriginalPassword = "";
-
         string gOriginalDomain = "";
         string gOriginalUsername = "";
+        string gOriginalPassword = "";
 
         AppDelegate appDelegate;
         AccountSettings theAccount;
@@ -144,7 +143,7 @@ namespace NachoClient.iOS
                 showAdvanced |= theAccount.Credentials.UserSpecifiedUsername;
             }
             if (null != theAccount.Server) {
-                showAdvanced |= theAccount.Server.UserSpecifiedServer;
+                showAdvanced |= (null != theAccount.Server.UserSpecifiedServerName);
             }
 
             bool showWaitScreen = LoginHelpers.IsCurrentAccountSet () && !LoginHelpers.HasViewedTutorial (LoginHelpers.GetCurrentAccountId ());
@@ -341,7 +340,7 @@ namespace NachoClient.iOS
             }
 
             // If the user entered the server, respect it.
-            if ((null != theAccount.Server) && theAccount.Server.UserSpecifiedServer) {
+            if ((null != theAccount.Server) && (null != theAccount.Server.UserSpecifiedServerName)) {
                 BackEnd.Instance.Stop (LoginHelpers.GetCurrentAccountId ());
                 waitScreen.SetLoadingText ("Verifying Your Server...");
                 loadTheAccount ();
@@ -599,7 +598,11 @@ namespace NachoClient.iOS
             gOriginalPassword = passwordView.textField.Text;
 
             if (null != theAccount.Server) {
-                serverView.textField.Text = theAccount.Server.BaseUriString ();
+                if (null == theAccount.Server.UserSpecifiedServerName) {
+                    serverView.textField.Text = theAccount.Server.Host;
+                } else {
+                    serverView.textField.Text = theAccount.Server.UserSpecifiedServerName;
+                }
             }
 
             string domain, username;
@@ -674,7 +677,7 @@ namespace NachoClient.iOS
                     server = new McServer ();
                     var result = EmailHelper.ParseServer (ref server, serverView.textField.Text);
                     if (EmailHelper.ParseServerWhyEnum.Success_0 == result) {
-                        server.UserSpecifiedServer = true;
+                        server.UserSpecifiedServerName = serverView.textField.Text;
                         server.AccountId = LoginHelpers.GetCurrentAccountId ();
                         server.Insert ();
                     }
@@ -683,13 +686,15 @@ namespace NachoClient.iOS
                 if (String.IsNullOrEmpty (serverView.textField.Text)) {
                     removeServerRecord ();
                 } else {
-                    var temp = new McServer ();
-                    var result = EmailHelper.ParseServer (ref temp, serverView.textField.Text);
-                    if (EmailHelper.ParseServerWhyEnum.Success_0 == result) {
-                        if(!server.IsSameServer(temp)) {
-                            server.CopyFrom (temp);
-                            server.UserSpecifiedServer = true;
-                            server.Update ();
+                    if ((null != server.UserSpecifiedServerName) || (String.Equals (server.Host, serverView.textField.Text, StringComparison.OrdinalIgnoreCase))) {
+                        var temp = new McServer ();
+                        var result = EmailHelper.ParseServer (ref temp, serverView.textField.Text);
+                        if (EmailHelper.ParseServerWhyEnum.Success_0 == result) {
+                            if (!server.IsSameServer (temp)) {
+                                server.CopyFrom (temp);
+                                server.UserSpecifiedServerName = serverView.textField.Text;
+                                server.Update ();
+                            }
                         }
                     }
                 }
@@ -714,9 +719,6 @@ namespace NachoClient.iOS
                 Telemetry.RecordAccountEmailAddress (appDelegate.Account);
                 LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, true);
             });
-
-            BackEnd.Instance.Start (LoginHelpers.GetCurrentAccountId ());
-            waitScreen.ShowView ();
         }
 
         public void removeServerRecord ()
