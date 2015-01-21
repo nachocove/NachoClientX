@@ -310,6 +310,8 @@ namespace NachoClient.iOS
             if (callReconfigure) {
                 hotListSource.ReconfigureVisibleCells (hotListView);
             }
+
+            hotListSource.ConfigureFooter (hotListView);
         }
 
         /// <summary>
