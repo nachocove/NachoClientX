@@ -524,9 +524,7 @@ namespace NachoClient.iOS
             alertDetailLabel.Text = Pretty.ReminderString (c.ReminderIsSet, c.Reminder);
             alertDetailLabel.SizeToFit ();
 
-            if (0 != c.attachments.Count ()) {
-                hasAttachments = true;
-            }
+            hasAttachments = 0 != c.attachments.Count ();
             attachmentListView.Hidden = !hasAttachments;
             ConfigureAttachments ();
 
@@ -798,7 +796,7 @@ namespace NachoClient.iOS
                 };
                 return;
             }
-                
+
             if (segue.Identifier.Equals ("EventToNotes")) {
                 var dc = (NotesViewController)segue.DestinationViewController;
                 dc.SetOwner (this, true);
@@ -878,7 +876,7 @@ namespace NachoClient.iOS
                 AdjustViewLayout (TagType.EVENT_LOCATION_TITLE_TAG, 0, ref internalYOffset, 18, EVENT_CARD_WIDTH - 100);
                 AdjustViewLayout (TagType.EVENT_LOCATION_DETAIL_LABEL_TAG, 42, ref internalYOffset, 5, EVENT_CARD_WIDTH - 60);
             }
-                
+
             AdjustViewLayout (TagType.EVENT_DESCRIPTION_TITLE_TAG, 0, ref internalYOffset, 18, EVENT_CARD_WIDTH - 100);
             if (yOffset != descriptionView.Frame.Y) {
                 ViewFramer.Create (descriptionView).Y (internalYOffset);
