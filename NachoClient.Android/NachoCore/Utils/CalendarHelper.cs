@@ -295,7 +295,11 @@ namespace NachoCore.Utils
             newEvent.Start = evt.Start;
             newEvent.End = evt.End;
             newEvent.IsAllDay = evt.IsAllDay;
-            newEvent.Priority = evt.Priority;
+            // The Priority of the existing event cannot be accessed.  Doing so will
+            // crash the app when running on a device (but not on the simulator. See
+            // http://developer.xamarin.com/guides/ios/advanced_topics/limitations/
+            // Priority is essentially a write-only property.
+            newEvent.Priority = 5; // evt.Priority;
             newEvent.Location = evt.Location;
             newEvent.Status = EventStatus.Confirmed;
             newEvent.Class = "PUBLIC";
