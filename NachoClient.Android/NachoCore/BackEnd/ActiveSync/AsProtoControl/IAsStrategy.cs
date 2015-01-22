@@ -46,5 +46,8 @@ namespace NachoCore.ActiveSync
         SyncKit GenSyncKit (int accountId, McProtocolState protocolState, bool cantBeEmpty);
         Tuple<PickActionEnum, AsCommand> Pick ();
         Tuple<PickActionEnum, AsCommand> PickUserDemand ();
+        int UploadTimeoutSecs (long length);
+        int DownloadTimeoutSecs (long length);
+        int DefaultTimeoutSecs { get; }
     }
 }

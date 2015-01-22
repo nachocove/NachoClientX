@@ -50,9 +50,9 @@ namespace NachoPlatform
                 var isUp = ReachInternet.IsReachable ();
                 status = (isUp) ? NetStatusStatusEnum.Up : NetStatusStatusEnum.Down;
                 if (NetStatusStatusEnum.Up == status) {
-                    speed = (ReachInternet.IsReachableViaWiFi ()) ? NetStatusSpeedEnum.WiFi : NetStatusSpeedEnum.CellFast;
+                    speed = (ReachInternet.IsReachableViaWiFi ()) ? NetStatusSpeedEnum.WiFi_0 : NetStatusSpeedEnum.CellFast_1;
                 } else {
-                    speed = NetStatusSpeedEnum.CellSlow;
+                    speed = NetStatusSpeedEnum.CellSlow_2;
                 }
             }
         }

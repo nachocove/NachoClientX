@@ -45,10 +45,9 @@ namespace Test.iOS
             public new void SetUp ()
             {
                 base.SetUp ();
-                var protoControl = ProtoOps.CreateProtoControl (accountId: defaultAccountId);
 
                 var server = McServer.Create (defaultAccountId, CommonMockData.MockUri);
-                Context = new MockContext (protoControl, server);
+                Context = new MockContext (null, server);
 
                 FolderCmd = CreateFolderSyncCmd (Context);
             }

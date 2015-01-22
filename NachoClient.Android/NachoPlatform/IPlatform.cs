@@ -50,9 +50,9 @@ namespace NachoPlatform
 
     public enum NetStatusSpeedEnum
     {
-        WiFi,
-        CellFast,
-        CellSlow,
+        WiFi_0 = 0,
+        CellFast_1 = 1,
+        CellSlow_2 = 2,
     };
 
     public class NetStatusEventArgs : EventArgs

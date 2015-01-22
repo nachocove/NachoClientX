@@ -48,7 +48,14 @@ namespace NachoCore.ActiveSync
         protected NcResult FailureInd;
         protected Object LockObj = new Object ();
 
-        public TimeSpan Timeout { set; get; }
+        private TimeSpan _Timeout;
+        public TimeSpan Timeout { 
+            set { _Timeout = value;
+                if (null != Op) {
+                    Op.Timeout = _Timeout;
+                }
+            } 
+            get { return _Timeout; } }
 
         public uint MaxTries { set; get; }
 

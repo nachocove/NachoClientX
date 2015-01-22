@@ -10,6 +10,7 @@ using NachoCore.Utils;
 
 namespace NachoCore.ActiveSync
 {
+    // TODO: it looks like one might be able to consolidate this with AsSmartCommand.
     public class AsSendMailCommand : AsCommand
     {
         private McEmailMessage EmailMessage;
@@ -42,11 +43,14 @@ namespace NachoCore.ActiveSync
             if (14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
                 return null;
             }
+            var mimePath = EmailMessage.MimePath ();
+            var length = new FileInfo (mimePath).Length;
+            Timeout = new TimeSpan (0, 0, BEContext.ProtoControl.SyncStrategy.UploadTimeoutSecs (length));
             var sendMail = new XElement (m_ns + Xml.ComposeMail.SendMail, 
                                new XElement (m_ns + Xml.ComposeMail.ClientId, EmailMessage.ClientId),
                                new XElement (m_ns + Xml.ComposeMail.SaveInSentItems),
                                new XElement (m_ns + Xml.ComposeMail.Mime, 
-                                   new XAttribute ("nacho-body-path", EmailMessage.MimePath ())));
+                                   new XAttribute ("nacho-body-path", mimePath)));
             var doc = AsCommand.ToEmptyXDocument ();
             doc.Add (sendMail);
             return doc;
@@ -55,7 +59,10 @@ namespace NachoCore.ActiveSync
         protected override Stream ToMime (AsHttpOperation Sender)
         {
             if (14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
-                return EmailMessage.ToMime ();
+                long length;
+                var stream = EmailMessage.ToMime (out length);
+                Timeout = new TimeSpan (0, 0, BEContext.ProtoControl.SyncStrategy.UploadTimeoutSecs (length));
+                return stream;
             }
             return null;
         }

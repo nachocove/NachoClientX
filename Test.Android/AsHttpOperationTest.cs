@@ -155,13 +155,14 @@ namespace Test.iOS
 
 
     [TestFixture]
-    public class AsHttpOperationTest
+    public class AsHttpOperationTest : CommonTestOps
     {
         private MockContext Context;
 
         [SetUp]
-        public void SetUp ()
+        public new void SetUp ()
         {
+            base.SetUp ();
             Context = null;
 
             // reset the comm status singleton before each test
@@ -579,8 +580,8 @@ namespace Test.iOS
         public void StatusCode503 ()
         {
             // A 503 with no retry-after and no X-MS-ASThrottle.
-            McMutables.Set (1, "HTTP", "DelaySeconds", (1).ToString ());
-            McMutables.Set (1, "HTTP", "MaxDelaySeconds", (3).ToString ());
+            McMutables.Set (2, "HTTP", "DelaySeconds", (1).ToString ());
+            McMutables.Set (2, "HTTP", "MaxDelaySeconds", (3).ToString ());
 
             uint retryCount = 0;
             PerformHttpOperationWithSettings (sm => {
@@ -597,8 +598,8 @@ namespace Test.iOS
         public void StatusCode503RetryAfter ()
         {
             // A 503 with retry-after.
-            McMutables.Set (1, "HTTP", "ThrottleDelaySeconds", (1).ToString ());
-            McMutables.Set (1, "HTTP", "MaxDelaySeconds", (3).ToString ());
+            McMutables.Set (2, "HTTP", "ThrottleDelaySeconds", (1).ToString ());
+            McMutables.Set (2, "HTTP", "MaxDelaySeconds", (3).ToString ());
             string retryAfterSecs = (1).ToString ();
 
             string HeaderRetryAfter = "Retry-After";
@@ -639,8 +640,8 @@ namespace Test.iOS
         public void StatusCode503Throttle ()
         {
             // A 503 with no retry-after and X-MS-ASThrottle.
-            McMutables.Set (1, "HTTP", "ThrottleDelaySeconds", (1).ToString ());
-            McMutables.Set (1, "HTTP", "MaxDelaySeconds", (3).ToString ());
+            McMutables.Set (2, "HTTP", "ThrottleDelaySeconds", (1).ToString ());
+            McMutables.Set (2, "HTTP", "MaxDelaySeconds", (3).ToString ());
 
             string HeaderXMsThrottle = "X-MS-ASThrottle";
 

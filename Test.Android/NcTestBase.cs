@@ -10,7 +10,7 @@ namespace Test.Common
     public class NcTestBase
     {
         [SetUp]
-        public void Setup ()
+        public void SetUp ()
         {
             NcModel.Instance.Reset (System.IO.Path.GetTempFileName ());
             NcModel.Instance.InitalizeDirs (1);
