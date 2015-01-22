@@ -108,6 +108,17 @@ namespace NachoPlatform
             }
         }
 
+        public bool ShouldWeBotherToAsk()
+        {
+            if (ABAuthorizationStatus.NotDetermined == ABAddressBook.GetAuthorizationStatus ()) {
+                return true;
+            }
+            // ABAuthorizationStatus.Authorized -- The user already said yes
+            // ABAuthorizationStatus.Denied -- The user already said no
+            // ABAuthorizationStatus.Restricted -- E.g. parental controls
+            return false;
+        }
+
         private ABAddressBook ABAddressBookCreate ()
         {
             NSError err; 
@@ -122,6 +133,10 @@ namespace NachoPlatform
         public void AskForPermission (Action<bool> result)
         {
             var ab = ABAddressBookCreate ();
+            if (null == ab) {
+                result (false);
+                return;
+            }
             ab.RequestAccess ((granted, reqErr) => {
                 if (null != reqErr) {
                     Log.Error (Log.LOG_SYS, "ABAddressBook.RequestAccess: {0}", GetNSErrorString (reqErr));

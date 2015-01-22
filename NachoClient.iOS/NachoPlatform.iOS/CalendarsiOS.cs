@@ -216,9 +216,24 @@ namespace NachoPlatform
             }
         }
 
+        public bool ShouldWeBotherToAsk ()
+        {
+            if (EKAuthorizationStatus.NotDetermined == EKEventStore.GetAuthorizationStatus (EKEntityType.Event)) {
+                return true;
+            }
+            // EKAuthorizationStatus.Authorized -- The user already said yes
+            // EKAuthorizationStatus.Denied -- The user already said no
+            // EKAuthorizationStatus.Restricted -- E.g. parental controls
+            return false;
+        }
+
         public void AskForPermission (Action<bool> result)
         {
             var eventStore = new EKEventStore ();
+            if (null == eventStore) {
+                result (false);
+                return;
+            }
             eventStore.RequestAccess (EKEntityType.Event,
                 (granted, reqErr) => {
                     if (null != reqErr) {
