@@ -109,7 +109,7 @@ namespace NachoCore.ActiveSync
                 McAbstrFolderEntry.ClassCodeEnum.Calendar) {
                 add.Add (new XElement (m_ns + Xml.AirSync.Class, Xml.AirSync.ClassCode.Calendar));
             }
-            add.Add (AsHelpers.ToXmlApplicationData (cal));
+            add.Add (AsHelpers.ToXmlApplicationData (cal, BEContext));
             return add;
         }
 
@@ -118,7 +118,7 @@ namespace NachoCore.ActiveSync
             var cal = McCalendar.QueryById<McCalendar> (pending.ItemId);
             return new XElement (m_ns + Xml.AirSync.Change, 
                 new XElement (m_ns + Xml.AirSync.ServerId, pending.ServerId),
-                AsHelpers.ToXmlApplicationData (cal));
+                AsHelpers.ToXmlApplicationData (cal, BEContext));
         }
 
         private XElement ToCalDelete (McPending pending, McFolder folder)

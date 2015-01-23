@@ -152,7 +152,7 @@ namespace NachoCore.ActiveSync
             return (value) ? "1" : "0";
         }
 
-        public static XElement ToXmlApplicationData (McCalendar cal)
+        public static XElement ToXmlApplicationData (McCalendar cal, IBEContext beContext)
         {
             XNamespace AirSyncNs = Xml.AirSync.Ns;
             XNamespace CalendarNs = Xml.Calendar.Ns;
@@ -236,7 +236,7 @@ namespace NachoCore.ActiveSync
             // TODO: exceptions.
             // TODO recurrences.
 
-            if (cal.ResponseRequestedIsSet) {
+            if (cal.ResponseRequestedIsSet && 14.0 <= Convert.ToDouble (beContext.ProtocolState.AsProtocolVersion)) {
                 xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.ResponseRequested, XmlFromBool (cal.ResponseRequested)));
             }
             if (cal.DisallowNewTimeProposalIsSet) {
