@@ -1304,7 +1304,7 @@ namespace NachoCore.ActiveSync
 
                 default:
                 case NcCommStatus.CommQualityEnum.Degraded:
-                    Log.Info (Log.LOG_AS, "Server {0} communication quality degrated.", Server.Host);
+                    Log.Info (Log.LOG_AS, "Server {0} communication quality degraded.", Server.Host);
                     break;
 
                 case NcCommStatus.CommQualityEnum.Unusable:
