@@ -352,8 +352,8 @@ namespace NachoCore.ActiveSync
                     status = statusElement.Value.ToEnum<NcAttendeeStatus> ();
                 }
 
-                // Optional
-                NcAttendeeType type = NcAttendeeType.Unknown;
+                // Optional.  Default is Required.  (At least that's how GFE behaves.)
+                NcAttendeeType type = NcAttendeeType.Required;
                 var typeElement = attendee.Element (ns + Xml.Calendar.Attendee.AttendeeType);
                 if (null != typeElement) {
                     type = typeElement.Value.ToEnum<NcAttendeeType> ();
