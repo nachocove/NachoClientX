@@ -683,6 +683,14 @@ namespace NachoClient.iOS
             swipeRecognizer.Enabled = false;
         }
 
+        public bool IsSwipeEnabled ()
+        {
+            if (null == swipeRecognizer) {
+                return false;
+            }
+            return swipeRecognizer.Enabled;
+        }
+
         protected void MayCompletePullOut ()
         {
             if (SnapAllShownThreshold <= Math.Abs (swipingView.LastMovePercentage)) {

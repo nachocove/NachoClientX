@@ -465,6 +465,26 @@ namespace NachoClient.iOS
             var view = (SwipeActionView)cell.ViewWithTag (SWIPE_VIEW_TAG);
             view.EnableSwipe (null != contact && allowSwiping);
 
+            if (view.IsSwipeEnabled ()) {
+                //Adds the swipe actions back on if they were removed.
+                if (0 == view.LeftSwipeActionButtons.Count) {
+                    view.SetAction (CALL_BUTTON, SwipeSide.LEFT);
+                }
+                if (0 == view.RightSwipeActionButtons.Count) {
+                    view.SetAction (EMAIL_BUTTON, SwipeSide.RIGHT);
+                }
+
+                //If contact doesn't sync, remove call/email swipe if contact don't have any #'s or emails
+                if (!contact.CanUserEdit ()) {
+                    if (0 == contact.PhoneNumbers.Count) {
+                        view.SetAction (null, SwipeSide.LEFT, 0);
+                    }
+                    if (0 == contact.EmailAddresses.Count) {
+                        view.SetAction (null, SwipeSide.RIGHT, 0);
+                    }
+                }
+            }
+
             if (null == contact) {
                 titleLabel.Text = "This contact is unavailable";
                 titleLabel.TextColor = UIColor.LightGray;
