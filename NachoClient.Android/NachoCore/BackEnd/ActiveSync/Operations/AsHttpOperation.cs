@@ -587,7 +587,22 @@ namespace NachoCore.ActiveSync
                     case ContentTypeWbxml:
                         var decoder = new ASWBXML (cToken);
                         try {
+                            var isWedged = false;
+                            var diaper = new NcTimer ("AsHttpOperation:LoadBytes diaper", 
+                                (state) => {
+                                    if (!cToken.IsCancellationRequested) {
+                                        isWedged = true;
+                                        TimeoutTimerCallback (state);
+                                    }
+                                },
+                                cToken, 180 * 1000, System.Threading.Timeout.Infinite);
                             decoder.LoadBytes (BEContext.Account.Id, ContentData);
+                            diaper.Dispose ();
+                            if (isWedged) {
+                                // If not cancelled, we've already done the right thing and sent a timeout event.
+                                return Final ((uint)SmEvt.E.HardFail, "LOADBYTESHANG");
+                            }
+                            cToken.ThrowIfCancellationRequested ();
                         } catch (OperationCanceledException) {
                             Owner.ResolveAllDeferred ();
                             return Final ((uint)SmEvt.E.HardFail, "WBXCANCEL");
