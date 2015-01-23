@@ -37,26 +37,26 @@ namespace NachoPlatform
 
         public class PlatformContactRecordiOS : PlatformContactRecord
         {
-            public override string UniqueId { get { 
-                    return Person.Id.ToString (); 
-                } 
-            }
-            public override DateTime LastUpdate { get {
-                    return Person.ModificationDate.ToDateTime ();
-                }
-            }
+            public override string UniqueId { get { return Person.Id.ToString (); } }
+
+            public override DateTime LastUpdate { get { return Person.ModificationDate.ToDateTime (); } }
             // Person not to be referenced from platform independent code.
             public ABPerson Person { get; set; }
 
-            public override NcResult ToMcContact ()
+            public override NcResult ToMcContact (McContact contactToUpdate)
             {
                 var accountId = McAccount.GetDeviceAccount ().Id;
-                var contact = new McContact () {
-                    Source = McAbstrItem.ItemSource.Device,
-                    ServerId = "NachoDeviceContact:" + UniqueId,
-                    AccountId = accountId,
-                    OwnerEpoch = SchemaRev,
-                };
+                McContact contact;
+                if (null == contactToUpdate) {
+                    contact = new McContact () {
+                        Source = McAbstrItem.ItemSource.Device,
+                        ServerId = "NachoDeviceContact:" + UniqueId,
+                        AccountId = accountId,
+                        OwnerEpoch = SchemaRev,
+                    };
+                } else {
+                    contact = contactToUpdate;
+                }
                 contact.FirstName = Person.FirstName;
                 contact.LastName = Person.LastName;
                 contact.MiddleName = Person.MiddleName;
@@ -108,6 +108,17 @@ namespace NachoPlatform
             }
         }
 
+        public bool ShouldWeBotherToAsk()
+        {
+            if (ABAuthorizationStatus.NotDetermined == ABAddressBook.GetAuthorizationStatus ()) {
+                return true;
+            }
+            // ABAuthorizationStatus.Authorized -- The user already said yes
+            // ABAuthorizationStatus.Denied -- The user already said no
+            // ABAuthorizationStatus.Restricted -- E.g. parental controls
+            return false;
+        }
+
         private ABAddressBook ABAddressBookCreate ()
         {
             NSError err; 
@@ -122,6 +133,10 @@ namespace NachoPlatform
         public void AskForPermission (Action<bool> result)
         {
             var ab = ABAddressBookCreate ();
+            if (null == ab) {
+                result (false);
+                return;
+            }
             ab.RequestAccess ((granted, reqErr) => {
                 if (null != reqErr) {
                     Log.Error (Log.LOG_SYS, "ABAddressBook.RequestAccess: {0}", GetNSErrorString (reqErr));

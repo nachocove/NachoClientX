@@ -152,7 +152,7 @@ namespace NachoCore.ActiveSync
             return (value) ? "1" : "0";
         }
 
-        public static XElement ToXmlApplicationData (McCalendar cal)
+        public static XElement ToXmlApplicationData (McCalendar cal, IBEContext beContext)
         {
             XNamespace AirSyncNs = Xml.AirSync.Ns;
             XNamespace CalendarNs = Xml.Calendar.Ns;
@@ -236,7 +236,7 @@ namespace NachoCore.ActiveSync
             // TODO: exceptions.
             // TODO recurrences.
 
-            if (cal.ResponseRequestedIsSet) {
+            if (cal.ResponseRequestedIsSet && 14.0 <= Convert.ToDouble (beContext.ProtocolState.AsProtocolVersion)) {
                 xmlAppData.Add (new XElement (CalendarNs + Xml.Calendar.ResponseRequested, XmlFromBool (cal.ResponseRequested)));
             }
             if (cal.DisallowNewTimeProposalIsSet) {
@@ -352,8 +352,8 @@ namespace NachoCore.ActiveSync
                     status = statusElement.Value.ToEnum<NcAttendeeStatus> ();
                 }
 
-                // Optional
-                NcAttendeeType type = NcAttendeeType.Unknown;
+                // Optional.  Default is Required.  (At least that's how GFE behaves.)
+                NcAttendeeType type = NcAttendeeType.Required;
                 var typeElement = attendee.Element (ns + Xml.Calendar.Attendee.AttendeeType);
                 if (null != typeElement) {
                     type = typeElement.Value.ToEnum<NcAttendeeType> ();
@@ -838,6 +838,9 @@ namespace NachoCore.ActiveSync
                 case Xml.Email.Subject:
                     if (!String.IsNullOrEmpty (emailMessage.Subject) && (emailMessage.Subject != child.Value)) {
                         Log.Error (Log.LOG_AS, "Subject overwritten with changed value: serverId={0} {1} {2}", emailMessage.ServerId, emailMessage.Subject, child.Value);
+                    }
+                    if (child.Value.StartsWith ("Synchronization with your") && child.Value.Contains ("failed for")) {
+                        Log.Error (Log.LOG_AS, "Server reports that synchronization failed. The user was notified via an e-mail message.");
                     }
                     emailMessage.Subject = child.Value;
                     break;

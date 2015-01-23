@@ -88,7 +88,15 @@ namespace NachoClient.iOS
 //            var module = Module_Calendar;
 //            var accountId = LoginHelpers.GetCurrentAccountId ();
 //
+//            // If we have already asked, then don't ask again.  TODO:  Setting to enabled access
 //            if (McMutables.GetOrCreateBool (accountId, module, Key_AskedUserForPermission, false)) {
+//                return;
+//            }
+//
+//            // Has the system already allowed or denied Nacho Mail?
+//            if(!NachoPlatform.Calendars.Instance.ShouldWeBotherToAsk()) {
+//                McMutables.SetBool (accountId, module, Key_AskedUserForPermission, true);
+//                Log.Info (Log.LOG_UI, "{0}: {1} {2}", module, Key_AskedUserForPermission, "do not bother");
 //                return;
 //            }
 //
@@ -121,7 +129,15 @@ namespace NachoClient.iOS
             var module = Module_Contacts;
             var accountId = LoginHelpers.GetCurrentAccountId ();
 
+            // If we have already asked, then don't ask again.  TODO:  Setting to enabled access
             if (McMutables.GetOrCreateBool (accountId, module, Key_AskedUserForPermission, false)) {
+                return;
+            }
+
+            // Has the system already allowed or denied Nacho Mail?
+            if(!NachoPlatform.Contacts.Instance.ShouldWeBotherToAsk()) {
+                McMutables.SetBool (accountId, module, Key_AskedUserForPermission, true);
+                Log.Info (Log.LOG_UI, "{0}: {1} {2}", module, Key_AskedUserForPermission, "do not bother");
                 return;
             }
 

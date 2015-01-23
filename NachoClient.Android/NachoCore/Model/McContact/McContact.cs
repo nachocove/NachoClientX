@@ -17,7 +17,7 @@ namespace NachoCore.Model
 
         public McContact GetContact ()
         {
-            return NcModel.Instance.Db.Get<McContact> (Id);
+            return McContact.QueryById<McContact> (Id);
         }
     }
 
@@ -31,7 +31,7 @@ namespace NachoCore.Model
 
         public McContact GetContact ()
         {
-            return NcModel.Instance.Db.Get<McContact> (ContactId);
+            return McContact.QueryById<McContact> (Id);
         }
     }
 
@@ -1147,19 +1147,16 @@ namespace NachoCore.Model
 
         static string GetContactSearchString (int accountId = 0)
         {
-            var fmt = "SELECT DISTINCT Id, coalesce(nullif(upper(substr(SORT_ORDER, 1, 1)), ''), '#') as FirstLetter  FROM   " +
-                      "(  " +
-                      "    SELECT c.Id, trim(trim(coalesce(c.FirstName,'') || ' ' || coalesce(c.LastName, '')) || ' ' || coalesce(ltrim(s.Value,'\"'), '')) AS SORT_ORDER  " +
-                      "    FROM McContact AS c  " +
-                      "    LEFT OUTER JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId  " +
-                      "    JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId  " +
-                      "    WHERE " +
-                      "    {0}" +
-                      "    m.ClassCode = ? AND  " +
-                      "    c.IsAwaitingDelete = 0  " +
-                      ")  " +
-                      "ORDER BY SORT_ORDER COLLATE NOCASE ASC ";
-
+            var fmt = " SELECT DISTINCT Id, substr(SORT_ORDER, 1, 1) as FirstLetter FROM   " +
+                      " (  " +
+                      "     SELECT c.Id as Id, trim(trim(coalesce(c.FirstName,'') || ' ' || coalesce(c.LastName, '')) || ' ' || coalesce(ltrim(s.Value,'\"'), '')) AS SORT_ORDER  " +
+                      "     FROM McContact AS c  " +
+                      "     LEFT OUTER JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId  " +
+                      "     WHERE " +
+                      "     {0} " +
+                      "     c.IsAwaitingDelete = 0  " +
+                      " )  " +
+                      " ORDER BY SORT_ORDER COLLATE NOCASE ASC";
             if (0 == accountId) {
                 return String.Format (fmt, "");
             } else {
@@ -1176,6 +1173,23 @@ namespace NachoCore.Model
         public static List<NcContactIndex> AllContactsSortedByName ()
         {
             return NcModel.Instance.Db.Query<NcContactIndex> (GetContactSearchString (0), (int)McAbstrFolderEntry.ClassCodeEnum.Contact);
+        }
+
+        public static List<NcContactIndex> AllContactsWithEmailAddresses ()
+        {
+            return NcModel.Instance.Db.Query<NcContactIndex> (
+                "SELECT DISTINCT Id, substr(SORT_ORDER, 0, 1) as FirstLetter FROM ( " +
+                "SELECT c.Id, trim(trim(coalesce(c.FirstName,'') || ' ' || coalesce(c.LastName, '')) || ' ' || coalesce(ltrim(s.Value,'\"'), '')) AS SORT_ORDER  " +
+                "FROM McContactEmailAddressAttribute AS s " +
+                "JOIN McContact AS c ON s.ContactId = c.Id " +
+                "JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
+                "WHERE " +
+                "m.ClassCode = ? AND " +
+                "c.IsAwaitingDelete = 0 " +
+                "ORDER BY SORT_ORDER COLLATE NOCASE ASC " +
+                ")",
+                (int)McAbstrFolderEntry.ClassCodeEnum.Contact
+            );
         }
 
         public static List<NcContactIndex> RicContactsSortedByRank (int accountId, int limit)

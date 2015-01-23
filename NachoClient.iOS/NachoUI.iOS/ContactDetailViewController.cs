@@ -437,14 +437,14 @@ namespace NachoClient.iOS
         protected override void ConfigureAndLayout ()
         {
             isFirstInfoItem = true;
-            UpdateVipButton ();
-
 
             if (null == contact) {
                 var unavailableTitle = (UILabel)View.ViewWithTag (HEADER_TITLE_TAG);
                 unavailableTitle.Text = "Contact is unavailable.";
                 return;
             }
+
+            UpdateVipButton ();
 
             UIColor userBackgroundColor = Util.GetContactColor (contact);
 

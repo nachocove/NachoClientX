@@ -405,8 +405,9 @@ namespace NachoCore.Model
                 " m.AccountId = ? AND " +
                 " m.ClassCode = ? AND " +
                 " m.FolderId = ? AND " +
+                " e.FlagUtcStartDate < ? AND " +
                 "e.IsRead = 0", 
-                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId);
+                accountId, accountId, McAbstrFolderEntry.ClassCodeEnum.Email, folderId, DateTime.UtcNow);
         }
 
         public static IEnumerable<McEmailMessage> QueryNeedsFetch (int accountId, int limit, double minScore)

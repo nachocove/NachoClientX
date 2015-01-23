@@ -37,6 +37,8 @@ namespace NachoCore.Utils
 
         private static string ClientId;
 
+        private bool FreshInstall;
+
         public TelemetryBEAWS ()
         {
         }
@@ -78,6 +80,7 @@ namespace NachoCore.Utils
                         ClientId = reader.ReadLine ();
                     }
                 }
+                FreshInstall = false;
             } else {
                 // Save the current Cognito id as client id
                 Retry (() => {
@@ -88,6 +91,7 @@ namespace NachoCore.Utils
                         writer.WriteLine (ClientId);
                     }
                 }
+                FreshInstall = true;
             }
 
             Retry (() => {
@@ -311,6 +315,8 @@ namespace NachoCore.Utils
             anEvent ["build_version"] = BuildInfo.Version;
             anEvent ["build_number"] = BuildInfo.BuildNumber;
             anEvent ["device_id"] = Device.Instance.Identity ();
+            anEvent ["fresh_install"] = FreshInstall;
+            FreshInstall = false;
 
             return AwsSendOneEvent (DeviceInfoTable, anEvent);
         }

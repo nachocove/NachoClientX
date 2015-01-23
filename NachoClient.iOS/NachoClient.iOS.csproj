@@ -58,6 +58,7 @@
     </CustomCommands>
     <MtouchUseSGen>true</MtouchUseSGen>
     <MtouchUseRefCounting>true</MtouchUseRefCounting>
+    <CodesignKey>iPhone Developer</CodesignKey>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|iPhone' ">
     <DebugSymbols>true</DebugSymbols>
@@ -179,9 +180,6 @@
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Net" />
-    <Reference Include="MimeKit">
-      <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\MonoTouch\MimeKit.dll</HintPath>
-    </Reference>
     <Reference Include="HockeyApp.iOS">
       <HintPath>HockeyApp\hockeyappios-3.5.5\lib\ios\HockeyApp.iOS.dll</HintPath>
     </Reference>
