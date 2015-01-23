@@ -187,6 +187,15 @@ namespace NachoClient.iOS
                 dvc.SetOwner (this, address, NachoContactType.EmailRequired);
                 return;
             }
+
+            if (segue.Identifier.Equals ("SegueToContactEdit")) {
+                var dvc = (ContactEditViewController)segue.DestinationViewController;
+                var holder = (SegueHolder)sender;
+                var contact = (McContact)holder.value;
+                dvc.contact = contact;
+                return;
+            }
+
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
             NcAssert.CaseError ();
         }
@@ -366,9 +375,12 @@ namespace NachoClient.iOS
 
             public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
             {
-                McContact contact;
+                var cell = tableView.CellAt (indexPath);
+                if (null != cell) {
+                    cell.Selected = false;
+                }
 
-                contact = Owner.searchResults [indexPath.Row].GetContact ();
+                var contact = Owner.searchResults [indexPath.Row].GetContact ();
 
                 Owner.CancelSearchIfActive ();
 
@@ -394,16 +406,26 @@ namespace NachoClient.iOS
         }
 
         string complaintTitle = "Email Address Missing";
-        string complaintMessage = "You've selected a contact who does not have an email address.  Would you like to edit this contact?";
+        string complaintMessage = "You've selected a contact who does not have an email address.";
+        string complaintEditMessage = "  Would you like to edit this contact?";
 
         void ComplainAboutMissingEmailAddress (McContact contact)
         {
-            UIAlertView alert = new UIAlertView (complaintTitle, complaintMessage, null, "No", new string[] { "Edit contact" });
+            var alert = new UIAlertView ();
+            if (contact.CanUserEdit ()) {
+                alert.AddButton ("No");
+                alert.AddButton ("Edit Contact");
+                alert.Message = complaintMessage + complaintEditMessage;
+            } else {
+                alert.AddButton ("OK");
+                alert.Message = complaintMessage;
+            }
             alert.Clicked += (s, b) => {
                 if (1 == b.ButtonIndex) {
-                    PerformSegue ("ContactChooserToContactView", new SegueHolder (contact));
+                    PerformSegue ("SegueToContactEdit", new SegueHolder (contact));
                 }
             };
+            alert.Title = complaintTitle;
             alert.Show ();
         }
 
