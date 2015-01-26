@@ -574,7 +574,6 @@ namespace NachoClient.iOS
 
             var cellHeight = (tableView.Frame.Height - 40) / 8;
             var cardWidth = tableView.Frame.Width - 15.0f;
-            var iconFrame = new RectangleF (A.Card_Horizontal_Indent, 0, cellHeight / 2, cellHeight);
             var rightIndent = (2 * A.Card_Horizontal_Indent) + (cellHeight / 2);
 
             // Inbox label
