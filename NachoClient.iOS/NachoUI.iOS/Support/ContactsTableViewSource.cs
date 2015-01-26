@@ -466,19 +466,18 @@ namespace NachoClient.iOS
             view.EnableSwipe (null != contact && allowSwiping);
 
             if (view.IsSwipeEnabled ()) {
-                if (!view.ContainsAction (EMAIL_BUTTON, SwipeSide.RIGHT)) {
-                    view.AddAction (EMAIL_BUTTON, SwipeSide.RIGHT);
-                }
-                if (!view.ContainsAction (CALL_BUTTON, SwipeSide.LEFT)) {
-                    view.AddAction (CALL_BUTTON, SwipeSide.LEFT);
-                }
+                view.ClearActions (SwipeSide.LEFT);
+                view.ClearActions (SwipeSide.RIGHT);
 
-                if (!contact.CanUserEdit ()) {
-                    if (0 == contact.PhoneNumbers.Count) {
-                        view.RemoveAction (SwipeSide.LEFT, 0);
+                if (contact.CanUserEdit ()) {
+                    view.SetAction (CALL_BUTTON, SwipeSide.LEFT);
+                    view.SetAction (EMAIL_BUTTON, SwipeSide.RIGHT);
+                } else {
+                    if (0 < contact.PhoneNumbers.Count) {
+                        view.SetAction (CALL_BUTTON, SwipeSide.LEFT);
                     }
-                    if (0 == contact.EmailAddresses.Count) {
-                        view.RemoveAction (SwipeSide.RIGHT, 0);
+                    if (0 < contact.EmailAddresses.Count) {
+                        view.SetAction (EMAIL_BUTTON, SwipeSide.RIGHT);
                     }
                 }
             }
