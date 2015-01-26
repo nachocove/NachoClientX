@@ -78,6 +78,7 @@ namespace NachoClient.iOS
             addContactButton.TintColor = A.Color_NachoBlue;
 
             NavigationItem.RightBarButtonItem = addContactButton;
+            NavigationItem.LeftItemsSupplementBackButton = true;
             NavigationItem.LeftBarButtonItem = searchButton;
 
             NavigationController.NavigationBar.Translucent = false;

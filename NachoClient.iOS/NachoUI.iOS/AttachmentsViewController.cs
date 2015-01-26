@@ -179,6 +179,7 @@ namespace NachoClient.iOS
             SearchDisplayController.SearchResultsTableView.Source = AttachmentsSource;
 
             searchButton.TintColor = A.Color_NachoBlue;
+            NavigationItem.LeftItemsSupplementBackButton = true;
             NavigationItem.LeftBarButtonItem = searchButton;
             searchButton.Clicked += searchClicked;
                 
