@@ -620,7 +620,7 @@ namespace NachoCore.Model
             return thread.ElementAt (i).Id;
         }
 
-        public McEmailMessage GetEmailMessage (int i)
+        private McEmailMessage GetEmailMessage (int i)
         {
             return thread.ElementAt (i).GetMessage ();
         }

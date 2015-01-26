@@ -84,7 +84,12 @@ namespace NachoClient.iOS
 
             if (DateControllerType.Defer == dateControllerType) {
                 UILabel messageSubject = new UILabel (new RectangleF (30, yOffset, View.Frame.Width - 60, 25));
-                messageSubject.Text = thread.GetEmailMessage (0).Subject;
+                var message = thread.SingleMessageSpecialCase ();
+                if (null != message) {
+                    messageSubject.Text = Pretty.SubjectString(message.Subject);
+                } else {
+                    messageSubject.Text = "";
+                }
                 messageSubject.Font = A.Font_AvenirNextRegular17;
                 messageSubject.TextColor = UIColor.White;
                 priorityView.Add (messageSubject);
