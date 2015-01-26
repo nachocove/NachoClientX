@@ -737,8 +737,8 @@ namespace NachoCore.Model
             _Categories = NcModel.Instance.Db.Table<McEmailMessageCategory> ().Where (x => x.ParentId == Id).ToList ();
             _MeetingRequest = NcModel.Instance.Db.Table<McMeetingRequest> ().Where (x => x.EmailMessageId == Id).SingleOrDefault ();
             isAncillaryInMemory = true;
-            dbToEmailAddressId = McMapEmailAddressEntry.QueryMessageToAddressIds (Id);
-            dbCcEmailAddressId = McMapEmailAddressEntry.QueryMessageCcAddressIds (Id);
+            dbToEmailAddressId = McMapEmailAddressEntry.QueryMessageToAddressIds (AccountId, Id);
+            dbCcEmailAddressId = McMapEmailAddressEntry.QueryMessageCcAddressIds (AccountId, Id);
 
             return NcResult.OK ();
         }

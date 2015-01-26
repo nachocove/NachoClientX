@@ -16,7 +16,7 @@ namespace NachoCore.Model
     /// coordinating between development efforts from different developers. We'll
     /// merge McContactEmailAddressAttribute into this table later.
     /// </summary>
-    public class McMapEmailAddressEntry : McAbstrObject
+    public class McMapEmailAddressEntry : McAbstrObjectPerAcc
     {
         [Indexed]
         public NcEmailAddress.Kind AddressType { set; get; }
@@ -32,29 +32,31 @@ namespace NachoCore.Model
             AddressType = NcEmailAddress.Kind.Unknown;
         }
 
-        public static List<int> QueryAddressIds (int objectId, NcEmailAddress.Kind addressType)
+        public static List<int> QueryAddressIds (int accountId, int objectId, NcEmailAddress.Kind addressType)
         {
             var addressList = NcModel.Instance.Db.Query<McMapEmailAddressEntry> (
                                   "SELECT * FROM McMapEmailAddressEntry AS e " +
-                                  "WHERE e.ObjectId = ? AND e.AddressType = ?", objectId, addressType);
+                                  "WHERE e.AccountId = ? AND e.ObjectId = ? AND e.AddressType = ?",
+                                  accountId, objectId, addressType);
             return (from address in addressList
                              select address.EmailAddressId).ToList ();
         }
 
-        public static List<int> QueryObjectIds (int emailAddressId, NcEmailAddress.Kind addressType)
+        public static List<int> QueryObjectIds (int accountId, int emailAddressId, NcEmailAddress.Kind addressType)
         {
             var objectList = NcModel.Instance.Db.Query<McMapEmailAddressEntry> (
                                  "SELECT * FROM McMapEmailAddressEntry as e " +
-                                 "WHERE e.EmailAddressId = ? AND e.AddressType = ?", emailAddressId, addressType);
+                                 "WHERE e.AccountId = ? AND e.EmailAddressId = ? AND e.AddressType = ?",
+                                 accountId, emailAddressId, addressType);
             return (from obj in objectList
                              select obj.ObjectId).ToList ();
         }
 
 
         // Email message -> address queries
-        public static int QueryMessageFromAddressId (int emailMessageId)
+        public static int QueryMessageFromAddressId (int accountId, int emailMessageId)
         {
-            var ids = QueryAddressIds (emailMessageId, NcEmailAddress.Kind.From);
+            var ids = QueryAddressIds (accountId, emailMessageId, NcEmailAddress.Kind.From);
             if (0 == ids.Count) {
                 return 0;
             }
@@ -62,9 +64,9 @@ namespace NachoCore.Model
             return ids [0];
         }
 
-        public static int QueryMessageSenderAddressId (int emailMessageId)
+        public static int QueryMessageSenderAddressId (int accountId, int emailMessageId)
         {
-            var ids = QueryAddressIds (emailMessageId, NcEmailAddress.Kind.Sender);
+            var ids = QueryAddressIds (accountId, emailMessageId, NcEmailAddress.Kind.Sender);
             if (0 == ids.Count) {
                 return 0;
             }
@@ -72,22 +74,22 @@ namespace NachoCore.Model
             return ids [0];
         }
 
-        public static List<int> QueryMessageToAddressIds (int emailMessageId)
+        public static List<int> QueryMessageToAddressIds (int accountId, int emailMessageId)
         {
-            return QueryAddressIds (emailMessageId, NcEmailAddress.Kind.To);
+            return QueryAddressIds (accountId, emailMessageId, NcEmailAddress.Kind.To);
         }
 
-        public static List<int> QueryMessageCcAddressIds (int emailMessageId)
+        public static List<int> QueryMessageCcAddressIds (int accountId, int emailMessageId)
         {
-            return QueryAddressIds (emailMessageId, NcEmailAddress.Kind.Cc);
+            return QueryAddressIds (accountId, emailMessageId, NcEmailAddress.Kind.Cc);
         }
 
-        public static List<int> QueryMessageAddressIds (int emailMessageId)
+        public static List<int> QueryMessageAddressIds (int accountId, int emailMessageId)
         {
             var addressList = NcModel.Instance.Db.Query<McMapEmailAddressEntry> (
                                   "SELECT * FROM McMapEmailAddressEntry as e " +
-                                  "WHERE e.ObjectId = ? AND " +
-                                  "e.AddressType IN (?, ?, ?, ?)", emailMessageId,
+                                  "WHERE e.AccountId = ? AND e.ObjectId = ? AND " +
+                                  "e.AddressType IN (?, ?, ?, ?)", accountId, emailMessageId,
                                   NcEmailAddress.Kind.From, NcEmailAddress.Kind.Sender,
                                   NcEmailAddress.Kind.To, NcEmailAddress.Kind.Cc);
             return (from address in addressList
@@ -95,56 +97,56 @@ namespace NachoCore.Model
         }
 
         // Address -> email message queries
-        public static List<int> QueryMessageIdsByToAddress (int toEmailAddressId)
+        public static List<int> QueryMessageIdsByToAddress (int accountId, int toEmailAddressId)
         {
-            return QueryObjectIds (toEmailAddressId, NcEmailAddress.Kind.To);
+            return QueryObjectIds (accountId, toEmailAddressId, NcEmailAddress.Kind.To);
         }
 
-        public static List<int> QueryMessageIdsByCcAddress (int ccEmailAddressId)
+        public static List<int> QueryMessageIdsByCcAddress (int accountId, int ccEmailAddressId)
         {
-            return QueryObjectIds (ccEmailAddressId, NcEmailAddress.Kind.Cc);
+            return QueryObjectIds (accountId, ccEmailAddressId, NcEmailAddress.Kind.Cc);
         }
 
-        public static List<int> QueryMessageIdsByFromAddress (int fromEmailAddressId)
+        public static List<int> QueryMessageIdsByFromAddress (int accountId, int fromEmailAddressId)
         {
-            return QueryObjectIds (fromEmailAddressId, NcEmailAddress.Kind.From);
+            return QueryObjectIds (accountId, fromEmailAddressId, NcEmailAddress.Kind.From);
         }
 
-        public static List<int> QueryMessageIdsBySenderAddress (int senderEmailAddressId)
+        public static List<int> QueryMessageIdsBySenderAddress (int accountId, int senderEmailAddressId)
         {
-            return QueryObjectIds (senderEmailAddressId, NcEmailAddress.Kind.Sender);
+            return QueryObjectIds (accountId, senderEmailAddressId, NcEmailAddress.Kind.Sender);
         }
 
         // Attendee -> address queries
-        public static List<int> QueryOptionalAddressIds (int attendeeId)
+        public static List<int> QueryOptionalAddressIds (int accountId, int attendeeId)
         {
-            return QueryObjectIds (attendeeId, NcEmailAddress.Kind.Optional);
+            return QueryObjectIds (accountId, attendeeId, NcEmailAddress.Kind.Optional);
         }
 
-        public static List<int> QueryRequiredAddressIds (int attendeeId)
+        public static List<int> QueryRequiredAddressIds (int accountId, int attendeeId)
         {
-            return QueryObjectIds (attendeeId, NcEmailAddress.Kind.Required);
+            return QueryObjectIds (accountId, attendeeId, NcEmailAddress.Kind.Required);
         }
 
-        public static List<int> QueryResourceAddressIds (int attendeeId)
+        public static List<int> QueryResourceAddressIds (int accountId, int attendeeId)
         {
-            return QueryObjectIds (attendeeId, NcEmailAddress.Kind.Resource);
+            return QueryObjectIds (accountId, attendeeId, NcEmailAddress.Kind.Resource);
         }
 
         // Address -> attendee query
-        public static List<int> QueryAttendeeIdsByOptionalAddress (int optionalEmailAddressId)
+        public static List<int> QueryAttendeeIdsByOptionalAddress (int accountId, int optionalEmailAddressId)
         {
-            return QueryObjectIds (optionalEmailAddressId, NcEmailAddress.Kind.Optional);
+            return QueryObjectIds (accountId, optionalEmailAddressId, NcEmailAddress.Kind.Optional);
         }
 
-        public static List<int> QueryAttendeeIdsByRequiredAddress (int requiredEmailAddressId)
+        public static List<int> QueryAttendeeIdsByRequiredAddress (int accountId, int requiredEmailAddressId)
         {
-            return QueryObjectIds (requiredEmailAddressId, NcEmailAddress.Kind.Required);
+            return QueryObjectIds (accountId, requiredEmailAddressId, NcEmailAddress.Kind.Required);
         }
 
-        public static List<int> QueryAttendeeIdsByResourceAddress (int resourceEmailAddressId)
+        public static List<int> QueryAttendeeIdsByResourceAddress (int accountId, int resourceEmailAddressId)
         {
-            return QueryObjectIds (resourceEmailAddressId, NcEmailAddress.Kind.Resource);
+            return QueryObjectIds (accountId, resourceEmailAddressId, NcEmailAddress.Kind.Resource);
         }
     }
 }
