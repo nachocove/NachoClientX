@@ -163,7 +163,7 @@ namespace NachoCore.Model
                     }
                     UpdateDescription (String.Format ("Updating database.. ({0} of {1})", n, migrations.Count));
 
-                    var startTime = DateTime.Now;
+                    var startTime = DateTime.UtcNow;
                     var version = migration.Version ();
                     int rows;
 
@@ -194,12 +194,12 @@ namespace NachoCore.Model
                     NcTask.Cts.Token.ThrowIfCancellationRequested ();
                     try {
                         migration.Run (NcTask.Cts.Token);
-                        migrationRecord.DurationMsec += (int)(DateTime.Now - startTime).TotalMilliseconds;
+                        migrationRecord.DurationMsec += (int)(DateTime.UtcNow - startTime).TotalMilliseconds;
                         migrationRecord.Finished = true;
                         rows = migrationRecord.Update ();
                         NcAssert.True (1 == rows);
                     } catch (OperationCanceledException) {
-                        migrationRecord.DurationMsec += (int)(DateTime.Now - startTime).TotalMilliseconds;
+                        migrationRecord.DurationMsec += (int)(DateTime.UtcNow - startTime).TotalMilliseconds;
                         rows = migrationRecord.Update ();
                         NcAssert.True (1 == rows);
                         throw;
