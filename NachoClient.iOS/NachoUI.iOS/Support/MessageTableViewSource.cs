@@ -477,7 +477,7 @@ namespace NachoClient.iOS
             cell.TextLabel.Text = "";
             cell.ContentView.Hidden = false;
 
-            var cellWidth = cell.Frame.Width;
+            var cellWidth = tableView.Frame.Width;
 
             var view = cell.ContentView.ViewWithTag (SWIPE_TAG) as SwipeActionView;
             view.Frame = new RectangleF (0, 0, cellWidth, HeightForMessage (message));
