@@ -217,7 +217,7 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "InitializeBackEnd: StartClass2Services complete");
 
             NcApplication.Instance.StartClass3Services ();
-            Log.Info (Log.LOG_LIFECYCLE, "initializeBackEnd: StartClass3Services complete");
+            Log.Info (Log.LOG_LIFECYCLE, "InitializeBackEnd: StartClass3Services complete");
 
             NcApplication.Instance.AppStartupTasks ();
 

@@ -63,6 +63,8 @@ namespace NachoCore.Model
         {
             var thisVersion = Version ();
             foreach (var table in tables) {
+                token.ThrowIfCancellationRequested ();
+
                 Db.Execute (String.Format ("UPDATE {0} SET MigrationVersion=?", table), thisVersion);
                 NcMigration.ProcessedObjects += 1;
             }
