@@ -466,21 +466,19 @@ namespace NachoClient.iOS
             view.EnableSwipe (null != contact && allowSwiping);
 
             if (view.IsSwipeEnabled ()) {
-                //Adds the swipe actions back on if they were removed.
-                if (0 == view.LeftSwipeActionButtons.Count) {
-                    view.SetAction (CALL_BUTTON, SwipeSide.LEFT);
+                if (!view.ContainsAction (EMAIL_BUTTON, SwipeSide.RIGHT)) {
+                    view.AddAction (EMAIL_BUTTON, SwipeSide.RIGHT);
                 }
-                if (0 == view.RightSwipeActionButtons.Count) {
-                    view.SetAction (EMAIL_BUTTON, SwipeSide.RIGHT);
+                if (!view.ContainsAction (CALL_BUTTON, SwipeSide.LEFT)) {
+                    view.AddAction (CALL_BUTTON, SwipeSide.LEFT);
                 }
 
-                //If contact doesn't sync, remove call/email swipe if contact don't have any #'s or emails
                 if (!contact.CanUserEdit ()) {
                     if (0 == contact.PhoneNumbers.Count) {
-                        view.SetAction (null, SwipeSide.LEFT, 0);
+                        view.RemoveAction (SwipeSide.LEFT, 0);
                     }
                     if (0 == contact.EmailAddresses.Count) {
-                        view.SetAction (null, SwipeSide.RIGHT, 0);
+                        view.RemoveAction (SwipeSide.RIGHT, 0);
                     }
                 }
             }

@@ -473,7 +473,6 @@ namespace NachoClient.iOS
         public SwipeCallback OnSwipe;
 
         public SwipeActionButtonList LeftSwipeActionButtons { get; protected set; }
-
         public SwipeActionButtonList RightSwipeActionButtons { get; protected set; }
 
         protected UITapGestureRecognizer coverRecognizer;
@@ -689,6 +688,51 @@ namespace NachoClient.iOS
                 return false;
             }
             return swipeRecognizer.Enabled;
+        }
+
+        public void ClearActions (SwipeSide whatSide)
+        {
+            int numCurrentActions = 0;
+            if(SwipeSide.LEFT == whatSide){
+                numCurrentActions = LeftSwipeActionButtons.Count;
+            } else {
+                numCurrentActions = RightSwipeActionButtons.Count;
+            }
+            for (int i = 0; i < numCurrentActions; i++) {
+                RemoveAction (whatSide, 0);
+            }
+        }
+
+        public void AddAction (SwipeActionDescriptor descriptor, SwipeSide side)
+        {
+            SetAction (descriptor, side);
+        }
+
+        public void UpdateAction (SwipeActionDescriptor descriptor, SwipeSide side, int index)
+        {
+            SetAction (descriptor, side, index);
+        }
+
+        public void RemoveAction (SwipeSide side, int index)
+        {
+            SetAction (null, side, index);
+        }
+
+        public bool ContainsAction (SwipeActionDescriptor descriptor, SwipeSide whatSide)
+        {
+            List<SwipeActionButton> actionButtons;
+            if (SwipeSide.LEFT == whatSide) {
+                actionButtons = (List<SwipeActionButton>)LeftSwipeActionButtons;
+            } else {
+                actionButtons = (List<SwipeActionButton>)RightSwipeActionButtons;
+            }
+
+            foreach (SwipeActionButton sab in actionButtons) {
+                if (sab.Config.Tag == descriptor.Tag) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         protected void MayCompletePullOut ()
