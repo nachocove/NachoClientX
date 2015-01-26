@@ -34,6 +34,7 @@ namespace NachoCore.Model
 
             var map = new McMapEmailAddressEntry ();
             map.ObjectId = objectId;
+            map.AccountId = accountId;
             map.EmailAddressId = emailAddress.Id;
             map.AddressType = addressType;
             // Override the default current version as there may be migration between this and current version
