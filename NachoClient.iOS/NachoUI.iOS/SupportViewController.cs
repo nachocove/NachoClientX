@@ -197,7 +197,8 @@ namespace NachoClient.iOS
             else if (!LoginHelpers.HasFirstSyncCompleted(LoginHelpers.GetCurrentAccountId())) {
                 NavigationItem.SetHidesBackButton (false, true);
             } else {
-                NavigationItem.SetHidesBackButton (true, true);
+                // Uncomment to hide <More
+                // NavigationItem.SetHidesBackButton (true, true);
             }
         }
 

@@ -53,9 +53,10 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            if (null != NavigationItem) {
-                NavigationItem.SetHidesBackButton (true, false);
-            }
+            // Uncomment to hide <More
+            // if (null != NavigationItem) {
+            //     NavigationItem.SetHidesBackButton (true, false);
+            // }
 
             account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
             CreateView ();
