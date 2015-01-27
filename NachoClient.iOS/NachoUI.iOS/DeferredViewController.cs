@@ -15,9 +15,9 @@ namespace NachoClient.iOS
             SetEmailMessages (new NachoDeferredEmailMessages ());
         }
 
-        protected override void CustomizeBackButton ()
-        {
-            BackShouldSwitchToFolders ();
-        }
+//        protected override void CustomizeBackButton ()
+//        {
+//            BackShouldSwitchToFolders ();
+//        }
     }
 }

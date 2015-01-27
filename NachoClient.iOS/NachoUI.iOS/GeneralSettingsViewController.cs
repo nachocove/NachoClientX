@@ -60,9 +60,10 @@ namespace NachoClient.iOS
             View.BackgroundColor = A.Color_NachoBackgroundGray;
             contentView.BackgroundColor = A.Color_NachoBackgroundGray;
 
-            if (null != NavigationItem) {
-                NavigationItem.SetHidesBackButton (true, false);
-            }
+            // Uncomment to hide <More
+            // if (null != NavigationItem) {
+            //     NavigationItem.SetHidesBackButton (true, false);
+            // }
             Util.ConfigureNavBar (false, this.NavigationController);
 
             yOffset = A.Card_Vertical_Indent;

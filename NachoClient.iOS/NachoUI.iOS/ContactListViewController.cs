@@ -42,6 +42,8 @@ namespace NachoClient.iOS
             swipeView = new SwipeView ();
             swipeView.Frame = new RectangleF (10, 0, View.Frame.Width - 20, 55);
             swipeView.BackgroundColor = UIColor.White;
+            swipeView.PagingEnabled = false;
+            swipeView.DecelerationRate = 0.1f;
 
             View.AddSubview (swipeView);
             swipeViewDateSource = new LettersSwipeViewDataSource (this);
@@ -76,6 +78,7 @@ namespace NachoClient.iOS
             addContactButton.TintColor = A.Color_NachoBlue;
 
             NavigationItem.RightBarButtonItem = addContactButton;
+            NavigationItem.LeftItemsSupplementBackButton = true;
             NavigationItem.LeftBarButtonItem = searchButton;
 
             NavigationController.NavigationBar.Translucent = false;

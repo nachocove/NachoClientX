@@ -1284,9 +1284,7 @@ namespace NachoClient.iOS
             //c.Phone = phoneDetailLabel.Text;
             c.Location = locationField.Text;
             c.attachments.Clear ();
-            foreach (var attachment in attachmentView.AttachmentList) {
-                c.attachments.Add (attachment);
-            }
+            c.attachments = attachmentView.AttachmentList;
                 
             // Extras
             c.OrganizerName = Pretty.UserNameForAccount (account);

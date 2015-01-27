@@ -73,7 +73,11 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            NavigationItem.SetHidesBackButton (true, false);
+            // Uncomment to hide <More
+            // if (null != NavigationItem) {
+            //     NavigationItem.SetHidesBackButton (true, false);
+            // }
+
             account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
 
             CreateView ();
@@ -175,6 +179,7 @@ namespace NachoClient.iOS
             SearchDisplayController.SearchResultsTableView.Source = AttachmentsSource;
 
             searchButton.TintColor = A.Color_NachoBlue;
+            NavigationItem.LeftItemsSupplementBackButton = true;
             NavigationItem.LeftBarButtonItem = searchButton;
             searchButton.Clicked += searchClicked;
                 

@@ -1072,7 +1072,11 @@ namespace NachoClient
         public static void CallContact (string segueIdentifier, McContact contact, NcUIViewController owner)
         {
             if (0 == contact.PhoneNumbers.Count) {
-                owner.PerformSegue (segueIdentifier, new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.PhoneNumberAdder));
+                if (contact.CanUserEdit ()) {
+                    owner.PerformSegue (segueIdentifier, new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.PhoneNumberAdder));
+                } else {
+                    ComplainAbout ("No Phone Number", "This contact does not have a phone number, and we are unable to modify the contact.");
+                }
             } else if (1 == contact.PhoneNumbers.Count) {
                 Util.PerformAction ("tel", contact.GetPrimaryPhoneNumber ());
             } else {
@@ -1085,11 +1089,15 @@ namespace NachoClient
                 owner.PerformSegue (segueIdentifier, new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultPhoneSelector));
             }
         }
-
+            
         public static void EmailContact (string segueIdentifier, McContact contact, NcUIViewController owner)
         {
             if (0 == contact.EmailAddresses.Count) {
-                owner.PerformSegue (segueIdentifier, new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder));
+                if (contact.CanUserEdit ()) {
+                    owner.PerformSegue (segueIdentifier, new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder));
+                } else {
+                    ComplainAbout ("No Email Address", "This contact does not have an email address, and we are unable to modify the contact.");
+                }
             } else if (1 == contact.EmailAddresses.Count) {
                 owner.PerformSegue ("SegueToMessageCompose", new SegueHolder (contact.GetEmailAddress ()));
             } else {

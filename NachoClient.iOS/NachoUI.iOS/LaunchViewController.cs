@@ -125,7 +125,7 @@ namespace NachoClient.iOS
             // Gotta keep global state :(
             selectedEmailService = service;
             serviceTableExpanded = willExpand;
-            ConfigureAndLayout ();
+            ConfigureAndLayoutInternal ();
 
             // Hide email/password/submit before they've selected a service.
             // Show email/password/submit after they've selected a service.
@@ -299,17 +299,28 @@ namespace NachoClient.iOS
             View.AddSubview (loginTriangles);
         }
 
+        protected override void ConfigureAndLayout ()
+        {
+            emailField.Text = "";
+            passwordField.Text = "";
+            emailServices.SetSelectedItem (McAccount.AccountServiceEnum.None);
+            emailServiceTableView.ReloadData ();
+            ConfigureAndLayoutInternal();
+        }
+
+
         /// <summary>
         /// Hides the Advances & Customer Support buttons when the service table is visible
         /// </summary>
-        protected override void ConfigureAndLayout ()
+        protected void ConfigureAndLayoutInternal ()
         {
+            ViewFramer.Create (emailServiceTableView).Height (emailServices.GetTableHeight ());
+
             UIView.AnimateKeyframes (1, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
                 UIView.AddKeyframeWithRelativeStartTime (0, 1, () => {
                     circleMail.Alpha = (keyboardHeight == 0 ? 1.0f : 0.0f);
                     supportButton.Alpha = (serviceTableExpanded ? 0.0f : 1.0f);
                     advancedButton.Alpha = (serviceTableExpanded ? 0.0f : 1.0f);
-                    ViewFramer.Create (emailServiceTableView).Height (emailServices.GetTableHeight ());
                     scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
                     RectangleF contentFrame;
                     contentFrame = new RectangleF (0, 0, View.Frame.Width, yOffset);
@@ -500,7 +511,7 @@ namespace NachoClient.iOS
             }
             keyboardHeight = newHeight;
 
-            ConfigureAndLayout ();
+            ConfigureAndLayoutInternal ();
 
             if (!shortScreen) {
                 scrollView.ScrollRectToVisible (new RectangleF (supportButton.Frame.X, supportButton.Frame.Y + 10, supportButton.Frame.Width, supportButton.Frame.Height), false);

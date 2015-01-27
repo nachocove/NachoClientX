@@ -75,9 +75,10 @@ namespace NachoClient.iOS
 
         protected void CreateView ()
         {
-            if (null != NavigationItem) {
-                NavigationItem.SetHidesBackButton (true, false);
-            }
+            // Uncomment to hide <More
+            // if (null != NavigationItem) {
+            //     NavigationItem.SetHidesBackButton (true, false);
+            // }
 
             var composeButton = new UIBarButtonItem ();
             Util.SetAutomaticImageForButton (composeButton, "contact-newemail");

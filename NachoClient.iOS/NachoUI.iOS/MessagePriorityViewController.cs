@@ -84,7 +84,12 @@ namespace NachoClient.iOS
 
             if (DateControllerType.Defer == dateControllerType) {
                 UILabel messageSubject = new UILabel (new RectangleF (30, yOffset, View.Frame.Width - 60, 25));
-                messageSubject.Text = thread.GetEmailMessage (0).Subject;
+                var message = thread.SingleMessageSpecialCase ();
+                if (null != message) {
+                    messageSubject.Text = Pretty.SubjectString(message.Subject);
+                } else {
+                    messageSubject.Text = "";
+                }
                 messageSubject.Font = A.Font_AvenirNextRegular17;
                 messageSubject.TextColor = UIColor.White;
                 priorityView.Add (messageSubject);
@@ -102,7 +107,7 @@ namespace NachoClient.iOS
                     new ButtonInfo ("Tonight", "modal-tonight", () => DateSelected (MessageDeferralType.Tonight, DateTime.MinValue)),
                     new ButtonInfo ("Tomorrow", "modal-tomorrow", () => DateSelected (MessageDeferralType.Tomorrow, DateTime.MinValue)),
                     new ButtonInfo (null, null, null),
-                    new ButtonInfo ("Weekend", "modal-this-week", () => DateSelected (MessageDeferralType.Weekend, DateTime.MinValue)),
+                    new ButtonInfo ("Weekend", "modal-weekend", () => DateSelected (MessageDeferralType.Weekend, DateTime.MinValue)),
                     new ButtonInfo ("Next Week", "modal-next-week", () => DateSelected (MessageDeferralType.NextWeek, DateTime.MinValue)),
                     new ButtonInfo ("Forever", "modal-forever", () => DateSelected (MessageDeferralType.Forever, DateTime.MinValue)),
                     new ButtonInfo (null, null, null),
@@ -119,7 +124,7 @@ namespace NachoClient.iOS
                     new ButtonInfo (null, null, null),
                     new ButtonInfo ("Tomorrow", "modal-tomorrow", () => DateSelected (MessageDeferralType.Tomorrow, DateTime.MinValue)),
                     new ButtonInfo ("Next Week", "modal-next-week", () => DateSelected (MessageDeferralType.NextWeek, DateTime.MinValue)),
-                    new ButtonInfo ("Next Month", "modal-next-week", () => DateSelected (MessageDeferralType.NextMonth, DateTime.MinValue)),
+                    new ButtonInfo ("Next Month", "modal-nextmonth", () => DateSelected (MessageDeferralType.NextMonth, DateTime.MinValue)),
                     new ButtonInfo (null, null, null),
                     null,
                     new ButtonInfo ("Pick Date", "modal-pick-date", () => PerformSegue ("MessagePriorityToDatePicker", this)),

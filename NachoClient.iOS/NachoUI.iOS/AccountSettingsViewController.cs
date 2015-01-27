@@ -160,7 +160,7 @@ namespace NachoClient.iOS
             nameLabel.Font = A.Font_AvenirNextRegular14;
             nameLabel.TextAlignment = UITextAlignment.Left;
             nameLabel.TextColor = LABEL_TEXT_COLOR;
-            nameLabel.Text = "Name";
+            nameLabel.Text = "Description";
             settingsView.Add (nameLabel);
 
             UITextField accountNameTextField = new UITextField (new RectangleF (nameLabel.Frame.Right + SPACER, yOffset, View.Frame.Width - 149, TEXTFIELD_HEIGHT));

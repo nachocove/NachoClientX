@@ -887,7 +887,7 @@ namespace NachoClient.iOS
         {
             var list = NcEmailManager.PriorityInbox ();
             var thread = list.GetEmailThread (0);
-            var message = thread.GetEmailMessage (0);
+            var message = thread.SingleMessageSpecialCase ();
             var notif = new UILocalNotification () {
                 AlertAction = null,
                 AlertBody = ((null == message.Subject) ? "(No Subject)" : message.Subject) + ", From " + message.From,

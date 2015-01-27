@@ -1,16 +1,3 @@
-﻿This pre-beta release addresses the following issues:
-1) On Exchange 2007 and Hotmail, messages in list view contained no preview lines of message.
-2) Certain username combinations for Exchange users were not recognized.
-3) Visually distinguish between read/unread messages.
-4) UI stalled on app startup for Google and Hotmail users.
-5) Certain crashes related to slow Exchange server responses.
-6) Ability to reach and modify server settings in advanced settings.
-7) Faster load times of messages.
-8) Certain calendar items were displayed poorly.
-9) Other internal fixes and optimizations.
-
-Known issues that are not addressed in this release
-1) Slow app launch times.
-2) Duplicate entries for contacts.
-3) Drafts folder for messages that are not completed.
+﻿Pre-beta release fixes certain Exchange 2007 server issues. Certain Sync items go quite a bit faster. 
+Known issues:  Duplicate Contacts may still be created. 
 

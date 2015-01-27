@@ -465,6 +465,23 @@ namespace NachoClient.iOS
             var view = (SwipeActionView)cell.ViewWithTag (SWIPE_VIEW_TAG);
             view.EnableSwipe (null != contact && allowSwiping);
 
+            if (view.IsSwipeEnabled ()) {
+                view.ClearActions (SwipeSide.LEFT);
+                view.ClearActions (SwipeSide.RIGHT);
+
+                if (contact.CanUserEdit ()) {
+                    view.SetAction (CALL_BUTTON, SwipeSide.LEFT);
+                    view.SetAction (EMAIL_BUTTON, SwipeSide.RIGHT);
+                } else {
+                    if (0 < contact.PhoneNumbers.Count) {
+                        view.SetAction (CALL_BUTTON, SwipeSide.LEFT);
+                    }
+                    if (0 < contact.EmailAddresses.Count) {
+                        view.SetAction (EMAIL_BUTTON, SwipeSide.RIGHT);
+                    }
+                }
+            }
+
             if (null == contact) {
                 titleLabel.Text = "This contact is unavailable";
                 titleLabel.TextColor = UIColor.LightGray;

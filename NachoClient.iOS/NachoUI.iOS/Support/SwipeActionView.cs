@@ -683,6 +683,27 @@ namespace NachoClient.iOS
             swipeRecognizer.Enabled = false;
         }
 
+        public bool IsSwipeEnabled ()
+        {
+            if (null == swipeRecognizer) {
+                return false;
+            }
+            return swipeRecognizer.Enabled;
+        }
+
+        public void ClearActions (SwipeSide whatSide)
+        {
+            int numCurrentActions = 0;
+            if (SwipeSide.LEFT == whatSide) {
+                numCurrentActions = LeftSwipeActionButtons.Count;
+            } else {
+                numCurrentActions = RightSwipeActionButtons.Count;
+            }
+            for (int i = 0; i < numCurrentActions; i++) {
+                SetAction (null, whatSide, 0);
+            }
+        }
+
         protected void MayCompletePullOut ()
         {
             if (SnapAllShownThreshold <= Math.Abs (swipingView.LastMovePercentage)) {
