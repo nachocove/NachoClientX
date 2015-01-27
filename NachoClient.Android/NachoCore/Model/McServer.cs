@@ -19,7 +19,8 @@ namespace NachoCore.Model
 
         public const string Default_Path = "/Microsoft-Server-ActiveSync";
         public const string GMail_Host = "m.google.com";
-        public const string GMail_MX_Suffix = "ASPMX.L.GOOGLE.com";
+        public const string GMail_MX_Suffix = "aspmx.l.google.com";
+        public const string GMail_MX_Suffix2 = "googlemail.com";
         public const string HotMail_Host = "s.outlook.com";
         public const string HotMail_Suffix = "hotmail.com";
         public const string Outlook_Suffix = "outlook.com";

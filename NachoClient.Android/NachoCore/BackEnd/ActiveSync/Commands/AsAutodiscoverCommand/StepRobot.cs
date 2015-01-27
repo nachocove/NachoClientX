@@ -1115,7 +1115,8 @@ namespace NachoCore.ActiveSync
                             NsType.MX == response.NsType &&
                             AtLeastOne<MxRecord> (response.Answers)) {
                         var aBest = (MxRecord)response.Answers.Where (r0 => r0 is MxRecord).OrderBy (r1 => ((MxRecord)r1).Preference).First ();
-                        if (aBest.MailExchange.EndsWith (McServer.GMail_MX_Suffix, StringComparison.OrdinalIgnoreCase)) {
+                        if (aBest.MailExchange.EndsWith (McServer.GMail_MX_Suffix, StringComparison.OrdinalIgnoreCase) ||
+                            aBest.MailExchange.EndsWith (McServer.GMail_MX_Suffix2, StringComparison.OrdinalIgnoreCase)) {
                             Command.ProtoControl.AutoDInfo = AutoDInfoEnum.MXFoundGoogle;
                             SrServerUri = McServer.BaseUriForHost (McServer.GMail_Host);
                             return Event.Create ((uint)SmEvt.E.Success, "SRPRMXSUCCESS");
