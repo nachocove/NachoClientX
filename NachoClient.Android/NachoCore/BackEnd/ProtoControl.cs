@@ -93,6 +93,10 @@ namespace NachoCore
         {
         }
 
+        public virtual void Remove ()
+        {
+        }
+
         public virtual void CertAskResp (bool isOkay)
         {
         }
