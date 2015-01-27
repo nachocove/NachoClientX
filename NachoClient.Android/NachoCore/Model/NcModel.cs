@@ -48,7 +48,7 @@ namespace NachoCore.Model
         public void EliminateIfStale (Action action)
         {
             lock (LockObj) {
-                var wayBack = DateTime.UtcNow.AddMinutes (-2);
+                var wayBack = DateTime.UtcNow.AddMinutes (-1);
                 if (LastAccess < wayBack) {
                     action ();
                     Dispose ();
@@ -352,7 +352,7 @@ namespace NachoCore.Model
                     }
                      */
                 }
-            }, null, 10000, 1000);
+            }, null, 10000, 2000);
             CheckPointTimer.Stfu = true;
         }
 
