@@ -249,6 +249,9 @@
     <Compile Include="..\Test.Android\McServerTest.cs">
       <Link>McServerTest.cs</Link>
     </Compile>
+    <Compile Include="..\Test.Android\McMapEmailAddressEntryTest.cs">
+      <Link>McMapEmailAddressEntryTest.cs</Link>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.MonoTouch.CSharp.targets" />

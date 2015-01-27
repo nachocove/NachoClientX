@@ -51,6 +51,8 @@ namespace NachoClient.iOS
 
         public McAccount Account { get; set; }
 
+        public bool IsMigrating { get; set; }
+
         // iOS kills us after 30, so make sure we dont get there
         private const int KPerformFetchTimeoutSeconds = 25;
         private int BackgroundIosTaskId = -1;
@@ -195,30 +197,48 @@ namespace NachoClient.iOS
 //            });
         }
 
-        // This method is common to both launching into the background and into the foreground.
-        // It gets called once during the app lifecycle.
-        public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
+        /// <summary>
+        /// Back-end initialization post launching. All non-UI (especially database-dependent) service
+        /// initialization go here. 
+        /// </summary>
+        /// <returns><c>true</c>, if initialization was backended, <c>false</c> otherwise.</returns>
+        /// <param name="launchOptions">Launch options.</param>
+        public bool InitializeBackEnd (UIApplication application, NSDictionary launchOptions, bool finishingMigration = false)
         {
-            Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Called");
-            bool isSet = ThreadPool.SetMaxThreads (50, 16);
-            NcAssert.True (isSet);
-
-            StartUIMonitor ();
-            const uint MB = 1000 * 1000; // MB not MiB
-            WebCache.Configure (1 * MB, 50 * MB);
-            NcApplication.Instance.StartClass1Services ();
-            Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartClass1Services complete");
+            IsMigrating = false;
+            if (!NcApplication.Instance.StartClass1Services (finishingMigration)) {
+                Log.Info (Log.LOG_LIFECYCLE, "InitializeBackEnd: deferred due to migration");
+                IsMigrating = true;
+                return false;
+            }
+            Log.Info (Log.LOG_LIFECYCLE, "InitializeBackEnd: StartClass1Services complete");
 
             NcApplication.Instance.StartClass2Services ();
-            Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartClass2Services complete");
+            Log.Info (Log.LOG_LIFECYCLE, "InitializeBackEnd: StartClass2Services complete");
 
             NcApplication.Instance.StartClass3Services ();
-            Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartClass3Services complete");
-
-            Account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
+            Log.Info (Log.LOG_LIFECYCLE, "InitializeBackEnd: StartClass3Services complete");
 
             NcApplication.Instance.AppStartupTasks ();
 
+            Log.Info (Log.LOG_LIFECYCLE, "InitializeBackEnd: NcApplication callbacks registered");
+
+            NcApplication.Instance.Class4LateShowEvent += (object sender, EventArgs e) => {
+                if (!StartCrashReportingHasHappened) {
+                    StartCrashReportingHasHappened = true;
+                    InvokeOnUIThread.Instance.Invoke (delegate {
+                        StartCrashReporting ();
+                        Log.Info (Log.LOG_LIFECYCLE, "Class4LateShowEvent: StartCrashReporting complete");
+                    });
+                }
+                // Telemetry is in AppDelegate because the implementation is iOS-only right now.
+                Telemetry.StartService ();
+            };
+            return true;
+        }
+
+        private void InitializeUI (UIApplication application, NSDictionary launchOptions)
+        {
             application.SetStatusBarStyle (UIStatusBarStyle.LightContent, true);
 
             UINavigationBar.Appearance.BarTintColor = A.Color_NachoGreen;
@@ -237,24 +257,33 @@ namespace NachoClient.iOS
             NSUrlProtocol.RegisterClass (new MonoTouch.ObjCRuntime.Class (typeof(CidImageProtocol)));
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: iOS Cocoa setup complete");
+        }
+
+        // This method is common to both launching into the background and into the foreground.
+        // It gets called once during the app lifecycle.
+        public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
+        {
+            Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Called");
+            bool isSet = ThreadPool.SetMaxThreads (50, 16);
+            NcAssert.True (isSet);
+
+            StartUIMonitor ();
+            const uint MB = 1000 * 1000; // MB not MiB
+            WebCache.Configure (1 * MB, 50 * MB);
 
             NcApplication.Instance.CredReqCallback = CredReqCallback;
             NcApplication.Instance.ServConfReqCallback = ServConfReqCallback;
             NcApplication.Instance.CertAskReqCallback = CertAskReqCallback;
 
-            Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: NcApplication callbacks registered");
+            InitializeBackEnd (application, launchOptions);
 
-            NcApplication.Instance.Class4LateShowEvent += (object sender, EventArgs e) => {
-                if (!StartCrashReportingHasHappened) {
-                    StartCrashReportingHasHappened = true;
-                    InvokeOnUIThread.Instance.Invoke (delegate {
-                        StartCrashReporting ();
-                        Log.Info (Log.LOG_LIFECYCLE, "Class4LateShowEvent: StartCrashReporting complete");
-                    });
-                }
-                // Telemetry is in AppDelegate because the implementation is iOS-only right now.
-                Telemetry.StartService ();
-            };
+            // NOTE: If migrating is needed, it is possible that we are altering McAccount itself. In that case,
+            //       this McAccount object may not be correct. However, we need a valid object so that 
+            //       LoginHelper.IsCurrentAccountSet() returns the right result. And we will reset this 
+            //       later.
+            Account = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
+
+            InitializeUI (application, launchOptions);
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: NcApplication Class4LateShowEvent registered");
 
@@ -283,7 +312,7 @@ namespace NachoClient.iOS
 
             NcKeyboardSpy.Instance.Init ();
 
-            if ("SegueToTabController" == StartupViewController.NextSegue ()) {
+            if (!IsMigrating && ("SegueToTabController" == StartupViewController.NextSegue ())) {
                 var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
                 var vc = storyboard.InstantiateViewController ("NachoTabBarController");
                 Log.Info (Log.LOG_UI, "fast path to tab bar controller: {0}", vc);
@@ -334,7 +363,7 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_LIFECYCLE, "BeginBackgroundTask: Callback exit");
             });
 
-            if (LoginHelpers.IsCurrentAccountSet () && LoginHelpers.HasFirstSyncCompleted (LoginHelpers.GetCurrentAccountId ())) {
+            if (!IsMigrating && LoginHelpers.IsCurrentAccountSet () && LoginHelpers.HasFirstSyncCompleted (LoginHelpers.GetCurrentAccountId ())) {
                 BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
 
                 int accountId = LoginHelpers.GetCurrentAccountId ();
@@ -516,7 +545,7 @@ namespace NachoClient.iOS
                 break;
             }
         }
-            
+
         /// Status bar height can change when the user is on a call or using navigation
         public override void ChangedStatusBarFrame (UIApplication application, RectangleF oldStatusBarFrame)
         {

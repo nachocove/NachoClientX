@@ -30,6 +30,9 @@ namespace NachoCore.Model
         [MaxLength (256)]
         public string Email { get; set; }
 
+        /// McEmailAddress index of Email
+        public int EmailAddressId { get; set; }
+
         /// Display name of attendee
         [MaxLength (256)]
         public string Name { get; set; }
@@ -75,7 +78,7 @@ namespace NachoCore.Model
                 return CALENDAR;
             } else if (r.GetType () == typeof(McException)) {
                 return EXCEPTION;
-            } else if (r.GetType() == typeof(McMeetingRequest)) {
+            } else if (r.GetType () == typeof(McMeetingRequest)) {
                 return MEETING_REQUEST;
             } else {
                 NcAssert.True (false);
@@ -113,6 +116,18 @@ namespace NachoCore.Model
             protected set {
                 displayName = value;
             }
+        }
+
+        public override int Insert ()
+        {
+            EmailAddressId = McEmailAddress.Get (AccountId, Email);
+            return base.Insert ();
+        }
+
+        public override int Update ()
+        {
+            EmailAddressId = McEmailAddress.Get (AccountId, Email);
+            return base.Update ();
         }
     }
 }

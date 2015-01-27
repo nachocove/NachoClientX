@@ -68,8 +68,14 @@ namespace NachoCore.Model
         /// All To addresses, comma separated (optional)
         public string To { set; get; }
 
+        /// Indexes of To in McEmailAddress table
+        protected List<int> dbToEmailAddressId { set; get; }
+
         /// All Cc addresses, comma separated (optional)
         public string Cc { set; get; }
+
+        /// Indexes of Cc in McEmailAddress table
+        protected List<int> dbCcEmailAddressId { set; get; }
 
         /// Email address of the sender (optional)
         public string From { set; get; }
@@ -127,6 +133,9 @@ namespace NachoCore.Model
 
         /// Sender, maybe not the same as From (optional)
         public string Sender { set; get; }
+
+        /// McEmailAddress Index of Sender
+        public int SenderEmailAddressId { set; get; }
 
         /// The user is on the bcc list (optional)
         public bool ReceivedAsBcc { set; get; }
@@ -663,6 +672,8 @@ namespace NachoCore.Model
             _Categories = new List<McEmailMessageCategory> ();
             _MeetingRequest = null;
             isAncillaryInMemory = false;
+            dbToEmailAddressId = new List<int> ();
+            dbCcEmailAddressId = new List<int> ();
         }
 
         [Ignore]
@@ -689,6 +700,30 @@ namespace NachoCore.Model
             }
         }
 
+        [Ignore]
+        public List<int> ToEmailAddressId {
+            get {
+                ReadAncillaryData ();
+                return dbToEmailAddressId;
+            }
+            set {
+                ReadAncillaryData ();
+                dbToEmailAddressId = value;
+            }
+        }
+
+        [Ignore]
+        public List<int> CcEmailAddressId {
+            get {
+                ReadAncillaryData ();
+                return dbCcEmailAddressId;
+            }
+            set {
+                ReadAncillaryData ();
+                dbCcEmailAddressId = value;
+            }
+        }
+
         protected NcResult ReadAncillaryData ()
         {
             NcAssert.True (!isDeleted);
@@ -702,6 +737,9 @@ namespace NachoCore.Model
             _Categories = NcModel.Instance.Db.Table<McEmailMessageCategory> ().Where (x => x.ParentId == Id).ToList ();
             _MeetingRequest = NcModel.Instance.Db.Table<McMeetingRequest> ().Where (x => x.EmailMessageId == Id).SingleOrDefault ();
             isAncillaryInMemory = true;
+            dbToEmailAddressId = McMapEmailAddressEntry.QueryMessageToAddressIds (AccountId, Id);
+            dbCcEmailAddressId = McMapEmailAddressEntry.QueryMessageCcAddressIds (AccountId, Id);
+
             return NcResult.OK ();
         }
 

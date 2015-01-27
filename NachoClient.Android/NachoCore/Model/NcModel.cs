@@ -226,6 +226,8 @@ namespace NachoCore.Model
             Db.CreateTable<McPath> ();
             Db.CreateTable<McNote> ();
             Db.CreateTable<McPortrait> ();
+            Db.CreateTable<McMapEmailAddressEntry> ();
+            Db.CreateTable<McMigration> ();
             ConfigureDb (Db);
         }
 

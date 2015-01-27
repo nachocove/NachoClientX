@@ -194,14 +194,20 @@ namespace NachoCore
             }
         }
 
-        public void StartClass1Services ()
+        public bool StartClass1Services (bool finishingMigration = false)
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass1Services called.");
-            NcTask.StartService ();
-            NcModel.Instance.GarbageCollectFiles ();
-            NcModel.Instance.Start ();
+            if (!finishingMigration) {
+                NcTask.StartService ();
+                NcModel.Instance.GarbageCollectFiles ();
+                NcModel.Instance.Start ();
+                if (NcMigration.WillStartService ()) {
+                    return false; // cannot finish all class 1 services
+                }
+            }
             EstablishService ();
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass1Services exited.");
+            return true;
         }
 
         public void StopClass1Services ()
@@ -307,7 +313,7 @@ namespace NachoCore
             MonitorTimer.Dispose ();
         }
 
-        public void MonitorReport (string moniker = null, [CallerFilePath] string sourceFilePath = "",  [CallerLineNumber] int sourceLineNumber = 0)
+        public void MonitorReport (string moniker = null, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
         {
             if (!String.IsNullOrEmpty (moniker)) {
                 Log.Info (Log.LOG_SYS, "Monitor: {0} from line {1} of {2}", moniker, sourceLineNumber, sourceFilePath);
