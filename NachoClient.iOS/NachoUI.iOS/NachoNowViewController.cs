@@ -28,6 +28,8 @@ namespace NachoClient.iOS
         protected NcCapture ReloadCapture;
         private string ReloadCaptureName;
 
+        protected static bool isForwarding;
+
         public NachoNowViewController (IntPtr handle) : base (handle)
         {
         }
@@ -120,7 +122,7 @@ namespace NachoClient.iOS
                     SendRunningLateMessage (eventId);
                     break;
                 case HotEventView.FORWARD_TAG:
-                    // FIXME
+                    ForwardInvite (eventId);
                     break;
                 case HotEventView.OPEN_TAG:
                     var e = McEvent.QueryById<McEvent> (eventId);
@@ -232,7 +234,12 @@ namespace NachoClient.iOS
                 var dc = (MessageComposeViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
                 var c = holder.value as McCalendar;
-                dc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, c.OrganizerEmail), c.Subject, "Running late");
+                if (isForwarding) {
+                    dc.SetCalendarInvite (c);
+                    dc.SetEmailPresetFields (null, "Fwd: " + c.Subject, "");
+                } else {
+                    dc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, c.OrganizerEmail), c.Subject, "Running late");
+                }
                 return;
             }
             if (segue.Identifier == "NachoNowToMessageList") {
@@ -357,6 +364,7 @@ namespace NachoClient.iOS
 
         public void SendRunningLateMessage (int eventId)
         {
+            isForwarding = false;
             var c = CalendarHelper.GetMcCalendarRootForEvent (eventId);
             if (null != c) {
                 if (String.IsNullOrEmpty (c.OrganizerEmail)) {
@@ -369,10 +377,11 @@ namespace NachoClient.iOS
 
         public void ForwardInvite (int eventId)
         {
-//            var c = CalendarHelper.GetMcCalendarRootForEvent (eventId);
-//            if (null != c) {
-//                PerformSegue ("CalendarToEmailCompose", new SegueHolder (c));
-//            }
+            isForwarding = true;
+            var c = CalendarHelper.GetMcCalendarRootForEvent (eventId);
+            if (null != c) {
+                PerformSegue ("CalendarToEmailCompose", new SegueHolder (c));
+            }
         }
 
         ///  IMessageTableViewSourceDelegate
