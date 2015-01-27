@@ -1029,10 +1029,11 @@ namespace NachoClient.iOS
             var calFolder = new McFolder ();
             if (!calendarChanged) {
                 if (action == CalendarItemEditorAction.create) {
-                    // The new event should go in the default calendar.  (In most cases, there is only one
-                    // calendar folder.  But Hotmail does things differently, and choosing the correct
-                    // folder is vital.)  Start with the first calendar in the list, regardless of its
-                    // type.  But then look for a default calendar folder elsewhere in the calendar list.
+                    // The initial setting of the calendar picker should be the default calendar folder.
+                    // (In most cases, there is only one calendar folder.  But Hotmail does things
+                    // differently, and choosing the correct folder is vital.)  Start with the first
+                    // calendar in the list, regardless of its type.  But then look for a default
+                    // calendar folder elsewhere in the calendar list.
                     calFolder = calendars.GetFolder (0);
                     for (int i = 1; i < calendars.Count (); ++i) {
                         var cal = calendars.GetFolder (i);
