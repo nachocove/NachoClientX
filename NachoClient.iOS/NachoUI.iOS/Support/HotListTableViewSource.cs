@@ -428,20 +428,63 @@ namespace NachoClient.iOS
 
             var cellHeight = (tableView.Frame.Height - 40) / 8;
             var cardWidth = noMessagesView.Frame.Width;
+            var rightIndent = (2 * A.Card_Horizontal_Indent) + (cellHeight / 2);
 
-            var messageFrameHeight = noMessagesView.Frame.Height - ((cellHeight * 3) + (4 * A.Card_Vertical_Indent));
+            var buttonsFrame = ((cellHeight * 3) + (2 * A.Card_Vertical_Indent));
+            var messageFrameHeight = noMessagesView.Frame.Height - buttonsFrame;
 
-            var messagePadding = (NoMessageThreads () ? messageFrameHeight : messageFrameHeight / 2);
+            var isFourS = false;
+            var isSixOrGreater = false;
+            var isSixPlusOrGreater = false;
+
+            if (260 > noMessagesView.Frame.Height) {
+                isFourS = true;
+            } else {
+                if (360 <= noMessagesView.Frame.Width) {
+                    isSixOrGreater = true;
+                }
+                if (390 < noMessagesView.Frame.Width) {
+                    isSixPlusOrGreater = true;
+                }
+            }
+
+
+            // Nacho Mail icon
+            var nachoMailIcon = new UIImageView ();
+            nachoMailIcon.Frame = (isSixOrGreater ? new RectangleF (cardWidth / 2 - 32.5f, A.Card_Vertical_Indent, 65, 65) : new RectangleF (cardWidth / 2 - 22.5f, A.Card_Horizontal_Indent, 45, 45));
+            nachoMailIcon.Image = UIImage.FromBundle ("Bootscreen-1");
+            nachoMailIcon.Hidden = isFourS;
+            noMessagesView.AddSubview (nachoMailIcon);
+
+            // Chips left
+            var chipsLeftIcon = new UIImageView ();
+            chipsLeftIcon.Frame = (isSixOrGreater ? new RectangleF (0, messageFrameHeight - 45, 115, 45) : new RectangleF (0, messageFrameHeight - 33, 85, 33));
+            chipsLeftIcon.Image = UIImage.FromBundle ("gen-nacholeft");
+            chipsLeftIcon.Hidden = isFourS;
+            noMessagesView.AddSubview (chipsLeftIcon);
+
+            // Chips right
+            var chipsRightIcon = new UIImageView ();
+            chipsRightIcon.Frame = (isSixOrGreater ? new RectangleF (cardWidth - 115, messageFrameHeight - 45, 115, 45) : new RectangleF (cardWidth - 85, messageFrameHeight - 33, 85, 33));
+            chipsRightIcon.Image = UIImage.FromBundle ("gen-nachoright");
+            chipsRightIcon.Hidden = isFourS;
+            noMessagesView.AddSubview (chipsRightIcon);
 
             // Empty Hot list label
             var stringAttributes = new UIStringAttributes {
                 ForegroundColor = A.Color_NachoGreen,
                 BackgroundColor = UIColor.White,
-                Font = A.Font_AvenirNextDemiBold14
+                Font = (isSixPlusOrGreater ? A.Font_AvenirNextDemiBold17 : A.Font_AvenirNextDemiBold14)
             };
 
-            var noHotMessagesString = new NSMutableAttributedString ("You do not have any Hot messages. \n \nStart adding Hot messages by tapping on the  ", stringAttributes);
-            var noHotMessagesStringPartTwo = new NSAttributedString ("  icon in your mail.", stringAttributes);
+            NSMutableAttributedString lastCardMessage = null;
+
+            if (NoMessageThreads ()) {
+                lastCardMessage = new NSMutableAttributedString ("You do not have any Hot messages. \n \nStart adding Hot messages by tapping on the  ", stringAttributes);
+            } else {
+                lastCardMessage = new NSMutableAttributedString ("Start adding Hot messages by tapping on the  ", stringAttributes);
+            }
+            var lastCardMessagePartTwo = new NSAttributedString ("  icon in your mail.", stringAttributes);
 
             var inlineIcon = new NachoInlineImageTextAttachment ();
             inlineIcon.Image = UIImage.FromBundle ("email-not-hot");
@@ -449,21 +492,20 @@ namespace NachoClient.iOS
             var stringWithAttachment = new NSAttributedString ();
             var stringWithImage = stringWithAttachment.FromTextAttachment (inlineIcon);
 
-            noHotMessagesString.Append (stringWithImage);
-            noHotMessagesString.Append (noHotMessagesStringPartTwo);
+            lastCardMessage.Append (stringWithImage);
+            lastCardMessage.Append (lastCardMessagePartTwo);
 
-            var messageWidth = 320 - 4 * A.Card_Horizontal_Indent;
+            var messageWidth = (isSixPlusOrGreater ? noMessagesView.Frame.Width - 4 * A.Card_Horizontal_Indent : 320 - 4 * A.Card_Horizontal_Indent);
 
             var hotListLabel = new UILabel (new RectangleF (0, 0, messageWidth, 50));
             hotListLabel.TextAlignment = UITextAlignment.Center;
-            hotListLabel.Font = A.Font_AvenirNextDemiBold14;
-            hotListLabel.TextColor = A.Color_NachoGreen;
             hotListLabel.BackgroundColor = UIColor.White;
             hotListLabel.Lines = 0;
             hotListLabel.LineBreakMode = UILineBreakMode.WordWrap;            
-            hotListLabel.AttributedText = noHotMessagesString;
+            hotListLabel.AttributedText = lastCardMessage;
             hotListLabel.SizeToFit ();
-            hotListLabel.Center = new PointF (noMessagesView.Frame.Width / 2, (messagePadding / 2) + (A.Card_Vertical_Indent / 2)); 
+            var hotListLabelYOffset = (isFourS ? messageFrameHeight / 2 : ((chipsLeftIcon.Frame.Top - nachoMailIcon.Frame.Bottom) / 2) + nachoMailIcon.Frame.Bottom + 5);
+            hotListLabel.Center = new PointF (noMessagesView.Frame.Width / 2, hotListLabelYOffset); 
             hotListLabel.Hidden = true;
             hotListLabel.Tag = HOT_LIST_LABEL;
 
@@ -471,21 +513,25 @@ namespace NachoClient.iOS
 
             var iconFrame = new RectangleF (A.Card_Horizontal_Indent, 0, cellHeight / 2, cellHeight);
 
+            Util.AddHorizontalLine (0, messageFrameHeight, noMessagesView.Frame.Width, A.Color_NachoBorderGray, noMessagesView);
+            Util.AddHorizontalLine (rightIndent, messageFrameHeight + (buttonsFrame / 3), noMessagesView.Frame.Width - rightIndent, A.Color_NachoBorderGray, noMessagesView);
+            Util.AddHorizontalLine (rightIndent, messageFrameHeight + (buttonsFrame / 3) * 2, noMessagesView.Frame.Width - rightIndent, A.Color_NachoBorderGray, noMessagesView);
+
             // Inbox 
             var inboxButton = UIButton.FromType (UIButtonType.RoundedRect);
-            inboxButton.Frame = new RectangleF (0, messagePadding + A.Card_Vertical_Indent, cardWidth, cellHeight);
+            inboxButton.Frame = new RectangleF (0, messageFrameHeight + A.Card_Vertical_Indent / 2, cardWidth, cellHeight);
             inboxButton.BackgroundColor = UIColor.White;
             inboxButton.Tag = INBOX_BUTTON_TAG;
             inboxButton.TouchUpInside += InboxClicked;
 
-            var inboxIcon = new UIImageView (new RectangleF (A.Card_Horizontal_Indent + 2, 0, cellHeight / 2, cellHeight));
+            var inboxIcon = new UIImageView (iconFrame);
             inboxIcon.ContentMode = UIViewContentMode.Center;
             inboxIcon.BackgroundColor = UIColor.White;
-            inboxIcon.Image = UIImage.FromBundle ("gen-unread-msgs");
+            inboxIcon.Image = UIImage.FromBundle ("gen-inbox");
             inboxIcon.Tag = INBOX_ICON_TAG;
 
             var inboxLabel = new UILabel ();
-            inboxLabel.Font = A.Font_AvenirNextDemiBold14;
+            inboxLabel.Font = (isSixPlusOrGreater ? A.Font_AvenirNextMedium17 : A.Font_AvenirNextMedium14);
             inboxLabel.TextColor = A.Color_NachoGreen;
             inboxLabel.Lines = 0;
             inboxLabel.LineBreakMode = UILineBreakMode.WordWrap;
@@ -501,7 +547,7 @@ namespace NachoClient.iOS
 
             // Deadlines
             var deadlinesButton = UIButton.FromType (UIButtonType.RoundedRect);
-            deadlinesButton.Frame = new RectangleF (0, inboxButton.Frame.Bottom + A.Card_Vertical_Indent, cardWidth, cellHeight);
+            deadlinesButton.Frame = new RectangleF (0, inboxButton.Frame.Bottom + A.Card_Vertical_Indent / 2, cardWidth, cellHeight);
             deadlinesButton.BackgroundColor = UIColor.White;
             deadlinesButton.Tag = DEADLINES_BUTTON_TAG;
             deadlinesButton.TouchUpInside += DeadlinesClicked;
@@ -513,7 +559,7 @@ namespace NachoClient.iOS
             deadlinesIcon.Tag = DEADLINES_ICON_TAG;
 
             var deadlinesLabel = new UILabel ();
-            deadlinesLabel.Font = A.Font_AvenirNextDemiBold14;
+            deadlinesLabel.Font = (isSixPlusOrGreater ? A.Font_AvenirNextMedium17 : A.Font_AvenirNextMedium14);
             deadlinesLabel.TextColor = A.Color_NachoGreen;
             deadlinesLabel.Lines = 0;
             deadlinesLabel.LineBreakMode = UILineBreakMode.WordWrap;
@@ -529,7 +575,7 @@ namespace NachoClient.iOS
 
             // Deferred
             var deferredButton = UIButton.FromType (UIButtonType.RoundedRect);
-            deferredButton.Frame = new RectangleF (0, deadlinesButton.Frame.Bottom + A.Card_Vertical_Indent, cardWidth, cellHeight);
+            deferredButton.Frame = new RectangleF (0, deadlinesButton.Frame.Bottom + A.Card_Vertical_Indent / 2, cardWidth, cellHeight);
             deferredButton.BackgroundColor = UIColor.White;
             deferredButton.Tag = DEFERRED_BUTTON_TAG;
             deferredButton.TouchUpInside += DeferredClicked;
@@ -541,7 +587,7 @@ namespace NachoClient.iOS
             deferredIcon.Tag = DEFERRED_ICON_TAG;
 
             var deferredLabel = new UILabel ();
-            deferredLabel.Font = A.Font_AvenirNextDemiBold14;
+            deferredLabel.Font = (isSixPlusOrGreater ? A.Font_AvenirNextMedium17 : A.Font_AvenirNextMedium14);
             deferredLabel.TextColor = A.Color_NachoGreen;
             deferredLabel.Lines = 0;
             deferredLabel.LineBreakMode = UILineBreakMode.WordWrap;
@@ -569,82 +615,52 @@ namespace NachoClient.iOS
             if (null == footer) {
                 return;
             }
-            footer.ViewWithTag (HOT_LIST_LABEL).Hidden = !NoMessageThreads ();
-
+            footer.ViewWithTag (HOT_LIST_LABEL).Hidden = false;
 
             var cellHeight = (tableView.Frame.Height - 40) / 8;
             var cardWidth = tableView.Frame.Width - 15.0f;
             var rightIndent = (2 * A.Card_Horizontal_Indent) + (cellHeight / 2);
 
             // Inbox label
-            var inboxHitBox = (UIButton)footer.ViewWithTag (INBOX_BUTTON_TAG);
+            var inboxButton = (UIButton)footer.ViewWithTag (INBOX_BUTTON_TAG);
             var inboxLabel = (UILabel)footer.ViewWithTag (INBOX_LABEL);
             inboxLabel.Frame = new RectangleF (rightIndent, 0, cardWidth - 2 * A.Card_Horizontal_Indent - rightIndent, cellHeight);
             var inboxFolder = NcEmailManager.InboxFolder ();
             var unreadInboxMessagesCount = McEmailMessage.CountOfUnreadMessageItems (inboxFolder.AccountId, inboxFolder.Id);
 
-            if (0 == unreadInboxMessagesCount) {
-                inboxLabel.Text = "You do not have any unread messages in your Inbox.";
-                inboxHitBox.Enabled = false;
-                footer.ViewWithTag (INBOX_ACCESSORY_TAG).Hidden = true;
-            } else if (1 == unreadInboxMessagesCount) {
-                inboxLabel.Text = "You have " + unreadInboxMessagesCount + " unread message in your Inbox.";
-                inboxHitBox.Enabled = true;
-                footer.ViewWithTag (INBOX_ACCESSORY_TAG).Hidden = false;
-            } else {
-                inboxLabel.Text = "You have " + unreadInboxMessagesCount + " unread messages in your Inbox.";
-                inboxHitBox.Enabled = true;
-                footer.ViewWithTag (INBOX_ACCESSORY_TAG).Hidden = false;
-            }
+            inboxLabel.Text = "Go to Inbox (" + unreadInboxMessagesCount + " unread)";
+            inboxButton.Enabled = true;
+            footer.ViewWithTag (INBOX_ACCESSORY_TAG).Hidden = false;
             inboxLabel.Hidden = false;
             inboxLabel.SizeToFit ();
-            inboxLabel.Center = new PointF (inboxLabel.Center.X, inboxHitBox.Frame.Height / 2);
+            inboxLabel.Center = new PointF (inboxLabel.Center.X, inboxButton.Frame.Height / 2);
 
             // Deadline label
-            var deadlinesHitBox = (UIButton)footer.ViewWithTag (DEADLINES_BUTTON_TAG);
+            var deadlinesButton = (UIButton)footer.ViewWithTag (DEADLINES_BUTTON_TAG);
             var deadlineMessages = McEmailMessage.QueryDueDateMessageItemsAllAccounts ();
             var deadlinesLabel = (UILabel)footer.ViewWithTag (DEADLINES_LABEL);
             deadlinesLabel.Frame = new RectangleF (rightIndent, 0, cardWidth - 2 * A.Card_Horizontal_Indent - rightIndent, cellHeight);
 
-            if (0 == deadlineMessages.Count) {
-                deadlinesLabel.Text = "You do not have any messages with deadlines.";
-                deadlinesHitBox.Enabled = false;
-                footer.ViewWithTag (DEADLINES_ACCESSORY_TAG).Hidden = true;
-            } else if (1 == deadlineMessages.Count) {
-                deadlinesLabel.Text = "You have 1 message with a deadline.";
-                deadlinesHitBox.Enabled = true;
-                footer.ViewWithTag (DEADLINES_ACCESSORY_TAG).Hidden = false;
-            } else {
-                deadlinesLabel.Text = "You have " + deadlineMessages.Count + " messages with deadlines.";
-                deadlinesHitBox.Enabled = true;
-                footer.ViewWithTag (DEADLINES_ACCESSORY_TAG).Hidden = false;
-            }
+            deadlinesLabel.Text = "Go to Deadlines (" + deadlineMessages.Count + ")";
+            deadlinesButton.Enabled = true;
             deadlinesLabel.Hidden = false;
+            footer.ViewWithTag (DEADLINES_ACCESSORY_TAG).Hidden = false;
             deadlinesLabel.SizeToFit ();
-            deadlinesLabel.Center = new PointF (deadlinesLabel.Center.X, inboxHitBox.Frame.Height / 2);
+            deadlinesLabel.Center = new PointF (deadlinesLabel.Center.X, deadlinesButton.Frame.Height / 2);
 
             // Deferred label
-            var deferredHitBox = (UIButton)footer.ViewWithTag (DEFERRED_BUTTON_TAG);
+            var deferredButton = (UIButton)footer.ViewWithTag (DEFERRED_BUTTON_TAG);
             var deferredMessages = new NachoDeferredEmailMessages ();
             var deferredLabel = (UILabel)footer.ViewWithTag (DEFERRED_LABEL);
             deferredLabel.Frame = new RectangleF (rightIndent, 0, cardWidth - 2 * A.Card_Horizontal_Indent - rightIndent, cellHeight);
 
-            if (0 == deferredMessages.Count ()) {
-                deferredLabel.Text = "You do not have any deferred messages.";
-                deferredHitBox.Enabled = false;
-                footer.ViewWithTag (DEFERRED_ACCESSORY_TAG).Hidden = true;
-            } else if (1 == deferredMessages.Count ()) {
-                deferredLabel.Text = "You have 1 deferred message.";
-                deferredHitBox.Enabled = true;
-                footer.ViewWithTag (DEFERRED_ACCESSORY_TAG).Hidden = false;
-            } else {
-                deferredLabel.Text = "You have " + deferredMessages.Count () + " deferred messages.";
-                deferredHitBox.Enabled = true;
-                footer.ViewWithTag (DEFERRED_ACCESSORY_TAG).Hidden = false;
-            }
+            deferredLabel.Text = "Go to Deferred Messages (" + deferredMessages.Count () + ")";
+            deferredButton.Enabled = true;
+            footer.ViewWithTag (DEFERRED_ACCESSORY_TAG).Hidden = false;
+
             deferredLabel.Hidden = false;
             deferredLabel.SizeToFit ();
-            deferredLabel.Center = new PointF (deferredLabel.Center.X, inboxHitBox.Frame.Height / 2);
+            deferredLabel.Center = new PointF (deferredLabel.Center.X, deferredButton.Frame.Height / 2);
         }
 
 
@@ -831,6 +847,14 @@ namespace NachoClient.iOS
             }
 
             var tableView = (UITableView)scrollView;
+            var totalContentY = tableView.ContentSize.Height;
+
+            // Centers on last card
+            if (startingPoint.Y <= totalContentY - tableView.Frame.Height - (tableView.Frame.Height / 3) && targetContentOffset.Y >= totalContentY - tableView.Frame.Height * 2) {
+                targetContentOffset.Y = tableView.RectForFooterInSection (0).Location.Y - 10;
+                return;
+            }
+
             var pathForTargetTopCell = tableView.IndexPathForRowAtPoint (new PointF (tableView.Frame.X / 2, targetContentOffset.Y + 10));
 
             if (null == pathForTargetTopCell) {
@@ -862,8 +886,8 @@ namespace NachoClient.iOS
                 UIApplication.SharedApplication.OpenUrl (url);
             }
         }
-            
+
     }
-       
+
 }
 
