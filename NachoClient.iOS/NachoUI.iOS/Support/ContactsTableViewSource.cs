@@ -469,16 +469,11 @@ namespace NachoClient.iOS
                 view.ClearActions (SwipeSide.LEFT);
                 view.ClearActions (SwipeSide.RIGHT);
 
-                if (contact.CanUserEdit ()) {
+                if (contact.CanUserEdit () || 0 < contact.PhoneNumbers.Count) {
                     view.SetAction (CALL_BUTTON, SwipeSide.LEFT);
+                }
+                if (contact.CanUserEdit () || 0 < contact.EmailAddresses.Count) {
                     view.SetAction (EMAIL_BUTTON, SwipeSide.RIGHT);
-                } else {
-                    if (0 < contact.PhoneNumbers.Count) {
-                        view.SetAction (CALL_BUTTON, SwipeSide.LEFT);
-                    }
-                    if (0 < contact.EmailAddresses.Count) {
-                        view.SetAction (EMAIL_BUTTON, SwipeSide.RIGHT);
-                    }
                 }
             }
 
