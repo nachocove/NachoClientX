@@ -133,17 +133,6 @@ namespace NachoCore
             RemoveService (accountId);
         }
 
-        public void QuickSync ()
-        {
-            var accounts = NcModel.Instance.Db.Table<McAccount> ();
-            foreach (var account in accounts) {
-                if (!HasServiceFromAccountId (account.Id)) {
-                    EstablishService (account.Id);
-                }
-                QuickSync (account.Id);
-            }
-        }
-
         public void EstablishService (int accountId)
         {
             ProtoControl service = null;
@@ -197,14 +186,6 @@ namespace NachoCore
                 }
                 ServiceFromAccountId (accountId).Execute ();
             }, "Start");
-        }
-
-        public void QuickSync (int accountId)
-        {
-            NcTask.Run (delegate {
-                NcCommStatus.Instance.Refresh ();
-                ServiceFromAccountId (accountId).QuickSync ();
-            }, "QuickSync");
         }
 
         public void CertAskResp (int accountId, bool isOkay)

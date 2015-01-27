@@ -40,8 +40,6 @@ namespace NachoCore
         void Stop (int accountId);
         // remove service for an account.
         void Remove (int accountId);
-        // for a single account to sync immediately.
-        void QuickSync (int accountId);
         // let the BE know that the asked-about server cert is/not okay to trust.
         void CertAskResp (int accountId, bool isOkay);
         // let the BE know that the server info has been updated for this account.
