@@ -75,8 +75,7 @@ namespace NachoCore.ActiveSync
         private const int KDefaultDelaySeconds = 5;
         private const int KDefaultThrottleDelaySeconds = 60;
         private const int KMaxDelaySeconds = 30;
-        private const int KMaxTimeoutSeconds = 100;
-        private const int KDefaultTimeoutSeconds = 20;
+        private const int KMaxTimeoutSeconds = 999;
         private const string KDefaultTimeoutExpander = "1.2";
         private const int KDefaultRetries = 8;
         private const int KConsec401ThenReDisc = 5;
@@ -164,7 +163,8 @@ namespace NachoCore.ActiveSync
             NcCapture.AddKind (KToXML);
             NcCommStatusSingleton = NcCommStatus.Instance;
             BEContext = beContext;
-            int timeoutSeconds = McMutables.GetOrCreateInt (BEContext.Account.Id, "HTTPOP", "TimeoutSeconds", KDefaultTimeoutSeconds);
+            int timeoutSeconds = McMutables.GetOrCreateInt (BEContext.Account.Id, "HTTPOP", "TimeoutSeconds", 
+                                     BEContext.ProtoControl.SyncStrategy.DefaultTimeoutSecs);
             Timeout = new TimeSpan (0, 0, timeoutSeconds);
             var timeoutExpander = McMutables.GetOrCreate (BEContext.Account.Id, "HTTPOP", "TimeoutExpander", KDefaultTimeoutExpander);
             TimeoutExpander = double.Parse (timeoutExpander);

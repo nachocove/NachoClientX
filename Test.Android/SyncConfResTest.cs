@@ -31,11 +31,10 @@ namespace Test.iOS
             public new void SetUp ()
             {
                 base.SetUp ();
-                var protoControl = ProtoOps.CreateProtoControl (accountId: defaultAccountId);
 
                 var server = McServer.Create (defaultAccountId, CommonMockData.MockUri);
                 server.Insert ();
-                Context = new MockContext (protoControl, server);
+                Context = new MockContext (null, server);
             }
 
             public class Inbox
@@ -436,26 +435,32 @@ namespace Test.iOS
             }
 
             [Test]
-            public void TestSyncDeleteForAllItems ()
+            public void TestSyncDeleteForMoveCalCmd ()
             {
                 TestSyncDelete<McCalendar> (ClassCode.Calendar, NcResult.SubKindEnum.Info_CalendarSetChanged, (itemId, folderServerId) => {
                     return Context.ProtoControl.MoveCalCmd (itemId, folderServerId);
                 });
+            }
 
-                SetUp ();
-
+            [Test]
+            public void TestSyncDeleteForMoveContactCmd ()
+            {
                 TestSyncDelete<McContact> (ClassCode.Contacts, NcResult.SubKindEnum.Info_ContactSetChanged, (itemId, folderServerId) => {
                     return Context.ProtoControl.MoveContactCmd (itemId, folderServerId);
                 });
+            }
 
-                SetUp ();
-
+            [Test]
+            public void TestSyncDeleteForMoveTaskCmd ()
+            {
                 TestSyncDelete<McTask> (ClassCode.Tasks, NcResult.SubKindEnum.Info_TaskSetChanged, (itemId, folderServerId) => {
                     return Context.ProtoControl.MoveTaskCmd (itemId, folderServerId);
                 });
+            }
 
-                SetUp ();
-
+            [Test]
+            public void TestSyncDeleteForMoveEmailCmd ()
+            {
                 TestSyncDelete<McEmailMessage> (ClassCode.Email, NcResult.SubKindEnum.Info_EmailMessageSetChanged, (itemId, folderServerId) => {
                     return Context.ProtoControl.MoveEmailCmd (itemId, folderServerId);
                 });
@@ -524,26 +529,32 @@ namespace Test.iOS
             }
 
             [Test]
-            public void TestSyncDeleteForAllItems ()
+            public void TestSyncDeleteForDeleteCalCmd ()
             {
                 TestSyncDelete<McCalendar> (ClassCode.Calendar, NcResult.SubKindEnum.Info_CalendarSetChanged, (itemId) => {
                     return Context.ProtoControl.DeleteCalCmd (itemId);
                 });
+            }
 
-                SetUp ();
-
+            [Test]
+            public void TestSyncDeleteForDeleteContactCmd ()
+            {
                 TestSyncDelete<McContact> (ClassCode.Contacts, NcResult.SubKindEnum.Info_ContactSetChanged, (itemId) => {
                     return Context.ProtoControl.DeleteContactCmd (itemId);
                 });
+            }
 
-                SetUp ();
-
+            [Test]
+            public void TestSyncDeleteForDeleteTaskCmd ()
+            {
                 TestSyncDelete<McTask> (ClassCode.Tasks, NcResult.SubKindEnum.Info_TaskSetChanged, (itemId) => {
                     return Context.ProtoControl.DeleteTaskCmd (itemId);
                 });
+            }
 
-                SetUp ();
-
+            [Test]
+            public void TestSyncDeleteForDeleteEmailCmd ()
+            {
                 TestSyncDelete<McEmailMessage> (ClassCode.Email, NcResult.SubKindEnum.Info_EmailMessageSetChanged, (itemId) => {
                     return Context.ProtoControl.DeleteEmailCmd (itemId);
                 });
@@ -577,20 +588,24 @@ namespace Test.iOS
             }
 
             [Test]
-            public void TestSyncDeleteForAllItems ()
+            public void TestSyncDeleteForUpdateCalCmd ()
             {
                 TestSyncDelete<McCalendar> (ClassCode.Calendar, (itemId) => {
                     return Context.ProtoControl.UpdateCalCmd (itemId);
                 });
+            }
 
-                SetUp ();
-
+            [Test]
+            public void TestSyncDeleteForUpdateContactCmd ()
+            {
                 TestSyncDelete<McContact> (ClassCode.Contacts, (itemId) => {
                     return Context.ProtoControl.UpdateContactCmd (itemId);
                 });
+            }
 
-                SetUp ();
-
+            [Test]
+            public void TestSyncDeleteForUpdateTaskCmd ()
+            {
                 TestSyncDelete<McTask> (ClassCode.Tasks, (itemId) => {
                     return Context.ProtoControl.UpdateTaskCmd (itemId);
                 });

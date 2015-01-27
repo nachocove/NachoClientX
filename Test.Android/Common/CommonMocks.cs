@@ -166,19 +166,22 @@ namespace Test.iOS
             // READ InitialProvisionCompleted
             Server = server; 
             Account = new McAccount () {
-                Id = 1,
                 EmailAddr = "johnd@foo.utopiasystems.net",
             };
+            Account.Insert ();
             var protoState = McProtocolState.QueryByAccountId<McProtocolState> (Account.Id).SingleOrDefault ();
             if (null == protoState) {
-
                 protoState = new McProtocolState () {
                     AccountId = Account.Id,
                 };
                 protoState.Insert ();
             }
             ProtocolState = protoState;
-            ProtoControl = protoControl;
+            if (null == protoControl) {
+                ProtoControl = new AsProtoControl (Owner, Account.Id);
+            } else {
+                ProtoControl = protoControl;
+            }
             Cred = new McCred () {
                 AccountId = Account.Id,
                 Username = "dummy",
@@ -322,5 +325,17 @@ namespace Test.iOS
         {
             return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Wait, null);
         }
+
+        public int UploadTimeoutSecs (long length)
+        {
+            return DefaultTimeoutSecs;
+        }
+
+        public int DownloadTimeoutSecs (long length)
+        {
+            return DefaultTimeoutSecs;
+        }
+
+        public int DefaultTimeoutSecs { get { return 30; } }
     }
 }

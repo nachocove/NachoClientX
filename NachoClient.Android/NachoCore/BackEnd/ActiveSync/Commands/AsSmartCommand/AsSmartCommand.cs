@@ -39,7 +39,9 @@ namespace NachoCore.ActiveSync
             if (14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
                 return null;
             }
-
+            var mimePath = EmailMessage.MimePath ();
+            var length = new FileInfo (mimePath).Length;
+            Timeout = new TimeSpan (0, 0, BEContext.ProtoControl.SyncStrategy.UploadTimeoutSecs (length));
             var smartMail = new XElement (m_ns + CommandName, 
                                 new XElement (m_ns + Xml.ComposeMail.ClientId, EmailMessage.ClientId),
                                 new XElement (m_ns + Xml.ComposeMail.Source,
@@ -47,7 +49,7 @@ namespace NachoCore.ActiveSync
                                     new XElement (m_ns + Xml.ComposeMail.ItemId, PendingSingle.ServerId)),
                                 new XElement (m_ns + Xml.ComposeMail.SaveInSentItems),
                                 new XElement (m_ns + Xml.ComposeMail.Mime, 
-                                    new XAttribute ("nacho-body-path", EmailMessage.MimePath ())));
+                    new XAttribute ("nacho-body-path", mimePath)));
             if (PendingSingle.Smart_OriginalEmailIsEmbedded) {
                 smartMail.Add (new XElement (m_ns + Xml.ComposeMail.ReplaceMime));
             }
@@ -59,7 +61,10 @@ namespace NachoCore.ActiveSync
         protected override Stream ToMime (AsHttpOperation Sender)
         {
             if (14.0 > Convert.ToDouble (BEContext.ProtocolState.AsProtocolVersion)) {
-                return EmailMessage.ToMime ();
+                long length;
+                var stream = EmailMessage.ToMime (out length);
+                Timeout = new TimeSpan (0, 0, BEContext.ProtoControl.SyncStrategy.UploadTimeoutSecs (length));
+                return stream;
             }
             return null;
         }

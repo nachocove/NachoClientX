@@ -1109,7 +1109,7 @@ namespace NachoCore.ActiveSync
              * Let those rates drive the allowed concurrency, rather than "1 + 2".
              */
             if (NcCommStatus.CommQualityEnum.OK == NcCommStatus.Instance.Quality (Server.Id) &&
-                NetStatusSpeedEnum.CellSlow != NcCommStatus.Instance.Speed &&
+                NetStatusSpeedEnum.CellSlow_2 != NcCommStatus.Instance.Speed &&
                 2 > ConcurrentExtraRequests) {
                 Interlocked.Increment (ref ConcurrentExtraRequests);
                 Log.Info (Log.LOG_AS, "DoExtraOrDont: starting extra request.");

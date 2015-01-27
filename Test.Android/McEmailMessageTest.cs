@@ -19,9 +19,9 @@ namespace Test.Common
         private const int defaultAccountId = 1;
 
         [SetUp]
-        public new void Setup ()
+        public new void SetUp ()
         {
-            base.Setup ();
+            base.SetUp ();
             Folder = McFolder.Create (defaultAccountId, false, false, false, "0", "test", "Test Folder",
                 NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1);
             Folder.Insert ();

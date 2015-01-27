@@ -21,9 +21,9 @@ namespace Test.Common
         McEmailMessageDependency Dependency;
 
         [SetUp]
-        public void SetUp ()
+        public new void SetUp ()
         {
-            base.Setup ();
+            base.SetUp ();
             NcApplication.Instance.TestOnlyInvokeUseCurrentThread = true;
             NcTask.StartService ();
             NcBrain.StartService ();

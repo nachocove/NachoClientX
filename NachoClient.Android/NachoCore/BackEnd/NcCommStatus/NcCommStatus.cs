@@ -36,7 +36,7 @@ namespace NachoCore.Utils
         {
             Trackers = new List<ServerTracker> ();
             Status = NetStatusStatusEnum.Up;
-            Speed = NetStatusSpeedEnum.WiFi;
+            Speed = NetStatusSpeedEnum.WiFi_0;
             NetStatus.Instance.NetStatusEvent += NetStatusEventHandler;
             // TODO: we really only need to run the timer if one or more tracker reports degraded.
             TrackerMonitorTimer = new NcTimer ("NcCommStatus", status => {

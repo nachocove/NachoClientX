@@ -268,7 +268,7 @@ namespace Test.iOS
 
     public class CommonTestOps
     {
-        public const int defaultAccountId = 1;
+        public const int defaultAccountId = 2; // Device account is #1.
 
         public void SetUp ()
         {
@@ -283,6 +283,7 @@ namespace Test.iOS
             settings.Warn.DisableTelemetry ();
             settings.Info.DisableTelemetry ();
             settings.Debug.DisableTelemetry ();
+            NcTask.StartService ();
         }
 
         public void TestForNachoExceptionFailure (Action action, string message)

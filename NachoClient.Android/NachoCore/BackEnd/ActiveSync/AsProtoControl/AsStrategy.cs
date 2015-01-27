@@ -466,10 +466,10 @@ namespace NachoCore.ActiveSync
         {
             int perFolderWindowSize = KBasePerFolderWindowSize;
             switch (NcCommStatus.Instance.Speed) {
-            case NetStatusSpeedEnum.CellFast:
+            case NetStatusSpeedEnum.CellFast_1:
                 perFolderWindowSize *= 2;
                 break;
-            case NetStatusSpeedEnum.WiFi:
+            case NetStatusSpeedEnum.WiFi_0:
                 perFolderWindowSize *= 3;
                 break;
             }
@@ -543,10 +543,10 @@ namespace NachoCore.ActiveSync
             var rung = Scope.StrategyRung (protocolState);
             int overallWindowSize = KBaseOverallWindowSize;
             switch (NcCommStatus.Instance.Speed) {
-            case NetStatusSpeedEnum.CellFast:
+            case NetStatusSpeedEnum.CellFast_1:
                 overallWindowSize *= 2;
                 break;
-            case NetStatusSpeedEnum.WiFi:
+            case NetStatusSpeedEnum.WiFi_0:
                 overallWindowSize *= 3;
                 break;
             }
@@ -970,7 +970,7 @@ namespace NachoCore.ActiveSync
                     NcApplication.ExecutionContextEnum.Foreground == exeCtxt) {
                     FetchKit fetchKit = null;
                     SyncKit syncKit = null;
-                    if (NetStatusSpeedEnum.WiFi == NcCommStatus.Instance.Speed && PowerPermitsSpeculation ()) {
+                    if (NetStatusSpeedEnum.WiFi_0 == NcCommStatus.Instance.Speed && PowerPermitsSpeculation ()) {
                         fetchKit = GenFetchKit (accountId);
                     }
                     syncKit = GenSyncKit (accountId, protocolState, false, false);
@@ -1016,5 +1016,28 @@ namespace NachoCore.ActiveSync
             NcAssert.True (false);
             return null;
         }
+
+        // Set 1st-try timeout value assuming we are running 25% of average speed, with a base of 30s.
+        // http://www.phonearena.com/news/Which-carrier-offers-the-fastest-mobile-data-and-coverage-4G--3G-speed-comparison_id53828
+        // http://blog.rottenwifi.com/average-public-wifi-client-satisfaction-rank-410/
+        // WiFi_0, CellFast_1, CellSlow_2.
+        public readonly double[] KUploadBiSec = { 2.7e6 / 8, 3.0e6 / 8, 1.3e6 / 8 };
+        public readonly double[] KDownloadBiSec = { 3.3e6 / 8, 6.0e6 / 8, 2.0e6 / 8 };
+        public const double KRateDiscount = 0.75;
+        public const int KMinTimeout = 30;
+
+        public int UploadTimeoutSecs (long length)
+        {
+            length = (0 >= length) ? 100 * 1000 : length;
+            return KMinTimeout + (int)(length / (KUploadBiSec [(int)NcCommStatus.Instance.Speed] * (1 - KRateDiscount)));
+        }
+
+        public int DownloadTimeoutSecs (long length)
+        {
+            length = (0 >= length) ? 1000 * 1000 : length;
+            return KMinTimeout + (int)(length / (KDownloadBiSec [(int)NcCommStatus.Instance.Speed] * (1 - KRateDiscount)));
+        }
+
+        public int DefaultTimeoutSecs { get { return KMinTimeout; } }
     }
 }
