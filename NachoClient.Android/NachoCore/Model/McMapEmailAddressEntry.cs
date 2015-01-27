@@ -10,6 +10,16 @@ using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
+    public class NcMapEmailAddressEntryEmailAddressId
+    {
+        public int EmailAddressId { get; set; }
+    }
+
+    public class NcMapEmailAddressEntryObjectId
+    {
+        public int ObjectId { get; set; }
+    }
+
     /// <summary>
     /// This is an universal map between all db objects and (canonical) email addresses.
     /// TODO - Currently, contact email addresses are exempted. This is mainly for
@@ -34,8 +44,8 @@ namespace NachoCore.Model
 
         public static List<int> QueryAddressIds (int accountId, int objectId, NcEmailAddress.Kind addressType)
         {
-            var addressList = NcModel.Instance.Db.Query<McMapEmailAddressEntry> (
-                                  "SELECT * FROM McMapEmailAddressEntry AS e " +
+            var addressList = NcModel.Instance.Db.Query<NcMapEmailAddressEntryEmailAddressId> (
+                                  "SELECT EmailAddressId FROM McMapEmailAddressEntry AS e " +
                                   "WHERE e.AccountId = ? AND e.ObjectId = ? AND e.AddressType = ?",
                                   accountId, objectId, addressType);
             return (from address in addressList
@@ -44,8 +54,8 @@ namespace NachoCore.Model
 
         public static List<int> QueryObjectIds (int accountId, int emailAddressId, NcEmailAddress.Kind addressType)
         {
-            var objectList = NcModel.Instance.Db.Query<McMapEmailAddressEntry> (
-                                 "SELECT * FROM McMapEmailAddressEntry as e " +
+            var objectList = NcModel.Instance.Db.Query<NcMapEmailAddressEntryObjectId> (
+                                 "SELECT ObjectId FROM McMapEmailAddressEntry as e " +
                                  "WHERE e.AccountId = ? AND e.EmailAddressId = ? AND e.AddressType = ?",
                                  accountId, emailAddressId, addressType);
             return (from obj in objectList
