@@ -69,16 +69,19 @@ namespace NachoCore.ActiveSync
             // for an event seems to change over time, but we don't know what triggers it.  It is
             // hoped that these error messages will identify the source of the issue.
             if (string.IsNullOrEmpty (newItem.UID)) {
-                Log.Error (Log.LOG_SYNC, "ActiveSync command sent an event without a UID.");
+                if (null != newItem.attendees && 0 < newItem.attendees.Count) {
+                    // An appointment without a UID is OK.  A meeting without a UID is a problem.
+                    Log.Error (Log.LOG_SYNC, "ActiveSync command sent a meeting without a UID.");
+                }
             } else {
-                var sameUid = McCalendar.QueryByUID (newItem.UID);
-                if (null != sameUid && (sameUid.AccountId != newItem.AccountId || sameUid.ServerId != newItem.ServerId)) {
-                    Log.Error (Log.LOG_SYNC, "Two events have the same UID ({0}) but different AccountId/ServerId ({1}/{2} and {3}/{4}). This will likely result in a duplicate event.",
+                var sameUid = McCalendar.QueryByUID (newItem.AccountId, newItem.UID);
+                if (null != sameUid && sameUid.ServerId != newItem.ServerId) {
+                    Log.Error (Log.LOG_SYNC, "Two events have the same UID ({0}) but different ServerId ({1} and {2}). This will likely result in a duplicate event.",
                         newItem.UID, sameUid.AccountId, sameUid.ServerId, newItem.AccountId, newItem.ServerId);
                 }
                 if (null != oldItem && oldItem.UID != newItem.UID) {
-                    Log.Error (Log.LOG_SYNC, "The UID for event \"{0}\" is changing from {1} to {2}",
-                        newItem.Subject, oldItem.UID, newItem.UID);
+                    Log.Error (Log.LOG_SYNC, "The UID for event {0} is changing from {1} to {2}",
+                        newItem.ServerId, oldItem.UID, newItem.UID);
                 }
             }
 
