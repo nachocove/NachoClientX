@@ -601,9 +601,8 @@ namespace NachoCore.ActiveSync
                         LastUri = ReDirUri;
                         await client.GetAsync (ReDirUri).ConfigureAwait (false);
                     } catch (Exception ex) {
-                        StepSm.PostEvent ((uint)SmEvt.E.TempFail, "SRDRGSC0", null, 
-                            string.Format ("SR:GetAsync Exception: {0}", ex.ToString ()));
-                        return;
+                        // Exceptions don't matter - only the cert matters.
+                        Log.Info (Log.LOG_AS, "SR:GetAsync Exception: {0}", ex.ToString ());
                     }
                     finally {
                         client.Dispose ();
