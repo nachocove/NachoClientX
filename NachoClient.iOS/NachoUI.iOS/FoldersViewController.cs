@@ -102,6 +102,13 @@ namespace NachoClient.iOS
                 messageListViewController.SetEmailMessages (messageList);
                 return;
             }
+            if ("SegueToDrafts" == segue.Identifier) {
+                var holder = (SegueHolder)sender;
+                McFolder draftFolder = (McFolder)holder.value;
+                DraftsViewController draftsVC  = (DraftsViewController)segue.DestinationViewController;
+                draftsVC.SetDraftType(DraftsHelper.FolderToDraftType(draftFolder));
+                return;
+            }
             if ("SegueToHotList" == segue.Identifier) {
                 return;
             }
@@ -445,9 +452,9 @@ namespace NachoClient.iOS
                 cell.BackgroundColor = (modal ? UIColor.Black : UIColor.LightGray);
                 UpdateLastAccessed ();
                 if (modal) {
-                    FolderSelected (folder);
+                    MoveMessageToFolder (folder);
                 } else {
-                    PerformSegue ("FoldersToMessageList", new SegueHolder (folder));
+                    OpenFolder(folder);
                 }
             });
             cell.AddGestureRecognizer (cellTap);
@@ -489,6 +496,12 @@ namespace NachoClient.iOS
 
         protected void CreateFolderCell (int subLevel, UIView parentView, bool subFolders, bool isHidden, FolderStruct folderStruct)
         {
+            if (modal) {
+                if (Xml.FolderHierarchy.TypeCode.UserCreatedCal_13 == folderStruct.type) {
+                    return;
+                }
+            }
+
             var tag = folderStruct.folderID + 10000;
 
             var indentation = subLevel * 10;
@@ -501,9 +514,9 @@ namespace NachoClient.iOS
                 cell.BackgroundColor = (modal ? UIColor.Black : UIColor.LightGray);
                 UpdateLastAccessed ();
                 if (modal) {
-                    FolderSelected (folder);
+                    MoveMessageToFolder (folder);
                 } else {
-                    PerformSegue ("FoldersToMessageList", new SegueHolder (folder));
+                    OpenFolder (folder);
                 }
             });
             cell.AddGestureRecognizer (cellTap);
@@ -726,7 +739,7 @@ namespace NachoClient.iOS
 
         public void ConfigureFolders ()
         {
-            Folders = new NachoFolders (NachoFolders.FilterForEmail);
+            Folders = new NachoFolders (NachoFolders.FilterForFolders);
             ConvertFoldersToMcFolders ();
             CreateNestedFolderList ();
         }
@@ -741,24 +754,26 @@ namespace NachoClient.iOS
         public void CreateNestedFolderList ()
         {
             foreach (var folder in foldersToMcFolders) {
-                if (McFolder.AsRootServerId == folder.ParentId) {
-                    int folderID = folder.Id;
-                    string fname = folder.DisplayName;
-                    Xml.FolderHierarchy.TypeCode ftype = folder.Type;
-                    List<FolderStruct> subFolders = new List<FolderStruct> ();
-                    subFolders = GetSubFolders (folder.Id, folder.AccountId, folder.ServerId, 0);
+                if (!(modal && DraftsHelper.IsDraftsFolder (folder))) {
+                    if (McFolder.AsRootServerId == folder.ParentId) {
+                        int folderID = folder.Id;
+                        string fname = folder.DisplayName;
+                        Xml.FolderHierarchy.TypeCode ftype = folder.Type;
+                        List<FolderStruct> subFolders = new List<FolderStruct> ();
+                        subFolders = GetSubFolders (folder.Id, folder.AccountId, folder.ServerId, 0);
 
-                    if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12 == folder.Type || NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1 == folder.Type) {
-                        yourFolderList.Add (new FolderStruct (folderID, subFolders, fname, ftype, 10000));
-                    } else {
-                        nestedFolderList.Add (new FolderStruct (folderID, subFolders, fname, ftype, 10000));
+                        if (NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12 == folder.Type || NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1 == folder.Type) {
+                            yourFolderList.Add (new FolderStruct (folderID, subFolders, fname, ftype, 10000));
+                        } else {
+                            nestedFolderList.Add (new FolderStruct (folderID, subFolders, fname, ftype, 10000));
+                        }
                     }
                 }
             }
-            SortDetaultsFoldersList ();
+            SortDefaultsFoldersList ();
         }
 
-        public void SortDetaultsFoldersList ()
+        public void SortDefaultsFoldersList ()
         {
             foreach (var folder in nestedFolderList) {
                 switch (folder.type) {
@@ -844,8 +859,11 @@ namespace NachoClient.iOS
 
         public void UpdateLastAccessed ()
         {
-            var list = McFolder.QueryByMostRecentlyAccessedFolders (account.Id);
-            recentFolderList = list.Take (MAX_RECENT_FOLDERS).ToList ();
+            if (!modal) {
+                recentFolderList = McFolder.QueryByMostRecentlyAccessedFolders (account.Id).Take(MAX_RECENT_FOLDERS).ToList();
+            } else {
+                recentFolderList = McFolder.QueryByMostRecentlyAccessedFoldersExcludeDrafts (account.Id).Take(MAX_RECENT_FOLDERS).ToList();
+            }
         }
 
         protected object cookie;
@@ -866,9 +884,18 @@ namespace NachoClient.iOS
             DismissViewController (animated, action);
         }
 
-        public void FolderSelected (McFolder folder)
+        public void MoveMessageToFolder (McFolder folder)
         {
             owner.FolderSelected (this, folder, cookie);
+        }
+
+        protected void OpenFolder (McFolder folder)
+        {
+            if(DraftsHelper.IsDraftsFolder(folder)){
+                PerformSegue ("SegueToDrafts", new SegueHolder (folder));
+            } else {
+                PerformSegue ("FoldersToMessageList", new SegueHolder (folder));
+            }
         }
 
         // INachoMessageEditorParent

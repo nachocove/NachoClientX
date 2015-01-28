@@ -171,6 +171,11 @@ namespace NachoCore.Model
             return McFolder.GetClientOwnedFolder (accountId, ClientOwned_LostAndFound);
         }
 
+        public static McFolder GetCalendarDraftsFolder (int accountId)
+        {
+            return McFolder.GetClientOwnedFolder (accountId, ClientOwned_CalDrafts);
+        }
+
         public static List<McFolder> GetUserFolders (int accountId, Xml.FolderHierarchy.TypeCode typeCode, int parentId, string name)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
@@ -251,6 +256,16 @@ namespace NachoCore.Model
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f " +
                 "WHERE f.AccountId = ? AND f.LastAccessed > ? " +
                 "ORDER BY f.LastAccessed DESC", accountId, DateTime.UtcNow.AddYears(-1));
+            return folders.ToList ();
+        }
+
+        public static List<McFolder> QueryByMostRecentlyAccessedFoldersExcludeDrafts (int accountId)
+        {
+            var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f " +
+                " WHERE f.AccountId = ? " +
+                " AND f.LastAccessed > ? " +
+                " AND f.IsClientOwned = 0 " +
+                " ORDER BY f.LastAccessed DESC", accountId, DateTime.UtcNow.AddYears(-1));
             return folders.ToList ();
         }
 

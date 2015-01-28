@@ -389,6 +389,23 @@ namespace NachoClient.iOS
             NcAssert.CaseError ();
         }
 
+        protected void DisplaySaveAsDraftAlertView ()
+        {
+            UIAlertView alert = new UIAlertView ();
+            alert.Title = "Save as Draft?";
+            alert.Message = "This event will be removed unless a draft is saved.";
+            alert.AddButton ("Discard"); //option 0
+            alert.AddButton ("Save"); //option 1
+            alert.CancelButtonIndex = 0;
+            alert.Dismissed += (object alertSender, UIButtonEventArgs alertEvent) => {
+                if (1 == alertEvent.ButtonIndex) {
+                    SaveEventDraft();
+                } 
+                DismissView();
+            };
+            alert.Show ();
+        }
+
         protected void CreateEditEventView ()
         {
             scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height);
@@ -403,18 +420,26 @@ namespace NachoClient.iOS
             cancelButton.Clicked += (sender, e) => {
                 View.EndEditing (true);
                 if (eventEditStarted) {
-                    UIAlertView alert = new UIAlertView ();
-                    alert.Title = "Are you sure?";
-                    alert.Message = "This event will not be saved";
-                    alert.AddButton ("Cancel");
-                    alert.AddButton ("Yes");
-                    alert.CancelButtonIndex = 0;
-                    alert.Dismissed += (object alertSender, UIButtonEventArgs alertEvent) => {
-                        if (1 == alertEvent.ButtonIndex) {
-                            DismissView ();
+                    if(action == CalendarItemEditorAction.create){
+                        DisplaySaveAsDraftAlertView ();
+                    } else {
+                        if(DraftsHelper.IsDraftsFolder(GetCalendarFolder())){
+                            DisplaySaveAsDraftAlertView ();
+                        } else {
+                            UIAlertView alert = new UIAlertView ();
+                            alert.Title = "Are you sure?";
+                            alert.Message = "These changes will be discarded if you don't save.";
+                            alert.AddButton ("Cancel"); //option 0
+                            alert.AddButton ("Yes"); //option 1
+                            alert.CancelButtonIndex = 0;
+                            alert.Dismissed += (object alertSender, UIButtonEventArgs alertEvent) => {
+                                if (1 == alertEvent.ButtonIndex) {
+                                    DismissView();
+                                } 
+                            };
+                            alert.Show ();
                         }
-                    };
-                    alert.Show ();
+                    }
                 } else {
                     DismissView ();
                 }
@@ -1277,6 +1302,12 @@ namespace NachoClient.iOS
             view.Frame = frame;
         }
 
+        protected void SaveEventDraft ()
+        {
+            ExtractValues ();
+            UpdateDraftRecord ();
+        }
+
         protected void ExtractValues ()
         {
             c.AccountId = account.Id;
@@ -1333,12 +1364,19 @@ namespace NachoClient.iOS
 
         protected void SyncMeetingRequest ()
         {
-
             if (0 == c.Id) {
                 c.Insert (); // new entry
                 folder = calendars.GetFolder (calendarIndex);
                 folder.Link (c);
                 BackEnd.Instance.CreateCalCmd (account.Id, c.Id, folder.Id);
+            } else if (DraftsHelper.IsDraftsFolder (GetCalendarFolder ())) {
+                var oldFolder = GetCalendarFolder ();
+                var newFolder = McFolder.GetDefaultCalendarFolder (account.Id);
+                oldFolder.Unlink (c);
+                newFolder.Link (c);
+                c.RecurrencesGeneratedUntil = DateTime.MinValue;
+                c.Update ();
+                BackEnd.Instance.CreateCalCmd (account.Id, c.Id, newFolder.Id);
             } else {
                 c.Update ();
                 var oldFolder = GetCalendarFolder ();
@@ -1356,6 +1394,18 @@ namespace NachoClient.iOS
                 Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged),
                 Account = NachoCore.Model.ConstMcAccount.NotAccountSpecific,
             });
+        }
+
+        protected void UpdateDraftRecord ()
+        {
+            if (0 == c.Id) {
+                c.RecurrencesGeneratedUntil = DateTime.MaxValue;
+                c.Insert (); // new entry
+                folder = McFolder.GetCalendarDraftsFolder (account.Id);
+                folder.Link (c);
+            } else {
+                c.Update ();
+            }
         }
 
         protected void DeleteEvent ()
