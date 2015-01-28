@@ -1314,6 +1314,14 @@ namespace NachoClient.iOS
                 c.ResponseRequestedIsSet = true;
             }
 
+            // There is no UI for setting the BusyStatus.  For new events, set it to the default
+            // value of Busy.  If we don't explicitly set BusyStatus, some servers will treat it
+            // as if it were Free, while others will act as if it were Busy.
+            if (!c.BusyStatusIsSet) {
+                c.BusyStatus = NcBusyStatus.Busy;
+                c.BusyStatusIsSet = true;
+            }
+
             // The event always uses the local time zone.
             c.TimeZone = new AsTimeZone (CalendarHelper.SimplifiedLocalTimeZone (), c.StartTime).toEncodedTimeZone ();
 
