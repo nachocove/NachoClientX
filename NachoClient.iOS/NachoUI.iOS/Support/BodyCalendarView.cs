@@ -65,7 +65,7 @@ namespace NachoClient.iOS
 
             if (null != evt.UID) {
                 // TODO: Do McExceptions have their own status?
-                calendarItem = McCalendar.QueryByUID (evt.UID);
+                calendarItem = McCalendar.QueryByUID (parent.AccountId, evt.UID);
             }
 
             // The contents of the action/info bar depends on whether this is a request,
