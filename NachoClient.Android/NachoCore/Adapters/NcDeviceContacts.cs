@@ -67,7 +67,13 @@ namespace NachoCore
                             return;
                         }
                     }
-                    var result = deviceContact.ToMcContact (existing);
+                    NcResult result;
+                    try {
+                        result = deviceContact.ToMcContact (existing);
+                    } catch (Exception ex) {
+                        Log.Error (Log.LOG_SYS, "Exception during ToMcContact: {0}", ex.ToString ());
+                        return;
+                    }
                     if (!result.isOK ()) {
                         Log.Error (Log.LOG_SYS, "Failed to create McContact from device contact {0}", deviceContact.UniqueId);
                         return;
