@@ -31,21 +31,19 @@ namespace NachoClient.iOS
         protected const string UICellReuseIdentifier = "UICell";
         protected const string ContactCellReuseIdentifier = "ContactCell";
 
-        public string searchToken;
+        protected string searchToken;
         McAccount account;
 
         public ContactsTableViewSource ()
         {
             owner = null;
             allowSwiping = false;
-            account = NcModel.Instance.Db.Table<McAccount> ()
-                .Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange)
-                .FirstOrDefault ();
         }
 
-        public void SetOwner (IContactsTableViewSourceDelegate owner, bool allowSwiping, UISearchDisplayController SearchDisplayController)
+        public void SetOwner (IContactsTableViewSourceDelegate owner, McAccount account, bool allowSwiping, UISearchDisplayController SearchDisplayController)
         {
             this.owner = owner;
+            this.account = account;
             this.allowSwiping = allowSwiping;
             this.SearchDisplayController = SearchDisplayController;
             SearchDisplayController.Delegate = new SearchDisplayDelegate (this);

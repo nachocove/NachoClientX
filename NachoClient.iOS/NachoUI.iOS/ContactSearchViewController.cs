@@ -26,6 +26,7 @@ namespace NachoClient.iOS
         // Interface
         protected INachoContactChooserDelegate owner;
         protected NcEmailAddress address;
+        protected McAccount account;
         protected string initialSearchString;
         // Internal state
         ContactsTableViewSource contactTableViewSource;
@@ -37,9 +38,10 @@ namespace NachoClient.iOS
         {
         }
 
-        public void SetOwner (INachoContactChooserDelegate owner, NcEmailAddress address, NachoContactType type)
+        public void SetOwner (INachoContactChooserDelegate owner, McAccount account, NcEmailAddress address, NachoContactType type)
         {
             this.owner = owner;
+            this.account = account;
             this.address = address;
             this.initialSearchString = "";
         }
@@ -57,7 +59,7 @@ namespace NachoClient.iOS
 
             // Manages the search bar & auto-complete table.
             contactTableViewSource = new ContactsTableViewSource ();
-            contactTableViewSource.SetOwner (this, false, SearchDisplayController);
+            contactTableViewSource.SetOwner (this, account, false, SearchDisplayController);
 
             cancelButton = new UIBarButtonItem ();
             Util.SetAutomaticImageForButton (cancelButton, "icn-close");

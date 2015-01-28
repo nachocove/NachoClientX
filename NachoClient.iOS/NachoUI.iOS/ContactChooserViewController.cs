@@ -28,15 +28,15 @@ namespace NachoClient.iOS
         // Internal state
         List<McContactEmailAddressAttribute> searchResults;
         // ContactTableViewSource is used solely to create & config a cell
-        ContactsTableViewSource contactTableViewSource;
         string contactSearchToken;
         float keyboardHeight;
 
         protected const string ContactCellReuseIdentifier = "ContactCell";
 
-        public void SetOwner (INachoContactChooserDelegate owner, NcEmailAddress address, NachoContactType contactType)
+        public void SetOwner (INachoContactChooserDelegate owner, McAccount account, NcEmailAddress address, NachoContactType contactType)
         {
             this.owner = owner;
+            this.account = account;
             this.address = address;
             this.contactType = contactType;
         }
@@ -60,10 +60,6 @@ namespace NachoClient.iOS
 
             NcAssert.True (null != owner);
             NcAssert.True (null != address);
-
-            account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
-
-            contactTableViewSource = new ContactsTableViewSource ();
 
             CreateView ();
 
@@ -184,7 +180,7 @@ namespace NachoClient.iOS
         {
             if (segue.Identifier.Equals ("ContactChooserToContactSearch")) {
                 var dvc = (INachoContactChooser)segue.DestinationViewController;
-                dvc.SetOwner (this, address, NachoContactType.EmailRequired);
+                dvc.SetOwner (this, account, address, NachoContactType.EmailRequired);
                 return;
             }
 
@@ -346,7 +342,7 @@ namespace NachoClient.iOS
 
             public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
             {
-                return Owner.contactTableViewSource.GetHeightForRow (tableView, indexPath);
+                return ContactCell.ROW_HEIGHT;
             }
 
             public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
