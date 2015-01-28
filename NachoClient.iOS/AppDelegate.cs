@@ -200,12 +200,19 @@ namespace NachoClient.iOS
         public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
         {
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Called");
+            // One-time initialization that do not need to be shut down later.
+            if (!StartCrashReportingHasHappened) {
+                StartCrashReportingHasHappened = true;
+                StartCrashReporting ();
+                Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartCrashReporting complete");
+            }
             bool isSet = ThreadPool.SetMaxThreads (50, 16);
             NcAssert.True (isSet);
-
             StartUIMonitor ();
             const uint MB = 1000 * 1000; // MB not MiB
             WebCache.Configure (1 * MB, 50 * MB);
+            // end of one-time initialization
+
             NcApplication.Instance.StartClass1Services ();
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartClass1Services complete");
 
@@ -245,13 +252,6 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: NcApplication callbacks registered");
 
             NcApplication.Instance.Class4LateShowEvent += (object sender, EventArgs e) => {
-                if (!StartCrashReportingHasHappened) {
-                    StartCrashReportingHasHappened = true;
-                    InvokeOnUIThread.Instance.Invoke (delegate {
-                        StartCrashReporting ();
-                        Log.Info (Log.LOG_LIFECYCLE, "Class4LateShowEvent: StartCrashReporting complete");
-                    });
-                }
                 // Telemetry is in AppDelegate because the implementation is iOS-only right now.
                 Telemetry.StartService ();
             };
@@ -516,7 +516,7 @@ namespace NachoClient.iOS
                 break;
             }
         }
-            
+
         /// Status bar height can change when the user is on a call or using navigation
         public override void ChangedStatusBarFrame (UIApplication application, RectangleF oldStatusBarFrame)
         {
