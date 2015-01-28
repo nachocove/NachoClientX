@@ -18,7 +18,7 @@ namespace NachoCore
         static bool running;
         static object lockObject = new object ();
 
-        private static void Process()
+        private static void Process ()
         {
             lock (lockObject) {
                 if (running) {
