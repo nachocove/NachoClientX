@@ -1175,15 +1175,17 @@ namespace NachoClient.iOS
 
         public void SetEventViewControllerItem ()
         {
-            var list = c.QueryRelatedEvents ();
-            if (null == list || 0 == list.Count ()) {
-                return;
-            } else if (1 == list.Count ()) {
-                owner.SetParentCalendarItem (list [0]);
-            } else {
-                //TODO This case should not be hit. Editing recurring events is disabled currently.
-                NcAssert.CaseError (String.Format ("Attempting to edit a recurring event. Recurrences count  {0}", list.Count ()));
-                return;
+            if (null != owner) {
+                var list = c.QueryRelatedEvents ();
+                if (null == list || 0 == list.Count ()) {
+                    return;
+                } else if (1 == list.Count ()) {
+                    owner.SetParentCalendarItem (list [0]);
+                } else {
+                    //TODO This case should not be hit. Editing recurring events is disabled currently.
+                    NcAssert.CaseError (String.Format ("Attempting to edit a recurring event. Recurrences count  {0}", list.Count ()));
+                    return;
+                }
             }
         }
 

@@ -13,7 +13,7 @@ using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
-    public partial class NachoNowViewController : NcUIViewController, IMessageTableViewSourceDelegate, INachoMessageEditorParent, INachoFolderChooserParent, INachoCalendarItemEditorParent, INachoDateControllerParent
+    public partial class NachoNowViewController : NcUIViewController, IMessageTableViewSourceDelegate, INachoMessageEditorParent, INachoFolderChooserParent, INachoDateControllerParent
     {
         protected bool priorityInboxNeedsRefresh;
         protected INachoEmailMessages priorityInbox;
@@ -199,7 +199,6 @@ namespace NachoClient.iOS
                 var holder = sender as SegueHolder;
                 var c = holder.value as McCalendar;
                 vc.SetCalendarItem (c);
-                vc.SetOwner (this);
                 return;
             }
             if (segue.Identifier == "NachoNowToEventView") {
@@ -461,23 +460,6 @@ namespace NachoClient.iOS
                 NcEmailArchiver.Move (message, folder);
             }
             vc.DismissFolderChooser (true, null);
-        }
-
-        /// <summary>
-        /// INachoCalendarItemEditorParent delegate
-        /// </summary>
-        public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)
-        {
-            vc.SetOwner (null);
-            vc.DismissCalendarItemEditor (false, null);
-        }
-
-        /// <summary>
-        /// INachoCalendarItemEditorParent delegate
-        /// </summary>
-        public void SetParentCalendarItem (McEvent e)
-        {
-            NcAssert.CaseError ();
         }
 
     }

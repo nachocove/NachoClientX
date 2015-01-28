@@ -18,7 +18,7 @@ using NachoCore.ActiveSync;
 
 namespace NachoClient.iOS
 {
-    public partial class ContactDetailViewController : NcUIViewControllerNoLeaks, IMessageTableViewSourceDelegate, INachoMessageEditorParent, INachoCalendarItemEditorParent, INachoFolderChooserParent, INachoNotesControllerParent, INachoDateControllerParent, INachoContactDefaultSelector
+    public partial class ContactDetailViewController : NcUIViewControllerNoLeaks, IMessageTableViewSourceDelegate, INachoMessageEditorParent, INachoFolderChooserParent, INachoNotesControllerParent, INachoDateControllerParent, INachoContactDefaultSelector
     {
         public McContact contact;
 
@@ -220,7 +220,6 @@ namespace NachoClient.iOS
                 var holder = (SegueHolder)sender;
                 var c = (McCalendar)holder.value;
                 vc.SetCalendarItem (c);
-                vc.SetOwner (this);
                 return;
             }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
@@ -1145,23 +1144,6 @@ namespace NachoClient.iOS
                     PerformSegue ("NachoNowToEditEvent", new SegueHolder (c));
                 }));
             }
-        }
-
-        /// <summary>
-        /// INachoCalendarItemEditorParent delegate
-        /// </summary>
-        public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)
-        {
-            vc.SetOwner (null);
-            vc.DismissCalendarItemEditor (true, null);
-        }
-
-        /// <summary>
-        /// INachoCalendarItemEditorParent delegate
-        /// </summary>
-        public void SetParentCalendarItem (McEvent e)
-        {
-            NcAssert.CaseError ();
         }
 
         public void DismissChildFolderChooser (INachoFolderChooser vc)

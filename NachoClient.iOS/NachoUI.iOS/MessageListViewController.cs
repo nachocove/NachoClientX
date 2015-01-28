@@ -15,7 +15,7 @@ using NachoCore.Brain;
 
 namespace NachoClient.iOS
 {
-    public partial class MessageListViewController : NcUITableViewController, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoMessageEditorParent, INachoCalendarItemEditorParent, INachoFolderChooserParent, IMessageTableViewSourceDelegate, INachoDateControllerParent
+    public partial class MessageListViewController : NcUITableViewController, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoMessageEditorParent, INachoFolderChooserParent, IMessageTableViewSourceDelegate, INachoDateControllerParent
     {
         MessageTableViewSource messageSource;
         protected UIBarButtonItem composeMailButton;
@@ -279,7 +279,6 @@ namespace NachoClient.iOS
                 var holder = sender as SegueHolder;
                 var e = holder.value as McCalendar;
                 vc.SetCalendarItem (e);
-                vc.SetOwner (this);
                 return;
             }
 
@@ -349,26 +348,12 @@ namespace NachoClient.iOS
         }
 
         /// <summary>
-        /// INachoCalendarItemEditorParent Delegate
-        /// </summary>
-        public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)
-        {
-            vc.SetOwner (null);
-            vc.DismissCalendarItemEditor (true, null);
-        }
-
-        /// <summary>
         /// INachoFolderChooser Delegate
         /// </summary>
         public void DismissChildFolderChooser (INachoFolderChooser vc)
         {
             vc.SetOwner (null, false, null);
             vc.DismissFolderChooser (false, null);
-        }
-
-        public void SetParentCalendarItem (McEvent e)
-        {
-            NcAssert.CaseError();
         }
 
         /// <summary>

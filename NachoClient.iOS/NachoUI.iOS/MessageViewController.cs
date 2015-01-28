@@ -25,7 +25,7 @@ using DDay.iCal.Serialization.iCalendar;
 namespace NachoClient.iOS
 {
     public partial class MessageViewController : NcUIViewControllerNoLeaks,
-        INachoMessageEditorParent, INachoFolderChooserParent, INachoCalendarItemEditorParent, 
+        INachoMessageEditorParent, INachoFolderChooserParent,
         INcDatePickerDelegate, IUcAddressBlockDelegate, INachoDateControllerParent
     {
         // Model data
@@ -595,7 +595,6 @@ namespace NachoClient.iOS
                 var vc = (EditEventViewController)segue.DestinationViewController;
                 var h = sender as SegueHolder;
                 var c = h.value as McCalendar;
-                vc.SetOwner (this);
                 vc.SetCalendarItem (c);
                 return;
             }
@@ -609,7 +608,6 @@ namespace NachoClient.iOS
                 var holder = sender as SegueHolder;
                 var e = holder.value as McCalendar;
                 vc.SetCalendarItem (e);
-                vc.SetOwner (this);
                 return;
             }
 
@@ -744,20 +742,6 @@ namespace NachoClient.iOS
                     PerformSegue ("MessageViewToEditEvent", new SegueHolder (cal));
                 }));
             }
-        }
-
-        public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)
-        {
-            vc.SetOwner (null);
-            vc.DismissCalendarItemEditor (true, null);
-        }
-
-        /// <summary>
-        /// INachoCalendarItemEditorParent delegate
-        /// </summary>
-        public void SetParentCalendarItem (McEvent e)
-        {
-            NcAssert.CaseError ();
         }
 
         public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
