@@ -69,7 +69,8 @@ namespace NachoCore.Model
             TaskMove,
             TaskBodyDownload,
             AttachmentDownload,
-            Last = AttachmentDownload,
+            Sync,
+            Last = Sync,
         };
         // Lifecycle of McPending:
         // - Protocol control API creates it (Eligible or PredBlocked) and puts it into the Q. Event goes to TL SM.
@@ -300,6 +301,17 @@ namespace NachoCore.Model
                 dupRef = null;
                 return false;
 
+            case Operations.Sync:
+                sameServerId = McPending.QueryByServerId (AccountId, ServerId).Where (x => x.State != StateEnum.Failed);
+                foreach (var pending in sameServerId) {
+                    if (pending.Operation == Operation) {
+                        dupRef = pending;
+                        return true;
+                    }
+                }
+                dupRef = null;
+                return false;
+
             default:
                 // TODO: implement additional cases as we care about them.
                 NcAssert.True (false);
@@ -452,6 +464,10 @@ namespace NachoCore.Model
                 break;
             case Operations.TaskDelete:
                 subKind = NcResult.SubKindEnum.Info_TaskDeleteSucceeded;
+                break;
+
+            case Operations.Sync:
+                subKind = NcResult.SubKindEnum.Info_SyncSucceeded;
                 break;
 
             default:
@@ -648,7 +664,8 @@ namespace NachoCore.Model
                 return NcResult.SubKindEnum.Error_SearchCommandFailed;
             case Operations.AttachmentDownload:
                 return NcResult.SubKindEnum.Error_AttDownloadFailed;
-
+            case Operations.Sync:
+                return NcResult.SubKindEnum.Error_SyncFailed;
             default:
                 throw new Exception (string.Format ("default subKind not specified for Operation {0}", Operation));
             }

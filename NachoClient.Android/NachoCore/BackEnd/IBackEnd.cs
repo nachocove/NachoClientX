@@ -40,8 +40,6 @@ namespace NachoCore
         void Stop (int accountId);
         // remove service for an account.
         void Remove (int accountId);
-        // for a single account to sync immediately.
-        void QuickSync (int accountId);
         // let the BE know that the asked-about server cert is/not okay to trust.
         void CertAskResp (int accountId, bool isOkay);
         // let the BE know that the server info has been updated for this account.
@@ -115,6 +113,8 @@ namespace NachoCore
         string MoveFolderCmd (int accountId, int folderId, int destFolderId);
         // rename a folder.
         string RenameFolderCmd (int accountId, int folderId, string displayName);
+        // Sync the contents of a folder.
+        string SyncCmd (int accountId, int folderId);
         // validate account config.
         bool ValidateConfig (int accountId, McServer server, McCred cred);
         void CancelValidateConfig (int accountId);

@@ -23,6 +23,9 @@ function gitCheckoutTag()
 
 for repo in $repos
 do
+  if [ "$repo" == "bc-csharp" ]; then
+    continue
+  fi
   gitCheckoutTag $repo
 done
 # repos.sh does not cover NachoClientX

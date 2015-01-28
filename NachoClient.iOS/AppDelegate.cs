@@ -555,8 +555,6 @@ namespace NachoClient.iOS
                 ReverseFinalShutdown ();
             }
             NcApplication.Instance.StatusIndEvent += FetchStatusHandler;
-            NcApplication.Instance.QuickSync ();
-
             // iOS only allows a limited amount of time to fetch data in the background.
             // Set a timer to force everything to shut down before iOS kills the app.
             performFetchTimer = new Timer (((object state) => {

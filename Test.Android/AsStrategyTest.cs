@@ -183,7 +183,6 @@ namespace Test.iOS
         [Test]
         public void TestCanAdvance ()
         {
-            McFolder folder;
             bool result;
             var emailFolder = McFolder.Create (Account.Id, false, false, true, "0", "inbox", "Inbox", Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
             emailFolder.AsSyncMetaToClientExpected = false;
@@ -754,11 +753,11 @@ namespace Test.iOS
             folders.Add (folder);
 
             // Test of null result.
-            var result = strat.GenSyncKit (account.Id, context.ProtocolState, false, false);
+            var result = strat.GenSyncKit (account.Id, context.ProtocolState, AsStrategy.SyncMode.Wide, false);
             Assert.IsNull (result);
 
             // Test cant-be-null.
-            result = strat.GenSyncKit (account.Id, context.ProtocolState, false, true);
+            result = strat.GenSyncKit (account.Id, context.ProtocolState, AsStrategy.SyncMode.Wide, true);
             Assert.IsNotNull (result);
             Assert.AreEqual (2, result.PerFolders.Count);
             Assert.True (result.PerFolders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Folder.Type));
@@ -769,7 +768,7 @@ namespace Test.iOS
             }
 
             // Test of narrow.
-            result = strat.GenSyncKit (account.Id, context.ProtocolState, true, false);
+            result = strat.GenSyncKit (account.Id, context.ProtocolState, AsStrategy.SyncMode.Narrow, false);
             Assert.AreEqual (2, result.PerFolders.Count);
             Assert.True (result.PerFolders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == x.Folder.Type));
             Assert.True (result.PerFolders.Any (x => Xml.FolderHierarchy.TypeCode.DefaultCal_8 == x.Folder.Type));
@@ -779,7 +778,7 @@ namespace Test.iOS
 
             // Test simple more-available case.
             folder.UpdateSet_AsSyncMetaToClientExpected (true);
-            result = strat.GenSyncKit (account.Id, context.ProtocolState, false, false);
+            result = strat.GenSyncKit (account.Id, context.ProtocolState, AsStrategy.SyncMode.Wide, false);
             Assert.AreEqual (1, result.PerFolders.Count);
             Assert.True (result.PerFolders.Any (x => Xml.FolderHierarchy.TypeCode.Ric_19 == x.Folder.Type));
 
@@ -836,7 +835,7 @@ namespace Test.iOS
                 ServerId = serverIdGen++.ToString (),
             };
             pending.Insert ();
-            result = strat.GenSyncKit (account.Id, context.ProtocolState, false, false);
+            result = strat.GenSyncKit (account.Id, context.ProtocolState, AsStrategy.SyncMode.Wide, false);
             Assert.AreEqual (4, result.PerFolders.Count);
             var pfInbox = result.PerFolders.Single (x => "inbox" == x.Folder.ServerId);
             Assert.False (pfInbox.GetChanges);
@@ -854,7 +853,7 @@ namespace Test.iOS
             var pfContact = result.PerFolders.Single (x => "contact" == x.Folder.ServerId);
             Assert.AreEqual (0, pfContact.Commands.Count);
             contact.UpdateSet_AsSyncMetaToClientExpected (false);
-            result = strat.GenSyncKit (account.Id, context.ProtocolState, false, false);
+            result = strat.GenSyncKit (account.Id, context.ProtocolState, AsStrategy.SyncMode.Wide, false);
             pfContact = result.PerFolders.Single (x => "contact" == x.Folder.ServerId);
             Assert.AreEqual (1, pfContact.Commands.Count);
             Assert.AreEqual (1, pfContact.Commands.Count (
@@ -890,7 +889,7 @@ namespace Test.iOS
                 ServerId = serverIdGen++.ToString (),
             };
             pending.Insert ();
-            result = strat.GenSyncKit (account.Id, context.ProtocolState, false, false);
+            result = strat.GenSyncKit (account.Id, context.ProtocolState, AsStrategy.SyncMode.Wide, false);
             pfUsermail = result.PerFolders.Single (x => "useremail" == x.Folder.ServerId);
             Assert.False (pfUsermail.GetChanges);
             Assert.AreEqual (2, pfUsermail.Commands.Count);
@@ -920,7 +919,7 @@ namespace Test.iOS
                 ServerId = serverIdGen++.ToString (),
             };
             pending.Insert ();
-            result = strat.GenSyncKit (account.Id, context.ProtocolState, false, false);
+            result = strat.GenSyncKit (account.Id, context.ProtocolState, AsStrategy.SyncMode.Wide, false);
             pfUsermail = result.PerFolders.Single (x => "useremail" == x.Folder.ServerId);
             Assert.False (pfUsermail.GetChanges);
             Assert.AreEqual (1, pfUsermail.Commands.Count);

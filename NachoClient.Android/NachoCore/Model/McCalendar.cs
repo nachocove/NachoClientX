@@ -139,10 +139,10 @@ namespace NachoCore.Model
             ).SingleOrDefault ();
         }
 
-        public static McCalendar QueryByUID (string UID)
+        public static McCalendar QueryByUID (int accountId, string UID)
         {
             var sameUid = NcModel.Instance.Db.Table<McCalendar> ().Where (
-                              x => x.UID == UID
+                              x => x.AccountId == accountId && x.UID == UID
                           );
             if (1 < sameUid.Count ()) {
                 // This shouldn't happen.  But we have seen it happen.
