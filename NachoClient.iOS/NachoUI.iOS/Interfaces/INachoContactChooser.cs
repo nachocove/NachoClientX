@@ -3,6 +3,7 @@
 using System;
 using MonoTouch.Foundation;
 using NachoCore.Utils;
+using NachoCore.Model;
 
 
 namespace NachoClient.iOS
@@ -16,7 +17,7 @@ namespace NachoClient.iOS
     public interface INachoContactChooser
     {
         void Cleanup();
-        void SetOwner (INachoContactChooserDelegate owner, NcEmailAddress address, NachoContactType type);
+        void SetOwner (INachoContactChooserDelegate owner, McAccount account, NcEmailAddress address, NachoContactType type);
     }
 
     public interface INachoContactChooserDelegate
