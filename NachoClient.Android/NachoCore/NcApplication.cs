@@ -28,6 +28,8 @@ namespace NachoCore
 
         public enum ExecutionContextEnum
         {
+            Migrating,
+            Initializing,
             Foreground,
             Background,
             QuickSync,
@@ -131,7 +133,8 @@ namespace NachoCore
 
         private NcApplication ()
         {
-            ThreadPool.SetMinThreads (8, 6);
+            NcAssert.True (ThreadPool.SetMinThreads (8, 6));
+            NcAssert.True (ThreadPool.SetMaxThreads (50, 16));
             TaskScheduler.UnobservedTaskException += (object sender, UnobservedTaskExceptionEventArgs eargs) => {
                 NcAssert.True (eargs.Exception is AggregateException, "AggregateException check");
                 var aex = (AggregateException)eargs.Exception;

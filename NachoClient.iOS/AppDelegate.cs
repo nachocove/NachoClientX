@@ -210,6 +210,7 @@ namespace NachoClient.iOS
             }
             bool isSet = ThreadPool.SetMaxThreads (50, 16);
             NcAssert.True (isSet);
+
             StartUIMonitor ();
             const uint MB = 1000 * 1000; // MB not MiB
             WebCache.Configure (1 * MB, 50 * MB);
