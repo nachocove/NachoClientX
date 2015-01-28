@@ -124,6 +124,7 @@
     <Compile Include="NcMessageThreadsTest.cs" />
     <Compile Include="EmailHelperTest.cs" />
     <Compile Include="McServerTest.cs" />
+    <Compile Include="McCalendarTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
