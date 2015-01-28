@@ -421,6 +421,11 @@ namespace NachoCore
             return ServiceFromAccountId (accountId).RenameFolderCmd (folderId, displayName);
         }
 
+        public string SyncCmd (int accountId, int folderId)
+        {
+            return ServiceFromAccountId (accountId).SyncCmd (folderId);
+        }
+
         public bool ValidateConfig (int accountId, McServer server, McCred cred)
         {
             if (NcCommStatus.Instance.Status != NetStatusStatusEnum.Up) {

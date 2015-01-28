@@ -113,6 +113,8 @@ namespace NachoCore
         string MoveFolderCmd (int accountId, int folderId, int destFolderId);
         // rename a folder.
         string RenameFolderCmd (int accountId, int folderId, string displayName);
+        // Sync the contents of a folder.
+        string SyncCmd (int accountId, int folderId);
         // validate account config.
         bool ValidateConfig (int accountId, McServer server, McCred cred);
         void CancelValidateConfig (int accountId);

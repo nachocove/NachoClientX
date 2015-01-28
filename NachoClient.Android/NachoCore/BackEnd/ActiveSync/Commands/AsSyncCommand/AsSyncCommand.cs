@@ -319,6 +319,9 @@ namespace NachoCore.ActiveSync
                     case McPending.Operations.TaskDelete:
                         commands.Add (ToTaskDelete (pending, folder));
                         break;
+                    case McPending.Operations.Sync:
+                        // we don't express this.
+                        break;
                     default:
                         NcAssert.CaseError (pending.Operation.ToString ());
                         break;
@@ -891,6 +894,7 @@ namespace NachoCore.ActiveSync
                         pathElem.Delete ();
                     }
                 }
+                // user-directed sync responses get processed here too.
                 pending.ResolveAsSuccess (BEContext.ProtoControl);
                 PendingList.RemoveAll (x => pending.Id == x.Id);
             }

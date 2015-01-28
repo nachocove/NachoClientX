@@ -300,6 +300,11 @@ namespace NachoCore
             return null;
         }
 
+        public virtual string SyncCmd (int folderId)
+        {
+            return null;
+        }
+
         public virtual void ValidateConfig (McServer server, McCred cred)
         {
         }
