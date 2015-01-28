@@ -23,7 +23,7 @@ namespace NachoClient.iOS
 
     public interface INachoCalendarItemEditorParent
     {
-        void SetParentCalendarItem (McEvent e);
+        void SetCalendarEvent (McEvent e);
     }
 }
 

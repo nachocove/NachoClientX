@@ -424,7 +424,7 @@ namespace NachoClient.iOS
                 ExtractValues ();
                 SyncMeetingRequest ();
                 PrepareInvites ();
-                SetEventViewControllerItem ();
+                SetOwnerCalendarEvent ();
                 DismissView ();
             };
 
@@ -1170,17 +1170,18 @@ namespace NachoClient.iOS
 
         public void DismissView ()
         {
+            owner = null;
             NavigationController.PopViewControllerAnimated (true);
         }
 
-        public void SetEventViewControllerItem ()
+        public void SetOwnerCalendarEvent ()
         {
             if (null != owner) {
                 var list = c.QueryRelatedEvents ();
                 if (null == list || 0 == list.Count ()) {
                     return;
                 } else if (1 == list.Count ()) {
-                    owner.SetParentCalendarItem (list [0]);
+                    owner.SetCalendarEvent (list [0]);
                 } else {
                     //TODO This case should not be hit. Editing recurring events is disabled currently.
                     NcAssert.CaseError (String.Format ("Attempting to edit a recurring event. Recurrences count  {0}", list.Count ()));

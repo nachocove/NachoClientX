@@ -1353,7 +1353,7 @@ namespace NachoClient.iOS
             vc.DismissCalendarItemEditor (true, null);
         }
 
-        public void SetParentCalendarItem (McEvent e)
+        public void SetCalendarEvent (McEvent e)
         {
             SetCalendarItem (e);
         }
