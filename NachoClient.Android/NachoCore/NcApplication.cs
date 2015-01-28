@@ -409,15 +409,6 @@ namespace NachoCore
             }, "NcAppStartup");
         }
 
-        public void QuickSync ()
-        {
-            if (ExecutionContextEnum.QuickSync != ExecutionContext) {
-                ExecutionContext = ExecutionContextEnum.QuickSync;
-            }
-            // Class 3 services must have already been set up.
-            BackEnd.Instance.QuickSync ();
-        }
-
         // method can be used to post to StatusIndEvent from outside NcApplication.
         public void InvokeStatusIndEvent (StatusIndEventArgs e)
         {
