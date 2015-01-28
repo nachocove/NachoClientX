@@ -239,7 +239,7 @@ namespace NachoClient.iOS
                 resultsTableView.ReloadData ();
                 NachoCore.Utils.NcAbate.RegularPriority ("ContactChooser UpdateAutocompleteResults");
             } else {
-                searchResults = McContact.SearchAllContactItems (forSearchString);
+                searchResults = McContact.SearchAllContactsWithEmailAddresses (forSearchString);
                 NachoCore.Utils.NcAbate.HighPriority ("ContactChooser UpdateAutocompleteResults with string");
                 resultsTableView.ReloadData ();
                 NachoCore.Utils.NcAbate.RegularPriority ("ContactChooser UpdateAutocompleteResults with string");
@@ -353,10 +353,10 @@ namespace NachoClient.iOS
             {
                 var cell = tableView.DequeueReusableCell (ContactCellReuseIdentifier);
                 if (null == cell) {
-                    cell = Owner.contactTableViewSource.CreateCell (tableView, VipButtonTouched);
+                    cell = ContactCell.CreateCell (tableView, VipButtonTouched);
                 }
                 var contact = Owner.searchResults [indexPath.Row].GetContact ();
-                Owner.contactTableViewSource.ConfigureCell (tableView, cell, contact);
+                ContactCell.ConfigureCell (tableView, cell, contact, null, false);
                 return cell;
             }
 

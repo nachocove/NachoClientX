@@ -1193,6 +1193,7 @@
       <Link>NachoCore\Utils\HashHelper.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\NachoInlineImageTextAttachment.cs" />
+    <Compile Include="NachoUI.iOS\Support\ContactCell.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
