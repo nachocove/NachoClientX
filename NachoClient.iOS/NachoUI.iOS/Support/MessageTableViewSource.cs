@@ -93,6 +93,11 @@ namespace NachoClient.iOS
             return didRefresh;
         }
 
+        public void StartSync ()
+        {
+            messageThreads.StartSync ();
+        }
+
         protected bool NoMessageThreads ()
         {
             return ((null == messageThreads) || (0 == messageThreads.Count ()));
@@ -540,7 +545,7 @@ namespace NachoClient.iOS
                 userLabelView.BackgroundColor = Util.ColorForUser (message.cachedFromColor);
             }
 
-            var unreadMessageView = (UIImageView) cell.ContentView.ViewWithTag (UNREAD_IMAGE_TAG);
+            var unreadMessageView = (UIImageView)cell.ContentView.ViewWithTag (UNREAD_IMAGE_TAG);
             unreadMessageView.Hidden = message.IsRead;
 
             var messageHeaderView = cell.ContentView.ViewWithTag (MESSAGE_HEADER_TAG) as MessageHeaderView;

@@ -49,5 +49,9 @@ namespace NachoCore
             return "Deadlines";
         }
 
+        public void StartSync ()
+        {
+        }
+
     }
 }

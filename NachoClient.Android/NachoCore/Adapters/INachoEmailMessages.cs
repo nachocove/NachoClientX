@@ -18,5 +18,7 @@ namespace NachoCore
         McEmailMessageThread GetEmailThread (int i);
 
         string DisplayName ();
+
+        void StartSync ();
     }
 }

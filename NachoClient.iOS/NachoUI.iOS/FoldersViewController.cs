@@ -141,7 +141,7 @@ namespace NachoClient.iOS
                 using (var image = UIImage.FromBundle ("modal-close")) {
                     var dismissButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, null);
                     dismissButton.Clicked += (object sender, EventArgs e) => {
-                        DismissViewController(true, null);
+                        DismissViewController (true, null);
                     };
                     navItem.LeftBarButtonItem = dismissButton;
                 }

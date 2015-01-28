@@ -78,6 +78,11 @@ namespace NachoCore
                 return displayName;
             }
 
+            public void StartSync ()
+            {
+                return;
+            }
+
         }
     }
 }
