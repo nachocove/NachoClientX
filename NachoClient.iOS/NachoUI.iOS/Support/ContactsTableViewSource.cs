@@ -15,21 +15,6 @@ namespace NachoClient.iOS
 {
     public class ContactsTableViewSource : UITableViewSource
     {
-        protected const float HORIZONTAL_INDENT = 65;
-
-        protected const int CALL_SWIPE_TAG = 100;
-        protected const int EMAIL_SWIPE_TAG = 101;
-        protected const int SWIPE_VIEW_TAG = 102;
-
-        protected const float ROW_HEIGHT = 80;
-
-        private static SwipeActionDescriptor CALL_BUTTON =
-            new SwipeActionDescriptor (CALL_SWIPE_TAG, 0.5f, UIImage.FromBundle ("contacts-call-swipe"),
-                "Dial", A.Color_NachoSwipeActionOrange);
-        private static SwipeActionDescriptor EMAIL_BUTTON =
-            new SwipeActionDescriptor (EMAIL_SWIPE_TAG, 0.5f, UIImage.FromBundle ("contacts-email-swipe"),
-                "Email", A.Color_NachoSwipeActionMatteBlack);
-
         bool multipleSections;
         int[] sectionStart;
         int[] sectionLength;
@@ -321,85 +306,18 @@ namespace NachoClient.iOS
 
         public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
         {
-            return ROW_HEIGHT;
+            return ContactCell.ROW_HEIGHT;
         }
-
-        protected const int TITLE_LABEL_TAG = 333;
-        protected const int USER_LABEL_TAG = 334;
-        protected const int SUBTITLE1_LABEL_TAG = 335;
-        protected const int SUBTITLE2_LABEL_TAG = 336;
-        protected const int SET_VIP_TAG = 337;
-        protected const int USER_PORTRAIT_TAG = 338;
-
+            
         public override UITableViewCell GetCell (UITableView tableView, NSIndexPath indexPath)
         {
             UITableViewCell cell = null;
             cell = tableView.DequeueReusableCell (ContactCellReuseIdentifier);
             if (null == cell) {
-                cell = CreateCell (tableView, VipButtonTouched);
+                cell = ContactCell.CreateCell (tableView, VipButtonTouched);
             }
             var contact = ContactFromIndexPath (tableView, indexPath);
-            ConfigureCell (tableView, cell, contact);
-            return cell;
-        }
-
-        public UITableViewCell CreateCell (UITableView tableView, EventHandler e)
-        {
-            var cell = new UITableViewCell (UITableViewCellStyle.Subtitle, ContactCellReuseIdentifier);
-
-            cell.Layer.CornerRadius = 15;
-            cell.Layer.MasksToBounds = true;
-            cell.SelectionStyle = UITableViewCellSelectionStyle.Default;
-
-            var view = new SwipeActionView (new RectangleF (0, 0, tableView.Frame.Width, ROW_HEIGHT));
-            view.BackgroundColor = UIColor.White;
-            view.SetAction (CALL_BUTTON, SwipeSide.LEFT);
-            view.SetAction (EMAIL_BUTTON, SwipeSide.RIGHT);
-            view.Tag = SWIPE_VIEW_TAG;
-
-            cell.ContentView.AddSubview (view);
-
-            UIButton toggleVipButton = new UIButton (new RectangleF (tableView.Frame.Right - 30, 10, 20, 20));
-            toggleVipButton.Tag = SET_VIP_TAG;
-            toggleVipButton.TouchUpInside += e;
-            view.AddSubview (toggleVipButton);
-
-            var titleLabel = new UILabel (new RectangleF (HORIZONTAL_INDENT, 10, tableView.Frame.Width - 15 - HORIZONTAL_INDENT - toggleVipButton.Frame.Width - 8, 20));
-            titleLabel.TextColor = A.Color_NachoGreen;
-            titleLabel.Font = A.Font_AvenirNextDemiBold17;
-            titleLabel.LineBreakMode = UILineBreakMode.TailTruncation;
-            titleLabel.Tag = TITLE_LABEL_TAG;
-            view.AddSubview (titleLabel);
-
-            var subtitle1Label = new UILabel (new RectangleF (HORIZONTAL_INDENT, 35, titleLabel.Frame.Width, 20));
-            subtitle1Label.LineBreakMode = UILineBreakMode.TailTruncation;
-            subtitle1Label.Font = A.Font_AvenirNextRegular14;
-            subtitle1Label.Tag = SUBTITLE1_LABEL_TAG;
-            view.AddSubview (subtitle1Label);
-
-            var subtitle2Label = new UILabel (new RectangleF (HORIZONTAL_INDENT, 55, titleLabel.Frame.Width, 20));
-            subtitle2Label.LineBreakMode = UILineBreakMode.TailTruncation;
-            subtitle2Label.Font = A.Font_AvenirNextRegular14;
-            subtitle2Label.Tag = SUBTITLE2_LABEL_TAG;
-            view.AddSubview (subtitle2Label);
-
-            // User userLabelView view, if no image
-            var userLabelView = new UILabel (new RectangleF (15, 10, 40, 40));
-            userLabelView.Font = A.Font_AvenirNextRegular24;
-            userLabelView.TextColor = UIColor.White;
-            userLabelView.TextAlignment = UITextAlignment.Center;
-            userLabelView.LineBreakMode = UILineBreakMode.Clip;
-            userLabelView.Layer.CornerRadius = 20;
-            userLabelView.Layer.MasksToBounds = true;
-            userLabelView.Tag = USER_LABEL_TAG;
-            view.AddSubview (userLabelView);
-
-            var userImageView = new UIImageView (new RectangleF (15, 10, 40, 40));
-            userImageView.Layer.CornerRadius = 20;
-            userImageView.Layer.MasksToBounds = true;
-            userImageView.Tag = USER_PORTRAIT_TAG;
-            view.AddSubview (userImageView);
-
+            ContactCell.ConfigureCell (tableView, cell, contact, owner, allowSwiping);
             return cell;
         }
 
@@ -415,167 +333,6 @@ namespace NachoClient.iOS
             using (var image = UIImage.FromBundle (c.IsVip ? "contacts-vip-checked" : "contacts-vip")) {
                 vipButton.SetImage (image, UIControlState.Normal);
             }
-        }
-
-        protected void CallSwipeHandler (McContact contact)
-        {
-            if (0 == contact.PhoneNumbers.Count) {
-                owner.PerformSegueForDelegate ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.PhoneNumberAdder));
-            } else if (1 == contact.PhoneNumbers.Count) {
-                Util.PerformAction ("tel", contact.GetPrimaryPhoneNumber ());
-            } else {
-                foreach (var p in contact.PhoneNumbers) {
-                    if (p.IsDefault) {
-                        Util.PerformAction ("tel", p.Value);
-                        return;
-                    }
-                }
-                owner.PerformSegueForDelegate ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultPhoneSelector));
-            }
-        }
-
-        protected void EmailSwipeHandler (McContact contact)
-        {
-            if (0 == contact.EmailAddresses.Count) {
-                owner.PerformSegueForDelegate ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.EmailAdder));
-            } else if (1 == contact.EmailAddresses.Count) {
-                owner.PerformSegueForDelegate ("SegueToMessageCompose", new SegueHolder (contact.GetEmailAddress ()));
-            } else {
-                foreach (var e in contact.EmailAddresses) {
-                    if (e.IsDefault) {
-                        owner.PerformSegueForDelegate ("SegueToMessageCompose", new SegueHolder (e.Value));
-                        return;
-                    }
-                }
-                owner.PerformSegueForDelegate ("SegueToContactDefaultSelection", new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultEmailSelector));
-            }
-        }
-
-        public void ConfigureCell (UITableView tableView, UITableViewCell cell, McContact contact)
-        {
-            var titleLabel = (UILabel)cell.ViewWithTag (TITLE_LABEL_TAG);
-            var subtitle1Label = (UILabel)cell.ViewWithTag (SUBTITLE1_LABEL_TAG);
-            var subtitle2Label = (UILabel)cell.ViewWithTag (SUBTITLE2_LABEL_TAG);
-            var labelView = (UILabel)cell.ViewWithTag (USER_LABEL_TAG);
-            var portraitView = (UIImageView)cell.ViewWithTag (USER_PORTRAIT_TAG);
-
-            labelView.Hidden = true;
-            portraitView.Hidden = true;
-
-            var view = (SwipeActionView)cell.ViewWithTag (SWIPE_VIEW_TAG);
-            view.EnableSwipe (null != contact && allowSwiping);
-
-            if (view.IsSwipeEnabled ()) {
-                view.ClearActions (SwipeSide.LEFT);
-                view.ClearActions (SwipeSide.RIGHT);
-
-                if (contact.CanUserEdit () || 0 < contact.PhoneNumbers.Count) {
-                    view.SetAction (CALL_BUTTON, SwipeSide.LEFT);
-                }
-                if (contact.CanUserEdit () || 0 < contact.EmailAddresses.Count) {
-                    view.SetAction (EMAIL_BUTTON, SwipeSide.RIGHT);
-                }
-            }
-
-            if (null == contact) {
-                titleLabel.Text = "This contact is unavailable";
-                titleLabel.TextColor = UIColor.LightGray;
-                titleLabel.Font = A.Font_AvenirNextRegular14;
-                subtitle1Label.Text = "";
-                subtitle2Label.Text = "";
-                view.OnSwipe = null;
-                view.OnClick = null;
-                return;
-            }
-
-            var displayTitle = contact.GetDisplayName ();
-            var displayTitleColor = A.Color_NachoDarkText;
-
-            var displaySubtitle1 = contact.GetPrimaryCanonicalEmailAddress ();
-            var displaySubtitle1Color = A.Color_NachoDarkText;
-
-            var displaySubtitle2 = contact.GetPrimaryPhoneNumber ();
-            var displaySubtitle2Color = A.Color_NachoDarkText;
-
-            var contactColor = Util.GetContactColor (contact);
-
-            if (String.IsNullOrEmpty (displayTitle) && !String.IsNullOrEmpty (displaySubtitle1)) {
-                displayTitle = displaySubtitle1;
-                displaySubtitle1 = "No name for this contact";
-                displaySubtitle1Color = A.Color_NachoTextGray;
-            }
-
-            if (String.IsNullOrEmpty (displayTitle)) {
-                displayTitle = "No name for this contact";
-                displayTitleColor = A.Color_NachoLightText;
-            }
-                
-            if (String.IsNullOrEmpty (displaySubtitle1)) {
-                displaySubtitle1 = "No email address for this contact";
-                displaySubtitle1Color = A.Color_NachoLightText;
-            }
-
-            if (String.IsNullOrEmpty (displaySubtitle2)) {
-                displaySubtitle2 = "No phone number for this contact";
-                displaySubtitle2Color = A.Color_NachoLightText;
-            }
-
-            titleLabel.Text = displayTitle;
-            titleLabel.TextColor = displayTitleColor;
-
-            subtitle1Label.Text = displaySubtitle1;
-            subtitle1Label.TextColor = displaySubtitle1Color;
-
-            subtitle2Label.Text = displaySubtitle2;
-            subtitle2Label.TextColor = displaySubtitle2Color;
-
-            if (0 == contact.PortraitId) {
-                ConfigureLabelView (labelView, contact, contactColor);
-                labelView.Hidden = false;
-            } else {
-                portraitView.Image = Util.ImageOfContact (contact);
-                portraitView.Hidden = false;
-            }
-
-            view.OnClick = (int tag) => {
-                switch (tag) {
-                case EMAIL_SWIPE_TAG:
-                    EmailSwipeHandler (contact);
-                    break;
-                case CALL_SWIPE_TAG:
-                    CallSwipeHandler (contact);
-                    break;
-                default:
-                    throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown action tag {0}", tag));
-                }
-            };
-            view.OnSwipe = (SwipeActionView activeView, SwipeActionView.SwipeState state) => {
-                switch (state) {
-                case SwipeActionView.SwipeState.SWIPE_BEGIN:
-                    tableView.ScrollEnabled = false;
-                    break;
-                case SwipeActionView.SwipeState.SWIPE_END_ALL_HIDDEN:
-                    tableView.ScrollEnabled = true;
-                    break;
-                case SwipeActionView.SwipeState.SWIPE_END_ALL_SHOWN:
-                    tableView.ScrollEnabled = false;
-                    break;
-                default:
-                    throw new NcAssert.NachoDefaultCaseFailure (String.Format ("Unknown swipe state {0}", (int)state));
-                }
-            };
-
-            var toggleVipButton = (UIButton)view.ViewWithTag (SET_VIP_TAG);
-            using (var image = UIImage.FromBundle (contact.IsVip ? "contacts-vip-checked" : "contacts-vip")) {
-                toggleVipButton.SetImage (image, UIControlState.Normal);
-            }
-        }
-
-        protected void ConfigureLabelView (UILabel labelView, McContact contact, UIColor contactColor)
-        {
-            labelView.Hidden = false;
-            labelView.Text = NachoCore.Utils.ContactsHelper.GetInitials (contact);
-            labelView.BackgroundColor = contactColor;
         }
 
         public void ScrollToSectionIncludingRecent (UITableView tableView, int index)
@@ -628,7 +385,7 @@ namespace NachoClient.iOS
                 }
             }
             // We immeidately display matches from our db.
-            var results = McContact.SearchAllContactItems (forSearchString);
+            var results = McContact.SearchAllContactsWithEmailAddresses (forSearchString);
             SetSearchResults (results);
             NachoCore.Utils.NcAbate.RegularPriority ("ContactTableViewSource UpdateSearchResults");
             return true;
@@ -675,5 +432,7 @@ namespace NachoClient.iOS
             }
         }
     }
+
+
 }
 

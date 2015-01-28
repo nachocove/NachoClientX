@@ -81,14 +81,6 @@ namespace NachoCore
         {
         }
 
-        /// <summary>
-        /// QuickSync is obsolete, and is not used by AsProtoControl.  It will be
-        /// removed if the next protocol to be implemented doesn't need it either.
-        /// </summary>
-        public virtual void QuickSync ()
-        {
-        }
-
         public virtual void ForceStop ()
         {
         }
@@ -304,6 +296,11 @@ namespace NachoCore
         }
 
         public virtual string RenameFolderCmd (int folderId, string displayName)
+        {
+            return null;
+        }
+
+        public virtual string SyncCmd (int folderId)
         {
             return null;
         }

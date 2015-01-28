@@ -23,8 +23,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NachoClient.Mac", "NachoCli
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WbxmlTool.Mac", "WbxmlTool.Mac\WbxmlTool.Mac.csproj", "{6E845969-C6CD-443F-BEA9-F1D3FB8AA800}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Exerciser.iOS", "Exerciser.iOS\Exerciser.iOS.csproj", "{D76DAE3E-42E8-43D7-BE2C-6B5A111DEE6C}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NachoUIMonitor.iOS", "..\NachoUIMonitorBinding\NachoUIMonitor.iOS\NachoUIMonitor.iOS.csproj", "{B516077B-652E-4AC9-B728-AB64B65044F4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SwipeViewBinding", "..\SwipeViewBinding\SwipeViewBinding\SwipeViewBinding\SwipeViewBinding.csproj", "{6239F5E9-9EA2-4B50-8CCE-241ED8E1F0B7}"
@@ -434,21 +432,6 @@ Global
 		{D5F54A4F-D84B-430F-9271-F7861E285B3E}.Release|iPhone.Build.0 = Release|Any CPU
 		{D5F54A4F-D84B-430F-9271-F7861E285B3E}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
 		{D5F54A4F-D84B-430F-9271-F7861E285B3E}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
-		{D76DAE3E-42E8-43D7-BE2C-6B5A111DEE6C}.Ad-Hoc|iPhone.ActiveCfg = Ad-Hoc|iPhone
-		{D76DAE3E-42E8-43D7-BE2C-6B5A111DEE6C}.AppStore|iPhone.ActiveCfg = AppStore|iPhone
-		{D76DAE3E-42E8-43D7-BE2C-6B5A111DEE6C}.AppStore|iPhone.Build.0 = AppStore|iPhone
-		{D76DAE3E-42E8-43D7-BE2C-6B5A111DEE6C}.Debug|Any CPU.ActiveCfg = Debug|iPhoneSimulator
-		{D76DAE3E-42E8-43D7-BE2C-6B5A111DEE6C}.Debug|Any CPU.Build.0 = Debug|iPhoneSimulator
-		{D76DAE3E-42E8-43D7-BE2C-6B5A111DEE6C}.Debug|iPhone.ActiveCfg = Debug|iPhone
-		{D76DAE3E-42E8-43D7-BE2C-6B5A111DEE6C}.Debug|iPhone.Build.0 = Debug|iPhone
-		{D76DAE3E-42E8-43D7-BE2C-6B5A111DEE6C}.Debug|iPhoneSimulator.ActiveCfg = Debug|iPhoneSimulator
-		{D76DAE3E-42E8-43D7-BE2C-6B5A111DEE6C}.Debug|iPhoneSimulator.Build.0 = Debug|iPhoneSimulator
-		{D76DAE3E-42E8-43D7-BE2C-6B5A111DEE6C}.Release|Any CPU.ActiveCfg = Release|iPhoneSimulator
-		{D76DAE3E-42E8-43D7-BE2C-6B5A111DEE6C}.Release|Any CPU.Build.0 = Release|iPhoneSimulator
-		{D76DAE3E-42E8-43D7-BE2C-6B5A111DEE6C}.Release|iPhone.ActiveCfg = Release|iPhone
-		{D76DAE3E-42E8-43D7-BE2C-6B5A111DEE6C}.Release|iPhone.Build.0 = Release|iPhone
-		{D76DAE3E-42E8-43D7-BE2C-6B5A111DEE6C}.Release|iPhoneSimulator.ActiveCfg = Release|iPhoneSimulator
-		{D76DAE3E-42E8-43D7-BE2C-6B5A111DEE6C}.Release|iPhoneSimulator.Build.0 = Release|iPhoneSimulator
 		{DBEE91B8-DF39-4008-9AC2-D7D1F3737449}.Ad-Hoc|iPhone.ActiveCfg = Release|Any CPU
 		{DBEE91B8-DF39-4008-9AC2-D7D1F3737449}.AppStore|iPhone.ActiveCfg = Release|Any CPU
 		{DBEE91B8-DF39-4008-9AC2-D7D1F3737449}.AppStore|iPhone.Build.0 = Release|Any CPU
@@ -530,7 +513,6 @@ Global
 		{E301B932-D165-4A65-8916-3E80C000B6AC}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
-		StartupItem = NachoClient.iOS\NachoClient.iOS.csproj
 		Policies = $0
 		$0.StandardHeader = $1
 		$1.Text = @ Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.\n

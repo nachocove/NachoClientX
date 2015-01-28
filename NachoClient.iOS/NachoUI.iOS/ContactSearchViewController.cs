@@ -31,6 +31,7 @@ namespace NachoClient.iOS
         ContactsTableViewSource contactTableViewSource;
 
         UIBarButtonItem cancelButton;
+        UIBarButtonItem searchButton;
 
         public ContactSearchViewController (IntPtr handle) : base (handle)
         {
@@ -67,6 +68,13 @@ namespace NachoClient.iOS
                 NavigationController.PopViewControllerAnimated (true); 
             };
 
+            searchButton = new UIBarButtonItem (UIBarButtonSystemItem.Search);
+            searchButton.TintColor = A.Color_NachoBlue;
+            NavigationItem.RightBarButtonItem = searchButton;
+            searchButton.Clicked += (object sender, EventArgs e) => {
+                SearchDisplayController.SearchBar.BecomeFirstResponder ();
+            };
+
             TableView.Source = contactTableViewSource;
             SearchDisplayController.SearchResultsTableView.Source = contactTableViewSource;
 
@@ -90,6 +98,12 @@ namespace NachoClient.iOS
         {
             base.ViewWillDisappear (animated);
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+        }
+
+        public override bool HidesBottomBarWhenPushed {
+            get {
+                return this.NavigationController.TopViewController == this;
+            }
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
@@ -116,7 +130,7 @@ namespace NachoClient.iOS
         protected void LoadContacts ()
         {
             NachoCore.Utils.NcAbate.HighPriority ("ContactSearchViewController LoadContacts");
-            var contacts = McContact.AllContactsWithEmailAddresses ();
+            var contacts = McContact.AllContactsSortedByName ();
             contactTableViewSource.SetContacts (null, contacts, false);
             TableView.ReloadData ();
             NachoCore.Utils.NcAbate.RegularPriority ("ContactSearchViewController LoadContacts");

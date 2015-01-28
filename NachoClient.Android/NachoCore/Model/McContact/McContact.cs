@@ -1124,7 +1124,7 @@ namespace NachoCore.Model
                 accountId, accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Contact, ricFolder.Id);
         }
 
-        public static List<McContactEmailAddressAttribute> SearchAllContactItems (string searchFor)
+        public static List<McContactEmailAddressAttribute> SearchAllContactsWithEmailAddresses (string searchFor)
         {
             // TODO: Put this in the brain
             if (String.IsNullOrEmpty (searchFor)) {
