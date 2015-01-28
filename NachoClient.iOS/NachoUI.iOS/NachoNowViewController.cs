@@ -472,5 +472,13 @@ namespace NachoClient.iOS
             vc.DismissCalendarItemEditor (false, null);
         }
 
+        /// <summary>
+        /// INachoCalendarItemEditorParent delegate
+        /// </summary>
+        public void SetParentCalendarItem (McEvent e)
+        {
+            NcAssert.CaseError ();
+        }
+
     }
 }

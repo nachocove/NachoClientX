@@ -172,6 +172,11 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Table<McException> ().Where (x => x.CalendarId == Id).ToList ();
         }
 
+        public List<McEvent> QueryRelatedEvents()
+        {
+            return NcModel.Instance.Db.Table<McEvent> ().Where (x => x.CalendarId == Id).ToList ();
+        }
+
         public void DeleteRelatedEvents ()
         {
             var list = NcModel.Instance.Db.Table<McEvent> ().Where (x => x.CalendarId == Id).ToList ();

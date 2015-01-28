@@ -366,6 +366,11 @@ namespace NachoClient.iOS
             vc.DismissFolderChooser (false, null);
         }
 
+        public void SetParentCalendarItem (McEvent e)
+        {
+            NcAssert.CaseError();
+        }
+
         /// <summary>
         /// INachoFolderChooser Delegate
         /// </summary>

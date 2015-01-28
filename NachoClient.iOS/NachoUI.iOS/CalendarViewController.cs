@@ -179,6 +179,11 @@ namespace NachoClient.iOS
             vc.DismissCalendarItemEditor (true, null);
         }
 
+        public void SetParentCalendarItem (McEvent e)
+        {
+            NcAssert.CaseError ();
+        }
+
         protected void ConfigureBasicView ()
         {
             // Enabled gestures

@@ -25,7 +25,7 @@ using MonoTouch.MapKit;
 
 namespace NachoClient.iOS
 {
-    public partial class EventViewController : NcUIViewControllerNoLeaks, INachoNotesControllerParent
+    public partial class EventViewController : NcUIViewControllerNoLeaks, INachoNotesControllerParent, INachoCalendarItemEditorParent
     {
         // Model information
         protected McEvent e;
@@ -806,6 +806,7 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("EventToEditEvent")) {
                 var dc = (EditEventViewController)segue.DestinationViewController;
                 dc.SetCalendarEvent (e, CalendarItemEditorAction.edit);
+                dc.SetOwner (this);
                 return;
             }
 
@@ -820,7 +821,7 @@ namespace NachoClient.iOS
             if (segue.Identifier == "SegueToMailTo") {
                 var dc = (MessageComposeViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
-                var url = (string) holder.value;
+                var url = (string)holder.value;
                 dc.SetMailToUrl (url);
                 return;
             }
@@ -1345,6 +1346,18 @@ namespace NachoClient.iOS
             }
         }
 
+        /// Interface INachoCalendarItemEditorParent
+        public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)
+        {
+            vc.SetOwner (null);
+            vc.DismissCalendarItemEditor (true, null);
+        }
+
+        public void SetParentCalendarItem (McEvent e)
+        {
+            SetCalendarItem (e);
+        }
+
         // Event handlers
 
         private void ScrollViewScrolled (object sender, EventArgs e)
@@ -1471,9 +1484,9 @@ namespace NachoClient.iOS
             scrollView.SetContentOffset (new PointF (0, contentView.Frame.Height - scrollView.Frame.Height), true);
         }
 
-        public void onLinkSelected(NSUrl url)
+        public void onLinkSelected (NSUrl url)
         {
-            if(EmailHelper.IsMailToURL(url.AbsoluteString)) {
+            if (EmailHelper.IsMailToURL (url.AbsoluteString)) {
                 PerformSegue ("SegueToMailTo", new SegueHolder (url.AbsoluteString));
             } else {
                 UIApplication.SharedApplication.OpenUrl (url);

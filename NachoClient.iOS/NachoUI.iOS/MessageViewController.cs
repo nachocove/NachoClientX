@@ -752,6 +752,14 @@ namespace NachoClient.iOS
             vc.DismissCalendarItemEditor (true, null);
         }
 
+        /// <summary>
+        /// INachoCalendarItemEditorParent delegate
+        /// </summary>
+        public void SetParentCalendarItem (McEvent e)
+        {
+            NcAssert.CaseError ();
+        }
+
         public void FolderSelected (INachoFolderChooser vc, McFolder folder, object cookie)
         {
             MoveThisMessage (folder);

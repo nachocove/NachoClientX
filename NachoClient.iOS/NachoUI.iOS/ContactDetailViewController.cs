@@ -1147,10 +1147,21 @@ namespace NachoClient.iOS
             }
         }
 
+        /// <summary>
+        /// INachoCalendarItemEditorParent delegate
+        /// </summary>
         public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)
         {
             vc.SetOwner (null);
             vc.DismissCalendarItemEditor (true, null);
+        }
+
+        /// <summary>
+        /// INachoCalendarItemEditorParent delegate
+        /// </summary>
+        public void SetParentCalendarItem (McEvent e)
+        {
+            NcAssert.CaseError ();
         }
 
         public void DismissChildFolderChooser (INachoFolderChooser vc)

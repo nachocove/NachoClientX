@@ -424,6 +424,7 @@ namespace NachoClient.iOS
                 ExtractValues ();
                 SyncMeetingRequest ();
                 PrepareInvites ();
+                SetEventViewControllerItem ();
                 DismissView ();
             };
 
@@ -1172,6 +1173,20 @@ namespace NachoClient.iOS
             NavigationController.PopViewControllerAnimated (true);
         }
 
+        public void SetEventViewControllerItem ()
+        {
+            var list = c.QueryRelatedEvents ();
+            if (null == list || 0 == list.Count ()) {
+                return;
+            } else if (1 == list.Count ()) {
+                owner.SetParentCalendarItem (list [0]);
+            } else {
+                //TODO This case should not be hit. Editing recurring events is disabled currently.
+                NcAssert.CaseError (String.Format ("Attempting to edit a recurring event. Recurrences count  {0}", list.Count ()));
+                return;
+            }
+        }
+
         public class TupleList<T1, T2> : List<Tuple<T1, T2>>
         {
             public void Add (T1 item, T2 item2)
@@ -1324,7 +1339,6 @@ namespace NachoClient.iOS
 
         protected void SyncMeetingRequest ()
         {
-
             if (0 == c.Id) {
                 c.Insert (); // new entry
                 folder = calendars.GetFolder (calendarIndex);
