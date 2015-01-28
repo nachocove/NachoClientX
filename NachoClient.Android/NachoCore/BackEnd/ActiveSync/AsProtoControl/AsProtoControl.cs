@@ -145,6 +145,7 @@ namespace NachoCore.ActiveSync
         public AsProtoControl (IProtoControlOwner owner, int accountId) : base (owner, accountId)
         {
             ProtoControl = this;
+            // TODO decouple disk setup from constructor.
             EstablishService ();
             /*
              * State Machine design:
@@ -919,6 +920,14 @@ namespace NachoCore.ActiveSync
             NcModel.Instance.InitalizeDirs (AccountId);
         }
 
+        public override void Remove ()
+        {
+            NcAssert.True ((uint)Lst.Parked == Sm.State || (uint)St.Start == Sm.State || (uint)St.Stop == Sm.State);
+            // TODO cleanup stuff on disk like for wipe.
+            NcCommStatus.Instance.CommStatusNetEvent -= NetStatusEventHandler;
+            NcCommStatus.Instance.CommStatusServerEvent -= ServerStatusEventHandler;
+            base.Remove ();
+        }
         // Methods callable by the owner.
         // Keep Execute() harmless if it is called while already executing.
         public override void Execute ()

@@ -127,6 +127,12 @@ namespace NachoCore
             service.ForceStop ();
         }
 
+        public void Remove (int accountId)
+        {
+            Stop (accountId);
+            RemoveService (accountId);
+        }
+
         public void QuickSync ()
         {
             var accounts = NcModel.Instance.Db.Table<McAccount> ();
@@ -158,6 +164,26 @@ namespace NachoCore
             if (!Services.TryAdd (accountId, service)) {
                 // Concurrency. Another thread has jumped in and done the add.
                 Log.Info (Log.LOG_SYS, "Another thread has already called EstablishService for Account.Id {0}", accountId);
+            }
+        }
+
+        // Service must be Stop()ed before calling RemoveService().
+        private void RemoveService (int accountId)
+        {
+            ProtoControl service = null;
+            if (Services.TryGetValue (accountId, out service)) {
+                service.Remove ();
+                if (!Services.TryRemove (accountId, out service)) {
+                    Log.Error (Log.LOG_LIFECYCLE, "BackEnd.RemoveService({0}) could not remove service.", accountId);
+                }
+                var account = McAccount.QueryById<McAccount> (accountId);
+                if (null != account) {
+                    account.Delete ();
+                } else {
+                    Log.Warn (Log.LOG_LIFECYCLE, "BackEnd.RemoveService({0}) McAccount missing.", accountId);
+                }
+            } else {
+                Log.Warn (Log.LOG_LIFECYCLE, "BackEnd.RemoveService({0}) could not find service.", accountId);
             }
         }
 

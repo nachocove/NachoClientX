@@ -1029,7 +1029,19 @@ namespace NachoClient.iOS
             var calFolder = new McFolder ();
             if (!calendarChanged) {
                 if (action == CalendarItemEditorAction.create) {
+                    // The initial setting of the calendar picker should be the default calendar folder.
+                    // (In most cases, there is only one calendar folder.  But Hotmail does things
+                    // differently, and choosing the correct folder is vital.)  Start with the first
+                    // calendar in the list, regardless of its type.  But then look for a default
+                    // calendar folder elsewhere in the calendar list.
                     calFolder = calendars.GetFolder (0);
+                    for (int i = 1; i < calendars.Count (); ++i) {
+                        var cal = calendars.GetFolder (i);
+                        if (Xml.FolderHierarchy.TypeCode.DefaultCal_8 == cal.Type) {
+                            calFolder = cal;
+                            break;
+                        }
+                    }
                 } else {
                     calFolder = GetCalendarFolder ();
                     if (null == calFolder) {
@@ -1300,6 +1312,15 @@ namespace NachoClient.iOS
                 c.MeetingStatus = NcMeetingStatus.Meeting;
                 c.ResponseRequested = true;
                 c.ResponseRequestedIsSet = true;
+            }
+
+            // There is no UI for setting the BusyStatus.  For new events, set it to Free for
+            // all-day events and Busy for other events.  If we don't explicitly set BusyStatus,
+            // some servers will treat it as if it were Free, while others will act as if it
+            // were Busy.
+            if (!c.BusyStatusIsSet) {
+                c.BusyStatus = allDayEvent ? NcBusyStatus.Free : NcBusyStatus.Busy;
+                c.BusyStatusIsSet = true;
             }
 
             // The event always uses the local time zone.
