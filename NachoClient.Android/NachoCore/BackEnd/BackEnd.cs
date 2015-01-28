@@ -127,10 +127,10 @@ namespace NachoCore
             service.ForceStop ();
         }
 
-        public void Remove (int accoountId)
+        public void Remove (int accountId)
         {
-            Stop (accoountId);
-            RemoveService (accoountId);
+            Stop (accountId);
+            RemoveService (accountId);
         }
 
         public void QuickSync ()
@@ -176,8 +176,14 @@ namespace NachoCore
                 if (!Services.TryRemove (accountId, out service)) {
                     Log.Error (Log.LOG_LIFECYCLE, "BackEnd.RemoveService({0}) could not remove service.", accountId);
                 }
+                var account = McAccount.QueryById<McAccount> (accountId);
+                if (null != account) {
+                    account.Delete ();
+                } else {
+                    Log.Warn (Log.LOG_LIFECYCLE, "BackEnd.RemoveService({0}) McAccount missing.", accountId);
+                }
             } else {
-                Log.Info (Log.LOG_LIFECYCLE, "BackEnd.RemoveService({0}) could not find service.", accountId);
+                Log.Warn (Log.LOG_LIFECYCLE, "BackEnd.RemoveService({0}) could not find service.", accountId);
             }
         }
 
