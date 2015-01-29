@@ -251,7 +251,7 @@ namespace NachoClient.iOS
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: NcApplication callbacks registered");
 
-            NcApplication.Instance.Class4LateShowEvent += (object sender, EventArgs e) => {
+            NcApplication.Instance.Class4EarlyShowEvent += (object sender, EventArgs e) => {
                 // Telemetry is in AppDelegate because the implementation is iOS-only right now.
                 Telemetry.StartService ();
             };
