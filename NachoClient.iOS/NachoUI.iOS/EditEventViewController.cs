@@ -1086,6 +1086,7 @@ namespace NachoClient.iOS
                 START_PICKER_HEIGHT = 216;
                 startIsOpening = true;
                 startDivider.Hidden = false;
+                ScrollToMakeVisible (true);
                 LayoutView ();
                 startDateOpen = true;
             }
@@ -1102,6 +1103,7 @@ namespace NachoClient.iOS
                 END_PICKER_HEIGHT = 216;
                 endIsOpening = true;
                 endDivider.Hidden = false;
+                ScrollToMakeVisible (false);
                 LayoutView ();
                 endDateOpen = true;
             }
@@ -1113,6 +1115,19 @@ namespace NachoClient.iOS
                 LayoutView ();
                 endDateOpen = false;
                 endDateLabel.TextColor = A.Color_808080;
+            }
+        }
+
+        protected void ScrollToMakeVisible (bool isStartView)
+        {
+            if (isStartView) {
+                if (startView.Frame.Bottom + startDatePicker.Frame.Height - scrollView.ContentOffset.Y > scrollView.Frame.Height) {
+                    scrollView.SetContentOffset (new PointF (0, startView.Frame.Top - (scrollView.Frame.Height - startDatePicker.Frame.Height - CELL_HEIGHT)), true);
+                }
+            } else {
+                if (endView.Frame.Bottom + endDatePicker.Frame.Height - scrollView.ContentOffset.Y > scrollView.Frame.Height) {
+                    scrollView.SetContentOffset (new PointF (0, endView.Frame.Top - (scrollView.Frame.Height - endDatePicker.Frame.Height - CELL_HEIGHT)), true);
+                }
             }
         }
 
