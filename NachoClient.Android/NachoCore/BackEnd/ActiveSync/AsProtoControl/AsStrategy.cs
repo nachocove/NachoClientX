@@ -977,6 +977,11 @@ namespace NachoCore.ActiveSync
                             new AsSyncCommand (BEContext.ProtoControl, nSyncKit));
                     }
                 }
+                // (FG, BG) If it has been more than 5 min since last FolderSync, do a FolderSync.
+                // It seems we can't rely on the server to tell us to do one in all situations.
+                if (protocolState.AsLastFolderSync < DateTime.UtcNow.AddMinutes (-5)) {
+                    return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.FSync, null);
+                }
                 // (FG, BG) If we are rate-limited, and we can execute a narrow Ping command at the 
                 // current filter setting, execute a narrow Ping command.
                 // Do don't obey rate-limiter if HotMail.

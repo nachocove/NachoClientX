@@ -589,12 +589,12 @@ namespace NachoCore.ActiveSync
                             (uint)AsEvt.E.AuthFail,
                             (uint)CtlEvt.E.GetServConf,
                             (uint)CtlEvt.E.GetCertOk,
-                            (uint)CtlEvt.E.ReFSync,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPick, State = (uint)Lst.Pick },
                             new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
                             new Trans { Event = (uint)CtlEvt.E.PkQOp, Act = DoArg, State = (uint)Lst.QOpW },
                             new Trans { Event = (uint)CtlEvt.E.PkHotQOp, Act = DoArg, State = (uint)Lst.HotQOpW },
                             new Trans { Event = (uint)CtlEvt.E.PkFetch, Act = DoArg, State = (uint)Lst.FetchW },
@@ -1216,6 +1216,10 @@ namespace NachoCore.ActiveSync
 
             case PickActionEnum.Wait:
                 Sm.PostEvent ((uint)CtlEvt.E.PkWait, "PCKWAIT", cmd);
+                break;
+
+            case PickActionEnum.FSync:
+                Sm.PostEvent ((uint)CtlEvt.E.ReFSync, "PCFSYNC");
                 break;
 
             default:
