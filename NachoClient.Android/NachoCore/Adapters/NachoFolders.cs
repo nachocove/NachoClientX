@@ -6,6 +6,7 @@ using System.Linq;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.ActiveSync;
+using NachoCore.Utils;
 
 namespace NachoCore
 {
@@ -39,6 +40,17 @@ namespace NachoCore
             Xml.FolderHierarchy.TypeCode.UserCreatedMail_12,
         };
 
+        public static Xml.FolderHierarchy.TypeCode[] FilterForFolders = {
+            Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1,
+            Xml.FolderHierarchy.TypeCode.DefaultInbox_2,
+            Xml.FolderHierarchy.TypeCode.DefaultDrafts_3,
+            Xml.FolderHierarchy.TypeCode.DefaultDeleted_4,
+            Xml.FolderHierarchy.TypeCode.DefaultSent_5,
+            Xml.FolderHierarchy.TypeCode.DefaultOutbox_6,
+            Xml.FolderHierarchy.TypeCode.UserCreatedMail_12,
+            Xml.FolderHierarchy.TypeCode.UserCreatedCal_13,
+        };
+
         public static readonly Xml.FolderHierarchy.TypeCode[] FilterForCalendars = {
             Xml.FolderHierarchy.TypeCode.DefaultCal_8,
             Xml.FolderHierarchy.TypeCode.UserCreatedCal_13,
@@ -67,9 +79,9 @@ namespace NachoCore
             if (null == account) {
                 return;
             }
-            var temp = NcModel.Instance.Db.Table<McFolder> ().Where (f => (f.AccountId == account.Id) && (f.IsClientOwned == false)).OrderBy (f => f.DisplayName).ToList ();
+            var temp = NcModel.Instance.Db.Table<McFolder> ().Where (f => f.AccountId == account.Id).OrderBy (f => f.DisplayName).ToList ();
             foreach (var l in temp) {
-                if (!l.IsHidden) {
+                if (!l.IsHidden && (!l.IsClientOwned || DraftsHelper.IsDraftsFolder(l))) {
                     // TODO: Need a matching enumeration
                     var match = (Xml.FolderHierarchy.TypeCode)l.Type;
                     if (Array.IndexOf (types, match) >= 0) {

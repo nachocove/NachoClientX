@@ -885,9 +885,9 @@ namespace NachoCore.ActiveSync
                 }
             });
             NcModel.Instance.RunInTransaction (() => {
-                if (null == McFolder.GetOutboxFolder (AccountId)) {
+                if (null == McFolder.GetCalendarDraftsFolder (AccountId)) {
                     freshMade = McFolder.Create (AccountId, true, false, true, "0",
-                        McFolder.ClientOwned_CalDrafts, "On-Device Calendar Drafts",
+                        McFolder.ClientOwned_CalDrafts, "Calendar Drafts",
                         Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
                     freshMade.Insert ();
                 }

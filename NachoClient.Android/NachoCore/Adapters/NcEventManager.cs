@@ -28,7 +28,6 @@ namespace NachoCore
         {
             list = NcModel.Instance.Db.Table<McEvent> ().OrderBy (v => v.StartTime).ToList ();
         }
-
     }
 }
 

@@ -1188,6 +1188,10 @@
     <Compile Include="NachoUI.iOS\DraftsViewController.designer.cs">
       <DependentUpon>DraftsViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="NachoUI.iOS\Support\DraftsTableViewSource.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\DraftsHelper.cs">
+      <Link>NachoCore\Utils\DraftsHelper.cs</Link>
+    </Compile>
     <Compile Include="NachoUI.iOS\Support\PermissionManager.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\HashHelper.cs">
       <Link>NachoCore\Utils\HashHelper.cs</Link>
