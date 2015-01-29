@@ -13,7 +13,8 @@ if [ $# -ne 2 ]; then
 fi
 
 # Fetch all git repos
-sh fetch.sh
+source repos.sh
+./fetch.py $repos
 
 # Tag all repos
 sh checkout_tag.sh "v$1_$2"
