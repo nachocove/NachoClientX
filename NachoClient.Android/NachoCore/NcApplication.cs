@@ -199,6 +199,7 @@ namespace NachoCore
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass1Services called.");
             NcTask.StartService ();
+            Telemetry.StartService ();
             NcModel.Instance.GarbageCollectFiles ();
             NcModel.Instance.Start ();
             EstablishService ();

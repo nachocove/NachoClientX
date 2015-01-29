@@ -57,11 +57,13 @@ namespace NachoClient.iOS
         // Don't use NcTimer here - use the raw timer to avoid any future chicken-egg issues.
         #pragma warning disable 414
         private Timer ShutdownTimer = null;
+        // used to ensure that a race condition doesn't let the ShutdownTimer stop things after re-activation.
         private int ShutdownCounter = 0;
 
         #pragma warning restore 414
         private bool FinalShutdownHasHappened = false;
         private bool StartCrashReportingHasHappened = false;
+        private bool DidEnterBackgroundCalled = false;
         private bool hasFirstSyncCompleted;
 
         private void StartCrashReporting ()
@@ -251,9 +253,8 @@ namespace NachoClient.iOS
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: NcApplication callbacks registered");
 
-            NcApplication.Instance.Class4EarlyShowEvent += (object sender, EventArgs e) => {
-                // Telemetry is in AppDelegate because the implementation is iOS-only right now.
-                Telemetry.StartService ();
+            NcApplication.Instance.Class4LateShowEvent += (object sender, EventArgs e) => {
+                Telemetry.SharedInstance.Throttling = false;
             };
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: NcApplication Class4LateShowEvent registered");
@@ -418,6 +419,11 @@ namespace NachoClient.iOS
         // when the user quits.
         public override void DidEnterBackground (UIApplication application)
         {
+            if (DidEnterBackgroundCalled) {
+                Log.Error (Log.LOG_LIFECYCLE, "DidEnterBackground: called more than once.");
+                return;
+            }
+            DidEnterBackgroundCalled = true;
             var timeRemaining = application.BackgroundTimeRemaining;
             Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground: time remaining: {0}", timeRemaining);
             // XAMMIT: sometimes BackgroundTimeRemaining reads as MAXFLOAT.
@@ -450,10 +456,11 @@ namespace NachoClient.iOS
         public override void WillEnterForeground (UIApplication application)
         {
             Log.Info (Log.LOG_LIFECYCLE, "WillEnterForeground: Called");
+            DidEnterBackgroundCalled = false;
             if (doingPerformFetch) {
                 CompletePerformFetchWithoutShutdown ();
             }
-            ++ShutdownCounter;
+            Interlocked.Increment (ref ShutdownCounter);
             if (null != ShutdownTimer) {
                 ShutdownTimer.Dispose ();
                 ShutdownTimer = null;
