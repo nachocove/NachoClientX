@@ -160,7 +160,7 @@ namespace NachoClient.iOS
             contentView.AddGestureRecognizer (g);
 
             account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
-            calendars = new NachoFolders (NachoFolders.FilterForCalendars);
+            calendars = new NachoFolders (account.Id, NachoFolders.FilterForCalendars);
 
             switch (action) {
             case CalendarItemEditorAction.create:

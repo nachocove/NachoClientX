@@ -11,6 +11,7 @@ using TypeCode = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode;
 using ClassCode = NachoCore.Model.McAbstrFolderEntry.ClassCodeEnum;
 using NachoAssertionFailure = NachoCore.Utils.NcAssert.NachoAssertionFailure;
 
+
 namespace Test.iOS
 {
     [TestFixture]
@@ -263,6 +264,50 @@ namespace Test.iOS
                 FoldersAreEqual (folder2, recentlyAccessed[1], "folder2 should be the second folder in the list");
                 FoldersAreEqual (folder1, recentlyAccessed[2], "folder1 should be the last folder in the list");
             }
+        }
+
+        [TestFixture]
+        public class QueryNonHiddenFoldersOfType : BaseMcFolderTest
+        {
+            [Test]
+            public void TestQueryNonHiddenFoldersOfType ()
+            {
+                int accountId = 1;
+
+                McFolder hiddenDraftFolder = FolderOps.CreateFolder (accountId, isClientOwned: true, isHidden: true, typeCode: Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
+                McFolder defaultEmailDrafts = FolderOps.CreateFolder (accountId, typeCode: Xml.FolderHierarchy.TypeCode.DefaultDrafts_3);
+                McFolder deviceCalendarDrafts = FolderOps.CreateFolder (accountId, isClientOwned: true, typeCode: Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
+                McFolder defaultInbox = FolderOps.CreateFolder (accountId, typeCode: Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+
+                Xml.FolderHierarchy.TypeCode[] draftTypes = {
+                    Xml.FolderHierarchy.TypeCode.DefaultDrafts_3,
+                    Xml.FolderHierarchy.TypeCode.UserCreatedCal_13,
+                };
+
+                List<McFolder> nonHiddenDraftFolders = McFolder.QueryNonHiddenFoldersOfType (accountId, draftTypes);
+                List<int> nonHiddenDraftFoldersIds = new List<int> ();
+                foreach (McFolder f in nonHiddenDraftFolders) {
+                    nonHiddenDraftFoldersIds.Add (f.Id);
+                }
+
+                Assert.False (nonHiddenDraftFoldersIds.Contains (hiddenDraftFolder.Id));
+                Assert.False (nonHiddenDraftFoldersIds.Contains (defaultInbox.Id));
+                Assert.True (nonHiddenDraftFoldersIds.Contains (defaultEmailDrafts.Id));
+                Assert.True (nonHiddenDraftFoldersIds.Contains (deviceCalendarDrafts.Id));
+            }
+        }
+
+        [Test]
+        public void TestTypesToCommaDelimitedString ()
+        {
+            Xml.FolderHierarchy.TypeCode[] typeArray = {
+                Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1,
+                Xml.FolderHierarchy.TypeCode.DefaultInbox_2,
+                Xml.FolderHierarchy.TypeCode.DefaultDrafts_3,
+            };
+
+            string typesArrayAsString =  Folder_Helpers.TypesToCommaDelimitedString (typeArray);
+            Assert.True (typesArrayAsString.Equals ("(1,2,3)"));
         }
 
         [TestFixture]

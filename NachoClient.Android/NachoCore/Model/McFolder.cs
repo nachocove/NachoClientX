@@ -236,6 +236,14 @@ namespace NachoCore.Model
             return GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultSent_5);
         }
 
+        public static McFolder GetEmailDraftsFolder (int accountId)
+        {
+            if (null != McFolder.GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultDrafts_3)) {
+                return McFolder.GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultDrafts_3);
+            }
+            return McFolder.GetClientOwnedFolder (accountId, ClientOwned_EmailDrafts);
+        }
+
         public static List<McFolder> QueryByParentId (int accountId, string parentId)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
@@ -251,6 +259,18 @@ namespace NachoCore.Model
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f " +
                 "WHERE f.AccountId = ? AND f.LastAccessed > ? " +
                 "ORDER BY f.LastAccessed DESC", accountId, DateTime.UtcNow.AddYears(-1));
+            return folders.ToList ();
+        }
+
+        public static List<McFolder> QueryNonHiddenFoldersOfType (int accountId, Xml.FolderHierarchy.TypeCode[] types)
+        {
+            var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f " +
+                " WHERE f.accountId = ? AND " +
+                " f.IsAwaitingDelete = 0 AND " +
+                " f.Type IN " + Folder_Helpers.TypesToCommaDelimitedString (types) + " AND " +
+                " f.IsHidden = 0 " +
+                " ORDER BY f.DisplayName ", 
+                accountId);
             return folders.ToList ();
         }
 

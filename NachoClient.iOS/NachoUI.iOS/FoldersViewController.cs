@@ -726,7 +726,7 @@ namespace NachoClient.iOS
 
         public void ConfigureFolders ()
         {
-            Folders = new NachoFolders (NachoFolders.FilterForEmail);
+            Folders = new NachoFolders (account.Id, NachoFolders.FilterForEmail);
             ConvertFoldersToMcFolders ();
             CreateNestedFolderList ();
         }

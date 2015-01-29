@@ -1,6 +1,7 @@
 using System;
 using NachoCore.Model;
 using NachoPlatform;
+using NachoCore.ActiveSync;
 
 namespace NachoCore.Utils
 {
@@ -44,6 +45,24 @@ namespace NachoCore.Utils
                 return original;
             }
             return char.ToUpper (original [0]) + original.Substring (1);
+        }
+    }
+
+    public static class Folder_Helpers
+    {
+        public static string TypesToCommaDelimitedString (Xml.FolderHierarchy.TypeCode[] types)
+        {
+            string typesAsString = "(";
+            int remainingTypes = types.Length;
+            for (int i = 0; i < types.Length; i++) {
+                typesAsString += ((int)types [i]).ToString();
+                if (types.Length - i > 1) {
+                    typesAsString += ",";
+                }
+                remainingTypes--;
+            }
+            typesAsString += ")";
+            return typesAsString;
         }
     }
 
