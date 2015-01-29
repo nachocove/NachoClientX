@@ -1086,7 +1086,7 @@ namespace NachoClient.iOS
                 START_PICKER_HEIGHT = 216;
                 startIsOpening = true;
                 startDivider.Hidden = false;
-                ScrollToMakeVisible (true);
+                ScrollToMakeVisible (startView);
                 LayoutView ();
                 startDateOpen = true;
             }
@@ -1103,7 +1103,7 @@ namespace NachoClient.iOS
                 END_PICKER_HEIGHT = 216;
                 endIsOpening = true;
                 endDivider.Hidden = false;
-                ScrollToMakeVisible (false);
+                ScrollToMakeVisible (endView);
                 LayoutView ();
                 endDateOpen = true;
             }
@@ -1118,16 +1118,10 @@ namespace NachoClient.iOS
             }
         }
 
-        protected void ScrollToMakeVisible (bool isStartView)
+        protected void ScrollToMakeVisible (UIView view)
         {
-            if (isStartView) {
-                if (startView.Frame.Bottom + startDatePicker.Frame.Height - scrollView.ContentOffset.Y > scrollView.Frame.Height) {
-                    scrollView.SetContentOffset (new PointF (0, startView.Frame.Top - (scrollView.Frame.Height - startDatePicker.Frame.Height - CELL_HEIGHT)), true);
-                }
-            } else {
-                if (endView.Frame.Bottom + endDatePicker.Frame.Height - scrollView.ContentOffset.Y > scrollView.Frame.Height) {
-                    scrollView.SetContentOffset (new PointF (0, endView.Frame.Top - (scrollView.Frame.Height - endDatePicker.Frame.Height - CELL_HEIGHT)), true);
-                }
+            if (view.Frame.Bottom + startDatePicker.Frame.Height - scrollView.ContentOffset.Y > scrollView.Frame.Height) {
+                scrollView.SetContentOffset (new PointF (0, view.Frame.Top - (scrollView.Frame.Height - startDatePicker.Frame.Height - CELL_HEIGHT)), true);
             }
         }
 
