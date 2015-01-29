@@ -6,7 +6,7 @@ using NachoCore.Model;
 
 namespace NachoCore.ActiveSync
 {
-    public enum PickActionEnum { Sync, Ping, QOop, HotQOp, Fetch, Wait };
+    public enum PickActionEnum { Sync, Ping, QOop, HotQOp, Fetch, Wait, FSync };
 
     public class PingKit
     {
