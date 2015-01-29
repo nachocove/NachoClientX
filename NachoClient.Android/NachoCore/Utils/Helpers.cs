@@ -53,15 +53,13 @@ namespace NachoCore.Utils
         public static string TypesToCommaDelimitedString (Xml.FolderHierarchy.TypeCode[] types)
         {
             string typesAsString = "(";
-            int remainingTypes = types.Length;
+            string[] typesToStringArray = new string[types.Length];
+
             for (int i = 0; i < types.Length; i++) {
-                typesAsString += ((int)types [i]).ToString();
-                if (types.Length - i > 1) {
-                    typesAsString += ",";
-                }
-                remainingTypes--;
+                typesToStringArray [i] = ((int)types [i]).ToString ();
             }
-            typesAsString += ")";
+
+            typesAsString += string.Join (",", typesToStringArray) + ")";
             return typesAsString;
         }
     }

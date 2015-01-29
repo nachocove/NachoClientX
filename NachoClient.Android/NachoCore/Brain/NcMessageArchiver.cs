@@ -27,16 +27,8 @@ namespace NachoCore
 
         public static void Archive (McEmailMessage message)
         {
-            var type = ActiveSync.Xml.FolderHierarchy.TypeCode.UserCreatedMail_12;
-            var folderList = McFolder.GetUserFolders (message.AccountId, type, 0, ArchiveFolderName);
-            if (null == folderList) {
-                BackEnd.Instance.CreateFolderCmd (message.AccountId, ArchiveFolderName, type);
-                folderList = McFolder.GetUserFolders (message.AccountId, type, 0, ArchiveFolderName);
-            }
-            NcAssert.True (null != folderList);
-            var folder = folderList.First ();
-
-            BackEnd.Instance.MoveEmailCmd (message.AccountId, message.Id, folder.Id);
+            McFolder archiveFolder = McFolder.GetOrCreateArchiveFolder (message.AccountId);
+            BackEnd.Instance.MoveEmailCmd (message.AccountId, message.Id, archiveFolder.Id);
         }
 
         public static void Delete (McEmailMessage message)

@@ -10,6 +10,7 @@ using System.Linq;
 using TypeCode = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode;
 using ClassCode = NachoCore.Model.McAbstrFolderEntry.ClassCodeEnum;
 using NachoAssertionFailure = NachoCore.Utils.NcAssert.NachoAssertionFailure;
+using NachoCore;
 
 
 namespace Test.iOS
@@ -294,8 +295,25 @@ namespace Test.iOS
                 Assert.False (nonHiddenDraftFoldersIds.Contains (defaultInbox.Id));
                 Assert.True (nonHiddenDraftFoldersIds.Contains (defaultEmailDrafts.Id));
                 Assert.True (nonHiddenDraftFoldersIds.Contains (deviceCalendarDrafts.Id));
+
+                List<McFolder> emptyFoldersList = McFolder.QueryNonHiddenFoldersOfType (accountId, new Xml.FolderHierarchy.TypeCode[0]);
+                Assert.True (0 == emptyFoldersList.Count);
             }
         }
+
+        [Test]
+        public void TestGetOrCreateEmailDraftsFolder ()
+        {
+
+            Assert.True("Drafts".Equals (McFolder.GetOrCreateEmailDraftsFolder (1).DisplayName));
+        }
+
+           //Not sure how to write a unit test for this
+//        [Test]
+//        public void TestGetOrCreateArchiveFolder ()
+//        {
+//            Assert.True("Archive".Equals (McFolder.GetOrCreateArchiveFolder (account.Id).DisplayName));
+//        }
 
         [Test]
         public void TestTypesToCommaDelimitedString ()
@@ -308,6 +326,10 @@ namespace Test.iOS
 
             string typesArrayAsString =  Folder_Helpers.TypesToCommaDelimitedString (typeArray);
             Assert.True (typesArrayAsString.Equals ("(1,2,3)"));
+
+            Xml.FolderHierarchy.TypeCode [] emptyTypeArray = new TypeCode[0];
+            typesArrayAsString = Folder_Helpers.TypesToCommaDelimitedString (emptyTypeArray);
+            Assert.True (typesArrayAsString.Equals ("()"));
         }
 
         [TestFixture]

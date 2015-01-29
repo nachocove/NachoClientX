@@ -12,6 +12,24 @@ namespace NachoCore
 {
     public class NachoFolders : INachoFolders
     {
+        //        Xml.FolderHierarchy.TypeCode.UserCreatedGeneric,     
+        //        Xml.FolderHierarchy.TypeCode.DefaultInbox,       
+        //        Xml.FolderHierarchy.TypeCode.DefaultDrafts,      
+        //        Xml.FolderHierarchy.TypeCode.DefaultDeleted,     
+        //        Xml.FolderHierarchy.TypeCode.DefaultSent,        
+        //        Xml.FolderHierarchy.TypeCode.DefaultOutbox,      
+        //        Xml.FolderHierarchy.TypeCode.DefaultTasks,       
+        //        Xml.FolderHierarchy.TypeCode.DefaultCal,     
+        //        Xml.FolderHierarchy.TypeCode.DefaultContacts,        
+        //        Xml.FolderHierarchy.TypeCode.DefaultNotes,       
+        //        Xml.FolderHierarchy.TypeCode.DefaultJournal,     
+        //        Xml.FolderHierarchy.TypeCode.UserCreatedMail,        
+        //        Xml.FolderHierarchy.TypeCode.UserCreatedCal,     
+        //        Xml.FolderHierarchy.TypeCode.UserCreatedContacts,        
+        //        Xml.FolderHierarchy.TypeCode.UserCreatedTasks,       
+        //        Xml.FolderHierarchy.TypeCode.UserCreatedJournal,     
+        //        Xml.FolderHierarchy.TypeCode.UserCreatedNotes,       
+
         public static readonly Xml.FolderHierarchy.TypeCode[] FilterForEmail = {
             Xml.FolderHierarchy.TypeCode.UserCreatedGeneric_1,
             Xml.FolderHierarchy.TypeCode.DefaultInbox_2,
