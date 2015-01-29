@@ -410,6 +410,10 @@ namespace NachoCore.Utils
         // to confirm that telemetry is still running.
         private const double MAX_IDLE_PERIOD = 30.0;
 
+        // The amount of pause (in milliseconds) between successive uploads when throttling is enabled.
+        // Assuming typical upload time of 50 msec, 200 msec pause gives roughly 4 uploads per seconds.
+        private const int THROTTLING_IDLE_PERIOD = 200;
+
         private static Telemetry _SharedInstance;
 
         public static Telemetry SharedInstance {
@@ -432,6 +436,10 @@ namespace NachoCore.Utils
         NcCounter FailToSend;
 
         private NcRateLimter FailToSendLogLimiter;
+
+        // Telemetry event upload can be throttled by this boolean. It is set by StartService() and
+        // clear by class 4 late show event
+        public bool Throttling;
 
         public Telemetry ()
         {
@@ -710,6 +718,7 @@ namespace NachoCore.Utils
         {
             #if __IOS__
             // FIXME - Add AWS SDK for Android so we can actually run telemetry for Android.
+            SharedInstance.Throttling = true;
             SharedInstance.Start <TelemetryBEAWS> ();
             #endif
         }
@@ -852,6 +861,11 @@ namespace NachoCore.Utils
                         // send multiple messages at a time. This leads to a more
                         // efficient utilization of write capacity.
                         Token.WaitHandle.WaitOne (5000);
+                    } else {
+                        // We still have more events to upload. Check if we are throttling still.
+                        if (Throttling) {
+                            Token.WaitHandle.WaitOne (THROTTLING_IDLE_PERIOD);
+                        }
                     }
                 } else {
                     // Log only to console. Logging telemetry failures to telemetry is
