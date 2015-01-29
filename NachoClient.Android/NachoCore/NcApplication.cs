@@ -206,48 +206,25 @@ namespace NachoCore
             NcModel.Instance.GarbageCollectFiles ();
             NcModel.Instance.Start ();
             EstablishService ();
+            NcModel.Instance.EngageRateLimiter ();
+            NcBrain.StartService ();
+            NcContactGleaner.Start ();
+            BackEnd.Instance.Owner = this;
+            BackEnd.Instance.EstablishService ();
+            BackEnd.Instance.Start ();
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass1Services exited.");
         }
 
         public void StopClass1Services ()
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass1Services called.");
+            BackEnd.Instance.Stop ();
+            NcContactGleaner.Stop ();
+            NcBrain.StopService ();
             NcModel.Instance.Stop ();
             NcTimer.StopService ();
             NcTask.StopService ();
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass1Services exited.");
-        }
-
-        public void StartClass2Services ()
-        {
-            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass2Services called.");
-            NcModel.Instance.EngageRateLimiter ();
-            NcBrain.StartService ();
-            NcContactGleaner.Start ();
-            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass2Services exited.");
-        }
-
-        public void StopClass2Services ()
-        {
-            // No need to turn off the model rate limiter.
-            NcContactGleaner.Stop ();
-            NcBrain.StopService ();
-        }
-
-        public void StartClass3Services ()
-        {
-            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass3Services called.");
-            BackEnd.Instance.Owner = this;
-            BackEnd.Instance.EstablishService ();
-            BackEnd.Instance.Start ();
-            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass3Services exited.");
-        }
-
-        public void StopClass3Services ()
-        {
-            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass3Services called.");
-            BackEnd.Instance.Stop ();
-            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass3Services exited.");
         }
 
         // ALL CLASS-4 STARTS ARE DEFERRED BASED ON TIME.

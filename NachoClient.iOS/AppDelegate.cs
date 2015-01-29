@@ -218,13 +218,6 @@ namespace NachoClient.iOS
 
             NcApplication.Instance.StartClass1Services ();
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartClass1Services complete");
-
-            NcApplication.Instance.StartClass2Services ();
-            Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartClass2Services complete");
-
-            NcApplication.Instance.StartClass3Services ();
-            Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartClass3Services complete");
-
             Account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
 
             NcApplication.Instance.AppStartupTasks ();
@@ -386,13 +379,8 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: Stale");
                 return;
             }
-
-            NcApplication.Instance.StopClass3Services ();
-            Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: StopClass3Services complete");
-            NcApplication.Instance.StopClass2Services ();
-            Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: StopClass2Services complete");
             NcApplication.Instance.StopClass1Services ();
-            Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: NcApplication.Instance.Dispose complete");
+            Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: StopClass1Services complete");
             if (0 < BackgroundIosTaskId) {
                 UIApplication.SharedApplication.EndBackgroundTask (BackgroundIosTaskId);
                 BackgroundIosTaskId = -1;
@@ -406,11 +394,6 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "ReverseFinalShutdown: Called");
             NcApplication.Instance.StartClass1Services ();
             Log.Info (Log.LOG_LIFECYCLE, "ReverseFinalShutdown: StartClass1Services complete");
-            NcApplication.Instance.StartClass2Services ();
-            Log.Info (Log.LOG_LIFECYCLE, "ReverseFinalShutdown: StartClass2Services complete");
-            NcApplication.Instance.StartClass3Services ();
-            Log.Info (Log.LOG_LIFECYCLE, "ReverseFinalShutdown: StartClass3Services complete");
-
             FinalShutdownHasHappened = false;
             Log.Info (Log.LOG_LIFECYCLE, "ReverseFinalShutdown: Exit");
         }
