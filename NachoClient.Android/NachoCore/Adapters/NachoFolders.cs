@@ -16,7 +16,7 @@ namespace NachoCore
         //        Xml.FolderHierarchy.TypeCode.DefaultInbox,
         //        Xml.FolderHierarchy.TypeCode.DefaultDrafts,
         //        Xml.FolderHierarchy.TypeCode.DefaultDeleted,
-        //        Xml.FolderHierarchy.TypeCode.DefaultSent, 
+        //        Xml.FolderHierarchy.TypeCode.DefaultSent,
         //        Xml.FolderHierarchy.TypeCode.DefaultOutbox,
         //        Xml.FolderHierarchy.TypeCode.DefaultTasks,
         //        Xml.FolderHierarchy.TypeCode.DefaultCal,
