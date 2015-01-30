@@ -188,7 +188,7 @@ namespace NachoClient.iOS
         {
             NachoCore.Utils.NcAbate.HighPriority ("ContactListViewController LoadContacs");
             var recents = McContact.RicContactsSortedByRank (account.Id, 5);
-            var contacts = McContact.AllContactsSortedByName ();
+            var contacts = McContact.AllContactsSortedByName (true);
             contactTableViewSource.SetContacts (recents, contacts, true);
             TableView.ReloadData ();
             NachoCore.Utils.NcAbate.RegularPriority ("ContactListViewController LoadContacs");

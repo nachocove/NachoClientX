@@ -35,6 +35,19 @@ namespace NachoCore.Model
         }
     }
 
+    public class McContactComparer : IEqualityComparer<McContact>
+    {
+        public bool Equals (McContact a, McContact b)
+        {
+            return a.Id == b.Id;
+        }
+
+        public int GetHashCode (McContact c)
+        {
+            return c.Id;
+        }
+    }
+
     public partial class McContact : McAbstrItem
     {
         /// <summary>
@@ -61,6 +74,9 @@ namespace NachoCore.Model
         private List<McContactAddressAttribute> DbAddresses;
         /// The collection of phone numbers associated with the contact
         private List<McContactStringAttribute> DbPhoneNumbers;
+
+        public bool EmailAddressesEclipsed { get; set; }
+
         /// The collection of email addresses associated with the contact
         private List<McContactEmailAddressAttribute> DbEmailAddresses;
         /// The collection of instant messaging addresses associated with the contact
@@ -652,18 +668,58 @@ namespace NachoCore.Model
         {
             // FIXME db transaction.
             CircleColor = NachoPlatform.PlatformUserColorIndex.PickRandomColorForUser ();
+            if (ShouldEmailAddressesBeEclipsed ()) {
+                EmailAddressesEclipsed = true;
+            }
             int retval = base.Insert ();
             InsertAncillaryData (NcModel.Instance.Db);
+            EvaluateEclipsing ();
             return retval;
         }
 
         public override int Update ()
         {
+            if (ShouldEmailAddressesBeEclipsed ()) {
+                EmailAddressesEclipsed = true;
+            }
             int retval = base.Update ();
             if (HasReadAncillaryData) {
                 InsertAncillaryData (NcModel.Instance.Db);
             }
+            EvaluateEclipsing ();
             return retval;
+        }
+
+        public override int Delete ()
+        {
+            var addressList = EmailAddresses;
+            int retval = base.Delete ();
+            foreach (var address in addressList) {
+                var contactList = McContact.QueryByEmailAddress (AccountId, address.Value);
+                foreach (var contact in contactList) {
+                    var newEclipsed = ShouldEmailAddressesBeEclipsed ();
+                    if (newEclipsed != EmailAddressesEclipsed) {
+                        EmailAddressesEclipsed = newEclipsed;
+                        contact.Update ();
+                    }
+                }
+            }
+            return retval;
+        }
+
+        private void EvaluateEclipsing ()
+        {
+            // Does it eclipse other contacts?
+            foreach (var address in EmailAddresses) {
+                var contactList = QueryByEmailAddress (AccountId, address.Value).Where (x => x.Id != Id);
+                foreach (var contact in contactList) {
+                    var newEclipsed = contact.ShouldEmailAddressesBeEclipsed ();
+                    if (newEclipsed != contact.EmailAddressesEclipsed) {
+                        contact.EmailAddressesEclipsed = true;
+                        contact.Update ();
+                    }
+                }
+            }
         }
 
         public override void DeleteAncillary ()
@@ -1124,7 +1180,7 @@ namespace NachoCore.Model
                 accountId, accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Contact, ricFolder.Id);
         }
 
-        public static List<McContactEmailAddressAttribute> SearchAllContactItems (string searchFor)
+        public static List<McContactEmailAddressAttribute> SearchAllContactItems (string searchFor, bool withEclipsing = false)
         {
             // TODO: Put this in the brain
             if (String.IsNullOrEmpty (searchFor)) {
@@ -1142,6 +1198,7 @@ namespace NachoCore.Model
                 "WHERE " +
                 "m.ClassCode=? AND " +
                 "c.IsAwaitingDelete = 0 AND " +
+                (withEclipsing ? "c.EmailAddressesEclipsed = 0 AND " : "") +
                 "( " +
                 "  c.FirstName LIKE ? OR c.LastName LIKE ?  OR s.Value LIKE ? OR s.Value LIKE ? " +
                 ") " +
@@ -1149,7 +1206,7 @@ namespace NachoCore.Model
                 (int)McAbstrFolderEntry.ClassCodeEnum.Contact, firstName, lastName, firstName, lastName);
         }
 
-        static string GetContactSearchString (int accountId = 0)
+        static string GetContactSearchString (bool withEclipsing, int accountId = 0)
         {
             var fmt = " SELECT DISTINCT Id, substr(SORT_ORDER, 1, 1) as FirstLetter FROM   " +
                       " (  " +
@@ -1157,6 +1214,7 @@ namespace NachoCore.Model
                       "     FROM McContact AS c  " +
                       "     LEFT OUTER JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId  " +
                       "     WHERE " +
+                      (withEclipsing ? " c.EmailAddressesEclipsed = 0 AND " : "") +
                       "     {0} " +
                       "     c.IsAwaitingDelete = 0  " +
                       " )  " +
@@ -1169,14 +1227,14 @@ namespace NachoCore.Model
             }
         }
 
-        public static List<NcContactIndex> AllContactsSortedByName (int accountId)
+        public static List<NcContactIndex> AllContactsSortedByName (int accountId, bool withEclipsing = false)
         {
-            return NcModel.Instance.Db.Query<NcContactIndex> (GetContactSearchString (accountId), (int)McAbstrFolderEntry.ClassCodeEnum.Contact);
+            return NcModel.Instance.Db.Query<NcContactIndex> (GetContactSearchString (withEclipsing, accountId), (int)McAbstrFolderEntry.ClassCodeEnum.Contact);
         }
 
-        public static List<NcContactIndex> AllContactsSortedByName ()
+        public static List<NcContactIndex> AllContactsSortedByName (bool withEclipsing = false)
         {
-            return NcModel.Instance.Db.Query<NcContactIndex> (GetContactSearchString (0), (int)McAbstrFolderEntry.ClassCodeEnum.Contact);
+            return NcModel.Instance.Db.Query<NcContactIndex> (GetContactSearchString (withEclipsing, 0), (int)McAbstrFolderEntry.ClassCodeEnum.Contact);
         }
 
         public static List<NcContactIndex> AllContactsWithEmailAddresses ()
@@ -1348,6 +1406,127 @@ namespace NachoCore.Model
                 }
             }
             return true;
+        }
+
+        public bool IsDevice ()
+        {
+            return (ItemSource.Device == Source);
+        }
+
+        public bool IsSynced ()
+        {
+            if (ItemSource.ActiveSync != Source) {
+                return false;
+            }
+            return (!IsGal () && !IsRic ());
+        }
+
+        public bool IsGleaned ()
+        {
+            return ((ItemSource.Internal == Source) && (1 == EmailAddresses.Count));
+        }
+
+        public bool IsGal ()
+        {
+            return ((ItemSource.ActiveSync == Source) && (!String.IsNullOrEmpty (GalCacheToken)));
+        }
+
+        public bool IsRic ()
+        {
+            McFolder ricFolder = McFolder.GetRicContactFolder (AccountId);
+            if (null == ricFolder) {
+                return false;
+            }
+            var map =
+                McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode (
+                    AccountId,
+                    ricFolder.Id,
+                    Id,
+                    ClassCodeEnum.Contact);
+            if (null == map) {
+                return false;
+            }
+            return true;
+        }
+
+        private int GetContactTypeIndex ()
+        {
+            if (IsDevice ()) {
+                return 5;
+            } else if (IsSynced ()) {
+                return 4;
+            } else if (IsGal ()) {
+                return 3;
+            } else if (IsRic ()) {
+                return 2;
+            } else if (IsGleaned ()) {
+                return 1;
+            }
+            NcAssert.True (false);
+            return 0;
+        }
+
+        private static bool ShouldSuperceded (McContact a, McContact b)
+        {
+            return (a.GetContactTypeIndex () > b.GetContactTypeIndex ());
+        }
+
+        private bool ShouldBeSupercededBy (McContact c)
+        {
+            return ShouldSuperceded (c, this);
+        }
+
+        private bool ShouldEmailAddressesBeEclipsed ()
+        {
+            if (!IsGleaned () && !IsGal () && !IsRic ()) {
+                return false;
+            }
+
+            List<McContact> contactList = new List<McContact> ();
+            foreach (var address in EmailAddresses) {
+                var contacts = McContact.QueryByEmailAddress (AccountId, address.Value).Where (x => x.Id != Id);
+                contactList.AddRange (contacts);
+            }
+
+            foreach (var contact in contactList.Distinct (new McContactComparer ())) {
+                if (!ShouldBeSupercededBy (contact)) {
+                    continue;
+                }
+                if (McContactEmailAddressAttribute.IsSuperSet (contact.EmailAddresses, EmailAddresses)) {
+                    return true; // found a contact that should eclipse this contact's addresses
+                }
+            }
+            return false;
+        }
+
+        public static List<NcContactIndex> EclipseContacts (List<NcContactIndex> contactIndexList)
+        {
+            List<NcContactIndex> newContactIndexList = new List<NcContactIndex> ();
+            foreach (var index in contactIndexList) {
+                var contact = McContact.QueryById<McContact> (index.Id);
+                if (contact.ShouldEmailAddressesBeEclipsed ()) {
+                    contact.EmailAddressesEclipsed = true;
+                    contact.Update ();
+                } else {
+                    newContactIndexList.Add (index);
+                }
+            }
+            return newContactIndexList;
+        }
+
+        public static List<McContactEmailAddressAttribute> EclipseContacts (List<McContactEmailAddressAttribute> addressList)
+        {
+            List<McContactEmailAddressAttribute> newAddressList = new List<McContactEmailAddressAttribute> ();
+            foreach (var address in addressList) {
+                var contact = address.GetContact ();
+                if (contact.ShouldEmailAddressesBeEclipsed ()) {
+                    contact.EmailAddressesEclipsed = true;
+                    contact.Update ();
+                } else {
+                    newAddressList.Add (address);
+                }
+            }
+            return newAddressList;
         }
     }
 }

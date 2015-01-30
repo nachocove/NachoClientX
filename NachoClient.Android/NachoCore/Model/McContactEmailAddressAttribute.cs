@@ -17,6 +17,30 @@ namespace NachoCore.Model
 
         [Indexed] // Email address as it appears in contact record
         public string Value { get; set; }
+
+        public bool IsInList (List<McContactEmailAddressAttribute> addressList)
+        {
+            foreach (var address in addressList) {
+                if (address.EmailAddress == EmailAddress) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public static bool IsSuperSet (List<McContactEmailAddressAttribute> list1,
+                                       List<McContactEmailAddressAttribute> list2)
+        {
+            if (list1.Count < list2.Count) {
+                return false;
+            }
+            foreach (var addr in list2) {
+                if (!addr.IsInList (list1)) {
+                    return false;
+                }
+            }
+            return true;
+        }
     }
 }
 
