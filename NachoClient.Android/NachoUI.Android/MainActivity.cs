@@ -148,9 +148,9 @@ namespace NachoClient.AndroidClient
         {
             menu = new List<SidebarMenu> ();
 
-            email = new NachoFolders (NachoFolders.FilterForEmail);
-            contacts = new NachoFolders (NachoFolders.FilterForContacts);
-            calendars = new NachoFolders (NachoFolders.FilterForCalendars);
+//            email = new NachoFolders (NachoFolders.FilterForEmail);
+//            contacts = new NachoFolders (NachoFolders.FilterForContacts);
+//            calendars = new NachoFolders (NachoFolders.FilterForCalendars);
 
             menu.Add (new SidebarMenu (null, "Now", SidebarToNachoNowSegueId));
 
