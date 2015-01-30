@@ -1194,6 +1194,9 @@
     </Compile>
     <Compile Include="NachoUI.iOS\Support\NachoInlineImageTextAttachment.cs" />
     <Compile Include="NachoUI.iOS\Support\ContactCell.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\DraftsHelper.cs">
+      <Link>NachoCore\Utils\DraftsHelper.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
