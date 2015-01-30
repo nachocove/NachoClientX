@@ -27,6 +27,35 @@ namespace NachoClient
         {
         }
 
+        static public string CheckCID (string cid, out int bodyId, out string value)
+        {
+            value = "";
+            bodyId = -1;
+            if (null == cid) {
+                return "null prefix for cid";
+            }
+            if (!cid.StartsWith ("//")) {
+                return "no prefix for cid";
+            }
+            if (2 == cid.Length) {
+                return "no body id for cid";
+            }
+            var index = cid.Substring (2).IndexOf ('/');
+            if (-1 == index) {
+                return "no trailing slash for cid";
+            }
+            if (cid.Length <= (index + 3)) {
+                return "no value for cid";
+            }
+            value = cid.Substring (index + 3);
+            try {
+            bodyId = Convert.ToInt32 (cid.Substring (2, index));
+            } catch(System.FormatException ex) {
+                return "malformed body id";
+            }
+            return null;
+        }
+
         // https://www.ietf.org/rfc/rfc2392.txt
         static public UIImage RenderContentId (string cid)
         {
@@ -36,13 +65,13 @@ namespace NachoClient
             // Unfortunately, when we are rendering email reply text we do not
             // have the opportunity to set up the base url using NSAttributedString.
             // TODO: Compose mail need to use uiwebview for display and/or editing.
-            if (!cid.StartsWith ("//")) {
-                Log.Warn (Log.LOG_UTILS, "RenderContentId: no prefix for cid");
+            int bodyId;
+            string value;
+            string message = CheckCID (cid, out bodyId, out value);
+            if (null != message) {
+                Log.Warn (Log.LOG_UTILS, "RenderContentId: {0}", message);
                 return Draw1px ();
             }
-            var index = cid.Substring (2).IndexOf ('/');
-            var value = cid.Substring (index + 3);
-            var bodyId = Convert.ToInt32 (cid.Substring (2, index));
             McBody body = McBody.QueryById<McBody> (bodyId);
             MimePart p = null;
             if (null != body) {
