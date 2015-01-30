@@ -333,6 +333,52 @@ namespace NachoCore.Utils
             return true;
         }
 
+        //Convert McEmailMessage comma delimeted string of addresses to list of NcEmailAddresses
+        public static List<NcEmailAddress> GetAddressListOfKind (NcEmailAddress.Kind whatKind, McEmailMessage fromMessage)
+        {
+            var addressList = new List<NcEmailAddress> ();
+            string addressListAsString = "";
+
+            switch (whatKind) {
+            case NcEmailAddress.Kind.To:
+                addressListAsString = fromMessage.To;
+                break;
+            case NcEmailAddress.Kind.Cc:
+                addressListAsString = fromMessage.Cc;
+                break;
+            case NcEmailAddress.Kind.Bcc:
+                addressListAsString = fromMessage.Bcc;
+                break;
+            }
+
+            InternetAddressList addresses;
+            if (!String.IsNullOrEmpty (addressListAsString) && InternetAddressList.TryParse (addressListAsString, out addresses)) {
+                foreach (var mailboxAddress in addresses.Mailboxes) {
+                    addressList.Add (new NcEmailAddress (whatKind, mailboxAddress.ToString()));
+                }
+            }
+
+            return addressList;
+        }
+
+        public static string EmailMessageRecipientsToString (McEmailMessage message)
+        {
+            List<NcEmailAddress> recipients = new List<NcEmailAddress> ();
+            recipients.AddRange(GetAddressListOfKind (NcEmailAddress.Kind.To, message));
+            recipients.AddRange(GetAddressListOfKind (NcEmailAddress.Kind.Cc, message));
+            recipients.AddRange(GetAddressListOfKind (NcEmailAddress.Kind.Bcc, message));
+
+            string[] recipientsArray = new string[recipients.Count];
+            int i = 0;
+
+            foreach (var address in recipients) {
+                recipientsArray [i] = Pretty.SenderString(address.address);
+                i++;
+            }
+
+            return string.Join (", ", recipientsArray);
+        }
+
         private static bool IsAccountAlias (InternetAddress accountInternetAddress, string match)
         {
             if (null == accountInternetAddress) {

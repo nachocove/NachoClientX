@@ -71,6 +71,9 @@ namespace NachoCore.Model
         /// All Cc addresses, comma separated (optional)
         public string Cc { set; get; }
 
+        /// All Bcc addresses, comma separated (optional)
+        public string Bcc { set; get; }
+
         /// Email address of the sender (optional)
         public string From { set; get; }
 
@@ -600,6 +603,36 @@ namespace NachoCore.Model
                 return FlagUtcDue.ToUniversalTime ();
             }
             return DateTime.MinValue;
+        }
+
+
+        public override string GetSubject ()
+        {
+            if (!String.IsNullOrEmpty (Subject)) {
+                return Subject;
+            } 
+            return "This message has no subject";
+        }
+
+        public override string GetRecipients ()
+        {
+            if(!String.IsNullOrEmpty(EmailHelper.EmailMessageRecipientsToString (this))){
+                return EmailHelper.EmailMessageRecipientsToString (this);
+            }
+            return "This message has no recipients";
+        }
+
+        public override string GetPrettyDate ()
+        {
+            return Pretty.FullDateTimeString (CreatedAt);
+        }
+
+        public override string GetBodyString ()
+        {
+            if (!String.IsNullOrEmpty(BodyPreview)){
+                return BodyPreview;
+            }
+            return "No message description provided";
         }
     }
 
