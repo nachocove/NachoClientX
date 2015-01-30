@@ -145,6 +145,10 @@ namespace NachoCore.Utils
             Error_CertAskReqCallback,
             Error_AutoDUserMessage,
             Error_AutoDAdminMessage,
+
+            // Since these can be persisted in the DB, we can only add to the end from now on!
+            Info_MigrationProgress,
+            Info_MigrationDescription,
         };
 
         public enum WhyEnum {

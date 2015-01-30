@@ -44,7 +44,6 @@ namespace NachoClient.iOS
         string gOriginalUsername = "";
         string gOriginalPassword = "";
 
-        AppDelegate appDelegate;
         AccountSettings theAccount;
 
         public UIView loadingCover;
@@ -78,7 +77,6 @@ namespace NachoClient.iOS
 
         public AdvancedLoginViewController (IntPtr handle) : base (handle)
         {
-            appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
         }
 
         public override void ViewDidLoad ()
@@ -341,9 +339,9 @@ namespace NachoClient.iOS
                     }
                 });
             }
-            if (null != appDelegate.Account) {
-                LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, false);
-                appDelegate.Account = null;
+            if (null != NcApplication.Instance.Account) {
+                LoginHelpers.SetHasProvidedCreds (NcApplication.Instance.Account.Id, false);
+                NcApplication.Instance.Account = null;
             }
 
             // Replace this view controller with the LaunchViewController
@@ -764,16 +762,16 @@ namespace NachoClient.iOS
         {
             NcModel.Instance.RunInTransaction (() => {
                 // Set up initial McAccount
-                appDelegate.Account = new McAccount () { EmailAddr = emailView.textField.Text };
-                appDelegate.Account.Signature = "Sent from Nacho Mail";
-                appDelegate.Account.Insert ();
+                NcApplication.Instance.Account = new McAccount () { EmailAddr = emailView.textField.Text };
+                NcApplication.Instance.Account.Signature = "Sent from Nacho Mail";
+                NcApplication.Instance.Account.Insert ();
                 // Set up initial McCred
                 var cred = new McCred () { 
-                    AccountId = appDelegate.Account.Id,
+                    AccountId = NcApplication.Instance.Account.Id,
                 };
                 cred.Insert ();
-                Telemetry.RecordAccountEmailAddress (appDelegate.Account);
-                LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, true);
+                Telemetry.RecordAccountEmailAddress (NcApplication.Instance.Account);
+                LoginHelpers.SetHasProvidedCreds (NcApplication.Instance.Account.Id, true);
             });
         }
 

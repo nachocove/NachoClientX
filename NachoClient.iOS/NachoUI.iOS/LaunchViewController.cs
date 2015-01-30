@@ -14,8 +14,6 @@ namespace NachoClient.iOS
 {
     public partial class LaunchViewController : NcUIViewControllerNoLeaks
     {
-        AppDelegate appDelegate;
-
         float yOffset;
         float keyboardHeight;
         bool shortScreen;
@@ -49,7 +47,6 @@ namespace NachoClient.iOS
 
         public LaunchViewController (IntPtr handle) : base (handle)
         {
-            appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
         }
 
         public override void ViewWillAppear (bool animated)
@@ -436,22 +433,22 @@ namespace NachoClient.iOS
                 // Need to regex-validate UI inputs.
                 // You will always need to supply user credentials (until certs, for sure).
                 // You will always need to supply the user's email address.
-                appDelegate.Account = new McAccount () { EmailAddr = emailField.Text };
-                appDelegate.Account.Signature = "Sent from Nacho Mail";
-                appDelegate.Account.AccountService = selectedEmailService;
-                appDelegate.Account.DisplayName = McAccount.AccountServiceName(selectedEmailService);
-                appDelegate.Account.Insert ();
+                NcApplication.Instance.Account = new McAccount () { EmailAddr = emailField.Text };
+                NcApplication.Instance.Account.Signature = "Sent from Nacho Mail";
+                NcApplication.Instance.Account.AccountService = selectedEmailService;
+                NcApplication.Instance.Account.DisplayName = McAccount.AccountServiceName(selectedEmailService);
+                NcApplication.Instance.Account.Insert ();
                 var cred = new McCred () { 
-                    AccountId = appDelegate.Account.Id,
+                    AccountId = NcApplication.Instance.Account.Id,
                     Username = emailField.Text,
                 };
                 cred.Insert ();
                 cred.UpdatePassword (passwordField.Text);
-                Telemetry.RecordAccountEmailAddress (appDelegate.Account);
+                Telemetry.RecordAccountEmailAddress (NcApplication.Instance.Account);
                 // Maintain the state of our progress
-                LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, true);
+                LoginHelpers.SetHasProvidedCreds (NcApplication.Instance.Account.Id, true);
             });
-            BackEnd.Instance.Start (appDelegate.Account.Id);
+            BackEnd.Instance.Start (NcApplication.Instance.Account.Id);
             PerformSegue (StartupViewController.NextSegue (), this);
         }
 
