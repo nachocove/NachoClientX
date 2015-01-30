@@ -26,6 +26,7 @@ namespace NachoClient.iOS
         public static readonly string REPLY_ACTION = "Reply";
         public static readonly string REPLY_ALL_ACTION = "ReplyAll";
         public static readonly string FORWARD_ACTION = "Forward";
+        public static readonly string EDIT_DRAFT_ACTION = "EditDraftAction";
 
         public INachoMessageEditorParent owner;
 

@@ -278,6 +278,79 @@ namespace Test.Android
             Assert.AreEqual ("/traveler" + McServer.Default_Path, server.Path);
         }
 
+        [Test]
+        public void TestGetAddressListOfKind ()
+        {
+            string[] toEmails = new string[] {
+                "toOne@yahoo.com",
+                "toTwo@yahoo.com",
+            };
+
+            string[] ccEmails = new string[] {
+                "ccOne@yahoo.com",
+                "ccTwo@yahoo.com",
+                "ccThree@yahoo.com",
+            };
+
+            string[] bccEmails = new string[] {
+                "bccOne@yahoo.com",
+                "bccTwo@yahoo.com",
+                "bccThree@yahoo.com",
+                "bccFour@yahoo.com",
+            };
+
+            McEmailMessage testMessage = new McEmailMessage ();
+            Assert.True (0 == EmailHelper.GetAddressListOfKind (NcEmailAddress.Kind.To, testMessage).Count);
+            Assert.True (0 == EmailHelper.GetAddressListOfKind (NcEmailAddress.Kind.Cc, testMessage).Count);
+            Assert.True (0 == EmailHelper.GetAddressListOfKind (NcEmailAddress.Kind.Bcc, testMessage).Count);
+
+            testMessage.To = string.Join (",", toEmails);
+            testMessage.Cc = string.Join (",", ccEmails);
+            testMessage.Bcc = string.Join (",", bccEmails);
+
+            var toList = EmailHelper.GetAddressListOfKind (NcEmailAddress.Kind.To, testMessage);
+            var ccList = EmailHelper.GetAddressListOfKind (NcEmailAddress.Kind.Cc, testMessage);
+            var bccList = EmailHelper.GetAddressListOfKind (NcEmailAddress.Kind.Bcc, testMessage);
+
+            Assert.True (2 == toList.Count);
+            Assert.True (toEmails [0] == toList [0].address);
+            Assert.True (toEmails [1] == toList [1].address);
+
+            Assert.True (3 == ccList.Count);
+            Assert.True (ccEmails [0] == ccList [0].address);
+            Assert.True (ccEmails [1] == ccList [1].address);
+            Assert.True (ccEmails [2] == ccList [2].address);
+
+            Assert.True (4 == bccList.Count);
+            Assert.True (bccEmails [0] == bccList [0].address);
+            Assert.True (bccEmails [1] == bccList [1].address);
+            Assert.True (bccEmails [2] == bccList [2].address);
+            Assert.True (bccEmails [3] == bccList [3].address);
+
+            string[] malformedToEmails = new string[] {
+                "to!One*@@yahoo.com",
+                "toTwo@yah&^%$oo...com",
+                "joebob@apple.com",
+            };
+            testMessage.To = string.Join (",", malformedToEmails);
+            Assert.True (1 == EmailHelper.GetAddressListOfKind (NcEmailAddress.Kind.To, testMessage).Count);
+        }
+
+        [Test]
+        public void TestEmailMessageRecipientsToString ()
+        {
+            McEmailMessage testMessage = new McEmailMessage ();
+            Assert.True (String.IsNullOrEmpty(EmailHelper.EmailMessageRecipientsToString (testMessage)));
+
+            testMessage.To = "adam@yahoo.com, bill@yahoo.com";
+            Assert.True (testMessage.To == EmailHelper.EmailMessageRecipientsToString (testMessage));
+
+            testMessage.Cc = "colin <colin@yahoo.com>";
+            Assert.True ("adam@yahoo.com, bill@yahoo.com, colin" == EmailHelper.EmailMessageRecipientsToString (testMessage));
+
+            testMessage.Bcc = "dave <dave@yahoo.com>";
+            Assert.True ("adam@yahoo.com, bill@yahoo.com, colin, dave" == EmailHelper.EmailMessageRecipientsToString (testMessage));
+        }
     }
 }
 

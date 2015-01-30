@@ -59,6 +59,30 @@ namespace NachoCore.Model
             NcAssert.True (NcModel.Instance.IsInTransaction ());
         }
 
+        public virtual string GetSubject ()
+        {
+            NcAssert.False (true, "GetSubject needs to be implemented for this derived class");
+            return "";
+        }
+
+        public virtual string GetRecipients ()
+        {
+            NcAssert.False (true, "GetRecipients needs to be implemented for this derived class");
+            return "";
+        }
+
+        public virtual string GetPrettyDate ()
+        {
+            NcAssert.False (true, "GetPrettyDate needs to be implemented for this derived class");
+            return "";
+        }
+
+        public virtual string GetBodyString ()
+        {
+            NcAssert.False (true, "GetBody needs to be implemented for this derived class");
+            return "";
+        }
+
         private IEnumerable<McAbstrItem> ExistingItems ()
         {
             IEnumerable<McAbstrItem> existingItems = null;

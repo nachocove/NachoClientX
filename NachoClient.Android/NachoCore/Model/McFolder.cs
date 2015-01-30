@@ -242,15 +242,18 @@ namespace NachoCore.Model
 
         public static McFolder GetOrCreateEmailDraftsFolder (int accountId)
         {
-            McFolder emailDraftsFolder = McFolder.GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultDrafts_3);
-            if (null == emailDraftsFolder) {
-                var deviceDraftsFolder = McFolder.Create (accountId, true, false, true, "0",
-                                             McFolder.ClientOwned_EmailDrafts, DRAFTS_DISPLAY_NAME,
-                                             Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
-                deviceDraftsFolder.Insert ();
+            McFolder defaultDraftsFolder = McFolder.GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultDrafts_3);
+            if (null == defaultDraftsFolder) {
+                var deviceDraftsFolder = McFolder.GetClientOwnedFolder (accountId, McFolder.ClientOwned_EmailDrafts);
+                if (null == deviceDraftsFolder) {
+                    deviceDraftsFolder = McFolder.Create (accountId, true, false, true, "0",
+                        McFolder.ClientOwned_EmailDrafts, DRAFTS_DISPLAY_NAME,
+                        Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
+                    deviceDraftsFolder.Insert ();
+                }
                 return deviceDraftsFolder;
             } else {
-                return emailDraftsFolder;
+                return defaultDraftsFolder;
             }
         }
 

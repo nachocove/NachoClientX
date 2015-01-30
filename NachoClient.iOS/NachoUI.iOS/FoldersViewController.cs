@@ -102,6 +102,13 @@ namespace NachoClient.iOS
                 messageListViewController.SetEmailMessages (messageList);
                 return;
             }
+            if ("SegueToDrafts" == segue.Identifier) {
+                var holder = (SegueHolder)sender;
+                McFolder draftFolder = (McFolder)holder.value;
+                DraftsViewController draftsVC  = (DraftsViewController)segue.DestinationViewController;
+                draftsVC.SetDraftType(DraftsHelper.FolderToDraftType(draftFolder));
+                return;
+            }
             if ("SegueToHotList" == segue.Identifier) {
                 return;
             }
@@ -274,7 +281,7 @@ namespace NachoClient.iOS
                 var folder = McFolder.GetDefaultInboxFolder (account.Id);
                 if (null != folder) {
                     CreateTopFolderCell ("Inbox", topFolderCount, true, () => {
-                        PerformSegue ("FoldersToMessageList", new SegueHolder (folder));
+                        OpenFolder (folder);
                     });
                     topFolderCount += 1;
                 }
@@ -445,9 +452,9 @@ namespace NachoClient.iOS
                 cell.BackgroundColor = (modal ? UIColor.Black : UIColor.LightGray);
                 UpdateLastAccessed ();
                 if (modal) {
-                    FolderSelected (folder);
+                    MoveMessageToFolder (folder);
                 } else {
-                    PerformSegue ("FoldersToMessageList", new SegueHolder (folder));
+                    OpenFolder (folder);
                 }
             });
             cell.AddGestureRecognizer (cellTap);
@@ -501,9 +508,9 @@ namespace NachoClient.iOS
                 cell.BackgroundColor = (modal ? UIColor.Black : UIColor.LightGray);
                 UpdateLastAccessed ();
                 if (modal) {
-                    FolderSelected (folder);
+                    MoveMessageToFolder (folder);
                 } else {
-                    PerformSegue ("FoldersToMessageList", new SegueHolder (folder));
+                    OpenFolder (folder);
                 }
             });
             cell.AddGestureRecognizer (cellTap);
@@ -805,6 +812,15 @@ namespace NachoClient.iOS
             return false;
         }
 
+        protected void OpenFolder (McFolder folder)
+        {
+            if (DraftsHelper.IsDraftsFolder (folder)) {
+                PerformSegue ("SegueToDrafts", new SegueHolder (folder));
+            } else {
+                PerformSegue ("FoldersToMessageList", new SegueHolder (folder));
+            }
+        }
+
         public class FolderStruct
         {
             public int folderID { get; set; }
@@ -866,7 +882,7 @@ namespace NachoClient.iOS
             DismissViewController (animated, action);
         }
 
-        public void FolderSelected (McFolder folder)
+        public void MoveMessageToFolder (McFolder folder)
         {
             owner.FolderSelected (this, folder, cookie);
         }
