@@ -307,7 +307,6 @@ namespace NachoClient.iOS
             ConfigureAndLayoutInternal ();
         }
 
-
         /// <summary>
         /// Hides the Advances & Customer Support buttons when the service table is visible
         /// </summary>
