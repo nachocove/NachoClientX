@@ -286,7 +286,7 @@ namespace NachoCore.Model
         public static List<McFolder> QueryNonHiddenFoldersOfType (int accountId, Xml.FolderHierarchy.TypeCode[] types)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f " +
-                " WHERE f.accountId = ? AND " +
+                " WHERE f.AccountId = ? AND " +
                 " f.IsAwaitingDelete = 0 AND " +
                 " f.Type IN " + Folder_Helpers.TypesToCommaDelimitedString (types) + " AND " +
                 " f.IsHidden = 0 " +

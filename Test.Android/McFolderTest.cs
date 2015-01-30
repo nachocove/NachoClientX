@@ -275,10 +275,12 @@ namespace Test.iOS
             {
                 int accountId = 1;
 
-                McFolder hiddenDraftFolder = FolderOps.CreateFolder (accountId, isClientOwned: true, isHidden: true, typeCode: Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
-                McFolder defaultEmailDrafts = FolderOps.CreateFolder (accountId, typeCode: Xml.FolderHierarchy.TypeCode.DefaultDrafts_3);
-                McFolder deviceCalendarDrafts = FolderOps.CreateFolder (accountId, isClientOwned: true, typeCode: Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
-                McFolder defaultInbox = FolderOps.CreateFolder (accountId, typeCode: Xml.FolderHierarchy.TypeCode.DefaultInbox_2);
+                McFolder differentAccountId = FolderOps.CreateFolder (2, typeCode: Xml.FolderHierarchy.TypeCode.DefaultDrafts_3, name: "apple");
+                McFolder waitingToDelete = FolderOps.CreateFolder (accountId, isAwaitingDelete:true, typeCode: Xml.FolderHierarchy.TypeCode.DefaultDrafts_3, name: "banana");
+                McFolder defaultEmailDrafts = FolderOps.CreateFolder (accountId, typeCode: Xml.FolderHierarchy.TypeCode.DefaultDrafts_3, name: "carrot");
+                McFolder deviceCalendarDrafts = FolderOps.CreateFolder (accountId, isClientOwned: true, typeCode: Xml.FolderHierarchy.TypeCode.UserCreatedCal_13, name: "date");
+                McFolder defaultInbox = FolderOps.CreateFolder (accountId, typeCode: Xml.FolderHierarchy.TypeCode.DefaultInbox_2, name: "elderberry");
+                McFolder hiddenDraftFolder = FolderOps.CreateFolder (accountId, isClientOwned: true, isHidden: true, typeCode: Xml.FolderHierarchy.TypeCode.UserCreatedCal_13, name: "fennel");
 
                 Xml.FolderHierarchy.TypeCode[] draftTypes = {
                     Xml.FolderHierarchy.TypeCode.DefaultDrafts_3,
@@ -291,21 +293,39 @@ namespace Test.iOS
                     nonHiddenDraftFoldersIds.Add (f.Id);
                 }
 
-                Assert.False (nonHiddenDraftFoldersIds.Contains (hiddenDraftFolder.Id));
-                Assert.False (nonHiddenDraftFoldersIds.Contains (defaultInbox.Id));
-                Assert.True (nonHiddenDraftFoldersIds.Contains (defaultEmailDrafts.Id));
-                Assert.True (nonHiddenDraftFoldersIds.Contains (deviceCalendarDrafts.Id));
+                Assert.False (nonHiddenDraftFoldersIds.Contains (differentAccountId.Id)); //AccountId different than the rest / not querying by it
+                Assert.False (nonHiddenDraftFoldersIds.Contains (waitingToDelete.Id)); //matches query criteria except that it is awaiting delete
+                Assert.False (nonHiddenDraftFoldersIds.Contains (defaultInbox.Id)); //matches criteria except that it isn't in the listed type []
+                Assert.False (nonHiddenDraftFoldersIds.Contains (hiddenDraftFolder.Id)); //matches criteria except it's hidden
+                Assert.True (nonHiddenDraftFoldersIds.Contains (defaultEmailDrafts.Id)); //match
+                Assert.True (nonHiddenDraftFoldersIds.Contains (deviceCalendarDrafts.Id)); //match
 
-                List<McFolder> emptyFoldersList = McFolder.QueryNonHiddenFoldersOfType (accountId, new Xml.FolderHierarchy.TypeCode[0]);
+                List<McFolder> emptyFoldersList = McFolder.QueryNonHiddenFoldersOfType (accountId, new Xml.FolderHierarchy.TypeCode[0]); //empty list
                 Assert.True (0 == emptyFoldersList.Count);
+
+                McFolder defaultEmailDraftsTwo = FolderOps.CreateFolder (accountId, typeCode: Xml.FolderHierarchy.TypeCode.DefaultDrafts_3, name: "honeydew-melon"); //flip-flop alphabetical order of insertions
+                McFolder defaultEmailDraftsThree = FolderOps.CreateFolder (accountId, typeCode: Xml.FolderHierarchy.TypeCode.DefaultDrafts_3, name: "guava");
+                nonHiddenDraftFolders = McFolder.QueryNonHiddenFoldersOfType (accountId, draftTypes);
+
+                Assert.True (4 == nonHiddenDraftFolders.Count);
+                Assert.True (nonHiddenDraftFolders [0].DisplayName.StartsWith ("c"));
+                Assert.True (nonHiddenDraftFolders [1].DisplayName.StartsWith ("d"));
+                Assert.True (nonHiddenDraftFolders [2].DisplayName.StartsWith ("g"));
+                Assert.True (nonHiddenDraftFolders [3].DisplayName.StartsWith ("h"));
             }
         }
 
         [Test]
         public void TestGetOrCreateEmailDraftsFolder ()
         {
+            int accountId = 1;
 
-            Assert.True("Drafts".Equals (McFolder.GetOrCreateEmailDraftsFolder (1).DisplayName));
+            McFolder defaultDrafts = FolderOps.CreateFolder (accountId, typeCode: Xml.FolderHierarchy.TypeCode.DefaultDrafts_3, name: "Default-Drafts");
+            Assert.True(McFolder.GetOrCreateEmailDraftsFolder (accountId).DisplayName == "Default-Drafts");
+            defaultDrafts.Delete ();
+
+            McFolder createdDraftsFolder = McFolder.GetOrCreateEmailDraftsFolder (accountId);
+            Assert.True (McFolder.DRAFTS_DISPLAY_NAME == createdDraftsFolder.DisplayName);
         }
 
            //Not sure how to write a unit test for this
