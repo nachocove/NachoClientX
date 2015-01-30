@@ -895,6 +895,45 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_SYS, "Monitor: NSURLCache usage {0}", NSUrlCache.SharedCache.CurrentMemoryUsage);
             NcApplication.Instance.MonitorReport ();
         }
+
+        public void CreateAccount (McAccount.AccountServiceEnum service, string emailAddress, string password)
+        {
+            NcModel.Instance.RunInTransaction (() => {
+                // Need to regex-validate UI inputs.
+                // You will always need to supply user credentials (until certs, for sure).
+                // You will always need to supply the user's email address.
+                var account = new McAccount () { EmailAddr = emailAddress };
+                account.Signature = "Sent from Nacho Mail";
+                account.AccountService = service;
+                account.DisplayName = McAccount.AccountServiceName (service);
+                account.Insert ();
+                var cred = new McCred () { 
+                    AccountId = account.Id,
+                    Username = emailAddress,
+                };
+                cred.Insert ();
+                if (null != password) {
+                    cred.UpdatePassword (password);
+                }
+                Log.Info (Log.LOG_UI, "CreateAccount: {0}/{1}/{2}", account.Id, cred.Id, service);
+                this.Account = account;
+                Telemetry.RecordAccountEmailAddress (this.Account);
+                LoginHelpers.SetHasProvidedCreds (this.Account.Id, true);
+            });
+        }
+
+        public void RemoveAccount ()
+        {
+            if (null != Account) {
+                Log.Info (Log.LOG_UI, "RemoveAccount: user removed account {0}", this.Account.Id);
+                BackEnd.Instance.Remove (this.Account.Id);
+                Account = null;
+                var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+                var vc = storyboard.InstantiateInitialViewController ();
+                Log.Info (Log.LOG_UI, "RemoveAccount: back to startup navigation controller {0}", vc);
+                Window.RootViewController = (UIViewController)vc;
+            }
+        }
     }
 
     public class HockeyAppCrashDelegate : BITCrashManagerDelegate

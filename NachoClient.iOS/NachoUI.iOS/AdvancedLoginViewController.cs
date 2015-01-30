@@ -362,7 +362,7 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
 
-            // Check the basics
+            // Check for user, password, and valid server
             if (!canUserConnect ()) {
                 return; // error has been displayed
             }
@@ -371,7 +371,9 @@ namespace NachoClient.iOS
 
             // Setup the account is there isn't one yet
             if (freshAccount) {
-                createUserSettings ();
+                var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
+                appDelegate.CreateAccount (McAccount.AccountServiceEnum.None, emailView.textField.Text, passwordView.textField.Text);
+                NcAssert.True (LoginHelpers.IsCurrentAccountSet ());
             } 
 
             // Save the stuff on the screen (pre-validated by canUserConnect())
@@ -486,6 +488,8 @@ namespace NachoClient.iOS
                 break;
             }
 
+            Log.Info (Log.LOG_UI, "Advanced Configure view: status={0} {1}", currentStatus, errorMessage.Text);
+
             LayoutView ();
         }
 
@@ -576,6 +580,8 @@ namespace NachoClient.iOS
 
                 BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
 
+                Log.Info (Log.LOG_UI, "AdvancedLoginView: handleStatusEnums {0}={1}", LoginHelpers.GetCurrentAccountId (), backEndState);
+
                 switch (backEndState) {
                 case BackEndStateEnum.ServerConfWait:
                     Log.Info (Log.LOG_UI, "ServerConfWait Auto-D-State-Enum On Page Load");
@@ -620,6 +626,7 @@ namespace NachoClient.iOS
                     return;
                 }
             } else {
+                Log.Info (Log.LOG_UI, "AdvancedLoginView: handleStatusEnums account not set");
                 ConfigureView (LoginStatus.EnterInfo);
                 haveEnteredEmailAndPass ();
             }
@@ -757,24 +764,6 @@ namespace NachoClient.iOS
             }
 
             theAccount.Server = McServer.QueryByAccountId<McServer> (LoginHelpers.GetCurrentAccountId ()).FirstOrDefault ();
-        }
-
-        // Called when nothing exists.
-        public void  createUserSettings ()
-        {
-            NcModel.Instance.RunInTransaction (() => {
-                // Set up initial McAccount
-                appDelegate.Account = new McAccount () { EmailAddr = emailView.textField.Text };
-                appDelegate.Account.Signature = "Sent from Nacho Mail";
-                appDelegate.Account.Insert ();
-                // Set up initial McCred
-                var cred = new McCred () { 
-                    AccountId = appDelegate.Account.Id,
-                };
-                cred.Insert ();
-                Telemetry.RecordAccountEmailAddress (appDelegate.Account);
-                LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, true);
-            });
         }
 
         public void removeServerRecord ()
