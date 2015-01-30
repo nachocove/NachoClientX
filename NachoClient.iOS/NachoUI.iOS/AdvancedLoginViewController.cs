@@ -323,9 +323,7 @@ namespace NachoClient.iOS
 
         void onStartOver ()
         {
-            if (LoginHelpers.IsCurrentAccountSet ()) {
-                BackEnd.Instance.Remove (LoginHelpers.GetCurrentAccountId ());
-            } else {
+            if (!LoginHelpers.IsCurrentAccountSet ()) {
                 // Remove our local copies
                 NcModel.Instance.RunInTransaction (() => {
                     if (null != theAccount) {
@@ -341,21 +339,7 @@ namespace NachoClient.iOS
                     }
                 });
             }
-            if (null != appDelegate.Account) {
-                LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, false);
-                appDelegate.Account = null;
-            }
-
-            // Replace this view controller with the LaunchViewController
-            var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-            var lvc = (UIViewController)storyboard.InstantiateViewController ("LaunchViewController");
-            NcAssert.NotNull (lvc);
-            var controlStack = NavigationController.ViewControllers;
-            NcAssert.NotNull (controlStack);
-            var controlCount = controlStack.Count ();
-            NcAssert.False (0 == controlCount);
-            controlStack [controlCount - 1] = lvc;
-            NavigationController.SetViewControllers (controlStack, true);
+            appDelegate.RemoveAccount ();
         }
 
         void onConnect (object sender, EventArgs e)
@@ -900,27 +884,6 @@ namespace NachoClient.iOS
                 ConfigureView (LoginStatus.NoNetwork);
                 waitScreen.DismissView ();
                 stopBeIfRunning ();
-            }
-            if (NcResult.SubKindEnum.Info_ValidateConfigSucceeded == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "Validate Config Successful Status Ind (Advanced View)");
-                ConfigureView (LoginStatus.ValidateSuccessful);
-                loadTheAccount ();
-                startBe ();
-            }
-            if (NcResult.SubKindEnum.Error_ValidateConfigFailedComm == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "Advanced Login status callback: Error_ValidateConfigFailedComm");
-                ConfigureView (LoginStatus.BadServer);
-                waitScreen.DismissView ();
-            }
-            if (NcResult.SubKindEnum.Error_ValidateConfigFailedAuth == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "Advanced Login status callback: Error_ValidateConfigFailedAuth");
-                ConfigureView (LoginStatus.BadCredentials);
-                waitScreen.DismissView ();
-            }
-            if (NcResult.SubKindEnum.Error_ValidateConfigFailedUser == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "Advanced Login status callback: Error_ValidateConfigFailedUser");
-                ConfigureView (LoginStatus.BadUsername);
-                waitScreen.DismissView ();
             }
             if (NcResult.SubKindEnum.Error_ServerConfReqCallback == s.Status.SubKind) {
                 Log.Info (Log.LOG_UI, "ServerConfReq Status Ind (Adv. View)");

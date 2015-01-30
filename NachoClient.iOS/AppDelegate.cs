@@ -928,11 +928,11 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_UI, "RemoveAccount: user removed account {0}", this.Account.Id);
                 BackEnd.Instance.Remove (this.Account.Id);
                 Account = null;
-                var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-                var vc = storyboard.InstantiateInitialViewController ();
-                Log.Info (Log.LOG_UI, "RemoveAccount: back to startup navigation controller {0}", vc);
-                Window.RootViewController = (UIViewController)vc;
             }
+            var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+            var vc = storyboard.InstantiateInitialViewController ();
+            Log.Info (Log.LOG_UI, "RemoveAccount: back to startup navigation controller {0}", vc);
+            Window.RootViewController = (UIViewController)vc;
         }
     }
 
