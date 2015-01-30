@@ -10,7 +10,7 @@ using NachoCore.ActiveSync;
 
 namespace NachoCore.Model
 {
-    public class McContactEmailAddressAttribute : McAbstrContactAttribute
+    public class McContactEmailAddressAttribute : McAbstrContactAttribute, ISetComparable<McContactEmailAddressAttribute>
     {
         [Indexed] // Reference to McEmailAddress
         public int EmailAddress { get; set; }
@@ -18,28 +18,15 @@ namespace NachoCore.Model
         [Indexed] // Email address as it appears in contact record
         public string Value { get; set; }
 
-        public bool IsInList (List<McContactEmailAddressAttribute> addressList)
+        public bool IsEquivalent (McContactEmailAddressAttribute address)
         {
-            foreach (var address in addressList) {
-                if (address.EmailAddress == EmailAddress) {
-                    return true;
-                }
-            }
-            return false;
+            return EmailAddress == address.EmailAddress;
         }
 
         public static bool IsSuperSet (List<McContactEmailAddressAttribute> list1,
                                        List<McContactEmailAddressAttribute> list2)
         {
-            if (list1.Count < list2.Count) {
-                return false;
-            }
-            foreach (var addr in list2) {
-                if (!addr.IsInList (list1)) {
-                    return false;
-                }
-            }
-            return true;
+            return SetHelper<McContactEmailAddressAttribute>.IsSuperSet (list1, list2);
         }
     }
 }

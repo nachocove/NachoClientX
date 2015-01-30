@@ -1192,6 +1192,9 @@
       <Link>NachoCore\Utils\HashHelper.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\NachoInlineImageTextAttachment.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\SetHelper.cs">
+      <Link>NachoCore\Utils\SetHelper.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
