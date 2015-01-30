@@ -939,7 +939,9 @@ namespace NachoClient
         public static void AddButtonImage (UIButton button, string imageName, UIControlState buttonState)
         {
             using (var buttonImage = UIImage.FromBundle (imageName)) {
-                button.SetImage (buttonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal), buttonState);
+                using (var originalImage = buttonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
+                    button.SetImage (originalImage, buttonState);
+                }
             }
         }
 
@@ -1089,7 +1091,7 @@ namespace NachoClient
                 owner.PerformSegue (segueIdentifier, new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultPhoneSelector));
             }
         }
-            
+
         public static void EmailContact (string segueIdentifier, McContact contact, NcUIViewController owner)
         {
             if (0 == contact.EmailAddresses.Count) {
@@ -1155,7 +1157,7 @@ namespace NachoClient
             tableView.EndUpdates ();
         }
 
-        public static bool AttributedStringEndsWith(NSAttributedString target, NSAttributedString match)
+        public static bool AttributedStringEndsWith (NSAttributedString target, NSAttributedString match)
         {
             if (null == match) {
                 return true;
