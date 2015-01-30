@@ -116,9 +116,12 @@ namespace NachoCore.Model
             return true;
         }
 
-        public static McServer QueryByHost (string host)
+        public static McServer QueryByHost (int accountId, string host)
         {
-            return NcModel.Instance.Db.Table<McServer> ().Where (x => host == x.Host).SingleOrDefault ();
+            return NcModel.Instance.Db.Table<McServer> ().Where (x => 
+                accountId == x.AccountId &&
+                host == x.Host
+            ).SingleOrDefault ();
         }
     }
 }

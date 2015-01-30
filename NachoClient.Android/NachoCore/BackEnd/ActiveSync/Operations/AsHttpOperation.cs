@@ -362,7 +362,7 @@ namespace NachoCore.ActiveSync
         private void ReportCommResult (string host, bool didFailGenerally)
         {
             if (!DontReportCommResult) {
-                NcCommStatusSingleton.ReportCommResult (host, didFailGenerally);
+                NcCommStatusSingleton.ReportCommResult (BEContext.Account.Id, host, didFailGenerally);
             }
         }
         // Final is how to pass the ultimate Event back to OwnerSm.
@@ -901,7 +901,7 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)HttpOpEvt.E.Delay, mnemonic, secs, message);
             }
             Log.Info (Log.LOG_AS, "AsHttpOperation: Excessive delay requested by server: {0} seconds.", secs);
-            NcCommStatusSingleton.ReportCommResult (ServerUri.Host, DateTime.UtcNow.AddSeconds (secs));
+            NcCommStatusSingleton.ReportCommResult (BEContext.Account.Id, ServerUri.Host, DateTime.UtcNow.AddSeconds (secs));
             return Final ((uint)SmEvt.E.HardFail, mnemonic, null, message);
         }
     }
