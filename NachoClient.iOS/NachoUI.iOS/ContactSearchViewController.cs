@@ -116,7 +116,7 @@ namespace NachoClient.iOS
         protected void LoadContacts ()
         {
             NachoCore.Utils.NcAbate.HighPriority ("ContactSearchViewController LoadContacts");
-            var contacts = McContact.AllContactsWithEmailAddresses ();
+            var contacts = McContact.AllContactsWithEmailAddresses (true);
             contactTableViewSource.SetContacts (null, contacts, false);
             TableView.ReloadData ();
             NachoCore.Utils.NcAbate.RegularPriority ("ContactSearchViewController LoadContacts");

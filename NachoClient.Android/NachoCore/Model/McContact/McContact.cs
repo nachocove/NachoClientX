@@ -673,7 +673,7 @@ namespace NachoCore.Model
             }
             int retval = base.Insert ();
             InsertAncillaryData (NcModel.Instance.Db);
-            EvaluateEclipsing ();
+            EvaluateEclipsing (EmailAddresses);
             return retval;
         }
 
@@ -686,7 +686,7 @@ namespace NachoCore.Model
             if (HasReadAncillaryData) {
                 InsertAncillaryData (NcModel.Instance.Db);
             }
-            EvaluateEclipsing ();
+            EvaluateEclipsing (EmailAddresses);
             return retval;
         }
 
@@ -694,28 +694,19 @@ namespace NachoCore.Model
         {
             var addressList = EmailAddresses;
             int retval = base.Delete ();
-            foreach (var address in addressList) {
-                var contactList = McContact.QueryByEmailAddress (AccountId, address.Value);
-                foreach (var contact in contactList) {
-                    var newEclipsed = ShouldEmailAddressesBeEclipsed ();
-                    if (newEclipsed != EmailAddressesEclipsed) {
-                        EmailAddressesEclipsed = newEclipsed;
-                        contact.Update ();
-                    }
-                }
-            }
+            EvaluateEclipsing (addressList);
             return retval;
         }
 
-        private void EvaluateEclipsing ()
+        private void EvaluateEclipsing (List<McContactEmailAddressAttribute> addressList)
         {
             // Does it eclipse other contacts?
-            foreach (var address in EmailAddresses) {
+            foreach (var address in addressList) {
                 var contactList = QueryByEmailAddress (AccountId, address.Value).Where (x => x.Id != Id);
                 foreach (var contact in contactList) {
                     var newEclipsed = contact.ShouldEmailAddressesBeEclipsed ();
                     if (newEclipsed != contact.EmailAddressesEclipsed) {
-                        contact.EmailAddressesEclipsed = true;
+                        contact.EmailAddressesEclipsed = newEclipsed;
                         contact.Update ();
                     }
                 }
@@ -1237,7 +1228,7 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Query<NcContactIndex> (GetContactSearchString (withEclipsing, 0), (int)McAbstrFolderEntry.ClassCodeEnum.Contact);
         }
 
-        public static List<NcContactIndex> AllContactsWithEmailAddresses ()
+        public static List<NcContactIndex> AllContactsWithEmailAddresses (bool withEclipsing = false)
         {
             return NcModel.Instance.Db.Query<NcContactIndex> (
                 "SELECT DISTINCT Id, substr(SORT_ORDER, 0, 1) as FirstLetter FROM ( " +
@@ -1247,6 +1238,7 @@ namespace NachoCore.Model
                 "JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
                 "WHERE " +
                 "m.ClassCode = ? AND " +
+                (withEclipsing ? "c.EmailAddressesEclipsed = 0 AND " : "") +
                 "c.IsAwaitingDelete = 0 " +
                 "ORDER BY SORT_ORDER COLLATE NOCASE ASC " +
                 ")",
