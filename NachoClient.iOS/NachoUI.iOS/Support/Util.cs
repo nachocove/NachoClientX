@@ -397,6 +397,21 @@ namespace NachoClient
             return image;
         }
 
+        public static UIImage DrawButtonBackgroundImage (UIColor color, SizeF size)
+        {
+            var origin = new PointF (0, 0);
+
+            UIGraphics.BeginImageContextWithOptions (size, false, 0);
+            var ctx = UIGraphics.GetCurrentContext ();
+
+            ctx.SetFillColor (color.CGColor);
+            ctx.FillRect (new RectangleF (origin, size));
+
+            var image = UIGraphics.GetImageFromCurrentImageContext ();
+            UIGraphics.EndImageContext ();
+            return image;
+        }
+
         public static UIImage DrawTodayButtonImage (string day)
         {
             var size = new SizeF (24, 24);

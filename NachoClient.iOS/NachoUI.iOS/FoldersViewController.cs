@@ -22,6 +22,7 @@ namespace NachoClient.iOS
         {
         }
 
+        protected bool foldersNeedRefresh;
         protected McAccount account;
         protected bool hasRecents = false;
         protected UILabel recentLabel;
@@ -41,6 +42,7 @@ namespace NachoClient.iOS
         protected UIColor textColor;
         protected UIColor separatorColor;
         protected UIColor cellBGColor;
+        protected UIColor cellHighlightedColor;
         protected UIColor scrollViewBGColor;
         protected UIColor borderColor;
 
@@ -61,14 +63,12 @@ namespace NachoClient.iOS
             account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
             CreateView ();
             ConfigureFolders ();
+            ConfigureView ();
 
             NcApplication.Instance.StatusIndEvent += (object sender, EventArgs e) => {
                 var s = (StatusIndEventArgs)e;
                 if (NcResult.SubKindEnum.Info_FolderSetChanged == s.Status.SubKind) {
-                    ClearLists ();
-                    ConfigureFolders ();
-                    ClearViews ();
-                    ConfigureView ();
+                    RefreshFoldersIfVisible ();
                 }
             };
         }
@@ -79,18 +79,27 @@ namespace NachoClient.iOS
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
             }
-            ConfigureView ();
+            MaybeRefreshFolders ();
         }
 
-        public override void ViewDidAppear (bool animated)
+        protected void RefreshFoldersIfVisible ()
         {
-            base.ViewDidAppear (animated);
+            foldersNeedRefresh = true;
+            if (!this.IsVisible ()) {
+                return;
+            }
+            MaybeRefreshFolders ();
         }
 
-        public override void ViewDidDisappear (bool animated)
+        protected void MaybeRefreshFolders ()
         {
-            base.ViewWillDisappear (animated);
-            ClearViews ();
+            if (foldersNeedRefresh) {
+                foldersNeedRefresh = false;
+                ClearLists ();
+                ConfigureFolders ();
+                ClearViews ();
+                ConfigureView ();
+            }
         }
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
@@ -249,6 +258,7 @@ namespace NachoClient.iOS
                 textColor = UIColor.White;
                 separatorColor = UIColor.LightGray.ColorWithAlpha (.6f);
                 cellBGColor = A.Color_NachoGreen;
+                cellHighlightedColor = UIColor.DarkGray;
                 scrollViewBGColor = A.Color_NachoGreen;
                 borderColor = UIColor.Clear;
                 folderIcon = UIImage.FromBundle ("modal-folder");
@@ -259,6 +269,7 @@ namespace NachoClient.iOS
                 textColor = A.Color_NachoDarkText;
                 separatorColor = A.Color_NachoBorderGray;
                 cellBGColor = UIColor.White;
+                cellHighlightedColor = UIColor.LightGray;
                 scrollViewBGColor = A.Color_NachoBackgroundGray;
                 borderColor = A.Color_NachoBorderGray;
                 folderIcon = UIImage.FromBundle ("folder-folder");
@@ -300,17 +311,13 @@ namespace NachoClient.iOS
                 CreateRecentFolderCell (folder, index);
                 index++;
             }
-
-            index = 0;
+                
             foreach (var f in nestedFolderList) {
                 CreateFolderCell (0, defaultsView, HasSubFolders (f), false, f);
-                index++;
             }
-
-            index = 0;
+                
             foreach (var f in yourFolderList) {
                 CreateFolderCell (0, yourFoldersView, HasSubFolders (f), false, f);
-                index++;
             }
 
             LayoutView ();
@@ -385,14 +392,14 @@ namespace NachoClient.iOS
         {
             foreach (var f in folders) {
                 var cell = parentView.ViewWithTag (f.folderID + 10000) as UIView;
-                if (false == cell.Hidden) {
+                if (!cell.Hidden) {
                     cell.Frame = new RectangleF (cell.Frame.X, 44 * defaultCellsOffset, cell.Frame.Width, 44);
                     cell.ViewWithTag (cell.Tag + 20000).Hidden = false;
                     defaultCellsOffset++;
                     if (HasSubFolders (f)) {
                         LayoutCells (parentView, f.subFolders);
                     }
-                } else if (true == cell.Hidden) {
+                } else if (cell.Hidden) {
                     MatchParentY (f, parentView);
                 }
             }
@@ -408,14 +415,13 @@ namespace NachoClient.iOS
 
         protected void CreateTopFolderCell (String name, int index, bool addSeparator, Action action)
         {
-            UIView cell = new UIView (new RectangleF (5, 44 * index, recentView.Frame.Width - 10, 44));
+            UIButton cell = new UIButton (UIButtonType.RoundedRect);
+            cell.Frame = new RectangleF (5, 44 * index, recentView.Frame.Width - 10, 44);
             cell.BackgroundColor = cellBGColor;
-            var cellTap = new UITapGestureRecognizer ();
-            cellTap.AddTarget (() => {
+            cell.SetImage (Util.DrawButtonBackgroundImage (cellHighlightedColor, cell.Frame.Size), UIControlState.Highlighted);
+            cell.TouchUpInside += (sender, e) => {
                 action ();
-                cell.BackgroundColor = (modal ? UIColor.Black : UIColor.LightGray);
-            });
-            cell.AddGestureRecognizer (cellTap);
+            };
 
             UILabel label = new UILabel (new RectangleF (52, 0, cell.Frame.Width - 52, 44));
             label.Text = name;
@@ -437,21 +443,20 @@ namespace NachoClient.iOS
 
         protected void CreateRecentFolderCell (McFolder folder, int index)
         {
-            UIView cell = new UIView (new RectangleF (5, 44 * index, recentView.Frame.Width - 10, 44));
+            UIButton cell = new UIButton (UIButtonType.RoundedRect);
+            cell.Frame = new RectangleF (5, 44 * index, recentView.Frame.Width - 10, 44);
             cell.BackgroundColor = cellBGColor;
-            var cellTap = new UITapGestureRecognizer ();
-            cellTap.AddTarget (() => {
+            cell.SetImage (Util.DrawButtonBackgroundImage (cellHighlightedColor, cell.Frame.Size), UIControlState.Highlighted);
+            cell.TouchUpInside += (sender, e) => {
                 folder = folder.UpdateSet_LastAccessed (DateTime.UtcNow);
-                cell.BackgroundColor = (modal ? UIColor.Black : UIColor.LightGray);
                 UpdateLastAccessed ();
                 if (modal) {
                     FolderSelected (folder);
                 } else {
                     PerformSegue ("FoldersToMessageList", new SegueHolder (folder));
                 }
-            });
-            cell.AddGestureRecognizer (cellTap);
-
+            };
+                
             UILabel label = new UILabel (new RectangleF (52, 0, cell.Frame.Width - 52, 44));
             label.Text = folder.DisplayName;
             label.Font = A.Font_AvenirNextMedium14;
@@ -473,6 +478,11 @@ namespace NachoClient.iOS
 
         public void ClearViews ()
         {
+            if (null != recentView) {
+                foreach (var v in recentView.Subviews) {
+                    v.RemoveFromSuperview ();
+                }
+            }
             // Not sure how defaultsView can be null
             // unless DidDisappear is called before ViewDidLoad.
             if (null != defaultsView) {
@@ -492,21 +502,20 @@ namespace NachoClient.iOS
             var tag = folderStruct.folderID + 10000;
 
             var indentation = subLevel * 10;
-            UIView cell = new UIView (new RectangleF (5 + indentation, 0, parentView.Frame.Width - 10 - indentation, 44));
+            UIButton cell = new UIButton (UIButtonType.RoundedRect);
+            cell.Frame = new RectangleF (5 + indentation, 0, parentView.Frame.Width - 10 - indentation, 44);
             cell.BackgroundColor = cellBGColor;
-            var cellTap = new UITapGestureRecognizer ();
-            cellTap.AddTarget (() => {
+            cell.SetImage (Util.DrawButtonBackgroundImage (cellHighlightedColor, cell.Frame.Size), UIControlState.Highlighted);
+            cell.TouchUpInside += (sender, e) => {
                 var folder = GetFolder (folderStruct);
                 folder = folder.UpdateSet_LastAccessed (DateTime.UtcNow);
-                cell.BackgroundColor = (modal ? UIColor.Black : UIColor.LightGray);
                 UpdateLastAccessed ();
                 if (modal) {
                     FolderSelected (folder);
                 } else {
                     PerformSegue ("FoldersToMessageList", new SegueHolder (folder));
                 }
-            });
-            cell.AddGestureRecognizer (cellTap);
+            };
 
             UILabel label = new UILabel (new RectangleF (52, 0, cell.Frame.Width - 52, 44));
             label.Text = folderStruct.folderName;
