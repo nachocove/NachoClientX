@@ -68,10 +68,10 @@ namespace NachoClient.iOS
         // Pre-made swipe action descriptors
         private static SwipeActionDescriptor EMAIL_ATTACH_BUTTON =
             new SwipeActionDescriptor (EMAIL_ATTACH_TAG, 0.25f, UIImage.FromBundle ("files-forward-swipe"),
-                "Forward", A.Color_NachoSwipeActionGreen);
+                "Forward", A.Color_NachoeSwipeForward);
         private static SwipeActionDescriptor OPEN_IN_BUTTON =
             new SwipeActionDescriptor (OPEN_IN_TAG, 0.25f, UIImage.FromBundle ("files-open-app-swipe"),
-                "Open in", A.Color_NachoSwipeActionBlue);
+                "Open in", A.Color_NachoSwipeActionMatteBlack);
         private static SwipeActionDescriptor DELETE_BUTTON =
             new SwipeActionDescriptor (DELETE_TAG, 0.5f, UIImage.FromBundle ("email-delete-swipe"),
                 "Delete", A.Color_NachoSwipeActionRed);
