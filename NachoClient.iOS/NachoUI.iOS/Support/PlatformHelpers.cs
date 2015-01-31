@@ -49,8 +49,8 @@ namespace NachoClient
             }
             value = cid.Substring (index + 3);
             try {
-            bodyId = Convert.ToInt32 (cid.Substring (2, index));
-            } catch(System.FormatException ex) {
+                bodyId = Convert.ToInt32 (cid.Substring (2, index));
+            } catch (System.FormatException) {
                 return "malformed body id";
             }
             return null;
