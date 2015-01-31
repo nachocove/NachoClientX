@@ -111,7 +111,9 @@ namespace NachoClient.iOS
         {
             var s = (StatusIndEventArgs)e;
             if (NcResult.SubKindEnum.Info_ExecutionContextChanged == s.Status.SubKind) {
-                if (NcApplication.ExecutionContextEnum.Initializing == (NcApplication.ExecutionContextEnum)s.Status.Value) {
+                var execContext = (NcApplication.ExecutionContextEnum)s.Status.Value;
+                if ((NcApplication.ExecutionContextEnum.Initializing != execContext) &&
+                    (NcApplication.ExecutionContextEnum.Migrating != execContext)) {
                     InvokeOnMainThread (() => {
                         if (null != ProgressBar) {
                             ProgressBar.Hidden = false;
