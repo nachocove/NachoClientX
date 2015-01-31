@@ -741,7 +741,7 @@ namespace NachoCore.ActiveSync
                     var pathElem = new McPath (BEContext.Account.Id);
                     pathElem.ServerId = addServerId;
                     pathElem.ParentId = folder.ServerId;
-                    pathElem.Insert ();
+                    pathElem.Insert (BEContext.Server.HostIsGMail ());
                     var applyAdd = new ApplyItemAdd (BEContext.Account.Id) {
                         ClassCode = classCode,
                         ServerId = addServerId,

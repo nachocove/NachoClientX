@@ -46,6 +46,23 @@ namespace NachoCore.Model
         // Note: by design there should only be one entry per ServerId && AccountId.
         // We choose to announce inconsistency and keep running rather than crash w/r/t this.
 
+        // Temporary - used to exclude GMail from error reporting. 
+        public int Insert (bool isGMail)
+        {
+            var preExists = McPath.QueryByServerId (AccountId, ServerId);
+            Log.Info (Log.LOG_DB, "McPath:Insert ServerId {0}", ServerId);
+            if (null != preExists) {
+                // In a move, expect the server to send one Add, which is not an error.
+                if (!preExists.WasMoveDest && !isGMail) {
+                    Log.Error (Log.LOG_DB, string.Format ("Duplicate McPath: old entry {0}/{1} replaced with {2}/{3} @ {4}.",
+                        preExists.ParentId, preExists.ServerId,
+                        ParentId, ServerId, new StackTrace ().ToString ()));
+                }
+                preExists.Delete ();
+            }
+            return base.Insert ();
+        }
+
         public override int Insert ()
         {
             var preExists = McPath.QueryByServerId (AccountId, ServerId);
