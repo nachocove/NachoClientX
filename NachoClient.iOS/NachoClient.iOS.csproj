@@ -1198,6 +1198,7 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\DraftsHelper.cs">
       <Link>NachoCore\Utils\DraftsHelper.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\Interfaces\INachoMessageComposer.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

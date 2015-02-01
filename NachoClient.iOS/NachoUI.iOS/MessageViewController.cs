@@ -572,12 +572,11 @@ namespace NachoClient.iOS
                 return;
             }
             if (segue.Identifier == "MessageViewToCompose") {
-                var vc = (MessageComposeViewController)segue.DestinationViewController;
+                var vc = (INachoMessageComposer)segue.DestinationViewController;
                 var h = sender as SegueHolder;
 
                 if (null != h.value) {
                     vc.SetAction (thread, (string)h.value);
-                    vc.SetOwner (this);  
                     if (null != h.value2) {
                         vc.SetQRType ((NcQuickResponse.QRTypeEnum)h.value2);
                     }

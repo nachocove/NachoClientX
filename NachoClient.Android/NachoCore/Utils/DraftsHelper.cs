@@ -19,7 +19,7 @@ namespace NachoCore.Utils
         //Leave this commented out until we are allowing users to edit draft messages 
         public static bool IsDraftsFolder (McFolder folder)
         {
-//            if (McFolder.GetOrCreateEmailDraftsFolder (folder.AccountId).Id == folder.Id) {
+//            if (McFolder.GetDefaultDraftsFolder (folder.AccountId).Id == folder.Id) {
 //                return true;
 //            }
             return false; 
@@ -36,7 +36,7 @@ namespace NachoCore.Utils
 
         public static List<McEmailMessage> GetEmailDrafts (int accountId)
         {
-            List<McEmailMessage> emailDrafts = McEmailMessage.QueryByFolderId<McEmailMessage> (accountId, McFolder.GetOrCreateEmailDraftsFolder (accountId).Id);
+            List<McEmailMessage> emailDrafts = McEmailMessage.QueryByFolderId<McEmailMessage> (accountId, McFolder.GetDefaultDraftsFolder (accountId).Id);
             return emailDrafts;
         }
     }

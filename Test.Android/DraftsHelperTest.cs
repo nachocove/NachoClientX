@@ -27,7 +27,7 @@ namespace Test.Android
             emailTwo.Insert ();
             emailThree.Insert ();
 
-            McFolder draftsFolder = McFolder.GetOrCreateEmailDraftsFolder (accountId);
+            McFolder draftsFolder = McFolder.GetDefaultDraftsFolder (accountId);
             Assert.IsTrue (0 == DraftsHelper.GetEmailDrafts (accountId).Count);
 
             draftsFolder.Link (emailOne);

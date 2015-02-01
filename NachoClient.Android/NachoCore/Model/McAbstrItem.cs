@@ -61,25 +61,25 @@ namespace NachoCore.Model
 
         public virtual string GetSubject ()
         {
-            NcAssert.False (true, "GetSubject needs to be implemented for this derived class");
+            NcAssert.CaseError ("GetSubject needs to be implemented for this derived class");
             return "";
         }
 
         public virtual string GetRecipients ()
         {
-            NcAssert.False (true, "GetRecipients needs to be implemented for this derived class");
+            NcAssert.CaseError ("GetRecipients needs to be implemented for this derived class");
             return "";
         }
 
-        public virtual string GetPrettyDate ()
+        public virtual DateTime GetDate ()
         {
-            NcAssert.False (true, "GetPrettyDate needs to be implemented for this derived class");
-            return "";
+            NcAssert.CaseError ("GetDate needs to be implemented for this derived class");
+            return new DateTime ();
         }
 
         public virtual string GetBodyString ()
         {
-            NcAssert.False (true, "GetBody needs to be implemented for this derived class");
+            NcAssert.CaseError ("GetBodyString needs to be implemented for this derived class");
             return "";
         }
 

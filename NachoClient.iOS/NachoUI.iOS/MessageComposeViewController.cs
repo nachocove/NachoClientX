@@ -19,16 +19,13 @@ using NachoCore;
 
 namespace NachoClient.iOS
 {
-    public partial class MessageComposeViewController : UIViewController, IUcAddressBlockDelegate, IUcAttachmentBlockDelegate, INachoContactChooserDelegate, INachoFileChooserParent, INachoDateControllerParent, INachoIntentChooserParent
+    public partial class MessageComposeViewController : UIViewController, IUcAddressBlockDelegate, IUcAttachmentBlockDelegate, INachoContactChooserDelegate, INachoFileChooserParent, INachoDateControllerParent, INachoIntentChooserParent, INachoMessageComposer
     {
-
         // Strings to be used when calling SetAction()
         public static readonly string REPLY_ACTION = "Reply";
         public static readonly string REPLY_ALL_ACTION = "ReplyAll";
         public static readonly string FORWARD_ACTION = "Forward";
         public static readonly string EDIT_DRAFT_ACTION = "EditDraftAction";
-
-        public INachoMessageEditorParent owner;
 
         protected McAccount account;
         protected McCalendar calendarInviteItem;
@@ -96,11 +93,6 @@ namespace NachoClient.iOS
 
         public MessageComposeViewController (IntPtr handle) : base (handle)
         {
-        }
-
-        public void SetOwner (INachoMessageEditorParent o)
-        {
-            owner = o;
         }
 
         public void SetQRType (NcQuickResponse.QRTypeEnum QRType)
@@ -176,7 +168,6 @@ namespace NachoClient.iOS
             sendButton.Clicked += (object sender, EventArgs e) => {
                 if (OkToSend ()) {
                     SendMessage ();
-                    owner = null;
                     NavigationController.PopViewControllerAnimated (true);
                 }
             };
@@ -191,7 +182,6 @@ namespace NachoClient.iOS
                 alert.CancelButtonIndex = 0;
                 alert.Dismissed += (object alertSender, UIButtonEventArgs alertEvent) => {
                     if (1 == alertEvent.ButtonIndex) {
-                        owner = null;
                         NavigationController.PopViewControllerAnimated (true);
                     }
                 };

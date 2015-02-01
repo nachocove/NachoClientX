@@ -346,6 +346,52 @@ namespace Test.Common
             message.UpdateScoreAndNeedUpdate ();
             CheckScoreAndUpdate (message.Id, 0.5, false);
         }
+
+        [Test]
+        public void TestGetSubject ()
+        {
+            McEmailMessage message = new McEmailMessage ();
+            Assert.IsNull (message.GetSubject ());
+
+            message.Subject = "test message subject";
+            Assert.True (message.Subject == message.GetSubject ());
+        }
+
+        [Test]
+        public void TestGetRecipients ()
+        {
+            McEmailMessage message = new McEmailMessage ();
+            Assert.IsNull (message.GetRecipients ());
+
+            message.To = "adam@yahoo.com";
+            Assert.True ("adam@yahoo.com" == message.GetRecipients ());
+
+            message.Cc = "brock@yahoo.com";
+            Assert.True ("adam@yahoo.com, brock@yahoo.com" == message.GetRecipients ());
+
+            message.Bcc = "carl@yahoo.com";
+            Assert.True ("adam@yahoo.com, brock@yahoo.com, carl@yahoo.com" == message.GetRecipients ());
+        }
+
+        [Test]
+        public void TestGetDate ()
+        {
+            McEmailMessage message = new McEmailMessage ();
+            Assert.True (new DateTime() == message.GetDate ());
+
+            message.CreatedAt = DateTime.Now;
+            Assert.True (message.CreatedAt == message.GetDate ());
+        }
+
+        [Test]
+        public void TestGetBodyString ()
+        {
+            McEmailMessage message = new McEmailMessage ();
+            Assert.IsNull(message.GetBodyString());
+
+            message.BodyPreview = "message body preview";
+            Assert.True (message.BodyPreview == message.GetBodyString ());
+        }
     }
 }
 

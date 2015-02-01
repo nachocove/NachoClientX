@@ -17,6 +17,8 @@ namespace NachoClient.iOS
         DraftsTableViewSource draftsTableViewSource;
         DraftsHelper.DraftType draftType;
 
+        UIBarButtonItem composeButton;
+
         public DraftsViewController (IntPtr handle) : base (handle)
         {
 
@@ -33,13 +35,10 @@ namespace NachoClient.iOS
             draftsTableViewSource = new DraftsTableViewSource ();
             draftsTableViewSource.SetOwner (this);
 
-            var composeButton = new UIBarButtonItem ();
+            composeButton = new UIBarButtonItem ();
             Util.SetAutomaticImageForButton (composeButton, "contact-newemail");
-            composeButton.Clicked += (object sender, EventArgs e) => {
-                PerformSegue ("SegueToMessageCompose", new SegueHolder (null, false));
-            };
+            composeButton.Clicked += ComposeButtonClicked;
             NavigationItem.RightBarButtonItem = composeButton;
-
 
             switch (draftType) {
 //            case DraftsHelper.DraftType.Calendar:
@@ -76,7 +75,13 @@ namespace NachoClient.iOS
 
         protected override void Cleanup ()
         {
+            composeButton.Clicked -= ComposeButtonClicked;
+            composeButton = null;
+        }
 
+        protected void ComposeButtonClicked (object sender, EventArgs e)
+        {
+            PerformSegue ("SegueToMessageCompose", new SegueHolder (null, false));
         }
 
         public void DraftItemSelected (DraftsHelper.DraftType draftType, McAbstrItem draft)
@@ -138,12 +143,10 @@ namespace NachoClient.iOS
                     mcvc.SetAction (tempThread, MessageComposeViewController.EDIT_DRAFT_ACTION);
                     return;
                 } else {
-                    var vc = (MessageComposeViewController)segue.DestinationViewController;
+                    var vc = (INachoMessageComposer)segue.DestinationViewController;
                     vc.SetAction (null, null);
-                    vc.SetOwner (this);
                     return;
                 }
-
             }
 
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);

@@ -321,10 +321,10 @@ namespace Test.iOS
             int accountId = 1;
 
             McFolder defaultDrafts = FolderOps.CreateFolder (accountId, typeCode: Xml.FolderHierarchy.TypeCode.DefaultDrafts_3, name: "Default-Drafts");
-            Assert.True(McFolder.GetOrCreateEmailDraftsFolder (accountId).DisplayName == "Default-Drafts");
+            Assert.True(McFolder.GetDefaultDraftsFolder (accountId).DisplayName == "Default-Drafts");
             defaultDrafts.Delete ();
 
-            McFolder createdDraftsFolder = McFolder.GetOrCreateEmailDraftsFolder (accountId);
+            McFolder createdDraftsFolder = McFolder.GetDefaultDraftsFolder (accountId);
             Assert.True (McFolder.DRAFTS_DISPLAY_NAME == createdDraftsFolder.DisplayName);
         }
 

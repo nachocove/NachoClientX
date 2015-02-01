@@ -211,7 +211,7 @@ namespace NachoClient.iOS
                 return;
             }
             if (segue.Identifier == "NachoNowToCompose") {
-                var vc = (MessageComposeViewController)segue.DestinationViewController;
+                var vc = (INachoMessageComposer)segue.DestinationViewController;
                 var h = sender as SegueHolder;
                 if (null == h) {
                     // Composing a message
@@ -219,7 +219,6 @@ namespace NachoClient.iOS
                 } else {
                     vc.SetAction ((McEmailMessageThread)h.value2, (string)h.value);
                 }
-                vc.SetOwner (this);
                 return;
             }
             if (segue.Identifier == "SegueToMailTo") {

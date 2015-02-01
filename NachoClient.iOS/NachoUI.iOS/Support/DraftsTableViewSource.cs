@@ -53,11 +53,6 @@ namespace NachoClient.iOS
             this.owner = owner;
         }
 
-        public float GetTableHeight ()
-        {
-            return GetHeightForRow (null, null) * RowsInSection (null, 0);
-        }
-
         public override int RowsInSection (UITableView tableview, int section)
         {
             return drafts.Count > 0 ? drafts.Count : 1;
@@ -190,13 +185,13 @@ namespace NachoClient.iOS
             bodyLabel.Text = drafts [row].GetBodyString ();
 
             switch (draftType) {
-            case DraftsHelper.DraftType.Calendar:
-                recipientsLabel.Text = drafts [row].GetPrettyDate();
-                dateLabel.Text = drafts [row].GetRecipients();
-                break;
+//            case DraftsHelper.DraftType.Calendar:
+//                recipientsLabel.Text = drafts [row].GetPrettyDate();
+//                dateLabel.Text = drafts [row].GetRecipients();
+//                break;
             case DraftsHelper.DraftType.Email:
                 recipientsLabel.Text = drafts [row].GetRecipients ();
-                dateLabel.Text = drafts [row].GetPrettyDate ();
+                dateLabel.Text = Pretty.FullDateTimeString(drafts [row].GetDate ());
                 break;
             }
         }
@@ -205,7 +200,7 @@ namespace NachoClient.iOS
         {
             switch (draftType) {
             case DraftsHelper.DraftType.Email:
-                McFolder draftsFolder = McFolder.GetOrCreateEmailDraftsFolder (draft.AccountId);
+                McFolder draftsFolder = McFolder.GetDefaultDraftsFolder (draft.AccountId);
                 //If it's a local draft, just delete it. If it's in the sync'd drafts, DeleteEmailCmd
                 if (draftsFolder.IsClientOwned) {
                     draft.Delete ();

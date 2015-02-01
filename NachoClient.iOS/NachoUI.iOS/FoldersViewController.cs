@@ -116,9 +116,8 @@ namespace NachoClient.iOS
                 return;
             }
             if (segue.Identifier == "SegueToCompose") {
-                var vc = (MessageComposeViewController)segue.DestinationViewController;
+                var vc = (INachoMessageComposer)segue.DestinationViewController;
                 vc.SetAction (null, null);
-                vc.SetOwner (this);
                 return;
             }
 
@@ -281,7 +280,7 @@ namespace NachoClient.iOS
                 var folder = McFolder.GetDefaultInboxFolder (account.Id);
                 if (null != folder) {
                     CreateTopFolderCell ("Inbox", topFolderCount, true, () => {
-                        OpenFolder (folder);
+                        FolderSelected (folder);
                     });
                     topFolderCount += 1;
                 }
@@ -451,11 +450,7 @@ namespace NachoClient.iOS
                 folder = folder.UpdateSet_LastAccessed (DateTime.UtcNow);
                 cell.BackgroundColor = (modal ? UIColor.Black : UIColor.LightGray);
                 UpdateLastAccessed ();
-                if (modal) {
-                    MoveMessageToFolder (folder);
-                } else {
-                    OpenFolder (folder);
-                }
+                FolderSelected (folder);
             });
             cell.AddGestureRecognizer (cellTap);
 
@@ -507,11 +502,7 @@ namespace NachoClient.iOS
                 folder = folder.UpdateSet_LastAccessed (DateTime.UtcNow);
                 cell.BackgroundColor = (modal ? UIColor.Black : UIColor.LightGray);
                 UpdateLastAccessed ();
-                if (modal) {
-                    MoveMessageToFolder (folder);
-                } else {
-                    OpenFolder (folder);
-                }
+                FolderSelected (folder);
             });
             cell.AddGestureRecognizer (cellTap);
 
@@ -882,9 +873,19 @@ namespace NachoClient.iOS
             DismissViewController (animated, action);
         }
 
-        public void MoveMessageToFolder (McFolder folder)
+        public void FolderSelected (McFolder folder)
         {
-            owner.FolderSelected (this, folder, cookie);
+            //modal, moving item to folder
+            //non modal, opening folder to view items
+            if (modal) {
+                owner.FolderSelected (this, folder, cookie);
+            } else {
+                if (DraftsHelper.IsDraftsFolder (folder)) {
+                    PerformSegue ("SegueToDrafts", new SegueHolder (folder));
+                } else {
+                    PerformSegue ("FoldersToMessageList", new SegueHolder (folder));
+                }
+            }
         }
 
         // INachoMessageEditorParent

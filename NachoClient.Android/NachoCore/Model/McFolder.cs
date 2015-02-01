@@ -240,7 +240,9 @@ namespace NachoCore.Model
             return GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultSent_5);
         }
 
-        public static McFolder GetOrCreateEmailDraftsFolder (int accountId)
+        //If a Default 'Drafts' folder is sync'd return that
+        //If none exists, create a client owned 'Drafts' folder
+        public static McFolder GetDefaultDraftsFolder (int accountId)
         {
             McFolder defaultDraftsFolder = McFolder.GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultDrafts_3);
             if (null == defaultDraftsFolder) {
