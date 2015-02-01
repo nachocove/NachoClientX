@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using MonoTouch.Foundation;
 using MonoTouch.AddressBook;
+using MimeKit;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -70,6 +71,14 @@ namespace NachoPlatform
                 var emails = Person.GetEmails ();
                 int i = 1;
                 foreach (var email in emails) {
+                    // Check if the email address string is valid. iOS contact email address are not
+                    // guaranteed to be RFC compliant.
+                    var emailAddresses = NcEmailAddress.ParseAddressListString (email.Value);
+                    if ((1 != emailAddresses.Count) ||
+                        (String.IsNullOrEmpty (((MailboxAddress)emailAddresses [0]).Address))) {
+                        Log.Warn (Log.LOG_SYS, "Cannot import invalid email addresses (count={0})", emailAddresses.Count);
+                        continue;
+                    }
                     contact.AddEmailAddressAttribute (accountId, string.Format ("Email{0}Address", i), null, email.Value);
                     ++i;
                 }
@@ -108,7 +117,7 @@ namespace NachoPlatform
             }
         }
 
-        public bool ShouldWeBotherToAsk()
+        public bool ShouldWeBotherToAsk ()
         {
             if (ABAuthorizationStatus.NotDetermined == ABAddressBook.GetAuthorizationStatus ()) {
                 return true;
