@@ -926,6 +926,7 @@ namespace NachoClient.iOS
         {
             if (null != Account) {
                 Log.Info (Log.LOG_UI, "RemoveAccount: user removed account {0}", this.Account.Id);
+                BackEnd.Instance.Stop (this.Account.Id);
                 BackEnd.Instance.Remove (this.Account.Id);
                 Account = null;
             }
