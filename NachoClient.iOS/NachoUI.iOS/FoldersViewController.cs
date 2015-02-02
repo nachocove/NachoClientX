@@ -104,6 +104,8 @@ namespace NachoClient.iOS
 
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
+            foldersNeedRefresh = true; // update the 'recent' list
+
             if ("FoldersToMessageList" == segue.Identifier) {
                 var holder = (SegueHolder)sender;
                 var messageList = new NachoEmailMessages ((McFolder)holder.value);
