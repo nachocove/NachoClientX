@@ -161,11 +161,23 @@ namespace NachoClient.iOS
             if (NcResult.SubKindEnum.Info_CalendarSetChanged == s.Status.SubKind) {
                 calendarSource.Refresh ();
                 calendarTableView.ReloadData ();
+                UpdateDateDotView ();
+
             }
             if (NcResult.SubKindEnum.Info_EventSetChanged == s.Status.SubKind) {
                 calendarSource.Refresh ();
                 calendarTableView.ReloadData ();
+                UpdateDateDotView ();
             }
+        }
+
+        protected void UpdateDateDotView ()
+        {
+            if (BasicView) {
+                DateDotView.UpdateButtons ();
+                return;
+            } 
+            DateDotView.UpdateButtonsMonth ();
         }
 
         public void PerformSegueForDelegate (string identifier, NSObject sender)
