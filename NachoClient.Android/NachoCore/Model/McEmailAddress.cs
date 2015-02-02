@@ -2,6 +2,7 @@
 //
 using System;
 using System.Linq;
+using System.Collections.Generic;
 using SQLite;
 using MimeKit;
 
@@ -66,6 +67,30 @@ namespace NachoCore.Model
             });
             emailAddress = retval;
             return true;
+        }
+
+        public static int Get (int accountId, string emailAddressString)
+        {
+            McEmailAddress emailAddress;
+            if (!Get (accountId, emailAddressString, out emailAddress)) {
+                return 0;
+            }
+            return emailAddress.Id;
+        }
+
+        public static List<int> GetList (int accountId, string emailAddressListString)
+        {
+            List<int> emailAddressIdList = new List<int> ();
+            if (!String.IsNullOrEmpty (emailAddressListString)) {
+                var addressList = NcEmailAddress.ParseAddressListString (emailAddressListString);
+                foreach (var address in addressList) {
+                    var emailAddressId = Get (accountId, ((MailboxAddress)address).Address);
+                    if (0 != emailAddressId) {
+                        emailAddressIdList.Add (emailAddressId);
+                    }
+                }
+            }
+            return emailAddressIdList;
         }
     }
 }

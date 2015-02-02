@@ -18,8 +18,7 @@ namespace NachoCore
 {
     // THIS IS THE INIT SEQUENCE FOR THE NON-UI ASPECTS OF THE APP ON ALL PLATFORMS.
     // IF YOUR INIT TAKES SIGNIFICANT TIME, YOU NEED TO HAVE A NcTask.Run() IN YOUR INIT
-    // THAT DOES THE LONG DURATION STUFF ON A BACKGROUND THREAD. THIS METHOD IS CALLED
-    // VIA THE UI THREAD ON STARTUP. ORDER MATTERS - KNOW BEFORE YOU MODIFY!
+    // THAT DOES THE LONG DURATION STUFF ON A BACKGROUND THREAD.
 
     public sealed class NcApplication : IBackEndOwner
     {
@@ -28,24 +27,43 @@ namespace NachoCore
 
         public enum ExecutionContextEnum
         {
+            Migrating,
+            Initializing,
             Foreground,
             Background,
             QuickSync,
         };
 
-        private ExecutionContextEnum _ExecutionContext;
+        private ExecutionContextEnum _ExecutionContext = ExecutionContextEnum.Migrating;
+        private ExecutionContextEnum _PlatformIndication = ExecutionContextEnum.Background;
 
         public ExecutionContextEnum ExecutionContext {
             get { return _ExecutionContext; }
-            set { 
+            private set { 
                 _ExecutionContext = value; 
-                Log.Info (Log.LOG_LIFECYCLE, "ExecutionContext => {0}", value.ToString ());
+                Log.Info (Log.LOG_LIFECYCLE, "ExecutionContext => {0}", _ExecutionContext.ToString ());
+                var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ExecutionContextChanged);
+                result.Value = _ExecutionContext;
                 InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_ExecutionContextChanged),
+                    Status = result,
                     Account = ConstMcAccount.NotAccountSpecific,
                 });
             }
         }
+
+        public ExecutionContextEnum PlatformIndication {
+            set { 
+                _PlatformIndication = value;
+                Log.Info (Log.LOG_LIFECYCLE, "PlatformIndication => {0}", _PlatformIndication.ToString ());
+                if (ExecutionContextEnum.Migrating != ExecutionContext &&
+                    ExecutionContextEnum.Initializing != ExecutionContext) {
+                    ExecutionContext = _PlatformIndication;
+                }
+            }
+        }
+
+        // This is sucky, but for now it is better than having it in AppDelegate.
+        public McAccount Account { get; set; }
 
         public delegate void CredReqCallbackDele (int accountId);
 
@@ -131,7 +149,8 @@ namespace NachoCore
 
         private NcApplication ()
         {
-            ThreadPool.SetMinThreads (8, 6);
+            NcAssert.True (ThreadPool.SetMinThreads (8, 6));
+            NcAssert.True (ThreadPool.SetMaxThreads (50, 16));
             TaskScheduler.UnobservedTaskException += (object sender, UnobservedTaskExceptionEventArgs eargs) => {
                 NcAssert.True (eargs.Exception is AggregateException, "AggregateException check");
                 var aex = (AggregateException)eargs.Exception;
@@ -195,56 +214,66 @@ namespace NachoCore
             }
         }
 
-        public void StartClass1Services ()
+        private void StartBasalServicesCompletion ()
         {
-            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass1Services called.");
-            NcTask.StartService ();
-            Telemetry.StartService ();
+            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServicesCompletion called.");
+            ExecutionContext = ExecutionContextEnum.Initializing;
             NcModel.Instance.GarbageCollectFiles ();
             NcModel.Instance.Start ();
+            Account = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
             EstablishService ();
-            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass1Services exited.");
-        }
-
-        public void StopClass1Services ()
-        {
-            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass1Services called.");
-            NcModel.Instance.Stop ();
-            NcTimer.StopService ();
-            NcTask.StopService ();
-            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass1Services exited.");
-        }
-
-        public void StartClass2Services ()
-        {
-            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass2Services called.");
             NcModel.Instance.EngageRateLimiter ();
             NcBrain.StartService ();
             NcContactGleaner.Start ();
-            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass2Services exited.");
-        }
-
-        public void StopClass2Services ()
-        {
-            // No need to turn off the model rate limiter.
-            NcContactGleaner.Stop ();
-            NcBrain.StopService ();
-        }
-
-        public void StartClass3Services ()
-        {
-            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass3Services called.");
             BackEnd.Instance.Owner = this;
             BackEnd.Instance.EstablishService ();
             BackEnd.Instance.Start ();
-            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass3Services exited.");
+            ExecutionContext = _PlatformIndication;
+            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServicesCompletion exited.");
         }
 
-        public void StopClass3Services ()
+        public void StartBasalServices ()
         {
-            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass3Services called.");
+            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServices called.");
+            NcTask.StartService ();
+            Telemetry.StartService ();
+            // Start Migrations, if any.
+            if (!NcMigration.WillStartService ()) {
+                StartBasalServicesCompletion ();
+                Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServices exited (w/out migration).");
+                return;
+            }
+            NcMigration.StartService (
+                StartBasalServicesCompletion,
+                (percentage) => {
+                    var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_MigrationProgress);
+                    result.Value = percentage;
+                    InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                        Status = result,
+                        Account = ConstMcAccount.NotAccountSpecific,
+                    });
+                },
+                (description) => {
+                    var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_MigrationDescription);
+                    result.Value = description;
+                    InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                        Status = result,
+                        Account = ConstMcAccount.NotAccountSpecific,
+                    });
+                });
+            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServices exited (w/migration).");
+        }
+
+        public void StopBasalServices ()
+        {
+            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopBasalServices called.");
             BackEnd.Instance.Stop ();
-            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass3Services exited.");
+            NcContactGleaner.Stop ();
+            NcBrain.StopService ();
+            NcModel.Instance.Stop ();
+            NcTimer.StopService ();
+            NcTask.StopService ();
+            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopBasalServices exited.");
         }
 
         // ALL CLASS-4 STARTS ARE DEFERRED BASED ON TIME.
@@ -253,7 +282,6 @@ namespace NachoCore
             // Make sure the scheduled notifications are up to date.
             LocalNotificationManager.ScheduleNotifications ();
 
-            ExecutionContext = ExecutionContextEnum.Foreground;
             MonitorStart (); // Has a deferred timer start inside.
             Log.Info (Log.LOG_LIFECYCLE, "{0} (build {1}) built at {2} by {3}",
                 BuildInfo.Version, BuildInfo.BuildNumber, BuildInfo.Time, BuildInfo.User);
@@ -285,7 +313,6 @@ namespace NachoCore
         public void StopClass4Services ()
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StopClass4Services called.");
-            ExecutionContext = ExecutionContextEnum.Background;
             MonitorStop ();
             if (Class4EarlyShowTimer.DisposeAndCheckHasFired ()) {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4EarlyShowTimer.DisposeAndCheckHasFired.");
@@ -312,7 +339,7 @@ namespace NachoCore
             MonitorTimer.Dispose ();
         }
 
-        public void MonitorReport (string moniker = null, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
+        public void MonitorReport (string moniker = null, [CallerFilePath] string sourceFilePath = "",  [CallerLineNumber] int sourceLineNumber = 0)
         {
             if (!String.IsNullOrEmpty (moniker)) {
                 Log.Info (Log.LOG_SYS, "Monitor: {0} from line {1} of {2}", moniker, sourceLineNumber, sourceFilePath);

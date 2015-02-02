@@ -103,16 +103,16 @@ namespace NachoClient.iOS
         static public int GetCurrentAccountId ()
         {
             NachoClient.iOS.AppDelegate appDelegate = (NachoClient.iOS.AppDelegate)UIApplication.SharedApplication.Delegate;
-            NcAssert.True (null != appDelegate.Account);
+            NcAssert.True (null != NcApplication.Instance.Account);
 
-            return appDelegate.Account.Id;
+            return NcApplication.Instance.Account.Id;
         }
 
         // Pre-req before calling GetCurrentAccountId
         static public bool IsCurrentAccountSet ()
         {
             NachoClient.iOS.AppDelegate appDelegate = (NachoClient.iOS.AppDelegate)UIApplication.SharedApplication.Delegate;
-            if (null != appDelegate.Account) {
+            if (null != NcApplication.Instance.Account) {
                 return true;
             } else {
                 return false;

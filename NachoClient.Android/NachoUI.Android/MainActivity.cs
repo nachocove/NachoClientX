@@ -69,7 +69,7 @@ namespace NachoClient.AndroidClient
         {
             base.OnCreate (savedInstanceState);
 
-            NcApplication.Instance.StartClass1Services ();
+            NcApplication.Instance.StartBasalServices ();
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartClass1Services complete");
 
             NcApplication.Instance.StartClass2Services ();
