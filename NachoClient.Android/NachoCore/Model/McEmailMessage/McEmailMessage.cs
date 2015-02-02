@@ -756,6 +756,8 @@ namespace NachoCore.Model
                 _MeetingRequest.Insert ();
             }
 
+            InsertAddressMaps ();
+
             return NcResult.OK ();
         }
 
@@ -774,6 +776,38 @@ namespace NachoCore.Model
             NcAssert.True (0 != Id);
             db.Query<McEmailMessageCategory> ("DELETE FROM McEmailMessageCategory WHERE ParentID=?", Id);
             db.Query<McMeetingRequest> ("DELETE FROM McMeetingRequest WHERE EmailMessageId=?", Id);
+            DeleteAddressMaps ();
+        }
+
+        private void InsertAddressList (List<int> addressIdList, NcEmailAddress.Kind kind)
+        {
+            foreach (var addressId in addressIdList) {
+                var map = CreateAddressMap ();
+                map.EmailAddressId = addressId;
+                map.AddressType = kind;
+                map.Insert ();
+            }
+        }
+
+        private void InsertAddressMaps ()
+        {
+            var map = CreateAddressMap ();
+            map.EmailAddressId = FromEmailAddressId;
+            map.AddressType = NcEmailAddress.Kind.From;
+            map.Insert ();
+            if (0 < SenderEmailAddressId) {
+                map = CreateAddressMap ();
+                map.EmailAddressId = SenderEmailAddressId;
+                map.AddressType = NcEmailAddress.Kind.Sender;
+                map.Insert ();
+            }
+            InsertAddressList (dbToEmailAddressId, NcEmailAddress.Kind.To);
+            InsertAddressList (dbCcEmailAddressId, NcEmailAddress.Kind.Cc);
+        }
+
+        private void DeleteAddressMaps ()
+        {
+            McMapEmailAddressEntry.DeleteMessageMapEntries (AccountId, Id);
         }
 
         public override int Insert ()
@@ -830,8 +864,10 @@ namespace NachoCore.Model
 
         public override int Delete ()
         {
-            int returnVal = base.Delete ();
-
+            int returnVal = 0;
+            NcModel.Instance.RunInTransaction (() => {
+                returnVal = base.Delete ();
+            });
             return returnVal;
         }
 

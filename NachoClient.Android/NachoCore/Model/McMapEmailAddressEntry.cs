@@ -106,6 +106,24 @@ namespace NachoCore.Model
                              select address.Id).ToList ();
         }
 
+        public static void DeleteMessageMapEntries (int accountId, int emailMessageId)
+        {
+            NcModel.Instance.Db.Query<McMapEmailAddressEntry> (
+                "DELETE FROM McMapEmailAddressEntry " +
+                "WHERE AccountId = ? AND ObjectId = ? AND " +
+                "AddressType IN (?, ?, ?, ?)", accountId, emailMessageId,
+                NcEmailAddress.Kind.From, NcEmailAddress.Kind.Sender,
+                NcEmailAddress.Kind.To, NcEmailAddress.Kind.Cc);
+        }
+
+        public static void DeleteMapEntries (int accountId, int objectId, NcEmailAddress.Kind addressType)
+        {
+            NcModel.Instance.Db.Query<McMapEmailAddressEntry> (
+                "DELETE FROM McMapEmailAddressEntry " +
+                "WHERE AccountId = ? AND ObjectId = ? AND AddressType = ?",
+                accountId, objectId, addressType);
+        }
+
         // Address -> email message queries
         public static List<int> QueryMessageIdsByToAddress (int accountId, int toEmailAddressId)
         {

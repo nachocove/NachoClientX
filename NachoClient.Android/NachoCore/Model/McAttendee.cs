@@ -118,16 +118,65 @@ namespace NachoCore.Model
             }
         }
 
+        private NcEmailAddress.Kind GetAddressMapType ()
+        {
+            switch (AttendeeType) {
+            case NcAttendeeType.Optional:
+                return NcEmailAddress.Kind.Optional;
+            case NcAttendeeType.Required:
+                return NcEmailAddress.Kind.Required;
+            case NcAttendeeType.Resource:
+                return NcEmailAddress.Kind.Resource;
+            default:
+                throw new NcAssert.NachoDefaultCaseFailure (
+                    String.Format ("Unknown attendee type {0}", (int)AttendeeType));
+            }
+        }
+
+        private void InsertAddressMap ()
+        {
+            var map = CreateAddressMap ();
+            map.EmailAddressId = EmailAddressId;
+            map.AddressType = GetAddressMapType ();
+            map.Insert ();
+        }
+
+        private void DeleteAddressMap ()
+        {
+            McMapEmailAddressEntry.DeleteMapEntries (AccountId, Id, GetAddressMapType ());
+        }
+
         public override int Insert ()
         {
-            EmailAddressId = McEmailAddress.Get (AccountId, Email);
-            return base.Insert ();
+            int retval = 0;
+            NcModel.Instance.RunInTransaction (() => {
+                EmailAddressId = McEmailAddress.Get (AccountId, Email);
+                retval = base.Insert ();
+                InsertAddressMap ();
+            });
+            return retval;
         }
 
         public override int Update ()
         {
-            EmailAddressId = McEmailAddress.Get (AccountId, Email);
-            return base.Update ();
+            int retval = 0;
+            NcModel.Instance.RunInTransaction (() => {
+                EmailAddressId = McEmailAddress.Get (AccountId, Email);
+                DeleteAddressMap ();
+                InsertAddressMap ();
+                retval = base.Update ();
+            });
+            return retval;
+        }
+
+        public override int Delete ()
+        {
+            int retval = 0;
+            NcModel.Instance.RunInTransaction (() => {
+                retval = base.Delete ();
+                DeleteAddressMap ();
+            });
+            return retval;
         }
     }
 }

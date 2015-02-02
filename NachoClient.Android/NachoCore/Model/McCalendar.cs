@@ -71,12 +71,28 @@ namespace NachoCore.Model
             }
         }
 
+        private void InsertAddressMap ()
+        {
+            var map = CreateAddressMap ();
+            map.EmailAddressId = OrganizerEmailAddressId;
+            map.AddressType = NcEmailAddress.Kind.Organizer;
+            map.Insert ();
+        }
+
+        private void DeleteAddressMap ()
+        {
+            McMapEmailAddressEntry.DeleteMapEntries (AccountId, Id, NcEmailAddress.Kind.Organizer);
+        }
+
         public override int Insert ()
         {
-            // FIXME db transaction.
-            OrganizerEmailAddressId = McEmailAddress.Get (AccountId, OrganizerEmail);
-            int retval = base.Insert ();
-            InsertAncillaryData ();
+            int retval = 0;
+            NcModel.Instance.RunInTransaction (() => {
+                OrganizerEmailAddressId = McEmailAddress.Get (AccountId, OrganizerEmail);
+                retval = base.Insert ();
+                InsertAncillaryData ();
+                InsertAddressMap ();
+            });
             return retval;
         }
 
@@ -92,10 +108,14 @@ namespace NachoCore.Model
 
         public override int Update ()
         {
-            // FIXME db transaction
-            OrganizerEmailAddressId = McEmailAddress.Get (AccountId, OrganizerEmail);
-            int retval = base.Update ();
-            UpdateAncillaryData (NcModel.Instance.Db);
+            int retval = 0;
+            NcModel.Instance.RunInTransaction (() => {
+                OrganizerEmailAddressId = McEmailAddress.Get (AccountId, OrganizerEmail);
+                DeleteAddressMap ();
+                InsertAddressMap ();
+                retval = base.Update ();
+                UpdateAncillaryData (NcModel.Instance.Db);
+            });
             return retval;
         }
 
@@ -207,9 +227,14 @@ namespace NachoCore.Model
 
         public override int Delete ()
         {
-            DeleteRelatedExceptions ();
-            DeleteRelatedEvents ();
-            return base.Delete ();
+            int retval = 0;
+            NcModel.Instance.RunInTransaction (() => {
+                DeleteRelatedExceptions ();
+                DeleteRelatedEvents ();
+                retval = base.Delete ();
+                DeleteAddressMap ();
+            });
+            return retval;
         }
     }
 }
