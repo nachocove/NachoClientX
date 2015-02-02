@@ -424,6 +424,7 @@ namespace NachoClient.iOS
                 ExtractValues ();
                 SyncMeetingRequest ();
                 PrepareInvites ();
+                SetOwnerCalendarEvent ();
                 DismissView ();
             };
 
@@ -1178,7 +1179,27 @@ namespace NachoClient.iOS
 
         public void DismissView ()
         {
+            owner = null;
             NavigationController.PopViewControllerAnimated (true);
+        }
+
+        public void SetOwnerCalendarEvent ()
+        {
+            if (null != owner) {
+                var list = c.QueryRelatedEvents ();
+                if (null == list || 0 == list.Count ()) {
+                    return;
+                } else if (1 == list.Count ()) {
+                    owner.SetCalendarEvent (list [0]);
+                } else {
+                    // If an event is changed from a single time on a single day to an All Day event lasting longer
+                    // than a single day the list of related events is greater than one, so the event presented is 
+                    // the first event in the series of related All Day events.  The detail also presents the duration
+                    // of the multi day All Day event making it clear to the user the event is in a series.
+                    owner.SetCalendarEvent (list [0]);
+                    //TODO Editing recurring events is disabled currently.
+                }
+            }
         }
 
         public class TupleList<T1, T2> : List<Tuple<T1, T2>>
@@ -1342,7 +1363,6 @@ namespace NachoClient.iOS
 
         protected void SyncMeetingRequest ()
         {
-
             if (0 == c.Id) {
                 c.Insert (); // new entry
                 folder = calendars.GetFolder (calendarIndex);

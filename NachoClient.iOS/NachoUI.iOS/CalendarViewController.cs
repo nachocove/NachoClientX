@@ -13,7 +13,7 @@ using MimeKit;
 
 namespace NachoClient.iOS
 {
-    public partial class CalendarViewController : NcUIViewController, INachoCalendarItemEditorParent, ICalendarTableViewSourceDelegate
+    public partial class CalendarViewController : NcUIViewController, ICalendarTableViewSourceDelegate
     {
         protected CalendarTableViewSource calendarSource;
         protected UITableView calendarTableView;
@@ -148,7 +148,6 @@ namespace NachoClient.iOS
                     vc.SetStartingDate (dt);
                 }
                 vc.SetCalendarItem (null);
-                vc.SetOwner (this);
                 return;
             }
             Log.Info (Log.LOG_UI, "Unhandled segue identifer {0}", segue.Identifier);
@@ -171,12 +170,6 @@ namespace NachoClient.iOS
         public void PerformSegueForDelegate (string identifier, NSObject sender)
         {
             PerformSegue (identifier, sender);
-        }
-
-        public void DismissChildCalendarItemEditor (INachoCalendarItemEditor vc)
-        {
-            vc.SetOwner (null);
-            vc.DismissCalendarItemEditor (true, null);
         }
 
         protected void ConfigureBasicView ()

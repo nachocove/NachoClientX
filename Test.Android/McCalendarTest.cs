@@ -79,6 +79,44 @@ namespace Test.Android
             var r6 = McCalendar.QueryByUID (2, "ccc");
             Assert.IsNull (r6, "McCalendar.QueryByUID (2, \"ccc\") found an item when it shouldn't have.");
         }
+
+        [Test]
+        public void TestQueryRelatedEvents ()
+        {
+            var c1 = CalendarHelper.DefaultMeeting (DateTime.UtcNow, DateTime.UtcNow);
+            c1.AccountId = 1;
+            c1.Subject = "c1";
+            c1.Insert (); 
+
+            var e1 = new McEvent();
+            e1.AccountId = 1;
+            e1.CalendarId = 1;
+            e1.Insert ();
+
+            var e2 = new McEvent();
+            e2.AccountId = 1;
+            e2.CalendarId = 1;
+            e2.Insert ();
+
+            var e3 = new McEvent();
+            e3.AccountId = 2;
+            e3.CalendarId = 1;
+            e3.Insert ();
+
+            var e4 = new McEvent();
+            e4.AccountId = 2;
+            e4.CalendarId = 2;
+            e4.Insert ();
+
+            var r0 = c1.QueryRelatedEvents ();
+            Assert.NotNull (r0, "c1.QueryRelatedEvents () didn't find any related events.");
+            Assert.AreEqual (3, r0.Count, "Returned the wrong number of related events");
+
+            Assert.AreEqual (1, r0[0].Id, "Returned the wrong event");
+            Assert.AreEqual (2, r0[1].Id, "Returned the wrong event");
+            Assert.AreEqual (3, r0[2].Id, "Returned the wrong event");
+
+        }
     }
 }
 
