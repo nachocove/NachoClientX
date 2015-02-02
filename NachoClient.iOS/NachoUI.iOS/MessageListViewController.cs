@@ -87,11 +87,11 @@ namespace NachoClient.iOS
                 PerformSegue ("MessageListToFolders", h);
             };
 
-            TableView.SeparatorColor = A.Color_NachoBackgroundGray;
+            TableView.SeparatorColor = A.Color_NachoBorderGray;
             NavigationController.NavigationBar.Translucent = false;
             Util.HideBlackNavigationControllerLine (NavigationController.NavigationBar);
 
-            View.BackgroundColor = A.Color_NachoBackgroundGray;
+            View.BackgroundColor = new UIColor (227f / 255f, 227f / 255f, 227f / 255f, 1.0f);
 
             messageSource.owner = this;
             TableView.Source = messageSource;

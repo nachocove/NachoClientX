@@ -55,8 +55,8 @@ namespace NachoClient.iOS
             View.AddSubview (lineView);
 
             TableView = new UITableView (new RectangleF (0, 56, View.Frame.Width, View.Frame.Height - 56), UITableViewStyle.Grouped);
-            TableView.SeparatorColor = A.Color_NachoBackgroundGray;
-            TableView.BackgroundColor = A.Color_NachoBackgroundGray;
+            TableView.SeparatorColor = A.Color_NachoLightBorderGray;
+            TableView.BackgroundColor = A.Color_NachoLightBorderGray;
             TableView.TableFooterView = new UIView (new RectangleF (0, 0, TableView.Frame.Width, 100));
             View.AddSubview (TableView);
 
@@ -69,8 +69,8 @@ namespace NachoClient.iOS
             TableView.Source = contactTableViewSource;
 
             SearchDisplayController.SearchResultsTableView.Source = contactTableViewSource;
-            SearchDisplayController.SearchResultsTableView.SeparatorColor = A.Color_NachoBackgroundGray;
-            SearchDisplayController.SearchResultsTableView.BackgroundColor = A.Color_NachoBackgroundGray;
+            SearchDisplayController.SearchResultsTableView.SeparatorColor = A.Color_NachoLightBorderGray;
+            SearchDisplayController.SearchResultsTableView.BackgroundColor = A.Color_NachoLightBorderGray;
 
             var searchButton = new UIBarButtonItem (UIBarButtonSystemItem.Search);
             searchButton.TintColor = A.Color_NachoBlue;
