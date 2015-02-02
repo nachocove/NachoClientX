@@ -69,7 +69,8 @@ namespace NachoCore.Model
             TaskMove,
             TaskBodyDownload,
             AttachmentDownload,
-            Last = AttachmentDownload,
+            CalForward,
+            Last = CalForward,
         };
         // Lifecycle of McPending:
         // - Protocol control API creates it (Eligible or PredBlocked) and puts it into the Q. Event goes to TL SM.
@@ -630,6 +631,8 @@ namespace NachoCore.Model
                 return NcResult.SubKindEnum.Error_MeetingResponseFailed;
             case Operations.CalBodyDownload:
                 return NcResult.SubKindEnum.Error_CalendarBodyDownloadFailed;
+            case Operations.CalForward:
+                return NcResult.SubKindEnum.Error_CalendarForwardFailed;
             case Operations.ContactCreate:
                 return NcResult.SubKindEnum.Error_ContactCreateFailed;
             case Operations.ContactUpdate:
@@ -902,6 +905,7 @@ namespace NachoCore.Model
                     case Operations.EmailSend:
                     case Operations.EmailForward:
                     case Operations.EmailReply:
+                    case Operations.CalForward: // An e-mail message is used when forwarding a calendar item.
                         item = McAbstrObject.QueryById<McEmailMessage> (ItemId);
                         break;
 
@@ -1219,6 +1223,7 @@ namespace NachoCore.Model
             case Operations.EmailReply:
             case Operations.EmailSend:
             case Operations.EmailSetFlag:
+            case Operations.CalForward: // An e-mail message is used when forwarding a calendar item
                 return McContact.QueryById<McEmailMessage> (ItemId);
             case Operations.TaskCreate:
             case Operations.TaskDelete:

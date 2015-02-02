@@ -145,6 +145,8 @@ namespace NachoCore.Utils
             Error_CertAskReqCallback,
             Error_AutoDUserMessage,
             Error_AutoDAdminMessage,
+
+            Error_CalendarForwardFailed,
         };
 
         public enum WhyEnum {

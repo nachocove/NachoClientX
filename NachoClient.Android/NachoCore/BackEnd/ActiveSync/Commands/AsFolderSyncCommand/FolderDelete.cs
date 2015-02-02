@@ -110,6 +110,15 @@ namespace NachoCore.ActiveSync
                     }
                     return null;
 
+                case McPending.Operations.CalForward:
+                    cancelCommand = false;
+                    if (pending.CommandDominatesItem (ServerId)) {
+                        action = McPending.DbActionEnum.Delete;
+                    } else {
+                        action = McPending.DbActionEnum.DoNothing;
+                    }
+                    return null;
+
                 case McPending.Operations.CalCreate:
                 case McPending.Operations.ContactCreate:
                 case McPending.Operations.TaskCreate:

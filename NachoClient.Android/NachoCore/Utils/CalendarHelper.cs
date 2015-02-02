@@ -211,8 +211,7 @@ namespace NachoCore.Utils
         private static void AddAttendeesAndOrganizerToiCalEvent (IEvent evt, McAccount account, McCalendar c)
         {
             evt.Organizer = new Organizer (c.OrganizerEmail);
-            evt.Organizer.SentBy = EmailHelper.MailToUri (account.EmailAddr);
-            evt.Organizer.CommonName = Pretty.OrganizerString(c.OrganizerName);
+            evt.Organizer.CommonName = c.OrganizerName;
             foreach (var mcAttendee in c.attendees) {
                 var iAttendee = new Attendee (EmailHelper.MailToUri (mcAttendee.Email));
                 NcAssert.True (null != mcAttendee.Name);
@@ -489,24 +488,6 @@ namespace NachoCore.Utils
             mimeMessage.To.Add (new MailboxAddress (a.Name, a.Email));
 
             mimeMessage.Subject = Pretty.SubjectString (c.Subject);
-            mimeMessage.Date = System.DateTime.UtcNow;
-            mimeMessage.Body = mimeBody;
-
-            var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
-            BackEnd.Instance.SendEmailCmd (mcMessage.AccountId, mcMessage.Id, c.Id);
-            mcMessage = McEmailMessage.QueryById<McEmailMessage> (mcMessage.Id);
-            mcMessage.Delete ();
-        }
-
-        public static void ForwardCalendarInvite (McAccount account, McCalendar c, McAttendee a, MimeEntity mimeBody)
-        {
-            var mimeMessage = new MimeMessage ();
-
-            mimeMessage.From.Add (new MailboxAddress (Pretty.OrganizerString (c.OrganizerName), c.OrganizerEmail));
-            mimeMessage.To.Add (new MailboxAddress (a.Name, a.Email));
-            mimeMessage.Sender = new MailboxAddress (Pretty.UserNameForAccount (account), account.EmailAddr);
-
-            mimeMessage.Subject = "Fwd: " + Pretty.SubjectString (c.Subject);
             mimeMessage.Date = System.DateTime.UtcNow;
             mimeMessage.Body = mimeBody;
 

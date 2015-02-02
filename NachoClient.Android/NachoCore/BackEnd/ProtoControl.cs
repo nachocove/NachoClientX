@@ -229,6 +229,18 @@ namespace NachoCore
             return null;
         }
 
+        /// <summary>
+        /// Forward a calendar event.
+        /// </summary>
+        /// <returns>The token for the pending operation.</returns>
+        /// <param name="newEmailMessageId">ID of the outgoing e-mail message.</param>
+        /// <param name="forwardedCalId">ID of the McCalendar event being forwarded.</param>
+        /// <param name="folderId">ID of the folder that is the parent of the event being forwarded.</param>
+        public virtual string ForwardCalCmd (int newEmailMessageId, int forwardedCalId, int folderId)
+        {
+            return null;
+        }
+
         public virtual string CreateContactCmd (int contactId, int folderId)
         {
             return null;

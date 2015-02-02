@@ -315,6 +315,11 @@ namespace NachoCore
             return ServiceFromAccountId (accountId).DnldCalBodyCmd (calId);
         }
 
+        public string ForwardCalCmd (int accountId, int newEmailMessageId, int forwardedCalId, int folderId)
+        {
+            return ServiceFromAccountId (accountId).ForwardCalCmd (newEmailMessageId, forwardedCalId, folderId);
+        }
+
         public string MarkEmailReadCmd (int accountId, int emailMessageId)
         {
             return ServiceFromAccountId (accountId).MarkEmailReadCmd (emailMessageId);
