@@ -145,6 +145,7 @@ namespace NachoCore.ActiveSync
         public AsProtoControl (IProtoControlOwner owner, int accountId) : base (owner, accountId)
         {
             ProtoControl = this;
+            // TODO decouple disk setup from constructor.
             EstablishService ();
             /*
              * State Machine design:
@@ -588,12 +589,12 @@ namespace NachoCore.ActiveSync
                             (uint)AsEvt.E.AuthFail,
                             (uint)CtlEvt.E.GetServConf,
                             (uint)CtlEvt.E.GetCertOk,
-                            (uint)CtlEvt.E.ReFSync,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoPick, State = (uint)Lst.Pick },
                             new Trans { Event = (uint)AsEvt.E.ReDisc, Act = DoDisc, State = (uint)Lst.DiscW },
                             new Trans { Event = (uint)AsEvt.E.ReSync, Act = DoSync, State = (uint)Lst.SyncW },
+                            new Trans { Event = (uint)CtlEvt.E.ReFSync, Act = DoFSync, State = (uint)Lst.FSyncW },
                             new Trans { Event = (uint)CtlEvt.E.PkQOp, Act = DoArg, State = (uint)Lst.QOpW },
                             new Trans { Event = (uint)CtlEvt.E.PkHotQOp, Act = DoArg, State = (uint)Lst.HotQOpW },
                             new Trans { Event = (uint)CtlEvt.E.PkFetch, Act = DoArg, State = (uint)Lst.FetchW },
@@ -878,14 +879,6 @@ namespace NachoCore.ActiveSync
             NcModel.Instance.RunInTransaction (() => {
                 if (null == McFolder.GetOutboxFolder (AccountId)) {
                     freshMade = McFolder.Create (AccountId, true, false, true, "0",
-                        McFolder.ClientOwned_EmailDrafts, "On-Device Email Drafts",
-                        Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
-                    freshMade.Insert ();
-                }
-            });
-            NcModel.Instance.RunInTransaction (() => {
-                if (null == McFolder.GetOutboxFolder (AccountId)) {
-                    freshMade = McFolder.Create (AccountId, true, false, true, "0",
                         McFolder.ClientOwned_CalDrafts, "On-Device Calendar Drafts",
                         Xml.FolderHierarchy.TypeCode.UserCreatedCal_13);
                     freshMade.Insert ();
@@ -919,6 +912,14 @@ namespace NachoCore.ActiveSync
             NcModel.Instance.InitalizeDirs (AccountId);
         }
 
+        public override void Remove ()
+        {
+            NcAssert.True ((uint)Lst.Parked == Sm.State || (uint)St.Start == Sm.State || (uint)St.Stop == Sm.State);
+            // TODO cleanup stuff on disk like for wipe.
+            NcCommStatus.Instance.CommStatusNetEvent -= NetStatusEventHandler;
+            NcCommStatus.Instance.CommStatusServerEvent -= ServerStatusEventHandler;
+            base.Remove ();
+        }
         // Methods callable by the owner.
         // Keep Execute() harmless if it is called while already executing.
         public override void Execute ()
@@ -1207,6 +1208,10 @@ namespace NachoCore.ActiveSync
 
             case PickActionEnum.Wait:
                 Sm.PostEvent ((uint)CtlEvt.E.PkWait, "PCKWAIT", cmd);
+                break;
+
+            case PickActionEnum.FSync:
+                Sm.PostEvent ((uint)CtlEvt.E.ReFSync, "PCFSYNC");
                 break;
 
             default:

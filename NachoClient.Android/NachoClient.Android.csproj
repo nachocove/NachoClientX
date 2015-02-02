@@ -17,7 +17,7 @@
     <AssemblyName>NachoClient.Android.Tablet</AssemblyName>
     <TargetFrameworkVersion>v5.0</TargetFrameworkVersion>
     <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
-    <AndroidUseLatestPlatformSdk>True</AndroidUseLatestPlatformSdk>
+    <AndroidUseLatestPlatformSdk>False</AndroidUseLatestPlatformSdk>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -352,6 +352,7 @@
     <Compile Include="NachoCore\Utils\EmailHelper.cs" />
     <Compile Include="NachoCore\Utils\LocalNotificationManager.cs" />
     <Compile Include="NachoCore\Utils\HashHelper.cs" />
+    <Compile Include="NachoCore\Utils\DraftsHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

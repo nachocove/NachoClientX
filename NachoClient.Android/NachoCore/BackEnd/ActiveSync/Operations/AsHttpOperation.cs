@@ -362,7 +362,7 @@ namespace NachoCore.ActiveSync
         private void ReportCommResult (string host, bool didFailGenerally)
         {
             if (!DontReportCommResult) {
-                NcCommStatusSingleton.ReportCommResult (host, didFailGenerally);
+                NcCommStatusSingleton.ReportCommResult (BEContext.Account.Id, host, didFailGenerally);
             }
         }
         // Final is how to pass the ultimate Event back to OwnerSm.
@@ -589,13 +589,13 @@ namespace NachoCore.ActiveSync
                         try {
                             var isWedged = false;
                             var diaper = new NcTimer ("AsHttpOperation:LoadBytes diaper", 
-                                (state) => {
+                                             (state) => {
                                     if (!cToken.IsCancellationRequested) {
                                         isWedged = true;
                                         TimeoutTimerCallback (state);
                                     }
                                 },
-                                cToken, 180 * 1000, System.Threading.Timeout.Infinite);
+                                             cToken, 180 * 1000, System.Threading.Timeout.Infinite);
                             decoder.LoadBytes (BEContext.Account.Id, ContentData);
                             diaper.Dispose ();
                             if (isWedged) {
@@ -626,7 +626,7 @@ namespace NachoCore.ActiveSync
                         var xmlStatus = responseDoc.Root.ElementAnyNs (Xml.AirSync.Status);
                         if (null != xmlStatus) {
                             // TODO - push TL status into pending.
-                            var statusEvent = Owner.ProcessTopLevelStatus (this, uint.Parse (xmlStatus.Value));
+                            var statusEvent = Owner.ProcessTopLevelStatus (this, uint.Parse (xmlStatus.Value), responseDoc);
                             if (null != statusEvent) {
                                 Log.Info (Log.LOG_AS, "Top-level XML Status {0}:{1}", xmlStatus.Value, statusEvent);
                                 // If Owner is returning an event, then Owner MUST resolve all pending.
@@ -901,7 +901,7 @@ namespace NachoCore.ActiveSync
                 return Event.Create ((uint)HttpOpEvt.E.Delay, mnemonic, secs, message);
             }
             Log.Info (Log.LOG_AS, "AsHttpOperation: Excessive delay requested by server: {0} seconds.", secs);
-            NcCommStatusSingleton.ReportCommResult (ServerUri.Host, DateTime.UtcNow.AddSeconds (secs));
+            NcCommStatusSingleton.ReportCommResult (BEContext.Account.Id, ServerUri.Host, DateTime.UtcNow.AddSeconds (secs));
             return Final ((uint)SmEvt.E.HardFail, mnemonic, null, message);
         }
     }

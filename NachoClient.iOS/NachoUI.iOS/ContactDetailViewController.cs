@@ -27,7 +27,7 @@ namespace NachoClient.iOS
 
         protected const string UICellReuseIdentifier = "UICell";
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
-        protected ContactsHelper contactHelper = new ContactsHelper();
+        protected ContactsHelper contactHelper = new ContactsHelper ();
         protected MessageTableViewSource messageSource;
         protected HashSet<int> MultiSelect = null;
 
@@ -66,7 +66,7 @@ namespace NachoClient.iOS
         protected UITapGestureRecognizer headerEmailViewTapGesture;
         protected UITapGestureRecognizer.Token headerEmailViewTapGestureHandlerToken;
 
-        protected UIView copyCellView = new UIView();
+        protected UIView copyCellView = new UIView ();
         protected List<LongPressPair> longPressRecognizers = new List<LongPressPair> ();
         protected LongPressCopyData longPressData;
 
@@ -126,7 +126,9 @@ namespace NachoClient.iOS
                 SegmentedControl.SendActionForControlEvents (UIControlEvent.ValueChanged);
             }
 
-            contact = McContact.QueryById<McContact> (contact.Id);
+            if (null != contact) {
+                contact = McContact.QueryById<McContact> (contact.Id);
+            }
             ConfigureAndLayout ();
         }
 
@@ -539,11 +541,11 @@ namespace NachoClient.iOS
                 }
             }
 
-            if(DateTime.MinValue != contact.GetDateAttribute(Xml.Contacts.Birthday)){
+            if (DateTime.MinValue != contact.GetDateAttribute (Xml.Contacts.Birthday)) {
                 contactInfoHeight += AddMiscInfo (Xml.Contacts.Birthday, contactInfoHeight, contactInfoScrollView);
             }
 
-            if(DateTime.MinValue != contact.GetDateAttribute(Xml.Contacts.Anniversary)){
+            if (DateTime.MinValue != contact.GetDateAttribute (Xml.Contacts.Anniversary)) {
                 contactInfoHeight += AddMiscInfo (Xml.Contacts.Anniversary, contactInfoHeight, contactInfoScrollView);
             }
 
@@ -578,7 +580,7 @@ namespace NachoClient.iOS
             } else {
                 SetViewHeight (contactInfoScrollView, View.Frame.Height - segmentedViewHolder.Frame.Top - 80);
             }
-            contactInfoScrollView.ContentSize = new SizeF(contactInfoScrollView.Frame.Width, contactInfoHeight);
+            contactInfoScrollView.ContentSize = new SizeF (contactInfoScrollView.Frame.Width, contactInfoHeight);
 
             //CONFIGURE INTERACTIONS VIEW
             UITableView interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
@@ -600,9 +602,9 @@ namespace NachoClient.iOS
                 }
                 if (string.IsNullOrEmpty (notesTextView.Text)) {
                     notesTextView.Text = "You have not entered any " +
-                        "notes for this contact. You can add and " +
-                        "edit notes by tapping the edit button in the top" +
-                        " right corner of this screen.";
+                    "notes for this contact. You can add and " +
+                    "edit notes by tapping the edit button in the top" +
+                    " right corner of this screen.";
                     notesTextView.TextColor = UIColor.Gray;
                 }
             }
@@ -618,7 +620,7 @@ namespace NachoClient.iOS
             selectedSegment = ((UISegmentedControl)sender).SelectedSegment;
             switch (selectedSegment) {
             case 0:
-                editContact.Enabled = contact.CanUserEdit ();
+                editContact.Enabled = (null != contact) && contact.CanUserEdit ();
                 contactInfoScrollView.Hidden = false;
                 interactionsTableView.Hidden = true;
                 notesView.Hidden = true;
@@ -631,7 +633,7 @@ namespace NachoClient.iOS
                 RefreshData ();
                 break;
             case 2:
-                editContact.Enabled = contact.CanUserEdit ();
+                editContact.Enabled = (null != contact) && contact.CanUserEdit ();
                 interactionsTableView.Hidden = true;
                 contactInfoScrollView.Hidden = true;
                 notesView.Hidden = false;
@@ -759,7 +761,7 @@ namespace NachoClient.iOS
                 longPressData = new LongPressCopyData (canonicalEmail, emailView);
                 CopyThis ();
             });
-            longPressRecognizers.Add(new LongPressPair(viewLongPress, viewLongPressToken));
+            longPressRecognizers.Add (new LongPressPair (viewLongPress, viewLongPressToken));
             emailView.AddGestureRecognizer (viewLongPress);
             emailView.UserInteractionEnabled = true;
 
@@ -831,14 +833,14 @@ namespace NachoClient.iOS
                 longPressData = new LongPressCopyData (phone.Value, phoneView);
                 CopyThis ();
             });
-            longPressRecognizers.Add(new LongPressPair(viewLongPress, viewLongPressToken));
+            longPressRecognizers.Add (new LongPressPair (viewLongPress, viewLongPressToken));
             phoneView.AddGestureRecognizer (viewLongPress);
             phoneView.UserInteractionEnabled = true;
 
             return phoneView.Frame.Height;
         }
 
-        protected float AddMiscInfo(string whatInfo, float yOffset, UIView contactInfoScrollView)
+        protected float AddMiscInfo (string whatInfo, float yOffset, UIView contactInfoScrollView)
         {
             UIView segmentedControllerHolderView = (UIView)View.ViewWithTag (SEGMENTED_VIEW_HOLDER_TAG);
 
@@ -884,14 +886,14 @@ namespace NachoClient.iOS
                 longPressData = new LongPressCopyData (value, miscInfoView);
                 CopyThis ();
             });
-            longPressRecognizers.Add(new LongPressPair(viewLongPress, viewLongPressToken));
+            longPressRecognizers.Add (new LongPressPair (viewLongPress, viewLongPressToken));
             miscInfoView.AddGestureRecognizer (viewLongPress);
             miscInfoView.UserInteractionEnabled = true;
 
             return miscInfoView.Frame.Height;
         }
 
-        protected void CopyThis()
+        protected void CopyThis ()
         {
             copyCellView.Frame = new RectangleF (0, longPressData.containerView.Frame.Y, longPressData.containerView.Superview.Frame.Width, longPressData.containerView.Frame.Height + 1);
             copyCellView.BackgroundColor = UIColor.LightGray.ColorWithAlpha (.3f);
@@ -906,9 +908,9 @@ namespace NachoClient.iOS
             UIMenuItem copyMenuItem = new UIMenuItem ("Copy", new MonoTouch.ObjCRuntime.Selector ("DoCopy"));
             copyMenu.MenuItems = new UIMenuItem[] { copyMenuItem };
             copyMenu.SetMenuVisible (true, true);
-        }       
+        }
 
-        [Export("DoCopy")]
+        [Export ("DoCopy")]
         protected void DoCopy ()
         {
             UIPasteboard pasteBoard = UIPasteboard.General;
@@ -930,11 +932,11 @@ namespace NachoClient.iOS
                 icon = "contacts-icn-address";
                 break;
             case Xml.Contacts.Birthday:
-                value = contact.GetDateAttribute (whatType).ToLongDateString();
+                value = contact.GetDateAttribute (whatType).ToLongDateString ();
                 icon = "contacts-icn-bday";
                 break;
             case Xml.Contacts.Anniversary:
-                value = contact.GetDateAttribute (whatType).ToLongDateString();
+                value = contact.GetDateAttribute (whatType).ToLongDateString ();
                 icon = "contacts-icn-bday";
                 break;
             case Xml.Contacts.Spouse:
@@ -1199,7 +1201,7 @@ namespace NachoClient.iOS
         {
             NcAssert.True (null != contact);
 
-            if (!contact.CanUserEdit()) {
+            if (!contact.CanUserEdit ()) {
                 return "This contact has not been synced. Adding or editing notes is disabled.";
             } else {
                 McBody contactBody = McBody.QueryById<McBody> (contact.BodyId);
@@ -1220,7 +1222,7 @@ namespace NachoClient.iOS
             public string textToCopy;
             public UIView containerView;
 
-            public LongPressCopyData(string textToCopy, UIView containerView)
+            public LongPressCopyData (string textToCopy, UIView containerView)
             {
                 this.textToCopy = textToCopy;
                 this.containerView = containerView;
@@ -1233,7 +1235,7 @@ namespace NachoClient.iOS
             UILongPressGestureRecognizer longPress;
             UILongPressGestureRecognizer.Token longPressToken;
 
-            public LongPressPair(UILongPressGestureRecognizer longPress, UILongPressGestureRecognizer.Token longPressToken)
+            public LongPressPair (UILongPressGestureRecognizer longPress, UILongPressGestureRecognizer.Token longPressToken)
             {
                 this.longPress = longPress;
                 this.longPressToken = longPressToken;

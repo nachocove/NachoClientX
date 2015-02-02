@@ -397,6 +397,21 @@ namespace NachoClient
             return image;
         }
 
+        public static UIImage DrawButtonBackgroundImage (UIColor color, SizeF size)
+        {
+            var origin = new PointF (0, 0);
+
+            UIGraphics.BeginImageContextWithOptions (size, false, 0);
+            var ctx = UIGraphics.GetCurrentContext ();
+
+            ctx.SetFillColor (color.CGColor);
+            ctx.FillRect (new RectangleF (origin, size));
+
+            var image = UIGraphics.GetImageFromCurrentImageContext ();
+            UIGraphics.EndImageContext ();
+            return image;
+        }
+
         public static UIImage DrawTodayButtonImage (string day)
         {
             var size = new SizeF (24, 24);
@@ -939,7 +954,9 @@ namespace NachoClient
         public static void AddButtonImage (UIButton button, string imageName, UIControlState buttonState)
         {
             using (var buttonImage = UIImage.FromBundle (imageName)) {
-                button.SetImage (buttonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal), buttonState);
+                using (var originalImage = buttonImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
+                    button.SetImage (originalImage, buttonState);
+                }
             }
         }
 
@@ -1089,7 +1106,7 @@ namespace NachoClient
                 owner.PerformSegue (segueIdentifier, new SegueHolder (contact, ContactDefaultSelectionViewController.DefaultSelectionType.DefaultPhoneSelector));
             }
         }
-            
+
         public static void EmailContact (string segueIdentifier, McContact contact, NcUIViewController owner)
         {
             if (0 == contact.EmailAddresses.Count) {
@@ -1155,7 +1172,7 @@ namespace NachoClient
             tableView.EndUpdates ();
         }
 
-        public static bool AttributedStringEndsWith(NSAttributedString target, NSAttributedString match)
+        public static bool AttributedStringEndsWith (NSAttributedString target, NSAttributedString match)
         {
             if (null == match) {
                 return true;

@@ -51,5 +51,12 @@ namespace NachoCore
             return folder.DisplayName;
         }
 
+        public void StartSync ()
+        {
+            if (null != folder) {
+                BackEnd.Instance.SyncCmd (folder.AccountId, folder.Id);
+            }
+        }
+
     }
 }

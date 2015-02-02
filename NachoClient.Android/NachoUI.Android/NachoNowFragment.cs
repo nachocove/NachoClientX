@@ -31,7 +31,7 @@ namespace NachoClient.AndroidClient
         {
             var rootView = inflater.Inflate (Resource.Layout.NachoNowFragment, container, false);
 
-            folders = new NachoFolders (NachoFolders.FilterForEmail);
+//            folders = new NachoFolders (NachoFolders.FilterForEmail);
 
             adapter = new NachoNowPagerAdapter (this, this.FragmentManager);
             pager = rootView.FindViewById<ViewPager> (Resource.Id.pager);

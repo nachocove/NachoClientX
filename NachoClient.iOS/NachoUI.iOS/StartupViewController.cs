@@ -22,6 +22,8 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
+            var segueIdentifer = NextSegue ();
+            Log.Info (Log.LOG_UI, "StartupViewController: PerformSegue({0})", segueIdentifer);
             PerformSegue (NextSegue (), this);
         }
 
@@ -79,7 +81,7 @@ namespace NachoClient.iOS
             if (segue.Identifier == "SegueToEventView") {
                 var vc = (EventViewController)segue.DestinationViewController;
                 var devAccountId = McAccount.GetDeviceAccount ().Id;
-                var eventId = Convert.ToInt32(McMutables.Get (devAccountId, "EventNotif", LoginHelpers.GetCurrentAccountId ().ToString ()));
+                var eventId = Convert.ToInt32 (McMutables.Get (devAccountId, "EventNotif", LoginHelpers.GetCurrentAccountId ().ToString ()));
                 var item = McEvent.QueryById<McEvent> (eventId);
                 vc.SetCalendarItem (item);
                 McMutables.Delete (devAccountId, "EventNotif", LoginHelpers.GetCurrentAccountId ().ToString ());

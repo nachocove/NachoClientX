@@ -127,15 +127,10 @@ namespace NachoCore
             service.ForceStop ();
         }
 
-        public void QuickSync ()
+        public void Remove (int accountId)
         {
-            var accounts = NcModel.Instance.Db.Table<McAccount> ();
-            foreach (var account in accounts) {
-                if (!HasServiceFromAccountId (account.Id)) {
-                    EstablishService (account.Id);
-                }
-                QuickSync (account.Id);
-            }
+            Stop (accountId);
+            RemoveService (accountId);
         }
 
         public void EstablishService (int accountId)
@@ -161,6 +156,26 @@ namespace NachoCore
             }
         }
 
+        // Service must be Stop()ed before calling RemoveService().
+        private void RemoveService (int accountId)
+        {
+            ProtoControl service = null;
+            if (Services.TryGetValue (accountId, out service)) {
+                service.Remove ();
+                if (!Services.TryRemove (accountId, out service)) {
+                    Log.Error (Log.LOG_LIFECYCLE, "BackEnd.RemoveService({0}) could not remove service.", accountId);
+                }
+                var account = McAccount.QueryById<McAccount> (accountId);
+                if (null != account) {
+                    account.Delete ();
+                } else {
+                    Log.Warn (Log.LOG_LIFECYCLE, "BackEnd.RemoveService({0}) McAccount missing.", accountId);
+                }
+            } else {
+                Log.Warn (Log.LOG_LIFECYCLE, "BackEnd.RemoveService({0}) could not find service.", accountId);
+            }
+        }
+
         public void Start (int accountId)
         {
             Log.Info (Log.LOG_LIFECYCLE, "BackEnd.Start({0}) called", accountId);
@@ -171,14 +186,6 @@ namespace NachoCore
                 }
                 ServiceFromAccountId (accountId).Execute ();
             }, "Start");
-        }
-
-        public void QuickSync (int accountId)
-        {
-            NcTask.Run (delegate {
-                NcCommStatus.Instance.Refresh ();
-                ServiceFromAccountId (accountId).QuickSync ();
-            }, "QuickSync");
         }
 
         public void CertAskResp (int accountId, bool isOkay)
@@ -417,6 +424,11 @@ namespace NachoCore
         public string RenameFolderCmd (int accountId, int folderId, string displayName)
         {
             return ServiceFromAccountId (accountId).RenameFolderCmd (folderId, displayName);
+        }
+
+        public string SyncCmd (int accountId, int folderId)
+        {
+            return ServiceFromAccountId (accountId).SyncCmd (folderId);
         }
 
         public bool ValidateConfig (int accountId, McServer server, McCred cred)

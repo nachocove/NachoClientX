@@ -32,6 +32,7 @@ namespace NachoClient.iOS
         UIButton connectButton;
         UIButton customerSupportButton;
         UIButton advancedButton;
+        UIButton restartButton;
 
         UIScrollView scrollView;
         UIView contentView;
@@ -296,6 +297,19 @@ namespace NachoClient.iOS
             contentView.AddSubview (customerSupportButton);
             yOffset = customerSupportButton.Frame.Bottom + 20;
 
+            restartButton = new UIButton (new RectangleF (50, yOffset, View.Frame.Width - 100, 20));
+            restartButton.BackgroundColor = A.Color_NachoNowBackground;
+            restartButton.TitleLabel.TextAlignment = UITextAlignment.Center;
+            restartButton.SetTitle ("Start Over", UIControlState.Normal);
+            restartButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
+            restartButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
+            restartButton.TouchUpInside += (object sender, EventArgs e) => {
+                View.EndEditing (true);
+                onStartOver ();
+            };
+            contentView.AddSubview (restartButton);
+            yOffset = restartButton.Frame.Bottom + 20;
+
             loadingCover = new UIView (View.Frame);
             loadingCover.BackgroundColor = A.Color_NachoGreen;
             contentView.Add (loadingCover);
@@ -307,11 +321,32 @@ namespace NachoClient.iOS
             inputViews.Add (passwordView);
         }
 
+        void onStartOver ()
+        {
+            if (!LoginHelpers.IsCurrentAccountSet ()) {
+                // Remove our local copies
+                NcModel.Instance.RunInTransaction (() => {
+                    if (null != theAccount) {
+                        if (null != theAccount.Account) {
+                            theAccount.Account.Delete ();
+                        }
+                        if (null != theAccount.Credentials) {
+                            theAccount.Credentials.Delete ();
+                        }
+                        if (null != theAccount.Server) {
+                            theAccount.Server.Delete ();
+                        }
+                    }
+                });
+            }
+            appDelegate.RemoveAccount ();
+        }
+
         void onConnect (object sender, EventArgs e)
         {
             View.EndEditing (true);
 
-            // Check the basics
+            // Check for user, password, and valid server
             if (!canUserConnect ()) {
                 return; // error has been displayed
             }
@@ -320,7 +355,9 @@ namespace NachoClient.iOS
 
             // Setup the account is there isn't one yet
             if (freshAccount) {
-                createUserSettings ();
+                var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
+                appDelegate.CreateAccount (McAccount.AccountServiceEnum.None, emailView.textField.Text, passwordView.textField.Text);
+                NcAssert.True (LoginHelpers.IsCurrentAccountSet ());
             } 
 
             // Save the stuff on the screen (pre-validated by canUserConnect())
@@ -435,6 +472,8 @@ namespace NachoClient.iOS
                 break;
             }
 
+            Log.Info (Log.LOG_UI, "Advanced Configure view: status={0} {1}", currentStatus, errorMessage.Text);
+
             LayoutView ();
         }
 
@@ -452,13 +491,13 @@ namespace NachoClient.iOS
             yOffset += CELL_HEIGHT;
 
             ViewFramer.Create (emailWhiteInset).Y (emailView.Frame.Top + (CELL_HEIGHT / 2));
-            yOffset += 25;
+            yOffset += 20;
 
             if (showAdvanced) {
                 ViewFramer.Create (serverView).Y (yOffset);
                 yOffset += CELL_HEIGHT;
 
-                yOffset += 25;
+                yOffset += 20;
 
                 ViewFramer.Create (domainView).Y (yOffset);
                 yOffset += CELL_HEIGHT;
@@ -467,7 +506,7 @@ namespace NachoClient.iOS
                 yOffset += CELL_HEIGHT;
 
                 ViewFramer.Create (domainWhiteInset).Y (domainView.Frame.Top + (CELL_HEIGHT / 2));
-                yOffset += 25;
+                yOffset += 20;
             }
             serverView.Hidden = !showAdvanced;
             domainView.Hidden = !showAdvanced;
@@ -475,7 +514,7 @@ namespace NachoClient.iOS
             domainWhiteInset.Hidden = !showAdvanced;
 
             ViewFramer.Create (connectButton).Y (yOffset);
-            yOffset = connectButton.Frame.Bottom + 25;
+            yOffset = connectButton.Frame.Bottom + 20;
 
             if (showAdvanced) {
                 advancedButton.Hidden = true;
@@ -487,6 +526,9 @@ namespace NachoClient.iOS
 
             ViewFramer.Create (customerSupportButton).Y (yOffset);
             yOffset = customerSupportButton.Frame.Bottom + 20;
+
+            ViewFramer.Create (restartButton).Y (yOffset);
+            yOffset = restartButton.Frame.Bottom + 20;
 
             scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
             var contentFrame = new RectangleF (0, 0, View.Frame.Width, yOffset);
@@ -521,6 +563,8 @@ namespace NachoClient.iOS
             if (LoginHelpers.IsCurrentAccountSet ()) {
 
                 BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
+
+                Log.Info (Log.LOG_UI, "AdvancedLoginView: handleStatusEnums {0}={1}", LoginHelpers.GetCurrentAccountId (), backEndState);
 
                 switch (backEndState) {
                 case BackEndStateEnum.ServerConfWait:
@@ -566,6 +610,7 @@ namespace NachoClient.iOS
                     return;
                 }
             } else {
+                Log.Info (Log.LOG_UI, "AdvancedLoginView: handleStatusEnums account not set");
                 ConfigureView (LoginStatus.EnterInfo);
                 haveEnteredEmailAndPass ();
             }
@@ -657,6 +702,8 @@ namespace NachoClient.iOS
                     theAccount.Credentials.Username = McCred.Join (domainView.textField.Text, usernameView.textField.Text);
                 } else {
                     theAccount.Credentials.Username = emailView.textField.Text;
+                    usernameView.textField.Text = theAccount.Credentials.Username;
+                    gOriginalUsername = theAccount.Credentials.Username;
                 }
                 theAccount.Credentials.UserSpecifiedUsername = userChangedUsername;
             }
@@ -701,24 +748,6 @@ namespace NachoClient.iOS
             }
 
             theAccount.Server = McServer.QueryByAccountId<McServer> (LoginHelpers.GetCurrentAccountId ()).FirstOrDefault ();
-        }
-
-        // Called when nothing exists.
-        public void  createUserSettings ()
-        {
-            NcModel.Instance.RunInTransaction (() => {
-                // Set up initial McAccount
-                appDelegate.Account = new McAccount () { EmailAddr = emailView.textField.Text };
-                appDelegate.Account.Signature = "Sent from Nacho Mail";
-                appDelegate.Account.Insert ();
-                // Set up initial McCred
-                var cred = new McCred () { 
-                    AccountId = appDelegate.Account.Id,
-                };
-                cred.Insert ();
-                Telemetry.RecordAccountEmailAddress (appDelegate.Account);
-                LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, true);
-            });
         }
 
         public void removeServerRecord ()
@@ -856,27 +885,6 @@ namespace NachoClient.iOS
                 waitScreen.DismissView ();
                 stopBeIfRunning ();
             }
-            if (NcResult.SubKindEnum.Info_ValidateConfigSucceeded == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "Validate Config Successful Status Ind (Advanced View)");
-                ConfigureView (LoginStatus.ValidateSuccessful);
-                loadTheAccount ();
-                startBe ();
-            }
-            if (NcResult.SubKindEnum.Error_ValidateConfigFailedComm == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "Advanced Login status callback: Error_ValidateConfigFailedComm");
-                ConfigureView (LoginStatus.BadServer);
-                waitScreen.DismissView ();
-            }
-            if (NcResult.SubKindEnum.Error_ValidateConfigFailedAuth == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "Advanced Login status callback: Error_ValidateConfigFailedAuth");
-                ConfigureView (LoginStatus.BadCredentials);
-                waitScreen.DismissView ();
-            }
-            if (NcResult.SubKindEnum.Error_ValidateConfigFailedUser == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "Advanced Login status callback: Error_ValidateConfigFailedUser");
-                ConfigureView (LoginStatus.BadUsername);
-                waitScreen.DismissView ();
-            }
             if (NcResult.SubKindEnum.Error_ServerConfReqCallback == s.Status.SubKind) {
                 Log.Info (Log.LOG_UI, "ServerConfReq Status Ind (Adv. View)");
                 ConfigureView (LoginStatus.ServerConf);
@@ -949,7 +957,6 @@ namespace NachoClient.iOS
 
         public AdvancedTextField (string labelText, string placeHolder, bool hasBorder, RectangleF rect) : base (rect)
         {
-
             UIView inputBox = this;
 
             inputBox.BackgroundColor = UIColor.White;

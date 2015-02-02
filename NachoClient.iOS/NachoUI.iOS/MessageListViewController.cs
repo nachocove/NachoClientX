@@ -107,6 +107,7 @@ namespace NachoClient.iOS
             RefreshControl.AttributedTitle = new NSAttributedString ("Refreshing...");
             RefreshControl.ValueChanged += (object sender, EventArgs e) => {
                 RefreshControl.BeginRefreshing ();
+                messageSource.StartSync ();
                 ReloadDataMaintainingPosition ();
                 new NcTimer ("MessageListViewController refresh", refreshCallback, null, 2000, 0);
             };

@@ -135,7 +135,7 @@ namespace NachoClient.iOS
             }
 
             // Has the system already allowed or denied Nacho Mail?
-            if(!NachoPlatform.Contacts.Instance.ShouldWeBotherToAsk()) {
+            if (!NachoPlatform.Contacts.Instance.ShouldWeBotherToAsk ()) {
                 McMutables.SetBool (accountId, module, Key_AskedUserForPermission, true);
                 Log.Info (Log.LOG_UI, "{0}: {1} {2}", module, Key_AskedUserForPermission, "do not bother");
                 return;

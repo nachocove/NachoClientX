@@ -33,7 +33,8 @@ namespace NachoCore.ActiveSync
         {
             McProtocolState protocolState = BEContext.ProtocolState;
             var status = (Xml.FolderHierarchy.FolderSyncStatusCode)Convert.ToUInt32 (doc.Root.Element (m_ns + Xml.FolderHierarchy.Status).Value);
-
+            protocolState.AsLastFolderSync = DateTime.UtcNow;
+            protocolState.Update ();
             switch (status) {
             case Xml.FolderHierarchy.FolderSyncStatusCode.Success_1:
                 var syncKey = doc.Root.Element (m_ns + Xml.FolderHierarchy.SyncKey).Value;

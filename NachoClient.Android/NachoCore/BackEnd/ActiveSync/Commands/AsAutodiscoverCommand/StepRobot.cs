@@ -601,9 +601,8 @@ namespace NachoCore.ActiveSync
                         LastUri = ReDirUri;
                         await client.GetAsync (ReDirUri).ConfigureAwait (false);
                     } catch (Exception ex) {
-                        StepSm.PostEvent ((uint)SmEvt.E.TempFail, "SRDRGSC0", null, 
-                            string.Format ("SR:GetAsync Exception: {0}", ex.ToString ()));
-                        return;
+                        // Exceptions don't matter - only the cert matters.
+                        Log.Info (Log.LOG_AS, "SR:GetAsync Exception: {0}", ex.ToString ());
                     }
                     finally {
                         client.Dispose ();
@@ -760,7 +759,7 @@ namespace NachoCore.ActiveSync
                 return true;
             }
 
-            public Event ProcessTopLevelStatus (AsHttpOperation Sender, uint status)
+            public Event ProcessTopLevelStatus (AsHttpOperation Sender, uint status, XDocument doc)
             {
                 // There is no AS XML <Status> to report on.
                 return null;

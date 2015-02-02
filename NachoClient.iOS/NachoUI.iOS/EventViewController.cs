@@ -789,7 +789,7 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("EventToCal")) {
                 // TODO I don't this this segue is possible.
                 var dc = (ChooseCalendarViewController)segue.DestinationViewController;
-                dc.SetCalendars (new NachoFolders (NachoFolders.FilterForCalendars));
+                dc.SetCalendars (new NachoFolders (account.Id, NachoFolders.FilterForCalendars));
                 dc.ViewDisappearing += (object s, EventArgs e) => {
                     // TODO Do something with the calendar index that is returned.
                     // dc.GetCalIndex ();

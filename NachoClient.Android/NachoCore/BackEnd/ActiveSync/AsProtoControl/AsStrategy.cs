@@ -504,7 +504,17 @@ namespace NachoCore.ActiveSync
 
         public SyncKit GenSyncKit (int accountId, McProtocolState protocolState, bool cantBeEmpty)
         {
-            return GenSyncKit (accountId, protocolState, false, cantBeEmpty);
+            return GenSyncKit (accountId, protocolState, SyncMode.Wide, cantBeEmpty);
+        }
+
+        public SyncKit GenUserSyncKit (McFolder folder, int rung, int overallWindowSize, McPending pending)
+        {
+            var syncKit = GenNarrowSyncKit (new List<McFolder> () { folder }, rung, overallWindowSize);
+            if (null == syncKit) {
+                return null;
+            }
+            syncKit.PerFolders.First ().Commands.Add (pending);
+            return syncKit;
         }
 
         public SyncKit GenNarrowSyncKit (List<McFolder> folders, int rung, int overallWindowSize)
@@ -537,8 +547,11 @@ namespace NachoCore.ActiveSync
             return rawPendings.Where (p => AsSyncCommand.IsSyncCommand (p.Operation)).ToList ();
         }
 
+        public enum SyncMode { Wide, Narrow, Directed };
+
         // Returns null if nothing to do.
-        public SyncKit GenSyncKit (int accountId, McProtocolState protocolState, bool isNarrow, bool cantBeEmpty)
+        public SyncKit GenSyncKit (int accountId, McProtocolState protocolState, SyncMode syncMode, bool cantBeEmpty,
+            McPending pending = null)
         {
             var rung = Scope.StrategyRung (protocolState);
             int overallWindowSize = KBaseOverallWindowSize;
@@ -550,9 +563,21 @@ namespace NachoCore.ActiveSync
                 overallWindowSize *= 3;
                 break;
             }
-            var rawFolders = FolderListProvider (accountId, rung, isNarrow);
+
+            if (SyncMode.Directed == syncMode) {
+                NcAssert.NotNull (pending);
+                NcAssert.True (McPending.Operations.Sync == pending.Operation);
+                var directed = McFolder.QueryByServerId<McFolder> (accountId, pending.ServerId);
+                if (null != directed) {
+                    return GenUserSyncKit (directed, rung, overallWindowSize, pending);
+                }
+                Log.Error (Log.LOG_AS, "GenSyncKit:Directed: Can't find folder.");
+                syncMode = SyncMode.Narrow;
+            }
+
+            var rawFolders = FolderListProvider (accountId, rung, SyncMode.Narrow == syncMode);
             // Don't bother with commands when doing a narrow Sync. Get new messages, get out.
-            if (isNarrow) {
+            if (SyncMode.Narrow == syncMode) {
                 return GenNarrowSyncKit (rawFolders, rung, overallWindowSize);
             }
             // Wide Sync below.
@@ -568,6 +593,7 @@ namespace NachoCore.ActiveSync
             foreach (var folder in AllSyncedFolders (accountId)) {
                 if (0 >= limit) {
                     // TODO: prefer default folders in this scenario.
+                    // TODO: prefer least-recently-synced folders, too.
                     break;
                 }
                 // See if we can and should do GetChanges. Only rawFolders are eligible. O(N**2) alert.
@@ -841,6 +867,7 @@ namespace NachoCore.ActiveSync
                     return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.HotQOp, cmd);
                 }
             }
+
             // (QS) If a narrow Sync hasn’t successfully completed in the last N seconds, 
             // perform a narrow Sync Command.
             // TODO we'd like to prioritize Inbox, but still get other folders too if we can squeeze it in.
@@ -848,7 +875,7 @@ namespace NachoCore.ActiveSync
             // we can squeeze it in.
             if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
                 if (protocolState.LastNarrowSync < DateTime.UtcNow.AddSeconds (-60)) {
-                    var nSyncKit = GenSyncKit (accountId, protocolState, true, false);
+                    var nSyncKit = GenSyncKit (accountId, protocolState, SyncMode.Narrow, false);
                     Log.Info (Log.LOG_AS, "Strategy:QS:Narrow Sync...");
                     if (null != nSyncKit) {
                         Log.Info (Log.LOG_AS, "Strategy:QS:...SyncKit");
@@ -866,6 +893,7 @@ namespace NachoCore.ActiveSync
                     NcAssert.True (McPending.Operations.Last == McPending.Operations.CalForward);
                     Log.Info (Log.LOG_AS, "Strategy:FG/BG:QOp:{0}", next.Operation.ToString ());
                     AsCommand cmd = null;
+                    var action = PickActionEnum.QOop;
                     switch (next.Operation) {
                     // It is likely that next is one of these at the top of the switch () ...
                     case McPending.Operations.FolderCreate:
@@ -920,10 +948,16 @@ namespace NachoCore.ActiveSync
                                 Pendings = new List<McPending> { next },
                             });
                         break;
+                    case McPending.Operations.Sync:
+                        var uSyncKit = GenSyncKit (accountId, protocolState, SyncMode.Directed, true, next);
+                        cmd = new AsSyncCommand (BEContext.ProtoControl, uSyncKit);
+                        action = PickActionEnum.Sync;
+                        break;
+
                     default:
                         if (AsSyncCommand.IsSyncCommand (next.Operation)) {
                             Log.Info (Log.LOG_AS, "Strategy:FG/BG:QOp-IsSyncCommand:{0}", next.Operation.ToString ());
-                            var syncKit = GenSyncKit (accountId, protocolState, false, true);
+                            var syncKit = GenSyncKit (accountId, protocolState, SyncMode.Wide, true);
                             return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
                                 new AsSyncCommand (BEContext.ProtoControl, syncKit));
                         } else {
@@ -931,7 +965,7 @@ namespace NachoCore.ActiveSync
                         }
                         break;
                     }
-                    return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.QOop, cmd);
+                    return Tuple.Create<PickActionEnum, AsCommand> (action, cmd);
                 }
                 // (FG, BG) Unless one of these conditions are met, perform a narrow Sync Command...
                 // The goal here is to ensure a narrow Sync periodically so that new Inbox/default cal aren't crowded out.
@@ -940,12 +974,17 @@ namespace NachoCore.ActiveSync
                     protocolState.LastNarrowSync < needNarrowSyncMarker &&
                     (protocolState.LastPing < needNarrowSyncMarker || ANarrowFolderHasToClientExpected (accountId))) {
                     Log.Info (Log.LOG_AS, "Strategy:FG/BG:Narrow Sync...");
-                    var nSyncKit = GenSyncKit (accountId, protocolState, true, false);
+                    var nSyncKit = GenSyncKit (accountId, protocolState, SyncMode.Narrow, false);
                     if (null != nSyncKit) {
                         Log.Info (Log.LOG_AS, "Strategy:FG/BG:...SyncKit");
                         return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
                             new AsSyncCommand (BEContext.ProtoControl, nSyncKit));
                     }
+                }
+                // (FG, BG) If it has been more than 5 min since last FolderSync, do a FolderSync.
+                // It seems we can't rely on the server to tell us to do one in all situations.
+                if (protocolState.AsLastFolderSync < DateTime.UtcNow.AddMinutes (-5)) {
+                    return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.FSync, null);
                 }
                 // (FG, BG) If we are rate-limited, and we can execute a narrow Ping command at the 
                 // current filter setting, execute a narrow Ping command.
@@ -976,7 +1015,7 @@ namespace NachoCore.ActiveSync
                     if (NetStatusSpeedEnum.WiFi_0 == NcCommStatus.Instance.Speed && PowerPermitsSpeculation ()) {
                         fetchKit = GenFetchKit (accountId);
                     }
-                    syncKit = GenSyncKit (accountId, protocolState, false, false);
+                    syncKit = GenSyncKit (accountId, protocolState, SyncMode.Wide, false);
                     if (null != fetchKit && (null == syncKit || 0.7 < CoinToss.NextDouble ())) {
                         Log.Info (Log.LOG_AS, "Strategy:FG/BG:Fetch");
                         return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Fetch, 

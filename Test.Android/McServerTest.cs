@@ -69,6 +69,23 @@ namespace Test.Android
             b.Path = null;
             Assert.IsFalse (a.IsSameServer (b));
         }
+
+        [Test]
+        public void TestQueryByHost ()
+        {
+            var a = new McServer ();
+            a.AccountId = 2;
+            a.Host = "foo";
+            a.Port = 99;
+            a.Insert ();
+            var b = new McServer ();
+            b.AccountId = 3;
+            b.Host = a.Host;
+            b.Port = 100;
+            b.Insert ();
+            var x = McServer.QueryByHost (3, a.Host);
+            Assert.AreEqual (100, x.Port);
+        }
     }
 }
 

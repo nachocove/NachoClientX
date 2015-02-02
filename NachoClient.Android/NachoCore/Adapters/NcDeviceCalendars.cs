@@ -18,7 +18,7 @@ namespace NachoCore
         static bool running;
         static object lockObject = new object ();
 
-        private static void Process()
+        private static void Process ()
         {
             lock (lockObject) {
                 if (running) {
@@ -42,7 +42,13 @@ namespace NachoCore
                 return;
             }
             Func<PlatformCalendarRecord, McCalendar> inserter = (deviceCalendar) => {
-                var result = deviceCalendar.ToMcCalendar ();
+                NcResult result;
+                try {
+                    result = deviceCalendar.ToMcCalendar ();
+                } catch (Exception ex) {
+                    Log.Error (Log.LOG_SYS, "Exception during ToMcCalendar: {0}", ex.ToString ());
+                    return null;
+                }
                 if (result.isOK ()) {
                     var calendar = result.GetValue<McCalendar> ();
                     NcAssert.NotNull (calendar);

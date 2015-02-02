@@ -57,6 +57,7 @@ namespace NachoClient.iOS
             refreshControl.AttributedTitle = new NSAttributedString ("Refreshing...");
             refreshControl.ValueChanged += (object sender, EventArgs e) => {
                 refreshControl.BeginRefreshing ();
+                priorityInbox.StartSync ();
                 RefreshPriorityInboxIfVisible ();
                 new NcTimer ("NachoNowViewController refresh", refreshCallback, null, 2000, 0);
             };
