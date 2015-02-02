@@ -116,6 +116,16 @@ namespace NachoCore.Model
                 NcEmailAddress.Kind.To, NcEmailAddress.Kind.Cc);
         }
 
+        public static void DeleteAttendeeMapEntries (int accountId, int attendeeId)
+        {
+            NcModel.Instance.Db.Query<McMapEmailAddressEntry> (
+                "DELETE FROM McMapEmailAddressEntry " +
+                "WHERE AccountId = ? AND ObjectId = ? AND " +
+                "AddressType IN (?, ?, ?)", accountId, attendeeId,
+                NcEmailAddress.Kind.Optional, NcEmailAddress.Kind.Required,
+                NcEmailAddress.Kind.Resource);
+        }
+
         public static void DeleteMapEntries (int accountId, int objectId, NcEmailAddress.Kind addressType)
         {
             NcModel.Instance.Db.Query<McMapEmailAddressEntry> (

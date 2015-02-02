@@ -143,7 +143,9 @@ namespace NachoCore.Model
 
         private void DeleteAddressMap ()
         {
-            McMapEmailAddressEntry.DeleteMapEntries (AccountId, Id, GetAddressMapType ());
+            // Delete all 3 address types (required, optional, resources) so that in case there
+            // is a change of AttendeeType, we still clean up the old map
+            McMapEmailAddressEntry.DeleteAttendeeMapEntries (AccountId, Id);
         }
 
         public override int Insert ()
