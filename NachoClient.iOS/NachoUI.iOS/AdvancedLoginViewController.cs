@@ -40,8 +40,6 @@ namespace NachoClient.iOS
 
         private bool hasSyncedEmail = false;
 
-        string gOriginalDomain = "";
-        string gOriginalUsername = "";
         string gOriginalPassword = "";
 
         AppDelegate appDelegate;
@@ -85,10 +83,6 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            theAccount = new AccountSettings ();
-
-            loadTheAccount ();
-
             CreateView ();
 
             waitScreen = new WaitingScreen (View.Frame);
@@ -100,17 +94,29 @@ namespace NachoClient.iOS
             certificateView.SetOwner (this);
             certificateView.CreateView ();
             View.Add (certificateView);
+
+            RefreshTheAccount ();
+            RefreshUI ();
+
+            // Preset only if we haven't got an account set up yet
+            if (String.IsNullOrEmpty (emailView.textField.Text)) {
+                NcAssert.True (null == theAccount.Account);
+                emailView.textField.Text = presetEmailAddress;
+            }
+            if (String.IsNullOrEmpty (passwordView.textField.Text)) {
+                NcAssert.True (null == theAccount.Account);
+                passwordView.textField.Text = presetPassword;
+                gOriginalPassword = presetPassword;
+            }
         }
 
         public override void ViewWillAppear (bool animated)
         {
             if (null != this.NavigationController) {
                 this.NavigationController.ToolbarHidden = true;
-
                 if (this.NavigationController.NavigationBarHidden == true) {
                     this.NavigationController.NavigationBarHidden = false; 
                 }
-
                 NavigationItem.SetHidesBackButton (true, false);
             }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
@@ -137,9 +143,7 @@ namespace NachoClient.iOS
                 NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
                 NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
             }
-
-            fillInKnownFields ();
-
+                
             if (null != theAccount.Credentials) {
                 showAdvanced |= theAccount.Credentials.UserSpecifiedUsername;
             }
@@ -147,7 +151,7 @@ namespace NachoClient.iOS
                 showAdvanced |= (null != theAccount.Server.UserSpecifiedServerName);
             }
 
-            bool showWaitScreen = LoginHelpers.IsCurrentAccountSet () && !LoginHelpers.HasViewedTutorial (LoginHelpers.GetCurrentAccountId ());
+            bool showWaitScreen = (null != theAccount.Account) && !LoginHelpers.HasViewedTutorial (theAccount.Account.Id);
 
             if (!showWaitScreen) {
                 NavigationItem.Title = "Account Setup";
@@ -177,7 +181,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public void CreateView ()
+        private void CreateView ()
         {
             if (null != this.NavigationController) {
                 NavigationController.NavigationBar.Opaque = true;
@@ -339,6 +343,7 @@ namespace NachoClient.iOS
                     }
                 });
             }
+            // Segues to LaunchViewController
             appDelegate.RemoveAccount ();
         }
 
@@ -346,29 +351,32 @@ namespace NachoClient.iOS
         {
             View.EndEditing (true);
 
-            // Check for user, password, and valid server
+            // Checks for valid user, password, and server
             if (!canUserConnect ()) {
                 return; // error has been displayed
             }
 
-            bool freshAccount = !LoginHelpers.IsCurrentAccountSet ();
-
             // Setup the account is there isn't one yet
+            var freshAccount = (null == theAccount.Account);
+
             if (freshAccount) {
+                Log.Info (Log.LOG_UI, "avl: onConnect new account");
                 var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
                 appDelegate.CreateAccount (McAccount.AccountServiceEnum.None, emailView.textField.Text, passwordView.textField.Text);
                 NcAssert.True (LoginHelpers.IsCurrentAccountSet ());
+                RefreshTheAccount ();
             } 
 
             // Save the stuff on the screen (pre-validated by canUserConnect())
-            saveUserSettings ();
+            SaveUserSettings ();
 
             // If only password has changed & backend is in CredWait, do cred resp
             if (!freshAccount) {
                 if (!String.Equals (gOriginalPassword, passwordView.textField.Text, StringComparison.OrdinalIgnoreCase)) {
+                    Log.Info (Log.LOG_UI, "avl: onConnect retry password");
                     BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
                     if (BackEndStateEnum.CredWait == backEndState) {
-                        BackEnd.Instance.CredResp (LoginHelpers.GetCurrentAccountId ());
+                        BackEnd.Instance.CredResp (theAccount.Account.Id);
                         waitScreen.SetLoadingText ("Verifying Your Credentials...");
                         waitScreen.ShowView ();
                         return;
@@ -376,28 +384,28 @@ namespace NachoClient.iOS
                 }
             }
 
-            // If the user entered the server, respect it.
-            if ((null != theAccount.Server) && (null != theAccount.Server.UserSpecifiedServerName)) {
-                BackEnd.Instance.Stop (LoginHelpers.GetCurrentAccountId ());
-                waitScreen.SetLoadingText ("Verifying Your Server...");
-                loadTheAccount ();
-                startBe ();
-                waitScreen.ShowView ();
-            } else {
-                // Removing server record will re-start auto-d on Backend.Start()
-                LoginHelpers.SetAutoDCompleted (LoginHelpers.GetCurrentAccountId (), false);
-                BackEnd.Instance.Stop (LoginHelpers.GetCurrentAccountId ());
-                removeServerRecord ();
-                theAccount.Server = null;
-                waitScreen.SetLoadingText ("Verifying Your Server...");
-                BackEnd.Instance.Start (LoginHelpers.GetCurrentAccountId ());
-                waitScreen.ShowView ();
+            // A null server record will re-start auto-d on Backend.Start()
+            // Delete the server record if the user didn't enter the server name
+            if ((null != theAccount.Server) && (null == theAccount.Server.UserSpecifiedServerName)) {
+                DeleteTheServer ("onConnect");
             }
+            BackEnd.Instance.Stop (theAccount.Account.Id);
+            if (null == theAccount.Server) {
+                LoginHelpers.SetAutoDCompleted (theAccount.Account.Id, false);
+                waitScreen.SetLoadingText ("Verifying Your Server...");
+                BackEnd.Instance.Start (theAccount.Account.Id);
+            } else {
+                // If the user entered the server, respect it.
+                waitScreen.SetLoadingText ("Verifying Your Server...");
+                startBe ();
+            }
+            waitScreen.ShowView ();
         }
 
         public void ConfigureView (LoginStatus currentStatus, string nuance = "")
         {
             haveEnteredEmailAndPass ();
+            RefreshTheServer ();
 
             switch (currentStatus) {
             case LoginStatus.BadCredentials:
@@ -432,9 +440,15 @@ namespace NachoClient.iOS
                 setTextToRed (new AdvancedTextField[] { serverView });
                 break;
             case LoginStatus.ServerConf:
-                errorMessage.Text = "Looks like we had a problem finding '" + theAccount.Account.EmailAddr + "'.";
+                if (null == theAccount.Server) {
+                    errorMessage.Text = "We had a problem finding the server for '" + theAccount.Account.EmailAddr + "'.";
+                } else if (null == theAccount.Server.UserSpecifiedServerName) {
+                    errorMessage.Text = "We had a problem finding the server '" + theAccount.Server.Host + "'.";
+                } else {
+                    errorMessage.Text = "We had a problem finding the server '" + theAccount.Server.UserSpecifiedServerName + "'.";
+                }
                 errorMessage.TextColor = A.Color_NachoRed;
-                if (serverView.textField.Text.Length > 0) {
+                if (!String.IsNullOrEmpty (serverView.textField.Text)) {
                     setTextToRed (new AdvancedTextField[] { emailView, serverView });
                 } else {
                     setTextToRed (new AdvancedTextField[] { emailView });
@@ -448,7 +462,7 @@ namespace NachoClient.iOS
                 break;
             case LoginStatus.BadUsername:
                 errorMessage.TextColor = A.Color_NachoRed;
-                if (usernameView.textField.Text.Length > 0) {
+                if (!String.IsNullOrEmpty (usernameView.textField.Text)) {
                     setTextToRed (new AdvancedTextField[] { domainView, usernameView });
                     errorMessage.Text = "There seems to be a problem with your user name.";
                 } else {
@@ -472,12 +486,12 @@ namespace NachoClient.iOS
                 break;
             }
 
-            Log.Info (Log.LOG_UI, "Advanced Configure view: status={0} {1}", currentStatus, errorMessage.Text);
+            Log.Info (Log.LOG_UI, "avl: status={0} {1}", currentStatus, errorMessage.Text);
 
             LayoutView ();
         }
 
-        protected void LayoutView ()
+        void LayoutView ()
         {
             yOffset = 15f;
 
@@ -536,57 +550,48 @@ namespace NachoClient.iOS
             scrollView.ContentSize = contentFrame.Size;
         }
 
-        public bool haveEnteredEmailAndPass ()
+        private bool haveEnteredEmailAndPass ()
         {
             if (0 == emailView.textField.Text.Length || 0 == passwordView.textField.Text.Length) {
-                enableConnect (false);
+                connectButton.Enabled = false;
+                connectButton.Alpha = .5f;
                 return false;
             } else {
-                enableConnect (true);
+                connectButton.Enabled = true;
+                connectButton.Alpha = 1.0f;
                 return true;
             }
         }
 
-        public void enableConnect (bool shouldWe)
-        {
-            if (true == shouldWe) {
-                connectButton.Enabled = true;
-                connectButton.Alpha = 1.0f;
-            } else {
-                connectButton.Enabled = false;
-                connectButton.Alpha = .5f;
-            }
-        }
-
-        public void handleStatusEnums ()
+        private void handleStatusEnums ()
         {
             if (LoginHelpers.IsCurrentAccountSet ()) {
 
                 BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
 
-                Log.Info (Log.LOG_UI, "AdvancedLoginView: handleStatusEnums {0}={1}", LoginHelpers.GetCurrentAccountId (), backEndState);
+                Log.Info (Log.LOG_UI, "avl: handleStatusEnums {0}={1}", LoginHelpers.GetCurrentAccountId (), backEndState);
 
                 switch (backEndState) {
                 case BackEndStateEnum.ServerConfWait:
-                    Log.Info (Log.LOG_UI, "ServerConfWait Auto-D-State-Enum On Page Load");
+                    Log.Info (Log.LOG_UI, "avl: ServerConfWait Auto-D-State-Enum On Page Load");
                     stopBeIfRunning ();
                     ConfigureView (LoginStatus.ServerConf);
                     return;
 
                 case BackEndStateEnum.CredWait:
-                    Log.Info (Log.LOG_UI, "CredWait Auto-D-State-Enum On Page Load");
+                    Log.Info (Log.LOG_UI, "avl: CredWait Auto-D-State-Enum On Page Load");
                     ConfigureView (LoginStatus.BadCredentials);
                     return;
 
                 case BackEndStateEnum.CertAskWait:
-                    Log.Info (Log.LOG_UI, "CertAskWait Auto-D-State-Enum On Page Load");
+                    Log.Info (Log.LOG_UI, "avl: CertAskWait Auto-D-State-Enum On Page Load");
                     ConfigureView (LoginStatus.AcceptCertificate);
                     certificateCallbackHandler ();
                     waitScreen.ShowView ();
                     return;
 
                 case BackEndStateEnum.PostAutoDPreInboxSync:
-                    Log.Info (Log.LOG_UI, "PostAutoDPreInboxSync Auto-D-State-Enum On Page Load");
+                    Log.Info (Log.LOG_UI, "avl: PostAutoDPreInboxSync Auto-D-State-Enum On Page Load");
                     LoginHelpers.SetAutoDCompleted (LoginHelpers.GetCurrentAccountId (), true);
                     errorMessage.Text = "Waiting for Inbox-Sync.";
                     waitScreen.SetLoadingText ("Syncing Your Inbox...");
@@ -594,13 +599,13 @@ namespace NachoClient.iOS
                     return;
 
                 case BackEndStateEnum.PostAutoDPostInboxSync:
-                    Log.Info (Log.LOG_UI, "PostAutoDPostInboxSync Auto-D-State-Enum On Page Load");
+                    Log.Info (Log.LOG_UI, "avl: PostAutoDPostInboxSync Auto-D-State-Enum On Page Load");
                     LoginHelpers.SetFirstSyncCompleted (LoginHelpers.GetCurrentAccountId (), true);
                     PerformSegue (StartupViewController.NextSegue (), this);
                     return;
 
                 case BackEndStateEnum.Running:
-                    Log.Info (Log.LOG_UI, "Running Auto-D-State-Enum On Page Load");
+                    Log.Info (Log.LOG_UI, "avl: Running Auto-D-State-Enum On Page Load");
                     errorMessage.Text = "Auto-D is running.";
                     waitScreen.ShowView ();
                     return;
@@ -610,13 +615,50 @@ namespace NachoClient.iOS
                     return;
                 }
             } else {
-                Log.Info (Log.LOG_UI, "AdvancedLoginView: handleStatusEnums account not set");
+                Log.Info (Log.LOG_UI, "avl: handleStatusEnums account not set");
                 ConfigureView (LoginStatus.EnterInfo);
                 haveEnteredEmailAndPass ();
             }
         }
 
-        protected void fillInKnownFields ()
+        /// <summary>
+        /// Refreshs the account.  These are static for the life of this view
+        /// </summary>
+        private void RefreshTheAccount ()
+        {
+            theAccount = new AccountSettings ();
+            if (LoginHelpers.IsCurrentAccountSet ()) {
+                var accountId = LoginHelpers.GetCurrentAccountId ();
+                theAccount.Account = McAccount.QueryById<McAccount> (accountId);
+                theAccount.Credentials = McCred.QueryByAccountId<McCred> (accountId).SingleOrDefault ();
+                gOriginalPassword = theAccount.Credentials.GetPassword ();
+                Log.Info (Log.LOG_UI, "avl: refresh the account");
+            }
+        }
+
+        /// <summary>
+        /// Refreshs the server.  The server potentially changes
+        /// </summary>
+        private void RefreshTheServer ()
+        {
+            if (null != theAccount.Account) {
+                theAccount.Server = McServer.QueryByAccountId<McServer> (theAccount.Account.Id).SingleOrDefault ();
+                if (null != theAccount.Server) {
+                    if (null == theAccount.Server.UserSpecifiedServerName) {
+                        serverView.textField.Text = theAccount.Server.Host;
+                        Log.Info (Log.LOG_UI, "avl: refresh server {0}", serverView.textField.Text);
+                    } else {
+                        serverView.textField.Text = theAccount.Server.UserSpecifiedServerName;
+                        Log.Info (Log.LOG_UI, "avl: refresh user defined server {0}", serverView.textField.Text);
+                    }
+                    return;
+                }
+            }
+            Log.Info (Log.LOG_UI, "avl: refresh no server");
+            serverView.textField.Text = "";
+        }
+
+        private void RefreshUI ()
         {
             foreach (var v in inputViews) {
                 v.textField.Text = "";
@@ -624,23 +666,21 @@ namespace NachoClient.iOS
             }
             errorMessage.Text = "";
             gOriginalPassword = "";
-            gOriginalDomain = "";
-            gOriginalUsername = "";
 
-            if (!LoginHelpers.IsCurrentAccountSet ()) {
-                emailView.textField.Text = presetEmailAddress;
-                passwordView.textField.Text = presetPassword;
-                gOriginalPassword = presetPassword;
-                return;
-            }
-            if (!LoginHelpers.HasProvidedCreds (LoginHelpers.GetCurrentAccountId ())) {
-                return;
+            if (null != theAccount.Account) {
+                emailView.textField.Text = theAccount.Account.EmailAddr;
             }
 
-            emailView.textField.Text = theAccount.Account.EmailAddr;
-
-            passwordView.textField.Text = theAccount.Credentials.GetPassword ();
-            gOriginalPassword = passwordView.textField.Text;
+            if (null != theAccount.Credentials) {
+                if (theAccount.Credentials.UserSpecifiedUsername) {
+                    string domain, username;
+                    McCred.Split (theAccount.Credentials.Username, out domain, out username);
+                    usernameView.textField.Text = username;
+                    domainView.textField.Text = domain;
+                   
+                }
+                passwordView.textField.Text = theAccount.Credentials.GetPassword ();
+            }
 
             if (null != theAccount.Server) {
                 if (null == theAccount.Server.UserSpecifiedServerName) {
@@ -649,119 +689,90 @@ namespace NachoClient.iOS
                     serverView.textField.Text = theAccount.Server.UserSpecifiedServerName;
                 }
             }
-
-            string domain, username;
-            McCred.Split (theAccount.Credentials.Username, out domain, out username);
-            domainView.textField.Text = domain;
-            usernameView.textField.Text = username;
-            gOriginalDomain = domain;
-            gOriginalUsername = username;
-        }
-
-        /// <summary>
-        /// Loads theAccount from the database
-        /// </summary>
-        protected void loadTheAccount ()
-        {
-            if (LoginHelpers.IsCurrentAccountSet ()) {
-                var accountId = LoginHelpers.GetCurrentAccountId ();
-                theAccount.Account = McAccount.QueryById<McAccount> (accountId);
-                theAccount.Credentials = McCred.QueryByAccountId<McCred> (accountId).SingleOrDefault ();
-                theAccount.Server = McServer.QueryByAccountId<McServer> (accountId).SingleOrDefault ();
-            } else {
-                theAccount.Account = null;
-                theAccount.Credentials = null;
-                theAccount.Server = null;
-            }
         }
 
         /// <summary>
         /// Updates McCred and McAccount from the UI
         /// in both theAccount and the database.
         /// </summary>
-        protected void saveUserSettings ()
+        private void SaveUserSettings ()
         {
-            theAccount.Account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
-            theAccount.Credentials = McCred.QueryByAccountId<McCred> (theAccount.Account.Id).SingleOrDefault (); 
+            NcAssert.NotNull (theAccount.Account);
+            NcAssert.NotNull (theAccount.Credentials);
+
+            // Save email & password
+            theAccount.Account.EmailAddr = emailView.textField.Text;
+            theAccount.Credentials.UpdatePassword (passwordView.textField.Text);
 
             // If the user clears the username, we'll let them start over
             if (String.IsNullOrEmpty (domainView.textField.Text) && String.IsNullOrEmpty (usernameView.textField.Text)) {
                 theAccount.Credentials.UserSpecifiedUsername = false;
-                gOriginalUsername = String.Empty;
-                gOriginalDomain = String.Empty;
-            }
-
-            // If the user supplied the username originally, they are in charge from now on
-            if (theAccount.Credentials.UserSpecifiedUsername) {
+                theAccount.Credentials.Username = theAccount.Account.EmailAddr;
+            } else {
+                // Otherwise, we'll use what they've entered
+                theAccount.Credentials.UserSpecifiedUsername = true;
                 theAccount.Credentials.Username = McCred.Join (domainView.textField.Text, usernameView.textField.Text);
-            } else {
-                // If the user changed the username, they are in charge from now on
-                var userChangedUsername = !String.Equals (gOriginalDomain, domainView.textField.Text, StringComparison.OrdinalIgnoreCase);
-                userChangedUsername |= !String.Equals (gOriginalUsername, usernameView.textField.Text, StringComparison.OrdinalIgnoreCase);
-                if (userChangedUsername) {
-                    theAccount.Credentials.Username = McCred.Join (domainView.textField.Text, usernameView.textField.Text);
-                } else {
-                    theAccount.Credentials.Username = emailView.textField.Text;
-                    usernameView.textField.Text = theAccount.Credentials.Username;
-                    gOriginalUsername = theAccount.Credentials.Username;
-                }
-                theAccount.Credentials.UserSpecifiedUsername = userChangedUsername;
             }
-            theAccount.Credentials.UpdatePassword (passwordView.textField.Text);
-            theAccount.Credentials.Update ();
 
-            theAccount.Account.EmailAddr = emailView.textField.Text;
+            // Update the database
             theAccount.Account.Update ();
+            theAccount.Credentials.Update ();
+            Log.Info (Log.LOG_UI, "avl: a/c updated {0}/{1} username={2}", theAccount.Account.Id, theAccount.Credentials.Id, theAccount.Credentials.UserSpecifiedUsername);
 
-            // if there is no server record and the text is not empty, create a server record and mark it user-created.
-            // if there is a server record and the text doesn't match, update the server record and mark it user-created.
-            // if there is a server record and the text is empty, delete the server record. Let the user start over.
-
-            McServer server = McServer.QueryByAccountId<McServer> (LoginHelpers.GetCurrentAccountId ()).FirstOrDefault ();
-
-            if (null == server) {
-                if (!String.IsNullOrEmpty (serverView.textField.Text)) {
-                    server = new McServer ();
-                    var result = EmailHelper.ParseServer (ref server, serverView.textField.Text);
-                    if (EmailHelper.ParseServerWhyEnum.Success_0 == result) {
-                        server.UserSpecifiedServerName = serverView.textField.Text;
-                        server.AccountId = LoginHelpers.GetCurrentAccountId ();
-                        server.Insert ();
-                    }
-                }
-            } else {
-                if (String.IsNullOrEmpty (serverView.textField.Text)) {
-                    removeServerRecord ();
-                } else {
-                    if ((null != server.UserSpecifiedServerName) || (String.Equals (server.Host, serverView.textField.Text, StringComparison.OrdinalIgnoreCase))) {
-                        var temp = new McServer ();
-                        var result = EmailHelper.ParseServer (ref temp, serverView.textField.Text);
-                        if (EmailHelper.ParseServerWhyEnum.Success_0 == result) {
-                            if (!server.IsSameServer (temp)) {
-                                server.CopyFrom (temp);
-                                server.UserSpecifiedServerName = serverView.textField.Text;
-                                server.Update ();
-                            }
-                        }
-                    }
-                }
-            }
-
-            theAccount.Server = McServer.QueryByAccountId<McServer> (LoginHelpers.GetCurrentAccountId ()).FirstOrDefault ();
+            SaveServerSettings ();
         }
 
-        public void removeServerRecord ()
+        /// <summary>
+        /// Saves the server settings.
+        /// </summary>
+        private void SaveServerSettings ()
         {
-            if (LoginHelpers.IsCurrentAccountSet ()) {
-                var account = McAccount.QueryById<McAccount> (LoginHelpers.GetCurrentAccountId ());
-                var removeServerRecord = McServer.QueryByAccountId<McServer> (account.Id).SingleOrDefault ();
-                if (null != removeServerRecord) {
-                    removeServerRecord.Delete ();
+            // if there is a server record and the text is empty, delete the server record. Let the user start over.
+            if (String.IsNullOrEmpty (serverView.textField.Text)) {
+                DeleteTheServer ("user cleared server");
+                return;
+            }
+
+            // did the server came from the back end, we're done
+            if (null != theAccount.Server) {
+                if (null == theAccount.Server.UserSpecifiedServerName) {
+                    if (String.Equals (theAccount.Server.Host, serverView.textField.Text, StringComparison.OrdinalIgnoreCase)) {
+                        Log.Info (Log.LOG_UI, "avl: user did not enter server name");
+                        return;
+                    }
                 }
+            }
+
+            // the user specified the host name, save it
+            if (null == theAccount.Server) {
+                theAccount.Server = new McServer () { AccountId = theAccount.Account.Id };
+                theAccount.Server.Insert ();
+            }
+            var temp = new McServer ();
+            var result = EmailHelper.ParseServer (ref temp, serverView.textField.Text);
+            NcAssert.True (EmailHelper.ParseServerWhyEnum.Success_0 == result);
+            if (!theAccount.Server.IsSameServer (temp)) {
+                theAccount.Server.CopyFrom (temp);
+                theAccount.Server.UserSpecifiedServerName = serverView.textField.Text;
+                theAccount.Server.Update ();
+                Log.Info (Log.LOG_UI, "avl: update server {0}", theAccount.Server.UserSpecifiedServerName);
             }
         }
 
-        public void setTextToRed (AdvancedTextField[] whichViews)
+        private void DeleteTheServer (string message)
+        {
+            if (null != theAccount.Server) {
+                if (null == theAccount.Server.UserSpecifiedServerName) {
+                    Log.Info (Log.LOG_UI, "avl: delete server {0} {1}", message, theAccount.Server.BaseUriString ());
+                } else {
+                    Log.Info (Log.LOG_UI, "avl: delete user defined server {0} {1}", message, theAccount.Server.UserSpecifiedServerName);
+                }
+                theAccount.Server.Delete ();
+                theAccount.Server = null;
+            }
+        }
+
+        private void setTextToRed (AdvancedTextField[] whichViews)
         {
             foreach (var textView in inputViews) {
                 if (whichViews.Contains (textView)) {
@@ -772,7 +783,7 @@ namespace NachoClient.iOS
             }
         }
 
-        protected bool canUserConnect ()
+        private bool canUserConnect ()
         {
             if (!haveEnteredEmailAndPass ()) {
                 return false;
@@ -797,26 +808,26 @@ namespace NachoClient.iOS
             return true;
         }
 
-        public void stopBeIfRunning ()
+        private void stopBeIfRunning ()
         {
             BackEnd.Instance.Stop (LoginHelpers.GetCurrentAccountId ());
         }
 
-        public void startBe ()
+        private void startBe ()
         {
             BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
 
             if (BackEndStateEnum.CredWait == backEndState) {
-                Log.Info (Log.LOG_UI, "Advanced login: startBe credWait");
+                Log.Info (Log.LOG_UI, "avl: startBe credWait");
                 BackEnd.Instance.CredResp (LoginHelpers.GetCurrentAccountId ());
             } else {
-                Log.Info (Log.LOG_UI, "Advanced login: startBe");
+                Log.Info (Log.LOG_UI, "avl: startBe");
                 BackEnd.Instance.Stop (LoginHelpers.GetCurrentAccountId ());
                 BackEnd.Instance.Start (LoginHelpers.GetCurrentAccountId ());
             }
         }
 
-        public virtual bool HandlesKeyboardNotifications {
+        protected virtual bool HandlesKeyboardNotifications {
             get { return true; }
         }
 
@@ -857,53 +868,52 @@ namespace NachoClient.iOS
             scrollView.SetContentOffset (new PointF (0, -scrollView.ContentInset.Top), false);
         }
 
-        public void StatusIndicatorCallback (object sender, EventArgs e)
+        private void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
 
             if (NcResult.SubKindEnum.Info_EmailMessageSetChanged == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "Info_EmailMessageSetChanged Status Ind (AdvancedView)");
+                Log.Info (Log.LOG_UI, "avl: Info_EmailMessageSetChanged Status Ind (AdvancedView)");
                 SyncCompleted ();
             }
             if (NcResult.SubKindEnum.Info_InboxPingStarted == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "Info_InboxPingStarted Status Ind (AdvancedView)");
+                Log.Info (Log.LOG_UI, "avl: Info_InboxPingStarted Status Ind (AdvancedView)");
                 SyncCompleted ();
             }
             if (NcResult.SubKindEnum.Info_AsAutoDComplete == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "Auto-D-Completed Status Ind (Advanced View)");
+                Log.Info (Log.LOG_UI, "avl: Auto-D-Completed Status Ind (Advanced View)");
                 waitScreen.SetLoadingText ("Syncing Your Inbox...");
-                theAccount.Server = McServer.QueryByAccountId<McServer> (LoginHelpers.GetCurrentAccountId ()).FirstOrDefault ();
-                serverView.textField.Text = theAccount.Server.Host;
+                RefreshTheServer ();
                 LoginHelpers.SetAutoDCompleted (LoginHelpers.GetCurrentAccountId (), true);
                 if (!LoginHelpers.HasViewedTutorial (LoginHelpers.GetCurrentAccountId ())) {
                     PerformSegue (StartupViewController.NextSegue (), this);
                 }
             }
             if (NcResult.SubKindEnum.Error_NetworkUnavailable == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "Advanced Login status callback: Error_NetworkUnavailable");
+                Log.Info (Log.LOG_UI, "avl: Advanced Login status callback: Error_NetworkUnavailable");
                 ConfigureView (LoginStatus.NoNetwork);
                 waitScreen.DismissView ();
                 stopBeIfRunning ();
             }
             if (NcResult.SubKindEnum.Error_ServerConfReqCallback == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "ServerConfReq Status Ind (Adv. View)");
+                Log.Info (Log.LOG_UI, "avl: ServerConfReq Status Ind (Adv. View)");
                 ConfigureView (LoginStatus.ServerConf);
                 waitScreen.DismissView ();
                 stopBeIfRunning ();
             }
             if (NcResult.SubKindEnum.Info_CredReqCallback == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "CredReqCallback Status Ind (Adv. View)");
+                Log.Info (Log.LOG_UI, "avl: CredReqCallback Status Ind (Adv. View)");
                 ConfigureView (LoginStatus.BadCredentials);
                 waitScreen.DismissView ();
             }
             if (NcResult.SubKindEnum.Error_CertAskReqCallback == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "CertAskCallback Status Ind");
+                Log.Info (Log.LOG_UI, "avl: CertAskCallback Status Ind");
                 ConfigureView (LoginStatus.AcceptCertificate);
                 certificateCallbackHandler ();
             }
         }
 
-        public void certificateCallbackHandler ()
+        private void certificateCallbackHandler ()
         {
             setTextToRed (new AdvancedTextField[]{ });
             certificateView.SetCertificateInformation ();
@@ -911,11 +921,13 @@ namespace NachoClient.iOS
             waitScreen.InvalidateAutomaticSegueTimer ();
         }
 
+        // INachoCertificateResponderParent
         public void DontAcceptCertificate ()
         {
             ConfigureView (LoginStatus.EnterInfo);
         }
 
+        // INachoCertificateResponderParent
         public void AcceptCertificate ()
         {
             ConfigureView (LoginStatus.AcceptCertificate);
@@ -923,7 +935,7 @@ namespace NachoClient.iOS
             waitScreen.InitializeAutomaticSegueTimer ();
         }
 
-        protected void SyncCompleted ()
+        private void SyncCompleted ()
         {
             LoginHelpers.SetFirstSyncCompleted (LoginHelpers.GetCurrentAccountId (), true);
             if (!hasSyncedEmail) {
@@ -933,19 +945,13 @@ namespace NachoClient.iOS
             }
         }
 
-        public class AccountSettings
+        private class AccountSettings
         {
-
             public McAccount Account { get; set; }
 
             public McCred Credentials { get; set; }
 
             public McServer Server { get; set; }
-
-            public AccountSettings ()
-            {
-
-            }
         }
     }
 
