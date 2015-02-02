@@ -1192,9 +1192,12 @@ namespace NachoClient.iOS
                 } else if (1 == list.Count ()) {
                     owner.SetCalendarEvent (list [0]);
                 } else {
-                    //TODO This case should not be hit. Editing recurring events is disabled currently.
-                    NcAssert.CaseError (String.Format ("Attempting to edit a recurring event. Recurrences count  {0}", list.Count ()));
-                    return;
+                    // If an event is changed from a single time on a single day to an All Day event lasting longer
+                    // than a single day the list of related events is greater than one, so the event presented is 
+                    // the first event in the series of related All Day events.  The detail also presents the duration
+                    // of the multi day All Day event making it clear to the user the event is in a series.
+                    owner.SetCalendarEvent (list [0]);
+                    //TODO Editing recurring events is disabled currently.
                 }
             }
         }
