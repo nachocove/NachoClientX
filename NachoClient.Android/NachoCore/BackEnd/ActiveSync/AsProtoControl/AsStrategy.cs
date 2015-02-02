@@ -593,6 +593,7 @@ namespace NachoCore.ActiveSync
             foreach (var folder in AllSyncedFolders (accountId)) {
                 if (0 >= limit) {
                     // TODO: prefer default folders in this scenario.
+                    // TODO: prefer least-recently-synced folders, too.
                     break;
                 }
                 // See if we can and should do GetChanges. Only rawFolders are eligible. O(N**2) alert.

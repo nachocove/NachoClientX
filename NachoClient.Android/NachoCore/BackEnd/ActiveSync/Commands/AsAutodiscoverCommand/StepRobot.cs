@@ -759,7 +759,7 @@ namespace NachoCore.ActiveSync
                 return true;
             }
 
-            public Event ProcessTopLevelStatus (AsHttpOperation Sender, uint status)
+            public Event ProcessTopLevelStatus (AsHttpOperation Sender, uint status, XDocument doc)
             {
                 // There is no AS XML <Status> to report on.
                 return null;
