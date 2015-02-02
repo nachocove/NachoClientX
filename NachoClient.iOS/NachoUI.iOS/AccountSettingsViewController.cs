@@ -21,6 +21,7 @@ namespace NachoClient.iOS
         protected UIBarButtonItem cancelButton;
         protected UIBarButtonItem saveButton;
         protected UIBarButtonItem backButton;
+        protected UIButton deleteAccountButton;
 
         protected bool textFieldsEditable = false;
 
@@ -323,19 +324,15 @@ namespace NachoClient.iOS
             deleteAccountView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
             deleteAccountView.Layer.BorderWidth = .5f;
 
-            UIImageView deleteIconImage;
-            using (var deleteIcon = UIImage.FromBundle ("email-delete-two")) {
-                deleteIconImage = new UIImageView (deleteIcon);
-            }
-            deleteIconImage.Frame = new RectangleF (HORIZONTAL_PADDING, 8, deleteIconImage.Frame.Width, deleteIconImage.Frame.Height);
-            deleteAccountView.AddSubview (deleteIconImage);
+            deleteAccountButton = UIButton.FromType (UIButtonType.System);
+            deleteAccountButton.Frame = new RectangleF (HORIZONTAL_PADDING, 0, deleteAccountView.Frame.Width, deleteAccountView.Frame.Height);
+            Util.AddButtonImage (deleteAccountButton, "email-delete-two", UIControlState.Normal);
+            deleteAccountButton.TitleEdgeInsets = new UIEdgeInsets (0, 28, 0, 0);
+            deleteAccountButton.SetTitle ("Delete This Account", UIControlState.Normal);
+            deleteAccountButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
+            deleteAccountButton.TouchUpInside += onDeleteAccount;
+            deleteAccountView.AddSubview (deleteAccountButton);
 
-            UILabel deleteAccountLabel = new UILabel (new RectangleF (deleteIconImage.Frame.Right + 12, 12, 220, 20));
-            deleteAccountLabel.Font = A.Font_AvenirNextMedium14;
-            deleteAccountLabel.TextColor = A.Color_NachoBlack;
-            deleteAccountLabel.TextAlignment = UITextAlignment.Left;
-            deleteAccountLabel.Text = "Delete This Account";
-            deleteAccountView.AddSubview (deleteAccountLabel);
             contentView.Add (deleteAccountView);
 
             yOffset = deleteAccountView.Frame.Bottom + A.Card_Vertical_Indent;
@@ -456,7 +453,7 @@ namespace NachoClient.iOS
             LayoutView ();
         }
 
-        protected void LayoutView()
+        protected void LayoutView ()
         {
             scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
             contentView.Frame = new RectangleF (0, 0, View.Frame.Width, yOffset);
@@ -531,6 +528,7 @@ namespace NachoClient.iOS
             editButton.Clicked -= EditButtonClicked;
             saveButton.Clicked -= SaveButtonClicked;
             backButton.Clicked -= BackButtonClicked;
+            deleteAccountButton.TouchUpInside -= onDeleteAccount;
 
             cancelButton = null;
             editButton = null;
@@ -549,19 +547,19 @@ namespace NachoClient.iOS
                 signatureView.RemoveGestureRecognizer (signatureTapGesture);
             }
 
-            UITextField accountNameTextField = (UITextField)View.ViewWithTag(ACCOUNT_NAME_TAG);
-            UITextField usernameTextField = (UITextField)View.ViewWithTag(USERNAME_TAG);
-            UITextField passwordTextField = (UITextField)View.ViewWithTag(PASSWORD_TAG);
-            UITextField emailTextField = (UITextField)View.ViewWithTag(EMAIL_TAG);
-            UITextField mailServerTextField = (UITextField)View.ViewWithTag(MAILSERVER_TAG);
-            UITextField conferenceTextField = (UITextField)View.ViewWithTag(CONFERENCE_TAG);
+            UITextField accountNameTextField = (UITextField)View.ViewWithTag (ACCOUNT_NAME_TAG);
+            UITextField usernameTextField = (UITextField)View.ViewWithTag (USERNAME_TAG);
+            UITextField passwordTextField = (UITextField)View.ViewWithTag (PASSWORD_TAG);
+            UITextField emailTextField = (UITextField)View.ViewWithTag (EMAIL_TAG);
+            UITextField mailServerTextField = (UITextField)View.ViewWithTag (MAILSERVER_TAG);
+            UITextField conferenceTextField = (UITextField)View.ViewWithTag (CONFERENCE_TAG);
 
             accountNameTextField.ShouldReturn -= TextFieldShouldReturn;
-            usernameTextField.ShouldReturn  -= TextFieldShouldReturn;
-            passwordTextField.ShouldReturn  -= TextFieldShouldReturn;
-            emailTextField.ShouldReturn  -= TextFieldShouldReturn;
-            mailServerTextField.ShouldReturn  -= TextFieldShouldReturn;
-            conferenceTextField.ShouldReturn  -= TextFieldShouldReturn;
+            usernameTextField.ShouldReturn -= TextFieldShouldReturn;
+            passwordTextField.ShouldReturn -= TextFieldShouldReturn;
+            emailTextField.ShouldReturn -= TextFieldShouldReturn;
+            mailServerTextField.ShouldReturn -= TextFieldShouldReturn;
+            conferenceTextField.ShouldReturn -= TextFieldShouldReturn;
 
             passwordTextField.ShouldChangeCharacters -= ShouldChangeCharacters;
 
@@ -639,7 +637,7 @@ namespace NachoClient.iOS
             return true;
         }
 
-        public bool ShouldChangeCharacters (UITextField textField, NSRange range, string replacementString) 
+        public bool ShouldChangeCharacters (UITextField textField, NSRange range, string replacementString)
         {
             var updatedString = textField.Text.Substring (0, range.Location) + replacementString + textField.Text.Substring (range.Location + range.Length);
             textField.Text = updatedString;
@@ -850,6 +848,13 @@ namespace NachoClient.iOS
             }
             ConfigureAndLayout ();
         }
+
+        void onDeleteAccount (object sender, EventArgs e)
+        {
+            var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
+            appDelegate.RemoveAccount ();
+        }
+
 
         protected virtual void OnKeyboardChanged (bool visible, float height)
         {

@@ -78,7 +78,6 @@ namespace Test.Android
 
             var r6 = McCalendar.QueryByUID (2, "ccc");
             Assert.IsNull (r6, "McCalendar.QueryByUID (2, \"ccc\") found an item when it shouldn't have.");
-
         }
     }
 }

@@ -57,11 +57,13 @@ namespace NachoClient.iOS
         // Don't use NcTimer here - use the raw timer to avoid any future chicken-egg issues.
         #pragma warning disable 414
         private Timer ShutdownTimer = null;
+        // used to ensure that a race condition doesn't let the ShutdownTimer stop things after re-activation.
         private int ShutdownCounter = 0;
 
         #pragma warning restore 414
         private bool FinalShutdownHasHappened = false;
         private bool StartCrashReportingHasHappened = false;
+        private bool DidEnterBackgroundCalled = false;
         private bool hasFirstSyncCompleted;
 
         private void StartCrashReporting ()
@@ -200,12 +202,19 @@ namespace NachoClient.iOS
         public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
         {
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Called");
+            // One-time initialization that do not need to be shut down later.
+            if (!StartCrashReportingHasHappened) {
+                StartCrashReportingHasHappened = true;
+                StartCrashReporting ();
+                Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartCrashReporting complete");
+            }
             bool isSet = ThreadPool.SetMaxThreads (50, 16);
             NcAssert.True (isSet);
-
             StartUIMonitor ();
             const uint MB = 1000 * 1000; // MB not MiB
             WebCache.Configure (1 * MB, 50 * MB);
+            // end of one-time initialization
+
             NcApplication.Instance.StartClass1Services ();
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartClass1Services complete");
 
@@ -245,15 +254,7 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: NcApplication callbacks registered");
 
             NcApplication.Instance.Class4LateShowEvent += (object sender, EventArgs e) => {
-                if (!StartCrashReportingHasHappened) {
-                    StartCrashReportingHasHappened = true;
-                    InvokeOnUIThread.Instance.Invoke (delegate {
-                        StartCrashReporting ();
-                        Log.Info (Log.LOG_LIFECYCLE, "Class4LateShowEvent: StartCrashReporting complete");
-                    });
-                }
-                // Telemetry is in AppDelegate because the implementation is iOS-only right now.
-                Telemetry.StartService ();
+                Telemetry.SharedInstance.Throttling = false;
             };
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: NcApplication Class4LateShowEvent registered");
@@ -418,6 +419,11 @@ namespace NachoClient.iOS
         // when the user quits.
         public override void DidEnterBackground (UIApplication application)
         {
+            if (DidEnterBackgroundCalled) {
+                Log.Error (Log.LOG_LIFECYCLE, "DidEnterBackground: called more than once.");
+                return;
+            }
+            DidEnterBackgroundCalled = true;
             var timeRemaining = application.BackgroundTimeRemaining;
             Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground: time remaining: {0}", timeRemaining);
             // XAMMIT: sometimes BackgroundTimeRemaining reads as MAXFLOAT.
@@ -450,10 +456,11 @@ namespace NachoClient.iOS
         public override void WillEnterForeground (UIApplication application)
         {
             Log.Info (Log.LOG_LIFECYCLE, "WillEnterForeground: Called");
+            DidEnterBackgroundCalled = false;
             if (doingPerformFetch) {
                 CompletePerformFetchWithoutShutdown ();
             }
-            ++ShutdownCounter;
+            Interlocked.Increment (ref ShutdownCounter);
             if (null != ShutdownTimer) {
                 ShutdownTimer.Dispose ();
                 ShutdownTimer = null;
@@ -516,7 +523,7 @@ namespace NachoClient.iOS
                 break;
             }
         }
-            
+
         /// Status bar height can change when the user is on a call or using navigation
         public override void ChangedStatusBarFrame (UIApplication application, RectangleF oldStatusBarFrame)
         {
@@ -887,6 +894,46 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_SYS, "ReceiveMemoryWarning;");
             Log.Info (Log.LOG_SYS, "Monitor: NSURLCache usage {0}", NSUrlCache.SharedCache.CurrentMemoryUsage);
             NcApplication.Instance.MonitorReport ();
+        }
+
+        public void CreateAccount (McAccount.AccountServiceEnum service, string emailAddress, string password)
+        {
+            NcModel.Instance.RunInTransaction (() => {
+                // Need to regex-validate UI inputs.
+                // You will always need to supply user credentials (until certs, for sure).
+                // You will always need to supply the user's email address.
+                var account = new McAccount () { EmailAddr = emailAddress };
+                account.Signature = "Sent from Nacho Mail";
+                account.AccountService = service;
+                account.DisplayName = McAccount.AccountServiceName (service);
+                account.Insert ();
+                var cred = new McCred () { 
+                    AccountId = account.Id,
+                    Username = emailAddress,
+                };
+                cred.Insert ();
+                if (null != password) {
+                    cred.UpdatePassword (password);
+                }
+                Log.Info (Log.LOG_UI, "CreateAccount: {0}/{1}/{2}", account.Id, cred.Id, service);
+                this.Account = account;
+                Telemetry.RecordAccountEmailAddress (this.Account);
+                LoginHelpers.SetHasProvidedCreds (this.Account.Id, true);
+            });
+        }
+
+        public void RemoveAccount ()
+        {
+            if (null != Account) {
+                Log.Info (Log.LOG_UI, "RemoveAccount: user removed account {0}", this.Account.Id);
+                BackEnd.Instance.Stop (this.Account.Id);
+                BackEnd.Instance.Remove (this.Account.Id);
+                Account = null;
+            }
+            var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+            var vc = storyboard.InstantiateInitialViewController ();
+            Log.Info (Log.LOG_UI, "RemoveAccount: back to startup navigation controller {0}", vc);
+            Window.RootViewController = (UIViewController)vc;
         }
     }
 

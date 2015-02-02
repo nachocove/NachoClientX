@@ -25,7 +25,7 @@ namespace NachoClient.AndroidClient
             var rootView = inflater.Inflate (Resource.Layout.FolderListFragment, container, false);
             var listview = rootView.FindViewById<ListView> (Resource.Id.listview);
 
-            folders = new NachoFolders (NachoFolders.FilterForEmail);
+//            folders = new NachoFolders (NachoFolders.FilterForEmail);
             adapter = new FolderListAdapter (this.Activity, folders);
             listview.Adapter = adapter;
 

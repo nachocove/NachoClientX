@@ -13,7 +13,8 @@ if [ $# -ne 2 ]; then
 fi
 
 # Fetch all git repos
-sh fetch.sh
+source repos.sh
+./fetch.py $repos
 
 # Tag all repos
 sh tag.sh "v$1_$2" "v$1_$2"

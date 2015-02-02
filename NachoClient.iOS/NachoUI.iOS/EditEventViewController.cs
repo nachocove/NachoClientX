@@ -160,7 +160,7 @@ namespace NachoClient.iOS
             contentView.AddGestureRecognizer (g);
 
             account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
-            calendars = new NachoFolders (NachoFolders.FilterForCalendars);
+            calendars = new NachoFolders (account.Id, NachoFolders.FilterForCalendars);
 
             switch (action) {
             case CalendarItemEditorAction.create:
@@ -1087,6 +1087,7 @@ namespace NachoClient.iOS
                 START_PICKER_HEIGHT = 216;
                 startIsOpening = true;
                 startDivider.Hidden = false;
+                ScrollToMakeVisible (startView);
                 LayoutView ();
                 startDateOpen = true;
             }
@@ -1103,6 +1104,7 @@ namespace NachoClient.iOS
                 END_PICKER_HEIGHT = 216;
                 endIsOpening = true;
                 endDivider.Hidden = false;
+                ScrollToMakeVisible (endView);
                 LayoutView ();
                 endDateOpen = true;
             }
@@ -1114,6 +1116,13 @@ namespace NachoClient.iOS
                 LayoutView ();
                 endDateOpen = false;
                 endDateLabel.TextColor = A.Color_808080;
+            }
+        }
+
+        protected void ScrollToMakeVisible (UIView view)
+        {
+            if (view.Frame.Bottom + startDatePicker.Frame.Height - scrollView.ContentOffset.Y > scrollView.Frame.Height) {
+                scrollView.SetContentOffset (new PointF (0, view.Frame.Top - (scrollView.Frame.Height - startDatePicker.Frame.Height - CELL_HEIGHT)), true);
             }
         }
 

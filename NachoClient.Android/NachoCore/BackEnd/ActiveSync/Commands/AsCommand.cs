@@ -383,7 +383,7 @@ namespace NachoCore.ActiveSync
         // Subclass can override and add specialized support for top-level status codes as needed.
         // Subclass must call base if it does not handle the status code itself.
         // See http://msdn.microsoft.com/en-us/library/ee218647(v=exchg.80).aspx
-        public virtual Event ProcessTopLevelStatus (AsHttpOperation Sender, uint status)
+        public virtual Event ProcessTopLevelStatus (AsHttpOperation Sender, uint status, XDocument doc)
         {
             switch ((Xml.StatusCode)status) {
             case Xml.StatusCode.InvalidContent_101:

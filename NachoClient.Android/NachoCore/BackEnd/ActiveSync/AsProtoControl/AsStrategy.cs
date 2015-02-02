@@ -593,6 +593,7 @@ namespace NachoCore.ActiveSync
             foreach (var folder in AllSyncedFolders (accountId)) {
                 if (0 >= limit) {
                     // TODO: prefer default folders in this scenario.
+                    // TODO: prefer least-recently-synced folders, too.
                     break;
                 }
                 // See if we can and should do GetChanges. Only rawFolders are eligible. O(N**2) alert.
@@ -976,6 +977,11 @@ namespace NachoCore.ActiveSync
                         return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
                             new AsSyncCommand (BEContext.ProtoControl, nSyncKit));
                     }
+                }
+                // (FG, BG) If it has been more than 5 min since last FolderSync, do a FolderSync.
+                // It seems we can't rely on the server to tell us to do one in all situations.
+                if (protocolState.AsLastFolderSync < DateTime.UtcNow.AddMinutes (-5)) {
+                    return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.FSync, null);
                 }
                 // (FG, BG) If we are rate-limited, and we can execute a narrow Ping command at the 
                 // current filter setting, execute a narrow Ping command.

@@ -178,6 +178,7 @@ namespace NachoCore
         private NcTimer Class4EarlyShowTimer;
         private NcTimer Class4LateShowTimer;
 
+        public event EventHandler Class4EarlyShowEvent;
         public event EventHandler Class4LateShowEvent;
         public event EventHandler MonitorEvent;
 
@@ -198,6 +199,7 @@ namespace NachoCore
         {
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartClass1Services called.");
             NcTask.StartService ();
+            Telemetry.StartService ();
             NcModel.Instance.GarbageCollectFiles ();
             NcModel.Instance.Start ();
             EstablishService ();
@@ -261,6 +263,9 @@ namespace NachoCore
             }
             Class4EarlyShowTimer = new NcTimer ("NcApplication:Class4EarlyShowTimer", (state) => {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4EarlyShowTimer called.");
+                if (null != Class4EarlyShowEvent) {
+                    Class4EarlyShowEvent (this, EventArgs.Empty);
+                }
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4EarlyShowTimer exited.");
             }, null, new TimeSpan (0, 0, KClass4EarlyShowSeconds), TimeSpan.Zero);
             Class4LateShowTimer = new NcTimer ("NcApplication:Class4LateShowTimer", (state) => {
@@ -307,7 +312,7 @@ namespace NachoCore
             MonitorTimer.Dispose ();
         }
 
-        public void MonitorReport (string moniker = null, [CallerFilePath] string sourceFilePath = "",  [CallerLineNumber] int sourceLineNumber = 0)
+        public void MonitorReport (string moniker = null, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
         {
             if (!String.IsNullOrEmpty (moniker)) {
                 Log.Info (Log.LOG_SYS, "Monitor: {0} from line {1} of {2}", moniker, sourceLineNumber, sourceFilePath);

@@ -61,6 +61,10 @@ namespace NachoCore.Model
 
         public const string GMail_All_ServerId = "Mail:^all";
 
+        //Used for display name when creating the folder (if it doesn't already exist)"
+        public const string DRAFTS_DISPLAY_NAME = "Drafts";
+        public const string ARCHIVE_DISPLAY_NAME = "Archive";
+
         public override string ToString ()
         {
             return "NcFolder: sid=" + ServerId + " pid=" + ParentId + " skey=" + AsSyncKey + " dn=" + DisplayName + " type=" + Type.ToString ();
@@ -236,6 +240,31 @@ namespace NachoCore.Model
             return GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultSent_5);
         }
 
+        public static McFolder GetOrCreateEmailDraftsFolder (int accountId)
+        {
+            McFolder emailDraftsFolder = McFolder.GetDistinguishedFolder (accountId, Xml.FolderHierarchy.TypeCode.DefaultDrafts_3);
+            if (null == emailDraftsFolder) {
+                var deviceDraftsFolder = McFolder.Create (accountId, true, false, true, "0",
+                                             McFolder.ClientOwned_EmailDrafts, DRAFTS_DISPLAY_NAME,
+                                             Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
+                deviceDraftsFolder.Insert ();
+                return deviceDraftsFolder;
+            } else {
+                return emailDraftsFolder;
+            }
+        }
+
+        public static McFolder GetOrCreateArchiveFolder (int accountId)
+        {
+            List<McFolder> archiveFolders = McFolder.GetUserFolders (accountId, Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, 0, ARCHIVE_DISPLAY_NAME);
+            if (null == archiveFolders) {
+                BackEnd.Instance.CreateFolderCmd (accountId, ARCHIVE_DISPLAY_NAME, Xml.FolderHierarchy.TypeCode.UserCreatedMail_12);
+                archiveFolders = McFolder.GetUserFolders (accountId, Xml.FolderHierarchy.TypeCode.UserCreatedMail_12, 0, ARCHIVE_DISPLAY_NAME);
+            }
+            NcAssert.NotNull (archiveFolders);
+            return archiveFolders.First ();
+        }
+            
         public static List<McFolder> QueryByParentId (int accountId, string parentId)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
@@ -251,6 +280,18 @@ namespace NachoCore.Model
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f " +
                 "WHERE f.AccountId = ? AND f.LastAccessed > ? " +
                 "ORDER BY f.LastAccessed DESC", accountId, DateTime.UtcNow.AddYears(-1));
+            return folders.ToList ();
+        }
+
+        public static List<McFolder> QueryNonHiddenFoldersOfType (int accountId, Xml.FolderHierarchy.TypeCode[] types)
+        {
+            var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f " +
+                " WHERE f.AccountId = ? AND " +
+                " f.IsAwaitingDelete = 0 AND " +
+                " f.Type IN " + Folder_Helpers.TypesToCommaDelimitedString (types) + " AND " +
+                " f.IsHidden = 0 " +
+                " ORDER BY f.DisplayName ", 
+                accountId);
             return folders.ToList ();
         }
 

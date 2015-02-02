@@ -413,7 +413,7 @@ namespace NachoClient.iOS
 
         public int IsButtonInMonth (int baseButtonTag, DateTime baseButtonDate, DateTime newDate)
         {
-            TimeSpan difference = baseButtonDate - newDate;
+            TimeSpan difference = newDate - baseButtonDate;
             var tempTag = baseButtonTag + (int)difference.Days;
             int rows = RowsInAMonth (baseButtonDate);
             if (99 >= tempTag) {

@@ -73,7 +73,7 @@ namespace Test.iOS
         {
         }
 
-        public virtual Event ProcessTopLevelStatus (AsHttpOperation sender, uint status)
+        public virtual Event ProcessTopLevelStatus (AsHttpOperation sender, uint status, XDocument doc)
         {
             return null;
         }

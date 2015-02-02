@@ -261,8 +261,9 @@ namespace Test.iOS
         {
         }
 
-        public void ReportCommResult (string host, DateTime delayUntil)
+        public void ReportCommResult (int accountId, string host, DateTime delayUntil)
         {
+            AccountId = accountId;
             Host = host;
             DelayUntil = delayUntil;
         }
@@ -271,12 +272,14 @@ namespace Test.iOS
         {
         }
 
-        public void ReportCommResult (string host, bool didFailGenerally)
+        public void ReportCommResult (int accountId, string host, bool didFailGenerally)
         {
+            AccountId = accountId;
             Host = host;
             DidFailGenerally = didFailGenerally;
         }
 
+        public int AccountId { get; set; }
         public string Host { get; set; }
         public bool DidFailGenerally { get; set; }
         public DateTime DelayUntil;

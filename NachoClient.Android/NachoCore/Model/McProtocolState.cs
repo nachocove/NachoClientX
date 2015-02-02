@@ -40,6 +40,8 @@ namespace NachoCore.Model
 
         public bool AsFolderSyncEpochScrubNeeded { get; set; }
 
+        public DateTime AsLastFolderSync { get; set; }
+
         public AsThrottleReasons AsThrottleReason { get; set; }
 
         public uint HeartbeatInterval { get; set; }

@@ -52,7 +52,7 @@ namespace NachoClient.iOS
             // }
                 
             var todayButton = new UIBarButtonItem ();
-            Util.SetAutomaticImageForButton (todayButton, Util.DrawTodayButtonImage(DateTime.Now.Day.ToString()));
+            Util.SetAutomaticImageForButton (todayButton, Util.DrawTodayButtonImage (DateTime.Now.Day.ToString ()));
             todayButton.Clicked += (object sender, EventArgs e) => {
                 ReturnToToday ();
             };
@@ -748,11 +748,7 @@ namespace NachoClient.iOS
 
                 if (-1 == returnWeek) {
 
-                    DateDotView.ViewDate = DateTime.Today;
-                    selectedDate = DateTime.Today;
-                    selectedDateTag = todayWeekTag;
-                    DateDotView.ToggleButtons (-1);
-                    DateDotView.UpdateButtons ();
+                    ResetDatePickerWeekToToday ();
                     copyImageView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                     DateDotView.Center = new PointF (screenLeft - (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                     UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
@@ -767,11 +763,7 @@ namespace NachoClient.iOS
                     currentDate = DateDotView.ViewDate;
                 } else if (1 == returnWeek) {
 
-                    DateDotView.ViewDate = DateTime.Today;
-                    selectedDate = DateTime.Today;
-                    selectedDateTag = todayWeekTag;
-                    DateDotView.ToggleButtons (-1);
-                    DateDotView.UpdateButtons ();
+                    ResetDatePickerWeekToToday ();
                     copyImageView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                     DateDotView.Center = new PointF (screenRight + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                     UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
@@ -786,11 +778,7 @@ namespace NachoClient.iOS
                     currentDate = DateDotView.ViewDate;
                 } else {
                     if (selectedDateTag != todayWeekTag) {
-                        DateDotView.ViewDate = DateTime.Today;
-                        selectedDate = DateTime.Today;
-                        selectedDateTag = todayWeekTag;
-                        DateDotView.ToggleButtons (-1);
-                        DateDotView.UpdateButtons ();
+                        ResetDatePickerWeekToToday ();
                     }
                 }
 
@@ -801,13 +789,9 @@ namespace NachoClient.iOS
                 this.View.BringSubviewToFront (calendarTableView);
                 Image.Dispose ();
 
-                if (-1 == returnMonth) {
+                if (1 == returnMonth) {
 
-                    DateDotView.ViewDate = DateTime.Today;
-                    selectedDate = DateTime.Today;
-                    selectedDateTag = todayMonthTag;
-                    DateDotView.ToggleButtons (-1);
-                    DateDotView.UpdateButtonsMonth ();
+                    ResetDatePickerMonthToToday ();
                     var rows = DateDotView.RowsInAMonth (DateDotView.ViewDate);
                     copyImageView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                     DateDotView.Center = new PointF (screenLeft - (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
@@ -822,13 +806,9 @@ namespace NachoClient.iOS
                         }
                     );
                     currentDate = DateDotView.ViewDate;
-                } else if (1 == returnMonth) {
+                } else if (-1 == returnMonth) {
 
-                    DateDotView.ViewDate = DateTime.Today;
-                    selectedDate = DateTime.Today;
-                    selectedDateTag = todayMonthTag;
-                    DateDotView.ToggleButtons (-1);
-                    DateDotView.UpdateButtonsMonth ();
+                    ResetDatePickerMonthToToday ();
                     var rows = DateDotView.RowsInAMonth (DateDotView.ViewDate);
                     copyImageView.Center = new PointF ((DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
                     DateDotView.Center = new PointF (screenRight + (DateDotView.Frame.Width / 2), (DateDotView.Frame.Height / 2));
@@ -845,11 +825,7 @@ namespace NachoClient.iOS
                     currentDate = DateDotView.ViewDate;
                 } else {
                     if (selectedDateTag != todayMonthTag) {
-                        DateDotView.ViewDate = DateTime.Today;
-                        selectedDate = DateTime.Today;
-                        selectedDateTag = todayMonthTag;
-                        DateDotView.ToggleButtons (-1);
-                        DateDotView.UpdateButtonsMonth ();
+                        ResetDatePickerMonthToToday ();
                     }
                 }
             }
@@ -857,6 +833,24 @@ namespace NachoClient.iOS
             this.View.BringSubviewToFront (calendarTableView);
             calendarSource.ScrollToDate (calendarTableView, DateTime.Today);
 
+        }
+
+        public void ResetDatePickerMonthToToday ()
+        {
+            DateDotView.ViewDate = DateTime.Today;
+            selectedDate = DateTime.Today;
+            selectedDateTag = todayMonthTag;
+            DateDotView.ToggleButtons (-1);
+            DateDotView.UpdateButtonsMonth ();
+        }
+
+        public void ResetDatePickerWeekToToday ()
+        {
+            DateDotView.ViewDate = DateTime.Today;
+            selectedDate = DateTime.Today;
+            selectedDateTag = todayWeekTag;
+            DateDotView.ToggleButtons (-1);
+            DateDotView.UpdateButtons ();
         }
 
         // ICalendarTableViewSourceDelegate

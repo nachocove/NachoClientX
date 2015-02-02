@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using NachoCore.Model;
+using NachoCore.Utils;
 
 namespace NachoCore.ActiveSync
 {
@@ -151,7 +152,11 @@ namespace NachoCore.ActiveSync
             {
                 // Remove the folder and anything subordinate.
                 var folder = McAbstrFolderEntry.QueryByServerId<McFolder> (AccountId, ServerId);
-                folder.Delete ();
+                if (null != folder) {
+                    folder.Delete ();
+                } else {
+                    Log.Error (Log.LOG_AS, "ApplyFolderDelete:ApplyCommandToModel: ServerId missing in DB.");
+                }
             }
         }
     }
