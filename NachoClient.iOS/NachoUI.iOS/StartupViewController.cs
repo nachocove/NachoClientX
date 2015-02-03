@@ -12,6 +12,9 @@ namespace NachoClient.iOS
 {
     public partial class StartupViewController : NcUIViewController
     {
+        UIProgressView ProgressBar = null;
+        UITextView TextField = null;
+
         public StartupViewController (IntPtr handle) : base (handle)
         {
         }
@@ -22,7 +25,13 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-            PerformSegue (NextSegue (), this);
+            if (NcApplication.ExecutionContextEnum.Migrating != NcApplication.Instance.ExecutionContext) {
+                var segueIdentifer = NextSegue ();
+                Log.Info (Log.LOG_UI, "StartupViewController: PerformSegue({0})", segueIdentifer);
+                PerformSegue (NextSegue (), this);
+            } else {
+                NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            }
         }
 
         public static string NextSegue ()
@@ -73,13 +82,79 @@ namespace NachoClient.iOS
             }
         }
 
+        public override void ViewDidAppear (bool animated)
+        {
+            // We need to migrate. Put up a spinner until this is done.
+            this.View.BackgroundColor = A.Color_NachoGreen;
+            var frame = this.View.Frame;
+            var halfHeight = frame.Height / 2.0f;
+
+            TextField = new UITextView ();
+            ViewFramer.Create (TextField)
+                .X (0)
+                .Y (halfHeight - 35.0f)
+                .Width (frame.Width)
+                .Height (35.0f);
+            TextField.TextColor = UIColor.White;
+            TextField.Font = A.Font_AvenirNextRegular17;
+            TextField.Text = "Updating database... (1 of 1)";
+            TextField.BackgroundColor = A.Color_NachoGreen;
+            TextField.TextAlignment = UITextAlignment.Center;
+
+            ProgressBar = new UIProgressView (frame);
+            ViewFramer.Create (ProgressBar).Y (halfHeight + 10.0f).AdjustHeight (20.0f);
+            ProgressBar.ProgressTintColor = A.Color_NachoYellow;
+            ProgressBar.TrackTintColor = A.Color_NachoIconGray;
+            this.Add (TextField);
+            this.Add (ProgressBar);
+        }
+
+        public void StatusIndicatorCallback (object sender, EventArgs e)
+        {
+            var s = (StatusIndEventArgs)e;
+            if (NcResult.SubKindEnum.Info_ExecutionContextChanged == s.Status.SubKind) {
+                var execContext = (NcApplication.ExecutionContextEnum)s.Status.Value;
+                if ((NcApplication.ExecutionContextEnum.Initializing != execContext) &&
+                    (NcApplication.ExecutionContextEnum.Migrating != execContext)) {
+                    InvokeOnMainThread (() => {
+                        if (null != ProgressBar) {
+                            ProgressBar.Hidden = false;
+                        }
+                        PerformSegue (NextSegue (), this);
+                    });
+                }
+            }
+            if (NcResult.SubKindEnum.Info_MigrationProgress == s.Status.SubKind) {
+                var percentage = (float)s.Status.Value;
+                if (null != ProgressBar) {
+                    InvokeOnMainThread (() => {
+                        ProgressBar.SetProgress (percentage, true);
+                    });
+                }
+            }
+            if (NcResult.SubKindEnum.Info_MigrationDescription == s.Status.SubKind) {
+                var description = (string)s.Status.Value;
+                if (null != TextField) {
+                    InvokeOnMainThread (() => {
+                        TextField.Text = description;
+                    });
+                }
+            }
+        }
+
+        public override void ViewWillDisappear (bool animated)
+        {
+            base.ViewWillDisappear (animated);
+            NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+        }
+
         public override void PrepareForSegue (UIStoryboardSegue segue, NSObject sender)
         {
 
             if (segue.Identifier == "SegueToEventView") {
                 var vc = (EventViewController)segue.DestinationViewController;
                 var devAccountId = McAccount.GetDeviceAccount ().Id;
-                var eventId = Convert.ToInt32(McMutables.Get (devAccountId, "EventNotif", LoginHelpers.GetCurrentAccountId ().ToString ()));
+                var eventId = Convert.ToInt32 (McMutables.Get (devAccountId, "EventNotif", LoginHelpers.GetCurrentAccountId ().ToString ()));
                 var item = McEvent.QueryById<McEvent> (eventId);
                 vc.SetCalendarItem (item);
                 McMutables.Delete (devAccountId, "EventNotif", LoginHelpers.GetCurrentAccountId ().ToString ());

@@ -14,8 +14,6 @@ namespace NachoClient.iOS
 {
     public partial class LaunchViewController : NcUIViewControllerNoLeaks
     {
-        AppDelegate appDelegate;
-
         float yOffset;
         float keyboardHeight;
         bool shortScreen;
@@ -49,7 +47,6 @@ namespace NachoClient.iOS
 
         public LaunchViewController (IntPtr handle) : base (handle)
         {
-            appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
         }
 
         public override void ViewWillAppear (bool animated)
@@ -74,7 +71,7 @@ namespace NachoClient.iOS
                 UIView.AnimateKeyframes (1.6, 0, UIViewKeyframeAnimationOptions.OverrideInheritedDuration, () => {
 
                     UIView.AddKeyframeWithRelativeStartTime (0, .5, () => {
-                        if (!largeScreen){
+                        if (!largeScreen) {
                             circleMail.Transform = CGAffineTransform.MakeScale (2.0f / 3.0f, 2.0f / 3.0f);
                         } else {
                             circleMail.Transform = CGAffineTransform.MakeScale (4.0f / 5.0f, 4.0f / 5.0f);
@@ -150,7 +147,7 @@ namespace NachoClient.iOS
             largeScreen = (600 < View.Frame.Height);
 
             circleMail = new UIImageView ();
-            using (var circleImage = UIImage.FromBundle (Util.GetImage("Bootscreen-1"))) {
+            using (var circleImage = UIImage.FromBundle (Util.GetImage ("Bootscreen-1"))) {
                 circleMail.Image = circleImage;
             }
             circleMail.Frame = new RectangleF (View.Frame.Width / 2 - (circleMail.Image.Size.Width / 2), (shortScreen ? 155 : 200) + (largeScreen ? 74 : 0), circleMail.Image.Size.Width, circleMail.Image.Size.Height);
@@ -292,7 +289,7 @@ namespace NachoClient.iOS
             // Anchor loginTriangles on the bottom
 
             loginTriangles = new UIImageView ();
-            using (var bootImage = UIImage.FromBundle (Util.GetImage("Bootscreen-5"))) {
+            using (var bootImage = UIImage.FromBundle (Util.GetImage ("Bootscreen-5"))) {
                 loginTriangles.Image = bootImage;
             }
             loginTriangles.Frame = new RectangleF (0, View.Frame.Height - loginTriangles.Image.Size.Height, loginTriangles.Image.Size.Width, loginTriangles.Image.Size.Height);
@@ -301,13 +298,14 @@ namespace NachoClient.iOS
 
         protected override void ConfigureAndLayout ()
         {
+            Log.Info (Log.LOG_UI, "LaunchViewController: starting fresh");
+            NcAssert.False (LoginHelpers.IsCurrentAccountSet ());
             emailField.Text = "";
             passwordField.Text = "";
             emailServices.SetSelectedItem (McAccount.AccountServiceEnum.None);
             emailServiceTableView.ReloadData ();
-            ConfigureAndLayoutInternal();
+            ConfigureAndLayoutInternal ();
         }
-
 
         /// <summary>
         /// Hides the Advances & Customer Support buttons when the service table is visible
@@ -412,6 +410,7 @@ namespace NachoClient.iOS
 
         private void Complain (string title, string message)
         {
+            Log.Info (Log.LOG_UI, "LaunchViewController: Complain {0}", message);
             var alert = new UIAlertView (title, message, null, "OK", null);
             alert.Show ();        
         }
@@ -421,6 +420,7 @@ namespace NachoClient.iOS
         /// </summary>
         private void ConfirmBeforeStarting (string title, string message)
         {
+            Log.Info (Log.LOG_UI, "LaunchViewController: Confirm {0}", message);
             var alert = new UIAlertView (title, message, null, "OK", new string[] { "Cancel" });
             alert.Clicked += (s, b) => {
                 if (0 == b.ButtonIndex) {
@@ -432,26 +432,9 @@ namespace NachoClient.iOS
 
         private void StartLoginProcess ()
         {
-            NcModel.Instance.RunInTransaction (() => {
-                // Need to regex-validate UI inputs.
-                // You will always need to supply user credentials (until certs, for sure).
-                // You will always need to supply the user's email address.
-                appDelegate.Account = new McAccount () { EmailAddr = emailField.Text };
-                appDelegate.Account.Signature = "Sent from Nacho Mail";
-                appDelegate.Account.AccountService = selectedEmailService;
-                appDelegate.Account.DisplayName = McAccount.AccountServiceName(selectedEmailService);
-                appDelegate.Account.Insert ();
-                var cred = new McCred () { 
-                    AccountId = appDelegate.Account.Id,
-                    Username = emailField.Text,
-                };
-                cred.Insert ();
-                cred.UpdatePassword (passwordField.Text);
-                Telemetry.RecordAccountEmailAddress (appDelegate.Account);
-                // Maintain the state of our progress
-                LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, true);
-            });
-            BackEnd.Instance.Start (appDelegate.Account.Id);
+            var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
+            appDelegate.CreateAccount (selectedEmailService, emailField.Text, passwordField.Text);
+            BackEnd.Instance.Start (NcApplication.Instance.Account.Id);
             PerformSegue (StartupViewController.NextSegue (), this);
         }
 
@@ -579,8 +562,8 @@ namespace NachoClient.iOS
             }
 
             if (segue.Identifier.Equals ("SegueToAdvancedLogin")) {
-                // TODO: How can account be set?
                 if (!LoginHelpers.IsCurrentAccountSet ()) {
+                    // Save the user's work in progress.
                     var vc = (AdvancedLoginViewController)segue.DestinationViewController;
                     vc.SetAdvanced (emailField.Text, passwordField.Text);
                 }

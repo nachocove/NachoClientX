@@ -111,7 +111,7 @@ namespace NachoClient.iOS
                 var dc = (INachoContactChooser)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
                 var address = (NcEmailAddress)holder.value;
-                dc.SetOwner (this, address, NachoContactType.EmailRequired);
+                dc.SetOwner (this, account, address, NachoContactType.EmailRequired);
                 return;
             }
 
@@ -119,7 +119,7 @@ namespace NachoClient.iOS
                 var dc = (INachoContactChooser)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
                 var address = (NcEmailAddress)holder.value;
-                dc.SetOwner (this, address, NachoContactType.EmailRequired);
+                dc.SetOwner (this, account, address, NachoContactType.EmailRequired);
                 return;
             }
 

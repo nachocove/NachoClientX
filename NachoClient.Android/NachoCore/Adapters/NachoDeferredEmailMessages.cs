@@ -49,5 +49,9 @@ namespace NachoCore
             return "Deferred";
         }
 
+        public void StartSync ()
+        {
+            // TODO: Send status in as if deferreds have changed
+        }
     }
 }

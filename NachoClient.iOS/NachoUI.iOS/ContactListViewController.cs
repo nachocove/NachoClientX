@@ -64,7 +64,7 @@ namespace NachoClient.iOS
 
             // Manages the search bar & auto-complete table.
             contactTableViewSource = new ContactsTableViewSource ();
-            contactTableViewSource.SetOwner (this, true, SearchDisplayController);
+            contactTableViewSource.SetOwner (this, account, true, SearchDisplayController);
 
             TableView.Source = contactTableViewSource;
 
@@ -97,7 +97,7 @@ namespace NachoClient.iOS
         {
             var sb = new UISearchBar ();
 
-            // creating the controller set up its pointers
+            // creating the controller sets up its pointers
             new UISearchDisplayController (sb, this);
 
             TableView.TableHeaderView = sb;

@@ -49,19 +49,19 @@ namespace NachoClient.iOS
         // class-level declarations
         public override UIWindow Window { get; set; }
 
-        public McAccount Account { get; set; }
-
         // iOS kills us after 30, so make sure we dont get there
         private const int KPerformFetchTimeoutSeconds = 25;
         private int BackgroundIosTaskId = -1;
         // Don't use NcTimer here - use the raw timer to avoid any future chicken-egg issues.
         #pragma warning disable 414
         private Timer ShutdownTimer = null;
+        // used to ensure that a race condition doesn't let the ShutdownTimer stop things after re-activation.
         private int ShutdownCounter = 0;
 
         #pragma warning restore 414
         private bool FinalShutdownHasHappened = false;
         private bool StartCrashReportingHasHappened = false;
+        private bool DidEnterBackgroundCalled = false;
         private bool hasFirstSyncCompleted;
 
         private void StartCrashReporting ()
@@ -200,22 +200,21 @@ namespace NachoClient.iOS
         public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
         {
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Called");
-            bool isSet = ThreadPool.SetMaxThreads (50, 16);
-            NcAssert.True (isSet);
+            // One-time initialization that do not need to be shut down later.
+            if (!StartCrashReportingHasHappened) {
+                StartCrashReportingHasHappened = true;
+                StartCrashReporting ();
+                Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartCrashReporting complete");
+            }
+            NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
 
             StartUIMonitor ();
             const uint MB = 1000 * 1000; // MB not MiB
             WebCache.Configure (1 * MB, 50 * MB);
-            NcApplication.Instance.StartClass1Services ();
-            Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartClass1Services complete");
+            // end of one-time initialization
 
-            NcApplication.Instance.StartClass2Services ();
-            Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartClass2Services complete");
-
-            NcApplication.Instance.StartClass3Services ();
-            Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartClass3Services complete");
-
-            Account = NcModel.Instance.Db.Table<McAccount> ().Where (x => x.AccountType == McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
+            NcApplication.Instance.StartBasalServices ();
+            Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartBasalServices complete");
 
             NcApplication.Instance.AppStartupTasks ();
 
@@ -245,15 +244,7 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: NcApplication callbacks registered");
 
             NcApplication.Instance.Class4LateShowEvent += (object sender, EventArgs e) => {
-                if (!StartCrashReportingHasHappened) {
-                    StartCrashReportingHasHappened = true;
-                    InvokeOnUIThread.Instance.Invoke (delegate {
-                        StartCrashReporting ();
-                        Log.Info (Log.LOG_LIFECYCLE, "Class4LateShowEvent: StartCrashReporting complete");
-                    });
-                }
-                // Telemetry is in AppDelegate because the implementation is iOS-only right now.
-                Telemetry.StartService ();
+                Telemetry.SharedInstance.Throttling = false;
             };
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: NcApplication Class4LateShowEvent registered");
@@ -283,7 +274,8 @@ namespace NachoClient.iOS
 
             NcKeyboardSpy.Instance.Init ();
 
-            if ("SegueToTabController" == StartupViewController.NextSegue ()) {
+            if (NcApplication.ExecutionContextEnum.Migrating != NcApplication.Instance.ExecutionContext &&
+                "SegueToTabController" == StartupViewController.NextSegue ()) {
                 var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
                 var vc = storyboard.InstantiateViewController ("NachoTabBarController");
                 Log.Info (Log.LOG_UI, "fast path to tab bar controller: {0}", vc);
@@ -321,6 +313,7 @@ namespace NachoClient.iOS
         public override void OnActivated (UIApplication application)
         {
             Log.Info (Log.LOG_LIFECYCLE, "OnActivated: Called");
+            NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Foreground;
             BadgeNotifClear ();
 
             NcApplication.Instance.StartClass4Services ();
@@ -368,6 +361,7 @@ namespace NachoClient.iOS
         public override void OnResignActivation (UIApplication application)
         {
             Log.Info (Log.LOG_LIFECYCLE, "OnResignActivation: time remaining: {0}", application.BackgroundTimeRemaining);
+            NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.Background;
             BadgeNotifGoInactive ();
             NcApplication.Instance.StatusIndEvent += BgStatusIndReceiver;
 
@@ -384,13 +378,8 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: Stale");
                 return;
             }
-
-            NcApplication.Instance.StopClass3Services ();
-            Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: StopClass3Services complete");
-            NcApplication.Instance.StopClass2Services ();
-            Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: StopClass2Services complete");
-            NcApplication.Instance.StopClass1Services ();
-            Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: NcApplication.Instance.Dispose complete");
+            NcApplication.Instance.StopBasalServices ();
+            Log.Info (Log.LOG_LIFECYCLE, "FinalShutdown: StopBasalServices complete");
             if (0 < BackgroundIosTaskId) {
                 UIApplication.SharedApplication.EndBackgroundTask (BackgroundIosTaskId);
                 BackgroundIosTaskId = -1;
@@ -402,13 +391,8 @@ namespace NachoClient.iOS
         private void ReverseFinalShutdown ()
         {
             Log.Info (Log.LOG_LIFECYCLE, "ReverseFinalShutdown: Called");
-            NcApplication.Instance.StartClass1Services ();
-            Log.Info (Log.LOG_LIFECYCLE, "ReverseFinalShutdown: StartClass1Services complete");
-            NcApplication.Instance.StartClass2Services ();
-            Log.Info (Log.LOG_LIFECYCLE, "ReverseFinalShutdown: StartClass2Services complete");
-            NcApplication.Instance.StartClass3Services ();
-            Log.Info (Log.LOG_LIFECYCLE, "ReverseFinalShutdown: StartClass3Services complete");
-
+            NcApplication.Instance.StartBasalServices ();
+            Log.Info (Log.LOG_LIFECYCLE, "ReverseFinalShutdown: StartBasalServices complete");
             FinalShutdownHasHappened = false;
             Log.Info (Log.LOG_LIFECYCLE, "ReverseFinalShutdown: Exit");
         }
@@ -418,6 +402,11 @@ namespace NachoClient.iOS
         // when the user quits.
         public override void DidEnterBackground (UIApplication application)
         {
+            if (DidEnterBackgroundCalled) {
+                Log.Error (Log.LOG_LIFECYCLE, "DidEnterBackground: called more than once.");
+                return;
+            }
+            DidEnterBackgroundCalled = true;
             var timeRemaining = application.BackgroundTimeRemaining;
             Log.Info (Log.LOG_LIFECYCLE, "DidEnterBackground: time remaining: {0}", timeRemaining);
             // XAMMIT: sometimes BackgroundTimeRemaining reads as MAXFLOAT.
@@ -450,10 +439,11 @@ namespace NachoClient.iOS
         public override void WillEnterForeground (UIApplication application)
         {
             Log.Info (Log.LOG_LIFECYCLE, "WillEnterForeground: Called");
+            DidEnterBackgroundCalled = false;
             if (doingPerformFetch) {
                 CompletePerformFetchWithoutShutdown ();
             }
-            ++ShutdownCounter;
+            Interlocked.Increment (ref ShutdownCounter);
             if (null != ShutdownTimer) {
                 ShutdownTimer.Dispose ();
                 ShutdownTimer = null;
@@ -550,20 +540,18 @@ namespace NachoClient.iOS
             CompletionHandler = completionHandler;
             fetchResult = UIBackgroundFetchResult.NoData;
             // Need to set ExecutionContext before Start of BE so that strategy can see it.
-            NcApplication.Instance.ExecutionContext = NcApplication.ExecutionContextEnum.QuickSync;
+            NcApplication.Instance.PlatformIndication = NcApplication.ExecutionContextEnum.QuickSync;
             if (FinalShutdownHasHappened) {
                 ReverseFinalShutdown ();
             }
             NcApplication.Instance.StatusIndEvent += FetchStatusHandler;
-            NcApplication.Instance.QuickSync ();
-
             // iOS only allows a limited amount of time to fetch data in the background.
             // Set a timer to force everything to shut down before iOS kills the app.
             performFetchTimer = new Timer (((object state) => {
                 // When the timer expires, just fire an event.  The status callback will take
                 // care of shutting everything down.
                 NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
-                    Account = this.Account,
+                    Account = NcApplication.Instance.Account,
                     Status = NcResult.Error (NcResult.SubKindEnum.Error_SyncFailedToComplete)
                 });
             }), null, KPerformFetchTimeoutSeconds * 1000, Timeout.Infinite);
@@ -575,7 +563,7 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "{0}: {1} id is {2}.", traceMessage, key, id);
 
             var devAccountId = McAccount.GetDeviceAccount ().Id;
-            McMutables.Set (devAccountId, key, Account.Id.ToString (), id.ToString ());
+            McMutables.Set (devAccountId, key, NcApplication.Instance.Account.Id.ToString (), id.ToString ());
         }
 
         public override void ReceivedLocalNotification (UIApplication application, UILocalNotification notification)
@@ -645,7 +633,7 @@ namespace NachoClient.iOS
             StatusIndEventArgs ea = (StatusIndEventArgs)e;
             // Use Info_SyncSucceeded rather than Info_NewUnreadEmailMessageInInbox because
             // we want to remove a notification if the server marks a message as read.
-            if (NcResult.SubKindEnum.Info_SyncSucceeded == ea.Status.SubKind && null != ea.Account && ea.Account.Id == Account.Id) {
+            if (NcResult.SubKindEnum.Info_SyncSucceeded == ea.Status.SubKind && null != ea.Account && ea.Account.Id == NcApplication.Instance.Account.Id) {
                 BadgeNotifUpdate ();
             }
         }
@@ -823,7 +811,7 @@ namespace NachoClient.iOS
                 }
                 if (String.IsNullOrEmpty (message.From)) {
                     // Don't notify or count in badge number from-me messages.
-                    Log.Info (Log.LOG_UI, "Not notifying on to-{0} message.", Account.EmailAddr);
+                    Log.Info (Log.LOG_UI, "Not notifying on to-{0} message.", NcApplication.Instance.Account.EmailAddr);
                     --badgeCount;
                     continue;
                 }
@@ -889,6 +877,48 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_SYS, "ReceiveMemoryWarning;");
             Log.Info (Log.LOG_SYS, "Monitor: NSURLCache usage {0}", NSUrlCache.SharedCache.CurrentMemoryUsage);
             NcApplication.Instance.MonitorReport ();
+        }
+
+        // TODO this needs to get moved out of AppDelegate.
+        public void CreateAccount (McAccount.AccountServiceEnum service, string emailAddress, string password)
+        {
+            NcModel.Instance.RunInTransaction (() => {
+                // Need to regex-validate UI inputs.
+                // You will always need to supply user credentials (until certs, for sure).
+                // You will always need to supply the user's email address.
+                var account = new McAccount () { EmailAddr = emailAddress };
+                account.Signature = "Sent from Nacho Mail";
+                account.AccountService = service;
+                account.DisplayName = McAccount.AccountServiceName (service);
+                account.Insert ();
+                var cred = new McCred () { 
+                    AccountId = account.Id,
+                    Username = emailAddress,
+                };
+                cred.Insert ();
+                if (null != password) {
+                    cred.UpdatePassword (password);
+                }
+                Log.Info (Log.LOG_UI, "CreateAccount: {0}/{1}/{2}", account.Id, cred.Id, service);
+                NcApplication.Instance.Account = account;
+                Telemetry.RecordAccountEmailAddress (NcApplication.Instance.Account);
+                LoginHelpers.SetHasProvidedCreds (NcApplication.Instance.Account.Id, true);
+            });
+        }
+
+        // TODO this needs to get moved out of AppDelegate.
+        public void RemoveAccount ()
+        {
+            if (null != NcApplication.Instance.Account) {
+                Log.Info (Log.LOG_UI, "RemoveAccount: user removed account {0}", NcApplication.Instance.Account.Id);
+                BackEnd.Instance.Stop (NcApplication.Instance.Account.Id);
+                BackEnd.Instance.Remove (NcApplication.Instance.Account.Id);
+                NcApplication.Instance.Account = null;
+            }
+            var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
+            var vc = storyboard.InstantiateInitialViewController ();
+            Log.Info (Log.LOG_UI, "RemoveAccount: back to startup navigation controller {0}", vc);
+            Window.RootViewController = (UIViewController)vc;
         }
     }
 

@@ -122,23 +122,23 @@ namespace NachoCore.Utils
             }
         }
 
-        public void ReportCommResult (string host, bool didFailGenerally)
+        public void ReportCommResult (int accountId, string host, bool didFailGenerally)
         {
             lock (syncRoot) {
-                ReportCommResult (GetServerId (host), didFailGenerally);
+                ReportCommResult (GetServerId (accountId, host), didFailGenerally);
             }
         }
 
-        public void ReportCommResult (string host, DateTime delayUntil)
+        public void ReportCommResult (int accountId, string host, DateTime delayUntil)
         {
             lock (syncRoot) {
-                ReportCommResult (GetServerId (host), delayUntil);
+                ReportCommResult (GetServerId (accountId, host), delayUntil);
             }
         }
 
-        private int GetServerId (string host)
+        private int GetServerId (int accountId, string host)
         {
-            var server = McServer.QueryByHost (host);
+            var server = McServer.QueryByHost (accountId, host);
             // Allow 0 for scenario when we don't yet have a McServer record in DB (ex: auto-d).
             return (null == server) ? 0 : server.Id;
         }

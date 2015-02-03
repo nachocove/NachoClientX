@@ -25,14 +25,21 @@ namespace NachoCore.Utils
         /// In what list does this NcEmailAddress reside?
         public enum Kind
         {
-            To,
-            Cc,
-            Bcc,
-            Required,
-            Optional,
-            Resource,
-            Unknown,
-        };
+            Unknown = 0,
+            // McEmailMessage
+            To = 1,
+            Cc = 2,
+            Bcc = 3,
+            Sender = 4,
+            From = 5,
+            // McAttendee
+            Required = 6,
+            Optional = 7,
+            Resource = 8,
+            // McCalendar
+            Organizer = 9}
+
+        ;
 
         /// Which list?
         public Kind kind;
@@ -80,6 +87,12 @@ namespace NachoCore.Utils
         // TODO: Localize!
         public static Kind ToKind (string prefix)
         {
+            if (prefix.StartsWith ("From")) {
+                return Kind.From;
+            }
+            if (prefix.StartsWith ("Sender")) {
+                return Kind.Sender;
+            }
             if (prefix.StartsWith ("To")) {
                 return Kind.To;
             }
@@ -108,6 +121,10 @@ namespace NachoCore.Utils
         public static string ToPrefix (Kind kind)
         {
             switch (kind) {
+            case Kind.From:
+                return "From";
+            case Kind.Sender:
+                return "Sender";
             case Kind.To:
                 return "To";
             case Kind.Cc:
@@ -126,6 +143,24 @@ namespace NachoCore.Utils
                 NcAssert.CaseError ();
                 return"";
             }
+        }
+
+        public static Kind ToKind (NcAttendeeType attendeeType)
+        {
+            switch (attendeeType) {
+            case NcAttendeeType.Unknown:
+                return Kind.Unknown;
+            case NcAttendeeType.Optional:
+                return Kind.Optional;
+            case NcAttendeeType.Required:
+                return Kind.Required;
+            case NcAttendeeType.Resource:
+                return Kind.Resource;
+            default:
+                NcAssert.CaseError (String.Format ("Unknown NcAttendeeType {0}", (int)attendeeType));
+                break;
+            }
+            return Kind.Unknown;
         }
 
         public static Kind FromAttendeeType (NcAttendeeType type)

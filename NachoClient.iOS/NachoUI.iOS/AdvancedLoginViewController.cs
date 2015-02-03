@@ -44,7 +44,6 @@ namespace NachoClient.iOS
         string gOriginalUsername = "";
         string gOriginalPassword = "";
 
-        AppDelegate appDelegate;
         AccountSettings theAccount;
 
         public UIView loadingCover;
@@ -78,7 +77,6 @@ namespace NachoClient.iOS
 
         public AdvancedLoginViewController (IntPtr handle) : base (handle)
         {
-            appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
         }
 
         public override void ViewDidLoad ()
@@ -323,9 +321,7 @@ namespace NachoClient.iOS
 
         void onStartOver ()
         {
-            if (LoginHelpers.IsCurrentAccountSet ()) {
-                BackEnd.Instance.Remove (LoginHelpers.GetCurrentAccountId ());
-            } else {
+            if (!LoginHelpers.IsCurrentAccountSet ()) {
                 // Remove our local copies
                 NcModel.Instance.RunInTransaction (() => {
                     if (null != theAccount) {
@@ -341,28 +337,15 @@ namespace NachoClient.iOS
                     }
                 });
             }
-            if (null != appDelegate.Account) {
-                LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, false);
-                appDelegate.Account = null;
-            }
-
-            // Replace this view controller with the LaunchViewController
-            var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
-            var lvc = (UIViewController)storyboard.InstantiateViewController ("LaunchViewController");
-            NcAssert.NotNull (lvc);
-            var controlStack = NavigationController.ViewControllers;
-            NcAssert.NotNull (controlStack);
-            var controlCount = controlStack.Count ();
-            NcAssert.False (0 == controlCount);
-            controlStack [controlCount - 1] = lvc;
-            NavigationController.SetViewControllers (controlStack, true);
+            var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
+            appDelegate.RemoveAccount ();
         }
 
         void onConnect (object sender, EventArgs e)
         {
             View.EndEditing (true);
 
-            // Check the basics
+            // Check for user, password, and valid server
             if (!canUserConnect ()) {
                 return; // error has been displayed
             }
@@ -371,7 +354,9 @@ namespace NachoClient.iOS
 
             // Setup the account is there isn't one yet
             if (freshAccount) {
-                createUserSettings ();
+                var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
+                appDelegate.CreateAccount (McAccount.AccountServiceEnum.None, emailView.textField.Text, passwordView.textField.Text);
+                NcAssert.True (LoginHelpers.IsCurrentAccountSet ());
             } 
 
             // Save the stuff on the screen (pre-validated by canUserConnect())
@@ -486,6 +471,8 @@ namespace NachoClient.iOS
                 break;
             }
 
+            Log.Info (Log.LOG_UI, "Advanced Configure view: status={0} {1}", currentStatus, errorMessage.Text);
+
             LayoutView ();
         }
 
@@ -576,6 +563,8 @@ namespace NachoClient.iOS
 
                 BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
 
+                Log.Info (Log.LOG_UI, "AdvancedLoginView: handleStatusEnums {0}={1}", LoginHelpers.GetCurrentAccountId (), backEndState);
+
                 switch (backEndState) {
                 case BackEndStateEnum.ServerConfWait:
                     Log.Info (Log.LOG_UI, "ServerConfWait Auto-D-State-Enum On Page Load");
@@ -620,6 +609,7 @@ namespace NachoClient.iOS
                     return;
                 }
             } else {
+                Log.Info (Log.LOG_UI, "AdvancedLoginView: handleStatusEnums account not set");
                 ConfigureView (LoginStatus.EnterInfo);
                 haveEnteredEmailAndPass ();
             }
@@ -759,24 +749,6 @@ namespace NachoClient.iOS
             theAccount.Server = McServer.QueryByAccountId<McServer> (LoginHelpers.GetCurrentAccountId ()).FirstOrDefault ();
         }
 
-        // Called when nothing exists.
-        public void  createUserSettings ()
-        {
-            NcModel.Instance.RunInTransaction (() => {
-                // Set up initial McAccount
-                appDelegate.Account = new McAccount () { EmailAddr = emailView.textField.Text };
-                appDelegate.Account.Signature = "Sent from Nacho Mail";
-                appDelegate.Account.Insert ();
-                // Set up initial McCred
-                var cred = new McCred () { 
-                    AccountId = appDelegate.Account.Id,
-                };
-                cred.Insert ();
-                Telemetry.RecordAccountEmailAddress (appDelegate.Account);
-                LoginHelpers.SetHasProvidedCreds (appDelegate.Account.Id, true);
-            });
-        }
-
         public void removeServerRecord ()
         {
             if (LoginHelpers.IsCurrentAccountSet ()) {
@@ -911,27 +883,6 @@ namespace NachoClient.iOS
                 ConfigureView (LoginStatus.NoNetwork);
                 waitScreen.DismissView ();
                 stopBeIfRunning ();
-            }
-            if (NcResult.SubKindEnum.Info_ValidateConfigSucceeded == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "Validate Config Successful Status Ind (Advanced View)");
-                ConfigureView (LoginStatus.ValidateSuccessful);
-                loadTheAccount ();
-                startBe ();
-            }
-            if (NcResult.SubKindEnum.Error_ValidateConfigFailedComm == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "Advanced Login status callback: Error_ValidateConfigFailedComm");
-                ConfigureView (LoginStatus.BadServer);
-                waitScreen.DismissView ();
-            }
-            if (NcResult.SubKindEnum.Error_ValidateConfigFailedAuth == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "Advanced Login status callback: Error_ValidateConfigFailedAuth");
-                ConfigureView (LoginStatus.BadCredentials);
-                waitScreen.DismissView ();
-            }
-            if (NcResult.SubKindEnum.Error_ValidateConfigFailedUser == s.Status.SubKind) {
-                Log.Info (Log.LOG_UI, "Advanced Login status callback: Error_ValidateConfigFailedUser");
-                ConfigureView (LoginStatus.BadUsername);
-                waitScreen.DismissView ();
             }
             if (NcResult.SubKindEnum.Error_ServerConfReqCallback == s.Status.SubKind) {
                 Log.Info (Log.LOG_UI, "ServerConfReq Status Ind (Adv. View)");

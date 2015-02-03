@@ -319,6 +319,9 @@ namespace NachoCore.ActiveSync
                     case McPending.Operations.TaskDelete:
                         commands.Add (ToTaskDelete (pending, folder));
                         break;
+                    case McPending.Operations.Sync:
+                        // we don't express this.
+                        break;
                     default:
                         NcAssert.CaseError (pending.Operation.ToString ());
                         break;
@@ -336,9 +339,9 @@ namespace NachoCore.ActiveSync
             return doc;
         }
 
-        public override Event ProcessTopLevelStatus (AsHttpOperation sender, uint status)
+        public override Event ProcessTopLevelStatus (AsHttpOperation sender, uint status, XDocument doc)
         {
-            var globEvent = base.ProcessTopLevelStatus (sender, status);
+            var globEvent = base.ProcessTopLevelStatus (sender, status, doc);
             if (null != globEvent) {
                 return globEvent;
             }
@@ -391,6 +394,24 @@ namespace NachoCore.ActiveSync
                 Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: FolderChange_12");
                 ResolveAllDeferred ();
                 return Event.Create ((uint)AsProtoControl.CtlEvt.E.ReFSync, "ASYNCTOPRFS");
+
+            case Xml.AirSync.StatusCode.TooMany_15:
+                Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: TooMany_15");
+                var xmlLimit = doc.Root.ElementAnyNs (Xml.AirSync.Limit);
+                if (null != xmlLimit && null != xmlLimit.Value) {
+                    try {
+                        var limit = uint.Parse (xmlLimit.Value);
+                        var protocolState = BEContext.ProtoControl.ProtocolState;
+                        protocolState.AsSyncLimit = limit;
+                        protocolState.Update ();
+                    } catch (Exception ex) {
+                        Log.Error (Log.LOG_AS, "AsSyncCommand: exception parsing Limit: {0}", ex.ToString ());
+                    }
+                } else {
+                    Log.Error (Log.LOG_AS, "AsSyncCommand: TLS TooMany_15 w/out Limit");
+                }
+                ResolveAllDeferred ();
+                return Event.Create ((uint)SmEvt.E.TempFail, "ASYNCTOPTM");
 
             case Xml.AirSync.StatusCode.Retry_16:
                 Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: Retry_16");
@@ -738,7 +759,7 @@ namespace NachoCore.ActiveSync
                     var pathElem = new McPath (BEContext.Account.Id);
                     pathElem.ServerId = addServerId;
                     pathElem.ParentId = folder.ServerId;
-                    pathElem.Insert ();
+                    pathElem.Insert (BEContext.Server.HostIsGMail ());
                     var applyAdd = new ApplyItemAdd (BEContext.Account.Id) {
                         ClassCode = classCode,
                         ServerId = addServerId,
@@ -891,6 +912,7 @@ namespace NachoCore.ActiveSync
                         pathElem.Delete ();
                     }
                 }
+                // user-directed sync responses get processed here too.
                 pending.ResolveAsSuccess (BEContext.ProtoControl);
                 PendingList.RemoveAll (x => pending.Id == x.Id);
             }

@@ -29,7 +29,7 @@ namespace NachoCore
         protected static McFolder InboxFolder (int accountId)
         {
             NcAssert.True (0 != accountId);
-            var emailFolders = new NachoFolders (NachoFolders.FilterForEmail);
+            var emailFolders = new NachoFolders (accountId, NachoFolders.FilterForEmail);
             for (int i = 0; i < emailFolders.Count (); i++) {
                 McFolder f = emailFolders.GetFolder (i);
                 if (f.DisplayName.Equals ("Inbox")) {
@@ -74,6 +74,13 @@ namespace NachoCore
         public string DisplayName ()
         {
             return folder.DisplayName;
+        }
+
+        public void StartSync ()
+        {
+            if (null != folder) {
+                BackEnd.Instance.SyncCmd (folder.AccountId, folder.Id);
+            }
         }
 
     }

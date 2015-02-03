@@ -69,14 +69,8 @@ namespace NachoClient.AndroidClient
         {
             base.OnCreate (savedInstanceState);
 
-            NcApplication.Instance.StartClass1Services ();
+            NcApplication.Instance.StartBasalServices ();
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartClass1Services complete");
-
-            NcApplication.Instance.StartClass2Services ();
-            Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartClass2Services complete");
-
-            NcApplication.Instance.StartClass3Services ();
-            Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartClass3Services complete");
 
             NcApplication.Instance.AppStartupTasks ();
 
@@ -148,9 +142,9 @@ namespace NachoClient.AndroidClient
         {
             menu = new List<SidebarMenu> ();
 
-            email = new NachoFolders (NachoFolders.FilterForEmail);
-            contacts = new NachoFolders (NachoFolders.FilterForContacts);
-            calendars = new NachoFolders (NachoFolders.FilterForCalendars);
+//            email = new NachoFolders (NachoFolders.FilterForEmail);
+//            contacts = new NachoFolders (NachoFolders.FilterForContacts);
+//            calendars = new NachoFolders (NachoFolders.FilterForCalendars);
 
             menu.Add (new SidebarMenu (null, "Now", SidebarToNachoNowSegueId));
 

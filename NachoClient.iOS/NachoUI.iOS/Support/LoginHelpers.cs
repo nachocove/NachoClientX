@@ -12,6 +12,7 @@ namespace NachoClient.iOS
     public class LoginHelpers
     {
         protected const string MODULE = "ClientConfigurationBits";
+
         public LoginHelpers ()
         {
         }
@@ -19,35 +20,38 @@ namespace NachoClient.iOS
         //Sets the status of the sync bit for given accountId
         static public void SetFirstSyncCompleted (int accountId, bool toWhat)
         {
-            NcAssert.True (GetCurrentAccountId() == accountId);
+            Log.Info (Log.LOG_UI, "SetFirstSyncCompleted: {0}={1}", accountId, toWhat);
+            NcAssert.True (GetCurrentAccountId () == accountId);
             McMutables.SetBool (accountId, MODULE, "hasSyncedFolders", toWhat);
         }
 
         //Gets the status of the sync bit for given accountId
         //True if they have succesfully sync'd folders
         //False if not
-        static public bool HasFirstSyncCompleted(int accountId)
+        static public bool HasFirstSyncCompleted (int accountId)
         {
-            NcAssert.True (GetCurrentAccountId() == accountId);
-            return McMutables.GetOrCreateBool(accountId, MODULE, "hasSyncedFolders", false);
+            NcAssert.True (GetCurrentAccountId () == accountId);
+            return McMutables.GetOrCreateBool (accountId, MODULE, "hasSyncedFolders", false);
         }
 
         static public void SetDoesBackEndHaveIssues (int accountId, bool toWhat)
         {
-            NcAssert.True (GetCurrentAccountId() == accountId);
+            Log.Info (Log.LOG_UI, "SetDoesBackEndHaveIssues: {0}={1}", accountId, toWhat);
+            NcAssert.True (GetCurrentAccountId () == accountId);
             McMutables.SetBool (accountId, MODULE, "doesBackEndHaveIssues", toWhat);
         }
 
         static public bool DoesBackEndHaveIssues (int accountId)
         {
-            NcAssert.True (GetCurrentAccountId() == accountId);
-            return McMutables.GetOrCreateBool(accountId, MODULE, "doesBackEndHaveIssues", false);
+            NcAssert.True (GetCurrentAccountId () == accountId);
+            return McMutables.GetOrCreateBool (accountId, MODULE, "doesBackEndHaveIssues", false);
         }
 
         //Sets the status of the tutorial bit for given accountId
         static public void SetHasViewedTutorial (int accountId, bool toWhat)
         {
-            NcAssert.True (GetCurrentAccountId() == accountId);
+            Log.Info (Log.LOG_UI, "SetHasViewedTutorial: {0}={1}", accountId, toWhat);
+            NcAssert.True (GetCurrentAccountId () == accountId);
             // TODO: should this really be per-account or once for all accounts?
             McMutables.SetBool (accountId, MODULE, "hasViewedTutorial", toWhat);
         }
@@ -55,56 +59,60 @@ namespace NachoClient.iOS
         //Gets the status of the tutorial bit for given accountId
         //True if they have viewed tutorial
         //False if not
-        static public bool HasViewedTutorial(int accountId)
+        static public bool HasViewedTutorial (int accountId)
         {
-            NcAssert.True (GetCurrentAccountId() == accountId);
-            return McMutables.GetOrCreateBool(accountId, MODULE, "hasViewedTutorial", false);
+            NcAssert.True (GetCurrentAccountId () == accountId);
+            return McMutables.GetOrCreateBool (accountId, MODULE, "hasViewedTutorial", false);
         }
 
         //Sets the status of the auto-d success bit for given accountId
         static public void SetAutoDCompleted (int accountId, bool toWhat)
         {
-            NcAssert.True (GetCurrentAccountId() == accountId);
+            Log.Info (Log.LOG_UI, "SetAutoDCompleted: {0}={1}", accountId, toWhat);
+            NcAssert.True (GetCurrentAccountId () == accountId);
             McMutables.SetBool (accountId, MODULE, "hasAutoDCompleted", toWhat);
         }
 
         //Gets the status of the auto-d success bit for given accountId
         //True if they have succesfully sync'd folders
         //False if not
-        static public bool HasAutoDCompleted(int accountId)
+        static public bool HasAutoDCompleted (int accountId)
         {
-            NcAssert.True (GetCurrentAccountId() == accountId);
-            return McMutables.GetOrCreateBool(accountId, MODULE, "hasAutoDCompleted", false);
+            NcAssert.True (GetCurrentAccountId () == accountId);
+            return McMutables.GetOrCreateBool (accountId, MODULE, "hasAutoDCompleted", false);
         }
 
         //Sets the status of the creds bit for given accountId
         static public void SetHasProvidedCreds (int accountId, bool toWhat)
         {
-            NcAssert.True (GetCurrentAccountId() == accountId);
+            Log.Info (Log.LOG_UI, "SetHasProvidedCreds: {0}={1}", accountId, toWhat);
+            NcAssert.True (GetCurrentAccountId () == accountId);
             McMutables.SetBool (accountId, MODULE, "hasProvidedCreds", toWhat);
         }
 
         //Gets the status of the creds bit for given accountId
         //True if they have provided creds at least once
         //False if not
-        static public bool HasProvidedCreds(int accountId)
+        static public bool HasProvidedCreds (int accountId)
         {
-            NcAssert.True (GetCurrentAccountId() == accountId);
-            return McMutables.GetOrCreateBool(accountId, MODULE, "hasProvidedCreds", false);
+            NcAssert.True (GetCurrentAccountId () == accountId);
+            return McMutables.GetOrCreateBool (accountId, MODULE, "hasProvidedCreds", false);
         }
 
-        static public int GetCurrentAccountId()
+        // We want to fail if someone just plucks a null
+        static public int GetCurrentAccountId ()
         {
             NachoClient.iOS.AppDelegate appDelegate = (NachoClient.iOS.AppDelegate)UIApplication.SharedApplication.Delegate;
-            NcAssert.True (null != appDelegate.Account);
+            NcAssert.True (null != NcApplication.Instance.Account);
 
-            return appDelegate.Account.Id;
+            return NcApplication.Instance.Account.Id;
         }
 
-        static public bool IsCurrentAccountSet()
+        // Pre-req before calling GetCurrentAccountId
+        static public bool IsCurrentAccountSet ()
         {
             NachoClient.iOS.AppDelegate appDelegate = (NachoClient.iOS.AppDelegate)UIApplication.SharedApplication.Delegate;
-            if (null != appDelegate.Account) {
+            if (null != NcApplication.Instance.Account) {
                 return true;
             } else {
                 return false;

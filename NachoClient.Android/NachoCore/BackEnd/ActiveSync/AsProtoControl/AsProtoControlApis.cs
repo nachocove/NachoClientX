@@ -1183,5 +1183,35 @@ namespace NachoCore.ActiveSync
             }, "RenameFolderCmd");
             return token;
         }
+
+        public override string SyncCmd (int folderId)
+        {
+            string token = null;
+            McFolder folder;
+            NcModel.Instance.RunInTransaction (() => {
+                folder = McFolder.QueryById<McFolder> (folderId);
+                if (null == folder) {
+                    Log.Error (Log.LOG_AS, "SyncCmd: can't find McFolder");
+                    return;
+                }
+                var pending = new McPending (Account.Id) {
+                    Operation = McPending.Operations.Sync,
+                    ServerId = folder.ServerId,
+                };
+                McPending dup;
+                if (pending.IsDuplicate (out dup)) {
+                    Log.Info (Log.LOG_AS, "SyncCmd: IsDuplicate of Id/Token {0}/{1}", dup.Id, dup.Token);
+                    token = dup.Token;
+                    return;
+                }
+                pending.DoNotDelay ();
+                pending.Insert ();
+                token = pending.Token;
+            });
+            NcTask.Run (delegate {
+                Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCDNLDEBOD");
+            }, "SyncCmd");
+            return token;
+        }
     }
 }

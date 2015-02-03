@@ -91,10 +91,6 @@ namespace NachoCore.Model
         // Valid only for GAL-cache entries.
         public string GalCacheToken { get; set; }
 
-        /// Reference count.
-        [Indexed]
-        public uint RefCount { get; set; }
-
         /// First name of the contact
         [Indexed]
         public string FirstName { get; set; }
@@ -1214,7 +1210,7 @@ namespace NachoCore.Model
                 accountId, accountId, (int)McAbstrFolderEntry.ClassCodeEnum.Contact, ricFolder.Id);
         }
 
-        public static List<McContactEmailAddressAttribute> SearchAllContactItems (string searchFor, bool withEclipsing = false)
+        public static List<McContactEmailAddressAttribute> SearchAllContactsWithEmailAddresses (string searchFor, bool withEclipsing = false)
         {
             // TODO: Put this in the brain
             if (String.IsNullOrEmpty (searchFor)) {
