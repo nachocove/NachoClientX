@@ -179,13 +179,14 @@ namespace NachoCore
         public void Start (int accountId)
         {
             Log.Info (Log.LOG_LIFECYCLE, "BackEnd.Start({0}) called", accountId);
+            NcCommStatus.Instance.Refresh ();
+            if (!HasServiceFromAccountId (accountId)) {
+                EstablishService (accountId);
+            }
             NcTask.Run (delegate {
-                NcCommStatus.Instance.Refresh ();
-                if (!HasServiceFromAccountId (accountId)) {
-                    EstablishService (accountId);
-                }
                 ServiceFromAccountId (accountId).Execute ();
             }, "Start");
+            Log.Info (Log.LOG_LIFECYCLE, "BackEnd.Start({0}) exited", accountId);
         }
 
         public void CertAskResp (int accountId, bool isOkay)
