@@ -337,6 +337,7 @@ namespace NachoClient.iOS
                     }
                 });
             }
+            var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
             appDelegate.RemoveAccount ();
         }
 

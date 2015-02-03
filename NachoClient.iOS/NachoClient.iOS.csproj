@@ -1197,6 +1197,7 @@
     <Compile Include="NachoUI.iOS\Support\ContactCell.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\DraftsHelper.cs">
       <Link>NachoCore\Utils\DraftsHelper.cs</Link>
+    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration.cs">
       <Link>NachoCore\Model\Migration\NcMigration.cs</Link>
     </Compile>

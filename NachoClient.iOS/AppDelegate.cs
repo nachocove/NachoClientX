@@ -879,6 +879,7 @@ namespace NachoClient.iOS
             NcApplication.Instance.MonitorReport ();
         }
 
+        // TODO this needs to get moved out of AppDelegate.
         public void CreateAccount (McAccount.AccountServiceEnum service, string emailAddress, string password)
         {
             NcModel.Instance.RunInTransaction (() => {
@@ -899,19 +900,20 @@ namespace NachoClient.iOS
                     cred.UpdatePassword (password);
                 }
                 Log.Info (Log.LOG_UI, "CreateAccount: {0}/{1}/{2}", account.Id, cred.Id, service);
-                this.Account = account;
-                Telemetry.RecordAccountEmailAddress (this.Account);
-                LoginHelpers.SetHasProvidedCreds (this.Account.Id, true);
+                NcApplication.Instance.Account = account;
+                Telemetry.RecordAccountEmailAddress (NcApplication.Instance.Account);
+                LoginHelpers.SetHasProvidedCreds (NcApplication.Instance.Account.Id, true);
             });
         }
 
+        // TODO this needs to get moved out of AppDelegate.
         public void RemoveAccount ()
         {
-            if (null != Account) {
-                Log.Info (Log.LOG_UI, "RemoveAccount: user removed account {0}", this.Account.Id);
-                BackEnd.Instance.Stop (this.Account.Id);
-                BackEnd.Instance.Remove (this.Account.Id);
-                Account = null;
+            if (null != NcApplication.Instance.Account) {
+                Log.Info (Log.LOG_UI, "RemoveAccount: user removed account {0}", NcApplication.Instance.Account.Id);
+                BackEnd.Instance.Stop (NcApplication.Instance.Account.Id);
+                BackEnd.Instance.Remove (NcApplication.Instance.Account.Id);
+                NcApplication.Instance.Account = null;
             }
             var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
             var vc = storyboard.InstantiateInitialViewController ();
