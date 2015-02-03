@@ -1522,7 +1522,7 @@ namespace NachoCore.Model
             return false;
         }
 
-        private bool ShouldEmailAddressesBeEclipsed ()
+        public bool ShouldEmailAddressesBeEclipsed ()
         {
             if (!IsGleaned () && !IsGal () && !IsRic ()) {
                 return false;
@@ -1542,7 +1542,7 @@ namespace NachoCore.Model
             });
         }
 
-        private bool ShouldPhoneNumbersBeEclipsed ()
+        public bool ShouldPhoneNumbersBeEclipsed ()
         {
             if (!IsGleaned () && !IsGal () && !IsRic ()) {
                 return false;
