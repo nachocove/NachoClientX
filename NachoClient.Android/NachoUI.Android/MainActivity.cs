@@ -72,12 +72,6 @@ namespace NachoClient.AndroidClient
             NcApplication.Instance.StartBasalServices ();
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartClass1Services complete");
 
-            NcApplication.Instance.StartClass2Services ();
-            Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartClass2Services complete");
-
-            NcApplication.Instance.StartClass3Services ();
-            Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: StartClass3Services complete");
-
             NcApplication.Instance.AppStartupTasks ();
 
             // Set our view from the "main" layout resource
