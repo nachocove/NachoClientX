@@ -150,13 +150,13 @@ namespace Test.Common
             Assert.IsTrue (s.Equals (e));
         }
 
-        public void CreateMcBody(MockDataSource mds, int id)
+        public void CreateMcBody (MockDataSource mds, int id)
         {
             var body = new McBody () {
                 AccountId = mds.Account.Id,
             };
             body.Insert ();
-            Assert.AreEqual(id, body.Id);
+            Assert.AreEqual (id, body.Id);
         }
 
         [Test]
@@ -230,6 +230,7 @@ namespace Test.Common
         {
             var c01 = new McAttendee (1, "Steve", "rascal2210@hotmail.com");
             c01.ParentId = 5;
+            c01.AttendeeType = NcAttendeeType.Required;
             c01.Insert ();
 
             var c02 = NcModel.Instance.Db.Get<McAttendee> (x => x.ParentId == 5);
@@ -269,10 +270,12 @@ namespace Test.Common
 
 
             var c06 = new McAttendee (1, "Chris", "chrisp@nachocove.com");
+            c06.AttendeeType = NcAttendeeType.Optional;
             c06.ParentId = 5;
             c06.Insert ();
             var c07 = new McAttendee (1, "Jeff", "jeffe@nachocove.com");
             c07.ParentId = 6;
+            c07.AttendeeType = NcAttendeeType.Optional;
             c07.Insert ();
 
             Assert.AreEqual (3, NcModel.Instance.Db.Table<McAttendee> ().Count ());
@@ -288,7 +291,7 @@ namespace Test.Common
         [Test]
         public void CaledarAttachments ()
         {
-            McCalendar cal = InsertSimpleEvent("");
+            McCalendar cal = InsertSimpleEvent ("");
 
             // Create three unowned attachments.
             McAttachment attachment1 = new McAttachment () {
@@ -500,7 +503,7 @@ namespace Test.Common
         }
 
         [Test]
-        public void ExceptionParse01()
+        public void ExceptionParse01 ()
         {
             var mds = new MockDataSource ();
             CreateMcBody (mds, 1);
@@ -522,8 +525,12 @@ namespace Test.Common
 
             if (type.Equals ("attendees")) {
                 List<McAttendee> attendees = new List<McAttendee> ();
-                attendees.Add (new McAttendee (1, "Bob", "bob@foo.com"));
-                attendees.Add (new McAttendee (1, "Joe", "joe@foo.com"));
+                attendees.Add (new McAttendee (1, "Bob", "bob@foo.com") {
+                    AttendeeType = NcAttendeeType.Required,
+                });
+                attendees.Add (new McAttendee (1, "Joe", "joe@foo.com") {
+                    AttendeeType = NcAttendeeType.Optional,
+                });
                 c.attendees = attendees;
             }
             if (type.Equals ("categories")) {
@@ -540,8 +547,14 @@ namespace Test.Common
             }
             if (type.Equals ("exceptions")) {
                 List<McException> exceptions = new List<McException> ();
-                exceptions.Add (new McException () { AccountId = c.AccountId, ExceptionStartTime = new DateTime(2011, 3, 17), });
-                exceptions.Add (new McException () { AccountId = c.AccountId, ExceptionStartTime = new DateTime(2011, 3, 18), });
+                exceptions.Add (new McException () {
+                    AccountId = c.AccountId,
+                    ExceptionStartTime = new DateTime (2011, 3, 17),
+                });
+                exceptions.Add (new McException () {
+                    AccountId = c.AccountId,
+                    ExceptionStartTime = new DateTime (2011, 3, 18),
+                });
                 c.exceptions = exceptions;
                 // Not in db; exceptions are not ancillary
             }
@@ -577,7 +590,9 @@ namespace Test.Common
             var c = InsertSimpleEvent ("attendees");
 
             var attendees = c.attendees;
-            attendees.Add (new McAttendee (1, "Harry", "harry@foo.com"));
+            attendees.Add (new McAttendee (1, "Harry", "harry@foo.com") {
+                AttendeeType = NcAttendeeType.Resource,
+            });
             c.attendees = attendees;
             c.Update ();
             var f = McCalendar.QueryById<McCalendar> (c.Id);
@@ -698,9 +713,9 @@ namespace Test.Common
             Assert.AreEqual (0, f.recurrences.Count);
         }
 
-        protected void ClearExceptionList(List<McException> list)
+        protected void ClearExceptionList (List<McException> list)
         {
-            foreach(var e in list) {
+            foreach (var e in list) {
                 e.Id = 0;
             }
         }
@@ -758,7 +773,7 @@ namespace Test.Common
         }
 
         [Test]
-        public void QueryExceptionDateLimits()
+        public void QueryExceptionDateLimits ()
         {
             var e0 = McException.QueryForExceptionId (0, DateTime.MinValue);
             Assert.AreEqual (0, e0.Count);
@@ -775,7 +790,7 @@ namespace Test.Common
         }
 
         [Test]
-        public void QueryExceptionDuplicate()
+        public void QueryExceptionDuplicate ()
         {
             var c = InsertSimpleEvent ("exceptions");
             foreach (var e in c.exceptions) {
@@ -785,9 +800,9 @@ namespace Test.Common
             var e5 = McException.QueryForExceptionId (c.Id, new DateTime (2011, 3, 17));
             Assert.IsNotNull (e5);
         }
-            
+
         [Test]
-        public void iCalParse()
+        public void iCalParse ()
         {
             IICalendar iCal;
             using (var stringReader = new StringReader (ical_string01_good)) {
