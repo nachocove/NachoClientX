@@ -117,8 +117,10 @@ namespace NachoCore.Utils
                 } catch (Exception e) {
                     if (!HandleAWSException (e)) {
                         if (NcTask.Cts.Token.IsCancellationRequested) {
-                            Client.Dispose ();
-                            Client = null;
+                            if (null != Client) {
+                                Client.Dispose ();
+                                Client = null;
+                            }
                             NcTask.Cts.Token.ThrowIfCancellationRequested ();
                         }
                         throw;
