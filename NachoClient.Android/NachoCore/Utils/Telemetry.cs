@@ -775,6 +775,14 @@ namespace NachoCore.Utils
             SendSha1AccountEmailAddresses ();
             DateTime heartBeat = DateTime.Now;
             while (true) {
+                // If we are in quick sync, just wait for either:
+                //   1. Cancellation
+                //   2. Transition to foreground
+                while (NcApplication.ExecutionContextEnum.QuickSync ==
+                       NcApplication.Instance.ExecutionContext) {
+                    NcTask.Cts.Token.WaitHandle.WaitOne (500);
+                }
+
                 if (!ranOnce) {
                     // Record how much back log we have in telemetry db
                     Dictionary<string, string> dict = new Dictionary<string, string> ();
