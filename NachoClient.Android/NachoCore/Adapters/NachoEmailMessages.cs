@@ -6,6 +6,7 @@ using System.Linq;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Brain;
+using NachoCore.Utils;
 
 namespace NachoCore
 {
@@ -42,6 +43,14 @@ namespace NachoCore
 
         public McEmailMessageThread GetEmailThread (int i)
         {
+            if (0 > i) {
+                Log.Error (Log.LOG_UTILS, "GetEmailThread: {0}", i);
+                return null;
+            }
+            if (threadList.Count <= i) {
+                Log.Error (Log.LOG_UTILS, "GetEmailThread: {0}", i);
+                return null;
+            }
             var t = threadList.ElementAt (i);
             return t;
         }
