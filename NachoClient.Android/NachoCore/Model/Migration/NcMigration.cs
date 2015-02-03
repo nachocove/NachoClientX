@@ -182,7 +182,7 @@ namespace NachoCore.Model
                     if (migration.Finished) {
                         continue;
                     }
-                    UpdateDescription (String.Format ("Updating database.. ({0} of {1})", n, migrations.Count));
+                    UpdateDescription (String.Format ("Updating your app with latest features... ({0} of {1})", n, migrations.Count));
 
                     var startTime = DateTime.UtcNow;
                     var version = migration.Version ();
