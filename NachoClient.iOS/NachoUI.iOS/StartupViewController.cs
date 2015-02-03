@@ -85,6 +85,7 @@ namespace NachoClient.iOS
         public override void ViewDidAppear (bool animated)
         {
             // We need to migrate. Put up a spinner until this is done.
+            this.NavigationItem.Title = "Upgrade";
             this.View.BackgroundColor = A.Color_NachoGreen;
             var frame = this.View.Frame;
             var halfHeight = frame.Height / 2.0f;
@@ -96,8 +97,8 @@ namespace NachoClient.iOS
                 .Width (frame.Width)
                 .Height (35.0f);
             TextField.TextColor = UIColor.White;
-            TextField.Font = A.Font_AvenirNextRegular17;
-            TextField.Text = "Updating database... (1 of 1)";
+            TextField.Font = A.Font_AvenirNextRegular14;
+            TextField.Text = "Updating your app with latest features... (1 of 1)";
             TextField.BackgroundColor = A.Color_NachoGreen;
             TextField.TextAlignment = UITextAlignment.Center;
 
