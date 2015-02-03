@@ -113,7 +113,7 @@ namespace NachoCore
         {
             var message = ex.ToString ();
             if (ex is OperationCanceledException && message.Contains ("NcTask")) {
-                Log.Error (Log.LOG_SYS, "XAMMIT AggregateException: UnobservedTaskException from cancelled Task.");
+                Log.Warn (Log.LOG_SYS, "XAMMIT AggregateException: UnobservedTaskException from cancelled Task.");
                 // XAMMIT. Known bug, Task should absorb OperationCanceledException when CancellationToken is bound to Task.
                 return true;
             }
@@ -225,10 +225,10 @@ namespace NachoCore
             NcModel.Instance.EngageRateLimiter ();
             NcBrain.StartService ();
             NcContactGleaner.Start ();
+            ExecutionContext = _PlatformIndication;
             BackEnd.Instance.Owner = this;
             BackEnd.Instance.EstablishService ();
             BackEnd.Instance.Start ();
-            ExecutionContext = _PlatformIndication;
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServicesCompletion exited.");
         }
 
