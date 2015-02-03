@@ -106,6 +106,19 @@ namespace NachoCore.Model
 
                     // Sort the migration
                     _migrations.Sort (new NcMigrationComparer ());
+
+                    // If this is a fresh install, all migrations will be included because the table is empty
+                    // and it thinks no migration has been run.
+                    if (NcModel.Instance.FreshInstall) {
+                        var migrationRecord = new McMigration ();
+                        migrationRecord.Version = CurrentVersion;
+                        migrationRecord.StartTime = DateTime.UtcNow;
+                        migrationRecord.Finished = true;
+                        var rows = migrationRecord.Insert ();
+                        NcAssert.True (1 == rows);
+                        _migrations.Clear ();
+                        LastMigration = CurrentVersion;
+                    }
                 }
                 return _migrations;
             }
