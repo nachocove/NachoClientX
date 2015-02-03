@@ -100,13 +100,15 @@ namespace NachoClient.iOS
 
             // Preset only if we haven't got an account set up yet
             if (String.IsNullOrEmpty (emailView.textField.Text)) {
-                NcAssert.True (null == theAccount.Account);
-                emailView.textField.Text = presetEmailAddress;
+                if (null == theAccount.Account) {
+                    emailView.textField.Text = presetEmailAddress;
+                }
             }
             if (String.IsNullOrEmpty (passwordView.textField.Text)) {
-                NcAssert.True (null == theAccount.Account);
-                passwordView.textField.Text = presetPassword;
-                gOriginalPassword = presetPassword;
+                if (null == theAccount.Account) {
+                    passwordView.textField.Text = presetPassword;
+                    gOriginalPassword = presetPassword;
+                }
             }
         }
 
@@ -143,27 +145,23 @@ namespace NachoClient.iOS
                 NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
                 NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
             }
-                
+
             if (null != theAccount.Credentials) {
                 showAdvanced |= theAccount.Credentials.UserSpecifiedUsername;
             }
             if (null != theAccount.Server) {
                 showAdvanced |= (null != theAccount.Server.UserSpecifiedServerName);
             }
-
-            bool showWaitScreen = (null != theAccount.Account) && !LoginHelpers.HasViewedTutorial (theAccount.Account.Id);
-
-            if (!showWaitScreen) {
-                NavigationItem.Title = "Account Setup";
-                loadingCover.Hidden = true;
-                handleStatusEnums ();
-            }
-
+ 
             // Layout before waitScreen.ShowView() hides the nav bar
             LayoutView ();
 
-            if (showWaitScreen) {
+            if (IsBackEndRunning ()) {
                 waitScreen.ShowView ();
+            } else {
+                NavigationItem.Title = "Account Setup";
+                loadingCover.Hidden = true;
+                handleStatusEnums ();
             }
 
             base.ViewDidAppear (animated);
@@ -327,7 +325,7 @@ namespace NachoClient.iOS
 
         void onStartOver ()
         {
-            if (!LoginHelpers.IsCurrentAccountSet ()) {
+            if (!IsNcAppicationAccountSet ()) {
                 // Remove our local copies
                 NcModel.Instance.RunInTransaction (() => {
                     if (null != theAccount) {
@@ -363,7 +361,7 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_UI, "avl: onConnect new account");
                 var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
                 appDelegate.CreateAccount (McAccount.AccountServiceEnum.None, emailView.textField.Text, passwordView.textField.Text);
-                NcAssert.True (LoginHelpers.IsCurrentAccountSet ());
+                NcAssert.True (IsNcAppicationAccountSet ());
                 RefreshTheAccount ();
             } 
 
@@ -372,9 +370,9 @@ namespace NachoClient.iOS
 
             // If only password has changed & backend is in CredWait, do cred resp
             if (!freshAccount) {
-                if (!String.Equals (gOriginalPassword, passwordView.textField.Text, StringComparison.OrdinalIgnoreCase)) {
+                if (!String.Equals (gOriginalPassword, passwordView.textField.Text, StringComparison.Ordinal)) {
                     Log.Info (Log.LOG_UI, "avl: onConnect retry password");
-                    BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
+                    BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (theAccount.Account.Id);
                     if (BackEndStateEnum.CredWait == backEndState) {
                         BackEnd.Instance.CredResp (theAccount.Account.Id);
                         waitScreen.SetLoadingText ("Verifying Your Credentials...");
@@ -384,21 +382,18 @@ namespace NachoClient.iOS
                 }
             }
 
+            BackEnd.Instance.Stop (theAccount.Account.Id);
+
             // A null server record will re-start auto-d on Backend.Start()
             // Delete the server record if the user didn't enter the server name
             if ((null != theAccount.Server) && (null == theAccount.Server.UserSpecifiedServerName)) {
                 DeleteTheServer ("onConnect");
             }
-            BackEnd.Instance.Stop (theAccount.Account.Id);
             if (null == theAccount.Server) {
                 LoginHelpers.SetAutoDCompleted (theAccount.Account.Id, false);
-                waitScreen.SetLoadingText ("Verifying Your Server...");
-                BackEnd.Instance.Start (theAccount.Account.Id);
-            } else {
-                // If the user entered the server, respect it.
-                waitScreen.SetLoadingText ("Verifying Your Server...");
-                startBe ();
             }
+            waitScreen.SetLoadingText ("Verifying Your Server...");
+            BackEnd.Instance.Start (theAccount.Account.Id);
             waitScreen.ShowView ();
         }
 
@@ -449,7 +444,7 @@ namespace NachoClient.iOS
                 }
                 errorMessage.TextColor = A.Color_NachoRed;
                 if (!String.IsNullOrEmpty (serverView.textField.Text)) {
-                    setTextToRed (new AdvancedTextField[] { emailView, serverView });
+                    setTextToRed (new AdvancedTextField[] { serverView });
                 } else {
                     setTextToRed (new AdvancedTextField[] { emailView });
                 }
@@ -565,59 +560,53 @@ namespace NachoClient.iOS
 
         private void handleStatusEnums ()
         {
-            if (LoginHelpers.IsCurrentAccountSet ()) {
-
-                BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
-
-                Log.Info (Log.LOG_UI, "avl: handleStatusEnums {0}={1}", LoginHelpers.GetCurrentAccountId (), backEndState);
-
-                switch (backEndState) {
-                case BackEndStateEnum.ServerConfWait:
-                    Log.Info (Log.LOG_UI, "avl: ServerConfWait Auto-D-State-Enum On Page Load");
-                    stopBeIfRunning ();
-                    ConfigureView (LoginStatus.ServerConf);
-                    return;
-
-                case BackEndStateEnum.CredWait:
-                    Log.Info (Log.LOG_UI, "avl: CredWait Auto-D-State-Enum On Page Load");
-                    ConfigureView (LoginStatus.BadCredentials);
-                    return;
-
-                case BackEndStateEnum.CertAskWait:
-                    Log.Info (Log.LOG_UI, "avl: CertAskWait Auto-D-State-Enum On Page Load");
-                    ConfigureView (LoginStatus.AcceptCertificate);
-                    certificateCallbackHandler ();
-                    waitScreen.ShowView ();
-                    return;
-
-                case BackEndStateEnum.PostAutoDPreInboxSync:
-                    Log.Info (Log.LOG_UI, "avl: PostAutoDPreInboxSync Auto-D-State-Enum On Page Load");
-                    LoginHelpers.SetAutoDCompleted (LoginHelpers.GetCurrentAccountId (), true);
-                    errorMessage.Text = "Waiting for Inbox-Sync.";
-                    waitScreen.SetLoadingText ("Syncing Your Inbox...");
-                    waitScreen.ShowView ();
-                    return;
-
-                case BackEndStateEnum.PostAutoDPostInboxSync:
-                    Log.Info (Log.LOG_UI, "avl: PostAutoDPostInboxSync Auto-D-State-Enum On Page Load");
-                    LoginHelpers.SetFirstSyncCompleted (LoginHelpers.GetCurrentAccountId (), true);
-                    PerformSegue (StartupViewController.NextSegue (), this);
-                    return;
-
-                case BackEndStateEnum.Running:
-                    Log.Info (Log.LOG_UI, "avl: Running Auto-D-State-Enum On Page Load");
-                    errorMessage.Text = "Auto-D is running.";
-                    waitScreen.ShowView ();
-                    return;
-
-                default:
-                    ConfigureView (LoginStatus.EnterInfo);
-                    return;
-                }
-            } else {
+            if (!IsNcAppicationAccountSet ()) {
                 Log.Info (Log.LOG_UI, "avl: handleStatusEnums account not set");
                 ConfigureView (LoginStatus.EnterInfo);
                 haveEnteredEmailAndPass ();
+                return;
+            }
+
+            var accountId = theAccount.Account.Id;
+            BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (accountId);
+            Log.Info (Log.LOG_UI, "avl: handleStatusEnums {0}={1}", accountId, backEndState);
+
+            switch (backEndState) {
+            case BackEndStateEnum.ServerConfWait:
+                Log.Info (Log.LOG_UI, "avl: ServerConfWait Auto-D-State-Enum On Page Load");
+                stopBeIfRunning ();
+                ConfigureView (LoginStatus.ServerConf);
+                break;
+            case BackEndStateEnum.CredWait:
+                Log.Info (Log.LOG_UI, "avl: CredWait Auto-D-State-Enum On Page Load");
+                ConfigureView (LoginStatus.BadCredentials);
+                break;
+            case BackEndStateEnum.CertAskWait:
+                Log.Info (Log.LOG_UI, "avl: CertAskWait Auto-D-State-Enum On Page Load");
+                ConfigureView (LoginStatus.AcceptCertificate);
+                certificateCallbackHandler ();
+                waitScreen.ShowView ();
+                break;
+            case BackEndStateEnum.PostAutoDPreInboxSync:
+                Log.Info (Log.LOG_UI, "avl: PostAutoDPreInboxSync Auto-D-State-Enum On Page Load");
+                LoginHelpers.SetAutoDCompleted (accountId, true);
+                errorMessage.Text = "Waiting for Inbox-Sync.";
+                waitScreen.SetLoadingText ("Syncing Your Inbox...");
+                waitScreen.ShowView ();
+                break;
+            case BackEndStateEnum.PostAutoDPostInboxSync:
+                Log.Info (Log.LOG_UI, "avl: PostAutoDPostInboxSync Auto-D-State-Enum On Page Load");
+                LoginHelpers.SetFirstSyncCompleted (accountId, true);
+                PerformSegue (StartupViewController.NextSegue (), this);
+                break;
+            case BackEndStateEnum.Running:
+                Log.Info (Log.LOG_UI, "avl: Running Auto-D-State-Enum On Page Load");
+                errorMessage.Text = "Auto-D is running.";
+                waitScreen.ShowView ();
+                break;
+            default:
+                ConfigureView (LoginStatus.EnterInfo);
+                break;
             }
         }
 
@@ -627,8 +616,9 @@ namespace NachoClient.iOS
         private void RefreshTheAccount ()
         {
             theAccount = new AccountSettings ();
-            if (LoginHelpers.IsCurrentAccountSet ()) {
-                var accountId = LoginHelpers.GetCurrentAccountId ();
+            if (IsNcAppicationAccountSet ()) {
+                // Reload the currently active account record
+                var accountId = GetNcApplicationAccountId ();
                 theAccount.Account = McAccount.QueryById<McAccount> (accountId);
                 theAccount.Credentials = McCred.QueryByAccountId<McCred> (accountId).SingleOrDefault ();
                 gOriginalPassword = theAccount.Credentials.GetPassword ();
@@ -810,22 +800,45 @@ namespace NachoClient.iOS
 
         private void stopBeIfRunning ()
         {
-            BackEnd.Instance.Stop (LoginHelpers.GetCurrentAccountId ());
+            BackEnd.Instance.Stop (theAccount.Account.Id);
         }
 
-        private void startBe ()
+        bool IsBackEndRunning ()
         {
-            BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (LoginHelpers.GetCurrentAccountId ());
-
-            if (BackEndStateEnum.CredWait == backEndState) {
-                Log.Info (Log.LOG_UI, "avl: startBe credWait");
-                BackEnd.Instance.CredResp (LoginHelpers.GetCurrentAccountId ());
-            } else {
-                Log.Info (Log.LOG_UI, "avl: startBe");
-                BackEnd.Instance.Stop (LoginHelpers.GetCurrentAccountId ());
-                BackEnd.Instance.Start (LoginHelpers.GetCurrentAccountId ());
+            if (null == theAccount.Account) {
+                return false;
             }
+            NcAssert.True (IsNcAppicationAccountSet ());
+            BackEndStateEnum backEndState = BackEnd.Instance.BackEndState (theAccount.Account.Id);
+            Log.Info (Log.LOG_UI, "avl:  isrunning state {0}", backEndState);
+            if (BackEndStateEnum.NotYetStarted == backEndState) {
+                return true;
+            }
+            if (BackEndStateEnum.Running == backEndState) {
+                return true;
+            }
+            if (BackEndStateEnum.PostAutoDPostInboxSync == backEndState) {
+                return true;
+            }
+            if (BackEndStateEnum.PostAutoDPreInboxSync == backEndState) {
+                return true;
+            }
+            return false;
         }
+
+        bool IsNcAppicationAccountSet ()
+        {
+            NachoClient.iOS.AppDelegate appDelegate = (NachoClient.iOS.AppDelegate)UIApplication.SharedApplication.Delegate;
+            return (null != appDelegate.Account);
+        }
+
+        int GetNcApplicationAccountId ()
+        {
+            NcAssert.True (IsNcAppicationAccountSet ());
+            NachoClient.iOS.AppDelegate appDelegate = (NachoClient.iOS.AppDelegate)UIApplication.SharedApplication.Delegate;
+            return appDelegate.Account.Id;
+        }
+
 
         protected virtual bool HandlesKeyboardNotifications {
             get { return true; }
@@ -884,8 +897,8 @@ namespace NachoClient.iOS
                 Log.Info (Log.LOG_UI, "avl: Auto-D-Completed Status Ind (Advanced View)");
                 waitScreen.SetLoadingText ("Syncing Your Inbox...");
                 RefreshTheServer ();
-                LoginHelpers.SetAutoDCompleted (LoginHelpers.GetCurrentAccountId (), true);
-                if (!LoginHelpers.HasViewedTutorial (LoginHelpers.GetCurrentAccountId ())) {
+                LoginHelpers.SetAutoDCompleted (theAccount.Account.Id, true);
+                if (!LoginHelpers.HasViewedTutorial (theAccount.Account.Id)) {
                     PerformSegue (StartupViewController.NextSegue (), this);
                 }
             }
@@ -931,13 +944,13 @@ namespace NachoClient.iOS
         public void AcceptCertificate ()
         {
             ConfigureView (LoginStatus.AcceptCertificate);
-            NcApplication.Instance.CertAskResp (LoginHelpers.GetCurrentAccountId (), true);
+            NcApplication.Instance.CertAskResp (theAccount.Account.Id, true);
             waitScreen.InitializeAutomaticSegueTimer ();
         }
 
         private void SyncCompleted ()
         {
-            LoginHelpers.SetFirstSyncCompleted (LoginHelpers.GetCurrentAccountId (), true);
+            LoginHelpers.SetFirstSyncCompleted (theAccount.Account.Id, true);
             if (!hasSyncedEmail) {
                 waitScreen.Layer.RemoveAllAnimations ();
                 waitScreen.StartSyncedEmailAnimation ();
