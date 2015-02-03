@@ -30,6 +30,9 @@ namespace NachoCore.Model
         [MaxLength (256)]
         public string Email { get; set; }
 
+        /// McEmailAddress index of Email
+        public int EmailAddressId { get; set; }
+
         /// Display name of attendee
         [MaxLength (256)]
         public string Name { get; set; }
@@ -75,7 +78,7 @@ namespace NachoCore.Model
                 return CALENDAR;
             } else if (r.GetType () == typeof(McException)) {
                 return EXCEPTION;
-            } else if (r.GetType() == typeof(McMeetingRequest)) {
+            } else if (r.GetType () == typeof(McMeetingRequest)) {
                 return MEETING_REQUEST;
             } else {
                 NcAssert.True (false);
@@ -113,6 +116,69 @@ namespace NachoCore.Model
             protected set {
                 displayName = value;
             }
+        }
+
+        private NcEmailAddress.Kind GetAddressMapType ()
+        {
+            switch (AttendeeType) {
+            case NcAttendeeType.Optional:
+                return NcEmailAddress.Kind.Optional;
+            case NcAttendeeType.Required:
+                return NcEmailAddress.Kind.Required;
+            case NcAttendeeType.Resource:
+                return NcEmailAddress.Kind.Resource;
+            default:
+                throw new NcAssert.NachoDefaultCaseFailure (
+                    String.Format ("Unknown attendee type {0}", (int)AttendeeType));
+            }
+        }
+
+        private void InsertAddressMap ()
+        {
+            var map = CreateAddressMap ();
+            map.EmailAddressId = EmailAddressId;
+            map.AddressType = GetAddressMapType ();
+            map.Insert ();
+        }
+
+        private void DeleteAddressMap ()
+        {
+            // Delete all 3 address types (required, optional, resources) so that in case there
+            // is a change of AttendeeType, we still clean up the old map
+            McMapEmailAddressEntry.DeleteAttendeeMapEntries (AccountId, Id);
+        }
+
+        public override int Insert ()
+        {
+            int retval = 0;
+            NcModel.Instance.RunInTransaction (() => {
+                EmailAddressId = McEmailAddress.Get (AccountId, Email);
+                retval = base.Insert ();
+                InsertAddressMap ();
+            });
+            return retval;
+        }
+
+        public override int Update ()
+        {
+            int retval = 0;
+            NcModel.Instance.RunInTransaction (() => {
+                EmailAddressId = McEmailAddress.Get (AccountId, Email);
+                DeleteAddressMap ();
+                InsertAddressMap ();
+                retval = base.Update ();
+            });
+            return retval;
+        }
+
+        public override int Delete ()
+        {
+            int retval = 0;
+            NcModel.Instance.RunInTransaction (() => {
+                retval = base.Delete ();
+                DeleteAddressMap ();
+            });
+            return retval;
         }
     }
 }

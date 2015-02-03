@@ -82,6 +82,9 @@ namespace NachoCore.Model
 
         public int RowVersion { get; set; }
 
+        [Indexed]
+        public int MigrationVersion { get; set; }
+
         protected Boolean isDeleted;
 
         public McAbstrObject ()
@@ -89,6 +92,7 @@ namespace NachoCore.Model
             Id = 0;
             LastModified = DateTime.MinValue;
             isDeleted = false;
+            MigrationVersion = NcMigration.CurrentVersion;
 
             string className = ClassName ();
             if (null == InsertCaptures) {
@@ -143,6 +147,7 @@ namespace NachoCore.Model
         }
 
         public delegate bool Mutator (McAbstrObject record);
+
         /// <summary>
         /// Update() with optimistic concurrency.
         /// </summary>
@@ -151,7 +156,7 @@ namespace NachoCore.Model
         /// <param name="count">Count is the same as the retval from plain-old Update(). 0 indicates failure.</param>
         /// <param name="tries">Tries before giving up.</param>
         /// <typeparam name="T">T must match the type of the object.</typeparam>
-        public virtual T UpdateWithOCApply<T> (Mutator mutator, out int count, int tries = 100) where T : McAbstrObject, new ()
+        public virtual T UpdateWithOCApply<T> (Mutator mutator, out int count, int tries = 100) where T : McAbstrObject, new()
         {
             NcAssert.True (typeof(T) == this.GetType ());
             var record = this;
@@ -184,7 +189,7 @@ namespace NachoCore.Model
         /// <param name="count">Count is the same as the retval from plain-old Update(). 0 indicates failure.</param>
         /// <param name="tries">Tries before giving up.</param>
         /// <typeparam name="T">T must match the type of the object.</typeparam>
-        public virtual T UpdateWithOCApply<T> (Mutator mutator, int tries = 100) where T : McAbstrObject, new ()
+        public virtual T UpdateWithOCApply<T> (Mutator mutator, int tries = 100) where T : McAbstrObject, new()
         {
             int count = 0;
             var record = UpdateWithOCApply<T> (mutator, out count, tries);
@@ -212,7 +217,7 @@ namespace NachoCore.Model
         {
             return NcModel.Instance.Db.Query<T> (
                 string.Format ("SELECT f.* FROM {0} AS f WHERE " +
-                    " f.Id = ? ", 
+                " f.Id = ? ", 
                     typeof(T).Name), 
                 id).SingleOrDefault ();
         }
@@ -221,7 +226,7 @@ namespace NachoCore.Model
         {
             return NcModel.Instance.Db.Execute (
                 string.Format ("DELETE FROM {0} WHERE " +
-                    " Id = ? ", 
+                " Id = ? ", 
                     typeof(T).Name), 
                 id);
         }

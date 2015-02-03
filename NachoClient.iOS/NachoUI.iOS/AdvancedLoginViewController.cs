@@ -44,7 +44,6 @@ namespace NachoClient.iOS
         string gOriginalUsername = "";
         string gOriginalPassword = "";
 
-        AppDelegate appDelegate;
         AccountSettings theAccount;
 
         public UIView loadingCover;
@@ -78,7 +77,6 @@ namespace NachoClient.iOS
 
         public AdvancedLoginViewController (IntPtr handle) : base (handle)
         {
-            appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
         }
 
         public override void ViewDidLoad ()
@@ -339,6 +337,7 @@ namespace NachoClient.iOS
                     }
                 });
             }
+            var appDelegate = (AppDelegate)UIApplication.SharedApplication.Delegate;
             appDelegate.RemoveAccount ();
         }
 

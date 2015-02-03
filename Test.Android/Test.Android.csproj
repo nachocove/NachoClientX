@@ -125,6 +125,7 @@
     <Compile Include="EmailHelperTest.cs" />
     <Compile Include="McServerTest.cs" />
     <Compile Include="McCalendarTest.cs" />
+    <Compile Include="McMapEmailAddressEntryTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

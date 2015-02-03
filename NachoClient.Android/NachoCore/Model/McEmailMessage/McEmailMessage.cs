@@ -68,8 +68,14 @@ namespace NachoCore.Model
         /// All To addresses, comma separated (optional)
         public string To { set; get; }
 
+        /// Indexes of To in McEmailAddress table
+        protected List<int> dbToEmailAddressId { set; get; }
+
         /// All Cc addresses, comma separated (optional)
         public string Cc { set; get; }
+
+        /// Indexes of Cc in McEmailAddress table
+        protected List<int> dbCcEmailAddressId { set; get; }
 
         /// Email address of the sender (optional)
         public string From { set; get; }
@@ -127,6 +133,9 @@ namespace NachoCore.Model
 
         /// Sender, maybe not the same as From (optional)
         public string Sender { set; get; }
+
+        /// McEmailAddress Index of Sender
+        public int SenderEmailAddressId { set; get; }
 
         /// The user is on the bcc list (optional)
         public bool ReceivedAsBcc { set; get; }
@@ -663,6 +672,8 @@ namespace NachoCore.Model
             _Categories = new List<McEmailMessageCategory> ();
             _MeetingRequest = null;
             isAncillaryInMemory = false;
+            dbToEmailAddressId = new List<int> ();
+            dbCcEmailAddressId = new List<int> ();
         }
 
         [Ignore]
@@ -689,6 +700,30 @@ namespace NachoCore.Model
             }
         }
 
+        [Ignore]
+        public List<int> ToEmailAddressId {
+            get {
+                ReadAncillaryData ();
+                return dbToEmailAddressId;
+            }
+            set {
+                ReadAncillaryData ();
+                dbToEmailAddressId = value;
+            }
+        }
+
+        [Ignore]
+        public List<int> CcEmailAddressId {
+            get {
+                ReadAncillaryData ();
+                return dbCcEmailAddressId;
+            }
+            set {
+                ReadAncillaryData ();
+                dbCcEmailAddressId = value;
+            }
+        }
+
         protected NcResult ReadAncillaryData ()
         {
             NcAssert.True (!isDeleted);
@@ -702,6 +737,9 @@ namespace NachoCore.Model
             _Categories = NcModel.Instance.Db.Table<McEmailMessageCategory> ().Where (x => x.ParentId == Id).ToList ();
             _MeetingRequest = NcModel.Instance.Db.Table<McMeetingRequest> ().Where (x => x.EmailMessageId == Id).SingleOrDefault ();
             isAncillaryInMemory = true;
+            dbToEmailAddressId = McMapEmailAddressEntry.QueryMessageToAddressIds (AccountId, Id);
+            dbCcEmailAddressId = McMapEmailAddressEntry.QueryMessageCcAddressIds (AccountId, Id);
+
             return NcResult.OK ();
         }
 
@@ -717,6 +755,8 @@ namespace NachoCore.Model
                 _MeetingRequest.AccountId = AccountId;
                 _MeetingRequest.Insert ();
             }
+
+            InsertAddressMaps ();
 
             return NcResult.OK ();
         }
@@ -736,6 +776,38 @@ namespace NachoCore.Model
             NcAssert.True (0 != Id);
             db.Query<McEmailMessageCategory> ("DELETE FROM McEmailMessageCategory WHERE ParentID=?", Id);
             db.Query<McMeetingRequest> ("DELETE FROM McMeetingRequest WHERE EmailMessageId=?", Id);
+            DeleteAddressMaps ();
+        }
+
+        private void InsertAddressList (List<int> addressIdList, NcEmailAddress.Kind kind)
+        {
+            foreach (var addressId in addressIdList) {
+                var map = CreateAddressMap ();
+                map.EmailAddressId = addressId;
+                map.AddressType = kind;
+                map.Insert ();
+            }
+        }
+
+        private void InsertAddressMaps ()
+        {
+            var map = CreateAddressMap ();
+            map.EmailAddressId = FromEmailAddressId;
+            map.AddressType = NcEmailAddress.Kind.From;
+            map.Insert ();
+            if (0 < SenderEmailAddressId) {
+                map = CreateAddressMap ();
+                map.EmailAddressId = SenderEmailAddressId;
+                map.AddressType = NcEmailAddress.Kind.Sender;
+                map.Insert ();
+            }
+            InsertAddressList (dbToEmailAddressId, NcEmailAddress.Kind.To);
+            InsertAddressList (dbCcEmailAddressId, NcEmailAddress.Kind.Cc);
+        }
+
+        private void DeleteAddressMaps ()
+        {
+            McMapEmailAddressEntry.DeleteMessageMapEntries (AccountId, Id);
         }
 
         public override int Insert ()
@@ -792,8 +864,10 @@ namespace NachoCore.Model
 
         public override int Delete ()
         {
-            int returnVal = base.Delete ();
-
+            int returnVal = 0;
+            NcModel.Instance.RunInTransaction (() => {
+                returnVal = base.Delete ();
+            });
             return returnVal;
         }
 
