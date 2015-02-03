@@ -50,6 +50,9 @@ namespace NachoCore.Model
                 return 0;
             }
             var address = NcEmailAddress.ParseMailboxAddressString (addressString);
+            if (null == address) {
+                return 0;
+            }
             return ProcessAddress (accountId, objectId, address, addressType);
         }
 
