@@ -113,7 +113,7 @@ namespace NachoCore
         {
             var message = ex.ToString ();
             if (ex is OperationCanceledException && message.Contains ("NcTask")) {
-                Log.Error (Log.LOG_SYS, "XAMMIT AggregateException: UnobservedTaskException from cancelled Task.");
+                Log.Warn (Log.LOG_SYS, "XAMMIT AggregateException: UnobservedTaskException from cancelled Task.");
                 // XAMMIT. Known bug, Task should absorb OperationCanceledException when CancellationToken is bound to Task.
                 return true;
             }
