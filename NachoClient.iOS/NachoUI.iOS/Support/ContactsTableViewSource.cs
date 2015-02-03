@@ -383,7 +383,7 @@ namespace NachoClient.iOS
                 }
             }
             // We immeidately display matches from our db.
-            var results = McContact.SearchAllContactsWithEmailAddresses (forSearchString);
+            var results = McContact.SearchAllContactsWithEmailAddresses (forSearchString, true);
             SetSearchResults (results);
             NachoCore.Utils.NcAbate.RegularPriority ("ContactTableViewSource UpdateSearchResults");
             return true;

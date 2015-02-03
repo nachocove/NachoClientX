@@ -1194,6 +1194,9 @@
       <Link>NachoCore\Utils\HashHelper.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Support\NachoInlineImageTextAttachment.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Utils\SetHelper.cs">
+      <Link>NachoCore\Utils\SetHelper.cs</Link>
+    </Compile>
     <Compile Include="NachoUI.iOS\Support\ContactCell.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\DraftsHelper.cs">
       <Link>NachoCore\Utils\DraftsHelper.cs</Link>
