@@ -76,7 +76,11 @@ namespace NachoCore.Utils
                     if (!stfu) {
                         Log.Info (Log.LOG_SYS, "NcTask {0} started.", taskName);
                     }
-                    action.Invoke ();
+                    try {
+                        action.Invoke ();
+                    } catch (OperationCanceledException) {
+                        Log.Info (Log.LOG_SYS, "NcTask {0} cancelled.", taskName);
+                    }
                     if (!stfu) {
                         Log.Info (Log.LOG_SYS, "NcTask {0} completed.", taskName);
                     }

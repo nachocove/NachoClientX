@@ -16,6 +16,24 @@ namespace NachoCore.Model
 
     public delegate void NcMigrationProgressUpdateFunction (float percentageComplete);
 
+    public class NcMigrationComparer : IComparer<NcMigration>
+    {
+        public NcMigrationComparer ()
+        {
+        }
+
+        public int Compare (NcMigration x, NcMigration y)
+        {
+            if (x.Version () < y.Version ()) {
+                return -1;
+            }
+            if (x.Version () > y.Version ()) {
+                return +1;
+            }
+            return 0;
+        }
+    }
+
     /// <summary>
     /// Base class for all migrations. Each migration is really a task that updates the database in some ways.
     /// </summary>
@@ -85,6 +103,9 @@ namespace NachoCore.Model
                             _migrations.Add (migration);
                         }
                     }
+
+                    // Sort the migration
+                    _migrations.Sort (new NcMigrationComparer ());
                 }
                 return _migrations;
             }
