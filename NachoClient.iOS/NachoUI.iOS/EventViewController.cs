@@ -181,7 +181,7 @@ namespace NachoClient.iOS
 
             yOffset += 20;
 
-            eventCardView = new UIView ();
+            eventCardView = new UIView (new RectangleF (A.Card_Horizontal_Indent, 0, contentView.Frame.Width - 30, 0));
             eventCardView.Tag = (int)TagType.EVENT_CARD_VIEW_TAG;
             eventCardView.BackgroundColor = cellBGColor;
             eventCardView.Layer.CornerRadius = A.Card_Corner_Radius;
@@ -205,7 +205,7 @@ namespace NachoClient.iOS
 
             Util.AddButtonImage (tentativeButton, "event-maybe", UIControlState.Normal);
             Util.AddButtonImage (tentativeButton, "event-maybe-active", UIControlState.Selected);
-            tentativeButton.Frame = new RectangleF (acceptButton.Frame.X + 42 + 45, 18, 24, 24);
+            tentativeButton.Frame = new RectangleF (eventCardView.Frame.Width / 2 - 37.5f, 18, 24, 24);
             tentativeButton.TintColor = UIColor.Clear;
             tentativeButton.TouchUpInside += TentativeButtonTouchUpInside;
             tentativeButton.Hidden = true;
@@ -213,13 +213,13 @@ namespace NachoClient.iOS
 
             Util.AddButtonImage (declineButton, "event-decline", UIControlState.Normal);
             Util.AddButtonImage (declineButton, "event-decline-active", UIControlState.Selected);
-            declineButton.Frame = new RectangleF (tentativeButton.Frame.X + 38 + 45 + 6, 18, 24, 24);
+            declineButton.Frame = new RectangleF (eventCardView.Frame.Width - 96.5f, 18, 24, 24);
             declineButton.TintColor = UIColor.Clear;
             declineButton.TouchUpInside += DeclineButtonTouchUpInside;
             declineButton.Hidden = true;
             eventCardView.AddSubview (declineButton);
 
-            acceptLabel = new UILabel (new RectangleF (48, 20, 45, 20));
+            acceptLabel = new UILabel (new RectangleF (acceptButton.Frame.X + 24 + 6, 20, 45, 20));
             acceptLabel.TextColor = textColor;
             acceptLabel.Font = A.Font_AvenirNextMedium14;
             acceptLabel.Text = "Attend";
@@ -820,7 +820,7 @@ namespace NachoClient.iOS
             if (segue.Identifier == "SegueToMailTo") {
                 var dc = (MessageComposeViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
-                var url = (string) holder.value;
+                var url = (string)holder.value;
                 dc.SetMailToUrl (url);
                 return;
             }
@@ -1471,9 +1471,9 @@ namespace NachoClient.iOS
             scrollView.SetContentOffset (new PointF (0, contentView.Frame.Height - scrollView.Frame.Height), true);
         }
 
-        public void onLinkSelected(NSUrl url)
+        public void onLinkSelected (NSUrl url)
         {
-            if(EmailHelper.IsMailToURL(url.AbsoluteString)) {
+            if (EmailHelper.IsMailToURL (url.AbsoluteString)) {
                 PerformSegue ("SegueToMailTo", new SegueHolder (url.AbsoluteString));
             } else {
                 UIApplication.SharedApplication.OpenUrl (url);
