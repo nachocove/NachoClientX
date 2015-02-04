@@ -746,143 +746,151 @@ namespace NachoCore.Utils
 
         private void Process<T> () where T : ITelemetryBE, new()
         {
-            bool ranOnce = false;
+            try {
+                bool ranOnce = false;
 
-            BackEnd = new T ();
-            BackEnd.Initialize ();
-            if (Token.IsCancellationRequested) {
-                // If cancellation occurred and this telemetry didn't quit in time.
-                // This happens because some AWS initialization routines are synchronous
-                // and do not accept a cancellation token.
-                // Better late than never. Quit now.
-                Log.Warn (Log.LOG_LIFECYCLE, "Delay cancellation of telemetry task");
-                return;
-            }
-            Counters [0].ReportPeriod = 5 * 60; // report once every 5 min
-
-            // Capture the transaction time to telemetry server
-            const string CAPTURE_NAME = "Telemetry.SendEvent";
-            NcCapture.AddKind (CAPTURE_NAME);
-            NcCapture transactionTime = NcCapture.Create (CAPTURE_NAME);
-
-            while (!BackEnd.IsUseable ()) {
-                NcTask.Cts.Token.ThrowIfCancellationRequested ();
-                Task.WaitAll (new Task[] { Task.Delay (5000, NcTask.Cts.Token) });
-            }
-            Log.Info (Log.LOG_LIFECYCLE, "Telemetry starts running");
-
-            int eventDeleted = 0;
-            SendSha1AccountEmailAddresses ();
-            DateTime heartBeat = DateTime.Now;
-            while (true) {
-                // If we are in quick sync, just wait for either:
-                //   1. Cancellation
-                //   2. Transition to foreground
-                while (NcApplication.ExecutionContextEnum.QuickSync ==
-                       NcApplication.Instance.ExecutionContext) {
-                    NcTask.Cts.Token.WaitHandle.WaitOne (500);
+                BackEnd = new T ();
+                BackEnd.Initialize ();
+                if (Token.IsCancellationRequested) {
+                    // If cancellation occurred and this telemetry didn't quit in time.
+                    // This happens because some AWS initialization routines are synchronous
+                    // and do not accept a cancellation token.
+                    // Better late than never. Quit now.
+                    Log.Warn (Log.LOG_LIFECYCLE, "Delay cancellation of telemetry task");
+                    return;
                 }
+                Counters [0].ReportPeriod = 5 * 60; // report once every 5 min
 
-                if (!ranOnce) {
-                    // Record how much back log we have in telemetry db
-                    Dictionary<string, string> dict = new Dictionary<string, string> ();
-                    var numEvents = McTelemetryEvent.QueryCount ();
-                    dict.Add ("num_events", numEvents.ToString ());
-                    if (0 < numEvents) {
-                        // Get the oldest event and report its timestamp
-                        var oldestDbEvent = McTelemetryEvent.QueryMultiple (1) [0];
-                        var oldestTeleEvent = oldestDbEvent.GetTelemetryEvent ();
-                        dict.Add ("oldest_event", oldestTeleEvent.Timestamp.ToString ("yyyy-MM-ddTHH:mm:ssK"));
-                        RecordSupport (dict);
-                    }
-                    ranOnce = true;
-                }
+                // Capture the transaction time to telemetry server
+                const string CAPTURE_NAME = "Telemetry.SendEvent";
+                NcCapture.AddKind (CAPTURE_NAME);
+                NcCapture transactionTime = NcCapture.Create (CAPTURE_NAME);
 
-                // TODO - We need to be smart about when we run. 
-                // For example, if we don't have WiFi, it may not be a good
-                // idea to upload a lot of data. The exact algorithm is TBD.
-                // But for now, let's not run when we're scrolling.
-                if ((DateTime.Now - heartBeat).TotalSeconds > 30) {
-                    heartBeat = DateTime.Now;
-                    Console.WriteLine ("Telemetry heartbeat {0}", heartBeat);
-                }
-                NcAssert.True (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId);
-                List<TelemetryEvent> tEvents = null;
-                List<McTelemetryEvent> dbEvents = null;
-                // Always check for support event first
-                dbEvents = McTelemetrySupportEvent.QueryOne ();
-                if (0 == dbEvents.Count) {
-                    // If doesn't have any, check for other events
-                    dbEvents = McTelemetryEvent.QueryMultiple (MAX_QUERY_ITEMS);
-                }
-                if (0 == dbEvents.Count) {
-                    // No pending event. Wait for one.
-                    DateTime then = DateTime.Now;
-                    while (!DbUpdated.WaitOne (NcTask.MaxCancellationTestInterval)) {
-                        NcTask.Cts.Token.ThrowIfCancellationRequested ();
-                        if (MAX_IDLE_PERIOD < (DateTime.Now - then).TotalSeconds) {
-                            Log.Info (Log.LOG_UTILS, "Telemetry has no event for more than {0} seconds",
-                                MAX_IDLE_PERIOD);
-                            then = DateTime.Now;
-                        }
-                    }
-                    continue;
-                } else {
+                while (!BackEnd.IsUseable ()) {
                     NcTask.Cts.Token.ThrowIfCancellationRequested ();
+                    Task.WaitAll (new Task[] { Task.Delay (5000, NcTask.Cts.Token) });
                 }
-                tEvents = new List<TelemetryEvent> ();
-                foreach (var dbEvent in dbEvents) {
-                    tEvents.Add (dbEvent.GetTelemetryEvent ());
-                }
+                Log.Info (Log.LOG_LIFECYCLE, "Telemetry starts running");
 
-                // Send it to the telemetry server
-                transactionTime.Start ();
-                bool succeed = BackEnd.SendEvents (tEvents);
-                transactionTime.Stop ();
-                transactionTime.Reset ();
-
-                if (succeed) {
-                    // If it is a support, make the callback.
-                    if ((1 == tEvents.Count) && (tEvents [0].IsSupportEvent ()) && (null != tEvents [0].Callback)) {
-                        InvokeOnUIThread.Instance.Invoke (tEvents [0].Callback);
+                int eventDeleted = 0;
+                SendSha1AccountEmailAddresses ();
+                DateTime heartBeat = DateTime.Now;
+                while (true) {
+                    // If we are in quick sync, just wait for either:
+                    //   1. Cancellation
+                    //   2. Transition to foreground
+                    while (NcApplication.ExecutionContextEnum.QuickSync ==
+                           NcApplication.Instance.ExecutionContext) {
+                        NcTask.Cts.Token.WaitHandle.WaitOne (500);
                     }
 
-                    // Delete the ones that are sent
-                    foreach (var dbEvent in dbEvents) {
-                        var rowsDeleted = dbEvent.Delete ();
-                        if (1 != rowsDeleted) {
-                            Log.Error (Log.LOG_UTILS, "Telemetry fails to delete event. (rowsDeleted={0}, id={1})",
-                                rowsDeleted, dbEvent.Id);
-                            NcTask.Dump ();
+                    if (!ranOnce) {
+                        // Record how much back log we have in telemetry db
+                        Dictionary<string, string> dict = new Dictionary<string, string> ();
+                        var numEvents = McTelemetryEvent.QueryCount ();
+                        dict.Add ("num_events", numEvents.ToString ());
+                        if (0 < numEvents) {
+                            // Get the oldest event and report its timestamp
+                            var oldestDbEvent = McTelemetryEvent.QueryMultiple (1) [0];
+                            var oldestTeleEvent = oldestDbEvent.GetTelemetryEvent ();
+                            dict.Add ("oldest_event", oldestTeleEvent.Timestamp.ToString ("yyyy-MM-ddTHH:mm:ssK"));
+                            RecordSupport (dict);
                         }
-                        NcAssert.True (1 == rowsDeleted);
-                        eventDeleted = (eventDeleted + 1) & 0xfff;
-                        if (0 == eventDeleted) {
-                            // 4K events deleted. Try to vacuum
-                            NcModel.MayIncrementallyVacuum (NcModel.Instance.TeleDb, 256);
-                        }
+                        ranOnce = true;
                     }
 
-                    if (MAX_QUERY_ITEMS > dbEvents.Count) {
-                        // We have completely caught up. Don't want to continue
-                        // to the next message immediately because we want to
-                        // send multiple messages at a time. This leads to a more
-                        // efficient utilization of write capacity.
-                        Token.WaitHandle.WaitOne (5000);
+                    // TODO - We need to be smart about when we run. 
+                    // For example, if we don't have WiFi, it may not be a good
+                    // idea to upload a lot of data. The exact algorithm is TBD.
+                    // But for now, let's not run when we're scrolling.
+                    if ((DateTime.Now - heartBeat).TotalSeconds > 30) {
+                        heartBeat = DateTime.Now;
+                        Console.WriteLine ("Telemetry heartbeat {0}", heartBeat);
+                    }
+                    NcAssert.True (NcApplication.Instance.UiThreadId != System.Threading.Thread.CurrentThread.ManagedThreadId);
+                    List<TelemetryEvent> tEvents = null;
+                    List<McTelemetryEvent> dbEvents = null;
+                    // Always check for support event first
+                    dbEvents = McTelemetrySupportEvent.QueryOne ();
+                    if (0 == dbEvents.Count) {
+                        // If doesn't have any, check for other events
+                        dbEvents = McTelemetryEvent.QueryMultiple (MAX_QUERY_ITEMS);
+                    }
+                    if (0 == dbEvents.Count) {
+                        // No pending event. Wait for one.
+                        DateTime then = DateTime.Now;
+                        while (!DbUpdated.WaitOne (NcTask.MaxCancellationTestInterval)) {
+                            NcTask.Cts.Token.ThrowIfCancellationRequested ();
+                            if (MAX_IDLE_PERIOD < (DateTime.Now - then).TotalSeconds) {
+                                Log.Info (Log.LOG_UTILS, "Telemetry has no event for more than {0} seconds",
+                                    MAX_IDLE_PERIOD);
+                                then = DateTime.Now;
+                            }
+                        }
+                        continue;
                     } else {
-                        // We still have more events to upload. Check if we are throttling still.
-                        if (Throttling) {
-                            Token.WaitHandle.WaitOne (THROTTLING_IDLE_PERIOD);
+                        NcTask.Cts.Token.ThrowIfCancellationRequested ();
+                    }
+                    tEvents = new List<TelemetryEvent> ();
+                    foreach (var dbEvent in dbEvents) {
+                        tEvents.Add (dbEvent.GetTelemetryEvent ());
+                    }
+
+                    // Send it to the telemetry server
+                    transactionTime.Start ();
+                    bool succeed = BackEnd.SendEvents (tEvents);
+                    transactionTime.Stop ();
+                    transactionTime.Reset ();
+
+                    if (succeed) {
+                        // If it is a support, make the callback.
+                        if ((1 == tEvents.Count) && (tEvents [0].IsSupportEvent ()) && (null != tEvents [0].Callback)) {
+                            InvokeOnUIThread.Instance.Invoke (tEvents [0].Callback);
+                        }
+
+                        // Delete the ones that are sent
+                        foreach (var dbEvent in dbEvents) {
+                            var rowsDeleted = dbEvent.Delete ();
+                            if (1 != rowsDeleted) {
+                                Log.Error (Log.LOG_UTILS, "Telemetry fails to delete event. (rowsDeleted={0}, id={1})",
+                                    rowsDeleted, dbEvent.Id);
+                                NcTask.Dump ();
+                                if (0 == rowsDeleted) {
+                                    Log.Error (Log.LOG_UTILS, "Duplicate telemetry task exits.");
+                                    return;
+                                }
+                            }
+                            NcAssert.True (1 == rowsDeleted);
+                            eventDeleted = (eventDeleted + 1) & 0xfff;
+                            if (0 == eventDeleted) {
+                                // 4K events deleted. Try to vacuum
+                                NcModel.MayIncrementallyVacuum (NcModel.Instance.TeleDb, 256);
+                            }
+                        }
+
+                        if (MAX_QUERY_ITEMS > dbEvents.Count) {
+                            // We have completely caught up. Don't want to continue
+                            // to the next message immediately because we want to
+                            // send multiple messages at a time. This leads to a more
+                            // efficient utilization of write capacity.
+                            Token.WaitHandle.WaitOne (5000);
+                        } else {
+                            // We still have more events to upload. Check if we are throttling still.
+                            if (Throttling) {
+                                Token.WaitHandle.WaitOne (THROTTLING_IDLE_PERIOD);
+                            }
+                        }
+                    } else {
+                        // Log only to console. Logging telemetry failures to telemetry is
+                        // a vicious cycle.
+                        FailToSend.Click ();
+                        if (FailToSendLogLimiter.TakeToken ()) {
+                            Log.Warn (Log.LOG_UTILS, "fail to reach telemetry server (count={0})", FailToSend.Count);
                         }
                     }
-                } else {
-                    // Log only to console. Logging telemetry failures to telemetry is
-                    // a vicious cycle.
-                    FailToSend.Click ();
-                    if (FailToSendLogLimiter.TakeToken ()) {
-                        Log.Warn (Log.LOG_UTILS, "fail to reach telemetry server (count={0})", FailToSend.Count);
-                    }
                 }
+            } catch (OperationCanceledException) {
+                Log.Info (Log.LOG_UTILS, "Telemetry task exits");
             }
         }
 
