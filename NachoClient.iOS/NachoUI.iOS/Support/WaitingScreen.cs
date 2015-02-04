@@ -9,6 +9,7 @@ using MonoTouch.UIKit;
 using UIImageEffectsBinding;
 using MonoTouch.CoreGraphics;
 using MonoTouch.CoreAnimation;
+using NachoCore.Utils;
 
 namespace NachoClient.iOS
 {
@@ -154,7 +155,7 @@ namespace NachoClient.iOS
             swipeUpLabel.TextAlignment = UITextAlignment.Center;
             this.AddSubview (swipeUpLabel);
 
-            dismissLabel = new UILabel (new RectangleF (this.Frame.Width / 2 - 75, this.Frame.Bottom - 30 , 150, 15));
+            dismissLabel = new UILabel (new RectangleF (this.Frame.Width / 2 - 75, this.Frame.Bottom - 30, 150, 15));
             dismissLabel.Font = A.Font_AvenirNextRegular12;
             dismissLabel.TextColor = UIColor.White;
             dismissLabel.Text = "Return To Account Setup";
@@ -198,8 +199,13 @@ namespace NachoClient.iOS
         {
             if (!LoginHelpers.HasViewedTutorial (LoginHelpers.GetCurrentAccountId ())) {
                 SegueToTutorial = NSTimer.CreateScheduledTimer (WAIT_TIME, delegate {
-                    if(!LoginHelpers.HasAutoDCompleted(LoginHelpers.GetCurrentAccountId())){
-                        owner.PerformSegue("SegueToHome", this);
+                    // TODO: Move this logic to advanced view controller
+                    if (LoginHelpers.IsCurrentAccountSet ()) {
+                        if (!LoginHelpers.HasAutoDCompleted (LoginHelpers.GetCurrentAccountId ())) {
+                            owner.PerformSegue ("SegueToHome", this);
+                        }
+                    } else {
+                        Log.Info(Log.LOG_UI, "avl: segue timer account null");
                     }
                 });
             }
@@ -263,13 +269,13 @@ namespace NachoClient.iOS
                 ArrowAnimation (topHalfSpinner, bottomHalfSpinner, topHalfSpinnerCenter, bottomHalfSpinnerCenter, false);
             }));
         }
-            
+
         private void ArrowAnimation (UIImageView theTopSpinner, UIImageView theBottomSpinner, PointF topSpinnerCenter, PointF bottomSpinnerCenter, bool bottomIsOnTop)
         {
-            Animate(3, 0, (UIViewAnimationOptions.Repeat | UIViewAnimationOptions.OverrideInheritedDuration | UIViewAnimationOptions.OverrideInheritedOptions | UIViewAnimationOptions.OverrideInheritedCurve | UIViewAnimationOptions.CurveLinear), () => {
-                    theTopSpinner.Center = new PointF (topSpinnerCenter.X, topSpinnerCenter.Y + 190f);
-                    theBottomSpinner.Center = new PointF (bottomSpinnerCenter.X, bottomSpinnerCenter.Y + 190f);
-                }, (() => { 
+            Animate (3, 0, (UIViewAnimationOptions.Repeat | UIViewAnimationOptions.OverrideInheritedDuration | UIViewAnimationOptions.OverrideInheritedOptions | UIViewAnimationOptions.OverrideInheritedCurve | UIViewAnimationOptions.CurveLinear), () => {
+                theTopSpinner.Center = new PointF (topSpinnerCenter.X, topSpinnerCenter.Y + 190f);
+                theBottomSpinner.Center = new PointF (bottomSpinnerCenter.X, bottomSpinnerCenter.Y + 190f);
+            }, (() => { 
             }));
         }
 
@@ -313,7 +319,7 @@ namespace NachoClient.iOS
 //                });
 
             }, ((bool finished) => {
-                owner.PerformSegue(StartupViewController.NextSegue(), this);
+                owner.PerformSegue (StartupViewController.NextSegue (), this);
             }));
         }
     }
