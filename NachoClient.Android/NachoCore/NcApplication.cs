@@ -52,6 +52,7 @@ namespace NachoCore
         }
 
         public ExecutionContextEnum PlatformIndication {
+            get { return _PlatformIndication; }
             set { 
                 _PlatformIndication = value;
                 Log.Info (Log.LOG_LIFECYCLE, "PlatformIndication => {0}", _PlatformIndication.ToString ());
@@ -233,10 +234,10 @@ namespace NachoCore
             NcModel.Instance.EngageRateLimiter ();
             NcBrain.StartService ();
             NcContactGleaner.Start ();
-            ExecutionContext = _PlatformIndication;
             BackEnd.Instance.Owner = this;
             BackEnd.Instance.EstablishService ();
             BackEnd.Instance.Start ();
+            ExecutionContext = _PlatformIndication;
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServicesCompletion exited.");
         }
 

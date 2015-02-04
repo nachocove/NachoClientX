@@ -462,7 +462,8 @@ namespace NachoCore.Brain
             if (ENABLED) {
                 // If brain task is running under quick sync, do not start time variance
                 // as it is a waste of time.
-                if (NcApplication.ExecutionContextEnum.QuickSync != NcApplication.Instance.ExecutionContext) {
+                if (NcApplication.ExecutionContextEnum.Background == NcApplication.Instance.ExecutionContext ||
+                    NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext) {
                     // Defer the processing until Nacho Nov view shows up.
                     NcTask.CancelableSleep (10000);
                     McEmailMessage.StartTimeVariance (EventQueue.Token);
@@ -479,7 +480,8 @@ namespace NachoCore.Brain
                 while (true) {
                     var brainEvent = EventQueue.Dequeue ();
                     if (!tvStarted &&
-                        (NcApplication.ExecutionContextEnum.QuickSync != NcApplication.Instance.ExecutionContext)) {
+                        (NcApplication.ExecutionContextEnum.Background == NcApplication.Instance.ExecutionContext ||
+                            NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext)) {
                         McEmailMessage.StartTimeVariance (EventQueue.Token);
                         tvStarted = true;
                     }
@@ -489,7 +491,8 @@ namespace NachoCore.Brain
                     }
                     // TODO - scheduling of brain actions need to be smarter. This will be
                     // addressed in brain 2.0.
-                    if (NcApplication.ExecutionContextEnum.QuickSync == NcApplication.Instance.ExecutionContext) {
+                    if (NcApplication.ExecutionContextEnum.Background != NcApplication.Instance.ExecutionContext &&
+                        NcApplication.ExecutionContextEnum.Foreground != NcApplication.Instance.ExecutionContext) {
                         continue;
                     }
                     if (ENABLED) {
