@@ -1,19 +1,2 @@
-﻿<Properties>
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="MonoDevelop.IPhone.IPhoneSimulatorTarget.IPhone5s.8.1" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="NachoClient.Android/NachoCore/Utils/CalendarHelper.cs">
-    <Files>
-      <File FileName="NachoClient.iOS/NachoUI.iOS/Support/CalendarTableViewSource.cs" Line="27" Column="27" />
-      <File FileName="NachoClient.iOS/NachoUI.iOS/CalendarViewController.cs" Line="1" Column="1" />
-      <File FileName="NachoClient.iOS/NachoUI.iOS/MessageComposeViewController.cs" Line="57" Column="57" />
-      <File FileName="NachoClient.Android/NachoCore/Utils/CalendarHelper.cs" Line="57" Column="57" />
-      <File FileName="NachoClient.iOS/NachoUI.iOS/EventViewController.cs" Line="10" Column="10" />
-      <File FileName="NachoClient.iOS/NachoUI.iOS/EditEventViewController.cs" Line="57" Column="57" />
-      <File FileName="NachoClient.iOS/NachoUI.iOS/MessageViewController.cs" Line="49" Column="49" />
-      <File FileName="NachoClient.iOS/NachoUI.iOS/NachoNowViewController.cs" Line="69" Column="69" />
-    </Files>
-  </MonoDevelop.Ide.Workbench>
-  <MonoDevelop.Ide.DebuggingService.Breakpoints>
-    <BreakpointStore />
-  </MonoDevelop.Ide.DebuggingService.Breakpoints>
-  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+﻿<Properties StartupItem="NachoClient.iOS/NachoClient.iOS.csproj">
 </Properties>
