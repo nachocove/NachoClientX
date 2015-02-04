@@ -264,7 +264,7 @@ namespace NachoCore.Model
             NcAssert.NotNull (archiveFolders);
             return archiveFolders.First ();
         }
-            
+
         public static List<McFolder> QueryByParentId (int accountId, string parentId)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
@@ -278,20 +278,20 @@ namespace NachoCore.Model
         public static List<McFolder> QueryByMostRecentlyAccessedFolders (int accountId)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f " +
-                "WHERE f.AccountId = ? AND f.LastAccessed > ? " +
-                "ORDER BY f.LastAccessed DESC", accountId, DateTime.UtcNow.AddYears(-1));
+                          "WHERE f.AccountId = ? AND f.LastAccessed > ? " +
+                          "ORDER BY f.LastAccessed DESC", accountId, DateTime.UtcNow.AddYears (-1));
             return folders.ToList ();
         }
 
         public static List<McFolder> QueryNonHiddenFoldersOfType (int accountId, Xml.FolderHierarchy.TypeCode[] types)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f " +
-                " WHERE f.AccountId = ? AND " +
-                " f.IsAwaitingDelete = 0 AND " +
-                " f.Type IN " + Folder_Helpers.TypesToCommaDelimitedString (types) + " AND " +
-                " f.IsHidden = 0 " +
-                " ORDER BY f.DisplayName ", 
-                accountId);
+                          " WHERE f.AccountId = ? AND " +
+                          " f.IsAwaitingDelete = 0 AND " +
+                          " f.Type IN " + Folder_Helpers.TypesToCommaDelimitedString (types) + " AND " +
+                          " f.IsHidden = 0 " +
+                          " ORDER BY f.DisplayName ", 
+                              accountId);
             return folders.ToList ();
         }
 
@@ -456,7 +456,15 @@ namespace NachoCore.Model
                 FolderEntryId = obj.Id,
                 ClassCode = classCode,
             };
-            map.Insert ();
+            NcModel.Instance.Db.RunInTransaction (() => {
+                map.Insert ();
+
+                // if it is a contact, re-evaluate the eclipsing status
+                if (obj is McContact) {
+                    var contact = (McContact)obj;
+                    contact.Update ();
+                }
+            });
             return NcResult.OK ();
         }
 
@@ -493,8 +501,8 @@ namespace NachoCore.Model
         public static void UpdateSet_AsSyncMetaToClientExpected (int accountId, bool toClientExpected)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                " f.AccountId = ? AND f.IsClientOwned = 0",
-                accountId);
+                          " f.AccountId = ? AND f.IsClientOwned = 0",
+                              accountId);
             foreach (var folder in folders) {
                 folder.UpdateSet_AsSyncMetaToClientExpected (toClientExpected);
             }
@@ -627,8 +635,8 @@ namespace NachoCore.Model
         public static void UpdateResetSyncState (int accountId)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
-                " f.AccountId = ? ",
-                accountId);
+                          " f.AccountId = ? ",
+                              accountId);
             foreach (var iterFolder in folders) {
                 iterFolder.UpdateResetSyncState ();
             }

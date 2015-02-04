@@ -21,7 +21,8 @@ namespace NachoCore.Brain
         #pragma warning restore 414
         private static void InvokerCallback (Object state)
         {
-            if (NcApplication.ExecutionContextEnum.QuickSync == NcApplication.Instance.ExecutionContext) {
+            if (NcApplication.ExecutionContextEnum.Background != NcApplication.Instance.ExecutionContext &&
+                NcApplication.ExecutionContextEnum.Foreground != NcApplication.Instance.ExecutionContext) {
                 // TODO - This is a temporary solution. We should not process any event other 
                 return;
             }
@@ -189,8 +190,13 @@ namespace NachoCore.Brain
             }
             if (!File.Exists (path)) {
                 var e2 = McEmailMessage.QueryById<McEmailMessage> (emailMessage.Id);
+                if (null == e2) {
+                    // E-mail message has been deleted while it was being processed.  This is rare, but it can happen.
+                    return;
+                }
                 var b2 = McBody.QueryById<McBody> (e2.BodyId);
-                Log.Error (Log.LOG_BRAIN, "Lost body: {0} == {1} and {2} == {3}", emailMessage.BodyId, body.Id, e2.BodyId, b2.Id);
+                Log.Error (Log.LOG_BRAIN, "Lost body: {0} == {1} and {2} == {3}",
+                    emailMessage.BodyId, body.Id, e2.BodyId, null == b2 ? 0 : b2.Id);
                 // FIXME: Let's not crash at the moment
                 MarkAsGleaned (emailMessage);
                 return;

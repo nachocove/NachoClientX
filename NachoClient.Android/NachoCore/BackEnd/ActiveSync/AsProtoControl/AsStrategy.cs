@@ -826,6 +826,10 @@ namespace NachoCore.ActiveSync
             var accountId = BEContext.Account.Id;
             var protocolState = BEContext.ProtocolState;
             var exeCtxt = NcApplication.Instance.ExecutionContext;
+            if (NcApplication.ExecutionContextEnum.Initializing == exeCtxt) {
+                // ExecutionContext is not set until after BE is started.
+                exeCtxt = NcApplication.Instance.PlatformIndication;
+            }
             AdvanceIfPossible (accountId, Scope.StrategyRung (protocolState));
             var stillHaveUnsyncedFolders = ScrubSyncedFolders (accountId);
             var userDemand = PickUserDemand ();

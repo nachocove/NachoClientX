@@ -84,6 +84,7 @@ namespace NachoClient.iOS
 
         public override void ViewDidAppear (bool animated)
         {
+            base.ViewDidAppear (animated);
             // We need to migrate. Put up a spinner until this is done.
             this.NavigationItem.Title = "Upgrade";
             this.View.BackgroundColor = A.Color_NachoGreen;

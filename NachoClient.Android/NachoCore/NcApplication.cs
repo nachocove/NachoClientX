@@ -52,6 +52,7 @@ namespace NachoCore
         }
 
         public ExecutionContextEnum PlatformIndication {
+            get { return _PlatformIndication; }
             set { 
                 _PlatformIndication = value;
                 Log.Info (Log.LOG_LIFECYCLE, "PlatformIndication => {0}", _PlatformIndication.ToString ());
@@ -149,8 +150,16 @@ namespace NachoCore
 
         private NcApplication ()
         {
-            NcAssert.True (ThreadPool.SetMinThreads (8, 6));
-            NcAssert.True (ThreadPool.SetMaxThreads (50, 16));
+            // SetMaxThreads needs to be called before SetMinThreads, because on some devices (such as
+            // iPhone 4s running iOS 7) the default maximum is less than the minimums we are trying to set.
+            // NcAssert.True can't be called here, because logging hasn't been set up yet, meaning a
+            // failure can't be properly reported.
+            if (!ThreadPool.SetMaxThreads (50, 16)) {
+                Console.WriteLine ("ERROR: ThreadPool maximums could not be set.");
+            }
+            if (!ThreadPool.SetMinThreads (8, 6)) {
+                Console.WriteLine ("ERROR: ThreadPool minimums could not be set.");
+            }
             TaskScheduler.UnobservedTaskException += (object sender, UnobservedTaskExceptionEventArgs eargs) => {
                 NcAssert.True (eargs.Exception is AggregateException, "AggregateException check");
                 var aex = (AggregateException)eargs.Exception;
@@ -225,10 +234,10 @@ namespace NachoCore
             NcModel.Instance.EngageRateLimiter ();
             NcBrain.StartService ();
             NcContactGleaner.Start ();
-            ExecutionContext = _PlatformIndication;
             BackEnd.Instance.Owner = this;
             BackEnd.Instance.EstablishService ();
             BackEnd.Instance.Start ();
+            ExecutionContext = _PlatformIndication;
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServicesCompletion exited.");
         }
 

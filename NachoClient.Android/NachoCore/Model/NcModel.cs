@@ -65,6 +65,8 @@ namespace NachoCore.Model
         // RateLimiter PUBLIC FOR TEST ONLY.
         public NcRateLimter RateLimiter { set; get; }
 
+        public bool FreshInstall { protected set; get; }
+
         private const string KTmpPathSegment = "tmp";
         private const string KFilesPathSegment = "files";
 
@@ -270,6 +272,7 @@ namespace NachoCore.Model
             }), (IntPtr)null);
             Documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
             DbFileName = Path.Combine (Documents, "db");
+            FreshInstall = !File.Exists (DbFileName);
             InitializeDb ();
             TeleDbFileName = Path.Combine (Documents, "teledb");
             InitializeTeleDb ();
