@@ -154,6 +154,7 @@ namespace NachoClient.iOS
             var dropdownImageView = (UIImageView)cell.ContentView.ViewWithTag (DROPDOWN_IMAGEVIEW_TAG);
 
             cell.TextLabel.Text = "";
+            cell.TextLabel.Font = A.Font_AvenirNextRegular14;
             providerImageView.Hidden = (McAccount.AccountServiceEnum.None == provider.EmailService);
 
             if (McAccount.AccountServiceEnum.None == provider.EmailService) {
