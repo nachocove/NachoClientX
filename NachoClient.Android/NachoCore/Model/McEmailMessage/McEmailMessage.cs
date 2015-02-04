@@ -494,6 +494,20 @@ namespace NachoCore.Model
                 DateTime.UtcNow);
         }
 
+        public static List<McEmailMessage> QueryDraftMessages (int accountId, int folderId) 
+        {
+            return NcModel.Instance.Db.Query<McEmailMessage> (
+                    "SELECT e.* FROM McEmailMessage AS e JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId WHERE " +
+                    " e.AccountId = ? AND " +
+                    " m.AccountId = ? AND " +
+                    " e.IsAwaitingDelete = 0 AND " + 
+                    " e.IsAwaitingDelete = 0 AND " + 
+                    " m.FolderId = ? AND + " +
+                    " e.ConversationId IS NULL " +
+                    " ORDER BY e.LastModified DESC",
+                accountId, accountId, folderId);
+        }
+
         public static List<NcEmailMessageIndex> QueryDueDateMessageItemsAllAccounts ()
         {
             return NcModel.Instance.Db.Query<NcEmailMessageIndex> (

@@ -390,28 +390,42 @@ namespace NachoCore.Utils
 
         /// <summary>
         /// Convert MimeMessage to McEmailMessage and add it to the database.
+        /// Can also be used to update an existing McEmailMessage, using the properties of a MimeMessage
         /// </summary>
-        static public McEmailMessage AddToDb (int AccountId, MimeMessage mimeMessage)
+        static public McEmailMessage AddToDbOrUpdate (int AccountId, MimeMessage mimeMessage, McEmailMessage emailMessage = null)
         {
             // Don't let 0 into the db
             NcAssert.True (AccountId > 0);
 
-            var msg = new McEmailMessage ();
-            msg.AccountId = AccountId;
-            msg.To = CommaSeparatedList (mimeMessage.To);
-            msg.Cc = CommaSeparatedList (mimeMessage.Cc);
-            msg.From = CommaSeparatedList (mimeMessage.From);
-            msg.Subject = mimeMessage.Subject;
+            if (null == emailMessage || 0 == emailMessage.Id) {
+                emailMessage = new McEmailMessage ();
+            }
 
-            // Create body
-            var body = McBody.InsertFile (AccountId, McAbstrFileDesc.BodyTypeEnum.MIME_4, (FileStream stream) => {
-                mimeMessage.WriteTo (stream);
-            });
-            msg.BodyId = body.Id;
+            emailMessage.AccountId = AccountId;
+            emailMessage.To = CommaSeparatedList (mimeMessage.To);
+            emailMessage.Cc = CommaSeparatedList (mimeMessage.Cc);
+            emailMessage.Bcc = CommaSeparatedList (mimeMessage.Bcc);
+            emailMessage.From = CommaSeparatedList (mimeMessage.From);
+            emailMessage.Subject = mimeMessage.Subject;
 
-            msg.Insert ();
+            if (0 == emailMessage.BodyId) {
+                emailMessage.BodyId = McBody.InsertFile (AccountId, McAbstrFileDesc.BodyTypeEnum.MIME_4, (FileStream stream) => {
+                    mimeMessage.WriteTo (stream);
+                }).Id;
+            } else {
+                var messageBody = McBody.QueryById<McBody> (emailMessage.BodyId);
+                messageBody.UpdateData((FileStream stream) => {
+                    mimeMessage.WriteTo (stream);
+                });
+            }
 
-            return msg;
+            if (0 == emailMessage.Id) {
+                emailMessage.Insert ();
+            } else {
+                emailMessage.Update ();
+            }
+
+            return emailMessage;
         }
 
         public static void MimeDisplayList (MimeMessage message, ref List<MimeEntity> list)

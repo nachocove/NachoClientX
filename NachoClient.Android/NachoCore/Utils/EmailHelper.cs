@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using MimeKit;
 using System.Text;
 using NachoCore.Model;
+using System.IO;
 
 
 namespace NachoCore.Utils
@@ -17,6 +18,7 @@ namespace NachoCore.Utils
             Reply,
             ReplyAll,
             Forward,
+            EditDraft,
         };
 
         public static bool IsSendAction (Action action)
@@ -26,7 +28,7 @@ namespace NachoCore.Utils
 
         public static bool IsForwardOrReplyAction (Action action)
         {
-            return Action.Send != action;
+            return (Action.Reply == action || Action.ReplyAll == action || Action.Forward == action);
         }
 
         // Reply or ReplyAll.  In almost all cases the two are treated the same.  There is only one case where they are different.
@@ -40,6 +42,74 @@ namespace NachoCore.Utils
             return Action.Forward == action;
         }
 
+        public static bool IsEditDraftAction (Action action)
+        {
+            return Action.EditDraft == action;
+        }
+
+        public static bool IsDraftForwardOrReply (McEmailMessage draftMessage)
+        {
+            if (null == draftMessage) {
+                return false;
+            }
+            return 0 != draftMessage.ReferencedEmailId;
+        }
+
+        public static bool IsDraftForward (McEmailMessage draftMessage)
+        {
+            if (null == draftMessage) {
+                return false;
+            }
+            return draftMessage.ReferencedIsForward;
+        }
+
+        public static bool IsAttachmentStillAvailable (McAttachment attachment)
+        {
+            if (null == attachment) {
+                return false;
+            }
+
+            McAttachment att = McAttachment.QueryById<McAttachment> (attachment.Id);
+            if (null == att) {
+                return false;
+            }
+
+            //Remove this check if we decide to download attachments 
+            if (!File.Exists (att.GetFilePath ())) {
+                return false;
+            }
+
+            return true;
+        }
+
+        public static bool ShowQuotedTextButton (Action action, McEmailMessage referencedMessage, McEmailMessage draftMessage)
+        {
+            if (!IsEditDraftAction (action)) {
+                return null != referencedMessage;
+            }
+
+            //Not a forward or reply, don't show
+            if (!IsDraftForwardOrReply (draftMessage)) {
+                return false;
+            }
+
+            //Original message included, don't show
+            if (DraftsHelper.IsOriginalMessageEmbedded (draftMessage)) {
+                return false;
+            }
+
+            //referenced message was deleted, don't show
+            if (DraftsHelper.WasReferencedMessageDeleted (draftMessage)) {
+                return false;
+            }
+
+            NcAssert.True (IsDraftForwardOrReply (draftMessage));
+            NcAssert.True (!DraftsHelper.IsOriginalMessageEmbedded (draftMessage));
+            NcAssert.True (!DraftsHelper.WasReferencedMessageDeleted (draftMessage));
+
+            return true;
+        }
+
         public static string CreateInitialSubjectLine (Action action, string referencedSubject)
         {
             if (IsSendAction (action)) {
@@ -50,6 +120,9 @@ namespace NachoCore.Utils
             }
             if (IsForwardAction (action)) {
                 return Pretty.Join ("Fwd:", referencedSubject, " ");
+            }
+            if (IsEditDraftAction (action)) {
+                return referencedSubject;
             }
             NcAssert.True (IsReplyAction (action));
             if (referencedSubject.StartsWith ("Re:")) {
@@ -376,7 +449,16 @@ namespace NachoCore.Utils
                 i++;
             }
 
-            return string.Join (", ", recipientsArray);
+            return (string.Join (", ", recipientsArray)).Trim();
+        }
+
+        public static List<NcEmailAddress> EmailMessageRecipients (McEmailMessage message)
+        {
+            List<NcEmailAddress> recipients = new List<NcEmailAddress> ();
+            recipients.AddRange(GetAddressListOfKind (NcEmailAddress.Kind.To, message));
+            recipients.AddRange(GetAddressListOfKind (NcEmailAddress.Kind.Cc, message));
+            recipients.AddRange(GetAddressListOfKind (NcEmailAddress.Kind.Bcc, message));
+            return recipients;
         }
 
         private static bool IsAccountAlias (InternetAddress accountInternetAddress, string match)

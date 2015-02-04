@@ -312,6 +312,63 @@ namespace Test.Common
             Assert.AreEqual(3, deferred.Count);
         }
 
+        [Test]
+        public void TestQueryDraftMessages ()
+        {
+            int accountId = 1;
+
+            McFolder draftsFolder = McFolder.GetDefaultDraftsFolder (accountId);
+
+            //non-null ConversationId
+            McEmailMessage emailOne = new McEmailMessage ();
+            emailOne.AccountId = accountId;
+            emailOne.IsAwaitingDelete = false;
+            emailOne.ConversationId = "conversationId";
+            emailOne.Insert ();
+            draftsFolder.Link (emailOne);
+
+            //awaiting delete
+            McEmailMessage emailTwo = new McEmailMessage ();
+            emailTwo.AccountId = accountId;
+            emailTwo.IsAwaitingDelete = true;
+            emailTwo.Insert ();
+            draftsFolder.Link (emailTwo);
+
+            //not in drafts folder
+            McEmailMessage emailThree = new McEmailMessage ();
+            emailThree.AccountId = accountId;
+            emailThree.IsAwaitingDelete = false;
+            emailThree.Insert ();
+
+            //draft message, most recent
+            McEmailMessage emailFour = new McEmailMessage ();
+            emailFour.AccountId = accountId;
+            emailFour.IsAwaitingDelete = false;
+            emailFour.Insert ();
+            emailFour.CreatedAt = DateTime.Now;
+            draftsFolder.Link (emailFour);
+
+            //draft message, second most recent
+            McEmailMessage emailFive = new McEmailMessage ();
+            emailFive.AccountId = accountId;
+            emailFive.IsAwaitingDelete = false;
+            emailFive.Insert ();
+            draftsFolder.Link (emailFive);
+
+            //draft message, third most recent
+            McEmailMessage emailSix = new McEmailMessage ();
+            emailSix.AccountId = accountId;
+            emailSix.IsAwaitingDelete = false;
+            emailSix.Insert ();
+            draftsFolder.Link (emailSix);
+
+            List<McEmailMessage> drafts = McEmailMessage.QueryDraftMessages (accountId, draftsFolder.Id);
+            Assert.True (3 == drafts.Count);
+            Assert.True (emailFour.Id == drafts [2].Id);
+            Assert.True (emailFive.Id == drafts [1].Id);
+            Assert.True (emailSix.Id == drafts [0].Id);
+        }
+
         private void CheckScoreAndUpdate (int id, double expectedScore, bool expectedNeedUpdate)
         {
             McEmailMessage message = McEmailMessage.QueryById<McEmailMessage> (id);

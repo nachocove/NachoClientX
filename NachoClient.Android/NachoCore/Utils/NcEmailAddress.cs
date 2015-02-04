@@ -186,7 +186,7 @@ namespace NachoCore.Utils
                 return null;
             }
 
-            if (null == mailbox.Name) {
+            if (null != this.contact) {
                 mailbox.Name = this.contact.GetDisplayName ();
             }
 

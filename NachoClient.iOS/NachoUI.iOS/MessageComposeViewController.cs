@@ -30,6 +30,7 @@ namespace NachoClient.iOS
         protected McAccount account;
         protected McCalendar calendarInviteItem;
 
+        protected McEmailMessage draftMessage;
         protected McEmailMessage referencedMessage;
         // The message being forwarded or replied to, if any
         protected EmailHelper.Action action;
@@ -71,6 +72,7 @@ namespace NachoClient.iOS
         // If this is a reply or forward, keep track of the quoted text that is inserted.
         // This makes it possible to check later if the user changed the text.
         private NSAttributedString initialQuotedText = null;
+        private NSAttributedString allAppendedText = null;
         protected UIFont labelFont = A.Font_AvenirNextMedium14;
         protected UIColor labelColor = A.Color_NachoDarkText;
 
@@ -90,6 +92,14 @@ namespace NachoClient.iOS
         protected McEmailMessage.IntentType messageIntent = McEmailMessage.IntentType.None;
         protected MessageDeferralType messageIntentDateType;
         protected DateTime messageIntentDateTime;
+
+
+        protected enum CancelOptions
+        {
+            SaveDraft,
+            DeleteMessage,
+            Cancel,
+        }
 
         public MessageComposeViewController (IntPtr handle) : base (handle)
         {
@@ -132,6 +142,48 @@ namespace NachoClient.iOS
             startInBodyField = (null != PresetAddresses) && !String.IsNullOrEmpty (PresetSubject) && !String.IsNullOrEmpty (emailTemplate);
         }
 
+        // Can be called by owner to set a pre-existing To: address, subject, email template and/or attachment
+        public void SetDraftPresetFields (List<NcEmailAddress> recipients = null,  string subject = null, string emailTemplate = null, List<McAttachment> attachmentList = null)
+        {
+            if (null != recipients) {
+                PresetAddresses = recipients;
+            }
+            PresetSubject = subject;
+            EmailTemplate = emailTemplate;
+            PresetAttachmentList = attachmentList;
+            alwaysShowIntent = !String.IsNullOrEmpty (PresetSubject);
+            startInSubjectField = (null != PresetAddresses && 0 != PresetAddresses.Count) && String.IsNullOrEmpty (PresetSubject);
+            startInBodyField = (null != PresetAddresses) && !String.IsNullOrEmpty (PresetSubject) && !String.IsNullOrEmpty (emailTemplate);
+        }
+
+        public void SetAction (McEmailMessageThread thread, string actionString)
+        {
+            if (null != thread) {
+                referencedMessage = thread.SingleMessageSpecialCase ();
+            }
+            if (null == actionString) {
+                action = EmailHelper.Action.Send;
+            } else if (REPLY_ACTION.Equals (actionString)) {
+                action = EmailHelper.Action.Reply;
+            } else if (REPLY_ALL_ACTION.Equals (actionString)) {
+                action = EmailHelper.Action.ReplyAll;
+            } else if (FORWARD_ACTION.Equals (actionString)) {
+                action = EmailHelper.Action.Forward;
+            }  else if (EDIT_DRAFT_ACTION.Equals (actionString)) {
+                action = EmailHelper.Action.EditDraft;
+            } else {
+                NcAssert.CaseError (String.Format ("Unexpected value for message action: {0}", actionString));
+            }
+            if (EmailHelper.IsForwardOrReplyAction(action)) {
+                NcAssert.NotNull (referencedMessage, String.Format ("A null message was passed to MessageComposeViewController for an action of {0}", actionString));
+            }
+
+            if (EmailHelper.IsEditDraftAction (action)) {
+                draftMessage = referencedMessage;
+                referencedMessage = DraftsHelper.GetReferencedMessage (draftMessage);
+            }
+        }
+
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
@@ -167,35 +219,29 @@ namespace NachoClient.iOS
 
             sendButton.Clicked += (object sender, EventArgs e) => {
                 if (OkToSend ()) {
-                    SendMessage ();
+                    if(calendarInviteIsSet){
+                        SendCalendarInvite();
+                    } else {
+                        SaveDraftOrSendMessage(false);
+                    }
                     NavigationController.PopViewControllerAnimated (true);
                 }
             };
 
             cancelButton.Clicked += (sender, e) => {
                 View.EndEditing (true);
-                UIAlertView alert = new UIAlertView ();
-                alert.Title = "Are you sure?";
-                alert.Message = "This message will not be saved";
-                alert.AddButton ("Cancel");
-                alert.AddButton ("Yes");
-                alert.CancelButtonIndex = 0;
-                alert.Dismissed += (object alertSender, UIButtonEventArgs alertEvent) => {
-                    if (1 == alertEvent.ButtonIndex) {
-                        NavigationController.PopViewControllerAnimated (true);
-                    }
-                };
-                alert.Show ();
+                DisplayCancelAlertController ();
             };
 
             suppressLayout = true;
 
             CreateView ();
 
-            if (EmailHelper.IsForwardOrReplyAction (action)) {
+            if (EmailHelper.IsForwardOrReplyAction (action) || EmailHelper.IsEditDraftAction (action)) {
                 InitializeMessageForAction ();
             }
-            showQuotedTextButton.Hidden = (null == referencedMessage);
+
+            showQuotedTextButton.Hidden = !EmailHelper.ShowQuotedTextButton (action, referencedMessage, draftMessage);
 
             suppressLayout = false;
                 
@@ -408,9 +454,11 @@ namespace NachoClient.iOS
             if (EmailTemplate != null) {
                 initialString.Append (new NSAttributedString (EmailTemplate, attributes));
             }
-            if (!String.IsNullOrEmpty (account.Signature)) {
-                initialString.Append (new NSAttributedString ("\n\n", attributes));
-                initialString.Append (new NSAttributedString (account.Signature, attributes));
+            if (!EmailHelper.IsEditDraftAction (action)) {
+                if (!String.IsNullOrEmpty (account.Signature)) {
+                    initialString.Append (new NSAttributedString ("\n\n", attributes));
+                    initialString.Append (new NSAttributedString (account.Signature, attributes));
+                }
             }
 
             bodyTextView.AttributedText = initialString;
@@ -471,8 +519,16 @@ namespace NachoClient.iOS
             }
 
             if (PresetAttachmentList != null) {
+                bool attachmentWasRemoved = false;
                 foreach (var attachment in PresetAttachmentList) {
-                    attachmentView.Append (attachment);
+                    if (EmailHelper.IsAttachmentStillAvailable (attachment)) {
+                        attachmentView.Append (attachment);
+                    } else {
+                        attachmentWasRemoved = true;
+                    }
+                }
+                if (attachmentWasRemoved) {
+                    NotifyUserAnAttachmentWasRemoved ();
                 }
             }
 
@@ -1077,168 +1133,6 @@ namespace NachoClient.iOS
             return true;
         }
 
-        /// <summary>
-        /// Backend is converting to mime.
-        /// TODO: SendMessage should encode as mime or not.
-        /// </summary>
-        public void SendMessage ()
-        {
-
-            if (!calendarInviteIsSet) {
-                var mimeMessage = new MimeMessage ();
-                mimeMessage.From.Add (new MailboxAddress (Pretty.UserNameForAccount (account), account.EmailAddr));
-                mimeMessage.To.AddRange (NcEmailAddress.ToInternetAddressList (toView.AddressList, NcEmailAddress.Kind.To));
-                mimeMessage.Cc.AddRange (NcEmailAddress.ToInternetAddressList (ccView.AddressList, NcEmailAddress.Kind.Cc));
-                mimeMessage.Bcc.AddRange (NcEmailAddress.ToInternetAddressList (bccView.AddressList, NcEmailAddress.Kind.Bcc));
-                mimeMessage.Date = System.DateTime.UtcNow;
-
-                var subject = Pretty.SubjectString (subjectField.Text);
-                if (McEmailMessage.IntentType.None != messageIntent) {
-                    var intentString = NcMessageIntent.GetIntentString (messageIntent, messageIntentDateType, messageIntentDateTime);
-                    mimeMessage.Subject = Pretty.Join (intentString, subject, " - ");
-                } else {
-                    mimeMessage.Subject = subject;
-                }
-
-                // TODO: Check whether or not the back end supports SmartReply and SmartForward
-
-                bool originalEmailIsEmbedded = true;
-                var bodyAttributedText = bodyTextView.AttributedText;
-
-                // If there's no initialQuotedText, then the email is not embedded
-                if (null == initialQuotedText) {
-                    originalEmailIsEmbedded = false;
-                }
-                    
-                // Perhaps we can strip out the initialQuotedText and use smart reply?
-                if ((null != initialQuotedText) && Util.AttributedStringEndsWith (bodyAttributedText, initialQuotedText)) {
-                    // Strip the quoted text from the body of the message and instead have the server add in the original message.
-                    originalEmailIsEmbedded = false;
-                    bodyAttributedText = bodyAttributedText.Substring (0, (bodyAttributedText.Length - initialQuotedText.Length));
-                }
-
-                var body = new BodyBuilder ();
-
-                body.TextBody = bodyTextView.Text;
-
-                NSError error = null;
-                NSData htmlData = bodyAttributedText.GetDataFromRange (new NSRange (0, bodyAttributedText.Length), new NSAttributedStringDocumentAttributes{ DocumentType = NSDocumentType.HTML }, ref error);
-                body.HtmlBody = htmlData.ToString ();
-
-                foreach (var attachment in attachmentView.AttachmentList) {
-                    body.Attachments.Add (attachment.GetFilePath ());
-                }
-                bool attachmentNeedsDownloading = false;
-                if (EmailHelper.IsForwardAction (action) && originalEmailIsEmbedded) {
-                    // The user edited the body of the message being forwarded. That means the server won't
-                    // automatically include the attachments from the forwarded message (if any).  That needs
-                    // to be done explicitly.  If all of the necessary attachments are available, go ahead and
-                    // add them to the message now.  If any of the attachments need to be downloaded, then
-                    // wait until later to add them.
-                    var originalAttachments = McAttachment.QueryByItemId (referencedMessage);
-                    foreach (var attachment in originalAttachments) {
-                        if (McAbstrFileDesc.FilePresenceEnum.Complete != attachment.FilePresence) {
-                            attachmentNeedsDownloading = true;
-                            break;
-                        }
-                    }
-                    if (!attachmentNeedsDownloading) {
-                        foreach (var attachment in originalAttachments) {
-                            body.Attachments.Add (attachment.GetFilePath ());
-                        }
-                    }
-                }
-                
-                mimeMessage.Body = body.ToMessageBody ();
-                var messageToSend = MimeHelpers.AddToDb (account.Id, mimeMessage);
-                messageToSend.Intent = messageIntent;
-                messageToSend.IntentDate = messageIntentDateTime;
-                messageToSend.Update ();
-                if (EmailHelper.IsForwardOrReplyAction (action)) {
-                    messageToSend.ReferencedEmailId = referencedMessage.Id;
-                    messageToSend.ReferencedBodyIsIncluded = originalEmailIsEmbedded;
-                    messageToSend.ReferencedIsForward = EmailHelper.IsForwardAction (action);
-                    messageToSend.WaitingForAttachmentsToDownload = attachmentNeedsDownloading;
-                    messageToSend.Update ();
-                }
-
-                bool messageSent = false;
-                if (EmailHelper.IsForwardOrReplyAction (action)) {
-                    var folders = McFolder.QueryByFolderEntryId<McEmailMessage> (referencedMessage.AccountId, referencedMessage.Id);
-                    if (folders.Count == 0) {
-                        Log.Error (Log.LOG_UI, "The message being forwarded or replied to is not owned by any folder. It will be sent as a regular outgoing message. Message: {0}", referencedMessage.ToString ());
-                        // Fall through and send it as a regular message.
-                    } else {
-                        if (folders.Count > 1) {
-                            Log.Warn (Log.LOG_UI, "The message being forwarded or replied to is owned by {0} folders. One of the folders will be picked at random as the official owner when sending the message. Message: {0}", folders.Count, referencedMessage.ToString ());
-                        }
-                        int folderId = folders [0].Id;
-                        if (EmailHelper.IsForwardAction (action)) {
-                            NachoCore.BackEnd.Instance.ForwardEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, originalEmailIsEmbedded);
-                        } else {
-                            NachoCore.BackEnd.Instance.ReplyEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, originalEmailIsEmbedded);
-                        }
-                        messageSent = true;
-                    }
-                }
-                if (!messageSent) {
-                    // A new outgoing message.  Or a forward/reply that has problems.
-                    NachoCore.BackEnd.Instance.SendEmailCmd (messageToSend.AccountId, messageToSend.Id);
-                    // TODO: Subtle ugliness. Id is passed to BE, ref-count is ++ in the DB.
-                    // The object here still has ref-count of 0, so interlock is lost, and delete really happens in the DB.
-                    // BE goes to reference the object later on, and it is missing.
-                    messageToSend = McEmailMessage.QueryById<McEmailMessage> (messageToSend.Id);
-                    messageToSend.Delete ();
-                }
-            } else {
-
-                // Create new attendees from addresses in To
-                var mailList = new List<MailboxAddress> ();
-
-                foreach (var view in new UcAddressBlock[] { toView, ccView, bccView }) {
-                    foreach (var a in view.AddressList) {
-                        var mailbox = a.ToMailboxAddress ();
-                        if (null == mailbox) {
-                            continue;
-                        }
-
-//                        var name = mailbox.Name;
-//                        if (String.IsNullOrEmpty (name)) {
-//                            name = mailbox.Address;
-//                        }
-//                        
-//                        var attendee = new McAttendee ();
-//                        attendee.AccountId = account.Id;
-//                        attendee.Name = name;
-//                        attendee.Email = mailbox.Address;
-//                        attendee.AttendeeType = NcAttendeeType.Required;
-//                        attendee.AttendeeTypeIsSet = true;
-//                        calendarInviteItem.attendees.Add (attendee);
-                        mailList.Add (mailbox);
-                    }
-                }
-
-                // Update calendar item
-                calendarInviteItem.Update ();
-                BackEnd.Instance.UpdateCalCmd (account.Id, calendarInviteItem.Id);
-                calendarInviteItem = McCalendar.QueryById<McCalendar> (calendarInviteItem.Id);
-                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged),
-                    Account = NachoCore.Model.ConstMcAccount.NotAccountSpecific,
-                });
-
-                // Create mime
-                var iCalPart = CalendarHelper.iCalToMimePart (account, calendarInviteItem);
-
-                StringBuilder bodyText = new StringBuilder ();
-                bodyText.Append (bodyTextView.Text).Append ("\n\n").Append (EmailHelper.FormatBasicHeadersForCalendarForward (calendarInviteItem, account.EmailAddr)).Append (calendarInviteItem.Description ?? "");
-                var mimeBody = CalendarHelper.CreateMime (bodyText.ToString (), iCalPart, calendarInviteItem.attachments);
-
-                CalendarHelper.SendInvites (account, calendarInviteItem, Pretty.SubjectString (subjectField.Text), null, mimeBody, mailList);
-
-            }
-        }
-
 
         /// <summary>
         /// Reply, ReplyAll, Forward
@@ -1256,14 +1150,24 @@ namespace NachoClient.iOS
                     ccView.Append (cc);
                 }
             }
-            if (null != referencedMessage) {
-                subjectField.Text = EmailHelper.CreateInitialSubjectLine (action, referencedMessage.Subject);
-            } else {
-                subjectField.Text = "";
+
+            if (EmailHelper.IsEditDraftAction (action)) {
+                subjectField.Text = PresetSubject;
+                PopulateMessageFromSelectedIntent (draftMessage.Intent, draftMessage.DeferralType, draftMessage.IntentDate);
+
+                if (EmailHelper.IsDraftForwardOrReply (draftMessage)) {
+                    if (!DraftsHelper.IsOriginalMessageEmbedded(draftMessage) && DraftsHelper.WasReferencedMessageDeleted (draftMessage)) {
+                        NotifyUserReferencedMessageWasDeleted ();
+                    }
+                }
             }
+
+            if (!EmailHelper.IsEditDraftAction (action)) {
+                subjectField.Text = EmailHelper.CreateInitialSubjectLine (action, referencedMessage.Subject);
+            }
+
             alwaysShowIntent |= !string.IsNullOrEmpty (subjectField.Text);
         }
-
 
         void onShowQuotedTextButton (object sender, EventArgs e)
         {
@@ -1285,6 +1189,7 @@ namespace NachoClient.iOS
                 attributes.Font = new MonoTouch.CoreText.CTFont (labelFont.Name, labelFont.PointSize);
                 var initialString = new NSMutableAttributedString ();
                 initialString.Append (bodyTextView.AttributedText);
+                var whereAppendedTextBegins = initialString.Length;
                 initialString.Append (new NSAttributedString ("\n\n", attributes));
                 initialString.Append (new NSAttributedString (EmailHelper.FormatBasicHeaders (referencedMessage), attributes));
                 var whereQuotedTextBegins = initialString.Length;
@@ -1301,8 +1206,10 @@ namespace NachoClient.iOS
                 if (whereQuotedTextBegins < bodyTextView.AttributedText.Length) {
                     // Pull from uitextview to account for formatting that happens when the string is added
                     initialQuotedText = bodyTextView.AttributedText.Substring (whereQuotedTextBegins, bodyTextView.AttributedText.Length - whereQuotedTextBegins);
+                    allAppendedText = bodyTextView.AttributedText.Substring (whereAppendedTextBegins, bodyTextView.AttributedText.Length - whereAppendedTextBegins);
                 } else {
                     initialQuotedText = null;
+                    allAppendedText = null;
                 }
             }
         }
@@ -1368,27 +1275,294 @@ namespace NachoClient.iOS
             this.DismissViewController (true, null);
         }
 
-        public void SetAction (McEmailMessageThread thread, string actionString)
+        public void DisplayCancelAlertController ()
         {
-            if (null != thread) {
-                referencedMessage = thread.SingleMessageSpecialCase ();
+            string alertMessage = "This message will be removed if you exit.";
+            if (!calendarInviteIsSet) {
+                alertMessage = "This message will be removed unless you save a draft.";
             }
-            if (null == actionString) {
-                action = EmailHelper.Action.Send;
-            } else if (REPLY_ACTION.Equals (actionString)) {
-                action = EmailHelper.Action.Reply;
-            } else if (REPLY_ALL_ACTION.Equals (actionString)) {
-                action = EmailHelper.Action.ReplyAll;
-            } else if (FORWARD_ACTION.Equals (actionString)) {
-                action = EmailHelper.Action.Forward;
-            } else {
-                NcAssert.CaseError (String.Format ("Unexpected value for message action: {0}", actionString));
+            var aController = UIAlertController.Create ("", alertMessage, UIAlertControllerStyle.ActionSheet);
+            aController.AddAction (UIAlertAction.Create ("Delete", UIAlertActionStyle.Destructive, Action => ActionClicked (CancelOptions.DeleteMessage)));
+            if (!calendarInviteIsSet) {
+                aController.AddAction (UIAlertAction.Create ("Save Draft", UIAlertActionStyle.Default, Action => ActionClicked (CancelOptions.SaveDraft)));
             }
-            if (EmailHelper.Action.Send != action) {
-                NcAssert.NotNull (referencedMessage, String.Format ("A null message was passed to MessageComposeViewController for an action of {0}", actionString));
+            aController.AddAction (UIAlertAction.Create ("Cancel", UIAlertActionStyle.Cancel, Action => ActionClicked (CancelOptions.Cancel)));
+
+            this.PresentViewController (aController, true, null);
+        }
+
+        protected void ActionClicked (CancelOptions selectedOption)
+        {
+            switch (selectedOption) {
+            case CancelOptions.SaveDraft:
+                SaveDraftOrSendMessage (true);
+                NavigationController.PopViewControllerAnimated (true);
+                return;
+            case CancelOptions.DeleteMessage:
+                if (EmailHelper.IsEditDraftAction (action)) {
+                    BackEnd.Instance.DeleteEmailCmd (draftMessage.AccountId, draftMessage.Id);
+                }
+                NavigationController.PopViewControllerAnimated (true);
+                return;
+            case CancelOptions.Cancel:
+                return;
             }
         }
 
-     
+        protected void SaveDraftOrSendMessage (bool saveDraft)
+        {
+            var extractedMessage = ExtractMessageComponents (saveDraft);
+            if (saveDraft) {
+                LinkAttachmentsToDraft (extractedMessage);
+            } else {
+                SendMessage (extractedMessage);
+            }
+        }
+
+        protected McEmailMessage ExtractMessageComponents (bool savingDraft)
+        {
+            var mimeMessage = new MimeMessage ();
+            mimeMessage.From.Add (new MailboxAddress (Pretty.UserNameForAccount (account), account.EmailAddr));
+            mimeMessage.To.AddRange (NcEmailAddress.ToInternetAddressList (toView.AddressList, NcEmailAddress.Kind.To));
+            mimeMessage.Cc.AddRange (NcEmailAddress.ToInternetAddressList (ccView.AddressList, NcEmailAddress.Kind.Cc));
+            mimeMessage.Bcc.AddRange (NcEmailAddress.ToInternetAddressList (bccView.AddressList, NcEmailAddress.Kind.Bcc));
+            mimeMessage.Date = System.DateTime.UtcNow;
+            mimeMessage.Subject = Pretty.SubjectString (subjectField.Text);
+
+            // Append selected intent - only do so if you are sending message, not saving a draft
+            if (!savingDraft) {
+                if (McEmailMessage.IntentType.None != messageIntent) {
+                    var intentString = NcMessageIntent.GetIntentString (messageIntent, messageIntentDateType, messageIntentDateTime);
+                    mimeMessage.Subject = Pretty.Join (intentString, mimeMessage.Subject, " - ");
+                }
+            }
+
+            // TODO: Check whether or not the back end supports SmartReply and SmartForward
+            bool originalEmailIsEmbedded = true;
+            var bodyAttributedText = bodyTextView.AttributedText;
+
+            // If there's no initialQuotedText, then the email is not embedded
+            if (null == initialQuotedText) {
+                originalEmailIsEmbedded = false;
+            }
+
+
+            // Stripping out initialQuotedText if user tapped button
+            // Only if user didn't modify quoted text
+            // If they're saving a draft, we want to strip out everything we appended to the body (including header)
+            // If they're sending a message, strip out the initialQuotedText, leave the header.
+            if (savingDraft) {
+                if (null != initialQuotedText && Util.AttributedStringEndsWith (bodyAttributedText, allAppendedText)) {
+                    originalEmailIsEmbedded = false;
+                    bodyTextView.Text = bodyTextView.Text.Substring (0, (bodyAttributedText.Length - allAppendedText.Length));
+                    bodyAttributedText = bodyAttributedText.Substring (0, (bodyAttributedText.Length - allAppendedText.Length));
+                }
+            } else {
+                // Perhaps we can strip out the initialQuotedText and use smart reply?
+                if (null != initialQuotedText  && Util.AttributedStringEndsWith (bodyAttributedText, initialQuotedText)) {
+                    // Strip the quoted text from the body of the message and instead have the server add in the original message.
+                    originalEmailIsEmbedded = false;
+                    bodyAttributedText = bodyAttributedText.Substring (0, (bodyAttributedText.Length - initialQuotedText.Length));
+                }
+            }
+
+            var body = new BodyBuilder ();
+
+            body.TextBody = bodyTextView.Text;
+
+            NSError error = null;
+            NSData htmlData = bodyAttributedText.GetDataFromRange (new NSRange (0, bodyAttributedText.Length), new NSAttributedStringDocumentAttributes{ DocumentType = NSDocumentType.HTML }, ref error);
+            body.HtmlBody = htmlData.ToString ();
+
+            foreach (var attachment in attachmentView.AttachmentList) {
+                //body.Attachments.Add crashes if file doesnt exist.
+                if (File.Exists (attachment.GetFilePath ())) {
+                    body.Attachments.Add (attachment.GetFilePath ());
+                }
+            }
+            bool attachmentNeedsDownloading = false;
+            if (EmailHelper.IsForwardAction (action) && originalEmailIsEmbedded || (EmailHelper.IsDraftForward(draftMessage) && DraftsHelper.IsOriginalMessageEmbedded(draftMessage))) {
+                // The user edited the body of the message being forwarded. That means the server won't
+                // automatically include the attachments from the forwarded message (if any).  That needs
+                // to be done explicitly.  If all of the necessary attachments are available, go ahead and
+                // add them to the message now.  If any of the attachments need to be downloaded, then
+                // wait until later to add them.
+                var originalAttachments = McAttachment.QueryByItemId (referencedMessage);
+                foreach (var attachment in originalAttachments) {
+                    if (McAbstrFileDesc.FilePresenceEnum.Complete != attachment.FilePresence) {
+                        attachmentNeedsDownloading = true;
+                        break;
+                    }
+                }
+                if (!attachmentNeedsDownloading) {
+                    foreach (var attachment in originalAttachments) {
+                        body.Attachments.Add (attachment.GetFilePath ());
+                    }
+                }
+            }
+
+            mimeMessage.Body = body.ToMessageBody ();
+            McEmailMessage messageToSend = MimeHelpers.AddToDbOrUpdate (account.Id, mimeMessage, draftMessage);
+            messageToSend.Intent = messageIntent;
+            messageToSend.IntentDate = messageIntentDateTime;
+            messageToSend.DeferralType = messageIntentDateType;
+            if (savingDraft) {
+                messageToSend.BodyPreview = bodyTextView.Text;
+            } 
+            messageToSend.Update ();
+            if (EmailHelper.IsForwardOrReplyAction (action) || EmailHelper.IsDraftForwardOrReply (draftMessage)) {
+                messageToSend.ReferencedEmailId = GetReferencedEmailId ();
+                messageToSend.ReferencedBodyIsIncluded = originalEmailIsEmbedded || DraftsHelper.IsOriginalMessageEmbedded(draftMessage);
+                messageToSend.ReferencedIsForward = EmailHelper.IsForwardAction (action) || EmailHelper.IsDraftForward (draftMessage);
+                messageToSend.WaitingForAttachmentsToDownload = attachmentNeedsDownloading;
+                messageToSend.Update ();
+            }
+
+            // What should we do if the attachments included in the message need to be downloaded?
+//            if (EmailHelper.IsEditDraftAction (action)) {
+//                foreach (var attachment in attachmentView.AttachmentList) {
+//                    if (McAbstrFileDesc.FilePresenceEnum.Complete != attachment.FilePresence) {
+//                        //these are the draft message's attachments, not the referenced message's attachments
+//                        messageToSend.WaitingForAttachmentsToDownload = true;
+//                        messageToSend.Update ();
+//                        break;
+//                    }
+//                }
+//            }
+
+            return messageToSend;
+        }
+
+        protected void LinkAttachmentsToDraft (McEmailMessage draftMessageToSave)
+        {
+            McFolder.GetDefaultDraftsFolder (account.Id).Link (draftMessageToSave);
+            foreach (var a in attachmentView.AttachmentList) {
+                a.ItemId = draftMessageToSave.Id;
+                a.ClassCode = McAbstrFolderEntry.ClassCodeEnum.Email;
+                a.AccountId = draftMessageToSave.AccountId;
+                a.Update ();
+            }
+        }
+
+        protected void SendMessage (McEmailMessage messageToSend)
+        {
+            bool messageSent = false;
+            if (EmailHelper.IsForwardOrReplyAction (action) || (EmailHelper.IsDraftForwardOrReply (draftMessage) && !DraftsHelper.WasReferencedMessageDeleted (draftMessage))) {
+                var folders = McFolder.QueryByFolderEntryId<McEmailMessage> (referencedMessage.AccountId, GetReferencedEmailId ());
+                if (folders.Count == 0) {
+                    Log.Error (Log.LOG_UI, "The message being forwarded or replied to is not owned by any folder. It will be sent as a regular outgoing message. Message: {0}", referencedMessage.ToString ());
+                    // Fall through and send it as a regular message.
+                } else {
+                    if (folders.Count > 1) {
+                        Log.Warn (Log.LOG_UI, "The message being forwarded or replied to is owned by {0} folders. One of the folders will be picked at random as the official owner when sending the message. Message: {0}", folders.Count, referencedMessage.ToString ());
+                    }
+                    int folderId = folders [0].Id;
+                    if (EmailHelper.IsForwardAction (action) || EmailHelper.IsDraftForward (draftMessage)) {
+                        NachoCore.BackEnd.Instance.ForwardEmailCmd (messageToSend.AccountId, messageToSend.Id, GetReferencedEmailId (), folderId, messageToSend.ReferencedBodyIsIncluded);
+                    } else {
+                        NachoCore.BackEnd.Instance.ReplyEmailCmd (messageToSend.AccountId, messageToSend.Id, GetReferencedEmailId (), folderId, messageToSend.ReferencedBodyIsIncluded);
+                    }
+                    messageSent = true;
+                }
+            }
+
+            if (!messageSent) {
+                // A new outgoing message.  Or a forward/reply that has problems.
+                NachoCore.BackEnd.Instance.SendEmailCmd (messageToSend.AccountId, messageToSend.Id);
+                // TODO: Subtle ugliness. Id is passed to BE, ref-count is ++ in the DB.
+                // The object here still has ref-count of 0, so interlock is lost, and delete really happens in the DB.
+                // BE goes to reference the object later on, and it is missing.
+                messageToSend = McEmailMessage.QueryById<McEmailMessage> (messageToSend.Id);
+                if (!EmailHelper.IsEditDraftAction (action)) {
+                    messageToSend.Delete ();
+                } 
+            }
+
+            if (EmailHelper.IsEditDraftAction (action)) {
+                draftMessage = McEmailMessage.QueryById<McEmailMessage> (draftMessage.Id);
+                if (null != draftMessage) {
+                    BackEnd.Instance.DeleteEmailCmd (account.Id, messageToSend.Id);
+                }
+            }
+        }
+
+        void SendCalendarInvite ()
+        {
+
+            // Create new attendees from addresses in To
+            var mailList = new List<MailboxAddress> ();
+
+            foreach (var view in new UcAddressBlock[] { toView, ccView, bccView }) {
+                foreach (var a in view.AddressList) {
+                    var mailbox = a.ToMailboxAddress ();
+                    if (null == mailbox) {
+                        continue;
+                    }
+
+                    //                        var name = mailbox.Name;
+                    //                        if (String.IsNullOrEmpty (name)) {
+                    //                            name = mailbox.Address;
+                    //                        }
+                    //                        
+                    //                        var attendee = new McAttendee ();
+                    //                        attendee.AccountId = account.Id;
+                    //                        attendee.Name = name;
+                    //                        attendee.Email = mailbox.Address;
+                    //                        attendee.AttendeeType = NcAttendeeType.Required;
+                    //                        attendee.AttendeeTypeIsSet = true;
+                    //                        calendarInviteItem.attendees.Add (attendee);
+                    mailList.Add (mailbox);
+                }
+            }
+
+            // Update calendar item
+            calendarInviteItem.Update ();
+            BackEnd.Instance.UpdateCalCmd (account.Id, calendarInviteItem.Id);
+            calendarInviteItem = McCalendar.QueryById<McCalendar> (calendarInviteItem.Id);
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged),
+                Account = NachoCore.Model.ConstMcAccount.NotAccountSpecific,
+            });
+
+            // Create mime
+            var iCalPart = CalendarHelper.iCalToMimePart (account, calendarInviteItem);
+
+            StringBuilder bodyText = new StringBuilder ();
+            bodyText.Append (bodyTextView.Text).Append ("\n\n").Append (EmailHelper.FormatBasicHeadersForCalendarForward (calendarInviteItem, account.EmailAddr)).Append (calendarInviteItem.Description ?? "");
+            var mimeBody = CalendarHelper.CreateMime (bodyText.ToString (), iCalPart, calendarInviteItem.attachments);
+
+            CalendarHelper.SendInvites (account, calendarInviteItem, Pretty.SubjectString (subjectField.Text), null, mimeBody, mailList);
+        }
+
+        protected int GetReferencedEmailId ()
+        {
+            if (!EmailHelper.IsEditDraftAction (action)) {
+                return referencedMessage.Id;
+            } 
+
+            if (DraftsHelper.WasReferencedMessageDeleted (draftMessage)) {
+                return draftMessage.ReferencedEmailId;
+            } else {
+                return referencedMessage.Id;
+            }
+        }
+
+        protected void NotifyUserReferencedMessageWasDeleted ()
+        {
+            UIAlertView alert = new UIAlertView ();
+            alert.Title = "Original Message Removed";
+            alert.Message = "The original message you referenced in this draft has been removed. It will not be sent to any recipients.";
+            alert.AddButton ("Ok");
+            alert.Show ();
+        }
+
+        protected void NotifyUserAnAttachmentWasRemoved ()
+        {
+            UIAlertView alert = new UIAlertView ();
+            alert.Title = "Attachment Removed";
+            alert.Message = "One or more of the attachments you included in this draft has been removed. The remaining attachments are included.";
+            alert.AddButton ("Ok");
+            alert.Show ();
+        }
     }
 }

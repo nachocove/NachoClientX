@@ -47,7 +47,6 @@ namespace NachoClient.iOS
 //                break;
             case DraftsHelper.DraftType.Email:
                 draftsTableViewSource.SetDraftType (DraftsHelper.DraftType.Email);
-                draftsTableViewSource.SetDraftsList (DraftsHelper.GetEmailDrafts (LoginHelpers.GetCurrentAccountId ()).Cast<McAbstrItem> ().ToList ());
                 break;
             }
            
@@ -135,11 +134,12 @@ namespace NachoClient.iOS
                 //h.value2 == isDraft
                 if ((bool)h.value2 == true) {
                     McEmailMessage draftMessage = (McEmailMessage)h.value;
-                    MessageComposeViewController mcvc = (MessageComposeViewController)segue.DestinationViewController;
                     McEmailMessageThread tempThread = new McEmailMessageThread ();
                     NcEmailMessageIndex tempIndex = new NcEmailMessageIndex ();
                     tempIndex.Id = draftMessage.Id;
                     tempThread.Add (tempIndex);
+                    INachoMessageComposer mcvc = (INachoMessageComposer)segue.DestinationViewController;
+                    mcvc.SetDraftPresetFields (EmailHelper.EmailMessageRecipients (draftMessage), draftMessage.Subject, draftMessage.GetBodyString (), McAttachment.QueryByItemId(draftMessage));
                     mcvc.SetAction (tempThread, MessageComposeViewController.EDIT_DRAFT_ACTION);
                     return;
                 } else {

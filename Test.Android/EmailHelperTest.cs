@@ -351,6 +351,132 @@ namespace Test.Android
             testMessage.Bcc = "dave <dave@yahoo.com>";
             Assert.True ("adam@yahoo.com, bill@yahoo.com, colin, dave" == EmailHelper.EmailMessageRecipientsToString (testMessage));
         }
+
+        [Test]
+        public void TestEmailMessageRecipients ()
+        {
+            McEmailMessage testMessage = new McEmailMessage ();
+            Assert.True (0 == EmailHelper.EmailMessageRecipients(testMessage).Count);
+
+            testMessage.To = "adam@yahoo.com";
+            Assert.True (testMessage.To == EmailHelper.EmailMessageRecipients(testMessage)[0].address);
+
+            testMessage.Cc = "colin@yahoo.com";
+            Assert.True (testMessage.To == EmailHelper.EmailMessageRecipients(testMessage)[0].address);
+            Assert.True (testMessage.Cc == EmailHelper.EmailMessageRecipients(testMessage)[1].address);
+
+
+            testMessage.Bcc = "dave@yahoo.com";
+            Assert.True (testMessage.To == EmailHelper.EmailMessageRecipients(testMessage)[0].address);
+            Assert.True (testMessage.Cc == EmailHelper.EmailMessageRecipients(testMessage)[1].address);
+            Assert.True (testMessage.Bcc == EmailHelper.EmailMessageRecipients(testMessage)[2].address);
+        }
+
+        [Test]
+        public void TestIsDraftForwardOrReply ()
+        {
+            McEmailMessage draft = null;
+            Assert.False (EmailHelper.IsDraftForwardOrReply (draft));
+
+            draft = new McEmailMessage ();
+            Assert.False (EmailHelper.IsDraftForwardOrReply (draft));
+
+            draft.ReferencedEmailId = 2;
+            Assert.True (EmailHelper.IsDraftForwardOrReply (draft));
+        }
+
+        [Test]
+        public void TestIsDraftForward ()
+        {
+            McEmailMessage draft = null;
+            Assert.False (EmailHelper.IsDraftForward (draft));
+
+            draft = new McEmailMessage ();
+            Assert.False (EmailHelper.IsDraftForward (draft));
+
+            draft.ReferencedIsForward = true;
+            Assert.True (EmailHelper.IsDraftForward (draft));
+        }
+
+        [Test]
+        public void TestIsForwardOrReplyAction ()
+        {
+            EmailHelper.Action testAction = EmailHelper.Action.Send;
+            Assert.IsFalse (EmailHelper.IsForwardOrReplyAction (testAction));
+
+            testAction = EmailHelper.Action.EditDraft;
+            Assert.IsFalse (EmailHelper.IsForwardOrReplyAction (testAction));
+
+            testAction = EmailHelper.Action.Forward;
+            Assert.IsTrue (EmailHelper.IsForwardOrReplyAction (testAction));
+
+            testAction = EmailHelper.Action.Reply;
+            Assert.IsTrue (EmailHelper.IsForwardOrReplyAction (testAction));
+
+            testAction = EmailHelper.Action.ReplyAll;
+            Assert.IsTrue (EmailHelper.IsForwardOrReplyAction (testAction));
+        }
+
+        [Test]
+        public void TestIsEditDraftAction ()
+        {
+            EmailHelper.Action testAction = EmailHelper.Action.Send;
+            Assert.IsFalse (EmailHelper.IsEditDraftAction (testAction));
+
+            testAction = EmailHelper.Action.Reply;
+            Assert.IsFalse (EmailHelper.IsEditDraftAction (testAction));
+
+            testAction = EmailHelper.Action.ReplyAll;
+            Assert.IsFalse (EmailHelper.IsEditDraftAction (testAction));
+
+            testAction = EmailHelper.Action.Forward;
+            Assert.IsFalse (EmailHelper.IsEditDraftAction (testAction));
+
+            testAction = EmailHelper.Action.EditDraft;
+            Assert.IsTrue (EmailHelper.IsEditDraftAction (testAction));
+        }
+
+        [Test]
+        public void TestShowQuotedTextButton ()
+        {
+            EmailHelper.Action replyAction = EmailHelper.Action.Reply;
+            EmailHelper.Action editDraftAction = EmailHelper.Action.EditDraft;
+
+            McEmailMessage referencedMessage = null;
+            McEmailMessage draftMessage = null;
+
+            //Reply action, and the referenced message is null, don't show
+            Assert.False (EmailHelper.ShowQuotedTextButton (replyAction, referencedMessage, draftMessage));
+
+            referencedMessage = new McEmailMessage ();
+            referencedMessage.AccountId = 2;
+            referencedMessage.Insert ();
+
+            //EditDraft action and the draft message is null, dont show
+            Assert.False (EmailHelper.ShowQuotedTextButton (editDraftAction, referencedMessage, draftMessage));
+
+            draftMessage = new McEmailMessage ();
+            draftMessage.AccountId = 2;
+            draftMessage.Insert ();
+            //EditDraft action and the draft message isn't forward or reply, don't show
+            Assert.False (EmailHelper.ShowQuotedTextButton (editDraftAction, referencedMessage, draftMessage));
+
+
+            draftMessage.ReferencedEmailId = referencedMessage.Id;
+            draftMessage.ReferencedBodyIsIncluded = true;
+            //EditDraft action, but the body is included in the message
+            Assert.False (EmailHelper.ShowQuotedTextButton (editDraftAction, referencedMessage, draftMessage));
+
+            draftMessage.ReferencedBodyIsIncluded = false;
+            //EditDraft action, is a forward/reply, referenced body is not present,
+            //Referenced message is not null, hasn't been deleted
+            Assert.True (EmailHelper.ShowQuotedTextButton (editDraftAction, referencedMessage, draftMessage));
+
+            referencedMessage.Delete ();
+            //EditDraft action, is a forward/reply, referenced body is not present,
+            //Referenced message has been deleted
+            Assert.False (EmailHelper.ShowQuotedTextButton (editDraftAction, referencedMessage, draftMessage));
+        }
     }
 }
 

@@ -6,6 +6,7 @@ using MimeKit;
 using System.Text;
 using NachoCore.Model;
 using NachoCore.ActiveSync;
+using System.Linq;
 
 namespace NachoCore.Utils
 {
@@ -16,12 +17,32 @@ namespace NachoCore.Utils
             Calendar,
         }
 
+        public static bool IsOriginalMessageEmbedded (McEmailMessage draftMessage)
+        {
+            if (null == draftMessage) {
+                return false;
+            }
+            return draftMessage.ReferencedBodyIsIncluded;
+        }
+
+        public static McEmailMessage GetReferencedMessage (McEmailMessage draftMessage)
+        {
+            return McEmailMessage.QueryById<McEmailMessage> (draftMessage.ReferencedEmailId);
+        }
+
+        public static bool WasReferencedMessageDeleted (McEmailMessage draftMessage)
+        {
+            NcAssert.True (0 != draftMessage.ReferencedEmailId, "This message doesn't have a referenced message.");
+            McEmailMessage referencedMessage = GetReferencedMessage (draftMessage);
+            return null == referencedMessage;
+        }
+
         //Leave this commented out until we are allowing users to edit draft messages 
         public static bool IsDraftsFolder (McFolder folder)
         {
-//            if (McFolder.GetDefaultDraftsFolder (folder.AccountId).Id == folder.Id) {
-//                return true;
-//            }
+            if (McFolder.GetDefaultDraftsFolder (folder.AccountId).Id == folder.Id) {
+                return true;
+            }
             return false; 
         }
 
@@ -36,8 +57,7 @@ namespace NachoCore.Utils
 
         public static List<McEmailMessage> GetEmailDrafts (int accountId)
         {
-            List<McEmailMessage> emailDrafts = McEmailMessage.QueryByFolderId<McEmailMessage> (accountId, McFolder.GetDefaultDraftsFolder (accountId).Id);
-            return emailDrafts;
+            return McEmailMessage.QueryDraftMessages (accountId, McFolder.GetDefaultDraftsFolder (accountId).Id);
         }
     }
 }

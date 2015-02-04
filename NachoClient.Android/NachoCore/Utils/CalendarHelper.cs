@@ -473,7 +473,7 @@ namespace NachoCore.Utils
             mimeMessage.Date = System.DateTime.UtcNow;
             mimeMessage.Body = mimeBody;
 
-            var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
+            var mcMessage = MimeHelpers.AddToDbOrUpdate (account.Id, mimeMessage);
             BackEnd.Instance.SendEmailCmd (mcMessage.AccountId, mcMessage.Id, c.Id);
             // TODO: Subtle ugliness. Id is passed to BE, ref-count is ++ in the DB.
             // The object here still has ref-count of 0, so interlock is lost, and delete really happens in the DB.
@@ -494,7 +494,7 @@ namespace NachoCore.Utils
             mimeMessage.Date = System.DateTime.UtcNow;
             mimeMessage.Body = mimeBody;
 
-            var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
+            var mcMessage = MimeHelpers.AddToDbOrUpdate (account.Id, mimeMessage);
             BackEnd.Instance.SendEmailCmd (mcMessage.AccountId, mcMessage.Id, c.Id);
             mcMessage = McEmailMessage.QueryById<McEmailMessage> (mcMessage.Id);
             mcMessage.Delete ();
@@ -511,7 +511,7 @@ namespace NachoCore.Utils
             mimeMessage.Subject = Pretty.SubjectString (ResponseSubjectPrefix (response) + ": " + c.Subject);
             mimeMessage.Date = DateTime.UtcNow;
             mimeMessage.Body = mimeBody;
-            var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
+            var mcMessage = MimeHelpers.AddToDbOrUpdate (account.Id, mimeMessage);
             BackEnd.Instance.SendEmailCmd (mcMessage.AccountId, mcMessage.Id, c.Id);
             mcMessage = McEmailMessage.QueryById<McEmailMessage> (mcMessage.Id);
             mcMessage.Delete ();
@@ -525,7 +525,7 @@ namespace NachoCore.Utils
             mimeMessage.Subject = Pretty.SubjectString (ResponseSubjectPrefix (response) + ": " + subject);
             mimeMessage.Date = DateTime.UtcNow;
             mimeMessage.Body = mimeBody;
-            var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
+            var mcMessage = MimeHelpers.AddToDbOrUpdate (account.Id, mimeMessage);
             BackEnd.Instance.SendEmailCmd (mcMessage.AccountId, mcMessage.Id);
             mcMessage = McEmailMessage.QueryById<McEmailMessage> (mcMessage.Id);
             mcMessage.Delete ();
@@ -541,7 +541,7 @@ namespace NachoCore.Utils
             mimeMessage.Subject = Pretty.SubjectString ("Canceled : " + c.Subject);
             mimeMessage.Date = DateTime.UtcNow;
             mimeMessage.Body = mimeBody;
-            var mcMessage = MimeHelpers.AddToDb (account.Id, mimeMessage);
+            var mcMessage = MimeHelpers.AddToDbOrUpdate (account.Id, mimeMessage);
             BackEnd.Instance.SendEmailCmd (mcMessage.AccountId, mcMessage.Id, c.Id);
             mcMessage = McEmailMessage.QueryById<McEmailMessage> (mcMessage.Id);
             mcMessage.Delete ();
