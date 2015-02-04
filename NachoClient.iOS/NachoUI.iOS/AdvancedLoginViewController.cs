@@ -257,6 +257,7 @@ namespace NachoClient.iOS
             yOffset += 25;
 
             connectButton = new UIButton (new RectangleF (25, yOffset, View.Frame.Width - 50, 46));
+            connectButton.AccessibilityLabel = "Connect";
             connectButton.BackgroundColor = A.Color_NachoTeal;
             connectButton.TitleLabel.TextAlignment = UITextAlignment.Center;
             connectButton.SetTitle ("Connect", UIControlState.Normal);
@@ -271,6 +272,7 @@ namespace NachoClient.iOS
             yOffset = connectButton.Frame.Bottom + 15;
 
             advancedButton = new UIButton (new RectangleF (50, yOffset, View.Frame.Width - 100, 20));
+            advancedButton.AccessibilityLabel = "Advanced Sign In";
             advancedButton.BackgroundColor = A.Color_NachoNowBackground;
             advancedButton.TitleLabel.TextAlignment = UITextAlignment.Center;
             advancedButton.SetTitle ("Advanced Sign In", UIControlState.Normal);
@@ -285,6 +287,7 @@ namespace NachoClient.iOS
             yOffset = advancedButton.Frame.Bottom + 20;
 
             customerSupportButton = new UIButton (new RectangleF (50, yOffset, View.Frame.Width - 100, 20));
+            customerSupportButton.AccessibilityLabel = "Customer Support";
             customerSupportButton.BackgroundColor = A.Color_NachoNowBackground;
             customerSupportButton.TitleLabel.TextAlignment = UITextAlignment.Center;
             customerSupportButton.SetTitle ("Customer Support", UIControlState.Normal);
@@ -298,6 +301,7 @@ namespace NachoClient.iOS
             yOffset = customerSupportButton.Frame.Bottom + 20;
 
             restartButton = new UIButton (new RectangleF (50, yOffset, View.Frame.Width - 100, 20));
+            restartButton.AccessibilityLabel = "Start Over";
             restartButton.BackgroundColor = A.Color_NachoNowBackground;
             restartButton.TitleLabel.TextAlignment = UITextAlignment.Center;
             restartButton.SetTitle ("Start Over", UIControlState.Normal);
@@ -995,12 +999,16 @@ namespace NachoClient.iOS
             textField.Font = A.Font_AvenirNextRegular14;
             textField.AutocapitalizationType = UITextAutocapitalizationType.None;
             textField.AutocorrectionType = UITextAutocorrectionType.No;
+            textField.AccessibilityLabel = labelText;
             inputBox.Add (textField);
 
             textField.ShouldReturn += (field) => {
                 field.TextColor = UIColor.Black;
                 inputBox.EndEditing (true);
                 return true;
+            };
+            textField.EditingDidEnd += (object sender, EventArgs e) => {
+                // Dummy event for triggering UI monitoring
             };
         }
     }
