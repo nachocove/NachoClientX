@@ -11,6 +11,7 @@ using TypeCode = NachoCore.ActiveSync.Xml.FolderHierarchy.TypeCode;
 using ClassCode = NachoCore.Model.McAbstrFolderEntry.ClassCodeEnum;
 using NachoAssertionFailure = NachoCore.Utils.NcAssert.NachoAssertionFailure;
 using Test.iOS;
+
 namespace Test.Common
 {
     public class McContactTest : NcTestBase
@@ -48,7 +49,7 @@ namespace Test.Common
 
             FolderOps.CreateFolder (accountId, typeCode: typeCode2, parentId: parentId, name: name);
 
-            McFolder expected2 = McFolder.GetUserFolders (accountId, typeCode2, parentId.ToInt (), name).First();
+            McFolder expected2 = McFolder.GetUserFolders (accountId, typeCode2, parentId.ToInt (), name).First ();
 
             var c = new McContact ();
             c.AccountId = 1;
@@ -145,6 +146,130 @@ namespace Test.Common
             Assert.AreEqual ("Charlie Clark", e [2].GetContact ().GetDisplayNameOrEmailAddress ());
             Assert.AreEqual ("eddie@foo.com", e [3].GetContact ().GetDisplayNameOrEmailAddress ());
 
+        }
+
+        private void CheckEmailAddressEclisped (McContact contact)
+        {
+            Assert.True (contact.EmailAddressesEclipsed);
+        }
+
+        private void CheckNotEmailAddressEclipsed (McContact contact)
+        {
+            Assert.False (contact.EmailAddressesEclipsed);
+        }
+
+        private void CheckIndex (List<NcContactIndex> indexList, int id)
+        {
+            Assert.AreEqual (1, indexList.Count);
+            Assert.AreEqual (id, indexList [0].Id);
+        }
+
+        private void CheckSearch (int accountId, int id)
+        {
+            var indexList = McContact.AllContactsSortedByName (true);
+            CheckIndex (indexList, id);
+
+            indexList = McContact.AllContactsSortedByName (accountId, true);
+            CheckIndex (indexList, id);
+        }
+
+        private McContact ReRead (McContact contact)
+        {
+            NcAssert.True (0 < contact.Id);
+            var newContact = McContact.QueryById<McContact> (contact.Id);
+            Assert.NotNull (newContact);
+            return newContact;
+        }
+
+        [Test]
+        public void EmailAddressesEclipsing ()
+        {
+            int accountId = 2;
+            string parentId = "0";
+            string name = "name";
+            string email = "bob@company.net";
+
+            var syncFolder = FolderOps.CreateFolder (accountId, typeCode: TypeCode.DefaultContacts_9,
+                                 parentId: parentId, name: name);
+            var ricFolder = FolderOps.CreateFolder (accountId, typeCode: TypeCode.Ric_19,
+                                parentId: parentId, name: name);
+
+            // Create an email address
+            var emailAddress = new McEmailAddress () {
+                AccountId = accountId,
+                CanonicalEmailAddress = email,
+            };
+            emailAddress.Insert ();
+
+            // Create a gleaned contact
+            var gleanedContact = new McContact () {
+                AccountId = accountId,
+                FirstName = email,
+                Source = McAbstrItem.ItemSource.Internal,
+            };
+            gleanedContact.AddEmailAddressAttribute (accountId, "Email1Address", null, email);
+            gleanedContact.Insert ();
+
+            CheckNotEmailAddressEclipsed (gleanedContact);
+            CheckSearch (accountId, gleanedContact.Id);
+
+            // Create a RIC contact. It should eclipse the gleaned contact
+            var ricContact = new McContact () {
+                AccountId = accountId,
+                FirstName = "Bob",
+                Source = McAbstrItem.ItemSource.ActiveSync,
+                WeightedRank = 12345678
+            };
+            ricContact.AddEmailAddressAttribute (accountId, "Email1Address", null, email);
+            ricContact.Insert ();
+            ricFolder.Link (ricContact);
+
+            gleanedContact = ReRead (gleanedContact);
+
+            CheckEmailAddressEclisped (gleanedContact);
+            CheckNotEmailAddressEclipsed (ricContact);
+            CheckSearch (accountId, ricContact.Id);
+
+            // Create a sync contact. It should eclipse the GAL, RIC and gleaned contact.
+            var syncContact = new McContact () {
+                AccountId = accountId,
+                FirstName = "Bob",
+                LastName = "Smith",
+                Source = McAbstrItem.ItemSource.ActiveSync
+            };
+            syncContact.AddEmailAddressAttribute (accountId, "Email1Address", null, email);
+            syncContact.Insert ();
+            syncFolder.Link (syncContact);
+
+            gleanedContact = ReRead (gleanedContact);
+            ricContact = ReRead (ricContact);
+
+            CheckEmailAddressEclisped (gleanedContact);
+            CheckEmailAddressEclisped (ricContact);
+            CheckNotEmailAddressEclipsed (syncContact);
+            CheckSearch (accountId, syncContact.Id);
+
+            // Create a GAL contact. It should eclipse the RIC and gleaned contact
+            var galContact = new McContact () {
+                AccountId = accountId,
+                FirstName = "Bob",
+                LastName = "Smith",
+                Source = McAbstrItem.ItemSource.ActiveSync,
+                GalCacheToken = "ace11f66-43ea-4fc6-be0b-10daf5bccf5f"
+            };
+            galContact.AddEmailAddressAttribute (accountId, "Email1Address", null, email);
+            galContact.Insert ();
+            syncFolder.Link (galContact);
+
+            gleanedContact = ReRead (gleanedContact);
+            ricContact = ReRead (ricContact);
+            syncContact = ReRead (syncContact);
+
+            CheckEmailAddressEclisped (gleanedContact);
+            CheckEmailAddressEclisped (ricContact);
+            CheckEmailAddressEclisped (galContact);
+            CheckNotEmailAddressEclipsed (syncContact);
+            CheckSearch (accountId, syncContact.Id);
         }
     }
 }
