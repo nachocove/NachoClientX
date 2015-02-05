@@ -479,15 +479,15 @@ namespace NachoCore.Brain
             lock (LockObj) {
                 while (true) {
                     var brainEvent = EventQueue.Dequeue ();
-                    if (!tvStarted &&
-                        (NcApplication.ExecutionContextEnum.Background == NcApplication.Instance.ExecutionContext ||
-                            NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext)) {
-                        McEmailMessage.StartTimeVariance (EventQueue.Token);
-                        tvStarted = true;
-                    }
                     if (NcBrainEventType.TERMINATE == brainEvent.Type) {
                         Log.Info (Log.LOG_BRAIN, "NcBrain Task exits");
                         return;
+                    }
+                    if (!tvStarted &&
+                        (NcApplication.ExecutionContextEnum.Background == NcApplication.Instance.ExecutionContext ||
+                        NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext)) {
+                        McEmailMessage.StartTimeVariance (EventQueue.Token);
+                        tvStarted = true;
                     }
                     // TODO - scheduling of brain actions need to be smarter. This will be
                     // addressed in brain 2.0.
