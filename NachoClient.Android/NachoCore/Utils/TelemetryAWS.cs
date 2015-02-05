@@ -133,7 +133,9 @@ namespace NachoCore.Utils
 
         public void ReinitializeTables ()
         {
-            Client.Dispose ();
+            if (null != Client) {
+                Client.Dispose ();
+            }
             InitializeTables ();
         }
 
