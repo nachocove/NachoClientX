@@ -1,3 +1,10 @@
-﻿Pre-beta release fixes certain Exchange 2007 server issues. Certain Sync items go quite a bit faster. 
-Known issues:  Duplicate Contacts may still be created. 
+﻿. Addressed slow performance on certain Hot Mail configurations.
+. Fixed navigation on the More screen to be more intuitive.
+. Addressed a series of SSL cert configuration errors that can be made by administrators when setting up 2007 Exchange servers.
+
+Known issues:
+1) No configuration setting to allow for syncing more than 30 days worth of messages.
+2) Certain calendar entries may be duplicated on Nacho Calendar.
+3) Event Forward of calendar events are not yet implemented.
+4) Data migration may take several minutes.
 
