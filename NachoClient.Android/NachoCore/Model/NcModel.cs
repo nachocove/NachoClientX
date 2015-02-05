@@ -289,8 +289,9 @@ namespace NachoCore.Model
                 if (instance == null) {
                     lock (syncRoot) {
                         if (instance == null) {
-                            instance = new NcModel ();
-                            instance.WriteNTransLockObj = new object ();
+                            var newInstnace = new NcModel ();
+                            newInstnace.WriteNTransLockObj = new object ();
+                            instance = newInstnace;
                         }
                     }
                 }
