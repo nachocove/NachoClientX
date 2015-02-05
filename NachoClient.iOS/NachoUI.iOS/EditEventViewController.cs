@@ -546,9 +546,11 @@ namespace NachoClient.iOS
                 if (0 > endDate.CompareTo (startDate)) {
                     strikethrough.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, CELL_HEIGHT / 2, endDateLabel.Frame.Width, 1);
                     strikethrough.Hidden = false;
+                    doneButton.Enabled = false;
                     endDateLabel.TextColor = A.Color_NachoRed;
                 } else { 
                     strikethrough.Hidden = true;
+                    doneButton.Enabled = true;
                     endDateLabel.TextColor = A.Color_808080;
                 }
             };
@@ -610,9 +612,11 @@ namespace NachoClient.iOS
                 if (0 > endDate.CompareTo (startDate)) {
                     strikethrough.Frame = new RectangleF (SCREEN_WIDTH - endDateLabel.Frame.Width - 15, CELL_HEIGHT / 2, endDateLabel.Frame.Width, 1);
                     strikethrough.Hidden = false;
+                    doneButton.Enabled = false;
                     endDateLabel.TextColor = A.Color_NachoRed;
                 } else { 
                     strikethrough.Hidden = true;
+                    doneButton.Enabled = true;
                     endDateLabel.TextColor = A.Color_NachoTeal;
                 }
             };

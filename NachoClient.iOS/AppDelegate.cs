@@ -224,11 +224,18 @@ namespace NachoClient.iOS
             UIToolbar.Appearance.BackgroundColor = UIColor.White;
             UIBarButtonItem.Appearance.TintColor = A.Color_NachoBlue;
 
-            var navigationTitleTextAttributes = new UITextAttributes ();
-            navigationTitleTextAttributes.Font = A.Font_AvenirNextDemiBold17;
-            navigationTitleTextAttributes.TextColor = UIColor.White;
-            UINavigationBar.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes);
-            UIBarButtonItem.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes, UIControlState.Normal);
+            // Text attributes for navbar titles
+            var navigationTitleEnabledTextAttributes = new UITextAttributes ();
+            navigationTitleEnabledTextAttributes.Font = A.Font_AvenirNextDemiBold17;
+            navigationTitleEnabledTextAttributes.TextColor = UIColor.White;
+
+            var navigationTitleDisabledTextAttributes = new UITextAttributes ();
+            navigationTitleDisabledTextAttributes.Font = A.Font_AvenirNextDemiBold17;
+            navigationTitleDisabledTextAttributes.TextColor = A.Color_NachoDisabledText;
+
+            UINavigationBar.Appearance.SetTitleTextAttributes (navigationTitleEnabledTextAttributes);
+            UIBarButtonItem.Appearance.SetTitleTextAttributes (navigationTitleEnabledTextAttributes, UIControlState.Normal);
+            UIBarButtonItem.Appearance.SetTitleTextAttributes (navigationTitleDisabledTextAttributes, UIControlState.Disabled);
             UIApplication.SharedApplication.RegisterForRemoteNotificationTypes (
                 UIRemoteNotificationType.NewsstandContentAvailability | UIRemoteNotificationType.Sound);
             UIApplication.SharedApplication.SetMinimumBackgroundFetchInterval (UIApplication.BackgroundFetchIntervalMinimum);
