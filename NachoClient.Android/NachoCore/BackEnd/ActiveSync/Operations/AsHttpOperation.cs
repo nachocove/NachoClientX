@@ -730,6 +730,10 @@ namespace NachoCore.ActiveSync
                 }
                 // We are following the (iffy) auto-d directive, but failing pending to avoid possible loop.
                 Owner.ResolveAllFailed (NcResult.WhyEnum.AccessDeniedOrBlocked);
+                // If we get a 403 on a Provision from GFE, this is them saying that EAS isn't paid-for.
+                if (BEContext.Server.HostIsGMail () && (null != Owner as AsProvisionCommand)) {
+                    BEContext.ProtoControl.AutoDInfo = AutoDInfoEnum.GoogleForbids;
+                }
                 return Final ((uint)AsProtoControl.AsEvt.E.ReDisc, "HTTPOP403F");
 
             case HttpStatusCode.NotFound:
