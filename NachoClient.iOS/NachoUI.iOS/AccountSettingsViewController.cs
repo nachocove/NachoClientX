@@ -333,7 +333,8 @@ namespace NachoClient.iOS
             deleteAccountButton.TouchUpInside += onDeleteAccount;
             deleteAccountView.AddSubview (deleteAccountButton);
 
-            contentView.Add (deleteAccountView);
+            // Fixme: delete account is still a test thing
+            // contentView.Add (deleteAccountView);
 
             yOffset = deleteAccountView.Frame.Bottom + A.Card_Vertical_Indent;
 
