@@ -355,7 +355,7 @@ namespace NachoCore
 
         public string ForwardCalCmd (int accountId, int newEmailMessageId, int forwardedCalId, int folderId)
         {
-            return ServiceFromAccountId (accountId).ForwardCalCmd (newEmailMessageId, forwardedCalId, folderId);
+            return ServiceFromAccountId (accountId, (service) => service.ForwardCalCmd (newEmailMessageId, forwardedCalId, folderId));
         }
 
         public string MarkEmailReadCmd (int accountId, int emailMessageId)
