@@ -1552,7 +1552,7 @@ namespace NachoCore.Model
             }
 
             List<McContact> contactList = new List<McContact> ();
-            foreach (var address in EmailAddresses) {
+            foreach (var address in PhoneNumbers) {
                 var contacts = McContact.QueryByPhoneNumber (AccountId, address.Value).Where (x => x.Id != Id);
                 contactList.AddRange (contacts);
             }
