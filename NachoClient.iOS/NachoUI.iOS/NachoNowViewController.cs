@@ -28,8 +28,6 @@ namespace NachoClient.iOS
         protected NcCapture ReloadCapture;
         private string ReloadCaptureName;
 
-        protected static bool isForwarding;
-
         public NachoNowViewController (IntPtr handle) : base (handle)
         {
         }
@@ -235,7 +233,7 @@ namespace NachoClient.iOS
                 var dc = (MessageComposeViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
                 var c = holder.value as McCalendar;
-                if (isForwarding) {
+                if ((bool)holder.value2) {
                     dc.SetCalendarInvite (c);
                     dc.SetEmailPresetFields (null, "Fwd: " + c.Subject, "");
                 } else {
@@ -365,23 +363,21 @@ namespace NachoClient.iOS
 
         public void SendRunningLateMessage (int eventId)
         {
-            isForwarding = false;
             var c = CalendarHelper.GetMcCalendarRootForEvent (eventId);
             if (null != c) {
                 if (String.IsNullOrEmpty (c.OrganizerEmail)) {
                     // maybe we should do a pop up or hide the swipe
                 } else {
-                    PerformSegue ("CalendarToEmailCompose", new SegueHolder (c));
+                    PerformSegue ("CalendarToEmailCompose", new SegueHolder (c, false));
                 }
             }
         }
 
         public void ForwardInvite (int eventId)
         {
-            isForwarding = true;
             var c = CalendarHelper.GetMcCalendarRootForEvent (eventId);
             if (null != c) {
-                PerformSegue ("CalendarToEmailCompose", new SegueHolder (c));
+                PerformSegue ("CalendarToEmailCompose", new SegueHolder (c, true));
             }
         }
 
