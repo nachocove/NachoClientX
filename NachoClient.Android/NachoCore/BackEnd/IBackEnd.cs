@@ -94,6 +94,17 @@ namespace NachoCore
         string RespondEmailCmd (int accountId, int emailMessageId, NcResponseType response);
         string RespondCalCmd (int accountId, int calId, NcResponseType response, DateTime? instance = null);
         string DnldCalBodyCmd (int accountId, int calId);
+
+        /// <summary>
+        /// Forward a calendar event.
+        /// </summary>
+        /// <returns>The token for the pending operation.</returns>
+        /// <param name="accountId">Account identifier.</param>
+        /// <param name="newEmailMessageId">ID of the outgoing e-mail message.</param>
+        /// <param name="forwardedCalId">ID of the McCalendar event being forwarded.</param>
+        /// <param name="folderId">ID of the folder that is the parent of the event being forwarded.</param>
+        string ForwardCalCmd (int accountId, int newEmailMessageId, int forwardedCalId, int folderId);
+
         string CreateContactCmd (int accountId, int contactId, int folderId);
         string UpdateContactCmd (int accountId, int contactId);
         string DeleteContactCmd (int accountId, int contactId);

@@ -844,7 +844,8 @@ namespace NachoCore.ActiveSync
                         McPending.Operations.EmailSend == x.Operation ||
                            McPending.Operations.EmailForward == x.Operation ||
                            McPending.Operations.EmailReply == x.Operation ||
-                           McPending.Operations.CalRespond == x.Operation
+                           McPending.Operations.CalRespond == x.Operation ||
+                           McPending.Operations.CalForward == x.Operation
                            ).FirstOrDefault ();
                 if (null != send) {
                     Log.Info (Log.LOG_AS, "Strategy:FG/BG:Send");
@@ -854,6 +855,7 @@ namespace NachoCore.ActiveSync
                         cmd = new AsSendMailCommand (BEContext.ProtoControl, send);
                         break;
                     case McPending.Operations.EmailForward:
+                    case McPending.Operations.CalForward:
                         cmd = new AsSmartForwardCommand (BEContext.ProtoControl, send);
                         break;
                     case McPending.Operations.EmailReply:
@@ -892,7 +894,7 @@ namespace NachoCore.ActiveSync
                 // (FG, BG) If there are entries in the pending queue, execute the oldest.
                 var next = McPending.QueryEligible (accountId).FirstOrDefault ();
                 if (null != next) {
-                    NcAssert.True (McPending.Operations.Last == McPending.Operations.Sync);
+                    NcAssert.True (McPending.Operations.Last == McPending.Operations.CalForward);
                     Log.Info (Log.LOG_AS, "Strategy:FG/BG:QOp:{0}", next.Operation.ToString ());
                     AsCommand cmd = null;
                     var action = PickActionEnum.QOop;
@@ -923,6 +925,7 @@ namespace NachoCore.ActiveSync
                     // ... however one of these below, which would have been handled above, could have been
                     // inserted into the Q while Pick() is in the middle of running.
                     case McPending.Operations.EmailForward:
+                    case McPending.Operations.CalForward:
                         cmd = new AsSmartForwardCommand (BEContext.ProtoControl, next);
                         break;
                     case McPending.Operations.EmailReply:

@@ -691,6 +691,31 @@ namespace NachoCore.ActiveSync
             return token;
         }
 
+        public override string ForwardCalCmd (int newEmailMessageId, int forwardedCalId, int folderId)
+        {
+            string token = null;
+            NcModel.Instance.RunInTransaction (() => {
+                var refdCalEvent = McAbstrObject.QueryById<McCalendar> (forwardedCalId);
+                var newEmailMessage = McAbstrObject.QueryById<McEmailMessage> (newEmailMessageId);
+                var folder = McAbstrObject.QueryById<McFolder> (folderId);
+                if (null == refdCalEvent || null == newEmailMessage || null == folder) {
+                    return;
+                }
+
+                var pending = new McPending (Account.Id, newEmailMessage) {
+                    Operation = McPending.Operations.CalForward,
+                    ServerId = refdCalEvent.ServerId,
+                    ParentId = folder.ServerId,
+                };
+                pending.Insert ();
+                token = pending.Token;
+            });
+            NcTask.Run (delegate {
+                Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCCALF");
+            }, "ForwardCalCmd");
+            return token;
+        }
+
         public override string CreateContactCmd (int contactId, int folderId)
         {
             string token = null;

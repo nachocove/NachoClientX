@@ -35,6 +35,7 @@ namespace NachoClient.iOS
         public static bool BasicView = false;
         public bool UseDeviceCalendar;
         protected bool adjustScrollPosition = true;
+        protected static bool isForwarding;
 
         public CalendarViewController (IntPtr handle) : base (handle)
         {
@@ -120,25 +121,20 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("SegueToNachoNow")) {
                 // Nothing to do
                 return;
-            }
+            }  
 
             if (segue.Identifier.Equals ("CalendarToEmailCompose")) {
                 var dc = (MessageComposeViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
                 var c = holder.value as McCalendar;
-                dc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, c.OrganizerEmail), c.Subject, "Running late");
+                if (isForwarding) {
+                    dc.SetCalendarInvite (c);
+                    dc.SetEmailPresetFields (null, "Fwd: " + c.Subject, "");
+                } else {
+                    dc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, c.OrganizerEmail), c.Subject, "Running late");
+                }
                 return;
             }
-
-            /// Event Forward WIP
-//            if (segue.Identifier.Equals ("CalendarToEmailCompose")) {
-//                var dc = (MessageComposeViewController)segue.DestinationViewController;
-//                var holder = sender as SegueHolder;
-//                var c = holder.value as McCalendar;
-//                dc.SetCalendarInvite (c);
-//                dc.SetEmailPresetFields (null, "FWD: " + c.Subject, "");
-//                return;
-//            }
 
             if (segue.Identifier == "CalendarToEditEventView") {
                 var vc = (EditEventViewController)segue.DestinationViewController;
@@ -875,6 +871,7 @@ namespace NachoClient.iOS
         // ICalendarTableViewSourceDelegate
         public void SendRunningLateMessage (int eventId)
         {
+            isForwarding = false;
             var c = CalendarHelper.GetMcCalendarRootForEvent (eventId);
             if (null != c) {
                 PerformSegue ("CalendarToEmailCompose", new SegueHolder (c));
@@ -884,10 +881,11 @@ namespace NachoClient.iOS
         // ICalendarTableViewSourceDelegate
         public void ForwardInvite (int eventId)
         {
-//            var c = CalendarHelper.GetMcCalendarRootForEvent (eventId);
-//            if (null != c) {
-//                PerformSegue ("CalendarToEmailCompose", new SegueHolder (c));
-//            }
+            isForwarding = true;
+            var c = CalendarHelper.GetMcCalendarRootForEvent (eventId);
+            if (null != c) {
+                PerformSegue ("CalendarToEmailCompose", new SegueHolder (c));
+            }
         }
 
         // ICalendarTableViewSourceDelegate
