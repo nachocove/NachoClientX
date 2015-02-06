@@ -199,6 +199,8 @@ namespace NachoClient.iOS
             emailField.AutocorrectionType = UITextAutocorrectionType.No;
             emailField.Tag = EMAIL_TEXTFIELD_TAG;
             emailField.ShouldReturn += TextFieldShouldReturn;
+            emailField.EditingDidEnd += TextFieldEditingEnded;
+            emailField.AccessibilityLabel = "Email Address";
             emailBox.AddSubview (emailField);
 
             UIImageView mailImage = new UIImageView ();
@@ -228,6 +230,8 @@ namespace NachoClient.iOS
             passwordField.AutocorrectionType = UITextAutocorrectionType.No;
             passwordField.Tag = PASSWORD_TEXTFIELD_TAG;
             passwordField.ShouldReturn += TextFieldShouldReturn;
+            passwordField.EditingDidEnd += TextFieldEditingEnded;
+            passwordField.AccessibilityLabel = "Password";
             passwordBox.AddSubview (passwordField);
             passwordBox.UserInteractionEnabled = true;
 
@@ -253,6 +257,7 @@ namespace NachoClient.iOS
             submitButton.Tag = SUBMIT_BUTTON_TAG;
             submitButton.Alpha = 0.0f;
             submitButton.TouchUpInside += SubmitButtonTouchUpInside;
+            submitButton.AccessibilityLabel = "Submit";
             contentView.AddSubview (submitButton);
 
             yOffset = submitButton.Frame.Bottom + 20f;
@@ -264,6 +269,7 @@ namespace NachoClient.iOS
             advancedButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
             advancedButton.Tag = ADVANCED_SIGNIN_BUTTON_TAG;
             advancedButton.Alpha = 0.0f;
+            advancedButton.AccessibilityLabel = "Advanced Sign In";
             contentView.AddSubview (advancedButton);
             advancedButton.TouchUpInside += AdvancedLoginTouchUpInside;
 
@@ -276,6 +282,7 @@ namespace NachoClient.iOS
             supportButton.TitleLabel.Font = A.Font_AvenirNextRegular14;
             supportButton.Tag = CUSTOMER_SUPPORT_BUTTON_TAG;
             supportButton.Alpha = 0.0f;
+            supportButton.AccessibilityLabel = "Customer Support";
             contentView.AddSubview (supportButton);
             supportButton.TouchUpInside += SupportButtonTouchUpInside;
 
@@ -412,6 +419,7 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_UI, "LaunchViewController: Complain {0}", message);
             var alert = new UIAlertView (title, message, null, "OK", null);
+            alert.AccessibilityLabel = message;
             alert.Show ();        
         }
 
@@ -422,6 +430,7 @@ namespace NachoClient.iOS
         {
             Log.Info (Log.LOG_UI, "LaunchViewController: Confirm {0}", message);
             var alert = new UIAlertView (title, message, null, "OK", new string[] { "Cancel" });
+            alert.AccessibilityLabel = "Confirm";
             alert.Clicked += (s, b) => {
                 if (0 == b.ButtonIndex) {
                     StartLoginProcess ();
@@ -516,6 +525,11 @@ namespace NachoClient.iOS
             return true;
         }
 
+        public void TextFieldEditingEnded (object obj, EventArgs args)
+        {
+            // This is not needed except for triggering UI monitoring
+        }
+
         protected void SubmitButtonTouchUpInside (object sender, EventArgs e)
         {
             MaybeStartLogin ();
@@ -549,7 +563,9 @@ namespace NachoClient.iOS
             supportButton = null;
 
             emailField.ShouldReturn -= TextFieldShouldReturn;
+            emailField.EditingDidEnd -= TextFieldEditingEnded;
             passwordField.ShouldReturn -= TextFieldShouldReturn;
+            passwordField.EditingDidEnd -= TextFieldEditingEnded;
 
             emailField = null;
             passwordField = null;
