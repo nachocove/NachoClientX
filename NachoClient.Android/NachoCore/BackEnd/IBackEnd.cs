@@ -23,6 +23,7 @@ namespace NachoCore
         MXNotFound,
         MXFoundGoogle,
         MXFoundNonGoogle,
+        GoogleForbids,
     };
 
     public interface IBackEnd
