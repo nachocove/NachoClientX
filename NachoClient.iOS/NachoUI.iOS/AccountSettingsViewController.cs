@@ -329,6 +329,7 @@ namespace NachoClient.iOS
             Util.AddButtonImage (deleteAccountButton, "email-delete-two", UIControlState.Normal);
             deleteAccountButton.TitleEdgeInsets = new UIEdgeInsets (0, 28, 0, 0);
             deleteAccountButton.SetTitle ("Delete This Account", UIControlState.Normal);
+            deleteAccountButton.Font = A.Font_AvenirNextRegular14;
             deleteAccountButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
             deleteAccountButton.TouchUpInside += onDeleteAccount;
             deleteAccountView.AddSubview (deleteAccountButton);
