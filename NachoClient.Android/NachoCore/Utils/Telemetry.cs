@@ -744,6 +744,13 @@ namespace NachoCore.Utils
             }
         }
 
+        private void WaitOrCancel (int millisecond)
+        {
+            if (NcTask.Cts.Token.WaitHandle.WaitOne (millisecond)) {
+                NcTask.Cts.Token.ThrowIfCancellationRequested ();
+            }
+        }
+
         private void Process<T> () where T : ITelemetryBE, new()
         {
             try {
@@ -781,7 +788,7 @@ namespace NachoCore.Utils
                     //   2. Transition to foreground
                     while (NcApplication.ExecutionContextEnum.QuickSync ==
                            NcApplication.Instance.ExecutionContext) {
-                        NcTask.Cts.Token.WaitHandle.WaitOne (500);
+                        WaitOrCancel (500);
                     }
 
                     if (!ranOnce) {
@@ -873,11 +880,11 @@ namespace NachoCore.Utils
                             // to the next message immediately because we want to
                             // send multiple messages at a time. This leads to a more
                             // efficient utilization of write capacity.
-                            Token.WaitHandle.WaitOne (5000);
+                            WaitOrCancel (5000);
                         } else {
                             // We still have more events to upload. Check if we are throttling still.
                             if (Throttling) {
-                                Token.WaitHandle.WaitOne (THROTTLING_IDLE_PERIOD);
+                                WaitOrCancel (THROTTLING_IDLE_PERIOD);
                             }
                         }
                     } else {
