@@ -1135,32 +1135,6 @@ namespace NachoCore.Model
             return contactList;
         }
 
-        public static List<NcContactIndex> QueryAllContactItems ()
-        {
-            return NcModel.Instance.Db.Query<NcContactIndex> (
-                "SELECT c.Id as Id, substr(c.FirstName, 0, 1) as FirstLetter FROM McContact AS c " +
-                " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
-                " WHERE " +
-                " c.AccountId = ? AND " +
-                " c.IsAwaitingDelete = 0 AND " +
-                " m.ClassCode = ?  " +
-                " m.AccountId = ? AND " +
-                " ORDER BY c.FirstName",
-                McAbstrFolderEntry.ClassCodeEnum.Contact);
-        }
-
-        public static List<NcContactIndex> QueryAllContactItems (int accountId)
-        {
-            return NcModel.Instance.Db.Query<NcContactIndex> (
-                "SELECT c.Id as Id, substr(c.FirstName, 0, 1) as FirstLetter FROM McContact AS c " +
-                " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
-                " WHERE " +
-                " c.IsAwaitingDelete = 0 AND " +
-                " m.ClassCode = ?  " +
-                " ORDER BY c.FirstName",
-                (int)McAbstrFolderEntry.ClassCodeEnum.Contact);
-        }
-
         public static List<NcContactIndex> QueryContactItems (int accountId, int folderId)
         {
             return NcModel.Instance.Db.Query<NcContactIndex> (
