@@ -90,7 +90,7 @@ namespace NachoCore.Model
             NcAssert.True (0 == Id);
             try {
                 InsertCapture.Start ();
-                int rc = NcModel.Instance.BusyProtect (() => {
+                int rc = NcModel.Instance.TeleDbBusyProtect (() => {
                     return NcModel.Instance.TeleDb.Insert (this);
                 });
                 InsertCapture.Stop ();
@@ -111,7 +111,7 @@ namespace NachoCore.Model
             NcAssert.True (0 < Id);
             try {
                 DeleteCapture.Start ();
-                int rc = NcModel.Instance.BusyProtect (() => {
+                int rc = NcModel.Instance.TeleDbBusyProtect (() => {
                     return NcModel.Instance.TeleDb.Delete (this);
                 });
                 DeleteCapture.Stop ();

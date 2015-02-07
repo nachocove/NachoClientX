@@ -76,6 +76,8 @@ namespace NachoCore.Model
 
         public object WriteNTransLockObj { private set; get; }
 
+        public object TeleDbWriteNTransLockObj { private set; get; }
+
         public enum AutoVacuumEnum
         {
             NONE = 0,
@@ -291,6 +293,7 @@ namespace NachoCore.Model
                         if (instance == null) {
                             var newInstnace = new NcModel ();
                             newInstnace.WriteNTransLockObj = new object ();
+                            newInstnace.TeleDbWriteNTransLockObj = new object ();
                             instance = newInstnace;
                         }
                     }
@@ -387,7 +390,7 @@ namespace NachoCore.Model
             }
         }
 
-        public int BusyProtect (Func<int> action)
+        public int BusyProtectInternal (Func<int> action, object lockObj)
         {
             int rc = 0;
             if (IsInTransaction ()) {
@@ -399,7 +402,7 @@ namespace NachoCore.Model
             var whoa = DateTime.UtcNow.AddSeconds (5.0);
             do {
                 try {
-                    lock (WriteNTransLockObj) {
+                    lock (lockObj) {
                         rc = action ();
                     }
                     return rc;
@@ -417,6 +420,16 @@ namespace NachoCore.Model
                     }
                 }
             } while (true);
+        }
+
+        public int BusyProtect (Func<int> action)
+        {
+            return BusyProtectInternal (action, WriteNTransLockObj);
+        }
+
+        public int TeleDbBusyProtect (Func<int> action)
+        {
+            return BusyProtectInternal (action, TeleDbWriteNTransLockObj);
         }
 
         public void TakeTokenOrSleep ()
