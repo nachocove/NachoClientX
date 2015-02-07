@@ -169,7 +169,16 @@ namespace NachoCore.Model
                 }
                 int priorVersion = record.RowVersion;
                 record.RowVersion = priorVersion + 1;
-                count = NcModel.Instance.Update (record, record.GetType (), true, priorVersion);
+                try {
+                    count = NcModel.Instance.Update (record, record.GetType (), true, priorVersion);
+                } catch (SQLiteException ex) {
+                    if (ex.Result == SQLite3.Result.Busy) {
+                        Log.Warn (Log.LOG_DB, "UpdateWithOCApply: Busy");
+                        count = 0;
+                    } else {
+                        throw;
+                    }
+                }
                 if (0 < count) {
                     break;
                 }
