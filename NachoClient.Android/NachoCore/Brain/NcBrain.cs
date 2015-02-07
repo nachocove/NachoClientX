@@ -145,7 +145,7 @@ namespace NachoCore.Brain
                     break;
                 }
                 Log.Info (Log.LOG_BRAIN, "glean contact from email message {0}", emailMessage.Id);
-                NcContactGleaner.GleanContacts (emailMessage.AccountId, emailMessage, quickGlean);
+                NcContactGleaner.GleanContactsHeaderPart2 (emailMessage);
                 if (quickGlean) {
                     // Assign a version 0 score by checking if our address is in the to list
                     InternetAddressList addressList = NcEmailAddress.ParseAddressListString (emailMessage.To);

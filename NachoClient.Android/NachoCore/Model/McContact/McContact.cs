@@ -1055,6 +1055,23 @@ namespace NachoCore.Model
             return contactList;
         }
 
+        public static List<McContact> QueryGleanedContactsByEmailAddress (int accountId, string emailAddress)
+        {
+            // TODO - When we use Source = Internal for something other than gleaned, we need to fix this
+            //        query to use McMapFolderFolderEntry to look for only internal contacts in the 
+            //        gleaned folder
+            List<McContact> contactList = NcModel.Instance.Db.Query<McContact> (
+                                              "SELECT c.* FROM McContact AS c " +
+                                              " JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId " +
+                                              "WHERE " +
+                                              " s.Value = ? AND " +
+                                              " c.Source = ? AND " +
+                                              " c.AccountId = ? AND " +
+                                              " c.IsAwaitingDelete = 0 ",
+                                              emailAddress, (int)McAbstrItem.ItemSource.Internal, accountId).ToList ();
+            return contactList;
+        }
+
         public static List<McContact> QueryByPhoneNumber (int accountId, string phoneNumber)
         {
             return NcModel.Instance.Db.Query<McContact> (
@@ -1560,6 +1577,11 @@ namespace NachoCore.Model
             return ShouldAttributeBeEclipsed (contactList, (c) => {
                 return McContactStringAttribute.IsSuperSet (c.PhoneNumbers, PhoneNumbers);
             });
+        }
+
+        public bool HasSameName (McContact other)
+        {
+            return ((FirstName == other.FirstName) && (MiddleName == other.MiddleName) && (LastName == other.LastName));
         }
     }
 }

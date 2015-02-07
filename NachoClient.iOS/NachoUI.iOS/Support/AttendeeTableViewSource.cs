@@ -132,7 +132,7 @@ namespace NachoClient.iOS
             var attendee = AttendeeList [indexPath.Row];
             McContact contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
             if (null == contact) {
-                NcContactGleaner.GleanContact (attendee.Email, Account.Id);
+                NcContactGleaner.GleanContacts (attendee.Email, Account.Id);
                 contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
             }
             owner.PerformSegueForDelegate ("SegueToContactDetail", new SegueHolder (contact));
@@ -485,23 +485,23 @@ namespace NachoClient.iOS
             }
         }
 
-//        public override void RowSelected (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
-//        {
-//            UITableViewCell cell = tableView.CellAt (indexPath);
-//            if (isMultiSelecting) {
-//                var iv = cell.ViewWithTag (MULTI_ICON_TAG) as UIImageView;
-//                ToggleMultiSelectIcon (iv);
-//
-//                var attendee = AttendeeList [indexPath.Row];
-//                if (multiSelect.ContainsKey (indexPath)) {
-//                    multiSelect.Remove (indexPath);
-//                } else {
-//                    multiSelect.Add (indexPath, attendee);
-//                }
-//                vc.ConfigureNavBar (multiSelect.Count);
-//            } 
-//            tableView.DeselectRow (indexPath, true);
-//        }
+        //        public override void RowSelected (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
+        //        {
+        //            UITableViewCell cell = tableView.CellAt (indexPath);
+        //            if (isMultiSelecting) {
+        //                var iv = cell.ViewWithTag (MULTI_ICON_TAG) as UIImageView;
+        //                ToggleMultiSelectIcon (iv);
+        //
+        //                var attendee = AttendeeList [indexPath.Row];
+        //                if (multiSelect.ContainsKey (indexPath)) {
+        //                    multiSelect.Remove (indexPath);
+        //                } else {
+        //                    multiSelect.Add (indexPath, attendee);
+        //                }
+        //                vc.ConfigureNavBar (multiSelect.Count);
+        //            }
+        //            tableView.DeselectRow (indexPath, true);
+        //        }
 
         protected void ToggleMultiSelectIcon (UIImageView iv)
         {
@@ -534,7 +534,7 @@ namespace NachoClient.iOS
         {
             McContact contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
             if (null == contact) {
-                NcContactGleaner.GleanContact (attendee.Email, Account.Id);
+                NcContactGleaner.GleanContacts (attendee.Email, Account.Id);
                 contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
             }
             owner.CallSwipeHandler (contact);
@@ -544,7 +544,7 @@ namespace NachoClient.iOS
         {
             McContact contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
             if (null == contact) {
-                NcContactGleaner.GleanContact (attendee.Email, Account.Id);
+                NcContactGleaner.GleanContacts (attendee.Email, Account.Id);
                 contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
             }
             owner.EmailSwipeHandler (contact);

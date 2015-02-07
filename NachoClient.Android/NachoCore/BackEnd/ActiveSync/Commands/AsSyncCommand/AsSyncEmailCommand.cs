@@ -7,6 +7,7 @@ using System.Linq;
 using MimeKit;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoCore.Brain;
 
 namespace NachoCore.ActiveSync
 {
@@ -45,6 +46,10 @@ namespace NachoCore.ActiveSync
             emailMessage.SenderEmailAddressId = McEmailAddress.Get (folder.AccountId, emailMessage.Sender);
             emailMessage.ToEmailAddressId = McEmailAddress.GetList (folder.AccountId, emailMessage.To);
             emailMessage.CcEmailAddressId = McEmailAddress.GetList (folder.AccountId, emailMessage.Cc);
+
+            if ((0 != emailMessage.FromEmailAddressId) || (0 < emailMessage.ToEmailAddressId.Count)) {
+                NcContactGleaner.GleanContactsHeaderPart1 (emailMessage);
+            }
 
             bool justCreated = false;
             if (null == eMsg) {
