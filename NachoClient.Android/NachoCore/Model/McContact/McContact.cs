@@ -1529,7 +1529,7 @@ namespace NachoCore.Model
             }
 
             return ShouldAttributeBeEclipsed (contactList, (c) => {
-                return McContactEmailAddressAttribute.IsSuperSet (c.EmailAddresses, EmailAddresses);
+                return HasSameName (c) && McContactEmailAddressAttribute.IsSuperSet (c.EmailAddresses, EmailAddresses);
             });
         }
 
@@ -1549,7 +1549,7 @@ namespace NachoCore.Model
             }
 
             return ShouldAttributeBeEclipsed (contactList, (c) => {
-                return McContactStringAttribute.IsSuperSet (c.PhoneNumbers, PhoneNumbers);
+                return HasSameName (c) && McContactStringAttribute.IsSuperSet (c.PhoneNumbers, PhoneNumbers);
             });
         }
 

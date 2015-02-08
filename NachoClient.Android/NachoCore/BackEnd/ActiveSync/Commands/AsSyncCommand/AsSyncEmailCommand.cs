@@ -47,24 +47,26 @@ namespace NachoCore.ActiveSync
             emailMessage.ToEmailAddressId = McEmailAddress.GetList (folder.AccountId, emailMessage.To);
             emailMessage.CcEmailAddressId = McEmailAddress.GetList (folder.AccountId, emailMessage.Cc);
 
-            if ((0 != emailMessage.FromEmailAddressId) || (0 < emailMessage.ToEmailAddressId.Count)) {
-                NcContactGleaner.GleanContactsHeaderPart1 (emailMessage);
-            }
+            NcModel.Instance.RunInTransaction (() => {
+                if ((0 != emailMessage.FromEmailAddressId) || (0 < emailMessage.ToEmailAddressId.Count)) {
+                    NcContactGleaner.GleanContactsHeaderPart1 (emailMessage);
+                }
 
-            bool justCreated = false;
-            if (null == eMsg) {
-                justCreated = true;
-                emailMessage.AccountId = folder.AccountId;
-            }
-            if (justCreated) {
-                emailMessage.Insert ();
-                folder.Link (emailMessage);
-                aHelp.InsertAttachments (emailMessage);
-            } else {
-                emailMessage.AccountId = folder.AccountId;
-                emailMessage.Id = eMsg.Id;
-                emailMessage.Update ();
-            }
+                bool justCreated = false;
+                if (null == eMsg) {
+                    justCreated = true;
+                    emailMessage.AccountId = folder.AccountId;
+                }
+                if (justCreated) {
+                    emailMessage.Insert ();
+                    folder.Link (emailMessage);
+                    aHelp.InsertAttachments (emailMessage);
+                } else {
+                    emailMessage.AccountId = folder.AccountId;
+                    emailMessage.Id = eMsg.Id;
+                    emailMessage.Update ();
+                }
+            });
             return emailMessage;
         }
     }

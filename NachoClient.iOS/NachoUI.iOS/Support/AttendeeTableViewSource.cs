@@ -132,7 +132,7 @@ namespace NachoClient.iOS
             var attendee = AttendeeList [indexPath.Row];
             McContact contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
             if (null == contact) {
-                NcContactGleaner.GleanContacts (attendee.Email, Account.Id);
+                NcContactGleaner.GleanContacts (attendee.Email, Account.Id, false);
                 contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
             }
             owner.PerformSegueForDelegate ("SegueToContactDetail", new SegueHolder (contact));
@@ -534,7 +534,7 @@ namespace NachoClient.iOS
         {
             McContact contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
             if (null == contact) {
-                NcContactGleaner.GleanContacts (attendee.Email, Account.Id);
+                NcContactGleaner.GleanContacts (attendee.Email, Account.Id, false);
                 contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
             }
             owner.CallSwipeHandler (contact);
@@ -544,7 +544,7 @@ namespace NachoClient.iOS
         {
             McContact contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
             if (null == contact) {
-                NcContactGleaner.GleanContacts (attendee.Email, Account.Id);
+                NcContactGleaner.GleanContacts (attendee.Email, Account.Id, false);
                 contact = McContact.QueryByEmailAddress (Account.Id, attendee.Email).FirstOrDefault ();
             }
             owner.EmailSwipeHandler (contact);

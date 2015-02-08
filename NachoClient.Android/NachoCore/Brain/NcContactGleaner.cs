@@ -19,6 +19,8 @@ namespace NachoCore.Brain
         }
     }
 
+    public delegate void NcContactGleanerAction (bool obeyAbatement);
+
     public class NcContactGleaner
     {
         public const int GLEAN_PERIOD = 10;
@@ -97,6 +99,7 @@ namespace NachoCore.Brain
                     AccountId = accountId,
                     Source = McAbstrItem.ItemSource.Internal,
                 };
+                gleanedContact.AddEmailAddressAttribute (accountId, "Email1Address", null, mbAddr.Address);
                 NcEmailAddress.SplitName (mbAddr, ref gleanedContact);
 
                 // Check if the contact is a duplicate
@@ -110,24 +113,12 @@ namespace NachoCore.Brain
                 NcModel.Instance.Db.RunInTransaction (() => {
                     gleanedContact.Insert ();
                     gleanedFolder.Link (gleanedContact);
-
-                    McEmailAddress emailAddress;
-                    McEmailAddress.Get (accountId, mbAddr, out emailAddress);
-
-                    var strattr = new McContactEmailAddressAttribute () {
-                        AccountId = accountId,
-                        Name = "Email1Address",
-                        Value = mbAddr.Address,
-                        ContactId = gleanedContact.Id,
-                        EmailAddress = emailAddress.Id,
-                    };
-                    strattr.Insert ();
                 });
             }
         }
 
 
-        public static void GleanContacts (string address, int accountId)
+        public static void GleanContacts (string address, int accountId, bool obeyAbatement)
         {
             if (String.IsNullOrEmpty (address)) {
                 return;
@@ -136,45 +127,40 @@ namespace NachoCore.Brain
             var gleanedFolder = McFolder.GetGleanedFolder (accountId);
             NcModel.Instance.Db.RunInTransaction (() => {
                 foreach (var mbAddr in addressList) {
+                    if (NcApplication.Instance.IsBackgroundAbateRequired && obeyAbatement) {
+                        throw new NcGleaningInterruptedException ();
+                    }
                     CreateGleanContact ((MailboxAddress)mbAddr, accountId, gleanedFolder);
                 }
             });
         }
 
-        protected static bool InterruptibleGleaning (Action action, bool enforceAbatement)
+        protected static bool InterruptibleGleaning (NcContactGleanerAction action, bool obeyAbatement)
         {
-            bool gleaned = false;
-            do {
-                try {
-                    action ();
-                    gleaned = true;
-                } catch (NcGleaningInterruptedException) {
-                    if (enforceAbatement) {
-                        break;
-                    } else {
-                        if (!NcTask.CancelableSleep (100)) {
-                            NcTask.Cts.Token.ThrowIfCancellationRequested ();
-                        }
-                    }
-                }
-            } while (!enforceAbatement && !gleaned);
-            return gleaned;
+            try {
+                NcModel.Instance.RunInTransaction (() => {
+                    action (obeyAbatement);
+                });
+            } catch (NcGleaningInterruptedException) {
+                return false;
+            }
+            return true;
         }
 
         public static bool GleanContactsHeaderPart1 (McEmailMessage emailMessage)
         {
-            return InterruptibleGleaning (() => {
-                GleanContacts (emailMessage.To, emailMessage.AccountId);
-                GleanContacts (emailMessage.From, emailMessage.AccountId);
+            return InterruptibleGleaning ((obeyAbatement) => {
+                GleanContacts (emailMessage.To, emailMessage.AccountId, obeyAbatement);
+                GleanContacts (emailMessage.From, emailMessage.AccountId, obeyAbatement);
             }, false);
         }
 
         public static bool GleanContactsHeaderPart2 (McEmailMessage emailMessage)
         {
-            bool gleaned = InterruptibleGleaning (() => {
-                GleanContacts (emailMessage.Cc, emailMessage.AccountId);
-                GleanContacts (emailMessage.ReplyTo, emailMessage.AccountId);
-                GleanContacts (emailMessage.Sender, emailMessage.AccountId);
+            bool gleaned = InterruptibleGleaning ((obeyAbatement) => {
+                GleanContacts (emailMessage.Cc, emailMessage.AccountId, obeyAbatement);
+                GleanContacts (emailMessage.ReplyTo, emailMessage.AccountId, obeyAbatement);
+                GleanContacts (emailMessage.Sender, emailMessage.AccountId, obeyAbatement);
             }, true);
             if (gleaned) {
                 MarkAsGleaned (emailMessage);

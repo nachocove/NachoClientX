@@ -1370,7 +1370,7 @@ namespace NachoClient.iOS
         {
             McContact contact = McContact.QueryByEmailAddress (account.Id, root.OrganizerEmail).FirstOrDefault ();
             if (null == contact) {
-                NcContactGleaner.GleanContacts (root.OrganizerEmail, account.Id);
+                NcContactGleaner.GleanContacts (root.OrganizerEmail, account.Id, false);
                 contact = McContact.QueryByEmailAddress (account.Id, root.OrganizerEmail).FirstOrDefault ();
             }
             PerformSegue ("SegueToContactDetail", new SegueHolder (contact));
