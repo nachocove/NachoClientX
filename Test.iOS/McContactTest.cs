@@ -185,20 +185,25 @@ namespace Test.Common
         }
 
         // Check that there is only one returned index and it matches the expected one
-        private void CheckIndex (List<NcContactIndex> indexList, int id)
+        private void CheckIndexes (List<NcContactIndex> indexList, int id, int id2)
         {
-            Assert.AreEqual (1, indexList.Count);
-            Assert.AreEqual (id, indexList [0].Id);
+            Assert.AreEqual (2, indexList.Count);
+            if (id == indexList [0].Id) {
+                Assert.AreEqual (id2, indexList [1].Id);
+            } else {
+                Assert.AreEqual (id2, indexList [0].Id);
+                Assert.AreEqual (id, indexList [1].Id);
+            }
         }
 
         // Call various query API with eclipsing and make sure they return the epxected id
-        private void CheckSearch (int accountId, int id)
+        private void CheckSearch (int accountId, int id, int id2)
         {
             var indexList = McContact.AllContactsSortedByName (true);
-            CheckIndex (indexList, id);
+            CheckIndexes (indexList, id, id2);
 
             indexList = McContact.AllContactsSortedByName (accountId, true);
-            CheckIndex (indexList, id);
+            CheckIndexes (indexList, id, id2);
         }
 
         // Re-read a McContact from database.
@@ -233,19 +238,33 @@ namespace Test.Common
             // Create a gleaned contact
             var gleanedContact = new McContact () {
                 AccountId = accountId,
-                FirstName = email,
+                FirstName = "Bob",
+                LastName = "Smith",
                 Source = McAbstrItem.ItemSource.Internal,
             };
             gleanedContact.AddEmailAddressAttribute (accountId, "Email1Address", null, email);
             gleanedContact.Insert ();
 
             CheckEmailAddressNotEclipsed (gleanedContact);
-            CheckSearch (accountId, gleanedContact.Id);
+
+            // Create a 2nd gleaned contact. This contact has the same email but different
+            // name. So, this gleaned contact will not be eclipsed.
+            var gleanedContact2 = new McContact () {
+                AccountId = accountId,
+                Source = McAbstrItem.ItemSource.Internal,
+            };
+            gleanedContact2.AddEmailAddressAttribute (accountId, "Email1Address", null, email);
+            gleanedContact2.Insert ();
+
+            CheckEmailAddressNotEclipsed (gleanedContact);
+            CheckEmailAddressNotEclipsed (gleanedContact2);
+            CheckSearch (accountId, gleanedContact.Id, gleanedContact2.Id);
 
             // Create a RIC contact. It should eclipse the gleaned contact
             var ricContact = new McContact () {
                 AccountId = accountId,
                 FirstName = "Bob",
+                LastName = "Smith",
                 Source = McAbstrItem.ItemSource.ActiveSync,
                 WeightedRank = 12345678
             };
@@ -257,7 +276,7 @@ namespace Test.Common
 
             CheckEmailAddressEclisped (gleanedContact);
             CheckEmailAddressNotEclipsed (ricContact);
-            CheckSearch (accountId, ricContact.Id);
+            CheckSearch (accountId, ricContact.Id, gleanedContact2.Id);
 
             // Create a sync contact. It should eclipse the GAL, RIC and gleaned contact.
             var syncContact = new McContact () {
@@ -276,7 +295,7 @@ namespace Test.Common
             CheckEmailAddressEclisped (gleanedContact);
             CheckEmailAddressEclisped (ricContact);
             CheckEmailAddressNotEclipsed (syncContact);
-            CheckSearch (accountId, syncContact.Id);
+            CheckSearch (accountId, syncContact.Id, gleanedContact2.Id);
 
             // Create a GAL contact. It should eclipse the RIC and gleaned contact
             var galContact = new McContact () {
@@ -298,7 +317,7 @@ namespace Test.Common
             CheckEmailAddressEclisped (ricContact);
             CheckEmailAddressEclisped (galContact);
             CheckEmailAddressNotEclipsed (syncContact);
-            CheckSearch (accountId, syncContact.Id);
+            CheckSearch (accountId, syncContact.Id, gleanedContact2.Id);
 
             // Delete the sync contact. This should uneclipse the GAL contact
             syncContact.Delete ();
@@ -310,7 +329,7 @@ namespace Test.Common
             CheckEmailAddressNotEclipsed (galContact);
             CheckEmailAddressEclisped (ricContact);
             CheckEmailAddressEclisped (gleanedContact);
-            CheckSearch (accountId, galContact.Id);
+            CheckSearch (accountId, galContact.Id, gleanedContact2.Id);
 
             // Delete the RIC contact. This should change any eclipsing status
             ricContact.Delete ();
@@ -320,7 +339,7 @@ namespace Test.Common
 
             CheckEmailAddressNotEclipsed (galContact);
             CheckEmailAddressEclisped (gleanedContact);
-            CheckSearch (accountId, galContact.Id);
+            CheckSearch (accountId, galContact.Id, gleanedContact2.Id);
         }
 
         [Test]
@@ -343,6 +362,7 @@ namespace Test.Common
             var ricContact = new McContact () {
                 AccountId = accountId,
                 FirstName = "Bob",
+                LastName = "Smith",
                 Source = McAbstrItem.ItemSource.ActiveSync,
                 WeightedRank = 12345678
             };
@@ -350,8 +370,22 @@ namespace Test.Common
             ricContact.Insert ();
             ricFolder.Link (ricContact);
 
+            // Create a 2nd RIC contact with different name
+            var ricContact2 = new McContact () {
+                AccountId = accountId,
+                FirstName = "Bob",
+                MiddleName = "J.",
+                LastName = "Smith",
+                Source = McAbstrItem.ItemSource.ActiveSync,
+                WeightedRank = 12345678
+            };
+            ricContact2.AddPhoneNumberAttribute (accountId, "PhoneNumber", null, phone);
+            ricContact2.Insert ();
+            ricFolder.Link (ricContact2);
+
             CheckPhoneNumberNotEclipsed (ricContact);
-            CheckSearch (accountId, ricContact.Id);
+            CheckPhoneNumberNotEclipsed (ricContact2);
+            CheckSearch (accountId, ricContact.Id, ricContact2.Id);
 
             // Create a sync contact. It should eclipse the GAL, RIC and gleaned contact.
             var syncContact = new McContact () {
@@ -368,7 +402,7 @@ namespace Test.Common
 
             CheckPhoneNumberEclipsed (ricContact);
             CheckPhoneNumberNotEclipsed (syncContact);
-            CheckSearch (accountId, syncContact.Id);
+            CheckSearch (accountId, syncContact.Id, ricContact2.Id);
 
             // Create a GAL contact. It should eclipse the RIC and gleaned contact
             var galContact = new McContact () {
@@ -388,7 +422,7 @@ namespace Test.Common
             CheckPhoneNumberEclipsed (ricContact);
             CheckPhoneNumberEclipsed (galContact);
             CheckPhoneNumberNotEclipsed (syncContact);
-            CheckSearch (accountId, syncContact.Id);
+            CheckSearch (accountId, syncContact.Id, ricContact2.Id);
 
             // Delete the GAL contact. RIC contact should remain eclipsed
             galContact.Delete ();
@@ -398,14 +432,14 @@ namespace Test.Common
 
             CheckPhoneNumberNotEclipsed (syncContact);
             CheckPhoneNumberEclipsed (ricContact);
-            CheckSearch (accountId, syncContact.Id);
+            CheckSearch (accountId, syncContact.Id, ricContact2.Id);
 
             // Delete the sync contact. RIC contact should become uneclipsed
             syncContact.Delete ();
 
             ricContact = ReRead (ricContact);
             CheckPhoneNumberNotEclipsed (ricContact);
-            CheckSearch (accountId, ricContact.Id);
+            CheckSearch (accountId, ricContact.Id, ricContact2.Id);
         }
     }
 }
