@@ -210,11 +210,8 @@ namespace NachoCore.Utils
 
         private static void AddAttendeesAndOrganizerToiCalEvent (IEvent evt, McAccount account, McCalendar c)
         {
-            evt.Organizer = new Organizer (account.EmailAddr);
-            evt.Organizer.SentBy = EmailHelper.MailToUri (account.EmailAddr);
-            if (!String.IsNullOrEmpty (Pretty.UserNameForAccount (account))) {
-                evt.Organizer.CommonName = Pretty.UserNameForAccount (account);
-            }
+            evt.Organizer = new Organizer (c.OrganizerEmail);
+            evt.Organizer.CommonName = c.OrganizerName;
             foreach (var mcAttendee in c.attendees) {
                 var iAttendee = new Attendee (EmailHelper.MailToUri (mcAttendee.Email));
                 NcAssert.True (null != mcAttendee.Name);
@@ -534,7 +531,7 @@ namespace NachoCore.Utils
         public static void SendMeetingCancelations (McAccount account, McCalendar c, MimeEntity mimeBody)
         {
             var mimeMessage = new MimeMessage ();
-            mimeMessage.From.Add (new MailboxAddress (Pretty.OrganizerString(c.OrganizerName), account.EmailAddr));
+            mimeMessage.From.Add (new MailboxAddress (Pretty.OrganizerString (c.OrganizerName), account.EmailAddr));
             foreach (var a in c.attendees) {
                 mimeMessage.To.Add (new MailboxAddress (a.Name, a.Email));
             }

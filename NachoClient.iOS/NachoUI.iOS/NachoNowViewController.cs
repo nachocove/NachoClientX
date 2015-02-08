@@ -121,7 +121,7 @@ namespace NachoClient.iOS
                     SendRunningLateMessage (eventId);
                     break;
                 case HotEventView.FORWARD_TAG:
-                    // FIXME
+                    ForwardInvite (eventId);
                     break;
                 case HotEventView.OPEN_TAG:
                     var e = McEvent.QueryById<McEvent> (eventId);
@@ -233,7 +233,12 @@ namespace NachoClient.iOS
                 var dc = (MessageComposeViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
                 var c = holder.value as McCalendar;
-                dc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, c.OrganizerEmail), c.Subject, "Running late");
+                if ((bool)holder.value2) {
+                    dc.SetCalendarInvite (c);
+                    dc.SetEmailPresetFields (null, "Fwd: " + c.Subject, "");
+                } else {
+                    dc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, c.OrganizerEmail), c.Subject, "Running late");
+                }
                 return;
             }
             if (segue.Identifier == "NachoNowToMessageList") {
@@ -363,17 +368,17 @@ namespace NachoClient.iOS
                 if (String.IsNullOrEmpty (c.OrganizerEmail)) {
                     // maybe we should do a pop up or hide the swipe
                 } else {
-                    PerformSegue ("CalendarToEmailCompose", new SegueHolder (c));
+                    PerformSegue ("CalendarToEmailCompose", new SegueHolder (c, false));
                 }
             }
         }
 
         public void ForwardInvite (int eventId)
         {
-//            var c = CalendarHelper.GetMcCalendarRootForEvent (eventId);
-//            if (null != c) {
-//                PerformSegue ("CalendarToEmailCompose", new SegueHolder (c));
-//            }
+            var c = CalendarHelper.GetMcCalendarRootForEvent (eventId);
+            if (null != c) {
+                PerformSegue ("CalendarToEmailCompose", new SegueHolder (c, true));
+            }
         }
 
         ///  IMessageTableViewSourceDelegate

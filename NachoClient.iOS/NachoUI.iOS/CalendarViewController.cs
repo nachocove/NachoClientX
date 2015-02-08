@@ -120,25 +120,20 @@ namespace NachoClient.iOS
             if (segue.Identifier.Equals ("SegueToNachoNow")) {
                 // Nothing to do
                 return;
-            }
+            }  
 
             if (segue.Identifier.Equals ("CalendarToEmailCompose")) {
                 var dc = (MessageComposeViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
                 var c = holder.value as McCalendar;
-                dc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, c.OrganizerEmail), c.Subject, "Running late");
+                if ((bool)holder.value2) {
+                    dc.SetCalendarInvite (c);
+                    dc.SetEmailPresetFields (null, "Fwd: " + c.Subject, "");
+                } else {
+                    dc.SetEmailPresetFields (new NcEmailAddress (NcEmailAddress.Kind.To, c.OrganizerEmail), c.Subject, "Running late");
+                }
                 return;
             }
-
-            /// Event Forward WIP
-//            if (segue.Identifier.Equals ("CalendarToEmailCompose")) {
-//                var dc = (MessageComposeViewController)segue.DestinationViewController;
-//                var holder = sender as SegueHolder;
-//                var c = holder.value as McCalendar;
-//                dc.SetCalendarInvite (c);
-//                dc.SetEmailPresetFields (null, "FWD: " + c.Subject, "");
-//                return;
-//            }
 
             if (segue.Identifier == "CalendarToEditEventView") {
                 var vc = (EditEventViewController)segue.DestinationViewController;
@@ -877,17 +872,17 @@ namespace NachoClient.iOS
         {
             var c = CalendarHelper.GetMcCalendarRootForEvent (eventId);
             if (null != c) {
-                PerformSegue ("CalendarToEmailCompose", new SegueHolder (c));
+                PerformSegue ("CalendarToEmailCompose", new SegueHolder (c, false));
             }
         }
 
         // ICalendarTableViewSourceDelegate
         public void ForwardInvite (int eventId)
         {
-//            var c = CalendarHelper.GetMcCalendarRootForEvent (eventId);
-//            if (null != c) {
-//                PerformSegue ("CalendarToEmailCompose", new SegueHolder (c));
-//            }
+            var c = CalendarHelper.GetMcCalendarRootForEvent (eventId);
+            if (null != c) {
+                PerformSegue ("CalendarToEmailCompose", new SegueHolder (c, true));
+            }
         }
 
         // ICalendarTableViewSourceDelegate
