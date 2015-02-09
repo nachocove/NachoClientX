@@ -321,6 +321,9 @@ namespace NachoClient.iOS
 
             NcApplication.Instance.StatusIndEvent -= BgStatusIndReceiver;
 
+            if (-1 != BackgroundIosTaskId) {
+                UIApplication.SharedApplication.EndBackgroundTask (BackgroundIosTaskId);
+            }
             BackgroundIosTaskId = UIApplication.SharedApplication.BeginBackgroundTask (() => {
                 Log.Info (Log.LOG_LIFECYCLE, "BeginBackgroundTask: Callback time remaining: {0}", application.BackgroundTimeRemaining);
                 FinalShutdown (null);
@@ -506,7 +509,7 @@ namespace NachoClient.iOS
                 break;
             }
         }
-            
+
         /// Status bar height can change when the user is on a call or using navigation
         public override void ChangedStatusBarFrame (UIApplication application, RectangleF oldStatusBarFrame)
         {
