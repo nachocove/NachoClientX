@@ -179,6 +179,7 @@ namespace NachoPlatform
             foreach (var source in sources) {
                 switch (source.SourceType) {
                 case ABSourceType.Exchange:
+                case ABSourceType.ExchangeGAL:
                     continue;
                 default:
                     Log.Info (Log.LOG_SYS, "Processing source {0}", source.SourceType);
