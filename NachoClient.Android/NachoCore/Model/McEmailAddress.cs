@@ -52,12 +52,21 @@ namespace NachoCore.Model
             return Get (accountId, addresses [0] as MailboxAddress, out emailAddress);
         }
 
+        /// <summary>
+        /// Find the McEmailAddress with the given e-mail address, creating a new McEmailAddress if necessary.
+        /// </summary>
         public static bool Get (int accountId, MailboxAddress mailboxAddress, out McEmailAddress emailAddress)
         {
-            McEmailAddress retval = null; // need a local variable for lambda
+            // See if a matching McEmailAddress exists, without opening a write transaction.
+            var query = "SELECT * from McEmailAddress WHERE CanonicalEmailAddress = ?";
+            McEmailAddress retval = NcModel.Instance.Db.Query<McEmailAddress> (query, mailboxAddress.Address).SingleOrDefault ();
+            if (null != retval) {
+                emailAddress = retval;
+                return true;
+            }
             NcModel.Instance.RunInTransaction (() => {
-                // Does this email address exist, and if not, let's create it
-                var query = "SELECT * from McEmailAddress WHERE CanonicalEmailAddress = ?";
+                // Repeat the lookup while within the transaction, in case another thread added it just now.
+                // If it is still not found, create a new McEmailaddress.
                 retval = NcModel.Instance.Db.Query<McEmailAddress> (query, mailboxAddress.Address).SingleOrDefault ();
                 if (null == retval) {
                     retval = new McEmailAddress (accountId, mailboxAddress.Address);
