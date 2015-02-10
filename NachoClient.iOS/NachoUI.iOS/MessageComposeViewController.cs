@@ -1086,168 +1086,119 @@ namespace NachoClient.iOS
             return true;
         }
 
-        /// <summary>
-        /// Backend is converting to mime.
-        /// TODO: SendMessage should encode as mime or not.
-        /// </summary>
         public void SendMessage ()
         {
+            var mimeMessage = new MimeMessage ();
+            mimeMessage.From.Add (new MailboxAddress (Pretty.UserNameForAccount (account), account.EmailAddr));
+            mimeMessage.To.AddRange (NcEmailAddress.ToInternetAddressList (toView.AddressList, NcEmailAddress.Kind.To));
+            mimeMessage.Cc.AddRange (NcEmailAddress.ToInternetAddressList (ccView.AddressList, NcEmailAddress.Kind.Cc));
+            mimeMessage.Bcc.AddRange (NcEmailAddress.ToInternetAddressList (bccView.AddressList, NcEmailAddress.Kind.Bcc));
+            mimeMessage.Date = System.DateTime.UtcNow;
 
-            if (!calendarInviteIsSet) {
-                var mimeMessage = new MimeMessage ();
-                mimeMessage.From.Add (new MailboxAddress (Pretty.UserNameForAccount (account), account.EmailAddr));
-                mimeMessage.To.AddRange (NcEmailAddress.ToInternetAddressList (toView.AddressList, NcEmailAddress.Kind.To));
-                mimeMessage.Cc.AddRange (NcEmailAddress.ToInternetAddressList (ccView.AddressList, NcEmailAddress.Kind.Cc));
-                mimeMessage.Bcc.AddRange (NcEmailAddress.ToInternetAddressList (bccView.AddressList, NcEmailAddress.Kind.Bcc));
-                mimeMessage.Date = System.DateTime.UtcNow;
-
-                var subject = Pretty.SubjectString (subjectField.Text);
-                if (McEmailMessage.IntentType.None != messageIntent) {
-                    var intentString = NcMessageIntent.GetIntentString (messageIntent, messageIntentDateType, messageIntentDateTime);
-                    mimeMessage.Subject = Pretty.Join (intentString, subject, " - ");
-                } else {
-                    mimeMessage.Subject = subject;
-                }
-
-                // TODO: Check whether or not the back end supports SmartReply and SmartForward
-
-                bool originalEmailIsEmbedded = true;
-                var bodyAttributedText = bodyTextView.AttributedText;
-
-                // If there's no initialQuotedText, then the email is not embedded
-                if (null == initialQuotedText) {
-                    originalEmailIsEmbedded = false;
-                }
-                    
-                // Perhaps we can strip out the initialQuotedText and use smart reply?
-                if ((null != initialQuotedText) && Util.AttributedStringEndsWith (bodyAttributedText, initialQuotedText)) {
-                    // Strip the quoted text from the body of the message and instead have the server add in the original message.
-                    originalEmailIsEmbedded = false;
-                    bodyAttributedText = bodyAttributedText.Substring (0, (bodyAttributedText.Length - initialQuotedText.Length));
-                }
-
-                var body = new BodyBuilder ();
-
-                body.TextBody = bodyTextView.Text;
-
-                NSError error = null;
-                NSData htmlData = bodyAttributedText.GetDataFromRange (new NSRange (0, bodyAttributedText.Length), new NSAttributedStringDocumentAttributes{ DocumentType = NSDocumentType.HTML }, ref error);
-                body.HtmlBody = htmlData.ToString ();
-
-                foreach (var attachment in attachmentView.AttachmentList) {
-                    body.Attachments.Add (attachment.GetFilePath ());
-                }
-                bool attachmentNeedsDownloading = false;
-                if (EmailHelper.IsForwardAction (action) && originalEmailIsEmbedded) {
-                    // The user edited the body of the message being forwarded. That means the server won't
-                    // automatically include the attachments from the forwarded message (if any).  That needs
-                    // to be done explicitly.  If all of the necessary attachments are available, go ahead and
-                    // add them to the message now.  If any of the attachments need to be downloaded, then
-                    // wait until later to add them.
-                    var originalAttachments = McAttachment.QueryByItemId (referencedMessage);
-                    foreach (var attachment in originalAttachments) {
-                        if (McAbstrFileDesc.FilePresenceEnum.Complete != attachment.FilePresence) {
-                            attachmentNeedsDownloading = true;
-                            break;
-                        }
-                    }
-                    if (!attachmentNeedsDownloading) {
-                        foreach (var attachment in originalAttachments) {
-                            body.Attachments.Add (attachment.GetFilePath ());
-                        }
-                    }
-                }
-                
-                mimeMessage.Body = body.ToMessageBody ();
-                var messageToSend = MimeHelpers.AddToDb (account.Id, mimeMessage);
-                messageToSend.Intent = messageIntent;
-                messageToSend.IntentDate = messageIntentDateTime;
-                messageToSend.Update ();
-                if (EmailHelper.IsForwardOrReplyAction (action)) {
-                    messageToSend.ReferencedEmailId = referencedMessage.Id;
-                    messageToSend.ReferencedBodyIsIncluded = originalEmailIsEmbedded;
-                    messageToSend.ReferencedIsForward = EmailHelper.IsForwardAction (action);
-                    messageToSend.WaitingForAttachmentsToDownload = attachmentNeedsDownloading;
-                    messageToSend.Update ();
-                }
-
-                bool messageSent = false;
-                if (EmailHelper.IsForwardOrReplyAction (action)) {
-                    var folders = McFolder.QueryByFolderEntryId<McEmailMessage> (referencedMessage.AccountId, referencedMessage.Id);
-                    if (folders.Count == 0) {
-                        Log.Error (Log.LOG_UI, "The message being forwarded or replied to is not owned by any folder. It will be sent as a regular outgoing message. Message: {0}", referencedMessage.ToString ());
-                        // Fall through and send it as a regular message.
-                    } else {
-                        if (folders.Count > 1) {
-                            Log.Warn (Log.LOG_UI, "The message being forwarded or replied to is owned by {0} folders. One of the folders will be picked at random as the official owner when sending the message. Message: {0}", folders.Count, referencedMessage.ToString ());
-                        }
-                        int folderId = folders [0].Id;
-                        if (EmailHelper.IsForwardAction (action)) {
-                            NachoCore.BackEnd.Instance.ForwardEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, originalEmailIsEmbedded);
-                        } else {
-                            NachoCore.BackEnd.Instance.ReplyEmailCmd (messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, originalEmailIsEmbedded);
-                        }
-                        messageSent = true;
-                    }
-                }
-                if (!messageSent) {
-                    // A new outgoing message.  Or a forward/reply that has problems.
-                    NachoCore.BackEnd.Instance.SendEmailCmd (messageToSend.AccountId, messageToSend.Id);
-                    // TODO: Subtle ugliness. Id is passed to BE, ref-count is ++ in the DB.
-                    // The object here still has ref-count of 0, so interlock is lost, and delete really happens in the DB.
-                    // BE goes to reference the object later on, and it is missing.
-                    messageToSend = McEmailMessage.QueryById<McEmailMessage> (messageToSend.Id);
-                    messageToSend.Delete ();
-                }
-            } else {
-
-                // Create new attendees from addresses in To
-                var mailList = new List<MailboxAddress> ();
-
-                foreach (var view in new UcAddressBlock[] { toView, ccView, bccView }) {
-                    foreach (var a in view.AddressList) {
-                        var mailbox = a.ToMailboxAddress ();
-                        if (null == mailbox) {
-                            continue;
-                        }
-
-//                        var name = mailbox.Name;
-//                        if (String.IsNullOrEmpty (name)) {
-//                            name = mailbox.Address;
-//                        }
-//                        
-//                        var attendee = new McAttendee ();
-//                        attendee.AccountId = account.Id;
-//                        attendee.Name = name;
-//                        attendee.Email = mailbox.Address;
-//                        attendee.AttendeeType = NcAttendeeType.Required;
-//                        attendee.AttendeeTypeIsSet = true;
-//                        calendarInviteItem.attendees.Add (attendee);
-                        mailList.Add (mailbox);
-                    }
-                }
-
-                // Update calendar item
-                calendarInviteItem.Update ();
-                BackEnd.Instance.UpdateCalCmd (account.Id, calendarInviteItem.Id);
-                calendarInviteItem = McCalendar.QueryById<McCalendar> (calendarInviteItem.Id);
-                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                    Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged),
-                    Account = NachoCore.Model.ConstMcAccount.NotAccountSpecific,
-                });
-
-                // Create mime
-                var iCalPart = CalendarHelper.iCalToMimePart (account, calendarInviteItem);
-
-                StringBuilder bodyText = new StringBuilder ();
-                bodyText.Append (bodyTextView.Text).Append ("\n\n").Append (EmailHelper.FormatBasicHeadersForCalendarForward (calendarInviteItem, account.EmailAddr)).Append (calendarInviteItem.Description ?? "");
-                var mimeBody = CalendarHelper.CreateMime (bodyText.ToString (), iCalPart, calendarInviteItem.attachments);
-
-                CalendarHelper.SendInvites (account, calendarInviteItem, Pretty.SubjectString (subjectField.Text), null, mimeBody, mailList);
-
+            var subject = Pretty.SubjectString (subjectField.Text);
+            if (McEmailMessage.IntentType.None != messageIntent) {
+                var intentString = NcMessageIntent.GetIntentString (
+                    messageIntent, messageIntentDateType, messageIntentDateTime);
+                subject = Pretty.Join (intentString, subject, " - ");
             }
-        }
+            mimeMessage.Subject = subject;
 
+            var bodyAttributedText = bodyTextView.AttributedText;
+            bool originalEmailIsEmbedded = !calendarInviteIsSet && null != initialQuotedText;
+            if (originalEmailIsEmbedded && Util.AttributedStringEndsWith (bodyAttributedText, initialQuotedText)) {
+                // Strip the quoted text from the body of the message and instead have the server add in the original message.
+                originalEmailIsEmbedded = false;
+                bodyAttributedText = bodyAttributedText.Substring (0, (bodyAttributedText.Length - initialQuotedText.Length));
+            }
+
+            var body = new BodyBuilder ();
+            body.TextBody = bodyTextView.Text;
+
+            NSError error = null;
+            NSData htmlData = bodyAttributedText.GetDataFromRange (
+                new NSRange (0, bodyAttributedText.Length),
+                new NSAttributedStringDocumentAttributes { DocumentType = NSDocumentType.HTML },
+                ref error);
+            body.HtmlBody = htmlData.ToString ();
+
+            foreach (var attachment in attachmentView.AttachmentList) {
+                body.Attachments.Add (attachment.GetFilePath ());
+            }
+            bool attachmentNeedsDownloading = false;
+            if (EmailHelper.IsForwardAction (action) && originalEmailIsEmbedded) {
+                // The user edited the body of the message being forwarded. That means the server won't
+                // automatically include the attachments from the forwarded message (if any).  That needs
+                // to be done explicitly.  If all of the necessary attachments are available, go ahead and
+                // add them to the message now.  If any of the attachments need to be downloaded, then
+                // wait until later to add them.
+                var originalAttachments = McAttachment.QueryByItemId (referencedMessage);
+                foreach (var attachment in originalAttachments) {
+                    if (McAbstrFileDesc.FilePresenceEnum.Complete != attachment.FilePresence) {
+                        attachmentNeedsDownloading = true;
+                        break;
+                    }
+                }
+                if (!attachmentNeedsDownloading) {
+                    foreach (var attachment in originalAttachments) {
+                        body.Attachments.Add (attachment.GetFilePath ());
+                    }
+                }
+            }
+
+            mimeMessage.Body = body.ToMessageBody ();
+            var messageToSend = MimeHelpers.AddToDb (account.Id, mimeMessage);
+            messageToSend.Intent = messageIntent;
+            messageToSend.IntentDate = messageIntentDateTime;
+            messageToSend.Update ();
+
+            if (EmailHelper.IsForwardOrReplyAction (action) && !calendarInviteIsSet) {
+                messageToSend.ReferencedEmailId = referencedMessage.Id;
+                messageToSend.ReferencedBodyIsIncluded = originalEmailIsEmbedded;
+                messageToSend.ReferencedIsForward = EmailHelper.IsForwardAction (action);
+                messageToSend.WaitingForAttachmentsToDownload = attachmentNeedsDownloading;
+                messageToSend.Update ();
+            }
+
+            bool messageSent = false;
+            if (EmailHelper.IsForwardOrReplyAction (action) || calendarInviteIsSet) {
+                List<McFolder> folders;
+                if (calendarInviteIsSet) {
+                    folders = McFolder.QueryByFolderEntryId<McCalendar> (calendarInviteItem.AccountId, calendarInviteItem.Id);
+                } else {
+                    folders = McFolder.QueryByFolderEntryId<McEmailMessage> (referencedMessage.AccountId, referencedMessage.Id);
+                }
+                if (folders.Count == 0) {
+                    Log.Error (Log.LOG_UI, "The message or event being forwarded or replied to is not owned by any folder. It will be sent as a regular outgoing message.");
+                    // Fall through and send it as a regular message.  Or don't send it at all if it is an event.
+                } else {
+                    if (folders.Count > 1) {
+                        Log.Warn (Log.LOG_UI, "The message or event being forwarded or replied to is owned by {0} folders. One of the folders will be picked at random as the official owner when sending the message.", folders.Count);
+                    }
+                    int folderId = folders [0].Id;
+                    if (calendarInviteIsSet) {
+                        NachoCore.BackEnd.Instance.ForwardCalCmd (
+                            messageToSend.AccountId, messageToSend.Id, calendarInviteItem.Id, folderId);
+                    } else if (EmailHelper.IsForwardAction (action)) {
+                        NachoCore.BackEnd.Instance.ForwardEmailCmd (
+                            messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, originalEmailIsEmbedded);
+                    } else {
+                        NachoCore.BackEnd.Instance.ReplyEmailCmd (
+                            messageToSend.AccountId, messageToSend.Id, referencedMessage.Id, folderId, originalEmailIsEmbedded);
+                    }
+                    messageSent = true;
+                }
+            }
+            if (!messageSent && !calendarInviteIsSet) {
+                // A new outgoing message.  Or a forward/reply that has problems.
+                NachoCore.BackEnd.Instance.SendEmailCmd (messageToSend.AccountId, messageToSend.Id);
+                // TODO: Subtle ugliness. Id is passed to BE, ref-count is ++ in the DB.
+                // The object here still has ref-count of 0, so interlock is lost, and delete really happens in the DB.
+                // BE goes to reference the object later on, and it is missing.
+                messageToSend = McEmailMessage.QueryById<McEmailMessage> (messageToSend.Id);
+                messageToSend.Delete ();
+            }
+
+        }
 
         /// <summary>
         /// Reply, ReplyAll, Forward

@@ -472,10 +472,17 @@ namespace NachoCore.Utils
 
             if (part is MimeKit.Tnef.TnefPart) {
                 // Convert the TNEF stuff into a MIME message, and look through that.
-                MimeMessage tnef = (part as MimeKit.Tnef.TnefPart).ConvertToMessage ();
-                if (null != tnef.Body) {
-                    FixTnefMessage (tnef);
-                    MimeDisplayList (tnef, ref list);
+                try {
+                    MimeMessage tnef = (part as MimeKit.Tnef.TnefPart).ConvertToMessage ();
+                    if (null != tnef.Body) {
+                        FixTnefMessage (tnef);
+                        MimeDisplayList (tnef, ref list);
+                    }
+                } catch (Exception e) {
+                    // Parsing the TNEF has failed with an ArgumentOutOfRangeException before.  If the
+                    // TNEF can't be parsed, log an error but otherwise ignore the problem.  There is
+                    // nothing we can do to extract the data.
+                    Log.Error (Log.LOG_CALENDAR, "Parsing of TNEF section failed: {0}", e.ToString ());
                 }
                 return;
             }
