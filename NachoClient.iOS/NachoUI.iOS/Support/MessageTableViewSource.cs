@@ -486,6 +486,7 @@ namespace NachoClient.iOS
 
             var view = cell.ContentView.ViewWithTag (SWIPE_TAG) as SwipeActionView;
             view.Frame = new RectangleF (0, 0, cellWidth, HeightForMessage (message));
+            view.Hidden = false;
 
             view.OnClick = (int tag) => {
                 switch (tag) {
@@ -509,9 +510,11 @@ namespace NachoClient.iOS
                 switch (state) {
                 case SwipeActionView.SwipeState.SWIPE_BEGIN:
                     ToggleSwiping (tableView, activeView, true);
+                    cell.Layer.CornerRadius = 0;
                     break;
                 case SwipeActionView.SwipeState.SWIPE_END_ALL_HIDDEN:
                     ToggleSwiping (tableView, activeView, false);
+                    cell.Layer.CornerRadius = 15;
                     break;
                 case SwipeActionView.SwipeState.SWIPE_END_ALL_SHOWN:
                     ToggleSwiping (tableView, activeView, true);
