@@ -88,6 +88,18 @@ namespace NachoClient.iOS
             // We need to migrate. Put up a spinner until this is done.
             this.NavigationItem.Title = "Upgrade";
             this.View.BackgroundColor = A.Color_NachoGreen;
+
+            if (!NcMigration.IsCompatible ()) {
+                // Display an alert view and wait to get out
+                UIAlertView av = new UIAlertView ();
+                av.Title = "Incompatible Version";
+                av.Message = "Running this older version results in an incompatible " +
+                "downgrade from the previously installed version. Please install a newer version.";
+                av.AccessibilityLabel = "Incompatible Version";
+                av.Show ();
+                return;
+            }
+
             var frame = this.View.Frame;
             var halfHeight = frame.Height / 2.0f;
 
@@ -99,7 +111,8 @@ namespace NachoClient.iOS
                 .Height (35.0f);
             TextField.TextColor = UIColor.White;
             TextField.Font = A.Font_AvenirNextRegular14;
-            TextField.Text = "Updating your app with latest features... (1 of 1)";
+            TextField.Text = String.Format ("Updating your app with latest features... (1 of {0})",
+                NcMigration.NumberOfMigrations);
             TextField.BackgroundColor = A.Color_NachoGreen;
             TextField.TextAlignment = UITextAlignment.Center;
 
@@ -130,7 +143,9 @@ namespace NachoClient.iOS
                 var percentage = (float)s.Status.Value;
                 if (null != ProgressBar) {
                     InvokeOnMainThread (() => {
-                        ProgressBar.SetProgress (percentage, true);
+                        // Skip animation for 0%. That happens right before starting
+                        // the next migration. Animation when rewinding to 0% looks weird
+                        ProgressBar.SetProgress (percentage, 0.0 != percentage);
                     });
                 }
             }

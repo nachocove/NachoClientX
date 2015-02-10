@@ -57,21 +57,11 @@ namespace NachoCore.Model
         public static int ProcessedObjects { get; protected set; }
 
         // The highest migration version of the current build
-        public static int CurrentVersion { get; protected set; }
+        private static int _currentVersion = -1;
 
-        // The last complete migrated version
-        public static int LastVersion { get; protected set; }
-
-        // All he migrations that need to be run
-        private static List<NcMigration> _migrations { get; set; }
-
-        private static List<NcMigration> migrations {
-            set {
-                _migrations = value;
-            }
+        public static int CurrentVersion {
             get {
-                if (null == _migrations) {
-                    _migrations = new List<NcMigration> ();
+                if (-1 == _currentVersion) {
                     // Find all derived classes.
                     var subclasses = (from assembly in AppDomain.CurrentDomain.GetAssemblies ()
                                                      from type_ in assembly.GetTypes ()
@@ -79,48 +69,96 @@ namespace NachoCore.Model
                                                      select type_
                                      );
 
-                    // Find the latest version
-                    var latestMigration = McMigration.QueryLatestMigration ();
-                    int LastMigration; // the latest complete migration
-                    if (null == latestMigration) {
-                        LastMigration = 0;
-                    } else {
-                        if (latestMigration.Finished) {
-                            LastMigration = latestMigration.Version;
-                        } else {
-                            LastMigration = latestMigration.Version - 1;
-                        }
-                    }
-
-                    // Filter out all migration versions that we have already finished.
                     foreach (var subclass in subclasses) {
                         NcMigration migration = (NcMigration)Activator.CreateInstance (subclass, false);
                         var version = migration.Version ();
-                        if (version > CurrentVersion) {
-                            CurrentVersion = version;
+                        if (version > _currentVersion) {
+                            _currentVersion = version;
                         }
-                        if (version > LastMigration) {
-                            _migrations.Add (migration);
-                        }
-                    }
-
-                    // Sort the migration
-                    _migrations.Sort (new NcMigrationComparer ());
-
-                    // If this is a fresh install, all migrations will be included because the table is empty
-                    // and it thinks no migration has been run.
-                    if (NcModel.Instance.FreshInstall) {
-                        var migrationRecord = new McMigration ();
-                        migrationRecord.Version = CurrentVersion;
-                        migrationRecord.StartTime = DateTime.UtcNow;
-                        migrationRecord.Finished = true;
-                        var rows = migrationRecord.Insert ();
-                        NcAssert.True (1 == rows);
-                        _migrations.Clear ();
-                        LastMigration = CurrentVersion;
                     }
                 }
+                return _currentVersion;
+            }
+        }
+
+        // The last migration version ran. (May not be complete)
+        private static int _lastVersion = -1;
+
+        public static int LastVersion {
+            get {
+                if (-1 == _lastVersion) {
+                    Setup ();
+                }
+                return _lastVersion;
+            }
+        }
+
+        // All he migrations that need to be run
+        private static List<NcMigration> _migrations { get; set; }
+
+        private static List<NcMigration> migrations {
+            get {
+                if (null == _migrations) {
+                    Setup ();
+                }
                 return _migrations;
+            }
+        }
+
+        public static int NumberOfMigrations {
+            get {
+                return migrations.Count;
+            }
+        }
+
+        private static void Setup ()
+        {
+            _migrations = new List<NcMigration> ();
+            // Find all derived classes.
+            var subclasses = (from assembly in AppDomain.CurrentDomain.GetAssemblies ()
+                                       from type_ in assembly.GetTypes ()
+                                       where type_.IsSubclassOf (typeof(NcMigration))
+                                       select type_
+                             );
+
+            // Find the latest version
+            var latestMigration = McMigration.QueryLatestMigration ();
+            int LastMigration; // the latest complete migration
+            if (null == latestMigration) {
+                LastMigration = 0;
+                _lastVersion = 0;
+            } else {
+                _lastVersion = latestMigration.Version;
+                if (latestMigration.Finished) {
+                    LastMigration = latestMigration.Version;
+                } else {
+                    LastMigration = latestMigration.Version - 1;
+                }
+            }
+
+            // Filter out all migration versions that we have already finished.
+            foreach (var subclass in subclasses) {
+                NcMigration migration = (NcMigration)Activator.CreateInstance (subclass, false);
+                var version = migration.Version ();
+                if (version > LastMigration) {
+                    _migrations.Add (migration);
+                }
+            }
+
+            // Sort the migration
+            _migrations.Sort (new NcMigrationComparer ());
+
+            // If this is a fresh install, all migrations will be included because the table is empty
+            // and it thinks no migration has been run.
+            if (NcModel.Instance.FreshInstall) {
+                var migrationRecord = new McMigration ();
+                migrationRecord.Version = CurrentVersion;
+                migrationRecord.StartTime = DateTime.UtcNow;
+                migrationRecord.Finished = true;
+                var rows = migrationRecord.Insert ();
+                NcAssert.True (1 == rows);
+                _migrations.Clear ();
+                _lastVersion = CurrentVersion;
             }
         }
 
@@ -173,7 +211,12 @@ namespace NachoCore.Model
 
         public static bool WillStartService ()
         {
-            return (0 < migrations.Where (x => !x.Finished).Count ());
+            return (0 < migrations.Where (x => !x.Finished).Count ()) || !IsCompatible ();
+        }
+
+        public static bool IsCompatible ()
+        {
+            return (CurrentVersion >= LastVersion);
         }
 
         public static void StartService (Action postRun, NcMigrationProgressUpdateFunction progressUpdate,
