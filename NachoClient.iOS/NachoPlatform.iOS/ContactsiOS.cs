@@ -74,8 +74,7 @@ namespace NachoPlatform
                     // Check if the email address string is valid. iOS contact email address are not
                     // guaranteed to be RFC compliant.
                     var emailAddresses = NcEmailAddress.ParseAddressListString (email.Value);
-                    if ((1 != emailAddresses.Count) ||
-                        (String.IsNullOrEmpty (((MailboxAddress)emailAddresses [0]).Address))) {
+                    if (1 != emailAddresses.Count) {
                         Log.Warn (Log.LOG_SYS, "Cannot import invalid email addresses (count={0})", emailAddresses.Count);
                         continue;
                     }
