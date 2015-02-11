@@ -65,7 +65,7 @@ namespace NachoCore.Model
         // RateLimiter PUBLIC FOR TEST ONLY.
         public NcRateLimter RateLimiter { set; get; }
 
-        public bool FreshInstall { protected set; get; }
+        public bool FreshInstall { private set; get; }
 
         private const string KTmpPathSegment = "tmp";
         private const string KFilesPathSegment = "files";
