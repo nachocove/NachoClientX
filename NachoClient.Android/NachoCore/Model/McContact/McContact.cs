@@ -689,6 +689,22 @@ namespace NachoCore.Model
             return retval;
         }
 
+        public void UpdateEmailAddressesEclipsing ()
+        {
+            NcModel.Instance.BusyProtect (() => {
+                return NcModel.Instance.Db.Execute ("UPDATE McContact SET EmailAddressesEclipsed = ? WHERE Id = ?",
+                    EmailAddressesEclipsed, Id);
+            });
+        }
+
+        public void UpdatePhoneNumbersEclipsing ()
+        {
+            NcModel.Instance.BusyProtect (() => {
+                return NcModel.Instance.Db.Execute ("UPDATE McContact SET PhoneNumbersEclipsed = ? WHERE Id = ?",
+                    PhoneNumbersEclipsed, Id);
+            });
+        }
+
         public override int Delete ()
         {
             // Force an auxilary read
@@ -710,7 +726,7 @@ namespace NachoCore.Model
                     var newEclipsed = contact.ShouldEmailAddressesBeEclipsed ();
                     if (newEclipsed != contact.EmailAddressesEclipsed) {
                         contact.EmailAddressesEclipsed = newEclipsed;
-                        contact.Update ();
+                        contact.UpdateEmailAddressesEclipsing ();
                     }
                 }
             }
@@ -727,7 +743,7 @@ namespace NachoCore.Model
                     var newEclipsed = contact.ShouldPhoneNumbersBeEclipsed ();
                     if (newEclipsed != contact.PhoneNumbersEclipsed) {
                         contact.PhoneNumbersEclipsed = newEclipsed;
-                        contact.Update ();
+                        contact.UpdatePhoneNumbersEclipsing ();
                     }
                 }
             }
