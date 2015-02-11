@@ -597,21 +597,20 @@ namespace NachoCore.Model
 
         public NcResult ForceReadAncillaryData ()
         {
-            var db = NcModel.Instance.Db;
             NcAssert.True (0 < Id);
-            DbDates = db.Table<McContactDateAttribute> ().Where (x => x.ContactId == Id).ToList ();
-            DbAddresses = db.Table<McContactAddressAttribute> ().Where (x => x.ContactId == Id).ToList ();
-            DbEmailAddresses = db.Table<McContactEmailAddressAttribute> ().Where (x => x.ContactId == Id).ToList ();
-            DbRelationships = db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.Relationship).ToList ();
-            DbPhoneNumbers = db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.PhoneNumber).ToList ();
-            DbIMAddresses = db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.IMAddress).ToList ();
-            DbCategories = db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.Category).ToList ();
+            DbDates = NcModel.Instance.Db.Table<McContactDateAttribute> ().Where (x => x.ContactId == Id).ToList ();
+            DbAddresses = NcModel.Instance.Db.Table<McContactAddressAttribute> ().Where (x => x.ContactId == Id).ToList ();
+            DbEmailAddresses = NcModel.Instance.Db.Table<McContactEmailAddressAttribute> ().Where (x => x.ContactId == Id).ToList ();
+            DbRelationships = NcModel.Instance.Db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.Relationship).ToList ();
+            DbPhoneNumbers = NcModel.Instance.Db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.PhoneNumber).ToList ();
+            DbIMAddresses = NcModel.Instance.Db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.IMAddress).ToList ();
+            DbCategories = NcModel.Instance.Db.Table<McContactStringAttribute> ().Where (x => x.ContactId == Id && x.Type == McContactStringType.Category).ToList ();
 
             // FIXME: Error handling
             return NcResult.OK ();
         }
 
-        public NcResult InsertAncillaryData (SQLiteConnection db)
+        public NcResult InsertAncillaryData ()
         {
             NcAssert.True (0 < Id);
 
@@ -621,7 +620,7 @@ namespace NachoCore.Model
             // FIXME: Fix this hammer?
             // FIXME: For update, Id may not be zero. Insert() asserts that Id is zero, so zero it.
             // FIXME: After hammer is fixed, use DeleteAncillaryData to clean up associated McPortrait.
-            DeleteAncillaryData (db);
+            DeleteAncillaryData ();
 
             foreach (var o in Dates) {
                 o.Id = 0;
@@ -665,23 +664,28 @@ namespace NachoCore.Model
 
         public override int Insert ()
         {
-            // FIXME db transaction.
             CircleColor = NachoPlatform.PlatformUserColorIndex.PickRandomColorForUser ();
             EvaluateSelfEclipsing ();
-            int retval = base.Insert ();
-            InsertAncillaryData (NcModel.Instance.Db);
-            EvaluateOthersEclipsing (EmailAddresses, PhoneNumbers);
+            int retval = 0;
+            NcModel.Instance.RunInTransaction (() => {
+                retval = base.Insert ();
+                InsertAncillaryData ();
+                EvaluateOthersEclipsing (EmailAddresses, PhoneNumbers);
+            });
             return retval;
         }
 
         public override int Update ()
         {
             EvaluateSelfEclipsing ();
-            int retval = base.Update ();
-            if (HasReadAncillaryData) {
-                InsertAncillaryData (NcModel.Instance.Db);
-            }
-            EvaluateOthersEclipsing (EmailAddresses, PhoneNumbers);
+            int retval = 0;
+            NcModel.Instance.RunInTransaction (() => {
+                retval = base.Update ();
+                if (HasReadAncillaryData) {
+                    InsertAncillaryData ();
+                }
+                EvaluateOthersEclipsing (EmailAddresses, PhoneNumbers);
+            });
             return retval;
         }
 
@@ -690,8 +694,11 @@ namespace NachoCore.Model
             // Force an auxilary read
             var addressList = EmailAddresses;
             var phoneList = PhoneNumbers;
-            int retval = base.Delete ();
-            EvaluateOthersEclipsing (addressList, phoneList);
+            int retval = 0;
+            NcModel.Instance.RunInTransaction (() => {
+                retval = base.Delete ();
+                EvaluateOthersEclipsing (addressList, phoneList);
+            });
             return retval;
         }
 
@@ -742,15 +749,17 @@ namespace NachoCore.Model
         public override void DeleteAncillary ()
         {
             NcAssert.True (NcModel.Instance.IsInTransaction ());
-            DeleteAncillaryData (NcModel.Instance.Db);
+            DeleteAncillaryData ();
         }
 
-        private NcResult DeleteAncillaryData (SQLiteConnection db)
+        private NcResult DeleteAncillaryData ()
         {
-            db.Query<McContactDateAttribute> ("DELETE FROM McContactDateAttribute WHERE ContactId=?", Id);
-            db.Query<McContactStringAttribute> ("DELETE FROM McContactStringAttribute WHERE ContactId=?", Id);
-            db.Query<McContactAddressAttribute> ("DELETE FROM McContactAddressAttribute WHERE ContactId=?", Id);
-            db.Query<McContactEmailAddressAttribute> ("DELETE FROM McContactEmailAddressAttribute WHERE ContactId=?", Id);
+            NcModel.Instance.RunInTransaction (() => {
+                NcModel.Instance.Db.Query<McContactDateAttribute> ("DELETE FROM McContactDateAttribute WHERE ContactId=?", Id);
+                NcModel.Instance.Db.Query<McContactStringAttribute> ("DELETE FROM McContactStringAttribute WHERE ContactId=?", Id);
+                NcModel.Instance.Db.Query<McContactAddressAttribute> ("DELETE FROM McContactAddressAttribute WHERE ContactId=?", Id);
+                NcModel.Instance.Db.Query<McContactEmailAddressAttribute> ("DELETE FROM McContactEmailAddressAttribute WHERE ContactId=?", Id);
+            });
             return NcResult.OK ();
         }
 
