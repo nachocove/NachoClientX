@@ -360,6 +360,7 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration2.cs" />
     <Compile Include="NachoCore\Model\McMapEmailAddressEntry.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration3.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration4.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
