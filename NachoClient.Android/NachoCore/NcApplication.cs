@@ -51,6 +51,11 @@ namespace NachoCore
             }
         }
 
+        public bool IsUp()
+        {
+            return (ExecutionContextEnum.Migrating != ExecutionContext) && (ExecutionContextEnum.Initializing != ExecutionContext);
+        }
+
         public ExecutionContextEnum PlatformIndication {
             get { return _PlatformIndication; }
             set { 
