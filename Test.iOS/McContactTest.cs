@@ -305,6 +305,15 @@ namespace Test.Common
             CheckEmailAddressNotEclipsed (galContact);
             CheckEmailAddressEclisped (gleanedContact);
             CheckSearch (accountId, galContact.Id);
+
+            // Verify specialized update function
+            gleanedContact.EmailAddressesEclipsed = false;
+            gleanedContact.UpdateEmailAddressesEclipsing ();
+            CheckEmailAddressNotEclipsed (gleanedContact);
+           
+            gleanedContact.EmailAddressesEclipsed = true;
+            gleanedContact.UpdateEmailAddressesEclipsing ();
+            CheckPhoneNumberEclipsed (gleanedContact);
         }
 
         [Test]
@@ -314,7 +323,6 @@ namespace Test.Common
             string parentId = "0";
             string name = "name";
             string phone = "1-408-555-1234";
-            string email = "bob@company.net";
 
             var syncFolder = FolderOps.CreateFolder (accountId, typeCode: TypeCode.DefaultContacts_9,
                                  parentId: parentId, name: name);
@@ -390,6 +398,15 @@ namespace Test.Common
             ricContact = ReRead (ricContact);
             CheckPhoneNumberNotEclipsed (ricContact);
             CheckSearch (accountId, ricContact.Id);
+
+            // Verify speicalized update function
+            ricContact.PhoneNumbersEclipsed = true;
+            ricContact.UpdatePhoneNumbersEclipsing ();
+            CheckPhoneNumberEclipsed (ricContact);
+
+            ricContact.PhoneNumbersEclipsed = false;
+            ricContact.UpdatePhoneNumbersEclipsing ();
+            CheckPhoneNumberNotEclipsed (ricContact);
         }
     }
 }
