@@ -125,22 +125,18 @@ namespace NachoCore.Brain
             }
             var addressList = NcEmailAddress.ParseAddressListString (address);
             var gleanedFolder = McFolder.GetGleanedFolder (accountId);
-            NcModel.Instance.Db.RunInTransaction (() => {
-                foreach (var mbAddr in addressList) {
-                    if (NcApplication.Instance.IsBackgroundAbateRequired && obeyAbatement) {
-                        throw new NcGleaningInterruptedException ();
-                    }
-                    CreateGleanContact ((MailboxAddress)mbAddr, accountId, gleanedFolder);
+            foreach (var mbAddr in addressList) {
+                if (NcApplication.Instance.IsBackgroundAbateRequired && obeyAbatement) {
+                    throw new NcGleaningInterruptedException ();
                 }
-            });
+                CreateGleanContact ((MailboxAddress)mbAddr, accountId, gleanedFolder);
+            }
         }
 
         protected static bool InterruptibleGleaning (NcContactGleanerAction action, bool obeyAbatement)
         {
             try {
-                NcModel.Instance.RunInTransaction (() => {
-                    action (obeyAbatement);
-                });
+                action (obeyAbatement);
             } catch (NcGleaningInterruptedException) {
                 return false;
             }
