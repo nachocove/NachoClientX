@@ -743,11 +743,11 @@ namespace NachoCore.Model
             return NcResult.OK ();
         }
 
-        protected NcResult InsertAncillaryData (SQLiteConnection db)
+        protected NcResult InsertAncillaryData ()
         {
             NcAssert.True (0 != Id);
 
-            InsertCategories (db);
+            InsertCategories ();
 
             if (null != _MeetingRequest) {
                 _MeetingRequest.Id = 0;
@@ -761,7 +761,7 @@ namespace NachoCore.Model
             return NcResult.OK ();
         }
 
-        protected NcResult InsertCategories (SQLiteConnection db)
+        protected NcResult InsertCategories ()
         {
             foreach (var c in _Categories) {
                 c.Id = 0;
@@ -771,12 +771,14 @@ namespace NachoCore.Model
             return NcResult.OK ();
         }
 
-        protected void DeleteAncillaryData (SQLiteConnection db)
+        protected void DeleteAncillaryData ()
         {
             NcAssert.True (0 != Id);
-            db.Query<McEmailMessageCategory> ("DELETE FROM McEmailMessageCategory WHERE ParentID=?", Id);
-            db.Query<McMeetingRequest> ("DELETE FROM McMeetingRequest WHERE EmailMessageId=?", Id);
-            DeleteAddressMaps ();
+            NcModel.Instance.RunInTransaction (() => {
+                NcModel.Instance.Db.Query<McEmailMessageCategory> ("DELETE FROM McEmailMessageCategory WHERE ParentID=?", Id);
+                NcModel.Instance.Db.Query<McMeetingRequest> ("DELETE FROM McMeetingRequest WHERE EmailMessageId=?", Id);
+                DeleteAddressMaps ();
+            });
         }
 
         private void InsertAddressList (List<int> addressIdList, NcEmailAddress.Kind kind)
@@ -824,7 +826,7 @@ namespace NachoCore.Model
 
             NcModel.Instance.RunInTransaction (() => {
                 returnVal = base.Insert ();
-                InsertAncillaryData (NcModel.Instance.Db);
+                InsertAncillaryData ();
             });
               
             return returnVal;
@@ -837,8 +839,8 @@ namespace NachoCore.Model
             NcModel.Instance.RunInTransaction (() => {
                 returnVal = base.Update ();
                 ReadAncillaryData ();
-                DeleteAncillaryData (NcModel.Instance.Db);
-                InsertAncillaryData (NcModel.Instance.Db);
+                DeleteAncillaryData ();
+                InsertAncillaryData ();
             });
 
             return returnVal;
@@ -859,7 +861,7 @@ namespace NachoCore.Model
                 }
             }
             DeleteAttachments ();
-            DeleteAncillaryData (NcModel.Instance.Db);
+            DeleteAncillaryData ();
         }
 
         public override int Delete ()

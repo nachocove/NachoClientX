@@ -427,8 +427,6 @@ namespace Test.iOS
         }
 
         // Content-Type is not required if Content-Length is missing or zero
-        /* TODO: Both of these tests currently fail. An exception is thrown in AsHttpOperation.cs
-         * Need to inspect */
         [Test]
         public void ContentTypeNotRequired ()
         {
@@ -438,7 +436,6 @@ namespace Test.iOS
             string mockResponseLength = 0.ToString ();
 
             PerformHttpOperationWithSettings (sm => {
-
             }, response => {
                 response.StatusCode = System.Net.HttpStatusCode.OK;
                 response.Content.Headers.Add ("Content-Length", mockResponseLength);
@@ -448,7 +445,6 @@ namespace Test.iOS
 
             /* Content-Length is missing --> must not require content type */
             PerformHttpOperationWithSettings (sm => {
-                sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine");
             }, response => {
                 response.StatusCode = System.Net.HttpStatusCode.OK;
             }, request => {
@@ -503,6 +499,7 @@ namespace Test.iOS
         {
             // Status Code -- Forbidden (403)
             PerformHttpOperationWithSettings (sm => {
+                sm.PostEvent ((uint)SmEvt.E.Launch, "MoveToFailureMachine");
             }, response => {
                 response.StatusCode = System.Net.HttpStatusCode.Forbidden;
             }, request => {
@@ -729,11 +726,16 @@ namespace Test.iOS
         private void PerformHttpOperationWithSettings (Action<NcStateMachine> provideSm, Action<HttpResponseMessage> provideResponse, Action<HttpRequestMessage> provideRequest)
         {
             var autoResetEvent = new AutoResetEvent(false);
-
+            string errorString = null;
             // setup
-            NcStateMachine sm = CreatePhonySM (() => {
-                autoResetEvent.Set ();
-            });
+            NcStateMachine sm = CreatePhonySM (
+                () => {
+                    autoResetEvent.Set ();
+                },
+                (message) => {
+                    errorString = message;
+                }
+            );
 
             provideSm (sm);
 
@@ -769,11 +771,12 @@ namespace Test.iOS
             op.Execute (sm);
 
             bool didFinish = autoResetEvent.WaitOne (6000);
+            Assert.IsNull (errorString, errorString);
             Assert.IsTrue (didFinish, "Operation did not finish");
         }
 
         // Action Delegate for creating a state machine
-        private NcStateMachine CreatePhonySM (Action action)
+        private NcStateMachine CreatePhonySM (Action action, Action<string> errorIndicator)
         {
             var sm = new NcStateMachine ("PHONY") {
                 Name = "BasicPhonyPing",
@@ -791,6 +794,12 @@ namespace Test.iOS
                                 Act = delegate () {
                                     action();
                                 }, 
+                                State = (uint)St.Start },
+                            new Trans {
+                                Event = (uint)SmEvt.E.HardFail,
+                                Act = delegate () {
+                                    errorIndicator ("Unexpected HardFail event");
+                                },
                                 State = (uint)St.Start },
                             new Trans {
                                 Event = (uint)AsProtoControl.AsEvt.E.ReDisc,
@@ -821,6 +830,12 @@ namespace Test.iOS
                                 },
                                 State = (uint)St.Start },
                             new Trans {
+                                Event = (uint)SmEvt.E.Success,
+                                Act = delegate () {
+                                    errorIndicator ("Unexpected Success event");
+                                },
+                                State = (uint)St.Start },
+                            new Trans {
                                 Event = (uint)SmEvt.E.HardFail,
                                 Act = delegate () {
                                     action();
@@ -836,7 +851,7 @@ namespace Test.iOS
 
         public enum PhonySt : uint
         {
-            FailureTests = (AsProtoControl.Lst.QOpW + 1),
+            FailureTests = (St.Last + 1),
             Last = FailureTests,
         };
            

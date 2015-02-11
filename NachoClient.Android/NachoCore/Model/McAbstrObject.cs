@@ -233,11 +233,13 @@ namespace NachoCore.Model
 
         public static int DeleteById<T> (int id) where T : McAbstrObject, new()
         {
-            return NcModel.Instance.Db.Execute (
-                string.Format ("DELETE FROM {0} WHERE " +
-                " Id = ? ", 
-                    typeof(T).Name), 
-                id);
+            return NcModel.Instance.BusyProtect (() => {
+                return NcModel.Instance.Db.Execute (
+                    string.Format ("DELETE FROM {0} WHERE " +
+                    " Id = ? ", 
+                        typeof(T).Name), 
+                    id);
+            });
         }
     }
 }
