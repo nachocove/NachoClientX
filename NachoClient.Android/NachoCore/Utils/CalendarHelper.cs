@@ -358,6 +358,9 @@ namespace NachoCore.Utils
             mcMessage.Delete ();
         }
 
+        /// <summary>
+        /// Create an iCalendar from either a McCalendar object or a McMeetingRequest object.
+        /// </summary>
         private static IICalendar iCalendarCommonFromAbstrCal (McAbstrCalendarRoot cal)
         {
             var iCal = new iCalendar ();
@@ -391,6 +394,10 @@ namespace NachoCore.Utils
             return iCal;
         }
 
+        /// <summary>
+        /// Create an iCalendar from a McCalendar object, setting only the fields that are common to meeting requests,
+        /// meeting responses, and meeting cancelations.
+        /// </summary>
         private static IICalendar iCalendarCommonFromMcCalendar (McCalendar cal)
         {
             var iCal = iCalendarCommonFromAbstrCal (cal);
@@ -398,6 +405,11 @@ namespace NachoCore.Utils
             return iCal;
         }
 
+        /// <summary>
+        /// Create an iCalendar meeting request from a McCalendar object.
+        /// </summary>
+        /// <returns>The calendar request from mc calendar.</returns>
+        /// <param name="cal">Cal.</param>
         private static IICalendar iCalendarRequestFromMcCalendar (McCalendar cal)
         {
             var iCal = iCalendarCommonFromMcCalendar (cal);
@@ -409,6 +421,9 @@ namespace NachoCore.Utils
             return iCal;
         }
 
+        /// <summary>
+        /// Set the fields in the iCalendar object that make it a meeting response.
+        /// </summary>
         private static void FillOutICalResponse (McAccount account, IICalendar iCal, NcResponseType response, string subject)
         {
             iCal.Method = DDay.iCal.CalendarMethods.Reply;
@@ -423,6 +438,9 @@ namespace NachoCore.Utils
             evt.Attendees.Add (iAttendee);
         }
 
+        /// <summary>
+        /// Create an iCalendar meeting response from a McCalendar object.
+        /// </summary>
         private static IICalendar iCalendarResponseFromMcCalendar (McCalendar cal, NcResponseType response)
         {
             var iCal = iCalendarCommonFromMcCalendar (cal);
@@ -430,6 +448,9 @@ namespace NachoCore.Utils
             return iCal;
         }
 
+        /// <summary>
+        /// Create an iCalendar meeting cancelation notice for a McCalendar object.
+        /// </summary>
         private static IICalendar iCalendarCancelFromMcCalendar (McCalendar cal)
         {
             var iCal = iCalendarCommonFromMcCalendar (cal);
@@ -441,6 +462,9 @@ namespace NachoCore.Utils
             return iCal;
         }
 
+        /// <summary>
+        /// Create an iCalendar meeting response from a McMeetingRequest object.
+        /// </summary>
         private static IICalendar iCalendarResponseFromEmail (McMeetingRequest mail, NcResponseType response, string subject)
         {
             var iCal = iCalendarCommonFromAbstrCal (mail);
@@ -449,6 +473,9 @@ namespace NachoCore.Utils
             return iCal;
         }
 
+        /// <summary>
+        /// Create a text/calendar MIME part that holds the given iCalendar event.
+        /// </summary>
         private static TextPart MimeCalFromICalendar (IICalendar iCal)
         {
             var iCalPart = new TextPart ("calendar");
@@ -465,21 +492,34 @@ namespace NachoCore.Utils
             return iCalPart;
         }
 
+        /// <summary>
+        /// Using a McCalendar object, create a text/calendar MIME part that holds an iCalendar meeting request.
+        /// </summary>
         public static TextPart MimeRequestFromCalendar (McCalendar cal)
         {
             return MimeCalFromICalendar (iCalendarRequestFromMcCalendar (cal));
         }
 
+        /// <summary>
+        /// Using a McCalendar object, create a text/calendar MIME part that holds an iCalendar meeting response.
+        /// </summary>
         public static TextPart MimeResponseFromCalendar (McCalendar cal, NcResponseType response)
         {
             return MimeCalFromICalendar (iCalendarResponseFromMcCalendar (cal, response));
         }
 
+        /// <summary>
+        /// Using a McCalendar object, create a text/calendar MIME part that holds an iCalendar meeting cancellation.
+        /// </summary>
         public static TextPart MimeCancelFromCalendar (McCalendar cal)
         {
             return MimeCalFromICalendar (iCalendarCancelFromMcCalendar (cal));
         }
 
+        /// <summary>
+        /// Using a McMeetingRequest object attached to an e-mail message, create a text/calendar MIME part that
+        /// holds an iCalendar meeting response.
+        /// </summary>
         public static TextPart MimeResponseFromEmail (McMeetingRequest mail, NcResponseType response, string subject)
         {
             return MimeCalFromICalendar (iCalendarResponseFromEmail (mail, response, subject));
