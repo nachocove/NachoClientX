@@ -234,7 +234,6 @@ namespace NachoCore
             ExecutionContext = ExecutionContextEnum.Initializing;
             NcModel.Instance.GarbageCollectFiles ();
             NcModel.Instance.Start ();
-            Account = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
             EstablishService ();
             NcModel.Instance.EngageRateLimiter ();
             NcBrain.StartService ();
@@ -251,6 +250,7 @@ namespace NachoCore
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServices called.");
             NcTask.StartService ();
             Telemetry.StartService ();
+            Account = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
             // Start Migrations, if any.
             if (!NcMigration.WillStartService ()) {
                 StartBasalServicesCompletion ();
