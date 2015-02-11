@@ -101,16 +101,6 @@ namespace NachoClient.iOS
             Util.AddHorizontalLine (0, 60, viewWidth, A.Color_NachoBorderGray, this).Tag =
                 (int)TagType.CALENDAR_LINE_TAG;
 
-            #if false
-            UILabel titleLabel = new UILabel (new RectangleF (74, 27, viewWidth - 89, 20));
-            titleLabel.Tag = (int)TagType.CALENDAR_TITLE_TAG;
-            titleLabel.Font = A.Font_AvenirNextDemiBold14;
-            titleLabel.TextColor = A.Color_NachoBlack;
-            titleLabel.TextAlignment = UITextAlignment.Left;
-            titleLabel.Text = subject;
-            titleLabel.SizeToFit ();
-            #endif
-
             // When label, image, and detail
             Util.AddTextLabelWithImageView (yOffset, "WHEN", "event-when", EventViewController.TagType.EVENT_WHEN_TITLE_TAG, this);
             yOffset += 16 + 6;
@@ -478,7 +468,7 @@ namespace NachoClient.iOS
 
             if (null != organizerEmail && meetingInfo.ResponseRequested) {
 
-                var iCalPart = CalendarHelper.iCalResponseToMimePart (account, /*evt*/(DDay.iCal.Event)null, status);
+                var iCalPart = CalendarHelper.MimeResponseFromEmail (meetingInfo, status, parentMessage.Subject);
                 // TODO Give the user a chance to enter some text. For now, the message body is empty.
                 var mimeBody = CalendarHelper.CreateMime ("", iCalPart, new List<McAttachment> ());
                 CalendarHelper.SendMeetingResponse (account, NcEmailAddress.ParseMailboxAddressString(meetingInfo.Organizer), parentMessage.Subject, null, mimeBody, status);

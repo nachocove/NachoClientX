@@ -88,61 +88,7 @@ namespace NachoCore.Utils
             return c;
         }
 
-        public static IICalendar iCalendarFromMcCalendarWithResponse (McAccount account, McCalendar c, NcResponseType response)
-        {
-            var iCal = iCalendarFromMcCalendarCommon (c, EventStatus.Confirmed);
-            iCal.Method = DDay.iCal.CalendarMethods.Reply;
-            var vEvent = iCal.Events [0];
-            var iAttendee = new Attendee (EmailHelper.MailToUri (account.EmailAddr));
-            if (!String.IsNullOrEmpty (Pretty.UserNameForAccount (account))) {
-                iAttendee.CommonName = Pretty.UserNameForAccount (account);
-            }
-            iAttendee.ParticipationStatus = iCalResponseString (response);
-            vEvent.Attendees.Add (iAttendee);
-            vEvent.Summary = ResponseSubjectPrefix (response) + ": " + c.Subject;
-            return iCal;
-        }
-
-        public static IICalendar iCalendarFromMcCalendarWithCancelation (McAccount account, McCalendar c)
-        {
-            var iCal = iCalendarFromMcCalendarCommon (c, EventStatus.Cancelled);
-            iCal.Method = DDay.iCal.CalendarMethods.Cancel;
-
-            var vEvent = iCal.Events [0];
-            vEvent.Summary = "Canceled: " + c.Subject;
-
-            AddAttendeesAndOrganizerToiCalEvent (vEvent, account, c);
-            return iCal;
-        }
-
-        public static IICalendar iCalendarFromMcCalendar (McAccount account, McCalendar c)
-        {
-            var iCal = iCalendarFromMcCalendarCommon (c, EventStatus.Confirmed);
-            iCal.Method = DDay.iCal.CalendarMethods.Request;
-
-            var evt = iCal.Events [0];
-            evt.Summary = c.Subject;
-
-            AddAttendeesAndOrganizerToiCalEvent (evt, account, c);
-            return iCal;
-        }
-
-        public static IICalendar iCalendarFromICalEventWithReply (McAccount account, DDay.iCal.Event evt, NcResponseType response)
-        {
-            var iCal = iCalendarFromICalEventCommon (evt);
-            iCal.Method = DDay.iCal.CalendarMethods.Reply;
-            var newEvent = iCal.Events [0];
-            var iAttendee = new Attendee (EmailHelper.MailToUri (account.EmailAddr));
-            if (!string.IsNullOrEmpty (Pretty.UserNameForAccount (account))) {
-                iAttendee.CommonName = Pretty.UserNameForAccount (account);
-            }
-            iAttendee.ParticipationStatus = iCalResponseString (response);
-            newEvent.Attendees.Add (iAttendee);
-            newEvent.Summary = ResponseSubjectPrefix (response) + ": " + evt.Summary;
-            return iCal;
-        }
-
-        private static void AddAttendeesAndOrganizerToiCalEvent (IEvent evt, McAccount account, McCalendar c)
+        private static void AddAttendeesAndOrganizerToiCalEvent (IEvent evt, McCalendar c)
         {
             evt.Organizer = new Organizer (c.OrganizerEmail);
             evt.Organizer.CommonName = c.OrganizerName;
@@ -170,72 +116,6 @@ namespace NachoCore.Utils
                 }
                 evt.Attendees.Add (iAttendee);
             }
-        }
-
-        /// <summary>
-        /// The parts of iCalendar that are common to both meeting requests and meeting responses.
-        /// </summary>
-        private static IICalendar iCalendarFromMcCalendarCommon (McCalendar c, EventStatus eventStatus)
-        {
-            var iCal = new iCalendar ();
-            iCal.ProductID = "Nacho Mail";
-
-            var tzi = CalendarHelper.SimplifiedLocalTimeZone ();
-            var timezone = FromSystemTimeZone (tzi, c.StartTime.AddYears (-1), false);
-            var localTimeZone = iCal.AddTimeZone (timezone);
-            if (null != tzi.StandardName) {
-                timezone.TZID = tzi.StandardName;
-                localTimeZone.TZID = tzi.StandardName;
-            }
-
-            var vEvent = iCal.Create<DDay.iCal.Event> ();
-            vEvent.UID = c.UID;
-            vEvent.LastModified = new iCalDateTime (DateTime.UtcNow);
-            vEvent.Start = new iCalDateTime (c.StartTime.LocalT (), localTimeZone.TZID);
-            vEvent.End = new iCalDateTime (c.EndTime.LocalT (), localTimeZone.TZID);
-            vEvent.IsAllDay = c.AllDayEvent;
-            vEvent.Priority = 5;
-            if (c.AllDayEvent) {
-                vEvent.Properties.Set ("X-MICROSOFT-CDO-ALLDAYEVENT", "TRUE");
-                vEvent.Properties.Set ("X-MICROSOFT-CDO-INTENDEDSTATUS", "FREE");
-            } else {
-                vEvent.Properties.Set ("X-MICROSOFT-CDO-ALLDAYEVENT", "FALSE");
-                vEvent.Properties.Set ("X-MICROSOFT-CDO-INTENDEDSTATUS", "BUSY");
-            }
-            vEvent.Properties.Set ("X-MICROSOFT-CDO-IMPORTANCE", 1);
-            vEvent.Location = c.Location;
-            vEvent.Status = eventStatus;
-            vEvent.Class = "PUBLIC";
-            vEvent.Transparency = TransparencyType.Opaque;
-            return iCal;
-        }
-
-        private static IICalendar iCalendarFromICalEventCommon (DDay.iCal.Event evt)
-        {
-            var copyFrom = (IICalendar)evt.Parent;
-
-            var iCal = new iCalendar ();
-            iCal.ProductID = "Nacho Mail";
-            foreach (var timeZone in copyFrom.TimeZones) {
-                iCal.AddTimeZone (timeZone);
-            }
-
-            var newEvent = iCal.Create<DDay.iCal.Event> ();
-            newEvent.UID = evt.UID;
-            newEvent.LastModified = new iCalDateTime (DateTime.UtcNow);
-            newEvent.Start = evt.Start;
-            newEvent.End = evt.End;
-            newEvent.IsAllDay = evt.IsAllDay;
-            // The Priority of the existing event cannot be accessed.  Doing so will
-            // crash the app when running on a device (but not on the simulator. See
-            // http://developer.xamarin.com/guides/ios/advanced_topics/limitations/
-            // Priority is essentially a write-only property.
-            newEvent.Priority = 5; // evt.Priority;
-            newEvent.Location = evt.Location;
-            newEvent.Status = EventStatus.Confirmed;
-            newEvent.Class = "PUBLIC";
-            newEvent.Transparency = TransparencyType.Opaque;
-            return iCal;
         }
 
         /// <summary>
@@ -478,69 +358,101 @@ namespace NachoCore.Utils
             mcMessage.Delete ();
         }
 
-        public static bool IsResponseRequested (DDay.iCal.Event evt, string emailAddress)
+        private static IICalendar iCalendarCommonFromAbstrCal (McAbstrCalendarRoot cal)
         {
-            if (null != evt.Attendees) {
-                foreach (var attendee in evt.Attendees) {
-                    if (emailAddress.Equals (EmailHelper.EmailAddressFromUri (attendee.Value),
-                            StringComparison.OrdinalIgnoreCase)) {
-                        return attendee.RSVP;
-                    }
-                }
+            var iCal = new iCalendar ();
+            iCal.ProductID = "Nacho Mail";
 
-                // Couldn't find the desired address. Assume that a response is requested
-                // from everyone or no one, and return the RSVP value of the first attendee
-                // in the list.
-                if (0 < evt.Attendees.Count) {
-                    return evt.Attendees [0].RSVP;
-                }
+            var tzi = CalendarHelper.SimplifiedLocalTimeZone ();
+            var timezone = FromSystemTimeZone (tzi, cal.StartTime.AddYears (-1), false);
+            var localTimeZone = iCal.AddTimeZone (timezone);
+            if (null != tzi.StandardName) {
+                timezone.TZID = tzi.StandardName;
+                localTimeZone.TZID = tzi.StandardName;
             }
 
-            // There aren't any attendees.  Something is wrong.
-            Log.Error (Log.LOG_CALENDAR, "Received a meeting invitation that doesn't have any attendees listed.");
-            return true;
+            var vEvent = iCal.Create<DDay.iCal.Event> ();
+            vEvent.LastModified = new iCalDateTime (DateTime.UtcNow);
+            vEvent.Start = new iCalDateTime (cal.StartTime.LocalT (), localTimeZone.TZID);
+            vEvent.End = new iCalDateTime (cal.EndTime.LocalT (), localTimeZone.TZID);
+            vEvent.IsAllDay = cal.AllDayEvent;
+            vEvent.Priority = 5;
+            if (cal.AllDayEvent) {
+                vEvent.Properties.Set ("X-MICROSOFT-CDO-ALLDAYEVENT", "TRUE");
+                vEvent.Properties.Set ("X-MICROSOFT-CDO-INTENDEDSTATUS", "FREE");
+            } else {
+                vEvent.Properties.Set ("X-MICROSOFT-CDO-ALLDAYEVENT", "FALSE");
+                vEvent.Properties.Set ("X-MICROSOFT-CDO-INTENDEDSTATUS", "BUSY");
+            }
+            vEvent.Properties.Set ("X-MICROSOFT-CDO-IMPORTANCE", 1);
+            vEvent.Location = cal.Location;
+            vEvent.Class = "PUBLIC";
+            vEvent.Transparency = TransparencyType.Opaque;
+            return iCal;
         }
 
-        /// <summary>
-        /// Create a text/calendar MIME part with a meeting request for the given event.
-        /// </summary>
-        public static TextPart iCalToMimePart (McAccount account, McCalendar c)
+        private static IICalendar iCalendarCommonFromMcCalendar (McCalendar cal)
         {
-            return iCalToMimePartCommon (
-                CalendarHelper.iCalendarFromMcCalendar (account, c),
-                DDay.iCal.CalendarMethods.Request);
+            var iCal = iCalendarCommonFromAbstrCal (cal);
+            iCal.Events [0].UID = cal.UID;
+            return iCal;
         }
 
-        /// <summary>
-        /// Create a text/calendar MIME part with a meeting response for the given event.
-        /// </summary>
-        public static TextPart iCalResponseToMimePart (McAccount account, McCalendar c, NcResponseType response)
+        private static IICalendar iCalendarRequestFromMcCalendar (McCalendar cal)
         {
-            return iCalToMimePartCommon (
-                CalendarHelper.iCalendarFromMcCalendarWithResponse (account, c, response),
-                DDay.iCal.CalendarMethods.Reply);
+            var iCal = iCalendarCommonFromMcCalendar (cal);
+            iCal.Method = DDay.iCal.CalendarMethods.Request;
+            var evt = iCal.Events [0];
+            evt.Status = EventStatus.Confirmed;
+            evt.Summary = cal.Subject;
+            AddAttendeesAndOrganizerToiCalEvent (evt, cal);
+            return iCal;
         }
 
-        public static TextPart iCalResponseToMimePart (McAccount account, DDay.iCal.Event evt, NcResponseType response)
+        private static void FillOutICalResponse (McAccount account, IICalendar iCal, NcResponseType response, string subject)
         {
-            return iCalToMimePartCommon (iCalendarFromICalEventWithReply (account, evt, response), DDay.iCal.CalendarMethods.Reply);
+            iCal.Method = DDay.iCal.CalendarMethods.Reply;
+            var evt = iCal.Events [0];
+            evt.Status = EventStatus.Confirmed;
+            evt.Summary = ResponseSubjectPrefix (response) + ": " + subject;
+            var iAttendee = new Attendee (EmailHelper.MailToUri (account.EmailAddr));
+            if (!string.IsNullOrEmpty (Pretty.UserNameForAccount (account))) {
+                iAttendee.CommonName = Pretty.UserNameForAccount (account);
+            }
+            iAttendee.ParticipationStatus = iCalResponseString (response);
+            evt.Attendees.Add (iAttendee);
         }
 
-        /// <summary>
-        /// Create a text/calendar MIME part with a cancelation notice for the given event.
-        /// </summary>
-        public static TextPart iCalCancelToMimePart (McAccount account, McCalendar c)
+        private static IICalendar iCalendarResponseFromMcCalendar (McCalendar cal, NcResponseType response)
         {
-            return iCalToMimePartCommon (CalendarHelper.iCalendarFromMcCalendarWithCancelation (account, c), DDay.iCal.CalendarMethods.Cancel);
+            var iCal = iCalendarCommonFromMcCalendar (cal);
+            FillOutICalResponse (McAccount.QueryById<McAccount>(cal.AccountId), iCal, response, cal.Subject);
+            return iCal;
         }
 
-        /// <summary>
-        /// Create a text/calendar MIME part from the given iCalendar object.
-        /// </summary>
-        private static TextPart iCalToMimePartCommon (IICalendar iCal, string method)
+        private static IICalendar iCalendarCancelFromMcCalendar (McCalendar cal)
+        {
+            var iCal = iCalendarCommonFromMcCalendar (cal);
+            iCal.Method = DDay.iCal.CalendarMethods.Cancel;
+            var evt = iCal.Events [0];
+            evt.Status = EventStatus.Cancelled;
+            evt.Summary = "Canceled: " + cal.Subject;
+            AddAttendeesAndOrganizerToiCalEvent (evt, cal);
+            return iCal;
+        }
+
+        private static IICalendar iCalendarResponseFromEmail (McMeetingRequest mail, NcResponseType response, string subject)
+        {
+            var iCal = iCalendarCommonFromAbstrCal (mail);
+            FillOutICalResponse (McAccount.QueryById<McAccount> (mail.AccountId), iCal, response, subject);
+            iCal.Events [0].UID = mail.GetUID ();
+            return iCal;
+        }
+
+        private static TextPart MimeCalFromICalendar (IICalendar iCal)
         {
             var iCalPart = new TextPart ("calendar");
-            iCalPart.ContentType.Parameters.Add ("METHOD", method);
+            iCalPart.ContentType.Parameters.Add ("METHOD", iCal.Method);
             using (var iCalStream = new MemoryStream ()) {
                 var serializer = new iCalendarSerializer ();
                 serializer.Serialize (iCal, iCalStream, System.Text.Encoding.ASCII);
@@ -551,6 +463,26 @@ namespace NachoCore.Utils
             }
             iCalPart.ContentTransferEncoding = ContentEncoding.Base64;
             return iCalPart;
+        }
+
+        public static TextPart MimeRequestFromCalendar (McCalendar cal)
+        {
+            return MimeCalFromICalendar (iCalendarRequestFromMcCalendar (cal));
+        }
+
+        public static TextPart MimeResponseFromCalendar (McCalendar cal, NcResponseType response)
+        {
+            return MimeCalFromICalendar (iCalendarResponseFromMcCalendar (cal, response));
+        }
+
+        public static TextPart MimeCancelFromCalendar (McCalendar cal)
+        {
+            return MimeCalFromICalendar (iCalendarCancelFromMcCalendar (cal));
+        }
+
+        public static TextPart MimeResponseFromEmail (McMeetingRequest mail, NcResponseType response, string subject)
+        {
+            return MimeCalFromICalendar (iCalendarResponseFromEmail (mail, response, subject));
         }
 
         public static MimeEntity CreateMime (string description, TextPart iCalPart, List<McAttachment> attachments)
