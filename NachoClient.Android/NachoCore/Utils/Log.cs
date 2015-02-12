@@ -13,8 +13,8 @@ using NachoPlatformBinding;
 
 namespace NachoCore.Utils
 {
-    // LogLevelSettings represents the configuration for one log level (debug, 
-    // info, warn, error). Each level has configuration for two destinations - 
+    // LogLevelSettings represents the configuration for one log level (debug,
+    // info, warn, error). Each level has configuration for two destinations -
     // console and telemetry. Each level has multiple (up to 64) subsystem. Each
     // subsystem can decide to go to console or telemetry or both.
     public class LogLevelSettings
@@ -23,7 +23,7 @@ namespace NachoCore.Utils
         public ulong Telemetry;
         public bool CallerInfo;
 
-        public LogLevelSettings (ulong consoleFlags = ulong.MaxValue, ulong telemetryFlags = ulong.MaxValue, bool callerInfo=false)
+        public LogLevelSettings (ulong consoleFlags = ulong.MaxValue, ulong telemetryFlags = ulong.MaxValue, bool callerInfo = false)
         {
             Console = consoleFlags;
             Telemetry = telemetryFlags;
@@ -122,17 +122,17 @@ namespace NachoCore.Utils
         }
 
         public LogSettings (LogLevelSettings debug, LogLevelSettings info, 
-            LogLevelSettings warn, LogLevelSettings error)
+                            LogLevelSettings warn, LogLevelSettings error)
         {
-            Debug = new LogLevelSettings(debug);
-            Info = new LogLevelSettings(info);
+            Debug = new LogLevelSettings (debug);
+            Info = new LogLevelSettings (info);
             Warn = new LogLevelSettings (warn);
             Error = new LogLevelSettings (error);
 
             FixUp ();
         }
 
-        private ulong GetOptionalUlong(string fieldName, ulong defaultValue = ulong.MaxValue)
+        private ulong GetOptionalUlong (string fieldName, ulong defaultValue = ulong.MaxValue)
         {
             FieldInfo field = typeof(LogSettings).GetField (fieldName);
             if (null == field) {
@@ -141,7 +141,7 @@ namespace NachoCore.Utils
             return (ulong)field.GetValue (this);
         }
 
-        private bool GetOptionalBool(string fieldName, bool defaultValue = false)
+        private bool GetOptionalBool (string fieldName, bool defaultValue = false)
         {
             FieldInfo field = typeof(LogSettings).GetField (fieldName);
             if (null == field) {
@@ -193,8 +193,8 @@ namespace NachoCore.Utils
             return methodName2.Substring (space + 1);
         }
 
-        private void _Log (ulong subsystem,  LogLevelSettings settings, TelemetryEventType teleType,
-            string fmt, string level, params object[] list)
+        private void _Log (int threadId, ulong subsystem, LogLevelSettings settings, TelemetryEventType teleType,
+                           string fmt, string level, params object[] list)
         {
             if (settings.ToConsole (subsystem)) {
                 // Get the caller information
@@ -213,7 +213,7 @@ namespace NachoCore.Utils
                     }
                 }
                 WriteLine ("{0}", String.Format (new NachoFormatter (),
-                    level + ":" + Thread.CurrentThread.ManagedThreadId.ToString () + ":" + callInfo + ": " + fmt, list));
+                    level + ":" + threadId.ToString () + ":" + callInfo + ": " + fmt, list));
             }
             if (settings.ToTelemetry (subsystem)) {
                 Telemetry.RecordLogEvent (teleType, fmt, list);
@@ -221,22 +221,22 @@ namespace NachoCore.Utils
             LogElement elem;
             int maxIndirect = 5;
             while (0 < maxIndirect && Log.IndirectQ.TryDequeue (out elem)) {
-                var message = "@" + elem.Occurred.ToString () + ":" + elem.Message;
+                var message = "@" + String.Format ("{0:yyyy-MM-ddTHH:mm:ss.fffZ}", elem.Occurred) + ": " + elem.Message;
                 switch (elem.Level) {
                 case LogElement.LevelEnum.Debug:
-                    Log.Debug (elem.Subsystem, message);
+                    _Log (elem.ThreadId, elem.Subsystem, Settings.Debug, TelemetryEventType.DEBUG, message, "Debug");
                     break;
 
                 case LogElement.LevelEnum.Info:
-                    Log.Info (elem.Subsystem, message);
+                    _Log (elem.ThreadId, elem.Subsystem, Settings.Info, TelemetryEventType.INFO, message, "Info");
                     break;
 
                 case LogElement.LevelEnum.Warn:
-                    Log.Warn (elem.Subsystem, message);
+                    _Log (elem.ThreadId, elem.Subsystem, Settings.Warn, TelemetryEventType.WARN, message, "Warn");
                     break;
 
                 case LogElement.LevelEnum.Error:
-                    Log.Error (elem.Subsystem, message);
+                    _Log (elem.ThreadId, elem.Subsystem, Settings.Error, TelemetryEventType.ERROR, message, "Error");
                     break;
                 }
                 --maxIndirect;
@@ -245,22 +245,22 @@ namespace NachoCore.Utils
 
         public void Error (ulong subsystem, string fmt, params object[] list)
         {
-            _Log (subsystem, Settings.Error, TelemetryEventType.ERROR, fmt, "Error", list);
+            _Log (Thread.CurrentThread.ManagedThreadId, subsystem, Settings.Error, TelemetryEventType.ERROR, fmt, "Error", list);
         }
 
         public void Warn (ulong subsystem, string fmt, params object[] list)
         {
-            _Log (subsystem, Settings.Warn, TelemetryEventType.WARN, fmt, "Warn", list);
+            _Log (Thread.CurrentThread.ManagedThreadId, subsystem, Settings.Warn, TelemetryEventType.WARN, fmt, "Warn", list);
         }
 
         public void Info (ulong subsystem, string fmt, params object[] list)
         {
-            _Log (subsystem, Settings.Info, TelemetryEventType.INFO, fmt, "Info", list);
+            _Log (Thread.CurrentThread.ManagedThreadId, subsystem, Settings.Info, TelemetryEventType.INFO, fmt, "Info", list);
         }
 
         public void Debug (ulong subsystem, string fmt, params object[] list)
         {
-            _Log (subsystem, Settings.Debug, TelemetryEventType.DEBUG, fmt, "Debug", list);
+            _Log (Thread.CurrentThread.ManagedThreadId, subsystem, Settings.Debug, TelemetryEventType.DEBUG, fmt, "Debug", list);
         }
 
         public class NachoFormatter : IFormatProvider, ICustomFormatter
@@ -300,7 +300,7 @@ namespace NachoCore.Utils
     public class Log
     {
         // Subsystem denotes a functional area of the app. Ulong supports 64 subsystems.
-        // 
+        //
         public const ulong LOG_SYNC = (1 << 0);
         public const ulong LOG_CALENDAR = (1 << 1);
         public const ulong LOG_CONTACTS = (1 << 2);
@@ -326,6 +326,7 @@ namespace NachoCore.Utils
         public const ulong LOG_DB = (1 << 20);
 
         private static Logger DefaultLogger;
+
         public static Logger SharedInstance {
             get {
                 if (null == DefaultLogger) {
@@ -431,7 +432,7 @@ namespace NachoCore.Utils
                     if ((0 != m) && (0 == (m % bytesPerExtraSpace))) {
                         output += " ";
                     }
-                    output += String.Format (" {0:X2}", (int)bytes [n+m]);
+                    output += String.Format (" {0:X2}", (int)bytes [n + m]);
                 }
                 output += "\n";
             }
@@ -454,11 +455,23 @@ namespace NachoCore.Utils
 
     public class LogElement
     {
-        public enum LevelEnum { Debug, Info, Warn, Error };
+        public enum LevelEnum
+        {
+            Debug,
+            Info,
+            Warn,
+            Error}
+
+        ;
 
         public LevelEnum Level { get; set; }
+
         public ulong Subsystem { get; set; }
+
         public string Message { get; set; }
+
         public DateTime Occurred { get; set; }
+
+        public int ThreadId { get; set; }
     }
 }
