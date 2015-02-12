@@ -1080,6 +1080,23 @@ namespace NachoCore.Model
             return contactList;
         }
 
+        public static List<McContact> QueryGleanedContactsByEmailAddress (int accountId, string emailAddress)
+        {
+            // TODO - When we use Source = Internal for something other than gleaned, we need to fix this
+            //        query to use McMapFolderFolderEntry to look for only internal contacts in the 
+            //        gleaned folder
+            List<McContact> contactList = NcModel.Instance.Db.Query<McContact> (
+                                              "SELECT c.* FROM McContact AS c " +
+                                              " JOIN McContactEmailAddressAttribute AS s ON c.Id = s.ContactId " +
+                                              "WHERE " +
+                                              " s.Value = ? AND " +
+                                              " c.Source = ? AND " +
+                                              " c.AccountId = ? AND " +
+                                              " c.IsAwaitingDelete = 0 ",
+                                              emailAddress, (int)McAbstrItem.ItemSource.Internal, accountId).ToList ();
+            return contactList;
+        }
+
         public static List<McContact> QueryByPhoneNumber (int accountId, string phoneNumber)
         {
             return NcModel.Instance.Db.Query<McContact> (
@@ -1141,32 +1158,6 @@ namespace NachoCore.Model
                                               " f.IsClientOwned = false ",
                                               accountId, emailAddress, (int)McAbstrFolderEntry.ClassCodeEnum.Contact).ToList ();
             return contactList;
-        }
-
-        public static List<NcContactIndex> QueryAllContactItems ()
-        {
-            return NcModel.Instance.Db.Query<NcContactIndex> (
-                "SELECT c.Id as Id, substr(c.FirstName, 0, 1) as FirstLetter FROM McContact AS c " +
-                " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
-                " WHERE " +
-                " c.AccountId = ? AND " +
-                " c.IsAwaitingDelete = 0 AND " +
-                " m.ClassCode = ?  " +
-                " m.AccountId = ? AND " +
-                " ORDER BY c.FirstName",
-                McAbstrFolderEntry.ClassCodeEnum.Contact);
-        }
-
-        public static List<NcContactIndex> QueryAllContactItems (int accountId)
-        {
-            return NcModel.Instance.Db.Query<NcContactIndex> (
-                "SELECT c.Id as Id, substr(c.FirstName, 0, 1) as FirstLetter FROM McContact AS c " +
-                " JOIN McMapFolderFolderEntry AS m ON c.Id = m.FolderEntryId " +
-                " WHERE " +
-                " c.IsAwaitingDelete = 0 AND " +
-                " m.ClassCode = ?  " +
-                " ORDER BY c.FirstName",
-                (int)McAbstrFolderEntry.ClassCodeEnum.Contact);
         }
 
         public static List<NcContactIndex> QueryContactItems (int accountId, int folderId)
@@ -1563,7 +1554,7 @@ namespace NachoCore.Model
             }
 
             return ShouldAttributeBeEclipsed (contactList, (c) => {
-                return McContactEmailAddressAttribute.IsSuperSet (c.EmailAddresses, EmailAddresses);
+                return HasSameName (c) && McContactEmailAddressAttribute.IsSuperSet (c.EmailAddresses, EmailAddresses);
             });
         }
 
@@ -1583,8 +1574,13 @@ namespace NachoCore.Model
             }
 
             return ShouldAttributeBeEclipsed (contactList, (c) => {
-                return McContactStringAttribute.IsSuperSet (c.PhoneNumbers, PhoneNumbers);
+                return HasSameName (c) && McContactStringAttribute.IsSuperSet (c.PhoneNumbers, PhoneNumbers);
             });
+        }
+
+        public bool HasSameName (McContact other)
+        {
+            return ((FirstName == other.FirstName) && (MiddleName == other.MiddleName) && (LastName == other.LastName));
         }
     }
 }
