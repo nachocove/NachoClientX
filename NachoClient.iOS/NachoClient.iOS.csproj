@@ -1219,6 +1219,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration3.cs">
       <Link>NachoCore\Model\Migration\NcMigration3.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration4.cs">
+      <Link>NachoCore\Model\Migration\NcMigration4.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -2125,6 +2128,10 @@
     <ProjectReference Include="..\..\DnDns\SourceCode\DnDns\DnDns.iOS\DnDns.iOS.csproj">
       <Project>{6F68E3AD-B80E-4980-8476-7ADDFFFF6672}</Project>
       <Name>DnDns.iOS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\MobileHtmlAgilityPack\MobileHtmlAgilityPack.csproj">
+      <Project>{D91DC8A9-454E-4CB9-96BE-19652A67D0A4}</Project>
+      <Name>MobileHtmlAgilityPack</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

@@ -26,6 +26,7 @@ namespace Test.Common
             base.SetUp ();
             NcApplication.Instance.TestOnlyInvokeUseCurrentThread = true;
             NcTask.StartService ();
+            NcBrain.StartupDelayMsec = 0;
             NcBrain.StartService ();
             Telemetry.ENABLED = false;
             if (!Initialized) {

@@ -360,6 +360,7 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration2.cs" />
     <Compile Include="NachoCore\Model\McMapEmailAddressEntry.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration3.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration4.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -567,6 +568,10 @@
     <ProjectReference Include="..\..\DnDns\SourceCode\DnDns\DnDns.Android\DnDns.Android.csproj">
       <Project>{F930802F-193C-4388-820B-05AE90A1FB6A}</Project>
       <Name>DnDns.Android</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\MobileHtmlAgilityPack\MobileHtmlAgilityPack.csproj">
+      <Project>{D91DC8A9-454E-4CB9-96BE-19652A67D0A4}</Project>
+      <Name>MobileHtmlAgilityPack</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>

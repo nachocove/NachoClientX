@@ -248,7 +248,11 @@ namespace NachoCore.Utils
                             NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic), Message));
                         goto PossiblyLeave;
                     }
-                    var hotTrans = hotNode.On.Where (x => FireEventCode == x.Event).Single ();
+                    var hotTrans = hotNode.On.Where (x => FireEventCode == x.Event).SingleOrDefault ();
+                    if (null == hotTrans) {
+                        Log.Error (Log.LOG_STATE, "No transition for SM {0} on {1}", Name, FireEventCode);
+                        NcAssert.True (false);
+                    }
                     if (!hotTrans.ActSetsState) {
                         Log.Info (Log.LOG_STATE, LogLine (string.Format ("SM{0}: S={1} & E={2}/{3} => S={4}",
                             NameAndId (), StateName (State), EventName [FireEventCode], fireEvent.Mnemonic, StateName (hotTrans.State)), Message));

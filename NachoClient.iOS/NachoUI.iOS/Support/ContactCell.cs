@@ -198,9 +198,11 @@ namespace NachoClient.iOS
                 switch (state) {
                 case SwipeActionView.SwipeState.SWIPE_BEGIN:
                     tableView.ScrollEnabled = false;
+                    cell.Layer.CornerRadius = 0;
                     break;
                 case SwipeActionView.SwipeState.SWIPE_END_ALL_HIDDEN:
                     tableView.ScrollEnabled = true;
+                    cell.Layer.CornerRadius = 15;
                     break;
                 case SwipeActionView.SwipeState.SWIPE_END_ALL_SHOWN:
                     tableView.ScrollEnabled = false;
