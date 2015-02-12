@@ -94,6 +94,10 @@ namespace NachoCore.Brain
             if (DoNotGlean (mbAddr.Address)) {
                 return;
             }
+            if (null == gleanedFolder) {
+                Log.Warn (Log.LOG_BRAIN, "gleaning folder is null");
+                return;
+            }
             lock (LockObj) {
                 var gleanedContact = new McContact () {
                     AccountId = accountId,
