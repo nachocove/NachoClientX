@@ -60,6 +60,7 @@ namespace NachoClient.iOS
         protected static UIColor _Color_NachoSeparator = null;
         protected static UIColor _Color_NachoDarkText = null;
         protected static UIColor _Color_NachoLightText = null;
+        protected static UIColor _Color_NachoDisabledText = null;
         protected static UIColor _Color_NachoSwipeActionRed = null;
         protected static UIColor _Color_NachoSwipeActionGreen = null;
         protected static UIColor _Color_NachoSwipeActionBlue = null;
@@ -538,6 +539,15 @@ namespace NachoClient.iOS
                     _Color_NachoLightText = Color_999999;
                 }
                 return _Color_NachoLightText;
+            }
+        }
+
+        public static UIColor Color_NachoDisabledText {
+            get {
+                if (null == _Color_NachoDisabledText) {
+                    _Color_NachoDisabledText = UIColor.FromRGB (79, 100, 109);
+                }
+                return _Color_NachoDisabledText;
             }
         }
 
