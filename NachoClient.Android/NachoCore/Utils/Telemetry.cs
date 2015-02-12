@@ -497,7 +497,7 @@ namespace NachoCore.Utils
             Telemetry.SharedInstance.DbUpdated.Set ();
         }
 
-        public static void RecordLogEvent (TelemetryEventType type, string fmt, params object[] list)
+        public static void RecordLogEvent (int threadId, TelemetryEventType type, string fmt, params object[] list)
         {
             if (!ENABLED) {
                 return;
@@ -513,7 +513,7 @@ namespace NachoCore.Utils
                 tEvent.Message = tEvent.Message.Substring (0, MAX_PARSE_LEN - 4);
                 tEvent.Message += " ...";
             }
-            tEvent.ThreadId = Thread.CurrentThread.ManagedThreadId;
+            tEvent.ThreadId = threadId;
 
             RecordRawEvent (tEvent);
         }

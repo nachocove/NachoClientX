@@ -216,7 +216,7 @@ namespace NachoCore.Utils
                     level + ":" + threadId.ToString () + ":" + callInfo + ": " + fmt, list));
             }
             if (settings.ToTelemetry (subsystem)) {
-                Telemetry.RecordLogEvent (teleType, fmt, list);
+                Telemetry.RecordLogEvent (threadId, teleType, fmt, list);
             }
             LogElement elem;
             int maxIndirect = 5;
