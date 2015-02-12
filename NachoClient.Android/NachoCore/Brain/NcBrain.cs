@@ -469,6 +469,11 @@ namespace NachoCore.Brain
         {
             bool tvStarted = false;
             if (ENABLED && !IsInUnitTest ()) {
+                // Delay brain to avoid initialization logjam
+                if (!NcTask.CancelableSleep (StartupDelayMsec)) {
+                    NcTask.Cts.Token.ThrowIfCancellationRequested ();
+                }
+
                 // If brain task is running under quick sync, do not start time variance
                 // as it is a waste of time.
                 if (NcApplication.ExecutionContextEnum.Background == NcApplication.Instance.ExecutionContext ||
