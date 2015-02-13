@@ -463,9 +463,9 @@ namespace NachoCore.Utils
 
             // The conversion from TNEF to MIME will sometimes create a TextPart
             // with a null ContentObject, which will result in a NullReferenceException
-            // when accessing the Text property.  Render all TextParts, except
-            // for those bogus ones.
-            if (part is TextPart && null != part.ContentObject) {
+            // when accessing the Text property.  Render all non-calendar TextParts,
+            // except for those bogus ones.
+            if (part is TextPart && null != part.ContentObject && !part.ContentType.Matches ("text", "calendar")) {
                 list.Add (part);
                 return;
             }
@@ -506,19 +506,19 @@ namespace NachoCore.Utils
 
         /// <summary>
         /// Pick the best alternative to be displayed, which is always supposed to be
-        /// the last one in the list.
+        /// the last one in the list.  But we want to ignore calendar entries (which are
+        /// handled a different way).
         /// </summary>
-        /// <description>
-        /// If the best alternative is a calendar entry, then also select the next best
-        /// item, since we want to display that one as well.
-        /// </description>
         protected static void MimeBestAlternativeDisplayList (Multipart multipart, ref List<MimeEntity> list)
         {
             var last = multipart.Last ();
-            MimeEntityDisplayList (last, ref list);
-            if (1 < multipart.Count && last.ContentType.Matches ("text", "calendar")) {
-                var nextToLast = multipart [multipart.Count - 2];
-                MimeEntityDisplayList (nextToLast, ref list);
+            if (last.ContentType.Matches ("text", "calendar")) {
+                if (1 < multipart.Count) {
+                    var nextToLast = multipart [multipart.Count - 2];
+                    MimeEntityDisplayList (nextToLast, ref list);
+                }
+            } else {
+                MimeEntityDisplayList (last, ref list);
             }
         }
 

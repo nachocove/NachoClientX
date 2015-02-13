@@ -1381,7 +1381,7 @@ namespace NachoClient.iOS
 
         protected void PrepareCancelationNotices ()
         {
-            var iCalCancelPart = CalendarHelper.iCalCancelToMimePart (account, c);
+            var iCalCancelPart = CalendarHelper.MimeCancelFromCalendar (c);
             var mimeBody = CalendarHelper.CreateMime ("", iCalCancelPart, new List<McAttachment> ());
 
             CalendarHelper.SendMeetingCancelations (account, c, mimeBody);
@@ -1392,7 +1392,7 @@ namespace NachoClient.iOS
         /// </summary>
         protected void PrepareInvites ()
         {
-            var iCalPart = CalendarHelper.iCalToMimePart (account, c);
+            var iCalPart = CalendarHelper.MimeRequestFromCalendar (c);
             var mimeBody = CalendarHelper.CreateMime (c.Description, iCalPart, c.attachments);
 
             CalendarHelper.SendInvites (account, c, null, null, mimeBody, null);
