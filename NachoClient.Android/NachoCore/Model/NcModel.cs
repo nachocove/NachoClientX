@@ -252,6 +252,7 @@ namespace NachoCore.Model
                 Subsystem = Log.LOG_DB,
                 Message = message,
                 Occurred = DateTime.UtcNow,
+                ThreadId = Thread.CurrentThread.ManagedThreadId,
             });
         }
 
@@ -268,6 +269,7 @@ namespace NachoCore.Model
                     Subsystem = Log.LOG_DB,
                     Message = string.Format ("SQLite Error Log (code {0}): {1}", code, message),
                     Occurred = DateTime.UtcNow,
+                    ThreadId = Thread.CurrentThread.ManagedThreadId,
                 });
             }), (IntPtr)null);
             Documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
