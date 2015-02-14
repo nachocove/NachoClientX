@@ -1550,7 +1550,7 @@ namespace NachoCore.Model
                 contactList.AddRange (contacts);
             }
 
-            var isAnonymous = IsAnonymous ();
+            var isAnonymous = IsAnonymous () && (IsRic () || IsGleaned ());
             return ShouldAttributeBeEclipsed (contactList, (c) => {
                 if (isAnonymous && !c.IsAnonymous ()) {
                     return true;
