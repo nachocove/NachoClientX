@@ -264,10 +264,14 @@ namespace NachoCore.Model
                     ((int)SQLite3.Result.Locked == code && message.Contains ("PRAGMA main.wal_checkpoint (PASSIVE)"))) {
                     return;
                 }
+                var messageWithStack = string.Format ("SQLite Error Log (code {0}): {1}", code, message);
+                foreach (var frame in NachoPlatformBinding.PlatformProcess.GetStackTrace ()) {
+                    messageWithStack += "\n" + frame;
+                }
                 Log.IndirectQ.Enqueue (new LogElement () {
                     Level = LogElement.LevelEnum.Error,
                     Subsystem = Log.LOG_DB,
-                    Message = string.Format ("SQLite Error Log (code {0}): {1}", code, message),
+                    Message = messageWithStack,
                     Occurred = DateTime.UtcNow,
                     ThreadId = Thread.CurrentThread.ManagedThreadId,
                 });
