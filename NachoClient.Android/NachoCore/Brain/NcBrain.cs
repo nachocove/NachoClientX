@@ -284,9 +284,14 @@ namespace NachoCore.Brain
                     continue;
                 }
 
+                // Create the parsed object, its tokenizer, and its index document
+                var message = NcObjectParser.ParseMimeMessage (messagePath);
+                var tokenizer = new NcMimeTokenizer (message);
+                var content = tokenizer.Content;
+                var indexDoc = new Index.IndexEmailMessage (emailMessage.Id.ToString (), content, message);
+
                 // Index the document
-                bytesIndexed +=
-                    index.BatchAdd (messagePath, "message", emailMessage.Id.ToString ());
+                bytesIndexed += index.BatchAdd (indexDoc);
                 numIndexed += 1;
 
                 // Mark the email message indexed
@@ -425,9 +430,7 @@ namespace NachoCore.Brain
                 num_entries -= GleanContacts (num_entries);
                 num_entries -= UpdateEmailAddressScores (num_entries);
                 num_entries -= UpdateEmailMessageScores (num_entries);
-                #if INDEXING_ENABLED
                 num_entries -= IndexEmailMessages (num_entries);
-                #endif
                 break;
             case NcBrainEventType.STATE_MACHINE:
                 var stateMachineEvent = (NcBrainStateMachineEvent)brainEvent;

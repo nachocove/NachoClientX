@@ -1219,6 +1219,12 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration3.cs">
       <Link>NachoCore\Model\Migration\NcMigration3.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcObjectParser.cs">
+      <Link>NachoCore\Brain\NcObjectParser.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcTokenizer.cs">
+      <Link>NachoCore\Brain\NcTokenizer.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

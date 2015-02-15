@@ -360,6 +360,8 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration2.cs" />
     <Compile Include="NachoCore\Model\McMapEmailAddressEntry.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration3.cs" />
+    <Compile Include="NachoCore\Brain\NcObjectParser.cs" />
+    <Compile Include="NachoCore\Brain\NcTokenizer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
