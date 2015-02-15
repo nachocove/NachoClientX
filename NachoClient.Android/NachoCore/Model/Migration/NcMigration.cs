@@ -218,7 +218,6 @@ namespace NachoCore.Model
                         migrationRecord.StartTime = startTime;
                         rows = migrationRecord.Insert ();
                         NcAssert.True (1 == rows);
-                        migration.Finished = true;
                     }
                     migrationRecord.NumberOfTimesRan += 1;
                     migrationRecord.Update ();
@@ -232,6 +231,7 @@ namespace NachoCore.Model
                         migrationRecord.Finished = true;
                         rows = migrationRecord.Update ();
                         NcAssert.True (1 == rows);
+                        migration.Finished = true;
                     } catch (OperationCanceledException) {
                         migrationRecord.DurationMsec += (int)(DateTime.UtcNow - startTime).TotalMilliseconds;
                         rows = migrationRecord.Update ();

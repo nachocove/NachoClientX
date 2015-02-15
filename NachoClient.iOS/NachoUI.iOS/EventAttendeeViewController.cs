@@ -607,7 +607,7 @@ namespace NachoClient.iOS
         public void SendAttendeeInvite (McAttendee attendee)
         {
             McCalendar item = (McCalendar)c;
-            var iCalPart = CalendarHelper.iCalToMimePart (account, item);
+            var iCalPart = CalendarHelper.MimeRequestFromCalendar (item);
             var mimeBody = CalendarHelper.CreateMime (item.Description, iCalPart, item.attachments);
 
             CalendarHelper.SendInvite (account, item, attendee, mimeBody);

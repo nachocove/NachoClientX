@@ -166,9 +166,9 @@ namespace NachoCore.Utils
             }
         }
 
-        public static void CancelableSleep (int msec)
+        public static bool CancelableSleep (int msec)
         {
-            CancelableSleep (msec, Cts.Token);
+            return CancelableSleep (msec, Cts.Token);
         }
     }
 }

@@ -274,8 +274,7 @@ namespace NachoClient.iOS
 
             NcKeyboardSpy.Instance.Init ();
 
-            if (NcApplication.ExecutionContextEnum.Migrating != NcApplication.Instance.ExecutionContext &&
-                "SegueToTabController" == StartupViewController.NextSegue ()) {
+            if (NcApplication.Instance.IsUp () && "SegueToTabController" == StartupViewController.NextSegue ()) {
                 var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
                 var vc = storyboard.InstantiateViewController ("NachoTabBarController");
                 Log.Info (Log.LOG_UI, "fast path to tab bar controller: {0}", vc);
@@ -321,6 +320,9 @@ namespace NachoClient.iOS
 
             NcApplication.Instance.StatusIndEvent -= BgStatusIndReceiver;
 
+            if (-1 != BackgroundIosTaskId) {
+                UIApplication.SharedApplication.EndBackgroundTask (BackgroundIosTaskId);
+            }
             BackgroundIosTaskId = UIApplication.SharedApplication.BeginBackgroundTask (() => {
                 Log.Info (Log.LOG_LIFECYCLE, "BeginBackgroundTask: Callback time remaining: {0}", application.BackgroundTimeRemaining);
                 FinalShutdown (null);
@@ -506,7 +508,7 @@ namespace NachoClient.iOS
                 break;
             }
         }
-            
+
         /// Status bar height can change when the user is on a call or using navigation
         public override void ChangedStatusBarFrame (UIApplication application, RectangleF oldStatusBarFrame)
         {

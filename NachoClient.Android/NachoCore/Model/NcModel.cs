@@ -65,7 +65,7 @@ namespace NachoCore.Model
         // RateLimiter PUBLIC FOR TEST ONLY.
         public NcRateLimter RateLimiter { set; get; }
 
-        public bool FreshInstall { protected set; get; }
+        public bool FreshInstall { private set; get; }
 
         private const string KTmpPathSegment = "tmp";
         private const string KFilesPathSegment = "files";
@@ -252,6 +252,7 @@ namespace NachoCore.Model
                 Subsystem = Log.LOG_DB,
                 Message = message,
                 Occurred = DateTime.UtcNow,
+                ThreadId = Thread.CurrentThread.ManagedThreadId,
             });
         }
 
@@ -263,11 +264,16 @@ namespace NachoCore.Model
                     ((int)SQLite3.Result.Locked == code && message.Contains ("PRAGMA main.wal_checkpoint (PASSIVE)"))) {
                     return;
                 }
+                var messageWithStack = string.Format ("SQLite Error Log (code {0}): {1}", code, message);
+                foreach (var frame in NachoPlatformBinding.PlatformProcess.GetStackTrace ()) {
+                    messageWithStack += "\n" + frame;
+                }
                 Log.IndirectQ.Enqueue (new LogElement () {
                     Level = LogElement.LevelEnum.Error,
                     Subsystem = Log.LOG_DB,
-                    Message = string.Format ("SQLite Error Log (code {0}): {1}", code, message),
+                    Message = messageWithStack,
                     Occurred = DateTime.UtcNow,
+                    ThreadId = Thread.CurrentThread.ManagedThreadId,
                 });
             }), (IntPtr)null);
             Documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);

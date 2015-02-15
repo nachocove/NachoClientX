@@ -748,57 +748,6 @@ namespace NachoClient
             view.Frame = frame;
         }
 
-        public static string GlobalObjIdToUID (string GlobalObjId)
-        {
-            string UID;
-            bool OutlookID = false;
-
-            byte[] data = Convert.FromBase64String (GlobalObjId);
-
-            StringBuilder sb = new StringBuilder ();
-            for (int i = 40; i < 48; i++) {
-                sb.Append (Convert.ToChar (data [i]));
-            }
-            string vCalHolder = sb.ToString ();
-
-            int uidHolderLength = 0;
-            for (int i = 36; i < 40; i++) {
-                uidHolderLength += data [i];
-            }
-
-            int remainingLength = 0;
-            for (int i = 40; i < data.Length; i++) {
-                remainingLength += 1;
-            }
-
-            if (53 > data.Length) {
-                OutlookID = true;
-            } else if ("vCal-Uid" != vCalHolder) {
-                OutlookID = true;
-            } else if (13 > uidHolderLength || remainingLength < uidHolderLength) {
-                OutlookID = true;
-            }
-
-            if (OutlookID) {
-                for (int i = 16; i < 20; i++) {
-                    data [i] = 0;
-                }
-                UID = BitConverter.ToString (data);
-            } else {
-                sb.Clear ();
-                int uidLength = uidHolderLength - 13;
-                for (int i = 0; i < uidLength; i++) {
-                    sb.Append (Convert.ToChar (data [52 + i]));
-                }
-                UID = sb.ToString ();
-            }
-
-            UID = UID.Replace ("-", "");
-            UID = UID.Replace ("{", "");
-            UID = UID.Replace ("}", "");
-            return UID;
-        }
-
         public static void SetAutomaticImageForButton (UIBarButtonItem button, string iconName)
         {
             using (var buttonImage = UIImage.FromBundle (iconName)) {

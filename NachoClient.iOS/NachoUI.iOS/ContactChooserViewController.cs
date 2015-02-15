@@ -200,8 +200,12 @@ namespace NachoClient.iOS
         {
             this.address.contact = contact;
             this.address.address = address;
-            owner.UpdateEmailAddress (this, this.address);
-            owner.DismissINachoContactChooser (this);
+            if (owner != null) {
+                owner.UpdateEmailAddress (this, this.address);
+                owner.DismissINachoContactChooser (this);
+            } else {
+                Log.Error (Log.LOG_UI, "ContactChooserViewController: null in update email address");
+            }
         }
 
         /// <summary>

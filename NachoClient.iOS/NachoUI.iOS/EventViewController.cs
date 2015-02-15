@@ -1308,7 +1308,7 @@ namespace NachoClient.iOS
 
             if (c is McCalendar && c.ResponseRequestedIsSet && c.ResponseRequested) {
                 // Send an e-mail message to the organizer with the response.
-                var iCalPart = CalendarHelper.iCalResponseToMimePart (account, (McCalendar)c, status);
+                var iCalPart = CalendarHelper.MimeResponseFromCalendar ((McCalendar)c, status);
                 // TODO Give the user a chance to enter some text. For now, the message body is empty.
                 var mimeBody = CalendarHelper.CreateMime ("", iCalPart, new List<McAttachment> ());
                 CalendarHelper.SendMeetingResponse (account, (McCalendar)c, mimeBody, status);
@@ -1370,7 +1370,7 @@ namespace NachoClient.iOS
         {
             McContact contact = McContact.QueryByEmailAddress (account.Id, root.OrganizerEmail).FirstOrDefault ();
             if (null == contact) {
-                NcContactGleaner.GleanContact (root.OrganizerEmail, account.Id);
+                NcContactGleaner.GleanContacts (root.OrganizerEmail, account.Id, false);
                 contact = McContact.QueryByEmailAddress (account.Id, root.OrganizerEmail).FirstOrDefault ();
             }
             PerformSegue ("SegueToContactDetail", new SegueHolder (contact));

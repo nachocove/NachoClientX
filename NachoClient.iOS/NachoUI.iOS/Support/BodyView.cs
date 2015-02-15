@@ -157,6 +157,10 @@ namespace NachoClient.iOS
 
             itemDateTime = body.LastModified;
 
+            if (item is McEmailMessage && null != ((McEmailMessage)item).MeetingRequest) {
+                RenderCalendarPart ();
+            }
+
             switch (body.BodyType) {
             case McAbstrFileDesc.BodyTypeEnum.PlainText_1:
                 RenderTextString (body.GetContentsString ());
@@ -192,8 +196,10 @@ namespace NachoClient.iOS
             McAbstrItem refreshedItem;
             if (item is McEmailMessage) {
                 refreshedItem = McEmailMessage.QueryById<McEmailMessage> (item.Id);
-            } else if (item is McAbstrCalendarRoot) {
+            } else if (item is McCalendar) {
                 refreshedItem = McCalendar.QueryById<McCalendar> (item.Id);
+            } else if (item is McException) {
+                refreshedItem = McException.QueryById<McException> (item.Id);
             } else {
                 throw new NcAssert.NachoDefaultCaseFailure (string.Format ("Unhandled abstract item type {0}", item.GetType ().Name));
             }
@@ -233,10 +239,6 @@ namespace NachoClient.iOS
                 // app comes back into the foreground before starting the download.  The
                 // StatusIndicatorCallback will take care of doing that.
                 waitingForAppInForeground = true;
-
-                // This log message may be removed once it is confirmed that this works
-                // as expected.
-                Log.Info (Log.LOG_UI, "BodyView: Download delayed because the app is not in the foreground.");
             }
         }
 
@@ -278,7 +280,7 @@ namespace NachoClient.iOS
                 // The download has started.
                 if (variableHeight) {
                     // A variable height view should always be visible. A fixed size
-                    // view might be off the screen. The Now view will call
+                    // view might be off the screen. The Hot view will call
                     // PrioritizeBodyDownload() when the card becomes visible.
                     BackEnd.Instance.Prioritize (item.AccountId, downloadToken);
                 }
@@ -336,11 +338,10 @@ namespace NachoClient.iOS
             float maxWidth = preferredWidth;
 
             foreach (var subview in childViews) {
-                // If any part of the view is currently visible or should be visible,
-                // then adjust it.  If the view is completely off the screen, leave
-                // it alone.  If we adjust the width of the view, it is possible that
-                // the height will change as a result.  In which case we have to redo
-                // all the calculations.
+                // If any part of the view should be visible, then adjust it.  If the view should
+                // be off the screen, then mark it hidden.  If the width of the view changes,
+                // then it is possible that the height will also change as a result.  In which
+                // case we have to redo all the calculations.
                 SizeF size;
                 int loopCount = 0;
                 do {
@@ -463,12 +464,9 @@ namespace NachoClient.iOS
             if (waitingForAppInForeground &&
                 NcResult.SubKindEnum.Info_ExecutionContextChanged == statusEvent.Status.SubKind &&
                 NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext) {
+
                 // We were waiting to start a download until the app was in the foreground.
                 // The app is now in the foreground.
-
-                // This log message may be removed once it is confirmed that this is behaving as expected.
-                Log.Info (Log.LOG_UI, "BodyView: Starting a delayed download now that the app is in the foreground.");
-
                 waitingForAppInForeground = false;
                 StartDownload ();
                 return;
@@ -497,7 +495,7 @@ namespace NachoClient.iOS
                     var localAccountId = item.AccountId;
                     var localDownloadToken = downloadToken;
                     NcTask.Run (delegate {
-                        foreach (var request in McPending.QueryByToken(localAccountId, localDownloadToken)) {
+                        foreach (var request in McPending.QueryByToken (localAccountId, localDownloadToken)) {
                             if (McPending.StateEnum.Failed == request.State) {
                                 request.Delete ();
                             }
@@ -506,6 +504,7 @@ namespace NachoClient.iOS
 
                     if (NcApplication.ExecutionContextEnum.Foreground != NcApplication.Instance.ExecutionContext &&
                         NcResult.WhyEnum.UnavoidableDelay == statusEvent.Status.Why) {
+
                         // The download probably failed because the back end was parked
                         // because the app is in the background.  Don't record this as
                         // a failure.  Instead, wait for the app to be in the foreground
@@ -513,8 +512,6 @@ namespace NachoClient.iOS
                         waitingForAppInForeground = true;
                         downloadToken = null;
 
-                        // This log message may be removed once it is confirmed that this is behaving as expected.
-                        Log.Info (Log.LOG_UI, "BodyView: Download failed while the app is in the background. The download will be retried when the app comes back to the foreground.");
                     } else {
                         // The download really did fail.  Let the user know.
                         ShowErrorMessage ();
@@ -594,9 +591,9 @@ namespace NachoClient.iOS
             }
         }
 
-        private void RenderCalendarPart (MimePart part)
+        private void RenderCalendarPart ()
         {
-            var calView = new BodyCalendarView (yOffset, preferredWidth, item, part, !UserInteractionEnabled);
+            var calView = new BodyCalendarView (yOffset, preferredWidth, (McEmailMessage)item, !UserInteractionEnabled);
             AddSubview (calView);
             childViews.Add (calView);
             yOffset += calView.Frame.Height;
@@ -612,8 +609,6 @@ namespace NachoClient.iOS
                 var part = (MimePart)entity;
                 if (part.ContentType.Matches ("text", "html")) {
                     RenderHtmlPart (part);
-                } else if (part.ContentType.Matches ("text", "calendar")) {
-                    RenderCalendarPart (part);
                 } else if (part.ContentType.Matches ("text", "rtf")) {
                     RenderRtfPart (part);
                 } else if (part.ContentType.Matches ("text", "*")) {
@@ -650,7 +645,7 @@ namespace NachoClient.iOS
     /// <summary>
     /// Wrap a BodyView within a UIScrollView that uses two-fingered scrolling.  The BodyView
     /// will be the only thing within the scroll view.  This is designed to be used within
-    /// the Nacho Now view.
+    /// the Nacho Hot view.
     /// </summary>
     public class ScrollableBodyView : UIScrollView
     {
@@ -677,7 +672,7 @@ namespace NachoClient.iOS
 
         /// <summary>
         /// Change the location and size of the scroll view's frame.  Configure the
-        /// BodyView with the giver item.
+        /// BodyView with the given item.
         /// </summary>
         public void ConfigureAndResize (McAbstrItem item, bool isRefresh, RectangleF newFrame)
         {
@@ -710,7 +705,7 @@ namespace NachoClient.iOS
         // I'm not sure exactly how this works, but it seems to do what we want.
         // The intention is to pass all touch events, other then the scrolling
         // that is recognized by the pan gesture recognizer, on up the chain.
-        // In the case of the Nacho Now view, this causes a single tap on the
+        // In the case of the Nacho Hot view, this causes a single tap on the
         // message body to open the message detail view.
 
         public override void TouchesBegan (NSSet touches, UIEvent evt)
