@@ -173,6 +173,7 @@ namespace NachoCore.Brain
         protected override void ExtractContent ()
         {
             _Content = "";
+            _Keywords = new List<string> ();
             foreach (TextPart part in Parts) {
                 if (part.ContentType.Matches ("text", "plain")) {
                     ExtractContentFromPlainText (part);

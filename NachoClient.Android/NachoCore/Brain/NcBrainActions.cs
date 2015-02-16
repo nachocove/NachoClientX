@@ -107,7 +107,7 @@ namespace NachoCore.Brain
             if (null == emailMessage) {
                 return false;
             }
-            Log.Debug (Log.LOG_BRAIN, "index email message {0}", emailMessage.Id);
+            Log.Info (Log.LOG_BRAIN, "index email message {0}", emailMessage.Id);
 
             // Make sure the body is there
             var messagePath = emailMessage.GetBody ().GetFilePath ();

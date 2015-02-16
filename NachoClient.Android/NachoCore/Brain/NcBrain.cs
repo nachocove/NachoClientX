@@ -20,7 +20,7 @@ namespace NachoCore.Brain
 
         public static bool RegisterStatusIndHandler = false;
 
-        public static int StartupDelayMsec = 100;
+        public static int StartupDelayMsec = 10000;
 
         private static NcBrain _SharedInstance;
 
