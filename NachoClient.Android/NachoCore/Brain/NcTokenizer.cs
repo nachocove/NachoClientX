@@ -102,7 +102,7 @@ namespace NachoCore.Brain
     {
         public delegate void HtmlWalker (HtmlNode node);
 
-        protected List<TextPart> Parts;
+        public List<TextPart> Parts { get; protected set; }
 
         protected List<TextPart> ProcessMimeEntity (MimeEntity part)
         {
@@ -227,7 +227,7 @@ namespace NachoCore.Brain
             }
             foreach (var child in node.ChildNodes) {
                 if (("style" == child.Name) || ("script" == child.Name)) {
-                    continue;
+                    continue; // skip all css and javascript
                 }
                 WalkHtmlNodes (child, walker);
             }

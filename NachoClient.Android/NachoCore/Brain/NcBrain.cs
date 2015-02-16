@@ -20,7 +20,7 @@ namespace NachoCore.Brain
 
         public static bool RegisterStatusIndHandler = false;
 
-        public static int StartupDelayMsec = 10000;
+        public static int StartupDelayMsec = 100;
 
         private static NcBrain _SharedInstance;
 
@@ -143,27 +143,8 @@ namespace NachoCore.Brain
             while (numGleaned < count && !NcApplication.Instance.IsBackgroundAbateRequired &&
                    !EventQueue.Token.IsCancellationRequested) {
                 McEmailMessage emailMessage = McEmailMessage.QueryNeedGleaning (accountId);
-                if (null == emailMessage) {
+                if (!GleanEmailMessage (emailMessage, accountAddress, quickGlean)) {
                     break;
-                }
-                Log.Info (Log.LOG_BRAIN, "glean contact from email message {0}", emailMessage.Id);
-                if (!NcContactGleaner.GleanContactsHeaderPart2 (emailMessage)) {
-                    break;
-                }
-                if (quickGlean) {
-                    // Assign a version 0 score by checking if our address is in the to list
-                    InternetAddressList addressList = NcEmailAddress.ParseAddressListString (emailMessage.To);
-                    foreach (var address in addressList) {
-                        if (!(address is MailboxAddress)) {
-                            continue;
-                        }
-                        if (((MailboxAddress)address).Address == accountAddress) {
-                            NcAssert.True (0 == emailMessage.ScoreVersion); // shouldn't be gleaning if version > 0
-                            emailMessage.Score = McEmailMessage.minHotScore;
-                            emailMessage.UpdateByBrain ();
-                            break;
-                        }
-                    }
                 }
                 numGleaned++;
             }
@@ -174,87 +155,52 @@ namespace NachoCore.Brain
             return numGleaned;
         }
 
-        private int AnalyzeEmailAddresses (int count)
+        private int ProcessLoop (int count, string message, Func<bool> action)
         {
-            int numAnalyzed = 0;
-            while (numAnalyzed < count && !NcApplication.Instance.IsBackgroundAbateRequired &&
+            int numProcessed = 0;
+            while (numProcessed < count && !NcApplication.Instance.IsBackgroundAbateRequired &&
                    !EventQueue.Token.IsCancellationRequested) {
-                McEmailAddress emailAddress = McEmailAddress.QueryNeedAnalysis ();
-                if (null == emailAddress) {
+                if (!action ()) {
                     break;
                 }
-                Log.Info (Log.LOG_BRAIN, "analyze email address {0}", emailAddress.Id);
-                emailAddress.ScoreObject ();
-                numAnalyzed++;
+                numProcessed++;
             }
-            if (0 != numAnalyzed) {
-                Log.Info (Log.LOG_BRAIN, "{0} email addresses analyzed", numAnalyzed);
+            if (0 != numProcessed) {
+                Log.Info (Log.LOG_BRAIN, "{0} {1}", numProcessed, message);
             }
-            return numAnalyzed;
+            return numProcessed;
+        }
+
+        private int AnalyzeEmailAddresses (int count)
+        {
+            return ProcessLoop (count, "email addresses analyzed", () => {
+                McEmailAddress emailAddress = McEmailAddress.QueryNeedAnalysis ();
+                return AnalyzeEmailAddress (emailAddress);
+            });
         }
 
         private int AnalyzeEmails (int count)
         {
-            int numAnalyzed = 0;
-            while (numAnalyzed < count && !NcApplication.Instance.IsBackgroundAbateRequired &&
-                   !EventQueue.Token.IsCancellationRequested) {
+            return ProcessLoop (count, "email messages analyzed", () => {
                 McEmailMessage emailMessage = McEmailMessage.QueryNeedAnalysis ();
-                if (null == emailMessage) {
-                    break;
-                }
-                Log.Debug (Log.LOG_BRAIN, "analyze email message {0}", emailMessage.Id);
-                emailMessage.ScoreObject ();
-                numAnalyzed++;
-            }
-            if (0 != numAnalyzed) {
-                Log.Info (Log.LOG_BRAIN, "{0} email messages analyzed", numAnalyzed);
-            }
-            return numAnalyzed;
+                return AnalyzeEmailMessage (emailMessage);
+            });
         }
 
         private int UpdateEmailAddressScores (int count)
         {
-            int numUpdated = 0;
-            while (numUpdated < count && !NcApplication.Instance.IsBackgroundAbateRequired &&
-                   !EventQueue.Token.IsCancellationRequested) {
+            return ProcessLoop (count, "email address scores updated", () => {
                 McEmailAddress emailAddress = McEmailAddress.QueryNeedUpdate ();
-                if (null == emailAddress) {
-                    break;
-                }
-                emailAddress.Score = emailAddress.GetScore ();
-                Log.Debug (Log.LOG_BRAIN, "[McEmailAddress:{0}] update score -> {1:F6}",
-                    emailAddress.Id, emailAddress.Score);
-                emailAddress.NeedUpdate = false;
-                emailAddress.UpdateByBrain ();
-
-                numUpdated++;
-            }
-            if (0 != numUpdated) {
-                Log.Info (Log.LOG_BRAIN, "{0} email address scores updated", numUpdated);
-            }
-            return numUpdated;
+                return UpdateEmailAddressScore (emailAddress, false);
+            });
         }
 
         private int UpdateEmailMessageScores (int count)
         {
-            int numUpdated = 0;
-            while (numUpdated < count && !NcApplication.Instance.IsBackgroundAbateRequired &&
-                   !EventQueue.Token.IsCancellationRequested) {
+            return ProcessLoop (count, "email message scores updated", () => {
                 McEmailMessage emailMessage = McEmailMessage.QueryNeedUpdate ();
-                if (null == emailMessage) {
-                    break;
-                }
-                emailMessage.Score = emailMessage.GetScore ();
-                Log.Debug (Log.LOG_BRAIN, "[McEmailMessage:{0}] update score -> {1:F6}",
-                    emailMessage.Id, emailMessage.Score);
-                emailMessage.NeedUpdate = false;
-                emailMessage.UpdateScoreAndNeedUpdate ();
-                numUpdated++;
-            }
-            if (0 != numUpdated) {
-                Log.Info (Log.LOG_BRAIN, "{0} email message scores updated", numUpdated);
-            }
-            return numUpdated;
+                return UpdateEmailMessageScore (emailMessage);
+            });
         }
 
         private int IndexEmailMessages (int count)
@@ -281,26 +227,9 @@ namespace NachoCore.Brain
                     index.BeginAddTransaction ();
                 }
 
-                // Make sure the body is there
-                var messagePath = emailMessage.GetBody ().GetFilePath ();
-                if (!File.Exists (messagePath)) {
-                    Log.Warn (Log.LOG_BRAIN, "{0} does not exist", messagePath);
-                    continue;
+                if (IndexEmailMessage (index, emailMessage, ref bytesIndexed)) {
+                    numIndexed += 1;
                 }
-
-                // Create the parsed object, its tokenizer, and its index document
-                var message = NcObjectParser.ParseMimeMessage (messagePath);
-                var tokenizer = new NcMimeTokenizer (message);
-                var content = tokenizer.Content;
-                var indexDoc = new Index.IndexEmailMessage (emailMessage.Id.ToString (), content, message);
-
-                // Index the document
-                bytesIndexed += index.BatchAdd (indexDoc);
-                numIndexed += 1;
-
-                // Mark the email message indexed
-                emailMessage.IsIndexed = true;
-                emailMessage.UpdateByBrain ();
             }
 
             foreach (var index in indexes.Values) {
@@ -380,21 +309,8 @@ namespace NachoCore.Brain
             Log.Debug (Log.LOG_BRAIN, "ProcessUpdateAddressEvent: event={0}", brainEvent.ToString ());
             McEmailAddress emailAddress =
                 McEmailAddress.QueryById<McEmailAddress> ((int)brainEvent.EmailAddressId);
-            if (null == emailAddress) {
-                return;
-            }
-            if (Scoring.Version != emailAddress.ScoreVersion) {
-                NcAssert.True (Scoring.Version > emailAddress.ScoreVersion);
-                return;
-            }
             bool updateDependencies = brainEvent.ForceUpdateDependentMessages;
-            double newScore = emailAddress.GetScore ();
-            if (newScore != emailAddress.Score) {
-                emailAddress.Score = newScore;
-                emailAddress.UpdateByBrain ();
-                updateDependencies = true;
-            }
-            if (updateDependencies) {
+            if (UpdateEmailAddressScore (emailAddress, true) && updateDependencies) {
                 emailAddress.MarkDependencies ();
             }
         }
@@ -404,18 +320,7 @@ namespace NachoCore.Brain
             Log.Debug (Log.LOG_BRAIN, "ProcessUpdateMessageEvent: event={0}", brainEvent.ToString ());
             McEmailMessage emailMessage =
                 McEmailMessage.QueryById<McEmailMessage> ((int)brainEvent.EmailMessageId);
-            if (null == emailMessage) {
-                return;
-            }
-            if (Scoring.Version != emailMessage.ScoreVersion) {
-                NcAssert.True (Scoring.Version > emailMessage.ScoreVersion);
-                return;
-            }
-            double newScore = emailMessage.GetScore ();
-            if (newScore != emailMessage.Score) {
-                emailMessage.Score = newScore;
-                emailMessage.UpdateByBrain ();
-            }
+            UpdateEmailMessageScore (emailMessage);
         }
 
         private void ProcessEvent (NcBrainEvent brainEvent)
