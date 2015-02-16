@@ -176,6 +176,8 @@ namespace NachoClient.iOS
             emailServiceTableView = new UITableView (new RectangleF (25, yOffset, View.Frame.Width - 50, emailServices.GetTableHeight ()));
             emailServiceTableView.BackgroundColor = UIColor.White;
             emailServiceTableView.ScrollEnabled = false;
+            emailServiceTableView.AccessibilityLabel = "Email Service Chooser";
+            emailServiceTableView.AccessibilityIdentifier = "EmailServicesDropdown";
             emailServiceTableView.Alpha = 0f;
             contentView.AddSubview (emailServiceTableView);
 

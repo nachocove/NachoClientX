@@ -159,6 +159,9 @@ namespace NachoClient.iOS
 
             if (McAccount.AccountServiceEnum.None == provider.EmailService) {
                 cell.TextLabel.Text = "Choose your email service";
+            } else {
+                cell.ContentView.AccessibilityLabel = McAccount.AccountServiceName (provider.EmailService);
+                cell.ContentView.AccessibilityIdentifier = McAccount.AccountServiceName (provider.EmailService);
             }
 
             if (!providerImageView.Hidden) {

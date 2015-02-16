@@ -420,6 +420,7 @@ namespace NachoClient.iOS
             UIButton cell = new UIButton (UIButtonType.RoundedRect);
             cell.Frame = new RectangleF (5, 44 * index, recentView.Frame.Width - 10, 44);
             cell.BackgroundColor = cellBGColor;
+            cell.AccessibilityLabel = name;
             cell.SetImage (Util.DrawButtonBackgroundImage (cellHighlightedColor, cell.Frame.Size), UIControlState.Highlighted);
             cell.TouchUpInside += (sender, e) => {
                 action ();
