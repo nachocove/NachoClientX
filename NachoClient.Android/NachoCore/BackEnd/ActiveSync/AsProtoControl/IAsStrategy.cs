@@ -44,6 +44,7 @@ namespace NachoCore.ActiveSync
     public interface IAsStrategy
     {
         SyncKit GenSyncKit (int accountId, McProtocolState protocolState, bool cantBeEmpty);
+        PingKit GenPingKit (int accountId, McProtocolState protocolState, bool isNarrow, bool stillHaveUnsyncedFolders);
         Tuple<PickActionEnum, AsCommand> Pick ();
         Tuple<PickActionEnum, AsCommand> PickUserDemand ();
         int UploadTimeoutSecs (long length);

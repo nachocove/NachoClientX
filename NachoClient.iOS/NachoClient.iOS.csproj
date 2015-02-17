@@ -1224,6 +1224,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\PushAssist.cs">
       <Link>NachoCore\BackEnd\PushAssist.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IPushAssistOwner.cs">
+      <Link>NachoCore\BackEnd\IPushAssistOwner.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />

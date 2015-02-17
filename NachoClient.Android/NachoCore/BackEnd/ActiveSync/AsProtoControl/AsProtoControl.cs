@@ -3,6 +3,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Net.Http.Headers;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,7 +14,7 @@ using NachoPlatform;
 
 namespace NachoCore.ActiveSync
 {
-    public partial class AsProtoControl : ProtoControl, IBEContext
+    public partial class AsProtoControl : ProtoControl, IPushAssistOwner
     {
         private IAsCommand Cmd;
         private AsValidateConfig Validator;
@@ -1342,6 +1343,40 @@ namespace NachoCore.ActiveSync
                 // The "Down" case.
                 Sm.PostEvent ((uint)CtlEvt.E.Park, "NSEHPARK");
             }
+        }
+
+        // PushAssist support.
+        private AsPingCommand GenerateDummyPing ()
+        {
+            var pingKit = SyncStrategy.GenPingKit (AccountId, ProtocolState, true, false);
+            if (null == pingKit) {
+                return null;
+            }
+            return new AsPingCommand (this, pingKit);
+        }
+
+        public string PushAssistRequestUrl ()
+        {
+            var dummy = GenerateDummyPing ();
+            return (null == dummy) ? null : dummy.PushAssistRequestUrl ();
+        }
+
+        public HttpHeaders PushAssistRequestHeaders ()
+        {
+            var dummy = GenerateDummyPing ();
+            return (null == dummy) ? null : dummy.PushAssistRequestHeaders ();
+        }
+
+        public byte[] PushAssistRequestData ()
+        {
+            var dummy = GenerateDummyPing ();
+            return (null == dummy) ? null : dummy.PushAssistRequestData ();
+        }
+
+        public byte[] PushAssistResponseData ()
+        {
+            var dummy = GenerateDummyPing ();
+            return (null == dummy) ? null : dummy.PushAssistResponseData ();
         }
     }
 }

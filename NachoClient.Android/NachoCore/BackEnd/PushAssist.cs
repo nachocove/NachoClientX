@@ -10,8 +10,7 @@ using NachoCore.Utils;
 using NachoCore.Model;
 
 /* INTEGRATION NOTES (JAN/HENRY)
- * JEFF - API calls to get strings for Ping, PingSuccess, URL, Headers, Creds, ...
- * JEFF - source file location.
+ * JEFF - API to use ModernHttpClient.
  * PushAssist.cs is to be platform-independent and protocol-independent (AS or IMAP or ...)
  * iOS platform code uses status-ind to "call" SetDeviceToken()/ResetDeviceToken().
  * There can be one PushAssist object per ProtoControl object. ONE PER ACCOUNT. 
@@ -27,7 +26,7 @@ namespace NachoCore
 {
     public class PushAssist : IDisposable
     {
-        private IBEContext Owner;
+        private IPushAssistOwner Owner;
         private NcStateMachine Sm;
         private HttpClient Client;
         private int AccountId;
@@ -69,8 +68,9 @@ namespace NachoCore
         const string KDeviceToken = "devicetoken";
         const string KPushAssistState = "pushassiststate";
 
-        public PushAssist (IBEContext owner)
+        public PushAssist (IPushAssistOwner owner)
         {
+            // FIXME - we will need to do cert-pinning, and also ensure SSL.
             Client = new HttpClient (new NativeMessageHandler (), true);
             Owner = owner;
             AccountId = Owner.Account.Id;
@@ -232,16 +232,19 @@ namespace NachoCore
                 // Yes, the SM is SOL at this point.
                 Log.Error (Log.LOG_PUSH, "DoGetSess: No McCred for accountId {0}", AccountId);
             }
+            var mailServerUrl = Owner.PushAssistRequestUrl ();
+            var httpHeaders = Owner.PushAssistRequestHeaders ();
+            var httpRequestData = Owner.PushAssistRequestData ();
+            var httpNoChangeReply = Owner.PushAssistResponseData ();
             var jsonRequest = new StartSessionRequest () {
                 ClientId = clientId,
-                MailServerUrl = "FIXME",
-
+                // FIXME - add other properties here.
             };
 
             MemoryStream jsonStream = new MemoryStream ();
             DataContractJsonSerializer ser = new DataContractJsonSerializer (typeof(StartSessionRequest));
             ser.WriteObject (jsonStream, jsonRequest);
-            HttpRequestMessage request = new HttpRequestMessage (HttpMethod.Post, "https://nco9.com/start-session");
+            HttpRequestMessage request = new HttpRequestMessage (HttpMethod.Post, "FIXME URL STRING HERE");
             request.Content = new StreamContent (jsonStream);
             //var response = await Client.SendAsync (request, ctoken);
         }
