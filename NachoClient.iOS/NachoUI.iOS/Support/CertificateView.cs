@@ -63,6 +63,8 @@ namespace NachoClient.iOS
             certificateView.BackgroundColor = UIColor.White;
             certificateView.Layer.CornerRadius = 7.0f;
             certificateView.Alpha = 1.0f;
+            certificateView.AccessibilityLabel = "Security Warning";
+            certificateView.AccessibilityIdentifier = "SecurityWarning";
 
             UITextView certificateViewTitle = new UITextView (new System.Drawing.RectangleF (8, 2, certificateView.Frame.Width - 16, 40));
             certificateViewTitle.BackgroundColor = UIColor.White;
@@ -103,7 +105,9 @@ namespace NachoClient.iOS
             trustCertificateButton.Tag = TRUST_CERTIFICATE_BUTTON_TAG;
             trustCertificateButton.TitleLabel.TextAlignment = UITextAlignment.Center;
             trustCertificateButton.SetTitle ("Allow", UIControlState.Normal);
-            trustCertificateButton.SetTitleColor (A.Color_SystemBlue, UIControlState.Normal);            
+            trustCertificateButton.SetTitleColor (A.Color_SystemBlue, UIControlState.Normal); 
+            trustCertificateButton.AccessibilityLabel = "Allow";
+            trustCertificateButton.AccessibilityIdentifier = "Allow";
             trustCertificateButton.TouchUpInside += (object sender, EventArgs e) => {
                 DismissView ();
                 owner.AcceptCertificate ();
@@ -116,6 +120,8 @@ namespace NachoClient.iOS
             dontTrustCertificateButton.BackgroundColor = UIColor.White;
             dontTrustCertificateButton.TitleLabel.TextAlignment = UITextAlignment.Center;
             dontTrustCertificateButton.SetTitle ("Cancel", UIControlState.Normal);
+            dontTrustCertificateButton.AccessibilityLabel = "Cancel";
+            dontTrustCertificateButton.AccessibilityIdentifier = "Cancel";
             dontTrustCertificateButton.Tag = CANCEL_CERTIFICATE_BUTTON_TAG;
             dontTrustCertificateButton.SetTitleColor (A.Color_SystemBlue, UIControlState.Normal);
             dontTrustCertificateButton.TouchUpInside += (object sender, EventArgs e) => {
