@@ -361,6 +361,7 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration3.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration4.cs" />
     <Compile Include="NachoCore\BackEnd\IBEContext.cs" />
+    <Compile Include="NachoCore\BackEnd\PushAssist.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

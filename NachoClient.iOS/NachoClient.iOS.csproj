@@ -820,7 +820,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\PlatformStopwatch.cs">
       <Link>NachoCore\Utils\PlatformStopwatch.cs</Link>
     </Compile>
-    <Compile Include="PushAssist.cs" />
     <Compile Include="..\NachoClient.Android\NachoCore\Utils\ITimer.cs">
       <Link>NachoCore\Utils\ITimer.cs</Link>
     </Compile>
@@ -1221,6 +1220,9 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\IBEContext.cs">
       <Link>NachoCore\BackEnd\IBEContext.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\PushAssist.cs">
+      <Link>NachoCore\BackEnd\PushAssist.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
