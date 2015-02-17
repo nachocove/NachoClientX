@@ -342,27 +342,26 @@ namespace NachoCore.Model
                 var threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
                 foreach (var db in new List<SQLiteConnection> { Db, TeleDb }) {
                     var thisDb = db;
-                    if (0 == walCheckpointCount) {
-                        var ok = db.ExecuteScalar<string> ("PRAGMA integrity_check(1);");
-                        if ("ok" != ok) {
-                            Console.WriteLine ("Corrupted db detected. ({0})", db.DatabasePath);
-                            if (TeleDbFileName == db.DatabasePath) {
-                                NcModel.Instance.ResetTeleDb ();
-                                thisDb = TeleDb;
-                            }
+                    // Integrity check is slow but it was useful when we were tracking
+                    // down integrity problem. Comment it out for future reuse
+//                    if (0 == walCheckpointCount) {
+//                        var ok = db.ExecuteScalar<string> ("PRAGMA integrity_check(1);");
+//                        if ("ok" != ok) {
+//                            Console.WriteLine ("Corrupted db detected. ({0})", db.DatabasePath);
+//                            if (TeleDbFileName == db.DatabasePath) {
+//                                NcModel.Instance.ResetTeleDb ();
+//                                thisDb = TeleDb;
+//                            }
+//                        }
+//                    }
+//                    walCheckpointCount = (walCheckpointCount + 1) & 0xfff;
+
+                    lock (WriteNTransLockObj) {
+                        List<CheckpointResult> results = thisDb.Query<CheckpointResult> (checkpointCmd);
+                        if ((0 < results.Count) && (0 != results [0].busy)) {
+                            Log.Error (Log.LOG_DB, "Checkpoint busy of {0}", db.DatabasePath);
                         }
                     }
-                    walCheckpointCount = (walCheckpointCount + 1) & 0xfff;
-                    thisDb.Query<CheckpointResult> (checkpointCmd);
-                    /*
-                     * TODO: Try using the C interface. It doesn't seem that the log/checkpointed
-                     * values always make sense as they don't float down to zero. This is the case 
-                     * no matter the mode.
-                    if (0 != results.Count && (0 != results[0].busy || 0 < results[0].checkpointed)) {
-                        Log.Info (Log.LOG_DB, "Checkpoint of {0}: {1}, {2}, {3}", db.DatabasePath, 
-                            results[0].busy, results[0].log, results[0].checkpointed);
-                    }
-                     */
                 }
             }, null, 10000, 2000);
             CheckPointTimer.Stfu = true;
