@@ -324,6 +324,7 @@ namespace NachoCore.Utils
         public const ulong LOG_DNS = (1 << 18);
         public const ulong LOG_ASSERT = (1 << 19);
         public const ulong LOG_DB = (1 << 20);
+        public const ulong LOG_PUSH = (1 << 21);
 
         private static Logger DefaultLogger;
 

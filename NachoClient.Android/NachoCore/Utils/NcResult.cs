@@ -150,6 +150,7 @@ namespace NachoCore.Utils
             Info_MigrationProgress,
             Info_MigrationDescription,
             Error_CalendarForwardFailed,
+            Info_PushAssistDeviceToken,
         };
 
         public enum WhyEnum {

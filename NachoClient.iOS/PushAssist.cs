@@ -9,26 +9,25 @@ using ModernHttpClient;
 using NachoCore.Utils;
 using NachoCore.Model;
 
-namespace NachoClient.iOS
+/* INTEGRATION NOTES (JAN/HENRY)
+ * JEFF - API calls to get strings for Ping, PingSuccess, URL, Headers, Creds, ...
+ * JEFF - source file location.
+ * PushAssist.cs is to be platform-independent and protocol-independent (AS or IMAP or ...)
+ * iOS platform code uses status-ind to "call" SetDeviceToken()/ResetDeviceToken().
+ * There can be one PushAssist object per ProtoControl object. ONE PER ACCOUNT. 
+ *      remember one app could end up having sessions with N different pinger servers (on-prem, etc).
+ * ProtoControl allocates/frees and maintains the reference to the PushAssist object.
+ * ProtoControl Execute()s PA once we are at Ping.
+ * Although Client token currently == AWS Cognito Id, we must keep AWS-isms out of this code. Think on-prem too.
+ * JEFF_TODO - really want to enable/disable based on narrow-ping. how to do that?
+ * JEFF_TODO - exactly how to we "cancel" rather than hold-off the pinger?
+ */
+
+namespace NachoCore
 {
-    public class PushAssist
+    public class PushAssist : IDisposable
     {
-        private static volatile PushAssist instance;
-        private static object syncRoot = new Object ();
-
-        public static PushAssist Instance {
-            get {
-                if (instance == null) {
-                    lock (syncRoot) {
-                        if (instance == null) {
-                            instance = new PushAssist ();
-                        }
-                    }
-                }
-                return instance; 
-            }
-        }
-
+        private IBEContext Owner;
         private NcStateMachine Sm;
         private HttpClient Client;
         private int AccountId;
@@ -43,6 +42,7 @@ namespace NachoClient.iOS
             SessTokW,
             // We are finally active. We push-back the Nacho pinger server until we can't!
             Active,
+            // We are capable of being active, but we don't want to be right now.
         };
 
         public class PAEvt : SmEvt
@@ -57,18 +57,25 @@ namespace NachoClient.iOS
                 CliTok,
                 // The client token has disappeared.
                 CliTokLoss,
+                // The protocol controller wants us to hold-off the pinger.
+                HoldOff,
+                // The protocol controller wants us to cancel pinger service and chill.
+                Park,
             };
         }
 
-        const string k_ios = "ios";
-        const string k_devicetoken = "devicetoken";
-        const string k_pushassist_state = "pushassist_state";
+        // JEFF_TODO We are using McMutables for now, consider modifying protocol state instead.
+        const string KPushAssist = "pushassist";
+        const string KDeviceToken = "devicetoken";
+        const string KPushAssistState = "pushassiststate";
 
-        private PushAssist (int accountId)
+        public PushAssist (IBEContext owner)
         {
             Client = new HttpClient (new NativeMessageHandler (), true);
-            AccountId = accountId;
-            Sm = new NcStateMachine ("PUSH") {
+            Owner = owner;
+            AccountId = Owner.Account.Id;
+            Sm = new NcStateMachine ("PA") {
+                Name = string.Format ("PA({0})", AccountId),
                 LocalStateType = typeof(Lst),
                 LocalEventType = typeof(PAEvt),
                 TransTable = new[] {
@@ -79,6 +86,8 @@ namespace NachoClient.iOS
                             (uint)PAEvt.E.DevTokLoss,
                             (uint)PAEvt.E.CliTok,
                             (uint)PAEvt.E.CliTokLoss,
+                            (uint)PAEvt.E.HoldOff,
+                            (uint)PAEvt.E.Park,
                         },
                         Invalid = new [] {
                             (uint)SmEvt.E.Success,
@@ -86,7 +95,7 @@ namespace NachoClient.iOS
                             (uint)SmEvt.E.HardFail,
                         },
                         On = new [] {
-                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)St.Start },
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoGetDevTok, State = (uint)Lst.DevTokW },
                         }
                     },
                     new Node { 
@@ -94,6 +103,7 @@ namespace NachoClient.iOS
                         Drop = new [] {
                             (uint)PAEvt.E.CliTok,
                             (uint)PAEvt.E.CliTokLoss,
+                            (uint)PAEvt.E.HoldOff,
                         },
                         Invalid = new [] {
                             (uint)SmEvt.E.Success,
@@ -104,12 +114,14 @@ namespace NachoClient.iOS
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoGetDevTok, State = (uint)Lst.DevTokW },
                             new Trans { Event = (uint)PAEvt.E.DevTok, Act = DoGetCliTok, State = (uint)Lst.CliTokW },
                             new Trans { Event = (uint)PAEvt.E.DevTokLoss, Act = DoGetDevTok, State = (uint)Lst.DevTokW },
+                            new Trans { Event = (uint)PAEvt.E.Park, Act = DoNop, State = (uint)St.Start },
                         },
                     },
                     new Node {
                         State = (uint)Lst.CliTokW,
                         Drop = new [] {
                             (uint)PAEvt.E.DevTok,
+                            (uint)PAEvt.E.HoldOff,
                         },
                         Invalid = new [] {
                             (uint)SmEvt.E.Success,
@@ -121,6 +133,7 @@ namespace NachoClient.iOS
                             new Trans { Event = (uint)PAEvt.E.DevTokLoss, Act = DoGetDevTok, State = (uint)Lst.DevTokW },
                             new Trans { Event = (uint)PAEvt.E.CliTok, Act = DoGetSess, State = (uint)Lst.SessTokW },
                             new Trans { Event = (uint)PAEvt.E.CliTokLoss, Act = DoGetCliTok, State = (uint)Lst.CliTokW },
+                            new Trans { Event = (uint)PAEvt.E.Park, Act = DoCancel, State = (uint)St.Start },
                         }
                     },
                     new Node {
@@ -128,6 +141,7 @@ namespace NachoClient.iOS
                         Drop = new [] {
                             (uint)PAEvt.E.DevTok,
                             (uint)PAEvt.E.CliTok,
+                            (uint)PAEvt.E.HoldOff,
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoGetSess, State = (uint)Lst.SessTokW },
@@ -136,10 +150,9 @@ namespace NachoClient.iOS
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoGetSess, State = (uint)Lst.SessTokW },
                             new Trans { Event = (uint)PAEvt.E.DevTokLoss, Act = DoGetDevTok, State = (uint)Lst.DevTokW },
                             new Trans { Event = (uint)PAEvt.E.CliTokLoss, Act = DoGetCliTok, State = (uint)Lst.CliTokW },
+                            new Trans { Event = (uint)PAEvt.E.Park, Act = DoCancel, State = (uint)St.Start },
                         }
                     },
-                    // FIXME in the Active state, we periodically push-back the pinger server. We need to decide 
-                    // if this activty should be within the scope of the SM.
                     new Node {
                         State = (uint)Lst.Active,
                         Invalid = new [] {
@@ -147,34 +160,59 @@ namespace NachoClient.iOS
                             (uint)SmEvt.E.TempFail,
                             (uint)SmEvt.E.HardFail,
                         },
-                        Drop = new [] {
-                            (uint)PAEvt.E.DevTok,
-                            (uint)PAEvt.E.CliTok,
-                        },
                         On = new [] {
+                            new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)Lst.Active },
                             new Trans { Event = (uint)PAEvt.E.DevTok, Act = DoGetSess, State = (uint)Lst.SessTokW },
                             new Trans { Event = (uint)PAEvt.E.DevTokLoss, Act = DoGetDevTok, State = (uint)Lst.DevTokW },
+                            new Trans { Event = (uint)PAEvt.E.CliTok, Act = DoGetSess, State = (uint)Lst.SessTokW },
                             new Trans { Event = (uint)PAEvt.E.CliTokLoss, Act = DoGetCliTok, State = (uint)Lst.CliTokW },
+                            new Trans { Event = (uint)PAEvt.E.HoldOff, Act = DoHoldOff, State = (uint)Lst.Active },
+                            new Trans { Event = (uint)PAEvt.E.Park, Act = DoCancel, State = (uint)St.Start },
                         }
                     },
                 }
             };
+            NcApplication.Instance.StatusIndEvent += DeviceTokenWatcher;
+        }
+
+        public void Dispose ()
+        {
+            // FIXME - bool to protect against double de-registration (-=).
+            NcApplication.Instance.StatusIndEvent -= DeviceTokenWatcher;
+            // FIXME - need to stop any outstanding http requests and dispose of client.
+        }
+
+        public void Execute ()
+        {
+            Sm.PostEvent ((uint)SmEvt.E.Launch, "PAEXE");
+        }
+
+        public void HoldOff ()
+        {
+            Sm.PostEvent ((uint)PAEvt.E.HoldOff, "PAHO");
         }
 
         private void DoNop ()
         {
         }
 
+        private void DoCancel ()
+        {
+            // FIXME Cancel any outstanding http request. This is tricky, given concurrency.
+            // Only one SM action can execute at a time, but there is a Q in front of the SM.
+        }
+
         private void DoGetDevTok ()
         {
-            var devTok = McMutables.Get (McAccount.GetDeviceAccount ().Id, k_ios, k_devicetoken);
+            var devTok = McMutables.Get (McAccount.GetDeviceAccount ().Id, KPushAssist, KDeviceToken);
             if (null != devTok) {
                 Sm.PostEvent ((uint)PAEvt.E.DevTok, "DEVTOKFOUND");
             }
         }
 
-        private async void DoGetCliTok ()
+        private void DoGetCliTok ()
         {
+            // JEFF_TODO - consider how to move AWS identity "north" of telemetry.
             var clientId = Telemetry.SharedInstance.GetUserName ();
             if (null != clientId) {
                 Sm.PostEvent ((uint)SmEvt.E.Success, "GOTCLITOK");
@@ -191,7 +229,8 @@ namespace NachoClient.iOS
             }
             var creds = McCred.QueryByAccountId<McCred> (AccountId);
             if (null == creds) {
-                // FIXME - need to recover when creds are added.
+                // Yes, the SM is SOL at this point.
+                Log.Error (Log.LOG_PUSH, "DoGetSess: No McCred for accountId {0}", AccountId);
             }
             var jsonRequest = new StartSessionRequest () {
                 ClientId = clientId,
@@ -205,42 +244,44 @@ namespace NachoClient.iOS
             HttpRequestMessage request = new HttpRequestMessage (HttpMethod.Post, "https://nco9.com/start-session");
             request.Content = new StreamContent (jsonStream);
             //var response = await Client.SendAsync (request, ctoken);
-            // FIXME try/catch +/-.
         }
 
-        // This API is called by code in AppDelegate on receipt of the iOS APNS device token.
+        private void DoHoldOff ()
+        {
+            // FIXME.
+        }
+
+        private void DeviceTokenWatcher (object sender, EventArgs ea)
+        {
+            StatusIndEventArgs siea = (StatusIndEventArgs)ea;
+            if (NcResult.SubKindEnum.Info_PushAssistDeviceToken == siea.Status.SubKind) {
+                if (null == siea.Status.Value) {
+                    ResetDeviceToken ();
+                } else {
+                    SetDeviceToken ((byte[])siea.Status.Value);
+                }
+            }
+        }
+
+        // This API is "called" by platform code on receipt of the APNS/GCD device token.
         public void SetDeviceToken (byte[] deviceToken)
         {
             NcTask.Run (delegate {
                 var b64tok = Convert.ToBase64String (deviceToken);
-                McMutables.Set (McAccount.GetDeviceAccount ().Id, k_ios, k_devicetoken, b64tok);
+                McMutables.Set (McAccount.GetDeviceAccount ().Id, KPushAssist, KDeviceToken, b64tok);
                 Sm.PostEvent ((uint)PAEvt.E.DevTok, "DEVTOKSET");
             }, "PushAssist");
         }
 
-        // This API is called by the code in AppDelegate to clear the iOS APNS device token.
+        // This API is called by platform code to clear the APNS/GCD device token.
         public void ResetDeviceToken ()
         {
             NcTask.Run (delegate {
                 // Because we aren't interlocking the DB delete and the SM event, all code
                 // must check device token before using it.
-                McMutables.Delete (McAccount.GetDeviceAccount ().Id, k_ios, k_devicetoken);
+                McMutables.Delete (McAccount.GetDeviceAccount ().Id, KPushAssist, KDeviceToken);
                 Sm.PostEvent ((uint)PAEvt.E.DevTokLoss, "DEVTOKLOSS");
-            });
-        }
-
-        public void DeferPushAssist ()
-        {
-            // FIXME - do we have a function here, or do we watch events? the latter...
-        }
-
-        private async HttpResponseMessage ApiGet (string urlString)
-        {
-            try {
-                await Client.GetAsync (urlString);
-            } catch (Exception ex) {
-                return null;
-            }
+            }, "PushAssist:ResetDeviceToken");
         }
 
         [DataContract]

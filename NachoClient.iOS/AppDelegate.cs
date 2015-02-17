@@ -128,13 +128,23 @@ namespace NachoClient.iOS
 
         public override void RegisteredForRemoteNotifications (UIApplication application, NSData deviceToken)
         {
-            PushAssist.Instance.SetDeviceToken (deviceToken.ToArray ());
+            var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_PushAssistDeviceToken);
+            result.Value = deviceToken.ToArray ();
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                Status = result,
+                Account = ConstMcAccount.NotAccountSpecific,
+            });
             Log.Info (Log.LOG_LIFECYCLE, "RegisteredForRemoteNotifications :{0}", deviceToken.ToString ());
         }
 
         public override void FailedToRegisterForRemoteNotifications (UIApplication application, NSError error)
         {
-            PushAssist.Instance.ResetDeviceToken ();
+            var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_PushAssistDeviceToken);
+            // null Value indicates token is lost.
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                Status = result,
+                Account = ConstMcAccount.NotAccountSpecific,
+            });
             Log.Info (Log.LOG_LIFECYCLE, "FailedToRegisterForRemoteNotifications: {0}", error.LocalizedDescription);
         }
 
@@ -229,8 +239,13 @@ namespace NachoClient.iOS
             navigationTitleTextAttributes.TextColor = UIColor.White;
             UINavigationBar.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes);
             UIBarButtonItem.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes, UIControlState.Normal);
-            UIApplication.SharedApplication.RegisterForRemoteNotificationTypes (
-                UIRemoteNotificationType.NewsstandContentAvailability | UIRemoteNotificationType.Sound);
+            if (UIApplication.SharedApplication.RespondsToSelector (new Selector ("registerForRemoteNotificationTypes:"))) {
+                // TODO: revist why we need the sound.
+                UIApplication.SharedApplication.RegisterForRemoteNotificationTypes (
+                    UIRemoteNotificationType.NewsstandContentAvailability | UIRemoteNotificationType.Sound);
+            } else {
+                // FIXME - do the right thing for iOS8+.
+            }
             UIApplication.SharedApplication.SetMinimumBackgroundFetchInterval (UIApplication.BackgroundFetchIntervalMinimum);
             // Set up webview to handle html with embedded custom types (curtesy of Exchange)
             NSUrlProtocol.RegisterClass (new MonoTouch.ObjCRuntime.Class (typeof(CidImageProtocol)));

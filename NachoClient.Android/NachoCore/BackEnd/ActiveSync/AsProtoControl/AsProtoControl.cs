@@ -138,6 +138,8 @@ namespace NachoCore.ActiveSync
 
         public IAsStrategy SyncStrategy { set; get; }
 
+        private PushAssist PushAssist { set; get; }
+
         private NcTimer PendingOnTimeTimer { set; get; }
 
         private int ConcurrentExtraRequests = 0;
@@ -839,7 +841,7 @@ namespace NachoCore.ActiveSync
             Sm.Validate ();
             Sm.State = ProtocolState.ProtoControlState;
             SyncStrategy = new AsStrategy (this);
-
+            PushAssist = new PushAssist (this);
             McPending.ResolveAllDispatchedAsDeferred (ProtoControl, Account.Id);
             NcCommStatus.Instance.CommStatusNetEvent += NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent += ServerStatusEventHandler;
@@ -918,6 +920,7 @@ namespace NachoCore.ActiveSync
             // TODO cleanup stuff on disk like for wipe.
             NcCommStatus.Instance.CommStatusNetEvent -= NetStatusEventHandler;
             NcCommStatus.Instance.CommStatusServerEvent -= ServerStatusEventHandler;
+            PushAssist.Dispose ();
             base.Remove ();
         }
         // Methods callable by the owner.
@@ -1044,13 +1047,13 @@ namespace NachoCore.ActiveSync
         private void DoDisc ()
         {
             SetCmd (new AsAutodiscoverCommand (this));
-            Cmd.Execute (Sm);
+            ExecuteCmd ();
         }
 
         private void DoOpt ()
         {
             SetCmd (new AsOptionsCommand (this));
-            Cmd.Execute (Sm);
+            ExecuteCmd ();
         }
 
         private void DoProv ()
@@ -1059,7 +1062,7 @@ namespace NachoCore.ActiveSync
                 Sm.PostEvent ((uint)SmEvt.E.Success, "DOPROVNOPROV");
             } else {
                 SetCmd (new AsProvisionCommand (this));
-                Cmd.Execute (Sm);
+                ExecuteCmd ();
             }
         }
 
@@ -1073,13 +1076,13 @@ namespace NachoCore.ActiveSync
         private void DoSettings ()
         {
             SetCmd (new AsSettingsCommand (this));
-            Cmd.Execute (Sm);
+            ExecuteCmd ();
         }
 
         private void DoFSync ()
         {
             SetCmd (new AsFolderSyncCommand (this));
-            Cmd.Execute (Sm);
+            ExecuteCmd ();
         }
 
         private void DoNopOrPick ()
@@ -1228,14 +1231,17 @@ namespace NachoCore.ActiveSync
                 cmd = new AsSyncCommand (this, SyncStrategy.GenSyncKit (AccountId, ProtocolState, true));
             }
             SetCmd (cmd);
-            Cmd.Execute (Sm);
+            ExecuteCmd ();
         }
 
         private void DoArg ()
         {
             var cmd = Sm.Arg as AsCommand;
+            if (null != cmd as AsPingCommand && null != PushAssist) {
+                PushAssist.Execute ();
+            }
             SetCmd (cmd);
-            Cmd.Execute (Sm);
+            ExecuteCmd ();
         }
 
         private void DoPark ()
@@ -1272,6 +1278,14 @@ namespace NachoCore.ActiveSync
                 Cmd.Cancel ();
             }
             Cmd = nextCmd;
+        }
+
+        private void ExecuteCmd ()
+        {
+            if (null != PushAssist) {
+                PushAssist.HoldOff ();
+            }
+            Cmd.Execute (Sm);
         }
 
         public override void ForceStop ()
