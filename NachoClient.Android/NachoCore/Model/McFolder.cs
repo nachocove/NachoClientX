@@ -456,7 +456,7 @@ namespace NachoCore.Model
                 FolderEntryId = obj.Id,
                 ClassCode = classCode,
             };
-            NcModel.Instance.Db.RunInTransaction (() => {
+            NcModel.Instance.RunInTransaction (() => {
                 map.Insert ();
 
                 // if it is a contact, re-evaluate the eclipsing status

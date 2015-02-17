@@ -114,7 +114,7 @@ namespace NachoCore.Brain
                     }
                 }
 
-                NcModel.Instance.Db.RunInTransaction (() => {
+                NcModel.Instance.RunInTransaction (() => {
                     gleanedContact.Insert ();
                     gleanedFolder.Link (gleanedContact);
                 });
