@@ -10,7 +10,6 @@ using NachoCore.Utils;
 using NachoCore.Model;
 
 /* INTEGRATION NOTES (JAN/HENRY)
- * JEFF - API to use ModernHttpClient.
  * PushAssist.cs is to be platform-independent and protocol-independent (AS or IMAP or ...)
  * iOS platform code uses status-ind to "call" SetDeviceToken()/ResetDeviceToken().
  * There can be one PushAssist object per ProtoControl object. ONE PER ACCOUNT. 
@@ -19,7 +18,7 @@ using NachoCore.Model;
  * ProtoControl Execute()s PA once we are at Ping.
  * Although Client token currently == AWS Cognito Id, we must keep AWS-isms out of this code. Think on-prem too.
  * JEFF_TODO - really want to enable/disable based on narrow-ping. how to do that?
- * JEFF_TODO - exactly how to we "cancel" rather than hold-off the pinger?
+ * JEFF_TODO - exactly how to we "cancel" rather than hold-off the pinger? (let it die).
  */
 
 namespace NachoCore
