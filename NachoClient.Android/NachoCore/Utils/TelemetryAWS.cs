@@ -286,7 +286,9 @@ namespace NachoCore.Utils
                     throw;
                 }
                 // Linear backoff
-                NcTask.CancelableSleep (1000);
+                if (!NcTask.CancelableSleep (1000)) {
+                    NcTask.Cts.Token.ThrowIfCancellationRequested ();
+                }
                 return false;
             }
             return true;
