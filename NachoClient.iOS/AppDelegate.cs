@@ -148,6 +148,11 @@ namespace NachoClient.iOS
             Log.Info (Log.LOG_LIFECYCLE, "FailedToRegisterForRemoteNotifications: {0}", error.LocalizedDescription);
         }
 
+        public override void DidRegisterUserNotificationSettings (UIApplication application, UIUserNotificationSettings notificationSettings)
+        {
+            Log.Info (Log.LOG_LIFECYCLE, "DidRegisteredUserNotificationSettings: {0}", notificationSettings);
+        }
+
         /// This is not a service but rather initialization of some native
         /// ObjC functions. It must be initialized before any UI object is
         /// created.
@@ -239,12 +244,18 @@ namespace NachoClient.iOS
             navigationTitleTextAttributes.TextColor = UIColor.White;
             UINavigationBar.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes);
             UIBarButtonItem.Appearance.SetTitleTextAttributes (navigationTitleTextAttributes, UIControlState.Normal);
-            if (UIApplication.SharedApplication.RespondsToSelector (new Selector ("registerForRemoteNotificationTypes:"))) {
+            if (UIApplication.SharedApplication.RespondsToSelector (new Selector ("registerUserNotificationSettings:"))) {
+                // iOS 8 and after
+                var settings = UIUserNotificationSettings.GetSettingsForTypes (UIUserNotificationType.Sound, null);
+                UIApplication.SharedApplication.RegisterUserNotificationSettings (settings);
+                UIApplication.SharedApplication.RegisterForRemoteNotifications ();
+            } else if (UIApplication.SharedApplication.RespondsToSelector (new Selector ("registerForRemoteNotificationTypes:"))) {
+                // iOS 7 and before
                 // TODO: revist why we need the sound.
                 UIApplication.SharedApplication.RegisterForRemoteNotificationTypes (
                     UIRemoteNotificationType.NewsstandContentAvailability | UIRemoteNotificationType.Sound);
             } else {
-                // FIXME - do the right thing for iOS8+.
+                Log.Error (Log.LOG_PUSH, "notification not registered!");
             }
             UIApplication.SharedApplication.SetMinimumBackgroundFetchInterval (UIApplication.BackgroundFetchIntervalMinimum);
             // Set up webview to handle html with embedded custom types (curtesy of Exchange)
