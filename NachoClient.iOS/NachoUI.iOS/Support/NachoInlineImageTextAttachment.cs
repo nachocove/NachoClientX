@@ -1,18 +1,17 @@
-﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using MonoTouch.UIKit;
-using MonoTouch.Foundation;
-using System.Drawing;
-using MonoTouch.CoreGraphics;
+using UIKit;
+using Foundation;
+using CoreGraphics;
 
 namespace NachoClient.iOS
 {
     public class NachoInlineImageTextAttachment : NSTextAttachment
     {
-        public override RectangleF GetAttachmentBounds (NSTextContainer textContainer, RectangleF proposedLineFragment, PointF glyphPosition, uint characterIndex)
+        public override CGRect GetAttachmentBounds (NSTextContainer textContainer, CGRect proposedLineFragment, CGPoint glyphPosition, nuint characterIndex)
         {
-            return new RectangleF (0, -6, 20, 20);
+            return new CGRect (0, -6, 20, 20);
         }
     }
 }

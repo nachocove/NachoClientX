@@ -1,9 +1,9 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Collections.Generic;
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 using NachoCore.Utils;
 
 namespace NachoPlatform
@@ -38,7 +38,7 @@ namespace NachoPlatform
             foreach (var notification in UIApplication.SharedApplication.ScheduledLocalNotifications) {
                 if (null != notification.UserInfo) {
                     var value = notification.UserInfo.ValueForKey (NachoClient.iOS.AppDelegate.EventNotificationKey);
-                    if (null != value && value is NSNumber && handle == ((NSNumber)value).IntValue) {
+                    if (null != value && value is NSNumber && handle == ((NSNumber)value).NIntValue) {
                         return notification;
                     }
                 }
@@ -66,7 +66,7 @@ namespace NachoPlatform
         public void ImmediateNotification (int handle, string message)
         {
             InvokeOnUIThread.Instance.Invoke (delegate {
-                UIApplication.SharedApplication.PresentLocationNotificationNow (CreateUILocalNotification (handle, DateTime.UtcNow, message));
+                UIApplication.SharedApplication.PresentLocalNotificationNow (CreateUILocalNotification (handle, DateTime.UtcNow, message));
             });
         }
 
@@ -122,9 +122,9 @@ namespace NachoPlatform
                 Log.Info (Log.LOG_CALENDAR, "LocalNotificationManager: currently scheduled: {0}:", notifications.Length);
                 foreach (var notification in notifications) {
                     var handleValue = notification.UserInfo.ValueForKey (NachoClient.iOS.AppDelegate.EventNotificationKey);
-                    int handle = -1;
+                    nint handle = -1;
                     if (null != handleValue && handleValue is NSNumber) {
-                        handle = ((NSNumber)handleValue).IntValue;
+                        handle = ((NSNumber)handleValue).NIntValue;
                     }
                     Log.Info (Log.LOG_CALENDAR, "Handle: {0}", handle);
                 }

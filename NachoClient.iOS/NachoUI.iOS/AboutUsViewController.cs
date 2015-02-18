@@ -2,21 +2,21 @@
 
 using System;
 
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
-using System.Drawing;
+using Foundation;
+using UIKit;
+using CoreGraphics;
 
 namespace NachoClient.iOS
 {
     public partial class AboutUsViewController : NcUIViewControllerNoLeaks
 	{
-        protected const float INDENT = 18;
-        protected const float CELL_HEIGHT = 44;
+        protected static readonly nfloat INDENT = 18;
+        protected static readonly nfloat CELL_HEIGHT = 44;
 
         protected const int LICENSE_AGREEMENT_VIEW_TAG = 100;
         protected const int OPEN_SOURCE_VIEW_TAG = 101;
 
-        protected float yOffset;
+        protected nfloat yOffset;
 
         protected UIView contentView;
         protected UIScrollView scrollView;
@@ -53,15 +53,15 @@ namespace NachoClient.iOS
 
             View.BackgroundColor = A.Color_NachoBackgroundGray;
 
-            scrollView = new UIScrollView (new RectangleF (0, 0, View.Frame.Width, View.Frame.Height));
+            scrollView = new UIScrollView (new CGRect (0, 0, View.Frame.Width, View.Frame.Height));
             scrollView.BackgroundColor = A.Color_NachoBackgroundGray;
             View.AddSubview (scrollView);
 
-            contentView = new UIView (new RectangleF (0, 0, View.Frame.Width, View.Frame.Height));
+            contentView = new UIView (new CGRect (0, 0, View.Frame.Width, View.Frame.Height));
             contentView.BackgroundColor = A.Color_NachoBackgroundGray;
             scrollView.AddSubview (contentView);
 
-            UIView aboutUsView = new UIView (new RectangleF (A.Card_Horizontal_Indent, A.Card_Vertical_Indent, View.Frame.Width - A.Card_Horizontal_Indent * 2, 100));
+            UIView aboutUsView = new UIView (new CGRect (A.Card_Horizontal_Indent, A.Card_Vertical_Indent, View.Frame.Width - A.Card_Horizontal_Indent * 2, 100));
             aboutUsView.BackgroundColor = UIColor.White;
             aboutUsView.Layer.CornerRadius = A.Card_Corner_Radius;
             aboutUsView.Layer.BorderColor = A.Card_Border_Color;
@@ -73,12 +73,12 @@ namespace NachoClient.iOS
             using (var nachoLogo = UIImage.FromBundle ("Bootscreen-1")) {
                 nachoLogoImageView = new UIImageView (nachoLogo);
             }
-            nachoLogoImageView.Frame = new RectangleF (aboutUsView.Frame.Width / 2 - 40, yOffset, 80, 80);
+            nachoLogoImageView.Frame = new CGRect (aboutUsView.Frame.Width / 2 - 40, yOffset, 80, 80);
             aboutUsView.Add (nachoLogoImageView);
 
             yOffset = nachoLogoImageView.Frame.Bottom + 15;
 
-            UILabel aboutUsHeaderLabel = new UILabel (new RectangleF (INDENT, yOffset, aboutUsView.Frame.Width - INDENT * 2, 100));
+            UILabel aboutUsHeaderLabel = new UILabel (new CGRect (INDENT, yOffset, aboutUsView.Frame.Width - INDENT * 2, 100));
             aboutUsHeaderLabel.Font = A.Font_AvenirNextDemiBold17;
             aboutUsHeaderLabel.TextColor = A.Color_NachoGreen;
             aboutUsHeaderLabel.TextAlignment = UITextAlignment.Center;
@@ -90,7 +90,7 @@ namespace NachoClient.iOS
 
             yOffset = aboutUsHeaderLabel.Frame.Bottom + 15;
 
-            UILabel aboutUsDescriptionLabel = new UILabel (new RectangleF (INDENT, yOffset, aboutUsView.Frame.Width - INDENT * 2, 100));
+            UILabel aboutUsDescriptionLabel = new UILabel (new CGRect (INDENT, yOffset, aboutUsView.Frame.Width - INDENT * 2, 100));
             aboutUsDescriptionLabel.Font = A.Font_AvenirNextRegular14;
             aboutUsDescriptionLabel.TextColor = A.Color_NachoBlack;
             aboutUsDescriptionLabel.TextAlignment = UITextAlignment.Center;
@@ -108,19 +108,19 @@ namespace NachoClient.iOS
 
             yOffset = aboutUsView.Frame.Bottom + A.Card_Vertical_Indent;
 
-            UIView buttonsView = new UIView (new RectangleF(A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), CELL_HEIGHT * 2));
+            UIView buttonsView = new UIView (new CGRect(A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), CELL_HEIGHT * 2));
             buttonsView.BackgroundColor = UIColor.White;
             buttonsView.Layer.CornerRadius = A.Card_Corner_Radius;
             buttonsView.Layer.BorderColor = A.Card_Border_Color;
             buttonsView.Layer.BorderWidth = A.Card_Border_Width;
 
-            UILabel licenseAgreementLabel = new UILabel (new RectangleF (INDENT, 12, 200, 20));
+            UILabel licenseAgreementLabel = new UILabel (new CGRect (INDENT, 12, 200, 20));
             licenseAgreementLabel.Font = A.Font_AvenirNextMedium14;
             licenseAgreementLabel.TextColor = A.Color_NachoGreen;
             licenseAgreementLabel.Text = "Read License Agreement";
             buttonsView.AddSubview (licenseAgreementLabel);
 
-            UIView licenseAgreementView = new UIView (new RectangleF (0, 0, buttonsView.Frame.Width, CELL_HEIGHT));
+            UIView licenseAgreementView = new UIView (new CGRect (0, 0, buttonsView.Frame.Width, CELL_HEIGHT));
             licenseAgreementView.BackgroundColor = UIColor.Clear;
             licenseAgreementView.UserInteractionEnabled = true;
             licenseAgreementView.Tag = LICENSE_AGREEMENT_VIEW_TAG;
@@ -132,13 +132,13 @@ namespace NachoClient.iOS
 
             Util.AddHorizontalLine (0, CELL_HEIGHT, buttonsView.Frame.Width, A.Color_NachoBorderGray, buttonsView);
 
-            UILabel openSourceLabel = new UILabel (new RectangleF (INDENT, CELL_HEIGHT + 11, 230, 20));
+            UILabel openSourceLabel = new UILabel (new CGRect (INDENT, CELL_HEIGHT + 11, 230, 20));
             openSourceLabel.Font = A.Font_AvenirNextMedium14;
             openSourceLabel.TextColor = A.Color_NachoGreen;
             openSourceLabel.Text = "View Open Source Contributions";
             buttonsView.AddSubview (openSourceLabel);
 
-            UIView openSourceView = new UIView (new RectangleF (0, CELL_HEIGHT, buttonsView.Frame.Width, CELL_HEIGHT));
+            UIView openSourceView = new UIView (new CGRect (0, CELL_HEIGHT, buttonsView.Frame.Width, CELL_HEIGHT));
             openSourceView.BackgroundColor = UIColor.Clear;
             openSourceView.UserInteractionEnabled = true;
             openSourceView.Tag = OPEN_SOURCE_VIEW_TAG;
@@ -182,8 +182,8 @@ namespace NachoClient.iOS
 
         protected override void ConfigureAndLayout ()
         {
-            scrollView.Frame = new RectangleF (0, 0, View.Frame.Width,View.Frame.Height);
-            contentView.Frame = new RectangleF (0, 0, View.Frame.Width, yOffset);
+            scrollView.Frame = new CGRect (0, 0, View.Frame.Width,View.Frame.Height);
+            contentView.Frame = new CGRect (0, 0, View.Frame.Width, yOffset);
             scrollView.ContentSize = contentView.Frame.Size;
         }
 

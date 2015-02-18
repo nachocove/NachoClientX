@@ -2,10 +2,10 @@
 
 using System;
 using System.Linq;
-using System.Drawing;
+using CoreGraphics;
 using System.Collections.Generic;
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -100,13 +100,13 @@ namespace NachoClient.iOS
 
             hotListView = new UITableView (carouselNormalSize (), UITableViewStyle.Grouped);
             hotListView.BackgroundColor = A.Color_NachoBackgroundGray;
-            hotListView.TableHeaderView = new UIView (new RectangleF (0, 0, 0, 0));
+            hotListView.TableHeaderView = new UIView (new CGRect (0, 0, 0, 0));
             hotListView.ContentInset = new UIEdgeInsets (-A.Card_Vertical_Indent, 0, 0, 0);
             hotListView.DecelerationRate = UIScrollView.DecelerationRateFast;
             hotListView.SeparatorColor = A.Color_NachoBackgroundGray;
             View.AddSubview (hotListView);
 
-            hotEventView = new HotEventView (new RectangleF (0, 0, View.Frame.Width, 69));
+            hotEventView = new HotEventView (new CGRect (0, 0, View.Frame.Width, 69));
             View.AddSubview (hotEventView);
 
             hotEventView.OnClick = ((int tag, int eventId) => {
@@ -337,17 +337,17 @@ namespace NachoClient.iOS
 
         int CALENDAR_VIEW_HEIGHT = (69);
 
-        protected RectangleF carouselNormalSize ()
+        protected CGRect carouselNormalSize ()
         {
-            var rect = new RectangleF (0, CALENDAR_VIEW_HEIGHT, View.Frame.Width, View.Frame.Height - CALENDAR_VIEW_HEIGHT);
+            var rect = new CGRect (0, CALENDAR_VIEW_HEIGHT, View.Frame.Width, View.Frame.Height - CALENDAR_VIEW_HEIGHT);
             return rect;
         }
 
         /// Grows from top of View
-        protected RectangleF calendarSmallSize ()
+        protected CGRect calendarSmallSize ()
         {
             var parentFrame = View.Frame;
-            var inboxFrame = new RectangleF ();
+            var inboxFrame = new CGRect ();
             inboxFrame.Y = 0;
             inboxFrame.Height = CALENDAR_VIEW_HEIGHT;
             inboxFrame.X = parentFrame.X;
@@ -426,7 +426,7 @@ namespace NachoClient.iOS
             if (null != m) {
                 var t = CalendarHelper.CreateTask (m);
                 vc.SetOwner (null);
-                vc.DismissMessageEditor (false, new NSAction (delegate {
+                vc.DismissMessageEditor (false, new Action (delegate {
                     PerformSegue ("", new SegueHolder (t));
                 }));
             }
@@ -440,7 +440,7 @@ namespace NachoClient.iOS
             var m = thread.SingleMessageSpecialCase ();
             if (null != m) {
                 var c = CalendarHelper.CreateMeeting (m);
-                vc.DismissMessageEditor (false, new NSAction (delegate {
+                vc.DismissMessageEditor (false, new Action (delegate {
                     PerformSegue ("NachoNowToEditEventView", new SegueHolder (c));
                 }));
             }

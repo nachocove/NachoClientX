@@ -1,9 +1,9 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Drawing;
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using CoreGraphics;
+using Foundation;
+using UIKit;
 using NachoCore.Utils;
 using NachoCore;
 
@@ -13,7 +13,7 @@ namespace NachoClient.iOS
     {
         private string html;
         private NSUrl baseUrl;
-        private float preferredWidth;
+        private nfloat preferredWidth;
         private Action sizeChangedCallback;
         private bool loadingComplete;
         private BodyView.LinkSelectedCallback onLinkSelected;
@@ -31,8 +31,8 @@ namespace NachoClient.iOS
         private const string disableJavaScript = "<meta http-equiv=\"Content-Security-Policy\" content=\"script-src 'none'\">";
         private const string wrapPre = "<style>pre { white-space: pre-wrap;}</style>";
 
-        public BodyWebView (float Y, float preferredWidth, float initialHeight, Action sizeChangedCallback, string html, NSUrl baseUrl, BodyView.LinkSelectedCallback onLinkSelected)
-            : base (new RectangleF(0, Y, preferredWidth, initialHeight))
+        public BodyWebView (nfloat Y, nfloat preferredWidth, nfloat initialHeight, Action sizeChangedCallback, string html, NSUrl baseUrl, BodyView.LinkSelectedCallback onLinkSelected)
+            : base (new CGRect(0, Y, preferredWidth, initialHeight))
         {
             this.html = html;
             this.baseUrl = baseUrl;
@@ -70,18 +70,18 @@ namespace NachoClient.iOS
             return this;
         }
 
-        public SizeF ContentSize {
+        public CGSize ContentSize {
             get {
                 return ScrollView.ContentSize;
             }
         }
 
-        public void ScrollingAdjustment (RectangleF frame, PointF contentOffset)
+        public void ScrollingAdjustment (CGRect frame, CGPoint contentOffset)
         {
             if (frame.Width < preferredWidth) {
                 // Changing the width of the UIWebView will change the layout.
                 // Making the width more narrow can have disastrous effects.
-                float expandWidthBy = preferredWidth - frame.Width;
+                nfloat expandWidthBy = preferredWidth - frame.Width;
                 frame.X -= expandWidthBy;
                 contentOffset.X -= expandWidthBy;
                 frame.Width += expandWidthBy;

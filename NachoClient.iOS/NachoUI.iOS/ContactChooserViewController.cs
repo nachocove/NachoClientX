@@ -2,13 +2,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.Drawing;
+using CoreGraphics;
 using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 using NachoCore.Utils;
 using NachoCore.Model;
 using NachoCore;
@@ -29,7 +29,7 @@ namespace NachoClient.iOS
         List<McContactEmailAddressAttribute> searchResults;
         // ContactTableViewSource is used solely to create & config a cell
         string contactSearchToken;
-        float keyboardHeight;
+        nfloat keyboardHeight;
 
         protected const string ContactCellReuseIdentifier = "ContactCell";
 
@@ -107,17 +107,17 @@ namespace NachoClient.iOS
         {
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
 
-            UIView inputView = new UIView (new RectangleF (0, 0, View.Frame.Width, 44));
+            UIView inputView = new UIView (new CGRect (0, 0, View.Frame.Width, 44));
             inputView.BackgroundColor = A.Color_NachoBackgroundGray;
 
             keyboardHeight = NcKeyboardSpy.Instance.keyboardHeight;
-            resultsTableView = new UITableView (new RectangleF (0, 44, View.Frame.Width, View.Frame.Height - keyboardHeight));
+            resultsTableView = new UITableView (new CGRect (0, 44, View.Frame.Width, View.Frame.Height - keyboardHeight));
 
             resultsTableView.SeparatorColor = A.Color_NachoBorderGray;
             resultsTableView.Source = new ContactChooserDataSource (this);
 
             cancelSearchButton = new UIButton (UIButtonType.RoundedRect);
-            cancelSearchButton.Frame = new RectangleF (View.Frame.Width - 58, 6, 50, 32);
+            cancelSearchButton.Frame = new CGRect (View.Frame.Width - 58, 6, 50, 32);
             cancelSearchButton.SetTitle ("Cancel", UIControlState.Normal);
             cancelSearchButton.Font = A.Font_AvenirNextMedium14;
             cancelSearchButton.SetTitleColor (A.Color_NachoIconGray, UIControlState.Normal);
@@ -126,11 +126,11 @@ namespace NachoClient.iOS
             };
             inputView.AddSubviews (cancelSearchButton);
 
-            UIView textInputView = new UIView (new RectangleF (8, 6, 246, 32));
+            UIView textInputView = new UIView (new CGRect (8, 6, 246, 32));
             textInputView.BackgroundColor = UIColor.White;
             textInputView.Layer.CornerRadius = 4;
 
-            autoCompleteTextField = new UITextField (new RectangleF (6, 0, 234, 32));
+            autoCompleteTextField = new UITextField (new CGRect (6, 0, 234, 32));
             autoCompleteTextField.BackgroundColor = UIColor.White;
             autoCompleteTextField.Font = A.Font_AvenirNextMedium14;
             autoCompleteTextField.ClearButtonMode = UITextFieldViewMode.Always;
@@ -164,7 +164,7 @@ namespace NachoClient.iOS
         public override void ViewDidLayoutSubviews ()
         {
             base.ViewDidLayoutSubviews ();
-            resultsTableView.Frame = new RectangleF (0, 44, View.Frame.Width, View.Frame.Height - keyboardHeight);
+            resultsTableView.Frame = new CGRect (0, 44, View.Frame.Width, View.Frame.Height - keyboardHeight);
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
@@ -309,7 +309,7 @@ namespace NachoClient.iOS
         /// <param name='height'>
         /// Calculated height of the keyboard (width not generally needed here)
         /// </param>
-        protected virtual void OnKeyboardChanged (bool visible, float height)
+        protected virtual void OnKeyboardChanged (bool visible, nfloat height)
         {
             var newHeight = (visible ? height : 0);
 
@@ -318,7 +318,7 @@ namespace NachoClient.iOS
             }
             keyboardHeight = newHeight;
 
-            resultsTableView.Frame = new RectangleF (0, 44, View.Frame.Width, View.Frame.Height - keyboardHeight);
+            resultsTableView.Frame = new CGRect (0, 44, View.Frame.Width, View.Frame.Height - keyboardHeight);
         }
 
         public class ContactChooserDataSource : UITableViewSource
@@ -330,12 +330,12 @@ namespace NachoClient.iOS
                 Owner = owner;
             }
 
-            public override int NumberOfSections (UITableView tableView)
+            public override nint NumberOfSections (UITableView tableView)
             {
                 return 1;
             }
 
-            public override int RowsInSection (UITableView tableview, int section)
+            public override nint RowsInSection (UITableView tableview, nint section)
             {
                 if (null != Owner.searchResults) {
                     return Owner.searchResults.Count;
@@ -344,7 +344,7 @@ namespace NachoClient.iOS
                 }
             }
 
-            public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
+            public override nfloat GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
             {
                 return ContactCell.ROW_HEIGHT;
             }

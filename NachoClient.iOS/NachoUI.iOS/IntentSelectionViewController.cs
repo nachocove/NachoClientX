@@ -2,10 +2,10 @@
 
 using System;
 
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 using NachoCore.Brain;
-using System.Drawing;
+using CoreGraphics;
 using NachoCore.Utils;
 
 namespace NachoClient.iOS
@@ -32,7 +32,7 @@ namespace NachoClient.iOS
             this.dateOwner = dateOwner;
         }
 
-        public void DismissIntentChooser (bool animated, NSAction action)
+        public void DismissIntentChooser (bool animated, Action action)
         {
             DismissViewController (false, null);
         }
@@ -48,7 +48,7 @@ namespace NachoClient.iOS
             UIView contentView = new UIView (View.Frame);
             contentView.BackgroundColor = A.Color_NachoGreen;
 
-            var navBar = new UINavigationBar (new RectangleF (0, 20, View.Frame.Width, 44));
+            var navBar = new UINavigationBar (new CGRect (0, 20, View.Frame.Width, 44));
             navBar.BarStyle = UIBarStyle.Default;
             navBar.Opaque = true;
             navBar.Translucent = false;
@@ -70,7 +70,7 @@ namespace NachoClient.iOS
             yOffset += 2;
 
             var messageIntentList = NcMessageIntent.GetIntentList ();
-            var tableView = new UITableView (new RectangleF (X_INDENT, yOffset, View.Frame.Width - (2 * X_INDENT), 44 * messageIntentList.Count));
+            var tableView = new UITableView (new CGRect (X_INDENT, yOffset, View.Frame.Width - (2 * X_INDENT), 44 * messageIntentList.Count));
             tableView.Source = new MessageIntentSource (this);
             tableView.BackgroundColor = A.Color_NachoGreen;
             tableView.ScrollEnabled = false;
@@ -112,12 +112,12 @@ namespace NachoClient.iOS
                 this.owner = owner;
             }
 
-            public override int NumberOfSections (UITableView tableView)
+            public override nint NumberOfSections (UITableView tableView)
             {
                 return 1;
             }
 
-            public override int RowsInSection (UITableView tableView, int section)
+            public override nint RowsInSection (UITableView tableView, nint section)
             {
                 return NcMessageIntent.GetIntentList ().Count;
             }

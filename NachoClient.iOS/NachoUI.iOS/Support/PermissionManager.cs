@@ -1,10 +1,10 @@
-﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 
-using MonoTouch.Foundation;
-using MonoTouch.ObjCRuntime;
-using MonoTouch.UIKit;
+using Foundation;
+using ObjCRuntime;
+using UIKit;
 
 using NachoCore;
 using NachoCore.Model;

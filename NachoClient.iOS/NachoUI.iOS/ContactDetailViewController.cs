@@ -5,9 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Collections.Generic;
-using System.Drawing;
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using CoreGraphics;
+using Foundation;
+using UIKit;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -31,13 +31,13 @@ namespace NachoClient.iOS
         protected MessageTableViewSource messageSource;
         protected HashSet<int> MultiSelect = null;
 
-        protected int selectedSegment = 0;
+        protected nint selectedSegment = 0;
         protected bool isFirstInfoItem = true;
 
-        protected const float ROW_SPACER = 15f;
-        protected const float PADDING = 18f;
-        protected const float VERTICAL_PADDING = 20f;
-        protected const float SEGMENTED_CONTROL_HEIGHT = 30f;
+        protected static readonly nfloat ROW_SPACER = 15f;
+        protected static readonly nfloat PADDING = 18f;
+        protected static readonly nfloat VERTICAL_PADDING = 20f;
+        protected static readonly nfloat SEGMENTED_CONTROL_HEIGHT = 30f;
 
         protected const int HEADER_INITIALS_CIRCLE_TAG = 100;
         protected const int HEADER_NAME_TAG = 101;
@@ -243,20 +243,20 @@ namespace NachoClient.iOS
             NavigationItem.SetRightBarButtonItem (editContact, true); 
 
             //CONTACT HEADER SECTION
-            UIView headerView = new UIView (new RectangleF (A.Card_Horizontal_Indent, A.Card_Vertical_Indent, View.Frame.Width - (A.Card_Horizontal_Indent * 2), 147));
+            UIView headerView = new UIView (new CGRect (A.Card_Horizontal_Indent, A.Card_Vertical_Indent, View.Frame.Width - (A.Card_Horizontal_Indent * 2), 147));
             headerView.Layer.CornerRadius = A.Card_Corner_Radius;
             headerView.Layer.BorderColor = A.Card_Border_Color;
             headerView.Layer.BorderWidth = A.Card_Border_Width;
             headerView.BackgroundColor = UIColor.White;
             View.AddSubview (headerView);
 
-            UIButton vipButton = new UIButton (new RectangleF (headerView.Frame.Right - 48, 10, VERTICAL_PADDING, VERTICAL_PADDING));
+            UIButton vipButton = new UIButton (new CGRect (headerView.Frame.Right - 48, 10, VERTICAL_PADDING, VERTICAL_PADDING));
             vipButton.Tag = HEADER_VIP_BUTTON_TAG;
             vipButton.SetImage (UIImage.FromBundle ("contacts-vip"), UIControlState.Normal);
             vipButton.TouchUpInside += VipButtonTouchUpInside;
             headerView.AddSubview (vipButton);
 
-            UILabel initialsCircleLabel = new UILabel (new RectangleF (PADDING, VERTICAL_PADDING, 60, 60));
+            UILabel initialsCircleLabel = new UILabel (new CGRect (PADDING, VERTICAL_PADDING, 60, 60));
             initialsCircleLabel.Font = A.Font_AvenirNextRegular24;
             initialsCircleLabel.BackgroundColor = A.Color_NachoLightText;
             initialsCircleLabel.TextColor = UIColor.White;
@@ -269,7 +269,7 @@ namespace NachoClient.iOS
             initialsCircleLabel.Tag = HEADER_INITIALS_CIRCLE_TAG;
             headerView.AddSubview (initialsCircleLabel);
 
-            UIImageView userImageView = new UIImageView (new RectangleF (PADDING, VERTICAL_PADDING, 60, 60));
+            UIImageView userImageView = new UIImageView (new CGRect (PADDING, VERTICAL_PADDING, 60, 60));
             userImageView.Layer.BorderColor = A.Card_Border_Color;
             userImageView.Layer.BorderWidth = A.Card_Border_Width;
             userImageView.Layer.CornerRadius = 30;
@@ -278,7 +278,7 @@ namespace NachoClient.iOS
             userImageView.Hidden = true;
             headerView.AddSubview (userImageView);
 
-            UILabel nameLabel = new UILabel (new RectangleF (initialsCircleLabel.Frame.Right + 16, 31, 190, 20));
+            UILabel nameLabel = new UILabel (new CGRect (initialsCircleLabel.Frame.Right + 16, 31, 190, 20));
             nameLabel.Font = A.Font_AvenirNextDemiBold17;
             nameLabel.TextColor = A.Color_NachoGreen;
             nameLabel.TextAlignment = UITextAlignment.Left;
@@ -286,7 +286,7 @@ namespace NachoClient.iOS
             nameLabel.Tag = HEADER_NAME_TAG;
             headerView.AddSubview (nameLabel);
 
-            UILabel titleLabel = new UILabel (new RectangleF (nameLabel.Frame.X, nameLabel.Frame.Bottom + 6, nameLabel.Frame.Width, nameLabel.Frame.Height - 5));
+            UILabel titleLabel = new UILabel (new CGRect (nameLabel.Frame.X, nameLabel.Frame.Bottom + 6, nameLabel.Frame.Width, nameLabel.Frame.Height - 5));
             titleLabel.Font = A.Font_AvenirNextMedium14;
             titleLabel.TextColor = A.Color_NachoTextGray;
             titleLabel.Tag = HEADER_TITLE_TAG;
@@ -295,7 +295,7 @@ namespace NachoClient.iOS
             Util.AddHorizontalLine (0, initialsCircleLabel.Frame.Bottom + PADDING, headerView.Frame.Width, A.Color_NachoBorderGray, headerView);
             Util.AddVerticalLine (headerView.Frame.Width / 2, initialsCircleLabel.Frame.Bottom + PADDING, headerView.Frame.Height - (initialsCircleLabel.Frame.Bottom + PADDING), A.Color_NachoBorderGray, headerView);
 
-            UIView callView = new UIView (new RectangleF (0, initialsCircleLabel.Frame.Bottom + PADDING, headerView.Frame.Width / 2, headerView.Frame.Height - (initialsCircleLabel.Frame.Bottom + PADDING)));
+            UIView callView = new UIView (new CGRect (0, initialsCircleLabel.Frame.Bottom + PADDING, headerView.Frame.Width / 2, headerView.Frame.Height - (initialsCircleLabel.Frame.Bottom + PADDING)));
             callView.Tag = HEADER_CALL_VIEW_TAG;
             callView.BackgroundColor = UIColor.Clear;
             headerCallViewGestureTapGesture = new UITapGestureRecognizer ();
@@ -307,10 +307,10 @@ namespace NachoClient.iOS
             using (var image = UIImage.FromBundle ("contacts-call")) {
                 callIcon = new UIImageView (image);
             }
-            callIcon.Frame = new RectangleF (callView.Frame.Width / 3, 11, callIcon.Frame.Height, callIcon.Frame.Width);
+            callIcon.Frame = new CGRect (callView.Frame.Width / 3, 11, callIcon.Frame.Height, callIcon.Frame.Width);
             callView.AddSubview (callIcon);
 
-            UILabel callLabel = new UILabel (new RectangleF (callIcon.Frame.Right + 10, 15, 50, 15));
+            UILabel callLabel = new UILabel (new CGRect (callIcon.Frame.Right + 10, 15, 50, 15));
             callLabel.TextColor = A.Color_NachoGreen;
             callLabel.Font = A.Font_AvenirNextMedium14;
             callLabel.Text = "Call";
@@ -318,7 +318,7 @@ namespace NachoClient.iOS
             callLabel.SizeToFit ();
             callView.AddSubview (callLabel);
 
-            UIView emailView = new UIView (new RectangleF (headerView.Frame.Width / 2, initialsCircleLabel.Frame.Bottom + PADDING, headerView.Frame.Width / 2, headerView.Frame.Height - (initialsCircleLabel.Frame.Bottom + PADDING)));
+            UIView emailView = new UIView (new CGRect (headerView.Frame.Width / 2, initialsCircleLabel.Frame.Bottom + PADDING, headerView.Frame.Width / 2, headerView.Frame.Height - (initialsCircleLabel.Frame.Bottom + PADDING)));
             emailView.Tag = HEADER_EMAIL_VIEW_TAG;
             emailView.BackgroundColor = UIColor.Clear;
             headerEmailViewTapGesture = new UITapGestureRecognizer ();
@@ -330,10 +330,10 @@ namespace NachoClient.iOS
             using (var image = UIImage.FromBundle ("contacts-email")) {
                 emailIcon = new UIImageView (image);
             }
-            emailIcon.Frame = new RectangleF (emailView.Frame.Width / 2 - 40, 11, emailIcon.Frame.Height, emailIcon.Frame.Width);
+            emailIcon.Frame = new CGRect (emailView.Frame.Width / 2 - 40, 11, emailIcon.Frame.Height, emailIcon.Frame.Width);
             emailView.AddSubview (emailIcon);
 
-            UILabel emailLabel = new UILabel (new RectangleF (emailIcon.Frame.Right + 10, 15, 50, 15));
+            UILabel emailLabel = new UILabel (new CGRect (emailIcon.Frame.Right + 10, 15, 50, 15));
             emailLabel.TextColor = A.Color_NachoGreen;
             emailLabel.Font = A.Font_AvenirNextMedium14;
             emailLabel.Text = "Email";
@@ -341,9 +341,9 @@ namespace NachoClient.iOS
             emailLabel.SizeToFit ();
             emailView.AddSubview (emailLabel);
 
-            float yOffset = headerView.Frame.Bottom + 12;
+            nfloat yOffset = headerView.Frame.Bottom + 12;
 
-            UIView segmentedViewHolder = new UIView (new RectangleF (A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), 100));
+            UIView segmentedViewHolder = new UIView (new CGRect (A.Card_Horizontal_Indent, yOffset, View.Frame.Width - (A.Card_Horizontal_Indent * 2), 100));
             segmentedViewHolder.Layer.BorderColor = A.Card_Border_Color;
             segmentedViewHolder.Layer.BorderWidth = A.Card_Border_Width;
             segmentedViewHolder.Layer.CornerRadius = A.Card_Corner_Radius;
@@ -353,7 +353,7 @@ namespace NachoClient.iOS
 
             //SEGMENTED CONTROL
             var segmentedControl = new UISegmentedControl ();
-            segmentedControl.Frame = new RectangleF (PADDING, VERTICAL_PADDING, segmentedViewHolder.Frame.Width - (PADDING * 2), SEGMENTED_CONTROL_HEIGHT);
+            segmentedControl.Frame = new CGRect (PADDING, VERTICAL_PADDING, segmentedViewHolder.Frame.Width - (PADDING * 2), SEGMENTED_CONTROL_HEIGHT);
             segmentedControl.TintColor = A.Color_NachoGreen;
             segmentedControl.InsertSegment ("Contact", 0, false);
             segmentedControl.InsertSegment ("Interactions", 1, false);
@@ -374,22 +374,22 @@ namespace NachoClient.iOS
             segmentedViewHolder.AddSubview (segmentedControl);
 
             //CONTACT INFO
-            UIScrollView contactInfoScrollView = new UIScrollView (new RectangleF (0, segmentedControl.Frame.Bottom + 5, segmentedViewHolder.Frame.Width, View.Frame.Height - segmentedViewHolder.Frame.Top - 80 - 64));
+            UIScrollView contactInfoScrollView = new UIScrollView (new CGRect (0, segmentedControl.Frame.Bottom + 5, segmentedViewHolder.Frame.Width, View.Frame.Height - segmentedViewHolder.Frame.Top - 80 - 64));
             contactInfoScrollView.BackgroundColor = UIColor.White;
             contactInfoScrollView.Tag = CONTACT_INFO_VIEW_TAG;
             segmentedViewHolder.AddSubview (contactInfoScrollView);
 
             //INTERACTIONS
-            UITableView interactionsTableView = new UITableView (new RectangleF (0, segmentedControl.Frame.Bottom + 4, segmentedViewHolder.Frame.Width, View.Frame.Height - segmentedViewHolder.Frame.Top - 80 - 64));
+            UITableView interactionsTableView = new UITableView (new CGRect (0, segmentedControl.Frame.Bottom + 4, segmentedViewHolder.Frame.Width, View.Frame.Height - segmentedViewHolder.Frame.Top - 80 - 64));
             interactionsTableView.Tag = INTERACTIONS_TABLE_VIEW_TAG;
             interactionsTableView.Hidden = true;
             interactionsTableView.BackgroundColor = UIColor.White;
             segmentedViewHolder.AddSubview (interactionsTableView);
 
             //NOTES
-            UIView notesView = new UIView (new RectangleF (PADDING, segmentedControl.Frame.Bottom, segmentedViewHolder.Frame.Width - (PADDING * 2), View.Frame.Height - segmentedViewHolder.Frame.Top - 80 - 64));
+            UIView notesView = new UIView (new CGRect (PADDING, segmentedControl.Frame.Bottom, segmentedViewHolder.Frame.Width - (PADDING * 2), View.Frame.Height - segmentedViewHolder.Frame.Top - 80 - 64));
             notesView.Tag = NOTES_VIEW_TAG;
-            UITextView notesTextView = new UITextView (new RectangleF (0, 5, notesView.Frame.Width, notesView.Frame.Height - 45));
+            UITextView notesTextView = new UITextView (new CGRect (0, 5, notesView.Frame.Width, notesView.Frame.Height - 45));
             notesTextView.Font = A.Font_AvenirNextRegular14;
             notesTextView.Editable = false;
             notesTextView.TextColor = A.Color_NachoBlack;
@@ -497,7 +497,7 @@ namespace NachoClient.iOS
             foreach (var v in contactInfoScrollView.Subviews) {
                 v.RemoveFromSuperview ();
             }
-            float contactInfoHeight = 0;
+            nfloat contactInfoHeight = 0;
 
             if (contact.EmailAddresses.Count > 0) {
                 foreach (var e in contact.EmailAddresses) {
@@ -570,7 +570,7 @@ namespace NachoClient.iOS
                 contactInfoHeight += AddMiscInfo (t, contactInfoHeight, contactInfoScrollView);
             }
 
-            copyCellView.Frame = new RectangleF (0, 0, contactInfoScrollView.Frame.Width, 50);
+            copyCellView.Frame = new CGRect (0, 0, contactInfoScrollView.Frame.Width, 50);
             copyCellView.Hidden = true;
             contactInfoScrollView.AddSubview (copyCellView);
 
@@ -580,7 +580,7 @@ namespace NachoClient.iOS
             } else {
                 SetViewHeight (contactInfoScrollView, View.Frame.Height - segmentedViewHolder.Frame.Top - 80);
             }
-            contactInfoScrollView.ContentSize = new SizeF (contactInfoScrollView.Frame.Width, contactInfoHeight);
+            contactInfoScrollView.ContentSize = new CGSize (contactInfoScrollView.Frame.Width, contactInfoHeight);
 
             //CONFIGURE INTERACTIONS VIEW
             UITableView interactionsTableView = (UITableView)View.ViewWithTag (INTERACTIONS_TABLE_VIEW_TAG);
@@ -697,19 +697,19 @@ namespace NachoClient.iOS
             Util.CallContact ("SegueToContactDefaultSelector", contact, this);
         }
 
-        protected float AddEmailAddress (McContactEmailAddressAttribute email, float yOffset, UIView contactInfoScrollView, bool isFirstEmail) /*TODO Remove isFirstEmail once we're settings defaults */
+        protected nfloat AddEmailAddress (McContactEmailAddressAttribute email, nfloat yOffset, UIView contactInfoScrollView, bool isFirstEmail) /*TODO Remove isFirstEmail once we're settings defaults */
         {
             UIView segmentedControllerHolderView = (UIView)View.ViewWithTag (SEGMENTED_VIEW_HOLDER_TAG);
 
-            var emailView = new UIView (new RectangleF (PADDING, yOffset, contactInfoScrollView.Frame.Width - PADDING, 40));
+            var emailView = new UIView (new CGRect (PADDING, yOffset, contactInfoScrollView.Frame.Width - PADDING, 40));
             emailView.Tag = variableTransientTag;
             contactInfoScrollView.AddSubview (emailView);
 
             UIImageView emailIcon = new UIImageView (UIImage.FromBundle ("contacts-icn-email"));
-            emailIcon.Frame = new RectangleF (0, ROW_SPACER, emailIcon.Frame.Width, emailIcon.Frame.Height);
+            emailIcon.Frame = new CGRect (0, ROW_SPACER, emailIcon.Frame.Width, emailIcon.Frame.Height);
             emailView.AddSubview (emailIcon);
 
-            var emailLabel = new UILabel (new RectangleF (emailIcon.Frame.Right + 8, ROW_SPACER, 45, 15));
+            var emailLabel = new UILabel (new CGRect (emailIcon.Frame.Right + 8, ROW_SPACER, 45, 15));
             emailLabel.Font = A.Font_AvenirNextMedium10;
             emailLabel.TextColor = UIColor.DarkGray;
             emailLabel.Text = "EMAIL";
@@ -717,7 +717,7 @@ namespace NachoClient.iOS
             emailView.AddSubview (emailLabel);
 
             var emailComposeIcon = new UIImageView (UIImage.FromBundle ("contacts-email"));
-            emailComposeIcon.Frame = new RectangleF (emailView.Frame.Width - (emailComposeIcon.Frame.Width + PADDING), ROW_SPACER, emailComposeIcon.Frame.Width, emailComposeIcon.Frame.Height);
+            emailComposeIcon.Frame = new CGRect (emailView.Frame.Width - (emailComposeIcon.Frame.Width + PADDING), ROW_SPACER, emailComposeIcon.Frame.Width, emailComposeIcon.Frame.Height);
             emailView.UserInteractionEnabled = true;
             emailView.AddSubview (emailComposeIcon);
 
@@ -736,11 +736,11 @@ namespace NachoClient.iOS
 
             if (isFirstEmail /*TODO email.IsDefault */) {
                 UIImageView defaultEmailIcon = new UIImageView (UIImage.FromBundle ("contacts-marker"));
-                defaultEmailIcon.Frame = new RectangleF (0, emailLabel.Frame.Bottom + 14, defaultEmailIcon.Frame.Width, defaultEmailIcon.Frame.Height);
+                defaultEmailIcon.Frame = new CGRect (0, emailLabel.Frame.Bottom + 14, defaultEmailIcon.Frame.Width, defaultEmailIcon.Frame.Height);
                 emailView.AddSubview (defaultEmailIcon);
             }
 
-            var emailTextView = new UILabel (new RectangleF (emailLabel.Frame.X, emailLabel.Frame.Bottom + 10, emailView.Frame.Width - (emailLabel.Frame.X + 45), 16));
+            var emailTextView = new UILabel (new CGRect (emailLabel.Frame.X, emailLabel.Frame.Bottom + 10, emailView.Frame.Width - (emailLabel.Frame.X + 45), 16));
             emailTextView.Font = A.Font_AvenirNextMedium14;
             emailTextView.TextColor = A.Color_NachoGreen;
             emailTextView.Text = canonicalEmail;
@@ -768,17 +768,17 @@ namespace NachoClient.iOS
             return emailView.Frame.Height;
         }
 
-        protected float AddPhoneNumber (McContactStringAttribute phone, float yOffset, UIView contactInfoScrollView, bool isFirstPhone) /*TODO Remove isFirstEmail once we're settings defaults */
+        protected nfloat AddPhoneNumber (McContactStringAttribute phone, nfloat yOffset, UIView contactInfoScrollView, bool isFirstPhone) /*TODO Remove isFirstEmail once we're settings defaults */
         {
             UIView segmentedControllerHolderView = (UIView)View.ViewWithTag (SEGMENTED_VIEW_HOLDER_TAG);
 
-            var phoneView = new UIView (new RectangleF (PADDING, yOffset, contactInfoScrollView.Frame.Width - PADDING, 40));
+            var phoneView = new UIView (new CGRect (PADDING, yOffset, contactInfoScrollView.Frame.Width - PADDING, 40));
             phoneView.Tag = variableTransientTag;
             phoneView.UserInteractionEnabled = true;
             contactInfoScrollView.AddSubview (phoneView);
 
             UIImageView phoneIcon = new UIImageView (UIImage.FromBundle ("contacts-icn-phone"));
-            phoneIcon.Frame = new RectangleF (0, ROW_SPACER, phoneIcon.Frame.Width, phoneIcon.Frame.Height);
+            phoneIcon.Frame = new CGRect (0, ROW_SPACER, phoneIcon.Frame.Width, phoneIcon.Frame.Height);
 
             phoneView.AddSubview (phoneIcon);
 
@@ -790,7 +790,7 @@ namespace NachoClient.iOS
                 phoneLabelText = "PHONE";
             }
 
-            var phoneLabel = new UILabel (new RectangleF (phoneIcon.Frame.Right + 8, ROW_SPACER, 45, 15));
+            var phoneLabel = new UILabel (new CGRect (phoneIcon.Frame.Right + 8, ROW_SPACER, 45, 15));
             phoneLabel.Font = A.Font_AvenirNextMedium10;
             phoneLabel.TextColor = UIColor.DarkGray;
             phoneLabel.Text = phoneLabelText;
@@ -798,7 +798,7 @@ namespace NachoClient.iOS
             phoneView.AddSubview (phoneLabel);
 
             var callIcon = new UIImageView (UIImage.FromBundle ("contacts-call"));
-            callIcon.Frame = new RectangleF (phoneView.Frame.Width - (callIcon.Frame.Width + PADDING), ROW_SPACER, callIcon.Frame.Width, callIcon.Frame.Height);
+            callIcon.Frame = new CGRect (phoneView.Frame.Width - (callIcon.Frame.Width + PADDING), ROW_SPACER, callIcon.Frame.Width, callIcon.Frame.Height);
             phoneView.AddSubview (callIcon);
 
             UITapGestureRecognizer phoneTap = new UITapGestureRecognizer ();
@@ -810,11 +810,11 @@ namespace NachoClient.iOS
 
             if (isFirstPhone /*TODO phone.IsDefault */) {
                 UIImageView defaultPhoneIcon = new UIImageView (UIImage.FromBundle ("contacts-marker"));
-                defaultPhoneIcon.Frame = new RectangleF (0, phoneLabel.Frame.Bottom + 13, defaultPhoneIcon.Frame.Width, defaultPhoneIcon.Frame.Height);
+                defaultPhoneIcon.Frame = new CGRect (0, phoneLabel.Frame.Bottom + 13, defaultPhoneIcon.Frame.Width, defaultPhoneIcon.Frame.Height);
                 phoneView.AddSubview (defaultPhoneIcon);
             }
 
-            var phoneNumberTextView = new UILabel (new RectangleF (phoneLabel.Frame.X, phoneLabel.Frame.Bottom + 10, View.Frame.Width - 75, 30));
+            var phoneNumberTextView = new UILabel (new CGRect (phoneLabel.Frame.X, phoneLabel.Frame.Bottom + 10, View.Frame.Width - 75, 30));
             phoneNumberTextView.Font = A.Font_AvenirNextMedium14;
             phoneNumberTextView.TextColor = A.Color_NachoGreen;
             phoneNumberTextView.Text = phone.Value;
@@ -840,11 +840,11 @@ namespace NachoClient.iOS
             return phoneView.Frame.Height;
         }
 
-        protected float AddMiscInfo (string whatInfo, float yOffset, UIView contactInfoScrollView)
+        protected nfloat AddMiscInfo (string whatInfo, nfloat yOffset, UIView contactInfoScrollView)
         {
             UIView segmentedControllerHolderView = (UIView)View.ViewWithTag (SEGMENTED_VIEW_HOLDER_TAG);
 
-            var miscInfoView = new UIView (new RectangleF (PADDING, yOffset, contactInfoScrollView.Frame.Width - PADDING, 40));
+            var miscInfoView = new UIView (new CGRect (PADDING, yOffset, contactInfoScrollView.Frame.Width - PADDING, 40));
             contactInfoScrollView.AddSubview (miscInfoView);
 
             string label = "";
@@ -854,18 +854,18 @@ namespace NachoClient.iOS
             SetViewProperties (whatInfo, ref label, ref value, ref iconName);
 
             UIImageView viewIcon = new UIImageView (UIImage.FromBundle (iconName));
-            viewIcon.Frame = new RectangleF (0, ROW_SPACER, viewIcon.Frame.Width, viewIcon.Frame.Height);
+            viewIcon.Frame = new CGRect (0, ROW_SPACER, viewIcon.Frame.Width, viewIcon.Frame.Height);
 
             miscInfoView.AddSubview (viewIcon);
 
-            var viewLabel = new UILabel (new RectangleF (viewIcon.Frame.Right + 8, ROW_SPACER, 45, 15));
+            var viewLabel = new UILabel (new CGRect (viewIcon.Frame.Right + 8, ROW_SPACER, 45, 15));
             viewLabel.Font = A.Font_AvenirNextMedium10;
             viewLabel.TextColor = UIColor.DarkGray;
             viewLabel.Text = label;
             viewLabel.SizeToFit ();
             miscInfoView.AddSubview (viewLabel);
 
-            var viewTextView = new UILabel (new RectangleF (viewLabel.Frame.X, viewLabel.Frame.Bottom + 10, miscInfoView.Frame.Width - (viewLabel.Frame.X + 10), 40));
+            var viewTextView = new UILabel (new CGRect (viewLabel.Frame.X, viewLabel.Frame.Bottom + 10, miscInfoView.Frame.Width - (viewLabel.Frame.X + 10), 40));
             viewTextView.Font = A.Font_AvenirNextMedium14;
             viewTextView.TextColor = A.Color_NachoGreen;
             viewTextView.Text = value;
@@ -895,17 +895,17 @@ namespace NachoClient.iOS
 
         protected void CopyThis ()
         {
-            copyCellView.Frame = new RectangleF (0, longPressData.containerView.Frame.Y, longPressData.containerView.Superview.Frame.Width, longPressData.containerView.Frame.Height + 1);
+            copyCellView.Frame = new CGRect (0, longPressData.containerView.Frame.Y, longPressData.containerView.Superview.Frame.Width, longPressData.containerView.Frame.Height + 1);
             copyCellView.BackgroundColor = UIColor.LightGray.ColorWithAlpha (.3f);
             copyCellView.Hidden = false;
 
             longPressData.containerView.Superview.BecomeFirstResponder ();
 
             UIMenuController copyMenu = UIMenuController.SharedMenuController;
-            copyMenu.SetTargetRect (new RectangleF (longPressData.containerView.Superview.Frame.Width / 2, longPressData.containerView.Frame.Y + 7, 0, 0), longPressData.containerView.Superview);
+            copyMenu.SetTargetRect (new CGRect (longPressData.containerView.Superview.Frame.Width / 2, longPressData.containerView.Frame.Y + 7, 0, 0), longPressData.containerView.Superview);
             copyMenu.ArrowDirection = UIMenuControllerArrowDirection.Down;
 
-            UIMenuItem copyMenuItem = new UIMenuItem ("Copy", new MonoTouch.ObjCRuntime.Selector ("DoCopy"));
+            UIMenuItem copyMenuItem = new UIMenuItem ("Copy", new ObjCRuntime.Selector ("DoCopy"));
             copyMenu.MenuItems = new UIMenuItem[] { copyMenuItem };
             copyMenu.SetMenuVisible (true, true);
         }
@@ -997,12 +997,12 @@ namespace NachoClient.iOS
 
         protected UIColor LighterColor (UIColor color)
         {
-            float hue, saturation, brightness, alpha;
+            nfloat hue, saturation, brightness, alpha;
             color.GetHSBA (out hue, out saturation, out brightness, out alpha);
-            return UIColor.FromHSBA (hue, saturation, Math.Min (brightness * 1.3f, 1.0f), alpha);
+            return UIColor.FromHSBA (hue, saturation, NMath.Min (brightness * 1.3f, 1.0f), alpha);
         }
 
-        protected void SetViewHeight (UIView view, float height)
+        protected void SetViewHeight (UIView view, nfloat height)
         {
             var frame = view.Frame;
             frame.Height = height;
@@ -1113,7 +1113,7 @@ namespace NachoClient.iOS
         public void DismissChildDateController (INachoDateController vc)
         {
             vc.Setup (null, null, DateControllerType.None);
-            vc.DismissDateController (false, new NSAction (delegate {
+            vc.DismissDateController (false, new Action (delegate {
                 this.DismissViewController (true, null);
             }));
         }
@@ -1121,7 +1121,7 @@ namespace NachoClient.iOS
         public void DismissChildMessageEditor (INachoMessageEditor vc)
         {
             vc.SetOwner (null);
-            vc.DismissMessageEditor (false, new NSAction (delegate {
+            vc.DismissMessageEditor (false, new Action (delegate {
                 this.DismissViewController (true, null);
             }));
         }
@@ -1132,7 +1132,7 @@ namespace NachoClient.iOS
             if (null != m) {
                 var t = CalendarHelper.CreateTask (m);
                 vc.SetOwner (null);
-                vc.DismissMessageEditor (false, new NSAction (delegate {
+                vc.DismissMessageEditor (false, new Action (delegate {
                     PerformSegue ("", new SegueHolder (t));
                 }));
             }
@@ -1143,7 +1143,7 @@ namespace NachoClient.iOS
             var m = thread.SingleMessageSpecialCase ();
             if (null != m) {
                 var c = CalendarHelper.CreateMeeting (m);
-                vc.DismissMessageEditor (false, new NSAction (delegate {
+                vc.DismissMessageEditor (false, new Action (delegate {
                     PerformSegue ("NachoNowToEditEvent", new SegueHolder (c));
                 }));
             }

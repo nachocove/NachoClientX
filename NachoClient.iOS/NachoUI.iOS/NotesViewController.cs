@@ -2,11 +2,11 @@
 
 using System;
 
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 
 using System.IO;
-using System.Drawing;
+using CoreGraphics;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -25,13 +25,13 @@ namespace NachoClient.iOS
         protected bool SupressAutoDate;
         protected McAccount account;
         UIColor separatorColor = A.Color_NachoBorderGray;
-        protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
-        protected static float LINE_OFFSET = 30f;
-        protected static float KEYBOARD_HEIGHT = 216f;
-        protected static float NOTES_TEXT_VIEW_HEIGHT = UIScreen.MainScreen.Bounds.Height - KEYBOARD_HEIGHT - LINE_OFFSET - 10;
-        protected static float TEXT_LINE_HEIGHT = 19.124f;
-        protected float NOTES_OFFSET = 0f;
-        protected float keyboardHeight;
+        protected static nfloat SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
+        protected static nfloat LINE_OFFSET = 30f;
+        protected static nfloat KEYBOARD_HEIGHT = 216f;
+        protected static nfloat NOTES_TEXT_VIEW_HEIGHT = UIScreen.MainScreen.Bounds.Height - KEYBOARD_HEIGHT - LINE_OFFSET - 10;
+        protected static nfloat TEXT_LINE_HEIGHT = 19.124f;
+        protected nfloat NOTES_OFFSET = 0f;
+        protected nfloat keyboardHeight;
 
         protected string originalNote;
         protected string embeddedDateString;
@@ -95,11 +95,11 @@ namespace NachoClient.iOS
             NavigationItem.Title = "Note";
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
              
-            scrollView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, View.Frame.Height - KEYBOARD_HEIGHT);
+            scrollView.Frame = new CGRect (0, 0, SCREEN_WIDTH, View.Frame.Height - KEYBOARD_HEIGHT);
             //notes
-            notesView = new UIView (new RectangleF (0, LINE_OFFSET + 10, SCREEN_WIDTH, NOTES_TEXT_VIEW_HEIGHT + 200));
+            notesView = new UIView (new CGRect (0, LINE_OFFSET + 10, SCREEN_WIDTH, NOTES_TEXT_VIEW_HEIGHT + 200));
             notesView.BackgroundColor = UIColor.White;
-            notesTextView = new UITextView (new RectangleF (15, 15, SCREEN_WIDTH - 30, NOTES_TEXT_VIEW_HEIGHT));
+            notesTextView = new UITextView (new CGRect (15, 15, SCREEN_WIDTH - 30, NOTES_TEXT_VIEW_HEIGHT));
             notesTextView.Font = A.Font_AvenirNextRegular14;
             notesTextView.TextColor = solidTextColor;
             notesTextView.BackgroundColor = UIColor.White;
@@ -115,13 +115,13 @@ namespace NachoClient.iOS
             //Content View
             contentView.BackgroundColor = UIColor.White;
 
-            var DateView = new UIView (new RectangleF (0, 0, SCREEN_WIDTH, LINE_OFFSET + 10));
+            var DateView = new UIView (new CGRect (0, 0, SCREEN_WIDTH, LINE_OFFSET + 10));
             DateView.BackgroundColor = A.Color_NachoNowBackground;
             MakeDateLabel (0, LINE_OFFSET - 10, SCREEN_WIDTH, 15, DATE_DETAIL_TAG, DateView);
             contentView.Add (DateView);
             contentView.Add (notesView);
             contentView.Add (line1);
-            contentView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, NOTES_TEXT_VIEW_HEIGHT + LINE_OFFSET + 10);
+            contentView.Frame = new CGRect (0, 0, SCREEN_WIDTH, NOTES_TEXT_VIEW_HEIGHT + LINE_OFFSET + 10);
 
             //Scroll View
             scrollView.BackgroundColor = A.Color_NachoNowBackground;
@@ -129,9 +129,9 @@ namespace NachoClient.iOS
 
         }
 
-        public UIView AddLine (float offset, float yVal, float width, UIColor color)
+        public UIView AddLine (nfloat offset, nfloat yVal, nfloat width, UIColor color)
         {
-            var lineUIView = new UIView (new RectangleF (offset, yVal, width, .5f));
+            var lineUIView = new UIView (new CGRect (offset, yVal, width, .5f));
             lineUIView.BackgroundColor = color;
             return (lineUIView);
         }
@@ -150,9 +150,9 @@ namespace NachoClient.iOS
             dateDetailLabel.Text = Pretty.ExtendedDateString (DateTime.UtcNow);
         }
 
-        public void MakeDateLabel (float xOffset, float yOffset, float width, float height, int tag, UIView parentView)
+        public void MakeDateLabel (nfloat xOffset, nfloat yOffset, nfloat width, nfloat height, int tag, UIView parentView)
         {
-            UILabel DateLabel = new UILabel (new RectangleF (xOffset, yOffset, width, height));
+            UILabel DateLabel = new UILabel (new CGRect (xOffset, yOffset, width, height));
             DateLabel.Font = A.Font_AvenirNextRegular12;
             DateLabel.TextColor = UIColor.LightGray;
             DateLabel.Tag = tag;
@@ -164,16 +164,16 @@ namespace NachoClient.iOS
         {
             // We want to scroll the caret rect into view
             var caretRect = textView.GetCaretRectForPosition (textView.SelectedTextRange.End);
-            caretRect.Size = new SizeF (caretRect.Size.Width, caretRect.Size.Height + textView.TextContainerInset.Bottom);
+            caretRect.Size = new CGSize (caretRect.Size.Width, caretRect.Size.Height + textView.TextContainerInset.Bottom);
             // Make sure our textview is big enough to hold the text
             var frame = textView.Frame;
-            frame.Size = new SizeF (textView.ContentSize.Width, textView.ContentSize.Height);
+            frame.Size = new CGSize (textView.ContentSize.Width, textView.ContentSize.Height);
             textView.Frame = frame;
             var newNotesViewFrame = notesView.Frame;
-            newNotesViewFrame.Size = new SizeF (notesView.Frame.Width, textView.ContentSize.Height + 250);
+            newNotesViewFrame.Size = new CGSize (notesView.Frame.Width, textView.ContentSize.Height + 250);
             notesView.Frame = newNotesViewFrame;
             // And update our enclosing scrollview for the new content size
-            scrollView.ContentSize = new SizeF (scrollView.ContentSize.Width, textView.Frame.Height + notesView.Frame.Y + 30);
+            scrollView.ContentSize = new CGSize (scrollView.ContentSize.Width, textView.Frame.Height + notesView.Frame.Y + 30);
             // Adjust the caretRect to be in our enclosing scrollview, and then scroll it
             caretRect.Y += notesView.Frame.Y + 30;
             scrollView.ScrollRectToVisible (caretRect, true);

@@ -2,12 +2,12 @@
 
 using System;
 
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 
 using System.IO;
 using System.Linq;
-using System.Drawing;
+using CoreGraphics;
 using System.Collections.Generic;
 
 using NachoCore.Utils;
@@ -84,7 +84,7 @@ namespace NachoClient.iOS
 
         public void Done ()
         {
-            NavigationController.PopViewControllerAnimated (true);
+            NavigationController.PopViewController (true);
         }
 
         protected class AlertChoicesSource : UITableViewSource
@@ -119,12 +119,12 @@ namespace NachoClient.iOS
                 return 0;
             }
 
-            public override int NumberOfSections (UITableView tableView)
+            public override nint NumberOfSections (UITableView tableView)
             {
                 return 1;
             }
 
-            public override int RowsInSection (UITableView tableview, int section)
+            public override nint RowsInSection (UITableView tableview, nint section)
             {
                 return choices.Count;
             }
