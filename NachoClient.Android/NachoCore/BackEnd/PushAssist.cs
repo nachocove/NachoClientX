@@ -214,7 +214,7 @@ namespace NachoCore
             // JEFF_TODO - consider how to move AWS identity "north" of telemetry.
             var clientId = Telemetry.SharedInstance.GetUserName ();
             if (null != clientId) {
-                Sm.PostEvent ((uint)SmEvt.E.Success, "GOTCLITOK");
+                Sm.PostEvent ((uint)PAEvt.E.CliTok, "GOTCLITOK");
             }
             // FIXME - we need to be able to register for changes to client token.
         }
