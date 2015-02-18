@@ -1345,7 +1345,10 @@ namespace NachoClient.iOS
                 NcAssert.CaseError (String.Format ("Unexpected value for message action: {0}", actionString));
             }
             if (EmailHelper.Action.Send != action) {
-                NcAssert.NotNull (referencedMessage, String.Format ("A null message was passed to MessageComposeViewController for an action of {0}", actionString));
+                if (null == referencedMessage) {
+                    Log.Info (Log.LOG_UI, String.Format ("A null message was passed to MessageComposeViewController for an action of {0}", actionString));
+                    action = EmailHelper.Action.Send;
+                }
             }
         }
 
