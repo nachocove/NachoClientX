@@ -3,3 +3,8 @@
 . Migration of data-base implemented, so as new features are added, existing is migrated. 
 . Calendar forwards implemented.
 . Pull-force sync of a folder or mailbox hooked up.
+
+Known issues:
+. No configuration setting to allow for syncing more than 30 days worth of messages.
+. Data migration may take several minutes.
+
