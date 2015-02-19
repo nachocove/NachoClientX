@@ -437,6 +437,8 @@ namespace NachoCore
             // to happen right away should go into a background task.
             NcTask.Run (delegate {
 
+                NcEventManager.Initialize ();
+
                 LocalNotificationManager.InitializeLocalNotifications ();
 
                 // Clean up old McPending tasks that have been abandoned.

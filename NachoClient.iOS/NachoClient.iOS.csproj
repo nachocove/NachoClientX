@@ -1033,12 +1033,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McEvent.cs">
       <Link>NachoCore\Model\McEvent.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoEvents.cs">
-      <Link>NachoCore\Adapters\NachoEvents.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcEventsCommon.cs">
-      <Link>NachoCore\Adapters\NcEventsCommon.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\INcEventProvider.cs">
       <Link>NachoCore\Adapters\INcEventProvider.cs</Link>
     </Compile>
@@ -1221,6 +1215,9 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration4.cs">
       <Link>NachoCore\Model\Migration\NcMigration4.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcEventsCalendarMap.cs">
+      <Link>NachoCore\Adapters\NcEventsCalendarMap.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

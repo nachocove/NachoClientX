@@ -234,6 +234,16 @@ namespace NachoCore.Model
                 retval = base.Delete ();
                 DeleteAddressMap ();
             });
+
+            // The code that manages McEvents will never notice that the events for this
+            // item have been deleted.  So the EventSetChanged status needs to be fired
+            // explicitly.
+            NcApplication.Instance.InvokeStatusIndEvent(new StatusIndEventArgs() {
+                Status = NcResult.Info(NcResult.SubKindEnum.Info_EventSetChanged),
+                Account = ConstMcAccount.NotAccountSpecific,
+                Tokens = new string[] { DateTime.Now.ToString () },
+            });
+
             return retval;
         }
     }

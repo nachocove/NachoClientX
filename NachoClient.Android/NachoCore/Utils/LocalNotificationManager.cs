@@ -66,14 +66,8 @@ namespace NachoCore.Utils
                 reschedulingNeeded = false;
                 NachoPlatform.Notif.Instance.ScheduleNotifications (notifications);
 
-                // DEBUG Until we are convinced that this works correctly.
-                Log.Info (Log.LOG_CALENDAR, "Initialized LocalNotificationManager with {0} notifications", notifications.Count);
-
                 NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
             }
-
-            // DEBUG Until we are convinced that this works correctly.
-            NachoPlatform.Notif.DumpNotifications ();
         }
 
         public static void ScheduleNotifications ()
@@ -129,9 +123,6 @@ namespace NachoCore.Utils
                 }
                 reschedulingNeeded = false;
             }
-
-            // DEBUG Until we are convinced that this works correctly.
-            NachoPlatform.Notif.DumpNotifications ();
         }
 
         /// <summary>

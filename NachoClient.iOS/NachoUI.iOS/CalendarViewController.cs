@@ -79,8 +79,10 @@ namespace NachoClient.iOS
                 this.NavigationController.ToolbarHidden = true;
             }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
-            calendarSource.Refresh ();
-            calendarTableView.ReloadData ();
+            calendarSource.Refresh (delegate {
+                calendarTableView.ReloadData ();
+                UpdateDateDotView ();
+            });
 
             if (adjustScrollPosition) {
                 adjustScrollPosition = false;
@@ -91,8 +93,6 @@ namespace NachoClient.iOS
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
-            calendarSource.Refresh ();
-            calendarTableView.ReloadData ();
             PermissionManager.DealWithCalendarPermission ();
         }
 
@@ -100,6 +100,7 @@ namespace NachoClient.iOS
         {
             base.ViewWillDisappear (animated);
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
+            calendarSource.StopTrackingEventChanges ();
         }
 
         /// <summary>
@@ -153,16 +154,15 @@ namespace NachoClient.iOS
         public void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
-            if (NcResult.SubKindEnum.Info_CalendarSetChanged == s.Status.SubKind) {
-                calendarSource.Refresh ();
-                calendarTableView.ReloadData ();
-                UpdateDateDotView ();
+            switch (s.Status.SubKind) {
 
-            }
-            if (NcResult.SubKindEnum.Info_EventSetChanged == s.Status.SubKind) {
-                calendarSource.Refresh ();
-                calendarTableView.ReloadData ();
-                UpdateDateDotView ();
+            // When the events change, refresh the UI to reflect the changes.
+            case NcResult.SubKindEnum.Info_EventSetChanged:
+                calendarSource.Refresh (delegate {
+                    calendarTableView.ReloadData ();
+                    UpdateDateDotView ();
+                });
+                break;
             }
         }
 
@@ -204,9 +204,10 @@ namespace NachoClient.iOS
         {
             NavigationController.NavigationBar.Translucent = false;
 
+            var eventCalendarMap = new NcAllEventsCalendarMap ();
             calendarSource = new CalendarTableViewSource ();
             calendarSource.owner = this;
-            calendarSource.SetCalendar (NcEventManager.Instance);
+            calendarSource.SetCalendar (eventCalendarMap);
 
             calendarTableView = new UITableView ();
             ConfigureCalendarTableSize (1);
@@ -215,7 +216,7 @@ namespace NachoClient.iOS
 
             NavigationItem.Title = "Calendar";
 
-            DateDotView = new DateBarView (View, NcEventManager.Instance);
+            DateDotView = new DateBarView (View, eventCalendarMap);
             DateDotView.SetOwner (this);
             DateDotView.InitializeDateBar ();
 

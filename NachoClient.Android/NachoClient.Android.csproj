@@ -333,8 +333,6 @@
     <Compile Include="NachoCore\Model\McMeetingRequest.cs" />
     <Compile Include="NachoCore\Brain\NcBrainControl.cs" />
     <Compile Include="NachoCore\Model\McEvent.cs" />
-    <Compile Include="NachoCore\Adapters\NachoEvents.cs" />
-    <Compile Include="NachoCore\Adapters\NcEventsCommon.cs" />
     <Compile Include="NachoCore\Adapters\INcEventProvider.cs" />
     <Compile Include="NachoCore\Adapters\NcEventManager.cs" />
     <Compile Include="NachoCore\Adapters\UserInteractionEmailMessages.cs" />
@@ -361,6 +359,7 @@
     <Compile Include="NachoCore\Model\McMapEmailAddressEntry.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration3.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration4.cs" />
+    <Compile Include="NachoCore\Adapters\NcEventsCalendarMap.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

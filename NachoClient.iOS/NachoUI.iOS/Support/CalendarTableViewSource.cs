@@ -30,10 +30,17 @@ namespace NachoClient.iOS
             this.calendar = calendar;
         }
 
-        public void Refresh ()
+        public void Refresh (Action completionAction)
         {
             if (null != calendar) {
-                calendar.Refresh ();
+                calendar.Refresh (completionAction);
+            }
+        }
+
+        public void StopTrackingEventChanges ()
+        {
+            if (null != calendar) {
+                calendar.StopTrackingEventChanges ();
             }
         }
 

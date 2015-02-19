@@ -6,6 +6,7 @@ using SQLite;
 using NachoCore.Model;
 using NachoCore.Utils;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace NachoCore.Model
 {
@@ -40,9 +41,11 @@ namespace NachoCore.Model
             e.CalendarId = calendarId;
             e.ExceptionId = exceptionId;
             e.Insert ();
-            NachoCore.Utils.Log.Info (Utils.Log.LOG_DB, "McEvent create: {0} {1}", startTime, calendarId);
-            if (0 != exceptionId) {
-                NachoCore.Utils.Log.Info (Utils.Log.LOG_DB, "McException found: eventId={0} exceptionId={1}", e.Id, exceptionId);
+            if (0 == exceptionId) {
+                NachoCore.Utils.Log.Info (Utils.Log.LOG_DB, "McEvent create: {0} {1} {2}", startTime, e.Id, calendarId);
+            } else {
+                NachoCore.Utils.Log.Info (Utils.Log.LOG_DB, "McEvent create with exception: {0} {1} {2} {3}",
+                    startTime, e.Id, exceptionId, calendarId);
             }
             return e;
         }
@@ -83,6 +86,14 @@ namespace NachoCore.Model
         }
 
         /// <summary>
+        /// All events in the database in chronological order.
+        /// </summary>
+        public static List<McEvent> QueryAllEventsInOrder ()
+        {
+            return NcModel.Instance.Db.Table<McEvent> ().OrderBy (v => v.StartTime).ToList ();
+        }
+
+        /// <summary>
         /// All events that have a reminder time within the given range, ordered by reminder time.
         /// </summary>
         public static IEnumerable<McEvent> QueryEventsWithRemindersInRange (DateTime start, DateTime end)
@@ -90,6 +101,15 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Table<McEvent> ()
                 .Where (e => start <= e.ReminderTime && e.ReminderTime < end)
                 .OrderBy (e => e.ReminderTime);
+        }
+
+        /// <summary>
+        /// All events associated wih the given calendar item that start after the given date.
+        /// </summary>
+        public static IEnumerable<McEvent> QueryEventsForCalendarItemAfter (int calendarId, DateTime after)
+        {
+            return NcModel.Instance.Db.Table<McEvent> ()
+                .Where (e => e.CalendarId == calendarId && e.StartTime > after);
         }
     }
 }
