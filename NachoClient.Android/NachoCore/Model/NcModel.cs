@@ -259,23 +259,26 @@ namespace NachoCore.Model
         private NcModel ()
         {
             NcAssert.True (2 == SQLite3.Threadsafe () || 1 == SQLite3.Threadsafe ());
-            SQLite3.Config (SQLite3.ConfigOption.Log, Device.Instance.GetSQLite3ErrorCallback ((code, message) => {
-                if ((int)SQLite3.Result.OK == code ||
-                    ((int)SQLite3.Result.Locked == code && message.Contains ("PRAGMA main.wal_checkpoint (PASSIVE)"))) {
-                    return;
-                }
-                var messageWithStack = string.Format ("SQLite Error Log (code {0}): {1}", code, message);
-                foreach (var frame in NachoPlatformBinding.PlatformProcess.GetStackTrace ()) {
-                    messageWithStack += "\n" + frame;
-                }
-                Log.IndirectQ.Enqueue (new LogElement () {
-                    Level = LogElement.LevelEnum.Error,
-                    Subsystem = Log.LOG_DB,
-                    Message = messageWithStack,
-                    Occurred = DateTime.UtcNow,
-                    ThreadId = Thread.CurrentThread.ManagedThreadId,
-                });
-            }), (IntPtr)null);
+            if (4 == IntPtr.Size) {
+                // bug qa-5: SQLite3.Config() causes a crash on 64-bit iOS devices.
+                SQLite3.Config (SQLite3.ConfigOption.Log, Device.Instance.GetSQLite3ErrorCallback ((code, message) => {
+                    if ((int)SQLite3.Result.OK == code ||
+                        ((int)SQLite3.Result.Locked == code && message.Contains ("PRAGMA main.wal_checkpoint (PASSIVE)"))) {
+                        return;
+                    }
+                    var messageWithStack = string.Format ("SQLite Error Log (code {0}): {1}", code, message);
+                    foreach (var frame in NachoPlatformBinding.PlatformProcess.GetStackTrace ()) {
+                        messageWithStack += "\n" + frame;
+                    }
+                    Log.IndirectQ.Enqueue (new LogElement () {
+                        Level = LogElement.LevelEnum.Error,
+                        Subsystem = Log.LOG_DB,
+                        Message = messageWithStack,
+                        Occurred = DateTime.UtcNow,
+                        ThreadId = Thread.CurrentThread.ManagedThreadId,
+                    });
+                }), (IntPtr)null);
+            }
             Documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
             DbFileName = Path.Combine (Documents, "db");
             FreshInstall = !File.Exists (DbFileName);
