@@ -6,14 +6,15 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Drawing;
+using CoreGraphics;
 using System.Security.Cryptography.X509Certificates;
 using System.Xml.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using System.Drawing;
+using Foundation;
+using UIKit;
 using NachoCore;
 using NachoCore.ActiveSync;
 using NachoCore.Model;
@@ -23,7 +24,7 @@ using NachoPlatform;
 using NachoClient.iOS;
 using SQLite;
 using NachoCore.Wbxml;
-using MonoTouch.ObjCRuntime;
+using ObjCRuntime;
 using NachoClient.Build;
 using HockeyApp;
 using NachoUIMonitorBinding;
@@ -51,7 +52,7 @@ namespace NachoClient.iOS
 
         // iOS kills us after 30, so make sure we dont get there
         private const int KPerformFetchTimeoutSeconds = 25;
-        private int BackgroundIosTaskId = -1;
+        private nint BackgroundIosTaskId = -1;
         // Don't use NcTimer here - use the raw timer to avoid any future chicken-egg issues.
         #pragma warning disable 414
         private Timer ShutdownTimer = null;
@@ -233,7 +234,7 @@ namespace NachoClient.iOS
                 UIRemoteNotificationType.NewsstandContentAvailability | UIRemoteNotificationType.Sound);
             UIApplication.SharedApplication.SetMinimumBackgroundFetchInterval (UIApplication.BackgroundFetchIntervalMinimum);
             // Set up webview to handle html with embedded custom types (curtesy of Exchange)
-            NSUrlProtocol.RegisterClass (new MonoTouch.ObjCRuntime.Class (typeof(CidImageProtocol)));
+            NSUrlProtocol.RegisterClass (new ObjCRuntime.Class (typeof(CidImageProtocol)));
 
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: iOS Cocoa setup complete");
 
@@ -258,12 +259,12 @@ namespace NachoClient.iOS
                 var localNotification = (UILocalNotification)launchOptions [UIApplication.LaunchOptionsLocalNotificationKey];
                 var emailNotificationDictionary = localNotification.UserInfo.ObjectForKey (EmailNotificationKey);
                 if (null != emailNotificationDictionary) {
-                    var emailMessageId = ((NSNumber)emailNotificationDictionary).IntValue;
+                    var emailMessageId = ((NSNumber)emailNotificationDictionary).NIntValue;
                     SaveNotification ("FinishedLaunching", EmailNotificationKey, emailMessageId);
                 }
                 var eventNotificationDictionary = localNotification.UserInfo.ObjectForKey (EventNotificationKey);
                 if (null != eventNotificationDictionary) {
-                    var eventId = ((NSNumber)eventNotificationDictionary).IntValue;
+                    var eventId = ((NSNumber)eventNotificationDictionary).NIntValue;
                     SaveNotification ("FinishedLaunching", EventNotificationKey, eventId);
                 }
                 if (localNotification != null) {
@@ -274,8 +275,7 @@ namespace NachoClient.iOS
 
             NcKeyboardSpy.Instance.Init ();
 
-            if (NcApplication.ExecutionContextEnum.Migrating != NcApplication.Instance.ExecutionContext &&
-                "SegueToTabController" == StartupViewController.NextSegue ()) {
+            if (NcApplication.Instance.IsUp () && "SegueToTabController" == StartupViewController.NextSegue ()) {
                 var storyboard = UIStoryboard.FromName ("MainStoryboard_iPhone", null);
                 var vc = storyboard.InstantiateViewController ("NachoTabBarController");
                 Log.Info (Log.LOG_UI, "fast path to tab bar controller: {0}", vc);
@@ -511,7 +511,7 @@ namespace NachoClient.iOS
         }
 
         /// Status bar height can change when the user is on a call or using navigation
-        public override void ChangedStatusBarFrame (UIApplication application, RectangleF oldStatusBarFrame)
+        public override void ChangedStatusBarFrame (UIApplication application, CGRect oldStatusBarFrame)
         {
             NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
                 Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_StatusBarHeightChanged),
@@ -561,7 +561,7 @@ namespace NachoClient.iOS
             doingPerformFetch = true;
         }
 
-        protected void SaveNotification (string traceMessage, string key, int id)
+        protected void SaveNotification (string traceMessage, string key, nint id)
         {
             Log.Info (Log.LOG_LIFECYCLE, "{0}: {1} id is {2}.", traceMessage, key, id);
 
@@ -586,7 +586,7 @@ namespace NachoClient.iOS
                     // Now we know that the app was already running.  In this case,
                     // we notify the user of the upcoming event with an alert view.
                     if (null != eventNotification) {
-                        var eventId = eventNotification.IntValue;
+                        var eventId = eventNotification.ToMcModelIndex();
                         var eventItem = McEvent.QueryById<McEvent> (eventId);
                         if (null != eventItem) {
                             var calendarItem = McCalendar.QueryById<McCalendar> (eventItem.CalendarId);
@@ -614,14 +614,14 @@ namespace NachoClient.iOS
             var nachoTabBarController = Window.RootViewController as NachoTabBarController;
                 
             if (null != emailNotification) {
-                var emailMessageId = emailNotification.IntValue;
+                var emailMessageId = emailNotification.ToMcModelIndex();
                 SaveNotification ("ReceivedLocalNotification", EmailNotificationKey, emailMessageId);
                 if (null != nachoTabBarController) {
                     nachoTabBarController.SwitchToNachoNow ();
                 }
             }
             if (null != eventNotification) {
-                var eventId = eventNotification.IntValue;
+                var eventId = eventNotification.ToMcModelIndex();
                 SaveNotification ("ReceivedLocalNotification", EventNotificationKey, eventId);
                 nachoTabBarController.SwitchToNachoNow ();
 

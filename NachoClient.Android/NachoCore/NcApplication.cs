@@ -51,6 +51,11 @@ namespace NachoCore
             }
         }
 
+        public bool IsUp ()
+        {
+            return (ExecutionContextEnum.Migrating != ExecutionContext) && (ExecutionContextEnum.Initializing != ExecutionContext);
+        }
+
         public ExecutionContextEnum PlatformIndication {
             get { return _PlatformIndication; }
             set { 
@@ -229,7 +234,6 @@ namespace NachoCore
             ExecutionContext = ExecutionContextEnum.Initializing;
             NcModel.Instance.GarbageCollectFiles ();
             NcModel.Instance.Start ();
-            Account = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
             EstablishService ();
             NcModel.Instance.EngageRateLimiter ();
             NcBrain.StartService ();
@@ -243,9 +247,11 @@ namespace NachoCore
 
         public void StartBasalServices ()
         {
+            Log.Info (Log.LOG_SYS, "{0}-bit App", 8 * IntPtr.Size);
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServices called.");
             NcTask.StartService ();
             Telemetry.StartService ();
+            Account = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
             // Start Migrations, if any.
             if (!NcMigration.WillStartService ()) {
                 StartBasalServicesCompletion ();
@@ -348,7 +354,7 @@ namespace NachoCore
             MonitorTimer.Dispose ();
         }
 
-        public void MonitorReport (string moniker = null, [CallerFilePath] string sourceFilePath = "",  [CallerLineNumber] int sourceLineNumber = 0)
+        public void MonitorReport (string moniker = null, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
         {
             if (!String.IsNullOrEmpty (moniker)) {
                 Log.Info (Log.LOG_SYS, "Monitor: {0} from line {1} of {2}", moniker, sourceLineNumber, sourceFilePath);

@@ -1,10 +1,10 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using MonoTouch.EventKit;
-using MonoTouch.Foundation;
+using EventKit;
+using Foundation;
 using NachoCore;
 using NachoCore.Utils;
 using NachoCore.Model;
@@ -272,7 +272,7 @@ namespace NachoPlatform
                 x.Source.SourceType != EKSourceType.Exchange &&
             x.Source.SourceType != EKSourceType.Birthdays
             ).ToArray ();
-            var predicate = EventStore.PredicateForEvents (start, end, calendars);
+            var predicate = EventStore.PredicateForEvents (start.ToNSDate (), end.ToNSDate (), calendars);
             var calEvents = EventStore.EventsMatching (predicate);
             if (null != calEvents) {
                 foreach (var calEvent in calEvents) {

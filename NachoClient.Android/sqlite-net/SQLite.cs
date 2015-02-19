@@ -1104,7 +1104,9 @@ namespace SQLite
 				}
 			}
 
-			throw new ArgumentException ("savePoint is not valid, and should be the result of a call to SaveTransactionPoint.", "savePoint");
+			throw new ArgumentException ("savePoint is not valid, and should be the result of a call to SaveTransactionPoint.",
+                String.Format ("savepoint={0}, transactionDepth={1}, stacktrace={2}",
+                    savepoint, _transactionDepth, new StackTrace ()));
 		}
 
 		/// <summary>
@@ -1467,7 +1469,7 @@ namespace SQLite
 					throw NotNullConstraintViolationException.New (ex, map, obj);
 				}
 
-				throw ex;
+				throw;
 			}
 
 			if (rowsAffected > 0)

@@ -6,11 +6,13 @@
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{0614D746-209D-4EDA-B732-DC6CF8964579}</ProjectGuid>
-    <ProjectTypeGuids>{6BC8ED88-2882-458C-8E55-DFD12B67127B};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <ProjectTypeGuids>{FEACFBD2-3405-455C-9665-78FE426C6842};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <OutputType>Exe</OutputType>
     <RootNamespace>Test.iOS</RootNamespace>
     <IPhoneResourcePrefix>Resources</IPhoneResourcePrefix>
     <AssemblyName>TestiOS</AssemblyName>
+    <TargetFrameworkIdentifier>Xamarin.iOS</TargetFrameworkIdentifier>
+    <TargetFrameworkVersion>v1.0</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|iPhoneSimulator' ">
     <DebugSymbols>true</DebugSymbols>
@@ -66,6 +68,7 @@
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
     <CodesignKey>iPhone Developer</CodesignKey>
+    <MtouchArch>ARMv7, ARM64</MtouchArch>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Ad-Hoc|iPhone' ">
     <DebugType>full</DebugType>
@@ -78,6 +81,7 @@
     <BuildIpa>true</BuildIpa>
     <CodesignProvision>Automatic:AdHoc</CodesignProvision>
     <CodesignKey>iPhone Distribution</CodesignKey>
+    <MtouchArch>ARMv7, ARM64</MtouchArch>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'AppStore|iPhone' ">
     <DebugType>full</DebugType>
@@ -89,23 +93,27 @@
     <ConsolePause>false</ConsolePause>
     <CodesignProvision>Automatic:AppStore</CodesignProvision>
     <CodesignKey>iPhone Distribution</CodesignKey>
+    <MtouchArch>ARMv7, ARM64</MtouchArch>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
-    <Reference Include="monotouch" />
     <Reference Include="MonoTouch.NUnitLite" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Net.Http" />
-    <Reference Include="MimeKit">
-      <HintPath>..\..\MimeKit\MimeKit\bin\Debug\lib\MonoTouch\MimeKit.dll</HintPath>
-    </Reference>
     <Reference Include="DnDns.iOS">
       <HintPath>..\..\DnDns\SourceCode\DnDns\DnDns.iOS\bin\Release\DnDns.iOS.dll</HintPath>
     </Reference>
-    <Reference Include="ModernHttpClient">
-      <HintPath>..\..\ModernHttpClient\build\MonoTouch\ModernHttpClient.dll</HintPath>
+    <Reference Include="Xamarin.iOS" />
+    <Reference Include="antlr.runtime.iOS">
+      <HintPath>..\..\DDay-iCal-Xamarin\DDay.iCal.iOS\bin\Debug\antlr.runtime.iOS.dll</HintPath>
+    </Reference>
+    <Reference Include="DDay.Collections.iOS">
+      <HintPath>..\..\DDay-iCal-Xamarin\DDay.iCal.iOS\bin\Debug\DDay.Collections.iOS.dll</HintPath>
+    </Reference>
+    <Reference Include="DDay.iCal.iOS">
+      <HintPath>..\..\DDay-iCal-Xamarin\DDay.iCal.iOS\bin\Debug\DDay.iCal.iOS.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -152,7 +160,7 @@
       <Link>McPendDepTest.cs</Link>
     </Compile>
     <Compile Include="..\Test.Android\NcTestBase.cs">
-      <Link>Test.Android\NcTestBase.cs</Link>
+      <Link>NcTestBase.cs</Link>
     </Compile>
     <Compile Include="..\Test.Android\McFolderTest.cs">
       <Link>McFolderTest.cs</Link>
@@ -256,26 +264,9 @@
     <Compile Include="..\Test.Android\McMapEmailAddressEntryTest.cs">
       <Link>McMapEmailAddressEntryTest.cs</Link>
     </Compile>
-  </ItemGroup>
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.MonoTouch.CSharp.targets" />
-  <ItemGroup>
-    <ProjectReference Include="..\NachoClient.iOS\NachoClient.iOS.csproj">
-      <Project>{7B5D1554-2619-4B46-BE91-585C896047AC}</Project>
-      <Name>NachoClient.iOS</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\DDay-iCal-Xamarin\antlr.runtime.iOS\antlr.runtime.iOS.csproj">
-      <Project>{3043ADD2-B6EF-4392-B5E4-983B63260039}</Project>
-      <Name>antlr.runtime.iOS</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\DDay-iCal-Xamarin\DDay.Collections.iOS\DDay.Collections.iOS.csproj">
-      <Project>{B7EE901B-1302-42C7-98D1-18666CB7D6DC}</Project>
-      <Name>DDay.Collections.iOS</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\DDay-iCal-Xamarin\DDay.iCal.iOS\DDay.iCal.iOS.csproj">
-      <Project>{1B095A78-F50A-449F-A3C4-D5662AD32717}</Project>
-      <Name>DDay.iCal.iOS</Name>
-    </ProjectReference>
+    <Compile Include="..\Test.Android\NcContactGleanerTest.cs">
+      <Link>NcContactGleanerTest.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />
@@ -331,5 +322,20 @@
     <BundleResource Include="..\Test.Android\Resources\nco9.com.crt">
       <Link>Resources\nco9.com.crt</Link>
     </BundleResource>
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />
+  <ItemGroup>
+    <ProjectReference Include="..\NachoClient.iOS\NachoClient.iOS.csproj">
+      <Project>{7B5D1554-2619-4B46-BE91-585C896047AC}</Project>
+      <Name>NachoClient.iOS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\MimeKit\MimeKit\MimeKit.iOS.csproj">
+      <Project>{4C1288AD-12C8-4BF7-AED7-6C4DC539C856}</Project>
+      <Name>MimeKit.iOS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ModernHttpClient\src\ModernHttpClient\ModernHttpClient.iOS64.csproj">
+      <Project>{6941F069-AC02-40EE-BBF3-9FE3331030EF}</Project>
+      <Name>ModernHttpClient.iOS64</Name>
+    </ProjectReference>
   </ItemGroup>
 </Project>

@@ -3,12 +3,12 @@
 using System;
 using System.Collections.Generic;
 
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 
 using NachoCore.Model;
 using NachoCore.Utils;
-using System.Drawing;
+using CoreGraphics;
 using NachoCore;
 
 namespace NachoClient.iOS
@@ -229,7 +229,7 @@ namespace NachoClient.iOS
             existingTableView = (UITableView)moreTabController.View;
             existingTableView.TintColor = A.Color_NachoGreen;
             existingTableView.ScrollEnabled = false;
-            var cellHeight = 0f;
+            nfloat cellHeight = 0;
             foreach (var cell in existingTableView.VisibleCells) {
                 cell.TextLabel.Font = A.Font_AvenirNextMedium14;
                 cellHeight = cell.Frame.Height;
@@ -239,14 +239,14 @@ namespace NachoClient.iOS
 
             newView.BackgroundColor = A.Color_NachoBackgroundGray;
 
-            accountInfoView = new AccountInfoView (new RectangleF (
+            accountInfoView = new AccountInfoView (new CGRect (
                 A.Card_Horizontal_Indent, A.Card_Vertical_Indent,
                 newView.Frame.Width - 2 * A.Card_Horizontal_Indent, 80));
             accountInfoView.OnAccountSelected = AccountTapHandler;
 
             var tableHeight = (((existingTableView.NumberOfRowsInSection (0)) + 2) * cellHeight + 25);
 
-            existingTableView.Frame = new RectangleF (
+            existingTableView.Frame = new CGRect (
                 A.Card_Horizontal_Indent, accountInfoView.Frame.Bottom + A.Card_Vertical_Indent,
                 newView.Frame.Width - 2 * A.Card_Horizontal_Indent, tableHeight);
             existingTableView.Layer.CornerRadius = A.Card_Corner_Radius;
@@ -255,7 +255,7 @@ namespace NachoClient.iOS
             existingTableView.Layer.BorderColor = A.Card_Border_Color;
             existingTableView.Tag = TABLEVIEW_TAG;
 
-            newView.ContentSize = new SizeF (View.Frame.Width, existingTableView.Frame.Bottom - A.Card_Vertical_Indent - 20);
+            newView.ContentSize = new CGSize (View.Frame.Width, existingTableView.Frame.Bottom - A.Card_Vertical_Indent - 20);
 
             newView.AddSubview (accountInfoView);
             newView.AddSubview (existingTableView);
@@ -270,7 +270,7 @@ namespace NachoClient.iOS
             var tableView = (UITableView)View.ViewWithTag (TABLEVIEW_TAG);
             if (null != tableView) {
                 var tableHeight = (tableView.NumberOfRowsInSection (0) * 44);
-                tableView.Frame = new RectangleF (tableView.Frame.X, tableView.Frame.Y, tableView.Frame.Width, tableHeight);
+                tableView.Frame = new CGRect (tableView.Frame.X, tableView.Frame.Y, tableView.Frame.Width, tableHeight);
             }
         }
 

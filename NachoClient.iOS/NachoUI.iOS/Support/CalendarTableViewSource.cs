@@ -1,9 +1,9 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Drawing;
-using MonoTouch.UIKit;
-using MonoTouch.Foundation;
+using CoreGraphics;
+using UIKit;
+using Foundation;
 using System.Collections.Generic;
 using NachoCore.Model;
 using NachoCore;
@@ -45,7 +45,7 @@ namespace NachoClient.iOS
         /// <summary>
         /// Tableview delegate
         /// </summary>
-        public override int NumberOfSections (UITableView tableView)
+        public override nint NumberOfSections (UITableView tableView)
         {
             if (null == calendar) {
                 return 1;
@@ -57,12 +57,12 @@ namespace NachoClient.iOS
         /// <summary>
         /// The number of rows in the specified section.
         /// </summary>
-        public override int RowsInSection (UITableView tableview, int section)
+        public override nint RowsInSection (UITableView tableview, nint section)
         {
             if (null == calendar) {
                 return 1;
             } else {
-                return calendar.NumberOfItemsForDay (section);
+                return calendar.NumberOfItemsForDay (section.ToArrayIndex());
             }
         }
 
@@ -71,7 +71,7 @@ namespace NachoClient.iOS
             return 87.0f;
         }
 
-        public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
+        public override nfloat GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
         {
             if (NoCalendarEvents ()) {
                 return 44.0f;
@@ -83,7 +83,7 @@ namespace NachoClient.iOS
             return HeightForCalendarEvent (c);
         }
 
-        public override float EstimatedHeight (UITableView tableView, NSIndexPath indexPath)
+        public override nfloat EstimatedHeight (UITableView tableView, NSIndexPath indexPath)
         {
             return 87.0f;
         }
@@ -145,7 +145,7 @@ namespace NachoClient.iOS
 
             if (identifier.Equals (CalendarEventReuseIdentifier)) {
                 var cell = new UITableViewCell (UITableViewCellStyle.Default, identifier);
-                if (cell.RespondsToSelector (new MonoTouch.ObjCRuntime.Selector ("setSeparatorInset:"))) {
+                if (cell.RespondsToSelector (new ObjCRuntime.Selector ("setSeparatorInset:"))) {
                     cell.SeparatorInset = UIEdgeInsets.Zero;
                 }
                 cell.SelectionStyle = UITableViewCellSelectionStyle.None;
@@ -153,7 +153,7 @@ namespace NachoClient.iOS
 
                 var cellWidth = tableView.Frame.Width;
 
-                var frame = new RectangleF (0, 0, tableView.Frame.Width, 87);
+                var frame = new CGRect (0, 0, tableView.Frame.Width, 87);
                 var view = new SwipeActionView (frame);
                 view.Tag = SWIPE_TAG;
 
@@ -165,39 +165,39 @@ namespace NachoClient.iOS
                 cell.ContentView.AddSubview (view);
 
                 // Subject label view
-                var subjectLabelView = new UILabel (new RectangleF (65, 15, cellWidth - 65, 20));
+                var subjectLabelView = new UILabel (new CGRect (65, 15, cellWidth - 65, 20));
                 subjectLabelView.Font = A.Font_AvenirNextDemiBold17;
                 subjectLabelView.TextColor = A.Color_NachoBlack;
                 subjectLabelView.Tag = SUBJECT_TAG;
                 view.AddSubview (subjectLabelView);
 
                 // Duration label view
-                var durationLabelView = new UILabel (new RectangleF (65, 35, cellWidth - 65, 20));
+                var durationLabelView = new UILabel (new CGRect (65, 35, cellWidth - 65, 20));
                 durationLabelView.Font = A.Font_AvenirNextMedium14;
                 durationLabelView.TextColor = A.Color_NachoBlack;
                 durationLabelView.Tag = DURATION_TAG;
                 view.AddSubview (durationLabelView);
 
                 // Location image view
-                var locationIconView = new UIImageView (new RectangleF (65, 59, 12, 12));
+                var locationIconView = new UIImageView (new CGRect (65, 59, 12, 12));
                 locationIconView.Tag = LOCATION_ICON_TAG;
                 view.AddSubview (locationIconView);
 
                 // Location label view
-                var locationLabelView = new UILabel (new RectangleF (80, 55, cellWidth - 80, 20));
+                var locationLabelView = new UILabel (new CGRect (80, 55, cellWidth - 80, 20));
                 locationLabelView.Font = A.Font_AvenirNextRegular14;
                 locationLabelView.TextColor = A.Color_NachoTextGray;
                 locationLabelView.Tag = LOCATION_TEXT_TAG;
                 view.AddSubview (locationLabelView);
 
                 // Vertical line
-                var lineView = new UIView (new RectangleF (35, 0, 1, 20));
+                var lineView = new UIView (new CGRect (35, 0, 1, 20));
                 lineView.BackgroundColor = A.Color_NachoLightBorderGray;
                 lineView.Tag = LINE_TAG;
                 view.AddSubview (lineView);
 
                 // Dot image view
-                var dotView = new UIImageView (new RectangleF (29, 19, 12, 12));
+                var dotView = new UIImageView (new CGRect (29, 19, 12, 12));
                 dotView.Tag = DOT_TAG;
                 view.AddSubview (dotView);
 
@@ -212,13 +212,13 @@ namespace NachoClient.iOS
         /// </summary>
         protected void ConfigureCell (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
         {
-            if (cell.ReuseIdentifier.Equals (EmptyCellReuseIdentifier)) {
+            if (cell.ReuseIdentifier.ToString().Equals (EmptyCellReuseIdentifier)) {
                 cell.SelectionStyle = UITableViewCellSelectionStyle.None;
                 cell.TextLabel.Text = "No messages";
                 return;
             }
 
-            if (cell.ReuseIdentifier.Equals (CalendarEventReuseIdentifier)) {
+            if (cell.ReuseIdentifier.ToString().Equals (CalendarEventReuseIdentifier)) {
                 cell.SelectionStyle = UITableViewCellSelectionStyle.Default;
                 ConfigureCalendarCell (tableView, cell, indexPath);
                 return;
@@ -256,8 +256,8 @@ namespace NachoClient.iOS
             subjectLabelView.Hidden = false;
  
             subjectLabelView.Text = subject;
-            dotView.Frame = new RectangleF (30, 20, 9, 9);
-            var size = new SizeF (10, 10);
+            dotView.Frame = new CGRect (30, 20, 9, 9);
+            var size = new CGSize (10, 10);
             dotView.Image = Util.DrawCalDot (A.Color_CalDotBlue, size);
             dotView.Hidden = false;
 
@@ -298,7 +298,7 @@ namespace NachoClient.iOS
 
             var lineView = cell.ContentView.ViewWithTag (LINE_TAG);
             lineView.Hidden = false;
-            lineView.Frame = new RectangleF (34, 0, 1, HeightForCalendarEvent (c));
+            lineView.Frame = new CGRect (34, 0, 1, HeightForCalendarEvent (c));
 
             var view = (SwipeActionView)cell.ViewWithTag (SWIPE_TAG);
             view.EnableSwipe ((null != cRoot) && (!String.IsNullOrEmpty(cRoot.OrganizerEmail)));
@@ -348,9 +348,9 @@ namespace NachoClient.iOS
             label.SizeToFit ();
             var labelView = new UIView ();
             if ("left" == side) {
-                labelView.Frame = new RectangleF (0, 0, label.Frame.Width + 50, label.Frame.Height);
+                labelView.Frame = new CGRect (0, 0, label.Frame.Width + 50, label.Frame.Height);
             } else {
-                labelView.Frame = new RectangleF (65, 0, label.Frame.Width + 50, label.Frame.Height);
+                labelView.Frame = new CGRect (65, 0, label.Frame.Width + 50, label.Frame.Height);
             }
             labelView.Add (label);
             return labelView;
@@ -369,35 +369,35 @@ namespace NachoClient.iOS
 
         }
 
-        public override float GetHeightForHeader (UITableView tableView, int section)
+        public override nfloat GetHeightForHeader (UITableView tableView, nint section)
         {
             return 75;
         }
 
-        public override UIView GetViewForHeader (UITableView tableView, int section)
+        public override UIView GetViewForHeader (UITableView tableView, nint section)
         {
-            var view = new UIView (new RectangleF (0, 0, tableView.Frame.Width, 75));
+            var view = new UIView (new CGRect (0, 0, tableView.Frame.Width, 75));
             view.BackgroundColor = A.Color_NachoLightGrayBackground;
             view.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
             view.Layer.BorderWidth = .5f;
 
-            var dayLabelView = new UILabel (new RectangleF (65, 20, tableView.Frame.Width - 65, 20));
+            var dayLabelView = new UILabel (new CGRect (65, 20, tableView.Frame.Width - 65, 20));
             dayLabelView.Font = A.Font_AvenirNextDemiBold17;
             dayLabelView.TextColor = A.Color_NachoBlack;
             view.AddSubview (dayLabelView);
 
-            var dateLabelView = new UILabel (new RectangleF (65, 40, tableView.Frame.Width - 65, 20));
+            var dateLabelView = new UILabel (new CGRect (65, 40, tableView.Frame.Width - 65, 20));
             dateLabelView.Font = A.Font_AvenirNextMedium14;
             dateLabelView.TextColor = A.Color_NachoTextGray;
             view.AddSubview (dateLabelView);
 
-            var bigNumberView = new UILabel (new RectangleF (0, 0, 65, 75));
+            var bigNumberView = new UILabel (new CGRect (0, 0, 65, 75));
             bigNumberView.Font = A.Font_AvenirNextRegular34;
             bigNumberView.TextColor = A.Color_NachoTeal;
             bigNumberView.TextAlignment = UITextAlignment.Center;
             view.AddSubview (bigNumberView);
 
-            var date = calendar.GetDateUsingDayIndex (section);
+            var date = calendar.GetDateUsingDayIndex (section.ToArrayIndex());
 
             if (null == preventAddButtonGC) {
                 preventAddButtonGC = new List<UIButton> ();
@@ -405,7 +405,7 @@ namespace NachoClient.iOS
 
             var addButton = new UIButton (UIButtonType.ContactAdd);
             addButton.TintColor = A.Color_NachoGreen;
-            addButton.Frame = new RectangleF (tableView.Frame.Width - 34, (view.Frame.Height / 2) - 8, 16, 16);
+            addButton.Frame = new CGRect (tableView.Frame.Width - 34, (view.Frame.Height / 2) - 8, 16, 16);
             addButton.TouchUpInside += (sender, e) => {
                 owner.PerformSegueForDelegate ("CalendarToEditEventView", new SegueHolder (date));
             };

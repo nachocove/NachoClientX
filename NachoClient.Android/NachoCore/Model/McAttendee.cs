@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using SQLite;
 using System;
@@ -121,6 +121,8 @@ namespace NachoCore.Model
         private NcEmailAddress.Kind GetAddressMapType ()
         {
             switch (AttendeeType) {
+            case NcAttendeeType.Unknown:
+                return NcEmailAddress.Kind.Unknown;
             case NcAttendeeType.Optional:
                 return NcEmailAddress.Kind.Optional;
             case NcAttendeeType.Required:

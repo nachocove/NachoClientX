@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using SQLite;
 using System;
@@ -448,10 +448,12 @@ namespace NachoCore.Model
 
         public void UpdateScoreAndNeedUpdate ()
         {
-            int rc = NcModel.Instance.Db.Execute (
-                         "UPDATE McEmailMessage " +
-                         "SET Score = ?,  NeedUpdate = ? " +
-                         "WHERE Id = ?", Score, NeedUpdate, Id);
+            int rc = NcModel.Instance.BusyProtect (() => {
+                return NcModel.Instance.Db.Execute (
+                    "UPDATE McEmailMessage " +
+                    "SET Score = ?,  NeedUpdate = ? " +
+                    "WHERE Id = ?", Score, NeedUpdate, Id);
+            });
             if (0 < rc) {
                 NcBrain brain = NcBrain.SharedInstance;
                 brain.McEmailMessageCounters.Update.Click ();

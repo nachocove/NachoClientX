@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 //#define INDEXING_ENABLED
 
@@ -19,6 +19,8 @@ namespace NachoCore.Brain
         public const bool ENABLED = true;
 
         public static bool RegisterStatusIndHandler = false;
+
+        public static int StartupDelayMsec = 10000;
 
         private static NcBrain _SharedInstance;
 
@@ -145,7 +147,9 @@ namespace NachoCore.Brain
                     break;
                 }
                 Log.Info (Log.LOG_BRAIN, "glean contact from email message {0}", emailMessage.Id);
-                NcContactGleaner.GleanContacts (emailMessage.AccountId, emailMessage, quickGlean);
+                if (!NcContactGleaner.GleanContactsHeaderPart2 (emailMessage)) {
+                    break;
+                }
                 if (quickGlean) {
                     // Assign a version 0 score by checking if our address is in the to list
                     InternetAddressList addressList = NcEmailAddress.ParseAddressListString (emailMessage.To);
@@ -456,16 +460,28 @@ namespace NachoCore.Brain
             }
         }
 
+        private bool IsInUnitTest ()
+        {
+            return (0 == StartupDelayMsec);
+        }
+
         public void Process ()
         {
             bool tvStarted = false;
-            if (ENABLED) {
+            if (ENABLED && !IsInUnitTest ()) {
+                // Delay brain to avoid initialization logjam
+                if (!NcTask.CancelableSleep (StartupDelayMsec)) {
+                    NcTask.Cts.Token.ThrowIfCancellationRequested ();
+                }
+
                 // If brain task is running under quick sync, do not start time variance
                 // as it is a waste of time.
                 if (NcApplication.ExecutionContextEnum.Background == NcApplication.Instance.ExecutionContext ||
                     NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext) {
                     // Defer the processing until Nacho Nov view shows up.
-                    NcTask.CancelableSleep (10000);
+                    if (!NcTask.CancelableSleep (StartupDelayMsec)) {
+                        NcTask.Cts.Token.ThrowIfCancellationRequested ();
+                    }
                     McEmailMessage.StartTimeVariance (EventQueue.Token);
                     tvStarted = true;
                 }
@@ -483,17 +499,19 @@ namespace NachoCore.Brain
                         Log.Info (Log.LOG_BRAIN, "NcBrain Task exits");
                         return;
                     }
-                    if (!tvStarted &&
-                        (NcApplication.ExecutionContextEnum.Background == NcApplication.Instance.ExecutionContext ||
-                        NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext)) {
-                        McEmailMessage.StartTimeVariance (EventQueue.Token);
-                        tvStarted = true;
-                    }
-                    // TODO - scheduling of brain actions need to be smarter. This will be
-                    // addressed in brain 2.0.
-                    if (NcApplication.ExecutionContextEnum.Background != NcApplication.Instance.ExecutionContext &&
-                        NcApplication.ExecutionContextEnum.Foreground != NcApplication.Instance.ExecutionContext) {
-                        continue;
+                    if (!IsInUnitTest ()) {
+                        if (!tvStarted &&
+                            (NcApplication.ExecutionContextEnum.Background == NcApplication.Instance.ExecutionContext ||
+                            NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext)) {
+                            McEmailMessage.StartTimeVariance (EventQueue.Token);
+                            tvStarted = true;
+                        }
+                        // TODO - scheduling of brain actions need to be smarter. This will be
+                        // addressed in brain 2.0.
+                        if (NcApplication.ExecutionContextEnum.Background != NcApplication.Instance.ExecutionContext &&
+                            NcApplication.ExecutionContextEnum.Foreground != NcApplication.Instance.ExecutionContext) {
+                            continue;
+                        }
                     }
                     if (ENABLED) {
                         ProcessEvent (brainEvent);

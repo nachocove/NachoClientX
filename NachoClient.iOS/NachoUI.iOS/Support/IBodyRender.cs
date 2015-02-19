@@ -1,9 +1,9 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Drawing;
+using CoreGraphics;
 
-using MonoTouch.UIKit;
+using UIKit;
 
 namespace NachoClient.iOS
 {
@@ -11,8 +11,8 @@ namespace NachoClient.iOS
     {
         UIView uiView ();
 
-        SizeF ContentSize { get; }
+        CGSize ContentSize { get; }
 
-        void ScrollingAdjustment (RectangleF frame, PointF contentOffset);
+        void ScrollingAdjustment (CGRect frame, CGPoint contentOffset);
     }
 }

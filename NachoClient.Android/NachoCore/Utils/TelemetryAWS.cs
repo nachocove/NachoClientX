@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 //#define AWS_DEBUG
 using System;
@@ -115,7 +115,7 @@ namespace NachoCore.Utils
                     action ();
                     isDone = true;
                 } catch (Exception e) {
-                    if (!HandleAWSException (e)) {
+                    if (!HandleAWSException (e, false)) {
                         if (NcTask.Cts.Token.IsCancellationRequested) {
                             if (null != Client) {
                                 Client.Dispose ();
@@ -230,7 +230,7 @@ namespace NachoCore.Utils
         /// <returns><c>true</c>, if AWS exception was handled, <c>false</c> otherwise.
         /// In that case, the caller must re-throw.</returns>
         /// <param name="e">E.</param>
-        private bool HandleAWSException (Exception e)
+        private bool HandleAWSException (Exception e, bool doReinitialize = true)
         {
             if (null != e) {
                 if (e is AggregateException) {
@@ -266,7 +266,9 @@ namespace NachoCore.Utils
             // This workaround simply catches everything and re-initializes
             // the connection and tables.
             Console.WriteLine ("Some exception caught in AWS send event\n{0}", e);
-            ReinitializeTables ();
+            if (doReinitialize) {
+                ReinitializeTables ();
+            }
             return true;
         }
 
@@ -284,7 +286,9 @@ namespace NachoCore.Utils
                     throw;
                 }
                 // Linear backoff
-                NcTask.CancelableSleep (1000);
+                if (!NcTask.CancelableSleep (1000)) {
+                    NcTask.Cts.Token.ThrowIfCancellationRequested ();
+                }
                 return false;
             }
             return true;

@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Collections.Generic;
@@ -166,9 +166,9 @@ namespace NachoCore.Utils
             }
         }
 
-        public static void CancelableSleep (int msec)
+        public static bool CancelableSleep (int msec)
         {
-            CancelableSleep (msec, Cts.Token);
+            return CancelableSleep (msec, Cts.Token);
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using NUnit.Framework;
@@ -302,9 +302,10 @@ namespace Test.iOS
 
                 List<McFolder> emptyFoldersList = McFolder.QueryNonHiddenFoldersOfType (accountId, new Xml.FolderHierarchy.TypeCode[0]); //empty list
                 Assert.True (0 == emptyFoldersList.Count);
-
+                #pragma warning disable 0219
                 McFolder defaultEmailDraftsTwo = FolderOps.CreateFolder (accountId, typeCode: Xml.FolderHierarchy.TypeCode.DefaultDrafts_3, name: "honeydew-melon"); //flip-flop alphabetical order of insertions
                 McFolder defaultEmailDraftsThree = FolderOps.CreateFolder (accountId, typeCode: Xml.FolderHierarchy.TypeCode.DefaultDrafts_3, name: "guava");
+                #pragma warning restore 0219
                 nonHiddenDraftFolders = McFolder.QueryNonHiddenFoldersOfType (accountId, draftTypes);
 
                 Assert.True (4 == nonHiddenDraftFolders.Count);

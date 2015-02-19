@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Collections.Generic;
@@ -121,9 +121,9 @@ namespace NachoCore.Model
             NcModel.Instance.Db.Query<McMapEmailAddressEntry> (
                 "DELETE FROM McMapEmailAddressEntry " +
                 "WHERE AccountId = ? AND ObjectId = ? AND " +
-                "AddressType IN (?, ?, ?)", accountId, attendeeId,
+                "AddressType IN (?, ?, ?, ?)", accountId, attendeeId,
                 NcEmailAddress.Kind.Optional, NcEmailAddress.Kind.Required,
-                NcEmailAddress.Kind.Resource);
+                NcEmailAddress.Kind.Resource, NcEmailAddress.Kind.Unknown);
         }
 
         public static void DeleteMapEntries (int accountId, int objectId, NcEmailAddress.Kind addressType)

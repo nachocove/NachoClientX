@@ -1,8 +1,8 @@
-﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Drawing;
-using MonoTouch.UIKit;
+using CoreGraphics;
+using UIKit;
 
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -44,7 +44,7 @@ namespace NachoClient.iOS
             cell.Layer.MasksToBounds = true;
             cell.SelectionStyle = UITableViewCellSelectionStyle.Default;
 
-            var view = new SwipeActionView (new RectangleF (0, 0, tableView.Frame.Width, ROW_HEIGHT));
+            var view = new SwipeActionView (new CGRect (0, 0, tableView.Frame.Width, ROW_HEIGHT));
             view.BackgroundColor = UIColor.White;
             view.SetAction (CALL_BUTTON, SwipeSide.LEFT);
             view.SetAction (EMAIL_BUTTON, SwipeSide.RIGHT);
@@ -52,32 +52,32 @@ namespace NachoClient.iOS
 
             cell.ContentView.AddSubview (view);
 
-            UIButton toggleVipButton = new UIButton (new RectangleF (tableView.Frame.Right - 30, 10, 20, 20));
+            UIButton toggleVipButton = new UIButton (new CGRect (tableView.Frame.Right - 30, 10, 20, 20));
             toggleVipButton.Tag = SET_VIP_TAG;
             toggleVipButton.TouchUpInside += e;
             view.AddSubview (toggleVipButton);
 
-            var titleLabel = new UILabel (new RectangleF (HORIZONTAL_INDENT, 10, tableView.Frame.Width - 15 - HORIZONTAL_INDENT - toggleVipButton.Frame.Width - 8, 20));
+            var titleLabel = new UILabel (new CGRect (HORIZONTAL_INDENT, 10, tableView.Frame.Width - 15 - HORIZONTAL_INDENT - toggleVipButton.Frame.Width - 8, 20));
             titleLabel.TextColor = A.Color_NachoGreen;
             titleLabel.Font = A.Font_AvenirNextDemiBold17;
             titleLabel.LineBreakMode = UILineBreakMode.TailTruncation;
             titleLabel.Tag = TITLE_LABEL_TAG;
             view.AddSubview (titleLabel);
 
-            var subtitle1Label = new UILabel (new RectangleF (HORIZONTAL_INDENT, 35, titleLabel.Frame.Width, 20));
+            var subtitle1Label = new UILabel (new CGRect (HORIZONTAL_INDENT, 35, titleLabel.Frame.Width, 20));
             subtitle1Label.LineBreakMode = UILineBreakMode.TailTruncation;
             subtitle1Label.Font = A.Font_AvenirNextRegular14;
             subtitle1Label.Tag = SUBTITLE1_LABEL_TAG;
             view.AddSubview (subtitle1Label);
 
-            var subtitle2Label = new UILabel (new RectangleF (HORIZONTAL_INDENT, 55, titleLabel.Frame.Width, 20));
+            var subtitle2Label = new UILabel (new CGRect (HORIZONTAL_INDENT, 55, titleLabel.Frame.Width, 20));
             subtitle2Label.LineBreakMode = UILineBreakMode.TailTruncation;
             subtitle2Label.Font = A.Font_AvenirNextRegular14;
             subtitle2Label.Tag = SUBTITLE2_LABEL_TAG;
             view.AddSubview (subtitle2Label);
 
             // User userLabelView view, if no image
-            var userLabelView = new UILabel (new RectangleF (15, 10, 40, 40));
+            var userLabelView = new UILabel (new CGRect (15, 10, 40, 40));
             userLabelView.Font = A.Font_AvenirNextRegular24;
             userLabelView.TextColor = UIColor.White;
             userLabelView.TextAlignment = UITextAlignment.Center;
@@ -87,7 +87,7 @@ namespace NachoClient.iOS
             userLabelView.Tag = USER_LABEL_TAG;
             view.AddSubview (userLabelView);
 
-            var userImageView = new UIImageView (new RectangleF (15, 10, 40, 40));
+            var userImageView = new UIImageView (new CGRect (15, 10, 40, 40));
             userImageView.Layer.CornerRadius = 20;
             userImageView.Layer.MasksToBounds = true;
             userImageView.Tag = USER_PORTRAIT_TAG;
@@ -198,9 +198,11 @@ namespace NachoClient.iOS
                 switch (state) {
                 case SwipeActionView.SwipeState.SWIPE_BEGIN:
                     tableView.ScrollEnabled = false;
+                    cell.Layer.CornerRadius = 0;
                     break;
                 case SwipeActionView.SwipeState.SWIPE_END_ALL_HIDDEN:
                     tableView.ScrollEnabled = true;
+                    cell.Layer.CornerRadius = 15;
                     break;
                 case SwipeActionView.SwipeState.SWIPE_END_ALL_SHOWN:
                     tableView.ScrollEnabled = false;

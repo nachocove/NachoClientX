@@ -22,22 +22,22 @@
 // THE SOFTWARE.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Threading;
-using MonoTouch.UIKit;
-using MonoTouch.Foundation;
-using MonoTouch.CoreLocation;
-using System.Globalization;
-using System.Drawing;
-using NachoCore.Model;
-using NachoCore;
-using NachoCore.Utils;
-using System.Collections.Generic;
-using MonoTouch.CoreGraphics;
+using CoreGraphics;
+using CoreLocation;
+using CoreText;
+using Foundation;
 using NachoClient.iOS;
-using MonoTouch.CoreText;
+using NachoCore;
+using NachoCore.Model;
+using NachoCore.Utils;
+using UIKit;
 
 namespace NachoClient
 {
@@ -371,41 +371,41 @@ namespace NachoClient
 
         public static UIImage DotWithColor (UIColor color)
         {
-            UIGraphics.BeginImageContext (new SizeF (22, 22));
+            UIGraphics.BeginImageContext (new CGSize (22, 22));
             var ctx = UIGraphics.GetCurrentContext ();
 
             ctx.SetFillColor (color.CGColor);
-            ctx.FillEllipseInRect (new RectangleF (5, 5, 12, 12));
+            ctx.FillEllipseInRect (new CGRect (5, 5, 12, 12));
 
             var image = UIGraphics.GetImageFromCurrentImageContext ();
             UIGraphics.EndImageContext ();
             return image;
         }
 
-        public static UIImage DrawCalDot (UIColor circleColor, SizeF size)
+        public static UIImage DrawCalDot (UIColor circleColor, CGSize size)
         {
-            var origin = new PointF (0, 0);
+            var origin = new CGPoint (0, 0);
 
             UIGraphics.BeginImageContextWithOptions (size, false, 0);
             var ctx = UIGraphics.GetCurrentContext ();
 
             ctx.SetFillColor (circleColor.CGColor);
-            ctx.FillEllipseInRect (new RectangleF (origin, size));
+            ctx.FillEllipseInRect (new CGRect (origin, size));
 
             var image = UIGraphics.GetImageFromCurrentImageContext ();
             UIGraphics.EndImageContext ();
             return image;
         }
 
-        public static UIImage DrawButtonBackgroundImage (UIColor color, SizeF size)
+        public static UIImage DrawButtonBackgroundImage (UIColor color, CGSize size)
         {
-            var origin = new PointF (0, 0);
+            var origin = new CGPoint (0, 0);
 
             UIGraphics.BeginImageContextWithOptions (size, false, 0);
             var ctx = UIGraphics.GetCurrentContext ();
 
             ctx.SetFillColor (color.CGColor);
-            ctx.FillRect (new RectangleF (origin, size));
+            ctx.FillRect (new CGRect (origin, size));
 
             var image = UIGraphics.GetImageFromCurrentImageContext ();
             UIGraphics.EndImageContext ();
@@ -414,8 +414,8 @@ namespace NachoClient
 
         public static UIImage DrawTodayButtonImage (string day)
         {
-            var size = new SizeF (24, 24);
-            var origin = new PointF (0, 0);
+            var size = new CGSize (24, 24);
+            var origin = new CGPoint (0, 0);
 
             var todayImage = UIImage.FromBundle ("calendar-empty-cal-alt");
 
@@ -428,7 +428,7 @@ namespace NachoClient
             var ctx = UIGraphics.GetCurrentContext ();
             ctx.TranslateCTM (0, todayImage.Size.Height);
             ctx.ScaleCTM (1, -1);
-            ctx.DrawImage (new RectangleF (origin, size), todayImage.CGImage);
+            ctx.DrawImage (new CGRect (origin, size), todayImage.CGImage);
 
             ctx.TranslateCTM ((todayImage.Size.Width / 2) - (attributedString.Size.Width / 2), (todayImage.Size.Height / 2) - (attributedString.Size.Height / 2) + 5);
             using (var textLine = new CTLine (attributedString)) {
@@ -626,7 +626,7 @@ namespace NachoClient
 
         public static UIImage MakeCheckmark (UIColor checkColor)
         {
-            var size = new SizeF (15, 15);
+            var size = new CGSize (15, 15);
 
             UIGraphics.BeginImageContextWithOptions (size, false, 0);
             var g = UIGraphics.GetCurrentContext ();
@@ -640,10 +640,10 @@ namespace NachoClient
             //create geometry
             var checkmark = new CGPath ();
 
-            checkmark.AddLines (new PointF[] {
-                new PointF (0, 10),
-                new PointF (5, 15), 
-                new PointF (15, 0)
+            checkmark.AddLines (new CGPoint[] {
+                new CGPoint (0, 10),
+                new CGPoint (5, 15), 
+                new CGPoint (15, 0)
             });
 
             //checkmark.CloseSubpath ();
@@ -660,7 +660,7 @@ namespace NachoClient
 
         public static UIImage MakeArrow (UIColor arrowColor)
         {
-            var size = new SizeF (15, 15);
+            var size = new CGSize (15, 15);
 
             UIGraphics.BeginImageContextWithOptions (size, false, 0);
             var g = UIGraphics.GetCurrentContext ();
@@ -669,10 +669,10 @@ namespace NachoClient
             arrowColor.SetStroke ();
             var arrow = new CGPath ();
 
-            arrow.AddLines (new PointF[] {
-                new PointF (6, 2),
-                new PointF (15, 8), 
-                new PointF (6, 13)
+            arrow.AddLines (new CGPoint[] {
+                new CGPoint (6, 2),
+                new CGPoint (15, 8), 
+                new CGPoint (6, 13)
             });
             g.AddPath (arrow);
             g.DrawPath (CGPathDrawingMode.Stroke);
@@ -683,42 +683,31 @@ namespace NachoClient
 
         }
 
-        public static void AddArrowAccessory (float xOffset, float yOffset, float size, UIView parentView)
+        public static UIImageView AddArrowAccessory (nfloat xOffset, nfloat yOffset, nfloat size, UIView parentView = null)
         {
-            UIImageView ArrowAcccessoryImage = new UIImageView (new RectangleF (xOffset, yOffset, size, size));
+            UIImageView ArrowAcccessoryImage = new UIImageView (new CGRect (xOffset, yOffset, size, size));
             using (var image = UIImage.FromBundle ("gen-more-arrow")) {
                 ArrowAcccessoryImage.Image = image;
             }
-            parentView.AddSubview (ArrowAcccessoryImage);
-        }
-
-        public static UIImageView AddArrowAccessoryView (float xOffset, float yOffset, float size)
-        {
-            UIImageView ArrowAcccessoryImage = new UIImageView (new RectangleF (xOffset, yOffset, size, size));
-            using (var image = UIImage.FromBundle ("gen-more-arrow")) {
-                ArrowAcccessoryImage.Image = image;
+            if (null != parentView) {
+                parentView.AddSubview (ArrowAcccessoryImage);
             }
             return ArrowAcccessoryImage;
         }
 
-        public static UIView AddHorizontalLineView (float offset, float yVal, float width, UIColor color)
+        public static UIView AddHorizontalLine (nfloat offset, nfloat yVal, nfloat width, UIColor color, UIView parentView = null)
         {
-            var lineUIView = new UIView (new RectangleF (offset, yVal, width, .5f));
+            var lineUIView = new UIView (new CGRect (offset, yVal, width, .5f));
             lineUIView.BackgroundColor = color;
+            if (null != parentView) {
+                parentView.Add (lineUIView);
+            }
             return lineUIView;
         }
 
-        public static UIView AddHorizontalLine (float offset, float yVal, float width, UIColor color, UIView parentView)
+        public static UIView AddVerticalLine (nfloat offset, nfloat yVal, nfloat height, UIColor color, UIView parentView)
         {
-            var lineUIView = new UIView (new RectangleF (offset, yVal, width, .5f));
-            lineUIView.BackgroundColor = color;
-            parentView.Add (lineUIView);
-            return lineUIView;
-        }
-
-        public static UIView AddVerticalLine (float offset, float yVal, float height, UIColor color, UIView parentView)
-        {
-            var lineUIView = new UIView (new RectangleF (offset, yVal, .5f, height));
+            var lineUIView = new UIView (new CGRect (offset, yVal, .5f, height));
             lineUIView.BackgroundColor = color;
             parentView.Add (lineUIView);
             return lineUIView;
@@ -741,62 +730,11 @@ namespace NachoClient
             }
         }
 
-        public static void SetViewHeight (UIView view, float height)
+        public static void SetViewHeight (UIView view, nfloat height)
         {
             var frame = view.Frame;
             frame.Height = height;
             view.Frame = frame;
-        }
-
-        public static string GlobalObjIdToUID (string GlobalObjId)
-        {
-            string UID;
-            bool OutlookID = false;
-
-            byte[] data = Convert.FromBase64String (GlobalObjId);
-
-            StringBuilder sb = new StringBuilder ();
-            for (int i = 40; i < 48; i++) {
-                sb.Append (Convert.ToChar (data [i]));
-            }
-            string vCalHolder = sb.ToString ();
-
-            int uidHolderLength = 0;
-            for (int i = 36; i < 40; i++) {
-                uidHolderLength += data [i];
-            }
-
-            int remainingLength = 0;
-            for (int i = 40; i < data.Length; i++) {
-                remainingLength += 1;
-            }
-
-            if (53 > data.Length) {
-                OutlookID = true;
-            } else if ("vCal-Uid" != vCalHolder) {
-                OutlookID = true;
-            } else if (13 > uidHolderLength || remainingLength < uidHolderLength) {
-                OutlookID = true;
-            }
-
-            if (OutlookID) {
-                for (int i = 16; i < 20; i++) {
-                    data [i] = 0;
-                }
-                UID = BitConverter.ToString (data);
-            } else {
-                sb.Clear ();
-                int uidLength = uidHolderLength - 13;
-                for (int i = 0; i < uidLength; i++) {
-                    sb.Append (Convert.ToChar (data [52 + i]));
-                }
-                UID = sb.ToString ();
-            }
-
-            UID = UID.Replace ("-", "");
-            UID = UID.Replace ("{", "");
-            UID = UID.Replace ("}", "");
-            return UID;
         }
 
         public static void SetAutomaticImageForButton (UIBarButtonItem button, string iconName)
@@ -838,7 +776,7 @@ namespace NachoClient
         {
             using (var image = UIImage.FromBundle ("nav-backarrow")) {
                 UIBarButtonItem backButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, (sender, args) => {
-                    nc.PopViewControllerAnimated (true);
+                    nc.PopViewController (true);
                 });
                 backButton.TintColor = tintColor;
                 ni.SetLeftBarButtonItem (backButton, true);
@@ -960,27 +898,27 @@ namespace NachoClient
             }
         }
 
-        public static void AddTextLabel (float xOffset, float yOffset, float width, float height, string text, UIView parentView)
+        public static void AddTextLabel (nfloat xOffset, nfloat yOffset, nfloat width, nfloat height, string text, UIView parentView)
         {
-            var textLabel = new UILabel (new RectangleF (xOffset, yOffset, width, height));
+            var textLabel = new UILabel (new CGRect (xOffset, yOffset, width, height));
             textLabel.Text = text;
             textLabel.Font = A.Font_AvenirNextRegular14;
             textLabel.TextColor = A.Color_NachoLightText;
             parentView.AddSubview (textLabel);
         }
 
-        public static void AddTextLabelWithImageView (float yOffset, string text, string imageName, EventViewController.TagType tag, UIView parentView)
+        public static void AddTextLabelWithImageView (nfloat yOffset, string text, string imageName, EventViewController.TagType tag, UIView parentView)
         {
-            var view = new UIView (new RectangleF (0, yOffset, parentView.Frame.Width, 16));
+            var view = new UIView (new CGRect (0, yOffset, parentView.Frame.Width, 16));
             view.Tag = (int)tag;
 
-            var textLabel = new UILabel (new RectangleF (42, 0, 100, 16));
+            var textLabel = new UILabel (new CGRect (42, 0, 100, 16));
             textLabel.Text = text;
             textLabel.Font = A.Font_AvenirNextMedium12;
             textLabel.TextColor = A.Color_NachoLightText;
             view.AddSubview (textLabel);
 
-            var imageView = new UIImageView (new RectangleF (18, 0, 16, 16));
+            var imageView = new UIImageView (new CGRect (18, 0, 16, 16));
             using (var image = UIImage.FromBundle (imageName)) {
                 imageView.Image = image;
             }
@@ -989,21 +927,21 @@ namespace NachoClient
             parentView.AddSubview (view);
         }
 
-        public static void AddDetailTextLabel (float xOffset, float yOffset, float width, float height, EventViewController.TagType tag, UIView parentView)
+        public static void AddDetailTextLabel (nfloat xOffset, nfloat yOffset, nfloat width, nfloat height, EventViewController.TagType tag, UIView parentView)
         {
-            var textLabel = new UILabel (new RectangleF (xOffset, yOffset, width, height));
+            var textLabel = new UILabel (new CGRect (xOffset, yOffset, width, height));
             textLabel.Font = A.Font_AvenirNextRegular14;
             textLabel.TextColor = A.Color_NachoDarkText;
             textLabel.Tag = (int)tag;
             parentView.AddSubview (textLabel);
         }
 
-        public static void CreateAttendeeButton (float attendeeImageDiameter, float spacing, float titleOffset, McAttendee attendee, int attendeeNum, bool isOrganizer, UIView parentView)
+        public static void CreateAttendeeButton (nfloat attendeeImageDiameter, nfloat spacing, nfloat titleOffset, McAttendee attendee, int attendeeNum, bool isOrganizer, UIView parentView)
         {
             var attendeeButton = UIButton.FromType (UIButtonType.RoundedRect);
             attendeeButton.Layer.CornerRadius = attendeeImageDiameter / 2;
             attendeeButton.Layer.MasksToBounds = true;
-            attendeeButton.Frame = new RectangleF (42 + spacing, 10 + titleOffset, attendeeImageDiameter, attendeeImageDiameter);
+            attendeeButton.Frame = new CGRect (42 + spacing, 10 + titleOffset, attendeeImageDiameter, attendeeImageDiameter);
             var userImage = Util.ImageOfSender (LoginHelpers.GetCurrentAccountId (), attendee.Email);
 
             if (null != userImage) {
@@ -1029,7 +967,7 @@ namespace NachoClient
             attendeeButton.UserInteractionEnabled = false;
             parentView.AddSubview (attendeeButton);
 
-            var attendeeName = new UILabel (new RectangleF (42 + spacing, 65 + titleOffset, attendeeImageDiameter, 15));
+            var attendeeName = new UILabel (new CGRect (42 + spacing, 65 + titleOffset, attendeeImageDiameter, 15));
             attendeeName.Font = A.Font_AvenirNextRegular14;
             attendeeName.TextColor = UIColor.LightGray;
             attendeeName.Tag = (int)EventViewController.TagType.EVENT_ATTENDEE_LABEL_TAG + attendeeNum;
@@ -1042,18 +980,18 @@ namespace NachoClient
             // can be displayed.  If the user is not the organizer, then the attendees'
             // status is not known, so we don't want to display a blank circle.
             if (isOrganizer) {
-                var responseView = new UIView (new RectangleF (42 + spacing + 27, 37 + titleOffset, 20, 20));
+                var responseView = new UIView (new CGRect (42 + spacing + 27, 37 + titleOffset, 20, 20));
                 responseView.Tag = (int)EventViewController.TagType.EVENT_ATTENDEE_LABEL_TAG + attendeeNum + 200;
                 responseView.BackgroundColor = UIColor.White;
                 responseView.Layer.CornerRadius = 10;
                 parentView.AddSubview (responseView);
-                var circleView = new UIView (new RectangleF (2.5f, 2.5f, 15, 15));
+                var circleView = new UIView (new CGRect (2.5f, 2.5f, 15, 15));
                 circleView.BackgroundColor = UIColor.White;
                 circleView.Layer.CornerRadius = 15 / 2;
                 circleView.Layer.BorderColor = A.Color_NachoLightGrayBackground.CGColor;
                 circleView.Layer.BorderWidth = 1;
                 responseView.AddSubview (circleView);
-                var responseImageView = new UIImageView (new RectangleF (2.5f, 2.5f, 15, 15));
+                var responseImageView = new UIImageView (new CGRect (2.5f, 2.5f, 15, 15));
                 responseImageView.Tag = (int)EventViewController.TagType.EVENT_ATTENDEE_LABEL_TAG + attendeeNum + 100;
                 using (var image = GetImageForAttendeeResponse (attendee.AttendeeStatus)) {
                     if (null != image) {
@@ -1187,6 +1125,36 @@ namespace NachoClient
             return match.IsEqual (t);
         }
 
+        public static int ToMcModelIndex (this NSNumber number)
+        {
+            return number.Int32Value;
+        }
+
+        public static int ToArrayIndex (this nint n)
+        {
+            return (int)n;
+        }
+
+        public static NSDate ToNSDate (this DateTime dateTime)
+        {
+            return NSDate.FromTimeIntervalSinceReferenceDate ((dateTime - (new DateTime (2001, 1, 1, 0, 0, 0))).TotalSeconds);
+        }
+
+        public static DateTime ToDateTime (this NSDate nsDate)
+        {
+            // TODO: Why not just a cast?
+            return (new DateTime (2001, 1, 1, 0, 0, 0)).AddSeconds (nsDate.SecondsSinceReferenceDate);
+        }
+
+        public static string PrettyPointF (CGPoint p)
+        {
+            return String.Format ("({0},{1})", p.X, p.Y);
+        }
+
+        public static string PrettySizeF (CGSize s)
+        {
+            return String.Format ("({0},{1})", s.Width, s.Height);
+        }
 
         #endregion
     }

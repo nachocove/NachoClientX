@@ -1,8 +1,8 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Drawing;
-using MonoTouch.UIKit;
+using CoreGraphics;
+using UIKit;
 
 namespace NachoClient.iOS
 {
@@ -36,9 +36,9 @@ namespace NachoClient.iOS
 
         public StateChangedCallback StateChanged;
             
-        public ExpandButton (PointF upperLeftCorner, bool isExpanded = true) : base ()
+        public ExpandButton (CGPoint upperLeftCorner, bool isExpanded = true) : base ()
         {
-            Frame = new RectangleF (upperLeftCorner, new SizeF (WIDTH, HEIGHT));
+            Frame = new CGRect (upperLeftCorner, new CGSize (WIDTH, HEIGHT));
             Expanded = isExpanded;
             this.TouchDown += (object sender, EventArgs e) => {
                 Expanded = !Expanded;

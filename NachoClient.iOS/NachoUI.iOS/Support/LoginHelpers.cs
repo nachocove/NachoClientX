@@ -1,9 +1,9 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using NachoCore.Model;
 using NachoClient;
-using MonoTouch.UIKit;
+using UIKit;
 using NachoCore;
 using NachoCore.Utils;
 
@@ -102,21 +102,14 @@ namespace NachoClient.iOS
         // We want to fail if someone just plucks a null
         static public int GetCurrentAccountId ()
         {
-            NachoClient.iOS.AppDelegate appDelegate = (NachoClient.iOS.AppDelegate)UIApplication.SharedApplication.Delegate;
             NcAssert.True (null != NcApplication.Instance.Account);
-
             return NcApplication.Instance.Account.Id;
         }
 
         // Pre-req before calling GetCurrentAccountId
         static public bool IsCurrentAccountSet ()
         {
-            NachoClient.iOS.AppDelegate appDelegate = (NachoClient.iOS.AppDelegate)UIApplication.SharedApplication.Delegate;
-            if (null != NcApplication.Instance.Account) {
-                return true;
-            } else {
-                return false;
-            }
+            return (null != NcApplication.Instance.Account);
         }
     }
 }

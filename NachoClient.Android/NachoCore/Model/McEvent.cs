@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using SQLite;
@@ -24,8 +24,10 @@ namespace NachoCore.Model
         [Indexed]
         public DateTime ReminderTime { get; set; }
 
+        [Indexed]
         public int CalendarId { get; set; }
 
+        [Indexed]
         public int ExceptionId { get; set; }
 
         static public McEvent Create (int accountId, DateTime startTime, DateTime endTime, int calendarId, int exceptionId)
@@ -69,7 +71,15 @@ namespace NachoCore.Model
 
         public static McEvent GetCurrentOrNextEvent()
         {
-            return NcModel.Instance.Db.Table<McEvent> ().Where (x => x.EndTime >= DateTime.UtcNow).OrderBy (x => x.StartTime).FirstOrDefault ();
+            foreach (var evt in NcModel.Instance.Db.Table<McEvent> ().Where (x => x.EndTime >= DateTime.UtcNow).OrderBy (x => x.StartTime)) {
+                var cal = evt.GetCalendarItemforEvent ();
+                if (null != cal && NcMeetingStatus.MeetingCancelled != cal.MeetingStatus && NcMeetingStatus.ForwardedMeetingCancelled != cal.MeetingStatus) {
+                    // An event that hasn't been canceled.  This is what we are looking for.
+                    return evt;
+                }
+                // The event was canceled.  Go to the next one in the list.
+            }
+            return null;
         }
 
         /// <summary>

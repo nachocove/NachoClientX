@@ -2,8 +2,8 @@
 
 using System;
 using System.Linq;
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -12,8 +12,8 @@ namespace NachoClient.iOS
 {
     public partial class StartupViewController : NcUIViewController
     {
-        UIProgressView ProgressBar = null;
-        UITextView TextField = null;
+        UIProgressView MigrationProgressBar = null;
+        UITextView MigrationMessageTextView = null;
 
         public StartupViewController (IntPtr handle) : base (handle)
         {
@@ -25,11 +25,12 @@ namespace NachoClient.iOS
         public override void ViewDidLoad ()
         {
             base.ViewDidLoad ();
-            if (NcApplication.ExecutionContextEnum.Migrating != NcApplication.Instance.ExecutionContext) {
+            if (NcApplication.Instance.IsUp ()) {
                 var segueIdentifer = NextSegue ();
-                Log.Info (Log.LOG_UI, "StartupViewController: PerformSegue({0})", segueIdentifer);
+                Log.Info (Log.LOG_UI, "svc: PerformSegue({0})", segueIdentifer);
                 PerformSegue (NextSegue (), this);
             } else {
+                CreateView ();
                 NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
             }
         }
@@ -73,7 +74,6 @@ namespace NachoClient.iOS
             }
         }
 
-
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
@@ -85,6 +85,11 @@ namespace NachoClient.iOS
         public override void ViewDidAppear (bool animated)
         {
             base.ViewDidAppear (animated);
+            ConfigureView ();
+        }
+
+        public void CreateView ()
+        {
             // We need to migrate. Put up a spinner until this is done.
             this.NavigationItem.Title = "Upgrade";
             this.View.BackgroundColor = A.Color_NachoGreen;
@@ -103,25 +108,41 @@ namespace NachoClient.iOS
             var frame = this.View.Frame;
             var halfHeight = frame.Height / 2.0f;
 
-            TextField = new UITextView ();
-            ViewFramer.Create (TextField)
+            MigrationMessageTextView = new UITextView ();
+            ViewFramer.Create (MigrationMessageTextView)
                 .X (0)
                 .Y (halfHeight - 35.0f)
                 .Width (frame.Width)
                 .Height (35.0f);
-            TextField.TextColor = UIColor.White;
-            TextField.Font = A.Font_AvenirNextRegular14;
-            TextField.Text = String.Format ("Updating your app with latest features... (1 of {0})",
+            MigrationMessageTextView.TextColor = UIColor.White;
+            MigrationMessageTextView.Font = A.Font_AvenirNextRegular14;
+            MigrationMessageTextView.Text = String.Format ("Updating your app with latest features... (1 of {0})",
                 NcMigration.NumberOfMigrations);
-            TextField.BackgroundColor = A.Color_NachoGreen;
-            TextField.TextAlignment = UITextAlignment.Center;
+            MigrationMessageTextView.BackgroundColor = A.Color_NachoGreen;
+            MigrationMessageTextView.TextAlignment = UITextAlignment.Center;
 
-            ProgressBar = new UIProgressView (frame);
-            ViewFramer.Create (ProgressBar).Y (halfHeight + 10.0f).AdjustHeight (20.0f);
-            ProgressBar.ProgressTintColor = A.Color_NachoYellow;
-            ProgressBar.TrackTintColor = A.Color_NachoIconGray;
-            this.Add (TextField);
-            this.Add (ProgressBar);
+            MigrationProgressBar = new UIProgressView (frame);
+            ViewFramer.Create (MigrationProgressBar).Y (halfHeight + 10.0f).AdjustHeight (20.0f);
+            MigrationProgressBar.ProgressTintColor = A.Color_NachoYellow;
+            MigrationProgressBar.TrackTintColor = A.Color_NachoIconGray;
+            this.Add (MigrationMessageTextView);
+            this.Add (MigrationProgressBar);
+        }
+
+        void ConfigureView ()
+        {
+            if (NcApplication.ExecutionContextEnum.Migrating == NcApplication.Instance.ExecutionContext) {
+                this.NavigationItem.Title = "Upgrade";
+                MigrationMessageTextView.Hidden = false;
+                MigrationProgressBar.Hidden = false;
+            } else if (NcApplication.ExecutionContextEnum.Initializing == NcApplication.Instance.ExecutionContext) {
+                this.NavigationItem.Title = "Initializing";
+                MigrationMessageTextView.Hidden = true;
+                MigrationProgressBar.Hidden = true;
+            } else {
+                this.NavigationItem.Title = "Initialization";
+            }
+            Log.Info (Log.LOG_UI, "svc: {0}", NcApplication.Instance.ExecutionContext);
         }
 
         public void StatusIndicatorCallback (object sender, EventArgs e)
@@ -129,31 +150,32 @@ namespace NachoClient.iOS
             var s = (StatusIndEventArgs)e;
             if (NcResult.SubKindEnum.Info_ExecutionContextChanged == s.Status.SubKind) {
                 var execContext = (NcApplication.ExecutionContextEnum)s.Status.Value;
-                if ((NcApplication.ExecutionContextEnum.Initializing != execContext) &&
-                    (NcApplication.ExecutionContextEnum.Migrating != execContext)) {
+                if (NcApplication.Instance.IsUp ()) {
                     InvokeOnMainThread (() => {
-                        if (null != ProgressBar) {
-                            ProgressBar.Hidden = false;
+                        if (null != MigrationProgressBar) {
+                            MigrationProgressBar.Hidden = false;
                         }
                         PerformSegue (NextSegue (), this);
                     });
+                } else {
+                    ConfigureView ();
                 }
             }
             if (NcResult.SubKindEnum.Info_MigrationProgress == s.Status.SubKind) {
                 var percentage = (float)s.Status.Value;
-                if (null != ProgressBar) {
+                if (null != MigrationProgressBar) {
                     InvokeOnMainThread (() => {
                         // Skip animation for 0%. That happens right before starting
                         // the next migration. Animation when rewinding to 0% looks weird
-                        ProgressBar.SetProgress (percentage, 0.0 != percentage);
+                        MigrationProgressBar.SetProgress (percentage, 0.0 != percentage);
                     });
                 }
             }
             if (NcResult.SubKindEnum.Info_MigrationDescription == s.Status.SubKind) {
                 var description = (string)s.Status.Value;
-                if (null != TextField) {
+                if (null != MigrationMessageTextView) {
                     InvokeOnMainThread (() => {
-                        TextField.Text = description;
+                        MigrationMessageTextView.Text = description;
                     });
                 }
             }

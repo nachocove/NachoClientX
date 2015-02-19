@@ -1,8 +1,8 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using MonoTouch.UIKit;
-using MonoTouch.Foundation;
+using UIKit;
+using Foundation;
 
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -17,7 +17,7 @@ namespace NachoClient.iOS
 
         void PerformSegueForAttachmentBlock (string identifier, SegueHolder segueHolder);
 
-        void PresentViewControllerForAttachmentBlock (UIViewController viewControllerToPresent, bool animated, NSAction completionHandler);
+        void PresentViewControllerForAttachmentBlock (UIViewController viewControllerToPresent, bool animated, Action completionHandler);
     }
 }
 

@@ -1,10 +1,10 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Linq;
-using System.Drawing;
-using MonoTouch.UIKit;
-using MonoTouch.Foundation;
+using CoreGraphics;
+using UIKit;
+using Foundation;
 using System.Collections.Generic;
 using NachoCore.Model;
 using NachoCore;
@@ -135,7 +135,7 @@ namespace NachoClient.iOS
         /// <summary>
         /// Tableview delegate
         /// </summary>
-        public override int NumberOfSections (UITableView tableView)
+        public override nint NumberOfSections (UITableView tableView)
         {
             if (SearchDisplayController.SearchResultsTableView == tableView) {
                 return 1;
@@ -143,7 +143,7 @@ namespace NachoClient.iOS
             return ((null == recent) ? 0 : 1) + (multipleSections ? 27 : 1);
         }
 
-        public override float GetHeightForHeader (UITableView tableView, int section)
+        public override nfloat GetHeightForHeader (UITableView tableView, nint section)
         {
             if (SearchDisplayController.SearchResultsTableView == tableView) {
                 return 0;
@@ -155,13 +155,13 @@ namespace NachoClient.iOS
             }
         }
 
-        public override UIView GetViewForHeader (UITableView tableView, int section)
+        public override UIView GetViewForHeader (UITableView tableView, nint section)
         {
             if (!multipleSections && (null == recent)) {
-                return new UIView (new RectangleF (0, 0, 0, 0));
+                return new UIView (new CGRect (0, 0, 0, 0));
             }
             if (SearchDisplayController.SearchResultsTableView == tableView) {
-                return new UIView (new RectangleF (0, 0, 0, 0));
+                return new UIView (new CGRect (0, 0, 0, 0));
             }
 //            if ((null != recent) && (0 == section)) {
 //                using(var image = UIImage.FromBundle("contacts-recent")) {
@@ -173,21 +173,21 @@ namespace NachoClient.iOS
 //                    return viewX;
 //                }            
 //            }
-            var view = new UIView (new RectangleF (0, 0, tableView.Frame.Width, 32));
+            var view = new UIView (new CGRect (0, 0, tableView.Frame.Width, 32));
             var label = new UILabel ();
             label.Font = A.Font_AvenirNextDemiBold17;
             label.Text = TitleForHeader (tableView, section);
             label.SizeToFit ();
-            label.Center = new PointF (15 + (label.Frame.Width / 2), 10);
+            label.Center = new CGPoint (15 + (label.Frame.Width / 2), 10);
             view.AddSubview (label);
             return view;
         }
 
-        public override string TitleForHeader (UITableView tableView, int section)
+        public override string TitleForHeader (UITableView tableView, nint section)
         {
             String header = "ABCDEFGHIJKLMNOPQRSTUVWXYZ#";
 
-            var n = section;
+            var n = (int)section;
             if (null != recent) {
                 if (0 == section) {
                     return "Recent";
@@ -200,7 +200,7 @@ namespace NachoClient.iOS
         /// <summary>
         /// The number of rows in the specified section.
         /// </summary>
-        public override int RowsInSection (UITableView tableview, int section)
+        public override nint RowsInSection (UITableView tableview, nint section)
         {
             int rows;
 
@@ -302,7 +302,7 @@ namespace NachoClient.iOS
             return imageView;
         }
 
-        public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
+        public override nfloat GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
         {
             return ContactCell.ROW_HEIGHT;
         }
@@ -370,7 +370,7 @@ namespace NachoClient.iOS
         /// <param name="forSearchOption">Index of the selected tab.</param>
         /// <param name="forSearchString">The prefix string to search for.</param>
         /// <param name="doGalSearch">True if it should issue a GAL search as well</param>.
-        public bool UpdateSearchResults (int forSearchOption, string forSearchString, bool doGalSearch = true)
+        public bool UpdateSearchResults (nint forSearchOption, string forSearchString, bool doGalSearch = true)
         {
             NachoCore.Utils.NcAbate.HighPriority ("ContactTableViewSource UpdateSearchResults");
             if ((null != account) && doGalSearch) {
@@ -416,7 +416,7 @@ namespace NachoClient.iOS
                 this.owner = owner;
             }
 
-            public override bool ShouldReloadForSearchScope (UISearchDisplayController controller, int forSearchOption)
+            public override bool ShouldReloadForSearchScope (UISearchDisplayController controller, nint forSearchOption)
             {
                 // TODO: Trigger asynch search & return false
                 string searchString = controller.SearchBar.Text;
@@ -425,7 +425,7 @@ namespace NachoClient.iOS
 
             public override bool ShouldReloadForSearchString (UISearchDisplayController controller, string forSearchString)
             {
-                int searchOption = controller.SearchBar.SelectedScopeButtonIndex;
+                var searchOption = controller.SearchBar.SelectedScopeButtonIndex;
                 return owner.UpdateSearchResults (searchOption, forSearchString);
             }
         }
