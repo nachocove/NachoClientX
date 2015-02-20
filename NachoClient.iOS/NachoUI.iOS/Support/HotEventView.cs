@@ -1,11 +1,11 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Drawing;
+using CoreGraphics;
 using System.Linq;
 using System.Collections.Generic;
 
-using MonoTouch.UIKit;
+using UIKit;
 
 using NachoCore;
 using NachoCore.Model;
@@ -48,7 +48,7 @@ namespace NachoClient.iOS
             new SwipeActionDescriptor (FORWARD_TAG, 0.5f, UIImage.FromBundle (A.File_NachoSwipeForward),
                 "Forward", A.Color_NachoeSwipeForward);
 
-        public HotEventView (RectangleF rect) : base (rect)
+        public HotEventView (CGRect rect) : base (rect)
         {
             var cellWidth = rect.Width;
 
@@ -63,31 +63,31 @@ namespace NachoClient.iOS
             view.SetAction (FORWARD_BUTTON, SwipeSide.RIGHT);
 
             // Dot image view
-            var dotView = new UIImageView (new RectangleF (30, 20, 9, 9));
+            var dotView = new UIImageView (new CGRect (30, 20, 9, 9));
             dotView.Tag = DOT_TAG;
             view.AddSubview (dotView);
 
             // Subject label view
-            var subjectLabelView = new UILabel (new RectangleF (56, 15, cellWidth - 56, 20));
+            var subjectLabelView = new UILabel (new CGRect (56, 15, cellWidth - 56, 20));
             subjectLabelView.Font = A.Font_AvenirNextDemiBold17;
             subjectLabelView.TextColor = A.Color_0F424C;
             subjectLabelView.Tag = SUBJECT_TAG;
             view.AddSubview (subjectLabelView);
 
             // Location image view
-            var iconView = new UIImageView (new RectangleF (30, 40, 12, 12));
+            var iconView = new UIImageView (new CGRect (30, 40, 12, 12));
             iconView.Tag = ICON_TAG;
             iconView.Image = UIImage.FromBundle ("cal-icn-pin");
             view.AddSubview (iconView);
 
             // Location label view
-            var labelView = new UILabel (new RectangleF (56, 37, cellWidth - 56, 20));
+            var labelView = new UILabel (new CGRect (56, 37, cellWidth - 56, 20));
             labelView.Font = A.Font_AvenirNextRegular14;
             labelView.TextColor = A.Color_0F424C;
             labelView.Tag = TEXT_TAG;
             view.AddSubview (labelView);
 
-            var bottomLine = new UIView (new RectangleF (0, this.Frame.Height - 1, this.Frame.Width, 1));
+            var bottomLine = new UIView (new CGRect (0, this.Frame.Height - 1, this.Frame.Width, 1));
             bottomLine.BackgroundColor = A.Color_NachoBackgroundGray;
             view.AddSubview (bottomLine);
 
@@ -161,7 +161,7 @@ namespace NachoClient.iOS
             var subject = Pretty.SubjectString (c.Subject);
             subjectLabelView.Text = subject;
 
-            var size = new SizeF (10, 10);
+            var size = new CGSize (10, 10);
             dotView.Image = Util.DrawCalDot (A.Color_CalDotBlue, size);
             dotView.Hidden = false;
 

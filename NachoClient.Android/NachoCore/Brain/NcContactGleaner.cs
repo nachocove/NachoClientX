@@ -26,8 +26,6 @@ namespace NachoCore.Brain
         public const int GLEAN_PERIOD = 10;
         private const uint MaxSaneAddressLength = 40;
 
-        private static object LockObj = new object ();
-
         #pragma warning disable 414
         private static NcTimer Invoker;
         #pragma warning restore 414
@@ -98,27 +96,29 @@ namespace NachoCore.Brain
                 Log.Warn (Log.LOG_BRAIN, "gleaning folder is null");
                 return;
             }
-            lock (LockObj) {
-                var gleanedContact = new McContact () {
-                    AccountId = accountId,
-                    Source = McAbstrItem.ItemSource.Internal,
-                };
-                gleanedContact.AddEmailAddressAttribute (accountId, "Email1Address", null, mbAddr.Address);
-                NcEmailAddress.SplitName (mbAddr, ref gleanedContact);
+            var gleanedContact = new McContact () {
+                AccountId = accountId,
+                Source = McAbstrItem.ItemSource.Internal,
+            };
 
+            gleanedContact.AddEmailAddressAttribute (accountId, "Email1Address", null, mbAddr.Address);
+            NcEmailAddress.SplitName (mbAddr, ref gleanedContact);
+
+            NcModel.Instance.RunInTransaction (() => {
                 // Check if the contact is a duplicate
+                var isDup = false;
                 var contactList = McContact.QueryGleanedContactsByEmailAddress (accountId, mbAddr.Address);
                 foreach (var contact in contactList) {
                     if (gleanedContact.HasSameName (contact)) {
-                        return; // this gleaned contact already exists
+                        isDup = true;
+                        break;
                     }
                 }
-
-                NcModel.Instance.RunInTransaction (() => {
+                if (!isDup) {
                     gleanedContact.Insert ();
                     gleanedFolder.Link (gleanedContact);
-                });
-            }
+                }
+            });
         }
 
 

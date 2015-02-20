@@ -1,7 +1,7 @@
 // # Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using MonoTouch.Foundation;
+using Foundation;
 
 namespace NachoPlatform
 {
@@ -28,7 +28,7 @@ namespace NachoPlatform
 
         public void Invoke (Action action)
         {
-            this.BeginInvokeOnMainThread (new NSAction (action));
+            this.BeginInvokeOnMainThread (new Action (action));
         }
     }
 }

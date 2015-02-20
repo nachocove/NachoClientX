@@ -2,8 +2,9 @@
 //
 using System;
 using System.Drawing;
-using MonoTouch.UIKit;
-using MonoTouch.Foundation;
+using UIKit;
+using Foundation;
+using CoreGraphics;
 using System.Collections.Generic;
 using NachoCore.Model;
 using NachoCore;
@@ -16,7 +17,7 @@ namespace NachoClient.iOS
         INachoEmailMessages messageThreads;
         protected const string UICellReuseIdentifier = "UICell";
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
-        protected HashSet<int> MultiSelect = null;
+        protected HashSet<nint> MultiSelect = null;
         protected bool multiSelectAllowed;
         protected bool multiSelectActive;
         protected bool swipingActive;
@@ -53,7 +54,7 @@ namespace NachoClient.iOS
         {
             owner = null;
             multiSelectAllowed = true;
-            MultiSelect = new HashSet<int> ();
+            MultiSelect = new HashSet<nint> ();
             ArchiveMessageCaptureName = "MessageTableViewSource.ArchiveMessage";
             NcCapture.AddKind (ArchiveMessageCaptureName);
             ArchiveCaptureMessage = NcCapture.Create (ArchiveMessageCaptureName);
@@ -106,7 +107,7 @@ namespace NachoClient.iOS
         /// <summary>
         /// Tableview delegate
         /// </summary>
-        public override int NumberOfSections (UITableView tableView)
+        public override nint NumberOfSections (UITableView tableView)
         {
             return 1;
         }
@@ -114,7 +115,7 @@ namespace NachoClient.iOS
         /// <summary>
         /// The number of rows in the specified section.
         /// </summary>
-        public override int RowsInSection (UITableView tableview, int section)
+        public override nint RowsInSection (UITableView tableview, nint section)
         {
             if (NoMessageThreads ()) {
                 return 1; // "No messages"
@@ -123,10 +124,10 @@ namespace NachoClient.iOS
             }
         }
 
-        const float NORMAL_ROW_HEIGHT = 126.0f;
-        const float DATED_ROW_HEIGHT = 161.0f;
+        static readonly nfloat NORMAL_ROW_HEIGHT = 126.0f;
+        static readonly nfloat DATED_ROW_HEIGHT = 161.0f;
 
-        protected float HeightForMessage (McEmailMessage message)
+        protected nfloat HeightForMessage (McEmailMessage message)
         {
             if (null == message) {
                 return NORMAL_ROW_HEIGHT;
@@ -137,7 +138,7 @@ namespace NachoClient.iOS
             return NORMAL_ROW_HEIGHT;
         }
 
-        public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
+        public override nfloat GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
         {
             if (NoMessageThreads ()) {
                 return NORMAL_ROW_HEIGHT;
@@ -162,7 +163,7 @@ namespace NachoClient.iOS
             return HeightForMessage (message);
         }
 
-        public override float EstimatedHeight (UITableView tableView, NSIndexPath indexPath)
+        public override nfloat EstimatedHeight (UITableView tableView, NSIndexPath indexPath)
         {
             return NORMAL_ROW_HEIGHT;
         }
@@ -208,7 +209,7 @@ namespace NachoClient.iOS
         protected const int MESSAGE_HEADER_TAG = 99107;
         protected const int UNREAD_IMAGE_TAG = 99108;
 
-        [MonoTouch.Foundation.Export ("ImageViewTapSelector:")]
+        [Foundation.Export ("ImageViewTapSelector:")]
         public void ImageViewTapSelector (UIGestureRecognizer sender)
         {
 
@@ -315,7 +316,7 @@ namespace NachoClient.iOS
                 if (null == cell) {
                     cell = new UITableViewCell (UITableViewCellStyle.Default, identifier);
                 }
-                if (cell.RespondsToSelector (new MonoTouch.ObjCRuntime.Selector ("setSeparatorInset:"))) {
+                if (cell.RespondsToSelector (new ObjCRuntime.Selector ("setSeparatorInset:"))) {
                     cell.SeparatorInset = UIEdgeInsets.Zero;
                 }
                 cell.SelectionStyle = UITableViewCellSelectionStyle.Default;
@@ -323,7 +324,7 @@ namespace NachoClient.iOS
 
                 var cellWidth = tableView.Frame.Width;
 
-                var frame = new RectangleF (0, 0, tableView.Frame.Width, NORMAL_ROW_HEIGHT);
+                var frame = new CGRect (0, 0, tableView.Frame.Width, NORMAL_ROW_HEIGHT);
                 var view = new SwipeActionView (frame);
                 view.Tag = SWIPE_TAG;
 
@@ -335,18 +336,18 @@ namespace NachoClient.iOS
                 cell.ContentView.AddSubview (view);
 
                 // Create subview for a larger touch target for multi-select
-                var imageViews = new UIView (new RectangleF (0, 0, 60, 70));
+                var imageViews = new UIView (new CGRect (0, 0, 60, 70));
                 view.AddSubview (imageViews);
 
                 // User image view
-                var userImageView = new UIImageView (new RectangleF (15, 20, 40, 40));
+                var userImageView = new UIImageView (new CGRect (15, 20, 40, 40));
                 userImageView.Layer.CornerRadius = 20;
                 userImageView.Layer.MasksToBounds = true;
                 userImageView.Tag = USER_IMAGE_TAG;
                 imageViews.AddSubview (userImageView);
 
                 // User userLabelView view, if no image
-                var userLabelView = new UILabel (new RectangleF (15, 20, 40, 40));
+                var userLabelView = new UILabel (new CGRect (15, 20, 40, 40));
                 userLabelView.Font = A.Font_AvenirNextRegular24;
                 userLabelView.TextColor = UIColor.White;
                 userLabelView.TextAlignment = UITextAlignment.Center;
@@ -369,7 +370,7 @@ namespace NachoClient.iOS
                 // Set up multi-select on checkmark
                 var imagesViewTap = new UITapGestureRecognizer ();
                 imagesViewTap.NumberOfTapsRequired = 1;
-                imagesViewTap.AddTarget (this, new MonoTouch.ObjCRuntime.Selector ("ImageViewTapSelector:"));
+                imagesViewTap.AddTarget (this, new ObjCRuntime.Selector ("ImageViewTapSelector:"));
                 imagesViewTap.CancelsTouchesInView = true; // prevents the row from being selected
                 imageViews.AddGestureRecognizer (imagesViewTap);
 
@@ -377,20 +378,20 @@ namespace NachoClient.iOS
                 var multiSelectImageView = new UIImageView ();
                 multiSelectImageView.Tag = MULTISELECT_IMAGE_TAG;
                 multiSelectImageView.BackgroundColor = UIColor.White;
-                multiSelectImageView.Frame = new RectangleF (15 + 20 - 8, 82, 16, 16); // Centered
-                // multiSelectImageView.Frame = new RectangleF (15 + 40 - 16, 80, 16, 16); // Right align with image
-                // multiSelectImageView.Frame = new RectangleF (15 + 20, 82, 16, 16); // Left align with image center
+                multiSelectImageView.Frame = new CGRect (15 + 20 - 8, 82, 16, 16); // Centered
+                // multiSelectImageView.Frame = new CGRect (15 + 40 - 16, 80, 16, 16); // Right align with image
+                // multiSelectImageView.Frame = new CGRect (15 + 20, 82, 16, 16); // Left align with image center
                 multiSelectImageView.Hidden = true;
                 view.AddSubview (multiSelectImageView);
 
-                var messageHeaderView = new MessageHeaderView (new RectangleF (65, 0, cellWidth - 65, 75));
+                var messageHeaderView = new MessageHeaderView (new CGRect (65, 0, cellWidth - 65, 75));
                 messageHeaderView.CreateView ();
                 messageHeaderView.Tag = MESSAGE_HEADER_TAG;
                 messageHeaderView.SetAllBackgroundColors (UIColor.White);
                 view.AddSubview (messageHeaderView);
 
                 // Preview label view
-                var previewLabelView = new UILabel (new RectangleF (65, 80, cellWidth - 15 - 65, 60));
+                var previewLabelView = new UILabel (new CGRect (65, 80, cellWidth - 15 - 65, 60));
                 previewLabelView.ContentMode = UIViewContentMode.TopLeft;
                 previewLabelView.Font = A.Font_AvenirNextRegular14;
                 previewLabelView.TextColor = A.Color_NachoDarkText;
@@ -400,7 +401,7 @@ namespace NachoClient.iOS
                 view.AddSubview (previewLabelView);
 
                 // Reminder image view
-                var reminderImageView = new UIImageView (new RectangleF (65, 129, 12, 12));
+                var reminderImageView = new UIImageView (new CGRect (65, 129, 12, 12));
                 using (var image = UIImage.FromBundle ("inbox-icn-deadline")) {
                     reminderImageView.Image = image;
                 }
@@ -410,7 +411,7 @@ namespace NachoClient.iOS
                 view.AddSubview (reminderImageView);
 
                 // Reminder label view
-                var reminderLabelView = new UILabel (new RectangleF (87, 125, 230, 20));
+                var reminderLabelView = new UILabel (new CGRect (87, 125, 230, 20));
                 reminderLabelView.Font = A.Font_AvenirNextRegular14;
                 reminderLabelView.TextColor = A.Color_9B9B9B;
                 reminderLabelView.BackgroundColor = UIColor.White;
@@ -428,12 +429,12 @@ namespace NachoClient.iOS
         /// </summary>
         protected void ConfigureCell (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
         {
-            if (cell.ReuseIdentifier.Equals (UICellReuseIdentifier)) {
+            if (cell.ReuseIdentifier.ToString().Equals (UICellReuseIdentifier)) {
                 cell.TextLabel.Text = "No messages";
                 return;
             }
 
-            if (cell.ReuseIdentifier.Equals (EmailMessageReuseIdentifier)) {
+            if (cell.ReuseIdentifier.ToString().Equals (EmailMessageReuseIdentifier)) {
                 ConfigureMessageCell (tableView, cell, indexPath.Row);
                 return;
             }
@@ -485,7 +486,7 @@ namespace NachoClient.iOS
             var cellWidth = tableView.Frame.Width;
 
             var view = cell.ContentView.ViewWithTag (SWIPE_TAG) as SwipeActionView;
-            view.Frame = new RectangleF (0, 0, cellWidth, HeightForMessage (message));
+            view.Frame = new CGRect (0, 0, cellWidth, HeightForMessage (message));
             view.Hidden = false;
 
             view.OnClick = (int tag) => {
@@ -570,7 +571,7 @@ namespace NachoClient.iOS
             using (var text = new NSAttributedString (cookedPreview)) {
                 previewLabelView.AttributedText = text;
             }
-            previewLabelView.Frame = new RectangleF (65, 80, cellWidth - 15 - 65, 60);
+            previewLabelView.Frame = new CGRect (65, 80, cellWidth - 15 - 65, 60);
             previewLabelView.SizeToFit ();
 
             // Reminder image view and label
@@ -665,7 +666,7 @@ namespace NachoClient.iOS
             var messageList = new List<McEmailMessage> ();
 
             foreach (var messageThreadIndex in MultiSelect) {
-                var messageThread = messageThreads.GetEmailThread (messageThreadIndex);
+                var messageThread = messageThreads.GetEmailThread ((int)messageThreadIndex);
                 var message = messageThread.SingleMessageSpecialCase ();
                 if (null != message) {
                     messageList.Add (message);

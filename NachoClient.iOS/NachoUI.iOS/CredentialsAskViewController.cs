@@ -3,11 +3,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Drawing;
+using CoreGraphics;
 using NachoCore.Model;
 using NachoCore.Utils;
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 using NachoPlatform;
 using NachoCore;
 
@@ -15,8 +15,8 @@ namespace NachoClient.iOS
 {
     public partial class CredentialsAskViewController : NcUIViewController, INachoCertificateResponderParent
 	{
-        protected float yOffset = 0;
-        protected float keyboardHeight;
+        protected nfloat yOffset = 0;
+        protected nfloat keyboardHeight;
         protected const int EMAIL_FIELD_TAG = 100;
         protected const int PASSWORD_FIELD_TAG = 101;
         protected const int SUBMIT_BUTTON_TAG = 102;
@@ -69,7 +69,7 @@ namespace NachoClient.iOS
 
             yOffset = 40;
 
-            UIButton escape = new UIButton (new RectangleF (20, yOffset, 20, 20));
+            UIButton escape = new UIButton (new CGRect (20, yOffset, 20, 20));
             escape.SetImage(UIImage.FromBundle ("navbar-icn-close"), UIControlState.Normal);
             escape.TouchUpInside += (object sender, EventArgs e) => {
                 View.EndEditing(true);
@@ -79,7 +79,7 @@ namespace NachoClient.iOS
 
             yOffset = escape.Frame.Bottom + 40;
 
-            UILabel errorMessage = new UILabel (new RectangleF (25, yOffset, View.Frame.Width - 50, 70));
+            UILabel errorMessage = new UILabel (new CGRect (25, yOffset, View.Frame.Width - 50, 70));
             errorMessage.TextAlignment = UITextAlignment.Center;
             errorMessage.Lines = 3;
             errorMessage.Text = "Your credentials are no longer valid. Please update your credentials.";
@@ -89,10 +89,10 @@ namespace NachoClient.iOS
 
             yOffset = errorMessage.Frame.Bottom + 20;
 
-            UIView emailBox = new UIView (new RectangleF (25, yOffset, View.Frame.Width - 50, 44));
+            UIView emailBox = new UIView (new CGRect (25, yOffset, View.Frame.Width - 50, 44));
             emailBox.BackgroundColor = UIColor.White;
 
-            var emailField = new UITextField (new RectangleF (100, 0, emailBox.Frame.Width - 100, emailBox.Frame.Height));
+            var emailField = new UITextField (new CGRect (100, 0, emailBox.Frame.Width - 100, emailBox.Frame.Height));
             emailField.BackgroundColor = UIColor.White;
             emailField.Placeholder = "email@company.com";
             emailField.Font = A.Font_AvenirNextRegular14;
@@ -104,7 +104,7 @@ namespace NachoClient.iOS
             emailField.Tag = EMAIL_FIELD_TAG;
             emailBox.AddSubview (emailField);
 
-            UILabel emailLabel = new UILabel (new RectangleF (10, 0, 60, 44));
+            UILabel emailLabel = new UILabel (new CGRect (10, 0, 60, 44));
             emailLabel.Text = "Email";
             emailLabel.BackgroundColor = UIColor.White;
             emailLabel.TextColor = A.Color_NachoGreen;
@@ -115,10 +115,10 @@ namespace NachoClient.iOS
 
             yOffset = emailBox.Frame.Bottom + 5f;
 
-            UIView passwordBox = new UIView (new RectangleF (25, yOffset, View.Frame.Width - 50, 44));
+            UIView passwordBox = new UIView (new CGRect (25, yOffset, View.Frame.Width - 50, 44));
             passwordBox.BackgroundColor = UIColor.White;
 
-            var passwordField = new UITextField (new RectangleF (100, 0, passwordBox.Frame.Width - 100, passwordBox.Frame.Height));
+            var passwordField = new UITextField (new CGRect (100, 0, passwordBox.Frame.Width - 100, passwordBox.Frame.Height));
             passwordField.BackgroundColor = UIColor.White;
             passwordField.Placeholder = "Required";
             passwordField.Font = A.Font_AvenirNextRegular14;
@@ -136,7 +136,7 @@ namespace NachoClient.iOS
             passwordBox.AddSubview (passwordField);
             passwordBox.UserInteractionEnabled = true;
 
-            UILabel passwordLabel = new UILabel (new RectangleF (10, 0, 80, 44));
+            UILabel passwordLabel = new UILabel (new CGRect (10, 0, 80, 44));
             passwordLabel.Text = "Password";
             passwordLabel.BackgroundColor = UIColor.White;
             passwordLabel.TextColor = A.Color_NachoGreen;
@@ -146,7 +146,7 @@ namespace NachoClient.iOS
 
             yOffset = passwordBox.Frame.Bottom + 5f;
 
-            var submitButton = new UIButton (new System.Drawing.RectangleF (25, yOffset, View.Frame.Width - 50, 45));
+            var submitButton = new UIButton (new CGRect (25, yOffset, View.Frame.Width - 50, 45));
             submitButton.BackgroundColor = A.Color_NachoBlue;
             submitButton.TitleLabel.TextAlignment = UITextAlignment.Center;
             submitButton.SetTitle ("Connect", UIControlState.Normal);
@@ -182,8 +182,8 @@ namespace NachoClient.iOS
 
         protected void LayoutView ()
         {
-            scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
-            var contentFrame = new RectangleF (0, 0, View.Frame.Width, yOffset);
+            scrollView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
+            var contentFrame = new CGRect (0, 0, View.Frame.Width, yOffset);
             contentView.Frame = contentFrame;
             scrollView.ContentSize = contentFrame.Size;
         }
@@ -289,7 +289,7 @@ namespace NachoClient.iOS
             DismissViewController(true, null);
         }
 
-        protected virtual void OnKeyboardChanged (bool visible, float height)
+        protected virtual void OnKeyboardChanged (bool visible, nfloat height)
         {
             var newHeight = (visible ? height : 0);
 

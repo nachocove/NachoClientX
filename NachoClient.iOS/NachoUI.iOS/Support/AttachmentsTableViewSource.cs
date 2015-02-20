@@ -1,16 +1,16 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.IO;
 using System.Linq;
-using System.Drawing;
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using CoreGraphics;
+using Foundation;
+using UIKit;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using System.Collections.Generic;
-using MonoTouch.CoreAnimation;
+using CoreAnimation;
 
 namespace NachoClient.iOS
 {
@@ -23,7 +23,7 @@ namespace NachoClient.iOS
         protected List<NcFileIndex> searchResults;
         protected Dictionary<NSIndexPath,NcFileIndex> multiSelect = null;
         protected List<string> contactList;
-        protected int segmentedIndex;
+        protected nint segmentedIndex;
         protected List<List<NcFileIndex>> nestedContactList;
         int[] sectionLength;
         string[] sectionTitle;
@@ -163,7 +163,7 @@ namespace NachoClient.iOS
             SearchDisplayController.Delegate = new SearchDisplayDelegate (this);
         }
 
-        public override int NumberOfSections (UITableView tableView)
+        public override nint NumberOfSections (UITableView tableView)
         {
             if (BY_CONTACT_SEGMENT == segmentedIndex) {
                 return contactList.Count;
@@ -171,7 +171,7 @@ namespace NachoClient.iOS
             return 1;
         }
 
-        public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
+        public override nfloat GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
         {
             return 80.0f;
         }
@@ -196,7 +196,7 @@ namespace NachoClient.iOS
             if (null == cell) {
                 cell = new UITableViewCell (UITableViewCellStyle.Default, identifier);
             }
-            if (cell.RespondsToSelector (new MonoTouch.ObjCRuntime.Selector ("setSeparatorInset:"))) {
+            if (cell.RespondsToSelector (new ObjCRuntime.Selector ("setSeparatorInset:"))) {
                 cell.SeparatorInset = UIEdgeInsets.Zero;
             }
             cell.SelectionStyle = UITableViewCellSelectionStyle.Default;
@@ -204,7 +204,7 @@ namespace NachoClient.iOS
 
             var cellWidth = tableView.Frame.Width;
 
-            var frame = new RectangleF (0, 0, tableView.Frame.Width, 80);
+            var frame = new CGRect (0, 0, tableView.Frame.Width, 80);
             var view = new SwipeActionView (frame);
 
             cell.AddSubview (view);
@@ -215,7 +215,7 @@ namespace NachoClient.iOS
             var multiSelectImageView = new UIImageView ();
             multiSelectImageView.Tag = MULTI_ICON_TAG;
             multiSelectImageView.BackgroundColor = CELL_COMPONENT_BG_COLOR;
-            multiSelectImageView.Frame = new RectangleF (18, (view.Frame.Height / 2) - 8, 16, 16);
+            multiSelectImageView.Frame = new CGRect (18, (view.Frame.Height / 2) - 8, 16, 16);
             multiSelectImageView.Hidden = true;
             view.AddSubview (multiSelectImageView);
 
@@ -223,7 +223,7 @@ namespace NachoClient.iOS
             var cellIconImageView = new UIImageView (); 
             cellIconImageView.Tag = ICON_TAG;
             cellIconImageView.BackgroundColor = CELL_COMPONENT_BG_COLOR;
-            cellIconImageView.Frame = new RectangleF (18, 28, 24, 24);
+            cellIconImageView.Frame = new CGRect (18, 28, 24, 24);
             view.AddSubview (cellIconImageView);
 
             //Text label
@@ -232,7 +232,7 @@ namespace NachoClient.iOS
             textLabel.Font = A.Font_AvenirNextDemiBold14;
             textLabel.TextColor = A.Color_NachoDarkText;
             textLabel.BackgroundColor = CELL_COMPONENT_BG_COLOR;
-            textLabel.Frame = new RectangleF (60, 11, cellWidth - 60 - 52, 19.5f);
+            textLabel.Frame = new CGRect (60, 11, cellWidth - 60 - 52, 19.5f);
             view.AddSubview (textLabel);
 
             //Detail text label
@@ -241,7 +241,7 @@ namespace NachoClient.iOS
             detailTextlabel.BackgroundColor = CELL_COMPONENT_BG_COLOR;
             detailTextlabel.Font = A.Font_AvenirNextRegular14;
             detailTextlabel.TextColor = A.Color_NachoTextGray;
-            detailTextlabel.Frame = new RectangleF (60, 11 + 19.5f, cellWidth - 60 - 52, 19.5f);
+            detailTextlabel.Frame = new CGRect (60, 11 + 19.5f, cellWidth - 60 - 52, 19.5f);
             view.AddSubview (detailTextlabel);
 
             //Date text label
@@ -250,16 +250,16 @@ namespace NachoClient.iOS
             dateTextlabel.BackgroundColor = CELL_COMPONENT_BG_COLOR;
             dateTextlabel.Font = A.Font_AvenirNextRegular14;
             dateTextlabel.TextColor = A.Color_NachoTextGray;
-            dateTextlabel.Frame = new RectangleF (60, 11 + 19.5f + 19.5f, cellWidth - 60 - 52, 19.5f);
+            dateTextlabel.Frame = new CGRect (60, 11 + 19.5f + 19.5f, cellWidth - 60 - 52, 19.5f);
             view.AddSubview (dateTextlabel);
 
             //Download image view
-            var dowloadImageView = new UIImageView (new RectangleF (cellWidth - 18 - 16, (view.Frame.Height / 2) - 8, 16, 16)); 
+            var dowloadImageView = new UIImageView (new CGRect (cellWidth - 18 - 16, (view.Frame.Height / 2) - 8, 16, 16)); 
             dowloadImageView.Tag = DOWNLOAD_IMAGEVIEW_TAG;
             view.AddSubview (dowloadImageView);
 
             //Separator line
-            var separatorLine = Util.AddHorizontalLineView (60, 80, cellWidth - 60, A.Color_NachoBorderGray);
+            var separatorLine = Util.AddHorizontalLine (60, 80, cellWidth - 60, A.Color_NachoBorderGray);
             separatorLine.Tag = SEPARATOR_LINE_TAG;
             view.AddSubview (separatorLine);
 
@@ -269,10 +269,10 @@ namespace NachoClient.iOS
 
         public void ConfigureCell (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
         {
-            float xOffset = isMultiSelecting ? 34 : 0;
-            float yOffset = 0;
+            nfloat xOffset = isMultiSelecting ? 34 : 0;
+            nfloat yOffset = 0;
 
-            float cellWidth = tableView.Frame.Width;
+            nfloat cellWidth = tableView.Frame.Width;
 
             //Item
             NcFileIndex item;
@@ -331,23 +331,23 @@ namespace NachoClient.iOS
              
             //Cell icon
             var cellIconImageView = view.ViewWithTag (ICON_TAG) as UIImageView;
-            cellIconImageView.Frame = new RectangleF (18 + xOffset, 28, 24, 24);
+            cellIconImageView.Frame = new CGRect (18 + xOffset, 28, 24, 24);
 
 
 
             //Text label
             var textLabel = view.ViewWithTag (TEXT_LABEL_TAG) as UILabel; 
-            textLabel.Frame = new RectangleF (60 + xOffset, 11, cellWidth - xOffset - 112, 19.5f);
+            textLabel.Frame = new CGRect (60 + xOffset, 11, cellWidth - xOffset - 112, 19.5f);
             yOffset += textLabel.Frame.Height;
 
             //Detail text label
             var detailTextlabel = view.ViewWithTag (DETAIL_TEXT_LABEL_TAG) as UILabel;  
-            detailTextlabel.Frame = new RectangleF (60 + xOffset, 11 + yOffset, cellWidth - xOffset - 112, 19.5f);
+            detailTextlabel.Frame = new CGRect (60 + xOffset, 11 + yOffset, cellWidth - xOffset - 112, 19.5f);
             yOffset += detailTextlabel.Frame.Height;
 
             //Date text label
             var dateTextlabel = view.ViewWithTag (DATE_TEXT_LABEL_TAG) as UILabel; 
-            dateTextlabel.Frame = new RectangleF (60 + xOffset, 11 + yOffset, cellWidth - xOffset - 112, 19.5f);
+            dateTextlabel.Frame = new CGRect (60 + xOffset, 11 + yOffset, cellWidth - xOffset - 112, 19.5f);
 
             //Download image view
             var downloadImageView = view.ViewWithTag (DOWNLOAD_IMAGEVIEW_TAG) as UIImageView;
@@ -357,9 +357,9 @@ namespace NachoClient.iOS
             var separatorLine = view.ViewWithTag (SEPARATOR_LINE_TAG);
             var totalRow = tableView.NumberOfRowsInSection (indexPath.Section);
             if (totalRow - 1 == indexPath.Row) {
-                separatorLine.Frame = new RectangleF (0, 79.5f, cellWidth, .5f);
+                separatorLine.Frame = new CGRect (0, 79.5f, cellWidth, .5f);
             } else {
-                separatorLine.Frame = new RectangleF (60 + xOffset, 79.5f, cellWidth - 60 - xOffset, .5f);
+                separatorLine.Frame = new CGRect (60 + xOffset, 79.5f, cellWidth - 60 - xOffset, .5f);
             }
 
             if (null != item) {
@@ -387,7 +387,7 @@ namespace NachoClient.iOS
         {
             if (null != attachment) {
                 var downloaded = false;
-                float xOffset = isMultiSelecting ? 34 : 0;
+                nfloat xOffset = isMultiSelecting ? 34 : 0;
                 StopAnimationsOnCell (cell);
 
                 switch (attachment.FilePresence) {
@@ -479,7 +479,7 @@ namespace NachoClient.iOS
                 } 
                 if (downloaded) {
                     detailText += " - Downloaded";
-                    detailTextLabel.Frame = new RectangleF (detailTextLabel.Frame.X, detailTextLabel.Frame.Y, detailTextLabel.Superview.Frame.Width - 78 - xOffset, detailTextLabel.Frame.Height);
+                    detailTextLabel.Frame = new CGRect (detailTextLabel.Frame.X, detailTextLabel.Frame.Y, detailTextLabel.Superview.Frame.Width - 78 - xOffset, detailTextLabel.Frame.Height);
                 }
                 detailTextLabel.Text = detailText;
 
@@ -550,7 +550,7 @@ namespace NachoClient.iOS
             return file;
         }
 
-        public override void RowSelected (UITableView tableView, MonoTouch.Foundation.NSIndexPath indexPath)
+        public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
         {
             UITableViewCell cell = tableView.CellAt (indexPath);
             if (isMultiSelecting) {
@@ -753,19 +753,19 @@ namespace NachoClient.iOS
             iv.AddSubview (line);
             iv.AddSubview (arrow);
 
-            PointF center = line.Center;
+            CGPoint center = line.Center;
             UIView.Animate (
                 duration: 0.4, 
                 delay: 0, 
                 options: UIViewAnimationOptions.CurveEaseIn,
                 animation: () => {
-                    line.Center = new PointF (center.X, iv.Image.Size.Height * 3 / 4);
-                    arrow.Center = new PointF (center.X, iv.Image.Size.Height * 3 / 4);
+                    line.Center = new CGPoint (center.X, iv.Image.Size.Height * 3 / 4);
+                    arrow.Center = new CGPoint (center.X, iv.Image.Size.Height * 3 / 4);
                     line.Alpha = 0.0f;
                     arrow.Alpha = 0.4f;
                 },
                 completion: () => {
-                    arrow.Center = new PointF (center.X, 2);
+                    arrow.Center = new CGPoint (center.X, 2);
                     arrow.Alpha = 1.0f;
                     ArrowAnimation (cell, arrow, center);
                 }
@@ -783,11 +783,11 @@ namespace NachoClient.iOS
             ArrowAnimation (cell, arrow, arrow.Center);
         }
 
-        private static void ArrowAnimation (UITableViewCell cell, UIImageView arrow, PointF center)
+        private static void ArrowAnimation (UITableViewCell cell, UIImageView arrow, CGPoint center)
         {
             var iv = cell.ViewWithTag (DOWNLOAD_IMAGEVIEW_TAG) as UIImageView;
             UIView.Animate (0.4, 0, (UIViewAnimationOptions.Repeat | UIViewAnimationOptions.OverrideInheritedDuration | UIViewAnimationOptions.OverrideInheritedOptions | UIViewAnimationOptions.OverrideInheritedCurve | UIViewAnimationOptions.CurveLinear), () => {
-                arrow.Center = new PointF (center.X, iv.Frame.Size.Height * 3 / 4);
+                arrow.Center = new CGPoint (center.X, iv.Frame.Size.Height * 3 / 4);
                 arrow.Alpha = 0.4f;
             }, (() => { 
             }));
@@ -799,7 +799,7 @@ namespace NachoClient.iOS
             displayAttachment ();
         }
 
-        public override float GetHeightForHeader (UITableView tableView, int section)
+        public override nfloat GetHeightForHeader (UITableView tableView, nint section)
         {
             if (SearchDisplayController.SearchResultsTableView == tableView) {
                 return 0;
@@ -815,7 +815,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public override float GetHeightForFooter (UITableView tableView, int section)
+        public override nfloat GetHeightForFooter (UITableView tableView, nint section)
         {
             if (BY_CONTACT_SEGMENT == segmentedIndex || SearchDisplayController.SearchResultsTableView == tableView) {
                 return 0;
@@ -823,16 +823,16 @@ namespace NachoClient.iOS
             return 32;
         }
 
-        public override UIView GetViewForHeader (UITableView tableView, int section)
+        public override UIView GetViewForHeader (UITableView tableView, nint section)
         {
             var senderString = TitleForHeader (tableView, section);
             var senderEmail = Pretty.EmailString (senderString);
             var senderDisplayName = Pretty.SenderString (senderString);
             if (SearchDisplayController.SearchResultsTableView == tableView) {
-                return new UIView (new RectangleF (0, 0, 0, 0));
+                return new UIView (new CGRect (0, 0, 0, 0));
             }
             if (BY_CONTACT_SEGMENT != segmentedIndex) {
-                return new UIView (new RectangleF (0, 0, 0, 0));
+                return new UIView (new CGRect (0, 0, 0, 0));
             }
             var view = new UIView ();
             var label = new UILabel ();
@@ -847,16 +847,16 @@ namespace NachoClient.iOS
                 yOffset += 19;
                 iconOffset += 19;
             }
-            label.Center = new PointF (60 + (label.Frame.Width / 2), yOffset);
+            label.Center = new CGPoint (60 + (label.Frame.Width / 2), yOffset);
             view.AddSubview (label);
 
-            var userImageView = new UIImageView (new RectangleF (12, iconOffset, 40, 40));
-            userImageView.Center = new PointF (userImageView.Center.X, label.Center.Y);
+            var userImageView = new UIImageView (new CGRect (12, iconOffset, 40, 40));
+            userImageView.Center = new CGPoint (userImageView.Center.X, label.Center.Y);
             userImageView.Layer.CornerRadius = 20;
             userImageView.Layer.MasksToBounds = true;
             view.AddSubview (userImageView);
 
-            var userLabelView = new UILabel (new RectangleF (12, iconOffset, 40, 40));
+            var userLabelView = new UILabel (new CGRect (12, iconOffset, 40, 40));
             userLabelView.Font = A.Font_AvenirNextRegular24;
             userLabelView.TextColor = UIColor.White;
             userLabelView.TextAlignment = UITextAlignment.Center;
@@ -885,28 +885,28 @@ namespace NachoClient.iOS
             return view;
         }
 
-        public override string TitleForHeader (UITableView tableView, int section)
+        public override string TitleForHeader (UITableView tableView, nint section)
         {
             return sectionTitle [section];
         }
 
-        public override UIView GetViewForFooter (UITableView tableView, int section)
+        public override UIView GetViewForFooter (UITableView tableView, nint section)
         {
             if (BY_CONTACT_SEGMENT == segmentedIndex || SearchDisplayController.SearchResultsTableView == tableView) {
-                return new UIView (new RectangleF (0, 0, 0, 0));
+                return new UIView (new CGRect (0, 0, 0, 0));
             }
-            var view = new UIView (new RectangleF (0, 0, tableView.Frame.Width, 32));
+            var view = new UIView (new CGRect (0, 0, tableView.Frame.Width, 32));
             var label = new UILabel ();
             label.Font = A.Font_AvenirNextRegular12;
             label.TextColor = A.Color_NachoIconGray;
             label.Text = TitleForFooter (tableView, section);
             label.SizeToFit ();
-            label.Center = new PointF (tableView.Frame.Width / 2, 16);
+            label.Center = new CGPoint (tableView.Frame.Width / 2, 16);
             view.AddSubview (label);
             return view;
         }
 
-        public override string TitleForFooter (UITableView tableView, int section)
+        public override string TitleForFooter (UITableView tableView, nint section)
         {
             if (1 == this.items.Count) {
                 return "1 file";
@@ -917,7 +917,7 @@ namespace NachoClient.iOS
         /// <summary>
         /// The number of rows in the specified section.
         /// </summary>
-        public override int RowsInSection (UITableView tableview, int section)
+        public override nint RowsInSection (UITableView tableview, nint section)
         {
             int rows;
 
@@ -936,12 +936,12 @@ namespace NachoClient.iOS
             this.searchResults = searchResults;
         }
 
-        public void SetSegmentedIndex (int index)
+        public void SetSegmentedIndex (nint index)
         {
             this.segmentedIndex = index;
         }
 
-        public bool UpdateSearchResults (int forSearchOption, string forSearchString)
+        public bool UpdateSearchResults (nint forSearchOption, string forSearchString)
         {
             NachoCore.Utils.NcAbate.HighPriority ("AttachmentsTableViewSource UpdateSearchResults");
             var results = SearchByString (forSearchString);
@@ -975,7 +975,7 @@ namespace NachoClient.iOS
             this.owner = owner;
         }
 
-        public override bool ShouldReloadForSearchScope (UISearchDisplayController controller, int forSearchOption)
+        public override bool ShouldReloadForSearchScope (UISearchDisplayController controller, nint forSearchOption)
         {
             // TODO: Trigger asynch search & return false
             string searchString = controller.SearchBar.Text;
@@ -984,7 +984,7 @@ namespace NachoClient.iOS
 
         public override bool ShouldReloadForSearchString (UISearchDisplayController controller, string forSearchString)
         {
-            int searchOption = controller.SearchBar.SelectedScopeButtonIndex;
+            nint searchOption = controller.SearchBar.SelectedScopeButtonIndex;
             return owner.UpdateSearchResults (searchOption, forSearchString);
         }
     }

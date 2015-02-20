@@ -1,10 +1,10 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Drawing;
+using CoreGraphics;
 
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 
 using NachoCore.Utils;
 
@@ -14,8 +14,8 @@ namespace NachoClient.iOS
     {
         protected BodyView.LinkSelectedCallback onLinkSelected;
 
-        public BodyTextView (float Y, float preferredWidth, NSAttributedString text, BodyView.LinkSelectedCallback onLinkSelected)
-            : base (new RectangleF(0, Y, preferredWidth, 1))
+        public BodyTextView (nfloat Y, nfloat preferredWidth, NSAttributedString text, BodyView.LinkSelectedCallback onLinkSelected)
+            : base (new CGRect(0, Y, preferredWidth, 1))
         {
             this.onLinkSelected = onLinkSelected;
 
@@ -40,7 +40,7 @@ namespace NachoClient.iOS
 
             // Render at most one screenful of text at a time.
             ViewFramer.Create (this)
-                .Height (Math.Min (ContentSize.Height, UIScreen.MainScreen.Bounds.Height));
+                .Height (NMath.Min (ContentSize.Height, UIScreen.MainScreen.Bounds.Height));
         }
 
         public UIView uiView ()
@@ -48,13 +48,13 @@ namespace NachoClient.iOS
             return this;
         }
 
-        public new SizeF ContentSize {
+        public new CGSize ContentSize {
             get {
                 return base.ContentSize;
             }
         }
 
-        public void ScrollingAdjustment (RectangleF frame, PointF contentOffset)
+        public void ScrollingAdjustment (CGRect frame, CGPoint contentOffset)
         {
             this.Frame = frame;
             this.ContentOffset = contentOffset;

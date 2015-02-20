@@ -1,10 +1,10 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Linq;
-using System.Drawing;
-using MonoTouch.UIKit;
-using MonoTouch.Foundation;
+using CoreGraphics;
+using UIKit;
+using Foundation;
 using NachoCore.Model;
 using NachoCore.Utils;
 
@@ -28,7 +28,7 @@ namespace NachoClient.iOS
 
         McAccount account;
 
-        public AccountInfoView (RectangleF frame) : base (frame)
+        public AccountInfoView (CGRect frame) : base (frame)
         {
             var accountInfoView = this;
 
@@ -40,15 +40,15 @@ namespace NachoClient.iOS
             accountSettingsTapGestureHandlerToken = accountSettingsTapGesture.AddTarget (AccountSettingsTapHandler);
             accountInfoView.AddGestureRecognizer (accountSettingsTapGesture);
 
-            var userImageView = new UIImageView (new RectangleF (12, 15, 50, 50));
-            userImageView.Center = new PointF (userImageView.Center.X, accountInfoView.Frame.Height / 2);
+            var userImageView = new UIImageView (new CGRect (12, 15, 50, 50));
+            userImageView.Center = new CGPoint (userImageView.Center.X, accountInfoView.Frame.Height / 2);
             userImageView.Layer.CornerRadius = 25;
             userImageView.Layer.MasksToBounds = true;
             userImageView.Hidden = true;
             userImageView.Tag = USER_IMAGE_VIEW_TAG;
             accountInfoView.AddSubview (userImageView);
 
-            var userLabelView = new UILabel (new RectangleF (12, 15, 50, 50));
+            var userLabelView = new UILabel (new CGRect (12, 15, 50, 50));
             userLabelView.Font = A.Font_AvenirNextRegular24;
             userLabelView.TextColor = UIColor.White;
             userLabelView.TextAlignment = UITextAlignment.Center;
@@ -59,13 +59,13 @@ namespace NachoClient.iOS
             userLabelView.Tag = USER_LABEL_VIEW_TAG;
             accountInfoView.AddSubview (userLabelView);
 
-            UILabel nameLabel = new UILabel (new RectangleF (75, 20, accountInfoView.Frame.Width - 120, LINE_HEIGHT));
+            UILabel nameLabel = new UILabel (new CGRect (75, 20, accountInfoView.Frame.Width - 120, LINE_HEIGHT));
             nameLabel.Font = A.Font_AvenirNextDemiBold14;
             nameLabel.TextColor = A.Color_NachoBlack;
             nameLabel.Tag = NAME_LABEL_TAG;
             accountInfoView.AddSubview (nameLabel);
 
-            UILabel accountEmailAddress = new UILabel (new RectangleF (75, nameLabel.Frame.Bottom, accountInfoView.Frame.Width - 120, LINE_HEIGHT));
+            UILabel accountEmailAddress = new UILabel (new CGRect (75, nameLabel.Frame.Bottom, accountInfoView.Frame.Width - 120, LINE_HEIGHT));
             accountEmailAddress.Tag = EMAIL_ADDRESS_LABEL_TAG;
             accountEmailAddress.Text = "";
             accountEmailAddress.Font = A.Font_AvenirNextRegular14;
@@ -76,7 +76,7 @@ namespace NachoClient.iOS
             using (var disclosureIcon = UIImage.FromBundle ("gen-more-arrow")) {
                 accountSettingsIndicatorArrow = new UIImageView (disclosureIcon);
             }
-            accountSettingsIndicatorArrow.Frame = new RectangleF (accountInfoView.Frame.Width - (accountSettingsIndicatorArrow.Frame.Width + 10), accountInfoView.Frame.Height / 2 - accountSettingsIndicatorArrow.Frame.Height / 2, accountSettingsIndicatorArrow.Frame.Width, accountSettingsIndicatorArrow.Frame.Height);
+            accountSettingsIndicatorArrow.Frame = new CGRect (accountInfoView.Frame.Width - (accountSettingsIndicatorArrow.Frame.Width + 10), accountInfoView.Frame.Height / 2 - accountSettingsIndicatorArrow.Frame.Height / 2, accountSettingsIndicatorArrow.Frame.Width, accountSettingsIndicatorArrow.Frame.Height);
             accountInfoView.AddSubview (accountSettingsIndicatorArrow);
         }
 
@@ -122,7 +122,7 @@ namespace NachoClient.iOS
 
         protected void AccountSettingsTapHandler (NSObject sender)
         {
-            EndEditing (true);
+            this.EndEditing (true);
             if (null != OnAccountSelected) {
                 OnAccountSelected (this.account);
             }

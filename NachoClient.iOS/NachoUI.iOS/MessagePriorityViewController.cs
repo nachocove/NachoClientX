@@ -2,13 +2,13 @@
 
 using System;
 using System.Collections.Generic;
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore.Brain;
-using MonoTouch.CoreAnimation;
-using System.Drawing;
+using CoreAnimation;
+using CoreGraphics;
 
 namespace NachoClient.iOS
 {
@@ -52,7 +52,7 @@ namespace NachoClient.iOS
             priorityView.ClipsToBounds = true;
             priorityView.BackgroundColor = A.Color_NachoGreen;
 
-            var navBar = new UINavigationBar (new RectangleF (0, 20, View.Frame.Width, 44));
+            var navBar = new UINavigationBar (new CGRect (0, 20, View.Frame.Width, 44));
             navBar.BarStyle = UIBarStyle.Default;
             navBar.Opaque = true;
             navBar.Translucent = false;
@@ -74,16 +74,16 @@ namespace NachoClient.iOS
 
             priorityView.AddSubview (navBar);
 
-            float yOffset = 64;
+            nfloat yOffset = 64;
 
-            UIView sectionSeparator = new UIView (new RectangleF (0, yOffset, View.Frame.Width, .5f));
+            UIView sectionSeparator = new UIView (new CGRect (0, yOffset, View.Frame.Width, .5f));
             sectionSeparator.BackgroundColor = UIColor.LightGray.ColorWithAlpha (.6f);
             priorityView.AddSubview (sectionSeparator);
 
             yOffset = sectionSeparator.Frame.Bottom + 20;
 
             if (DateControllerType.Defer == dateControllerType) {
-                UILabel messageSubject = new UILabel (new RectangleF (30, yOffset, View.Frame.Width - 60, 25));
+                UILabel messageSubject = new UILabel (new CGRect (30, yOffset, View.Frame.Width - 60, 25));
                 var message = thread.SingleMessageSpecialCase ();
                 if (null != message) {
                     messageSubject.Text = Pretty.SubjectString(message.Subject);
@@ -159,8 +159,8 @@ namespace NachoClient.iOS
                 buttonRect.Layer.MasksToBounds = true;
                 buttonRect.Layer.BorderColor = UIColor.LightGray.CGColor;
                 buttonRect.Layer.BorderWidth = .5f;                 
-                buttonRect.Frame = new RectangleF (0, 0, BUTTON_SIZE, BUTTON_SIZE);
-                buttonRect.Center = new PointF (xOffset, yOffset);
+                buttonRect.Frame = new CGRect (0, 0, BUTTON_SIZE, BUTTON_SIZE);
+                buttonRect.Center = new CGPoint (xOffset, yOffset);
                 using (var image = UIImage.FromBundle (buttonInfo.buttonIcon).ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
                     buttonRect.SetImage (image, UIControlState.Normal);
                 }
@@ -175,7 +175,7 @@ namespace NachoClient.iOS
                 label.Font = A.Font_AvenirNextMedium14;
                 label.TextAlignment = UITextAlignment.Center;
                 label.SizeToFit ();
-                label.Center = new PointF (xOffset, 5 + yOffset + ((BUTTON_SIZE + BUTTON_LABEL_HEIGHT) / 2));
+                label.Center = new CGPoint (xOffset, 5 + yOffset + ((BUTTON_SIZE + BUTTON_LABEL_HEIGHT) / 2));
                 priorityView.Add (label);
 
                 xOffset += BUTTON_SIZE + BUTTON_PADDING_WIDTH;
@@ -184,7 +184,7 @@ namespace NachoClient.iOS
             View.AddSubview (priorityView);
         }
 
-        public void DismissDateController (bool animated, NSAction action)
+        public void DismissDateController (bool animated, Action action)
         {
             owner = null;
             DismissViewController (animated, action);
@@ -212,7 +212,7 @@ namespace NachoClient.iOS
             }
 
             vc.owner = null;
-            vc.DismissViewController (false, new NSAction (delegate {
+            vc.DismissViewController (false, new Action (delegate {
                 DateSelected (MessageDeferralType.Custom, chosenDateTime);
             }));
         }

@@ -51,7 +51,7 @@ namespace NachoCore
             }
         }
 
-        public bool IsUp()
+        public bool IsUp ()
         {
             return (ExecutionContextEnum.Migrating != ExecutionContext) && (ExecutionContextEnum.Initializing != ExecutionContext);
         }
@@ -247,6 +247,7 @@ namespace NachoCore
 
         public void StartBasalServices ()
         {
+            Log.Info (Log.LOG_SYS, "{0}-bit App", 8 * IntPtr.Size);
             Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServices called.");
             NcTask.StartService ();
             Telemetry.StartService ();
@@ -353,7 +354,7 @@ namespace NachoCore
             MonitorTimer.Dispose ();
         }
 
-        public void MonitorReport (string moniker = null, [CallerFilePath] string sourceFilePath = "",  [CallerLineNumber] int sourceLineNumber = 0)
+        public void MonitorReport (string moniker = null, [CallerFilePath] string sourceFilePath = "", [CallerLineNumber] int sourceLineNumber = 0)
         {
             if (!String.IsNullOrEmpty (moniker)) {
                 Log.Info (Log.LOG_SYS, "Monitor: {0} from line {1} of {2}", moniker, sourceLineNumber, sourceFilePath);

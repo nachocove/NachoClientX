@@ -1,7 +1,7 @@
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
-using MonoTouch.ObjCRuntime;
-using MonoTouch.CoreFoundation;
+using Foundation;
+using UIKit;
+using ObjCRuntime;
+using CoreFoundation;
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -189,7 +189,7 @@ namespace NachoPlatform
             return nacho_set_handlers_and_boom (home);
         }
 
-        [MonoTouch.MonoPInvokeCallback (typeof (SQLite3.ErrorLogCallback))]
+        [MonoPInvokeCallback (typeof (SQLite3.ErrorLogCallback))]
         public static void SQLite3ErrorCallback (IntPtr pArg, int iErrCode, string zMsg)
         {
             if (!zMsg.Contains ("cfurl_cache_response")) {
