@@ -1241,6 +1241,9 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration4.cs">
       <Link>NachoCore\Model\Migration\NcMigration4.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration5.cs">
+      <Link>NachoCore\Model\Migration\NcMigration5.cs</Link>
+    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcBrainActions.cs">
       <Link>NachoCore\Brain\NcBrainActions.cs</Link>
     </Compile>

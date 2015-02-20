@@ -363,6 +363,7 @@
     <Compile Include="NachoCore\Brain\NcObjectParser.cs" />
     <Compile Include="NachoCore\Brain\NcTokenizer.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration4.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration5.cs" />
     <Compile Include="NachoCore\Brain\NcBrainActions.cs" />
   </ItemGroup>
   <ItemGroup>
