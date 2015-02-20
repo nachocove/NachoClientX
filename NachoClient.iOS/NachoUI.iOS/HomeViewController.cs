@@ -121,6 +121,7 @@ namespace NachoClient.iOS
             closeTutorial = new UIButton (new CoreGraphics.CGRect (View.Frame.Width-145, 0, 130, 35));
             closeTutorial.TitleLabel.TextColor = UIColor.Black;
             closeTutorial.SetTitle ("Dismiss", UIControlState.Normal);
+            closeTutorial.AccessibilityLabel = "Dismiss";
             closeTutorial.TitleLabel.TextColor = UIColor.Black;
             closeTutorial.TitleLabel.Font = A.Font_AvenirNextRegular14;
             closeTutorial.SetTitleColor (UIColor.Black, UIControlState.Normal);
