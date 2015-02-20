@@ -68,7 +68,7 @@ namespace NachoCore
             // fired when everything is ready.
 
             if (isActive) {
-                NcEventManager.AddEndDate (this, untilDate);
+                NcEventManager.AddEventWindow (this, untilDate.ToUniversalTime ());
             }
 
             int numDays = IndexOfDate (untilDate);
@@ -153,14 +153,14 @@ namespace NachoCore
 
         public void StopTrackingEventChanges ()
         {
-            NcEventManager.RemoveEndDate (this);
+            NcEventManager.RemoveEventWindow (this);
             isActive = false;
         }
 
         public void Refresh (Action completionAction)
         {
             if (!isActive) {
-                NcEventManager.AddEndDate (this, finalDay);
+                NcEventManager.AddEventWindow (this, finalDay.ToUniversalTime ());
                 isActive = true;
             }
 

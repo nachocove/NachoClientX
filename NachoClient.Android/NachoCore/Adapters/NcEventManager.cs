@@ -19,7 +19,8 @@ namespace NachoCore
 
         private static object lockObject = new object ();
 
-        private static Dictionary<object, DateTime> endDates = new Dictionary<object, DateTime> ();
+        private static Dictionary<object, TimeSpan> eventWindows = new Dictionary<object, TimeSpan> ();
+        private static TimeSpan maxDuration = TimeSpan.MinValue;
         private static DateTime latestEndDate = DateTime.MinValue;
 
         public static void Initialize ()
@@ -27,46 +28,50 @@ namespace NachoCore
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
 
             // Always keep the events accurate for the next 30 days, so that local notifications will be correct.
-            AddEndDate (typeof(NcEventManager), DateTime.Now.AddDays (30));
-
-            // ... and update that 30-day marker every two days
-            TimeSpan twoDays = new TimeSpan (2, 0, 0, 0);
-            new NcTimer ("NcEventManager", ((object state) => {
-                AddEndDate (typeof(NcEventManager), DateTime.Now.AddDays (30));
-            }), null, twoDays, twoDays);
+            AddEventWindow (typeof(NcEventManager), new TimeSpan (30, 0, 0, 0));
         }
 
         /// <summary>
         /// Inform NcEventManager that events need to be maintained through the given date.
         /// The key should be unique for each caller and can be used later to change or remove
-        /// the end date.
+        /// the event window.
         /// </summary>
-        public static void AddEndDate (object key, DateTime endDate)
+        public static void AddEventWindow (object key, DateTime endDate)
+        {
+            AddEventWindow (key, endDate - DateTime.UtcNow);
+        }
+
+        /// <summary>
+        /// Inform NcEventManager that events need to be maintained for some period into the
+        /// future.  The key should be unique for each caller and can be used later to change
+        /// or remove the event window.
+        /// </summary>
+        public static void AddEventWindow (object key, TimeSpan duration)
         {
             lock (lockObject) {
-                endDates [key] = endDate;
-                if (endDate > latestEndDate) {
-                    latestEndDate = endDate;
+                eventWindows [key] = duration;
+                if (DateTime.UtcNow + duration > latestEndDate) {
                     RegenerateEvents ();
                 }
             }
         }
 
-        public static void RemoveEndDate (object key)
+        public static void RemoveEventWindow (object key)
         {
             lock (lockObject) {
-                endDates.Remove (key);
+                eventWindows.Remove (key);
             }
         }
 
         private static void RegenerateEvents ()
         {
-            latestEndDate = DateTime.MinValue;
-            foreach (var sentinel in endDates.Values) {
-                if (sentinel > latestEndDate) {
-                    latestEndDate = sentinel;
+            maxDuration = TimeSpan.MinValue;
+            foreach (var duration in eventWindows.Values) {
+                if (duration > maxDuration) {
+                    maxDuration = duration;
                 }
             }
+            latestEndDate = DateTime.UtcNow + maxDuration;
             CalendarHelper.ExpandRecurrences (latestEndDate);
         }
 
@@ -79,6 +84,18 @@ namespace NachoCore
             case NcResult.SubKindEnum.Info_CalendarSetChanged:
                 lock (lockObject) {
                     RegenerateEvents ();
+                }
+                break;
+
+            // When the app comes into the foreground, check if it has been more than two days
+            // since events were regenerated.
+            case NcResult.SubKindEnum.Info_ExecutionContextChanged:
+                if (NachoCore.NcApplication.ExecutionContextEnum.Foreground == (NachoCore.NcApplication.ExecutionContextEnum)s.Status.Value) {
+                    lock (lockObject) {
+                        if (DateTime.UtcNow + maxDuration > latestEndDate.AddDays (2)) {
+                            RegenerateEvents ();
+                        }
+                    }
                 }
                 break;
             }

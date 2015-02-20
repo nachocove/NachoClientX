@@ -98,7 +98,7 @@ namespace NachoClient.iOS
 
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
             // Have the event manager keep the McEvents accurate for at least the next seven days.
-            NcEventManager.AddEndDate (this, DateTime.Now.AddDays (7));
+            NcEventManager.AddEventWindow (this, new TimeSpan (7, 0, 0, 0));
 
             Configure ();
         }
