@@ -12,7 +12,7 @@ namespace NachoCore.Brain
     // The goal is to separate the actions from the scheduling of actions.
     public partial class NcBrain
     {
-        protected bool GleanEmailMessage (McEmailMessage emailMessage, string accountAddress, bool quickGlean)
+        protected bool GleanEmailMessage (McEmailMessage emailMessage, string accountAddress, bool quickScore)
         {
             if (null == emailMessage) {
                 return false;
@@ -22,7 +22,7 @@ namespace NachoCore.Brain
                 return false;
             }
 
-            if (quickGlean) {
+            if (quickScore) {
                 // Assign a version 0 score by checking if our address is in the to list
                 InternetAddressList addressList = NcEmailAddress.ParseAddressListString (emailMessage.To);
                 foreach (var address in addressList) {
@@ -32,7 +32,7 @@ namespace NachoCore.Brain
                     if (((MailboxAddress)address).Address == accountAddress) {
                         emailMessage.Score = McEmailMessage.minHotScore;
                         emailMessage.UpdateByBrain ();
-                        return false;
+                        break;
                     }
                 }
             }
