@@ -573,5 +573,9 @@
       <Project>{F930802F-193C-4388-820B-05AE90A1FB6A}</Project>
       <Name>DnDns.Android</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\MobileHtmlAgilityPack\MobileHtmlAgilityPack.csproj">
+      <Project>{D91DC8A9-454E-4CB9-96BE-19652A67D0A4}</Project>
+      <Name>MobileHtmlAgilityPack</Name>
+    </ProjectReference>
   </ItemGroup>
 </Project>
