@@ -131,6 +131,9 @@ namespace NachoClient.iOS
 
         void ConfigureView ()
         {
+            if (!NcMigration.IsCompatible ()) {
+                return;
+            }
             if (NcApplication.ExecutionContextEnum.Migrating == NcApplication.Instance.ExecutionContext) {
                 this.NavigationItem.Title = "Upgrade";
                 MigrationMessageTextView.Hidden = false;
