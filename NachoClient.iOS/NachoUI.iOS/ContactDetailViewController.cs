@@ -116,6 +116,10 @@ namespace NachoClient.iOS
                 this.NavigationController.ToolbarHidden = true;
                 originalBarTintColor = this.NavigationController.NavigationBar.BarTintColor;
             }
+            if (this.NavigationController.RespondsToSelector (new ObjCRuntime.Selector ("interactivePopGestureRecognizer"))) {
+                this.NavigationController.InteractivePopGestureRecognizer.Enabled = true;
+                this.NavigationController.InteractivePopGestureRecognizer.Delegate = null;
+            }
 
             Util.ConfigureNavBar (false, NavigationController);
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
