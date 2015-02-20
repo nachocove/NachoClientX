@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using SQLite;
@@ -24,8 +24,10 @@ namespace NachoCore.Model
         [Indexed]
         public DateTime ReminderTime { get; set; }
 
+        [Indexed]
         public int CalendarId { get; set; }
 
+        [Indexed]
         public int ExceptionId { get; set; }
 
         static public McEvent Create (int accountId, DateTime startTime, DateTime endTime, int calendarId, int exceptionId)

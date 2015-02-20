@@ -2,12 +2,12 @@
 
 using System;
 using System.Linq;
-using System.Drawing;
+using CoreGraphics;
 using System.Collections.Generic;
-using MonoTouch.Foundation;
+using Foundation;
 
 //using MonoTouch.CoreGraphics;
-using MonoTouch.UIKit;
+using UIKit;
 using NachoCore.Model;
 using NachoCore.Utils;
 using NachoCore;
@@ -197,7 +197,7 @@ namespace NachoClient.iOS
             // visible.  The second time this view is presented
             // the content offset is set to properly.
             if (0 > TableView.ContentOffset.Y) {
-                TableView.ContentOffset = new PointF (0, 0);
+                TableView.ContentOffset = new CGPoint (0, 0);
             }
 
             if (null != this.NavigationController) {
@@ -329,7 +329,7 @@ namespace NachoClient.iOS
             if (null != m) {
                 var t = CalendarHelper.CreateTask (m);
                 vc.SetOwner (null);
-                vc.DismissMessageEditor (false, new NSAction (delegate {
+                vc.DismissMessageEditor (false, new Action (delegate {
                     PerformSegue ("", new SegueHolder (t));
                 }));
             }
@@ -343,7 +343,7 @@ namespace NachoClient.iOS
             var m = thread.SingleMessageSpecialCase ();
             if (null != m) {
                 var c = CalendarHelper.CreateMeeting (m);
-                vc.DismissMessageEditor (false, new NSAction (delegate {
+                vc.DismissMessageEditor (false, new Action (delegate {
                     PerformSegue ("NachoNowToEditEvent", new SegueHolder (c));
                 }));
             }
@@ -383,7 +383,7 @@ namespace NachoClient.iOS
             using (var image = UIImage.FromBundle ("nav-backarrow")) {
 //                backButton = new UIBarButtonItem (image, UIBarButtonItemStyle.Plain, onClickBackButton);
                 var button = UIButton.FromType (UIButtonType.System);
-                button.Frame = new RectangleF (0, 0, 70, 30);
+                button.Frame = new CGRect (0, 0, 70, 30);
                 button.SetTitle ("Mail", UIControlState.Normal);
                 button.SetTitleColor (UIColor.White, UIControlState.Normal);
                 button.SetImage (image, UIControlState.Normal);

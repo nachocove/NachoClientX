@@ -1,9 +1,9 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
-using MonoTouch.Security;
+using Foundation;
+using UIKit;
+using Security;
 using NachoCore.Utils;
 
 namespace NachoPlatform

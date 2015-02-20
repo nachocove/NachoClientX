@@ -1,7 +1,7 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using MonoTouch.Foundation;
+using Foundation;
 using NachoCore.Model;
 
 namespace NachoClient.iOS
@@ -18,7 +18,7 @@ namespace NachoClient.iOS
     {
         void SetOwner (INachoCalendarItemEditorParent owner);
         void SetCalendarItem (McEvent item, CalendarItemEditorAction action);
-        void DismissCalendarItemEditor (bool animated, NSAction action);
+        void DismissCalendarItemEditor (bool animated, Action action);
     }
 
     public interface INachoCalendarItemEditorParent

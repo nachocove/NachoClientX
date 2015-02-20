@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Collections.Generic;
@@ -48,29 +48,18 @@ namespace NachoCore.Index
 
         // Add() is significantly slower than BeginAddTransaction() + BatchAdd() + EndAddTransaction()
         // So, if you are going to use more than one item, please use the later combination.
-        public long Add (string emailPath, string type, string id)
+        public long Add (IndexDocument doc)
         {
             BeginAddTransaction ();
-            var bytesIndexed = BatchAdd (emailPath, type, id);
+            var bytesIndexed = BatchAdd (doc);
             EndAddTransaction ();
             return bytesIndexed;
         }
 
-        public long BatchAdd (string emailPath, string type, string id)
+        public long BatchAdd (IndexDocument doc)
         {
             if (null == Writer) {
                 throw new ArgumentNullException ();
-            }
-
-            // Create the document to be indexed
-            IndexDocument doc;
-            switch (type) {
-            case "message":
-                doc = new IndexEmailMessage (emailPath, id);
-                break;
-            default:
-                var msg = String.Format ("unsupported item type {0}", type);
-                throw new ArgumentException (msg);
             }
 
             // Index the document

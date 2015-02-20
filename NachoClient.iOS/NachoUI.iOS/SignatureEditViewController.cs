@@ -2,9 +2,9 @@
 
 using System;
 
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
-using System.Drawing;
+using Foundation;
+using UIKit;
+using CoreGraphics;
 using NachoCore.Model;
 
 namespace NachoClient.iOS
@@ -49,7 +49,7 @@ namespace NachoClient.iOS
 
         protected override void CreateViewHierarchy ()
         {
-            navbar.Frame = new RectangleF (0, 0, View.Frame.Width, 64);
+            navbar.Frame = new CGRect (0, 0, View.Frame.Width, 64);
             View.Add (navbar);
             navbar.BackgroundColor = A.Color_NachoGreen;
             navbar.Translucent = false;
@@ -69,8 +69,8 @@ namespace NachoClient.iOS
 
             View.BackgroundColor = A.Color_NachoBackgroundGray;
 
-            float yOffset = navbar.Frame.Bottom + 20;
-            UITextView signatureTextView = new UITextView (new RectangleF (0, yOffset, View.Frame.Width, 150));
+            nfloat yOffset = navbar.Frame.Bottom + 20;
+            UITextView signatureTextView = new UITextView (new CGRect (0, yOffset, View.Frame.Width, 150));
             signatureTextView.Font = A.Font_AvenirNextRegular14;
             signatureTextView.Tag = SIGNATURE_TEXT_VIEW_TAG;
 

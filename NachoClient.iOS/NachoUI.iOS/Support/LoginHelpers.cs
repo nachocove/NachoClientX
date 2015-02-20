@@ -1,9 +1,9 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using NachoCore.Model;
 using NachoClient;
-using MonoTouch.UIKit;
+using UIKit;
 using NachoCore;
 using NachoCore.Utils;
 

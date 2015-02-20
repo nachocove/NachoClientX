@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.IO;
@@ -82,12 +82,13 @@ namespace NachoCore.Index
 
         public long BytesIndexed { protected set; get; }
 
-        public IndexDocument (string type, string id)
+        public IndexDocument (string type, string id, string body)
         {
             BytesIndexed = 0;
             Doc = new Document ();
             Doc.Add (GetExactMatchOnlyField ("type", type));
             Doc.Add (GetExactMatchOnlyField ("id", id));
+            Doc.Add (GetIndexedField ("body", body));
             BytesIndexed += type.Length + id.Length;
         }
 
@@ -115,87 +116,17 @@ namespace NachoCore.Index
     {
         protected MimeMessage Message;
 
-        public IndexMimeDocument (string messageBodyPath, string type, string id) : base (type, id)
+        public IndexMimeDocument (string type, string id, string content, MimeMessage message) :
+            base (type, id, content)
         {
-            // MIME parse the message 
-            using (var fileStream = new FileStream (messageBodyPath, FileMode.Open, FileAccess.Read)) {
-                Message = MimeMessage.Load (fileStream);
-            }
-
-            // Dig thru all MIME part and index those we can:
-            // 1. text/html - HTML doc
-            // 2. text/plain - plain text
-            // 3. multipart/mixed - Index every subpart that can be indexed.
-            // 4. multipart/alternatives - Index only the preferred part.
-            ProcessMimeEntity (Message.Body);
+            Message = message;
         }
-
-        private bool ProcessMimeEntity (MimeEntity part)
-        {
-            bool processed = false;
-            if (part is MessagePart) {
-                var message = (MessagePart)part;
-                processed |= ProcessMimeEntity (message.Message.Body);
-                return processed;
-            }
-            if (part is Multipart) {
-                var multipart = (Multipart)part;
-                if (multipart.ContentType.Matches ("multipart", "alternative")) {
-                    processed |= ProcessAlternativeMultipart (multipart);
-                } else if (multipart.ContentType.Matches ("multipart", "mixed")) {
-                    processed |= ProcessMixedMultipart (multipart);
-                } else {
-                    // Unsupported multipart
-                    Log.Warn ("unsupported multipart type {0}", multipart.ContentType.Name);
-                }
-                return processed;
-            }
-            return ProcessMimePart ((MimePart)part);
-        }
-
-        private bool ProcessAlternativeMultipart (Multipart multipart)
-        {
-            // We start from the last part and iterate backward until we find something that works
-            for (int n = multipart.Count - 1; n >= 0; n--) {
-                if (ProcessMimeEntity (multipart [n])) {
-                    return true;
-                }
-            }
-            Log.Warn ("no suitable alternative part ({0} parts total)", multipart.Count);
-            return false;
-        }
-
-        private bool ProcessMixedMultipart (Multipart multipart)
-        {
-            bool processed = false;
-            foreach (var subpart in multipart) {
-                processed |= ProcessMimeEntity (subpart);
-            }
-            return processed;
-        }
-
-        private bool ProcessMimePart (MimePart part)
-        {
-            // TODO - The only thing we support now is plain text. For HTML, we need a HTML tokenizer
-            // But most email client will send a plain text alternative. So, we should be ok for most
-            // cases.
-            if ("plain" == part.ContentType.MediaSubtype) {
-                TextPart body = (TextPart)part;
-                if (null != body.Text) {
-                    Log.Debug ("body = {0}", body.Text);
-                    var bodyField = GetIndexedField ("body", body.Text);
-                    Doc.Add (bodyField);
-                    return true;
-                }
-            }
-            return false;
-        }
-
     }
 
     public class IndexEmailMessage : IndexMimeDocument
     {
-        public IndexEmailMessage (string messageBodyPath, string id) : base (messageBodyPath, "message", id)
+        public IndexEmailMessage (string id, string content, MimeMessage message) :
+            base ("message", id, content, message)
         {
             Doc.Add (GetIndexedField ("subject", Message.Subject));
             BytesIndexed += Message.Subject.Length;
@@ -209,14 +140,6 @@ namespace NachoCore.Index
             AddAddressList ("to", Message.To);
             AddAddressList ("cc", Message.Cc);
             AddAddressList ("bcc", Message.Bcc);
-        }
-    }
-
-    public class IndexEvent : IndexMimeDocument
-    {
-        public IndexEvent (string eventBodyPath, string id) : base (eventBodyPath, "event", id)
-        {
-            // MIME parse the message
         }
     }
 }

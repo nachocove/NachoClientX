@@ -2,11 +2,11 @@
 
 using System;
 
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 
 using System.IO;
-using System.Drawing;
+using CoreGraphics;
 using System.Collections.Generic;
 using MimeKit;
 
@@ -21,7 +21,7 @@ using System.Text;
 using NachoCore;
 using NachoCore.ActiveSync;
 
-using MonoTouch.MapKit;
+using MapKit;
 
 namespace NachoClient.iOS
 {
@@ -81,13 +81,13 @@ namespace NachoClient.iOS
         protected bool attachmentsDrawerOpen = false;
 
         // UI-related constants, or pseudo-constants
-        protected static float SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
+        protected static nfloat SCREEN_WIDTH = UIScreen.MainScreen.Bounds.Width;
         protected const int CELL_HEIGHT = 44;
         protected const float TEXT_LINE_HEIGHT = 19.124f;
-        protected static float EVENT_CARD_WIDTH = SCREEN_WIDTH - 30;
-        protected float NOTE_OFFSET = 0f;
-        protected float keyboardHeight;
-        protected float notesInitialHeight = 0f;
+        protected static nfloat EVENT_CARD_WIDTH = SCREEN_WIDTH - 30;
+        protected nfloat NOTE_OFFSET = 0f;
+        protected nfloat keyboardHeight;
+        protected nfloat notesInitialHeight = 0f;
 
         public enum TagType
         {
@@ -151,6 +151,11 @@ namespace NachoClient.iOS
             // Navigation controls
             NavigationController.NavigationBar.Translucent = false;
 
+            if (this.NavigationController.RespondsToSelector (new ObjCRuntime.Selector ("interactivePopGestureRecognizer"))) {
+                this.NavigationController.InteractivePopGestureRecognizer.Enabled = true;
+                this.NavigationController.InteractivePopGestureRecognizer.Delegate = null;
+            }
+
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
 
             // Main view
@@ -165,7 +170,7 @@ namespace NachoClient.iOS
 
             contentView.BackgroundColor = contentViewBGColor;
 
-            float yOffset = 20;
+            nfloat yOffset = 20;
 
             editEventButton = new UIBarButtonItem ();
             editEventButton.TintColor = A.Color_NachoBlue;
@@ -173,7 +178,7 @@ namespace NachoClient.iOS
             editEventButton.Clicked += EditButtonClicked;
 
             // Title label
-            var eventTitleLabel = new UILabel (new RectangleF (15 + 18, yOffset, SCREEN_WIDTH - 66, 20));
+            var eventTitleLabel = new UILabel (new CGRect (15 + 18, yOffset, SCREEN_WIDTH - 66, 20));
             eventTitleLabel.Font = A.Font_AvenirNextDemiBold17;
             eventTitleLabel.TextColor = A.Color_NachoBlack;
             eventTitleLabel.Tag = (int)TagType.EVENT_TITLE_LABEL_TAG;
@@ -181,7 +186,7 @@ namespace NachoClient.iOS
 
             yOffset += 20;
 
-            eventCardView = new UIView (new RectangleF (A.Card_Horizontal_Indent, 0, contentView.Frame.Width - 30, 0));
+            eventCardView = new UIView (new CGRect (A.Card_Horizontal_Indent, 0, contentView.Frame.Width - 30, 0));
             eventCardView.Tag = (int)TagType.EVENT_CARD_VIEW_TAG;
             eventCardView.BackgroundColor = cellBGColor;
             eventCardView.Layer.CornerRadius = A.Card_Corner_Radius;
@@ -190,14 +195,14 @@ namespace NachoClient.iOS
             contentView.AddSubview (eventCardView);
 
             // RSVP bar 
-            organizerIcon = new UIImageView (new RectangleF (18, 18, 24, 24));
+            organizerIcon = new UIImageView (new CGRect (18, 18, 24, 24));
             organizerIcon.Image = UIImage.FromBundle ("event-organizer");
             organizerIcon.Hidden = true;
             eventCardView.AddSubview (organizerIcon);
 
             Util.AddButtonImage (acceptButton, "event-attend", UIControlState.Normal);
             Util.AddButtonImage (acceptButton, "event-attend-active", UIControlState.Selected);
-            acceptButton.Frame = new RectangleF (18, 18, 24, 24);
+            acceptButton.Frame = new CGRect (18, 18, 24, 24);
             acceptButton.TintColor = UIColor.Clear;
             acceptButton.TouchUpInside += AcceptButtonTouchUpInside;
             acceptButton.Hidden = true;
@@ -205,7 +210,7 @@ namespace NachoClient.iOS
 
             Util.AddButtonImage (tentativeButton, "event-maybe", UIControlState.Normal);
             Util.AddButtonImage (tentativeButton, "event-maybe-active", UIControlState.Selected);
-            tentativeButton.Frame = new RectangleF (eventCardView.Frame.Width / 2 - 37.5f, 18, 24, 24);
+            tentativeButton.Frame = new CGRect (eventCardView.Frame.Width / 2 - 37.5f, 18, 24, 24);
             tentativeButton.TintColor = UIColor.Clear;
             tentativeButton.TouchUpInside += TentativeButtonTouchUpInside;
             tentativeButton.Hidden = true;
@@ -213,34 +218,34 @@ namespace NachoClient.iOS
 
             Util.AddButtonImage (declineButton, "event-decline", UIControlState.Normal);
             Util.AddButtonImage (declineButton, "event-decline-active", UIControlState.Selected);
-            declineButton.Frame = new RectangleF (eventCardView.Frame.Width - 96.5f, 18, 24, 24);
+            declineButton.Frame = new CGRect (eventCardView.Frame.Width - 96.5f, 18, 24, 24);
             declineButton.TintColor = UIColor.Clear;
             declineButton.TouchUpInside += DeclineButtonTouchUpInside;
             declineButton.Hidden = true;
             eventCardView.AddSubview (declineButton);
 
-            acceptLabel = new UILabel (new RectangleF (acceptButton.Frame.X + 24 + 6, 20, 45, 20));
+            acceptLabel = new UILabel (new CGRect (acceptButton.Frame.X + 24 + 6, 20, 45, 20));
             acceptLabel.TextColor = textColor;
             acceptLabel.Font = A.Font_AvenirNextMedium14;
             acceptLabel.Text = "Attend";
             acceptLabel.Hidden = true;
             eventCardView.Add (acceptLabel);
 
-            tentativeLabel = new UILabel (new RectangleF (tentativeButton.Frame.X + 24 + 6, 20, 45, 20));
+            tentativeLabel = new UILabel (new CGRect (tentativeButton.Frame.X + 24 + 6, 20, 45, 20));
             tentativeLabel.TextColor = textColor;
             tentativeLabel.Font = A.Font_AvenirNextMedium14;
             tentativeLabel.Text = "Maybe";
             tentativeLabel.Hidden = true;
             eventCardView.Add (tentativeLabel);
 
-            declineLabel = new UILabel (new RectangleF (declineButton.Frame.X + 24 + 6, 20, 50, 20));
+            declineLabel = new UILabel (new CGRect (declineButton.Frame.X + 24 + 6, 20, 50, 20));
             declineLabel.TextColor = textColor;
             declineLabel.Font = A.Font_AvenirNextMedium14;
             declineLabel.Text = "Decline";
             declineLabel.Hidden = true;
             eventCardView.Add (declineLabel);
 
-            messageLabel = new UILabel (new RectangleF (18 + 24 + 6, 20, 100, 20));
+            messageLabel = new UILabel (new CGRect (18 + 24 + 6, 20, 100, 20));
             messageLabel.TextColor = textColor;
             messageLabel.TextAlignment = UITextAlignment.Left;
             messageLabel.Font = A.Font_AvenirNextMedium14;
@@ -251,7 +256,7 @@ namespace NachoClient.iOS
             removeFromCalendarButton.SetTitle ("Remove from calendar", UIControlState.Normal);
             removeFromCalendarButton.Font = A.Font_AvenirNextRegular12;
             removeFromCalendarButton.SizeToFit ();
-            removeFromCalendarButton.Frame = new RectangleF (18 + 24 + 10, 19, removeFromCalendarButton.Frame.Width, 24);
+            removeFromCalendarButton.Frame = new CGRect (18 + 24 + 10, 19, removeFromCalendarButton.Frame.Width, 24);
             removeFromCalendarButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
             removeFromCalendarButton.Hidden = true;
             eventCardView.Add (removeFromCalendarButton);
@@ -260,7 +265,7 @@ namespace NachoClient.iOS
             changeResponseButton.SetTitle ("Change response", UIControlState.Normal);
             changeResponseButton.Font = A.Font_AvenirNextMedium14;
             changeResponseButton.SizeToFit ();
-            changeResponseButton.Frame = new RectangleF (EVENT_CARD_WIDTH - changeResponseButton.Frame.Width - 18, 20, changeResponseButton.Frame.Width, 20);
+            changeResponseButton.Frame = new CGRect (EVENT_CARD_WIDTH - changeResponseButton.Frame.Width - 18, 20, changeResponseButton.Frame.Width, 20);
             changeResponseButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
             changeResponseButton.Hidden = true;
             changeResponseButton.TouchUpInside += ChangeResponseTouchUpInside;
@@ -268,7 +273,7 @@ namespace NachoClient.iOS
 
             yOffset = 60;
 
-            rsvpSeparatorLine = Util.AddHorizontalLineView (0, yOffset, EVENT_CARD_WIDTH, A.Color_NachoBorderGray);
+            rsvpSeparatorLine = Util.AddHorizontalLine (0, yOffset, EVENT_CARD_WIDTH, A.Color_NachoBorderGray);
             eventCardView.Add (rsvpSeparatorLine);
 
             yOffset += 18;
@@ -292,7 +297,7 @@ namespace NachoClient.iOS
             // Description, for which we use a BodyView.
             Util.AddTextLabelWithImageView (yOffset, "DESCRIPTION", "event-description", TagType.EVENT_DESCRIPTION_TITLE_TAG, eventCardView);
             yOffset += 16 + 6;
-            descriptionView = BodyView.VariableHeightBodyView (new PointF (42, yOffset), EVENT_CARD_WIDTH - 60, scrollView.Frame.Size, LayoutView, onLinkSelected);
+            descriptionView = BodyView.VariableHeightBodyView (new CGPoint (42, yOffset), EVENT_CARD_WIDTH - 60, scrollView.Frame.Size, LayoutView, onLinkSelected);
             descriptionView.Tag = (int)TagType.EVENT_DESCRIPTION_LABEL_TAG;
             eventCardView.AddSubview (descriptionView);
 
@@ -303,7 +308,7 @@ namespace NachoClient.iOS
             }
 
             // Reminder
-            eventAlertsView = new UIView (new RectangleF (0, yOffset, EVENT_CARD_WIDTH, CELL_HEIGHT));
+            eventAlertsView = new UIView (new CGRect (0, yOffset, EVENT_CARD_WIDTH, CELL_HEIGHT));
             eventAlertsView.Tag = (int)TagType.EVENT_ALERTS_VIEW_TAG;
             eventAlertsView.BackgroundColor = cellBGColor;
 
@@ -320,10 +325,10 @@ namespace NachoClient.iOS
             yOffset += CELL_HEIGHT + 20;
 
             // Attachments
-            attachmentListView = new AttachmentListView (new RectangleF (
+            attachmentListView = new AttachmentListView (new CGRect (
                 0, yOffset + 1.0f,
                 EVENT_CARD_WIDTH, 50));
-            var imageView = new UIImageView (new RectangleF (18, 0, 16, 16));
+            var imageView = new UIImageView (new CGRect (18, 0, 16, 16));
             using (var image = UIImage.FromBundle ("email-icn-attachment")) {
                 imageView.Image = image;
             }
@@ -350,7 +355,7 @@ namespace NachoClient.iOS
             #endif
 
             // Organizer
-            eventOrganizerView = new UIView (new RectangleF (0, yOffset, EVENT_CARD_WIDTH, CELL_HEIGHT + 16 + 16));
+            eventOrganizerView = new UIView (new CGRect (0, yOffset, EVENT_CARD_WIDTH, CELL_HEIGHT + 16 + 16));
             eventOrganizerView.Tag = (int)TagType.EVENT_ORGANIZER_VIEW_TAG;
             eventOrganizerView.BackgroundColor = cellBGColor;
             eventOrganizerView.Hidden = true;
@@ -360,7 +365,7 @@ namespace NachoClient.iOS
             Util.AddTextLabelWithImageView (0, "ORGANIZER", "event-organizer", TagType.EVENT_ORGANIZER_TITLE_TAG, eventOrganizerView);
 
             //User Name
-            var userNameLabel = new UILabel (new RectangleF (92, 16 + 10, eventOrganizerView.Frame.Width - 92 - 18, 20));
+            var userNameLabel = new UILabel (new CGRect (92, 16 + 10, eventOrganizerView.Frame.Width - 92 - 18, 20));
             userNameLabel.LineBreakMode = UILineBreakMode.TailTruncation;
             userNameLabel.TextColor = UIColor.LightGray;
             userNameLabel.Font = A.Font_AvenirNextRegular14;
@@ -368,7 +373,7 @@ namespace NachoClient.iOS
             eventOrganizerView.AddSubview (userNameLabel);
 
             //User Email
-            var userEmailLabel = new UILabel (new RectangleF (92, 26 + 20, eventOrganizerView.Frame.Width - 92 - 18, 20));
+            var userEmailLabel = new UILabel (new CGRect (92, 26 + 20, eventOrganizerView.Frame.Width - 92 - 18, 20));
             userEmailLabel.LineBreakMode = UILineBreakMode.TailTruncation;
             userEmailLabel.TextColor = UIColor.LightGray;
             userEmailLabel.Font = A.Font_AvenirNextRegular14;
@@ -383,7 +388,7 @@ namespace NachoClient.iOS
             yOffset += CELL_HEIGHT + 20;
 
             // Attendees label, image, and detail
-            eventAttendeeView = new UIView (new RectangleF (0, yOffset, EVENT_CARD_WIDTH, 96 + 16));
+            eventAttendeeView = new UIView (new CGRect (0, yOffset, EVENT_CARD_WIDTH, 96 + 16));
             eventAttendeeView.Tag = (int)TagType.EVENT_ATTENDEE_VIEW_TAG;
             attendeeTapGestureRecognizer = new UITapGestureRecognizer ();
             attendeeTapGestureRecognizerTapToken = attendeeTapGestureRecognizer.AddTarget (AttendeeTapGestureRecognizerTap);
@@ -394,7 +399,7 @@ namespace NachoClient.iOS
             yOffset += 96 + 20;
 
             // Notes
-            eventNotesView = new UIView (new RectangleF (0, yOffset, EVENT_CARD_WIDTH, CELL_HEIGHT));
+            eventNotesView = new UIView (new CGRect (0, yOffset, EVENT_CARD_WIDTH, CELL_HEIGHT));
             eventNotesView.Tag = (int)TagType.EVENT_NOTES_TEXT_VIEW_TAG;
             eventNotesView.BackgroundColor = cellBGColor;
             Util.AddArrowAccessory (eventNotesView.Frame.Width - 18 - 12, 2, 12, eventNotesView);
@@ -416,11 +421,11 @@ namespace NachoClient.iOS
             //            eventNotesTextView.Started += NotesEditingStarted;
             //            eventNotesTextView.Changed += NotesChanged;
             //eventCardView.AddSubview (eventNotesTextView);
-            eventCardView.Frame = new RectangleF (A.Card_Horizontal_Indent, 60, contentView.Frame.Width - 30, yOffset + A.Card_Vertical_Indent);
+            eventCardView.Frame = new CGRect (A.Card_Horizontal_Indent, 60, contentView.Frame.Width - 30, yOffset + A.Card_Vertical_Indent);
 
             yOffset += 20;
 
-            scrollView.ContentSize = new SizeF (SCREEN_WIDTH, eventCardView.Frame.Bottom + 15);
+            scrollView.ContentSize = new CGSize (SCREEN_WIDTH, eventCardView.Frame.Bottom + 15);
         }
 
         protected override void ConfigureAndLayout ()
@@ -484,7 +489,7 @@ namespace NachoClient.iOS
                         Pretty.FullTimeString (e.StartTime), Pretty.FullDateTimeString (e.EndTime));
                 }
             }
-            durationLabel.Frame = new RectangleF (durationLabel.Frame.X, durationLabel.Frame.Y, SCREEN_WIDTH - 90, 20);
+            durationLabel.Frame = new CGRect (durationLabel.Frame.X, durationLabel.Frame.Y, SCREEN_WIDTH - 90, 20);
             durationLabel.Lines = 0;
             durationLabel.LineBreakMode = UILineBreakMode.WordWrap;
             durationLabel.SizeToFit ();
@@ -536,7 +541,7 @@ namespace NachoClient.iOS
                         var organizerNameLabel = View.ViewWithTag ((int)TagType.EVENT_ORGANIZER_NAME_LABEL) as UILabel;
                         organizerNameLabel.Text = root.OrganizerName;
                     } else {
-                        organizerEmailLabel.Frame = new RectangleF (92, (eventOrganizerView.Frame.Height / 2) - 2, eventOrganizerView.Frame.Width - 92 - 18, 20);
+                        organizerEmailLabel.Frame = new CGRect (92, (eventOrganizerView.Frame.Height / 2) - 2, eventOrganizerView.Frame.Width - 92 - 18, 20);
                     }
                     organizerEmailLabel.Text = root.OrganizerEmail;
 
@@ -546,7 +551,7 @@ namespace NachoClient.iOS
                         using (var rawImage = userImage) {
                             using (var originalImage = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
                                 // User image
-                                var userImageView = new UIImageView (new RectangleF (42, 10 + 16, 40, 40));
+                                var userImageView = new UIImageView (new CGRect (42, 10 + 16, 40, 40));
                                 userImageView.Layer.CornerRadius = (40.0f / 2.0f);
                                 userImageView.Layer.MasksToBounds = true;
                                 userImageView.Image = originalImage;
@@ -558,7 +563,7 @@ namespace NachoClient.iOS
                     } else {
 
                         // User userLabelView view, if no image
-                        var userLabelView = new UILabel (new RectangleF (42, 10 + 16, 40, 40));
+                        var userLabelView = new UILabel (new CGRect (42, 10 + 16, 40, 40));
                         userLabelView.Font = A.Font_AvenirNextRegular17;
                         userLabelView.BackgroundColor = Util.GetCircleColorForEmail (root.OrganizerEmail, account.Id);
                         userLabelView.TextColor = UIColor.White;
@@ -596,7 +601,7 @@ namespace NachoClient.iOS
                 hasAttendees = true;
                 View.ViewWithTag ((int)TagType.EVENT_ATTENDEES_TITLE_TAG).Hidden = false;
                 eventAttendeeView.Hidden = false;
-                float spacing = 0;
+                nfloat spacing = 0;
                 int attendeeNum = 0;
                 foreach (var attendee in c.attendees) {
 
@@ -616,7 +621,7 @@ namespace NachoClient.iOS
                     extraAttendeesButton.Layer.MasksToBounds = true;
                     extraAttendeesButton.Layer.BorderColor = A.Color_NachoGreen.CGColor;
                     extraAttendeesButton.Layer.BorderWidth = 1;
-                    extraAttendeesButton.Frame = new RectangleF (42 + iconSpace - 39, 10 + titleOffset, attendeeImageDiameter, attendeeImageDiameter);
+                    extraAttendeesButton.Frame = new CGRect (42 + iconSpace - 39, 10 + titleOffset, attendeeImageDiameter, attendeeImageDiameter);
                     extraAttendeesButton.Font = A.Font_AvenirNextRegular14;
                     extraAttendeesButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
                     extraAttendeesButton.Tag = (int)TagType.EVENT_ATTENDEE_DETAIL_TAG;
@@ -631,7 +636,7 @@ namespace NachoClient.iOS
             eventNotes.Text = GetNoteText ();
             eventNotes.Lines = 0;
             eventNotes.LineBreakMode = UILineBreakMode.WordWrap;
-            eventNotes.Frame = new RectangleF (42, 22, EVENT_CARD_WIDTH - 60, 0);
+            eventNotes.Frame = new CGRect (42, 22, EVENT_CARD_WIDTH - 60, 0);
             eventNotes.SizeToFit ();
 
             LayoutView ();
@@ -858,12 +863,12 @@ namespace NachoClient.iOS
 
         public void LayoutView ()
         {
-            float yOffset = 0;
+            nfloat yOffset = 0;
 
             AdjustViewLayout (TagType.EVENT_TITLE_LABEL_TAG, 15 + 18, ref yOffset, 20, SCREEN_WIDTH - 66);
             AdjustY (eventCardView, yOffset + 15);
 
-            float internalYOffset = (NcMeetingStatus.Appointment == c.MeetingStatus && !isOrganizer) ? 0 : 60;
+            nfloat internalYOffset = (NcMeetingStatus.Appointment == c.MeetingStatus && !isOrganizer) ? 0 : 60;
 
             AdjustViewLayout (TagType.EVENT_WHEN_TITLE_TAG, 0, ref internalYOffset, 18, EVENT_CARD_WIDTH - 100);
             AdjustViewLayout (TagType.EVENT_WHEN_DETAIL_LABEL_TAG, 42, ref internalYOffset, 5, EVENT_CARD_WIDTH - 60);
@@ -882,7 +887,7 @@ namespace NachoClient.iOS
                 ViewFramer.Create (descriptionView).Y (internalYOffset);
             }
             // descriptionView should already be layed out correctly. There is no need to call Layout() again.
-            internalYOffset += Math.Max (descriptionView.Frame.Height, 20);
+            internalYOffset += NMath.Max (descriptionView.Frame.Height, 20);
 
             #if PHONE_UI
             AdjustViewLayout (TagType.EVENT_PHONE_TITLE_TAG, 23, ref yOffset, 20, SCREEN_WIDTH - 50);
@@ -912,17 +917,17 @@ namespace NachoClient.iOS
 
             internalYOffset += 18;
 
-            var eventNotesViewHeight = (float)CELL_HEIGHT;
+            var eventNotesViewHeight = (nfloat)CELL_HEIGHT;
             if (hasNotes) {
                 eventNotesViewHeight = (View.ViewWithTag ((int)TagType.EVENT_NOTES_DETAIL_TAG).Frame.Height + View.ViewWithTag ((int)TagType.EVENT_NOTE_TITLE_TAG).Frame.Height + 6);
             }
-            View.ViewWithTag ((int)TagType.EVENT_NOTES_TEXT_VIEW_TAG).Frame = new RectangleF (0, internalYOffset, EVENT_CARD_WIDTH, eventNotesViewHeight);
+            View.ViewWithTag ((int)TagType.EVENT_NOTES_TEXT_VIEW_TAG).Frame = new CGRect (0, internalYOffset, EVENT_CARD_WIDTH, eventNotesViewHeight);
             internalYOffset += eventNotesViewHeight;
 
-            float logicalWidth = Math.Max (SCREEN_WIDTH, descriptionView.Frame.Right);
-            scrollView.Frame = new RectangleF (0, 0, SCREEN_WIDTH, View.Frame.Height - keyboardHeight);
-            eventCardView.Frame = new RectangleF (15, eventCardView.Frame.Y, logicalWidth - 30, internalYOffset + 20);
-            contentView.Frame = new RectangleF (0, 0, logicalWidth, eventCardView.Frame.Bottom + 20);
+            nfloat logicalWidth = NMath.Max (SCREEN_WIDTH, descriptionView.Frame.Right);
+            scrollView.Frame = new CGRect (0, 0, SCREEN_WIDTH, View.Frame.Height - keyboardHeight);
+            eventCardView.Frame = new CGRect (15, eventCardView.Frame.Y, logicalWidth - 30, internalYOffset + 20);
+            contentView.Frame = new CGRect (0, 0, logicalWidth, eventCardView.Frame.Bottom + 20);
             scrollView.ContentSize = contentView.Frame.Size;
 
         }
@@ -955,7 +960,7 @@ namespace NachoClient.iOS
             }
         }
 
-        protected virtual void OnKeyboardChanged (bool visible, float height)
+        protected virtual void OnKeyboardChanged (bool visible, nfloat height)
         {
             var newHeight = (visible ? height : 0);
 
@@ -995,33 +1000,33 @@ namespace NachoClient.iOS
         //            scrollView.ScrollRectToVisible (caretRect, true);
         //        }
 
-        protected static void AdjustViewLayout (UIView view, float X, ref float Y, float extraY)
+        protected static void AdjustViewLayout (UIView view, nfloat X, ref nfloat Y, nfloat extraY)
         {
             AdjustViewLayout (view, X, ref Y, extraY, view.Frame.Width);
         }
 
-        protected static void AdjustViewLayout (UIView view, float X, ref float Y, float extraY, float width)
+        protected static void AdjustViewLayout (UIView view, nfloat X, ref nfloat Y, nfloat extraY, nfloat width)
         {
             Y += extraY;
-            view.Frame = new RectangleF (X, Y, width, view.Frame.Height);
+            view.Frame = new CGRect (X, Y, width, view.Frame.Height);
             Y += view.Frame.Height;
         }
 
-        protected void AdjustViewLayout (TagType tag, float X, ref float Y, float extraY)
+        protected void AdjustViewLayout (TagType tag, nfloat X, ref nfloat Y, nfloat extraY)
         {
             var view = View.ViewWithTag ((int)tag);
             NcAssert.NotNull (view);
             AdjustViewLayout (view, X, ref Y, extraY, view.Frame.Width);
         }
 
-        protected void AdjustViewLayout (TagType tag, float X, ref float Y, float extraY, float width)
+        protected void AdjustViewLayout (TagType tag, nfloat X, ref nfloat Y, nfloat extraY, nfloat width)
         {
             var view = View.ViewWithTag ((int)tag);
             NcAssert.NotNull (view);
             AdjustViewLayout (view, X, ref Y, extraY, width);
         }
 
-        protected void AdjustY (UIView view, float yOffset)
+        protected void AdjustY (UIView view, nfloat yOffset)
         {
             var frame = view.Frame;
             frame.Y = yOffset;
@@ -1050,7 +1055,7 @@ namespace NachoClient.iOS
             if (c.MeetingStatus == NcMeetingStatus.ForwardedMeetingCancelled) {
                 declineButton.Hidden = false;
                 declineButton.Selected = false;
-                declineButton.Frame = new RectangleF (18, 18, 24, 24);
+                declineButton.Frame = new CGRect (18, 18, 24, 24);
                 messageLabel.Hidden = true;
                 acceptButton.Hidden = true;
                 organizerIcon.Hidden = true;
@@ -1068,11 +1073,11 @@ namespace NachoClient.iOS
             if (isOrganizer) {
                 messageLabel.Hidden = false;
                 messageLabel.Text = "You are the organizer";
-                messageLabel.Frame = new RectangleF (18 + 24 + 12, 18, 150, 24);
+                messageLabel.Frame = new CGRect (18 + 24 + 12, 18, 150, 24);
                 acceptButton.Hidden = true;
                 organizerIcon.Hidden = false;
                 acceptButton.Selected = true;
-                acceptButton.Frame = new RectangleF (18, 18, 24, 24);
+                acceptButton.Frame = new CGRect (18, 18, 24, 24);
                 acceptLabel.Hidden = true;
                 tentativeButton.Hidden = true;
                 tentativeLabel.Hidden = true;
@@ -1351,7 +1356,7 @@ namespace NachoClient.iOS
         {
             // BodyView needs to know when scrolling happens, so it can do its magic and make sure
             // the correct stuff is visible.
-            descriptionView.ScrollingAdjustment (new PointF (
+            descriptionView.ScrollingAdjustment (new CGPoint (
                 scrollView.ContentOffset.X - (eventCardView.Frame.X + descriptionView.Frame.X),
                 scrollView.ContentOffset.Y - (eventCardView.Frame.Y + descriptionView.Frame.Y)));
         }
@@ -1387,7 +1392,7 @@ namespace NachoClient.iOS
         /// </summary>
         private void RemoveFromCalendarClicked (object sender, EventArgs e)
         {
-            NavigationController.PopViewControllerAnimated (true);
+            NavigationController.PopViewController (true);
 
             // Remove the item from the calendar.
             BackEnd.Instance.DeleteCalCmd (c.AccountId, c.Id);
@@ -1463,12 +1468,12 @@ namespace NachoClient.iOS
 
         private void NotesEditingStarted (object sender, EventArgs e)
         {
-            scrollView.SetContentOffset (new PointF (0, contentView.Frame.Height - scrollView.Frame.Height), true);
+            scrollView.SetContentOffset (new CGPoint (0, contentView.Frame.Height - scrollView.Frame.Height), true);
         }
 
         private void NotesChanged (object sender, EventArgs e)
         {
-            scrollView.SetContentOffset (new PointF (0, contentView.Frame.Height - scrollView.Frame.Height), true);
+            scrollView.SetContentOffset (new CGPoint (0, contentView.Frame.Height - scrollView.Frame.Height), true);
         }
 
         public void onLinkSelected (NSUrl url)

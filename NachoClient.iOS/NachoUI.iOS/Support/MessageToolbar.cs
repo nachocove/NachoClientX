@@ -1,9 +1,9 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Drawing;
+using CoreGraphics;
 
-using MonoTouch.UIKit;
+using UIKit;
 
 using NachoCore.Utils;
 
@@ -66,7 +66,7 @@ namespace NachoClient.iOS
             OnClick (sender, new MessageToolbarEventArgs(ActionType.DELETE));
         }
 
-        public MessageToolbar (RectangleF frame) : base (frame)
+        public MessageToolbar (CGRect frame) : base (frame)
         {
             Translucent = false;
             BarTintColor = UIColor.White;
