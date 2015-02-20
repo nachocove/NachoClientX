@@ -119,8 +119,16 @@ namespace NachoClient.iOS
 
                 //Rethrow any unhandled .NET exceptions as native iOS
                 // exceptions so the stack traces appear nicely in HockeyApp
-                AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
+                AppDomain.CurrentDomain.UnhandledException += (sender, e) => {
+                    try {
+                        var ex = e.ExceptionObject as Exception;
+                        if (null != ex) {
+                            // See if we can get the part of the stack that is getting lost in ThrowExceptionAsNative().
+                            Log.Error (Log.LOG_LIFECYCLE, "UnhandledException: {0}", ex.Message);
+                        }
+                    } catch { }
                     Setup.ThrowExceptionAsNative (e.ExceptionObject);
+                };
 
                 NcApplication.UnobservedTaskException += (sender, e) =>
                     Setup.ThrowExceptionAsNative (e.Exception);
