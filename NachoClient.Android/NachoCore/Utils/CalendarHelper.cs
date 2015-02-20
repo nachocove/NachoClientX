@@ -1009,6 +1009,8 @@ namespace NachoCore.Utils
 
                     foreach (var calendarItem in list) {
 
+                        NcTask.Cts.Token.ThrowIfCancellationRequested ();
+
                         // Delete any existing events that are later than calendarItem.RecurrencesGeneratedUntil.
                         // These events can exist for two reasons: (1) The app was killed while generating events
                         // for this item. (2) The calendar item as edited and it RecurrencesGeneratedUntil was
