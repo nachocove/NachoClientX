@@ -1,7 +1,7 @@
 //  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using MonoTouch.Foundation;
+using Foundation;
 using NachoCore.Model;
 
 namespace NachoClient.iOS
@@ -9,7 +9,7 @@ namespace NachoClient.iOS
     public interface INachoMessageEditor
     {
         void SetOwner (INachoMessageEditorParent o);
-        void DismissMessageEditor (bool animated, NSAction action);
+        void DismissMessageEditor (bool animated, Action action);
     }
 
     public interface INachoMessageEditorParent

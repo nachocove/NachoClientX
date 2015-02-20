@@ -1,9 +1,9 @@
-﻿using System;
-using System.Drawing;
+using System;
+using CoreGraphics;
 using System.Collections.Generic;
 
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 
 using MimeKit;
 using NachoCore.Utils;
@@ -47,7 +47,7 @@ namespace NachoClient.iOS
         protected bool isCompact;
         protected bool isEditable;
 
-        protected float parentWidth;
+        protected nfloat parentWidth;
         protected string openTopLeftString;
         protected string closedTopLeftString;
         protected IUcAddressBlockDelegate owner;
@@ -60,11 +60,12 @@ namespace NachoClient.iOS
 
         protected List<UcAddressField> list;
 
-        protected float LINE_HEIGHT = 42;
-        protected float LEFT_LABEL_INDENT = 15;
-        protected float LEFT_ADDRESS_INDENT = 57;
-        protected float RIGHT_INDENT = 15;
-        protected float CHOOSER_INSET = 8;
+        protected nfloat lineHeight = 42;
+        protected nfloat leftAddressIndent = 57;
+
+        protected static nfloat LEFT_LABEL_INDENT = 15;
+        protected static nfloat RIGHT_INDENT = 15;
+        protected static nfloat CHOOSER_INSET = 8;
 
         protected UcAddressField currentAddressField;
 
@@ -78,7 +79,7 @@ namespace NachoClient.iOS
             CHOOSER_BUTTON_TAG,
         };
 
-        public UcAddressBlock (IUcAddressBlockDelegate owner, string openLabel, string closedLabel, float width)
+        public UcAddressBlock (IUcAddressBlockDelegate owner, string openLabel, string closedLabel, nfloat width)
         {
             this.owner = owner;
             this.openTopLeftString = openLabel;
@@ -106,14 +107,14 @@ namespace NachoClient.iOS
             this.isEditable = isEditable;
         }
 
-        public void SetLineHeight (float height)
+        public void SetLineHeight (nfloat height)
         {
-            this.LINE_HEIGHT = height;
+            this.lineHeight = height;
         }
 
-        public void SetAddressIndentation (float width)
+        public void SetAddressIndentation (nfloat width)
         {
-            this.LEFT_ADDRESS_INDENT = width;
+            this.leftAddressIndent = width;
         }
 
         public void SetCurrentAddressField (UcAddressField addressField)
@@ -145,12 +146,12 @@ namespace NachoClient.iOS
             a.TextColor = A.Color_154750;
             a.Text = text;
             a.address = address;
-            var aSize = a.StringSize (a.Text, a.Font);
+            var aSize = a.Text.StringSize (a.Font);
             if (UcAddressField.TEXT_FIELD == type) {
                 // extra space for rounded corners
                 aSize.Width += 14; // FIXME - see if there is a way to derive this value from dimension of the text view
             }
-            a.Frame = new RectangleF (PointF.Empty, aSize);
+            a.Frame = new CGRect (CGPoint.Empty, aSize);
             a.Delegate = new UcAddressFieldDelegate (this);
             this.AddSubview (a);
             list.Insert (index, a);
@@ -212,7 +213,7 @@ namespace NachoClient.iOS
 
             var moreTapGestureRecognizer = new UITapGestureRecognizer ();
             moreTapGestureRecognizer.NumberOfTapsRequired = 1;
-            moreTapGestureRecognizer.AddTarget (this, new MonoTouch.ObjCRuntime.Selector ("MoreLabelTapSelector:"));
+            moreTapGestureRecognizer.AddTarget (this, new ObjCRuntime.Selector ("MoreLabelTapSelector:"));
             moreLabel.AddGestureRecognizer (moreTapGestureRecognizer);
             moreLabel.UserInteractionEnabled = true;
 
@@ -226,7 +227,7 @@ namespace NachoClient.iOS
             Util.SetOriginalImagesForButton (chooserButton, "email-add", "email-add-active");
             chooserButton.SizeToFit ();
             var chooserButtonX = parentWidth - chooserButton.Frame.Width - RIGHT_INDENT - CHOOSER_INSET;
-            chooserButton.Frame = new RectangleF (chooserButtonX, 0, chooserButton.Frame.Width + RIGHT_INDENT + CHOOSER_INSET, LINE_HEIGHT);
+            chooserButton.Frame = new CGRect (chooserButtonX, 0, chooserButton.Frame.Width + RIGHT_INDENT + CHOOSER_INSET, lineHeight);
             chooserButton.HorizontalAlignment = UIControlContentHorizontalAlignment.Left;
             chooserButton.ImageEdgeInsets = new UIEdgeInsets (0, 8, 0, 0);
             chooserButton.Tag = (int)TagType.CHOOSER_BUTTON_TAG;
@@ -253,7 +254,7 @@ namespace NachoClient.iOS
 //            entryTextField.BackgroundColor = UIColor.Yellow;
         }
 
-        [MonoTouch.Foundation.Export ("MoreLabelTapSelector:")]
+        [Foundation.Export ("MoreLabelTapSelector:")]
         public void MoreLabelTapSelector (UIGestureRecognizer sender)
         {
             if (!isEditable) {
@@ -274,8 +275,8 @@ namespace NachoClient.iOS
             }
 
             topLeftLabel.Text = topLeftLabelString;
-            var topLeftLabelSize = topLeftLabel.StringSize (topLeftLabelString, topLeftLabel.Font);
-            topLeftLabel.Frame = new RectangleF (topLeftLabel.Frame.Location, topLeftLabelSize);
+            var topLeftLabelSize = topLeftLabelString.StringSize (topLeftLabel.Font);
+            topLeftLabel.Frame = new CGRect (topLeftLabel.Frame.Location, topLeftLabelSize);
 
             if (null != owner) {
                 owner.AddressBlockNeedsLayout (this);
@@ -288,9 +289,9 @@ namespace NachoClient.iOS
         }
 
         /// Adjusts x & y on the top line of a view
-        protected void AdjustXY (UIView view, float X, float Y)
+        protected void AdjustXY (UIView view, nfloat X, nfloat Y)
         {
-            view.Center = new PointF (X + (view.Frame.Width / 2), Y + LINE_HEIGHT / 2);
+            view.Center = new CGPoint (X + (view.Frame.Width / 2), Y + lineHeight / 2);
         }
 
         public void Layout ()
@@ -304,9 +305,9 @@ namespace NachoClient.iOS
 
         protected void LayoutCompactView ()
         {
-            float yOffset = 0;
-            float xOffset = 15;
-            float xLimit = parentWidth;
+            nfloat yOffset = 0;
+            nfloat xOffset = 15;
+            nfloat xLimit = parentWidth;
 
             if (null == openTopLeftString) {
                 topLeftLabel.Hidden = true;
@@ -323,7 +324,7 @@ namespace NachoClient.iOS
             }
 
             // accommodate long labels
-            xOffset = Math.Max(xOffset, LEFT_ADDRESS_INDENT);
+            xOffset = NMath.Max (xOffset, leftAddressIndent);
 
             if (0 < list.Count) {
                 NcAssert.True (1 < list.Count); // must have at least 2 since the first one is a gap
@@ -350,28 +351,28 @@ namespace NachoClient.iOS
                 moreLabel.Hidden = false;
                 var remainingSpace = xLimit - xOffset;
                 if (moreLabel.Frame.Width >= remainingSpace) {
-                    yOffset += LINE_HEIGHT;
+                    yOffset += lineHeight;
                     xOffset = LEFT_LABEL_INDENT;
                     xLimit = parentWidth;
                 }
-                var yMoreLabel = yOffset + (LINE_HEIGHT / 2) - (moreLabel.Frame.Height / 2);
-                moreLabel.Frame = new RectangleF (xOffset, yMoreLabel, (xLimit - xOffset), moreLabel.Frame.Height);
+                var yMoreLabel = yOffset + (lineHeight / 2) - (moreLabel.Frame.Height / 2);
+                moreLabel.Frame = new CGRect (xOffset, yMoreLabel, (xLimit - xOffset), moreLabel.Frame.Height);
                 xOffset += moreLabel.Frame.Width;
             }
             if (isEditable) {
-                entryTextField.Frame = new RectangleF (xOffset, 0, (xLimit - xOffset), LINE_HEIGHT);
+                entryTextField.Frame = new CGRect (xOffset, 0, (xLimit - xOffset), lineHeight);
                 xOffset += entryTextField.Frame.Width;
             }
-            yOffset += LINE_HEIGHT;
+            yOffset += lineHeight;
             // Size the whole control
-            this.Frame = new RectangleF (this.Frame.X, this.Frame.Y, parentWidth, yOffset);
+            this.Frame = new CGRect (this.Frame.X, this.Frame.Y, parentWidth, yOffset);
         }
 
         protected void LayoutExpandedView ()
         {
-            float yOffset = 0;
-            float xOffset = LEFT_LABEL_INDENT;
-            float xLimit = parentWidth;
+            nfloat yOffset = 0;
+            nfloat xOffset = LEFT_LABEL_INDENT;
+            nfloat xLimit = parentWidth;
            
             moreLabel.Hidden = true;
 
@@ -392,7 +393,7 @@ namespace NachoClient.iOS
             }
 
             bool firstLine = true;
-            xOffset = LEFT_ADDRESS_INDENT;
+            xOffset = leftAddressIndent;
             if (0 < list.Count) {
                 xOffset -= list [0].Frame.Width;
             }
@@ -412,32 +413,32 @@ namespace NachoClient.iOS
                 if (!address.IsGapField ()) {
                     if (requestedSpace >= remainingSpace) {
                         // ..or the line is too long
-                        if (firstLine || (LEFT_ADDRESS_INDENT != xOffset)) {
+                        if (firstLine || (leftAddressIndent != xOffset)) {
                             firstLine = false;
-                            yOffset += LINE_HEIGHT;
-                            xOffset = LEFT_ADDRESS_INDENT;
+                            yOffset += lineHeight;
+                            xOffset = leftAddressIndent;
                             xLimit = parentWidth;
                         }
                     }
                 }
                 address.Hidden = false;
-                var yAddress = yOffset + (LINE_HEIGHT / 2) - (address.Frame.Height / 2);
-                address.Frame = new RectangleF (xOffset, yAddress, address.Frame.Width, address.Frame.Height);
+                var yAddress = yOffset + (lineHeight / 2) - (address.Frame.Height / 2);
+                address.Frame = new CGRect (xOffset, yAddress, address.Frame.Width, address.Frame.Height);
                 xOffset += address.Frame.Width;
             }
             // Put the new entry placeholder at the end.
             if (10 >= (xLimit - xOffset)) {
-                yOffset += LINE_HEIGHT;
-                xOffset = LEFT_ADDRESS_INDENT;
+                yOffset += lineHeight;
+                xOffset = leftAddressIndent;
                 xLimit = parentWidth;
             }
             if (isEditable) {
-                entryTextField.Frame = new RectangleF (xOffset, yOffset, (xLimit - xOffset), LINE_HEIGHT);
+                entryTextField.Frame = new CGRect (xOffset, yOffset, (xLimit - xOffset), lineHeight);
                 xOffset += entryTextField.Frame.Width;
             }
-            yOffset += LINE_HEIGHT;
+            yOffset += lineHeight;
             // Size the whole control
-            this.Frame = new RectangleF (this.Frame.X, this.Frame.Y, parentWidth, yOffset);
+            this.Frame = new CGRect (this.Frame.X, this.Frame.Y, parentWidth, yOffset);
         }
 
         public UcAddressField AddressFieldSuccessor (UcAddressField addressField)

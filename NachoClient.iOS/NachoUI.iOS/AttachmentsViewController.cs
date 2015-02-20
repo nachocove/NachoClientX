@@ -3,14 +3,14 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Drawing;
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using CoreGraphics;
+using Foundation;
+using UIKit;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
 using System.Collections.Generic;
-using MonoTouch.CoreAnimation;
+using CoreAnimation;
 
 namespace NachoClient.iOS
 {
@@ -39,7 +39,7 @@ namespace NachoClient.iOS
         string FilesToNotesSegueId = "AttachmentsToNotes";
 
         // animation constants
-        public float AnimationDuration = 3.0f;
+        public nfloat AnimationDuration = 3.0f;
 
         UIBarButtonItem searchButton;
         UIBarButtonItem multiSelectButton;
@@ -64,7 +64,7 @@ namespace NachoClient.iOS
         /// <summary>
         /// INachoFileChooser delegate
         /// </summary>
-        public void DismissFileChooser (bool animated, NSAction action)
+        public void DismissFileChooser (bool animated, Action action)
         {
             Owner = null;
         }
@@ -112,7 +112,7 @@ namespace NachoClient.iOS
 
         private void CreateView ()
         {
-            var yOffset = 0f;
+            nfloat yOffset = 0;
             searchButton = new UIBarButtonItem (UIBarButtonSystemItem.Search);
             multiSelectButton = new UIBarButtonItem ();
             multiOpenInButton = new UIBarButtonItem ();
@@ -121,7 +121,7 @@ namespace NachoClient.iOS
             multiCancelButton = new UIBarButtonItem ();
 
             if (modal) {
-                navbar.Frame = new RectangleF (0, 0, View.Frame.Width, 64);
+                navbar.Frame = new CGRect (0, 0, View.Frame.Width, 64);
                 View.AddSubview (navbar);
                 navbar.BackgroundColor = A.Color_NachoGreen;
                 navbar.Translucent = false;
@@ -140,11 +140,11 @@ namespace NachoClient.iOS
                 NavigationItem.Title = "Files";
             }
 
-            segmentedControlView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 40));
+            segmentedControlView = new UIView (new CGRect (0, yOffset, View.Frame.Width, 40));
             segmentedControlView.BackgroundColor = UIColor.White;
 
             segmentedControl = new UISegmentedControl ();
-            segmentedControl.Frame = new RectangleF (6, 5, View.Frame.Width - 12, 30);
+            segmentedControl.Frame = new CGRect (6, 5, View.Frame.Width - 12, 30);
             segmentedControl.InsertSegment ("By Name", 0, false);
             segmentedControl.InsertSegment ("By Date", 1, false);
             segmentedControl.InsertSegment ("By Contact", 2, false);
@@ -166,7 +166,7 @@ namespace NachoClient.iOS
             segmentedControlView.AddSubview (segmentedControl);
             View.AddSubview (segmentedControlView);
 
-            tableView = new UITableView (new RectangleF (0, 0, 0, 0), UITableViewStyle.Grouped);
+            tableView = new UITableView (new CGRect (0, 0, 0, 0), UITableViewStyle.Grouped);
             tableView.SeparatorColor = UIColor.Clear;
 
             InitializeSearchDisplayController ();
@@ -204,7 +204,7 @@ namespace NachoClient.iOS
             multiCancelButton.Image = UIImage.FromBundle ("gen-close");
             multiCancelButton.Clicked += cancelClicked;
 
-            EmptyListLabel = new UILabel (new RectangleF (0, 80, UIScreen.MainScreen.Bounds.Width, 20));
+            EmptyListLabel = new UILabel (new CGRect (0, 80, UIScreen.MainScreen.Bounds.Width, 20));
             EmptyListLabel.TextAlignment = UITextAlignment.Center;
             EmptyListLabel.Font = A.Font_AvenirNextDemiBold14;
             EmptyListLabel.TextColor = A.Color_NachoBorderGray;
@@ -231,8 +231,8 @@ namespace NachoClient.iOS
                 ConfigureMultiSelectNavBar (true, 0);
                 UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
                     () => {
-                        segmentedControlView.Center = new PointF (segmentedControlView.Center.X, segmentedControlView.Center.Y - segmentedControlView.Frame.Height);
-                        tableView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height);
+                        segmentedControlView.Center = new CGPoint (segmentedControlView.Center.X, segmentedControlView.Center.Y - segmentedControlView.Frame.Height);
+                        tableView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height);
                         ConfigureVisibleCells ();
                     },
                     () => {
@@ -250,8 +250,8 @@ namespace NachoClient.iOS
                 AttachmentsSource.IsMultiSelecting = false;
                 UIView.Animate (.2, 0, UIViewAnimationOptions.CurveLinear,
                     () => {
-                        segmentedControlView.Center = new PointF (segmentedControlView.Center.X, segmentedControlView.Center.Y + segmentedControlView.Frame.Height);
-                        tableView.Frame = new RectangleF (0, segmentedControlView.Frame.Height, View.Frame.Width, View.Frame.Height - segmentedControlView.Frame.Height);
+                        segmentedControlView.Center = new CGPoint (segmentedControlView.Center.X, segmentedControlView.Center.Y + segmentedControlView.Frame.Height);
+                        tableView.Frame = new CGRect (0, segmentedControlView.Frame.Height, View.Frame.Width, View.Frame.Height - segmentedControlView.Frame.Height);
                         ConfigureVisibleCells ();
                     },
                     () => {
@@ -485,12 +485,12 @@ namespace NachoClient.iOS
             var segHeight = segmentedControlView.Frame.Height;
             if (!suppressLayout) {
                 if (!modal) {
-                    tableView.Frame = new RectangleF (0, segHeight, View.Frame.Width, View.Frame.Height - segHeight);
+                    tableView.Frame = new CGRect (0, segHeight, View.Frame.Width, View.Frame.Height - segHeight);
                 } else {
-                    tableView.Frame = new RectangleF (0, segHeight + navbar.Frame.Height, View.Frame.Width, View.Frame.Height - (navbar.Frame.Height + segHeight));
+                    tableView.Frame = new CGRect (0, segHeight + navbar.Frame.Height, View.Frame.Width, View.Frame.Height - (navbar.Frame.Height + segHeight));
                 }
                 // Initially let's hide the search controller
-                tableView.SetContentOffset (new PointF (0.0f, 44.0f), false);
+                tableView.SetContentOffset (new CGPoint (0.0f, 44.0f), false);
             }
             suppressLayout = false;
         }
@@ -683,7 +683,7 @@ namespace NachoClient.iOS
                 searchbarOverlay.RemoveFromSuperview ();
                 SearchDisplayController.SearchBar.UserInteractionEnabled = true;
             } else {
-                searchbarOverlay = new UIView (new RectangleF (0, 0, View.Frame.Width, 44));
+                searchbarOverlay = new UIView (new CGRect (0, 0, View.Frame.Width, 44));
                 searchbarOverlay.Hidden = false;
                 searchbarOverlay.BackgroundColor = UIColor.Black;
                 searchbarOverlay.Alpha = 0;

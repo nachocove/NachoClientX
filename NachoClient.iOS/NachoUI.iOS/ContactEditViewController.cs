@@ -5,9 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Collections.Generic;
-using System.Drawing;
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using CoreGraphics;
+using Foundation;
+using UIKit;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -42,9 +42,9 @@ namespace NachoClient.iOS
 
         protected BlockType editingBlockType;
 
-        protected float moreButtonIndent;
-        protected const float HORIZONTAL_INDENT = 30;
-        protected float CELL_HEIGHT = 44;
+        protected nfloat moreButtonIndent;
+        protected static readonly nfloat HORIZONTAL_INDENT = 30;
+        protected nfloat CELL_HEIGHT = 44;
 
         protected List<PhoneCell> phoneCellList = new List<PhoneCell> ();
         protected List<EmailCell> emailCellList = new List<EmailCell> ();
@@ -70,8 +70,8 @@ namespace NachoClient.iOS
         public McContact contact;
         protected McContact contactCopy;
        
-        protected float yOffset;
-        protected float keyboardHeight;
+        protected nfloat yOffset;
+        protected nfloat keyboardHeight;
 
         protected const int HEADER_INITIALS_CIRCLE_TAG = 100;
         protected const int HEADER_PORTRAIT_TAG = 101;
@@ -190,7 +190,7 @@ namespace NachoClient.iOS
 
         protected override void CreateViewHierarchy ()
         {
-            float internalOffset = 0;
+            nfloat internalOffset = 0;
 
             cancelButton = new UIBarButtonItem ();
             using (var image = UIImage.FromBundle ("icn-close")) {
@@ -221,13 +221,13 @@ namespace NachoClient.iOS
             scrollView.AddSubview (contentView);
             View.AddSubview (scrollView);
 
-            phoneView = new UIView (new RectangleF (0, 0, 0, 0));
-            emailView = new UIView (new RectangleF (0, 0, 0, 0));
-            dateView = new UIView (new RectangleF (0, 0, 0, 0));
+            phoneView = new UIView (new CGRect (0, 0, 0, 0));
+            emailView = new UIView (new CGRect (0, 0, 0, 0));
+            dateView = new UIView (new CGRect (0, 0, 0, 0));
 
             yOffset = A.Card_Vertical_Indent;
 
-            contactNameLabel = new UILabel (new RectangleF (HORIZONTAL_INDENT, yOffset, View.Frame.Width - (HORIZONTAL_INDENT * 2), 16));
+            contactNameLabel = new UILabel (new CGRect (HORIZONTAL_INDENT, yOffset, View.Frame.Width - (HORIZONTAL_INDENT * 2), 16));
             contactNameLabel.Font = A.Font_AvenirNextDemiBold17;
             contactNameLabel.TextColor = A.Color_NachoBlack;
             contactNameLabel.TextAlignment = UITextAlignment.Left;
@@ -240,14 +240,14 @@ namespace NachoClient.iOS
 
             yOffset = contactNameLabel.Frame.Bottom + 10;
 
-            UIView headerView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 110));
+            UIView headerView = new UIView (new CGRect (0, yOffset, View.Frame.Width, 110));
             headerView.BackgroundColor = UIColor.White;
             headerView.Layer.BorderColor = A.Card_Border_Color;
             headerView.Layer.BorderWidth = A.Card_Border_Width;
             headerView.Tag = HEADER_VIEW_TAG;
             contentView.AddSubview (headerView);
 
-            UILabel initialsCircleLabel = new UILabel (new RectangleF (HORIZONTAL_INDENT, 18, 60, 60));
+            UILabel initialsCircleLabel = new UILabel (new CGRect (HORIZONTAL_INDENT, 18, 60, 60));
             initialsCircleLabel.Font = A.Font_AvenirNextRegular24;
             initialsCircleLabel.BackgroundColor = A.Color_NachoLightText;
             initialsCircleLabel.TextColor = UIColor.White;
@@ -260,7 +260,7 @@ namespace NachoClient.iOS
             initialsCircleLabel.Tag = HEADER_INITIALS_CIRCLE_TAG;
             headerView.AddSubview (initialsCircleLabel);
 
-            UIImageView userImageView = new UIImageView (new RectangleF (HORIZONTAL_INDENT, 18, 60, 60));
+            UIImageView userImageView = new UIImageView (new CGRect (HORIZONTAL_INDENT, 18, 60, 60));
             userImageView.Layer.BorderColor = A.Card_Border_Color;
             userImageView.Layer.BorderWidth = A.Card_Border_Width;
             userImageView.Layer.CornerRadius = HORIZONTAL_INDENT;
@@ -269,12 +269,12 @@ namespace NachoClient.iOS
             userImageView.Hidden = true;
             headerView.AddSubview (userImageView);
 
-            UIView headerNameEditView = new UIView (new RectangleF (initialsCircleLabel.Frame.Right + 26, 0, View.Frame.Width - 115, (CELL_HEIGHT * 4)));
+            UIView headerNameEditView = new UIView (new CGRect (initialsCircleLabel.Frame.Right + 26, 0, View.Frame.Width - 115, (CELL_HEIGHT * 4)));
             headerNameEditView.BackgroundColor = UIColor.White;
             headerNameEditView.Tag = HEADER_NAME_EDIT_VIEW_TAG;
             headerNameEditView.Hidden = false;
 
-            firstNameField = new UITextField (new RectangleF (0, 18, headerNameEditView.Frame.Width, 16));
+            firstNameField = new UITextField (new CGRect (0, 18, headerNameEditView.Frame.Width, 16));
             firstNameField.Font = A.Font_AvenirNextMedium14;
             firstNameField.TextColor = A.Color_NachoGreen;
             firstNameField.TextAlignment = UITextAlignment.Left;
@@ -287,7 +287,7 @@ namespace NachoClient.iOS
 
             Util.AddHorizontalLine (0, firstNameField.Frame.Bottom + 10, headerNameEditView.Frame.Width, A.Color_NachoBorderGray, headerNameEditView);
 
-            middleNameField = new UITextField (new RectangleF (0, firstNameField.Frame.Bottom + 28, headerNameEditView.Frame.Width, 16));
+            middleNameField = new UITextField (new CGRect (0, firstNameField.Frame.Bottom + 28, headerNameEditView.Frame.Width, 16));
             middleNameField.Font = A.Font_AvenirNextMedium14;
             middleNameField.TextColor = A.Color_NachoGreen;
             middleNameField.TextAlignment = UITextAlignment.Left;
@@ -300,7 +300,7 @@ namespace NachoClient.iOS
 
             Util.AddHorizontalLine (0, middleNameField.Frame.Bottom + 10, headerNameEditView.Frame.Width, A.Color_NachoBorderGray, headerNameEditView);
 
-            lastNameField = new UITextField (new RectangleF (0, middleNameField.Frame.Bottom + 28, headerNameEditView.Frame.Width, 16));
+            lastNameField = new UITextField (new CGRect (0, middleNameField.Frame.Bottom + 28, headerNameEditView.Frame.Width, 16));
             lastNameField.Font = A.Font_AvenirNextMedium14;
             lastNameField.TextColor = A.Color_NachoGreen;
             lastNameField.TextAlignment = UITextAlignment.Left;
@@ -312,7 +312,7 @@ namespace NachoClient.iOS
             headerNameEditView.AddSubview (lastNameField);
             Util.AddHorizontalLine (0, lastNameField.Frame.Bottom + 10, headerNameEditView.Frame.Width, A.Color_NachoBorderGray, headerNameEditView);
 
-            suffixField = new UITextField (new RectangleF (0, lastNameField.Frame.Bottom + 28, headerNameEditView.Frame.Width, 16));
+            suffixField = new UITextField (new CGRect (0, lastNameField.Frame.Bottom + 28, headerNameEditView.Frame.Width, 16));
             suffixField.Font = A.Font_AvenirNextMedium14;
             suffixField.TextColor = A.Color_NachoGreen;
             suffixField.TextAlignment = UITextAlignment.Left;
@@ -327,12 +327,12 @@ namespace NachoClient.iOS
 
             headerView.AddSubview (headerNameEditView);
 
-            UIView headerCompanyView = new UIView (new RectangleF (initialsCircleLabel.Frame.Right + 26, headerNameEditView.Frame.Bottom, 204, CELL_HEIGHT));
+            UIView headerCompanyView = new UIView (new CGRect (initialsCircleLabel.Frame.Right + 26, headerNameEditView.Frame.Bottom, 204, CELL_HEIGHT));
             headerCompanyView.BackgroundColor = UIColor.White;
             headerCompanyView.Tag = HEADER_COMPANY_VIEW_TAG;
             headerView.AddSubview (headerCompanyView);
 
-            UITextField headerCompanyTextField = new UITextField (new RectangleF (0, 14, 204, 16));
+            UITextField headerCompanyTextField = new UITextField (new CGRect (0, 14, 204, 16));
             headerCompanyTextField.Font = A.Font_AvenirNextMedium14;
             headerCompanyTextField.TextColor = A.Color_NachoGreen;
             headerCompanyTextField.TextAlignment = UITextAlignment.Left;
@@ -344,7 +344,7 @@ namespace NachoClient.iOS
 
             yOffset = headerView.Frame.Bottom + A.Card_Vertical_Indent;
 
-            phoneView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 200));
+            phoneView = new UIView (new CGRect (0, yOffset, View.Frame.Width, 200));
             phoneView.BackgroundColor = UIColor.White;
             contentView.AddSubview (phoneView);
 
@@ -359,7 +359,7 @@ namespace NachoClient.iOS
             phoneCellList.Sort ();
             yOffset = phoneView.Frame.Bottom + A.Card_Vertical_Indent;
 
-            emailView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 200));
+            emailView = new UIView (new CGRect (0, yOffset, View.Frame.Width, 200));
             emailView.BackgroundColor = UIColor.White;
             addEmailButton = AddNewButton ("Email", AddEmailTouchUpInside, emailView);
             contentView.AddSubview (emailView);
@@ -373,7 +373,7 @@ namespace NachoClient.iOS
             }
             yOffset = emailView.Frame.Bottom + 20;
 
-            dateView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 200));
+            dateView = new UIView (new CGRect (0, yOffset, View.Frame.Width, 200));
             dateView.BackgroundColor = UIColor.White;
             contentView.AddSubview (dateView);
 
@@ -388,7 +388,7 @@ namespace NachoClient.iOS
             }
             yOffset = dateView.Frame.Bottom + 20;
 
-            addressView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 200));
+            addressView = new UIView (new CGRect (0, yOffset, View.Frame.Width, 200));
             addressView.BackgroundColor = UIColor.White;
             contentView.AddSubview (addressView);
 
@@ -403,7 +403,7 @@ namespace NachoClient.iOS
             }
             yOffset = addressView.Frame.Bottom + 20;
 
-            imAddressView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 200));
+            imAddressView = new UIView (new CGRect (0, yOffset, View.Frame.Width, 200));
             imAddressView.BackgroundColor = UIColor.White;
             contentView.AddSubview (imAddressView);
 
@@ -418,7 +418,7 @@ namespace NachoClient.iOS
             }
             yOffset = imAddressView.Frame.Bottom + 20;
 
-            relationshipView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 200));
+            relationshipView = new UIView (new CGRect (0, yOffset, View.Frame.Width, 200));
             relationshipView.BackgroundColor = UIColor.White;
             contentView.AddSubview (relationshipView);
 
@@ -434,7 +434,7 @@ namespace NachoClient.iOS
 
             yOffset = relationshipView.Frame.Bottom + 20;
 
-            miscView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 200));
+            miscView = new UIView (new CGRect (0, yOffset, View.Frame.Width, 200));
             miscView.BackgroundColor = UIColor.White;
             contentView.AddSubview (miscView);
 
@@ -450,21 +450,21 @@ namespace NachoClient.iOS
 
             yOffset = miscView.Frame.Bottom + 20;
 
-            notesView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, CELL_HEIGHT * 4));
+            notesView = new UIView (new CGRect (0, yOffset, View.Frame.Width, CELL_HEIGHT * 4));
             notesView.BackgroundColor = UIColor.White;
             contentView.AddSubview (notesView);
 
-            UILabel notesLabel = new UILabel (new RectangleF (27, 8, 100, 15));
+            UILabel notesLabel = new UILabel (new CGRect (27, 8, 100, 15));
             notesLabel.Text = "Notes";
             notesLabel.TextColor = UIColor.DarkGray;
             notesLabel.Font = A.Font_AvenirNextMedium14;
             notesLabel.SizeToFit ();
             notesView.AddSubview (notesLabel);
 
-            var line = Util.AddHorizontalLineView (28, notesLabel.Frame.Bottom + 3, notesView.Frame.Width - 28, A.Color_NachoBackgroundGray);
+            var line = Util.AddHorizontalLine (28, notesLabel.Frame.Bottom + 3, notesView.Frame.Width - 28, A.Color_NachoBackgroundGray);
             notesView.AddSubview (line);
 
-            notesTextView = new UITextView (new RectangleF (22, line.Frame.Bottom + 2, View.Frame.Width - 60, notesView.Frame.Height - (line.Frame.Bottom + 10)));
+            notesTextView = new UITextView (new CGRect (22, line.Frame.Bottom + 2, View.Frame.Width - 60, notesView.Frame.Height - (line.Frame.Bottom + 10)));
             notesTextView.Font = A.Font_AvenirNextMedium14;
             notesTextView.TextColor = A.Color_NachoGreen;
             notesTextView.TextAlignment = UITextAlignment.Left;
@@ -475,16 +475,16 @@ namespace NachoClient.iOS
 
             yOffset = notesView.Frame.Bottom + CELL_HEIGHT;
 
-            deleteContactButton = new UIButton (new RectangleF (0, yOffset, View.Frame.Width, CELL_HEIGHT));
+            deleteContactButton = new UIButton (new CGRect (0, yOffset, View.Frame.Width, CELL_HEIGHT));
             deleteContactButton.BackgroundColor = UIColor.White;
             deleteContactButton.TouchUpInside += DeleteContactButtonTouchUpInside;
             contentView.AddSubview (deleteContactButton);
 
             UIImageView deleteContactIcon = new UIImageView (UIImage.FromBundle ("email-delete"));
-            deleteContactIcon.Frame = new RectangleF (25, 10, deleteContactIcon.Frame.Width, deleteContactIcon.Frame.Height);
+            deleteContactIcon.Frame = new CGRect (25, 10, deleteContactIcon.Frame.Width, deleteContactIcon.Frame.Height);
             deleteContactButton.AddSubview (deleteContactIcon);
 
-            UILabel deleteContactLabel = new UILabel (new RectangleF (deleteContactIcon.Frame.Right + 10, 14, 150, 16));
+            UILabel deleteContactLabel = new UILabel (new CGRect (deleteContactIcon.Frame.Right + 10, 14, 150, 16));
             deleteContactLabel.Text = "Delete Contact";
             deleteContactLabel.Font = A.Font_AvenirNextMedium14;
             deleteContactLabel.TextAlignment = UITextAlignment.Left;
@@ -533,7 +533,7 @@ namespace NachoClient.iOS
             if (null != dateView) {
                 AdjustY (dateView, emailView.Frame.Bottom + 20);
 
-                float off = 0;
+                nfloat off = 0;
                 foreach (var d in dateCellList) {
                     AdjustY (d, off);
                     off += d.Frame.Height;
@@ -545,7 +545,7 @@ namespace NachoClient.iOS
 
             if (null != addressView) {
                 AdjustY (addressView, dateView.Frame.Bottom + 20);
-                float off = 0;
+                nfloat off = 0;
                 foreach (var ac in addressCellList) {
                     AdjustY (ac, off);
                     off += ac.Frame.Height;
@@ -592,8 +592,8 @@ namespace NachoClient.iOS
                 }
             }
 
-            scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
-            contentView.Frame = new RectangleF (0, 0, View.Frame.Width, yOffset);
+            scrollView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
+            contentView.Frame = new CGRect (0, 0, View.Frame.Width, yOffset);
             scrollView.ContentSize = contentView.Frame.Size;
 
             if (null != theMoreView) {
@@ -662,28 +662,28 @@ namespace NachoClient.iOS
             switch (whatField.Tag) {
             case FIRST_NAME_TAG:
                 if (string.IsNullOrEmpty (replacement)) {
-                    firstName = firstName.Remove (range.Location, 1);
+                    firstName = firstName.Remove ((int)range.Location, 1);
                 } else {
                     firstName += replacement;
                 }
                 break;
             case MIDDLE_NAME_TAG:
                 if (string.IsNullOrEmpty (replacement)) {
-                    middleName = middleName.Remove (range.Location, 1);
+                    middleName = middleName.Remove ((int)range.Location, 1);
                 } else {
                     middleName += replacement;
                 }
                 break;
             case LAST_NAME_TAG:
                 if (string.IsNullOrEmpty (replacement)) {
-                    lastName = lastName.Remove (range.Location, 1);
+                    lastName = lastName.Remove ((int)range.Location, 1);
                 } else {
                     lastName += replacement;
                 }
                 break;
             case SUFFIX_TAG:
                 if (string.IsNullOrEmpty (replacement)) {
-                    suffix = suffix.Remove (range.Location, 1);
+                    suffix = suffix.Remove ((int)range.Location, 1);
                 } else {
                     suffix += replacement;
                 }
@@ -717,12 +717,12 @@ namespace NachoClient.iOS
 
         protected UIButton AddNewButton (string title, EventHandler action, UIView parent)
         {
-            UIButton addButton = new UIButton (new RectangleF (0, parent.Frame.Bottom, View.Frame.Width, CELL_HEIGHT));
+            UIButton addButton = new UIButton (new CGRect (0, parent.Frame.Bottom, View.Frame.Width, CELL_HEIGHT));
             addButton.BackgroundColor = UIColor.White;
             addButton.TouchUpInside += action;
             parent.AddSubview (addButton);
 
-            UILabel addLabel = new UILabel (new RectangleF (28, 14, 150, 16));
+            UILabel addLabel = new UILabel (new CGRect (28, 14, 150, 16));
             addLabel.Text = "Add " + title;
             addLabel.Font = A.Font_AvenirNextMedium14;
             addLabel.TextAlignment = UITextAlignment.Left;
@@ -730,7 +730,7 @@ namespace NachoClient.iOS
             addButton.AddSubview (addLabel);
 
             UIImageView addIcon = new UIImageView (UIImage.FromBundle ("email-add"));
-            addIcon.Frame = new RectangleF (moreButtonIndent + 8, 14, addIcon.Frame.Width, addIcon.Frame.Height);
+            addIcon.Frame = new CGRect (moreButtonIndent + 8, 14, addIcon.Frame.Width, addIcon.Frame.Height);
             addButton.AddSubview (addIcon);
 
             return addButton;
@@ -753,7 +753,7 @@ namespace NachoClient.iOS
             contactCopy.Update ();
         }
 
-        protected void SetViewHeight (UIView view, float height)
+        protected void SetViewHeight (UIView view, nfloat height)
         {
             var frame = view.Frame;
             frame.Height = height;
@@ -796,7 +796,7 @@ namespace NachoClient.iOS
             }
         }
 
-        protected virtual void OnKeyboardChanged (bool visible, float height)
+        protected virtual void OnKeyboardChanged (bool visible, nfloat height)
         {
             var newHeight = (visible ? height : 0);
 
@@ -935,7 +935,7 @@ namespace NachoClient.iOS
             alert.Dismissed += (object alertSender, UIButtonEventArgs alertEvent) => {
                 if (1 == alertEvent.ButtonIndex) {
                     contactCopy.Delete ();
-                    NavigationController.PopViewControllerAnimated (true);
+                    NavigationController.PopViewController (true);
                 }
             };
             alert.Show ();
@@ -974,7 +974,7 @@ namespace NachoClient.iOS
                     contactCopy = McContact.QueryById<McContact> (contactCopy.Id); // Re-read to get fields set by BE
                     break;
                 }
-                NavigationController.PopViewControllerAnimated (true);
+                NavigationController.PopViewController (true);
             } else {
                 UIAlertView alert = new UIAlertView ();
                 alert.Title = "Email Entered Incorrectly";
@@ -1328,16 +1328,16 @@ namespace NachoClient.iOS
 
         protected UIButton labelChooserButton (int tag)
         {
-            UIButton chooserButton = new UIButton (new RectangleF (0, 0, 105, CELL_HEIGHT));
+            UIButton chooserButton = new UIButton (new CGRect (0, 0, 105, CELL_HEIGHT));
             chooserButton.BackgroundColor = UIColor.White;
             chooserButton.Tag = tag;
 
             UIImageView defaultImageView = new UIImageView (UIImage.FromBundle ("contacts-marker"));
-            defaultImageView.Frame = new RectangleF (10, 14, defaultImageView.Frame.Width, defaultImageView.Frame.Height);
+            defaultImageView.Frame = new CGRect (10, 14, defaultImageView.Frame.Width, defaultImageView.Frame.Height);
             defaultImageView.Tag = chooserButton.Tag + 1000;
             chooserButton.AddSubview (defaultImageView);
 
-            UILabel buttonLabel = new UILabel (new RectangleF (defaultImageView.Frame.Right + 6, 13, 54, 14));
+            UILabel buttonLabel = new UILabel (new CGRect (defaultImageView.Frame.Right + 6, 13, 54, 14));
             buttonLabel.Font = A.Font_AvenirNextRegular12;
             buttonLabel.TextColor = UIColor.DarkGray;
             buttonLabel.TextAlignment = UITextAlignment.Left;
@@ -1345,7 +1345,7 @@ namespace NachoClient.iOS
             chooserButton.AddSubview (buttonLabel);
 
             UIImageView arrowImageView = new UIImageView (UIImage.FromBundle ("gen-dropdown"));
-            arrowImageView.Frame = new RectangleF (buttonLabel.Frame.Right + 5, 8, arrowImageView.Frame.Width, arrowImageView.Frame.Height);
+            arrowImageView.Frame = new CGRect (buttonLabel.Frame.Right + 5, 8, arrowImageView.Frame.Width, arrowImageView.Frame.Height);
             arrowImageView.Tag = chooserButton.Tag + 3000;
             chooserButton.AddSubview (arrowImageView);
 
@@ -1404,7 +1404,7 @@ namespace NachoClient.iOS
         }
 
 
-        protected void AdjustY (UIView view, float yOffset)
+        protected void AdjustY (UIView view, nfloat yOffset)
         {
             var frame = view.Frame;
             frame.Y = yOffset;
@@ -1413,7 +1413,7 @@ namespace NachoClient.iOS
 
         protected void ShiftCells (BlockType whatType)
         {
-            float offset = 0;
+            nfloat offset = 0;
             switch (whatType) {
             case BlockType.Address:
                 foreach (var a in addressCellList) {
@@ -1538,10 +1538,10 @@ namespace NachoClient.iOS
             protected UIButton labelButton;
             public UIButton moreButton;
 
-            protected float yOffset;
+            protected nfloat yOffset;
 
 
-            protected EditCell (float yOffset, ContactEditViewController owner)
+            protected EditCell (nfloat yOffset, ContactEditViewController owner)
             {
                 this.yOffset = yOffset;
                 this.owner = owner;
@@ -1549,13 +1549,13 @@ namespace NachoClient.iOS
 
             public virtual void CreateView ()
             {
-                this.Frame = new RectangleF (0, yOffset, owner.View.Frame.Width, owner.CELL_HEIGHT);
+                this.Frame = new CGRect (0, yOffset, owner.View.Frame.Width, owner.CELL_HEIGHT);
                 this.BackgroundColor = UIColor.White;
 
                 labelButton = owner.labelChooserButton (BUTTON_TAG);
                 this.AddSubview (labelButton);
 
-                editField = new UITextField (new RectangleF (labelButton.Frame.Right + 18, 0, 135, owner.CELL_HEIGHT));
+                editField = new UITextField (new CGRect (labelButton.Frame.Right + 18, 0, 135, owner.CELL_HEIGHT));
                 editField.Font = A.Font_AvenirNextMedium14;
                 editField.TextColor = A.Color_NachoGreen;
                 editField.TextAlignment = UITextAlignment.Left;
@@ -1563,7 +1563,7 @@ namespace NachoClient.iOS
                 editField.Tag = BUTTON_TAG + 2000;
                 this.AddSubview (editField);
 
-                moreButton = new UIButton (new RectangleF (owner.moreButtonIndent, 7, 30, 30));
+                moreButton = new UIButton (new CGRect (owner.moreButtonIndent, 7, 30, 30));
                 moreButton.SetImage (UIImage.FromBundle ("contacts-more-options"), UIControlState.Normal);
                 moreButton.SetImage (UIImage.FromBundle ("contacts-more-options-active"), UIControlState.Selected);
                 moreButton.Tag = BUTTON_TAG + 3000;
@@ -1578,12 +1578,12 @@ namespace NachoClient.iOS
             UIView backgroundCover = new UIView (View.Frame);
             backgroundCover.BackgroundColor = UIColor.LightGray.ColorWithAlpha (.1f);
 
-            UIView moreView = new UIView (new RectangleF (View.Frame.Width - 220, -28, 165, 102));
+            UIView moreView = new UIView (new CGRect (View.Frame.Width - 220, -28, 165, 102));
             moreView.BackgroundColor = A.Color_NachoGreen;
             moreView.Layer.CornerRadius = 6.0f;
             moreView.Hidden = true;
 
-            UIButton defaultButton = new UIButton (new RectangleF (1, 0, moreView.Frame.Width - 2, (moreView.Frame.Height / 2) - 1));
+            UIButton defaultButton = new UIButton (new CGRect (1, 0, moreView.Frame.Width - 2, (moreView.Frame.Height / 2) - 1));
 
             defaultButton.BackgroundColor = A.Color_NachoGreen;
             defaultButton.Tag = MORE_VIEW_DEFAULT_BUTTON_TAG;
@@ -1592,10 +1592,10 @@ namespace NachoClient.iOS
             moreView.AddSubview (defaultButton);
 
             UIImageView defaultImageView = new UIImageView (UIImage.FromBundle ("contacts-default"));
-            defaultImageView.Frame = new RectangleF (18, 14, defaultImageView.Frame.Width, defaultImageView.Frame.Height);
+            defaultImageView.Frame = new CGRect (18, 14, defaultImageView.Frame.Width, defaultImageView.Frame.Height);
             defaultButton.AddSubview (defaultImageView);
 
-            UILabel defaultLabel = new UILabel (new RectangleF (defaultImageView.Frame.Right + 10, 18, 100, 15));
+            UILabel defaultLabel = new UILabel (new CGRect (defaultImageView.Frame.Right + 10, 18, 100, 15));
             defaultLabel.Font = A.Font_AvenirNextMedium14;
             defaultLabel.TextColor = UIColor.White;
             defaultLabel.Text = "Set As Default";
@@ -1603,7 +1603,7 @@ namespace NachoClient.iOS
 
             Util.AddHorizontalLine (18, defaultButton.Frame.Bottom, moreView.Frame.Width - (18 * 2), UIColor.LightGray.ColorWithAlpha (.8f), moreView);
 
-            UIButton deleteButton = new UIButton (new RectangleF (0, moreView.Frame.Height / 2 + 1, moreView.Frame.Width, (moreView.Frame.Height / 2) - 1));
+            UIButton deleteButton = new UIButton (new CGRect (0, moreView.Frame.Height / 2 + 1, moreView.Frame.Width, (moreView.Frame.Height / 2) - 1));
             deleteButton.BackgroundColor = A.Color_NachoGreen;
             deleteButton.Tag = MORE_VIEW_DELETE_BUTTON_TAG;
             deleteButton.TouchUpInside += DeleteButtonClicked;
@@ -1611,17 +1611,17 @@ namespace NachoClient.iOS
             moreView.AddSubview (deleteButton);
 
             UIImageView deleteImageView = new UIImageView (UIImage.FromBundle ("gen-delete-all"));
-            deleteImageView.Frame = new RectangleF (18, 13, deleteImageView.Frame.Width, deleteImageView.Frame.Height);
+            deleteImageView.Frame = new CGRect (18, 13, deleteImageView.Frame.Width, deleteImageView.Frame.Height);
             deleteButton.AddSubview (deleteImageView);
 
-            UILabel deleteLabel = new UILabel (new RectangleF (deleteImageView.Frame.Right + 10, 18, 100, 15));
+            UILabel deleteLabel = new UILabel (new CGRect (deleteImageView.Frame.Right + 10, 18, 100, 15));
             deleteLabel.Font = A.Font_AvenirNextMedium14;
             deleteLabel.TextColor = UIColor.White;
             deleteLabel.Text = "Delete";
             deleteButton.AddSubview (deleteLabel);
 
             UIImageView aarowImageView = new UIImageView (UIImage.FromBundle ("contacts-popup-arrow"));
-            aarowImageView.Frame = new RectangleF (moreView.Frame.Width, 
+            aarowImageView.Frame = new CGRect (moreView.Frame.Width, 
                 (moreView.Frame.Height / 2) - (aarowImageView.Frame.Height / 2),
                 aarowImageView.Frame.Width,
                 aarowImageView.Frame.Height);
@@ -1635,19 +1635,19 @@ namespace NachoClient.iOS
             UpdateContact ();
             switch (editingBlockType) {
             case BlockType.Phone:
-                RectangleF moreFrame = theMoreView.Frame;
+                CGRect moreFrame = theMoreView.Frame;
                 moreFrame.X = moreFrame.X;
                 moreFrame.Y = (phoneView.Frame.Y - 28) + editingPhoneCell.Frame.Y;
                 theMoreView.Frame = moreFrame;
                 break;
             case BlockType.Email:
-                RectangleF emailMoreFrame = theMoreView.Frame;
+                CGRect emailMoreFrame = theMoreView.Frame;
                 emailMoreFrame.X = emailMoreFrame.X;
                 emailMoreFrame.Y = (emailView.Frame.Y - 28) + editingEmailCell.Frame.Y;
                 theMoreView.Frame = emailMoreFrame;
                 break;
             case BlockType.Address:
-                RectangleF addressMoreFrame = theMoreView.Frame;
+                CGRect addressMoreFrame = theMoreView.Frame;
                 addressMoreFrame.X = addressMoreFrame.X;
                 addressMoreFrame.Y = (addressView.Frame.Y - 28) + editingAddressCell.Frame.Y;
                 theMoreView.Frame = addressMoreFrame;
@@ -1743,7 +1743,7 @@ namespace NachoClient.iOS
         {
             public McContactStringAttribute phoneAttribute;
 
-            public PhoneCell (float yOffset, ContactEditViewController owner, McContactStringAttribute phoneAttribute) : base (yOffset, owner)
+            public PhoneCell (nfloat yOffset, ContactEditViewController owner, McContactStringAttribute phoneAttribute) : base (yOffset, owner)
             {
                 this.phoneAttribute = phoneAttribute;
                 CreateView ();
@@ -1833,7 +1833,7 @@ namespace NachoClient.iOS
         {
             public McContactEmailAddressAttribute emailAttribute;
 
-            public EmailCell (float yOffset, ContactEditViewController owner, McContactEmailAddressAttribute emailAttribute) : base (yOffset, owner)
+            public EmailCell (nfloat yOffset, ContactEditViewController owner, McContactEmailAddressAttribute emailAttribute) : base (yOffset, owner)
             {
                 this.emailAttribute = emailAttribute;
                 CreateView ();
@@ -1917,10 +1917,10 @@ namespace NachoClient.iOS
             protected UIButton labelButton;
             protected UIButton trashButton;
 
-            protected float yOffset;
+            protected nfloat yOffset;
 
 
-            public DateCell (float yOffset, ContactEditViewController owner, McContactDateAttribute dateAttribute)
+            public DateCell (nfloat yOffset, ContactEditViewController owner, McContactDateAttribute dateAttribute)
             {
                 this.yOffset = yOffset;
                 this.owner = owner;
@@ -1931,14 +1931,14 @@ namespace NachoClient.iOS
 
             public void CreateView ()
             {
-                this.Frame = new RectangleF (0, yOffset, owner.View.Frame.Width, owner.CELL_HEIGHT);
+                this.Frame = new CGRect (0, yOffset, owner.View.Frame.Width, owner.CELL_HEIGHT);
                 this.BackgroundColor = UIColor.White;
 
                 labelButton = owner.labelChooserButton (BUTTON_TAG);
                 labelButton.TouchUpInside += DateLabelClicked;
                 this.AddSubview (labelButton);
 
-                dateLabel = new UILabel (new RectangleF (labelButton.Frame.Right + 18, 0, 150, 44));
+                dateLabel = new UILabel (new CGRect (labelButton.Frame.Right + 18, 0, 150, 44));
                 dateLabel.Font = A.Font_AvenirNextMedium14;
                 dateLabel.TextColor = A.Color_NachoGreen;
                 dateLabel.TextAlignment = UITextAlignment.Left;
@@ -1950,17 +1950,17 @@ namespace NachoClient.iOS
                 dateLabelTapToken = dateLabelTap.AddTarget (DateClicked);
                 dateLabel.AddGestureRecognizer (dateLabelTap);
 
-                dateView = new UIView (new RectangleF (0, owner.CELL_HEIGHT, owner.View.Frame.Width, 216));
+                dateView = new UIView (new CGRect (0, owner.CELL_HEIGHT, owner.View.Frame.Width, 216));
                 dateView.BackgroundColor = UIColor.White;
                 dateView.Hidden = true;
                 Util.AddHorizontalLine (28, dateView.Frame.Height - 1, owner.View.Frame.Width - 28, A.Color_NachoBackgroundGray, dateView);
                 this.AddSubview (dateView);
 
-                datePicker = new UIDatePicker (new RectangleF (0, 0, owner.View.Frame.Width, 216));
+                datePicker = new UIDatePicker (new CGRect (0, 0, owner.View.Frame.Width, 216));
                 datePicker.Mode = UIDatePickerMode.Date;
                 dateView.AddSubview (datePicker);
 
-                trashButton = new UIButton (new RectangleF (owner.moreButtonIndent, 7, 30, 30));
+                trashButton = new UIButton (new CGRect (owner.moreButtonIndent, 7, 30, 30));
                 UIImage x = UIImage.FromBundle ("gen-trash");
                 trashButton.SetImage (x, UIControlState.Normal);
                 trashButton.Tag = BUTTON_TAG + 3000;
@@ -2007,7 +2007,7 @@ namespace NachoClient.iOS
                     this.dateLabel.TextColor = A.Color_NachoTeal;
                     LayoutView ();
                 } else {
-                    dateAttribute.Value = datePicker.Date;
+                    dateAttribute.Value = datePicker.Date.ToDateTime();
                     dateView.Hidden = true;
                     this.dateLabel.TextColor = A.Color_NachoGreen;
                     ConfigureView ();
@@ -2029,7 +2029,7 @@ namespace NachoClient.iOS
 
             protected void DateLabelClicked (object sender, EventArgs e)
             {
-                dateAttribute.Value = datePicker.Date;
+                dateAttribute.Value = datePicker.Date.ToDateTime();
                 owner.View.EndEditing (true);
                 owner.editingBlockType = BlockType.Date;
                 owner.editingDateCell = this;
@@ -2069,9 +2069,9 @@ namespace NachoClient.iOS
 
             protected UIImageView disclosureImageView;
 
-            protected float yOffset;
+            protected nfloat yOffset;
 
-            public AddressCell (float yOffset, ContactEditViewController owner, McContactAddressAttribute addressAttribute)
+            public AddressCell (nfloat yOffset, ContactEditViewController owner, McContactAddressAttribute addressAttribute)
             {
                 this.yOffset = yOffset;
                 this.owner = owner;
@@ -2082,14 +2082,14 @@ namespace NachoClient.iOS
 
             public void CreateView ()
             {
-                this.Frame = new RectangleF (0, yOffset, owner.View.Frame.Width, owner.CELL_HEIGHT);
+                this.Frame = new CGRect (0, yOffset, owner.View.Frame.Width, owner.CELL_HEIGHT);
                 this.BackgroundColor = UIColor.White;
 
                 labelButton = owner.labelChooserButton (BUTTON_TAG);
                 labelButton.TouchUpInside += AddressLabelClicked;
                 this.AddSubview (labelButton);
 
-                moreButton = new UIButton (new RectangleF (owner.moreButtonIndent, 6, 30, 30));
+                moreButton = new UIButton (new CGRect (owner.moreButtonIndent, 6, 30, 30));
                 moreButton.SetImage (UIImage.FromBundle ("contacts-more-options"), UIControlState.Normal);
                 moreButton.SetImage (UIImage.FromBundle ("contacts-more-options-active"), UIControlState.Selected);
                 moreButton.TouchUpInside += MoreButtonClicked;
@@ -2097,11 +2097,11 @@ namespace NachoClient.iOS
 
                 Util.AddHorizontalLine (28, owner.CELL_HEIGHT - 1, owner.View.Frame.Width - 28, A.Color_NachoBackgroundGray, this);
 
-                editAddressView = new UIView (new RectangleF (0, owner.CELL_HEIGHT, owner.View.Frame.Width, owner.CELL_HEIGHT * 5));
+                editAddressView = new UIView (new CGRect (0, owner.CELL_HEIGHT, owner.View.Frame.Width, owner.CELL_HEIGHT * 5));
                 editAddressView.BackgroundColor = UIColor.White;
                 this.AddSubview (editAddressView);
 
-                streetTextField = owner.ConfigureAddressTextField (new RectangleF (HORIZONTAL_INDENT, 0, 250, owner.CELL_HEIGHT - 1), "Street");
+                streetTextField = owner.ConfigureAddressTextField (new CGRect (HORIZONTAL_INDENT, 0, 250, owner.CELL_HEIGHT - 1), "Street");
                 streetTextField.EditingDidEnd += EditingEnded;
                 streetTextField.ShouldReturn += (textField) => {
                     cityTextField.BecomeFirstResponder ();
@@ -2111,7 +2111,7 @@ namespace NachoClient.iOS
 
                 Util.AddHorizontalLine (28, streetTextField.Frame.Bottom, owner.View.Frame.Width - 28, A.Color_NachoBackgroundGray, editAddressView);
 
-                cityTextField = owner.ConfigureAddressTextField (new RectangleF (HORIZONTAL_INDENT, owner.CELL_HEIGHT, 250, owner.CELL_HEIGHT - 1), "City");
+                cityTextField = owner.ConfigureAddressTextField (new CGRect (HORIZONTAL_INDENT, owner.CELL_HEIGHT, 250, owner.CELL_HEIGHT - 1), "City");
                 cityTextField.EditingDidEnd += EditingEnded;
                 cityTextField.ShouldReturn += (textField) => {
                     stateTextField.BecomeFirstResponder ();
@@ -2121,7 +2121,7 @@ namespace NachoClient.iOS
 
                 Util.AddHorizontalLine (28, cityTextField.Frame.Bottom, owner.View.Frame.Width - 28, A.Color_NachoBackgroundGray, editAddressView);
 
-                stateTextField = owner.ConfigureAddressTextField (new RectangleF (HORIZONTAL_INDENT, (owner.CELL_HEIGHT * 2), 250, owner.CELL_HEIGHT - 1), "State");
+                stateTextField = owner.ConfigureAddressTextField (new CGRect (HORIZONTAL_INDENT, (owner.CELL_HEIGHT * 2), 250, owner.CELL_HEIGHT - 1), "State");
                 stateTextField.EditingDidEnd += EditingEnded;
                 stateTextField.ShouldReturn += (textField) => {
                     zipTextField.BecomeFirstResponder ();
@@ -2131,7 +2131,7 @@ namespace NachoClient.iOS
 
                 Util.AddHorizontalLine (28, stateTextField.Frame.Bottom, owner.View.Frame.Width - 28, A.Color_NachoBackgroundGray, editAddressView);
 
-                zipTextField = owner.ConfigureAddressTextField (new RectangleF (HORIZONTAL_INDENT, (owner.CELL_HEIGHT * 3), 250, owner.CELL_HEIGHT - 1), "Zip Code");
+                zipTextField = owner.ConfigureAddressTextField (new CGRect (HORIZONTAL_INDENT, (owner.CELL_HEIGHT * 3), 250, owner.CELL_HEIGHT - 1), "Zip Code");
                 zipTextField.EditingDidEnd += EditingEnded;
                 zipTextField.ShouldReturn += (textField) => {
                     countryTextField.BecomeFirstResponder ();
@@ -2141,7 +2141,7 @@ namespace NachoClient.iOS
 
                 Util.AddHorizontalLine (28, zipTextField.Frame.Bottom, owner.View.Frame.Width - 28, A.Color_NachoBackgroundGray, editAddressView);
 
-                countryTextField = owner.ConfigureAddressTextField (new RectangleF (HORIZONTAL_INDENT, (owner.CELL_HEIGHT * 4), 250, owner.CELL_HEIGHT - 1), "Country");
+                countryTextField = owner.ConfigureAddressTextField (new CGRect (HORIZONTAL_INDENT, (owner.CELL_HEIGHT * 4), 250, owner.CELL_HEIGHT - 1), "Country");
                 countryTextField.EditingDidEnd += EditingEnded;
                 countryTextField.ShouldReturn += (textField) => {
                     owner.View.EndEditing (true);
@@ -2234,7 +2234,7 @@ namespace NachoClient.iOS
         {
             public McContactStringAttribute imAddressAttribute;
 
-            public IMAddressCell (float yOffset, ContactEditViewController owner, McContactStringAttribute imAddressAttribute) : base (yOffset, owner)
+            public IMAddressCell (nfloat yOffset, ContactEditViewController owner, McContactStringAttribute imAddressAttribute) : base (yOffset, owner)
             {
                 this.imAddressAttribute = imAddressAttribute;
                 CreateView ();
@@ -2313,7 +2313,7 @@ namespace NachoClient.iOS
         {
             public McContactStringAttribute relationshipAttribute;
 
-            public RelationshipCell (float yOffset, ContactEditViewController owner, McContactStringAttribute relationshipAttribute) : base (yOffset, owner)
+            public RelationshipCell (nfloat yOffset, ContactEditViewController owner, McContactStringAttribute relationshipAttribute) : base (yOffset, owner)
             {
                 this.relationshipAttribute = relationshipAttribute;
                 CreateView ();
@@ -2392,7 +2392,7 @@ namespace NachoClient.iOS
             public string Value;
             public Xml.Contacts Type;
 
-            public MiscCell (float yOffset, ContactEditViewController owner, string Name, string Value) : base (yOffset, owner)
+            public MiscCell (nfloat yOffset, ContactEditViewController owner, string Name, string Value) : base (yOffset, owner)
             {
                 this.Name = Name;
                 this.Value = Value;
@@ -2498,7 +2498,7 @@ namespace NachoClient.iOS
             return;
         }
 
-        protected UITextField ConfigureAddressTextField (RectangleF frame, string placeholder)
+        protected UITextField ConfigureAddressTextField (CGRect frame, string placeholder)
         {
             UITextField addressTextField = new UITextField (frame);
             addressTextField.Font = A.Font_AvenirNextMedium14;

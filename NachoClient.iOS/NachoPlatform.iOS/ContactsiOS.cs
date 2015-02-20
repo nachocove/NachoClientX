@@ -1,11 +1,11 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using MonoTouch.Foundation;
-using MonoTouch.AddressBook;
+using Foundation;
+using AddressBook;
 using MimeKit;
 using NachoCore;
 using NachoCore.Model;

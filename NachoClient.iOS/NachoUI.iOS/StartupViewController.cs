@@ -2,8 +2,8 @@
 
 using System;
 using System.Linq;
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 using NachoCore;
 using NachoCore.Model;
 using NachoCore.Utils;

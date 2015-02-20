@@ -4,7 +4,8 @@ using System;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using MonoTouch.UIKit;
+using CoreGraphics;
+using UIKit;
 
 using MimeKit;
 using DDay.iCal;
@@ -39,11 +40,11 @@ namespace NachoClient.iOS
         private McCalendar calendarItem;
         private bool requestActions = false;
         private bool cancelActions = false;
-        private float viewWidth;
+        private nfloat viewWidth;
         private string organizerEmail;
 
-        public BodyCalendarView (float Y, float width, McEmailMessage parentMessage, bool isOnHot)
-            : base (new RectangleF (0, Y, width, 150))
+        public BodyCalendarView (nfloat Y, nfloat width, McEmailMessage parentMessage, bool isOnHot)
+            : base (new CGRect (0, Y, width, 150))
         {
             this.parentMessage = parentMessage;
             meetingInfo = parentMessage.MeetingRequest;
@@ -75,13 +76,13 @@ namespace NachoClient.iOS
             return this;
         }
 
-        public SizeF ContentSize {
+        public CGSize ContentSize {
             get {
                 return Frame.Size;
             }
         }
 
-        public void ScrollingAdjustment (RectangleF frame, PointF contentOffset)
+        public void ScrollingAdjustment (CGRect frame, CGPoint contentOffset)
         {
             // The calendar section does not scroll or resize.
             // The only thing that can be adjusted is the view's origin.
@@ -96,7 +97,7 @@ namespace NachoClient.iOS
             DateTime start = meetingInfo.StartTime;
             DateTime end = meetingInfo.EndTime;
             string location = meetingInfo.Location;
-            var yOffset = 60f + 18f;
+            nfloat yOffset = 60f + 18f;
 
             Util.AddHorizontalLine (0, 60, viewWidth, A.Color_NachoBorderGray, this).Tag =
                 (int)TagType.CALENDAR_LINE_TAG;
@@ -130,7 +131,7 @@ namespace NachoClient.iOS
             durationLabel.LineBreakMode = UILineBreakMode.WordWrap;
             durationLabel.SizeToFit ();
 
-            yOffset += Math.Max (20, durationLabel.Frame.Height);
+            yOffset += NMath.Max (20, durationLabel.Frame.Height);
             yOffset += 20;
 
             if (!string.IsNullOrEmpty (location)) {
@@ -158,18 +159,18 @@ namespace NachoClient.iOS
 
                 if (null != organizerEmail) {
                     // Organizer
-                    var eventOrganizerView = new UIView (new RectangleF (0, yOffset, viewWidth, 44 + 16 + 16));
+                    var eventOrganizerView = new UIView (new CGRect (0, yOffset, viewWidth, 44 + 16 + 16));
                     eventOrganizerView.Tag = (int)EventViewController.TagType.EVENT_ORGANIZER_VIEW_TAG;
                     eventOrganizerView.BackgroundColor = UIColor.White;
                     this.AddSubview (eventOrganizerView);
 
                     Util.AddTextLabelWithImageView (0, "ORGANIZER", "event-organizer", EventViewController.TagType.EVENT_ORGANIZER_TITLE_TAG, eventOrganizerView);
 
-                    var emailOffset = 46f;
+                    nfloat emailOffset = 46f;
 
                     if (null != organizerName) {
                         // Organizer Name
-                        var userNameLabel = new UILabel (new RectangleF (92, 16 + 10, eventOrganizerView.Frame.Width - 92 - 18, 20));
+                        var userNameLabel = new UILabel (new CGRect (92, 16 + 10, eventOrganizerView.Frame.Width - 92 - 18, 20));
                         userNameLabel.LineBreakMode = UILineBreakMode.TailTruncation;
                         userNameLabel.TextColor = UIColor.LightGray;
                         userNameLabel.Font = A.Font_AvenirNextRegular14;
@@ -180,7 +181,7 @@ namespace NachoClient.iOS
                         emailOffset = (eventOrganizerView.Frame.Height / 2) - 3;
                     }
 
-                    var userEmailLabel = new UILabel (new RectangleF (92, emailOffset, eventOrganizerView.Frame.Width - 92 - 18, 20));
+                    var userEmailLabel = new UILabel (new CGRect (92, emailOffset, eventOrganizerView.Frame.Width - 92 - 18, 20));
                     userEmailLabel.LineBreakMode = UILineBreakMode.TailTruncation;
                     userEmailLabel.TextColor = UIColor.LightGray;
                     userEmailLabel.Font = A.Font_AvenirNextRegular14;
@@ -194,7 +195,7 @@ namespace NachoClient.iOS
                         using (var rawImage = userImage) {
                             using (var originalImage = rawImage.ImageWithRenderingMode (UIImageRenderingMode.AlwaysOriginal)) {
                                 // User image
-                                var userImageView = new UIImageView (new RectangleF (42, 10 + 16, 40, 40));
+                                var userImageView = new UIImageView (new CGRect (42, 10 + 16, 40, 40));
                                 userImageView.Layer.CornerRadius = (40.0f / 2.0f);
                                 userImageView.Layer.MasksToBounds = true;
                                 userImageView.Image = originalImage;
@@ -206,7 +207,7 @@ namespace NachoClient.iOS
                     } else {
 
                         // User userLabelView view, if no image
-                        var userLabelView = new UILabel (new RectangleF (42, 10 + 16, 40, 40));
+                        var userLabelView = new UILabel (new CGRect (42, 10 + 16, 40, 40));
                         userLabelView.Font = A.Font_AvenirNextRegular17;
                         userLabelView.BackgroundColor = Util.GetCircleColorForEmail (organizerEmail, accountId);
                         userLabelView.TextColor = UIColor.White;
@@ -227,7 +228,7 @@ namespace NachoClient.iOS
             if ("IPM.Schedule.Meeting.Request" == parentMessage.MessageClass) {
 
                 // Attendees label, image, and detail
-                var eventAttendeeView = new UIView (new RectangleF (0, yOffset, viewWidth, 96 + 16));
+                var eventAttendeeView = new UIView (new CGRect (0, yOffset, viewWidth, 96 + 16));
                 eventAttendeeView.Tag = (int)EventViewController.TagType.EVENT_ATTENDEE_VIEW_TAG;
                 Util.AddTextLabelWithImageView (0, "ATTENDEES", "event-attendees", EventViewController.TagType.EVENT_ATTENDEES_TITLE_TAG, eventAttendeeView);
                 this.AddSubview (eventAttendeeView);
@@ -240,7 +241,7 @@ namespace NachoClient.iOS
                 var attendeeImageDiameter = 40;
                 var iconSpace = viewWidth - 60;
                 var iconPadding = (iconSpace - (attendeeImageDiameter * 5)) / 4;
-                float spacing = 0;
+                nfloat spacing = 0;
                 int attendeeNum = 0;
                 var allAttendees = NcEmailAddress.ParseAddressListString (Pretty.Join (parentMessage.To, parentMessage.Cc, ", "));
                 foreach (var attendeeAddress in allAttendees) {
@@ -265,7 +266,7 @@ namespace NachoClient.iOS
                     extraAttendeesButton.Layer.MasksToBounds = true;
                     extraAttendeesButton.Layer.BorderColor = A.Color_NachoGreen.CGColor;
                     extraAttendeesButton.Layer.BorderWidth = 1;
-                    extraAttendeesButton.Frame = new RectangleF (42 + iconSpace - 39, 10 + titleOffset, attendeeImageDiameter, attendeeImageDiameter);
+                    extraAttendeesButton.Frame = new CGRect (42 + iconSpace - 39, 10 + titleOffset, attendeeImageDiameter, attendeeImageDiameter);
                     extraAttendeesButton.Font = A.Font_AvenirNextRegular14;
                     extraAttendeesButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
                     extraAttendeesButton.Tag = (int)EventViewController.TagType.EVENT_ATTENDEE_DETAIL_TAG;
@@ -276,7 +277,7 @@ namespace NachoClient.iOS
 
             Util.AddHorizontalLine (0, yOffset, viewWidth, A.Color_NachoBorderGray, this).Tag =
                 (int)TagType.CALENDAR_LINE_TAG;
-            this.Frame = new RectangleF (this.Frame.X, this.Frame.Y, this.Frame.Width, yOffset + 20);
+            this.Frame = new CGRect (this.Frame.X, this.Frame.Y, this.Frame.Width, yOffset + 20);
         }
 
         UIButton acceptButton;
@@ -301,7 +302,7 @@ namespace NachoClient.iOS
             acceptButton = new UIButton (UIButtonType.RoundedRect);
             Util.AddButtonImage (acceptButton, "event-attend", UIControlState.Normal);
             Util.AddButtonImage (acceptButton, "event-attend-active", UIControlState.Selected);
-            acceptButton.Frame = new RectangleF (responseView.Frame.X + 18, 18, 24, 24);
+            acceptButton.Frame = new CGRect (responseView.Frame.X + 18, 18, 24, 24);
             acceptButton.TintColor = UIColor.Clear;
             acceptButton.Hidden = true;
             responseView.AddSubview (acceptButton);
@@ -309,7 +310,7 @@ namespace NachoClient.iOS
             tentativeButton = new UIButton (UIButtonType.RoundedRect);
             Util.AddButtonImage (tentativeButton, "event-maybe", UIControlState.Normal);
             Util.AddButtonImage (tentativeButton, "event-maybe-active", UIControlState.Selected);
-            tentativeButton.Frame = new RectangleF (responseView.Center.X - 37.5f, 18, 24, 24);
+            tentativeButton.Frame = new CGRect (responseView.Center.X - 37.5f, 18, 24, 24);
             tentativeButton.TintColor = UIColor.Clear;
             tentativeButton.Hidden = true;
             responseView.AddSubview (tentativeButton);
@@ -317,34 +318,34 @@ namespace NachoClient.iOS
             declineButton = new UIButton (UIButtonType.RoundedRect);
             Util.AddButtonImage (declineButton, "event-decline", UIControlState.Normal);
             Util.AddButtonImage (declineButton, "event-decline-active", UIControlState.Selected);
-            declineButton.Frame = new RectangleF (responseView.Frame.Width - 96.5f, 18, 24, 24);
+            declineButton.Frame = new CGRect (responseView.Frame.Width - 96.5f, 18, 24, 24);
             declineButton.TintColor = UIColor.Clear;
             declineButton.Hidden = true;
             responseView.AddSubview (declineButton);
 
-            acceptLabel = new UILabel (new RectangleF (acceptButton.Frame.X + 24 + 6, 20, 45, 20));
+            acceptLabel = new UILabel (new CGRect (acceptButton.Frame.X + 24 + 6, 20, 45, 20));
             acceptLabel.TextColor = A.Color_NachoDarkText;
             acceptLabel.Font = A.Font_AvenirNextMedium14;
             acceptLabel.Text = "Attend";
             acceptLabel.Hidden = true;
             responseView.AddSubview (acceptLabel);
 
-            tentativeLabel = new UILabel (new RectangleF (tentativeButton.Frame.X + 24 + 6, 20, 45, 20));
+            tentativeLabel = new UILabel (new CGRect (tentativeButton.Frame.X + 24 + 6, 20, 45, 20));
             tentativeLabel.TextColor = A.Color_NachoDarkText;
             tentativeLabel.Font = A.Font_AvenirNextMedium14;
             tentativeLabel.Text = "Maybe";
             tentativeLabel.Hidden = true;
             responseView.AddSubview (tentativeLabel);
 
-            declineLabel = new UILabel (new RectangleF (declineButton.Frame.X + 24 + 6, 20, 50, 20));
+            declineLabel = new UILabel (new CGRect (declineButton.Frame.X + 24 + 6, 20, 50, 20));
             declineLabel.TextColor = A.Color_NachoDarkText;
             declineLabel.Font = A.Font_AvenirNextMedium14;
             declineLabel.Text = "Decline";
             declineLabel.Hidden = true;
             responseView.AddSubview (declineLabel);
 
-            float messageX = 18 + 24 + 10;
-            messageLabel = new UILabel (new RectangleF (messageX, 18, viewWidth - messageX, 24));
+            nfloat messageX = 18 + 24 + 10;
+            messageLabel = new UILabel (new CGRect (messageX, 18, viewWidth - messageX, 24));
             messageLabel.TextColor = A.Color_NachoBlack;
             messageLabel.TextAlignment = UITextAlignment.Left;
             messageLabel.Font = A.Font_AvenirNextRegular12;
@@ -352,7 +353,7 @@ namespace NachoClient.iOS
             responseView.AddSubview (messageLabel);
 
             dotView = new UIImageView ();
-            dotView.Frame = new RectangleF (21, 25, 10, 10);
+            dotView.Frame = new CGRect (21, 25, 10, 10);
             dotView.Hidden = true;
             responseView.Add (dotView);
 
@@ -360,7 +361,7 @@ namespace NachoClient.iOS
             removeFromCalendarButton.SetTitle ("Remove from calendar", UIControlState.Normal);
             removeFromCalendarButton.Font = A.Font_AvenirNextRegular12;
             removeFromCalendarButton.SizeToFit ();
-            removeFromCalendarButton.Frame = new RectangleF (18 + 24 + 10, 19, removeFromCalendarButton.Frame.Width, 24);
+            removeFromCalendarButton.Frame = new CGRect (18 + 24 + 10, 19, removeFromCalendarButton.Frame.Width, 24);
             removeFromCalendarButton.SetTitleColor (A.Color_NachoGreen, UIControlState.Normal);
             removeFromCalendarButton.Hidden = true;
             responseView.Add (removeFromCalendarButton);
@@ -371,7 +372,7 @@ namespace NachoClient.iOS
         /// </summary>
         private void ShowRequestChoicesBar (bool isOnHot)
         {
-            UIView responseView = new UIView (new RectangleF (0, 0, viewWidth, 60));
+            UIView responseView = new UIView (new CGRect (0, 0, viewWidth, 60));
             responseView.BackgroundColor = UIColor.White;
 
             CreateActionBarViews (responseView);
@@ -481,7 +482,7 @@ namespace NachoClient.iOS
         /// </summary>
         private void ShowAttendeeResponseBar ()
         {
-            UIView responseView = new UIView (new RectangleF (0, 0, viewWidth, 60));
+            UIView responseView = new UIView (new CGRect (0, 0, viewWidth, 60));
             responseView.BackgroundColor = UIColor.Clear;
 
             CreateActionBarViews (responseView);
@@ -536,7 +537,7 @@ namespace NachoClient.iOS
         /// </summary>
         private void ShowCancellationBar (bool isOnHot)
         {
-            UIView responseView = new UIView (new RectangleF (0, 0, viewWidth, 60));
+            UIView responseView = new UIView (new CGRect (0, 0, viewWidth, 60));
             responseView.BackgroundColor = UIColor.Clear;
 
             CreateActionBarViews (responseView);
@@ -571,17 +572,17 @@ namespace NachoClient.iOS
         /// <summary>
         /// The location of the message when it is next to a dot rather than a full button.
         /// </summary>
-        private RectangleF MessageFrameWithDot ()
+        private CGRect MessageFrameWithDot ()
         {
-            return new RectangleF (42, 18, viewWidth - 42, 24);
+            return new CGRect (42, 18, viewWidth - 42, 24);
         }
 
         /// <summary>
         /// The location for a button when only one button is being shown.
         /// </summary>
-        private RectangleF SingleButtonFrame ()
+        private CGRect SingleButtonFrame ()
         {
-            return new RectangleF (18, 18, 24, 24);
+            return new CGRect (18, 18, 24, 24);
         }
 
         /// <summary>
@@ -589,7 +590,7 @@ namespace NachoClient.iOS
         /// </summary>
         private UIImage ColoredDotImage (UIColor color)
         {
-            return Util.DrawCalDot (color, new SizeF (10, 10));
+            return Util.DrawCalDot (color, new CGSize (10, 10));
         }
 
         /// <summary>

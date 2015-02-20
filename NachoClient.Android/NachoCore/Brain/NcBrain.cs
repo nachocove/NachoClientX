@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 //#define INDEXING_ENABLED
 
@@ -387,7 +387,9 @@ namespace NachoCore.Brain
                 if (NcApplication.ExecutionContextEnum.Background == NcApplication.Instance.ExecutionContext ||
                     NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext) {
                     // Defer the processing until Nacho Nov view shows up.
-                    NcTask.CancelableSleep (StartupDelayMsec);
+                    if (!NcTask.CancelableSleep (StartupDelayMsec)) {
+                        NcTask.Cts.Token.ThrowIfCancellationRequested ();
+                    }
                     McEmailMessage.StartTimeVariance (EventQueue.Token);
                     tvStarted = true;
                 }

@@ -6,9 +6,10 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 using MimeKit;
+using CoreGraphics;
 
 using NachoCore;
 using NachoCore.Utils;
@@ -30,10 +31,10 @@ namespace NachoClient.iOS
         private DateTime itemDateTime = DateTime.MinValue;
 
         // Information about size and position
-        private float preferredWidth;
-        private float yOffset = 0;
-        private PointF contentOffset = PointF.Empty;
-        private SizeF visibleArea;
+        private nfloat preferredWidth;
+        private nfloat yOffset = 0;
+        private CGPoint contentOffset = CGPoint.Empty;
+        private CGSize visibleArea;
 
         // UI elements
         private List<IBodyRender> childViews = new List<IBodyRender> ();
@@ -58,7 +59,7 @@ namespace NachoClient.iOS
         /// </summary>
         /// <returns>A new BodyView object that still needs to be configured.</returns>
         /// <param name="frame">The location and size of the BodyView.</param>
-        public static BodyView FixedSizeBodyView (RectangleF frame, Action sizeChangedCallback, LinkSelectedCallback onLinkSelected)
+        public static BodyView FixedSizeBodyView (CGRect frame, Action sizeChangedCallback, LinkSelectedCallback onLinkSelected)
         {
             BodyView newBodyView = new BodyView (frame);
             newBodyView.variableHeight = false;
@@ -78,9 +79,9 @@ namespace NachoClient.iOS
         /// <param name="preferredWidth">The preferred width of the BodyView.</param>
         /// <param name="visibleArea">The maximum amount of space that is visible at one time in the parent view.</param>
         /// <param name="sizeChangedCallback">A function to call when the size of the BodyView changes.</param>
-        public static BodyView VariableHeightBodyView (PointF location, float preferredWidth, SizeF visibleArea, Action sizeChangedCallback, LinkSelectedCallback onLinksSelected)
+        public static BodyView VariableHeightBodyView (CGPoint location, nfloat preferredWidth, CGSize visibleArea, Action sizeChangedCallback, LinkSelectedCallback onLinksSelected)
         {
-            BodyView newBodyView = new BodyView (new RectangleF (location.X, location.Y, preferredWidth, 1));
+            BodyView newBodyView = new BodyView (new CGRect (location.X, location.Y, preferredWidth, 1));
             newBodyView.variableHeight = true;
             newBodyView.visibleArea = visibleArea;
             newBodyView.sizeChangedCallback = sizeChangedCallback;
@@ -88,7 +89,7 @@ namespace NachoClient.iOS
             return newBodyView;
         }
 
-        private BodyView (RectangleF frame)
+        private BodyView (CGRect frame)
             : base (frame)
         {
             preferredWidth = frame.Width;
@@ -99,7 +100,7 @@ namespace NachoClient.iOS
             spinner.HidesWhenStopped = true;
             AddSubview (spinner);
 
-            errorMessage = new UILabel (new RectangleF (0, 10, frame.Width, 1));
+            errorMessage = new UILabel (new CGRect (0, 10, frame.Width, 1));
             errorMessage.Font = A.Font_AvenirNextDemiBold14;
             errorMessage.LineBreakMode = UILineBreakMode.WordWrap;
             errorMessage.TextColor = A.Color_808080;
@@ -183,7 +184,7 @@ namespace NachoClient.iOS
             LayoutQuietly ();
         }
 
-        public void ConfigureAndResize (McAbstrItem item, bool isRefresh, SizeF newSize)
+        public void ConfigureAndResize (McAbstrItem item, bool isRefresh, CGSize newSize)
         {
             NcAssert.True (!variableHeight, "ConfigureAndResize should only be used for fixed size BodyViews");
             preferredWidth = newSize.Width;
@@ -302,64 +303,64 @@ namespace NachoClient.iOS
 
             if (variableHeight) {
                 // Try to put the spinner in the center of the screen.
-                spinner.Center = new PointF (visibleArea.Width / 2 - Frame.X, visibleArea.Height / 2 - Frame.Y);
+                spinner.Center = new CGPoint (visibleArea.Width / 2 - Frame.X, visibleArea.Height / 2 - Frame.Y);
             } else {
                 // Put the spinner in the center of the BodyView.
-                spinner.Center = new PointF (Frame.Width / 2, Frame.Height / 2);
+                spinner.Center = new CGPoint (Frame.Width / 2, Frame.Height / 2);
             }
             spinner.StartAnimating ();
         }
 
-        private static float Min4 (float a, float b, float c, float d)
+        private static nfloat Min4 (nfloat a, nfloat b, nfloat c, nfloat d)
         {
-            return Math.Min (Math.Min (a, b), Math.Min (c, d));
+            return NMath.Min (NMath.Min (a, b), NMath.Min (c, d));
         }
 
-        private static bool AreClose (float a, float b)
+        private static bool AreClose (nfloat a, nfloat b)
         {
-            float ratio = a / b;
+            nfloat ratio = a / b;
             return 0.99f < ratio && ratio < 1.01f;
         }
 
         private bool LayoutAndDetectSizeChange ()
         {
-            SizeF oldSize = Frame.Size;
-            float zoomScale = ViewHelper.ZoomScale (this);
+            CGSize oldSize = Frame.Size;
+            nfloat zoomScale = ViewHelper.ZoomScale (this);
 
-            float screenTop = contentOffset.Y / zoomScale;
-            float screenBottom = (contentOffset.Y + visibleArea.Height) / zoomScale;
+            nfloat screenTop = contentOffset.Y / zoomScale;
+            nfloat screenBottom = (contentOffset.Y + visibleArea.Height) / zoomScale;
 
-            float subviewX = Math.Max (0f, contentOffset.X / zoomScale);
-            float subviewY = 0;
+            nfloat subviewX = NMath.Max (0f, contentOffset.X / zoomScale);
+            nfloat subviewY = 0;
             if (!errorMessage.Hidden) {
                 subviewY = errorMessage.Frame.Bottom;
             }
 
-            float maxWidth = preferredWidth;
+            nfloat maxWidth = preferredWidth;
 
             foreach (var subview in childViews) {
                 // If any part of the view should be visible, then adjust it.  If the view should
                 // be off the screen, then mark it hidden.  If the width of the view changes,
                 // then it is possible that the height will also change as a result.  In which
                 // case we have to redo all the calculations.
-                SizeF size;
+                CGSize size;
                 int loopCount = 0;
                 do {
                     size = subview.ContentSize;
                     var currentFrame = subview.uiView ().Frame;
-                    float viewTop = subviewY;
-                    float viewBottom = viewTop + size.Height;
+                    nfloat viewTop = subviewY;
+                    nfloat viewBottom = viewTop + size.Height;
                     if (viewTop < screenBottom && screenTop < viewBottom) {
                         // Part of the view should be visible on the screen.
-                        float newX = Math.Max (0f, Math.Min (subviewX, size.Width - preferredWidth));
-                        float newWidth = Math.Max (preferredWidth, Math.Min (size.Width - subviewX, visibleArea.Width / zoomScale));
-                        float newXOffset = newX;
+                        nfloat newX = NMath.Max (0f, NMath.Min (subviewX, size.Width - preferredWidth));
+                        nfloat newWidth = NMath.Max (preferredWidth, NMath.Min (size.Width - subviewX, visibleArea.Width / zoomScale));
+                        nfloat newXOffset = newX;
 
-                        float newY = Math.Max (viewTop, screenTop);
-                        float newHeight = Min4 (viewBottom - screenTop, screenBottom - viewTop, size.Height, visibleArea.Height / zoomScale);
-                        float newYOffset = newY - viewTop;
+                        nfloat newY = NMath.Max (viewTop, screenTop);
+                        nfloat newHeight = Min4 (viewBottom - screenTop, screenBottom - viewTop, size.Height, visibleArea.Height / zoomScale);
+                        nfloat newYOffset = newY - viewTop;
 
-                        subview.ScrollingAdjustment (new RectangleF (newX, newY, newWidth, newHeight), new PointF (newXOffset, newYOffset));
+                        subview.ScrollingAdjustment (new CGRect (newX, newY, newWidth, newHeight), new CGPoint (newXOffset, newYOffset));
                         subview.uiView ().Hidden = false;
                     } else {
                         // None of the view is currently on the screen.
@@ -368,7 +369,7 @@ namespace NachoClient.iOS
                 } while (size != subview.ContentSize && ++loopCount < 4);
 
                 subviewY += size.Height;
-                maxWidth = Math.Max (maxWidth, size.Width);
+                maxWidth = NMath.Max (maxWidth, size.Width);
             }
 
             bool sizeChanged = !AreClose (oldSize.Width, maxWidth * zoomScale) || !AreClose (oldSize.Height, subviewY * zoomScale);
@@ -399,7 +400,7 @@ namespace NachoClient.iOS
         /// </summary>
         /// <param name="newContentOffset">The top left corner of the area that
         /// should be visible, in the BodyView's coordinates.</param>
-        public void ScrollingAdjustment (PointF newContentOffset)
+        public void ScrollingAdjustment (CGPoint newContentOffset)
         {
             this.contentOffset = newContentOffset;
             LayoutAndNotifyParent ();
@@ -535,8 +536,8 @@ namespace NachoClient.iOS
                 return;
             }
             UIFont uiFont = A.Font_AvenirNextRegular17;
-            var attributes = new MonoTouch.CoreText.CTStringAttributes ();
-            attributes.Font = new MonoTouch.CoreText.CTFont (uiFont.Name, uiFont.PointSize);
+            var attributes = new CoreText.CTStringAttributes ();
+            attributes.Font = new CoreText.CTFont (uiFont.Name, uiFont.PointSize);
             RenderAttributedString (new NSAttributedString (text, attributes));
         }
 
@@ -655,7 +656,7 @@ namespace NachoClient.iOS
         /// <summary>
         /// Create a scrollable BodyView with the given frame.
         /// </summary>
-        public ScrollableBodyView (RectangleF frame, BodyView.LinkSelectedCallback onLinkSelected)
+        public ScrollableBodyView (CGRect frame, BodyView.LinkSelectedCallback onLinkSelected)
             : base (frame)
         {
             // UIScrollView comes with a gesture recognizer for scrolling.
@@ -666,7 +667,7 @@ namespace NachoClient.iOS
             ScrollsToTop = false;
 
             Scrolled += ScrollViewScrolled;
-            bodyView = BodyView.FixedSizeBodyView (new RectangleF (0, 0, frame.Width, frame.Height), BodyViewSizeChanged, onLinkSelected);
+            bodyView = BodyView.FixedSizeBodyView (new CGRect (0, 0, frame.Width, frame.Height), BodyViewSizeChanged, onLinkSelected);
             AddSubview (bodyView);
         }
 
@@ -674,12 +675,12 @@ namespace NachoClient.iOS
         /// Change the location and size of the scroll view's frame.  Configure the
         /// BodyView with the given item.
         /// </summary>
-        public void ConfigureAndResize (McAbstrItem item, bool isRefresh, RectangleF newFrame)
+        public void ConfigureAndResize (McAbstrItem item, bool isRefresh, CGRect newFrame)
         {
             this.Frame = newFrame;
             if (0 == displayedBodyId || item.BodyId != displayedBodyId) {
                 // Displaying a different message. Scroll back to the top.
-                ContentOffset = new PointF (0, 0);
+                ContentOffset = new CGPoint (0, 0);
                 displayedBodyId = item.BodyId;
             }
             bodyView.ConfigureAndResize (item, isRefresh, newFrame.Size);

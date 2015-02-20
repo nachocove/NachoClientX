@@ -1,10 +1,10 @@
-﻿. Addressed slow performance on certain Hot Mail configurations.
-. Fixed navigation on the More screen to be more intuitive.
-. Addressed a series of SSL cert configuration errors that can be made by administrators when setting up 2007 Exchange servers.
+﻿. Fixed several issues related to responsiveness in calendar.
+. Fixed issues in which certain formats of recurring meetings caused a delay as they were processed.
+. Migration of data-base implemented, so as new features are added, existing is migrated. 
+. Calendar forwards implemented.
+. Pull-force sync of a folder or mailbox hooked up.
 
 Known issues:
-1) No configuration setting to allow for syncing more than 30 days worth of messages.
-2) Certain calendar entries may be duplicated on Nacho Calendar.
-3) Event Forward of calendar events are not yet implemented.
-4) Data migration may take several minutes.
+. No configuration setting to allow for syncing more than 30 days worth of messages.
+. Data migration may take several minutes.
 

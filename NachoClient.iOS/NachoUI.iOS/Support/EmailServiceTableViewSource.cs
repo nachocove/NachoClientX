@@ -1,9 +1,9 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Drawing;
-using MonoTouch.UIKit;
-using MonoTouch.Foundation;
+using CoreGraphics;
+using UIKit;
+using Foundation;
 using NachoCore.Model;
 using NachoCore.Utils;
 using System.Collections.Generic;
@@ -72,7 +72,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public float GetTableHeight ()
+        public nfloat GetTableHeight ()
         {
             return GetHeightForRow (null, null) * RowsInSection (null, 0);
         }
@@ -106,7 +106,7 @@ namespace NachoClient.iOS
             return null;
         }
 
-        public override int RowsInSection (UITableView tableview, int section)
+        public override nint RowsInSection (UITableView tableview, nint section)
         {
             return (expanded ? providers.Count : 1); 
         }
@@ -134,11 +134,11 @@ namespace NachoClient.iOS
 
             var width = tableView.Frame.Width - 24 - 15;
 
-            var providerImageView = new UIImageView (new RectangleF (0, 1, 284, 46));
+            var providerImageView = new UIImageView (new CGRect (0, 1, 284, 46));
             providerImageView.Tag = PROVIDER_IMAGEVIEW_TAG;
             cell.ContentView.AddSubview (providerImageView);
 
-            var dropdownImageView = new UIImageView (new RectangleF (width, 11, 24, 24));
+            var dropdownImageView = new UIImageView (new CGRect (width, 11, 24, 24));
             dropdownImageView.Tag = DROPDOWN_IMAGEVIEW_TAG;
             cell.ContentView.AddSubview (dropdownImageView);
 
@@ -159,6 +159,9 @@ namespace NachoClient.iOS
 
             if (McAccount.AccountServiceEnum.None == provider.EmailService) {
                 cell.TextLabel.Text = "Choose your email service";
+            } else {
+                cell.ContentView.AccessibilityLabel = McAccount.AccountServiceName (provider.EmailService);
+                cell.ContentView.AccessibilityIdentifier = McAccount.AccountServiceName (provider.EmailService);
             }
 
             if (!providerImageView.Hidden) {
@@ -176,7 +179,7 @@ namespace NachoClient.iOS
             }
         }
 
-        public override float GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
+        public override nfloat GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
         {
             return 46;
         }

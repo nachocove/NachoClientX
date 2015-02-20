@@ -210,9 +210,17 @@ namespace NachoCore.Model
                                 };
                                 newAttachment.Insert ();
                                 newAttachment.SetDisplayName (bodyAttachment.ContentDisposition.FileName);
-                                newAttachment.UpdateData ((FileStream stream) => {
-                                    (bodyAttachment as MimePart).ContentObject.DecodeTo (stream);
-                                });
+                                var bodyAttachmentPart = (MimePart)bodyAttachment;
+                                if (null == bodyAttachmentPart.ContentObject) {
+                                    // I don't know what causes this to happen, but a customer encountered this situation.
+                                    Log.Warn (Log.LOG_CALENDAR, "Event attachment {0} does not have any content.",
+                                        bodyAttachment.ContentDisposition.FileName);
+                                    newAttachment.UpdateData ("");
+                                } else {
+                                    newAttachment.UpdateData ((FileStream stream) => {
+                                        bodyAttachmentPart.ContentObject.DecodeTo (stream);
+                                    });
+                                }
                                 synchedAttachments.Add (newAttachment);
                             }
                         }
