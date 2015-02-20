@@ -2137,6 +2137,10 @@
       <Project>{70C6ECB5-6358-4DB8-915F-3ADC31C39E4E}</Project>
       <Name>NachoPlatformBinding</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\MobileHtmlAgilityPack\MobileHtmlAgilityPack.csproj">
+      <Project>{D91DC8A9-454E-4CB9-96BE-19652A67D0A4}</Project>
+      <Name>MobileHtmlAgilityPack</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\Welcome to Taco Mail.pdf" />
