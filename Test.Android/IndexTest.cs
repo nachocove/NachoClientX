@@ -6,6 +6,7 @@ using System.IO;
 using MimeKit;
 using NUnit.Framework;
 using NachoCore.Index;
+using NachoCore.Brain;
 
 namespace Test.Common
 {
@@ -160,10 +161,13 @@ namespace Test.Common
                 message.WriteTo (stream);
             }
             long bytesIndexed;
+            var tokenizer = new NcMimeTokenizer (message);
+            var content = tokenizer.Content;
+            var indexDoc = new NachoCore.Index.IndexEmailMessage (id, content, message);
             if (useBatch) {
-                bytesIndexed = Index.BatchAdd (EmailPath, "message", id);
+                bytesIndexed = Index.BatchAdd (indexDoc);
             } else {
-                bytesIndexed = Index.Add (EmailPath, "message", id);
+                bytesIndexed = Index.Add (indexDoc);
             }
             Assert.True (0 < bytesIndexed);
             File.Delete (EmailPath);
