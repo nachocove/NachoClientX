@@ -43,6 +43,8 @@ namespace NachoCore.Model
 
         bool Finished;
 
+        static bool IsSetup;
+
         // Convenient short hand for all migrations
         public SQLiteConnection Db {
             get {
@@ -87,7 +89,7 @@ namespace NachoCore.Model
         public static int LastVersion {
             get {
                 if (-1 == _lastVersion) {
-                    Setup ();
+                    throw new Exception ("Setup() must be called before this field can be accessed");
                 }
                 return _lastVersion;
             }
@@ -99,7 +101,7 @@ namespace NachoCore.Model
         private static List<NcMigration> migrations {
             get {
                 if (null == _migrations) {
-                    Setup ();
+                    throw new Exception ("Setup() must be called before this field can be accessed");
                 }
                 return _migrations;
             }
@@ -111,8 +113,13 @@ namespace NachoCore.Model
             }
         }
 
-        private static void Setup ()
+        public static void Setup ()
         {
+            if (IsSetup) {
+                return;
+            }
+            IsSetup = true;
+
             _migrations = new List<NcMigration> ();
             // Find all derived classes.
             var subclasses = (from assembly in AppDomain.CurrentDomain.GetAssemblies ()

@@ -252,6 +252,10 @@ namespace NachoCore
             NcTask.StartService ();
             Telemetry.StartService ();
             Account = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
+            // NcMigration does one query. So db must be initialized. Currently, db can be and is 
+            // lazy initialized. So, we don't need pay any attention. But if that changes in the future,
+            // we need to sequence these properly.
+            NcMigration.Setup ();
             // Start Migrations, if any.
             if (!NcMigration.WillStartService ()) {
                 StartBasalServicesCompletion ();
