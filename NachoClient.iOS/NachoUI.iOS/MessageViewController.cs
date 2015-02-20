@@ -346,6 +346,11 @@ namespace NachoClient.iOS
 
         protected override void ConfigureAndLayout ()
         {
+            if (this.NavigationController.RespondsToSelector (new ObjCRuntime.Selector ("interactivePopGestureRecognizer"))) {
+                this.NavigationController.InteractivePopGestureRecognizer.Enabled = true;
+                this.NavigationController.InteractivePopGestureRecognizer.Delegate = null;
+            }
+
             var message = thread.SingleMessageSpecialCase ();
 
             if (null == message) {

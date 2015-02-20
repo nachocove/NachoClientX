@@ -151,6 +151,11 @@ namespace NachoClient.iOS
             // Navigation controls
             NavigationController.NavigationBar.Translucent = false;
 
+            if (this.NavigationController.RespondsToSelector (new ObjCRuntime.Selector ("interactivePopGestureRecognizer"))) {
+                this.NavigationController.InteractivePopGestureRecognizer.Enabled = true;
+                this.NavigationController.InteractivePopGestureRecognizer.Delegate = null;
+            }
+
             Util.SetBackButton (NavigationController, NavigationItem, A.Color_NachoBlue);
 
             // Main view

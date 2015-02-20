@@ -93,6 +93,10 @@ namespace NachoClient.iOS
                 NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillHideNotification, OnKeyboardNotification);
                 NSNotificationCenter.DefaultCenter.AddObserver (UIKeyboard.WillShowNotification, OnKeyboardNotification);
             }
+            if (this.NavigationController.RespondsToSelector (new ObjCRuntime.Selector ("interactivePopGestureRecognizer"))) {
+                this.NavigationController.InteractivePopGestureRecognizer.Enabled = true;
+                this.NavigationController.InteractivePopGestureRecognizer.Delegate = null;
+            }
             base.ViewDidAppear (animated);
         }
 

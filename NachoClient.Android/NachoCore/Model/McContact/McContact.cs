@@ -1528,9 +1528,6 @@ namespace NachoCore.Model
         private bool ShouldAttributeBeEclipsed (List<McContact> contactList, CheckAttributeEclipsingFunc checkFunc)
         {
             foreach (var contact in contactList.Distinct(new McContactComparer ())) {
-                if (!ShouldBeSupercededBy (contact)) {
-                    continue;
-                }
                 if (checkFunc (contact)) {
                     return true;
                 }
@@ -1553,8 +1550,12 @@ namespace NachoCore.Model
                 contactList.AddRange (contacts);
             }
 
+            var isAnonymous = IsAnonymous () && (IsRic () || IsGleaned ());
             return ShouldAttributeBeEclipsed (contactList, (c) => {
-                return HasSameName (c) && McContactEmailAddressAttribute.IsSuperSet (c.EmailAddresses, EmailAddresses);
+                if (isAnonymous && !c.IsAnonymous ()) {
+                    return true;
+                }
+                return ShouldBeSupercededBy (c) && HasSameName (c) && McContactEmailAddressAttribute.IsSuperSet (c.EmailAddresses, EmailAddresses);
             });
         }
 
@@ -1574,13 +1575,22 @@ namespace NachoCore.Model
             }
 
             return ShouldAttributeBeEclipsed (contactList, (c) => {
-                return HasSameName (c) && McContactStringAttribute.IsSuperSet (c.PhoneNumbers, PhoneNumbers);
+                return ShouldBeSupercededBy (c) && HasSameName (c) && McContactStringAttribute.IsSuperSet (c.PhoneNumbers, PhoneNumbers);
             });
         }
 
         public bool HasSameName (McContact other)
         {
             return ((FirstName == other.FirstName) && (MiddleName == other.MiddleName) && (LastName == other.LastName));
+        }
+
+        public bool IsAnonymous ()
+        {
+            return (
+                String.IsNullOrEmpty (FirstName) &&
+                String.IsNullOrEmpty (MiddleName) &&
+                String.IsNullOrEmpty (LastName)
+            );
         }
     }
 }
