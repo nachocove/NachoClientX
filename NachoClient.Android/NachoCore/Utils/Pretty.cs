@@ -1,7 +1,6 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Drawing;
 using NachoCore;
 using NachoCore.Model;
 using MimeKit;
@@ -423,16 +422,6 @@ namespace NachoCore.Utils
                 return String.Format ("{0:F1}GB", (double)fileSize / 1.0e9);
             }
             return String.Format ("{0:F1}TB", (double)fileSize / 1.0e12);
-        }
-
-        public static string PointF (PointF p)
-        {
-            return String.Format ("({0},{1})", p.X, p.Y);
-        }
-
-        public static string SizeF (SizeF s)
-        {
-            return String.Format ("({0},{1})", s.Width, s.Height);
         }
 
         public static string Join (String one, String two, String separator = " ")

@@ -1,4 +1,4 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 //#define AWS_DEBUG
 using System;
@@ -286,7 +286,9 @@ namespace NachoCore.Utils
                     throw;
                 }
                 // Linear backoff
-                NcTask.CancelableSleep (1000);
+                if (!NcTask.CancelableSleep (1000)) {
+                    NcTask.Cts.Token.ThrowIfCancellationRequested ();
+                }
                 return false;
             }
             return true;

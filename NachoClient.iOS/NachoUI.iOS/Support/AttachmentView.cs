@@ -1,13 +1,13 @@
-﻿//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
+//  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
-using System.Drawing;
+using CoreGraphics;
 using System.IO;
 using System.Linq;
-using MonoTouch.Foundation;
+using Foundation;
 
 
-using MonoTouch.UIKit;
+using UIKit;
 
 using NachoCore;
 using NachoCore.Model;
@@ -56,12 +56,12 @@ namespace NachoClient.iOS
             DOWNLOAD_IMAGEVIEW_TAG = 314,
         }
 
-        public AttachmentView (RectangleF frame, McAttachment anAttachment) : base (frame)
+        public AttachmentView (CGRect frame, McAttachment anAttachment) : base (frame)
         {
             attachment = anAttachment;
 
             var imageY = (VIEW_HEIGHT / 2) - (ICON_SIZE / 2);
-            imageView = new UIImageView (new RectangleF (0, imageY, ICON_SIZE, ICON_SIZE));
+            imageView = new UIImageView (new CGRect (0, imageY, ICON_SIZE, ICON_SIZE));
             if (Pretty.TreatLikeAPhoto (attachment.DisplayName)) {
                 imageView.Image = UIImage.FromBundle ("email-att-photos");
             } else {
@@ -73,7 +73,7 @@ namespace NachoClient.iOS
 
             var leftMargin = ICON_SIZE + ICON_GAP;
             var lineLength = frame.Width - leftMargin - DOWNLOAD_ICON_SIZE - 8;
-            filenameView = new UILabel (new RectangleF (leftMargin, TOP_MARGIN, lineLength, LINE_HEIGHT));
+            filenameView = new UILabel (new CGRect (leftMargin, TOP_MARGIN, lineLength, LINE_HEIGHT));
             filenameView.TextColor = A.Color_NachoDarkText;
             filenameView.Font = A.Font_AvenirNextDemiBold14;
             filenameView.Tag = (int)TagType.ATTACHMENT_NAME_TAG;
@@ -93,7 +93,7 @@ namespace NachoClient.iOS
                 detailText += " - " + Pretty.PrettyFileSize (attachment.FileSize);
             } 
 
-            detailView = new UILabel (new RectangleF (leftMargin, TOP_MARGIN + LINE_HEIGHT, lineLength, LINE_HEIGHT));
+            detailView = new UILabel (new CGRect (leftMargin, TOP_MARGIN + LINE_HEIGHT, lineLength, LINE_HEIGHT));
             detailView.Text = detailText;
             detailView.TextColor = A.Color_NachoTextGray;
             detailView.Font = A.Font_AvenirNextRegular14;
@@ -104,7 +104,7 @@ namespace NachoClient.iOS
             AddSubview (detailView);
 
             //Download image view
-            downloadImageView = new UIImageView (new RectangleF (frame.Width - 18 - 16, (frame.Height / 2) - 8, 16, 16)); 
+            downloadImageView = new UIImageView (new CGRect (frame.Width - 18 - 16, (frame.Height / 2) - 8, 16, 16)); 
             downloadImageView.Tag = (int)TagType.DOWNLOAD_IMAGEVIEW_TAG;
             using (var image = UIImage.FromBundle ("email-att-download")) {
                 downloadImageView.Image = image;
@@ -112,7 +112,7 @@ namespace NachoClient.iOS
 
             AddSubview (downloadImageView);
 
-            separatorView = new UIView (new RectangleF (ICON_SIZE + ICON_GAP, VIEW_HEIGHT - 1.0f,
+            separatorView = new UIView (new CGRect (ICON_SIZE + ICON_GAP, VIEW_HEIGHT - 1.0f,
                 Frame.Width - ICON_SIZE, SEPARATOR_HEIGHT));
             separatorView.BackgroundColor = A.Color_NachoLightBorderGray;
             separatorView.Tag = (int)TagType.ATTACHMENT_SEPARATOR_TAG;
@@ -298,19 +298,19 @@ namespace NachoClient.iOS
             iv.AddSubview (line);
             iv.AddSubview (arrow);
 
-            PointF center = line.Center;
+            CGPoint center = line.Center;
             UIView.Animate (
                 duration: 0.4, 
                 delay: 0, 
                 options: UIViewAnimationOptions.CurveEaseIn,
                 animation: () => {
-                    line.Center = new PointF (center.X, iv.Image.Size.Height * 3 / 4);
-                    arrow.Center = new PointF (center.X, iv.Image.Size.Height * 3 / 4);
+                    line.Center = new CGPoint (center.X, iv.Image.Size.Height * 3 / 4);
+                    arrow.Center = new CGPoint (center.X, iv.Image.Size.Height * 3 / 4);
                     line.Alpha = 0.0f;
                     arrow.Alpha = 0.4f;
                 },
                 completion: () => {
-                    arrow.Center = new PointF (center.X, 2);
+                    arrow.Center = new CGPoint (center.X, 2);
                     arrow.Alpha = 1.0f;
                     ArrowAnimation (arrow, center);
                 }
@@ -328,11 +328,11 @@ namespace NachoClient.iOS
             ArrowAnimation (arrow, arrow.Center);
         }
 
-        private void ArrowAnimation (UIImageView arrow, PointF center)
+        private void ArrowAnimation (UIImageView arrow, CGPoint center)
         {
             var iv = this.ViewWithTag ((int)TagType.DOWNLOAD_IMAGEVIEW_TAG) as UIImageView;
             UIView.Animate (0.4, 0, (UIViewAnimationOptions.Repeat | UIViewAnimationOptions.OverrideInheritedDuration | UIViewAnimationOptions.OverrideInheritedOptions | UIViewAnimationOptions.OverrideInheritedCurve | UIViewAnimationOptions.CurveLinear), () => {
-                arrow.Center = new PointF (center.X, iv.Frame.Size.Height * 3 / 4);
+                arrow.Center = new CGPoint (center.X, iv.Frame.Size.Height * 3 / 4);
                 arrow.Alpha = 0.4f;
             }, (() => { 
             }));

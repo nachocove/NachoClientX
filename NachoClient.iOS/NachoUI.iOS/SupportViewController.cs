@@ -2,17 +2,17 @@
 
 using System;
 
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 using NachoCore.Utils;
 using System.Collections.Generic;
-using System.Drawing;
+using CoreGraphics;
 
 namespace NachoClient.iOS
 {
     public partial class SupportViewController : NcUIViewControllerNoLeaks
     {
-        protected const float INDENT = 18;
+        protected static readonly nfloat INDENT = 18;
 
         protected UITapGestureRecognizer messageTapGesture;
         protected UITapGestureRecognizer.Token messageTapGestureHandlerToken;
@@ -37,24 +37,24 @@ namespace NachoClient.iOS
             View.BackgroundColor = A.Color_NachoBackgroundGray;
             Util.ConfigureNavBar (false, this.NavigationController);
 
-            UIView supportView = new UIView (new RectangleF (A.Card_Horizontal_Indent, A.Card_Vertical_Indent, View.Frame.Width - A.Card_Horizontal_Indent * 2, View.Frame.Height - 24 - 120));
+            UIView supportView = new UIView (new CGRect (A.Card_Horizontal_Indent, A.Card_Vertical_Indent, View.Frame.Width - A.Card_Horizontal_Indent * 2, View.Frame.Height - 24 - 120));
             supportView.BackgroundColor = UIColor.White;
             supportView.Layer.CornerRadius = A.Card_Corner_Radius;
             supportView.Layer.BorderColor = A.Card_Border_Color;
             supportView.Layer.BorderWidth = A.Card_Border_Width;
 
-            float yOffset = INDENT;
+            nfloat yOffset = INDENT;
 
             UIImageView nachoLogoImageView;
             using (var nachoLogo = UIImage.FromBundle ("Bootscreen-1")) {
                 nachoLogoImageView = new UIImageView (nachoLogo);
             }
-            nachoLogoImageView.Frame = new RectangleF (supportView.Frame.Width / 2 - 40, yOffset, 80, 80);
+            nachoLogoImageView.Frame = new CGRect (supportView.Frame.Width / 2 - 40, yOffset, 80, 80);
             supportView.Add (nachoLogoImageView);
 
             yOffset = nachoLogoImageView.Frame.Bottom + 26;
 
-            UILabel happyToHearLabel = new UILabel (new RectangleF (INDENT, yOffset, supportView.Frame.Width - INDENT * 2, 50));
+            UILabel happyToHearLabel = new UILabel (new CGRect (INDENT, yOffset, supportView.Frame.Width - INDENT * 2, 50));
             happyToHearLabel.Font = A.Font_AvenirNextDemiBold17;
             happyToHearLabel.TextColor = A.Color_NachoGreen;
             happyToHearLabel.TextAlignment = UITextAlignment.Center;
@@ -68,16 +68,16 @@ namespace NachoClient.iOS
             Util.AddHorizontalLine (0, yOffset, supportView.Frame.Width, A.Color_NachoBorderGray, supportView);
 
             yOffset += INDENT;
-            float topEmailCellYVal = yOffset;
+            nfloat topEmailCellYVal = yOffset;
 
             UIImageView emailIconImage;
             using (var emailIcon = UIImage.FromBundle ("contacts-email")) {
                 emailIconImage = new UIImageView (emailIcon);
             }
-            emailIconImage.Frame = new RectangleF (INDENT, yOffset, emailIconImage.Frame.Width, emailIconImage.Frame.Height);
+            emailIconImage.Frame = new CGRect (INDENT, yOffset, emailIconImage.Frame.Width, emailIconImage.Frame.Height);
             supportView.AddSubview (emailIconImage);
 
-            UILabel sendUsEmailLabel = new UILabel (new RectangleF (emailIconImage.Frame.Right + 12, yOffset, View.Frame.Width - 100, 40));
+            UILabel sendUsEmailLabel = new UILabel (new CGRect (emailIconImage.Frame.Right + 12, yOffset, View.Frame.Width - 100, 40));
             sendUsEmailLabel.Font = A.Font_AvenirNextMedium14;
             sendUsEmailLabel.TextColor = A.Color_NachoBlack;
             sendUsEmailLabel.TextAlignment = UITextAlignment.Left;
@@ -89,9 +89,9 @@ namespace NachoClient.iOS
 
             new ViewFramer (emailIconImage).Y (sendUsEmailLabel.Center.Y - emailIconImage.Frame.Height / 2);
             yOffset = sendUsEmailLabel.Frame.Bottom + INDENT;
-            float bottomEmailCellYVal = yOffset;
+            nfloat bottomEmailCellYVal = yOffset;
 
-            UIView messageTapView = new UIView (new RectangleF (0, topEmailCellYVal, supportView.Frame.Width, bottomEmailCellYVal - topEmailCellYVal));
+            UIView messageTapView = new UIView (new CGRect (0, topEmailCellYVal, supportView.Frame.Width, bottomEmailCellYVal - topEmailCellYVal));
             messageTapView.BackgroundColor = UIColor.Clear;
             messageTapView.Tag = MESSAGE_TAP_VIEW_TAG;
             messageTapView.UserInteractionEnabled = true;
@@ -111,10 +111,10 @@ namespace NachoClient.iOS
             using (var callIcon = UIImage.FromBundle ("contacts-call")) {
                 callIconImage = new UIImageView (callIcon);
             }
-            callIconImage.Frame = new RectangleF (INDENT, yOffset, callIconImage.Frame.Width, callIconImage.Frame.Height);
+            callIconImage.Frame = new CGRect (INDENT, yOffset, callIconImage.Frame.Width, callIconImage.Frame.Height);
             supportView.AddSubview (callIconImage);
 
-            UILabel callUsLabel = new UILabel (new RectangleF (callIconImage.Frame.Right + 12, yOffset, 220, 30));
+            UILabel callUsLabel = new UILabel (new CGRect (callIconImage.Frame.Right + 12, yOffset, 220, 30));
             callUsLabel.Font = A.Font_AvenirNextMedium14;
             callUsLabel.TextColor = A.Color_NachoBlack;
             callUsLabel.TextAlignment = UITextAlignment.Left;
@@ -122,9 +122,9 @@ namespace NachoClient.iOS
             supportView.AddSubview (callUsLabel);
 
             yOffset = callUsLabel.Frame.Bottom + INDENT;
-            float bottomCallCellYVal = yOffset;
+            nfloat bottomCallCellYVal = yOffset;
 
-            UIView callTapView = new UIView (new RectangleF (0, bottomEmailCellYVal, supportView.Frame.Width, bottomCallCellYVal - bottomEmailCellYVal));
+            UIView callTapView = new UIView (new CGRect (0, bottomEmailCellYVal, supportView.Frame.Width, bottomCallCellYVal - bottomEmailCellYVal));
             callTapView.BackgroundColor = UIColor.Clear;
             callTapView.UserInteractionEnabled = true; 
             callTapView.Tag = CALL_TAP_VIEW_TAG;
@@ -138,7 +138,7 @@ namespace NachoClient.iOS
 
             Util.AddHorizontalLine (0, yOffset, supportView.Frame.Width, A.Color_NachoBorderGray, supportView);
 
-            UILabel versionLabel = new UILabel (new RectangleF (supportView.Frame.Width / 2 - 75, supportView.Frame.Bottom - 50, 150, 20));
+            UILabel versionLabel = new UILabel (new CGRect (supportView.Frame.Width / 2 - 75, supportView.Frame.Bottom - 50, 150, 20));
             versionLabel.Font = A.Font_AvenirNextRegular10;
             versionLabel.TextColor = A.Color_NachoBlack;
             versionLabel.TextAlignment = UITextAlignment.Center;

@@ -2,12 +2,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Drawing;
+using CoreGraphics;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 using NachoCore;
 using NachoCore.Utils;
 using NachoCore.Model;
@@ -67,7 +67,7 @@ namespace NachoClient.iOS
 
             cancelButton.Clicked += (sender, e) => {
                 owner = null;
-                NavigationController.PopViewControllerAnimated (true); 
+                NavigationController.PopViewController (true); 
             };
 
             searchButton = new UIBarButtonItem (UIBarButtonSystemItem.Search);

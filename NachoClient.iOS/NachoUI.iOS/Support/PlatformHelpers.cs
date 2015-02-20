@@ -3,12 +3,12 @@
 using System;
 using System.IO;
 using System.Text;
-using System.Drawing;
+using CoreGraphics;
 using System.Collections.Generic;
 using System.Linq;
-using MonoTouch.Foundation;
+using Foundation;
 
-using MonoTouch.UIKit;
+using UIKit;
 using MimeKit;
 using NachoCore;
 using NachoCore.Model;
@@ -150,10 +150,10 @@ namespace NachoClient
         {
             NSString text = new NSString (string.IsNullOrEmpty (value) ? " " : value);
             UIFont font = UIFont.SystemFontOfSize (20);
-            SizeF size = text.StringSize (font);
+            CGSize size = text.StringSize (font);
             UIGraphics.BeginImageContextWithOptions (size, false, 0.0f);
             UIColor.Red.SetColor ();
-            text.DrawString (new PointF (0, 0), font);
+            text.DrawString (new CGPoint (0, 0), font);
             UIImage image = UIGraphics.GetImageFromCurrentImageContext ();
             UIGraphics.EndImageContext ();
 
@@ -162,14 +162,14 @@ namespace NachoClient
 
         public static UIImage Draw1px ()
         {
-            var size = new SizeF (1, 1);
-            var origin = new PointF (0, 0);
+            var size = new CGSize (1, 1);
+            var origin = new CGPoint (0, 0);
 
             UIGraphics.BeginImageContextWithOptions (size, false, 0);
             var ctx = UIGraphics.GetCurrentContext ();
 
             ctx.SetFillColor (UIColor.Clear.CGColor);
-            ctx.FillEllipseInRect (new RectangleF (origin, size));
+            ctx.FillEllipseInRect (new CGRect (origin, size));
 
             var image = UIGraphics.GetImageFromCurrentImageContext ();
             UIGraphics.EndImageContext ();
@@ -229,7 +229,7 @@ namespace NachoClient
                 return viewC.View;
             }
 
-            public override RectangleF RectangleForPreview (UIDocumentInteractionController controller)
+            public override CGRect RectangleForPreview (UIDocumentInteractionController controller)
             {
                 return viewC.View.Frame;
             }

@@ -259,23 +259,26 @@ namespace NachoCore.Model
         private NcModel ()
         {
             NcAssert.True (2 == SQLite3.Threadsafe () || 1 == SQLite3.Threadsafe ());
-            SQLite3.Config (SQLite3.ConfigOption.Log, Device.Instance.GetSQLite3ErrorCallback ((code, message) => {
-                if ((int)SQLite3.Result.OK == code ||
-                    ((int)SQLite3.Result.Locked == code && message.Contains ("PRAGMA main.wal_checkpoint (PASSIVE)"))) {
-                    return;
-                }
-                var messageWithStack = string.Format ("SQLite Error Log (code {0}): {1}", code, message);
-                foreach (var frame in NachoPlatformBinding.PlatformProcess.GetStackTrace ()) {
-                    messageWithStack += "\n" + frame;
-                }
-                Log.IndirectQ.Enqueue (new LogElement () {
-                    Level = LogElement.LevelEnum.Error,
-                    Subsystem = Log.LOG_DB,
-                    Message = messageWithStack,
-                    Occurred = DateTime.UtcNow,
-                    ThreadId = Thread.CurrentThread.ManagedThreadId,
-                });
-            }), (IntPtr)null);
+            if (4 == IntPtr.Size) {
+                // bug qa-5: SQLite3.Config() causes a crash on 64-bit iOS devices.
+                SQLite3.Config (SQLite3.ConfigOption.Log, Device.Instance.GetSQLite3ErrorCallback ((code, message) => {
+                    if ((int)SQLite3.Result.OK == code ||
+                        ((int)SQLite3.Result.Locked == code && message.Contains ("PRAGMA main.wal_checkpoint (PASSIVE)"))) {
+                        return;
+                    }
+                    var messageWithStack = string.Format ("SQLite Error Log (code {0}): {1}", code, message);
+                    foreach (var frame in NachoPlatformBinding.PlatformProcess.GetStackTrace ()) {
+                        messageWithStack += "\n" + frame;
+                    }
+                    Log.IndirectQ.Enqueue (new LogElement () {
+                        Level = LogElement.LevelEnum.Error,
+                        Subsystem = Log.LOG_DB,
+                        Message = messageWithStack,
+                        Occurred = DateTime.UtcNow,
+                        ThreadId = Thread.CurrentThread.ManagedThreadId,
+                    });
+                }), (IntPtr)null);
+            }
             Documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
             DbFileName = Path.Combine (Documents, "db");
             FreshInstall = !File.Exists (DbFileName);
@@ -342,27 +345,26 @@ namespace NachoCore.Model
                 var threadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
                 foreach (var db in new List<SQLiteConnection> { Db, TeleDb }) {
                     var thisDb = db;
-                    if (0 == walCheckpointCount) {
-                        var ok = db.ExecuteScalar<string> ("PRAGMA integrity_check(1);");
-                        if ("ok" != ok) {
-                            Console.WriteLine ("Corrupted db detected. ({0})", db.DatabasePath);
-                            if (TeleDbFileName == db.DatabasePath) {
-                                NcModel.Instance.ResetTeleDb ();
-                                thisDb = TeleDb;
-                            }
+                    // Integrity check is slow but it was useful when we were tracking
+                    // down integrity problem. Comment it out for future reuse
+//                    if (0 == walCheckpointCount) {
+//                        var ok = db.ExecuteScalar<string> ("PRAGMA integrity_check(1);");
+//                        if ("ok" != ok) {
+//                            Console.WriteLine ("Corrupted db detected. ({0})", db.DatabasePath);
+//                            if (TeleDbFileName == db.DatabasePath) {
+//                                NcModel.Instance.ResetTeleDb ();
+//                                thisDb = TeleDb;
+//                            }
+//                        }
+//                    }
+//                    walCheckpointCount = (walCheckpointCount + 1) & 0xfff;
+
+                    lock (WriteNTransLockObj) {
+                        List<CheckpointResult> results = thisDb.Query<CheckpointResult> (checkpointCmd);
+                        if ((0 < results.Count) && (0 != results [0].busy)) {
+                            Log.Error (Log.LOG_DB, "Checkpoint busy of {0}", db.DatabasePath);
                         }
                     }
-                    walCheckpointCount = (walCheckpointCount + 1) & 0xfff;
-                    thisDb.Query<CheckpointResult> (checkpointCmd);
-                    /*
-                     * TODO: Try using the C interface. It doesn't seem that the log/checkpointed
-                     * values always make sense as they don't float down to zero. This is the case 
-                     * no matter the mode.
-                    if (0 != results.Count && (0 != results[0].busy || 0 < results[0].checkpointed)) {
-                        Log.Info (Log.LOG_DB, "Checkpoint of {0}: {1}, {2}, {3}", db.DatabasePath, 
-                            results[0].busy, results[0].log, results[0].checkpointed);
-                    }
-                     */
                 }
             }, null, 10000, 2000);
             CheckPointTimer.Stfu = true;

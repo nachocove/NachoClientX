@@ -2,9 +2,9 @@
 
 using System;
 
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
-using System.Drawing;
+using Foundation;
+using UIKit;
+using CoreGraphics;
 using NachoCore.Model;
 using NachoCore.Utils;
 using System.Linq;
@@ -25,12 +25,12 @@ namespace NachoClient.iOS
 
         protected bool textFieldsEditable = false;
 
-        protected const float HORIZONTAL_PADDING = 25f;
-        protected const float SPACER = 15f;
-        protected const float LABEL_VERTICAL_SPACER = 17f;
-        protected const float LABEL_WIDTH = 90f;
-        protected const float LABEL_HEIGHT = 17f;
-        protected const float TEXTFIELD_HEIGHT = 50f;
+        protected static readonly nfloat HORIZONTAL_PADDING = 25f;
+        protected static readonly nfloat SPACER = 15f;
+        protected static readonly nfloat LABEL_VERTICAL_SPACER = 17f;
+        protected static readonly nfloat LABEL_WIDTH = 90f;
+        protected static readonly nfloat LABEL_HEIGHT = 17f;
+        protected static readonly nfloat TEXTFIELD_HEIGHT = 50f;
 
         protected readonly UIColor LABEL_TEXT_COLOR = A.Color_NachoDarkText;
         protected readonly UIColor TEXT_FIELD_TEXT_COLOR = A.Color_NachoGreen;
@@ -63,8 +63,8 @@ namespace NachoClient.iOS
         protected UITapGestureRecognizer signatureTapGesture;
         protected UITapGestureRecognizer.Token signatureTapGestureHandlerToken;
 
-        protected float yOffset;
-        protected float keyboardHeight;
+        protected nfloat yOffset;
+        protected nfloat keyboardHeight;
 
         protected enum AccountIssue
         {
@@ -139,32 +139,32 @@ namespace NachoClient.iOS
 
             View.BackgroundColor = A.Color_NachoBackgroundGray;
 
-            scrollView = new UIScrollView (new RectangleF (0, 0, View.Frame.Width, View.Frame.Height));
+            scrollView = new UIScrollView (new CGRect (0, 0, View.Frame.Width, View.Frame.Height));
             scrollView.BackgroundColor = A.Color_NachoBackgroundGray;
             scrollView.ScrollEnabled = true;
             scrollView.AlwaysBounceVertical = true;
             scrollView.KeyboardDismissMode = UIScrollViewKeyboardDismissMode.OnDrag;
             View.AddSubview (scrollView);
 
-            contentView = new UIView (new RectangleF (0, 0, View.Frame.Width, View.Frame.Height));
+            contentView = new UIView (new CGRect (0, 0, View.Frame.Width, View.Frame.Height));
             contentView.BackgroundColor = A.Color_NachoBackgroundGray;
             scrollView.AddSubview (contentView);
 
-            UIView settingsView = new UIView (new RectangleF (0, 20, View.Frame.Width, TEXTFIELD_HEIGHT * 7));
+            UIView settingsView = new UIView (new CGRect (0, 20, View.Frame.Width, TEXTFIELD_HEIGHT * 7));
             settingsView.BackgroundColor = UIColor.White;
             settingsView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
             settingsView.Layer.BorderWidth = .5f;
 
             yOffset = 0;
 
-            UILabel nameLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset + LABEL_VERTICAL_SPACER, LABEL_WIDTH, LABEL_HEIGHT));
+            UILabel nameLabel = new UILabel (new CGRect (HORIZONTAL_PADDING, yOffset + LABEL_VERTICAL_SPACER, LABEL_WIDTH, LABEL_HEIGHT));
             nameLabel.Font = A.Font_AvenirNextRegular14;
             nameLabel.TextAlignment = UITextAlignment.Left;
             nameLabel.TextColor = LABEL_TEXT_COLOR;
             nameLabel.Text = "Description";
             settingsView.Add (nameLabel);
 
-            UITextField accountNameTextField = new UITextField (new RectangleF (nameLabel.Frame.Right + SPACER, yOffset, View.Frame.Width - 149, TEXTFIELD_HEIGHT));
+            UITextField accountNameTextField = new UITextField (new CGRect (nameLabel.Frame.Right + SPACER, yOffset, View.Frame.Width - 149, TEXTFIELD_HEIGHT));
             accountNameTextField.Placeholder = "Exchange";
             accountNameTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
             accountNameTextField.Font = TEXT_FIELD_FONT;
@@ -177,14 +177,14 @@ namespace NachoClient.iOS
 
             Util.AddHorizontalLine (HORIZONTAL_PADDING, yOffset, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, settingsView);
 
-            UILabel usernameLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset + LABEL_VERTICAL_SPACER, nameLabel.Frame.Width, LABEL_HEIGHT));
+            UILabel usernameLabel = new UILabel (new CGRect (HORIZONTAL_PADDING, yOffset + LABEL_VERTICAL_SPACER, nameLabel.Frame.Width, LABEL_HEIGHT));
             usernameLabel.Font = A.Font_AvenirNextRegular14;
             usernameLabel.TextAlignment = UITextAlignment.Left;
             usernameLabel.TextColor = LABEL_TEXT_COLOR;
             usernameLabel.Text = "Username";
             settingsView.Add (usernameLabel);
 
-            UITextField usernameTextField = new UITextField (new RectangleF (nameLabel.Frame.Right + SPACER, yOffset, accountNameTextField.Frame.Width, TEXTFIELD_HEIGHT));
+            UITextField usernameTextField = new UITextField (new CGRect (nameLabel.Frame.Right + SPACER, yOffset, accountNameTextField.Frame.Width, TEXTFIELD_HEIGHT));
             usernameTextField.Placeholder = "username";
             usernameTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
             usernameTextField.Font = TEXT_FIELD_FONT;
@@ -197,14 +197,14 @@ namespace NachoClient.iOS
 
             Util.AddHorizontalLine (HORIZONTAL_PADDING, yOffset, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, settingsView);
 
-            UILabel passwordLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset + LABEL_VERTICAL_SPACER, nameLabel.Frame.Width, LABEL_HEIGHT));
+            UILabel passwordLabel = new UILabel (new CGRect (HORIZONTAL_PADDING, yOffset + LABEL_VERTICAL_SPACER, nameLabel.Frame.Width, LABEL_HEIGHT));
             passwordLabel.Font = A.Font_AvenirNextRegular14;
             passwordLabel.TextAlignment = UITextAlignment.Left;
             passwordLabel.TextColor = LABEL_TEXT_COLOR;
             passwordLabel.Text = "Password";
             settingsView.Add (passwordLabel);
 
-            UITextField passwordTextField = new UITextField (new RectangleF (nameLabel.Frame.Right + SPACER, yOffset, accountNameTextField.Frame.Width, TEXTFIELD_HEIGHT));
+            UITextField passwordTextField = new UITextField (new CGRect (nameLabel.Frame.Right + SPACER, yOffset, accountNameTextField.Frame.Width, TEXTFIELD_HEIGHT));
             passwordTextField.Placeholder = "********";
             passwordTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
             passwordTextField.Font = TEXT_FIELD_FONT;
@@ -219,14 +219,14 @@ namespace NachoClient.iOS
 
             Util.AddHorizontalLine (HORIZONTAL_PADDING, yOffset, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, settingsView);
 
-            UILabel emailLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset + LABEL_VERTICAL_SPACER, nameLabel.Frame.Width, LABEL_HEIGHT));
+            UILabel emailLabel = new UILabel (new CGRect (HORIZONTAL_PADDING, yOffset + LABEL_VERTICAL_SPACER, nameLabel.Frame.Width, LABEL_HEIGHT));
             emailLabel.Font = A.Font_AvenirNextRegular14;
             emailLabel.TextAlignment = UITextAlignment.Left;
             emailLabel.TextColor = LABEL_TEXT_COLOR;
             emailLabel.Text = "Email";
             settingsView.Add (emailLabel);
 
-            UITextField emailTextField = new UITextField (new RectangleF (nameLabel.Frame.Right + SPACER, yOffset, accountNameTextField.Frame.Width, TEXTFIELD_HEIGHT));
+            UITextField emailTextField = new UITextField (new CGRect (nameLabel.Frame.Right + SPACER, yOffset, accountNameTextField.Frame.Width, TEXTFIELD_HEIGHT));
             emailTextField.Placeholder = "zachq@nachocove.com";
             emailTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
             emailTextField.Font = TEXT_FIELD_FONT;
@@ -239,14 +239,14 @@ namespace NachoClient.iOS
 
             Util.AddHorizontalLine (HORIZONTAL_PADDING, yOffset, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, settingsView);
 
-            UILabel mailserverLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset + LABEL_VERTICAL_SPACER, nameLabel.Frame.Width, LABEL_HEIGHT));
+            UILabel mailserverLabel = new UILabel (new CGRect (HORIZONTAL_PADDING, yOffset + LABEL_VERTICAL_SPACER, nameLabel.Frame.Width, LABEL_HEIGHT));
             mailserverLabel.Font = A.Font_AvenirNextRegular14;
             mailserverLabel.TextAlignment = UITextAlignment.Left;
             mailserverLabel.TextColor = LABEL_TEXT_COLOR;
             mailserverLabel.Text = "Mail Server";
             settingsView.Add (mailserverLabel);
 
-            UITextField mailserverTextField = new UITextField (new RectangleF (nameLabel.Frame.Right + SPACER, yOffset, accountNameTextField.Frame.Width, TEXTFIELD_HEIGHT));
+            UITextField mailserverTextField = new UITextField (new CGRect (nameLabel.Frame.Right + SPACER, yOffset, accountNameTextField.Frame.Width, TEXTFIELD_HEIGHT));
             mailserverTextField.Placeholder = "outlook.office365.com";
             mailserverTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
             mailserverTextField.Font = TEXT_FIELD_FONT;
@@ -259,7 +259,7 @@ namespace NachoClient.iOS
 
             Util.AddHorizontalLine (HORIZONTAL_PADDING, yOffset, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, settingsView);
 
-            UILabel conferencecallLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset + 3f, nameLabel.Frame.Width, LABEL_HEIGHT + 25));
+            UILabel conferencecallLabel = new UILabel (new CGRect (HORIZONTAL_PADDING, yOffset + 3f, nameLabel.Frame.Width, LABEL_HEIGHT + 25));
 
             conferencecallLabel.Font = A.Font_AvenirNextRegular14;
             conferencecallLabel.TextAlignment = UITextAlignment.Left;
@@ -270,7 +270,7 @@ namespace NachoClient.iOS
 
             settingsView.Add (conferencecallLabel);
 
-            UITextField conferencecallTextField = new UITextField (new RectangleF (nameLabel.Frame.Right + SPACER, yOffset, accountNameTextField.Frame.Width, TEXTFIELD_HEIGHT));
+            UITextField conferencecallTextField = new UITextField (new CGRect (nameLabel.Frame.Right + SPACER, yOffset, accountNameTextField.Frame.Width, TEXTFIELD_HEIGHT));
             conferencecallTextField.Placeholder = "1928342-3";
             conferencecallTextField.TextColor = TEXT_FIELD_TEXT_COLOR;
             conferencecallTextField.Font = TEXT_FIELD_FONT;
@@ -280,18 +280,18 @@ namespace NachoClient.iOS
             settingsView.Add (conferencecallTextField);
 
             yOffset = conferencecallTextField.Frame.Bottom;
-            float topSignatureCell = yOffset;
+            nfloat topSignatureCell = yOffset;
 
             Util.AddHorizontalLine (HORIZONTAL_PADDING, yOffset, settingsView.Frame.Width - HORIZONTAL_PADDING, A.Color_NachoBorderGray, settingsView);
 
-            UILabel signatureLabel = new UILabel (new RectangleF (HORIZONTAL_PADDING, yOffset + LABEL_VERTICAL_SPACER, nameLabel.Frame.Width, LABEL_HEIGHT));
+            UILabel signatureLabel = new UILabel (new CGRect (HORIZONTAL_PADDING, yOffset + LABEL_VERTICAL_SPACER, nameLabel.Frame.Width, LABEL_HEIGHT));
             signatureLabel.Font = A.Font_AvenirNextRegular14;
             signatureLabel.TextAlignment = UITextAlignment.Left;
             signatureLabel.TextColor = LABEL_TEXT_COLOR;
             signatureLabel.Text = "Signature";
             settingsView.Add (signatureLabel);
 
-            UILabel displaySignatureLabel = new UILabel (new RectangleF (signatureLabel.Frame.Right + SPACER, yOffset + LABEL_VERTICAL_SPACER, accountNameTextField.Frame.Width - 15, LABEL_HEIGHT));
+            UILabel displaySignatureLabel = new UILabel (new CGRect (signatureLabel.Frame.Right + SPACER, yOffset + LABEL_VERTICAL_SPACER, accountNameTextField.Frame.Width - 15, LABEL_HEIGHT));
             displaySignatureLabel.TextColor = TEXT_FIELD_TEXT_COLOR;
             displaySignatureLabel.Font = TEXT_FIELD_FONT;
             displaySignatureLabel.TextAlignment = UITextAlignment.Left;
@@ -299,7 +299,7 @@ namespace NachoClient.iOS
             displaySignatureLabel.Tag = SIGNATURE_TAG;
             settingsView.AddSubview (displaySignatureLabel);
 
-            UIView signatureCellView = new UIView (new RectangleF (0, topSignatureCell, View.Frame.Width, settingsView.Frame.Height - topSignatureCell));
+            UIView signatureCellView = new UIView (new CGRect (0, topSignatureCell, View.Frame.Width, settingsView.Frame.Height - topSignatureCell));
             signatureCellView.BackgroundColor = UIColor.Clear;
             signatureCellView.UserInteractionEnabled = true;
             signatureCellView.Tag = SIGNATURE_VIEW_TAG;
@@ -313,19 +313,19 @@ namespace NachoClient.iOS
             using (var disclosureArrowIcon = UIImage.FromBundle ("gen-more-arrow")) {
                 disclosureArrowImageView = new UIImageView (disclosureArrowIcon);
             }
-            disclosureArrowImageView.Frame = new RectangleF (displaySignatureLabel.Frame.Right + 5, yOffset + LABEL_VERTICAL_SPACER, disclosureArrowImageView.Frame.Width, disclosureArrowImageView.Frame.Height);
+            disclosureArrowImageView.Frame = new CGRect (displaySignatureLabel.Frame.Right + 5, yOffset + LABEL_VERTICAL_SPACER, disclosureArrowImageView.Frame.Width, disclosureArrowImageView.Frame.Height);
             settingsView.AddSubview (disclosureArrowImageView);
             contentView.AddSubview (settingsView);
 
             yOffset = settingsView.Frame.Bottom + 20;
 
-            UIView deleteAccountView = new UIView (new RectangleF (0, yOffset, View.Frame.Width, 44));
+            UIView deleteAccountView = new UIView (new CGRect (0, yOffset, View.Frame.Width, 44));
             deleteAccountView.BackgroundColor = UIColor.White;
             deleteAccountView.Layer.BorderColor = A.Color_NachoBorderGray.CGColor;
             deleteAccountView.Layer.BorderWidth = .5f;
 
             deleteAccountButton = UIButton.FromType (UIButtonType.System);
-            deleteAccountButton.Frame = new RectangleF (HORIZONTAL_PADDING, 0, deleteAccountView.Frame.Width, deleteAccountView.Frame.Height);
+            deleteAccountButton.Frame = new CGRect (HORIZONTAL_PADDING, 0, deleteAccountView.Frame.Width, deleteAccountView.Frame.Height);
             Util.AddButtonImage (deleteAccountButton, "email-delete-two", UIControlState.Normal);
             deleteAccountButton.TitleEdgeInsets = new UIEdgeInsets (0, 28, 0, 0);
             deleteAccountButton.SetTitle ("Delete This Account", UIControlState.Normal);
@@ -339,21 +339,21 @@ namespace NachoClient.iOS
 
             yOffset = deleteAccountView.Frame.Bottom + A.Card_Vertical_Indent;
 
-            UIView greyBackground = new UIView (new System.Drawing.RectangleF (0, 0, View.Frame.Width, View.Frame.Height));
+            UIView greyBackground = new UIView (new CGRect (0, 0, View.Frame.Width, View.Frame.Height));
             greyBackground.BackgroundColor = UIColor.DarkGray;
             greyBackground.Alpha = .4f;
             greyBackground.Tag = GREY_BACKGROUND_VIEW_TAG;
             greyBackground.Hidden = true;
             View.Add (greyBackground);
 
-            UIView statusView = new UIView (new System.Drawing.RectangleF (View.Frame.Width / 6, View.Frame.Height / 2 - 150, View.Frame.Width * 2 / 3, 150));
+            UIView statusView = new UIView (new CGRect (View.Frame.Width / 6, View.Frame.Height / 2 - 150, View.Frame.Width * 2 / 3, 150));
             statusView.Tag = STATUS_VIEW_TAG;
             statusView.Layer.CornerRadius = 7.0f;
             statusView.BackgroundColor = UIColor.White;
             statusView.Alpha = 1.0f;
             statusView.Hidden = true;
 
-            UITextView statusMessage = new UITextView (new System.Drawing.RectangleF (8, 2, statusView.Frame.Width - 16, statusView.Frame.Height / 2.4f));
+            UITextView statusMessage = new UITextView (new CGRect (8, 2, statusView.Frame.Width - 16, statusView.Frame.Height / 2.4f));
             statusMessage.BackgroundColor = UIColor.White;
             statusMessage.Alpha = 1.0f;
             statusMessage.Font = UIFont.SystemFontOfSize (17);
@@ -365,17 +365,17 @@ namespace NachoClient.iOS
             UIActivityIndicatorView theSpinner = new UIActivityIndicatorView (UIActivityIndicatorViewStyle.WhiteLarge);
             theSpinner.Alpha = 1.0f;
             theSpinner.HidesWhenStopped = true;
-            theSpinner.Frame = new System.Drawing.RectangleF (statusView.Frame.Width / 2 - 20, 50, 40, 40);
+            theSpinner.Frame = new CGRect (statusView.Frame.Width / 2 - 20, 50, 40, 40);
             theSpinner.Color = A.Color_SystemBlue;
             theSpinner.StartAnimating ();
 
             statusView.AddSubview (theSpinner);
 
-            UIView cancelLine = new UIView (new System.Drawing.RectangleF (0, 105, statusView.Frame.Width, .5f));
+            UIView cancelLine = new UIView (new CGRect (0, 105, statusView.Frame.Width, .5f));
             cancelLine.BackgroundColor = A.Color_NachoLightBorderGray;
             statusView.AddSubview (cancelLine);
 
-            UIButton cancelValidation = new UIButton (new System.Drawing.RectangleF (0, 106, statusView.Frame.Width, 40));
+            UIButton cancelValidation = new UIButton (new CGRect (0, 106, statusView.Frame.Width, 40));
             cancelValidation.Layer.CornerRadius = 10.0f;
             cancelValidation.BackgroundColor = UIColor.White;
             cancelValidation.TitleLabel.TextAlignment = UITextAlignment.Center;
@@ -457,8 +457,8 @@ namespace NachoClient.iOS
 
         protected void LayoutView ()
         {
-            scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
-            contentView.Frame = new RectangleF (0, 0, View.Frame.Width, yOffset);
+            scrollView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
+            contentView.Frame = new CGRect (0, 0, View.Frame.Width, yOffset);
             scrollView.ContentSize = contentView.Frame.Size;
         }
 
@@ -641,7 +641,7 @@ namespace NachoClient.iOS
 
         public bool ShouldChangeCharacters (UITextField textField, NSRange range, string replacementString)
         {
-            var updatedString = textField.Text.Substring (0, range.Location) + replacementString + textField.Text.Substring (range.Location + range.Length);
+            var updatedString = textField.Text.Substring (0, (int)range.Location) + replacementString + textField.Text.Substring ((int)(range.Location + range.Length));
             textField.Text = updatedString;
             return false;
         }
@@ -660,7 +660,7 @@ namespace NachoClient.iOS
 
         protected void BackButtonClicked (object sender, EventArgs e)
         {
-            NavigationController.PopViewControllerAnimated (true);
+            NavigationController.PopViewController (true);
         }
 
         protected void CancelButtonClicked (object sender, EventArgs e)
@@ -858,7 +858,7 @@ namespace NachoClient.iOS
         }
 
 
-        protected virtual void OnKeyboardChanged (bool visible, float height)
+        protected virtual void OnKeyboardChanged (bool visible, nfloat height)
         {
             var newHeight = (visible ? height : 0);
 

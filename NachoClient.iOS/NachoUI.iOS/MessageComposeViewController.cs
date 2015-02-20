@@ -2,11 +2,11 @@
 
 using System;
 using System.IO;
-using System.Drawing;
+using CoreGraphics;
 using System.Collections.Generic;
 
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
+using Foundation;
+using UIKit;
 
 using MimeKit;
 
@@ -39,7 +39,7 @@ namespace NachoClient.iOS
 
         protected bool calendarInviteIsSet;
         bool suppressLayout;
-        float keyboardHeight;
+        nfloat keyboardHeight;
 
         UcAddressBlock toView;
         UcAddressBlock ccView;
@@ -76,13 +76,13 @@ namespace NachoClient.iOS
         protected UIFont labelFont = A.Font_AvenirNextMedium14;
         protected UIColor labelColor = A.Color_NachoDarkText;
 
-        protected float LINE_HEIGHT = 42;
-        protected float LEFT_INDENT = 15;
-        protected float RIGHT_INDENT = 15;
-        protected float BODY_TOP_MARGIN = 10;
-        protected float BODY_LEFT_MARGIN = 10;
-        protected float BODY_RIGHT_MARGIN = 10;
-        protected float BODY_BOTTOM_MARGIN = 10;
+        protected nfloat LINE_HEIGHT = 42;
+        protected nfloat LEFT_INDENT = 15;
+        protected nfloat RIGHT_INDENT = 15;
+        protected nfloat BODY_TOP_MARGIN = 10;
+        protected nfloat BODY_LEFT_MARGIN = 10;
+        protected nfloat BODY_RIGHT_MARGIN = 10;
+        protected nfloat BODY_BOTTOM_MARGIN = 10;
 
         protected NcQuickResponse.QRTypeEnum QRType = NcQuickResponse.QRTypeEnum.None;
 
@@ -176,7 +176,7 @@ namespace NachoClient.iOS
                 if (OkToSend ()) {
                     SendMessage ();
                     owner = null;
-                    NavigationController.PopViewControllerAnimated (true);
+                    NavigationController.PopViewController (true);
                 }
             };
 
@@ -191,7 +191,7 @@ namespace NachoClient.iOS
                 alert.Dismissed += (object alertSender, UIButtonEventArgs alertEvent) => {
                     if (1 == alertEvent.ButtonIndex) {
                         owner = null;
-                        NavigationController.PopViewControllerAnimated (true);
+                        NavigationController.PopViewController (true);
                     }
                 };
                 alert.Show ();
@@ -231,7 +231,7 @@ namespace NachoClient.iOS
         {
             base.ViewWillAppear (animated);
             if (null != this.NavigationController) {
-                if (this.NavigationController.RespondsToSelector (new MonoTouch.ObjCRuntime.Selector ("interactivePopGestureRecognizer"))) {
+                if (this.NavigationController.RespondsToSelector (new ObjCRuntime.Selector ("interactivePopGestureRecognizer"))) {
                     this.NavigationController.InteractivePopGestureRecognizer.Enabled = false;
                 }
             }
@@ -333,22 +333,22 @@ namespace NachoClient.iOS
             ccView = new UcAddressBlock (this, "Cc:", "Cc/Bcc:", View.Frame.Width);
             bccView = new UcAddressBlock (this, "Bcc:", null, View.Frame.Width);
 
-            toViewHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 1));
+            toViewHR = new UIView (new CGRect (0, 0, View.Frame.Width, 1));
             toViewHR.BackgroundColor = A.Color_NachoNowBackground;
 
-            ccViewHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 1));
+            ccViewHR = new UIView (new CGRect (0, 0, View.Frame.Width, 1));
             ccViewHR.BackgroundColor = A.Color_NachoNowBackground;
 
-            bccViewHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 1));
+            bccViewHR = new UIView (new CGRect (0, 0, View.Frame.Width, 1));
             bccViewHR.BackgroundColor = A.Color_NachoNowBackground;
 
-            subjectLabelHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 1));
+            subjectLabelHR = new UIView (new CGRect (0, 0, View.Frame.Width, 1));
             subjectLabelHR.BackgroundColor = A.Color_NachoNowBackground;
 
-            intentLabelHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 1));
+            intentLabelHR = new UIView (new CGRect (0, 0, View.Frame.Width, 1));
             intentLabelHR.BackgroundColor = A.Color_NachoNowBackground;
 
-            attachmentViewHR = new UIView (new RectangleF (0, 0, View.Frame.Width, 1));
+            attachmentViewHR = new UIView (new CGRect (0, 0, View.Frame.Width, 1));
             attachmentViewHR.BackgroundColor = A.Color_NachoNowBackground;
 
             subjectLabel = new UILabel ();
@@ -399,7 +399,7 @@ namespace NachoClient.iOS
 
             attachmentView = new UcAttachmentBlock (this, account.Id, View.Frame.Width, 40, true);
 
-            bodyTextView = new UITextView (new RectangleF (BODY_LEFT_MARGIN, 0, View.Frame.Width - BODY_RIGHT_MARGIN - BODY_LEFT_MARGIN, 0));
+            bodyTextView = new UITextView (new CGRect (BODY_LEFT_MARGIN, 0, View.Frame.Width - BODY_RIGHT_MARGIN - BODY_LEFT_MARGIN, 0));
             bodyTextView.Font = labelFont;
             bodyTextView.TextColor = labelColor;
             bodyTextView.BackgroundColor = UIColor.White;
@@ -410,8 +410,8 @@ namespace NachoClient.iOS
             bodyTextView.ShowsVerticalScrollIndicator = false;
             bodyTextView.AllowsEditingTextAttributes = true;
 
-            var attributes = new MonoTouch.CoreText.CTStringAttributes ();
-            attributes.Font = new MonoTouch.CoreText.CTFont (labelFont.Name, labelFont.PointSize);
+            var attributes = new CoreText.CTStringAttributes ();
+            attributes.Font = new CoreText.CTFont (labelFont.Name, labelFont.PointSize);
             var initialString = new NSMutableAttributedString ();
 
             if (EmailTemplate != null) {
@@ -676,7 +676,7 @@ namespace NachoClient.iOS
             bccView.Layout ();
             attachmentView.Layout ();
 
-            float yOffset = 0;
+            nfloat yOffset = 0;
 
             ViewFramer.Create (toView).Y (yOffset);
             ViewFramer.Create (toViewHR).Y (yOffset + toView.Frame.Height);
@@ -714,7 +714,7 @@ namespace NachoClient.iOS
             var intentDisplayWidth = View.Frame.Width - intentDisplayStart - 12 - RIGHT_INDENT;
             CenterY (intentDisplayLabel, intentDisplayStart, 0, intentDisplayWidth, LINE_HEIGHT);
 
-            intentView.Frame = new RectangleF (0, yOffset, View.Frame.Width, LINE_HEIGHT);
+            intentView.Frame = new CGRect (0, yOffset, View.Frame.Width, LINE_HEIGHT);
             ViewFramer.Create (intentLabelHR).Y (intentView.Frame.Bottom);
 
             if (!intentView.Hidden) {
@@ -728,12 +728,12 @@ namespace NachoClient.iOS
                 yOffset += attachmentViewHR.Frame.Height;
             }
 
-            scrollView.Frame = new RectangleF (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
+            scrollView.Frame = new CGRect (0, 0, View.Frame.Width, View.Frame.Height - keyboardHeight);
 
             // padding at the end, before textview
             yOffset += 10;
 
-            var contentFrame = new RectangleF (0, 0, View.Frame.Width, yOffset);
+            var contentFrame = new CGRect (0, 0, View.Frame.Width, yOffset);
             contentView.Frame = contentFrame;
 
             ViewFramer.Create (bodyTextView).Y (contentFrame.Bottom);
@@ -741,10 +741,10 @@ namespace NachoClient.iOS
             SetBodyAndScrollViewSize (bodyTextView);
         }
 
-        protected void CenterY (UIView view, float x, float y, float width, float section_height)
+        protected void CenterY (UIView view, nfloat x, nfloat y, nfloat width, nfloat section_height)
         {
             var centeredY = y + (section_height / 2) - (view.Frame.Height / 2);
-            view.Frame = new RectangleF (x, centeredY, width, view.Frame.Height);
+            view.Frame = new CGRect (x, centeredY, width, view.Frame.Height);
         }
 
         private void OnKeyboardNotification (NSNotification notification)
@@ -780,7 +780,7 @@ namespace NachoClient.iOS
         /// <param name='height'>
         /// Calculated height of the keyboard (width not generally needed here)
         /// </param>
-        protected virtual void OnKeyboardChanged (bool visible, float height)
+        protected virtual void OnKeyboardChanged (bool visible, nfloat height)
         {
             var newHeight = (visible ? height : 0);
 
@@ -795,7 +795,7 @@ namespace NachoClient.iOS
         /// <summary>
         /// Requires iOS 7
         /// </summary>
-        public static float AdjustToFittingHeight (UITextView textView)
+        public static nfloat AdjustToFittingHeight (UITextView textView)
         {
             if (textView == null) {
                 return 0;
@@ -809,10 +809,10 @@ namespace NachoClient.iOS
             var containerSize = textView.LayoutManager.GetUsedRectForTextContainer (textView.TextContainer).Size;
 
             // Take insets into consideration.
-            float height = (float)Math.Ceiling (containerSize.Height + textView.TextContainerInset.Top + textView.TextContainerInset.Bottom);
+            nfloat height = (nfloat)Math.Ceiling (containerSize.Height + textView.TextContainerInset.Top + textView.TextContainerInset.Bottom);
 
             // Adjust frame but only alter height.
-            textView.Frame = new RectangleF (textView.Frame.X, textView.Frame.Y, textView.Frame.Width, height);
+            textView.Frame = new CGRect (textView.Frame.X, textView.Frame.Y, textView.Frame.Width, height);
 
             // Return the height for convenient access.
             return height;
@@ -821,18 +821,18 @@ namespace NachoClient.iOS
         /// <summary>
         /// iOS 6 and before
         /// </summary>
-        public static float OldAdjustToFittingHeight (UITextView textView)
+        public static nfloat OldAdjustToFittingHeight (UITextView textView)
         {
             if (textView == null) {
                 return 0;
             }
 
             // Get the size that'll hold this text.
-            var sz = textView.SizeThatFits (new SizeF (textView.Frame.Width, float.MaxValue));
-            float height = (float)Math.Ceiling (sz.Height + textView.TextContainerInset.Top + textView.TextContainerInset.Bottom);
+            var sz = textView.SizeThatFits (new CGSize (textView.Frame.Width, nfloat.MaxValue));
+            nfloat height = (nfloat)Math.Ceiling (sz.Height + textView.TextContainerInset.Top + textView.TextContainerInset.Bottom);
 
             // Adjust frame but only alter height.
-            textView.Frame = new RectangleF (textView.Frame.X, textView.Frame.Y, textView.Frame.Width, height);
+            textView.Frame = new CGRect (textView.Frame.X, textView.Frame.Y, textView.Frame.Width, height);
 
             return sz.Height;
         }
@@ -844,7 +844,7 @@ namespace NachoClient.iOS
             if (!textView.Frame.Size.Equals (textView.ContentSize)) {
                 textView.ContentSize = textView.Frame.Size;
             }
-            float y;
+            nfloat y;
             if (showQuotedTextButton.Hidden) {
                 y = textView.Frame.Bottom;
             } else {
@@ -852,7 +852,7 @@ namespace NachoClient.iOS
                 y = showQuotedTextButton.Frame.Bottom;
             }
 
-            var scrollViewContentSize = new SizeF (textView.ContentSize.Width, y + BODY_BOTTOM_MARGIN + BODY_TOP_MARGIN);
+            var scrollViewContentSize = new CGSize (textView.ContentSize.Width, y + BODY_BOTTOM_MARGIN + BODY_TOP_MARGIN);
             if (!scrollView.ContentSize.Equals (scrollViewContentSize)) {
                 scrollView.ContentSize = scrollViewContentSize;
             }
@@ -877,7 +877,7 @@ namespace NachoClient.iOS
 
             // We want to scroll the caret rect into view
             var caretRect = textView.GetCaretRectForPosition (textView.SelectedTextRange.Start);
-            caretRect.Size = new SizeF (caretRect.Size.Width, caretRect.Size.Height + textView.TextContainerInset.Bottom);
+            caretRect.Size = new CGSize (caretRect.Size.Width, caretRect.Size.Height + textView.TextContainerInset.Bottom);
 
             var targetRect = caretRect;
             targetRect.Y += textView.Frame.Y;
@@ -895,14 +895,14 @@ namespace NachoClient.iOS
             if (scrollView.ContentOffset.Y < contentView.Frame.Bottom) {
                 var nco = scrollView.ContentOffset.Y + bodyTextView.ContentOffset.Y;
                 // Console.WriteLine ("adjusted: {0} {1}", nco, ViewHelper.ViewInfo (scrollView, ""));
-                scrollView.SetContentOffset (new PointF (scrollView.ContentOffset.X, nco), false);
-                bodyTextView.SetContentOffset (new PointF (bodyTextView.ContentOffset.X, 0), false);
+                scrollView.SetContentOffset (new CGPoint (scrollView.ContentOffset.X, nco), false);
+                bodyTextView.SetContentOffset (new CGPoint (bodyTextView.ContentOffset.X, 0), false);
             }
             if (0 > bodyTextView.ContentOffset.Y) {
                 var nco = scrollView.ContentOffset.Y + bodyTextView.ContentOffset.Y;
                 // Console.WriteLine ("adjusted: {0} {1}", nco, ViewHelper.ViewInfo (scrollView, ""));
-                scrollView.SetContentOffset (new PointF (scrollView.ContentOffset.X, nco), false);
-                bodyTextView.SetContentOffset (new PointF (bodyTextView.ContentOffset.X, 0), false);
+                scrollView.SetContentOffset (new CGPoint (scrollView.ContentOffset.X, nco), false);
+                bodyTextView.SetContentOffset (new CGPoint (bodyTextView.ContentOffset.X, 0), false);
             }
         }
 
@@ -916,7 +916,7 @@ namespace NachoClient.iOS
         {
             if (0 > scrollView.ContentOffset.Y) {
                 // Console.WriteLine ("dragging adjusted: {0}", ViewHelper.ViewInfo (scrollView, ""));
-                scrollView.SetContentOffset (new PointF (scrollView.ContentOffset.X, 0), true);
+                scrollView.SetContentOffset (new CGPoint (scrollView.ContentOffset.X, 0), true);
             }
         }
 
@@ -969,8 +969,8 @@ namespace NachoClient.iOS
                 subjectField.Text = selectedResponse.subject;
             }
 
-            var attributes = new MonoTouch.CoreText.CTStringAttributes ();
-            attributes.Font = new MonoTouch.CoreText.CTFont (labelFont.Name, labelFont.PointSize);
+            var attributes = new CoreText.CTStringAttributes ();
+            attributes.Font = new CoreText.CTFont (labelFont.Name, labelFont.PointSize);
 
             var response = new NSMutableAttributedString (selectedResponse.body, attributes);
             response.Append (bodyTextView.AttributedText);
@@ -1031,7 +1031,7 @@ namespace NachoClient.iOS
         }
 
         /// IUcAttachmentBlock delegate
-        public void PresentViewControllerForAttachmentBlock (UIViewController viewControllerToPresent, bool animated, NSAction completionHandler)
+        public void PresentViewControllerForAttachmentBlock (UIViewController viewControllerToPresent, bool animated, Action completionHandler)
         {
             this.PresentViewController (viewControllerToPresent, animated, completionHandler);
         }
@@ -1241,8 +1241,8 @@ namespace NachoClient.iOS
             string html;
             string text;
             if (MimeHelpers.FindText (referencedMessage, out html, out text)) {
-                var attributes = new MonoTouch.CoreText.CTStringAttributes ();
-                attributes.Font = new MonoTouch.CoreText.CTFont (labelFont.Name, labelFont.PointSize);
+                var attributes = new CoreText.CTStringAttributes ();
+                attributes.Font = new CoreText.CTFont (labelFont.Name, labelFont.PointSize);
                 var initialString = new NSMutableAttributedString ();
                 initialString.Append (bodyTextView.AttributedText);
                 initialString.Append (new NSAttributedString ("\n\n", attributes));
@@ -1345,7 +1345,10 @@ namespace NachoClient.iOS
                 NcAssert.CaseError (String.Format ("Unexpected value for message action: {0}", actionString));
             }
             if (EmailHelper.Action.Send != action) {
-                NcAssert.NotNull (referencedMessage, String.Format ("A null message was passed to MessageComposeViewController for an action of {0}", actionString));
+                if (null == referencedMessage) {
+                    Log.Info (Log.LOG_UI, String.Format ("A null message was passed to MessageComposeViewController for an action of {0}", actionString));
+                    action = EmailHelper.Action.Send;
+                }
             }
         }
 
