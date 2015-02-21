@@ -524,6 +524,36 @@ namespace NachoCore
             }
             BackEnd.Instance.CertAskResp (accountId, isOkay);
         }
+
+        public string GetClientId ()
+        {
+            // TODO - the client id is currently obtained thru telemetry. Create an API
+            //        now and if / when we move the client id registration mechanism
+            //        out of telemetry, only this API needs to be changed.
+            return Telemetry.SharedInstance.GetUserName ();
+        }
+
+        public string GetPlatformName ()
+        {
+            #if __IOS__
+            return "ios";
+            #elif __ANDROID__
+            return "android";
+            #else
+            throw new PlatformNotSupportedException ();
+            #endif
+        }
+
+        public string GetPushService ()
+        {
+            #if __IOS__
+            return "APNS";
+            #elif __ANDROID__
+            return "GCM";
+            #else
+            throw new PlatformNotSupportedException ();
+            #endif
+        }
     }
 }
 

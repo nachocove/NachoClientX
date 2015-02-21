@@ -151,15 +151,18 @@ namespace NachoCore.Utils
             Info_MigrationDescription,
             Error_CalendarForwardFailed,
             Info_PushAssistDeviceToken,
+            Info_PushAssistClientToken,
         };
 
-        public enum WhyEnum {
+        public enum WhyEnum
+        {
             NotSpecified = 0,
             Unknown,
             ProtocolError,
             ServerError,
             ServerOffline,
-            QuotaExceeded, // Other than storage capacity.
+            QuotaExceeded,
+            // Other than storage capacity.
             NoSpace,
             ConflictWithServer,
             InvalidDest,

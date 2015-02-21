@@ -81,7 +81,7 @@ namespace NachoCore.ActiveSync
                 case (uint)Lst.HotQOpW:
                 case (uint)Lst.FetchW:
                 case (uint)Lst.IdleW:
-                     return (ProtocolState.HasSyncedInbox) ? 
+                    return (ProtocolState.HasSyncedInbox) ? 
                         BackEndStateEnum.PostAutoDPostInboxSync : 
                         BackEndStateEnum.PostAutoDPreInboxSync;
 
@@ -93,6 +93,7 @@ namespace NachoCore.ActiveSync
         }
 
         private X509Certificate2 _ServerCertToBeExamined;
+
         public override X509Certificate2 ServerCertToBeExamined {
             get {
                 return _ServerCertToBeExamined;
@@ -1377,6 +1378,19 @@ namespace NachoCore.ActiveSync
         {
             var dummy = GenerateDummyPing ();
             return (null == dummy) ? null : dummy.PushAssistResponseData ();
+        }
+
+        public PushAssistParameters PushAssistParameters ()
+        {
+            return new NachoCore.PushAssistParameters () {
+                RequestUrl = PushAssistRequestUrl (),
+                RequestData = PushAssistRequestData (),
+                RequestHeaders = PushAssistRequestHeaders (),
+                NoChangeResponseData = PushAssistResponseData (),
+                Protocol = PushAssistProtocol.ACTIVE_SYNC,
+                ResponseTimeoutMsec = 10000,
+                WaitBeforeUseMsec = 1000
+            };
         }
     }
 }

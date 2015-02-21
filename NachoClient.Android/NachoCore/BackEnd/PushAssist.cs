@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.IO;
+using System.Collections.Generic;
 using ModernHttpClient;
 using NachoCore.Utils;
 using NachoCore.Model;
@@ -29,6 +30,23 @@ namespace NachoCore
         private NcStateMachine Sm;
         private HttpClient Client;
         private int AccountId;
+        private bool IsDisposed;
+
+        public static string PingerHostName = "pinger.officetaco.com";
+
+        public const int ApiVersion = 1;
+
+        private string BaseUrl {
+            get {
+                return String.Format ("https://{0}/{1}", PingerHostName, ApiVersion);
+            }
+        }
+
+        private string StartSessionUrl {
+            get {
+                return BaseUrl + "/request";
+            }
+        }
 
         public enum Lst : uint
         {
@@ -112,7 +130,11 @@ namespace NachoCore
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoGetDevTok, State = (uint)Lst.DevTokW },
                             new Trans { Event = (uint)PAEvt.E.DevTok, Act = DoGetCliTok, State = (uint)Lst.CliTokW },
-                            new Trans { Event = (uint)PAEvt.E.DevTokLoss, Act = DoGetDevTok, State = (uint)Lst.DevTokW },
+                            new Trans {
+                                Event = (uint)PAEvt.E.DevTokLoss,
+                                Act = DoGetDevTok,
+                                State = (uint)Lst.DevTokW
+                            },
                             new Trans { Event = (uint)PAEvt.E.Park, Act = DoNop, State = (uint)St.Start },
                         },
                     },
@@ -129,9 +151,17 @@ namespace NachoCore
                         },
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoGetCliTok, State = (uint)Lst.CliTokW },
-                            new Trans { Event = (uint)PAEvt.E.DevTokLoss, Act = DoGetDevTok, State = (uint)Lst.DevTokW },
+                            new Trans {
+                                Event = (uint)PAEvt.E.DevTokLoss,
+                                Act = DoGetDevTok,
+                                State = (uint)Lst.DevTokW
+                            },
                             new Trans { Event = (uint)PAEvt.E.CliTok, Act = DoGetSess, State = (uint)Lst.SessTokW },
-                            new Trans { Event = (uint)PAEvt.E.CliTokLoss, Act = DoGetCliTok, State = (uint)Lst.CliTokW },
+                            new Trans {
+                                Event = (uint)PAEvt.E.CliTokLoss,
+                                Act = DoGetCliTok,
+                                State = (uint)Lst.CliTokW
+                            },
                             new Trans { Event = (uint)PAEvt.E.Park, Act = DoCancel, State = (uint)St.Start },
                         }
                     },
@@ -147,8 +177,16 @@ namespace NachoCore
                             new Trans { Event = (uint)SmEvt.E.Success, Act = DoNop, State = (uint)Lst.Active },
                             new Trans { Event = (uint)SmEvt.E.TempFail, Act = DoGetSess, State = (uint)Lst.SessTokW },
                             new Trans { Event = (uint)SmEvt.E.HardFail, Act = DoGetSess, State = (uint)Lst.SessTokW },
-                            new Trans { Event = (uint)PAEvt.E.DevTokLoss, Act = DoGetDevTok, State = (uint)Lst.DevTokW },
-                            new Trans { Event = (uint)PAEvt.E.CliTokLoss, Act = DoGetCliTok, State = (uint)Lst.CliTokW },
+                            new Trans {
+                                Event = (uint)PAEvt.E.DevTokLoss,
+                                Act = DoGetDevTok,
+                                State = (uint)Lst.DevTokW
+                            },
+                            new Trans {
+                                Event = (uint)PAEvt.E.CliTokLoss,
+                                Act = DoGetCliTok,
+                                State = (uint)Lst.CliTokW
+                            },
                             new Trans { Event = (uint)PAEvt.E.Park, Act = DoCancel, State = (uint)St.Start },
                         }
                     },
@@ -162,23 +200,32 @@ namespace NachoCore
                         On = new [] {
                             new Trans { Event = (uint)SmEvt.E.Launch, Act = DoNop, State = (uint)Lst.Active },
                             new Trans { Event = (uint)PAEvt.E.DevTok, Act = DoGetSess, State = (uint)Lst.SessTokW },
-                            new Trans { Event = (uint)PAEvt.E.DevTokLoss, Act = DoGetDevTok, State = (uint)Lst.DevTokW },
+                            new Trans {
+                                Event = (uint)PAEvt.E.DevTokLoss,
+                                Act = DoGetDevTok,
+                                State = (uint)Lst.DevTokW
+                            },
                             new Trans { Event = (uint)PAEvt.E.CliTok, Act = DoGetSess, State = (uint)Lst.SessTokW },
-                            new Trans { Event = (uint)PAEvt.E.CliTokLoss, Act = DoGetCliTok, State = (uint)Lst.CliTokW },
+                            new Trans {
+                                Event = (uint)PAEvt.E.CliTokLoss,
+                                Act = DoGetCliTok,
+                                State = (uint)Lst.CliTokW
+                            },
                             new Trans { Event = (uint)PAEvt.E.HoldOff, Act = DoHoldOff, State = (uint)Lst.Active },
                             new Trans { Event = (uint)PAEvt.E.Park, Act = DoCancel, State = (uint)St.Start },
                         }
                     },
                 }
             };
-            NcApplication.Instance.StatusIndEvent += DeviceTokenWatcher;
+            NcApplication.Instance.StatusIndEvent += TokensWatcher;
         }
 
         public void Dispose ()
         {
-            // FIXME - bool to protect against double de-registration (-=).
-            NcApplication.Instance.StatusIndEvent -= DeviceTokenWatcher;
-            // FIXME - need to stop any outstanding http requests and dispose of client.
+            if (!IsDisposed) {
+                IsDisposed = true;
+                NcApplication.Instance.StatusIndEvent -= TokensWatcher;
+            }
         }
 
         public void Execute ()
@@ -211,17 +258,23 @@ namespace NachoCore
 
         private void DoGetCliTok ()
         {
-            // JEFF_TODO - consider how to move AWS identity "north" of telemetry.
-            var clientId = Telemetry.SharedInstance.GetUserName ();
+            var clientId = NcApplication.Instance.GetClientId ();
             if (null != clientId) {
                 Sm.PostEvent ((uint)PAEvt.E.CliTok, "GOTCLITOK");
             }
-            // FIXME - we need to be able to register for changes to client token.
+        }
+
+        private string SafeToBase64 (byte[] bytes)
+        {
+            if (null == bytes) {
+                return null;
+            }
+            return Convert.ToBase64String (bytes);
         }
 
         private void DoGetSess ()
         {
-            var clientId = Telemetry.SharedInstance.GetUserName ();
+            var clientId = NcApplication.Instance.GetClientId ();
             if (null == clientId) {
                 Sm.PostEvent ((uint)PAEvt.E.CliTokLoss, "DOSESSCTL");
                 return;
@@ -231,21 +284,50 @@ namespace NachoCore
                 // Yes, the SM is SOL at this point.
                 Log.Error (Log.LOG_PUSH, "DoGetSess: No McCred for accountId {0}", AccountId);
             }
-            var mailServerUrl = Owner.PushAssistRequestUrl ();
-            var httpHeaders = Owner.PushAssistRequestHeaders ();
-            var httpRequestData = Owner.PushAssistRequestData ();
-            var httpNoChangeReply = Owner.PushAssistResponseData ();
+            var parameters = Owner.PushAssistParameters ();
+            List<Header> httpHeaderList = new List<Header> ();
+            foreach (var header in parameters.RequestHeaders) {
+                httpHeaderList.Add (new Header () {
+                    Name = header.Key,
+                    Value = header.Value.ToString ()
+                });
+            }
             var jsonRequest = new StartSessionRequest () {
                 ClientId = clientId,
-                // FIXME - add other properties here.
+                MailServerUrl = parameters.RequestUrl,
+                MailServerCredentials = new Credentials {
+                    Username = "henryk@nachocove.com",
+                    Password = "hkk123",
+                },
+                Protocol = ProtocolToString (parameters.Protocol),
+                Platform = NcApplication.Instance.GetPlatformName (),
+                HttpHeaders = httpHeaderList.ToArray (),
+                HttpRequestData = SafeToBase64 (parameters.RequestData),
+                HttpExpectedReply = SafeToBase64 (parameters.ExpectedResponseData),
+                HttpNoChangeReply = SafeToBase64 (parameters.NoChangeResponseData),
+                CommandTerminator = SafeToBase64 (parameters.CommandTerminator),
+                CommandAcknowledgement = SafeToBase64 (parameters.CommandAcknowledgement),
+                ResponseTimeout = parameters.ResponseTimeoutMsec,
+                WaitBeforeUse = parameters.WaitBeforeUseMsec,
+                PushToken = McMutables.Get (Owner.Account.Id, KPushAssist, KDeviceToken),
+                PushService = NcApplication.Instance.GetPushService (),
             };
 
             MemoryStream jsonStream = new MemoryStream ();
             DataContractJsonSerializer ser = new DataContractJsonSerializer (typeof(StartSessionRequest));
             ser.WriteObject (jsonStream, jsonRequest);
-            HttpRequestMessage request = new HttpRequestMessage (HttpMethod.Post, "FIXME URL STRING HERE");
+            HttpRequestMessage request = new HttpRequestMessage (HttpMethod.Post, StartSessionUrl);
             request.Content = new StreamContent (jsonStream);
-            //var response = await Client.SendAsync (request, ctoken);
+            do {
+                try {
+                    var response = Client.SendAsync (request, NcTask.Cts.Token).ConfigureAwait (false);
+                    break;
+                } catch (OperationCanceledException) {
+                    break;
+                } catch (Exception e) {
+                    Log.Warn (Log.LOG_PUSH, "Caught push assist http exception: {0}", e);
+                }
+            } while (true);
         }
 
         private void DoHoldOff ()
@@ -253,14 +335,27 @@ namespace NachoCore
             // FIXME.
         }
 
-        private void DeviceTokenWatcher (object sender, EventArgs ea)
+        private void TokensWatcher (object sender, EventArgs ea)
         {
             StatusIndEventArgs siea = (StatusIndEventArgs)ea;
-            if (NcResult.SubKindEnum.Info_PushAssistDeviceToken == siea.Status.SubKind) {
-                if (null == siea.Status.Value) {
-                    ResetDeviceToken ();
-                } else {
-                    SetDeviceToken ((byte[])siea.Status.Value);
+            switch (siea.Status.SubKind) {
+            case NcResult.SubKindEnum.Info_PushAssistDeviceToken:
+                {
+                    if (null == siea.Status.Value) {
+                        ResetDeviceToken ();
+                    } else {
+                        SetDeviceToken ((byte[])siea.Status.Value);
+                    }
+                    break;
+                }
+            case NcResult.SubKindEnum.Info_PushAssistClientToken:
+                {
+                    if (null == siea.Status.Value) {
+                        Sm.PostEvent ((uint)PAEvt.E.CliTokLoss, "CLITOKLOST");
+                    } else {
+                        DoGetCliTok ();
+                    }
+                    break;
                 }
             }
         }
@@ -321,9 +416,9 @@ namespace NachoCore
             [DataMember]
             public string CommandAcknowledgement;
             [DataMember]
-            public string ResponseTimeout;
+            public int ResponseTimeout;
             [DataMember]
-            public string WaitBeforeUse;
+            public int WaitBeforeUse;
             [DataMember]
             public string PushToken;
             [DataMember]
@@ -337,6 +432,19 @@ namespace NachoCore
             public string Name;
             [DataMember]
             public string Value;
+        }
+
+        protected string ProtocolToString (PushAssistProtocol protocol)
+        {
+            switch (protocol) {
+            case PushAssistProtocol.UNKNOWN:
+                return "unknown";
+            case PushAssistProtocol.ACTIVE_SYNC:
+                return "ActiveSync";
+            case PushAssistProtocol.IMAP:
+                return "IMAP";
+            }
+            return null;
         }
     }
 }

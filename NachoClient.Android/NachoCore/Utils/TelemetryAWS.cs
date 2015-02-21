@@ -94,6 +94,13 @@ namespace NachoCore.Utils
                 FreshInstall = true;
             }
 
+            // Notify others (e.g. push assist SM) about the client id
+            var result = NcResult.Info (NcResult.SubKindEnum.Info_PushAssistClientToken);
+            result.Value = ClientId;
+            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                Status = result,
+            });
+
             Retry (() => {
                 Client = new AmazonDynamoDBClient (credentials, config);
 
