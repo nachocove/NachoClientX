@@ -514,10 +514,13 @@ namespace NachoCore.Model
         public static List<McEmailMessage> QueryNeedsIndexing (int maxMessages)
         {
             return NcModel.Instance.Db.Query<McEmailMessage> (
-                "SELECT * FROM McEmailMessage as e " +
-                " where e.IsIndexed = 0 AND e.BodyId != 0 " +
+                "SELECT e.* FROM McEmailMessage as e " +
+                " JOIN McBody as b ON b.Id == e.BodyId " +
+                " WHERE e.IsIndexed = 0 AND " +
+                " e.BodyId != 0 AND " +
+                " b.FilePresence = ? " +
                 " ORDER BY e.DateReceived DESC LIMIT ?",
-                maxMessages
+                McAbstrFileDesc.FilePresenceEnum.Complete, maxMessages
             );
         }
 

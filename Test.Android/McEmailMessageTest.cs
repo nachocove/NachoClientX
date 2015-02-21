@@ -73,7 +73,7 @@ namespace Test.Common
             NcAssert.True (0 < dep.Id);
         }
 
-        public void CheckMessages (McEmailMessage [] messages, List<NcEmailMessageIndex> got, params int [] expectedIndices)
+        public void CheckMessages (McEmailMessage[] messages, List<NcEmailMessageIndex> got, params int[] expectedIndices)
         {
             Assert.AreEqual (expectedIndices.Length, got.Count);
             for (int n = 0; n < expectedIndices.Length; n++) {
@@ -194,7 +194,7 @@ namespace Test.Common
             Folder.Link (message3);
 
             var count = McEmailMessage.CountOfUnreadMessageItems (1, Folder.Id);
-            Assert.AreEqual(3, count);
+            Assert.AreEqual (3, count);
         }
 
         [Test]
@@ -246,10 +246,10 @@ namespace Test.Common
             var deadlines = McEmailMessage.QueryDueDateMessageItemsAllAccounts ();
             foreach (var deadline in deadlines) {
                 Assert.AreNotEqual (0, McEmailMessage.QueryById<McEmailMessage> (deadline.Id).FlagStatus);
-                Assert.AreNotEqual("Defer until", McEmailMessage.QueryById<McEmailMessage> (deadline.Id).FlagType);
+                Assert.AreNotEqual ("Defer until", McEmailMessage.QueryById<McEmailMessage> (deadline.Id).FlagType);
                 NcAssert.True (!McEmailMessage.QueryById<McEmailMessage> (deadline.Id).IsAwaitingDelete);
             }
-            Assert.AreEqual(2, deadlines.Count);
+            Assert.AreEqual (2, deadlines.Count);
         }
 
         [Test]
@@ -259,7 +259,7 @@ namespace Test.Common
                 AccountId = 1,
                 FlagType = "Defer until",
                 FlagStatus = 1,
-                FlagUtcStartDate = DateTime.UtcNow.AddHours(1),
+                FlagUtcStartDate = DateTime.UtcNow.AddHours (1),
 
             };
             message.Insert ();
@@ -268,7 +268,7 @@ namespace Test.Common
                 AccountId = 2,
                 FlagType = "Defer until",
                 FlagStatus = 1,
-                FlagUtcStartDate = DateTime.UtcNow.AddHours(1),
+                FlagUtcStartDate = DateTime.UtcNow.AddHours (1),
             };
             message1.Insert ();
 
@@ -276,7 +276,7 @@ namespace Test.Common
                 AccountId = 1,
                 FlagType = "Defer until",
                 FlagStatus = 1,
-                FlagUtcStartDate = DateTime.UtcNow.AddHours(-1),
+                FlagUtcStartDate = DateTime.UtcNow.AddHours (-1),
             };
             message2.Insert ();
 
@@ -284,14 +284,14 @@ namespace Test.Common
                 AccountId = 1,
                 FlagType = "Defer until",
                 FlagStatus = 0,
-                FlagUtcStartDate = DateTime.UtcNow.AddHours(1),
+                FlagUtcStartDate = DateTime.UtcNow.AddHours (1),
             };
             message3.Insert ();
 
             McEmailMessage message4 = new McEmailMessage () {
                 AccountId = 2,
                 FlagStatus = 1,
-                FlagUtcStartDate = DateTime.UtcNow.AddHours(1),
+                FlagUtcStartDate = DateTime.UtcNow.AddHours (1),
                 IsAwaitingDelete = true,
             };
             message4.Insert ();
@@ -299,7 +299,7 @@ namespace Test.Common
             McEmailMessage message5 = new McEmailMessage () {
                 AccountId = 3,
                 FlagStatus = 2,
-                FlagUtcStartDate = DateTime.UtcNow.AddHours(100),
+                FlagUtcStartDate = DateTime.UtcNow.AddHours (100),
             };
             message5.Insert ();
 
@@ -309,7 +309,7 @@ namespace Test.Common
                 NcAssert.True (McEmailMessage.QueryById<McEmailMessage> (d.Id).FlagUtcStartDate > DateTime.UtcNow);
                 NcAssert.True (!McEmailMessage.QueryById<McEmailMessage> (d.Id).IsAwaitingDelete);
             }
-            Assert.AreEqual(3, deferred.Count);
+            Assert.AreEqual (3, deferred.Count);
         }
 
         private void CheckScoreAndUpdate (int id, double expectedScore, bool expectedNeedUpdate)
@@ -317,7 +317,7 @@ namespace Test.Common
             McEmailMessage message = McEmailMessage.QueryById<McEmailMessage> (id);
             Assert.True (null != message);
 
-            Assert.AreEqual(expectedScore, message.Score);
+            Assert.AreEqual (expectedScore, message.Score);
             Assert.AreEqual (expectedNeedUpdate, message.NeedUpdate);
         }
 
@@ -345,6 +345,113 @@ namespace Test.Common
             message.NeedUpdate = false;
             message.UpdateScoreAndNeedUpdate ();
             CheckScoreAndUpdate (message.Id, 0.5, false);
+        }
+
+        protected void InsertAndCheckBody (McBody body)
+        {
+            Assert.True (0 == body.Id);
+            body.Insert ();
+            Assert.True (0 < body.Id);
+        }
+
+        protected void InsertAndCheckMessage (McEmailMessage message)
+        {
+            Assert.True (0 == message.Id);
+            message.Insert ();
+            Assert.True (0 < message.Id);
+        }
+
+        protected void CheckMessage (McEmailMessage expected, McEmailMessage got)
+        {
+            Assert.AreEqual (expected.Id, got.Id);
+            Assert.AreEqual (expected.AccountId, got.AccountId);
+            Assert.AreEqual (expected.BodyId, got.BodyId);
+            Assert.AreEqual (expected.IsIndexed, got.IsIndexed);
+        }
+
+        [Test]
+        public void TestQueryNeedsIndexing ()
+        {
+            // Create 5 email messages:
+            // 1. Has body, is complete, and not marked indexed
+            // 2. Has no body
+            // 3. Has body and is complete, and not marked indexed
+            // 4. Has body but is incomplete
+            // 5. Has body and is complete, and marked indexed
+            var body1 = new McBody () {
+                AccountId = 1,
+                FilePresence = McAbstrFileDesc.FilePresenceEnum.Complete
+            };
+            InsertAndCheckBody (body1);
+
+            var body3 = new McBody () {
+                AccountId = 1,
+                FilePresence = McAbstrFileDesc.FilePresenceEnum.Complete
+            };
+            InsertAndCheckBody (body3);
+
+            var body4 = new McBody () {
+                AccountId = 1,
+                FilePresence = McAbstrFileDesc.FilePresenceEnum.Partial
+            };
+            InsertAndCheckBody (body4);
+
+            var body5 = new McBody () {
+                AccountId = 1,
+                FilePresence = McAbstrFileDesc.FilePresenceEnum.Complete
+            };
+            InsertAndCheckBody (body5);
+
+            var message1 = new McEmailMessage () {
+                AccountId = 1,
+                DateReceived = new DateTime (2015, 2, 20, 17, 30, 00),
+                BodyId = body1.Id,
+                IsIndexed = false
+            };
+            InsertAndCheckMessage (message1);
+
+            var message2 = new McEmailMessage () {
+                AccountId = 1,
+                DateReceived = new DateTime (2015, 2, 20, 17, 35, 00),
+                BodyId = 0,
+                IsIndexed = false
+            };
+            InsertAndCheckMessage (message2);
+
+            var message3 = new McEmailMessage () {
+                AccountId = 1,
+                DateReceived = new DateTime (2015, 2, 20, 17, 40, 00),
+                BodyId = body3.Id,
+                IsIndexed = false
+            };
+            InsertAndCheckMessage (message3);
+
+            var message4 = new McEmailMessage () {
+                AccountId = 1,
+                DateReceived = new DateTime (2015, 2, 20, 17, 45, 00),
+                BodyId = body4.Id,
+                IsIndexed = false
+            };
+            InsertAndCheckMessage (message4);
+
+            var message5 = new McEmailMessage () {
+                AccountId = 1,
+                DateReceived = new DateTime (2015, 2, 20, 17, 50, 00),
+                BodyId = body5.Id,
+                IsIndexed = true
+            };
+            InsertAndCheckMessage (message5);
+
+            // Query up to 10 emails. Should return message3 followed by message1
+            var results1 = McEmailMessage.QueryNeedsIndexing (10);
+            Assert.AreEqual (2, results1.Count);
+            CheckMessage (message3, results1 [0]);
+            CheckMessage (message1, results1 [1]);
+
+            // Query up to 1 email. Should only return message3
+            var results2 = McEmailMessage.QueryNeedsIndexing (1);
+            Assert.AreEqual (1, results2.Count);
+            CheckMessage (message3, results2 [0]);
         }
     }
 }
