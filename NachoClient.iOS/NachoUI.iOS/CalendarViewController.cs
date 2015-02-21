@@ -80,7 +80,7 @@ namespace NachoClient.iOS
             }
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
             calendarSource.Refresh (delegate {
-                calendarTableView.ReloadData ();
+                ReloadDataWithoutScrolling ();
                 UpdateDateDotView ();
             });
 
@@ -159,10 +159,63 @@ namespace NachoClient.iOS
             // When the events change, refresh the UI to reflect the changes.
             case NcResult.SubKindEnum.Info_EventSetChanged:
                 calendarSource.Refresh (delegate {
-                    calendarTableView.ReloadData ();
+                    ReloadDataWithoutScrolling ();
                     UpdateDateDotView ();
                 });
                 break;
+            }
+        }
+
+        /// <summary>
+        /// When ReloadData() results is new table entries or in table entries going away,
+        /// the visible portion of the table might shift significantly.  This function
+        /// attempts to scroll the view back to where it was before ReloadData() was called.
+        /// </summary>
+        protected void ReloadDataWithoutScrolling ()
+        {
+            var visibleRows = calendarTableView.IndexPathsForVisibleRows;
+
+            if (null == visibleRows || 0 == visibleRows.Length) {
+
+                // No actual events are visible.  Section headers only.  Figure out which section
+                // is at the top (which is not trivial), then scroll that section to the top
+                // after reloading the data.
+                nint topSection = 0;
+                var visibleArea = calendarTableView.Bounds;
+                nint numSections = calendarSource.NumberOfSections (calendarTableView);
+                for (nint i = 0; i < numSections; ++i) {
+                    var sectionBounds = calendarTableView.RectForSection (i);
+                    if (visibleArea.IntersectsWith (sectionBounds)) {
+                        topSection = i;
+                        break;
+                    }
+                }
+
+                calendarTableView.ReloadData ();
+
+                calendarTableView.ScrollToRow (NSIndexPath.FromItemSection (NSRange.NotFound, topSection), UITableViewScrollPosition.Top, false);
+
+            } else {
+
+                calendarTableView.ReloadData ();
+
+                // Pick the row that was near the middle of the visible rows, and make sure that row is still visible.
+
+                NSIndexPath scrollToRow = visibleRows [visibleRows.Length / 2];
+
+                nint numSections = calendarSource.NumberOfSections (calendarTableView);
+                if (scrollToRow.Section >= numSections) {
+                    // The number of days being shown has decreased.  Scroll to the last day.
+                    scrollToRow = NSIndexPath.FromItemSection (NSRange.NotFound, numSections - 1);
+                } else {
+                    nint numRows = calendarSource.RowsInSection (calendarTableView, scrollToRow.Section);
+                    if (scrollToRow.Row >= numRows) {
+                        // The number of events on our target day has decreased.  Scroll to the last event on that day.
+                        scrollToRow = NSIndexPath.FromItemSection (0 == numRows ? NSRange.NotFound : numRows - 1, scrollToRow.Section);
+                    }
+                }
+
+                calendarTableView.ScrollToRow (scrollToRow, UITableViewScrollPosition.None, false);
             }
         }
 
@@ -170,9 +223,9 @@ namespace NachoClient.iOS
         {
             if (BasicView) {
                 DateDotView.UpdateButtons ();
-                return;
-            } 
-            DateDotView.UpdateButtonsMonth ();
+            } else {
+                DateDotView.UpdateButtonsMonth ();
+            }
         }
 
         public void PerformSegueForDelegate (string identifier, NSObject sender)
