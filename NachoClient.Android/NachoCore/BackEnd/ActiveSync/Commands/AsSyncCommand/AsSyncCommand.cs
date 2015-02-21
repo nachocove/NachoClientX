@@ -594,7 +594,9 @@ namespace NachoCore.ActiveSync
             // If we're getting MoreAvailable with NO Command(s) for the entire Sync, this may be an Error.
             if (0 != SawMoreAvailableNoCommands.Count && !SawCommandsInAnyFolder) {
                 foreach (var errFolder in SawMoreAvailableNoCommands) {
-                    Log.Error (Log.LOG_AS, "AsSyncCommand: MoreAvailable with no commands in folder ServerId {0}.", errFolder.ServerId);
+                    // We've seen this be innocuous in Office365.
+                    // http://localhost:8000/bugfix/alpha/logs/us-east-1:d4d26796-9ff3-4d36-bfee-f7e4138c0237/2015-02-20T01:11:29.955Z/1/
+                    Log.Warn (Log.LOG_AS, "AsSyncCommand: MoreAvailable with no commands in folder ServerId {0}.", errFolder.ServerId);
                 }
             }
 
