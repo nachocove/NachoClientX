@@ -26,7 +26,11 @@ namespace NachoCore.Model
 
         public string AsSyncKey { get; set; }
 
+        // For keeping old folders around through a forced re-FolderSync from 0.
         public uint AsFolderSyncEpoch { get; set; }
+        // For keeping old items around through a forced re-Sync from 0.
+        public int AsSyncEpoch { get; set; }
+        public bool AsSyncEpochScrubNeeded { get; set; }
         // AsSyncMetaToClientExpected true when we have a reason to believe that we're not synced up.
         public bool AsSyncMetaToClientExpected { get; set; }
         // Updated when a Sync works on this folder. When we hit MaxFolders limit, this decides who goes next.
@@ -389,6 +393,37 @@ namespace NachoCore.Model
             }
         }
 
+        public void PerformSyncEpochScrub ()
+        {
+            const int perIter = 100;
+            NcTask.Run (() => {
+                Log.Info (Log.LOG_AS, "PerformSyncEpochScrub {0}", Id);
+                while (true) {
+                    var orphanedEmails = McEmailMessage.QueryOldEpochByFolderId<McEmailMessage> (AccountId, Id, AsSyncEpoch, perIter);
+                    var orphanedCals = McCalendar.QueryOldEpochByFolderId<McCalendar> (AccountId, Id, AsSyncEpoch, perIter);
+                    var orphanedContacts = McContact.QueryOldEpochByFolderId<McContact> (AccountId, Id, AsSyncEpoch, perIter);
+                    var orphanedTasks = McTask.QueryOldEpochByFolderId<McTask> (AccountId, Id, AsSyncEpoch, perIter);
+                    var whackem = new List<McAbstrItem> ();
+                    whackem.AddRange (orphanedEmails);
+                    whackem.AddRange (orphanedCals);
+                    whackem.AddRange (orphanedContacts);
+                    whackem.AddRange (orphanedTasks);
+                    if (0 == whackem.Count) {
+                        break;
+                    }
+                    foreach (var item in whackem) {
+                        item.Delete ();
+                    }
+                }
+                UpdateWithOCApply<McFolder> ((record) => {
+                    var target = (McFolder)record;
+                    target.AsSyncEpochScrubNeeded = false;
+                    return true;
+                });
+                // after UpdateWithOCApply, "this" can be a stale version of the folder!
+            }, "PerformSyncEpochScrub");
+        }
+
         public void DeleteItems ()
         {
             var contentMaps = McMapFolderFolderEntry.QueryByFolderId (AccountId, Id);
@@ -440,6 +475,24 @@ namespace NachoCore.Model
             return base.Delete ();
         }
 
+        public NcResult UpdateLink (McAbstrItem obj)
+        {
+            var classCode = obj.GetClassCode ();
+            NcAssert.True (classCode != ClassCodeEnum.Folder, "Linking folders is not currently supported");
+            NcAssert.True (classCode != ClassCodeEnum.NeverInFolder);
+            NcAssert.True (AccountId == obj.AccountId, "Folder's AccountId should match FolderEntry's AccountId");
+            var existing = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode 
+                (AccountId, Id, obj.Id, classCode);
+            if (null == existing) {
+                return NcResult.Error (NcResult.SubKindEnum.Error_NotInFolder);
+            }
+            if (existing.AsSyncEpoch != AsSyncEpoch) {
+                existing.AsSyncEpoch = AsSyncEpoch;
+                existing.Update ();
+            }
+            return NcResult.OK ();
+        }
+
         public NcResult Link (McAbstrItem obj)
         {
             var classCode = obj.GetClassCode ();
@@ -455,6 +508,7 @@ namespace NachoCore.Model
                 FolderId = Id,
                 FolderEntryId = obj.Id,
                 ClassCode = classCode,
+                AsSyncEpoch = AsSyncEpoch,
             };
             NcModel.Instance.RunInTransaction (() => {
                 map.Insert ();
@@ -626,9 +680,10 @@ namespace NachoCore.Model
             var folder = UpdateWithOCApply<McFolder> ((record) => {
                 var target = (McFolder)record;
                 target.ResetSyncState ();
+                target.AsSyncEpoch++;
+                target.AsSyncEpochScrubNeeded = true;
                 return true;
             });
-            folder.DeleteItems ();
             return folder;
         }
 

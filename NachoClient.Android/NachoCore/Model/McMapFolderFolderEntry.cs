@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using SQLite;
+using NachoCore.Utils;
 
 namespace NachoCore.Model
 {
@@ -18,13 +19,29 @@ namespace NachoCore.Model
         [Indexed]
         public McAbstrFolderEntry.ClassCodeEnum ClassCode { get; set; }
 
+        [Indexed]
+        public int AsSyncEpoch { get; set; }
+
         public McMapFolderFolderEntry ()
         {
+            AsSyncEpoch = int.MaxValue;
         }
 
         public McMapFolderFolderEntry (int accountId)
         {
             AccountId = accountId;
+        }
+
+        public override int Insert ()
+        {
+            NcAssert.True (AsSyncEpoch < int.MaxValue);
+            return base.Insert ();
+        }
+
+        public override int Update ()
+        {
+            NcAssert.True (AsSyncEpoch < int.MaxValue);
+            return base.Update ();
         }
 
         // Gives all the map entries for this folder's contents (not deep).
