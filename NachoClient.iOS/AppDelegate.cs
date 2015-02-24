@@ -209,8 +209,9 @@ namespace NachoClient.iOS
         // It gets called once during the app lifecycle.
         public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
         {
-            if (null == NcApplication.Instance.AppId) {
-                NcApplication.Instance.AppId = (string)(NSString)NSBundle.MainBundle.InfoDictionary.ObjectForKey (new NSString ("CFBundleIdentifier"));
+            if (null == NcApplication.Instance.CrashFolder) {
+                var cacheFolder = NSSearchPath.GetDirectories (NSSearchPathDirectory.CachesDirectory, NSSearchPathDomain.User, true) [0];
+                NcApplication.Instance.CrashFolder = Path.Combine (cacheFolder, "net.hockeyapp.sdk.ios");
                 NcApplication.Instance.MarkStartup ();
             }
 
