@@ -4,6 +4,8 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.IO;
+using System.Text;
 using NachoCore.Brain;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -37,6 +39,8 @@ namespace NachoCore
         private ExecutionContextEnum _ExecutionContext = ExecutionContextEnum.Migrating;
         private ExecutionContextEnum _PlatformIndication = ExecutionContextEnum.Background;
 
+        private DateTime _LaunchTimeUTc = DateTime.UtcNow;
+
         public ExecutionContextEnum ExecutionContext {
             get { return _ExecutionContext; }
             private set { 
@@ -50,6 +54,29 @@ namespace NachoCore
                 });
             }
         }
+
+        public string AppId { get; set; }
+
+        private string _CrashFolder { get; set; }
+
+        public string CrashFolder {
+            get {
+                if (null == _CrashFolder) {
+                    var documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+                    _CrashFolder = Path.Combine (documents, "com.plausiblelabs.crashreporter.data", AppId, "queued_reports");
+                }
+                return _CrashFolder;
+            }
+        }
+
+        public string StartupLog {
+            get {
+                var documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
+                return Path.Combine (documents, "startup.log");
+            }
+        }
+
+        private bool StartupMarked;
 
         public bool IsUp ()
         {
@@ -252,35 +279,53 @@ namespace NachoCore
             NcTask.StartService ();
             Telemetry.StartService ();
             Account = McAccount.QueryByAccountType (McAccount.AccountTypeEnum.Exchange).FirstOrDefault ();
+
             // NcMigration does one query. So db must be initialized. Currently, db can be and is 
             // lazy initialized. So, we don't need pay any attention. But if that changes in the future,
             // we need to sequence these properly.
             NcMigration.Setup ();
-            // Start Migrations, if any.
-            if (!NcMigration.WillStartService ()) {
-                StartBasalServicesCompletion ();
-                Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServices exited (w/out migration).");
+
+            if (ShouldEnterSafeMode ()) {
+                if (!NcMigration.WillStartService ()) {
+                    ExecutionContext = ExecutionContextEnum.Initializing;
+                }
+                NcTask.Run (() => {
+                    if (!MonitorUploads ()) {
+                        Log.Info (Log.LOG_LIFECYCLE, "NcApplication: safe mode canceled");
+                        return;
+                    }
+                    StartBasalServicesCompletion ();
+                }, "SafeMode");
+                Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServices exited (safe mode).");
                 return;
             }
-            NcMigration.StartService (
-                StartBasalServicesCompletion,
-                (percentage) => {
-                    var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_MigrationProgress);
-                    result.Value = percentage;
-                    InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                        Status = result,
-                        Account = ConstMcAccount.NotAccountSpecific,
+
+            // Start Migrations, if any.
+            if (NcMigration.WillStartService ()) {
+                NcMigration.StartService (
+                    StartBasalServicesCompletion,
+                    (percentage) => {
+                        var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_MigrationProgress);
+                        result.Value = percentage;
+                        InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                            Status = result,
+                            Account = ConstMcAccount.NotAccountSpecific,
+                        });
+                    },
+                    (description) => {
+                        var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_MigrationDescription);
+                        result.Value = description;
+                        InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                            Status = result,
+                            Account = ConstMcAccount.NotAccountSpecific,
+                        });
                     });
-                },
-                (description) => {
-                    var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_MigrationDescription);
-                    result.Value = description;
-                    InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                        Status = result,
-                        Account = ConstMcAccount.NotAccountSpecific,
-                    });
-                });
-            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServices exited (w/migration).");
+                Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServices exited (w/migration).");
+                return;
+            }
+
+            StartBasalServicesCompletion ();
+            Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServices exited (w/out migration).");
         }
 
         public void StopBasalServices ()
@@ -525,6 +570,96 @@ namespace NachoCore
                     BackEnd.Instance.ServerCertToBeExamined (accountId).Thumbprint, true);
             }
             BackEnd.Instance.CertAskResp (accountId, isOkay);
+        }
+
+        private bool ShouldEnterSafeMode ()
+        {
+            var startupLog = StartupLog;
+            if (!File.Exists (StartupLog)) {
+                return false;
+            }
+            var bytes = new byte[128];
+            int numBytes = 0;
+            using (var fileStream = File.Open (startupLog, FileMode.Open, FileAccess.Read)) {
+                numBytes = fileStream.Read (bytes, 0, bytes.Length);
+            }
+            int numTimestamps = 0;
+            for (int n = 0; n < numBytes; n++) {
+                if ('\n' == bytes [n]) {
+                    numTimestamps += 1;
+                    if (numTimestamps > 1) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private int NumberOfCrashReports ()
+        {
+            if (!Directory.Exists (CrashFolder)) {
+                return 0;
+            }
+            return Directory.GetFiles (CrashFolder).Length;
+        }
+
+        private bool MonitorUploads ()
+        {
+            bool telemetryDone = false;
+            bool crashReportingDone = false;
+            while (120.0 > (DateTime.UtcNow - _LaunchTimeUTc).TotalSeconds) { // safe mode can only run up to 2 min
+                // Check if we have caught up in telemetry upload
+                if (!telemetryDone) {
+                    int numTelemetryEvents = McTelemetryEvent.QueryCount () + McTelemetrySupportEvent.QueryCount ();
+                    if (0 == numTelemetryEvents) {
+                        telemetryDone = true;
+                    }
+                }
+
+                // Check if HockeyApp has any queued crash reports
+                if (!crashReportingDone && (0 == NumberOfCrashReports ())) {
+                    crashReportingDone = true;
+                }
+
+                if (crashReportingDone && telemetryDone) {
+                    break;
+                }
+                if (!NcTask.CancelableSleep (100)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+
+        public void MarkStartup ()
+        {
+            using (var fileStream = File.Open (StartupLog, FileMode.OpenOrCreate | FileMode.Append)) {
+                var timestamp = String.Format ("{0}\n", DateTime.UtcNow);
+                var bytes = Encoding.ASCII.GetBytes (timestamp);
+                fileStream.Write (bytes, 0, bytes.Length);
+                StartupMarked = true;
+            }
+        }
+
+        public void UnmarkStartup ()
+        {
+            if (!StartupMarked) {
+                return; // already unmarked
+            }
+            if (30 > (DateTime.UtcNow - _LaunchTimeUTc).TotalSeconds) {
+                return; // wait 30 seconds before unmark. should give enough time to upload crash log and some telemetry
+            }
+            var startupLog = StartupLog;
+            if (File.Exists (startupLog)) {
+                try {
+                    File.Delete (startupLog);
+                    StartupMarked = false;
+                } catch (Exception e) {
+                    Log.Warn (Log.LOG_LIFECYCLE, "fail to delete starutp log (file={0}, exception={1})", startupLog, e.Message);
+                }
+            }
         }
     }
 }

@@ -386,10 +386,6 @@ namespace NachoCore.Brain
                 // as it is a waste of time.
                 if (NcApplication.ExecutionContextEnum.Background == NcApplication.Instance.ExecutionContext ||
                     NcApplication.ExecutionContextEnum.Foreground == NcApplication.Instance.ExecutionContext) {
-                    // Defer the processing until Nacho Nov view shows up.
-                    if (!NcTask.CancelableSleep (StartupDelayMsec)) {
-                        NcTask.Cts.Token.ThrowIfCancellationRequested ();
-                    }
                     McEmailMessage.StartTimeVariance (EventQueue.Token);
                     tvStarted = true;
                 }
@@ -422,6 +418,7 @@ namespace NachoCore.Brain
                         }
                     }
                     if (ENABLED) {
+                        NcApplication.Instance.UnmarkStartup ();
                         ProcessEvent (brainEvent);
                     }
                 }
