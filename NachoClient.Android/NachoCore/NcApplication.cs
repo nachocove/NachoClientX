@@ -604,6 +604,17 @@ namespace NachoCore
             bool telemetryDone = false;
             bool crashReportingDone = false;
             while (120 > UpTimeSec) { // safe mode can only run up to 2 min
+                if (15 < UpTimeSec) {
+                    // If we have no network connectivity or cellular only, we wait or
+                    // upload up to 15 sec. The cellular part is to avoid running up
+                    // data charges.
+                    NcCommStatus comStatus = NcCommStatus.Instance;
+                    if ((NetStatusStatusEnum.Down == comStatus.Status) ||
+                        (NetStatusSpeedEnum.WiFi_0 != comStatus.Speed)) {
+                        break;
+                    }
+                }
+
                 // Check if we have caught up in telemetry upload
                 if (!telemetryDone) {
                     int numTelemetryEvents = McTelemetryEvent.QueryCount () + McTelemetrySupportEvent.QueryCount ();
