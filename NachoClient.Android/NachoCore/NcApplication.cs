@@ -289,8 +289,31 @@ namespace NachoCore
                         Log.Info (Log.LOG_LIFECYCLE, "NcApplication: safe mode canceled");
                         return;
                     }
-                    StartBasalServicesCompletion ();
+                    if (!NcMigration.WillStartService ()) {
+                        StartBasalServicesCompletion ();
+                    } else {
+                        Log.Info (Log.LOG_LIFECYCLE, "Starting migration after exiting safe mode");
+                        NcMigration.StartService (
+                            StartBasalServicesCompletion,
+                            (percentage) => {
+                                var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_MigrationProgress);
+                                result.Value = percentage;
+                                InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                                    Status = result,
+                                    Account = ConstMcAccount.NotAccountSpecific,
+                                });
+                            },
+                            (description) => {
+                                var result = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_MigrationDescription);
+                                result.Value = description;
+                                InvokeStatusIndEvent (new StatusIndEventArgs () { 
+                                    Status = result,
+                                    Account = ConstMcAccount.NotAccountSpecific,
+                                });
+                            });
+                    }
                 }, "SafeMode");
+
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServices exited (safe mode).");
                 return;
             }
