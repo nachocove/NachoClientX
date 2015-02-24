@@ -126,7 +126,7 @@ namespace NachoCore.Model
         private ConcurrentDictionary<int, NcSQLiteConnection> DbConns;
         private ConcurrentDictionary<int, int> TransDepth;
 
-        private int walCheckpointCount = 0;
+        //private int walCheckpointCount = 0;
 
         public int NumberDbConnections {
             get {

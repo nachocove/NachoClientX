@@ -88,10 +88,12 @@ namespace NachoCore.ActiveSync
             // If there is no match, insert the new item.
             if (null == oldItem) {
                 newItem.AccountId = folder.AccountId;
-                int ir = newItem.Insert ();
-                InsertExceptions (newItem);
-                NcAssert.True (0 < ir, "newItem.Insert");
-                folder.Link (newItem);
+                NcModel.Instance.RunInTransaction (() => {
+                    int ir = newItem.Insert ();
+                    InsertExceptions (newItem);
+                    NcAssert.True (0 < ir, "newItem.Insert");
+                    folder.Link (newItem);
+                });
                 return;
             }
 
@@ -111,6 +113,7 @@ namespace NachoCore.ActiveSync
             newItem.AccountId = oldItem.AccountId;
             newItem.CreatedAt = oldItem.CreatedAt;
             newItem.RecurrencesGeneratedUntil = DateTime.MinValue; // Force regeneration of events
+            folder.UpdateLink (newItem);
             int ur = newItem.Update ();
             InsertExceptions (newItem);
             NcAssert.True (0 < ur, "newItem.Update");

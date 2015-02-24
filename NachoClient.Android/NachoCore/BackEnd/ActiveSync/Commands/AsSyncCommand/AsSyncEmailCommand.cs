@@ -64,6 +64,7 @@ namespace NachoCore.ActiveSync
                 } else {
                     emailMessage.AccountId = folder.AccountId;
                     emailMessage.Id = eMsg.Id;
+                    folder.UpdateLink (emailMessage);
                     emailMessage.Update ();
                 }
             });

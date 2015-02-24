@@ -501,6 +501,9 @@ namespace NachoCore.ActiveSync
                             protocolState.Update ();
                         }
                     }
+                    if (folder.AsSyncEpochScrubNeeded && !folder.AsSyncMetaToClientExpected) {
+                        folder.PerformSyncEpochScrub ();
+                    }
                     break;
 
                 case Xml.AirSync.StatusCode.ServerError_5:
