@@ -126,7 +126,8 @@ namespace NachoClient.iOS
                             // See if we can get the part of the stack that is getting lost in ThrowExceptionAsNative().
                             Log.Error (Log.LOG_LIFECYCLE, "UnhandledException: {0}", ex.Message);
                         }
-                    } catch { }
+                    } catch {
+                    }
                     Setup.ThrowExceptionAsNative (e.ExceptionObject);
                 };
 
@@ -208,6 +209,12 @@ namespace NachoClient.iOS
         // It gets called once during the app lifecycle.
         public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
         {
+            if (null == NcApplication.Instance.CrashFolder) {
+                var cacheFolder = NSSearchPath.GetDirectories (NSSearchPathDirectory.CachesDirectory, NSSearchPathDomain.User, true) [0];
+                NcApplication.Instance.CrashFolder = Path.Combine (cacheFolder, "net.hockeyapp.sdk.ios");
+                NcApplication.Instance.MarkStartup ();
+            }
+
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Called");
             // One-time initialization that do not need to be shut down later.
             if (!StartCrashReportingHasHappened) {
@@ -594,7 +601,7 @@ namespace NachoClient.iOS
                     // Now we know that the app was already running.  In this case,
                     // we notify the user of the upcoming event with an alert view.
                     if (null != eventNotification) {
-                        var eventId = eventNotification.ToMcModelIndex();
+                        var eventId = eventNotification.ToMcModelIndex ();
                         var eventItem = McEvent.QueryById<McEvent> (eventId);
                         if (null != eventItem) {
                             var calendarItem = McCalendar.QueryById<McCalendar> (eventItem.CalendarId);
@@ -622,14 +629,14 @@ namespace NachoClient.iOS
             var nachoTabBarController = Window.RootViewController as NachoTabBarController;
                 
             if (null != emailNotification) {
-                var emailMessageId = emailNotification.ToMcModelIndex();
+                var emailMessageId = emailNotification.ToMcModelIndex ();
                 SaveNotification ("ReceivedLocalNotification", EmailNotificationKey, emailMessageId);
                 if (null != nachoTabBarController) {
                     nachoTabBarController.SwitchToNachoNow ();
                 }
             }
             if (null != eventNotification) {
-                var eventId = eventNotification.ToMcModelIndex();
+                var eventId = eventNotification.ToMcModelIndex ();
                 SaveNotification ("ReceivedLocalNotification", EventNotificationKey, eventId);
                 nachoTabBarController.SwitchToNachoNow ();
 
