@@ -582,7 +582,7 @@ namespace NachoCore
             for (int n = 0; n < numBytes; n++) {
                 if ('\n' == bytes [n]) {
                     numTimestamps += 1;
-                    if (numTimestamps > 1) {
+                    if (numTimestamps > 2) {
                         return true;
                     }
                 }
