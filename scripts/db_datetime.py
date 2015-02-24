@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import sys
 import datetime
+from dateutil import parser
 
 
 def db2datetime(value):
@@ -13,6 +14,14 @@ def db2datetime(value):
 
     return date, datetime.time(hour=hours, minute=minutes, second=seconds, microsecond=milliseconds * 1000)
 
+def toticks(dt):
+    days = datetime.date.toordinal(dt.date()) - 1
+    ticks = days * 86400
+    ticks += dt.hour * 3600
+    ticks += dt.minute * 60
+    ticks += dt.second
+    ticks = (ticks * 1000000) + (dt.microsecond - (dt.microsecond % 1000))
+    return ticks * 10  # convert to ticks
 
 def usage():
     print 'USAGE: db_timestamp.py [value]'
@@ -24,9 +33,13 @@ if __name__ == '__main__':
     db_val = None
     try:
         db_val = int(sys.argv[1], 10)
+        (date_val, time_val) = db2datetime(db_val)
+        time_str = time_val.strftime('%H:%M:%S') + ('.%03d' % (time_val.microsecond/1000))
+        print 'Generic: %s %s' % (date_val.strftime('%m-%d-%Y'), time_str)
+        print 'ISO-8601 UTC: %sT%sZ' % (date_val.strftime('%Y-%m-%d'), time_str)
     except ValueError:
-        usage()
-    (date_val, time_val) = db2datetime(db_val)
-    time_str = time_val.strftime('%H:%M:%S') + ('.%03d' % (time_val.microsecond/1000))
-    print 'Generic: %s %s' % (date_val.strftime('%m-%d-%Y'), time_str)
-    print 'ISO-8601 UTC: %sT%sZ' % (date_val.strftime('%Y-%m-%d'), time_str)
+        try:
+            dt = parser.parse(sys.argv[1])
+            print "DynamoDB format: %s" % toticks(dt)
+        except:
+            usage()
