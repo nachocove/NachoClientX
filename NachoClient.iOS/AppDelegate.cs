@@ -414,7 +414,7 @@ namespace NachoClient.iOS
         public override void DidEnterBackground (UIApplication application)
         {
             if (DidEnterBackgroundCalled) {
-                Log.Error (Log.LOG_LIFECYCLE, "DidEnterBackground: called more than once.");
+                Log.Warn (Log.LOG_LIFECYCLE, "DidEnterBackground: called more than once.");
                 return;
             }
             DidEnterBackgroundCalled = true;
