@@ -393,10 +393,10 @@ namespace NachoCore.Model
             }
         }
 
-        public void PerformSyncEpochScrub ()
+        public void PerformSyncEpochScrub (bool testRunSync = false)
         {
             const int perIter = 100;
-            NcTask.Run (() => {
+            Action action = () => {
                 Log.Info (Log.LOG_AS, "PerformSyncEpochScrub {0}", Id);
                 while (true) {
                     var orphanedEmails = McEmailMessage.QueryOldEpochByFolderId<McEmailMessage> (AccountId, Id, AsSyncEpoch, perIter);
@@ -421,7 +421,12 @@ namespace NachoCore.Model
                     return true;
                 });
                 // after UpdateWithOCApply, "this" can be a stale version of the folder!
-            }, "PerformSyncEpochScrub");
+            };
+            if (testRunSync) {
+                action ();
+            } else {
+                NcTask.Run (action, "PerformSyncEpochScrub");
+            }
         }
 
         public void DeleteItems ()
