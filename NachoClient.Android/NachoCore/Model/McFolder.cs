@@ -397,22 +397,30 @@ namespace NachoCore.Model
                 switch (map.ClassCode) {
                 case McAbstrItem.ClassCodeEnum.Email:
                     var emailMessage = McAbstrFolderEntry.QueryById<McEmailMessage> (map.FolderEntryId);
-                    emailMessage.Delete ();
+                    if (null != emailMessage) {
+                        emailMessage.Delete ();
+                    }
                     break;
 
                 case McAbstrItem.ClassCodeEnum.Calendar:
                     var cal = McAbstrFolderEntry.QueryById<McCalendar> (map.FolderEntryId);
-                    cal.Delete ();
+                    if (null != cal) {
+                        cal.Delete ();
+                    }
                     break;
 
                 case McAbstrItem.ClassCodeEnum.Contact:
                     var contact = McAbstrFolderEntry.QueryById<McContact> (map.FolderEntryId);
-                    contact.Delete ();
+                    if (null != contact) {
+                        contact.Delete ();
+                    }
                     break;
 
                 case McAbstrItem.ClassCodeEnum.Tasks:
                     var task = McAbstrFolderEntry.QueryById<McTask> (map.FolderEntryId);
-                    task.Delete ();
+                    if (null != task) {
+                        task.Delete ();
+                    }
                     break;
 
                 case McAbstrItem.ClassCodeEnum.Folder:
