@@ -41,6 +41,12 @@ namespace NachoCore
 
         private DateTime _LaunchTimeUTc = DateTime.UtcNow;
 
+        public double UpTimeSec { 
+            get {
+                return (DateTime.UtcNow - _LaunchTimeUTc).TotalSeconds;
+            }
+        }
+
         public ExecutionContextEnum ExecutionContext {
             get { return _ExecutionContext; }
             private set { 
@@ -55,19 +61,8 @@ namespace NachoCore
             }
         }
 
-        public string AppId { get; set; }
-
-        private string _CrashFolder { get; set; }
-
-        public string CrashFolder {
-            get {
-                if (null == _CrashFolder) {
-                    var documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
-                    _CrashFolder = Path.Combine (documents, "com.plausiblelabs.crashreporter.data", AppId, "queued_reports");
-                }
-                return _CrashFolder;
-            }
-        }
+        // This string needs to be filled out by platform-dependent code when the app is first launched.
+        public string CrashFolder { get; set; }
 
         public string StartupLog {
             get {
@@ -601,14 +596,14 @@ namespace NachoCore
             if (!Directory.Exists (CrashFolder)) {
                 return 0;
             }
-            return Directory.GetFiles (CrashFolder).Length;
+            return Directory.GetFiles (CrashFolder).Where (x => x.EndsWith (".meta")).Count ();
         }
 
         private bool MonitorUploads ()
         {
             bool telemetryDone = false;
             bool crashReportingDone = false;
-            while (120.0 > (DateTime.UtcNow - _LaunchTimeUTc).TotalSeconds) { // safe mode can only run up to 2 min
+            while (120 > UpTimeSec) { // safe mode can only run up to 2 min
                 // Check if we have caught up in telemetry upload
                 if (!telemetryDone) {
                     int numTelemetryEvents = McTelemetryEvent.QueryCount () + McTelemetrySupportEvent.QueryCount ();
