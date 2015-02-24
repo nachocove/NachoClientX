@@ -72,9 +72,16 @@ namespace NachoCore.Model
             }
         }
 
+        /// <summary>
+        /// Return the event that is currently in progress, or the next one to start.
+        /// Ignore events associated with a canceled meeting.  Ignore events that are
+        /// more than a week away.  Return null if no event is found.
+        /// </summary>
         public static McEvent GetCurrentOrNextEvent()
         {
-            foreach (var evt in NcModel.Instance.Db.Table<McEvent> ().Where (x => x.EndTime >= DateTime.UtcNow).OrderBy (x => x.StartTime)) {
+            DateTime now = DateTime.UtcNow;
+            DateTime weekInFuture = now + new TimeSpan (7, 0, 0, 0);
+            foreach (var evt in NcModel.Instance.Db.Table<McEvent> ().Where (x => x.EndTime >= now && x.StartTime < weekInFuture).OrderBy (x => x.StartTime)) {
                 var cal = evt.GetCalendarItemforEvent ();
                 if (null != cal && NcMeetingStatus.MeetingCancelled != cal.MeetingStatus && NcMeetingStatus.ForwardedMeetingCancelled != cal.MeetingStatus) {
                     // An event that hasn't been canceled.  This is what we are looking for.
