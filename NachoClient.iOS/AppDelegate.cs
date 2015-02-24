@@ -200,6 +200,11 @@ namespace NachoClient.iOS
         // It gets called once during the app lifecycle.
         public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
         {
+            if (null == NcApplication.Instance.AppId) {
+                NcApplication.Instance.AppId = (string)(NSString)NSBundle.MainBundle.InfoDictionary.ObjectForKey (new NSString ("CFBundleIdentifier"));
+                NcApplication.Instance.MarkStartup ();
+            }
+
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Called");
             // One-time initialization that do not need to be shut down later.
             if (!StartCrashReportingHasHappened) {
@@ -586,7 +591,7 @@ namespace NachoClient.iOS
                     // Now we know that the app was already running.  In this case,
                     // we notify the user of the upcoming event with an alert view.
                     if (null != eventNotification) {
-                        var eventId = eventNotification.ToMcModelIndex();
+                        var eventId = eventNotification.ToMcModelIndex ();
                         var eventItem = McEvent.QueryById<McEvent> (eventId);
                         if (null != eventItem) {
                             var calendarItem = McCalendar.QueryById<McCalendar> (eventItem.CalendarId);
@@ -614,14 +619,14 @@ namespace NachoClient.iOS
             var nachoTabBarController = Window.RootViewController as NachoTabBarController;
                 
             if (null != emailNotification) {
-                var emailMessageId = emailNotification.ToMcModelIndex();
+                var emailMessageId = emailNotification.ToMcModelIndex ();
                 SaveNotification ("ReceivedLocalNotification", EmailNotificationKey, emailMessageId);
                 if (null != nachoTabBarController) {
                     nachoTabBarController.SwitchToNachoNow ();
                 }
             }
             if (null != eventNotification) {
-                var eventId = eventNotification.ToMcModelIndex();
+                var eventId = eventNotification.ToMcModelIndex ();
                 SaveNotification ("ReceivedLocalNotification", EventNotificationKey, eventId);
                 nachoTabBarController.SwitchToNachoNow ();
 
