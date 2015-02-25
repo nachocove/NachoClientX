@@ -1,6 +1,7 @@
 #define HA_AUTH_ANONYMOUS
 //#define HA_AUTH_USER
 //#define HA_AUTH_EMAIL
+#define NO_CERT_VALIDATION // curl -k
 
 using System;
 using System.IO;
@@ -28,6 +29,11 @@ using ObjCRuntime;
 using NachoClient.Build;
 using HockeyApp;
 using NachoUIMonitorBinding;
+
+#if NO_CERT_VALIDATION
+using System.Net.Security;
+using System.Net;
+#endif
 
 namespace NachoClient.iOS
 {
@@ -211,11 +217,21 @@ namespace NachoClient.iOS
 //            });
         }
 
+        #if NO_CERT_VALIDATION
+        private bool CertCheck (object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        {
+            return true;
+        }
+        #endif
+
         // This method is common to both launching into the background and into the foreground.
         // It gets called once during the app lifecycle.
         public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
         {
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Called");
+            #if NO_CERT_VALIDATION
+            ServicePointManager.ServerCertificateValidationCallback = CertCheck;
+            #endif
             // One-time initialization that do not need to be shut down later.
             if (!StartCrashReportingHasHappened) {
                 StartCrashReportingHasHappened = true;
@@ -612,7 +628,7 @@ namespace NachoClient.iOS
                     // Now we know that the app was already running.  In this case,
                     // we notify the user of the upcoming event with an alert view.
                     if (null != eventNotification) {
-                        var eventId = eventNotification.ToMcModelIndex();
+                        var eventId = eventNotification.ToMcModelIndex ();
                         var eventItem = McEvent.QueryById<McEvent> (eventId);
                         if (null != eventItem) {
                             var calendarItem = McCalendar.QueryById<McCalendar> (eventItem.CalendarId);
@@ -640,14 +656,14 @@ namespace NachoClient.iOS
             var nachoTabBarController = Window.RootViewController as NachoTabBarController;
                 
             if (null != emailNotification) {
-                var emailMessageId = emailNotification.ToMcModelIndex();
+                var emailMessageId = emailNotification.ToMcModelIndex ();
                 SaveNotification ("ReceivedLocalNotification", EmailNotificationKey, emailMessageId);
                 if (null != nachoTabBarController) {
                     nachoTabBarController.SwitchToNachoNow ();
                 }
             }
             if (null != eventNotification) {
-                var eventId = eventNotification.ToMcModelIndex();
+                var eventId = eventNotification.ToMcModelIndex ();
                 SaveNotification ("ReceivedLocalNotification", EventNotificationKey, eventId);
                 nachoTabBarController.SwitchToNachoNow ();
 

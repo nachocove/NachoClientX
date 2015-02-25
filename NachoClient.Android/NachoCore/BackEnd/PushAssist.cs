@@ -6,6 +6,8 @@ using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.IO;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using ModernHttpClient;
 using NachoCore.Utils;
 using NachoCore.Model;
@@ -33,18 +35,20 @@ namespace NachoCore
         private bool IsDisposed;
 
         public static string PingerHostName = "pinger.officetaco.com";
+        //public static string PingerHostName = "localhost";
 
         public const int ApiVersion = 1;
 
         private string BaseUrl {
             get {
                 return String.Format ("https://{0}/{1}", PingerHostName, ApiVersion);
+                //return String.Format ("http://{0}:8001/{1}", PingerHostName, ApiVersion);
             }
         }
 
         private string StartSessionUrl {
             get {
-                return BaseUrl + "/request";
+                return BaseUrl + "/register";
             }
         }
 
@@ -88,7 +92,7 @@ namespace NachoCore
         public PushAssist (IPushAssistOwner owner)
         {
             // FIXME - we will need to do cert-pinning, and also ensure SSL.
-            Client = new HttpClient (new NativeMessageHandler (), true);
+            Client = new HttpClient (new NativeMessageHandler (false, true), true);
             Owner = owner;
             AccountId = Owner.Account.Id;
             Sm = new NcStateMachine ("PA") {
@@ -296,8 +300,8 @@ namespace NachoCore
                 ClientId = clientId,
                 MailServerUrl = parameters.RequestUrl,
                 MailServerCredentials = new Credentials {
-                    Username = "henryk@nachocove.com",
-                    Password = "hkk123",
+                    Username = "xxxxxx",
+                    Password = "xxxxxx",
                 },
                 Protocol = ProtocolToString (parameters.Protocol),
                 Platform = NcApplication.Instance.GetPlatformName (),
@@ -313,21 +317,12 @@ namespace NachoCore
                 PushService = NcApplication.Instance.GetPushService (),
             };
 
-            MemoryStream jsonStream = new MemoryStream ();
-            DataContractJsonSerializer ser = new DataContractJsonSerializer (typeof(StartSessionRequest));
-            ser.WriteObject (jsonStream, jsonRequest);
-            HttpRequestMessage request = new HttpRequestMessage (HttpMethod.Post, StartSessionUrl);
-            request.Content = new StreamContent (jsonStream);
-            do {
-                try {
-                    var response = Client.SendAsync (request, NcTask.Cts.Token).ConfigureAwait (false);
-                    break;
-                } catch (OperationCanceledException) {
-                    break;
-                } catch (Exception e) {
-                    Log.Warn (Log.LOG_PUSH, "Caught push assist http exception: {0}", e);
-                }
-            } while (true);
+            try {
+                var response = DoHttpRequest (StartSessionUrl, jsonRequest, NcTask.Cts.Token);
+            } catch (OperationCanceledException) {
+            } catch (Exception e) {
+                Log.Warn (Log.LOG_PUSH, "Caught push assist http exception: {0}", e);
+            }
         }
 
         private void DoHoldOff ()
@@ -445,6 +440,42 @@ namespace NachoCore
                 return "IMAP";
             }
             return null;
+        }
+
+        protected async Task<HttpResponseMessage> DoHttpRequest (string url, object jsonRequest, CancellationToken cToken)
+        {
+            if (String.IsNullOrEmpty (url)) {
+                Log.Error (Log.LOG_PUSH, "null URL");
+                return null;
+            }
+            if (null == jsonRequest) {
+                Log.Error (Log.LOG_PUSH, "null json request");
+                return null;
+            }
+
+            // Set up the request
+            HttpRequestMessage request = new HttpRequestMessage (HttpMethod.Post, url);
+            Log.Info (Log.LOG_PUSH, "request: scheme={0}, url={1}, port={2}, method={3}",
+                request.RequestUri.Scheme, request.RequestUri.AbsoluteUri, request.RequestUri.Port, request.Method);
+
+            // Set up the POST content
+            MemoryStream jsonStream = new MemoryStream ();
+            DataContractJsonSerializer ser = new DataContractJsonSerializer (typeof(StartSessionRequest));
+            ser.WriteObject (jsonStream, jsonRequest);
+            var content = System.Text.Encoding.ASCII.GetString (jsonStream.ToArray ());
+            // FIXME - Somehow StreamContent is not working
+            //request.Content = new StreamContent (jsonStream);
+            request.Content = new StringContent (content);
+            request.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue ("application/json");
+            request.Content.Headers.ContentLength = jsonStream.Length;
+
+            // Make the request
+            var response = await Client
+                .SendAsync (request, HttpCompletionOption.ResponseContentRead, cToken)
+                .ConfigureAwait (false);
+            Log.Info (Log.LOG_PUSH, "response: statusCode={0}, content={1}", response.StatusCode,
+                await response.Content.ReadAsStringAsync ().ConfigureAwait (false));
+            return response;
         }
     }
 }
