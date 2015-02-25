@@ -303,7 +303,7 @@ namespace Test.iOS
             Folder = folder;
         }
 
-        public SyncKit GenSyncKit (int accountId, McProtocolState protocolState, bool cantBeEmpty)
+        public SyncKit GenSyncKit (int accountId, McProtocolState protocolState)
         {
             return new NachoCore.ActiveSync.SyncKit () {
                 OverallWindowSize = 1,
