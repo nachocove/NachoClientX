@@ -323,7 +323,7 @@ namespace NachoCore
                 CommandAcknowledgement = SafeToBase64 (parameters.CommandAcknowledgement),
                 ResponseTimeout = parameters.ResponseTimeoutMsec,
                 WaitBeforeUse = parameters.WaitBeforeUseMsec,
-                PushToken = McMutables.Get (Owner.Account.Id, KPushAssist, KDeviceToken),
+                PushToken = McMutables.Get (McAccount.GetDeviceAccount ().Id, KPushAssist, KDeviceToken),
                 PushService = NcApplication.Instance.GetPushService (),
             };
 
@@ -368,6 +368,7 @@ namespace NachoCore
         // This API is "called" by platform code on receipt of the APNS/GCD device token.
         public void SetDeviceToken (byte[] deviceToken)
         {
+            // FIXME - Why NcTask? This creates a race where SM may read before the token is saved
             NcTask.Run (delegate {
                 var b64tok = Convert.ToBase64String (deviceToken);
                 McMutables.Set (McAccount.GetDeviceAccount ().Id, KPushAssist, KDeviceToken, b64tok);
@@ -378,6 +379,7 @@ namespace NachoCore
         // This API is called by platform code to clear the APNS/GCD device token.
         public void ResetDeviceToken ()
         {
+            // FIXME - Why NcTask? This creates a race where SM may read before the token is saved
             NcTask.Run (delegate {
                 // Because we aren't interlocking the DB delete and the SM event, all code
                 // must check device token before using it.
