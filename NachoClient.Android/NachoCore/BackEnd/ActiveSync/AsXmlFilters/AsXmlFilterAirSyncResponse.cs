@@ -33,7 +33,7 @@ namespace NachoCore.Wbxml
             node1 = new NcXmlFilterNode ("Class", RedactionType.NONE, RedactionType.NONE);
             node0.Add(node1); // xml -> Class
             // CollectionId
-            node1 = new NcXmlFilterNode ("CollectionId", RedactionType.NONE, RedactionType.NONE);
+            node1 = new NcXmlFilterNode ("CollectionId", RedactionType.SHORT_HASH, RedactionType.NONE);
             node0.Add(node1); // xml -> CollectionId
             // GetChanges
             node1 = new NcXmlFilterNode ("GetChanges", RedactionType.NONE, RedactionType.NONE);
@@ -123,7 +123,7 @@ namespace NachoCore.Wbxml
             node4 = new NcXmlFilterNode ("SyncKey", RedactionType.NONE, RedactionType.NONE);
             node3.Add(node4); // Collection -> SyncKey
             // CollectionId
-            node4 = new NcXmlFilterNode ("CollectionId", RedactionType.NONE, RedactionType.NONE);
+            node4 = new NcXmlFilterNode ("CollectionId", RedactionType.SHORT_HASH, RedactionType.NONE);
             node3.Add(node4); // Collection -> CollectionId
             // Status
             node4 = new NcXmlFilterNode ("Status", RedactionType.NONE, RedactionType.NONE);
