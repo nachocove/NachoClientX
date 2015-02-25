@@ -2,14 +2,13 @@
 //
 using System;
 using System.Net.Http;
-using System.Runtime.Serialization;
-using System.Runtime.Serialization.Json;
 using System.IO;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
 using ModernHttpClient;
+using Newtonsoft.Json;
 using NachoCore.Utils;
 using NachoCore.Model;
 
@@ -277,6 +276,18 @@ namespace NachoCore
             return Convert.ToBase64String (bytes);
         }
 
+        private string ExtractHttpHeaderValue (KeyValuePair<string, IEnumerable<string>> keyValue)
+        {
+            var valueList = keyValue.Value.ToList ();
+            if (0 == valueList.Count) {
+                return null;
+            }
+            if (1 < valueList.Count) {
+                Log.Warn (Log.LOG_PUSH, "HTTP header value for {0} has {1} values. Use only first one.", keyValue.Key, valueList.Count);
+            }
+            return valueList [0];
+        }
+
         private void DoGetSess ()
         {
             var clientId = NcApplication.Instance.GetClientId ();
@@ -284,23 +295,16 @@ namespace NachoCore
                 Sm.PostEvent ((uint)PAEvt.E.CliTokLoss, "DOSESSCTL");
                 return;
             }
-            var creds = McCred.QueryByAccountId<McCred> (AccountId);
-            if (null == creds) {
-                // Yes, the SM is SOL at this point.
-                Log.Error (Log.LOG_PUSH, "DoGetSess: No McCred for accountId {0}", AccountId);
-            }
-            var parameters = Owner.PushAssistParameters ();
-            List<Header> httpHeaderList = new List<Header> ();
-            foreach (var header in parameters.RequestHeaders) {
-                httpHeaderList.Add (new Header () {
-                    Name = header.Key,
-                    Value = header.Value.ToString ()
-                });
-            }
             var cred = McCred.QueryByAccountId<McCred> (AccountId).FirstOrDefault ();
             if (null == cred) {
-                Log.Error (Log.LOG_PUSH, "Cannot find credential for account {0}", AccountId);
+                // Yes, the SM is SOL at this point.
+                Log.Error (Log.LOG_PUSH, "DoGetSess: No McCred for accountId {0}", AccountId);
                 return;
+            }
+            var parameters = Owner.PushAssistParameters ();
+            Dictionary<string, string> httpHeadersDict = new Dictionary<string, string> ();
+            foreach (var header in parameters.RequestHeaders) {
+                httpHeadersDict.Add (header.Key, ExtractHttpHeaderValue (header));
             }
             var jsonRequest = new StartSessionRequest () {
                 ClientId = clientId,
@@ -311,7 +315,7 @@ namespace NachoCore
                 },
                 Protocol = ProtocolToString (parameters.Protocol),
                 Platform = NcApplication.Instance.GetPlatformName (),
-                HttpHeaders = httpHeaderList.ToArray (),
+                HttpHeaders = httpHeadersDict,
                 HttpRequestData = SafeToBase64 (parameters.RequestData),
                 HttpExpectedReply = SafeToBase64 (parameters.ExpectedResponseData),
                 HttpNoChangeReply = SafeToBase64 (parameters.NoChangeResponseData),
@@ -382,57 +386,29 @@ namespace NachoCore
             }, "PushAssist:ResetDeviceToken");
         }
 
-        [DataContract]
         public class Credentials
         {
-            [DataMember]
             public string Username;
-            [DataMember]
             public string Password;
         }
 
-        [DataContract]
         public class StartSessionRequest
         {
-            [DataMember]
             public string ClientId;
-            [DataMember]
             public string MailServerUrl;
-            [DataMember]
             public Credentials MailServerCredentials;
-            [DataMember]
             public string Protocol;
-            [DataMember]
             public string Platform;
-            [DataMember]
-            public Header[] HttpHeaders;
-            [DataMember]
+            public Dictionary<string, string> HttpHeaders;
             public string HttpRequestData;
-            [DataMember]
             public string HttpExpectedReply;
-            [DataMember]
             public string HttpNoChangeReply;
-            [DataMember]
             public string CommandTerminator;
-            [DataMember]
             public string CommandAcknowledgement;
-            [DataMember]
             public int ResponseTimeout;
-            [DataMember]
             public int WaitBeforeUse;
-            [DataMember]
             public string PushToken;
-            [DataMember]
             public string PushService;
-        }
-
-        [DataContract]
-        public class Header
-        {
-            [DataMember]
-            public string Name;
-            [DataMember]
-            public string Value;
         }
 
         protected string ProtocolToString (PushAssistProtocol protocol)
@@ -465,15 +441,10 @@ namespace NachoCore
                 request.RequestUri.Scheme, request.RequestUri.AbsoluteUri, request.RequestUri.Port, request.Method);
 
             // Set up the POST content
-            MemoryStream jsonStream = new MemoryStream ();
-            DataContractJsonSerializer ser = new DataContractJsonSerializer (typeof(StartSessionRequest));
-            ser.WriteObject (jsonStream, jsonRequest);
-            var content = System.Text.Encoding.ASCII.GetString (jsonStream.ToArray ());
-            // FIXME - Somehow StreamContent is not working
-            //request.Content = new StreamContent (jsonStream);
+            var content = JsonConvert.SerializeObject (jsonRequest);
             request.Content = new StringContent (content);
             request.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue ("application/json");
-            request.Content.Headers.ContentLength = jsonStream.Length;
+            request.Content.Headers.ContentLength = content.Length;
 
             // Make the request
             var response = await Client
