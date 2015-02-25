@@ -8,6 +8,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
 using ModernHttpClient;
 using NachoCore.Utils;
 using NachoCore.Model;
@@ -296,12 +297,17 @@ namespace NachoCore
                     Value = header.Value.ToString ()
                 });
             }
+            var cred = McCred.QueryByAccountId<McCred> (AccountId).FirstOrDefault ();
+            if (null == cred) {
+                Log.Error (Log.LOG_PUSH, "Cannot find credential for account {0}", AccountId);
+                return;
+            }
             var jsonRequest = new StartSessionRequest () {
                 ClientId = clientId,
                 MailServerUrl = parameters.RequestUrl,
                 MailServerCredentials = new Credentials {
-                    Username = "xxxxxx",
-                    Password = "xxxxxx",
+                    Username = cred.Username,
+                    Password = cred.GetPassword ()
                 },
                 Protocol = ProtocolToString (parameters.Protocol),
                 Platform = NcApplication.Instance.GetPlatformName (),
