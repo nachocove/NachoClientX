@@ -16,14 +16,33 @@ namespace NachoCore.Brain
 
         static public List<McEmailMessageThread> ThreadByConversation (List<NcEmailMessageIndex> list)
         {
-            NcAssert.True (null != list);
+            NcAssert.NotNull (list);
             var conversationList = new List<McEmailMessageThread> ();
+            var conversationId = new Dictionary<string, McEmailMessageThread> ();
             for (int i = 0; i < list.Count; i++) {
-                var singleMessageList = new McEmailMessageThread ();
-                singleMessageList.Add (list [i]);
-                conversationList.Add (singleMessageList);
+                McEmailMessageThread x;
+                if (!conversationId.TryGetValue (list [i].ThreadId, out x)) {
+                    x = new McEmailMessageThread ();
+                    conversationList.Add (x);
+                    conversationId.Add (list [i].ThreadId, x);
+                }
+                x.Add (list [i]);
             }
             return conversationList;
+        }
+
+        static public List<McEmailMessageThread> ThreadByMessage(List<NcEmailMessageIndex> list)
+        {
+            NcAssert.NotNull (list);
+            var threadList = new List<McEmailMessageThread> ();
+            for (var i = 0; i < list.Count; i++) {
+                var newEmailMessageIndex = new NcEmailMessageIndex ();
+                newEmailMessageIndex.Id = list [i].Id;
+                var newEmailMessageThread = new McEmailMessageThread ();
+                newEmailMessageThread.Add (newEmailMessageIndex);
+                threadList.Add (newEmailMessageThread);
+            }
+            return threadList;
         }
 
         // Return true or false if old and new lists are different.
@@ -45,7 +64,7 @@ namespace NachoCore.Brain
             int oldListIndex = 0;
             int newListIndex = 0;
             while ((oldListIndex < oldList.Count) && (newListIndex < newList.Count)) {
-                var messageId = oldList [oldListIndex].GetEmailMessageIndex (0);
+                var messageId = oldList [oldListIndex].GetEmailMessageIndex (0).Id;
                 if (messageId != newList [newListIndex].Id) {
                     deletes.Add (oldListIndex);
                 } else {
@@ -93,7 +112,7 @@ namespace NachoCore.Brain
             int newListIndex = 0;
 
             while ((oldListIndex < oldList.Count) && (newListIndex < newList.Count)) {
-                var oldId = oldList [oldListIndex].GetEmailMessageIndex (0);
+                var oldId = oldList [oldListIndex].GetEmailMessageIndex (0).Id;
                 var newId = newList [newListIndex].Id;
                 if (oldId != newId) {
                     adds.Add (newListIndex);
@@ -137,6 +156,9 @@ namespace NachoCore.Brain
             if ((null == newList) || (0 == newList.Count)) {
                 return true;
             }
+
+            // kludge
+            return true;
 
             if (!CheckForDeletes (oldList, newList, out deletes)) {
                 return false;

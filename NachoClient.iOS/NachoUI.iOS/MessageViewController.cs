@@ -23,7 +23,7 @@ using DDay.iCal.Serialization.iCalendar;
 
 namespace NachoClient.iOS
 {
-    public partial class MessageViewController : NcUIViewControllerNoLeaks,
+    public partial class MessageViewController : NcUIViewControllerNoLeaks, INachoMessageViewer,
         INachoMessageEditorParent, INachoFolderChooserParent, INachoCalendarItemEditorParent, 
         INcDatePickerDelegate, IUcAddressBlockDelegate, INachoDateControllerParent
     {
@@ -60,6 +60,8 @@ namespace NachoClient.iOS
         nfloat HEADER_TOP_MARGIN = 0;
         
 
+
+
 #else
         const int VIEW_INSET = 0;
         const int ATTACHMENTVIEW_INSET = 15;
@@ -94,6 +96,12 @@ namespace NachoClient.iOS
         public MessageViewController (IntPtr handle)
             : base (handle)
         {
+        }
+
+        public void SetSingleMessageThread (McEmailMessageThread thread)
+        {
+            NcAssert.True (1 == thread.Count);
+            this.thread = thread;
         }
 
         protected override void CreateViewHierarchy ()
@@ -591,7 +599,7 @@ namespace NachoClient.iOS
             if (segue.Identifier == "SegueToMailTo") {
                 var dc = (MessageComposeViewController)segue.DestinationViewController;
                 var holder = sender as SegueHolder;
-                var url = (string) holder.value;
+                var url = (string)holder.value;
                 dc.SetMailToUrl (url);
                 return;
             }
@@ -925,9 +933,9 @@ namespace NachoClient.iOS
         {
         }
 
-        public void onLinkSelected(NSUrl url)
+        public void onLinkSelected (NSUrl url)
         {
-            if(EmailHelper.IsMailToURL(url.AbsoluteString)) {
+            if (EmailHelper.IsMailToURL (url.AbsoluteString)) {
                 PerformSegue ("SegueToMailTo", new SegueHolder (url.AbsoluteString));
             } else {
                 UIApplication.SharedApplication.OpenUrl (url);

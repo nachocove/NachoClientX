@@ -1,23 +1,25 @@
-//  Copyright (C) 2013 Nacho Cove, Inc. All rights reserved.
+﻿//  Copyright (C) 2015 Nacho Cove, Inc. All rights reserved.
 //
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using NachoCore;
-using NachoCore.Model;
 using NachoCore.Brain;
-using NachoCore.Utils;
+using NachoCore.Model;
 
 namespace NachoCore
 {
-    public class NachoEmailMessages : INachoEmailMessages
+    public class NachoThreadedEmailMessages : INachoEmailMessages
     {
-        List<McEmailMessageThread> threadList;
+        string threadId;
         McFolder folder;
 
-        public NachoEmailMessages (McFolder folder)
+        List<McEmailMessageThread> threadList;
+
+        public NachoThreadedEmailMessages (McFolder folder, string threadId)
         {
             this.folder = folder;
+            this.threadId = threadId;
             List<int> adds;
             List<int> deletes;
             Refresh (out adds, out deletes);
@@ -25,14 +27,14 @@ namespace NachoCore
 
         public bool Refresh (out List<int> adds, out List<int> deletes)
         {
-            var list = McEmailMessage.QueryActiveMessageItems (folder.AccountId, folder.Id);
+            var list = McEmailMessage.QueryActiveMessageItemsByThreadId (folder.AccountId, folder.Id, threadId);
             if (null == list) {
                 list = new List<NcEmailMessageIndex> ();
             }
             if (!NcMessageThreads.AreDifferent (threadList, list, out adds, out deletes)) {
                 return false;
             }
-            threadList = NcMessageThreads.ThreadByConversation (list);
+            threadList = NcMessageThreads.ThreadByMessage (list);
             return true;
         }
 
@@ -43,34 +45,24 @@ namespace NachoCore
 
         public McEmailMessageThread GetEmailThread (int i)
         {
-            if (0 > i) {
-                Log.Error (Log.LOG_UTILS, "GetEmailThread: {0}", i);
-                return null;
-            }
-            if (threadList.Count <= i) {
-                Log.Error (Log.LOG_UTILS, "GetEmailThread: {0}", i);
-                return null;
-            }
             var t = threadList.ElementAt (i);
             return t;
         }
 
         public string DisplayName ()
         {
-            return folder.DisplayName;
+            return "Thread";
         }
 
         public void StartSync ()
         {
-            if (null != folder) {
-                BackEnd.Instance.SyncCmd (folder.AccountId, folder.Id);
-            }
+
         }
 
         public INachoEmailMessages GetAdapterForThread (string threadId)
         {
-            return new NachoThreadedEmailMessages (folder, threadId);
+            return null;
         }
-
     }
 }
+

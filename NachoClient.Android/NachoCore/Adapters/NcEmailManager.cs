@@ -84,6 +84,11 @@ namespace NachoCore
                 return;
             }
 
+            public INachoEmailMessages GetAdapterForThread (string threadId)
+            {
+                return null;
+            }
+
         }
     }
 }

@@ -177,13 +177,21 @@ namespace NachoClient.iOS
             ReloadCapture.Start ();
             List<int> adds;
             List<int> deletes;
-            if (messageSource.RefreshEmailMessages (out adds, out deletes)) {
+            bool refresh = messageSource.RefreshEmailMessages (out adds, out deletes);
+            if (messageSource.NoMessageThreads ()) {
+                MaybeDismissView ();
+            } else if (refresh) {
                 Util.UpdateTable (TableView, adds, deletes);
             } else {
                 messageSource.ReconfigureVisibleCells (TableView);
             }
             ReloadCapture.Stop ();
             NachoCore.Utils.NcAbate.RegularPriority ("MessageListViewController ReloadDataMaintainingPosition");
+        }
+
+        public virtual void MaybeDismissView()
+        {
+            // nope
         }
 
         public override void ViewWillAppear (bool animated)
@@ -257,9 +265,17 @@ namespace NachoClient.iOS
                 return;
             }
             if (segue.Identifier == "NachoNowToMessageView") {
-                var vc = (MessageViewController)segue.DestinationViewController;
+                var vc = (INachoMessageViewer)segue.DestinationViewController;
                 var holder = (SegueHolder)sender;
-                vc.thread = holder.value as McEmailMessageThread;                
+                var thread = holder.value as McEmailMessageThread;
+                vc.SetSingleMessageThread (thread);
+                return;
+            }
+            if (segue.Identifier == "SegueToMessageThreadView") {
+                var holder = (SegueHolder)sender;
+                var thread = (McEmailMessageThread)holder.value;
+                var vc = (MessageListViewController)segue.DestinationViewController;
+                vc.SetEmailMessages (messageSource.GetAdapterForThread (thread.GetThreadId ()));
                 return;
             }
             if (segue.Identifier == "NachoNowToMessagePriority") {
@@ -297,7 +313,11 @@ namespace NachoClient.iOS
         ///  IMessageTableViewSourceDelegate
         public void MessageThreadSelected (McEmailMessageThread messageThread)
         {
-            PerformSegue ("NachoNowToMessageView", new SegueHolder (messageThread));
+            if (messageThread.HasMultipleMessages ()) {
+                PerformSegue ("SegueToMessageThreadView", new SegueHolder (messageThread));
+            } else {
+                PerformSegue ("NachoNowToMessageView", new SegueHolder (messageThread));
+            }
         }
 
         /// <summary>
@@ -325,7 +345,7 @@ namespace NachoClient.iOS
         /// </summary>
         public void CreateTaskForEmailMessage (INachoMessageEditor vc, McEmailMessageThread thread)
         {
-            var m = thread.SingleMessageSpecialCase ();
+            var m = thread.FirstMessageSpecialCase ();
             if (null != m) {
                 var t = CalendarHelper.CreateTask (m);
                 vc.SetOwner (null);
@@ -340,7 +360,7 @@ namespace NachoClient.iOS
         /// </summary>
         public void CreateMeetingEmailForMessage (INachoMessageEditor vc, McEmailMessageThread thread)
         {
-            var m = thread.SingleMessageSpecialCase ();
+            var m = thread.FirstMessageSpecialCase ();
             if (null != m) {
                 var c = CalendarHelper.CreateMeeting (m);
                 vc.DismissMessageEditor (false, new Action (delegate {

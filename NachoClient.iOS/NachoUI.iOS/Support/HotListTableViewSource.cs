@@ -255,7 +255,7 @@ namespace NachoClient.iOS
                 return;
             }
 
-            var message = messageThread.SingleMessageSpecialCase ();
+            var message = messageThread.FirstMessageSpecialCase ();
             if (null == message) {
                 ConfigureAsUnavailable (cell);
                 return;
@@ -358,11 +358,11 @@ namespace NachoClient.iOS
             unreadMessageView.Hidden = message.IsRead;
 
             var messageHeaderView = view.ViewWithTag (MESSAGE_HEADER_TAG) as MessageHeaderView;
-            messageHeaderView.ConfigureView (message);
+            messageHeaderView.ConfigureView (messageThread, message);
 
             messageHeaderView.OnClickChili = (object sender, EventArgs e) => {
                 NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
-                messageHeaderView.ConfigureView (message);
+                messageHeaderView.ConfigureView (messageThread, message);
             };
 
             nfloat previewViewTop;
@@ -691,7 +691,11 @@ namespace NachoClient.iOS
             if (null == messageThread) {
                 return;
             }
-            owner.PerformSegueForDelegate ("NachoNowToMessageView", new SegueHolder (messageThread));
+            if (messageThread.HasMultipleMessages ()) {
+                owner.PerformSegueForDelegate ("SegueToMessageThreadView", new SegueHolder (messageThread));
+            } else {
+                owner.PerformSegueForDelegate ("NachoNowToMessageView", new SegueHolder (messageThread));
+            }
         }
 
         private void InboxClicked (object sender, EventArgs e)
@@ -735,10 +739,7 @@ namespace NachoClient.iOS
 
             var messageThread = (McEmailMessageThread)h.value;
             NcAssert.NotNull (messageThread);
-            var message = messageThread.SingleMessageSpecialCase ();
-            if (null != message) {
-                NcEmailArchiver.Move (message, folder);
-            }
+            NcEmailArchiver.Move (messageThread, folder);
         }
 
         /// INachoFolderChooserParent delegate
@@ -760,11 +761,7 @@ namespace NachoClient.iOS
             if (null == messageThread) {
                 return;
             }
-            var message = messageThread.SingleMessageSpecialCase ();
-            if (null == message) {
-                return;
-            }
-            NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
+            NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (messageThread);
         }
 
         void onDeferButtonClicked (McEmailMessageThread messageThread)
@@ -788,11 +785,7 @@ namespace NachoClient.iOS
             if (null == messageThread) {
                 return;
             }
-            var message = messageThread.SingleMessageSpecialCase ();
-            if (null == message) {
-                return;
-            }
-            NcEmailArchiver.Archive (message);
+            NcEmailArchiver.Archive (messageThread);
         }
 
         void onDeleteButtonClicked (McEmailMessageThread messageThread)
@@ -800,11 +793,7 @@ namespace NachoClient.iOS
             if (null == messageThread) {
                 return;
             }
-            var message = messageThread.SingleMessageSpecialCase ();
-            if (null == message) {
-                return;
-            }
-            NcEmailArchiver.Delete (message);
+            NcEmailArchiver.Delete (messageThread);
         }
 
         protected CGPoint startingPoint;

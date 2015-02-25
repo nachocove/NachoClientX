@@ -1244,6 +1244,14 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcBrainActions.cs">
       <Link>NachoCore\Brain\NcBrainActions.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\MessageThreadViewController.cs" />
+    <Compile Include="NachoUI.iOS\MessageThreadViewController.designer.cs">
+      <DependentUpon>MessageThreadViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoThreadedEmailMessages.cs">
+      <Link>NachoCore\Adapters\NachoThreadedEmailMessages.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Interfaces\INachoMessageViewer.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
@@ -2099,6 +2107,8 @@
     <BundleResource Include="Resources\modal-nextmonth%406x.png" />
     <BundleResource Include="Resources\modal-weekend-active%406x.png" />
     <BundleResource Include="Resources\modal-weekend%406x.png" />
+    <BundleResource Include="Resources\email-hot-thread%402x.png" />
+    <BundleResource Include="Resources\email-not-hot-thread%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">

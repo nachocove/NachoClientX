@@ -364,6 +364,7 @@
     <Compile Include="NachoCore\Adapters\NcEventsCalendarMap.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration5.cs" />
     <Compile Include="NachoCore\Brain\NcBrainActions.cs" />
+    <Compile Include="NachoCore\Adapters\NachoThreadedEmailMessages.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

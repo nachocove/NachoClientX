@@ -35,6 +35,14 @@ namespace NachoCore.Utils
             });
             NcBrain.UpdateMessageScore (message.Id);
         }
+
+        public static void ToggleHotOrNot (McEmailMessageThread thread)
+        {
+            foreach (var message in thread) {
+                ToggleHotOrNot (message);
+            }
+        }
+
     }
 }
 
