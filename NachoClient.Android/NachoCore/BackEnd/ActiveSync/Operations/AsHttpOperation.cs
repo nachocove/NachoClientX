@@ -507,7 +507,7 @@ namespace NachoCore.ActiveSync
                     try {
                         var evt = ProcessHttpResponse (response, cToken);
                         if (cToken.IsCancellationRequested) {
-                            Log.Info (Log.LOG_HTTP, "AttempHttp: Dropping event because of cancellation: {0}", evt.ToString());
+                            Log.Info (Log.LOG_HTTP, "AttempHttp: Dropping event because of cancellation: {0}/{1}", evt.EventCode, evt.Mnemonic);
                         } else {
                             HttpOpSm.PostEvent (evt);
                         }
