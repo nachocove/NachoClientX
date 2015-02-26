@@ -198,22 +198,6 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Table<McException> ().Where (x => x.CalendarId == Id).ToList ();
         }
 
-        public void DeleteRelatedEvents ()
-        {
-            var list = NcModel.Instance.Db.Table<McEvent> ().Where (x => x.CalendarId == Id).ToList ();
-            foreach (var e in list) {
-                e.Delete ();
-            }
-        }
-
-        public void DeleteRelatedExceptions ()
-        {
-            var list = NcModel.Instance.Db.Table<McException> ().Where (x => x.CalendarId == Id).ToList ();
-            foreach (var e in list) {
-                e.Delete ();
-            }
-        }
-
         public void SaveExceptions (List<McException> list)
         {
             if (null == list) {
@@ -225,15 +209,32 @@ namespace NachoCore.Model
             }
         }
 
+        public void DeleteRelatedExceptions ()
+        {
+            McException.DeleteExceptionsForCalendarItem (this.Id);
+        }
+
         public override int Delete ()
         {
             int retval = 0;
+            List<NcEventIndex> eventIds = null;
+
             NcModel.Instance.RunInTransaction (() => {
                 DeleteRelatedExceptions ();
-                DeleteRelatedEvents ();
+                eventIds = McEvent.QueryEventIdsForCalendarItem (this.Id);
+                McEvent.DeleteEventsForCalendarItem (this.Id);
                 retval = base.Delete ();
                 DeleteAddressMap ();
             });
+
+            // Canceling a local notification may require running some code on the UI thread.
+            // Even if the UI thread action is invoked asynchronously, the UI thread will take
+            // priority and run for a little while, slowing down this thread.  We don't want
+            // the slowdown to happen within a database transaction.  So the actual cancelation
+            // is delayed until after all the database work is done.  (But it uses the set of
+            // event IDs that were gathered while within the transaction, so those are guaranteed
+            // to be the correct events.)
+            LocalNotificationManager.CancelNotifications (eventIds);
 
             // The code that manages McEvents will never notice that the events for this
             // item have been deleted.  So the EventSetChanged status needs to be fired

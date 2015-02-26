@@ -29,5 +29,14 @@ namespace NachoCore.Model
             var result = NcModel.Instance.Db.Query<McException> (query, calendarId, exceptionStartTime).ToList ();
             return result;
         }
+
+        /// <summary>
+        /// Delete all the McExceptions associated with the given calendar event.
+        /// </summary>
+        /// <returns>The number of McExceptions that were deleted.</returns>
+        public static int DeleteExceptionsForCalendarItem (int calendarId)
+        {
+            return NcModel.Instance.Db.Execute ("DELETE FROM McException WHERE CalendarId = ?", calendarId);
+        }
     }
 }

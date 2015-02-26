@@ -198,6 +198,110 @@ namespace Test.Common
             Assert.NotNull (nextEvent, "GetCurrentOrNextEvent() didn't find any event.");
             Assert.AreEqual (e2.Id, nextEvent.Id, "GetCurrentOrNextEvent() returned the wrong event.");
         }
+
+        [Test]
+        public void TestQueryEventIdsForCalendarItem ()
+        {
+            var e0 = new McEvent () {
+                AccountId = 1,
+                CalendarId = 100,
+                StartTime = new DateTime (2015, 2, 1, 0, 0, 0, DateTimeKind.Utc),
+                EndTime = new DateTime (2015, 2, 1, 1, 0, 0, DateTimeKind.Utc),
+            };
+            var e1 = new McEvent () {
+                AccountId = 1,
+                CalendarId = 100,
+                StartTime = new DateTime (2015, 2, 2, 0, 0, 0, DateTimeKind.Utc),
+                EndTime = new DateTime (2015, 2, 2, 1, 0, 0, DateTimeKind.Utc),
+            };
+            var e2 = new McEvent () {
+                AccountId = 1,
+                CalendarId = 101,
+                StartTime = new DateTime (2015, 2, 1, 0, 0, 0, DateTimeKind.Utc),
+                EndTime = new DateTime (2015, 2, 1, 1, 0, 0, DateTimeKind.Utc),
+            };
+            var e3 = new McEvent () {
+                AccountId = 1,
+                CalendarId = 101,
+                StartTime = new DateTime (2015, 2, 2, 0, 0, 0, DateTimeKind.Utc),
+                EndTime = new DateTime (2015, 2, 2, 1, 0, 0, DateTimeKind.Utc),
+            };
+
+            e0.Insert ();
+            e1.Insert ();
+            e2.Insert ();
+            e3.Insert ();
+
+            var eventIds = McEvent.QueryEventIdsForCalendarItem (100);
+            Assert.AreEqual (2, eventIds.Count,
+                "QueryEventIdsForCalendaritem(100) returned the wrong number of event IDs.");
+            Assert.True (e0.Id == eventIds [0].Id || e1.Id == eventIds [0].Id,
+                "QueryEventIdsForCalendarItem(100) returned the wrong event ID.");
+            Assert.True (e0.Id == eventIds [1].Id || e1.Id == eventIds [1].Id,
+                "QueryEventIdsForCalendarItem(100) returned the wrong event ID.");
+            Assert.AreNotEqual (eventIds [0].Id, eventIds [1].Id,
+                "QueryEventIdsForCalendarItem(100) returned the same event ID multiple times.");
+
+            eventIds = McEvent.QueryEventIdsForCalendarItem (101);
+            Assert.AreEqual (2, eventIds.Count,
+                "QueryEventIdsForCalendaritem(101) returned the wrong number of event IDs.");
+            Assert.True (e2.Id == eventIds [0].Id || e3.Id == eventIds [0].Id,
+                "QueryEventIdsForCalendarItem(100) returned the wrong event ID.");
+            Assert.True (e2.Id == eventIds [1].Id || e3.Id == eventIds [1].Id,
+                "QueryEventIdsForCalendarItem(100) returned the wrong event ID.");
+            Assert.AreNotEqual (eventIds [0].Id, eventIds [1].Id,
+                "QueryEventIdsForCalendarItem(100) returned the same event ID multiple times.");
+
+            eventIds = McEvent.QueryEventIdsForCalendarItem (200);
+            Assert.AreEqual (0, eventIds.Count,
+                "QueryEventIdsForCalendarItem(200) returned {0} event IDs when it should have returned none.", eventIds.Count);
+        }
+
+        [Test]
+        public void TestDeleteEventsForCalendarItem ()
+        {
+            var e0 = new McEvent () {
+                AccountId = 1,
+                CalendarId = 100,
+                StartTime = new DateTime (2015, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                EndTime = new DateTime (2015, 1, 1, 1, 0, 0, DateTimeKind.Utc),
+            };
+            var e1 = new McEvent () {
+                AccountId = 1,
+                CalendarId = 100,
+                StartTime = new DateTime (2015, 1, 2, 0, 0, 0, DateTimeKind.Utc),
+                EndTime = new DateTime (2015, 1, 2, 1, 0, 0, DateTimeKind.Utc),
+            };
+            var e2 = new McEvent () {
+                AccountId = 1,
+                CalendarId = 101,
+                StartTime = new DateTime (2015, 2, 1, 0, 0, 0, DateTimeKind.Utc),
+                EndTime = new DateTime (2015, 2, 1, 1, 0, 0, DateTimeKind.Utc),
+            };
+            var e3 = new McEvent () {
+                AccountId = 1,
+                CalendarId = 101,
+                StartTime = new DateTime (2015, 2, 2, 0, 0, 0, DateTimeKind.Utc),
+                EndTime = new DateTime (2015, 2, 2, 1, 0, 0, DateTimeKind.Utc),
+            };
+
+            e0.Insert ();
+            e1.Insert ();
+            e2.Insert ();
+            e3.Insert ();
+
+            int numDeleted = McEvent.DeleteEventsForCalendarItem (200);
+            Assert.AreEqual (0, numDeleted,
+                "DeletEventsForCalendarItem(200) deleted {0} events when it shouldn't have deleted any.", numDeleted);
+
+            numDeleted = McEvent.DeleteEventsForCalendarItem (100);
+            Assert.AreEqual (2, numDeleted, "DeleteEventsForCalendarItem(100) deleted {0} events when it should have deleted 2.", numDeleted);
+            var notDeletedEvents = McEvent.QueryAllEventsInOrder ();
+            Assert.AreEqual (e2.Id, notDeletedEvents [0].Id,
+                "DeleteEventsForCalendarItem(100) deleted the wrong events.");
+            Assert.AreEqual (e3.Id, notDeletedEvents [1].Id,
+                "DeleteEventsForCalendarItem(100) deleted the wrong events.");
+        }
     }
 }
 
