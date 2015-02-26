@@ -168,7 +168,6 @@ namespace NachoCore.Utils
         public static void CancelNotifications (List<NcEventIndex> events)
         {
             lock (lockObject) {
-                NcAssert.NotNull (scheduledEvents, "LocalNotificationManager.CancelNotifications() was called before InitializeLocalNotifications().");
                 foreach (var eventId in events) {
                     if (scheduledEvents.Remove (eventId.Id)) {
                         NachoPlatform.Notif.Instance.CancelNotification (eventId.Id);
