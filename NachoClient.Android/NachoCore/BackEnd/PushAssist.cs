@@ -32,6 +32,7 @@ namespace NachoCore
         private IPushAssistOwner Owner;
         private NcStateMachine Sm;
         private HttpClient Client;
+        private CookieContainer CookieJar;
         private int AccountId;
         private bool IsDisposed;
 
@@ -99,7 +100,12 @@ namespace NachoCore
         public PushAssist (IPushAssistOwner owner)
         {
             // FIXME - we will need to do cert-pinning, and also ensure SSL.
-            Client = new HttpClient (new NativeMessageHandler (false, true), true);
+            CookieJar = new CookieContainer ();
+            var handler = new NativeMessageHandler (false, true) {
+                CookieContainer = CookieJar,
+                UseCookies = true,
+            };
+            Client = new HttpClient (handler, true);
             Owner = owner;
             AccountId = Owner.Account.Id;
             Sm = new NcStateMachine ("PA") {
@@ -236,6 +242,7 @@ namespace NachoCore
             if (!IsDisposed) {
                 IsDisposed = true;
                 NcApplication.Instance.StatusIndEvent -= TokensWatcher;
+                Client.Dispose ();
             }
         }
 
