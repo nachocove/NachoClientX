@@ -604,9 +604,9 @@ namespace NachoCore.Model
             });
             control.StatusInd (result, new [] { Token });
             if (DelayNotAllowed) {
-                Log.Info (Log.LOG_SYNC, "Pending:ResolveAsHardFail:{0}:{1} Reason:{2}:{3}", Id, Token, ResultSubKind.ToString (), ResultWhy.ToString ());
+                Log.Info (Log.LOG_SYNC, "Pending:ResolveAsHardFail:Reason:{2}:{3} {0}:{1}", Id, Token, ResultSubKind.ToString (), ResultWhy.ToString ());
             } else {
-                Log.Warn (Log.LOG_SYNC, "Pending:ResolveAsHardFail:{0}:{1} Reason:{2}:{3}", Id, Token, ResultSubKind.ToString (), ResultWhy.ToString ());
+                Log.Warn (Log.LOG_SYNC, "Pending:ResolveAsHardFail:Reason:{2}:{3} {0}:{1}", Id, Token, ResultSubKind.ToString (), ResultWhy.ToString ());
             }
         }
 
