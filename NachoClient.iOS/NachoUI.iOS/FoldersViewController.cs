@@ -607,8 +607,14 @@ namespace NachoClient.iOS
         {
             FolderStruct lastFolder;
             if (parentView == defaultsView) {
+                if ((null == nestedFolderList) || (0 == nestedFolderList.Count)) {
+                    return;
+                }
                 lastFolder = nestedFolderList.Last ();
             } else {
+                if ((null == yourFolderList) || (0 == yourFolderList.Count)) {
+                    return;
+                }
                 lastFolder = yourFolderList.Last ();
             }
             var LastCell = GetLastCell (lastFolder, parentView);
