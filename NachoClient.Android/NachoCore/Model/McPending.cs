@@ -603,7 +603,11 @@ namespace NachoCore.Model
                 UnblockSuccessors (control, DelayNotAllowed ? StateEnum.Eligible : StateEnum.Failed);
             });
             control.StatusInd (result, new [] { Token });
-            Log.Info (Log.LOG_SYNC, "Pending:ResolveAsHardFail:{0}:{1} Reason:{2}:{3}", Id, Token, ResultSubKind.ToString (), ResultWhy.ToString ());
+            if (DelayNotAllowed) {
+                Log.Info (Log.LOG_SYNC, "Pending:ResolveAsHardFail:{0}:{1} Reason:{2}:{3}", Id, Token, ResultSubKind.ToString (), ResultWhy.ToString ());
+            } else {
+                Log.Warn (Log.LOG_SYNC, "Pending:ResolveAsHardFail:{0}:{1} Reason:{2}:{3}", Id, Token, ResultSubKind.ToString (), ResultWhy.ToString ());
+            }
         }
 
         private NcResult.SubKindEnum DefaultErrorSubKind ()
