@@ -569,15 +569,6 @@ namespace NachoCore.Model
         private static void Scrub ()
         {
             // The contents of this method change, depending on what we are scrubbing for.
-            // TODO: Make SQL this account-sensitive.
-            var dupCals = Instance.Db.Query<McCalendar> (
-                              "SELECT * FROM McCalendar WHERE UID IN " +
-                              "(SELECT UID FROM McCalendar GROUP BY UID HAVING COUNT(*) > 1)"
-                          );
-            foreach (var dupCal in dupCals) {
-                Log.Error (Log.LOG_DB, "Duplicate McCalendar Entry: Id={0}, ServerId={1}, UID={2}", 
-                    dupCal.Id, dupCal.ServerId, dupCal.UID);
-            }
         }
 
         public void ResetTeleDb ()

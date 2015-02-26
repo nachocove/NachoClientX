@@ -76,8 +76,10 @@ namespace NachoCore.ActiveSync
             } else {
                 var sameUid = McCalendar.QueryByUID (newItem.AccountId, newItem.UID);
                 if (null != sameUid && sameUid.ServerId != newItem.ServerId) {
-                    Log.Error (Log.LOG_SYNC, "Two events have the same UID ({0}) but different ServerId ({1} and {2}). This will likely result in a duplicate event.",
-                        newItem.UID, sameUid.AccountId, sameUid.ServerId, newItem.AccountId, newItem.ServerId);
+                    // It is normal for there to be duplicate UIDs for a short period of time when the server
+                    // changes an event using an add/delete.  So this is probably not an error.
+                    Log.Info (Log.LOG_SYNC, "Two events have the same UID ({0}) but different ServerId ({1} and {2}). This will likely result in a duplicate event.",
+                        newItem.UID, sameUid.ServerId, newItem.ServerId);
                 }
                 if (null != oldItem && oldItem.UID != newItem.UID) {
                     Log.Error (Log.LOG_SYNC, "The UID for event {0} is changing from {1} to {2}",
