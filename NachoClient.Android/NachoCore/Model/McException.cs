@@ -31,12 +31,11 @@ namespace NachoCore.Model
         }
 
         /// <summary>
-        /// Delete all the McExceptions associated with the given calendar event.
+        /// All of the exceptions associated with the given calendar item.
         /// </summary>
-        /// <returns>The number of McExceptions that were deleted.</returns>
-        public static int DeleteExceptionsForCalendarItem (int calendarId)
+        public static IEnumerable<McException> QueryExceptionsForCalendarItem (int calendarId)
         {
-            return NcModel.Instance.Db.Execute ("DELETE FROM McException WHERE CalendarId = ?", calendarId);
+            return NcModel.Instance.Db.Table<McException> ().Where (x => x.CalendarId == calendarId);
         }
     }
 }

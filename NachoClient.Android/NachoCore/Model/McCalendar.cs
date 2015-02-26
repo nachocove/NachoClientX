@@ -211,7 +211,9 @@ namespace NachoCore.Model
 
         public void DeleteRelatedExceptions ()
         {
-            McException.DeleteExceptionsForCalendarItem (this.Id);
+            foreach (var exception in McException.QueryExceptionsForCalendarItem (this.Id)) {
+                exception.Delete ();
+            }
         }
 
         public override int Delete ()
