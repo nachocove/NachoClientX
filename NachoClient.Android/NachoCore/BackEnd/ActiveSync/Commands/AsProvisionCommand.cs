@@ -164,7 +164,7 @@ namespace NachoCore.ActiveSync
             return doc;
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
+        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
         {
             var xmlStatus = doc.Root.Element (m_ns + Xml.Provision.Status);
             switch ((Xml.Provision.ProvisionStatusCode)uint.Parse (xmlStatus.Value)) {

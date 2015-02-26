@@ -56,12 +56,12 @@ namespace Test.iOS
             return null;
         }
 
-        public virtual Event ProcessResponse (AsHttpOperation sender, HttpResponseMessage response)
+        public virtual Event ProcessResponse (AsHttpOperation sender, HttpResponseMessage response, CancellationToken cToken)
         {
             return Event.Create ((uint)SmEvt.E.Success, "MOCKSUCCESS");
         }
 
-        public virtual Event ProcessResponse (AsHttpOperation sender, HttpResponseMessage response, XDocument doc)
+        public virtual Event ProcessResponse (AsHttpOperation sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
         {
             if (null != ProcessResponseStandin) {
                 return ProcessResponseStandin (sender, response, doc);

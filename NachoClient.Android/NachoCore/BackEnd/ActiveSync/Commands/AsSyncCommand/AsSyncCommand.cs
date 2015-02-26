@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Xml.Linq;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -424,7 +425,7 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
+        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
         {
             List<McFolder> SawMoreAvailableNoCommands = new List<McFolder> ();
             bool SawCommandsInAnyFolder = false;
@@ -670,7 +671,7 @@ namespace NachoCore.ActiveSync
         }
 
         // Called when we get an empty Sync response body.
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
+        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, CancellationToken cToken)
         {
             // FoldersInRequest NOT stale here.
             var now = DateTime.UtcNow;
