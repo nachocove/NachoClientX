@@ -1252,6 +1252,7 @@
       <Link>NachoCore\Adapters\NachoThreadedEmailMessages.cs</Link>
     </Compile>
     <Compile Include="NachoUI.iOS\Interfaces\INachoMessageViewer.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration6.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
