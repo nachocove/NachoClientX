@@ -43,7 +43,7 @@ namespace NachoCore.ActiveSync
 
     public interface IAsStrategy
     {
-        SyncKit GenSyncKit (int accountId, McProtocolState protocolState, bool cantBeEmpty);
+        SyncKit GenSyncKit (int accountId, McProtocolState protocolState);
         Tuple<PickActionEnum, AsCommand> Pick ();
         Tuple<PickActionEnum, AsCommand> PickUserDemand ();
         int UploadTimeoutSecs (long length);
