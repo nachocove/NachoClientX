@@ -35,6 +35,8 @@ namespace NachoCore
         private CookieContainer CookieJar;
         private int AccountId;
         private bool IsDisposed;
+        private string ClientContext;
+        private string SessionToken;
 
         public static string PingerHostName = "pinger.officetaco.com";
         //public static string PingerHostName = "localhost";
@@ -57,6 +59,12 @@ namespace NachoCore
         private string DeferSessionUrl {
             get {
                 return BaseUrl + "/defer";
+            }
+        }
+
+        private string StopSessionUrl {
+            get {
+                return BaseUrl + "/stop";
             }
         }
 
@@ -108,6 +116,8 @@ namespace NachoCore
             Client = new HttpClient (handler, true);
             Owner = owner;
             AccountId = Owner.Account.Id;
+            var account = McAccount.QueryById<McAccount> (AccountId);
+            ClientContext = HashHelper.Sha256 (account.EmailAddr);
             Sm = new NcStateMachine ("PA") {
                 Name = string.Format ("PA({0})", AccountId),
                 LocalStateType = typeof(Lst),
@@ -260,10 +270,45 @@ namespace NachoCore
         {
         }
 
-        private void DoCancel ()
+        private async void DoCancel ()
         {
             // FIXME Cancel any outstanding http request. This is tricky, given concurrency.
             // Only one SM action can execute at a time, but there is a Q in front of the SM.
+            var clientId = NcApplication.Instance.GetClientId ();
+            var parameters = Owner.PushAssistParameters ();
+            if (String.IsNullOrEmpty (clientId) ||
+                String.IsNullOrEmpty (ClientContext) ||
+                String.IsNullOrEmpty (SessionToken)) {
+                Log.Error (Log.LOG_PUSH,
+                    "DoCancel: missing required parameters (clientId={0}, clientContext={1}, token={2})",
+                    clientId, ClientContext, SessionToken);
+                Sm.PostEvent ((uint)SmEvt.E.HardFail, "PAPARAMERROR");
+            }
+            var jsonRequest = new StopSessionRequest () {
+                ClientId = NcApplication.Instance.GetClientId (),
+                ClientContext = ClientContext,
+                Token = SessionToken,
+            };
+
+            try {
+                var task = DoHttpRequest (StopSessionUrl, jsonRequest, NcTask.Cts.Token);
+                var httpResponse = task.Result;
+                if (HttpStatusCode.OK != httpResponse.StatusCode) {
+                    Log.Warn (Log.LOG_PUSH, "DoCancel: HTTP failure (statusCode={0}, content={1})",
+                        httpResponse.StatusCode, httpResponse.Content);
+                    return;
+                }
+
+                var jsonResponse = await httpResponse.Content.ReadAsStringAsync ().ConfigureAwait (false);
+                var response = ParsePingerResponse (jsonResponse);
+                if (!response.IsOk ()) {
+                    Sm.PostEvent ((uint)SmEvt.E.TempFail, "PAHTTPFAIL");
+                }
+            } catch (OperationCanceledException) {
+                throw;
+            } catch (Exception e) {
+                Log.Warn (Log.LOG_PUSH, "DoCancel: Caught push assist http exception - {0}", e);
+            }
         }
 
         private void DoGetDevTok ()
@@ -352,6 +397,7 @@ namespace NachoCore
             }
             var jsonRequest = new StartSessionRequest () {
                 ClientId = clientId,
+                ClientContext = ClientContext,
                 MailServerUrl = parameters.RequestUrl,
                 MailServerCredentials = new Credentials {
                     Username = cred.Username,
@@ -381,8 +427,10 @@ namespace NachoCore
                 }
                 var jsonResponse = await httpResponse.Content.ReadAsStringAsync ().ConfigureAwait (false);
                 var response = ParsePingerResponse (jsonResponse);
-                if (!response.IsOk ()) {
+                if (!response.IsOkOrWarn ()) {
                     Sm.PostEvent ((uint)SmEvt.E.TempFail, "PAHTTPFAIL");
+                } else {
+                    SessionToken = response.Token;
                 }
             } catch (OperationCanceledException) {
                 throw;
@@ -395,8 +443,18 @@ namespace NachoCore
         {
             var clientId = NcApplication.Instance.GetClientId ();
             var parameters = Owner.PushAssistParameters ();
+            if (String.IsNullOrEmpty (clientId) ||
+                String.IsNullOrEmpty (ClientContext) ||
+                String.IsNullOrEmpty (SessionToken)) {
+                Log.Error (Log.LOG_PUSH,
+                    "DoHoldOff: missing required parameters (clientId={0}, clientContext={1}, token={2})",
+                    clientId, ClientContext, SessionToken);
+                Sm.PostEvent ((uint)SmEvt.E.HardFail, "PAPARAMERROR");
+            }
             var jsonRequest = new DeferSessionRequest () {
                 ClientId = clientId,
+                ClientContext = ClientContext,
+                Token = SessionToken,
                 ResponseTimeout = parameters.ResponseTimeoutMsec
             };
 
@@ -404,7 +462,7 @@ namespace NachoCore
                 var task = DoHttpRequest (DeferSessionUrl, jsonRequest, NcTask.Cts.Token);
                 var httpResponse = task.Result;
                 if (HttpStatusCode.OK != httpResponse.StatusCode) {
-                    Log.Warn (Log.LOG_PUSH, "DoGetSess: HTTP failure (statusCode={0}, content={1})",
+                    Log.Warn (Log.LOG_PUSH, "DoHoldOff: HTTP failure (statusCode={0}, content={1})",
                         httpResponse.StatusCode, httpResponse.Content);
                     return;
                 }
@@ -478,6 +536,7 @@ namespace NachoCore
         public class StartSessionRequest
         {
             public string ClientId;
+            public string ClientContext;
             public string MailServerUrl;
             public Credentials MailServerCredentials;
             public string Protocol;
@@ -497,7 +556,16 @@ namespace NachoCore
         public class DeferSessionRequest
         {
             public string ClientId;
+            public string ClientContext;
+            public string Token;
             public int ResponseTimeout;
+        }
+
+        public class StopSessionRequest
+        {
+            public string ClientId;
+            public string ClientContext;
+            public string Token;
         }
 
         public class PingerResponse
@@ -508,10 +576,21 @@ namespace NachoCore
 
             public string Message;
             public string Status;
+            public string Token;
 
             public bool IsOk ()
             {
                 return (Ok == Status);
+            }
+
+            public bool IsWarn ()
+            {
+                return (Warn == Status);
+            }
+
+            public bool IsOkOrWarn ()
+            {
+                return IsOk () || IsWarn ();
             }
         }
 
@@ -541,7 +620,7 @@ namespace NachoCore
 
             // Set up the request
             HttpRequestMessage request = new HttpRequestMessage (HttpMethod.Post, url);
-            Log.Info (Log.LOG_PUSH, "request: scheme={0}, url={1}, port={2}, method={3}",
+            Log.Info (Log.LOG_PUSH, "PA request: scheme={0}, url={1}, port={2}, method={3}",
                 request.RequestUri.Scheme, request.RequestUri.AbsoluteUri, request.RequestUri.Port, request.Method);
 
             // Set up the POST content
@@ -554,7 +633,7 @@ namespace NachoCore
             var response = await Client
                 .SendAsync (request, HttpCompletionOption.ResponseContentRead, cToken)
                 .ConfigureAwait (false);
-            Log.Info (Log.LOG_PUSH, "response: statusCode={0}, content={1}", response.StatusCode,
+            Log.Info (Log.LOG_PUSH, "PA response: statusCode={0}, content={1}", response.StatusCode,
                 await response.Content.ReadAsStringAsync ().ConfigureAwait (false));
             return response;
         }
