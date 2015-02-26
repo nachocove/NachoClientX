@@ -564,9 +564,10 @@ namespace NachoCore.Model
                 " JOIN McBody as b ON b.Id == e.BodyId " +
                 " WHERE e.IsIndexed = 0 AND " +
                 " e.BodyId != 0 AND " +
-                " b.FilePresence = ? " +
+                " b.FilePresence = ? AND " +
+                " b.BodyType = ? " +
                 " ORDER BY e.DateReceived DESC LIMIT ?",
-                McAbstrFileDesc.FilePresenceEnum.Complete, maxMessages
+                McAbstrFileDesc.FilePresenceEnum.Complete, McAbstrFileDesc.BodyTypeEnum.MIME_4, maxMessages
             );
         }
 
