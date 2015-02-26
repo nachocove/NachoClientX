@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
+using System.Net;
 using ModernHttpClient;
 using Newtonsoft.Json;
 using NachoCore.Utils;
@@ -49,6 +50,12 @@ namespace NachoCore
         private string StartSessionUrl {
             get {
                 return BaseUrl + "/register";
+            }
+        }
+
+        private string DeferSessionUrl {
+            get {
+                return BaseUrl + "/defer";
             }
         }
 
@@ -288,7 +295,37 @@ namespace NachoCore
             return valueList [0];
         }
 
-        private void DoGetSess ()
+        private static PingerResponse ParsePingerResponse (string jsonResponse)
+        {
+            try {
+                var response = JsonConvert.DeserializeObject<PingerResponse> (jsonResponse);
+                switch (response.Status) {
+                case PingerResponse.Ok:
+                    {
+                        if (!String.IsNullOrEmpty (response.Message)) {
+                            Log.Info (Log.LOG_PUSH, "DoGetSess: response={0}", response.Message);
+                        }
+                        break;
+                    }
+                case PingerResponse.Warn:
+                    {
+                        Log.Warn (Log.LOG_PUSH, "DoGetSess: response={0}", response.Message);
+                        break;
+                    }
+                case PingerResponse.Error:
+                    {
+                        Log.Error (Log.LOG_PUSH, "DoGetSess: response={0}", response.Message);
+                        break;
+                    }
+                }
+                return response;
+            } catch (Exception e) {
+                Log.Error (Log.LOG_PUSH, "Fail to parse JSON response (jsonResponse={0}, exception={1})", jsonResponse, e);
+                return null;
+            }
+        }
+
+        private async void DoGetSess ()
         {
             var clientId = NcApplication.Instance.GetClientId ();
             if (null == clientId) {
@@ -328,16 +365,53 @@ namespace NachoCore
             };
 
             try {
-                var response = DoHttpRequest (StartSessionUrl, jsonRequest, NcTask.Cts.Token);
+                var task = DoHttpRequest (StartSessionUrl, jsonRequest, NcTask.Cts.Token);
+                var httpResponse = task.Result;
+                if (HttpStatusCode.OK != httpResponse.StatusCode) {
+                    Log.Warn (Log.LOG_PUSH, "DoGetSess: HTTP failure (statusCode={0}, content={1})",
+                        httpResponse.StatusCode, httpResponse.Content);
+                    return;
+                }
+                var jsonResponse = await httpResponse.Content.ReadAsStringAsync ().ConfigureAwait (false);
+                var response = ParsePingerResponse (jsonResponse);
+                if (!response.IsOk ()) {
+                    Sm.PostEvent ((uint)SmEvt.E.TempFail, "PAHTTPFAIL");
+                }
             } catch (OperationCanceledException) {
+                throw;
             } catch (Exception e) {
-                Log.Warn (Log.LOG_PUSH, "Caught push assist http exception: {0}", e);
+                Log.Warn (Log.LOG_PUSH, "DoGetSess: Caught push assist http exception - {0}", e);
             }
         }
 
-        private void DoHoldOff ()
+        private async void DoHoldOff ()
         {
-            // FIXME.
+            var clientId = NcApplication.Instance.GetClientId ();
+            var parameters = Owner.PushAssistParameters ();
+            var jsonRequest = new DeferSessionRequest () {
+                ClientId = clientId,
+                ResponseTimeout = parameters.ResponseTimeoutMsec
+            };
+
+            try {
+                var task = DoHttpRequest (DeferSessionUrl, jsonRequest, NcTask.Cts.Token);
+                var httpResponse = task.Result;
+                if (HttpStatusCode.OK != httpResponse.StatusCode) {
+                    Log.Warn (Log.LOG_PUSH, "DoGetSess: HTTP failure (statusCode={0}, content={1})",
+                        httpResponse.StatusCode, httpResponse.Content);
+                    return;
+                }
+
+                var jsonResponse = await httpResponse.Content.ReadAsStringAsync ().ConfigureAwait (false);
+                var response = ParsePingerResponse (jsonResponse);
+                if (!response.IsOk ()) {
+                    Sm.PostEvent ((uint)SmEvt.E.TempFail, "PAHTTPFAIL");
+                }
+            } catch (OperationCanceledException) {
+                throw;
+            } catch (Exception e) {
+                Log.Warn (Log.LOG_PUSH, "DoHoldOff: Caught push assist http exception - {0}", e);
+            }
         }
 
         private void TokensWatcher (object sender, EventArgs ea)
@@ -411,6 +485,27 @@ namespace NachoCore
             public int WaitBeforeUse;
             public string PushToken;
             public string PushService;
+        }
+
+        public class DeferSessionRequest
+        {
+            public string ClientId;
+            public int ResponseTimeout;
+        }
+
+        public class PingerResponse
+        {
+            public const string Ok = "OK";
+            public const string Warn = "WARN";
+            public const string Error = "ERROR";
+
+            public string Message;
+            public string Status;
+
+            public bool IsOk ()
+            {
+                return (Ok == Status);
+            }
         }
 
         protected string ProtocolToString (PushAssistProtocol protocol)
