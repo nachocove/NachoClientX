@@ -9,6 +9,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using SQLite;
+using NachoCore.Utils;
 
 namespace NachoPlatform
 {
@@ -127,7 +128,15 @@ namespace NachoPlatform
                 IdForVendorChars -= BunIdHashChars;
                 suffix = BitConverter.ToString (new SHA256Managed ().ComputeHash (Encoding.UTF8.GetBytes (bunId))).Replace ("-", "").Substring (0, BunIdHashChars);
             }
-            _IdentityMemoize = "Ncho" + UIDevice.CurrentDevice.IdentifierForVendor.AsString ().Replace ('-', 'X').Substring (0, IdForVendorChars) + suffix;
+            var ident = Keychain.Instance.GetIdentifierForVendor ();
+            if (null == ident) {
+                Log.Info (Log.LOG_SYS, "Identity: saving IdentifierForVendor {0} in KeyChain.", ident);
+                ident = UIDevice.CurrentDevice.IdentifierForVendor.AsString ();
+                if (!Keychain.Instance.SetIdentifierForVendor (ident)) {
+                    Log.Error (Log.LOG_SYS, "Identity: unable to save IdentifierForVendor in KeyChain.");
+                }
+            }
+            _IdentityMemoize = "Ncho" + ident.Replace ('-', 'X').Substring (0, IdForVendorChars) + suffix;
             return _IdentityMemoize;
         }
 

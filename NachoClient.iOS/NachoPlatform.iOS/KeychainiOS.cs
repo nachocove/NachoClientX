@@ -32,13 +32,18 @@ namespace NachoPlatform
             return true;
         }
 
-        private SecRecord CreateQuery (int handle)
+        private SecRecord CreateQuery (string service)
         {
             // http://stackoverflow.com/questions/4891562/ios-keychain-services-only-specific-values-allowed-for-ksecattrgeneric-key/5008417#5008417
             return new SecRecord (SecKind.GenericPassword) {
                 Account = KDefaultAccount,
-                Service = handle.ToString (),
+                Service = service,
             };
+        }
+
+        private SecRecord CreateQuery (int handle)
+        {
+            return CreateQuery (handle.ToString ());
         }
 
         public string GetPassword (int handle)
@@ -77,6 +82,52 @@ namespace NachoPlatform
                 res = SecKeyChain.Add (insert);
                 if (SecStatusCode.Success != res) {
                     Log.Error (Log.LOG_SYS, "SetPassword: SecKeyChain.Add returned {0}", res.ToString ());
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private const string KIdentifierForVendor = "IdentifierForVendor";
+
+        public string GetIdentifierForVendor ()
+        {
+            SecStatusCode res;
+            var match = SecKeyChain.QueryAsRecord (CreateQuery (KIdentifierForVendor), out res);
+            if (SecStatusCode.Success == res) {
+                var iData = match.ValueData;
+                var bytes = iData.ToArray ();
+                var ident = System.Text.Encoding.UTF8.GetString (bytes);
+                return ident;
+                // XAMMIT. 
+                // Sometimes NSData.ToString would return System.Runtime.Remoting.Messaging.AsyncResult.
+                // return match.ValueData.ToString ();
+            } else {
+                if (SecStatusCode.ItemNotFound != res) {
+                    Log.Error (Log.LOG_SYS, "GetIdentifierForVendor: SecKeyChain.QueryAsRecord returned {0}", res.ToString ());
+                }
+                return null;
+            }
+        }
+
+        public bool SetIdentifierForVendor (string ident)
+        {
+            SecStatusCode res;
+            var match = SecKeyChain.QueryAsRecord (CreateQuery (KIdentifierForVendor), out res);
+            if (SecStatusCode.Success == res) {
+                match.ValueData = NSData.FromString (ident);
+                res = SecKeyChain.Update (CreateQuery (KIdentifierForVendor), match);
+                if (SecStatusCode.Success != res) {
+                    Log.Error (Log.LOG_SYS, "SetIdentifierForVendor: SecKeyChain.Remove returned {0}", res.ToString ());
+                    return false;
+                }
+            } else {
+                var insert = CreateQuery (KIdentifierForVendor);
+                insert.ValueData = NSData.FromString (ident);
+                insert.Accessible = SecAccessible.AlwaysThisDeviceOnly;
+                res = SecKeyChain.Add (insert);
+                if (SecStatusCode.Success != res) {
+                    Log.Error (Log.LOG_SYS, "SetIdentifierForVendor: SecKeyChain.Add returned {0}", res.ToString ());
                     return false;
                 }
             }
