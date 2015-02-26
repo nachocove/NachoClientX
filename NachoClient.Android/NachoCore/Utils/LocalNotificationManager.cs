@@ -155,12 +155,23 @@ namespace NachoCore.Utils
             }
         }
 
-        public static void CancelNotification (McEvent ev)
+        public static void CancelNotification (McEvent evt)
         {
             lock (lockObject) {
                 NcAssert.NotNull (scheduledEvents, "LocalNotificationManager.CancelNotification() was called before InitializeLocalNotifications().");
-                if (scheduledEvents.Remove (ev.Id)) {
-                    NachoPlatform.Notif.Instance.CancelNotification (ev.Id);
+                if (scheduledEvents.Remove (evt.Id)) {
+                    NachoPlatform.Notif.Instance.CancelNotification (evt.Id);
+                }
+            }
+        }
+
+        public static void CancelNotifications (List<NcEventIndex> events)
+        {
+            lock (lockObject) {
+                foreach (var eventId in events) {
+                    if (scheduledEvents.Remove (eventId.Id)) {
+                        NachoPlatform.Notif.Instance.CancelNotification (eventId.Id);
+                    }
                 }
             }
         }

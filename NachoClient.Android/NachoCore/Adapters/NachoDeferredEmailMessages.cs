@@ -53,5 +53,64 @@ namespace NachoCore
         {
             // TODO: Send status in as if deferreds have changed
         }
+
+        public INachoEmailMessages GetAdapterForThread (string threadId)
+        {
+            return new NachoDeferredEmailThread (threadId);
+        }
+    }
+
+    public class NachoDeferredEmailThread : INachoEmailMessages
+    {
+        string threadId;
+        List<McEmailMessageThread> threadList;
+
+        public NachoDeferredEmailThread (string threadId)
+        {
+            List<int> adds;
+            List <int> deletes;
+            this.threadId = threadId;
+            Refresh (out adds, out deletes);
+        }
+
+        public bool Refresh (out List<int> adds, out List<int> deletes)
+        {
+            var list = McEmailMessage.QueryDeferredMessageItemsAllAccountsByThreadId (threadId);
+            if (null == list) {
+                list = new List<NcEmailMessageIndex> ();
+            }
+            if (!NcMessageThreads.AreDifferent (threadList, list, out adds, out deletes)) {
+                return false;
+            }
+            //            threadList = NcMessageThreads.ThreadByConversation (list);
+            threadList = NcMessageThreads.ThreadByMessage (list);
+            return true;
+        }
+
+        public int Count ()
+        {
+            return threadList.Count;
+        }
+
+        public McEmailMessageThread GetEmailThread (int i)
+        {
+            var t = threadList.ElementAt (i);
+            return t;
+        }
+
+        public string DisplayName ()
+        {
+            return "Thread";
+        }
+
+        public void StartSync ()
+        {
+            // TODO: Send status in as if deferreds have changed
+        }
+
+        public INachoEmailMessages GetAdapterForThread (string threadId)
+        {
+            return null;
+        }
     }
 }

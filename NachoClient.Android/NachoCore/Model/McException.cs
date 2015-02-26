@@ -29,5 +29,13 @@ namespace NachoCore.Model
             var result = NcModel.Instance.Db.Query<McException> (query, calendarId, exceptionStartTime).ToList ();
             return result;
         }
+
+        /// <summary>
+        /// All of the exceptions associated with the given calendar item.
+        /// </summary>
+        public static IEnumerable<McException> QueryExceptionsForCalendarItem (int calendarId)
+        {
+            return NcModel.Instance.Db.Table<McException> ().Where (x => x.CalendarId == calendarId);
+        }
     }
 }

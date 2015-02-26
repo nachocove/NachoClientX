@@ -74,6 +74,11 @@ namespace NachoClient.iOS
             return messageThreads.DisplayName ();
         }
 
+        public INachoEmailMessages GetAdapterForThread(string threadId)
+        {
+            return messageThreads.GetAdapterForThread (threadId);
+        }
+
         public McEmailMessageThread GetFirstThread ()
         {
             if (null == this.messageThreads) {
@@ -99,7 +104,7 @@ namespace NachoClient.iOS
             messageThreads.StartSync ();
         }
 
-        protected bool NoMessageThreads ()
+        public bool NoMessageThreads ()
         {
             return ((null == messageThreads) || (0 == messageThreads.Count ()));
         }
@@ -152,11 +157,11 @@ namespace NachoClient.iOS
             }
 
             // Avoid looking up msg twice in quick succession (see ConfigureMessageCell)
-            var messageIndex = messageThread.SingleMessageSpecialCaseIndex ();
+            var messageIndex = messageThread.FirstMessageSpecialCaseIndex ();
             if (messageCache.TryGetValue (messageIndex, out message)) {
                 messageCache.Remove (messageIndex);
             } else {
-                message = messageThread.SingleMessageSpecialCase ();
+                message = messageThread.FirstMessageSpecialCase ();
                 messageCache [messageIndex] = message;
             }
                 
@@ -429,12 +434,12 @@ namespace NachoClient.iOS
         /// </summary>
         protected void ConfigureCell (UITableView tableView, UITableViewCell cell, NSIndexPath indexPath)
         {
-            if (cell.ReuseIdentifier.ToString().Equals (UICellReuseIdentifier)) {
+            if (cell.ReuseIdentifier.ToString ().Equals (UICellReuseIdentifier)) {
                 cell.TextLabel.Text = "No messages";
                 return;
             }
 
-            if (cell.ReuseIdentifier.ToString().Equals (EmailMessageReuseIdentifier)) {
+            if (cell.ReuseIdentifier.ToString ().Equals (EmailMessageReuseIdentifier)) {
                 ConfigureMessageCell (tableView, cell, indexPath.Row);
                 return;
             }
@@ -467,11 +472,11 @@ namespace NachoClient.iOS
             }
 
             // Avoid looking up msg twice in quick succession (see GetHeight)
-            var messageIndex = messageThread.SingleMessageSpecialCaseIndex ();
+            var messageIndex = messageThread.FirstMessageSpecialCaseIndex ();
             if (messageCache.TryGetValue (messageIndex, out message)) {
                 messageCache.Remove (messageIndex);
             } else {
-                message = messageThread.SingleMessageSpecialCase ();
+                message = messageThread.FirstMessageSpecialCase ();
                 messageCache [messageIndex] = message;
             }
 
@@ -553,11 +558,11 @@ namespace NachoClient.iOS
             unreadMessageView.Hidden = message.IsRead;
 
             var messageHeaderView = cell.ContentView.ViewWithTag (MESSAGE_HEADER_TAG) as MessageHeaderView;
-            messageHeaderView.ConfigureView (message);
+            messageHeaderView.ConfigureView (messageThread, message);
 
             messageHeaderView.OnClickChili = (object sender, EventArgs e) => {
                 NachoCore.Utils.ScoringHelpers.ToggleHotOrNot (message);
-                messageHeaderView.ConfigureView (message);
+                messageHeaderView.ConfigureView (messageThread, message);
             };
 
             // User checkmark view
@@ -634,30 +639,21 @@ namespace NachoClient.iOS
         public void MoveThisMessage (McEmailMessageThread messageThread, McFolder folder)
         {
             NcAssert.NotNull (messageThread);
-            var message = messageThread.SingleMessageSpecialCase ();
-            if (null != message) {
-                NcEmailArchiver.Move (message, folder);
-            }
+            NcEmailArchiver.Move (messageThread, folder);
         }
 
         public void DeleteThisMessage (McEmailMessageThread messageThread)
         {
             NcAssert.NotNull (messageThread);
             Log.Debug (Log.LOG_UI, "DeleteThisMessage");
-            var message = messageThread.SingleMessageSpecialCase ();
-            if (null != message) {
-                NcEmailArchiver.Delete (message);
-            }
+            NcEmailArchiver.Delete (messageThread);
         }
 
         public void ArchiveThisMessage (McEmailMessageThread messageThread)
         {
             NcAssert.NotNull (messageThread);
             ArchiveCaptureMessage.Start ();
-            var message = messageThread.SingleMessageSpecialCase ();
-            if (null != message) {
-                NcEmailArchiver.Archive (message);
-            }
+            NcEmailArchiver.Archive (messageThread);
             ArchiveCaptureMessage.Stop ();
         }
 
@@ -667,8 +663,7 @@ namespace NachoClient.iOS
 
             foreach (var messageThreadIndex in MultiSelect) {
                 var messageThread = messageThreads.GetEmailThread ((int)messageThreadIndex);
-                var message = messageThread.SingleMessageSpecialCase ();
-                if (null != message) {
+                foreach (var message in messageThread) {
                     messageList.Add (message);
                 }
             }
@@ -789,8 +784,7 @@ namespace NachoClient.iOS
             if (null == messageThread) {
                 return;
             }
-            var message = messageThread.SingleMessageSpecialCase ();
-            if (null != message) {
+            foreach(var message in messageThread) {
                 Log.Debug (Log.LOG_UI, "message Id={0} bodyId={1} Score={2}", message.Id, message.BodyId, message.Score);
             }
         }

@@ -986,6 +986,10 @@ namespace NachoCore.ActiveSync
                     break;
                 }
             }
+            if (null == emailMessage.ConversationId) {
+                Log.Info (Log.LOG_AS, "ProcessEmailItem conversation id is null: {0}", emailMessage.ServerId);
+                emailMessage.ConversationId = System.Guid.NewGuid ().ToString ();
+            }
             return NcResult.OK (emailMessage);
         }
 

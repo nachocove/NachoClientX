@@ -56,7 +56,7 @@ namespace NachoCore
             if (!NcMessageThreads.AreDifferent (threadList, list, out adds, out deletes)) {
                 return false;
             }
-            threadList = NcMessageThreads.ThreadByConversation (list);
+            threadList = NcMessageThreads.ThreadByMessage (list);
             return true;
         }
 
@@ -81,6 +81,11 @@ namespace NachoCore
             if (null != folder) {
                 BackEnd.Instance.SyncCmd (folder.AccountId, folder.Id);
             }
+        }
+
+        public INachoEmailMessages GetAdapterForThread (string threadId)
+        {
+            return null;
         }
 
     }

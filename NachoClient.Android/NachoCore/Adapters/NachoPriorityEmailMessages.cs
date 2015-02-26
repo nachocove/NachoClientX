@@ -24,14 +24,21 @@ namespace NachoCore
 
         public bool Refresh (out List<int> adds, out List<int> deletes)
         {
-            List<NcEmailMessageIndex> list = new List<NcEmailMessageIndex> ();
+            List<NcEmailMessageIndex> hotList = new List<NcEmailMessageIndex> ();
             double threshold = McEmailMessage.minHotScore;
             // Before statistics converge, there may be a period when there is no hot emails.
             // When that happens, lower the threshold until we found something
-            list = McEmailMessage.QueryActiveMessageItemsByScore (folder.AccountId, folder.Id, threshold);
-            if (null == list) {
-                list = new List<NcEmailMessageIndex> ();
+            hotList = McEmailMessage.QueryActiveMessageItemsByScore (folder.AccountId, folder.Id, threshold);
+            if (null == hotList) {
+                hotList = new List<NcEmailMessageIndex> ();
             }
+
+            List<NcEmailMessageIndex> list = new List<NcEmailMessageIndex> ();
+            foreach (var hotMessage in hotList) {
+                var relatedList = McEmailMessage.QueryActiveMessageItemsByThreadId (folder.AccountId, folder.Id, hotMessage.ThreadId);
+                list.AddRange (relatedList);
+            }
+
             if (!NcMessageThreads.AreDifferent (threadList, list, out adds, out deletes)) {
                 return false;
             }
@@ -60,6 +67,11 @@ namespace NachoCore
             if (null != folder) {
                 BackEnd.Instance.SyncCmd (folder.AccountId, folder.Id);
             }
+        }
+
+        public INachoEmailMessages GetAdapterForThread (string threadId)
+        {
+            return new NachoThreadedEmailMessages (folder, threadId);
         }
             
     }

@@ -104,7 +104,7 @@ namespace NachoClient.iOS
             this.BringSubviewToFront (chiliHitBox);
         }
 
-        public void ConfigureView (McEmailMessage message)
+        public void ConfigureView (McEmailMessageThread thread, McEmailMessage message)
         {
             // From label view
             var fromLabelView = this.ViewWithTag (FROM_TAG) as UILabel;
@@ -115,6 +115,9 @@ namespace NachoClient.iOS
             // Chili image view
             var chiliImageView = this.ViewWithTag (USER_CHILI_TAG) as UIImageView;
             var chiliImageIcon = (message.isHot () ? "email-hot" : "email-not-hot");
+            if (thread.HasMultipleMessages ()) {
+                chiliImageIcon += "-thread";
+            }
             using (var image = UIImage.FromBundle (chiliImageIcon)) {
                 chiliImageView.Image = image;
             }

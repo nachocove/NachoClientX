@@ -1098,7 +1098,7 @@ namespace NachoClient.iOS
             var subject = Pretty.SubjectString (subjectField.Text);
             if (McEmailMessage.IntentType.None != messageIntent) {
                 var intentString = NcMessageIntent.GetIntentString (
-                    messageIntent, messageIntentDateType, messageIntentDateTime);
+                                       messageIntent, messageIntentDateType, messageIntentDateTime);
                 subject = Pretty.Join (intentString, subject, " - ");
             }
             mimeMessage.Subject = subject;
@@ -1116,9 +1116,9 @@ namespace NachoClient.iOS
 
             NSError error = null;
             NSData htmlData = bodyAttributedText.GetDataFromRange (
-                new NSRange (0, bodyAttributedText.Length),
-                new NSAttributedStringDocumentAttributes { DocumentType = NSDocumentType.HTML },
-                ref error);
+                                  new NSRange (0, bodyAttributedText.Length),
+                                  new NSAttributedStringDocumentAttributes { DocumentType = NSDocumentType.HTML },
+                                  ref error);
             body.HtmlBody = htmlData.ToString ();
 
             foreach (var attachment in attachmentView.AttachmentList) {
@@ -1331,7 +1331,7 @@ namespace NachoClient.iOS
         public void SetAction (McEmailMessageThread thread, string actionString)
         {
             if (null != thread) {
-                referencedMessage = thread.SingleMessageSpecialCase ();
+                referencedMessage = thread.FirstMessageSpecialCase ();
             }
             if (null == actionString) {
                 action = EmailHelper.Action.Send;

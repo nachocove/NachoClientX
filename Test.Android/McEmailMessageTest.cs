@@ -380,24 +380,28 @@ namespace Test.Common
             // 5. Has body and is complete, and marked indexed
             var body1 = new McBody () {
                 AccountId = 1,
+                BodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4,
                 FilePresence = McAbstrFileDesc.FilePresenceEnum.Complete
             };
             InsertAndCheckBody (body1);
 
             var body3 = new McBody () {
                 AccountId = 1,
+                BodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4,
                 FilePresence = McAbstrFileDesc.FilePresenceEnum.Complete
             };
             InsertAndCheckBody (body3);
 
             var body4 = new McBody () {
                 AccountId = 1,
+                BodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4,
                 FilePresence = McAbstrFileDesc.FilePresenceEnum.Partial
             };
             InsertAndCheckBody (body4);
 
             var body5 = new McBody () {
                 AccountId = 1,
+                BodyType = McAbstrFileDesc.BodyTypeEnum.MIME_4,
                 FilePresence = McAbstrFileDesc.FilePresenceEnum.Complete
             };
             InsertAndCheckBody (body5);

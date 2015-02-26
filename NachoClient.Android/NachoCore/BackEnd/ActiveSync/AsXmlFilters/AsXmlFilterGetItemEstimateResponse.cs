@@ -28,7 +28,7 @@ namespace NachoCore.Wbxml
             // Collection
             node3 = new NcXmlFilterNode ("Collection", RedactionType.NONE, RedactionType.NONE);
             // CollectionId
-            node4 = new NcXmlFilterNode ("CollectionId", RedactionType.NONE, RedactionType.NONE);
+            node4 = new NcXmlFilterNode ("CollectionId", RedactionType.SHORT_HASH, RedactionType.NONE);
             node3.Add(node4); // Collection -> CollectionId
             // Estimate
             node4 = new NcXmlFilterNode ("Estimate", RedactionType.NONE, RedactionType.NONE);

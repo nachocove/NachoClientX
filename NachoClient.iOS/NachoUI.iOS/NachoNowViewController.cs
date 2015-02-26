@@ -249,9 +249,17 @@ namespace NachoClient.iOS
                 return;
             }
             if (segue.Identifier == "NachoNowToMessageView") {
-                var vc = (MessageViewController)segue.DestinationViewController;
+                var vc = (INachoMessageViewer)segue.DestinationViewController;
                 var holder = (SegueHolder)sender;
-                vc.thread = holder.value as McEmailMessageThread;                
+                var thread = holder.value as McEmailMessageThread;
+                vc.SetSingleMessageThread (thread);
+                return;
+            }
+            if (segue.Identifier == "SegueToMessageThreadView") {
+                var holder = (SegueHolder)sender;
+                var thread = (McEmailMessageThread)holder.value;
+                var vc = (MessageListViewController)segue.DestinationViewController;
+                vc.SetEmailMessages (priorityInbox.GetAdapterForThread (thread.GetThreadId ()));
                 return;
             }
             if (segue.Identifier == "NachoNowToMessagePriority") {
@@ -422,7 +430,7 @@ namespace NachoClient.iOS
         /// </summary>
         public void CreateTaskForEmailMessage (INachoMessageEditor vc, McEmailMessageThread thread)
         {
-            var m = thread.SingleMessageSpecialCase ();
+            var m = thread.FirstMessageSpecialCase ();
             if (null != m) {
                 var t = CalendarHelper.CreateTask (m);
                 vc.SetOwner (null);
@@ -437,7 +445,7 @@ namespace NachoClient.iOS
         /// </summary>
         public void CreateMeetingEmailForMessage (INachoMessageEditor vc, McEmailMessageThread thread)
         {
-            var m = thread.SingleMessageSpecialCase ();
+            var m = thread.FirstMessageSpecialCase ();
             if (null != m) {
                 var c = CalendarHelper.CreateMeeting (m);
                 vc.DismissMessageEditor (false, new Action (delegate {
@@ -462,10 +470,7 @@ namespace NachoClient.iOS
         {
             var segueHolder = (SegueHolder)cookie;
             var messageThread = (McEmailMessageThread)segueHolder.value;
-            var message = messageThread.SingleMessageSpecialCase ();
-            if (null != message) {
-                NcEmailArchiver.Move (message, folder);
-            }
+            NcEmailArchiver.Move (messageThread, folder);
             vc.DismissFolderChooser (true, null);
         }
 

@@ -283,10 +283,14 @@ namespace NachoCore.ActiveSync
 
         public List<McFolder> EmailFolderListProvider (int accountId, Scope.EmailEnum scope, bool isNarrow)
         {
+            McFolder inbox;
             switch (scope) {
             case Scope.EmailEnum.None:
                 if (isNarrow) {
-                    return new List<McFolder> () { McFolder.GetDefaultInboxFolder (accountId) };
+                    inbox = McFolder.GetDefaultInboxFolder (accountId);
+                    if (null != inbox) {
+                        return new List<McFolder> () { inbox };
+                    }
                 }
                 return new List<McFolder> ();
 
@@ -295,12 +299,20 @@ namespace NachoCore.ActiveSync
             case Scope.EmailEnum.Def2w:
             case Scope.EmailEnum.Def3d:
             case Scope.EmailEnum.Def1m:
-                return new List<McFolder> () { McFolder.GetDefaultInboxFolder (accountId) };
+                inbox = McFolder.GetDefaultInboxFolder (accountId);
+                if (null != inbox) {
+                    return new List<McFolder> () { inbox };
+                }
+                return new List<McFolder> ();
 
             case Scope.EmailEnum.All1m:
             case Scope.EmailEnum.AllInf:
                 if (isNarrow) {
-                    return new List<McFolder> () { McFolder.GetDefaultInboxFolder (accountId) };
+                    inbox = McFolder.GetDefaultInboxFolder (accountId);
+                    if (null != inbox) {
+                        return new List<McFolder> () { inbox };
+                    }
+                    return new List<McFolder> ();
                 }
                 return McFolder.ServerEndQueryAll (accountId).Where (f => 
                     Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) ==
@@ -314,23 +326,35 @@ namespace NachoCore.ActiveSync
 
         public List<McFolder> CalFolderListProvider (int accountId, Scope.CalEnum scope, bool isNarrow)
         {
+            McFolder cal;
             switch (scope) {
             case Scope.CalEnum.None:
                 if (isNarrow) {
-                    return new List<McFolder> () { McFolder.GetDefaultCalendarFolder (accountId) };
+                    cal = McFolder.GetDefaultCalendarFolder (accountId);
+                    if (null != cal) {
+                        return new List<McFolder> () { cal };
+                    }
                 }
                 return new List<McFolder> ();
 
             case Scope.CalEnum.Def2w:
             case Scope.CalEnum.Def1m:
-                return new List<McFolder> () { McFolder.GetDefaultCalendarFolder (accountId) };
+                cal = McFolder.GetDefaultCalendarFolder (accountId);
+                if (null != cal) {
+                    return new List<McFolder> () { cal };
+                }
+                return new List<McFolder> ();
 
             case Scope.CalEnum.All1m:
             case Scope.CalEnum.All3m:
             case Scope.CalEnum.All6m:
             case Scope.CalEnum.AllInf:
                 if (isNarrow) {
-                    return new List<McFolder> () { McFolder.GetDefaultCalendarFolder (accountId) };
+                    cal = McFolder.GetDefaultCalendarFolder (accountId);
+                    if (null != cal) {
+                        return new List<McFolder> () { cal };
+                    }
+                    return new List<McFolder> ();
                 }
                 return McFolder.ServerEndQueryAll (accountId).Where (f => 
                     Xml.FolderHierarchy.TypeCodeToAirSyncClassCodeEnum (f.Type) ==
@@ -361,11 +385,15 @@ namespace NachoCore.ActiveSync
 
             case Scope.ContactEnum.DefRicInf:
                 ric = McFolder.GetRicContactFolder (accountId);
+                McFolder contacts = McFolder.GetDefaultContactFolder (accountId);
+                var list = new List<McFolder> ();
                 if (null != ric) {
-                    return new List<McFolder> () { ric, McFolder.GetDefaultContactFolder (accountId) };
-                } else {
-                    return new List<McFolder> () { McFolder.GetDefaultContactFolder (accountId) };
+                    list.Add (ric);
                 }
+                if (null != contacts) {
+                    list.Add (contacts);
+                }
+                return list;
 
             case Scope.ContactEnum.AllInf:
                 return McFolder.ServerEndQueryAll (accountId).Where (f => 
@@ -502,13 +530,17 @@ namespace NachoCore.ActiveSync
             McAbstrFolderEntry.ClassCodeEnum.Contact).ToList ();
         }
 
-        public SyncKit GenSyncKit (int accountId, McProtocolState protocolState, bool cantBeEmpty)
+        public SyncKit GenSyncKit (int accountId, McProtocolState protocolState)
         {
-            return GenSyncKit (accountId, protocolState, SyncMode.Wide, cantBeEmpty);
+            return GenSyncKit (accountId, protocolState, SyncMode.Wide);
         }
 
         public SyncKit GenUserSyncKit (McFolder folder, int rung, int overallWindowSize, McPending pending)
         {
+            if (null == folder) {
+                Log.Error (Log.LOG_AS, "GenUserSyncKit called with null folder.");
+                return null;
+            }
             var syncKit = GenNarrowSyncKit (new List<McFolder> () { folder }, rung, overallWindowSize);
             if (null == syncKit) {
                 return null;
@@ -519,6 +551,9 @@ namespace NachoCore.ActiveSync
 
         public SyncKit GenNarrowSyncKit (List<McFolder> folders, int rung, int overallWindowSize)
         {
+            if (0 == folders.Count) {
+                return null;
+            }
             var perFolders = new List<SyncKit.PerFolder> ();
             foreach (var iterFolder in folders) {
                 var folder = iterFolder;
@@ -550,8 +585,7 @@ namespace NachoCore.ActiveSync
         public enum SyncMode { Wide, Narrow, Directed };
 
         // Returns null if nothing to do.
-        public SyncKit GenSyncKit (int accountId, McProtocolState protocolState, SyncMode syncMode, bool cantBeEmpty,
-            McPending pending = null)
+        public SyncKit GenSyncKit (int accountId, McProtocolState protocolState, SyncMode syncMode, McPending pending = null)
         {
             var rung = Scope.StrategyRung (protocolState);
             int overallWindowSize = KBaseOverallWindowSize;
@@ -573,6 +607,7 @@ namespace NachoCore.ActiveSync
                 }
                 Log.Error (Log.LOG_AS, "GenSyncKit:Directed: Can't find folder.");
                 syncMode = SyncMode.Narrow;
+                return null;
             }
 
             var rawFolders = FolderListProvider (accountId, rung, SyncMode.Narrow == syncMode);
@@ -657,9 +692,6 @@ namespace NachoCore.ActiveSync
                     PerFolders = retList,
                 };
             }
-            if (cantBeEmpty) {
-                return GenNarrowSyncKit (FolderListProvider (accountId, rung, true), rung, overallWindowSize);
-            }
             return null;
         }
 
@@ -667,6 +699,10 @@ namespace NachoCore.ActiveSync
         {
             var maxHeartbeatInterval = (stillHaveUnsyncedFolders) ? 60 : BEContext.ProtocolState.HeartbeatInterval;
             var folders = FolderListProvider (accountId, Scope.StrategyRung (protocolState), isNarrow);
+            if (0 == folders.Count) {
+                Log.Error (Log.LOG_AS, "GenPingKit: no folders");
+                return null;
+            }
             if (folders.Any (x => true == x.AsSyncMetaToClientExpected)) {
                 return null;
             }
@@ -731,7 +767,8 @@ namespace NachoCore.ActiveSync
         {
             var defInbox = McFolder.GetDefaultInboxFolder (accountId);
             var defCal = McFolder.GetDefaultCalendarFolder (accountId);
-            var retval = (defInbox.AsSyncMetaToClientExpected || defCal.AsSyncMetaToClientExpected);
+            var retval = ((null != defInbox && defInbox.AsSyncMetaToClientExpected) ||
+                         (null != defCal && defCal.AsSyncMetaToClientExpected));
             Log.Info (Log.LOG_AS, "ANarrowFolderHasToClientExpected is {0}", retval);
             return retval;
         }
@@ -879,7 +916,7 @@ namespace NachoCore.ActiveSync
             // we can squeeze it in.
             if (NcApplication.ExecutionContextEnum.QuickSync == exeCtxt) {
                 if (protocolState.LastNarrowSync < DateTime.UtcNow.AddSeconds (-60)) {
-                    var nSyncKit = GenSyncKit (accountId, protocolState, SyncMode.Narrow, false);
+                    var nSyncKit = GenSyncKit (accountId, protocolState, SyncMode.Narrow);
                     Log.Info (Log.LOG_AS, "Strategy:QS:Narrow Sync...");
                     if (null != nSyncKit) {
                         Log.Info (Log.LOG_AS, "Strategy:QS:...SyncKit");
@@ -953,17 +990,28 @@ namespace NachoCore.ActiveSync
                             });
                         break;
                     case McPending.Operations.Sync:
-                        var uSyncKit = GenSyncKit (accountId, protocolState, SyncMode.Directed, true, next);
-                        cmd = new AsSyncCommand (BEContext.ProtoControl, uSyncKit);
-                        action = PickActionEnum.Sync;
+                        var uSyncKit = GenSyncKit (accountId, protocolState, SyncMode.Directed, next);
+                        if (null != uSyncKit) {
+                            cmd = new AsSyncCommand (BEContext.ProtoControl, uSyncKit);
+                            action = PickActionEnum.Sync;
+                        } else {
+                            Log.Error (Log.LOG_AS, "Strategy:FG/BG:QOp: null SyncKit");
+                            cmd = null;
+                            action = PickActionEnum.FSync;
+                        }
                         break;
 
                     default:
                         if (AsSyncCommand.IsSyncCommand (next.Operation)) {
                             Log.Info (Log.LOG_AS, "Strategy:FG/BG:QOp-IsSyncCommand:{0}", next.Operation.ToString ());
-                            var syncKit = GenSyncKit (accountId, protocolState, SyncMode.Wide, true);
-                            return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
-                                new AsSyncCommand (BEContext.ProtoControl, syncKit));
+                            var syncKit = GenSyncKit (accountId, protocolState, SyncMode.Wide);
+                            if (null != syncKit) {
+                                return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
+                                    new AsSyncCommand (BEContext.ProtoControl, syncKit));
+                            } else {
+                                Log.Error (Log.LOG_AS, "Strategy:FG/BG:QOp-IsSyncCommand: null SyncKit.");
+                                return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.FSync, null);
+                            }
                         } else {
                             NcAssert.CaseError (next.Operation.ToString ());
                         }
@@ -978,7 +1026,7 @@ namespace NachoCore.ActiveSync
                     protocolState.LastNarrowSync < needNarrowSyncMarker &&
                     (protocolState.LastPing < needNarrowSyncMarker || ANarrowFolderHasToClientExpected (accountId))) {
                     Log.Info (Log.LOG_AS, "Strategy:FG/BG:Narrow Sync...");
-                    var nSyncKit = GenSyncKit (accountId, protocolState, SyncMode.Narrow, false);
+                    var nSyncKit = GenSyncKit (accountId, protocolState, SyncMode.Narrow);
                     if (null != nSyncKit) {
                         Log.Info (Log.LOG_AS, "Strategy:FG/BG:...SyncKit");
                         return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Sync, 
@@ -1019,7 +1067,7 @@ namespace NachoCore.ActiveSync
                     if (NetStatusSpeedEnum.WiFi_0 == NcCommStatus.Instance.Speed && PowerPermitsSpeculation ()) {
                         fetchKit = GenFetchKit (accountId);
                     }
-                    syncKit = GenSyncKit (accountId, protocolState, SyncMode.Wide, false);
+                    syncKit = GenSyncKit (accountId, protocolState, SyncMode.Wide);
                     if (null != fetchKit && (null == syncKit || 0.7 < CoinToss.NextDouble ())) {
                         Log.Info (Log.LOG_AS, "Strategy:FG/BG:Fetch");
                         return Tuple.Create<PickActionEnum, AsCommand> (PickActionEnum.Fetch, 

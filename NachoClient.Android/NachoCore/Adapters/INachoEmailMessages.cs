@@ -20,5 +20,7 @@ namespace NachoCore
         string DisplayName ();
 
         void StartSync ();
+
+        INachoEmailMessages GetAdapterForThread (string threadId);
     }
 }
