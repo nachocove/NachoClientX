@@ -10,6 +10,14 @@ using System.Linq;
 
 namespace NachoCore.Model
 {
+    /// <summary>
+    /// For queries that only need the McEvent ID, not the entire object.
+    /// </summary>
+    public class NcEventIndex
+    {
+        public int Id { set; get; }
+    }
+
     public class McEvent : McAbstrObjectPerAcc
     {
         public McEvent ()
@@ -117,6 +125,27 @@ namespace NachoCore.Model
         {
             return NcModel.Instance.Db.Table<McEvent> ()
                 .Where (e => e.CalendarId == calendarId && e.StartTime > after);
+        }
+
+        /// <summary>
+        /// Return the IDs for all of the McEvents associated with the given calendar item.
+        /// </summary>
+        public static List<NcEventIndex> QueryEventIdsForCalendarItem (int calendarId)
+        {
+            return NcModel.Instance.Db.Query<NcEventIndex> (
+                "SELECT e.Id as Id FROM McEvent AS e WHERE e.CalendarId = ?", calendarId);
+        }
+
+        /// <summary>
+        /// Delete all the McEvents associated with the given calendar item. This method does not cancel
+        /// any local notifications for the events.  Callers of this method must handle local notification
+        /// cancelation themselves.
+        /// </summary>
+        /// <returns>The number of McEvents that were deleted.</returns>
+        public static int DeleteEventsForCalendarItem (int calendarId)
+        {
+            return NcModel.Instance.Db.Execute (
+                "DELETE FROM McEvent WHERE CalendarId = ?", calendarId);
         }
     }
 }
