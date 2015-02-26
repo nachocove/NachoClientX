@@ -365,6 +365,7 @@
     <Compile Include="NachoCore\Model\Migration\NcMigration5.cs" />
     <Compile Include="NachoCore\Brain\NcBrainActions.cs" />
     <Compile Include="NachoCore\Adapters\NachoThreadedEmailMessages.cs" />
+    <Compile Include="NachoCore\Adapters\NachoMessageSearchResults.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

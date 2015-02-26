@@ -18,13 +18,18 @@ namespace NachoClient.iOS
     public partial class MessageListViewController : NcUITableViewController, IUISearchDisplayDelegate, IUISearchBarDelegate, INachoMessageEditorParent, INachoCalendarItemEditorParent, INachoFolderChooserParent, IMessageTableViewSourceDelegate, INachoDateControllerParent
     {
         MessageTableViewSource messageSource;
+        MessageTableViewSource searchResultsSource;
         protected UIBarButtonItem composeMailButton;
         protected UIBarButtonItem multiSelectButton;
         protected UIBarButtonItem cancelSelectedButton;
         protected UIBarButtonItem archiveButton;
         protected UIBarButtonItem deleteButton;
+        protected UIBarButtonItem searchButton;
         protected UIBarButtonItem moveButton;
         protected UIBarButtonItem backButton;
+
+        protected UISearchBar searchBar;
+        protected UISearchDisplayController searchDisplayController;
 
         protected const string UICellReuseIdentifier = "UICell";
         protected const string EmailMessageReuseIdentifier = "EmailMessage";
@@ -87,6 +92,9 @@ namespace NachoClient.iOS
                 PerformSegue ("MessageListToFolders", h);
             };
 
+            searchButton = new UIBarButtonItem (UIBarButtonSystemItem.Search);
+            searchButton.Clicked += onClickSearchButton;
+
             TableView.SeparatorColor = A.Color_NachoBackgroundGray;
             NavigationController.NavigationBar.Translucent = false;
             Util.HideBlackNavigationControllerLine (NavigationController.NavigationBar);
@@ -111,6 +119,15 @@ namespace NachoClient.iOS
                 ReloadDataMaintainingPosition ();
                 new NcTimer ("MessageListViewController refresh", refreshCallback, null, 2000, 0);
             };
+
+            searchBar = new UISearchBar ();
+            searchBar.Delegate = this;
+            searchDisplayController = new UISearchDisplayController (searchBar, this);
+            searchResultsSource = new MessageTableViewSource ();
+            searchResultsSource.owner = this;
+            searchDisplayController.SearchResultsSource = searchResultsSource;
+
+            View.AddSubview (searchBar);
 
             Util.ConfigureNavBar (false, this.NavigationController);
         }
@@ -143,10 +160,16 @@ namespace NachoClient.iOS
                 };
                 if (null == backButton) {
                     NavigationItem.HidesBackButton = false;
-                    NavigationItem.LeftBarButtonItem = null;
+                    NavigationItem.LeftItemsSupplementBackButton = true;
+                    NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] {
+                        searchButton,
+                    };
                 } else {
                     NavigationItem.HidesBackButton = true;
-                    NavigationItem.LeftBarButtonItem = backButton;
+                    NavigationItem.LeftBarButtonItems = new UIBarButtonItem[] {
+                        backButton,
+                        searchButton,
+                    };
                 }
             }
         }
@@ -189,7 +212,7 @@ namespace NachoClient.iOS
             NachoCore.Utils.NcAbate.RegularPriority ("MessageListViewController ReloadDataMaintainingPosition");
         }
 
-        public virtual void MaybeDismissView()
+        public virtual void MaybeDismissView ()
         {
             // nope
         }
@@ -418,5 +441,44 @@ namespace NachoClient.iOS
             var nachoTabBar = Util.GetActiveTabBar ();
             nachoTabBar.SwitchToFolders ();
         }
+
+        protected void onClickSearchButton (object sender, EventArgs e)
+        {
+            searchBar.BecomeFirstResponder ();
+        }
+
+        [Export ("searchBar:textDidChange:")]
+        public void TextChanged (UISearchBar searchBar, string searchText)
+        {
+            var matches = new List<NachoCore.Index.MatchedItem> ();
+            searchResultsSource.SetEmailMessages (new NachoMessageSearchResults (matches));
+            List<int> adds;
+            List<int> deletes;
+            searchResultsSource.RefreshEmailMessages (out adds, out deletes);
+            if (null != searchDisplayController.SearchResultsTableView) {
+                searchDisplayController.SearchResultsTableView.ReloadData ();
+            }
+        }
+
+        [Foundation.Export ("searchBarSearchButtonClicked:")]
+        public void SearchButtonClicked (UIKit.UISearchBar searchBar)
+        {
+            if (null == NcApplication.Instance.Account) {
+                return;
+            }
+            var indexPath = NcModel.Instance.GetFileDirPath (NcApplication.Instance.Account.Id, "index");
+            var index = new NachoCore.Index.Index (indexPath);
+            var match = searchBar.Text;
+            var pattern = String.Format ("to:\"{0}\" subject:\"{0}\"  body:\"{0}\"", match);
+            var matches = index.Search (pattern);
+            searchResultsSource.SetEmailMessages (new NachoMessageSearchResults (matches));
+            List<int> adds;
+            List<int> deletes;
+            searchResultsSource.RefreshEmailMessages (out adds, out deletes);
+            if (null != searchDisplayController.SearchResultsTableView) {
+                searchDisplayController.SearchResultsTableView.ReloadData ();
+            }
+        }
     }
+
 }

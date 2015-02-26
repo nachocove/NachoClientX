@@ -1253,6 +1253,9 @@
     </Compile>
     <Compile Include="NachoUI.iOS\Interfaces\INachoMessageViewer.cs" />
     <Compile Include="NachoCore\Model\Migration\NcMigration6.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoMessageSearchResults.cs">
+      <Link>NachoCore\Adapters\NachoMessageSearchResults.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
