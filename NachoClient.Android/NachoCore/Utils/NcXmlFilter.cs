@@ -63,8 +63,31 @@ namespace NachoCore.Wbxml
 
     public class NcXmlFilter
     {
-        public static string[] DEFAULT_NO_REDACTION_VALUES = new string[1] {
-            "Inbox"
+        public static string[] DEFAULT_NO_REDACTION_VALUES = new string[] {
+            "Inbox",
+            "Contact:DEFAULT",
+            "Event:DEFAULT",
+            "Mail:^sync_gmail_group",
+            "Mail:DEFAULT",
+            "Mail:^k",
+            "Mail:^r",
+            "Mail:^f",
+            "Mail:^t",
+            "Mail:^s",
+            "Mail:^all",
+            "00000000-0000-0000-0000-000000000001",
+            "00000000-0000-0000-0000-000000000002",
+            "00000000-0000-0000-0000-000000000003",
+            "00000000-0000-0000-0000-000000000004",
+            "00000000-0000-0000-0000-000000000005",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
         };
 
         public string[] NoRedactionValues = DEFAULT_NO_REDACTION_VALUES;
