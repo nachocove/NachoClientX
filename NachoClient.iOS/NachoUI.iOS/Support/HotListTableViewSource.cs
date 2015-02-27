@@ -836,25 +836,23 @@ namespace NachoClient.iOS
             var tableView = (UITableView)scrollView;
             var totalContentY = tableView.ContentSize.Height;
 
-            // Centers on last card
-            if (startingPoint.Y <= totalContentY - tableView.Frame.Height - (tableView.Frame.Height / 3) && targetContentOffset.Y >= totalContentY - tableView.Frame.Height * 2) {
-                targetContentOffset.Y = tableView.RectForFooterInSection (0).Location.Y - 10;
-                return;
-            }
-
             var pathForTargetTopCell = tableView.IndexPathForRowAtPoint (new CGPoint (tableView.Frame.X / 2, targetContentOffset.Y + 10));
 
             if (null == pathForTargetTopCell) {
                 return;
             }
 
+            // pull down, go to previous cell
             if (startingPoint.Y >= targetContentOffset.Y) {
                 targetContentOffset.Y = tableView.RectForRowAtIndexPath (pathForTargetTopCell).Location.Y - 10;
                 return;
             }
 
             var nextRow = pathForTargetTopCell.Row + 1;
+
+            // push up, go to table footer if past the end
             if (nextRow >= RowsInSection (tableView, pathForTargetTopCell.Section)) {
+                targetContentOffset.Y = tableView.RectForFooterInSection (0).Location.Y - 10;
                 return;
             }
 
