@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Xml.Linq;
 using NachoCore.ActiveSync;
 using NachoCore.Model;
@@ -67,7 +68,7 @@ namespace NachoCore.ActiveSync
             return null;
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
+        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, CancellationToken cToken)
         {
             PendingResolveApply ((pending) => {
                 pending.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSendSucceeded));
@@ -82,7 +83,7 @@ namespace NachoCore.ActiveSync
             return Event.Create ((uint)SmEvt.E.Success, "SMSUCCESS");
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
+        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
         {
             // The only applicable TL Status codes are the general ones.
             PendingResolveApply ((pending) => {

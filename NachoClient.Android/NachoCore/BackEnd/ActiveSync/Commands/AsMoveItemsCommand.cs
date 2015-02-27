@@ -4,6 +4,7 @@ using System;
 using System.Linq;
 using System.Net.Http;
 using System.Xml.Linq;
+using System.Threading;
 using NachoCore.ActiveSync;
 using NachoCore.Utils;
 using NachoCore.Model;
@@ -64,7 +65,7 @@ namespace NachoCore.ActiveSync
             return doc;
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
+        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
         {
             // Right now, there will only be 1 Response because we issue 1 at a time.
             var xmlResponse = doc.Root.Element (m_ns + Xml.Mov.Response);

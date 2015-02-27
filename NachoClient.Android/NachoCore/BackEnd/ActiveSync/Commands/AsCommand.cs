@@ -249,12 +249,12 @@ namespace NachoCore.ActiveSync
             return null;
         }
         // Called for non-WBXML HTTP 200 responses.
-        public virtual Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
+        public virtual Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, CancellationToken cToken)
         {
             return new Event () { EventCode = (uint)SmEvt.E.Success };
         }
 
-        public virtual Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
+        public virtual Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
         {
             return new Event () { EventCode = (uint)SmEvt.E.Success };
         }

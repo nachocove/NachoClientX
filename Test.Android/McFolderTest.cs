@@ -1242,7 +1242,7 @@ namespace Test.iOS
             McEmailMessage email3 = FolderOps.CreateUniqueItem<McEmailMessage> (AccountId, serverId:"7");
             folder1.Link (email3);
             // email4 excluded (account).
-            McEmailMessage email4 = FolderOps.CreateUniqueItem<McEmailMessage> (AccountId, serverId:"8");
+            FolderOps.CreateUniqueItem<McEmailMessage> (AccountId, serverId:"8");
             McFolder folder2 = FolderOps.CreateFolder (AccountId);
             folder2 = folder2.UpdateWithOCApply<McFolder> ((record) => {
                 var target = (McFolder)record;

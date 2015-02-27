@@ -855,13 +855,13 @@ namespace NachoCore.ActiveSync
                 }
             }
 
-            public Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
+            public Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, CancellationToken cToken)
             {
                 // We should never get back content that isn't XML.
                 return Event.Create ((uint)SmEvt.E.HardFail, "SRPR0HARD");
             }
 
-            public Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
+            public Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
             {
                 var xmlResponse = doc.Root.ElementAnyNs (Xml.Autodisco.Response);
                 var xmlUser = xmlResponse.ElementAnyNs (Xml.Autodisco.User);

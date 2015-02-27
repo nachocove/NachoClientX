@@ -446,7 +446,7 @@ namespace NachoCore.ActiveSync
 
             try {
                 ServicePointManager.FindServicePoint(request.RequestUri).ConnectionLimit = 25;
-                // HttpClient doesn't respect Timeout sometimes (DNS and TCP connection establishment for sure).
+                // Xamarin HttpClient doesn't respect Timeout sometimes (DNS and TCP connection establishment for sure).
                 // Even worse, you can only set one timeout value for all concurrent requests, and you can't 
                 // change the value once you start using the client. So we use our own per-request timeout.
                 TimeoutTimer = new NcTimer ("AsHttpOperation:Timeout", TimeoutTimerCallback, cToken, Timeout, 
@@ -505,7 +505,12 @@ namespace NachoCore.ActiveSync
                     }
                     CancelTimeoutTimer ("Success");
                     try {
-                        HttpOpSm.PostEvent (ProcessHttpResponse (response, cToken));
+                        var evt = ProcessHttpResponse (response, cToken);
+                        if (cToken.IsCancellationRequested) {
+                            Log.Info (Log.LOG_HTTP, "AttempHttp: Dropping event because of cancellation: {0}/{1}", evt.EventCode, evt.Mnemonic);
+                        } else {
+                            HttpOpSm.PostEvent (evt);
+                        }
                     } catch (Exception ex) {
                         Log.Error (Log.LOG_HTTP, "AttempHttp {0} {1}: exception {2}\n{3}", ex, ServerUri, ex.Message, ex.StackTrace);
                         // Likely a bug in our code if we got here, but likely to get stuck here again unless we resolve-as-failed.
@@ -635,14 +640,14 @@ namespace NachoCore.ActiveSync
                         }
                         Log.Debug (Log.LOG_XML, "{0} response:\n{1}", CommandName, responseDoc);
                         // Owner MUST resolve all pending.
-                        return Final (Owner.ProcessResponse (this, response, responseDoc));
+                        return Final (Owner.ProcessResponse (this, response, responseDoc, cToken));
                     case ContentTypeWbxmlMultipart:
                         NcAssert.True (false, "ContentTypeWbxmlMultipart unimplemented.");
                         return null;
                     case ContentTypeXml:
                         responseDoc = XDocument.Load (ContentData);
                         // Owner MUST resolve all pending.
-                        return Final (Owner.ProcessResponse (this, response, responseDoc));
+                        return Final (Owner.ProcessResponse (this, response, responseDoc, cToken));
                     default:
                         if (null == ContentType) {
                             Log.Warn (Log.LOG_HTTP, "ProcessHttpResponse: received HTTP response with content but no Content-Type.");
@@ -656,14 +661,14 @@ namespace NachoCore.ActiveSync
                         }
                         if (null == responseDoc) {
                             // Owner MUST resolve all pending.
-                            return Final (Owner.ProcessResponse (this, response));
+                            return Final (Owner.ProcessResponse (this, response, cToken));
                         } else {
-                            return Final (Owner.ProcessResponse (this, response, responseDoc));
+                            return Final (Owner.ProcessResponse (this, response, responseDoc, cToken));
                         }
                     }
                 } 
                 // Owner MUST resolve all pending.
-                return Final (Owner.ProcessResponse (this, response));
+                return Final (Owner.ProcessResponse (this, response, cToken));
 
             }
             switch (response.StatusCode) {
