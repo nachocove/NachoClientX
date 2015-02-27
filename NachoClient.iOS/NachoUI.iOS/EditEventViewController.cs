@@ -1011,7 +1011,7 @@ namespace NachoClient.iOS
 
             //people view
             var peopleDetailLabelView = contentView.ViewWithTag (PEOPLE_DETAIL_TAG) as UILabel;
-            peopleDetailLabelView.Text = (0 != c.attendees.Count () ? "Attendees: (" + c.attendees.Count () + ")" : "Attendees:");
+            peopleDetailLabelView.Text = (0 != c.attendees.Count ? "Attendees: (" + c.attendees.Count + ")" : "Attendees:");
 
             //alert view
             var alertDetailLabelView = contentView.ViewWithTag (ALERT_DETAIL_TAG) as UILabel;
@@ -1418,7 +1418,7 @@ namespace NachoClient.iOS
             this.PresentViewController (viewControllerToPresent, animated, completionHandler);
         }
 
-        public void UpdateAttendeeList (List<McAttendee> attendees)
+        public void UpdateAttendeeList (IList<McAttendee> attendees)
         {
             c.attendees = attendees;
         }

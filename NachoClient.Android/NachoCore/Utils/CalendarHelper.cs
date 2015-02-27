@@ -602,10 +602,11 @@ namespace NachoCore.Utils
             if (null != MimeHelpers.ExtractTextPart (message.GetBody ())) {
                 c.Description = MimeHelpers.ExtractTextPart (message.GetBody ());
             }
-            c.attendees = new System.Collections.Generic.List<McAttendee> ();
-            c.attendees.AddRange (CreateAttendeeList (message.AccountId, message.From, NcAttendeeType.Required));
-            c.attendees.AddRange (CreateAttendeeList (message.AccountId, message.To, NcAttendeeType.Required));
-            c.attendees.AddRange (CreateAttendeeList (message.AccountId, message.Cc, NcAttendeeType.Optional));
+            var attendees = new List<McAttendee> ();
+            attendees.AddRange (CreateAttendeeList (message.AccountId, message.From, NcAttendeeType.Required));
+            attendees.AddRange (CreateAttendeeList (message.AccountId, message.To, NcAttendeeType.Required));
+            attendees.AddRange (CreateAttendeeList (message.AccountId, message.Cc, NcAttendeeType.Optional));
+            c.attendees = attendees;
             return c;
         }
 

@@ -477,20 +477,10 @@ namespace NachoCore.ActiveSync
                     switch (child.Name.LocalName) {
                     // Containers
                     case Xml.Calendar.Exception.Attendees:
-                        var attendees = ParseAttendees (accountId, ns, child);
-                        if (null == e.attendees) {
-                            e.attendees = attendees;
-                        } else {
-                            e.attendees.AddRange (attendees);
-                        }
+                        e.attendees = ParseAttendees (accountId, ns, child);
                         break;
                     case Xml.Calendar.Exception.Categories:
-                        var categories = ParseCategories (accountId, ns, child);
-                        if (null == e.categories) {
-                            e.categories = categories;
-                        } else {
-                            e.categories.AddRange (categories);
-                        }
+                        e.categories = ParseCategories (accountId, ns, child);
                         break;
                     // Elements
                     case Xml.Calendar.Exception.AllDayEvent:
@@ -590,12 +580,10 @@ namespace NachoCore.ActiveSync
                 switch (child.Name.LocalName) {
                 // Containers
                 case Xml.Calendar.Calendar_Attendees:
-                    var attendees = ParseAttendees (accountId, nsCalendar, child);
-                    c.attendees.AddRange (attendees);
+                    c.attendees = ParseAttendees (accountId, nsCalendar, child);
                     break;
                 case Xml.Calendar.Calendar_Categories:
-                    var categories = ParseCategories (accountId, nsCalendar, child);
-                    c.categories.AddRange (categories);
+                    c.categories = ParseCategories (accountId, nsCalendar, child);
                     break;
                 case Xml.Calendar.Calendar_Exceptions:
                     var exceptions = ParseExceptions (accountId, nsCalendar, child);

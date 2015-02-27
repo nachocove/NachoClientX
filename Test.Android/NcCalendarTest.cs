@@ -589,7 +589,7 @@ namespace Test.Common
         {
             var c = InsertSimpleEvent ("attendees");
 
-            var attendees = c.attendees;
+            var attendees = new List<McAttendee> (c.attendees);
             attendees.Add (new McAttendee (1, "Harry", "harry@foo.com") {
                 AttendeeType = NcAttendeeType.Resource,
             });
@@ -605,7 +605,7 @@ namespace Test.Common
         {
             var c = InsertSimpleEvent ("attendees");
 
-            var attendees = c.attendees;
+            var attendees = new List<McAttendee> (c.attendees);
             attendees.RemoveAt (0);
             c.attendees = attendees;
             c.Update ();
@@ -619,8 +619,6 @@ namespace Test.Common
         {
             var c = InsertSimpleEvent ("attendees");
 
-            var attendees = c.attendees;
-            attendees.RemoveAt (0);
             c.attendees = new List<McAttendee> ();
             c.Update ();
             var f = McCalendar.QueryById<McCalendar> (c.Id);
@@ -633,7 +631,7 @@ namespace Test.Common
         {
             var c = InsertSimpleEvent ("categories");
 
-            var categories = c.categories;
+            var categories = new List<McCalendarCategory> (c.categories);
             categories.Add (new McCalendarCategory (1, "green"));
             c.categories = categories;
             c.Update ();
@@ -647,7 +645,7 @@ namespace Test.Common
         {
             var c = InsertSimpleEvent ("categories");
 
-            var categories = c.categories;
+            var categories = new List<McCalendarCategory> (c.categories);
             categories.RemoveAt (0);
             c.categories = categories;
             c.Update ();
@@ -661,8 +659,6 @@ namespace Test.Common
         {
             var c = InsertSimpleEvent ("categories");
 
-            var categories = c.categories;
-            categories.RemoveAt (0);
             c.categories = new List<McCalendarCategory> ();
             c.Update ();
             var f = McCalendar.QueryById<McCalendar> (c.Id);
