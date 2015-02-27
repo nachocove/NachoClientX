@@ -126,8 +126,17 @@ namespace NachoClient.iOS
 
                 //Rethrow any unhandled .NET exceptions as native iOS
                 // exceptions so the stack traces appear nicely in HockeyApp
-                AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
+                AppDomain.CurrentDomain.UnhandledException += (sender, e) => {
+                    try {
+                        var ex = e.ExceptionObject as Exception;
+                        if (null != ex) {
+                            // See if we can get the part of the stack that is getting lost in ThrowExceptionAsNative().
+                            Log.Error (Log.LOG_LIFECYCLE, "UnhandledException: {0}", ex.Message);
+                        }
+                    } catch {
+                    }
                     Setup.ThrowExceptionAsNative (e.ExceptionObject);
+                };
 
                 NcApplication.UnobservedTaskException += (sender, e) =>
                     Setup.ThrowExceptionAsNative (e.Exception);
@@ -242,6 +251,12 @@ namespace NachoClient.iOS
         // It gets called once during the app lifecycle.
         public override bool FinishedLaunching (UIApplication application, NSDictionary launchOptions)
         {
+            if (null == NcApplication.Instance.CrashFolder) {
+                var cacheFolder = NSSearchPath.GetDirectories (NSSearchPathDirectory.CachesDirectory, NSSearchPathDomain.User, true) [0];
+                NcApplication.Instance.CrashFolder = Path.Combine (cacheFolder, "net.hockeyapp.sdk.ios");
+                NcApplication.Instance.MarkStartup ();
+            }
+
             Log.Info (Log.LOG_LIFECYCLE, "FinishedLaunching: Called");
             #if NO_CERT_VALIDATION
             ServicePointManager.ServerCertificateValidationCallback = CertCheck;
@@ -462,7 +477,7 @@ namespace NachoClient.iOS
         public override void DidEnterBackground (UIApplication application)
         {
             if (DidEnterBackgroundCalled) {
-                Log.Error (Log.LOG_LIFECYCLE, "DidEnterBackground: called more than once.");
+                Log.Warn (Log.LOG_LIFECYCLE, "DidEnterBackground: called more than once.");
                 return;
             }
             DidEnterBackgroundCalled = true;
@@ -905,7 +920,7 @@ namespace NachoClient.iOS
         {
             var list = NcEmailManager.PriorityInbox ();
             var thread = list.GetEmailThread (0);
-            var message = thread.SingleMessageSpecialCase ();
+            var message = thread.FirstMessageSpecialCase ();
             var notif = new UILocalNotification () {
                 AlertAction = null,
                 AlertBody = ((null == message.Subject) ? "(No Subject)" : message.Subject) + ", From " + message.From,

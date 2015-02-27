@@ -10,7 +10,7 @@
             <attribute_redaction>full</attribute_redaction>
          </UserResponse>
          <CollectionId>
-            <element_redaction>none</element_redaction>
+            <element_redaction>short_hash</element_redaction>
             <attribute_redaction>none</attribute_redaction>
          </CollectionId>
          <RequestId>

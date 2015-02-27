@@ -267,6 +267,9 @@
     <Compile Include="..\Test.Android\NcContactGleanerTest.cs">
       <Link>NcContactGleanerTest.cs</Link>
     </Compile>
+    <Compile Include="..\Test.Android\McEventTest.cs">
+      <Link>McEventTest.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />

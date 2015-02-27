@@ -155,6 +155,21 @@ namespace NachoCore.Model
                 accountId, accountId, folderId);
         }
 
+        public static List<T> QueryOldEpochByFolderId<T> (int accountId, int folderId, int currentEpoch, int limit) where T : McAbstrItem, new()
+        {
+            return NcModel.Instance.Db.Query<T> (
+                string.Format (
+                    "SELECT e.* FROM {0} AS e JOIN McMapFolderFolderEntry AS m ON e.Id = m.FolderEntryId WHERE " +
+                    " e.AccountId = ? AND " +
+                    " m.AccountId = ? AND " +
+                    " e.IsAwaitingDelete = 0 AND " +
+                    " m.FolderId = ? AND " + 
+                    " m.AsSyncEpoch < ? " + 
+                    " LIMIT ? ",
+                    typeof(T).Name),
+                accountId, accountId, folderId, currentEpoch, limit);
+        }
+
         public McBody GetBody ()
         {
             if (0 == BodyId) {

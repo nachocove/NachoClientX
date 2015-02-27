@@ -1124,4 +1124,152 @@ namespace Test.iOS
             Assert.AreEqual (expected.Type, actual.Type, testDesc);
         }
     }
+
+    [TestFixture]
+    public class EpochScrub : BaseMcFolderTest
+    {
+        const int AccountId = 1;
+        [Test]
+        public void TestUpdateResetSyncState ()
+        {
+            McFolder folder1 = FolderOps.CreateFolder (AccountId);
+            folder1 = folder1.UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.AsSyncKey = "55";
+                target.AsSyncMetaToClientExpected = false;
+                return true;
+            });
+            folder1 = McFolder.QueryById<McFolder> (folder1.Id);
+            Assert.AreEqual ("55", folder1.AsSyncKey);
+            Assert.IsFalse (folder1.AsSyncMetaToClientExpected);
+            Assert.IsFalse (folder1.AsSyncEpochScrubNeeded);
+            Assert.AreEqual (0, folder1.AsSyncEpoch);
+
+            folder1.UpdateResetSyncState ();
+            Assert.AreEqual (McFolder.AsSyncKey_Initial, folder1.AsSyncKey);
+            Assert.IsTrue (folder1.AsSyncMetaToClientExpected);
+            Assert.IsTrue (folder1.AsSyncEpochScrubNeeded);
+            Assert.AreEqual (1, folder1.AsSyncEpoch);
+        }
+
+        [Test]
+        public void TestLinkAndLinkUpdate ()
+        {
+            McFolder folder1 = FolderOps.CreateFolder (AccountId);
+            folder1 = folder1.UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.AsSyncEpoch = 66;
+                return true;
+            });
+            McEmailMessage email = FolderOps.CreateUniqueItem<McEmailMessage> (AccountId);
+            folder1.Link (email);
+            var map = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode (AccountId,
+                          folder1.Id, email.Id, McAbstrFolderEntry.ClassCodeEnum.Email);
+            Assert.AreEqual (66, folder1.AsSyncEpoch);
+            Assert.AreEqual (66, map.AsSyncEpoch);
+            folder1 = folder1.UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.AsSyncEpoch++;
+                return true;
+            });
+            folder1.UpdateLink (email);
+            map = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode (AccountId,
+                folder1.Id, email.Id, McAbstrFolderEntry.ClassCodeEnum.Email);
+            Assert.AreEqual (67, map.AsSyncEpoch);
+        }
+
+        [Test]
+        public void TestPerformSyncEpochScrub ()
+        {
+            // Setup pre-existing folder + email.
+            McFolder folder1 = FolderOps.CreateFolder (AccountId);
+            folder1 = folder1.UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.AsSyncEpoch = 77;
+                return true;
+            });
+            McEmailMessage email1 = FolderOps.CreateUniqueItem<McEmailMessage> (AccountId);
+            folder1.Link (email1);
+            // Bump to next epoch, and add 2nd email.
+            folder1 = folder1.UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.AsSyncEpoch++;
+                return true;
+            });
+            McEmailMessage email2 = FolderOps.CreateUniqueItem<McEmailMessage> (AccountId, serverId:"6");
+            folder1.Link (email2);
+            // Do the scrub.
+            folder1.PerformSyncEpochScrub (testRunSync:true);
+            // 1st email is gone.
+            var dead = McEmailMessage.QueryById<McEmailMessage> (email1.Id);
+            Assert.IsNull (dead);
+            var mapMissing = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode (AccountId,
+                                 folder1.Id, email1.Id, McAbstrFolderEntry.ClassCodeEnum.Email);
+            Assert.IsNull (mapMissing);
+            // 2nd email is still there.
+            var live = McEmailMessage.QueryById<McEmailMessage> (email2.Id);
+            Assert.IsNotNull (live);
+            Assert.AreEqual (live.Id, email2.Id);
+            var mapFound = McMapFolderFolderEntry.QueryByFolderIdFolderEntryIdClassCode (AccountId,
+                folder1.Id, email2.Id, McAbstrFolderEntry.ClassCodeEnum.Email);
+            Assert.IsNotNull (mapFound);
+            Assert.AreEqual (email2.Id, mapFound.FolderEntryId);
+            Assert.AreEqual (folder1.Id, mapFound.FolderId);
+        }
+
+        [Test]
+        public void TestQueryOldEpochByFolderId ()
+        {
+            // excluded items: wrong account, IsAwaitingDelete, wrong folder, current epoch.
+            McFolder folder1 = FolderOps.CreateFolder (AccountId);
+            folder1 = folder1.UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.AsSyncEpoch = 99;
+                return true;
+            });
+            // email1 & email2 are included.
+            McEmailMessage email1 = FolderOps.CreateUniqueItem<McEmailMessage> (AccountId);
+            folder1.Link (email1);
+            McEmailMessage email2 = FolderOps.CreateUniqueItem<McEmailMessage> (AccountId, serverId:"6");
+            folder1.Link (email2);
+            // bump to next epoch.
+            folder1 = folder1.UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.AsSyncEpoch++;
+                return true;
+            });
+            // email3 excluded (epoch).
+            McEmailMessage email3 = FolderOps.CreateUniqueItem<McEmailMessage> (AccountId, serverId:"7");
+            folder1.Link (email3);
+            // email4 excluded (account).
+            FolderOps.CreateUniqueItem<McEmailMessage> (AccountId, serverId:"8");
+            McFolder folder2 = FolderOps.CreateFolder (AccountId);
+            folder2 = folder2.UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.AsSyncEpoch = 99;
+                return true;
+            });
+            // email5 excluded (folder).
+            McEmailMessage email5 = FolderOps.CreateUniqueItem<McEmailMessage> (AccountId, serverId:"9");
+            folder2.Link (email5);
+            // email6 excluded (IsAwaitingDelete).
+            McEmailMessage email6 = FolderOps.CreateUniqueItem<McEmailMessage> (AccountId, serverId:"10");
+            email6.IsAwaitingDelete = true;
+            email6.Update ();
+            folder1.Link (email6);
+
+            var oldies = McEmailMessage.QueryOldEpochByFolderId<McEmailMessage> 
+                (AccountId, folder1.Id, folder1.AsSyncEpoch, 100);
+            Assert.AreEqual (2, oldies.Count);
+            var arr = oldies.ToArray ();
+            Assert.IsTrue (email1.Id == arr [0].Id || email1.Id == arr [1].Id);
+            Assert.IsTrue (email2.Id == arr [0].Id || email2.Id == arr [1].Id);
+            Assert.AreNotEqual (arr [0].Id, arr [1].Id);
+            oldies = McEmailMessage.QueryOldEpochByFolderId<McEmailMessage> 
+                (AccountId, folder1.Id, folder1.AsSyncEpoch, 1);
+            Assert.AreEqual (1, oldies.Count);
+            arr = oldies.ToArray ();
+            Assert.IsTrue (email1.Id == arr [0].Id || email2.Id == arr [0].Id);
+        }
+    }
 }

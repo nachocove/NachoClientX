@@ -21,8 +21,14 @@ namespace NachoCore
             if (src.Id == folder.Id) {
                 return;
             }
-
             BackEnd.Instance.MoveEmailCmd (message.AccountId, message.Id, folder.Id);
+        }
+
+        public static void Move (McEmailMessageThread thread, McFolder folder)
+        {
+            foreach (var message in thread) {
+                Move (message, folder);
+            }
         }
 
         public static void Archive (McEmailMessage message)
@@ -31,10 +37,23 @@ namespace NachoCore
             BackEnd.Instance.MoveEmailCmd (message.AccountId, message.Id, archiveFolder.Id);
         }
 
+        public static void Archive (McEmailMessageThread thread)
+        {
+            foreach (var message in thread) {
+                Archive (message);
+            }
+        }
+
         public static void Delete (McEmailMessage message)
         {
             BackEnd.Instance.DeleteEmailCmd (message.AccountId, message.Id);
         }
+
+        public static void Delete (McEmailMessageThread thread)
+        {
+            foreach (var message in thread) {
+                Delete (message);
+            }
+        }
     }
 }
-

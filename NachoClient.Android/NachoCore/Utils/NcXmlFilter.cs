@@ -1,6 +1,7 @@
 //  Copyright (C) 2014 Nacho Cove, Inc. All rights reserved.
 //
 using System;
+using System.Collections.Concurrent;
 using System.Xml;
 using System.Xml.Linq;
 using System.Threading;
@@ -63,8 +64,31 @@ namespace NachoCore.Wbxml
 
     public class NcXmlFilter
     {
-        public static string[] DEFAULT_NO_REDACTION_VALUES = new string[1] {
-            "Inbox"
+        public static string[] DEFAULT_NO_REDACTION_VALUES = new string[] {
+            "Inbox",
+            "Contact:DEFAULT",
+            "Event:DEFAULT",
+            "Mail:^sync_gmail_group",
+            "Mail:DEFAULT",
+            "Mail:^k",
+            "Mail:^r",
+            "Mail:^f",
+            "Mail:^t",
+            "Mail:^s",
+            "Mail:^all",
+            "00000000-0000-0000-0000-000000000001",
+            "00000000-0000-0000-0000-000000000002",
+            "00000000-0000-0000-0000-000000000003",
+            "00000000-0000-0000-0000-000000000004",
+            "00000000-0000-0000-0000-000000000005",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
         };
 
         public string[] NoRedactionValues = DEFAULT_NO_REDACTION_VALUES;
@@ -230,12 +254,12 @@ namespace NachoCore.Wbxml
             CToken = cToken;
         }
 
-        private Boolean IsElement (XNode node)
+        private static Boolean IsElement (XNode node)
         {
             return ((null != node) && (XmlNodeType.Element == node.NodeType));
         }
 
-        private Boolean IsContent (XNode node)
+        private static Boolean IsContent (XNode node)
         {
             return ((XmlNodeType.Text == node.NodeType) || (XmlNodeType.CDATA == node.NodeType));
         }
@@ -320,7 +344,7 @@ namespace NachoCore.Wbxml
             return newElement;
         }
 
-        private string GetContentValue (XNode content)
+        private static string GetContentValue (XNode content)
         {
             NcAssert.True (IsContent (content));
             if (XmlNodeType.Text == content.NodeType) {
@@ -335,17 +359,41 @@ namespace NachoCore.Wbxml
             return null; // unreachable. but keep compiler happy
         }
 
-        private int GetContentLength (XNode content)
+        private static int GetContentLength (XNode content)
         {
             var value = GetContentValue (content);
             return value.Length;
         }
 
-        private string GetSha256Hash (XNode content, out int contentLen)
+        static ConcurrentDictionary<string,string> HashCache = new ConcurrentDictionary<string, string> ();
+
+        public static string ShortHash (XNode content, out int contentLen)
         {
             var value = GetContentValue (content);
             contentLen = value.Length;
-            var hash = HashHelper.Sha256 (value);
+            return ShortHash (value);
+        }
+
+        public static string ShortHash (string value)
+        {
+            var hash = FullHash (value).Substring (0, 6);
+            return hash;
+        }
+
+        public static string FullHash (XNode content, out int contentLen)
+        {
+            var value = GetContentValue (content);
+            contentLen = value.Length;
+            return FullHash (value);
+        }
+
+        public static string FullHash (string value)
+        {
+            string hash;
+            if (!HashCache.TryGetValue(value, out hash)) {
+                hash = HashHelper.Sha256 (value);
+                HashCache.TryAdd (value, hash);
+            }
             return hash;
         }
 
@@ -367,11 +415,11 @@ namespace NachoCore.Wbxml
                 value = String.Format ("[{0} redacted bytes]", GetContentLength (origContent));
                 break;
             case RedactionType.SHORT_HASH:
-                hash = GetSha256Hash (origContent, out contentLen);
-                value = String.Format ("[{0} redacted bytes] {1}", contentLen, hash.Substring (0, 6));
+                hash = ShortHash (origContent, out contentLen);
+                value = String.Format ("[{0} redacted bytes] {1}", contentLen, hash);
                 break;
             case RedactionType.FULL_HASH:
-                hash = GetSha256Hash (origContent, out contentLen);
+                hash = FullHash (origContent, out contentLen);
                 value = String.Format ("[{0} redacted bytes] {1}", contentLen, hash);
                 break;
             case RedactionType.NONE:

@@ -1349,6 +1349,7 @@ namespace NachoClient.iOS
                 folder.Link (c);
                 BackEnd.Instance.CreateCalCmd (account.Id, c.Id, folder.Id);
             } else {
+                c.RecurrencesGeneratedUntil = DateTime.MinValue; // Force regeneration of events
                 c.Update ();
                 var oldFolder = GetCalendarFolder ();
                 var newFolder = calendars.GetFolder (calendarIndex);
@@ -1360,11 +1361,6 @@ namespace NachoClient.iOS
                 BackEnd.Instance.UpdateCalCmd (account.Id, c.Id);
             }
             c = McCalendar.QueryById<McCalendar> (c.Id);
-            CalendarHelper.UpdateRecurrences (c);
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged),
-                Account = NachoCore.Model.ConstMcAccount.NotAccountSpecific,
-            });
         }
 
         protected void DeleteEvent ()

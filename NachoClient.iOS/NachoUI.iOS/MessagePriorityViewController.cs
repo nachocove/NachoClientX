@@ -84,9 +84,9 @@ namespace NachoClient.iOS
 
             if (DateControllerType.Defer == dateControllerType) {
                 UILabel messageSubject = new UILabel (new CGRect (30, yOffset, View.Frame.Width - 60, 25));
-                var message = thread.SingleMessageSpecialCase ();
-                if (null != message) {
-                    messageSubject.Text = Pretty.SubjectString(message.Subject);
+                var subject = thread.GetSubject ();
+                if (null != subject) {
+                    messageSubject.Text = Pretty.SubjectString(subject);
                 } else {
                     messageSubject.Text = "";
                 }

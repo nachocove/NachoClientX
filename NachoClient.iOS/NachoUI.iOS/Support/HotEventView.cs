@@ -96,9 +96,11 @@ namespace NachoClient.iOS
             });
             this.AddGestureRecognizer (tapRecognizer);
 
-            Configure ();
-
             NcApplication.Instance.StatusIndEvent += StatusIndicatorCallback;
+            // Have the event manager keep the McEvents accurate for at least the next seven days.
+            NcEventManager.AddEventWindow (this, new TimeSpan (7, 0, 0, 0));
+
+            Configure ();
         }
 
         public void Configure ()
@@ -110,16 +112,12 @@ namespace NachoClient.iOS
         private void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var statusEvent = (StatusIndEventArgs)e;
-            if (NcResult.SubKindEnum.Info_CalendarSetChanged == statusEvent.Status.SubKind) {
-                CalendarHelper.ExpandRecurrences (DateTime.UtcNow.AddDays (7));
+
+            switch (statusEvent.Status.SubKind) {
+
+            case NcResult.SubKindEnum.Info_EventSetChanged:
                 Configure ();
-            }
-            if (NcResult.SubKindEnum.Info_CalendarChanged == statusEvent.Status.SubKind) {
-                CalendarHelper.ExpandRecurrences (DateTime.UtcNow.AddDays (7));
-                Configure ();
-            }
-            if (NcResult.SubKindEnum.Info_EventSetChanged == statusEvent.Status.SubKind) {
-                Configure ();
+                break;
             }
         }
 

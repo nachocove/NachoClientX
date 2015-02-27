@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Xml.Linq;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -187,7 +188,7 @@ namespace NachoCore.ActiveSync
             PendingList.Remove (pending);
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
+        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
         {
             var xmlStatus = doc.Root.Element (m_ns + Xml.ItemOperations.Status);
             var outerStatus = (Xml.ItemOperations.StatusCode)uint.Parse (xmlStatus.Value);

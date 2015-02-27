@@ -11,7 +11,7 @@ using NachoCore.Brain;
 namespace NachoCore.Model
 {
     public partial class McEmailAddress : McAbstrObjectPerAcc, IScorable
-    {   
+    {
         // Score version of this object
         [Indexed]
         public int ScoreVersion { get; set; }
@@ -30,7 +30,7 @@ namespace NachoCore.Model
 
         // DO NOT update these fields directly. Use IncrementXXX methods instead.
         // Otherwise, the delta will not be saved correctly. ORM does not allow
-        // private property so there is no way to use a public property with 
+        // private property so there is no way to use a public property with
         // customized getters to read of a private property.
 
         // Number of emails receivied
@@ -118,7 +118,7 @@ namespace NachoCore.Model
             // TODO - mark dependent meetings later
         }
 
-        public void IncrementEmailsReceived (int count=1)
+        public void IncrementEmailsReceived (int count = 1)
         {
             EmailsReceived += count;
             GetScoreSyncInfo ();
@@ -126,7 +126,7 @@ namespace NachoCore.Model
             MarkDependencies ();
         }
 
-        public void IncrementEmailsRead (int count=1)
+        public void IncrementEmailsRead (int count = 1)
         {
             EmailsRead += count;
             GetScoreSyncInfo ();
@@ -134,7 +134,7 @@ namespace NachoCore.Model
             MarkDependencies ();
         }
 
-        public void IncrementEmailsReplied (int count=1)
+        public void IncrementEmailsReplied (int count = 1)
         {
             EmailsReplied += count;
             GetScoreSyncInfo ();
@@ -142,7 +142,7 @@ namespace NachoCore.Model
             MarkDependencies ();
         }
 
-        public void IncrementEmailsArchived (int count=1)
+        public void IncrementEmailsArchived (int count = 1)
         {
             EmailsArchived += count;
             GetScoreSyncInfo ();
@@ -150,7 +150,7 @@ namespace NachoCore.Model
             MarkDependencies ();
         }
 
-        public void IncrementEmailsDeleted (int count=1)
+        public void IncrementEmailsDeleted (int count = 1)
         {
             EmailsDeleted += count;
             GetScoreSyncInfo ();
@@ -223,7 +223,7 @@ namespace NachoCore.Model
         public static McEmailAddress QueryNeedUpdate ()
         {
             return NcModel.Instance.Db.Table<McEmailAddress> ()
-                .Where (x => x.NeedUpdate)
+                .Where (x => x.NeedUpdate && x.ScoreVersion == Scoring.Version)
                 .FirstOrDefault ();
         }
 

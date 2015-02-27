@@ -1230,7 +1230,15 @@ namespace NachoCore.ActiveSync
             var cmd = Sm.Arg as AsCommand;
             if (null == cmd) {
                 Log.Info (Log.LOG_AS, "DoSync: not from Pick.");
-                cmd = new AsSyncCommand (this, SyncStrategy.GenSyncKit (AccountId, ProtocolState, true));
+                var syncKit = SyncStrategy.GenSyncKit (AccountId, ProtocolState);
+                if (null != syncKit) {
+                    cmd = new AsSyncCommand (this, syncKit);
+                } else {
+                    // Something is wrong. Do a FolderSync, and hope it gets better.
+                    Log.Error (Log.LOG_AS, "DoSync: got a null SyncKit.");
+                    Sm.PostEvent ((uint)CtlEvt.E.ReFSync, "PCFSYNCNULL");
+                    return;
+                }
             }
             SetCmd (cmd);
             ExecuteCmd ();

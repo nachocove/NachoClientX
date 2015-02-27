@@ -47,11 +47,14 @@ namespace NachoCore.ActiveSync
                 mcContact.IsIncomplete = true;
             }
             if (null == existingContact) {
-                var ur = mcContact.Insert ();
-                folder.Link (mcContact);
-                NcAssert.True (0 < ur, "mcContact.Insert");
+                NcModel.Instance.RunInTransaction (() => {
+                    var ur = mcContact.Insert ();
+                    NcAssert.True (0 < ur, "mcContact.Insert");
+                    folder.Link (mcContact);
+                });
             } else {
                 mcContact.Id = existingContact.Id;
+                folder.UpdateLink (mcContact);
                 var ur = mcContact.Update ();
                 NcAssert.True (0 < ur, "mcContact.Update");
             }

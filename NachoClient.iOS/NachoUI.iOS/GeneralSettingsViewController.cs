@@ -39,15 +39,17 @@ namespace NachoClient.iOS
         {
             base.ViewDidLoad ();
 
-            if (this.NavigationController.RespondsToSelector (new ObjCRuntime.Selector ("interactivePopGestureRecognizer"))) {
-                this.NavigationController.InteractivePopGestureRecognizer.Enabled = false;
-            }
             NavigationItem.Title = "Settings";
         }
 
         public override void ViewWillAppear (bool animated)
         {
             base.ViewWillAppear (animated);
+            if (this.NavigationController.RespondsToSelector (new ObjCRuntime.Selector ("interactivePopGestureRecognizer"))) {
+                this.NavigationController.InteractivePopGestureRecognizer.Enabled = true;
+                this.NavigationController.InteractivePopGestureRecognizer.Delegate = null;
+            }
+
         }
 
         public override void ViewDidAppear (bool animated)

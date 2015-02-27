@@ -21,7 +21,7 @@ namespace NachoCore.ActiveSync
             return false;
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
+        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, CancellationToken cToken)
         {
             if (ProcessOptionsHeaders (response.Headers, BEContext)) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_AsOptionsSuccess));

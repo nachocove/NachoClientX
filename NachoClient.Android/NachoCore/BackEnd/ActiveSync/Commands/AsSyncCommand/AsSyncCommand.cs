@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Xml.Linq;
 using NachoCore.Model;
 using NachoCore.Utils;
+using NachoCore.Wbxml;
 using System.IO;
 
 namespace NachoCore.ActiveSync
@@ -424,10 +426,11 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
+        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
         {
             List<McFolder> SawMoreAvailableNoCommands = new List<McFolder> ();
             bool SawCommandsInAnyFolder = false;
+            bool HasBeenCancelled = false;
             List<McFolder> processedFolders = new List<McFolder> ();
             var xmlLimit = doc.Root.Element (m_ns + Xml.AirSync.Limit);
             if (null != xmlLimit) {
@@ -442,6 +445,9 @@ namespace NachoCore.ActiveSync
             var collections = xmlCollections.Elements (m_ns + Xml.AirSync.Collection);
             // Note: we may get back zero Collection items.
             foreach (var collection in collections) {
+                // Check for cancellation at the start of processing a folder for consistency in processing each folder.
+                // Even if we have been cancelled, we still process command-responses and status of pending to-server ops.
+                HasBeenCancelled = cToken.IsCancellationRequested;
                 List<McPending> pendingInFolder;
                 // Note: CollectionId, Status and SyncKey are required to be present.
                 var serverId = collection.Element (m_ns + Xml.AirSync.CollectionId).Value;
@@ -458,34 +464,39 @@ namespace NachoCore.ActiveSync
                     SawCommandsInAnyFolder = true;
                 }
                 var xmlStatus = collection.Element (m_ns + Xml.AirSync.Status);
-                // The protocol requires SyncKey, but GOOG does not obey in the StatusCode.NotFound case.
-                if (null != xmlSyncKey) {
-                    var now = DateTime.UtcNow;
-                    folder = folder.UpdateWithOCApply<McFolder> ((record) => {
-                        var target = (McFolder)record;
-                        target.AsSyncKey = xmlSyncKey.Value;
-                        target.AsSyncMetaToClientExpected = (McFolder.AsSyncKey_Initial == oldSyncKey) || (null != xmlMoreAvailable);
-                        if (null != xmlCommands) {
-                            target.HasSeenServerCommand = true;
-                        }
-                        target.SyncAttemptCount += 1;
-                        target.LastSyncAttempt = now;
-                        return true;
-                    });
+                if (HasBeenCancelled) {
+                    Log.Info (Log.LOG_HTTP, "Bypassing folder update and commands due to cancellation: {0}", NcXmlFilterState.ShortHash (folder.ServerId));
                 } else {
-                    Log.Warn (Log.LOG_SYNC, "SyncKey missing from XML.");
+                    // The protocol requires SyncKey, but GOOG does not obey in the StatusCode.NotFound case.
+                    // If we have been cancelled, don't advance sync state for the folder.
+                    if (null != xmlSyncKey) {
+                        var now = DateTime.UtcNow;
+                        folder = folder.UpdateWithOCApply<McFolder> ((record) => {
+                            var target = (McFolder)record;
+                            target.AsSyncKey = xmlSyncKey.Value;
+                            target.AsSyncMetaToClientExpected = (McFolder.AsSyncKey_Initial == oldSyncKey) || (null != xmlMoreAvailable);
+                            if (null != xmlCommands) {
+                                target.HasSeenServerCommand = true;
+                            }
+                            target.SyncAttemptCount += 1;
+                            target.LastSyncAttempt = now;
+                            return true;
+                        });
+                    } else {
+                        Log.Warn (Log.LOG_SYNC, "SyncKey missing from XML.");
+                    }
+                    Log.Info (Log.LOG_SYNC, "MoreAvailable presence {0}", (null != xmlMoreAvailable));
+                    Log.Info (Log.LOG_SYNC, "Folder:{0}, Old SyncKey:{1}, New SyncKey:{2}", NcXmlFilterState.ShortHash (folder.ServerId), oldSyncKey, folder.AsSyncKey);
                 }
                 processedFolders.Add (folder);
-                Log.Info (Log.LOG_SYNC, "MoreAvailable presence {0}", (null != xmlMoreAvailable));
-                Log.Info (Log.LOG_SYNC, "Folder:{0}, Old SyncKey:{1}, New SyncKey:{2}", folder.ServerId, oldSyncKey, folder.AsSyncKey);
                 var status = (Xml.AirSync.StatusCode)uint.Parse (xmlStatus.Value);
                 switch (status) {
                 case Xml.AirSync.StatusCode.Success_1:
                     var xmlResponses = collection.Element (m_ns + Xml.AirSync.Responses);
                     ProcessCollectionResponses (folder, xmlResponses);
-
-                    ProcessCollectionCommands (folder, xmlCommands);
-
+                    if (!HasBeenCancelled) {
+                        ProcessCollectionCommands (folder, xmlCommands);
+                    }
                     lock (PendingResolveLockObj) {
                         // Any pending not already resolved gets resolved as Success.
                         pendingInFolder = PendingList.Where (x => x.ParentId == folder.ServerId).ToList ();
@@ -494,11 +505,17 @@ namespace NachoCore.ActiveSync
                             pending.ResolveAsSuccess (BEContext.ProtoControl);
                         }
                     }
-                    if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == folder.Type) {
-                        var protocolState = BEContext.ProtocolState;
-                        if (!protocolState.HasSyncedInbox) {
-                            protocolState.HasSyncedInbox = true;
-                            protocolState.Update ();
+                    if (!HasBeenCancelled) {
+                        if (Xml.FolderHierarchy.TypeCode.DefaultInbox_2 == folder.Type) {
+                            var protocolState = BEContext.ProtocolState;
+                            if (!protocolState.HasSyncedInbox) {
+                                protocolState.HasSyncedInbox = true;
+                                protocolState.Update ();
+                            }
+                        }
+                        // If we have been cancelled, this sync can't cause an epoch scrub.
+                        if (folder.AsSyncEpochScrubNeeded && !folder.AsSyncMetaToClientExpected) {
+                            folder.PerformSyncEpochScrub ();
                         }
                     }
                     break;
@@ -594,13 +611,14 @@ namespace NachoCore.ActiveSync
             // If we're getting MoreAvailable with NO Command(s) for the entire Sync, this may be an Error.
             if (0 != SawMoreAvailableNoCommands.Count && !SawCommandsInAnyFolder) {
                 foreach (var errFolder in SawMoreAvailableNoCommands) {
-                    Log.Error (Log.LOG_AS, "AsSyncCommand: MoreAvailable with no commands in folder ServerId {0}.", errFolder.ServerId);
+                    // We've seen this be innocuous in Office365.
+                    // http://localhost:8000/bugfix/alpha/logs/us-east-1:d4d26796-9ff3-4d36-bfee-f7e4138c0237/2015-02-20T01:11:29.955Z/1/
+                    Log.Warn (Log.LOG_AS, "AsSyncCommand: MoreAvailable with no commands in folder ServerId {0}.", errFolder.ServerId);
                 }
             }
 
             // For any folders missing from the response, we need to note that there isn't more on the server-side.
             // Remember the loop above re-writes folders, so FoldersInRequest object will be stale!
-            List<McFolder> reloadedFolders = new List<McFolder> ();
             foreach (var maybeStale in FoldersInRequest) {
                 var folder = McFolder.ServerEndQueryById (maybeStale.Id);
                 if (0 == processedFolders.Where (f => folder.Id == f.Id).Count ()) {
@@ -610,7 +628,6 @@ namespace NachoCore.ActiveSync
                     // I suspect it may have been driven by GOOG doing the opposite - omitting when there is nothing. We will have to test and see.
                     Log.Info (Log.LOG_AS, "McFolder {0} not included in Sync response.", folder.ServerId);
                 }
-                reloadedFolders.Add (folder);
             }
             if (HadEmailMessageSetChanges) {
                 BEContext.ProtoControl.StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
@@ -665,7 +682,7 @@ namespace NachoCore.ActiveSync
         }
 
         // Called when we get an empty Sync response body.
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response)
+        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, CancellationToken cToken)
         {
             // FoldersInRequest NOT stale here.
             var now = DateTime.UtcNow;

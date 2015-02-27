@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Xml.Linq;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -29,7 +30,7 @@ namespace NachoCore.ActiveSync
             return doc;
         }
 
-        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc)
+        public override Event ProcessResponse (AsHttpOperation Sender, HttpResponseMessage response, XDocument doc, CancellationToken cToken)
         {
             McProtocolState protocolState = BEContext.ProtocolState;
             var status = (Xml.FolderHierarchy.FolderSyncStatusCode)Convert.ToUInt32 (doc.Root.Element (m_ns + Xml.FolderHierarchy.Status).Value);
@@ -146,7 +147,7 @@ namespace NachoCore.ActiveSync
             Log.Info (Log.LOG_AS, "PerformFolderSyncEpochScrub: {0} folders.", orphaned.Count);
             foreach (var iterFolder in orphaned) {
                 var folder = iterFolder;
-                Log.Info (Log.LOG_AS, "PerformFolderSyncEpochScrub: moving old {0} under LAF.", folder.DisplayName);
+                Log.Info (Log.LOG_AS, "PerformFolderSyncEpochScrub: moving old folder {0} under LAF.", folder.Id);
                 // If an Add command from the server re-used this folder's ServerId, then
                 // we changed that server id to a GUID when applying the Add to the model.
                 folder = folder.UpdateWithOCApply<McFolder> ((record) => {

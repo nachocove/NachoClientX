@@ -1042,12 +1042,6 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\McEvent.cs">
       <Link>NachoCore\Model\McEvent.cs</Link>
     </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoEvents.cs">
-      <Link>NachoCore\Adapters\NachoEvents.cs</Link>
-    </Compile>
-    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcEventsCommon.cs">
-      <Link>NachoCore\Adapters\NcEventsCommon.cs</Link>
-    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Adapters\INcEventProvider.cs">
       <Link>NachoCore\Adapters\INcEventProvider.cs</Link>
     </Compile>
@@ -1228,6 +1222,12 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration3.cs">
       <Link>NachoCore\Model\Migration\NcMigration3.cs</Link>
     </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcObjectParser.cs">
+      <Link>NachoCore\Brain\NcObjectParser.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcTokenizer.cs">
+      <Link>NachoCore\Brain\NcTokenizer.cs</Link>
+    </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration4.cs">
       <Link>NachoCore\Model\Migration\NcMigration4.cs</Link>
     </Compile>
@@ -1242,6 +1242,27 @@
     </Compile>
     <Compile Include="..\NachoClient.Android\NachoCore\BackEnd\PushAssistJson.cs">
       <Link>NachoCore\BackEnd\PushAssistJson.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NcEventsCalendarMap.cs">
+      <Link>NachoCore\Adapters\NcEventsCalendarMap.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration5.cs">
+      <Link>NachoCore\Model\Migration\NcMigration5.cs</Link>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Brain\NcBrainActions.cs">
+      <Link>NachoCore\Brain\NcBrainActions.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\MessageThreadViewController.cs" />
+    <Compile Include="NachoUI.iOS\MessageThreadViewController.designer.cs">
+      <DependentUpon>MessageThreadViewController.cs</DependentUpon>
+    </Compile>
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoThreadedEmailMessages.cs">
+      <Link>NachoCore\Adapters\NachoThreadedEmailMessages.cs</Link>
+    </Compile>
+    <Compile Include="NachoUI.iOS\Interfaces\INachoMessageViewer.cs" />
+    <Compile Include="NachoCore\Model\Migration\NcMigration6.cs" />
+    <Compile Include="..\NachoClient.Android\NachoCore\Adapters\NachoMessageSearchResults.cs">
+      <Link>NachoCore\Adapters\NachoMessageSearchResults.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -2098,6 +2119,8 @@
     <BundleResource Include="Resources\modal-nextmonth%406x.png" />
     <BundleResource Include="Resources\modal-weekend-active%406x.png" />
     <BundleResource Include="Resources\modal-weekend%406x.png" />
+    <BundleResource Include="Resources\email-hot-thread%402x.png" />
+    <BundleResource Include="Resources\email-not-hot-thread%402x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
@@ -2135,6 +2158,10 @@
     <ProjectReference Include="..\..\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding\NachoPlatformBinding.csproj">
       <Project>{70C6ECB5-6358-4DB8-915F-3ADC31C39E4E}</Project>
       <Name>NachoPlatformBinding</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\MobileHtmlAgilityPack\MobileHtmlAgilityPack.csproj">
+      <Project>{D91DC8A9-454E-4CB9-96BE-19652A67D0A4}</Project>
+      <Name>MobileHtmlAgilityPack</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

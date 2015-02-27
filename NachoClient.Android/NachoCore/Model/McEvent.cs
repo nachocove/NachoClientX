@@ -6,9 +6,18 @@ using SQLite;
 using NachoCore.Model;
 using NachoCore.Utils;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace NachoCore.Model
 {
+    /// <summary>
+    /// For queries that only need the McEvent ID, not the entire object.
+    /// </summary>
+    public class NcEventIndex
+    {
+        public int Id { set; get; }
+    }
+
     public class McEvent : McAbstrObjectPerAcc
     {
         public McEvent ()
@@ -40,9 +49,11 @@ namespace NachoCore.Model
             e.CalendarId = calendarId;
             e.ExceptionId = exceptionId;
             e.Insert ();
-            NachoCore.Utils.Log.Info (Utils.Log.LOG_DB, "McEvent create: {0} {1}", startTime, calendarId);
-            if (0 != exceptionId) {
-                NachoCore.Utils.Log.Info (Utils.Log.LOG_DB, "McException found: eventId={0} exceptionId={1}", e.Id, exceptionId);
+            if (0 == exceptionId) {
+                NachoCore.Utils.Log.Info (Utils.Log.LOG_DB, "McEvent create: {0} {1} {2}", startTime, e.Id, calendarId);
+            } else {
+                NachoCore.Utils.Log.Info (Utils.Log.LOG_DB, "McEvent create with exception: {0} {1} {2} {3}",
+                    startTime, e.Id, exceptionId, calendarId);
             }
             return e;
         }
@@ -69,9 +80,16 @@ namespace NachoCore.Model
             }
         }
 
+        /// <summary>
+        /// Return the event that is currently in progress, or the next one to start.
+        /// Ignore events associated with a canceled meeting.  Ignore events that are
+        /// more than a week away.  Return null if no event is found.
+        /// </summary>
         public static McEvent GetCurrentOrNextEvent()
         {
-            foreach (var evt in NcModel.Instance.Db.Table<McEvent> ().Where (x => x.EndTime >= DateTime.UtcNow).OrderBy (x => x.StartTime)) {
+            DateTime now = DateTime.UtcNow;
+            DateTime weekInFuture = now + new TimeSpan (7, 0, 0, 0);
+            foreach (var evt in NcModel.Instance.Db.Table<McEvent> ().Where (x => x.EndTime >= now && x.StartTime < weekInFuture).OrderBy (x => x.StartTime)) {
                 var cal = evt.GetCalendarItemforEvent ();
                 if (null != cal && NcMeetingStatus.MeetingCancelled != cal.MeetingStatus && NcMeetingStatus.ForwardedMeetingCancelled != cal.MeetingStatus) {
                     // An event that hasn't been canceled.  This is what we are looking for.
@@ -83,6 +101,14 @@ namespace NachoCore.Model
         }
 
         /// <summary>
+        /// All events in the database in chronological order.
+        /// </summary>
+        public static List<McEvent> QueryAllEventsInOrder ()
+        {
+            return NcModel.Instance.Db.Table<McEvent> ().OrderBy (v => v.StartTime).ToList ();
+        }
+
+        /// <summary>
         /// All events that have a reminder time within the given range, ordered by reminder time.
         /// </summary>
         public static IEnumerable<McEvent> QueryEventsWithRemindersInRange (DateTime start, DateTime end)
@@ -90,6 +116,36 @@ namespace NachoCore.Model
             return NcModel.Instance.Db.Table<McEvent> ()
                 .Where (e => start <= e.ReminderTime && e.ReminderTime < end)
                 .OrderBy (e => e.ReminderTime);
+        }
+
+        /// <summary>
+        /// All events associated wih the given calendar item that start after the given date.
+        /// </summary>
+        public static IEnumerable<McEvent> QueryEventsForCalendarItemAfter (int calendarId, DateTime after)
+        {
+            return NcModel.Instance.Db.Table<McEvent> ()
+                .Where (e => e.CalendarId == calendarId && e.StartTime > after);
+        }
+
+        /// <summary>
+        /// Return the IDs for all of the McEvents associated with the given calendar item.
+        /// </summary>
+        public static List<NcEventIndex> QueryEventIdsForCalendarItem (int calendarId)
+        {
+            return NcModel.Instance.Db.Query<NcEventIndex> (
+                "SELECT e.Id as Id FROM McEvent AS e WHERE e.CalendarId = ?", calendarId);
+        }
+
+        /// <summary>
+        /// Delete all the McEvents associated with the given calendar item. This method does not cancel
+        /// any local notifications for the events.  Callers of this method must handle local notification
+        /// cancelation themselves.
+        /// </summary>
+        /// <returns>The number of McEvents that were deleted.</returns>
+        public static int DeleteEventsForCalendarItem (int calendarId)
+        {
+            return NcModel.Instance.Db.Execute (
+                "DELETE FROM McEvent WHERE CalendarId = ?", calendarId);
         }
     }
 }

@@ -964,97 +964,98 @@ namespace NachoCore.Utils
             DateTime localStartTime = new DateTime (organizersTime.Year, organizersTime.Month, organizersTime.Day, 0, 0, 0, DateTimeKind.Local);
             double days = (end - start).TotalDays;
 
-            Action createEvents = delegate() {
-                // Use a do/while loop so we will always create at least one event, even if
-                // the original item is improperly less than one day long.  If the all-day
-                // event spans the transition from daylight saving time to standard time,
-                // then it will have an extra hour in its duration.  So the cutoff for
-                // creating an extra event is a quarter of a day.
-                McAbstrCalendarRoot reminderItem = (McAbstrCalendarRoot)exception ?? c;
-                bool needsReminder = reminderItem.ReminderIsSet;
-                int exceptionId = null == exception ? 0 : exception.Id;
-                do {
-                    DateTime nextDay = localStartTime.AddDays (1.0);
-                    var ev = McEvent.Create (c.AccountId, localStartTime.ToUniversalTime (), nextDay.ToUniversalTime (), c.Id, exceptionId);
-                    if (needsReminder) {
-                        ev.SetReminder (reminderItem.Reminder);
-                        needsReminder = false; // Only the first day should have a reminder.
-                    }
-                    localStartTime = nextDay;
-                    days -= 1.0;
-                    NcTask.Cts.Token.ThrowIfCancellationRequested ();
-                } while (days > 0.25);
-            };
-
-            if (7.0 > days) {
-                // Less than a week long.  Create the events, usually just one event,
-                // right now in the current thread.  This is the normal case.
-                createEvents ();
-            } else {
-                // The event is at least a week long.  This should be very unusual.
-                // Create the events on a background thread so nothing is blocked.
-                NcTask.Run (createEvents, "ExpandAllDayEvent");
-            }
+            // Use a do/while loop so we will always create at least one event, even if
+            // the original item is improperly less than one day long.  If the all-day
+            // event spans the transition from daylight saving time to standard time,
+            // then it will have an extra hour in its duration.  So the cutoff for
+            // creating an extra event is a quarter of a day.
+            McAbstrCalendarRoot reminderItem = (McAbstrCalendarRoot)exception ?? c;
+            bool needsReminder = reminderItem.ReminderIsSet;
+            int exceptionId = null == exception ? 0 : exception.Id;
+            do {
+                DateTime nextDay = localStartTime.AddDays (1.0);
+                var ev = McEvent.Create (c.AccountId, localStartTime.ToUniversalTime (), nextDay.ToUniversalTime (), c.Id, exceptionId);
+                if (needsReminder) {
+                    ev.SetReminder (reminderItem.Reminder);
+                    needsReminder = false; // Only the first day should have a reminder.
+                }
+                localStartTime = nextDay;
+                days -= 1.0;
+                NcTask.Cts.Token.ThrowIfCancellationRequested ();
+            } while (days > 0.25);
         }
 
-        public static bool ExpandRecurrences (DateTime untilDate)
+        private static object expandRecurrencesLock = new object ();
+
+        /// <summary>
+        /// Create McEvents as necessary so that McEvents are accurate up through the given date.  If there
+        /// are any changes to the McEvents, an EventSetChanged status will be sent.  All work is done as a
+        /// task on a background thread; this method always returns immediately.
+        /// </summary>
+        public static void ExpandRecurrences (DateTime untilDate)
         {
-//            // Debug
-//            NcModel.Instance.Db.DeleteAll<McEvent> ();
-//            FIXME - if we choose to use DeleteAll, we need to add support for it in NcModel.
-//
-//            // Debug
-//            var l = NcModel.Instance.Db.Table<McCalendar> ().ToList ();
-//            foreach (var e in l) {
-//                e.RecurrencesGeneratedUntil = DateTime.MinValue;
-//                e.Update ();
-//            }
-//
-            // Decide how long into the future we are going to generate recurrences
-            DateTime GenerateUntil = untilDate;
+            NcTask.Run (delegate {
 
-            // Fetch calendar entries that haven't been generated that far in advance
-            var list = McCalendar.QueryOutOfDateRecurrences (GenerateUntil);
+                // Duplicate events may result if two instances of ExpandRecurrences are running at the same time.
+                lock (expandRecurrencesLock) {
 
-            // Abandon if nothing to do
-            if ((null == list) || (0 == list.Count)) {
-                return false;
-            }
+                    // Fetch calendar entries that haven't been generated that far in advance
+                    var list = McCalendar.QueryOutOfDateRecurrences (untilDate);
 
-            // Loop thru 'em, generating recurrences
-            foreach (var calendarItem in list) {
-                // Just add entries that don't have recurrences
-                if (0 == calendarItem.recurrences.Count) {
-                    if (calendarItem.AllDayEvent) {
-                        ExpandAllDayEvent (calendarItem, calendarItem.StartTime, calendarItem.EndTime);
-                    } else {
-                        CreateEventRecord (calendarItem, calendarItem.StartTime, calendarItem.EndTime);
+                    if (0 == list.Count) {
+                        // McEvents are up to date.  Nothing to do.
+                        return;
                     }
-                    calendarItem.RecurrencesGeneratedUntil = DateTime.MaxValue;
-                    calendarItem.Update ();
-                    continue;
-                }
-                var lastOneGeneratedAggregate = DateTime.MaxValue;
-                foreach (var recurrence in calendarItem.recurrences) {
-                    var lastOneGenerated = ExpandRecurrences (calendarItem, recurrence, calendarItem.RecurrencesGeneratedUntil, GenerateUntil);
-                    if (lastOneGeneratedAggregate > lastOneGenerated) {
-                        lastOneGeneratedAggregate = lastOneGenerated;
+
+                    foreach (var calendarItem in list) {
+
+                        NcTask.Cts.Token.ThrowIfCancellationRequested ();
+
+                        // Delete any existing events that are later than calendarItem.RecurrencesGeneratedUntil.
+                        // These events can exist for two reasons: (1) The app was killed while generating events
+                        // for this item. (2) The calendar item as edited and it RecurrencesGeneratedUntil was
+                        // reset.
+                        foreach (var evt in McEvent.QueryEventsForCalendarItemAfter (calendarItem.Id, calendarItem.RecurrencesGeneratedUntil)) {
+                            evt.Delete ();
+                        }
+
+                        if (0 == calendarItem.recurrences.Count) {
+
+                            // Non-recurring event.  Create one McEvent.
+                            if (calendarItem.AllDayEvent) {
+                                ExpandAllDayEvent (calendarItem, calendarItem.StartTime, calendarItem.EndTime);
+                            } else {
+                                CreateEventRecord (calendarItem, calendarItem.StartTime, calendarItem.EndTime);
+                            }
+                            calendarItem.RecurrencesGeneratedUntil = DateTime.MaxValue;
+                            calendarItem.Update ();
+
+                        } else {
+
+                            // Recurring event.  Create McEvents up through untilDate.
+                            var lastOneGeneratedAggregate = DateTime.MaxValue;
+                            foreach (var recurrence in calendarItem.recurrences) {
+                                var lastOneGenerated = ExpandRecurrences (
+                                    calendarItem, recurrence, calendarItem.RecurrencesGeneratedUntil, untilDate);
+                                if (lastOneGeneratedAggregate > lastOneGenerated) {
+                                    lastOneGeneratedAggregate = lastOneGenerated;
+                                }
+                            }
+                            calendarItem.RecurrencesGeneratedUntil = lastOneGeneratedAggregate;
+                            calendarItem.Update ();
+                        }
                     }
                 }
-                calendarItem.RecurrencesGeneratedUntil = lastOneGeneratedAggregate;
-                calendarItem.Update ();
-            }
 
-            var el = NcModel.Instance.Db.Table<McEvent> ().Count ();
-            Log.Info (Log.LOG_CALENDAR, "Events in db: {0}", el);
+                var el = NcModel.Instance.Db.Table<McEvent> ().Count ();
+                Log.Info (Log.LOG_CALENDAR, "Events in db: {0}", el);
 
-            NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () { 
-                Status = NachoCore.Utils.NcResult.Info (NcResult.SubKindEnum.Info_EventSetChanged),
-                Account = NachoCore.Model.ConstMcAccount.NotAccountSpecific,
-                Tokens = new String[] { DateTime.Now.ToString () },
-            });
-
-            return true;
+                NcApplication.Instance.InvokeStatusIndEvent (new StatusIndEventArgs () {
+                    Status = NcResult.Info (NcResult.SubKindEnum.Info_EventSetChanged),
+                    Account = ConstMcAccount.NotAccountSpecific,
+                    Tokens = new string[] { DateTime.Now.ToString () },
+                });
+            }, "ExpandRecurrences");
         }
 
         protected static void CreateEventRecord (McCalendar c, DateTime startTime, DateTime endTime)
@@ -1080,14 +1081,6 @@ namespace NachoCore.Utils
                     }
                 }
             }
-        }
-
-        public static void UpdateRecurrences (McCalendar c)
-        {
-            c.DeleteRelatedEvents ();
-            c.RecurrencesGeneratedUntil = DateTime.MinValue;
-            c.Update ();
-            NcEventManager.Instance.ExpandRecurrences ();
         }
 
         /// <summary>
