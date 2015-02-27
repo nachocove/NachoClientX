@@ -247,9 +247,11 @@ namespace NachoClient.iOS
         {
             // Download the body.
             if (item is McEmailMessage) {
-                downloadToken = BackEnd.Instance.DnldEmailBodyCmd (item.AccountId, item.Id, true);
+                // FIXMESJS
+                downloadToken = BackEnd.Instance.DnldEmailBodyCmd (item.AccountId, item.Id, true).GetValue<string> ();
             } else if (item is McAbstrCalendarRoot) {
-                downloadToken = BackEnd.Instance.DnldCalBodyCmd (item.AccountId, item.Id);
+                // FIXMESJS
+                downloadToken = BackEnd.Instance.DnldCalBodyCmd (item.AccountId, item.Id).GetValue<string> ();
             } else {
                 throw new NcAssert.NachoDefaultCaseFailure (string.Format (
                     "Unhandled abstract item type {0}", item.GetType ().Name));

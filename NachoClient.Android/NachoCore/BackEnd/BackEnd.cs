@@ -69,13 +69,13 @@ namespace NachoCore
             return Services.ContainsKey (accountId);
         }
 
-        private TResult ServiceFromAccountId<TResult> (int accountId, Func<ProtoControl, TResult> func)
+        private NcResult ServiceFromAccountId (int accountId, Func<ProtoControl, NcResult> func)
         {
             NcAssert.True (0 != accountId, "0 != accountId");
             ProtoControl protoCtrl;
             if (!Services.TryGetValue (accountId, out protoCtrl)) {
                 Log.Error (Log.LOG_SYS, "ServiceFromAccountId called with bad accountId {0}", accountId);
-                return default (TResult);
+                return NcResult.Error (NcResult.SubKindEnum.Error_AccountDoesNotExist);
             }
             return func (protoCtrl);
         }
@@ -124,9 +124,9 @@ namespace NachoCore
             if (!HasServiceFromAccountId (accountId)) {
                 EstablishService (accountId);
             }
-            ServiceFromAccountId<bool> (accountId, (service) => {
+            ServiceFromAccountId (accountId, (service) => {
                 service.ForceStop ();
-                return true;
+                return NcResult.OK ();
             });
         }
 
@@ -189,7 +189,7 @@ namespace NachoCore
             NcTask.Run (delegate {
                 ServiceFromAccountId (accountId, (service) => {
                     service.Execute ();
-                    return true;
+                    return NcResult.OK ();
                 });
             }, "Start");
             Log.Info (Log.LOG_LIFECYCLE, "BackEnd.Start({0}) exited", accountId);
@@ -200,7 +200,7 @@ namespace NachoCore
             NcTask.Run (delegate {
                 ServiceFromAccountId (accountId, (service) => {
                     service.CertAskResp (isOkay);
-                    return true;
+                    return NcResult.OK ();
                 });
             }, "CertAskResp");
         }
@@ -210,7 +210,7 @@ namespace NachoCore
             NcTask.Run (delegate {
                 ServiceFromAccountId (accountId, (service) => {
                     service.ServerConfResp (forceAutodiscovery);
-                    return true;
+                    return NcResult.OK ();
                 });
             }, "ServerConfResp");
         }
@@ -220,7 +220,7 @@ namespace NachoCore
             NcTask.Run (delegate {
                 ServiceFromAccountId (accountId, (service) => {
                     service.CredResp ();
-                    return true;
+                    return NcResult.OK ();
                 });
             }, "CredResp");
         }
@@ -230,7 +230,7 @@ namespace NachoCore
             // Don't Task.Run.
             ServiceFromAccountId (accountId, (service) => {
                 service.Cancel (token);
-                return true;
+                return NcResult.OK ();
             });
         }
 
@@ -239,7 +239,7 @@ namespace NachoCore
             // Don't Task.Run - must be super-fast return (no network).
             ServiceFromAccountId (accountId, (service) => {
                 service.Prioritize (token);
-                return true;
+                return NcResult.OK ();
             });
         }
 
@@ -248,7 +248,7 @@ namespace NachoCore
         {
             ServiceFromAccountId (accountId, (service) => {
                 service.UnblockPendingCmd (pendingId);
-                return true;
+                return NcResult.OK ();
             });
         }
 
@@ -256,220 +256,238 @@ namespace NachoCore
         {
             ServiceFromAccountId (accountId, (service) => {
                 service.DeletePendingCmd (pendingId);
-                return true;
+                return NcResult.OK ();
+            });
+        }
+
+        private NcResult CmdInDoNotDelayContext (int accountId, Func<ProtoControl, NcResult> cmd)
+        {
+            return ServiceFromAccountId (accountId, (service) => {
+                if (NcCommStatus.Instance.Status == NetStatusStatusEnum.Down) {
+                    return NcResult.Error (NcResult.SubKindEnum.Error_NetworkUnavailable);
+                }
+                if (NcCommStatus.Instance.Quality (service.Server.Id) == NcCommStatus.CommQualityEnum.Unusable) {
+                    return NcResult.Error (NcResult.SubKindEnum.Info_ServiceUnavailable);
+                }
+                return cmd (service);
             });
         }
 
         // Commands need to do Task.Run as appropriate in protocol controller.
-        public string StartSearchContactsReq (int accountId, string prefix, uint? maxResults)
+        public NcResult StartSearchContactsReq (int accountId, string prefix, uint? maxResults)
         {
-            return ServiceFromAccountId (accountId, (service) => service.StartSearchContactsReq (prefix, maxResults));
+            return CmdInDoNotDelayContext (accountId, (service) => service.StartSearchContactsReq (prefix, maxResults));
         }
 
-        public void SearchContactsReq (int accountId, string prefix, uint? maxResults, string token)
+        public NcResult SearchContactsReq (int accountId, string prefix, uint? maxResults, string token)
         {
-            ServiceFromAccountId (accountId, (service) => {
-                service.SearchContactsReq (prefix, maxResults, token);
-                return true;
-            });
+            return CmdInDoNotDelayContext (accountId, (service) => service.SearchContactsReq (prefix, maxResults, token));
         }
 
-        public string SendEmailCmd (int accountId, int emailMessageId)
+        public NcResult SendEmailCmd (int accountId, int emailMessageId)
         {
             return ServiceFromAccountId (accountId, (service) => service.SendEmailCmd (emailMessageId));
         }
 
-        public string SendEmailCmd (int accountId, int emailMessageId, int calId)
+        public NcResult SendEmailCmd (int accountId, int emailMessageId, int calId)
         {
             return ServiceFromAccountId (accountId, (service) => service.SendEmailCmd (emailMessageId, calId));
         }
 
-        public string ForwardEmailCmd (int accountId, int newEmailMessageId, int forwardedEmailMessageId,
+        public NcResult ForwardEmailCmd (int accountId, int newEmailMessageId, int forwardedEmailMessageId,
                                        int folderId, bool originalEmailIsEmbedded)
         {
             return ServiceFromAccountId (accountId, (service) => service.ForwardEmailCmd (newEmailMessageId, forwardedEmailMessageId,
                 folderId, originalEmailIsEmbedded));
         }
 
-        public string ReplyEmailCmd (int accountId, int newEmailMessageId, int repliedToEmailMessageId,
+        public NcResult ReplyEmailCmd (int accountId, int newEmailMessageId, int repliedToEmailMessageId,
                                      int folderId, bool originalEmailIsEmbedded)
         {
             return ServiceFromAccountId (accountId, (service) => service.ReplyEmailCmd (newEmailMessageId, repliedToEmailMessageId,
                 folderId, originalEmailIsEmbedded));
         }
 
-        public string DeleteEmailCmd (int accountId, int emailMessageId)
+        public NcResult DeleteEmailCmd (int accountId, int emailMessageId)
         {
             return ServiceFromAccountId (accountId, (service) => service.DeleteEmailCmd (emailMessageId));
         }
 
-        public string MoveEmailCmd (int accountId, int emailMessageId, int destFolderId)
+        public NcResult MoveEmailCmd (int accountId, int emailMessageId, int destFolderId)
         {
             return ServiceFromAccountId (accountId, (service) => service.MoveEmailCmd (emailMessageId, destFolderId));
         }
 
-        public string DnldAttCmd (int accountId, int attId, bool doNotDefer = false)
+        public NcResult DnldAttCmd (int accountId, int attId, bool doNotDelay = false)
         {
-            return ServiceFromAccountId (accountId, (service) => service.DnldAttCmd (attId, doNotDefer));
+            if (doNotDelay) {
+                return CmdInDoNotDelayContext (accountId, (service) => service.DnldAttCmd (attId, doNotDelay));
+            } else {
+                return ServiceFromAccountId (accountId, (service) => service.DnldAttCmd (attId, doNotDelay));
+            }
         }
 
-        public string DnldEmailBodyCmd (int accountId, int emailMessageId, bool doNotDefer = false)
+        public NcResult DnldEmailBodyCmd (int accountId, int emailMessageId, bool doNotDelay = false)
         {
-            return ServiceFromAccountId (accountId, (service) => service.DnldEmailBodyCmd (emailMessageId, doNotDefer));
+            if (doNotDelay) {
+                return CmdInDoNotDelayContext (accountId, (service) => service.DnldEmailBodyCmd (emailMessageId, doNotDelay));
+            } else {
+                return ServiceFromAccountId (accountId, (service) => service.DnldEmailBodyCmd (emailMessageId, doNotDelay));
+            }
         }
 
-        public string CreateCalCmd (int accountId, int calId, int folderId)
+        public NcResult CreateCalCmd (int accountId, int calId, int folderId)
         {
             return ServiceFromAccountId (accountId, (service) => service.CreateCalCmd (calId, folderId));
         }
 
-        public string UpdateCalCmd (int accountId, int calId)
+        public NcResult UpdateCalCmd (int accountId, int calId)
         {
             return ServiceFromAccountId (accountId, (service) => service.UpdateCalCmd (calId));
         }
 
-        public string DeleteCalCmd (int accountId, int calId)
+        public NcResult DeleteCalCmd (int accountId, int calId)
         {
             return ServiceFromAccountId (accountId, (service) => service.DeleteCalCmd (calId));
         }
 
-        public string MoveCalCmd (int accountId, int calId, int destFolderId)
+        public NcResult MoveCalCmd (int accountId, int calId, int destFolderId)
         {
             return ServiceFromAccountId (accountId, (service) => service.MoveCalCmd (calId, destFolderId));
         }
 
-        public string RespondEmailCmd (int accountId, int emailMessageId, NcResponseType response)
+        public NcResult RespondEmailCmd (int accountId, int emailMessageId, NcResponseType response)
         {
             return ServiceFromAccountId (accountId, (service) => service.RespondEmailCmd (emailMessageId, response));
         }
 
-        public string RespondCalCmd (int accountId, int calId, NcResponseType response, DateTime? instance = null)
+        public NcResult RespondCalCmd (int accountId, int calId, NcResponseType response, DateTime? instance = null)
         {
             return ServiceFromAccountId (accountId, (service) => service.RespondCalCmd (calId, response, instance));
         }
 
-        public string DnldCalBodyCmd (int accountId, int calId)
+        public NcResult DnldCalBodyCmd (int accountId, int calId)
         {
             return ServiceFromAccountId (accountId, (service) => service.DnldCalBodyCmd (calId));
         }
 
-        public string ForwardCalCmd (int accountId, int newEmailMessageId, int forwardedCalId, int folderId)
+        public NcResult ForwardCalCmd (int accountId, int newEmailMessageId, int forwardedCalId, int folderId)
         {
             return ServiceFromAccountId (accountId, (service) => service.ForwardCalCmd (newEmailMessageId, forwardedCalId, folderId));
         }
 
-        public string MarkEmailReadCmd (int accountId, int emailMessageId)
+        public NcResult MarkEmailReadCmd (int accountId, int emailMessageId)
         {
             return ServiceFromAccountId (accountId, (service) => service.MarkEmailReadCmd (emailMessageId));
         }
 
-        public string SetEmailFlagCmd (int accountId, int emailMessageId, string flagType, 
+        public NcResult SetEmailFlagCmd (int accountId, int emailMessageId, string flagType, 
                                        DateTime start, DateTime utcStart, DateTime due, DateTime utcDue)
         {
             return ServiceFromAccountId (accountId, (service) => service.SetEmailFlagCmd (emailMessageId, flagType, 
                 start, utcStart, due, utcDue));
         }
 
-        public string ClearEmailFlagCmd (int accountId, int emailMessageId)
+        public NcResult ClearEmailFlagCmd (int accountId, int emailMessageId)
         {
             return ServiceFromAccountId (accountId, (service) => service.ClearEmailFlagCmd (emailMessageId));
         }
 
-        public string MarkEmailFlagDone (int accountId, int emailMessageId,
+        public NcResult MarkEmailFlagDone (int accountId, int emailMessageId,
                                          DateTime completeTime, DateTime dateCompleted)
         {
             return ServiceFromAccountId (accountId, (service) => service.MarkEmailFlagDone (emailMessageId,
                 completeTime, dateCompleted));
         }
 
-        public string CreateContactCmd (int accountId, int contactId, int folderId)
+        public NcResult CreateContactCmd (int accountId, int contactId, int folderId)
         {
             return ServiceFromAccountId (accountId, (service) => service.CreateContactCmd (contactId, folderId));
         }
 
-        public string UpdateContactCmd (int accountId, int contactId)
+        public NcResult UpdateContactCmd (int accountId, int contactId)
         {
             return ServiceFromAccountId (accountId, (service) => service.UpdateContactCmd (contactId));
         }
 
-        public string DeleteContactCmd (int accountId, int contactId)
+        public NcResult DeleteContactCmd (int accountId, int contactId)
         {
             return ServiceFromAccountId (accountId, (service) => service.DeleteContactCmd (contactId));
         }
 
-        public string MoveContactCmd (int accountId, int contactId, int destFolderId)
+        public NcResult MoveContactCmd (int accountId, int contactId, int destFolderId)
         {
             return ServiceFromAccountId (accountId, (service) => service.MoveContactCmd (contactId, destFolderId));
         }
 
-        public string DnldContactBodyCmd (int accountId, int contactId)
+        public NcResult DnldContactBodyCmd (int accountId, int contactId)
         {
             return ServiceFromAccountId (accountId, (service) => service.DnldContactBodyCmd (contactId));
         }
 
-        public string CreateTaskCmd (int accountId, int taskId, int folderId)
+        public NcResult CreateTaskCmd (int accountId, int taskId, int folderId)
         {
             return ServiceFromAccountId (accountId, (service) => service.CreateTaskCmd (taskId, folderId));
         }
 
-        public string UpdateTaskCmd (int accountId, int taskId)
+        public NcResult UpdateTaskCmd (int accountId, int taskId)
         {
             return ServiceFromAccountId (accountId, (service) => service.UpdateTaskCmd (taskId));
         }
 
-        public string DeleteTaskCmd (int accountId, int taskId)
+        public NcResult DeleteTaskCmd (int accountId, int taskId)
         {
             return ServiceFromAccountId (accountId, (service) => service.DeleteTaskCmd (taskId));
         }
 
-        public string MoveTaskCmd (int accountId, int taskId, int destFolderId)
+        public NcResult MoveTaskCmd (int accountId, int taskId, int destFolderId)
         {
             return ServiceFromAccountId (accountId, (service) => service.MoveTaskCmd (taskId, destFolderId));
         }
 
-        public string DnldTaskBodyCmd (int accountId, int taskId)
+        public NcResult DnldTaskBodyCmd (int accountId, int taskId)
         {
             return ServiceFromAccountId (accountId, (service) => service.DnldTaskBodyCmd (taskId));
         }
 
-        public string CreateFolderCmd (int accountId, int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType)
+        public NcResult CreateFolderCmd (int accountId, int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType)
         {
             return ServiceFromAccountId (accountId, (service) => service.CreateFolderCmd (destFolderId, displayName, folderType));
         }
 
-        public string CreateFolderCmd (int accountId, string DisplayName, Xml.FolderHierarchy.TypeCode folderType)
+        public NcResult CreateFolderCmd (int accountId, string DisplayName, Xml.FolderHierarchy.TypeCode folderType)
         {
             return ServiceFromAccountId (accountId, (service) => service.CreateFolderCmd (DisplayName, folderType));
         }
 
-        public string DeleteFolderCmd (int accountId, int folderId)
+        public NcResult DeleteFolderCmd (int accountId, int folderId)
         {
             return ServiceFromAccountId (accountId, (service) => service.DeleteFolderCmd (folderId));
         }
 
-        public string MoveFolderCmd (int accountId, int folderId, int destFolderId)
+        public NcResult MoveFolderCmd (int accountId, int folderId, int destFolderId)
         {
             return ServiceFromAccountId (accountId, (service) => service.MoveFolderCmd (folderId, destFolderId));
         }
 
-        public string RenameFolderCmd (int accountId, int folderId, string displayName)
+        public NcResult RenameFolderCmd (int accountId, int folderId, string displayName)
         {
             return ServiceFromAccountId (accountId, (service) => service.RenameFolderCmd (folderId, displayName));
         }
 
-        public string SyncCmd (int accountId, int folderId)
+        public NcResult SyncCmd (int accountId, int folderId)
         {
-            return ServiceFromAccountId (accountId, (service) => service.SyncCmd (folderId));
+            return CmdInDoNotDelayContext (accountId, (service) => service.SyncCmd (folderId));
         }
 
-        public bool ValidateConfig (int accountId, McServer server, McCred cred)
+        public NcResult ValidateConfig (int accountId, McServer server, McCred cred)
         {
             if (NcCommStatus.Instance.Status != NetStatusStatusEnum.Up) {
-                return false;
+                return NcResult.Error (NcResult.SubKindEnum.Error_NetworkUnavailable);
             }
             return ServiceFromAccountId (accountId, (service) => {
                 service.ValidateConfig (server, cred);
-                return true;
+                return NcResult.OK ();
             });
         }
 
@@ -477,23 +495,25 @@ namespace NachoCore
         {
             ServiceFromAccountId (accountId, (service) => {
                 service.CancelValidateConfig ();
-                return true;
+                return NcResult.OK ();
             });
         }
 
         public BackEndStateEnum BackEndState (int accountId)
         {
-            return ServiceFromAccountId (accountId, (service) => service.BackEndState);
+            var result = ServiceFromAccountId (accountId, (service) => NcResult.OK (service.BackEndState));
+            return result.isOK () ? result.GetValue<BackEndStateEnum> () : BackEndStateEnum.NotYetStarted;
         }
 
         public AutoDInfoEnum AutoDInfo (int accountId)
         {
-            return ServiceFromAccountId (accountId, (service) => service.AutoDInfo);
+            var result = ServiceFromAccountId (accountId, (service) => NcResult.OK (service.AutoDInfo));
+            return result.isOK () ? result.GetValue<AutoDInfoEnum> () : AutoDInfoEnum.Unknown;
         }
 
         public X509Certificate2 ServerCertToBeExamined (int accountId)
         {
-            return ServiceFromAccountId (accountId, (service) => service.ServerCertToBeExamined);
+            return ServiceFromAccountId (accountId, (service) => NcResult.OK (service.ServerCertToBeExamined)).GetValue<X509Certificate2> ();
         }
 
         //

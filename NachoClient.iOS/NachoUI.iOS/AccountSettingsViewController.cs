@@ -596,7 +596,8 @@ namespace NachoClient.iOS
             testCred.SetTestPassword (passwordTextField.Text);
             testCred.Username = (usernameTextField.Text);
 
-            if (!BackEnd.Instance.ValidateConfig (LoginHelpers.GetCurrentAccountId (), testServer, testCred)) {
+            // FIXMESJS
+            if (!BackEnd.Instance.ValidateConfig (LoginHelpers.GetCurrentAccountId (), testServer, testCred).isOK ()) {
                 var badNetworkConnection = new UIAlertView ("Network Error", "There is an issue with the network and we cannot validate your changes. Would you like to save anyway?", null, "Ok", "Cancel");
                 badNetworkConnection.Clicked += SaveAnywayClicked;
                 badNetworkConnection.Show ();

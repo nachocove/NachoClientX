@@ -262,8 +262,9 @@ namespace NachoClient.iOS
 
         protected void KickoffSearchApi (int forSearchOption, string forSearchString)
         {
+            // FIXMESJS
             if (String.IsNullOrEmpty (contactSearchToken)) {
-                contactSearchToken = BackEnd.Instance.StartSearchContactsReq (account.Id, forSearchString, null);
+                contactSearchToken = BackEnd.Instance.StartSearchContactsReq (account.Id, forSearchString, null).GetValue<string> ();
             } else {
                 BackEnd.Instance.SearchContactsReq (account.Id, forSearchString, null, contactSearchToken);
             }

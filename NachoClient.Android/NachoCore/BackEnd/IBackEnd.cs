@@ -3,6 +3,7 @@
 using System;
 using System.Security.Cryptography.X509Certificates;
 using NachoCore.Model;
+using NachoCore.Utils;
 // TODO: this file should not reference ActiveSync.
 using NachoCore.ActiveSync;
 
@@ -56,44 +57,44 @@ namespace NachoCore
         // accept the fail. delete the pending obj.
         void DeletePendingCmd (int accountId, int pendingId);
         // search contacts. returns token that can be used to cancel the search and all eclipsed searches.
-        string StartSearchContactsReq (int accountId, string prefix, uint? maxResults);
+        NcResult StartSearchContactsReq (int accountId, string prefix, uint? maxResults);
         // follow-on contacts search, using same token.
-        void SearchContactsReq (int accountId, string prefix, uint? maxResults, string token);
+        NcResult SearchContactsReq (int accountId, string prefix, uint? maxResults, string token);
         // send specified email (not in a synced folder). returns token that can be used to possibly cancel.
-        string SendEmailCmd (int accountId, int emailMessageId);
+        NcResult SendEmailCmd (int accountId, int emailMessageId);
         // BE will make sure that the operation that created calId is complete before sending the
         // email to the server. If the calId operation fails (hard), then the SendEmailCmd will too.
-        string SendEmailCmd (int accountId, int emailMessageId, int calId);
+        NcResult SendEmailCmd (int accountId, int emailMessageId, int calId);
 
-        string ForwardEmailCmd (int accountId, int newEmailMessageId, int forwardedEmailMessageId,
+        NcResult ForwardEmailCmd (int accountId, int newEmailMessageId, int forwardedEmailMessageId,
                           int folderId, bool originalEmailIsEmbedded);
 
-        string ReplyEmailCmd (int accountId, int newEmailMessageId, int repliedToEmailMessageId,
+        NcResult ReplyEmailCmd (int accountId, int newEmailMessageId, int repliedToEmailMessageId,
                         int folderId, bool originalEmailIsEmbedded);
         // delete an email from a synced folder. returns token that can be used to possibly cancel.
-        string DeleteEmailCmd (int accountId, int emailMessageId);
+        NcResult DeleteEmailCmd (int accountId, int emailMessageId);
         // move an email from one folder to another. returns token that can be used to possibly cancel.
-        string MoveEmailCmd (int accountId, int emailMessageId, int destFolderId);
+        NcResult MoveEmailCmd (int accountId, int emailMessageId, int destFolderId);
         // mark an email as read. returns token that can be used to possibly cancel.
-        string MarkEmailReadCmd (int accountId, int emailMessageId);
+        NcResult MarkEmailReadCmd (int accountId, int emailMessageId);
         // set the flag value on the email.
-        string SetEmailFlagCmd (int accountId, int emailMessageId, string flagType, 
+        NcResult SetEmailFlagCmd (int accountId, int emailMessageId, string flagType, 
                           DateTime start, DateTime utcStart, DateTime due, DateTime utcDue);
         // clear the flag value on the email.
-        string ClearEmailFlagCmd (int accountId, int emailMessageId);
+        NcResult ClearEmailFlagCmd (int accountId, int emailMessageId);
         // mark the flag as "done" for the server, and clear the values in the DB.
-        string MarkEmailFlagDone (int accountId, int emailMessageId,
+        NcResult MarkEmailFlagDone (int accountId, int emailMessageId,
                             DateTime completeTime, DateTime dateCompleted);
-        string DnldEmailBodyCmd (int accountId, int emailMessageId, bool doNotDefer = false);
+        NcResult DnldEmailBodyCmd (int accountId, int emailMessageId, bool doNotDelay = false);
         // download an attachment. returns token that can be used to possibly cancel.
-        string DnldAttCmd (int accountId, int attId, bool doNotDefer = false);
-        string CreateCalCmd (int accountId, int calId, int folderId);
-        string UpdateCalCmd (int accountId, int calId);
-        string DeleteCalCmd (int accountId, int calId);
-        string MoveCalCmd (int accountId, int calId, int destFolderId);
-        string RespondEmailCmd (int accountId, int emailMessageId, NcResponseType response);
-        string RespondCalCmd (int accountId, int calId, NcResponseType response, DateTime? instance = null);
-        string DnldCalBodyCmd (int accountId, int calId);
+        NcResult DnldAttCmd (int accountId, int attId, bool doNotDelay = false);
+        NcResult CreateCalCmd (int accountId, int calId, int folderId);
+        NcResult UpdateCalCmd (int accountId, int calId);
+        NcResult DeleteCalCmd (int accountId, int calId);
+        NcResult MoveCalCmd (int accountId, int calId, int destFolderId);
+        NcResult RespondEmailCmd (int accountId, int emailMessageId, NcResponseType response);
+        NcResult RespondCalCmd (int accountId, int calId, NcResponseType response, DateTime? instance = null);
+        NcResult DnldCalBodyCmd (int accountId, int calId);
 
         /// <summary>
         /// Forward a calendar event.
@@ -103,32 +104,32 @@ namespace NachoCore
         /// <param name="newEmailMessageId">ID of the outgoing e-mail message.</param>
         /// <param name="forwardedCalId">ID of the McCalendar event being forwarded.</param>
         /// <param name="folderId">ID of the folder that is the parent of the event being forwarded.</param>
-        string ForwardCalCmd (int accountId, int newEmailMessageId, int forwardedCalId, int folderId);
+        NcResult ForwardCalCmd (int accountId, int newEmailMessageId, int forwardedCalId, int folderId);
 
-        string CreateContactCmd (int accountId, int contactId, int folderId);
-        string UpdateContactCmd (int accountId, int contactId);
-        string DeleteContactCmd (int accountId, int contactId);
-        string MoveContactCmd (int accountId, int contactId, int destFolderId);
-        string DnldContactBodyCmd (int accountId, int contactId);
-        string CreateTaskCmd (int accountId, int taskId, int folderId);
-        string UpdateTaskCmd (int accountId, int taskId);
-        string DeleteTaskCmd (int accountId, int taskId);
-        string MoveTaskCmd (int accountId, int taskId, int destFolderId);
-        string DnldTaskBodyCmd (int accountId, int taskId);
+        NcResult CreateContactCmd (int accountId, int contactId, int folderId);
+        NcResult UpdateContactCmd (int accountId, int contactId);
+        NcResult DeleteContactCmd (int accountId, int contactId);
+        NcResult MoveContactCmd (int accountId, int contactId, int destFolderId);
+        NcResult DnldContactBodyCmd (int accountId, int contactId);
+        NcResult CreateTaskCmd (int accountId, int taskId, int folderId);
+        NcResult UpdateTaskCmd (int accountId, int taskId);
+        NcResult DeleteTaskCmd (int accountId, int taskId);
+        NcResult MoveTaskCmd (int accountId, int taskId, int destFolderId);
+        NcResult DnldTaskBodyCmd (int accountId, int taskId);
         // create a subordinate folder.
-        string CreateFolderCmd (int accountId, int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType);
+        NcResult CreateFolderCmd (int accountId, int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType);
         // create a root folder.
-        string CreateFolderCmd (int accountId, string DisplayName, Xml.FolderHierarchy.TypeCode folderType);
+        NcResult CreateFolderCmd (int accountId, string DisplayName, Xml.FolderHierarchy.TypeCode folderType);
         // delete a folder.
-        string DeleteFolderCmd (int accountId, int folderId);
+        NcResult DeleteFolderCmd (int accountId, int folderId);
         // move a folder.
-        string MoveFolderCmd (int accountId, int folderId, int destFolderId);
+        NcResult MoveFolderCmd (int accountId, int folderId, int destFolderId);
         // rename a folder.
-        string RenameFolderCmd (int accountId, int folderId, string displayName);
+        NcResult RenameFolderCmd (int accountId, int folderId, string displayName);
         // Sync the contents of a folder.
-        string SyncCmd (int accountId, int folderId);
+        NcResult SyncCmd (int accountId, int folderId);
         // validate account config.
-        bool ValidateConfig (int accountId, McServer server, McCred cred);
+        NcResult ValidateConfig (int accountId, McServer server, McCred cred);
         void CancelValidateConfig (int accountId);
         // state, including auto-d.
         BackEndStateEnum BackEndState (int accountId);
