@@ -20,6 +20,7 @@ namespace NachoClient.iOS
         private const int SUBJECT_TAG = 3902;
         private const int ICON_TAG = 3903;
         private const int TEXT_TAG = 3904;
+        private const int NO_MESSAGES_TAG = 3905;
 
         public const int DIAL_IN_TAG = 1;
         public const int NAVIGATE_TO_TAG = 2;
@@ -73,6 +74,14 @@ namespace NachoClient.iOS
             subjectLabelView.TextColor = A.Color_0F424C;
             subjectLabelView.Tag = SUBJECT_TAG;
             view.AddSubview (subjectLabelView);
+
+            // No messages label view
+            var noMessagesLabelView = new UILabel (rect);
+            noMessagesLabelView.Font = A.Font_AvenirNextDemiBold17;
+            noMessagesLabelView.TextColor = A.Color_0F424C;
+            noMessagesLabelView.Tag = NO_MESSAGES_TAG;
+            noMessagesLabelView.TextAlignment = UITextAlignment.Center;
+            view.AddSubview (noMessagesLabelView);
 
             // Location image view
             var iconView = new UIImageView (new CGRect (30, 40, 12, 12));
@@ -139,6 +148,7 @@ namespace NachoClient.iOS
             }
 
             var view = (SwipeActionView)this.ViewWithTag (SWIPE_TAG);
+            var noMessagesLabelView = (UILabel)this.ViewWithTag (NO_MESSAGES_TAG);
             var subjectLabelView = (UILabel)this.ViewWithTag (SUBJECT_TAG);
             var labelView = (UILabel)this.ViewWithTag (TEXT_TAG);
             var dotView = (UIImageView)this.ViewWithTag (DOT_TAG);
@@ -147,8 +157,9 @@ namespace NachoClient.iOS
             view.EnableSwipe ((null != c) && (null != cRoot) && (!String.IsNullOrEmpty(cRoot.OrganizerEmail)));
 
             if (null == c) {
-                subjectLabelView.Text = "No upcoming events";
-                subjectLabelView.Hidden = false;
+                noMessagesLabelView.Text = "No upcoming events";
+                noMessagesLabelView.Hidden = false;
+                subjectLabelView.Hidden = true;
                 labelView.Hidden = true;
                 iconView.Hidden = true;
                 dotView.Hidden = true;
@@ -157,9 +168,12 @@ namespace NachoClient.iOS
                 return;
             }
 
+            noMessagesLabelView.Hidden = true;
+
             // Subject label view
             var subject = Pretty.SubjectString (c.Subject);
             subjectLabelView.Text = subject;
+            subjectLabelView.Hidden = false;
 
             var size = new CGSize (10, 10);
             dotView.Image = Util.DrawCalDot (A.Color_CalDotBlue, size);
