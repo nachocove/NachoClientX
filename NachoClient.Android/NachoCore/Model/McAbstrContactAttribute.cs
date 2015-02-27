@@ -30,7 +30,7 @@ namespace NachoCore.Model
 
         public McContact GetContact ()
         {
-            return NcModel.Instance.Db.Get<McContact> (ContactId);
+            return McContact.QueryById<McContact> ((int)ContactId);
         }
     }
 }
