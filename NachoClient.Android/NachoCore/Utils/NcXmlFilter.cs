@@ -342,7 +342,7 @@ namespace NachoCore.Wbxml
             return value.Length;
         }
 
-        static ConcurrentDictionary<string,string> HashCache = null;
+        static ConcurrentDictionary<string,string> HashCache = new ConcurrentDictionary<string, string> ();
 
         public static string ShortHash (XNode content, out int contentLen)
         {
@@ -366,9 +366,6 @@ namespace NachoCore.Wbxml
 
         public static string FullHash (string value)
         {
-            if (null == HashCache) {
-                HashCache = new ConcurrentDictionary<string, string> ();
-            }
             string hash;
             if (!HashCache.TryGetValue(value, out hash)) {
                 hash = HashHelper.Sha256 (value);
