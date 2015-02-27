@@ -107,6 +107,10 @@ namespace NachoClient.iOS
                 sectionStart [i] = index;
                 sectionLength [i] = count;
             }
+
+            if (SearchDisplayController.Active) {
+                SearchDisplayController.Delegate.ShouldReloadForSearchScope (SearchDisplayController, 0);
+            }
         }
 
         public void SetSearchResults (List<McContactEmailAddressAttribute> searchResults)
