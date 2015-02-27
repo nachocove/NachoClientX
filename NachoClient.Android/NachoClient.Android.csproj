@@ -363,6 +363,7 @@
     <Compile Include="NachoCore\BackEnd\IBEContext.cs" />
     <Compile Include="NachoCore\BackEnd\PushAssist.cs" />
     <Compile Include="NachoCore\BackEnd\IPushAssistOwner.cs" />
+    <Compile Include="NachoCore\BackEnd\PushAssistJson.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

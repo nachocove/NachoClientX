@@ -4,6 +4,7 @@ using System;
 using System.Net.Http;
 using System.IO;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
@@ -27,6 +28,8 @@ using NachoCore.Model;
 
 namespace NachoCore
 {
+    public delegate void NotificationFetchFunc (int accountId);
+
     public class PushAssist : IDisposable
     {
         private IPushAssistOwner Owner;
@@ -37,6 +40,9 @@ namespace NachoCore
         private bool IsDisposed;
         private string ClientContext;
         private string SessionToken;
+
+        private static ConcurrentDictionary <string, WeakReference> ContextObjectMap =
+            new ConcurrentDictionary <string, WeakReference> ();
 
         public static string PingerHostName = "pinger.officetaco.com";
         //public static string PingerHostName = "localhost";
@@ -105,6 +111,42 @@ namespace NachoCore
         const string KDeviceToken = "devicetoken";
         const string KPushAssistState = "pushassiststate";
 
+        public static PushAssist GetPAObjectByContext (string context)
+        {
+            WeakReference weakRef;
+            PushAssist pa;
+            if (ContextObjectMap.TryGetValue (context, out weakRef)) {
+                if (weakRef.IsAlive) {
+                    return (PushAssist)weakRef.Target;
+                }
+            }
+            return null;
+        }
+
+        public static void ProcessRemoteNotification (PingerNotification pinger, NotificationFetchFunc fetch)
+        {
+            foreach (var context in pinger) {
+                // Look up the account
+                var pa = GetPAObjectByContext (context.Key);
+                if (null == pa) {
+                    continue;
+                }
+                if (0 == pa.AccountId) {
+                    Log.Error (Log.LOG_PUSH, "Cannot find account for context {0} for remote notification", pa.AccountId);
+                    continue;
+                }
+
+                switch (pinger.GetAction (context.Value)) {
+                case PingerNotificationActionEnum.NEW:
+                    fetch (pa.AccountId);
+                    break;
+                case PingerNotificationActionEnum.REGISTER:
+                    pa.DeviceTokenLost ();
+                    break;
+                }
+            }
+        }
+
         public PushAssist (IPushAssistOwner owner)
         {
             // FIXME - we will need to do cert-pinning, and also ensure SSL.
@@ -117,7 +159,17 @@ namespace NachoCore
             Owner = owner;
             AccountId = Owner.Account.Id;
             var account = McAccount.QueryById<McAccount> (AccountId);
-            ClientContext = HashHelper.Sha256 (account.EmailAddr);
+            ClientContext = GetClientContext (account);
+            // FIXME - This entry is never freed even if the account is deleted. If the account is
+            //         recreated, the existing entry will be overwritten. If the account is just 
+            //         deleted, this entry is orphaned. I am assuming account deletion is rare
+            //         enough that leaking a few tens of bytes every once a while is ok.
+            var paRef = new WeakReference (this);
+            if (!ContextObjectMap.TryAdd (ClientContext, paRef)) {
+                WeakReference oldPaRef = null;
+                ContextObjectMap.TryGetValue (ClientContext, out oldPaRef);
+                ContextObjectMap.TryUpdate (ClientContext, paRef, oldPaRef);
+            }
             Sm = new NcStateMachine ("PA") {
                 Name = string.Format ("PA({0})", AccountId),
                 LocalStateType = typeof(Lst),
@@ -247,6 +299,23 @@ namespace NachoCore
             NcApplication.Instance.StatusIndEvent += TokensWatcher;
         }
 
+        private string GetClientContext (McAccount account)
+        {
+            string prefix = null;
+            string id = null;
+            switch (account.AccountType) {
+            case McAccount.AccountTypeEnum.Device:
+                prefix = "device";
+                id = account.EmailAddr;
+                break;
+            case McAccount.AccountTypeEnum.Exchange:
+                prefix = "exchange";
+                id = account.EmailAddr;
+                break;
+            }
+            return HashHelper.Sha256 (prefix + ":" + id).Substring (0, 8);
+        }
+
         public void Dispose ()
         {
             if (!IsDisposed) {
@@ -275,7 +344,6 @@ namespace NachoCore
             // FIXME Cancel any outstanding http request. This is tricky, given concurrency.
             // Only one SM action can execute at a time, but there is a Q in front of the SM.
             var clientId = NcApplication.Instance.GetClientId ();
-            var parameters = Owner.PushAssistParameters ();
             if (String.IsNullOrEmpty (clientId) ||
                 String.IsNullOrEmpty (ClientContext) ||
                 String.IsNullOrEmpty (SessionToken)) {
@@ -527,72 +595,6 @@ namespace NachoCore
             }, "PushAssist:ResetDeviceToken");
         }
 
-        public class Credentials
-        {
-            public string Username;
-            public string Password;
-        }
-
-        public class StartSessionRequest
-        {
-            public string ClientId;
-            public string ClientContext;
-            public string MailServerUrl;
-            public Credentials MailServerCredentials;
-            public string Protocol;
-            public string Platform;
-            public Dictionary<string, string> HttpHeaders;
-            public string HttpRequestData;
-            public string HttpExpectedReply;
-            public string HttpNoChangeReply;
-            public string CommandTerminator;
-            public string CommandAcknowledgement;
-            public int ResponseTimeout;
-            public int WaitBeforeUse;
-            public string PushToken;
-            public string PushService;
-        }
-
-        public class DeferSessionRequest
-        {
-            public string ClientId;
-            public string ClientContext;
-            public string Token;
-            public int ResponseTimeout;
-        }
-
-        public class StopSessionRequest
-        {
-            public string ClientId;
-            public string ClientContext;
-            public string Token;
-        }
-
-        public class PingerResponse
-        {
-            public const string Ok = "OK";
-            public const string Warn = "WARN";
-            public const string Error = "ERROR";
-
-            public string Message;
-            public string Status;
-            public string Token;
-
-            public bool IsOk ()
-            {
-                return (Ok == Status);
-            }
-
-            public bool IsWarn ()
-            {
-                return (Warn == Status);
-            }
-
-            public bool IsOkOrWarn ()
-            {
-                return IsOk () || IsWarn ();
-            }
-        }
 
         protected string ProtocolToString (PushAssistProtocol protocol)
         {
@@ -636,6 +638,11 @@ namespace NachoCore
             Log.Info (Log.LOG_PUSH, "PA response: statusCode={0}, content={1}", response.StatusCode,
                 await response.Content.ReadAsStringAsync ().ConfigureAwait (false));
             return response;
+        }
+
+        private void DeviceTokenLost ()
+        {
+            Sm.PostEvent ((uint)PAEvt.E.DevTokLoss, "DEVTOKLOSS");
         }
     }
 }

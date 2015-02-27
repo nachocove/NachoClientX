@@ -24,6 +24,7 @@ using NachoCore.Brain;
 using NachoPlatform;
 using NachoClient.iOS;
 using SQLite;
+using Newtonsoft.Json;
 using NachoCore.Wbxml;
 using ObjCRuntime;
 using NachoClient.Build;
@@ -158,6 +159,19 @@ namespace NachoClient.iOS
         public override void DidRegisterUserNotificationSettings (UIApplication application, UIUserNotificationSettings notificationSettings)
         {
             Log.Info (Log.LOG_LIFECYCLE, "DidRegisteredUserNotificationSettings: {0}", notificationSettings);
+        }
+
+        public override void DidReceiveRemoteNotification (UIApplication application, NSDictionary userInfo, Action<UIBackgroundFetchResult> completionHandler)
+        {
+            Log.Info (Log.LOG_LIFECYCLE, "Got remote notification - {0}", userInfo);
+            NSDictionary apsDict = (NSDictionary)userInfo.ObjectForKey (new NSString ("aps"));
+            string jsonStr = (string)(NSString)apsDict.ObjectForKey (new NSString ("alert"));
+            var notification = JsonConvert.DeserializeObject<Notification> (jsonStr);
+            if (notification.HasPingerSection ()) {
+                PushAssist.ProcessRemoteNotification (notification.pinger, (accountId) => {
+                    Console.WriteLine (">>>>> fetch account {0}", accountId);
+                });
+            }
         }
 
         /// This is not a service but rather initialization of some native
