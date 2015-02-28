@@ -144,6 +144,11 @@ namespace NachoCore
                     pa.DeviceTokenLost ();
                     break;
                 }
+
+                // TODO - We don't have multiple account support yet. So, for now, perform fetch always
+                //        fetches the one account. In the future, we have to figure out which account
+                //        should participate in the fetch and pass them in.
+                break;
             }
         }
 

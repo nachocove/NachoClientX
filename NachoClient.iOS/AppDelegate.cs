@@ -173,12 +173,15 @@ namespace NachoClient.iOS
         public override void DidReceiveRemoteNotification (UIApplication application, NSDictionary userInfo, Action<UIBackgroundFetchResult> completionHandler)
         {
             Log.Info (Log.LOG_LIFECYCLE, "Got remote notification - {0}", userInfo);
-            NSDictionary apsDict = (NSDictionary)userInfo.ObjectForKey (new NSString ("aps"));
-            string jsonStr = (string)(NSString)apsDict.ObjectForKey (new NSString ("alert"));
+            // Amazingly, it turns out the most programmatically simple way to convert a NSDictionary
+            // to our own model objects.
+            NSError error;
+            var jsonData = NSJsonSerialization.Serialize (userInfo, NSJsonWritingOptions.PrettyPrinted, out error);
+            var jsonStr = (string)NSString.FromData (jsonData, NSStringEncoding.UTF8);
             var notification = JsonConvert.DeserializeObject<Notification> (jsonStr);
             if (notification.HasPingerSection ()) {
                 PushAssist.ProcessRemoteNotification (notification.pinger, (accountId) => {
-                    Console.WriteLine (">>>>> fetch account {0}", accountId);
+                    PerformFetch (application, completionHandler);
                 });
             }
         }

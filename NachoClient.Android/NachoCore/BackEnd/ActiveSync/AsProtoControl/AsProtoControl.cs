@@ -1396,7 +1396,7 @@ namespace NachoCore.ActiveSync
                 RequestHeaders = PushAssistRequestHeaders (),
                 NoChangeResponseData = PushAssistResponseData (),
                 Protocol = PushAssistProtocol.ACTIVE_SYNC,
-                ResponseTimeoutMsec = 10000,
+                ResponseTimeoutMsec = 60000,
                 WaitBeforeUseMsec = 1000
             };
         }
