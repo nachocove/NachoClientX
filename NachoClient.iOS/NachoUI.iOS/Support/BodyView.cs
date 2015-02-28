@@ -100,7 +100,7 @@ namespace NachoClient.iOS
             spinner.HidesWhenStopped = true;
             AddSubview (spinner);
 
-            errorMessage = new UILabel (new CGRect (0, 10, frame.Width, 1));
+            errorMessage = new UILabel (new CGRect (20, 10, frame.Width - 40, 1));
             errorMessage.Font = A.Font_AvenirNextDemiBold14;
             errorMessage.LineBreakMode = UILineBreakMode.WordWrap;
             errorMessage.TextColor = A.Color_808080;
@@ -246,16 +246,16 @@ namespace NachoClient.iOS
         private void StartDownload ()
         {
             // Download the body.
+            NcResult nr;
             if (item is McEmailMessage) {
-                // FIXMESJS
-                downloadToken = BackEnd.Instance.DnldEmailBodyCmd (item.AccountId, item.Id, true).GetValue<string> ();
+                nr = BackEnd.Instance.DnldEmailBodyCmd (item.AccountId, item.Id, true);
             } else if (item is McAbstrCalendarRoot) {
-                // FIXMESJS
-                downloadToken = BackEnd.Instance.DnldCalBodyCmd (item.AccountId, item.Id).GetValue<string> ();
+                nr = BackEnd.Instance.DnldCalBodyCmd (item.AccountId, item.Id);
             } else {
                 throw new NcAssert.NachoDefaultCaseFailure (string.Format (
                     "Unhandled abstract item type {0}", item.GetType ().Name));
             }
+            downloadToken = nr.GetValue<string> ();
 
             if (null == downloadToken) {
                 // There is a race condition where the download of the body could complete
@@ -270,14 +270,14 @@ namespace NachoClient.iOS
                         Reconfigure ();
                     } else {
                         Log.Warn (Log.LOG_UI, "Failed to start body download for message {0} in account {1}", item.Id, item.AccountId);
-                        ShowErrorMessage ();
+                        ShowErrorMessage (nr);
                     }
                 } else {
                     // The item seems to have been deleted from the database.  The best we
                     // can do is to show an error message, even though tapping to retry the
                     // download won't do any good.
                     Log.Warn (Log.LOG_UI, "Failed to start body download for message {0} in account {1}, and it looks like the message has been deleted.", item.Id, item.AccountId);
-                    ShowErrorMessage ();
+                    ShowErrorMessage (nr);
                 }
             } else {
                 // The download has started.
@@ -432,26 +432,46 @@ namespace NachoClient.iOS
             base.Dispose (disposing);
         }
 
-        private void ShowErrorMessage ()
+        private void ShowErrorMessage (NcResult nr)
         {
             NcApplication.Instance.StatusIndEvent -= StatusIndicatorCallback;
             statusIndicatorIsRegistered = false;
             spinner.StopAnimating ();
             string preview = item.GetBodyPreviewOrEmpty ();
             bool hasPreview = !string.IsNullOrEmpty (preview);
-            string message;
+            // TODO: Refactor
+            string message = "Download failed.";
+            switch (nr.SubKind) {
+            case NcResult.SubKindEnum.Error_NetworkUnavailable:
+                message += " The network is unavailable.";
+                break;
+            case NcResult.SubKindEnum.Error_NoSpace:
+                message += " Your device is out of space.";
+                break;
+            case NcResult.SubKindEnum.Error_EmailMessageBodyDownloadFailed:
+                message += " Message download failed.";
+                break;
+            case NcResult.SubKindEnum.Error_CalendarBodyDownloadFailed:
+                message += " Calendar body download failed.";
+                break;
+            case NcResult.SubKindEnum.Error_AttDownloadFailed:
+                message += " Attachment download failed.";
+                break;
+            case NcResult.SubKindEnum.Error_AuthFailBlocked:
+                message += " Authorization failed.";
+                break;
+            case NcResult.SubKindEnum.Error_AuthFailPasswordExpired:
+                message += " Your password has expired.";
+                break;
+            default:
+                message += " Download failed.";
+                break;
+            }
             if (UserInteractionEnabled) {
-                if (hasPreview) {
-                    message = "[ Download failed. Tap here to retry. Message preview only. ]";
-                } else {
-                    message = "[ Download failed. Tap here to retry. ]";
-                }
-            } else {
-                if (hasPreview) {
-                    message = "[ Download failed. Message preview only. ]";
-                } else {
-                    message = "[ Download failed. ]";
-                }
+                message += " Tap here to retry.";
+            }
+            if (hasPreview) {
+                message += " Showing message preview only.";
             }
             RenderDownloadFailure (message);
             if (hasPreview) {
@@ -517,7 +537,7 @@ namespace NachoClient.iOS
 
                     } else {
                         // The download really did fail.  Let the user know.
-                        ShowErrorMessage ();
+                        ShowErrorMessage (NcResult.Error (statusEvent.Status.SubKind));
                     }
                     break;
                 }

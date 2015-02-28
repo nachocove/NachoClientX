@@ -202,7 +202,7 @@ namespace NachoClient
                 attachment.DeleteFile ();
             }
             if (McAbstrFileDesc.FilePresenceEnum.None == attachment.FilePresence) {
-                // FIXMESJS
+                // TODO: Add more precise error messages based on NcResult like BodyView
                 return BackEnd.Instance.DnldAttCmd (attachment.AccountId, attachment.Id, true).GetValue<string> ();
             } else if (McAbstrFileDesc.FilePresenceEnum.Partial == attachment.FilePresence) {
                 return McPending.QueryByAttachmentId (attachment.AccountId, attachment.Id).Token;

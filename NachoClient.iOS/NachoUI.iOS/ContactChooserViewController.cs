@@ -262,7 +262,7 @@ namespace NachoClient.iOS
 
         protected void KickoffSearchApi (int forSearchOption, string forSearchString)
         {
-            // FIXMESJS
+            // TODO: Think about whether we want to users about errors during GAL search
             if (String.IsNullOrEmpty (contactSearchToken)) {
                 contactSearchToken = BackEnd.Instance.StartSearchContactsReq (account.Id, forSearchString, null).GetValue<string> ();
             } else {
