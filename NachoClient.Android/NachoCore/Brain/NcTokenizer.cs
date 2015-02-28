@@ -106,6 +106,9 @@ namespace NachoCore.Brain
 
         protected List<TextPart> ProcessMimeEntity (MimeEntity part)
         {
+            if (null == part) {
+                return new List<TextPart> ();
+            }
             if (part is MessagePart) {
                 var message = (MessagePart)part;
                 return ProcessMimeEntity (message.Message.Body);
