@@ -105,6 +105,7 @@ namespace NachoCore.Model
                 return dbAttendees.AsReadOnly ();
             }
             set {
+                NcAssert.NotNull (value, "To clear the attendees, use an empty list instead of null.");
                 appAttendees = value;
             }
         }
@@ -189,6 +190,7 @@ namespace NachoCore.Model
                 return dbCategories.AsReadOnly ();
             }
             set {
+                NcAssert.NotNull (value, "To clear the categories, use an empty list instead of null.");
                 appCategories = value;
             }
         }
