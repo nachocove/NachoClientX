@@ -471,16 +471,16 @@ namespace NachoCore.ActiveSync
                 NcAssert.True (exception.Name.LocalName.Equals (Xml.Calendar.Exceptions.Exception));
                 var e = new McException ();
                 e.AccountId = accountId;
-                e.attendees = new List<McAttendee> ();
-                e.categories = new List<McCalendarCategory> ();
+                var attendees = new List<McAttendee> ();
+                var categories = new List<McCalendarCategory> ();
                 foreach (var child in exception.Elements()) {
                     switch (child.Name.LocalName) {
                     // Containers
                     case Xml.Calendar.Exception.Attendees:
-                        e.attendees = ParseAttendees (accountId, ns, child);
+                        attendees.AddRange (ParseAttendees (accountId, ns, child));
                         break;
                     case Xml.Calendar.Exception.Categories:
-                        e.categories = ParseCategories (accountId, ns, child);
+                        categories.AddRange (ParseCategories (accountId, ns, child));
                         break;
                     // Elements
                     case Xml.Calendar.Exception.AllDayEvent:
@@ -535,10 +535,13 @@ namespace NachoCore.ActiveSync
                         break;
                     }
                 }
+                e.attendees = attendees;
+                e.categories = categories;
                 l.Add (e);
             }
             return l;
         }
+
         // CreateNcCalendarFromXML
         // <Body xmlns="AirSyncBase:"> <Type> 1 </Type> <Data> </Data> </Body>
         // <DtStamp xmlns="Calendar:"> 20131123T190243Z </DtStamp>
@@ -565,8 +568,8 @@ namespace NachoCore.ActiveSync
             c.AccountId = accountId;
             c.ServerId = serverId.Value;
 
-            c.attendees = new List<McAttendee> ();
-            c.categories = new List<McCalendarCategory> ();
+            var attendees = new List<McAttendee> ();
+            var categories = new List<McCalendarCategory> ();
             c.exceptions = new List<McException> ();
             c.recurrences = new List<McRecurrence> ();
 
@@ -580,10 +583,10 @@ namespace NachoCore.ActiveSync
                 switch (child.Name.LocalName) {
                 // Containers
                 case Xml.Calendar.Calendar_Attendees:
-                    c.attendees = ParseAttendees (accountId, nsCalendar, child);
+                    attendees.AddRange (ParseAttendees (accountId, nsCalendar, child));
                     break;
                 case Xml.Calendar.Calendar_Categories:
-                    c.categories = ParseCategories (accountId, nsCalendar, child);
+                    categories.AddRange (ParseCategories (accountId, nsCalendar, child));
                     break;
                 case Xml.Calendar.Calendar_Exceptions:
                     var exceptions = ParseExceptions (accountId, nsCalendar, child);
@@ -657,6 +660,8 @@ namespace NachoCore.ActiveSync
                     break;
                 }
             }
+            c.attendees = attendees;
+            c.categories = categories;
             return NcResult.OK (c);
         }
 
