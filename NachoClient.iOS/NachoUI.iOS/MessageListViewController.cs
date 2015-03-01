@@ -466,8 +466,8 @@ namespace NachoClient.iOS
             if (null == NcApplication.Instance.Account) {
                 return;
             }
-            var indexPath = NcModel.Instance.GetFileDirPath (NcApplication.Instance.Account.Id, "index");
-            var index = new NachoCore.Index.Index (indexPath);
+            var indexPath = NcModel.Instance.GetIndexPath (NcApplication.Instance.Account.Id);
+            var index = new NachoCore.Index.NcIndex (indexPath);
             var match = searchBar.Text;
             var pattern = String.Format ("to:\"{0}\" subject:\"{0}\"  body:\"{0}\"", match);
             var matches = index.Search (pattern);
