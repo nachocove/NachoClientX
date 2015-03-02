@@ -181,7 +181,12 @@ namespace NachoClient.iOS
             var notification = JsonConvert.DeserializeObject<Notification> (jsonStr);
             if (notification.HasPingerSection ()) {
                 PushAssist.ProcessRemoteNotification (notification.pinger, (accountId) => {
-                    PerformFetch (application, completionHandler);
+                    if (NcApplication.Instance.IsForeground) {
+                        var inbox = NcEmailManager.PriorityInbox ();
+                        inbox.StartSync ();
+                    } else {
+                        PerformFetch (application, completionHandler);
+                    }
                 });
             }
         }

@@ -66,6 +66,12 @@ namespace NachoCore
             }
         }
 
+        public bool IsForeground {
+            get {
+                return (ExecutionContextEnum.Foreground == ExecutionContext);
+            }
+        }
+
         // This string needs to be filled out by platform-dependent code when the app is first launched.
         public string CrashFolder { get; set; }
 
