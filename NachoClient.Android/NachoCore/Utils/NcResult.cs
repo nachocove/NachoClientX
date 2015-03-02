@@ -150,6 +150,17 @@ namespace NachoCore.Utils
             Info_MigrationProgress,
             Info_MigrationDescription,
             Error_CalendarForwardFailed,
+            Error_AccountDoesNotExist,
+            Error_ItemMissing,
+            Error_FolderMissing,
+            Error_ClientOwned,
+            Error_FilePresenceIsComplete,
+            Error_AttMissing,
+            Error_FilePresenceNotNone,
+            Error_IsNontruncatedBodyComplete,
+            Error_InvalidResponseType,
+            Error_IsDistinguished,
+            Error_IsAwaitingDelete,
         };
 
         public enum WhyEnum {
