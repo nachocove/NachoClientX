@@ -90,14 +90,14 @@ namespace NachoCore.ActiveSync
             });
         }
 
-        public override string StartSearchContactsReq (string prefix, uint? maxResults)
+        public override NcResult StartSearchContactsReq (string prefix, uint? maxResults)
         {
             var token = Guid.NewGuid ().ToString ();
             SearchContactsReq (prefix, maxResults, token);
-            return token;
+            return NcResult.OK (token);
         }
 
-        public override void SearchContactsReq (string prefix, uint? maxResults, string token)
+        public override NcResult SearchContactsReq (string prefix, uint? maxResults, string token)
         {
             McPending.ResolvePendingSearchReqs (Account.Id, token, true);
             var newSearch = new McPending (Account.Id) {
@@ -112,37 +112,40 @@ namespace NachoCore.ActiveSync
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCSRCH");
             }, "SearchContactsReq");
+            return NcResult.OK (token);
         }
 
-        public override string SendEmailCmd (int emailMessageId)
+        public override NcResult SendEmailCmd (int emailMessageId)
         {
-            string token = null;
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             Log.Info (Log.LOG_AS, "SendEmailCmd({0})", emailMessageId);
             NcModel.Instance.RunInTransaction (() => {
                 var emailMessage = McAbstrObject.QueryById<McEmailMessage> (emailMessageId);
                 if (null == emailMessage) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
                     return;
                 }
                 var pending = new McPending (Account.Id, emailMessage) {
                     Operation = McPending.Operations.EmailSend,
                 };
                 pending.Insert ();
-                token = pending.Token;
+                result = NcResult.OK (pending.Token);
             });
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCSEND");
             }, "SendEmailCmd");
             Log.Info (Log.LOG_AS, "SendEmailCmd({0}) returning", emailMessageId);
-            return token;
+            return result;
         }
 
-        public override string SendEmailCmd (int emailMessageId, int calId)
+        public override NcResult SendEmailCmd (int emailMessageId, int calId)
         {
-            string token = null;
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             NcModel.Instance.RunInTransaction (() => {
                 var cal = McAbstrObject.QueryById<McCalendar> (calId);
                 var emailMessage = McAbstrObject.QueryById<McEmailMessage> (emailMessageId);
                 if (null == cal || null == emailMessage) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
                     return;
                 }
 
@@ -179,18 +182,18 @@ namespace NachoCore.ActiveSync
                         break;
                     }
                 }
-                token = pending.Token;
+                result = NcResult.OK (pending.Token);
             });
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCSENDCAL");
             }, "SendEmailCmd(cal)");
-            return token;
+            return result;
         }
 
-        private string SmartEmailCmd (McPending.Operations Op, int newEmailMessageId, int refdEmailMessageId,
+        private NcResult SmartEmailCmd (McPending.Operations Op, int newEmailMessageId, int refdEmailMessageId,
                                       int folderId, bool originalEmailIsEmbedded)
         {
-            string token = null;
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             if (originalEmailIsEmbedded && 14.0 > Convert.ToDouble (ProtocolState.AsProtocolVersion)) {
                 return SendEmailCmd (newEmailMessageId);
             }
@@ -199,10 +202,14 @@ namespace NachoCore.ActiveSync
                 var refdEmailMessage = McAbstrObject.QueryById<McEmailMessage> (refdEmailMessageId);
                 var newEmailMessage = McAbstrObject.QueryById<McEmailMessage> (newEmailMessageId);
                 folder = McAbstrObject.QueryById<McFolder> (folderId);
-                if (null == refdEmailMessage || null == newEmailMessage || null == folder) {
+                if (null == refdEmailMessage || null == newEmailMessage) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
                     return;
                 }
-
+                if (null == folder) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing);
+                    return;
+                }
                 var pending = new McPending (Account.Id, newEmailMessage) {
                     Operation = Op,
                     ServerId = refdEmailMessage.ServerId,
@@ -210,22 +217,22 @@ namespace NachoCore.ActiveSync
                     Smart_OriginalEmailIsEmbedded = originalEmailIsEmbedded,
                 };
                 pending.Insert ();
-                token = pending.Token;
+                result = NcResult.OK (pending.Token);
             });
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCSMF");
             }, "SmartEmailCmd");
-            return token;
+            return result;
         }
 
-        public override string ReplyEmailCmd (int newEmailMessageId, int repliedToEmailMessageId,
+        public override NcResult ReplyEmailCmd (int newEmailMessageId, int repliedToEmailMessageId,
                                               int folderId, bool originalEmailIsEmbedded)
         {
             return SmartEmailCmd (McPending.Operations.EmailReply,
                 newEmailMessageId, repliedToEmailMessageId, folderId, originalEmailIsEmbedded);
         }
 
-        public override string ForwardEmailCmd (int newEmailMessageId, int forwardedEmailMessageId,
+        public override NcResult ForwardEmailCmd (int newEmailMessageId, int forwardedEmailMessageId,
                                                 int folderId, bool originalEmailIsEmbedded)
         {
             if (originalEmailIsEmbedded) {
@@ -235,7 +242,7 @@ namespace NachoCore.ActiveSync
                         var token = DnldAttCmd (attach.Id);
                         if (null == token) {
                             // FIXME - is this correct behavior in this case?
-                            return null;
+                            return NcResult.Error (NcResult.SubKindEnum.Error_TaskBodyDownloadFailed);
                         }
                     }
                 }
@@ -244,23 +251,28 @@ namespace NachoCore.ActiveSync
                 newEmailMessageId, forwardedEmailMessageId, folderId, originalEmailIsEmbedded);
         }
 
-        public override string DeleteEmailCmd (int emailMessageId)
+        public override NcResult DeleteEmailCmd (int emailMessageId)
         {
-            string token = null;
+            NcResult result = null;
             McEmailMessage emailMessage = null;
             NcModel.Instance.RunInTransaction (() => {
                 emailMessage = McAbstrObject.QueryById<McEmailMessage> (emailMessageId);
                 if (null == emailMessage) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
                     return;
                 }
 
                 var folders = McFolder.QueryByFolderEntryId<McEmailMessage> (Account.Id, emailMessageId);
                 if (null == folders || 0 == folders.Count) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing);
                     return;
                 }
 
                 var primeFolder = folders.First ();
-                NcAssert.True (primeFolder.IsClientOwned == false, "Should not delete items in client-owned folders");
+                if (primeFolder.IsClientOwned) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ClientOwned);
+                    return;
+                }
 
                 var pending = new McPending (Account.Id) {
                     Operation = McPending.Operations.EmailDelete,
@@ -268,12 +280,12 @@ namespace NachoCore.ActiveSync
                     ServerId = emailMessage.ServerId
                 };   
                 pending.Insert ();
-                token = pending.Token;
+                result = NcResult.OK (pending.Token);
                 emailMessage.Delete ();
             });
-            if (null != emailMessage && null != token) {
+            if (null != emailMessage && result.isOK ()) {
                 Log.Info (Log.LOG_AS, "DeleteEmailCmd: Id {0}/ServerId {1} => Token {2}",
-                    emailMessage.Id, emailMessage.ServerId, token);
+                    emailMessage.Id, emailMessage.ServerId, result.GetValue<string> ());
 
                 StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_EmailMessageSetChanged));
                 Log.Debug (Log.LOG_AS, "DeleteEmailCmd:Info_EmailMessageSetChanged sent.");
@@ -281,24 +293,31 @@ namespace NachoCore.ActiveSync
                     Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCDELMSG");
                 }, "DeleteEmailCmd");
             }
-            return token;
+            return result;
         }
 
-        private string MoveItemCmd (McPending.Operations op, NcResult.SubKindEnum subKind,
+        private NcResult MoveItemCmd (McPending.Operations op, NcResult.SubKindEnum subKind,
                                     McAbstrItem item, McFolder srcFolder, int destFolderId)
         {
-            string token = null;
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             if (null == srcFolder) {
-                return null;
+                return NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing);
             }
-            NcAssert.True (srcFolder.IsClientOwned != true, "Back end must not modify client-owned folders");
+            if (srcFolder.IsClientOwned) {
+                return NcResult.Error (NcResult.SubKindEnum.Error_ClientOwned);
+            }
+
             NcModel.Instance.RunInTransaction (() => {
                 var destFolder = McAbstrObject.QueryById<McFolder> (destFolderId);
                 if (null == destFolder) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing);
                     return;
                 }
 
-                NcAssert.True (destFolder.IsClientOwned != true, "Back end must not modify client-owned folders");
+                if (destFolder.IsClientOwned) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ClientOwned);
+                    return;
+                }
                 McPending markUpdate = null;
                 if (McPending.Operations.EmailMove == op && Server.HostIsGMail ()) {
                     // Need to make sure the email is marked read to get it out of GFE Inbox.
@@ -324,7 +343,7 @@ namespace NachoCore.ActiveSync
                 };
 
                 pending.Insert ();
-                token = pending.Token;
+                result = NcResult.OK (pending.Token);
                 destFolder.Link (item);
                 srcFolder.Unlink (item);
             });
@@ -332,14 +351,14 @@ namespace NachoCore.ActiveSync
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCMOVMSG");
             }, "MoveItemCmd");
-            return token;
+            return result;
         }
 
-        public override string MoveEmailCmd (int emailMessageId, int destFolderId)
+        public override NcResult MoveEmailCmd (int emailMessageId, int destFolderId)
         {
             var emailMessage = McAbstrObject.QueryById<McEmailMessage> (emailMessageId);
             if (null == emailMessage) {
-                return null;
+                return NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
             }
             var srcFolder = McFolder.QueryByFolderEntryId<McEmailMessage> (Account.Id, emailMessageId).FirstOrDefault ();
 
@@ -348,34 +367,43 @@ namespace NachoCore.ActiveSync
         }
 
         private bool GetItemAndFolder<T> (int itemId, 
-                                          out T item,
-                                          int folderId,
-                                          out McFolder folder) where T : McAbstrItem, new()
+            out T item,
+            int folderId,
+            out McFolder folder,
+            out NcResult.SubKindEnum subKind) where T : McAbstrItem, new()
         {
             folder = null;
             item = McAbstrObject.QueryById<T> (itemId);
             if (null == item) {
+                subKind = NcResult.SubKindEnum.Error_ItemMissing;
                 return false;
             }
 
             var folders = McFolder.QueryByFolderEntryId<T> (Account.Id, itemId);
             foreach (var maybe in folders) {
-                NcAssert.True (maybe.IsClientOwned == false, "BackEnd must not operate on client-owned folders");
+                if (maybe.IsClientOwned) {
+                    subKind = NcResult.SubKindEnum.Error_ClientOwned;
+                    return false;
+                }
                 if (-1 == folderId || maybe.Id == folderId) {
                     folder = maybe;
+                    subKind = NcResult.SubKindEnum.NotSpecified;
                     return true;
                 }
             }
+            subKind = NcResult.SubKindEnum.Error_FolderMissing;
             return false;
         }
 
-        public override string MarkEmailReadCmd (int emailMessageId)
+        public override NcResult MarkEmailReadCmd (int emailMessageId)
         {
-            string token = null;
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
+            NcResult.SubKindEnum subKind;
             McEmailMessage emailMessage;
             McFolder folder;
             NcModel.Instance.RunInTransaction (() => {
-                if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder)) {
+                if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder, out subKind)) {
+                    result = NcResult.Error (subKind);
                     return;
                 }
                 var pending = new McPending (Account.Id) {
@@ -384,24 +412,26 @@ namespace NachoCore.ActiveSync
                     ParentId = folder.ServerId,
                 };   
                 pending.Insert ();
-                token = pending.Token;
+                result = NcResult.OK (pending.Token);
                 emailMessage.IsRead = true;
                 emailMessage.Update ();
             });
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCMRMSG");
             }, "MarkEmailReadCmd");
-            return token;
+            return result;
         }
 
-        public override string SetEmailFlagCmd (int emailMessageId, string flagType, 
+        public override NcResult SetEmailFlagCmd (int emailMessageId, string flagType, 
                                                 DateTime start, DateTime utcStart, DateTime due, DateTime utcDue)
         {
-            string token = null;
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
+            NcResult.SubKindEnum subKind;
             McEmailMessage emailMessage;
             McFolder folder;
             NcModel.Instance.RunInTransaction (() => {
-                if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder)) {
+                if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder, out subKind)) {
+                    result = NcResult.Error (subKind);
                     return;
                 }
                 var pending = new McPending (Account.Id) {
@@ -415,7 +445,7 @@ namespace NachoCore.ActiveSync
                     EmailSetFlag_UtcDue = utcDue,
                 };
                 pending.Insert ();
-                token = pending.Token;
+                result = NcResult.OK (pending.Token);
                 // Set the Flag info in the DB item.
                 emailMessage.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Active;
                 emailMessage.FlagType = flagType;
@@ -428,16 +458,18 @@ namespace NachoCore.ActiveSync
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCSF");
             }, "SetEmailFlagCmd");
-            return token;
+            return result;
         }
 
-        public override string ClearEmailFlagCmd (int emailMessageId)
+        public override NcResult ClearEmailFlagCmd (int emailMessageId)
         {
-            string token = null;
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
+            NcResult.SubKindEnum subKind;
             McEmailMessage emailMessage;
             McFolder folder;
             NcModel.Instance.RunInTransaction (() => {
-                if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder)) {
+                if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder, out subKind)) {
+                    result = NcResult.Error (subKind);
                     return;
                 }
 
@@ -447,24 +479,26 @@ namespace NachoCore.ActiveSync
                     ParentId = folder.ServerId,
                 };
                 pending.Insert ();
-                token = pending.Token;
+                result = NcResult.OK (pending.Token);
                 emailMessage.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Cleared;
                 emailMessage.Update ();
             });
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCCF");
             }, "ClearEmailFlagCmd");
-            return token;
+            return result;
         }
 
-        public override string MarkEmailFlagDone (int emailMessageId,
+        public override NcResult MarkEmailFlagDone (int emailMessageId,
                                                   DateTime completeTime, DateTime dateCompleted)
         {
-            string token = null;
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
+            NcResult.SubKindEnum subKind;
             McEmailMessage emailMessage;
             McFolder folder;
             NcModel.Instance.RunInTransaction (() => {
-                if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder)) {
+                if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder, out subKind)) {
+                    result = NcResult.Error (subKind);
                     return;
                 }
                 var pending = new McPending (Account.Id) {
@@ -475,7 +509,7 @@ namespace NachoCore.ActiveSync
                     EmailMarkFlagDone_DateCompleted = dateCompleted,
                 };
                 pending.Insert ();
-                token = pending.Token;
+                result = NcResult.OK (pending.Token);
                 emailMessage.FlagStatus = (uint)McEmailMessage.FlagStatusValue.Complete;
                 emailMessage.FlagCompleteTime = completeTime;
                 emailMessage.FlagDateCompleted = dateCompleted;
@@ -484,22 +518,23 @@ namespace NachoCore.ActiveSync
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCCF");
             }, "MarkEmailFlagDone");
-            return token;
+            return result;
         }
 
-        public override string DnldEmailBodyCmd (int emailMessageId, bool doNotDefer = false)
+        public override NcResult DnldEmailBodyCmd (int emailMessageId, bool doNotDelay = false)
         {
-            string token = null;
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
+            NcResult.SubKindEnum subKind;
             McEmailMessage emailMessage;
             McFolder folder;
             NcModel.Instance.RunInTransaction (() => {
-                if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder)) {
-                    Log.Error (Log.LOG_AS, "DnldEmailBodyCmd: can't find McEmailMessage and/or McFolder");
+                if (!GetItemAndFolder<McEmailMessage> (emailMessageId, out emailMessage, -1, out folder, out subKind)) {
+                    result = NcResult.Error (subKind);
                     return;
                 }
                 var body = emailMessage.GetBody ();
                 if (McAbstrFileDesc.IsNontruncatedBodyComplete (body)) {
-                    Log.Error (Log.LOG_AS, "DnldEmailBodyCmd: FilePresence is Complete");
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_FilePresenceIsComplete);
                     return;
                 }
                 var pending = new McPending (Account.Id) {
@@ -511,34 +546,37 @@ namespace NachoCore.ActiveSync
                 if (pending.IsDuplicate (out dup)) {
                     // TODO: Insert but have the result of the 1st duplicate trigger the same result events for all duplicates.
                     Log.Info (Log.LOG_AS, "DnldEmailBodyCmd: IsDuplicate of Id/Token {0}/{1}", dup.Id, dup.Token);
-                    token = dup.Token;
+                    result = NcResult.OK (dup.Token);
                     return;
                 }
-                if (doNotDefer) {
+                if (doNotDelay) {
                     pending.DoNotDelay ();
                 }
                 pending.Insert ();
-                token = pending.Token;
+                result = NcResult.OK (pending.Token);
             });
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCDNLDEBOD");
             }, "DnldEmailBodyCmd");
-            return token;
+            return result;
         }
 
-        public override string DnldAttCmd (int attId, bool doNotDefer = false)
+        public override NcResult DnldAttCmd (int attId, bool doNotDelay = false)
         {
-            string token = null;
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             NcModel.Instance.RunInTransaction (() => {
                 var att = McAbstrObject.QueryById<McAttachment> (attId);
                 if (null == att) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_AttMissing);
                     return;
                 }
                 if (McAbstrFileDesc.FilePresenceEnum.None != att.FilePresence) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_FilePresenceNotNone);
                     return;
                 }
                 var emailMessage = McAbstrObject.QueryById<McEmailMessage> (att.ItemId);
                 if (null == emailMessage) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
                     return;
                 }
                 var pending = new McPending (Account.Id) {
@@ -550,31 +588,33 @@ namespace NachoCore.ActiveSync
                 if (pending.IsDuplicate (out dup)) {
                     // TODO: Insert but have the result of the 1st duplicate trigger the same result events for all duplicates.
                     Log.Info (Log.LOG_AS, "DnldAttCmd: IsDuplicate of Id/Token {0}/{1}", dup.Id, dup.Token);
-                    token = dup.Token;
+                    result = NcResult.OK (dup.Token);
                     return;
                 }
 
-                if (doNotDefer) {
+                if (doNotDelay) {
                     pending.DoNotDelay ();
                 }
                 pending.Insert ();
-                token = pending.Token;
+                result = NcResult.OK (pending.Token);
                 att.SetFilePresence (McAbstrFileDesc.FilePresenceEnum.Partial);
                 att.Update ();
             });
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCDNLDATT");
             }, "DnldAttCmd");
-            return token;
+            return result;
         }
 
-        public override string CreateCalCmd (int calId, int folderId)
+        public override NcResult CreateCalCmd (int calId, int folderId)
         {
-            string token = null;
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
+            NcResult.SubKindEnum subKind;
             McCalendar cal;
             McFolder folder;
             NcModel.Instance.RunInTransaction (() => {
-                if (!GetItemAndFolder<McCalendar> (calId, out cal, folderId, out folder)) {
+                if (!GetItemAndFolder<McCalendar> (calId, out cal, folderId, out folder, out subKind)) {
+                    result = NcResult.Error (subKind);
                     return;
                 }
                 var pending = new McPending (Account.Id, cal) {
@@ -583,29 +623,34 @@ namespace NachoCore.ActiveSync
                     ClientId = cal.ClientId,
                 };
                 pending.Insert ();
-                token = pending.Token;
+                result = NcResult.OK (pending.Token);
             });
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged));
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCCRECAL");
             }, "CreateCalCmd");
-            return token;
+            return result;
         }
 
-        public override string UpdateCalCmd (int calId)
+        public override NcResult UpdateCalCmd (int calId)
         {
-            string token = null;
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             NcModel.Instance.RunInTransaction (() => {
                 var cal = McAbstrObject.QueryById<McCalendar> (calId);
                 if (null == cal) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
                     return;
                 }
                 var folders = McFolder.QueryByFolderEntryId<McCalendar> (Account.Id, calId);
                 if (null == folders || 0 == folders.Count) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing);
                     return;
                 }
                 var primeFolder = folders.First ();
-                NcAssert.True (primeFolder.IsClientOwned == false, "BackEnd should not operate on client-owned folders");
+                if (primeFolder.IsClientOwned) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ClientOwned);
+                    return;
+                }
 
                 var pending = new McPending (Account.Id, cal) {
                     Operation = McPending.Operations.CalUpdate,
@@ -613,29 +658,34 @@ namespace NachoCore.ActiveSync
                     ServerId = cal.ServerId,
                 };   
                 pending.Insert ();
-                token = pending.Token;
+                result = NcResult.OK (pending.Token);
             });
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged));
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCCHGCAL");
             }, "UpdateCalCmd");
-            return token;
+            return result;
         }
 
-        public override string DeleteCalCmd (int calId)
+        public override NcResult DeleteCalCmd (int calId)
         {
-            string token = null;
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             NcModel.Instance.RunInTransaction (() => {
                 var cal = McAbstrObject.QueryById<McCalendar> (calId);
                 if (null == cal) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
                     return;
                 }
                 var folders = McFolder.QueryByFolderEntryId<McCalendar> (Account.Id, calId);
                 if (null == folders || 0 == folders.Count) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing);
                     return;
                 }
                 var primeFolder = folders.First ();
-                NcAssert.True (primeFolder.IsClientOwned == false, "Must not delete items in client-owned folders");
+                if (primeFolder.IsClientOwned) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ClientOwned);
+                    return;
+                }
 
                 var pending = new McPending (Account.Id) {
                     Operation = McPending.Operations.CalDelete,
@@ -643,21 +693,21 @@ namespace NachoCore.ActiveSync
                     ServerId = cal.ServerId,
                 };   
                 pending.Insert ();
-                token = pending.Token;
+                result = NcResult.OK (pending.Token);
                 cal.Delete ();
             });
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_CalendarSetChanged));
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCDELCAL");
             }, "DeleteCalCmd");
-            return token;
+            return result;
         }
 
-        public override string MoveCalCmd (int calId, int destFolderId)
+        public override NcResult MoveCalCmd (int calId, int destFolderId)
         {
             var cal = McAbstrObject.QueryById<McCalendar> (calId);
             if (null == cal) {
-                return null;
+                return NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
             }
             var srcFolder = McFolder.QueryByFolderEntryId<McCalendar> (Account.Id, calId).FirstOrDefault ();
 
@@ -665,17 +715,20 @@ namespace NachoCore.ActiveSync
                 cal, srcFolder, destFolderId);
         }
 
-        public override string DnldCalBodyCmd (int calId)
+        public override NcResult DnldCalBodyCmd (int calId)
         {
-            string token = null;
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
+            NcResult.SubKindEnum subKind;
             McCalendar cal;
             McFolder folder;
             NcModel.Instance.RunInTransaction (() => {
-                if (!GetItemAndFolder<McCalendar> (calId, out cal, -1, out folder)) {
+                if (!GetItemAndFolder<McCalendar> (calId, out cal, -1, out folder, out subKind)) {
+                    result = NcResult.Error (subKind);
                     return;
                 }
                 var body = cal.GetBody ();
                 if (McAbstrFileDesc.IsNontruncatedBodyComplete (body)) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_IsNontruncatedBodyComplete);
                     return;
                 }
                 var pending = new McPending (Account.Id) {
@@ -683,46 +736,52 @@ namespace NachoCore.ActiveSync
                     ServerId = cal.ServerId,
                 };
                 pending.Insert ();
-                token = pending.Token;
+                result = NcResult.OK (pending.Token);
             });
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCDNLDCALBOD");
             }, "DnldCalBodyCmd");
-            return token;
+            return result;
         }
 
-        public override string ForwardCalCmd (int newEmailMessageId, int forwardedCalId, int folderId)
+        public override NcResult ForwardCalCmd (int newEmailMessageId, int forwardedCalId, int folderId)
         {
-            string token = null;
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             NcModel.Instance.RunInTransaction (() => {
                 var refdCalEvent = McAbstrObject.QueryById<McCalendar> (forwardedCalId);
                 var newEmailMessage = McAbstrObject.QueryById<McEmailMessage> (newEmailMessageId);
                 var folder = McAbstrObject.QueryById<McFolder> (folderId);
-                if (null == refdCalEvent || null == newEmailMessage || null == folder) {
+                if (null == refdCalEvent || null == newEmailMessage) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
                     return;
                 }
-
+                if (null == folder) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing);
+                    return;
+                }
                 var pending = new McPending (Account.Id, newEmailMessage) {
                     Operation = McPending.Operations.CalForward,
                     ServerId = refdCalEvent.ServerId,
                     ParentId = folder.ServerId,
                 };
                 pending.Insert ();
-                token = pending.Token;
+                result = NcResult.OK (pending.Token);
             });
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCCALF");
             }, "ForwardCalCmd");
-            return token;
+            return result;
         }
 
-        public override string CreateContactCmd (int contactId, int folderId)
+        public override NcResult CreateContactCmd (int contactId, int folderId)
         {
-            string token = null;
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             McContact contact;
             McFolder folder;
             NcModel.Instance.RunInTransaction (() => {
-                if (!GetItemAndFolder<McContact> (contactId, out contact, folderId, out folder)) {
+                NcResult.SubKindEnum subKind;
+                if (!GetItemAndFolder<McContact> (contactId, out contact, folderId, out folder, out subKind)) {
+                    result = NcResult.Error (subKind);
                     return;
                 }
                 var pending = new McPending (Account.Id, contact) {
@@ -731,29 +790,34 @@ namespace NachoCore.ActiveSync
                     ClientId = contact.ClientId,
                 };
                 pending.Insert ();
-                token = pending.Token;
+                result = NcResult.OK (pending.Token);
             });
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ContactSetChanged));
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCCRECNT");
             }, "CreateContactCmd");
-            return token;
+            return result;
         }
 
-        public override string UpdateContactCmd (int contactId)
+        public override NcResult UpdateContactCmd (int contactId)
         {
-            string token = null;
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             NcModel.Instance.RunInTransaction (() => {
                 var contact = McAbstrObject.QueryById<McContact> (contactId);
                 if (null == contact) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
                     return;
                 }
                 var folders = McFolder.QueryByFolderEntryId<McContact> (Account.Id, contactId);
                 if (null == folders || 0 == folders.Count) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing);
                     return;
                 }
                 var primeFolder = folders.First ();
-                NcAssert.True (primeFolder.IsClientOwned == false, "BackEnd must not operate on client-owned folders");
+                if (primeFolder.IsClientOwned) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ClientOwned);
+                    return;
+                }
 
                 var pending = new McPending (Account.Id, contact) {
                     Operation = McPending.Operations.ContactUpdate,
@@ -761,50 +825,55 @@ namespace NachoCore.ActiveSync
                     ServerId = contact.ServerId,
                 };   
                 pending.Insert ();
-                token = pending.Token;
+                result = NcResult.OK (pending.Token);
             });
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ContactSetChanged));
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCCHGCTC");
             }, "UpdateContactCmd");
-            return token;
+            return result;
         }
 
-        public override string DeleteContactCmd (int contactId)
+        public override NcResult DeleteContactCmd (int contactId)
         {
-            string token = null;
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             NcModel.Instance.RunInTransaction (() => {
                 var contact = McAbstrObject.QueryById<McContact> (contactId);
                 if (null == contact) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
                     return;
                 }
                 var folders = McFolder.QueryByFolderEntryId<McContact> (Account.Id, contactId);
                 if (null == folders || 0 == folders.Count) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing);
                     return;
                 }
                 var primeFolder = folders.First ();
-                NcAssert.True (primeFolder.IsClientOwned == false, "Should not delete items in client-owned folders");
+                if (primeFolder.IsClientOwned) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ClientOwned);
+                    return;
+                }
                 var pending = new McPending (Account.Id) {
                     Operation = McPending.Operations.ContactDelete,
                     ParentId = primeFolder.ServerId,
                     ServerId = contact.ServerId,
                 };   
                 pending.Insert ();
-                token = pending.Token;
+                result = NcResult.OK (pending.Token);
                 contact.Delete ();
             });
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_ContactSetChanged));
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCDELCTC");
             }, "DeleteContactCmd");
-            return token;
+            return result;
         }
 
-        public override string MoveContactCmd (int contactId, int destFolderId)
+        public override NcResult MoveContactCmd (int contactId, int destFolderId)
         {
             var contact = McAbstrObject.QueryById<McContact> (contactId);
             if (null == contact) {
-                return null;
+                return NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
             }
             var srcFolder = McFolder.QueryByFolderEntryId<McContact> (Account.Id, contactId).FirstOrDefault ();
 
@@ -812,17 +881,20 @@ namespace NachoCore.ActiveSync
                 contact, srcFolder, destFolderId);
         }
 
-        public override string DnldContactBodyCmd (int contactId)
+        public override NcResult DnldContactBodyCmd (int contactId)
         {
-            string token = null;
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             McContact contact;
             McFolder folder;
             NcModel.Instance.RunInTransaction (() => {
-                if (!GetItemAndFolder<McContact> (contactId, out contact, -1, out folder)) {
+                NcResult.SubKindEnum subKind;
+                if (!GetItemAndFolder<McContact> (contactId, out contact, -1, out folder, out subKind)) {
+                    result = NcResult.Error (subKind);
                     return;
                 }
                 var body = contact.GetBody ();
                 if (McAbstrFileDesc.IsNontruncatedBodyComplete (body)) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_IsNontruncatedBodyComplete);
                     return;
                 }
                 var pending = new McPending (Account.Id) {
@@ -830,21 +902,23 @@ namespace NachoCore.ActiveSync
                     ServerId = contact.ServerId,
                 };
                 pending.Insert ();
-                token = pending.Token;
+                result = NcResult.OK (pending.Token);
             });
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCDNLDCONBOD");
             }, "DnldContactBodyCmd");
-            return token;
+            return result;
         }
 
-        public override string CreateTaskCmd (int taskId, int folderId)
+        public override NcResult CreateTaskCmd (int taskId, int folderId)
         {
-            string token = null;
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             McTask task;
             McFolder folder;
             NcModel.Instance.RunInTransaction (() => {
-                if (!GetItemAndFolder<McTask> (taskId, out task, folderId, out folder)) {
+                NcResult.SubKindEnum subKind;
+                if (!GetItemAndFolder<McTask> (taskId, out task, folderId, out folder, out subKind)) {
+                    result = NcResult.Error (subKind);
                     return;
                 }
                 var pending = new McPending (Account.Id, task) {
@@ -853,29 +927,34 @@ namespace NachoCore.ActiveSync
                     ClientId = task.ClientId,
                 };
                 pending.Insert ();
-                token = pending.Token;
+                result = NcResult.OK (pending.Token);
             });
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_TaskSetChanged));
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCCRETSK");
             }, "CreateTaskCmd");
-            return token;
+            return result;
         }
 
-        public override string UpdateTaskCmd (int taskId)
+        public override NcResult UpdateTaskCmd (int taskId)
         {
-            string token = null;
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             NcModel.Instance.RunInTransaction (() => {
                 var task = McAbstrObject.QueryById<McTask> (taskId);
                 if (null == task) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
                     return;
                 }
                 var folders = McFolder.QueryByFolderEntryId<McTask> (Account.Id, taskId);
                 if (null == folders || 0 == folders.Count) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing);
                     return;
                 }
                 var primeFolder = folders.First ();
-                NcAssert.True (primeFolder.IsClientOwned == false, "BackEnd should not operate on client-owned folders");
+                if (primeFolder.IsClientOwned) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ClientOwned);
+                    return;
+                }
 
                 var pending = new McPending (Account.Id, task) {
                     Operation = McPending.Operations.TaskUpdate,
@@ -883,28 +962,33 @@ namespace NachoCore.ActiveSync
                     ServerId = task.ServerId,
                 };   
                 pending.Insert ();
-                token = pending.Token;
+                result = NcResult.OK (pending.Token);
             });
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCCHGTSK");
             }, "UpdateTaskCmd");
-            return token;
+            return result;
         }
 
-        public override string DeleteTaskCmd (int taskId)
+        public override NcResult DeleteTaskCmd (int taskId)
         {
-            string token = null;
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             NcModel.Instance.RunInTransaction (() => {
                 var task = McAbstrObject.QueryById<McTask> (taskId);
                 if (null == task) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
                     return;
                 }
                 var folders = McFolder.QueryByFolderEntryId<McTask> (Account.Id, taskId);
                 if (null == folders || 0 == folders.Count) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing);
                     return;
                 }
                 var primeFolder = folders.First ();
-                NcAssert.True (primeFolder.IsClientOwned == false, "Must not delete items in client-owned folders");
+                if (primeFolder.IsClientOwned) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ClientOwned);
+                    return;
+                }
 
                 var pending = new McPending (Account.Id) {
                     Operation = McPending.Operations.ContactDelete,
@@ -912,21 +996,21 @@ namespace NachoCore.ActiveSync
                     ServerId = task.ServerId,
                 };   
                 pending.Insert ();
-                token = pending.Token;
+                result = NcResult.OK (pending.Token);
                 task.Delete ();
             });
             StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_TaskSetChanged));
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCDELTSK");
             }, "DeleteTaskCmd");
-            return token;
+            return result;
         }
 
-        public override string MoveTaskCmd (int taskId, int destFolderId)
+        public override NcResult MoveTaskCmd (int taskId, int destFolderId)
         {
             var task = McAbstrObject.QueryById<McTask> (taskId);
             if (null == task) {
-                return null;
+                return NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
             }
             var srcFolder = McFolder.QueryByFolderEntryId<McTask> (Account.Id, taskId).FirstOrDefault ();
 
@@ -934,17 +1018,20 @@ namespace NachoCore.ActiveSync
                 task, srcFolder, destFolderId);
         }
 
-        public override string DnldTaskBodyCmd (int taskId)
+        public override NcResult DnldTaskBodyCmd (int taskId)
         {
-            string token = null;
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             McTask task;
             McFolder folder;
             NcModel.Instance.RunInTransaction (() => {
-                if (!GetItemAndFolder<McTask> (taskId, out task, -1, out folder)) {
+                NcResult.SubKindEnum subKind;
+                if (!GetItemAndFolder<McTask> (taskId, out task, -1, out folder, out subKind)) {
+                    result = NcResult.Error (subKind);
                     return;
                 }
                 var body = task.GetBody ();
                 if (McAbstrFileDesc.IsNontruncatedBodyComplete (body)) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_IsNontruncatedBodyComplete);
                     return;
                 }
                 var pending = new McPending (Account.Id) {
@@ -952,33 +1039,35 @@ namespace NachoCore.ActiveSync
                     ServerId = task.ServerId,
                 };
                 pending.Insert ();
-                token = pending.Token;
+                result = NcResult.OK (pending.Token);
             });
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCDNLDTBOD");
             }, "DnldTaskBodyCmd");
-            return token;
+            return result;
         }
 
-        public override string RespondEmailCmd (int emailMessageId, NcResponseType response)
+        public override NcResult RespondEmailCmd (int emailMessageId, NcResponseType response)
         {
             return RespondItemCmd<McEmailMessage> (emailMessageId, response);
         }
 
-        public override string RespondCalCmd (int calId, NcResponseType response, DateTime? instance = null)
+        public override NcResult RespondCalCmd (int calId, NcResponseType response, DateTime? instance = null)
         {
             return RespondItemCmd<McCalendar> (calId, response, instance);
         }
 
-        private string RespondItemCmd<T> (int itemId, NcResponseType response, DateTime? instance = null)
+        private NcResult RespondItemCmd<T> (int itemId, NcResponseType response, DateTime? instance = null)
             where T : McAbstrItem, new ()
         {
-            string token = null;
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             McPending pending;
             NcModel.Instance.RunInTransaction (() => {
                 T item;
                 McFolder folder;
-                if (!GetItemAndFolder<T> (itemId, out item, -1, out folder)) {
+                NcResult.SubKindEnum subKind;
+                if (!GetItemAndFolder<T> (itemId, out item, -1, out folder, out subKind)) {
+                    result = NcResult.Error (subKind);
                     return;
                 }
                 // From MS-ASCMD:
@@ -992,6 +1081,7 @@ namespace NachoCore.ActiveSync
                 14.1 > Convert.ToDouble (ProtocolState.AsProtocolVersion)) {
                     var cal = item as McCalendar;
                     if (null == cal) {
+                        result = NcResult.Error (NcResult.SubKindEnum.Error_ItemMissing);
                         Log.Error (Log.LOG_AS, "Cannot respond to an email-invite message not in Inbox for older EAS ({0})", folder.Type);
                         return;
                     }
@@ -1006,6 +1096,7 @@ namespace NachoCore.ActiveSync
                         cal.ResponseType = NcResponseType.Declined;
                         break;
                     default:
+                        result = NcResult.Error (NcResult.SubKindEnum.Error_InvalidResponseType);
                         return;
                     }
                     cal.ResponseTypeIsSet = true;
@@ -1031,6 +1122,7 @@ namespace NachoCore.ActiveSync
                         break;
 
                     default:
+                        result = NcResult.Error (NcResult.SubKindEnum.Error_InvalidResponseType);
                         return;
                     }
 
@@ -1045,18 +1137,18 @@ namespace NachoCore.ActiveSync
                     }
                 }
                 pending.Insert ();
-                token = pending.Token;
+                result = NcResult.OK (pending.Token);
             });
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCRESPCAL");
             }, "RespondItemCmd");
-            return token;
+            return result;
         }
 
-        public override string CreateFolderCmd (int destFolderId, string displayName, 
+        public override NcResult CreateFolderCmd (int destFolderId, string displayName, 
                                                 Xml.FolderHierarchy.TypeCode folderType)
         {
-            string token = null;
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             var serverId = DateTime.UtcNow.Ticks.ToString ();
             string destFldServerId;
             NcModel.Instance.RunInTransaction (() => {
@@ -1067,9 +1159,13 @@ namespace NachoCore.ActiveSync
                     // Sub-folder case.
                     var destFld = McAbstrObject.QueryById<McFolder> (destFolderId);
                     if (null == destFld) {
+                        result = NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing);
                         return;
                     }
-                    NcAssert.True (destFld.IsClientOwned == false, "BackEnd should not modify client-owned folders");
+                    if (destFld.IsClientOwned) {
+                        result = NcResult.Error (NcResult.SubKindEnum.Error_ClientOwned);
+                        return;
+                    }
                     destFldServerId = destFld.ServerId;
                 }
                 var folder = McFolder.Create (Account.Id,
@@ -1093,28 +1189,37 @@ namespace NachoCore.ActiveSync
                     // Epoch intentionally not set.
                 };
                 pending.Insert ();
-                token = pending.Token;
+                result = NcResult.OK (pending.Token);
             });
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCFCRE");
             }, "CreateFolderCmd");
 
-            return token;
+            return result;
         }
 
-        public override string CreateFolderCmd (string displayName, Xml.FolderHierarchy.TypeCode folderType)
+        public override NcResult CreateFolderCmd (string displayName, Xml.FolderHierarchy.TypeCode folderType)
         {
             return CreateFolderCmd (-1, displayName, folderType);
         }
 
-        public override string DeleteFolderCmd (int folderId)
+        public override NcResult DeleteFolderCmd (int folderId)
         {
-            string token = null;
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             NcModel.Instance.RunInTransaction (() => {
                 var folder = McAbstrObject.QueryById<McFolder> (folderId);
-                NcAssert.False (folder.IsDistinguished, "BackEnd must not delete distinguished folders");
-                NcAssert.False (folder.IsClientOwned, "BackEnd must not delete folders in client-owned folders.");
-                NcAssert.False (folder.IsAwaitingDelete, "BackEnd must not try to delete folder that has been already deleted.");
+                if (folder.IsDistinguished) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_IsDistinguished);
+                    return;
+                }
+                if (folder.IsClientOwned) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ClientOwned);
+                    return;
+                }
+                if (folder.IsAwaitingDelete) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_IsAwaitingDelete);
+                    return;
+                }
 
                 var pending = new McPending (Account.Id) {
                     Operation = McPending.Operations.FolderDelete,
@@ -1125,12 +1230,12 @@ namespace NachoCore.ActiveSync
                 MarkFoldersAwaitingDelete (folder);
 
                 pending.Insert ();
-                token = pending.Token;
+                result = NcResult.OK (pending.Token);
             });
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCFDEL");
             }, "DeleteFolderCmd");
-            return token;
+            return result;
         }
 
         // recursively mark param and its children with isAwaitingDelete == true
@@ -1143,19 +1248,32 @@ namespace NachoCore.ActiveSync
             }
         }
 
-        public override string MoveFolderCmd (int folderId, int destFolderId)
+        public override NcResult MoveFolderCmd (int folderId, int destFolderId)
         {
-            string token = null;
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             NcModel.Instance.RunInTransaction (() => {
                 var folder = McAbstrObject.QueryById<McFolder> (folderId);
+                if (null == folder) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing);
+                    return;
+                }
                 var destFolder = McAbstrObject.QueryById<McFolder> (destFolderId);
-                NcAssert.False (folder.IsDistinguished, "BackEnd must not move distinguished folders");
-                NcAssert.False (folder.IsClientOwned, "BackEnd must not move client-owned folders");
-                NcAssert.False (destFolder.IsClientOwned, "BackEnd must not modify client-owned folders");
+                if (null == destFolder) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing);
+                    return;
+                }
+                if (folder.IsDistinguished) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_IsDistinguished);
+                    return;
+                }
+                if (folder.IsClientOwned || destFolder.IsClientOwned) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ClientOwned);
+                    return;
+                }
                 folder = folder.UpdateSet_ParentId (destFolder.ServerId);
                 StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
                 if (folder.IsClientOwned) {
-                    token = McPending.KSynchronouslyCompleted;
+                    result = NcResult.OK (McPending.KSynchronouslyCompleted);
                     return;
                 }
                 var pending = new McPending (Account.Id) {
@@ -1167,28 +1285,38 @@ namespace NachoCore.ActiveSync
                     Folder_Type = folder.Type,
                 };
                 pending.Insert ();
-                token = pending.Token;
+                result = NcResult.OK (pending.Token);
             });
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCFUP1");
             }, "MoveFolderCmd");
-            return token;
+            return result;
         }
 
-        public override string RenameFolderCmd (int folderId, string displayName)
+        public override NcResult RenameFolderCmd (int folderId, string displayName)
         {
-            string token = null;
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             NcModel.Instance.RunInTransaction (() => {
                 var folder = McAbstrObject.QueryById<McFolder> (folderId);
-                NcAssert.False (folder.IsDistinguished, "BackEnd must not delete distinguished folders");
-                NcAssert.False (folder.IsClientOwned, "BackEnd must not modify client-owned folders");
+                if (null == folder) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing);
+                    return;
+                }
+                if (folder.IsDistinguished) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_IsDistinguished);
+                    return;
+                }
+                if (folder.IsClientOwned) {
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_ClientOwned);
+                    return;
+                }
 
                 folder = folder.UpdateSet_DisplayName (displayName);
 
                 StatusInd (NcResult.Info (NcResult.SubKindEnum.Info_FolderSetChanged));
 
                 if (folder.IsClientOwned) {
-                    token = McPending.KSynchronouslyCompleted;
+                    result = NcResult.OK (McPending.KSynchronouslyCompleted);
                     return;
                 }
 
@@ -1201,22 +1329,22 @@ namespace NachoCore.ActiveSync
                     Folder_Type = folder.Type,
                 };
                 pending.Insert ();
-                token = pending.Token;
+                result = NcResult.OK (pending.Token);
             });
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQ, "ASPCFUP2");
             }, "RenameFolderCmd");
-            return token;
+            return result;
         }
 
-        public override string SyncCmd (int folderId)
+        public override NcResult SyncCmd (int folderId)
         {
-            string token = null;
+            NcResult result = NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure);
             McFolder folder;
             NcModel.Instance.RunInTransaction (() => {
                 folder = McFolder.QueryById<McFolder> (folderId);
                 if (null == folder) {
-                    Log.Error (Log.LOG_AS, "SyncCmd: can't find McFolder");
+                    result = NcResult.Error (NcResult.SubKindEnum.Error_FolderMissing);
                     return;
                 }
                 var pending = new McPending (Account.Id) {
@@ -1226,17 +1354,17 @@ namespace NachoCore.ActiveSync
                 McPending dup;
                 if (pending.IsDuplicate (out dup)) {
                     Log.Info (Log.LOG_AS, "SyncCmd: IsDuplicate of Id/Token {0}/{1}", dup.Id, dup.Token);
-                    token = dup.Token;
+                    result = NcResult.OK (dup.Token);
                     return;
                 }
                 pending.DoNotDelay ();
                 pending.Insert ();
-                token = pending.Token;
+                result = NcResult.OK (pending.Token);
             });
             NcTask.Run (delegate {
                 Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCDNLDEBOD");
             }, "SyncCmd");
-            return token;
+            return result;
         }
     }
 }

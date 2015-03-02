@@ -117,110 +117,111 @@ namespace NachoCore
         {
         }
 
-        public virtual string StartSearchContactsReq (string prefix, uint? maxResults)
+        public virtual NcResult StartSearchContactsReq (string prefix, uint? maxResults)
         {
             return null;
         }
 
-        public virtual void SearchContactsReq (string prefix, uint? maxResults, string token)
-        {
-        }
-
-        public virtual string SendEmailCmd (int emailMessageId)
+        public virtual NcResult SearchContactsReq (string prefix, uint? maxResults, string token)
         {
             return null;
         }
 
-        public virtual string SendEmailCmd (int emailMessageId, int calId)
+        public virtual NcResult SendEmailCmd (int emailMessageId)
         {
             return null;
         }
 
-        public virtual string ForwardEmailCmd (int newEmailMessageId, int forwardedEmailMessageId,
+        public virtual NcResult SendEmailCmd (int emailMessageId, int calId)
+        {
+            return null;
+        }
+
+        public virtual NcResult ForwardEmailCmd (int newEmailMessageId, int forwardedEmailMessageId,
                                                 int folderId, bool originalEmailIsEmbedded)
         {
             return null;
         }
 
-        public virtual string ReplyEmailCmd (int newEmailMessageId, int repliedToEmailMessageId,
+        public virtual NcResult ReplyEmailCmd (int newEmailMessageId, int repliedToEmailMessageId,
                                               int folderId, bool originalEmailIsEmbedded)
         {
             return null;
         }
 
-        public virtual string DeleteEmailCmd (int emailMessageId)
+        public virtual NcResult DeleteEmailCmd (int emailMessageId)
         {
             return null;
         }
 
-        public virtual string MarkEmailReadCmd (int emailMessageId)
+        public virtual NcResult MarkEmailReadCmd (int emailMessageId)
         {
             return null;
         }
 
-        public virtual string MoveEmailCmd (int emailMessageId, int destFolderId)
+        public virtual NcResult MoveEmailCmd (int emailMessageId, int destFolderId)
         {
             return null;
         }
 
-        public virtual string SetEmailFlagCmd (int emailMessageId, string flagType, 
+        public virtual NcResult SetEmailFlagCmd (int emailMessageId, string flagType, 
                                                 DateTime start, DateTime utcStart, DateTime due, DateTime utcDue)
         {
             return null;
         }
 
-        public virtual string ClearEmailFlagCmd (int emailMessageId)
+        public virtual NcResult ClearEmailFlagCmd (int emailMessageId)
         {
             return null;
         }
 
-        public virtual string MarkEmailFlagDone (int emailMessageId,
+        public virtual NcResult MarkEmailFlagDone (int emailMessageId,
                                                   DateTime completeTime, DateTime dateCompleted)
         {
             return null;
         }
 
-        public virtual string DnldEmailBodyCmd (int emailMessageId, bool doNotDefer = false)
+        public virtual NcResult DnldEmailBodyCmd (int emailMessageId, bool doNotDelay = false)
         {
             return null;
         }
 
-        public virtual string DnldAttCmd (int attId, bool doNotDefer = false)
+        public virtual NcResult DnldAttCmd (int attId, bool doNotDelay = false)
         {
             return null;
         }
 
-        public virtual string CreateCalCmd (int calId, int folderId)
+        public virtual NcResult CreateCalCmd (int calId, int folderId)
         {
             return null;
         }
 
-        public virtual string UpdateCalCmd (int calId)
+        public virtual NcResult UpdateCalCmd (int calId)
         {
             return null;
         }
 
-        public virtual string DeleteCalCmd (int calId)
+        public virtual NcResult DeleteCalCmd (int calId)
         {
             return null;
         }
        
-        public virtual string MoveCalCmd (int calId, int destFolderId)
+        public virtual NcResult MoveCalCmd (int calId, int destFolderId)
         {
             return null;
         }
 
-        public virtual string RespondEmailCmd (int emailMessageId, NcResponseType response)
+        public virtual NcResult RespondEmailCmd (int emailMessageId, NcResponseType response)
         {
             return null;
         }
 
-        public virtual string RespondCalCmd (int calId, NcResponseType response, DateTime? instance = null)
+        public virtual NcResult RespondCalCmd (int calId, NcResponseType response, DateTime? instance = null)
         {
             return null;
         }
 
-        public virtual string DnldCalBodyCmd (int calId)
+        public virtual NcResult DnldCalBodyCmd (int calId)
         {
             return null;
         }
@@ -232,87 +233,87 @@ namespace NachoCore
         /// <param name="newEmailMessageId">ID of the outgoing e-mail message.</param>
         /// <param name="forwardedCalId">ID of the McCalendar event being forwarded.</param>
         /// <param name="folderId">ID of the folder that is the parent of the event being forwarded.</param>
-        public virtual string ForwardCalCmd (int newEmailMessageId, int forwardedCalId, int folderId)
+        public virtual NcResult ForwardCalCmd (int newEmailMessageId, int forwardedCalId, int folderId)
         {
             return null;
         }
 
-        public virtual string CreateContactCmd (int contactId, int folderId)
+        public virtual NcResult CreateContactCmd (int contactId, int folderId)
         {
             return null;
         }
 
-        public virtual string UpdateContactCmd (int contactId)
+        public virtual NcResult UpdateContactCmd (int contactId)
         {
             return null;
         }
 
-        public virtual string DeleteContactCmd (int contactId)
+        public virtual NcResult DeleteContactCmd (int contactId)
         {
             return null;
         }
 
-        public virtual string MoveContactCmd (int contactId, int destFolderId)
+        public virtual NcResult MoveContactCmd (int contactId, int destFolderId)
         {
             return null;
         }
 
-        public virtual string DnldContactBodyCmd (int contactId)
+        public virtual NcResult DnldContactBodyCmd (int contactId)
         {
             return null;
         }
 
-        public virtual string CreateTaskCmd (int taskId, int folderId)
+        public virtual NcResult CreateTaskCmd (int taskId, int folderId)
         {
             return null;
         }
 
-        public virtual string UpdateTaskCmd (int taskId)
+        public virtual NcResult UpdateTaskCmd (int taskId)
         {
             return null;
         }
 
-        public virtual string DeleteTaskCmd (int taskId)
+        public virtual NcResult DeleteTaskCmd (int taskId)
         {
             return null;
         }
 
-        public virtual string MoveTaskCmd (int taskId, int destFolderId)
+        public virtual NcResult MoveTaskCmd (int taskId, int destFolderId)
         {
             return null;
         }
 
-        public virtual string DnldTaskBodyCmd (int taskId)
+        public virtual NcResult DnldTaskBodyCmd (int taskId)
         {
             return null;
         }
 
-        public virtual string CreateFolderCmd (int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType)
+        public virtual NcResult CreateFolderCmd (int destFolderId, string displayName, Xml.FolderHierarchy.TypeCode folderType)
         {
             return null;
         }
 
-        public virtual string CreateFolderCmd (string DisplayName, Xml.FolderHierarchy.TypeCode folderType)
+        public virtual NcResult CreateFolderCmd (string DisplayName, Xml.FolderHierarchy.TypeCode folderType)
         {
             return null;
         }
 
-        public virtual string DeleteFolderCmd (int folderId)
+        public virtual NcResult DeleteFolderCmd (int folderId)
         {
             return null;
         }
 
-        public virtual string MoveFolderCmd (int folderId, int destFolderId)
+        public virtual NcResult MoveFolderCmd (int folderId, int destFolderId)
         {
             return null;
         }
 
-        public virtual string RenameFolderCmd (int folderId, string displayName)
+        public virtual NcResult RenameFolderCmd (int folderId, string displayName)
         {
             return null;
         }
 
-        public virtual string SyncCmd (int folderId)
+        public virtual NcResult SyncCmd (int folderId)
         {
             return null;
         }

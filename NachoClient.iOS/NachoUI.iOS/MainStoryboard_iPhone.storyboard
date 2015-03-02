@@ -30,7 +30,7 @@
             <objects>
                 <viewController storyboardIdentifier="NachoNowViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="ygr-ff-C2f" customClass="NachoNowViewController" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="BSK-Fb-RSa">
-                        <rect key="frame" x="0.0" y="64" width="320" height="455"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                     </view>
@@ -452,7 +452,7 @@
             <objects>
                 <tableViewController storyboardIdentifier="MessageListViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="kq1-eO-X0p" customClass="MessageListViewController" sceneMemberID="viewController">
                     <tableView key="view" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="PBw-9w-NMN">
-                        <rect key="frame" x="0.0" y="64" width="320" height="455"/>
+                        <rect key="frame" x="0.0" y="64" width="320" height="504"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <connections>
@@ -593,7 +593,6 @@
                         <segue destination="15q-DA-GFk" kind="push" identifier="SegueToEditEvent" id="twQ-jE-jZd"/>
                         <segue destination="v8Y-11-4jc" kind="modal" identifier="MessageViewToFolders" modalTransitionStyle="crossDissolve" id="c2Q-C8-ZgX"/>
                         <segue destination="tAw-fh-hJX" kind="push" identifier="SegueToMailTo" id="EUF-Gz-AvW"/>
-                        <segue destination="15q-DA-GFk" kind="push" id="MVh-4z-6Fj"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="LjP-vQ-4le" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -862,6 +861,22 @@
             </objects>
             <point key="canvasLocation" x="2519" y="-1730"/>
         </scene>
+        <!--Notes Navigation Controller-->
+        <scene sceneID="2gu-y0-TcU">
+            <objects>
+                <navigationController id="rQ6-W7-lBA" userLabel="Notes Navigation Controller" sceneMemberID="viewController">
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="0Cx-Bj-vxC">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </navigationBar>
+                    <connections>
+                        <segue destination="qAG-NA-NKz" kind="relationship" relationship="rootViewController" id="Ztv-WG-YJO"/>
+                    </connections>
+                </navigationController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="Ih5-J5-dJr" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="736" y="-2894"/>
+        </scene>
         <!--Notes View Controller-->
         <scene sceneID="OcZ-uK-llj">
             <objects>
@@ -911,9 +926,6 @@
                         <segue destination="xfD-Vu-nBF" kind="relationship" relationship="viewControllers" id="XQg-JR-vxA"/>
                         <segue destination="PGe-ip-eZd" kind="relationship" relationship="viewControllers" id="aB0-7O-hbe"/>
                         <segue destination="Ond-cj-T9D" kind="relationship" relationship="viewControllers" id="L3g-YM-YjM"/>
-                        <segue destination="sL0-ex-8A8" kind="relationship" relationship="viewControllers" id="DQk-BA-wYt"/>
-                        <segue destination="bzq-xt-DVh" kind="relationship" relationship="viewControllers" id="b7c-1Z-ljK"/>
-                        <segue destination="Dc9-zu-AZQ" kind="relationship" relationship="viewControllers" id="5QG-Sn-Ioi"/>
                         <segue destination="BOY-39-YAe" kind="relationship" relationship="viewControllers" id="CgA-hJ-TPb"/>
                         <segue destination="aHn-x6-ar8" kind="relationship" relationship="viewControllers" id="Eb2-K0-nI3"/>
                     </connections>
@@ -934,7 +946,7 @@
                     <navigationItem key="navigationItem" id="lw1-fW-wNn"/>
                     <connections>
                         <segue destination="tAw-fh-hJX" kind="push" identifier="AttachmentsToCompose" id="p7w-hx-Y70"/>
-                        <segue destination="qAG-NA-NKz" kind="push" identifier="AttachmentsToNotes" id="KnL-e9-HQR"/>
+                        <segue destination="rQ6-W7-lBA" kind="modal" identifier="AttachmentsToNotes" id="zIz-hP-NrB"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="PMN-Ra-w2D" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -1378,26 +1390,6 @@
             </objects>
             <point key="canvasLocation" x="-4479" y="1203"/>
         </scene>
-        <!--Hot List-->
-        <scene sceneID="Wq2-wD-IPP">
-            <objects>
-                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="sL0-ex-8A8" sceneMemberID="viewController">
-                    <tabBarItem key="tabBarItem" title="Hot List" id="j5R-YU-3dm"/>
-                    <toolbarItems/>
-                    <navigationItem key="navigationItem" id="Yaf-Ro-b70"/>
-                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="OiJ-qn-JZn">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
-                        <autoresizingMask key="autoresizingMask"/>
-                    </navigationBar>
-                    <nil name="viewControllers"/>
-                    <connections>
-                        <segue destination="S8F-Mj-kVD" kind="relationship" relationship="rootViewController" id="8MO-NE-xo2"/>
-                    </connections>
-                </navigationController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="tjY-5P-Jrb" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-4969" y="1203"/>
-        </scene>
         <!--Deferred View Controller-->
         <scene sceneID="ceV-2B-pox">
             <objects>
@@ -1425,26 +1417,6 @@
             </objects>
             <point key="canvasLocation" x="-4479" y="1919"/>
         </scene>
-        <!--Deferred-->
-        <scene sceneID="Cee-CK-UDv">
-            <objects>
-                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="Dc9-zu-AZQ" sceneMemberID="viewController">
-                    <tabBarItem key="tabBarItem" title="Deferred" id="RmA-2j-cDD"/>
-                    <toolbarItems/>
-                    <navigationItem key="navigationItem" id="qMq-38-r4v"/>
-                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="5pH-eJ-ybd">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
-                        <autoresizingMask key="autoresizingMask"/>
-                    </navigationBar>
-                    <nil name="viewControllers"/>
-                    <connections>
-                        <segue destination="SnS-WJ-KWp" kind="relationship" relationship="rootViewController" id="3v9-ec-BfW"/>
-                    </connections>
-                </navigationController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="x93-jt-3rU" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-4969" y="1919"/>
-        </scene>
         <!--Inbox View Controller-->
         <scene sceneID="NMJ-WX-bQO">
             <objects>
@@ -1471,25 +1443,6 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="BFH-Ry-urH" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-4485" y="2687"/>
-        </scene>
-        <!--Inbox-->
-        <scene sceneID="o88-zD-oYi">
-            <objects>
-                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="bzq-xt-DVh" sceneMemberID="viewController">
-                    <tabBarItem key="tabBarItem" title="Inbox" id="rM0-7S-BJ4"/>
-                    <toolbarItems/>
-                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="IeH-Na-ecI">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
-                        <autoresizingMask key="autoresizingMask"/>
-                    </navigationBar>
-                    <nil name="viewControllers"/>
-                    <connections>
-                        <segue destination="2MA-z5-r9e" kind="relationship" relationship="rootViewController" id="bpw-06-O5b"/>
-                    </connections>
-                </navigationController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="FKZ-iR-jAL" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="-4969" y="2687"/>
         </scene>
         <!--Folders Navigation Controller-->
         <scene sceneID="ObW-V6-9oJ">
@@ -1630,35 +1583,33 @@
         <simulatedScreenMetrics key="destination" type="retina4"/>
     </simulatedMetricsContainer>
     <inferredMetricsTieBreakers>
-        <segue reference="lbY-YF-b2b"/>
-        <segue reference="g4G-tD-G9H"/>
-        <segue reference="iqA-wd-xqD"/>
-        <segue reference="XZZ-AT-ZHc"/>
-        <segue reference="Aba-pv-mzB"/>
-        <segue reference="Ar9-Nl-fq9"/>
-        <segue reference="UJb-nL-M4Z"/>
-        <segue reference="ZzH-qS-KOm"/>
-        <segue reference="WNu-7Y-s9s"/>
-        <segue reference="alQ-9Z-W4y"/>
-        <segue reference="mLY-u0-R5O"/>
-        <segue reference="kYM-OY-NE0"/>
-        <segue reference="jlp-70-Yjw"/>
-        <segue reference="6J3-c2-bz5"/>
-        <segue reference="B5b-jg-ZNg"/>
-        <segue reference="rEt-DF-c51"/>
         <segue reference="7sK-rg-HQL"/>
-        <segue reference="m2D-2n-RiV"/>
-        <segue reference="w67-dy-XSq"/>
+        <segue reference="twQ-jE-jZd"/>
+        <segue reference="i6d-Pz-anv"/>
+        <segue reference="c2Q-C8-ZgX"/>
+        <segue reference="lof-V2-Nc4"/>
+        <segue reference="RHB-Or-A5o"/>
+        <segue reference="qB9-ce-7gT"/>
         <segue reference="eTD-uL-AQU"/>
         <segue reference="tkk-6o-6oa"/>
         <segue reference="ay2-o2-R8l"/>
-        <segue reference="zby-Sy-Y3J"/>
         <segue reference="xrp-ey-B0j"/>
-        <segue reference="Kmd-x6-iCJ"/>
+        <segue reference="zby-Sy-Y3J"/>
+        <segue reference="Ztv-WG-YJO"/>
         <segue reference="Bq3-C6-QI6"/>
         <segue reference="rew-s7-VAQ"/>
-        <segue reference="8MO-NE-xo2"/>
-        <segue reference="u7I-4F-wRY"/>
+        <segue reference="Kmd-x6-iCJ"/>
+        <segue reference="B5b-jg-ZNg"/>
+        <segue reference="m2D-2n-RiV"/>
+        <segue reference="w67-dy-XSq"/>
+        <segue reference="g4G-tD-G9H"/>
+        <segue reference="iqA-wd-xqD"/>
+        <segue reference="lbY-YF-b2b"/>
+        <segue reference="XZZ-AT-ZHc"/>
+        <segue reference="Aba-pv-mzB"/>
+        <segue reference="mLY-u0-R5O"/>
+        <segue reference="Ar9-Nl-fq9"/>
+        <segue reference="WNu-7Y-s9s"/>
         <segue reference="wZy-ga-YEb"/>
     </inferredMetricsTieBreakers>
     <color key="tintColor" red="0.062745101749897003" green="0.27450981736183167" blue="0.30980393290519714" alpha="1" colorSpace="deviceRGB"/>

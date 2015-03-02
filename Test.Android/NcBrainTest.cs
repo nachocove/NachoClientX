@@ -12,8 +12,6 @@ namespace Test.Common
 {
     public class NcBrainTest : NcTestBase
     {
-        static bool Initialized = false;
-
         McEmailAddress Address;
 
         McEmailMessage Message;
@@ -29,10 +27,6 @@ namespace Test.Common
             NcBrain.StartupDelayMsec = 0;
             NcBrain.StartService ();
             Telemetry.ENABLED = false;
-            if (!Initialized) {
-                NcTask.StartService ();
-                Initialized = true;
-            }
             Address = new McEmailAddress ();
             Address.AccountId = 1;
             Address.CanonicalEmailAddress = "bob@company.com";
@@ -81,7 +75,7 @@ namespace Test.Common
             }
         }
 
-        [TestCase]
+        [Test]
         public void UpdateEmailAddress ()
         {
             // Imagine initially 1 out of 3 emails are read
@@ -113,7 +107,7 @@ namespace Test.Common
             message = McEmailMessage.QueryById<McEmailMessage> (message.Id);
         }
 
-        [TestCase]
+        [Test]
         public void UpdateEmailMessage ()
         {
             Address.IsVip = false;

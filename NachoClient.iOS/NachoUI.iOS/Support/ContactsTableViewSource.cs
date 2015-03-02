@@ -107,6 +107,10 @@ namespace NachoClient.iOS
                 sectionStart [i] = index;
                 sectionLength [i] = count;
             }
+
+            if (SearchDisplayController.Active) {
+                SearchDisplayController.Delegate.ShouldReloadForSearchScope (SearchDisplayController, 0);
+            }
         }
 
         public void SetSearchResults (List<McContactEmailAddressAttribute> searchResults)
@@ -377,7 +381,8 @@ namespace NachoClient.iOS
                 // Issue a GAL search. The status indication handler will update the search results
                 // (with doGalSearch = false) to reflect potential matches from GAL.
                 if (String.IsNullOrEmpty (searchToken)) {
-                    searchToken = BackEnd.Instance.StartSearchContactsReq (account.Id, forSearchString, null);
+                    // TODO: Think about whether we want to users about errors during GAL search
+                    searchToken = BackEnd.Instance.StartSearchContactsReq (account.Id, forSearchString, null).GetValue<string> ();
                 } else {
                     BackEnd.Instance.SearchContactsReq (account.Id, forSearchString, null, searchToken);
                 }

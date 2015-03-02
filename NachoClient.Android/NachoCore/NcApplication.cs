@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.IO;
 using System.Text;
+using System.Diagnostics;
 using NachoCore.Brain;
 using NachoCore.Model;
 using NachoCore.Utils;
@@ -26,6 +27,7 @@ namespace NachoCore
     {
         private const int KClass4EarlyShowSeconds = 5;
         private const int KClass4LateShowSeconds = 15;
+        private const int KSafeModeMaxSeconds = 120;
 
         public enum ExecutionContextEnum
         {
@@ -40,6 +42,9 @@ namespace NachoCore
         private ExecutionContextEnum _PlatformIndication = ExecutionContextEnum.Background;
 
         private DateTime _LaunchTimeUTc = DateTime.UtcNow;
+
+        private bool SafeMode = false;
+        private bool SafeModeStarted = false;
 
         public double UpTimeSec { 
             get {
@@ -284,6 +289,7 @@ namespace NachoCore
                 if (!NcMigration.WillStartService ()) {
                     ExecutionContext = ExecutionContextEnum.Initializing;
                 }
+                SafeMode = true;
                 NcTask.Run (() => {
                     if (!MonitorUploads ()) {
                         Log.Info (Log.LOG_LIFECYCLE, "NcApplication: safe mode canceled");
@@ -312,10 +318,13 @@ namespace NachoCore
                                 });
                             });
                     }
+                    SafeMode = false;
                 }, "SafeMode");
 
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: StartBasalServices exited (safe mode).");
                 return;
+            } else {
+                SafeMode = false;
             }
 
             // Start Migrations, if any.
@@ -377,7 +386,7 @@ namespace NachoCore
                     Class4EarlyShowEvent (this, EventArgs.Empty);
                 }
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4EarlyShowTimer exited.");
-            }, null, new TimeSpan (0, 0, KClass4EarlyShowSeconds), TimeSpan.Zero);
+            }, null, new TimeSpan (0, 0, KClass4EarlyShowSeconds + (SafeMode ? KSafeModeMaxSeconds : 0)), TimeSpan.Zero);
             Class4LateShowTimer = new NcTimer ("NcApplication:Class4LateShowTimer", (state) => {
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4LateShowTimer called.");
                 NcModel.Instance.Info ();
@@ -389,7 +398,7 @@ namespace NachoCore
                     Class4LateShowEvent (this, EventArgs.Empty);
                 }
                 Log.Info (Log.LOG_LIFECYCLE, "NcApplication: Class4LateShowTimer exited.");
-            }, null, new TimeSpan (0, 0, KClass4LateShowSeconds), TimeSpan.Zero);
+            }, null, new TimeSpan (0, 0, KClass4LateShowSeconds + (SafeMode ? KSafeModeMaxSeconds : 0)), TimeSpan.Zero);
         }
 
         public void StopClass4Services ()
@@ -623,6 +632,12 @@ namespace NachoCore
         private bool ShouldEnterSafeMode ()
         {
             var startupLog = StartupLog;
+            if (Debugger.IsAttached) {
+                return false;
+            }
+            if (SafeModeStarted) {
+                return false;
+            }
             if (!File.Exists (StartupLog)) {
                 return false;
             }
@@ -656,7 +671,12 @@ namespace NachoCore
         {
             bool telemetryDone = false;
             bool crashReportingDone = false;
-            while (120 > UpTimeSec) { // safe mode can only run up to 2 min
+            SafeModeStarted = true;
+            int numTelemetryEvents, numCrashes;
+            while (KSafeModeMaxSeconds > UpTimeSec) { // safe mode can only run up to 2 min
+                numTelemetryEvents = 0;
+                numCrashes = 0;
+
                 if (15 < UpTimeSec) {
                     // If we have no network connectivity or cellular only, we wait or
                     // upload up to 15 sec. The cellular part is to avoid running up
@@ -670,22 +690,36 @@ namespace NachoCore
 
                 // Check if we have caught up in telemetry upload
                 if (!telemetryDone) {
-                    int numTelemetryEvents = McTelemetryEvent.QueryCount () + McTelemetrySupportEvent.QueryCount ();
+                    numTelemetryEvents = McTelemetryEvent.QueryCount () + McTelemetrySupportEvent.QueryCount ();
                     if (0 == numTelemetryEvents) {
                         telemetryDone = true;
                     }
                 }
 
                 // Check if HockeyApp has any queued crash reports
-                if (!crashReportingDone && (0 == NumberOfCrashReports ())) {
-                    crashReportingDone = true;
+                if (!crashReportingDone) {
+                    numCrashes = NumberOfCrashReports ();
+                    if (0 == numCrashes) {
+                        crashReportingDone = true;
+                    }
                 }
+
+                Log.Info (Log.LOG_LIFECYCLE, "MonitorUploads: telemetryEvents={0}, crashes={1}", numTelemetryEvents, numCrashes);
 
                 if (crashReportingDone && telemetryDone) {
                     break;
                 }
-                if (!NcTask.CancelableSleep (100)) {
+                if (!NcTask.CancelableSleep (1000)) {
                     return false;
+                }
+            }
+            if (KSafeModeMaxSeconds > UpTimeSec) {
+                // Safe mode does not use up all allowed time. Reschedule class 4 timer to an earlier time.
+                if (!Class4EarlyShowTimer.IsExpired ()) {
+                    Class4EarlyShowTimer.Change (new TimeSpan (0, 0, KClass4EarlyShowSeconds), TimeSpan.Zero);
+                }
+                if (!Class4LateShowTimer.IsExpired ()) {
+                    Class4LateShowTimer.Change (new TimeSpan (0, 0, KClass4LateShowSeconds), TimeSpan.Zero);
                 }
             }
             return true;

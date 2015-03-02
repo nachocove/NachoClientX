@@ -839,7 +839,7 @@ namespace NachoClient.iOS
 
         protected void SetBodyAndScrollViewSize (UITextView textView)
         {
-            OldAdjustToFittingHeight (textView);
+            AdjustToFittingHeight (textView);
 
             if (!textView.Frame.Size.Equals (textView.ContentSize)) {
                 textView.ContentSize = textView.Frame.Size;

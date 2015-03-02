@@ -152,6 +152,17 @@ namespace NachoCore.Utils
             Error_CalendarForwardFailed,
             Info_PushAssistDeviceToken,
             Info_PushAssistClientToken,
+            Error_AccountDoesNotExist,
+            Error_ItemMissing,
+            Error_FolderMissing,
+            Error_ClientOwned,
+            Error_FilePresenceIsComplete,
+            Error_AttMissing,
+            Error_FilePresenceNotNone,
+            Error_IsNontruncatedBodyComplete,
+            Error_InvalidResponseType,
+            Error_IsDistinguished,
+            Error_IsAwaitingDelete,
         };
 
         public enum WhyEnum

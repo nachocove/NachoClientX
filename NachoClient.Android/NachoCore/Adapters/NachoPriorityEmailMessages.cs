@@ -39,11 +39,12 @@ namespace NachoCore
                 list.AddRange (relatedList);
             }
 
-            if (!NcMessageThreads.AreDifferent (threadList, list, out adds, out deletes)) {
-                return false;
+            var threads = NcMessageThreads.ThreadByConversation (list);
+            if (NcMessageThreads.AreDifferent (threadList, threads, out adds, out deletes)) {
+                threadList = threads;
+                return true;
             }
-            threadList = NcMessageThreads.ThreadByConversation (list);
-            return true;
+            return false;
         }
 
         public int Count ()

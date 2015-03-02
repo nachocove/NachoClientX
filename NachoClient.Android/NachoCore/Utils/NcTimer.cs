@@ -20,8 +20,11 @@ namespace NachoCore.Utils
 
         public ITimer Timer;
         public TimerCallback callback;
+
         public bool Stfu { get; set; }
+
         public string Who { get; set; }
+
         public int Id;
 
         private static int nextId = 0;
@@ -75,7 +78,7 @@ namespace NachoCore.Utils
 
                             Timer.Dispose ();
                             Log.Debug (Log.LOG_TIMER, "callback set: due={0}, period={1}", due, period);
-                            Timer = (ITimer)Activator.CreateInstance(TimerClass, WrappedCallback,
+                            Timer = (ITimer)Activator.CreateInstance (TimerClass, WrappedCallback,
                                 Object_, due, period);
                             return; // no callback yet
                         } else if (0 < Period) {
@@ -95,7 +98,7 @@ namespace NachoCore.Utils
                             Log.Debug (Log.LOG_TIMER, "callback set2: due={0}, period={1}", due, period);
                             Timer = 
                                 (ITimer)Activator.CreateInstance (TimerClass, WrappedCallback, 
-                                    Object_, due, period);
+                                Object_, due, period);
                         }
                     }
                     if (null == callback) {
@@ -199,6 +202,11 @@ namespace NachoCore.Utils
         public bool Change (UInt32 due, UInt32 period)
         {
             return Change ((long)due, (long)period);
+        }
+
+        public bool IsExpired ()
+        {
+            return HasFired;
         }
 
         public bool DisposeAndCheckHasFired ()

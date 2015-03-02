@@ -69,14 +69,15 @@ namespace NachoCore.Brain
                 return true;
             }
             var newScore = emailAddress.GetScore ();
-            if (emailAddress.NeedUpdate || (newScore != emailAddress.GetScore ())) {
+            bool scoreUpdated = newScore != emailAddress.Score;
+            if (emailAddress.NeedUpdate || scoreUpdated) {
                 Log.Debug (Log.LOG_BRAIN, "[McEmailAddress:{0}] update score -> {1:F6}",
                     emailAddress.Id, emailAddress.Score);
                 emailAddress.Score = newScore;
                 emailAddress.NeedUpdate = false;
                 emailAddress.UpdateByBrain ();
             }
-            if (updateDependencies && (newScore != emailAddress.GetScore ())) {
+            if (updateDependencies && scoreUpdated) {
                 emailAddress.MarkDependencies ();
             }
             return true;

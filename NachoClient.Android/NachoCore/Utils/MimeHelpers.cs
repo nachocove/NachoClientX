@@ -50,6 +50,22 @@ namespace NachoCore.Utils
             }
         }
 
+        public static MimeMessage ConvertTnefToMessage (MimeKit.Tnef.TnefPart tnef)
+        {
+            try {
+                var message = tnef.ConvertToMessage ();
+                FixTnefMessage (message);
+                return message;
+            } catch (Exception e) {
+                // We have seen ConvertToMessage() fail with ArgumentOutOfRangeException and ArgumentException.
+                // It is unknown whether the problem is in Exchange server giving the app a corrupt calendar
+                // event body, or in MimeKit's TNEF parser.  But either way, there is not much the app can do
+                // to recover the data.
+                Log.Error (Log.LOG_CALENDAR, "TnefPart.ConvertToMessage() failed with exception {0}", e.ToString ());
+                return EmptyMessage ();
+            }
+        }
+
         public static MimeEntity SearchMessage (string cid, MimeMessage message)
         {
             NcAssert.True (null != message);
@@ -124,7 +140,7 @@ namespace NachoCore.Utils
             if (entity is MimeKit.Tnef.TnefPart) {
                 // Pull apart the TNEF part and see what is inside.
                 var tnef = entity as MimeKit.Tnef.TnefPart;
-                var mimeMessage = tnef.ConvertToMessage ();
+                var mimeMessage = ConvertTnefToMessage (tnef);
                 return FindTextPartWithSubtype (mimeMessage.Body, subtype);
             }
             if (entity is TextPart && entity.ContentType.Matches ("text", subtype)) {
@@ -330,7 +346,7 @@ namespace NachoCore.Utils
             if (entity is MimeKit.Tnef.TnefPart) {
                 // Replace the TNEF part with an equivalent MIME entity
                 var tnef = entity as MimeKit.Tnef.TnefPart;
-                var tnefAsMime = tnef.ConvertToMessage ();
+                var tnefAsMime = ConvertTnefToMessage (tnef);
                 ReplaceEntity (entity, tnefAsMime.Body, parent, message);
                 return SetPlainTextHelper (tnefAsMime.Body, parent, message, text, alreadyReplaced);
             }
@@ -471,17 +487,9 @@ namespace NachoCore.Utils
 
             if (part is MimeKit.Tnef.TnefPart) {
                 // Convert the TNEF stuff into a MIME message, and look through that.
-                try {
-                    MimeMessage tnef = (part as MimeKit.Tnef.TnefPart).ConvertToMessage ();
-                    if (null != tnef.Body) {
-                        FixTnefMessage (tnef);
-                        MimeDisplayList (tnef, ref list);
-                    }
-                } catch (Exception e) {
-                    // Parsing the TNEF has failed with an ArgumentOutOfRangeException before.  If the
-                    // TNEF can't be parsed, log an error but otherwise ignore the problem.  There is
-                    // nothing we can do to extract the data.
-                    Log.Error (Log.LOG_CALENDAR, "Parsing of TNEF section failed: {0}", e.ToString ());
+                MimeMessage tnef = ConvertTnefToMessage (part as MimeKit.Tnef.TnefPart);
+                if (null != tnef.Body) {
+                    MimeDisplayList (tnef, ref list);
                 }
                 return;
             }
@@ -603,7 +611,7 @@ namespace NachoCore.Utils
             } else if (entity is MimeKit.Tnef.TnefPart) {
                 // Pull apart the TNEF part and see what is inside.
                 var tnef = entity as MimeKit.Tnef.TnefPart;
-                var mimeMessage = tnef.ConvertToMessage ();
+                var mimeMessage = ConvertTnefToMessage (tnef);
                 FindAttachments (mimeMessage.Body, result);
             } else if (entity is Multipart) {
                 foreach (var subpart in entity as Multipart) {

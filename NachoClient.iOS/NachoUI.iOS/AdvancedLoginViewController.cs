@@ -938,6 +938,8 @@ namespace NachoClient.iOS
         public void DontAcceptCertificate ()
         {
             ConfigureView (LoginStatus.EnterInfo);
+            NcApplication.Instance.CertAskResp (theAccount.Account.Id, false);
+            waitScreen.DismissView ();
         }
 
         // INachoCertificateResponderParent

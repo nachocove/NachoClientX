@@ -52,10 +52,10 @@ namespace NachoClient.iOS
         {
         }
 
-        public void Setup (INachoAttendeeListChooserDelegate owner, List<McAttendee> attendees, McAbstrCalendarRoot c, bool editing, bool organizer)
+        public void Setup (INachoAttendeeListChooserDelegate owner, IList<McAttendee> attendees, McAbstrCalendarRoot c, bool editing, bool organizer)
         {
             this.owner = owner;
-            this.AttendeeList = attendees;
+            this.AttendeeList = new List<McAttendee> (attendees);
             this.c = c;
             this.editing = editing;
             this.organizer = organizer;

@@ -113,7 +113,7 @@ namespace NachoClient.iOS
         const string TitleFour = "Just One Last Thing ...";
 
         const string BodyZero = "This tutorial will help you use <br> NachoMail";
-        const string BodyOne = "Important mesages go to your <font color=\"FF3F20\">Hot List</font>. <br> All messages can be found in <font color=\"1CCEC2\">Mail</font>.";
+        const string BodyOne = "Important messages go to your <font color=\"FF3F20\">Hot List</font>. <br> All messages can be found in <font color=\"1CCEC2\">Mail</font>.";
         const string BodyTwo = "Quickly browse through your Hot <br> List by swiping up and down.";
         const string BodyThree = "Your next meeting is <font color=\"FF3F20\">here</font>. Manage <br> your schedule using Calendar.";
         const string BodyFour = "Sliding right or left elsewhere will get you <br> shortcuts and options for the items";

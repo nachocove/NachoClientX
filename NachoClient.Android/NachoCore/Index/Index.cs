@@ -136,17 +136,21 @@ namespace NachoCore.Index
 
         public List<MatchedItem> Search (string queryString, int maxMatches = 1000)
         {
-            using (var reader = IndexReader.Open (IndexDirectory, true)) {
-                var parser = new QueryParser (Lucene.Net.Util.Version.LUCENE_30, "body", Analyzer);
-                var query = parser.Parse (queryString);
-                var searcher = new IndexSearcher (reader);
-                var matches = searcher.Search (query, maxMatches);
-                List<MatchedItem> matchedItems = new List<MatchedItem> ();
-                foreach (var scoreDoc in matches.ScoreDocs) {
-                    matchedItems.Add (new MatchedItem (searcher.Doc (scoreDoc.Doc)));
+            List<MatchedItem> matchedItems = new List<MatchedItem> ();
+            try {
+                using (var reader = IndexReader.Open (IndexDirectory, true)) {
+                    var parser = new QueryParser (Lucene.Net.Util.Version.LUCENE_30, "body", Analyzer);
+                    var query = parser.Parse (queryString);
+                    var searcher = new IndexSearcher (reader);
+                    var matches = searcher.Search (query, maxMatches);
+                    foreach (var scoreDoc in matches.ScoreDocs) {
+                        matchedItems.Add (new MatchedItem (searcher.Doc (scoreDoc.Doc)));
+                    }
                 }
-                return matchedItems;
+            } catch (Lucene.Net.Store.NoSuchDirectoryException e) {
+                // This can happen if a search is done before anything is written to the index.
             }
+            return matchedItems;
         }
     }
 
