@@ -96,7 +96,13 @@ namespace NachoCore.Brain
             }
             var indexPath = NcModel.Instance.GetIndexPath (accountId);
             index = new Index.NcIndex (indexPath);
-            _Indexes.TryAdd (accountId, index);
+            if (!_Indexes.TryAdd (accountId, index)) {
+                // A race happens and this thread loses. There should be an Index in the dictionary now
+                index.Dispose ();
+                index = null;
+                var got = _Indexes.TryGetValue (accountId, out index);
+                NcAssert.True (got);
+            }
             return index;
         }
 
