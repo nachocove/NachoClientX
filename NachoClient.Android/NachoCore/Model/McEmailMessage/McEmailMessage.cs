@@ -741,15 +741,6 @@ namespace NachoCore.Model
         {
             using (IEnumerator<NcEmailMessageIndex> ie = thread.GetEnumerator ()) {
                 while (ie.MoveNext ()) {
-                    yield return ie.Current.GetMessage ();
-                }
-            }
-        }
-
-        public IEnumerator<McEmailMessage> GetEnumeratorX ()
-        {
-            using (IEnumerator<NcEmailMessageIndex> ie = thread.GetEnumerator ()) {
-                while (ie.MoveNext ()) {
                     var message = ie.Current.GetMessage ();
                     if (null != message) {
                         yield return message;
