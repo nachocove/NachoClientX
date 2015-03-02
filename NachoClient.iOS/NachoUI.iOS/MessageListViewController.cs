@@ -450,14 +450,7 @@ namespace NachoClient.iOS
         [Export ("searchBar:textDidChange:")]
         public void TextChanged (UISearchBar searchBar, string searchText)
         {
-            var matches = new List<NachoCore.Index.MatchedItem> ();
-            searchResultsSource.SetEmailMessages (new NachoMessageSearchResults (matches));
-            List<int> adds;
-            List<int> deletes;
-            searchResultsSource.RefreshEmailMessages (out adds, out deletes);
-            if (null != searchDisplayController.SearchResultsTableView) {
-                searchDisplayController.SearchResultsTableView.ReloadData ();
-            }
+            SearchButtonClicked (searchBar);
         }
 
         [Foundation.Export ("searchBarSearchButtonClicked:")]
