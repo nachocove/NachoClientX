@@ -36,7 +36,7 @@ namespace Test.Common
             return list;
         }
 
-        public List<NcEmailMessageIndex> CreateMessageIndexList (params int[] values)
+        public List<McEmailMessageThread> CreateMessageIndexList (params int[] values)
         {
             var list = new List<NcEmailMessageIndex> ();
 
@@ -45,10 +45,10 @@ namespace Test.Common
                 n.Id = v;
                 list.Add (n);
             }
-            return list;
+            return NcMessageThreads.ThreadByMessage (list);
         }
 
-        public void CheckAddsAndDeletes (List<McEmailMessageThread> oldList, List<NcEmailMessageIndex> newList, List<int> adds, List<int> deletes)
+        public void CheckAddsAndDeletes (List<McEmailMessageThread> oldList, List<McEmailMessageThread> newList, List<int> adds, List<int> deletes)
         {
             Assert.True (IsNullOrNotEmpty (adds));
             Assert.True (IsNullOrNotEmpty (deletes));

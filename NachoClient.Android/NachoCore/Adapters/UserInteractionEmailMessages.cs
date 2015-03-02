@@ -53,11 +53,12 @@ namespace NachoCore
                 return true;
             }
             var list = McEmailMessage.QueryInteractions (contact.AccountId, contact);
-            if (!NcMessageThreads.AreDifferent (threadList, list, out adds, out deletes)) {
-                return false;
+            var threads = NcMessageThreads.ThreadByMessage (list);
+            if (NcMessageThreads.AreDifferent (threadList, threads, out adds, out deletes)) {
+                threadList = threads;
+                return true;
             }
-            threadList = NcMessageThreads.ThreadByMessage (list);
-            return true;
+            return false;
         }
 
         public int Count ()

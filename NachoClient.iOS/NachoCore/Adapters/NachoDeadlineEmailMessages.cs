@@ -23,14 +23,12 @@ namespace NachoCore
         public bool Refresh (out List<int> adds, out List<int> deletes)
         {
             var list = McEmailMessage.QueryDueDateMessageItemsAllAccounts ();
-            if (null == list) {
-                list = new List<NcEmailMessageIndex> ();
+            var threads = NcMessageThreads.ThreadByConversation (list);
+            if (NcMessageThreads.AreDifferent (threadList, threads, out adds, out deletes)) {
+                threadList = threads;
+                return true;
             }
-            if (!NcMessageThreads.AreDifferent (threadList, list, out adds, out deletes)) {
-                return false;
-            }
-            threadList = NcMessageThreads.ThreadByConversation (list);
-            return true;
+            return false;
         }
 
         public int Count ()
@@ -76,14 +74,12 @@ namespace NachoCore
         public bool Refresh (out List<int> adds, out List<int> deletes)
         {
             var list = McEmailMessage.QueryDueDateMessageItemsAllAccountsByThreadId (threadId);
-            if (null == list) {
-                list = new List<NcEmailMessageIndex> ();
+            var threads = NcMessageThreads.ThreadByMessage (list);
+            if (NcMessageThreads.AreDifferent (threadList, threads, out adds, out deletes)) {
+                threadList = threads;
+                return true;
             }
-            if (!NcMessageThreads.AreDifferent (threadList, list, out adds, out deletes)) {
-                return false;
-            }
-            threadList = NcMessageThreads.ThreadByMessage (list);
-            return true;
+            return false;
         }
 
         public int Count ()
