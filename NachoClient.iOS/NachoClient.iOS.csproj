@@ -2118,8 +2118,18 @@
     <BundleResource Include="Resources\modal-nextmonth%406x.png" />
     <BundleResource Include="Resources\modal-weekend-active%406x.png" />
     <BundleResource Include="Resources\modal-weekend%406x.png" />
-    <BundleResource Include="Resources\email-hot-thread%402x.png" />
-    <BundleResource Include="Resources\email-not-hot-thread%402x.png" />
+    <BundleResource Include="Resources\email-hotthread%402x.png" />
+    <BundleResource Include="Resources\email-hotthread%403x.png" />
+    <BundleResource Include="Resources\email-hotthread%404x.png" />
+    <BundleResource Include="Resources\email-hotthread%406x.png" />
+    <BundleResource Include="Resources\email-nothothread%402x.png" />
+    <BundleResource Include="Resources\email-nothothread%403x.png" />
+    <BundleResource Include="Resources\email-nothothread%404x.png" />
+    <BundleResource Include="Resources\email-nothothread%406x.png" />
+    <BundleResource Include="Resources\gen-deadlinethread%402x.png" />
+    <BundleResource Include="Resources\gen-deadlinethread%403x.png" />
+    <BundleResource Include="Resources\gen-deadlinethread%404x.png" />
+    <BundleResource Include="Resources\gen-deadlinethread%406x.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\UIImageEffects\UIImageEffectsBinding\UIImageEffectsBinding\UIImageEffectsBinding.csproj">
