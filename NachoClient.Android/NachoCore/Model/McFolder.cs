@@ -30,6 +30,7 @@ namespace NachoCore.Model
         public uint AsFolderSyncEpoch { get; set; }
         // For keeping old items around through a forced re-Sync from 0.
         public int AsSyncEpoch { get; set; }
+
         public bool AsSyncEpochScrubNeeded { get; set; }
         // AsSyncMetaToClientExpected true when we have a reason to believe that we're not synced up.
         public bool AsSyncMetaToClientExpected { get; set; }
@@ -164,6 +165,11 @@ namespace NachoCore.Model
             return McFolder.GetClientOwnedFolder (accountId, ClientOwned_Outbox);
         }
 
+        public static McFolder GetCalDraftsFolder (int accountId)
+        {
+            return McFolder.GetClientOwnedFolder (accountId, ClientOwned_CalDrafts);
+        }
+
         public static McFolder GetGalCacheFolder (int accountId)
         {
             return McFolder.GetClientOwnedFolder (accountId, ClientOwned_GalCache);
@@ -279,10 +285,10 @@ namespace NachoCore.Model
             return folders.ToList ();
         }
 
-        public static List<McFolder> QueryByMostRecentlyAccessedFolders (int accountId)
+        public static List<McFolder> QueryByMostRecentlyAccessedVisibleFolders (int accountId)
         {
             var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f " +
-                          "WHERE f.AccountId = ? AND f.LastAccessed > ? " +
+                          "WHERE f.AccountId = ? AND f.LastAccessed > ? AND f.IsHidden = 0 " +
                           "ORDER BY f.LastAccessed DESC", accountId, DateTime.UtcNow.AddYears (-1));
             return folders.ToList ();
         }
@@ -296,6 +302,34 @@ namespace NachoCore.Model
                           " f.IsHidden = 0 " +
                           " ORDER BY f.DisplayName ", 
                               accountId);
+            return folders.ToList ();
+        }
+
+        public static McFolder QueryByServerId (int accountId, string serverId)
+        {
+            var f = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
+                    " f.AccountId = ? AND " +
+                    " f.IsAwaitingDelete = 0 AND " +
+                    " f.IsHidden = 0 AND " +
+                    " f.ServerId = ? ",
+                        accountId, serverId).ToList ();
+            NcAssert.True (2 > f.Count());
+            return NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
+            " f.AccountId = ? AND " +
+            " f.IsAwaitingDelete = 0 AND " +
+            " f.IsHidden = 0 AND " +
+            " f.ServerId = ? ",
+                accountId, serverId).SingleOrDefault ();
+        }
+
+        public static List<McFolder> QueryVisibleChildrenOfParentId (int accountId, string parentId)
+        {
+            var folders = NcModel.Instance.Db.Query<McFolder> ("SELECT f.* FROM McFolder AS f WHERE " +
+                          " f.AccountId = ? AND " +
+                          " f.IsHidden = 0 AND " +
+                          " f.IsAwaitingDelete = 0 AND " +
+                          " f.ParentId = ? ",
+                              accountId, parentId);
             return folders.ToList ();
         }
 
