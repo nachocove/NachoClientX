@@ -13,6 +13,7 @@ using MimeKit;
 using System.Xml.Linq;
 using NachoCore.Model;
 using NachoCore.Brain;
+using NachoCore.Index;
 
 namespace NachoCore.Model
 {
@@ -957,6 +958,7 @@ namespace NachoCore.Model
             NcModel.Instance.RunInTransaction (() => {
                 returnVal = base.Delete ();
             });
+            NcBrain.SharedInstance.UnindexEmailMessage (this);
             return returnVal;
         }
 

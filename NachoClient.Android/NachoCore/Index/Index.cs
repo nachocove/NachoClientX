@@ -15,7 +15,7 @@ using Lucene.Net.Search.Payloads;
 
 namespace NachoCore.Index
 {
-    public class Index : IDisposable
+    public class NcIndex : IDisposable
     {
         private StandardAnalyzer Analyzer;
         private FSDirectory IndexDirectory;
@@ -24,7 +24,9 @@ namespace NachoCore.Index
         private IndexWriter Writer;
         private IndexReader Reader;
 
-        public Index (string indexDirectoryPath)
+        public bool Dirty { protected set; get; }
+
+        public NcIndex (string indexDirectoryPath)
         {
             Analyzer = new StandardAnalyzer (Lucene.Net.Util.Version.LUCENE_30);
             IndexDirectory = FSDirectory.Open (indexDirectoryPath);
@@ -48,7 +50,7 @@ namespace NachoCore.Index
 
         // Add() is significantly slower than BeginAddTransaction() + BatchAdd() + EndAddTransaction()
         // So, if you are going to use more than one item, please use the later combination.
-        public long Add (IndexDocument doc)
+        public long Add (NcIndexDocument doc)
         {
             BeginAddTransaction ();
             var bytesIndexed = BatchAdd (doc);
@@ -56,7 +58,7 @@ namespace NachoCore.Index
             return bytesIndexed;
         }
 
-        public long BatchAdd (IndexDocument doc)
+        public long BatchAdd (NcIndexDocument doc)
         {
             if (null == Writer) {
                 throw new ArgumentNullException ();
@@ -64,6 +66,7 @@ namespace NachoCore.Index
 
             // Index the document
             Writer.AddDocument (doc.Doc);
+            Dirty = true;
 
             return doc.BytesIndexed;
         }
@@ -74,6 +77,7 @@ namespace NachoCore.Index
             if (null != Writer) {
                 throw new ArgumentException ();
             }
+            Dirty = false;
             Writer = new IndexWriter (IndexDirectory, Analyzer, IndexWriter.MaxFieldLength.UNLIMITED);
         }
 
@@ -82,6 +86,7 @@ namespace NachoCore.Index
             Writer.Commit ();
             Writer.Dispose ();
             Writer = null;
+            Dirty = false;
             Lock.ReleaseMutex ();
         }
 
@@ -114,6 +119,7 @@ namespace NachoCore.Index
                 return false;
             }
             Reader.DeleteDocument (matches.ScoreDocs [0].Doc);
+            Dirty = true;
             return true;
         }
 
