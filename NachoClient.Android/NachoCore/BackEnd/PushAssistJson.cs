@@ -14,6 +14,7 @@ namespace NachoCore
     public class StartSessionRequest
     {
         public string ClientId;
+        public string DeviceId;
         public string ClientContext;
         public string MailServerUrl;
         public Credentials MailServerCredentials;
@@ -34,6 +35,7 @@ namespace NachoCore
     public class DeferSessionRequest
     {
         public string ClientId;
+        public string DeviceId;
         public string ClientContext;
         public string Token;
         public int ResponseTimeout;
@@ -42,6 +44,7 @@ namespace NachoCore
     public class StopSessionRequest
     {
         public string ClientId;
+        public string DeviceId;
         public string ClientContext;
         public string Token;
     }

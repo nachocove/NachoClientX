@@ -359,6 +359,7 @@ namespace NachoCore
             }
             var jsonRequest = new StopSessionRequest () {
                 ClientId = NcApplication.Instance.GetClientId (),
+                DeviceId = NachoPlatform.Device.Instance.Identity (),
                 ClientContext = ClientContext,
                 Token = SessionToken,
             };
@@ -470,6 +471,7 @@ namespace NachoCore
             }
             var jsonRequest = new StartSessionRequest () {
                 ClientId = clientId,
+                DeviceId = NachoPlatform.Device.Instance.Identity (),
                 ClientContext = ClientContext,
                 MailServerUrl = parameters.RequestUrl,
                 MailServerCredentials = new Credentials {
@@ -527,6 +529,7 @@ namespace NachoCore
             }
             var jsonRequest = new DeferSessionRequest () {
                 ClientId = clientId,
+                DeviceId = NachoPlatform.Device.Instance.Identity (),
                 ClientContext = ClientContext,
                 Token = SessionToken,
                 ResponseTimeout = parameters.ResponseTimeoutMsec
