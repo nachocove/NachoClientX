@@ -170,7 +170,7 @@ namespace NachoClient.iOS
         public void StatusIndicatorCallback (object sender, EventArgs e)
         {
             var s = (StatusIndEventArgs)e;
-            if (NcResult.SubKindEnum.Info_SearchCommandSucceeded == s.Status.SubKind) {
+            if (NcResult.SubKindEnum.Info_ContactSearchCommandSucceeded == s.Status.SubKind) {
                 Log.Debug (Log.LOG_UI, "StatusIndicatorCallback: Info_SearchCommandSucceeded");
                 UpdateAutocompleteResults (0, autoCompleteTextField.Text);
             }
@@ -264,9 +264,9 @@ namespace NachoClient.iOS
         {
             // TODO: Think about whether we want to users about errors during GAL search
             if (String.IsNullOrEmpty (contactSearchToken)) {
-                contactSearchToken = BackEnd.Instance.StartSearchContactsReq (account.Id, forSearchString, null).GetValue<string> ();
+                contactSearchToken = BackEnd.Instance.StartSearchEmailReq (account.Id, forSearchString, null).GetValue<string> ();
             } else {
-                BackEnd.Instance.SearchContactsReq (account.Id, forSearchString, null, contactSearchToken);
+                BackEnd.Instance.SearchEmailReq (account.Id, forSearchString, null, contactSearchToken);
             }
         }
 

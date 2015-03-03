@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
@@ -11,11 +12,18 @@ namespace NachoCore.ActiveSync
     // NOTE: Only contacts searches are implemented so far!
     public class AsSearchCommand : AsCommand
     {
+        private NcResult.SubKindEnum ErrorSubKind;
+        private NcResult.SubKindEnum InfoSubKind;
+
         public AsSearchCommand (IBEContext beContext, McPending pending) :
             base (Xml.Search.Ns, Xml.Search.Ns, beContext)
         {
             PendingSingle = pending;
             PendingSingle.MarkDispached ();
+            ErrorSubKind = (McPending.Operations.ContactSearch == PendingSingle.Operation) ?
+                NcResult.SubKindEnum.Error_ContactSearchCommandFailed : NcResult.SubKindEnum.Error_EmailSearchCommandFailed;
+            InfoSubKind = (McPending.Operations.ContactSearch == PendingSingle.Operation) ?
+                NcResult.SubKindEnum.Info_ContactSearchCommandSucceeded : NcResult.SubKindEnum.Info_EmailSearchCommandSucceeded;
         }
 
         protected override bool RequiresPending ()
@@ -25,22 +33,45 @@ namespace NachoCore.ActiveSync
 
         protected override XDocument ToXDocument (AsHttpOperation Sender)
         {
+            XNamespace m_nsEmail = Xml.Email.Ns;
             var doc = AsCommand.ToEmptyXDocument ();
-
+            XElement search;
             var options = new XElement (m_ns + Xml.Search.Options,
                               new XElement (m_ns + Xml.Search.Range, string.Format ("0-{0}", PendingSingle.Search_MaxResults - 1)));
-            // TODO: move decision to strategy.
-            if (NcCommStatus.Instance.Speed != NachoPlatform.NetStatusSpeedEnum.CellSlow_2 &&
+            switch (PendingSingle.Operation) {
+            case McPending.Operations.ContactSearch:
+                // TODO: move decision to strategy.
+                if (NcCommStatus.Instance.Speed != NachoPlatform.NetStatusSpeedEnum.CellSlow_2 &&
                 // TODO - enum-ize AsProtocolVersion.
-                "14.1" == BEContext.ProtocolState.AsProtocolVersion) {
-                options.Add (new XElement (m_ns + Xml.Search.Picture,
-                    new XElement (m_ns + Xml.Search.MaxPictures, PendingSingle.Search_MaxResults)));
+                    "14.1" == BEContext.ProtocolState.AsProtocolVersion) {
+                    options.Add (new XElement (m_ns + Xml.Search.Picture,
+                        new XElement (m_ns + Xml.Search.MaxPictures, PendingSingle.Search_MaxResults)));
+                }
+                search = new XElement (m_ns + Xml.Search.Ns,
+                    new XElement (m_ns + Xml.Search.Store, 
+                        new XElement (m_ns + Xml.Search.Name, Xml.Search.NameCode.GAL),
+                        new XElement (m_ns + Xml.Search.Query, PendingSingle.Search_Prefix),
+                        options));
+                break;
+            case McPending.Operations.EmailSearch:
+                options.Add (new XElement (m_ns + Xml.Search.DeepTraversal));
+                search = new XElement (m_ns + Xml.Search.Ns,
+                    new XElement (m_ns + Xml.Search.Store, 
+                        new XElement (m_ns + Xml.Search.Name, Xml.Search.NameCode.Mailbox),
+                        new XElement (m_ns + Xml.Search.Query, 
+                            /* new XElement (m_ns + Xml.Search.And,*/
+                                new XElement (m_ns + Xml.Search.FreeText, PendingSingle.Search_Prefix) /*,
+                            new XElement (m_ns + Xml.Search.LessThan,
+                                    new XElement (m_nsEmail + Xml.Email.DateReceived),
+                                    // FIXME - this comes from strat.
+                                    new XElement (m_ns + Xml.Search.Value, (DateTime.UtcNow + new TimeSpan (30, 0, 0, 0)).ToString (AsHelpers.DateTimeFmt1))))*/),
+                        options));
+                break;
+            default:
+                NcAssert.CaseError (string.Format ("Bad Operation {0}", PendingSingle.Operation));
+                search = null;
+                break;
             }
-            var search = new XElement (m_ns + Xml.Search.Ns,
-                             new XElement (m_ns + Xml.Search.Store, 
-                                 new XElement (m_ns + Xml.Search.Name, Xml.Search.NameCode.GAL),
-                    new XElement (m_ns + Xml.Search.Query, PendingSingle.Search_Prefix),
-                                 options));
             doc.Add (search);
             return doc;
         }
@@ -62,13 +93,26 @@ namespace NachoCore.ActiveSync
                 case Xml.Search.StoreStatusCode.Success_1:
                 case Xml.Search.StoreStatusCode.NotFound_6:
                     var xmlResults = xmlStore.Elements (m_ns + Xml.Search.Result);
-                    foreach (var xmlResult in xmlResults) {
-                        UpdateOrInsertGalCache (xmlResult, PendingSingle.Token);
+                    switch (PendingSingle.Operation) {
+                    case McPending.Operations.ContactSearch:
+                        foreach (var xmlResult in xmlResults) {
+                            UpdateOrInsertGalCache (xmlResult, PendingSingle.Token);
+                        }
+                        PendingResolveApply ((pending) => {
+                            pending.ResolveAsSuccess (BEContext.ProtoControl, NcResult.Info (InfoSubKind));
+                        });
+                        break;
+                    case McPending.Operations.EmailSearch:
+                        var result = NcResult.Info (InfoSubKind);
+                        result.Value = BuildEmailMessageIdVector (xmlResults);
+                        PendingResolveApply ((pending) => {
+                            pending.ResolveAsSuccess (BEContext.ProtoControl, result);
+                        });
+                        break;
+                    default:
+                        NcAssert.CaseError (string.Format ("Bad Operation {0}", PendingSingle.Operation));
+                        break;
                     }
-                    PendingResolveApply ((pending) => {
-                        pending.ResolveAsSuccess (BEContext.ProtoControl,
-                            NcResult.Info (NcResult.SubKindEnum.Info_SearchCommandSucceeded));
-                    });
                     return Event.Create ((uint)SmEvt.E.Success, "SRCHSUCCESS");
                 
                 default:
@@ -90,8 +134,7 @@ namespace NachoCore.ActiveSync
                         case Xml.Search.StoreStatusCode.BadLink_4:
                             PendingResolveApply ((pending) => {
                                 pending.ResolveAsHardFail (BEContext.ProtoControl,
-                                    NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
-                                        NcResult.WhyEnum.BadOrMalformed));
+                                    NcResult.Error (ErrorSubKind, NcResult.WhyEnum.BadOrMalformed));
                             });
                             return Event.Create ((uint)SmEvt.E.HardFail, "SRCHHARD0");
 
@@ -99,16 +142,14 @@ namespace NachoCore.ActiveSync
                         case Xml.Search.StoreStatusCode.AccessBlocked_13:
                             PendingResolveApply ((pending) => {
                                 pending.ResolveAsHardFail (BEContext.ProtoControl,
-                                    NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
-                                        NcResult.WhyEnum.AccessDeniedOrBlocked));
+                                    NcResult.Error (ErrorSubKind, NcResult.WhyEnum.AccessDeniedOrBlocked));
                             });
                             return Event.Create ((uint)SmEvt.E.HardFail, "SRCHHARD1");
 
                         case Xml.Search.StoreStatusCode.TooComplex_8:
                             PendingResolveApply ((pending) => {
                                 pending.ResolveAsHardFail (BEContext.ProtoControl,
-                                    NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
-                                        NcResult.WhyEnum.TooComplex));
+                                    NcResult.Error (ErrorSubKind, NcResult.WhyEnum.TooComplex));
                             });
                             return Event.Create ((uint)SmEvt.E.HardFail, "SRCHHARD2");
 
@@ -116,8 +157,7 @@ namespace NachoCore.ActiveSync
                             PendingResolveApply ((pending) => {
                                 pending.ResolveAsDeferred (BEContext.ProtoControl,
                                     DateTime.UtcNow.AddSeconds (McPending.KDefaultDeferDelaySeconds),
-                                    NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
-                                        NcResult.WhyEnum.ServerError));
+                                    NcResult.Error (ErrorSubKind, NcResult.WhyEnum.ServerError));
                             });
                             return Event.Create ((uint)SmEvt.E.TempFail, "SRCHTEMP0");
 
@@ -127,8 +167,7 @@ namespace NachoCore.ActiveSync
                             PendingResolveApply ((pending) => {
                                 pending.ResolveAsDeferred (BEContext.ProtoControl,
                                     DateTime.UtcNow.AddSeconds (McPending.KDefaultDeferDelaySeconds),
-                                    NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
-                                        NcResult.WhyEnum.Unknown));
+                                    NcResult.Error (ErrorSubKind, NcResult.WhyEnum.Unknown));
                             });
                             return Event.Create ((uint)SmEvt.E.TempFail, "SRCHTEMP1");
 
@@ -141,8 +180,7 @@ namespace NachoCore.ActiveSync
                         case Xml.Search.StoreStatusCode.EndOfRRange_12:
                             PendingResolveApply ((pending) => {
                                 pending.ResolveAsHardFail (BEContext.ProtoControl,
-                                    NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
-                                        NcResult.WhyEnum.TooComplex));
+                                    NcResult.Error (ErrorSubKind, NcResult.WhyEnum.TooComplex));
                             });
                             return Event.Create ((uint)SmEvt.E.HardFail, "SRCHEORR");
 
@@ -155,8 +193,7 @@ namespace NachoCore.ActiveSync
                         default:
                             PendingResolveApply ((pending) => {
                                 pending.ResolveAsHardFail (BEContext.ProtoControl,
-                                    NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
-                                        NcResult.WhyEnum.Unknown));
+                                    NcResult.Error (ErrorSubKind, NcResult.WhyEnum.Unknown));
                             });
                             return Event.Create ((uint)SmEvt.E.HardFail, "SRCHUNK");
                         }
@@ -167,12 +204,10 @@ namespace NachoCore.ActiveSync
             PendingResolveApply ((pending) => {
                 if (Xml.Search.SearchStatusCode.ServerError_3 == (Xml.Search.SearchStatusCode)uint.Parse (status)) {
                     pending.ResolveAsHardFail (BEContext.ProtoControl,
-                        NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
-                            NcResult.WhyEnum.ServerError));
+                        NcResult.Error (ErrorSubKind, NcResult.WhyEnum.ServerError));
                 } else {
                     pending.ResolveAsHardFail (BEContext.ProtoControl,
-                        NcResult.Error (NcResult.SubKindEnum.Error_SearchCommandFailed,
-                            NcResult.WhyEnum.Unknown));
+                        NcResult.Error (ErrorSubKind, NcResult.WhyEnum.Unknown));
                 }
             });
             return Event.Create ((uint)SmEvt.E.HardFail, "SRTLYUK");
@@ -208,6 +243,33 @@ namespace NachoCore.ActiveSync
             contact.GalCacheToken = Token;
             contact.Insert ();
             galCacheFolder.Link (contact);
+        }
+
+        private List<NcEmailMessageIndex> BuildEmailMessageIdVector (IEnumerable<XElement> xmlResults)
+        {
+            var vector = new List<NcEmailMessageIndex> ();
+            foreach (var xmlResult in xmlResults) {
+                var xmlProperties = xmlResult.ElementAnyNs (Xml.Search.Properties);
+                if (null == xmlProperties) {
+                    Log.Error (Log.LOG_AS, "Search result without Properties");
+                } else {
+                    var xmlFrom = xmlProperties.ElementAnyNs (Xml.Email.From);
+                    var xmlDateReceived = xmlProperties.ElementAnyNs (Xml.Email.DateReceived);
+                    if (null == xmlFrom || null == xmlFrom.Value || null == xmlDateReceived || null == xmlDateReceived.Value) {
+                        Log.Error (Log.LOG_AS, "Search result without From or DateReceived");
+                    } else {
+                        var dateRecv = AsHelpers.ParseAsDateTime (xmlDateReceived.Value);
+                        var hopefullyOne = McEmailMessage.QueryByDateReceivedAndFrom (BEContext.Account.Id, dateRecv, xmlFrom.Value);
+                        if (1 != hopefullyOne.Count) {
+                            Log.Error (Log.LOG_AS, "Search result with != 1 match: {0}", hopefullyOne.Count);
+                        }
+                        if (0 < hopefullyOne.Count) {
+                            vector.Add (hopefullyOne.First ());
+                        }
+                    }
+                }
+            }
+            return vector;
         }
     }
 }

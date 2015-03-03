@@ -117,6 +117,16 @@ namespace NachoCore
         {
         }
 
+        public virtual NcResult StartSearchEmailReq (string keywords, uint? maxResults)
+        {
+            return null;
+        }
+
+        public virtual NcResult SearchEmailReq (string keywords, uint? maxResults, string token)
+        {
+            return null;
+        }
+
         public virtual NcResult StartSearchContactsReq (string prefix, uint? maxResults)
         {
             return null;

@@ -67,7 +67,8 @@ namespace NachoCore.ActiveSync
                     case McPending.StateEnum.Failed:
                     case McPending.StateEnum.PredBlocked:
                     case McPending.StateEnum.UserBlocked:
-                        if (McPending.Operations.ContactSearch == pending.Operation) {
+                        if (McPending.Operations.ContactSearch == pending.Operation || 
+                            McPending.Operations.EmailSearch == pending.Operation) {
                             McPending.ResolvePendingSearchReqs (Account.Id, token, false);
                         } else {
                             pending.ResolveAsCancelled ();
@@ -90,6 +91,31 @@ namespace NachoCore.ActiveSync
             });
         }
 
+        public override NcResult StartSearchEmailReq (string keywords, uint? maxResults)
+        {
+            var token = Guid.NewGuid ().ToString ();
+            SearchEmailReq (keywords, maxResults, token);
+            return NcResult.OK (token);
+        }
+
+        public override NcResult SearchEmailReq (string keywords, uint? maxResults, string token)
+        {
+            McPending.ResolvePendingSearchReqs (Account.Id, token, true);
+            var newSearch = new McPending (Account.Id) {
+                Operation = McPending.Operations.EmailSearch,
+                Search_Prefix = keywords,
+                Search_MaxResults = (null == maxResults) ? 50 : (uint)maxResults,
+                Token = token
+            };
+            newSearch.DoNotDelay ();
+            newSearch.Insert ();
+
+            NcTask.Run (delegate {
+                Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCSRCHE");
+            }, "SearchEmailReq");
+            return NcResult.OK (token);
+        }
+
         public override NcResult StartSearchContactsReq (string prefix, uint? maxResults)
         {
             var token = Guid.NewGuid ().ToString ();
@@ -110,7 +136,7 @@ namespace NachoCore.ActiveSync
             newSearch.Insert ();
 
             NcTask.Run (delegate {
-                Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCSRCH");
+                Sm.PostEvent ((uint)CtlEvt.E.PendQHot, "ASPCSRCHC");
             }, "SearchContactsReq");
             return NcResult.OK (token);
         }
