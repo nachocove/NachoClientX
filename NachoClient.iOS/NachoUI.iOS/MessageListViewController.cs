@@ -200,21 +200,21 @@ namespace NachoClient.iOS
             ReloadCapture.Start ();
             List<int> adds;
             List<int> deletes;
-            bool refresh = messageSource.RefreshEmailMessages (out adds, out deletes);
-            if (messageSource.NoMessageThreads ()) {
-                MaybeDismissView ();
-            } else if (refresh) {
+            if (messageSource.RefreshEmailMessages (out adds, out deletes)) {
                 Util.UpdateTable (TableView, adds, deletes);
             } else {
                 messageSource.ReconfigureVisibleCells (TableView);
             }
+            if (messageSource.NoMessageThreads ()) {
+                MaybeDismissView ();
+            }  
             ReloadCapture.Stop ();
             NachoCore.Utils.NcAbate.RegularPriority ("MessageListViewController ReloadDataMaintainingPosition");
         }
 
         public virtual void MaybeDismissView ()
         {
-            // nope
+            // Nope, message views show 'empty'
         }
 
         public override void ViewWillAppear (bool animated)
