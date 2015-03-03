@@ -16,7 +16,7 @@ namespace Test.Common
 
         const string EmailPath = "email";
 
-        Index Index;
+        NcIndex Index;
 
         private void CleanupIndexDirectory ()
         {
