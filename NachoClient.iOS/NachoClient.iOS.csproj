@@ -1259,6 +1259,10 @@
     <Compile Include="..\NachoClient.Android\NachoCore\Model\Migration\NcMigration7.cs">
       <Link>NachoCore\Model\Migration\NcMigration7.cs</Link>
     </Compile>
+    <Compile Include="NachoUI.iOS\NotesViewerViewController.cs" />
+    <Compile Include="NachoUI.iOS\NotesViewerViewController.designer.cs">
+      <DependentUpon>NotesViewerViewController.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Resources\HomePageController.xib" />
