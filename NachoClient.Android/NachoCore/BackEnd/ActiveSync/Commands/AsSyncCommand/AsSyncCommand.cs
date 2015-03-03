@@ -492,6 +492,9 @@ namespace NachoCore.ActiveSync
                 var status = (Xml.AirSync.StatusCode)uint.Parse (xmlStatus.Value);
                 switch (status) {
                 case Xml.AirSync.StatusCode.Success_1:
+                    if (0 != folder.AsSyncFailRun) {
+                        folder = folder.UpdateReset_AsSyncFailRun ();
+                    }
                     var xmlResponses = collection.Element (m_ns + Xml.AirSync.Responses);
                     ProcessCollectionResponses (folder, xmlResponses);
                     if (!HasBeenCancelled) {
@@ -520,37 +523,42 @@ namespace NachoCore.ActiveSync
                     }
                     break;
 
-                case Xml.AirSync.StatusCode.ServerError_5:
-                    Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: ServerError_5");
-                    // TODO: detect a loop, and reset folder state if looping.
-                    lock (PendingResolveLockObj) {
-                        // Defer all the outbound commands until after ReSync.
-                        pendingInFolder = PendingList.Where (x => x.ParentId == folder.ServerId).ToList ();
-                        foreach (var pending in pendingInFolder) {
-                            PendingList.Remove (pending);
-                            pending.ResolveAsDeferred (BEContext.ProtoControl,
-                                McPending.DeferredEnum.UntilSync,
-                                NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure));
-                        }
-                    }
-                    break;
-
                 case Xml.AirSync.StatusCode.SyncKeyInvalid_3:
-                    Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: SyncKeyInvalid_3");
-                    folder = folder.UpdateResetSyncState ();
-                    // Overkill, but ensure that UI knows that the rug was pulled from under it.
-                    HadEmailMessageSetChanges = true;
-                    HadContactSetChanges = true;
-                    HadCalendarSetChanges = true;
-                    HadTaskChanges = true;
-                    lock (PendingResolveLockObj) {
-                        // Defer all the outbound commands until after ReSync.
-                        pendingInFolder = PendingList.Where (x => x.ParentId == folder.ServerId).ToList ();
-                        foreach (var pending in pendingInFolder) {
-                            PendingList.Remove (pending);
-                            pending.ResolveAsDeferred (BEContext.ProtoControl,
-                                McPending.DeferredEnum.UntilSync,
-                                NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure));
+                case Xml.AirSync.StatusCode.ServerError_5:
+                    Log.Warn (Log.LOG_AS, "AsSyncCommand: Status: {0}", status.ToString ());
+                    if (4 > folder.AsSyncFailRun) {
+                        // Let the scrubber re-enable.
+                        folder = folder.UpdateIncrement_AsSyncFailRunToClientExpected (false);
+                        Log.Warn (Log.LOG_AS, "AsSyncCommand: AsSyncFailRun {0}", folder.AsSyncFailRun);
+                        lock (PendingResolveLockObj) {
+                            // Defer all the outbound commands until after ReSync.
+                            pendingInFolder = PendingList.Where (x => x.ParentId == folder.ServerId).ToList ();
+                            foreach (var pending in pendingInFolder) {
+                                PendingList.Remove (pending);
+                                pending.ResolveAsDeferred (BEContext.ProtoControl,
+                                    McPending.DeferredEnum.UntilSync,
+                                    NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure));
+                            }
+                        }
+                    } else {
+                        // Initiate re-sync of folder.
+                        Log.Error (Log.LOG_AS, "AsSyncCommand: UpdateResetSyncState after AsSyncFailRun {0}", folder.AsSyncFailRun);
+                        folder = folder.UpdateReset_AsSyncFailRun ();
+                        folder = folder.UpdateResetSyncState ();
+                        // Overkill, but ensure that UI knows that the rug was pulled from under it.
+                        HadEmailMessageSetChanges = true;
+                        HadContactSetChanges = true;
+                        HadCalendarSetChanges = true;
+                        HadTaskChanges = true;
+                        lock (PendingResolveLockObj) {
+                            // Defer all the outbound commands until after ReSync.
+                            pendingInFolder = PendingList.Where (x => x.ParentId == folder.ServerId).ToList ();
+                            foreach (var pending in pendingInFolder) {
+                                PendingList.Remove (pending);
+                                pending.ResolveAsDeferred (BEContext.ProtoControl,
+                                    McPending.DeferredEnum.UntilSync,
+                                    NcResult.Error (NcResult.SubKindEnum.Error_UnknownCommandFailure));
+                            }
                         }
                     }
                     break;
