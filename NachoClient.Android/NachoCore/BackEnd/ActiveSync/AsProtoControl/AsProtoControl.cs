@@ -1388,6 +1388,12 @@ namespace NachoCore.ActiveSync
             return (null == dummy) ? null : dummy.PushAssistResponseData ();
         }
 
+        public int PushAssistTimeout ()
+        {
+            var pingKit = SyncStrategy.GenPingKit (AccountId, ProtocolState, true, false);
+            return (int)(null == pingKit ? 600 : pingKit.MaxHeartbeatInterval) * 1000;
+        }
+
         public PushAssistParameters PushAssistParameters ()
         {
             return new NachoCore.PushAssistParameters () {
@@ -1396,7 +1402,7 @@ namespace NachoCore.ActiveSync
                 RequestHeaders = PushAssistRequestHeaders (),
                 NoChangeResponseData = PushAssistResponseData (),
                 Protocol = PushAssistProtocol.ACTIVE_SYNC,
-                ResponseTimeoutMsec = 60000,
+                ResponseTimeoutMsec = PushAssistTimeout (),
                 WaitBeforeUseMsec = 1000
             };
         }

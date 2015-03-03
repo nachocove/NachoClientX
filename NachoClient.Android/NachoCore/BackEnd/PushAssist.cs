@@ -504,6 +504,7 @@ namespace NachoCore
                     Sm.PostEvent ((uint)SmEvt.E.TempFail, "PAHTTPFAIL");
                 } else {
                     SessionToken = response.Token;
+                    Sm.PostEvent ((uint)SmEvt.E.Success, "GETSESSOK");
                 }
             } catch (OperationCanceledException) {
                 throw;
