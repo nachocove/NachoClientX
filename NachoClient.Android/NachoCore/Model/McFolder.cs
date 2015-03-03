@@ -26,6 +26,9 @@ namespace NachoCore.Model
 
         public string AsSyncKey { get; set; }
 
+        // Keep track of certian back-to-back Sync failures. If N happen in a row, we will reset the SyncKey.
+        public int AsSyncFailRun { get; set; }
+
         // For keeping old folders around through a forced re-FolderSync from 0.
         public uint AsFolderSyncEpoch { get; set; }
         // For keeping old items around through a forced re-Sync from 0.
@@ -607,6 +610,27 @@ namespace NachoCore.Model
             foreach (var folder in folders) {
                 folder.UpdateSet_AsSyncMetaToClientExpected (toClientExpected);
             }
+        }
+
+        public McFolder UpdateReset_AsSyncFailRun ()
+        {
+            var folder = UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.AsSyncFailRun = 0;
+                return true;
+            });
+            return folder;
+        }
+
+        public McFolder UpdateIncrement_AsSyncFailRunToClientExpected (bool toClientExpected)
+        {
+            var folder = UpdateWithOCApply<McFolder> ((record) => {
+                var target = (McFolder)record;
+                target.AsSyncFailRun++;
+                target.AsSyncMetaToClientExpected = toClientExpected;
+                return true;
+            });
+            return folder;
         }
 
         public McFolder UpdateSet_AsSyncMetaToClientExpected (bool toClientExpected)
