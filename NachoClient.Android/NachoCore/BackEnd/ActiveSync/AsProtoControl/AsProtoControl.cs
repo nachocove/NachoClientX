@@ -1370,10 +1370,16 @@ namespace NachoCore.ActiveSync
             return (null == dummy) ? null : dummy.PushAssistRequestUrl ();
         }
 
-        public HttpHeaders PushAssistRequestHeaders ()
+        public HttpRequestHeaders PushAssistRequestHeaders ()
         {
             var dummy = GenerateDummyPing ();
             return (null == dummy) ? null : dummy.PushAssistRequestHeaders ();
+        }
+
+        public HttpContentHeaders PushAssistContentHeaders ()
+        {
+            var dummy = GenerateDummyPing ();
+            return (null == dummy) ? null : dummy.PushAssistContentHeaders ();
         }
 
         public byte[] PushAssistRequestData ()
@@ -1400,6 +1406,7 @@ namespace NachoCore.ActiveSync
                 RequestUrl = PushAssistRequestUrl (),
                 RequestData = PushAssistRequestData (),
                 RequestHeaders = PushAssistRequestHeaders (),
+                ContentHeaders = PushAssistContentHeaders (),
                 NoChangeResponseData = PushAssistResponseData (),
                 Protocol = PushAssistProtocol.ACTIVE_SYNC,
                 ResponseTimeoutMsec = PushAssistTimeout (),

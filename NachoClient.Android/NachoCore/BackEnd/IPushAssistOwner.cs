@@ -19,7 +19,11 @@ namespace NachoCore
 
         public byte[] RequestData;
 
-        public HttpHeaders RequestHeaders;
+        public HttpRequestHeaders RequestHeaders;
+
+        public HttpContentHeaders ContentHeaders;
+
+        public HttpResponseHeaders ResponseHeaders;
 
         public byte[] ExpectedResponseData;
 

@@ -116,7 +116,7 @@ namespace NachoCore.ActiveSync
             return ServerUri (Op).ToString ();
         }
 
-        public HttpHeaders PushAssistRequestHeaders ()
+        public HttpRequestHeaders PushAssistRequestHeaders ()
         {
             Op = new AsHttpOperation (CommandName, this, BEContext);
             HttpRequestMessage request;
@@ -124,6 +124,16 @@ namespace NachoCore.ActiveSync
                 return null;
             }
             return request.Headers;
+        }
+
+        public HttpContentHeaders PushAssistContentHeaders ()
+        {
+            Op = new AsHttpOperation (CommandName, this, BEContext);
+            HttpRequestMessage request;
+            if (!Op.CreateHttpRequest (out request, System.Threading.CancellationToken.None)) {
+                return null;
+            }
+            return request.Content.Headers;
         }
 
         public byte[] PushAssistRequestData ()
