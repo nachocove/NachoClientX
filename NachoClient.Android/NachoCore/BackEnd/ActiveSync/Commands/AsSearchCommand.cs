@@ -59,12 +59,12 @@ namespace NachoCore.ActiveSync
                     new XElement (m_ns + Xml.Search.Store, 
                         new XElement (m_ns + Xml.Search.Name, Xml.Search.NameCode.Mailbox),
                         new XElement (m_ns + Xml.Search.Query, 
-                            /* new XElement (m_ns + Xml.Search.And,*/
-                                new XElement (m_ns + Xml.Search.FreeText, PendingSingle.Search_Prefix) /*,
-                            new XElement (m_ns + Xml.Search.LessThan,
+                            new XElement (m_ns + Xml.Search.And,
+                                new XElement (m_ns + Xml.Search.FreeText, PendingSingle.Search_Prefix),
+                                new XElement (m_ns + Xml.Search.LessThan,
                                     new XElement (m_nsEmail + Xml.Email.DateReceived),
                                     // FIXME - this comes from strat.
-                                    new XElement (m_ns + Xml.Search.Value, (DateTime.UtcNow + new TimeSpan (30, 0, 0, 0)).ToString (AsHelpers.DateTimeFmt1))))*/),
+                                    new XElement (m_ns + Xml.Search.Value, (DateTime.UtcNow + new TimeSpan (30, 0, 0, 0)).ToString (AsHelpers.DateTimeFmt1))))),
                         options));
                 break;
             default:
