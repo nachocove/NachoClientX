@@ -636,6 +636,9 @@ namespace NachoClient.iOS
                     nachoTabBarController = (NachoTabBarController)Window.RootViewController.PresentedViewController.TabBarController;
                 }
             }
+            if (null == nachoTabBarController) {
+                Log.Error (Log.LOG_LIFECYCLE, "The NachoTabBarController could not be found.  Handling of the notification will be delayed or skipped.");
+            }
                 
             if (null != emailNotification) {
                 var emailMessageId = emailNotification.ToMcModelIndex ();
