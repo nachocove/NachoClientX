@@ -15,22 +15,64 @@ namespace NachoCore
         List<NcEmailMessageIndex> list;
         List<McEmailMessageThread> threadList;
 
-        public NachoMessageSearchResults (List<Index.MatchedItem> matches)
+        List<Index.MatchedItem> matches;
+        List<NcEmailMessageIndex> serverMatches;
+
+        public NachoMessageSearchResults ()
+        {
+            threadList = new List<McEmailMessageThread> ();
+        }
+
+        public void UpdateMatches (List<Index.MatchedItem> matches)
+        {
+            this.matches = matches;
+            UpdateResults ();
+        }
+
+        public void UpdateServerMatches (List<NcEmailMessageIndex> serverMatches)
+        {
+            this.serverMatches = serverMatches;
+            UpdateResults ();
+        }
+
+        public void UpdateResults ()
         {
             List<int> adds;
             List<int> deletes;
 
             list = new List<NcEmailMessageIndex> ();
 
-            foreach (var match in matches) {
-                if ("message" == match.Type) {
-                    var messageIndex = new NcEmailMessageIndex ();
-                    messageIndex.Id = int.Parse (match.Id);
-                    list.Add (messageIndex);
+            if (null != matches) {
+                foreach (var match in matches) {
+                    if ("message" == match.Type) {
+                        var messageIndex = new NcEmailMessageIndex ();
+                        messageIndex.Id = int.Parse (match.Id);
+                        list.Add (messageIndex);
+                    }
+                }
+            }
+            if (null != serverMatches) {
+                foreach (var serverMatch in serverMatches) {
+                    if (!list.Contains (serverMatch, new NcEmailMessageIndexComparer ())) {
+                        list.Add (serverMatch);
+                    }
                 }
             }
 
+            list.RemoveAll ((NcEmailMessageIndex obj) => IsValid (obj));
+
             Refresh (out adds, out deletes);
+        }
+
+        // As messages are moved, they change index & become
+        // unavailable.  Deferred messages should be hidden.
+        protected bool IsValid (NcEmailMessageIndex messageIndex)
+        {
+            var message = messageIndex.GetMessage ();
+            if ((null == message) || message.IsDeferred ()) {
+                return true;
+            }
+            return false;
         }
 
         public bool Refresh (out List<int> adds, out List<int> deletes)

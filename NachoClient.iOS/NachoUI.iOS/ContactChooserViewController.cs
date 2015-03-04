@@ -264,9 +264,9 @@ namespace NachoClient.iOS
         {
             // TODO: Think about whether we want to users about errors during GAL search
             if (String.IsNullOrEmpty (contactSearchToken)) {
-                contactSearchToken = BackEnd.Instance.StartSearchEmailReq (account.Id, forSearchString, null).GetValue<string> ();
+                contactSearchToken = BackEnd.Instance.StartSearchContactsReq (account.Id, forSearchString, null).GetValue<string> ();
             } else {
-                BackEnd.Instance.SearchEmailReq (account.Id, forSearchString, null, contactSearchToken);
+                BackEnd.Instance.SearchContactsReq (account.Id, forSearchString, null, contactSearchToken);
             }
         }
 

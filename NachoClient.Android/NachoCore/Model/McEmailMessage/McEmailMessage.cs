@@ -63,6 +63,19 @@ namespace NachoCore.Model
         }
     }
 
+    public class NcEmailMessageIndexComparer : IEqualityComparer<NcEmailMessageIndex>
+    {
+        public bool Equals (NcEmailMessageIndex a, NcEmailMessageIndex b)
+        {
+            return a.Id == b.Id;
+        }
+
+        public int GetHashCode (NcEmailMessageIndex i)
+        {
+            return i.Id;
+        }
+    }
+
     public partial class McEmailMessage : McAbstrItem
     {
         private const string CrLf = "\r\n";
