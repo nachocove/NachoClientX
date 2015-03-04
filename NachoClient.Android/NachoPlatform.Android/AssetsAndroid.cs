@@ -22,6 +22,10 @@ namespace NachoPlatform
 				return false;
 			}
 		}
+        public string GetPath (string relPath) {
+            // FIXME - it may be that getting the path is not possible. If so, then we need to change the interface.
+            return "FIXME";
+        }
 		public string[] List (string relPath) {
 			string[] fileNames = AndroidAssetManager.List (relPath);
 			return fileNames.Select (str => Path.Combine (relPath, str)).ToArray ();

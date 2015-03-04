@@ -4,6 +4,7 @@ using SQLite;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,6 +19,7 @@ namespace NachoCore.Model
         private object LockObj;
         private DateTime LastAccess;
         private bool DidDispose;
+
 
         public NcSQLiteConnection (string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = false) :
             base (databasePath, openFlags, storeDateTimeAsTicks)
@@ -69,12 +71,16 @@ namespace NachoCore.Model
 
         private const string KTmpPathSegment = "tmp";
         private const string KFilesPathSegment = "files";
+        private const string KDbFileName = "db";
+        private const string KTeleDbFileName = "teledb";
 
-        public string DbFileName { set; get; }
+        private string DbFilePath { set; get; }
 
-        public string TeleDbFileName { set; get; }
+        private string TeleDbFilePath { set; get; }
 
         public object WriteNTransLockObj { private set; get; }
+
+        public long DbCreateConfigMs { private set; get; }
 
         public enum AutoVacuumEnum
         {
@@ -91,7 +97,7 @@ namespace NachoCore.Model
                 NcSQLiteConnection db = null;
                 while (true) {
                     if (!DbConns.TryGetValue (threadId, out db)) {
-                        db = new NcSQLiteConnection (DbFileName, 
+                        db = new NcSQLiteConnection (DbFilePath, 
                             SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.NoMutex, 
                             storeDateTimeAsTicks: true);
                         db.BusyTimeout = TimeSpan.FromSeconds (10.0);
@@ -113,7 +119,7 @@ namespace NachoCore.Model
             get {
                 lock (_TeleDbLock) {
                     if (null == _TeleDb) {
-                        _TeleDb = new SQLiteConnection (TeleDbFileName,
+                        _TeleDb = new SQLiteConnection (TeleDbFilePath,
                             SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.FullMutex,
                             storeDateTimeAsTicks: true);
                         _TeleDb.BusyTimeout = TimeSpan.FromSeconds (10.0);
@@ -191,12 +197,8 @@ namespace NachoCore.Model
             }
         }
 
-        private void InitializeDb ()
+        private void CreateDb ()
         {
-            RateLimiter = new NcRateLimter (16, 0.250);
-            DbConns = new ConcurrentDictionary<int, NcSQLiteConnection> ();
-            TransDepth = new ConcurrentDictionary<int, int> ();
-            AutoVacuum = AutoVacuumEnum.NONE;
             Db.CreateTable<McAccount> ();
             Db.CreateTable<McConference> ();
             Db.CreateTable<McCred> ();
@@ -235,7 +237,35 @@ namespace NachoCore.Model
             Db.CreateTable<McPortrait> ();
             Db.CreateTable<McMapEmailAddressEntry> ();
             Db.CreateTable<McMigration> ();
-            ConfigureDb (Db);
+        }
+
+        private void InitializeDb (bool doConfigure = true)
+        {
+            RateLimiter = new NcRateLimter (16, 0.250);
+            DbConns = new ConcurrentDictionary<int, NcSQLiteConnection> ();
+            TransDepth = new ConcurrentDictionary<int, int> ();
+            AutoVacuum = AutoVacuumEnum.NONE;
+            var watch = Stopwatch.StartNew ();
+            var assets = new Assets ();
+            if (!File.Exists (DbFilePath) && assets.Exists (KDbFileName)) {
+                try {
+                    File.Copy (assets.GetPath (KDbFileName), DbFilePath);
+                } catch (Exception ex) {
+                    Log.IndirectQ.Enqueue (new LogElement () {
+                        Level = LogElement.LevelEnum.Error,
+                        Subsystem = Log.LOG_DB,
+                        Message = string.Format ("InitializeDb: Exception on Copy: {0}", ex.Message),
+                        Occurred = DateTime.UtcNow,
+                        ThreadId = Thread.CurrentThread.ManagedThreadId,
+                    });
+                }
+            }
+            CreateDb ();
+            if (doConfigure) {
+                ConfigureDb (Db);
+            }
+            watch.Stop ();
+            DbCreateConfigMs = watch.ElapsedMilliseconds;
         }
 
         private void InitializeTeleDb ()
@@ -285,14 +315,21 @@ namespace NachoCore.Model
                 }), (IntPtr)null);
             }
             Documents = Environment.GetFolderPath (Environment.SpecialFolder.MyDocuments);
-            DbFileName = Path.Combine (Documents, "db");
-            FreshInstall = !File.Exists (DbFileName);
+            DbFilePath = Path.Combine (Documents, KDbFileName);
+            FreshInstall = !File.Exists (DbFilePath);
             InitializeDb ();
-            TeleDbFileName = Path.Combine (Documents, "teledb");
+            TeleDbFilePath = Path.Combine (Documents, KTeleDbFileName);
             InitializeTeleDb ();
             NcApplication.Instance.MonitorEvent += (object sender, EventArgs e) => {
                 Scrub ();
             };
+            Log.IndirectQ.Enqueue (new LogElement () {
+                Level = LogElement.LevelEnum.Info,
+                Subsystem = Log.LOG_DB,
+                Message = string.Format ("DB Create & Configure: {0}ms", DbCreateConfigMs),
+                Occurred = DateTime.UtcNow,
+                ThreadId = Thread.CurrentThread.ManagedThreadId,
+            });
         }
 
         private static volatile NcModel instance;
@@ -520,10 +557,10 @@ namespace NachoCore.Model
             };
         }
 
-        public void Reset (string dbFileName)
+        public void Reset (string dbFilePath, bool doConfigure = true)
         {
-            DbFileName = dbFileName;
-            InitializeDb ();
+            DbFilePath = dbFilePath;
+            InitializeDb (doConfigure);
             GarbageCollectFiles ();
         }
 
@@ -586,9 +623,9 @@ namespace NachoCore.Model
 
                 // Rename the db file
                 var timestamp = DateTime.Now.ToString ().Replace (' ', '_').Replace ('/', '-');
-                File.Replace (TeleDbFileName, TeleDbFileName + "." + timestamp, null);
-                File.Replace (TeleDbFileName + "-wal", TeleDbFileName + "-wal." + timestamp, null);
-                File.Replace (TeleDbFileName + "-shm", TeleDbFileName + "-shm." + timestamp, null);
+                File.Replace (TeleDbFilePath, TeleDbFilePath + "." + timestamp, null);
+                File.Replace (TeleDbFilePath + "-wal", TeleDbFilePath + "-wal." + timestamp, null);
+                File.Replace (TeleDbFilePath + "-shm", TeleDbFilePath + "-shm." + timestamp, null);
 
                 // Recreate the db
                 InitializeTeleDb ();
