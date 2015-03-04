@@ -240,9 +240,7 @@ namespace NachoCore.Brain
             }
 
             foreach (var index in indexes.Values) {
-                if (index.Dirty) {
-                    index.EndAddTransaction ();
-                }
+                index.EndAddTransaction ();
             }
             if (0 != numIndexed) {
                 Log.Info (Log.LOG_BRAIN, "{0} email messages indexed", numIndexed);

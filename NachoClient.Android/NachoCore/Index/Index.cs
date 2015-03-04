@@ -61,7 +61,7 @@ namespace NachoCore.Index
         public long BatchAdd (NcIndexDocument doc)
         {
             if (null == Writer) {
-                throw new ArgumentNullException ();
+                throw new ArgumentNullException ("writer not set up");
             }
 
             // Index the document
@@ -75,7 +75,7 @@ namespace NachoCore.Index
         {
             Lock.WaitOne ();
             if (null != Writer) {
-                throw new ArgumentException ();
+                throw new ArgumentException ("writer already exists");
             }
             Dirty = false;
             Writer = new IndexWriter (IndexDirectory, Analyzer, IndexWriter.MaxFieldLength.UNLIMITED);
@@ -83,10 +83,12 @@ namespace NachoCore.Index
 
         public void EndAddTransaction ()
         {
-            Writer.Commit ();
+            if (Dirty) {
+                Writer.Commit ();
+                Dirty = false;
+            }
             Writer.Dispose ();
             Writer = null;
-            Dirty = false;
             Lock.ReleaseMutex ();
         }
 
@@ -103,7 +105,7 @@ namespace NachoCore.Index
         public bool BatchRemove (string type, string id)
         {
             if (null == Reader) {
-                throw new ArgumentNullException ();
+                throw new ArgumentNullException ("reader not set up");
             }
             var parser = new QueryParser (Lucene.Net.Util.Version.LUCENE_30, "id", Analyzer);
             var queryString = String.Format ("type:{0} AND id:{1}", type, id);
@@ -127,7 +129,7 @@ namespace NachoCore.Index
         {
             Lock.WaitOne ();
             if (null != Reader) {
-                throw new ArgumentException ();
+                throw new ArgumentException ("reader already exists");
             }
             Reader = IndexReader.Open (IndexDirectory, false);
         }
