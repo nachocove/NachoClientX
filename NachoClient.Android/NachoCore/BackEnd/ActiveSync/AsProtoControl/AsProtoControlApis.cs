@@ -104,7 +104,7 @@ namespace NachoCore.ActiveSync
             var newSearch = new McPending (Account.Id) {
                 Operation = McPending.Operations.EmailSearch,
                 Search_Prefix = keywords,
-                Search_MaxResults = (null == maxResults) ? 50 : (uint)maxResults,
+                Search_MaxResults = (null == maxResults) ? 20 : (uint)maxResults,
                 Token = token
             };
             newSearch.DoNotDelay ();
