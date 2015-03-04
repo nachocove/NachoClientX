@@ -137,6 +137,7 @@ namespace NachoCore.Index
                 Reader = IndexReader.Open (IndexDirectory, false);
             } catch (Lucene.Net.Store.NoSuchDirectoryException e) {
                 // This can happen if the removal is done before anything is written to the index.
+                Lock.ReleaseMutex ();
                 return false;
             }
             return true;
