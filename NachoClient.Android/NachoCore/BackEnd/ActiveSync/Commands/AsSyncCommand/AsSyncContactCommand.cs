@@ -41,6 +41,7 @@ namespace NachoCore.ActiveSync
                 if (null == mcContact || null == mcContact.ServerId || string.Empty == mcContact.ServerId) {
                     mcContact = new McContact () {
                         ServerId = xmlServerId.Value,
+                        Source = McAbstrItem.ItemSource.ActiveSync,
                     };
                 }
                 mcContact.AccountId = folder.AccountId;
