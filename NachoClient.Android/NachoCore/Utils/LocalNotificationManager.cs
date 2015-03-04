@@ -141,7 +141,7 @@ namespace NachoCore.Utils
                 if (ev.EndTime > now) {
                     // The reminder time has passed, but the event isn't over yet.
                     // Notify the user right now.
-                    string message = Pretty.Join (Pretty.SubjectString (ev.GetCalendarItemforEvent ().Subject), Pretty.ReminderTime (ev.StartTime - now));
+                    string message = Pretty.Join (Pretty.SubjectString (EventSubject(ev)), Pretty.ReminderTime (ev.StartTime - now));
                     NachoPlatform.Notif.Instance.ImmediateNotification (ev.Id, message);
                 }
                 return;
@@ -181,9 +181,22 @@ namespace NachoCore.Utils
             return reschedulingNeeded || scheduledThrough - DateTime.UtcNow < MINIMUM_WINDOW;
         }
 
+        // It is possible for a McEvent to be deleted or to have been orphaned while the local notification
+        // processing is happening.  The situation will get cleared up quickly by NcEventManager.  But in the
+        // meantime, this class needs to handle GetCalendarItemForEvent() returning null.
+        private static string EventSubject (McEvent ev)
+        {
+            var calendarItem = ev.GetCalendarItemforEvent ();
+            if (null == calendarItem) {
+                return "";
+            } else {
+                return calendarItem.Subject;
+            }
+        }
+
         private static string NotificationMessage (McEvent ev)
         {
-            return Pretty.Join (Pretty.SubjectString (ev.GetCalendarItemforEvent ().Subject), Pretty.ReminderTime (ev.StartTime - ev.ReminderTime));
+            return Pretty.Join (Pretty.SubjectString (EventSubject(ev)), Pretty.ReminderTime (ev.StartTime - ev.ReminderTime));
         }
 
         private static void StatusIndicatorCallback (object sender, EventArgs e)
